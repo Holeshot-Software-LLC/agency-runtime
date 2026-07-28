@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
@@ -338,6 +338,33 @@ agency install --all --dry-run
 agency doctor
 ```
 
+Inspect the exact installed build and resolve an update target without changing
+the environment:
+
+```bash
+agency -V                                      # fast package version
+agency version --json                         # source/VCS commit + install kind
+agency upgrade check --channel release        # latest stable release
+agency upgrade check --channel main --refresh # current development head
+agency upgrade --version 0.2.0                 # exact release plan
+agency upgrade --ref <full-commit-sha>         # exact ref plan
+```
+
+The repository currently has no published stable release, so the release check
+truthfully reports unavailable. Private-repository checks use your configured
+GitHub CLI authentication when present; Agency neither stores nor returns that
+credential. `--cached` performs no remote access, and
+`AGENCY_UPDATE_NOTICES=0` disables interactive cache notices.
+
+`agency upgrade` is deliberately a planner, not a self-modifying installer. It
+resolves the selector to one full immutable commit and prints the exact pip and
+Codex-refresh commands for review in an owner-controlled terminal; it reports
+`mutation_performed=false` and executes nothing. The authenticated dashboard
+checks stale release/main metadata in the background and exposes the same fixed
+copy-only attended command. It cannot install packages, refresh Codex, restart
+itself, or bypass Windows operator presence. See
+[ADR-0107](docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md).
+
 This unreleased source keeps persistent setup and control mutations fail-closed
 except for two narrow Windows 11 x64 implementations. Exact
 `agency roster rollback` prepares and revalidates one authoritative Store
@@ -439,7 +466,8 @@ the protected coordination pair.
 ## 📊 Operations dashboard
 
 The optional local dashboard shows live routing, delegation, provider health,
-model receipts, host status, roster and workforce evidence, and recent turns.
+model receipts, host status, roster and workforce evidence, recent turns, and
+cached/background update status.
 It is a local-only, bounded, read-only observability surface; every former
 mutation endpoint rejects both owner and broker bearers. See
 [ADR-0096](docs/decisions/0096-require-operator-presence-for-persistent-controls.md).

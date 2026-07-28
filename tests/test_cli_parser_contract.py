@@ -78,6 +78,8 @@ HANDLER_NAMES = (
     "cmd_source_list",
     "cmd_status",
     "cmd_sync",
+    "cmd_upgrade",
+    "cmd_version",
     "cmd_workforce_consolidate",
     "cmd_workforce_duplicates",
     "cmd_workforce_list",
@@ -172,6 +174,8 @@ EXPECTED_PATHS = (
     "agency source list",
     "agency status",
     "agency sync",
+    "agency upgrade",
+    "agency version",
     "agency workforce",
     "agency workforce amend",
     "agency workforce consolidate",
@@ -259,6 +263,8 @@ EXPECTED_BINDINGS = {
     "agency source list": "cmd_source_list",
     "agency status": "cmd_status",
     "agency sync": "cmd_sync",
+    "agency upgrade": "cmd_upgrade",
+    "agency version": "cmd_version",
     "agency workforce disable": "cmd_agent_disable",
     "agency workforce amend": "cmd_hiring_approve",
     "agency workforce consolidate": "cmd_workforce_consolidate",
@@ -273,7 +279,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "56aa12eec275734ee00eda873a816db5a37ae5f065c2d9f70ddf2dc7dc10f0cd"
+EXPECTED_MANIFEST_SHA256 = "dfdc0df86ed6ba066d7e30175e830aea1aa68b3c147add446367d0b10fe02179"
 
 
 def _handler(name: str):

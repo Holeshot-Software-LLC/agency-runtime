@@ -3,9 +3,10 @@ title: "Separate reproducible unsigned builds from signed delivery"
 status: accepted
 category: decisions
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [release, security, windows, signing, reproducibility, supply-chain]
 related:
+  - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - SECURITY.md
   - THIRD_PARTY_NOTICES.md
   - docs/THREAT_MODEL.md

@@ -55,6 +55,7 @@ export function createDashboard(runtime = globalThis) {
 		state.clockTimer = null;
 		live.cancelLiveRequest();
 		live.cancelControlRequest();
+		live.cancelUpdateRequest();
 		live.cancelFullRefresh();
 		live.cancelMutationRequests();
 		live.cancelViewRequests();
@@ -70,6 +71,7 @@ export function createDashboard(runtime = globalThis) {
 		}
 		state.lifecycle.suspended = false;
 		live.updateLocalClock();
+		live.scheduleUpdateRefresh(0);
 		if (state.live.enabled && !state.live.terminal) {
 			live.setLiveStatus("Syncing live activity", "connecting");
 			live.scheduleLive(0);
@@ -82,6 +84,7 @@ export function createDashboard(runtime = globalThis) {
 		state.lifecycle.suspended = false;
 		if (!state.full.inFlight) byId("refresh-button").disabled = false;
 		live.updateLocalClock();
+		live.scheduleUpdateRefresh(0);
 		if (!state.live.enabled || state.live.terminal) return;
 		live.scheduleLive(0);
 		live.scheduleControlRefresh(0);
@@ -186,7 +189,24 @@ export function createDashboard(runtime = globalThis) {
 		});
 		renderer.configureEvidenceTabs();
 		configureReadOnlySurface();
-		listen(byId("refresh-button"), "click", live.refreshAll);
+		listen(byId("refresh-button"), "click", async () => {
+			await live.refreshAll();
+			void live.refreshUpdateStatus();
+		});
+		live.ensureUpdateSurface();
+		listen(byId("update-copy-button"), "click", async () => {
+			const command = String(byId("update-command")?.textContent || "").trim();
+			if (!command) return;
+			try {
+				if (typeof window.navigator?.clipboard?.writeText !== "function") {
+					throw new Error("clipboard unavailable");
+				}
+				await window.navigator.clipboard.writeText(command);
+				core.showNotice("Upgrade command copied. Review it in an owner-controlled terminal.");
+			} catch {
+				core.showNotice("Copy was unavailable. Select the displayed command manually.", true);
+			}
+		});
 		listen(byId("route-button"), "click", actions.runRoute);
 		listen(byId("route-host"), "change", renderer.renderRouteHosts);
 		listen(byId("roster-search-form"), "submit", live.searchRoster);
@@ -272,7 +292,9 @@ export function createDashboard(runtime = globalThis) {
 		if (state.lifecycle.destroyed) return false;
 		bindEvents();
 		live.updateLocalClock();
-		return connectFromLocation();
+		const connected = await connectFromLocation();
+		if (connected) void live.refreshUpdateStatus();
+		return connected;
 	}
 
 	const dashboard = {

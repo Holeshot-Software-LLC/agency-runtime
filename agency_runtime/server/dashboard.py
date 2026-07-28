@@ -1126,6 +1126,7 @@ def _dashboard_observation_operation(method: str, path: str) -> str:
         ("GET", "/api/roster/reviews"): "roster_reviews",
         ("GET", "/api/runtime"): "runtime",
         ("GET", "/api/snapshots"): "snapshots",
+        ("GET", "/api/update"): "update",
         ("GET", "/api/workforce"): "workforce",
         ("POST", "/api/route"): "route",
         ("POST", "/api/search"): "search",
@@ -1413,6 +1414,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "/api/providers/models": self._handle_provider_models,
                 "/api/health": lambda: self._json_ok({"status": "ok"}),
                 "/api/snapshots": self._handle_snapshots,
+                "/api/update": self._handle_update,
                 "/api/policy": self._handle_policy,
             }.get(path)
             if handler is None:
@@ -1438,6 +1440,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         except WorkforcePayloadBudgetError:
             logger.error("dashboard GET response budget exceeded for %s", operation)
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
+
         except (KeyError, ValueError, RuntimeError) as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:  # defensive boundary; details stay in logs
@@ -1450,6 +1453,18 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 type(exc).__name__,
             )
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
+
+    def _handle_update(self) -> None:
+        """Return cached release/main identity and schedule bounded refreshes."""
+
+        from agency_runtime.core.update_service import dashboard_update_snapshot
+
+        self._json_ok(
+            dashboard_update_snapshot(
+                home_dir=self.server.update_home,  # type: ignore[attr-defined]
+                schedule=True,
+            )
+        )
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path.rstrip("/") or "/"
@@ -2861,6 +2876,7 @@ class DashboardHTTPServer(AgencyHTTPServer):
         self.host_inspector = host_inspector or _HOST_INSPECTIONS.inspect
         self.config_path = canonical_config_path
         self.runtime_control_path = runtime_control_path(home_dir=runtime_control_home)
+        self.update_home = runtime_control_home
         super().__init__(
             store,
             host,

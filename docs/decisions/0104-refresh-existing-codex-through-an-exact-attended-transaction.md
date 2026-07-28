@@ -3,9 +3,10 @@ title: "Refresh existing Codex through an exact attended transaction"
 status: accepted
 category: decisions
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [security, codex, installation, user-presence, transactions]
 related:
+  - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md

@@ -7,6 +7,102 @@ import {
 	withRequestId,
 } from "./dashboard-core.js";
 
+const UPDATE_STATUS_FLAGS = new Map([
+	["unchecked", null],
+	["unavailable", null],
+	["unknown", null],
+	["current", false],
+	["newer_installed", false],
+	["local_changes", false],
+	["different_target", null],
+	["update_available", true],
+]);
+const RELEASE_VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:(?:a|b|rc)(?:0|[1-9]\d*))?$/;
+const UPDATE_REF_PATTERN = /^[0-9A-Za-z][0-9A-Za-z._+/-]{0,127}$/;
+const FULL_SHA_PATTERN = /^[0-9a-f]{40}$/;
+
+function safeUpdateText(value, limit) {
+	return typeof value === "string" && value.length > 0 && value.length <= limit
+		&& value.trim() === value && !/[\u0000-\u001f\u007f]/.test(value);
+}
+
+export function safeUpdateTargetUrl(value, target, channel) {
+	if (typeof value !== "string" || !isRecord(target)) return "";
+	if (channel === "main") {
+		const prefix = "https://github.com/Holeshot-Software-LLC/agency-runtime/commit/";
+		return FULL_SHA_PATTERN.test(target.commit_sha) && value === `${prefix}${target.commit_sha}`
+			? value : "";
+	}
+	const prefix = "https://github.com/Holeshot-Software-LLC/agency-runtime/releases/tag/";
+	return UPDATE_REF_PATTERN.test(target.label)
+		&& !target.label.includes("..") && !target.label.includes("//")
+		&& !target.label.includes("@{") && !target.label.endsWith("/")
+		&& value === `${prefix}${target.label}` ? value : "";
+}
+
+function validateUpdateChannel(status, channel, installed) {
+	const expectedCommand = `agency upgrade --channel ${channel}`;
+	const expectedSelectorRef = channel === "release" ? "latest" : "main";
+	if (
+		!isRecord(status)
+		|| status.schema_version !== "agency.update.v1"
+		|| !UPDATE_STATUS_FLAGS.has(status.status)
+		|| status.update_available !== UPDATE_STATUS_FLAGS.get(status.status)
+		|| status.command !== expectedCommand
+		|| typeof status.checked !== "boolean"
+		|| typeof status.cache_hit !== "boolean"
+		|| typeof status.stale !== "boolean"
+		|| typeof status.checking !== "boolean"
+		|| status.checked !== (status.status !== "unchecked")
+		|| (status.checked && !safeUpdateText(status.checked_at, 64))
+		|| (!status.checked && status.checked_at !== null)
+		|| (status.error !== null && !safeUpdateText(status.error, 512))
+		|| !isRecord(status.installed)
+		|| status.installed.build_identity !== installed.build_identity
+		|| !isRecord(status.selector)
+		|| status.selector.kind !== "channel"
+		|| status.selector.value !== channel
+		|| status.selector.ref !== expectedSelectorRef
+		|| status.selector.key !== `channel:${channel}`
+		|| (channel === "main" && ["newer_installed", "update_available"].includes(status.status))
+	) return false;
+
+	const targetRequired = !["unchecked", "unavailable"].includes(status.status);
+	if (targetRequired !== isRecord(status.target)) return false;
+	if (!targetRequired) return status.target === null;
+	const target = status.target;
+	if (
+		!safeUpdateText(target.label, 128)
+		|| !FULL_SHA_PATTERN.test(target.commit_sha)
+		|| !safeUpdateTargetUrl(target.url, target, channel)
+		|| (target.published_at !== null && !safeUpdateText(target.published_at, 64))
+	) return false;
+	if (channel === "main") {
+		return target.kind === "main" && target.label === "main" && target.ref === "main"
+			&& target.version === null && target.published_at === null;
+	}
+	return target.kind === "release" && target.ref === target.label
+		&& (target.version === null || RELEASE_VERSION_PATTERN.test(target.version));
+}
+
+export function validateUpdateStatusPayload(payload) {
+	if (!isRecord(payload) || payload.schema_version !== "agency.dashboard.update.v1") {
+		throw new Error("Unsupported Agency update response.");
+	}
+	const installed = payload.installed;
+	if (
+		!isRecord(installed)
+		|| !safeUpdateText(installed.package_version, 64)
+		|| !safeUpdateText(installed.build_identity, 160)
+		|| typeof payload.checking !== "boolean"
+		|| !validateUpdateChannel(payload.release, "release", installed)
+		|| !validateUpdateChannel(payload.main, "main", installed)
+		|| payload.checking !== (payload.release.checking || payload.main.checking)
+		|| payload.recommended !== (payload.release.update_available === true ? "release" : "main")
+	) throw new Error("Agency update response is invalid.");
+	return payload;
+}
+
 export function createLiveController(core, config, renderer) {
 	const {
 		runtime,
@@ -194,6 +290,144 @@ export function createLiveController(core, config, renderer) {
 		state.control.controller = null;
 		state.control.inFlight = false;
 		if (controller) controller.abort();
+	}
+
+	function cancelUpdateRequest() {
+		state.updateRequest.generation += 1;
+		window.clearTimeout(state.updateRequest.timer);
+		state.updateRequest.timer = null;
+		state.updateRequest.controller?.abort();
+		state.updateRequest.controller = null;
+		state.updateRequest.inFlight = false;
+		state.updateRequest.attempts = 0;
+	}
+
+	function ensureUpdateSurface() {
+		let banner = byId("update-banner");
+		if (banner) return banner;
+		banner = document.createElement("aside");
+		banner.id = "update-banner";
+		banner.className = "update-banner";
+		banner.hidden = true;
+		banner.setAttribute("role", "status");
+		banner.setAttribute("aria-live", "polite");
+
+		const copy = document.createElement("span");
+		copy.className = "update-copy";
+		const title = document.createElement("strong");
+		title.id = "update-title";
+		const detail = document.createElement("small");
+		detail.id = "update-detail";
+		const command = document.createElement("code");
+		command.id = "update-command";
+		copy.append(title, detail, command);
+
+		const actions = document.createElement("span");
+		actions.className = "update-actions";
+		const link = document.createElement("a");
+		link.id = "update-link";
+		link.className = "button ghost";
+		link.target = "_blank";
+		link.rel = "noopener noreferrer";
+		link.textContent = "View target";
+		link.hidden = true;
+		const copyButton = document.createElement("button");
+		copyButton.id = "update-copy-button";
+		copyButton.className = "button solid";
+		copyButton.type = "button";
+		copyButton.textContent = "Copy command";
+		copyButton.hidden = true;
+		actions.append(link, copyButton);
+		banner.append(copy, actions);
+		byId("notice")?.insertAdjacentElement?.("afterend", banner);
+		return banner;
+	}
+
+	function applyUpdateStatus(payload) {
+		validateUpdateStatusPayload(payload);
+		state.update = payload;
+		renderUpdateStatus();
+		return true;
+	}
+
+	function renderUpdateStatus() {
+		const banner = ensureUpdateSurface();
+		const payload = state.update;
+		if (!banner || !payload) return false;
+		const release = payload.release;
+		const main = payload.main;
+		const selected = release.update_available === true
+			? release
+			: main.update_available === true
+				? main
+				: release.checked && !release.error
+					? release
+					: main;
+		const available = selected.update_available === true;
+		const checking = payload.checking === true;
+		banner.hidden = false;
+		banner.dataset.state = available ? "available" : checking ? "checking" : "current";
+		byId("update-title").textContent = available
+			? "Agency update available"
+			: checking
+				? "Checking Agency updates"
+				: "Agency version";
+		const target = isRecord(selected.target) ? selected.target : null;
+		const targetLabel = target?.label ? ` · ${target.label}` : "";
+		byId("update-detail").textContent = `${payload.installed.build_identity}${targetLabel} · ${selected.status}`;
+		byId("update-command").textContent = available ? selected.command : "";
+		byId("update-command").hidden = !available;
+		const channel = selected === release ? "release" : "main";
+		const targetUrl = safeUpdateTargetUrl(target?.url, target, channel);
+		const link = byId("update-link");
+		link.hidden = !targetUrl;
+		if (targetUrl) link.href = targetUrl;
+		else link.removeAttribute("href");
+		byId("update-copy-button").hidden = !available;
+		return true;
+	}
+
+	function scheduleUpdateRefresh(delay = 1500) {
+		window.clearTimeout(state.updateRequest.timer);
+		state.updateRequest.timer = null;
+		if (lifecycleInactive() || state.updateRequest.attempts >= 5) return;
+		state.updateRequest.timer = window.setTimeout(refreshUpdateStatus, delay);
+	}
+
+	async function refreshUpdateStatus() {
+		if (lifecycleInactive() || state.updateRequest.inFlight) return false;
+		const controller = new AbortController();
+		const generation = state.updateRequest.generation + 1;
+		state.updateRequest.generation = generation;
+		state.updateRequest.controller = controller;
+		state.updateRequest.inFlight = true;
+		try {
+			const payload = await api("/api/update", { signal: controller.signal });
+			if (
+				controller.signal.aborted
+				|| generation !== state.updateRequest.generation
+				|| lifecycleInactive()
+			) return false;
+			applyUpdateStatus(payload);
+			if (payload.checking === true) {
+				state.updateRequest.attempts += 1;
+				scheduleUpdateRefresh();
+			} else {
+				state.updateRequest.attempts = 0;
+			}
+			return true;
+		} catch (error) {
+			if (error?.name !== "AbortError") {
+				state.updateRequest.attempts += 1;
+				if (state.updateRequest.attempts < 3) scheduleUpdateRefresh(3000);
+			}
+			return false;
+		} finally {
+			if (state.updateRequest.controller === controller) {
+				state.updateRequest.controller = null;
+				state.updateRequest.inFlight = false;
+			}
+		}
 	}
 
 	function clearRemediationBusyState() {
@@ -1346,6 +1580,12 @@ export function createLiveController(core, config, renderer) {
 		applyMasterState,
 		cancelLiveRequest,
 		cancelControlRequest,
+		cancelUpdateRequest,
+		ensureUpdateSurface,
+		applyUpdateStatus,
+		renderUpdateStatus,
+		scheduleUpdateRefresh,
+		refreshUpdateStatus,
 		beginViewRequest,
 		viewRequestIsCurrent,
 		finishViewRequest,

@@ -3,9 +3,10 @@ title: "Build every subprocess environment from least privilege"
 status: accepted
 category: decisions
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-28
 tags: [security, processes, credentials, path, installer]
 related:
+  - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-129-isolate-subprocess-environments.md
   - docs/THREAT_MODEL.md
   - docs/decisions/0055-freeze-executable-identity-before-launch.md

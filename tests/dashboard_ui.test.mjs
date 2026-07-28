@@ -14,6 +14,10 @@ const ACTIONS_SOURCE = readFileSync(
   fileURLToPath(new URL("../agency_runtime/dashboard/dashboard-actions.js", import.meta.url)),
   "utf8",
 );
+const LIVE_SOURCE = readFileSync(
+  fileURLToPath(new URL("../agency_runtime/dashboard/dashboard-live.js", import.meta.url)),
+  "utf8",
+);
 const RENDER_SOURCE = readFileSync(
   fileURLToPath(new URL("../agency_runtime/dashboard/dashboard-render.js", import.meta.url)),
   "utf8",
@@ -3485,13 +3489,16 @@ test("app.js pauses while hidden, resumes visibly, and gates BFCache restoration
   });
   harness.api.scheduleLive(500);
   harness.api.scheduleControlRefresh(750);
+  harness.api.scheduleUpdateRefresh(900);
   assert.notEqual(harness.api.state.live.timer, null);
   assert.notEqual(harness.api.state.control.timer, null);
+  assert.notEqual(harness.api.state.updateRequest.timer, null);
 
   harness.document.visibilityState = "hidden";
   harness.api.handleVisibilityChange();
   assert.equal(harness.api.state.live.timer, null);
   assert.equal(harness.api.state.control.timer, null);
+  assert.equal(harness.api.state.updateRequest.timer, null);
   assert.equal(harness.node("live-status").dataset.state, "paused");
   assert.match(harness.node("live-status").textContent, /hidden/i);
 
@@ -3505,28 +3512,42 @@ test("app.js pauses while hidden, resumes visibly, and gates BFCache restoration
     harness.timers.tasks.get(harness.api.state.control.timer).delay,
     0,
   );
+  assert.equal(
+    harness.timers.tasks.get(harness.api.state.updateRequest.timer).delay,
+    0,
+  );
   assert.notEqual(harness.api.state.clockTimer, null);
   assert.equal(harness.node("live-status").dataset.state, "connecting");
 
   harness.api.cancelLiveRequest();
   harness.api.cancelControlRequest();
+  harness.api.cancelUpdateRequest();
   harness.node("refresh-button").disabled = true;
   harness.api.handlePageShow({ persisted: false });
   assert.equal(harness.node("refresh-button").disabled, true);
   assert.equal(harness.api.state.live.timer, null);
   assert.equal(harness.api.state.control.timer, null);
+  assert.equal(harness.api.state.updateRequest.timer, null);
 
   harness.api.state.live.enabled = false;
   harness.api.handlePageShow({ persisted: true });
   assert.equal(harness.node("refresh-button").disabled, false);
   assert.equal(harness.api.state.live.timer, null);
   assert.equal(harness.api.state.control.timer, null);
+  assert.equal(
+    harness.timers.tasks.get(harness.api.state.updateRequest.timer).delay,
+    0,
+  );
 
   harness.api.state.live.enabled = true;
   harness.api.state.live.terminal = true;
   harness.api.handlePageShow({ persisted: true });
   assert.equal(harness.api.state.live.timer, null);
   assert.equal(harness.api.state.control.timer, null);
+  assert.equal(
+    harness.timers.tasks.get(harness.api.state.updateRequest.timer).delay,
+    0,
+  );
 
   harness.api.state.live.terminal = false;
   harness.node("refresh-button").disabled = true;
@@ -5789,8 +5810,115 @@ test("operational dashboard markup and accessibility policies stay discoverable"
   assert.match(APP_CSS_SOURCE, /\.remediation-card/);
   assert.match(APP_CSS_SOURCE, /\.remediation-guard/);
   assert.match(APP_CSS_SOURCE, /\.provider-chain-row/);
+  assert.match(APP_CSS_SOURCE, /\.update-banner/);
   assert.match(APP_CSS_SOURCE, /@media\s*\(forced-colors:\s*active\)/);
   assert.match(APP_CSS_SOURCE, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+});
+
+function updateContractPayload() {
+  const installed = {
+    package_version: "0.1.0", build_identity: `0.1.0+g${"a".repeat(12)}`,
+    source_revision: "a".repeat(40), source_branch: "main", source_dirty: false,
+    install_kind: "source-checkout", official_repository: true,
+  };
+  return {
+    schema_version: "agency.dashboard.update.v1",
+    installed,
+    release: {
+      schema_version: "agency.update.v1", installed,
+      selector: { kind: "channel", value: "release", ref: "latest", key: "channel:release" },
+      checked: true, cache_hit: true, stale: false, checking: false,
+      checked_at: "1970-01-01T00:16:40+00:00",
+      status: "update_available", update_available: true, error: null,
+      command: "agency upgrade --channel release",
+      target: {
+        kind: "release", label: "v0.2.0", version: "0.2.0", ref: "v0.2.0",
+        commit_sha: "b".repeat(40), published_at: "2026-07-28T00:00:00Z",
+        url: "https://github.com/Holeshot-Software-LLC/agency-runtime/releases/tag/v0.2.0",
+      },
+    },
+    main: {
+      schema_version: "agency.update.v1", installed,
+      selector: { kind: "channel", value: "main", ref: "main", key: "channel:main" },
+      checked: true, cache_hit: true, stale: false, checking: false,
+      checked_at: "1970-01-01T00:16:40+00:00",
+      status: "different_target", update_available: null, error: null,
+      command: "agency upgrade --channel main",
+      target: {
+        kind: "main", label: "main", version: null, ref: "main",
+        commit_sha: "c".repeat(40), published_at: null,
+        url: `https://github.com/Holeshot-Software-LLC/agency-runtime/commit/${"c".repeat(40)}`,
+      },
+    },
+    recommended: "release",
+    checking: false,
+  };
+}
+
+test("dashboard update surface traces authenticated status to a fixed attended command", async () => {
+  const calls = [];
+  const payload = updateContractPayload();
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    return jsonResponse(200, payload);
+  });
+
+  assert.equal(await harness.api.refreshUpdateStatus(), true);
+  assert.deepEqual(calls, ["/api/update"]);
+  assert.equal(harness.node("update-banner").dataset.state, "available");
+  assert.equal(harness.node("update-title").textContent, "Agency update available");
+  assert.equal(harness.node("update-command").textContent, "agency upgrade --channel release");
+  assert.equal(harness.node("update-copy-button").hidden, false);
+  assert.equal(harness.node("update-link").href, payload.release.target.url);
+
+  const copied = [];
+  harness.context.window.navigator = { clipboard: { writeText: async (value) => copied.push(value) } };
+  harness.api.bindEvents();
+  await harness.node("update-copy-button").listeners.get("click")[0]();
+  assert.deepEqual(copied, ["agency upgrade --channel release"]);
+  assert.match(harness.node("notice").textContent, /owner-controlled terminal/);
+
+  harness.context.window.navigator = {};
+  await harness.node("update-copy-button").listeners.get("click")[0]();
+  assert.match(harness.node("notice").textContent, /select the displayed command/i);
+
+  harness.context.window.navigator = {
+    clipboard: { writeText: async () => { throw new Error("clipboard denied"); } },
+  };
+  await harness.node("update-copy-button").listeners.get("click")[0]();
+  assert.match(harness.node("notice").textContent, /select the displayed command/i);
+});
+
+test("dashboard update surface rejects cross-field and target-identity mismatches", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("direct projection must not fetch");
+  });
+  assert.throws(
+    () => harness.api.applyUpdateStatus({ schema_version: "agency.dashboard.update.v0" }),
+    /Unsupported Agency update response/,
+  );
+
+  const impossibleMain = updateContractPayload();
+  impossibleMain.release.status = "current";
+  impossibleMain.release.update_available = false;
+  impossibleMain.recommended = "main";
+  impossibleMain.main.status = "update_available";
+  impossibleMain.main.update_available = true;
+  assert.throws(() => harness.api.applyUpdateStatus(impossibleMain), /invalid/i);
+
+  const mismatchedFlag = updateContractPayload();
+  mismatchedFlag.release.status = "current";
+  assert.throws(() => harness.api.applyUpdateStatus(mismatchedFlag), /invalid/i);
+
+  const mismatchedCommitUrl = updateContractPayload();
+  mismatchedCommitUrl.main.target.url = `https://github.com/Holeshot-Software-LLC/agency-runtime/commit/${"d".repeat(40)}`;
+  assert.throws(() => harness.api.applyUpdateStatus(mismatchedCommitUrl), /invalid/i);
+
+  const mismatchedReleaseUrl = updateContractPayload();
+  mismatchedReleaseUrl.release.target.url = "https://github.com/Holeshot-Software-LLC/agency-runtime/releases/tag/v9.9.9";
+  assert.throws(() => harness.api.applyUpdateStatus(mismatchedReleaseUrl), /invalid/i);
+  assert.match(LIVE_SOURCE, /api\("\/api\/update"/);
+  assert.match(LIVE_SOURCE, /safeUpdateTargetUrl/);
 });
 
 test("authenticated dashboard is a read-only monitoring surface with no mutation request client", () => {

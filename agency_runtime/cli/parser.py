@@ -58,6 +58,16 @@ def _positive_int(value: str) -> int:
     return parsed
 
 
+def _update_timeout(value: str) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise argparse.ArgumentTypeError("must be from 0.1 through 30 seconds") from exc
+    if not 0.1 <= parsed <= 30:
+        raise argparse.ArgumentTypeError("must be from 0.1 through 30 seconds")
+    return parsed
+
+
 def _search_limit(value: str) -> int:
     parsed = _positive_int(value)
     if parsed > 100:
@@ -92,6 +102,78 @@ def _runtime_control_action(action: str) -> str:
     if command is None:  # pragma: no cover - static registration invariant
         raise RuntimeError("CLI runtime control registration is invalid")
     return command.action
+
+
+def _add_update_target_arguments(
+    parser: argparse.ArgumentParser,
+    *,
+    timeout_default: float | None,
+) -> None:
+    target = parser.add_mutually_exclusive_group()
+    target.add_argument(
+        "--channel",
+        choices=["release", "main"],
+        default=None,
+        help="Resolve the latest stable release or the current main commit (default: release)",
+    )
+    target.add_argument(
+        "--version",
+        dest="target_version",
+        default=None,
+        help="Resolve one canonical release version such as 0.2.0 or 0.2.0rc1",
+    )
+    target.add_argument(
+        "--ref",
+        dest="target_ref",
+        default=None,
+        help="Resolve one bounded Git tag, branch, or full commit ref",
+    )
+    cache_mode = parser.add_mutually_exclusive_group()
+    cache_mode.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Ignore a fresh cached result and query GitHub again",
+    )
+    cache_mode.add_argument(
+        "--cached",
+        action="store_true",
+        help="Read only the local update cache without network or GitHub CLI access",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=_update_timeout,
+        default=timeout_default,
+        help="Maximum GitHub update-check time in seconds (0.1 through 30)",
+    )
+    parser.add_argument("--json", action="store_true", help="Print machine-readable results")
+
+
+def _register_updates(sub: Subparsers, handlers: Handlers) -> None:
+    version = sub.add_parser(
+        "version",
+        help="Show installed package, source commit, and optional update identity",
+    )
+    version.add_argument(
+        "--check",
+        action="store_true",
+        help="Compare the installed identity with the selected remote target",
+    )
+    _add_update_target_arguments(version, timeout_default=None)
+    _bind(version, handlers, "cmd_version")
+
+    upgrade = sub.add_parser(
+        "upgrade",
+        help="Resolve an immutable target and print an attended upgrade plan",
+    )
+    upgrade.add_argument(
+        "upgrade_action",
+        nargs="?",
+        choices=["check", "plan"],
+        default="plan",
+        help="Use 'check' to inspect availability without printing install commands",
+    )
+    _add_update_target_arguments(upgrade, timeout_default=5.0)
+    _bind(upgrade, handlers, "cmd_upgrade")
 
 
 def _register_install(sub: Subparsers, handlers: Handlers) -> None:
@@ -1371,12 +1453,14 @@ def build_parser(handlers: Handlers) -> argparse.ArgumentParser:
     """Build the command tree with callbacks supplied by the public facade."""
     parser = argparse.ArgumentParser(prog="agency", description="Agency Runtime Control Plane")
     parser.add_argument(
+        "-V",
         "--version",
         action="version",
         version=f"%(prog)s {__version__}",
         help="Show the installed Agency Runtime version and exit",
     )
     sub = parser.add_subparsers(dest="command", required=True)
+    _register_updates(sub, handlers)
     _register_install(sub, handlers)
     _register_host_control(sub, handlers)
     _register_configuration(sub, handlers)

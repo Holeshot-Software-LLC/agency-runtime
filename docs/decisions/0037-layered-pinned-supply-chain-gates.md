@@ -3,9 +3,10 @@ title: "Use layered pinned supply-chain gates"
 status: accepted
 category: decisions
 created: 2026-07-12
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [security, supply-chain, ci, release]
 related:
+  - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
   - docs/decisions/0101-run-exhaustive-python-verification-on-demand.md
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md

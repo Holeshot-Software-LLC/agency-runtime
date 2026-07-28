@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -168,6 +168,7 @@ Status meanings:
 | [ADR-0104](0104-refresh-existing-codex-through-an-exact-attended-transaction.md) | Refresh existing Codex through an exact attended transaction | Accepted |
 | [ADR-0105](0105-bound-delivery-to-live-demo-checkpoints.md) | Bound delivery to live demo checkpoints | Accepted |
 | [ADR-0106](0106-isolate-native-host-lifecycle-working-directories.md) | Isolate native host lifecycle working directories | Accepted |
+| [ADR-0107](0107-resolve-updates-immutably-and-keep-application-attended.md) | Resolve updates immutably and keep application attended | Accepted |
 
 ## Documentation governance
 

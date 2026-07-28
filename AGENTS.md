@@ -3,7 +3,7 @@ title: "Repository Agent Instructions"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-27
+updated: 2026-07-28
 tags:
   - governance
   - documentation
@@ -140,6 +140,8 @@ python -m pytest \
   tests/test_roster_snapshot_generation.py \
   tests/test_mcp_protocol_hardening.py \
   tests/test_cli_parser_contract.py \
+  tests/test_cli_upgrade.py \
+  tests/test_update_service.py \
   tests/test_native_installer.py \
   tests/test_host_boundary_hardening.py \
   tests/test_cli_operator_presence.py \

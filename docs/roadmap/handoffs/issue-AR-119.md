@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [handoff, routing, workforce, evaluation, recovery, production-readiness]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -23,6 +23,8 @@ related:
   - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
   - docs/roadmap/issue-AR-187-isolate-native-host-lifecycle-cwd.md
   - docs/decisions/0106-isolate-native-host-lifecycle-working-directories.md
+  - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
+  - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
 supersedes: []
 superseded_by: null
 type: handoff
@@ -112,6 +114,9 @@ the full acceptance history.
 - AR-186 replaces open-ended review/certification with one visible outcome,
   two bounded review passes, fast verification, and an early live-demo
   checkpoint. Exhaustive CI is optional; human steps wait without retry loops.
+- AR-188 passed 58 focused CLI/update/parser tests, two endpoint tests, all 108 UI
+  tests, its asset budget, desktop/mobile smoke, and three independent reviews.
+  All findings closed; no push, install, trust, tracker, release, or hosted run.
 
 ## exact-blocker
 
@@ -134,6 +139,7 @@ the full acceptance history.
   timed-out, no-response, and unknown upstream arms remain invalid, never losses.
 - Tracker creation/closure for authorization-pending AR items and other writes
   remain pending owner authorization.
+- No stable Agency Runtime release exists; stable discovery remains unavailable.
 
 ## same-task-continuity
 

@@ -3,9 +3,10 @@ title: "Require genuine operator presence for persistent controls"
 status: accepted
 category: decisions
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [security, dashboard, browser, controls, user-presence]
 related:
+  - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-128-seal-model-facing-control-authority.md

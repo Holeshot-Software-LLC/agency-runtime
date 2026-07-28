@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -149,6 +149,13 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- `agency -V` now provides a fast package probe, while `agency version` reports
+  exact source/VCS identity. `agency upgrade` can resolve the latest stable
+  release, `main`, one canonical release version, or one bounded ref to a full immutable
+  commit and print a non-executing attended install plan. The authenticated
+  dashboard exposes asynchronously refreshed, strictly validated update status
+  and a fixed copy-only command; hooks, MCP, and dashboard bearers gain no
+  package or host mutation authority.
 - Distribution builds now derive an immutable wheel profile from the actual
   host: supported Windows x64 emits `py3-none-win_amd64` with the reviewed PE,
   while other hosts emit `py3-none-any` and exclude only that executable. Both

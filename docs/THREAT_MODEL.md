@@ -3,7 +3,7 @@ title: "Threat Model"
 status: active
 category: security
 created: 2026-07-12
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [security, architecture, privacy, supply-chain]
 related:
   - SECURITY.md
@@ -121,6 +121,7 @@ It assumes the operating-system account and Python interpreter are trusted.
 | Dashboard service registration | Systemd unit operations are bound to one frozen mutation-safe XDG root across planning, reads, writes, unlink, and rollback; Task Scheduler remains token-SID-bound. The ownership manifest binds exact interpreter and package bootstrap metadata/content identity; inspection, start, and restart revalidate both and reject drift. Installer-process and systemd-manager environment inputs are checked separately, and only matching variable names may enter diagnostics. Normal Linux retains `PrivateTmp`; positively identified WSL omits only that directive because its mount namespace rewrites ancestor identities, while namespace validation and all other unit controls remain mandatory. |
 | Owned child processes | Shell-free bounded argv and I/O; atomic-at-creation Windows Job Objects or a dedicated Linux pidfd/subreaper supervisor that also contains session-escaping descendants and handles launcher parent death; Linux supervisor isolation from inherited target signal, pidfd, resource-limit, scheduler, affinity, priority, I/O-priority, ptrace, and proc-memory paths; policy readiness followed by an exact parent-owned GO commit only after durable lifecycle and I/O ownership; post-drain terminal completion receipts; deterministic timeout and interruption cleanup; Windows system helpers resolve through validated allowlisted native paths rather than CWD or `PATH`. |
 | Privacy | Metadata-only default; bounded defensive redaction; secrets remain write-only in dashboard and CLI projections; finite retention; logs sanitize control characters and content-bearing failures. |
+| Update discovery | Closed-world release/main/version/ref selectors resolve to one full commit through configured GitHub CLI access or fixed-origin redirect-free public HTTPS under one total timeout and response budget. The CLI child receives only an allowlisted environment; unrelated secrets do not cross the process boundary. Official repository URLs, semantic tags, refs, full SHAs, text controls, and target shapes are validated before an owner-private atomic cache write and revalidated on every read. Concurrent refreshes merge under a process lock. Only semantic release ordering produces automatic notices; a different mutable branch/ref is not called newer. Dashboard and startup projections are read-only, hooks/MCP perform no update I/O, and attended plans pin the exact SHA while executing no pip, host, trust, service, or release mutation. |
 | Supply chain | Minimal runtime dependency; pinned build, audit, and workflow tools; immutable GitHub Action SHAs; identity-frozen hostile-config-free Git transport; full reviewed commit and clean-checkout identity before and after construction; bounded non-executable regular source paths materialized from independently rehashed canonical Git blobs rather than checkout-filtered bytes; private environment-reduced temp-first build whose bounded normalizer preserves every source-derived payload byte, canonicalizes LF only for a finite shared generated-metadata allowlist, rebuilds wheel `RECORD`, explicitly encodes byte-deterministic stored ZIP members and an RFC 1951 stored-block gzip stream, and applies one tar ownership, mode, and timestamp policy without host-zlib output; contained descendant cleanup and atomic no-clobber wheel/source-pair publication; hosted Windows and Linux construction/verification; wheel/sdist names, roots, version, dependencies, license, and committed MANIFEST-governed bytes checked independently and exactly; contiguous single-container ZIP/gzip/tar layouts with no prefixes, gaps, orphan records, noncanonical stored blocks, unapproved comments/extras/PAX keys, nonzero alignment padding, concatenated streams, or noncanonical trailing data; portable regular archive members with path-component, count, size, aggregate, and compression bounds; strict raw-UTF-8 generated metadata, wheel/sdist metadata parity, singleton headers, entry points, WHEEL tags, and RECORD hashes/sizes; exact installed-runtime vulnerability audit; Bandit; capability-gated native CodeQL analysis and upload where repository visibility and licensing permit it; machine-readable non-analysis evidence only for a recognized private/internal missing-entitlement response, with ambiguous probes failing closed; native dependency-diff review when GitHub exposes it; offline workflow security linting; no credential persistence in checkout steps. |
 
 ## Residual risk and non-goals
@@ -158,6 +159,11 @@ It assumes the operating-system account and Python interpreter are trusted.
 - Defensive redaction cannot recognize every secret or personal identifier.
   Do not enable content capture for data that must never be stored.
 - The dashboard is not a remote, multi-user, or reverse-proxied control plane.
+- Update metadata and its private cache can be unavailable or stale within the
+  documented TTL. Resolution proves the selected official commit identity, not
+  that an unsigned prerelease is safe, signed, published, newer than a diverged
+  checkout, or authorized for installation. An attended printed command is not
+  execution, activation, or release evidence.
 - The owner dashboard bearer is not proof of human presence when a model can
   control that browser session. Owner mutation endpoints are now removed;
   exact roster rollback and existing-install Codex refresh on Windows 11 x64

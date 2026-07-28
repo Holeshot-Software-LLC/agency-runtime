@@ -311,9 +311,10 @@ def test_release_resources_are_addressable() -> None:
     # PR #129 added substantial workforce/dashboard lifecycle UI (dashboard-render
     # grew ~25%). The original 256 KiB budget no longer accommodates the full
     # unmodified JS (required for 100% V8 branch coverage) plus minified CSS/HTML.
-    # Raised to 257 KiB to fit the unmodified JS without sacrificing coverage or
-    # hiding assets; CSS/HTML remain fully minified.
-    assert dashboard_bytes < 257 * 1024, "dashboard assets exceeded the 257 KiB budget"
+    # AR-188 adds the authenticated update projection, strict client validation,
+    # and an attended-command banner. Keep that production behavior readable and
+    # branch-testable while retaining a tight aggregate ceiling.
+    assert dashboard_bytes < 268 * 1024, "dashboard assets exceeded the 268 KiB budget"
 
 
 @pytest.mark.parametrize(

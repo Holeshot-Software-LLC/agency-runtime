@@ -1394,6 +1394,113 @@ def test_dashboard_api_requires_per_launch_token(dashboard_server):
     assert payload == {"error": "authentication required"}
 
 
+def test_dashboard_update_endpoint_is_authenticated_observed_and_read_only(
+    dashboard_server,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import update_service
+
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    captured: dict[str, object] = {}
+    identity = {
+        "package_version": "0.1.0",
+        "build_identity": f"0.1.0+g{'a' * 12}",
+        "source_revision": "a" * 40,
+        "source_branch": "main",
+        "source_dirty": False,
+        "install_kind": "source-checkout",
+        "official_repository": True,
+    }
+    release_target = {
+        "kind": "release",
+        "label": "v0.2.0",
+        "version": "0.2.0",
+        "ref": "v0.2.0",
+        "commit_sha": "b" * 40,
+        "url": "https://github.com/Holeshot-Software-LLC/agency-runtime/releases/tag/v0.2.0",
+        "published_at": "2026-07-28T00:00:00Z",
+    }
+    main_target = {
+        "kind": "main",
+        "label": "main",
+        "version": None,
+        "ref": "main",
+        "commit_sha": "c" * 40,
+        "url": f"https://github.com/Holeshot-Software-LLC/agency-runtime/commit/{'c' * 40}",
+        "published_at": None,
+    }
+    cache = {
+        "schema_version": update_service.CACHE_SCHEMA_VERSION,
+        "entries": {
+            "channel:release": {
+                "checked_at": 1_000,
+                "expires_at": 2_000,
+                "target": release_target,
+                "error": None,
+            },
+            "channel:main": {
+                "checked_at": 1_000,
+                "expires_at": 2_000,
+                "target": main_target,
+                "error": None,
+            },
+        },
+    }
+    monkeypatch.setattr(update_service, "_read_cache", lambda **_kwargs: cache)
+    monkeypatch.setattr(update_service, "_dashboard_installed_version_snapshot", lambda: identity)
+    monkeypatch.setattr(update_service.time, "time", lambda: 1_500)
+    snapshot = update_service.dashboard_update_snapshot
+
+    def inspect(*, home_dir, schedule):
+        captured.update(home_dir=home_dir, schedule=schedule)
+        return snapshot(home_dir=home_dir, schedule=schedule)
+
+    monkeypatch.setattr(update_service, "dashboard_update_snapshot", inspect)
+    request_id = str(uuid4())
+
+    unauthorized, _payload, _headers = _json_response(dashboard_server, "/api/update")
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/update",
+        token=dashboard_server["token"],
+        request_id=request_id,
+    )
+
+    assert unauthorized == 401
+    assert status == 200
+    assert payload["schema_version"] == "agency.dashboard.update.v1"
+    assert payload["checking"] is False
+    assert payload["release"]["status"] == "update_available"
+    assert payload["release"]["update_available"] is True
+    assert payload["main"]["status"] == "different_target"
+    assert payload["main"]["update_available"] is None
+    assert captured == {"home_dir": dashboard_server["home"], "schedule": True}
+    observation = _wait_for_dashboard_observation(caplog, request_id)
+    assert observation["operation"] == "update"
+    assert observation["outcome"] == "ok"
+
+    node = shutil.which("node")
+    if node is not None:
+        module_url = (
+            Path(__file__).parents[1] / "agency_runtime" / "dashboard" / "dashboard-live.js"
+        ).as_uri()
+        validator = (
+            f"import {{ validateUpdateStatusPayload }} from {json.dumps(module_url)};"
+            "let input = ''; for await (const chunk of process.stdin) input += chunk;"
+            "validateUpdateStatusPayload(JSON.parse(input));"
+        )
+        completed = subprocess.run(
+            [node, "--input-type=module", "--eval", validator],
+            input=json.dumps(payload),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        assert completed.returncode == 0, completed.stdout + completed.stderr
+
+
 def test_dashboard_correlates_requests_with_content_free_observations(
     dashboard_server,
     caplog: pytest.LogCaptureFixture,

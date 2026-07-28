@@ -641,25 +641,37 @@ def validate_private_directory(path: Path) -> Path:
     return target
 
 
-def private_runtime_root() -> Path:
-    """Return the validated per-user root for Agency-owned private state."""
+def private_runtime_root_candidates() -> tuple[Path, ...]:
+    """Return deterministic primary/fallback roots without creating either."""
 
     primary = Path.home() / _RUNTIME_ROOT_NAME
-    try:
-        return ensure_private_directory(primary)
-    except (OSError, PermissionError):
-        if not _IS_WINDOWS:
-            raise
+    if not _IS_WINDOWS:
+        return (primary,)
     identities = {
         str(current_process_user_sid(is_windows=True) or ""),
         *current_process_restricted_sids(is_windows=True),
     }
     identities.discard("")
     if not identities:
-        raise PermissionError("Agency Runtime cannot identify a private Windows token root")
+        return (primary,)
     digest = hashlib.sha256("\n".join(sorted(identities)).encode()).hexdigest()[:16]
     fallback = Path(tempfile.gettempdir()) / f"agency-runtime-token-{digest}"
-    return ensure_private_directory(fallback)
+    return (primary, fallback)
+
+
+def private_runtime_root() -> Path:
+    """Return the validated per-user root for Agency-owned private state."""
+
+    candidates = private_runtime_root_candidates()
+    primary = candidates[0]
+    try:
+        return ensure_private_directory(primary)
+    except (OSError, PermissionError):
+        if not _IS_WINDOWS:
+            raise
+    if len(candidates) != 2:
+        raise PermissionError("Agency Runtime cannot identify a private Windows token root")
+    return ensure_private_directory(candidates[1])
 
 
 def private_runtime_directory(name: str) -> Path:
@@ -1007,6 +1019,7 @@ __all__ = [
     "ensure_private_directory",
     "private_runtime_directory",
     "private_runtime_root",
+    "private_runtime_root_candidates",
     "private_temporary_directory",
     "reattest_codex_host_private_path",
     "remove_private_directory",

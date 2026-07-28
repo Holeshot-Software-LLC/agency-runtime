@@ -3,7 +3,7 @@ title: "Troubleshooting Agency Runtime"
 status: active
 category: operations
 created: 2026-07-10
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [operations, troubleshooting]
 related:
   - README.md
@@ -17,12 +17,14 @@ related:
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
+  - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0071-bound-native-delegation-correction.md
   - docs/decisions/0073-own-subprocess-trees-atomically.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
+  - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
 supersedes: []
 superseded_by: null
 ---
@@ -42,6 +44,40 @@ agency install --all --dry-run --json
 Do not interpret a generated file as a loaded integration. The host inventory
 must advance through discovery, registration, enablement, loading, and canary
 evidence separately.
+
+## Version or update status is unavailable
+
+Start by separating installed identity, cached status, and live discovery:
+
+```bash
+agency -V
+agency version --json
+agency upgrade check --channel release --refresh --json
+agency upgrade check --channel main --refresh --json
+agency upgrade check --channel main --cached --json
+```
+
+The stable-release command returns unavailable until a non-draft,
+non-prerelease GitHub release exists. That does not imply `main` is unavailable.
+This repository is private during prerelease development, so live checks first
+use configured `gh` authentication. Confirm `gh auth status` succeeds in the
+same owner shell if anonymous HTTPS returns 404. Update discovery is bounded to
+five seconds by default; use `--timeout` only within the accepted 0.1–30 second
+range.
+
+Dashboard startup schedules stale release and main checks without blocking the
+runtime. Ordinary CLI startup reads only the private cache and never puts update
+I/O in hook or MCP paths. A failed result is cached for one hour and a successful
+result for 24 hours; use `--refresh` to bypass a fresh entry or `--cached` to
+guarantee no remote access. Set `AGENCY_UPDATE_NOTICES=0` to suppress interactive
+cached notices.
+
+`different_target` is not automatically called an update for `main` or an
+arbitrary ref: the installed checkout may be ahead or diverged. Review the full
+commits. `local_changes` means the commit matches but tracked files differ.
+`agency upgrade` only prints exact-SHA commands. Run them, if desired, in an
+owner-controlled terminal and then complete the normal Codex trust/activation
+steps; the dashboard cannot apply them.
 
 ## Host was not discovered
 

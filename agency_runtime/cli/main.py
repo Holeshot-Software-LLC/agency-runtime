@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import os
 import sys
 from collections.abc import Sequence
 from typing import Any
@@ -374,6 +375,19 @@ cmd_dashboard = _services.cmd_dashboard
 _wait_dashboard_ready = _services._wait_dashboard_ready
 cmd_dashboard_service = _services.cmd_dashboard_service
 
+
+def cmd_version(args: argparse.Namespace) -> int:
+    from .upgrade_commands import cmd_version as command
+
+    return command(args)
+
+
+def cmd_upgrade(args: argparse.Namespace) -> int:
+    from .upgrade_commands import cmd_upgrade as command
+
+    return command(args)
+
+
 _positive_int = _parser._positive_int
 
 _COMMAND_NAMES = (
@@ -441,6 +455,8 @@ _COMMAND_NAMES = (
     "cmd_source_list",
     "cmd_status",
     "cmd_sync",
+    "cmd_upgrade",
+    "cmd_version",
     "cmd_workforce_list",
     "cmd_workforce_consolidate",
     "cmd_workforce_duplicates",
@@ -461,12 +477,43 @@ def main(argv: Sequence[str] | None = None) -> int:
     _configure_console_output()
     parser = build_parser()
     args = parser.parse_args(argv)
+    _print_cached_update_notice(args)
     try:
         enforce_for_namespace(args)
         return int(args.func(args))
     except (KeyError, OSError, ValueError, RuntimeError) as exc:
         print(f"agency: error: {safe_display_token(str(exc), limit=500)}", file=sys.stderr)
         return 1
+
+
+def _print_cached_update_notice(args: argparse.Namespace) -> None:
+    """Notify interactive human commands from cache without network or Git work."""
+
+    if not sys.stderr.isatty() or bool(getattr(args, "json", False)):
+        return
+    command = getattr(args, "command", "")
+    if not isinstance(command, str) or command in {
+        "codex",
+        "dashboard",
+        "hook",
+        "mcp",
+        "run",
+        "serve",
+        "upgrade",
+        "version",
+    }:
+        return
+    setting = os.environ.get("AGENCY_UPDATE_NOTICES", "1").strip().casefold()
+    if setting in {"0", "false", "no", "off"}:
+        return
+    try:
+        from agency_runtime.core.update_service import cached_startup_notice
+
+        notice = cached_startup_notice()
+    except (OSError, PermissionError, RuntimeError, TypeError, ValueError):
+        return
+    if notice:
+        print(notice, file=sys.stderr)
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -18,7 +18,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Dispatch the version probe without importing the complete CLI graph."""
 
     arguments = list(sys.argv[1:] if argv is None else argv)
-    if arguments == ["--version"]:
+    if arguments in (["--version"], ["-V"]):
         print(f"agency {__version__}")
         return 0
 

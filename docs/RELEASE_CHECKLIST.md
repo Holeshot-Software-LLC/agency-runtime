@@ -3,7 +3,7 @@ title: "Release Checklist"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [release, verification]
 related:
   - CHANGELOG.md
@@ -29,12 +29,14 @@ related:
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
+  - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
   - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
+  - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
 supersedes: []
 superseded_by: null
 ---
@@ -57,6 +59,9 @@ or adding an index-install claim.
 - [ ] `CHANGELOG.md` describes user-visible additions, changes, fixes, security
       changes, deprecations, and known limitations.
 - [ ] The package version, release title, and proposed tag agree.
+- [ ] `agency -V`, detailed installed identity, stable-release resolution, and
+      the proposed tag all agree with the exact candidate commit. Update plans
+      contain that full SHA rather than a mutable branch, tag, or `latest`.
 
 ## 2. Truthful support matrix
 
@@ -101,6 +106,10 @@ or adding an index-install claim.
 - [ ] Dashboard, MCP, generated-host, and restricted-broker surfaces are
       read-only; every former mutation endpoint rejects both bearer roles before
       dispatch and the shipped browser contains no mutation client or control.
+- [ ] The authenticated dashboard update banner remains copy-only, validates
+      the update schema and official target URL, performs checks asynchronously,
+      and cannot invoke pip, host refresh, service restart, trust, or release
+      mutation. Hook and MCP hot paths perform no update discovery.
 - [ ] Every persistent CLI mutation fails closed unless it prepares the exact
       authoritative method, resolved resource identity, payload binding, and all
       applicable revision/CAS tokens before an OS-backed non-exporting

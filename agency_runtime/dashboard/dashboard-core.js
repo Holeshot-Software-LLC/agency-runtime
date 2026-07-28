@@ -106,6 +106,14 @@ export function createState() {
 		connection: {
 			generation: 0,
 		},
+		update: null,
+		updateRequest: {
+			controller: null,
+			inFlight: false,
+			generation: 0,
+			attempts: 0,
+			timer: null,
+		},
 		commit: {
 			generation: 0,
 		},
