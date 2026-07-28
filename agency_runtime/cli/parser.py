@@ -34,19 +34,14 @@ _NATIVE_HOOK_EVENTS = (
 
 
 class _VerifyCodexActivationAction(argparse.Action):
-    """Bind the exact verification-only authority marker at parse time."""
+    """Bind the exact verification-only mode at parse time."""
 
     def __init__(self, option_strings, dest, **kwargs):
         super().__init__(option_strings, dest, nargs=0, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None) -> None:
         del parser, values, option_string
-        from agency_runtime.core.codex_activation_verification import (
-            CODEX_ACTIVATION_VERIFICATION_ACTION,
-        )
-
         setattr(namespace, self.dest, True)
-        namespace._operator_presence_prepared_action = CODEX_ACTIVATION_VERIFICATION_ACTION
 
 
 def _positive_int(value: str) -> int:
@@ -83,16 +78,11 @@ def _bind(
     *,
     operator_presence_family: str = "",
     operator_presence_dry_run_exempt: bool = False,
-    operator_presence_prepared_action: str = "",
 ) -> None:
     defaults: dict[str, object] = {"func": handlers[name]}
     if operator_presence_family:
         defaults["_operator_presence_family"] = operator_presence_family
         defaults["_operator_presence_dry_run_exempt"] = operator_presence_dry_run_exempt
-    if operator_presence_prepared_action:
-        if not operator_presence_family:
-            raise ValueError("prepared operator presence requires a mutation family")
-        defaults["_operator_presence_prepared_action"] = operator_presence_prepared_action
     parser.set_defaults(**defaults)
 
 
@@ -242,7 +232,6 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         "cmd_install",
         operator_presence_family="installation",
         operator_presence_dry_run_exempt=True,
-        operator_presence_prepared_action="install.codex.v1",
     )
 
 
@@ -291,7 +280,6 @@ def _register_uninstall(sub: Subparsers, handlers: Handlers) -> None:
         "cmd_uninstall",
         operator_presence_family="installation",
         operator_presence_dry_run_exempt=True,
-        operator_presence_prepared_action="uninstall.host-integrations.v1",
     )
 
 
@@ -714,7 +702,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         handlers,
         "cmd_roster_rollback",
         operator_presence_family="roster-governance",
-        operator_presence_prepared_action="roster.rollback.v1",
     )
 
     roster_upstream = roster_sub.add_parser(

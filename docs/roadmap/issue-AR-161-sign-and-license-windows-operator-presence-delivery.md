@@ -1,6 +1,6 @@
 ---
 title: "AR-161: Sign and license Windows operator-presence delivery"
-status: blocked
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-07-27
@@ -15,11 +15,9 @@ related:
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
-  - agency_runtime/native/windows/operator_presence/LICENSE.cppwinrt.txt
-  - agency_runtime/native/windows/operator_presence/LICENSE.microsoft-stl.txt
-  - agency_runtime/native/windows/operator_presence/NOTICE.microsoft-stl.txt
+  - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
 type: issue
 epic: release
 issue_id: AR-161
@@ -48,6 +46,10 @@ organization's Visual Studio, Windows SDK, static CRT, or other redistributable
 entitlement for this exact delivery.
 
 ## Current state
+
+AR-197 retired the helper before public delivery, so no helper remains to sign,
+package, or license. The requirements below are preserved as faithful history
+of the abandoned delivery path and are not current release gates.
 
 The repository pins the unsigned source and executable identities and records
 the compiler, SDK, flags, and target in provenance. Exact local copies of the

@@ -254,12 +254,13 @@ def uninstall_plan_digest(
     return hashlib.sha256(_canonical_json(payload)).hexdigest()
 
 
-def _verify_host_uninstall_operator_presence(binding: _HostUninstallBinding) -> None:
-    """Invoke the fixed native verifier without accepting caller injection."""
+def _require_host_uninstall_authority(binding: _HostUninstallBinding) -> None:
+    """Keep host uninstall closed after retirement of Agency-owned authority."""
 
-    from agency_runtime.core.windows_operator_presence import _verify_host_uninstall_binding
-
-    _verify_host_uninstall_binding(binding)
+    _host_uninstall_binding_primitives(binding)
+    raise PreparedHostUninstallError(
+        "host integration uninstall is unavailable; no host mutation was made"
+    )
 
 
 def _canonical_targets(targets: Sequence[str], *, selected_by: str) -> tuple[str, ...]:
@@ -392,12 +393,7 @@ def _apply_prepared_host_uninstall(
             home_dir=home_dir,
         )
         primitives = _host_uninstall_binding_primitives(binding)
-        _verify_host_uninstall_operator_presence(binding)
-        if _host_uninstall_binding_primitives(binding) != primitives:
-            raise PreparedHostUninstallError(
-                "prepared host uninstall changed during operator verification; "
-                "no host mutation was made"
-            )
+        _require_host_uninstall_authority(binding)
 
     outcomes: list[dict[str, Any]] = []
     with _uninstall_lock(home_dir=home_dir):

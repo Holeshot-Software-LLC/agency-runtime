@@ -178,7 +178,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-158` | [Disambiguate multi-surface observation test evidence](issue-AR-158-disambiguate-multi-surface-observation-tests.md) | open | p1 | observability | pending authorization |
 | `AR-159` | [Enforce production branch protection](issue-AR-159-enforce-production-branch-protection.md) | open | p0 | release | pending authorization |
 | `AR-160` | [Publish platform-honest native release artifacts](issue-AR-160-publish-platform-honest-native-release-artifacts.md) | in_progress | p0 | release | pending authorization |
-| `AR-161` | [Sign and license Windows operator-presence delivery](issue-AR-161-sign-and-license-windows-operator-presence-delivery.md) | blocked | p0 | release | pending authorization |
+| `AR-161` | [Sign and license Windows operator-presence delivery](issue-AR-161-sign-and-license-windows-operator-presence-delivery.md) | done | p0 | release | retired by AR-197 |
 | `AR-162` | [Collapse unavailable CodeQL fanout](issue-AR-162-collapse-unavailable-codeql-fanout.md) | open | p1 | testing | pending authorization |
 | `AR-163` | [Reopen stale remediation resolution authority](issue-AR-163-reopen-stale-remediation-authority.md) | in_progress | p1 | security | pending authorization |
 | `AR-164` | [Reject repository-ancestor PATH poisoning](issue-AR-164-reject-repository-ancestor-path-poisoning.md) | in_progress | p0 | security | pending authorization |
@@ -215,6 +215,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-195` | [Separate Codex canary parent and child goals](issue-AR-195-separate-codex-canary-parent-and-child-goals.md) | in_progress | p0 | host-integrations | pending authorization |
 | `AR-196` | [Authorize prepared dashboard-service install and repair](issue-AR-196-authorize-prepared-dashboard-service-repair.md) | in_progress | p0 | security | pending authorization |
 | `AR-197` | [Remove Agency-owned Windows Hello](issue-AR-197-remove-agency-owned-windows-hello.md) | in_progress | p0 | security | pending authorization |
+| `AR-198` | [Install the applicable suite by default](issue-AR-198-install-applicable-suite-by-default.md) | done | p0 | host-integrations | pending authorization |
 
 ## Traceability
 
@@ -382,7 +383,7 @@ not stable internal identifiers.
 | [AR-158](issue-AR-158-disambiguate-multi-surface-observation-tests.md) | `aad2901` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
 | [AR-159](issue-AR-159-enforce-production-branch-protection.md) | `dca7af5`, `f64ba1e`; hosted enforcement pending authorization | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-160](issue-AR-160-publish-platform-honest-native-release-artifacts.md) | `f64ba1e`, `e0bbe70`, `c625bc7`; local cross-OS release set green, hosted proof and tracker creation pending | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md), [ADR-0098](../decisions/0098-pair-portable-and-win-amd64-wheels.md) |
-| [AR-161](issue-AR-161-sign-and-license-windows-operator-presence-delivery.md) | `f64ba1e`; blocked on owner publisher identity and authorized legal review; tracker creation pending authorization | [ADR-0099](../decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md) |
+| [AR-161](issue-AR-161-sign-and-license-windows-operator-presence-delivery.md) | `f64ba1e`; unsigned delivery path retired by AR-197 before public release | [ADR-0099](../decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md), [ADR-0110](../decisions/0110-remove-agency-owned-windows-hello.md) |
 | [AR-162](issue-AR-162-collapse-unavailable-codeql-fanout.md) | `f64ba1e`; hosted measurement and tracker creation pending | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-163](issue-AR-163-reopen-stale-remediation-authority.md) | `f64ba1e`; tracker creation pending | [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 | [AR-164](issue-AR-164-reject-repository-ancestor-path-poisoning.md) | `f64ba1e`; tracker creation pending | [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
@@ -418,7 +419,8 @@ not stable internal identifiers.
 | [AR-194](issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | `9e86898`; focused cross-interpreter inspection and target-Python binding passed; attended service repair pending; tracker creation pending authorization | [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md), [ADR-0050](../decisions/0050-isolate-installed-python-module-resolution.md) |
 | [AR-195](issue-AR-195-separate-codex-canary-parent-and-child-goals.md) | `42da990`; focused source and independent review passed; exact installed canary pending | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md) |
 | [AR-196](issue-AR-196-authorize-prepared-dashboard-service-repair.md) | `42da990`, `8136510`; unsafe verifier draft removed; [active recovery capsule](handoffs/issue-AR-196.md); service remains fail-closed and decoupled from plugin activation | [ADR-0109](../decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md), [ADR-0110](../decisions/0110-remove-agency-owned-windows-hello.md) |
-| [AR-197](issue-AR-197-remove-agency-owned-windows-hello.md) | `8136510` records the removal decision and bounded handoff; implementation pending | [ADR-0110](../decisions/0110-remove-agency-owned-windows-hello.md) |
+| [AR-197](issue-AR-197-remove-agency-owned-windows-hello.md) | `8136510`, `f5ca172`; helper and action-specific release surface removed; fresh Codex activation canary pending | [ADR-0110](../decisions/0110-remove-agency-owned-windows-hello.md), [ADR-0111](../decisions/0111-install-the-applicable-suite-by-default.md) |
+| [AR-198](issue-AR-198-install-applicable-suite-by-default.md) | `f5ca172`, `da012ab`; focused tests, fast spine, dashboard UI, routing evaluation, and write-free default-install demo passed; [active recovery capsule](handoffs/issue-AR-198.md); tracker creation pending authorization | [ADR-0111](../decisions/0111-install-the-applicable-suite-by-default.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

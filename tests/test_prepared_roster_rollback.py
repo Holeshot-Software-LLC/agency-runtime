@@ -8,7 +8,6 @@ from typing import Any
 
 import pytest
 
-from agency_runtime.core import windows_operator_presence as presence_subject
 from agency_runtime.core.config_binding import StoreConfigBindingError
 from agency_runtime.core.operator_presence import OperatorPresenceError
 from agency_runtime.core.roster.bundled import bundled_roster
@@ -333,7 +332,7 @@ def test_coordinator_rejects_non_builtin_primitive_in_every_binding_field(
     )
     monkeypatch.setattr(
         roster_subject,
-        "_verify_roster_rollback_operator_presence",
+        "_require_roster_rollback_authority",
         lambda _binding: pytest.fail("invalid binding reached native verification"),
     )
 
@@ -356,7 +355,7 @@ def test_public_coordinator_denial_leaves_every_database_effect_unchanged(
     def deny(_binding: _RosterRollbackBinding) -> None:
         raise OperatorPresenceError("operator canceled")
 
-    monkeypatch.setattr(roster_subject, "_verify_roster_rollback_operator_presence", deny)
+    monkeypatch.setattr(roster_subject, "_require_roster_rollback_authority", deny)
 
     with pytest.raises(OperatorPresenceError, match="operator canceled"):
         store.rollback_agent_revision(
@@ -405,7 +404,7 @@ def test_public_coordinator_owns_prepare_verify_and_same_store_commit_order(
         "_prepare_agent_revision_rollback",
         prepare,
     )
-    monkeypatch.setattr(roster_subject, "_verify_roster_rollback_operator_presence", verify)
+    monkeypatch.setattr(roster_subject, "_require_roster_rollback_authority", verify)
     monkeypatch.setattr(
         roster_subject.RosterStoreMixin,
         "_commit_prepared_agent_revision_rollback",
@@ -435,7 +434,7 @@ def test_mutation_attempt_inside_verifier_cannot_reach_commit(
     def mutate(binding: _RosterRollbackBinding) -> None:
         object.__setattr__(binding, "target_hash", "9" * 64)
 
-    monkeypatch.setattr(roster_subject, "_verify_roster_rollback_operator_presence", mutate)
+    monkeypatch.setattr(roster_subject, "_require_roster_rollback_authority", mutate)
 
     with pytest.raises(AttributeError, match="can't set attribute"):
         store.rollback_agent_revision(
@@ -491,7 +490,7 @@ def test_verifier_return_cannot_substitute_second_valid_plan(
     )
     monkeypatch.setattr(
         roster_subject,
-        "_verify_roster_rollback_operator_presence",
+        "_require_roster_rollback_authority",
         lambda _binding: second_plan,
     )
 
@@ -1149,8 +1148,6 @@ def test_commit_applies_exact_active_workforce_event_and_generation_once(tmp_pat
         "activation_authority_kind": prepared.activation_authority_kind,
         "from_hash": prepared.current_hash,
         "from_version": prepared.current_version,
-        "operator_presence_helper_sha256": presence_subject._EXPECTED_EXECUTABLE_SHA256,
-        "operator_presence_mechanism": presence_subject._OPERATOR_PRESENCE_MECHANISM,
         "target_revision_id": prepared.target_revision_id,
         "to_hash": prepared.target_hash,
         "to_version": prepared.target_version,

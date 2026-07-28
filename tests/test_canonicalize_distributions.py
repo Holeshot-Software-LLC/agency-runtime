@@ -421,54 +421,11 @@ def test_sdist_rejects_unreviewed_regular_file_modes(mode: int) -> None:
 
 def test_sdist_source_mode_allowlists_are_exact_across_all_permission_bits() -> None:
     ordinary = "package-1/package/module.py"
-    executable = f"package-1/{subject.NATIVE_OPERATOR_PRESENCE_EXECUTABLE}"
     for mode in range(0o10000):
         assert subject._source_tar_file_mode_allowed(ordinary, mode) is (
             mode in {0o600, 0o644, 0o666}
         )
-        assert subject._source_tar_file_mode_allowed(executable, mode) is (
-            mode in {0o600, 0o644, 0o666, 0o777}
-        )
         assert (mode in subject.SOURCE_TAR_DIRECTORY_MODES) is (mode in {0o700, 0o755, 0o777})
-
-
-def test_sdist_normalizes_only_governed_windows_executable_mode() -> None:
-    executable = f"package-1/{subject.NATIVE_OPERATOR_PRESENCE_EXECUTABLE}"
-    parts = Path(executable).as_posix().split("/")
-    entries: dict[str, bytes | None] = {
-        "/".join(parts[:index]): None for index in range(1, len(parts))
-    }
-    entries[executable] = b"reviewed-pe"
-
-    windows_source = _source_sdist(entries, windows=True, file_modes={executable: 0o777})
-    linux_source = _source_sdist(entries, file_modes={executable: 0o644})
-    windows_canonical = subject.canonicalize_sdist_bytes(
-        windows_source,
-        timestamp=TIMESTAMP,
-        expected_filename="package-1.tar.gz",
-    )
-    linux_canonical = subject.canonicalize_sdist_bytes(
-        linux_source,
-        timestamp=TIMESTAMP,
-        expected_filename="package-1.tar.gz",
-    )
-
-    assert windows_canonical == linux_canonical
-    with tarfile.open(fileobj=io.BytesIO(windows_canonical), mode="r:gz") as archive:
-        assert archive.getmember(executable).mode == 0o644
-
-    arbitrary = "package-1/package/unreviewed.exe"
-    bad_entries = {
-        "package-1": None,
-        "package-1/package": None,
-        arbitrary: b"unreviewed",
-    }
-    with pytest.raises(ValueError, match="file header"):
-        subject.canonicalize_sdist_bytes(
-            _source_sdist(bad_entries, windows=True, file_modes={arbitrary: 0o777}),
-            timestamp=TIMESTAMP,
-            expected_filename="package-1.tar.gz",
-        )
 
 
 def test_generated_metadata_eol_variants_converge_without_mutating_source_payloads() -> None:

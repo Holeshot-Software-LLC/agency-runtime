@@ -17,7 +17,6 @@ related:
   - docs/THREAT_MODEL.md
   - docs/RELEASE_CHECKLIST.md
   - agency_runtime/core/prepared_codex_install.py
-  - agency_runtime/core/windows_operator_presence.py
 supersedes: []
 superseded_by: null
 id: ADR-0104

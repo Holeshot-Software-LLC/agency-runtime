@@ -255,11 +255,6 @@ def _run_refresh_harness(
 
     monkeypatch.setattr(prepared_install, "_prepare", lambda *_args, **_kwargs: prepared)
     monkeypatch.setattr(prepared_install, "_is_noop", lambda _prepared: False)
-    monkeypatch.setattr(
-        prepared_install,
-        "_verify_codex_install_operator_presence",
-        lambda _binding: None,
-    )
     monkeypatch.setattr(prepared_install, "_install_lock", lock)
     monkeypatch.setattr(prepared_install, "load_config", lambda *_args, **_kwargs: prepared.config)
     monkeypatch.setattr(
@@ -289,7 +284,6 @@ def _run_refresh_harness(
 def test_exact_cli_shapes_delegate_to_the_prepared_coordinator(argv: list[str]) -> None:
     args = cli_main.build_parser().parse_args(argv)
 
-    assert args._operator_presence_prepared_action == prepared_install._ACTION
     assert prepared_install.is_exact_prepared_codex_install(args) is True
     assert operator_presence.request_for_namespace(args) is None
 
@@ -318,13 +312,10 @@ def test_every_nearby_install_shape_is_rejected_from_the_prepared_slice(
     assert prepared_install.is_exact_prepared_codex_install(args) is False
 
 
-def test_non_dry_run_near_miss_retains_generic_operator_presence() -> None:
+def test_full_suite_codex_shape_uses_the_installer_boundary() -> None:
     args = cli_main.build_parser().parse_args(["install", "--agent", "codex"])
 
-    request = operator_presence.request_for_namespace(args)
-
-    assert request is not None
-    assert request.family == "installation"
+    assert operator_presence.request_for_namespace(args) is None
 
 
 def test_exact_cli_dispatch_does_not_construct_the_generic_store(tmp_path: Path) -> None:
@@ -651,7 +642,7 @@ def test_forced_replacement_retains_backup_and_creates_new_install_lineage(
     assert second_manifest["backup_path"] == str(backup)
 
 
-def test_noop_skips_operator_verification_but_rechecks_under_install_lock(
+def test_noop_rechecks_under_install_lock_without_agency_owned_verification(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -660,16 +651,12 @@ def test_noop_skips_operator_verification_but_rechecks_under_install_lock(
     monkeypatch.setattr(prepared_install, "_prepare", lambda *_args, **_kwargs: prepared)
     monkeypatch.setattr(prepared_install, "_is_noop", lambda _prepared: True)
 
-    def forbidden(*_args: object, **_kwargs: object) -> None:
-        raise AssertionError("a no-op must not request operator verification")
-
     @contextmanager
     def lock(*, home_dir: str | Path | None):
         del home_dir
         events.append("lock")
         yield
 
-    monkeypatch.setattr(prepared_install, "_verify_codex_install_operator_presence", forbidden)
     monkeypatch.setattr(prepared_install, "_install_lock", lock)
 
     result = prepared_install.refresh_existing_codex_adapter(prepared.config)
@@ -683,7 +670,7 @@ def test_noop_skips_operator_verification_but_rechecks_under_install_lock(
 
 
 @pytest.mark.parametrize("binding_changed", [False, True])
-def test_noop_recheck_drift_aborts_without_verification_or_mutation(
+def test_noop_recheck_drift_aborts_without_mutation(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     binding_changed: bool,
@@ -713,7 +700,6 @@ def test_noop_recheck_drift_aborts_without_verification_or_mutation(
     monkeypatch.setattr(prepared_install, "_is_noop", lambda _prepared: next(noop_states))
     monkeypatch.setattr(prepared_install, "_install_lock", lock)
     monkeypatch.setattr(prepared_install, "load_config", lambda *_args, **_kwargs: prepared.config)
-    monkeypatch.setattr(prepared_install, "_verify_codex_install_operator_presence", forbidden)
     monkeypatch.setattr(prepared_install, "atomic_install_tree", forbidden)
 
     with pytest.raises(
@@ -723,35 +709,7 @@ def test_noop_recheck_drift_aborts_without_verification_or_mutation(
         prepared_install.refresh_existing_codex_adapter(prepared.config)
 
 
-def test_operator_denial_causes_zero_host_or_native_mutation(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    prepared = _prepared(tmp_path)
-    events: list[str] = []
-    monkeypatch.setattr(prepared_install, "_prepare", lambda *_args, **_kwargs: prepared)
-    monkeypatch.setattr(prepared_install, "_is_noop", lambda _prepared: False)
-
-    def deny(_binding: prepared_install._CodexInstallBinding) -> None:
-        events.append("verification_denied")
-        raise prepared_install.PreparedCodexInstallError("operator denied")
-
-    def forbidden(*_args: object, **_kwargs: object) -> None:
-        raise AssertionError("denial must precede every mutation boundary")
-
-    monkeypatch.setattr(prepared_install, "_verify_codex_install_operator_presence", deny)
-    monkeypatch.setattr(prepared_install, "_install_lock", forbidden)
-    monkeypatch.setattr(prepared_install, "_published_candidate", forbidden)
-    monkeypatch.setattr(prepared_install, "atomic_install_tree", forbidden)
-    monkeypatch.setattr(prepared_install, "_native_command", forbidden)
-
-    with pytest.raises(prepared_install.PreparedCodexInstallError, match="operator denied"):
-        prepared_install.refresh_existing_codex_adapter(prepared.config)
-
-    assert events == ["verification_denied"]
-
-
-def test_post_verification_binding_drift_refuses_before_publication(
+def test_prelock_binding_drift_refuses_before_publication(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -776,11 +734,6 @@ def test_post_verification_binding_drift_refuses_before_publication(
 
     monkeypatch.setattr(prepared_install, "_prepare", prepare)
     monkeypatch.setattr(prepared_install, "_is_noop", lambda _prepared: False)
-    monkeypatch.setattr(
-        prepared_install,
-        "_verify_codex_install_operator_presence",
-        lambda _binding: events.append("verified"),
-    )
     monkeypatch.setattr(prepared_install, "_install_lock", lock)
     monkeypatch.setattr(prepared_install, "load_config", lambda *_args, **_kwargs: original.config)
     monkeypatch.setattr(prepared_install, "_published_candidate", forbidden)
@@ -789,11 +742,11 @@ def test_post_verification_binding_drift_refuses_before_publication(
 
     with pytest.raises(
         prepared_install.PreparedCodexInstallError,
-        match="state changed after operator verification",
+        match="state changed before native registration",
     ):
         prepared_install.refresh_existing_codex_adapter(original.config)
 
-    assert events == ["prepare:30", "verified", "lock", "prepare:31"]
+    assert events == ["prepare:30", "lock", "prepare:31"]
 
 
 def test_target_drift_after_publication_is_detected_before_atomic_swap(
@@ -841,11 +794,6 @@ def test_target_drift_after_publication_is_detected_before_atomic_swap(
 
     monkeypatch.setattr(prepared_install, "_prepare", lambda *_args, **_kwargs: prepared)
     monkeypatch.setattr(prepared_install, "_is_noop", lambda _prepared: False)
-    monkeypatch.setattr(
-        prepared_install,
-        "_verify_codex_install_operator_presence",
-        lambda _binding: None,
-    )
     monkeypatch.setattr(prepared_install, "_install_lock", lock)
     monkeypatch.setattr(prepared_install, "load_config", lambda *_args, **_kwargs: prepared.config)
     monkeypatch.setattr(prepared_install, "_published_candidate", publish)
@@ -970,11 +918,6 @@ def test_native_refresh_orders_remove_before_add_and_proves_final_state(
 
     monkeypatch.setattr(prepared_install, "_prepare", lambda *_args, **_kwargs: prepared)
     monkeypatch.setattr(prepared_install, "_is_noop", lambda _prepared: False)
-    monkeypatch.setattr(
-        prepared_install,
-        "_verify_codex_install_operator_presence",
-        lambda _binding: events.append("verified"),
-    )
     monkeypatch.setattr(prepared_install, "_install_lock", lock)
     monkeypatch.setattr(prepared_install, "load_config", lambda *_args, **_kwargs: prepared.config)
     monkeypatch.setattr(
@@ -1053,11 +996,6 @@ def test_unproven_post_swap_identity_retains_backup_for_manual_recovery(
 
     monkeypatch.setattr(prepared_install, "_prepare", lambda *_args, **_kwargs: prepared)
     monkeypatch.setattr(prepared_install, "_is_noop", lambda _prepared: False)
-    monkeypatch.setattr(
-        prepared_install,
-        "_verify_codex_install_operator_presence",
-        lambda _binding: None,
-    )
     monkeypatch.setattr(prepared_install, "_install_lock", lock)
     monkeypatch.setattr(prepared_install, "load_config", lambda *_args, **_kwargs: prepared.config)
     monkeypatch.setattr(
@@ -1173,11 +1111,6 @@ def test_successful_add_command_without_matching_inventory_is_not_success(
 
     monkeypatch.setattr(prepared_install, "_prepare", lambda *_args, **_kwargs: prepared)
     monkeypatch.setattr(prepared_install, "_is_noop", lambda _prepared: False)
-    monkeypatch.setattr(
-        prepared_install,
-        "_verify_codex_install_operator_presence",
-        lambda _binding: None,
-    )
     monkeypatch.setattr(prepared_install, "_install_lock", lock)
     monkeypatch.setattr(prepared_install, "load_config", lambda *_args, **_kwargs: prepared.config)
     monkeypatch.setattr(

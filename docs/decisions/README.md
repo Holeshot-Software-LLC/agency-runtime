@@ -43,7 +43,7 @@ Status meanings:
 - ADR-0058 Broker restricted Windows host controls through the authenticated dashboard → ADR-0090 Model-facing control paths are read-only
 - ADR-0059 Broker restricted Windows agent controls through narrow dashboard operations → ADR-0090 Model-facing control paths are read-only
 - ADR-0061 Validate brokered control transition receipts against deterministic CAS semantics → ADR-0090 Model-facing control paths are read-only
-- ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls → ADR-0110 Remove Agency-owned Windows Hello and use harness-native trust
+- ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls → ADR-0110 Remove Agency-owned Windows Hello and use harness-native trust → ADR-0111 Install the applicable suite by default
 
 ## Architecture and integrations
 
@@ -171,7 +171,8 @@ Status meanings:
 | [ADR-0106](0106-isolate-native-host-lifecycle-working-directories.md) | Isolate native host lifecycle working directories | Accepted |
 | [ADR-0107](0107-resolve-updates-immutably-and-keep-application-attended.md) | Resolve updates immutably and keep application attended | Accepted |
 | [ADR-0109](0109-prepare-dashboard-service-repair-before-operator-presence.md) | Prepare dashboard-service repair before operator presence | Superseded |
-| [ADR-0110](0110-remove-agency-owned-windows-hello.md) | Remove Agency-owned Windows Hello and use harness-native trust | Accepted |
+| [ADR-0110](0110-remove-agency-owned-windows-hello.md) | Remove Agency-owned Windows Hello and use harness-native trust | Superseded |
+| [ADR-0111](0111-install-the-applicable-suite-by-default.md) | Install the applicable suite by default | Accepted |
 
 ## Documentation governance
 

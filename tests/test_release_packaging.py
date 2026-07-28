@@ -16,7 +16,6 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - exercised by the Python 3.10 matrix
     import tomli as tomllib
 
-from scripts import smoke_installed_distribution as installed_smoke
 from scripts.read_release_version import read_release_version
 from scripts.release_contract import DISTRIBUTION_LICENSE_FILES
 from scripts.verify_release_hygiene import SECRET_PATTERNS, generated_path_reason
@@ -283,12 +282,6 @@ def test_release_resources_are_addressable() -> None:
         "dashboard/dashboard-render.js",
         "dashboard/index.html",
         "dashboard/package.json",
-        "native/windows/operator_presence/operator_presence_verifier.cpp",
-        "native/windows/operator_presence/operator_presence_verifier.exe",
-        "native/windows/operator_presence/operator_presence_verifier.provenance.json",
-        "native/windows/operator_presence/LICENSE.cppwinrt.txt",
-        "native/windows/operator_presence/LICENSE.microsoft-stl.txt",
-        "native/windows/operator_presence/NOTICE.microsoft-stl.txt",
     )
     for relative in required:
         assert package.joinpath(*relative.split("/")).is_file(), relative
@@ -315,54 +308,6 @@ def test_release_resources_are_addressable() -> None:
     # and an attended-command banner. Keep that production behavior readable and
     # branch-testable while retaining a tight aggregate ceiling.
     assert dashboard_bytes < 268 * 1024, "dashboard assets exceeded the 268 KiB budget"
-
-
-@pytest.mark.parametrize(
-    ("artifact_set", "include_executable", "expected"),
-    [
-        ("portable", False, []),
-        ("windows-x64", True, ["operator_presence_verifier.exe"]),
-    ],
-)
-def test_installed_smoke_enforces_the_native_wheel_profile(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    artifact_set: str,
-    include_executable: bool,
-    expected: list[str],
-) -> None:
-    package = tmp_path / "agency_runtime"
-    native = package / "native" / "windows" / "operator_presence"
-    native.mkdir(parents=True)
-    (native / "operator_presence_verifier.cpp").write_text("source", encoding="utf-8")
-    (native / "operator_presence_verifier.provenance.json").write_text("{}", encoding="utf-8")
-    if include_executable:
-        (native / "operator_presence_verifier.exe").write_bytes(b"pe")
-    monkeypatch.setattr(installed_smoke, "files", lambda _package: package)
-
-    assert installed_smoke._native_asset_contract(artifact_set) == {
-        "artifact_set": artifact_set,
-        "executables": expected,
-    }
-
-
-def test_installed_portable_smoke_rejects_an_executable(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    package = tmp_path / "agency_runtime"
-    native = package / "native" / "windows" / "operator_presence"
-    native.mkdir(parents=True)
-    for name in (
-        "operator_presence_verifier.cpp",
-        "operator_presence_verifier.provenance.json",
-    ):
-        (native / name).write_text("asset", encoding="utf-8")
-    (native / "unexpected.ExE").write_bytes(b"pe")
-    monkeypatch.setattr(installed_smoke, "files", lambda _package: package)
-
-    with pytest.raises(RuntimeError, match="executable profile is invalid"):
-        installed_smoke._native_asset_contract("portable")
 
 
 def test_release_metadata_is_single_source_and_cross_platform() -> None:
@@ -482,11 +427,6 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
     verify = next(
         step for step in artifact_steps if step["name"] == "Verify metadata and artifact contents"
     )
-    native_rebuild = next(
-        step
-        for step in artifact_steps
-        if step["name"] == "Rebuild and byte-verify Windows operator-presence helper"
-    )
     assert artifact_job["env"]["AGENCY_RELEASE_COMMIT"] == "${{ github.sha }}"
     assert artifact_job["env"]["AGENCY_ARTIFACT_SET"] == "${{ matrix.artifact_set }}"
     assert artifact_job["runs-on"] == "${{ matrix.os }}"
@@ -495,8 +435,7 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
         {"os": "ubuntu-24.04", "artifact_set": "portable"},
         {"os": "windows-2022", "artifact_set": "windows-x64"},
     ]
-    assert artifact_steps.index(autocrlf) + 1 == artifact_steps.index(native_rebuild)
-    assert artifact_steps.index(native_rebuild) + 1 == artifact_steps.index(build)
+    assert artifact_steps.index(autocrlf) + 1 == artifact_steps.index(build)
     assert autocrlf == {
         "name": "Prove clean CRLF checkout uses canonical Git blobs",
         "shell": "bash",
@@ -522,16 +461,8 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
         if step["name"] == "Smoke release modules without installing the project"
     )
     assert "python -m scripts.build_distributions --help" in release_smoke["run"]
-    assert "python -m scripts.build_windows_operator_presence --help" in release_smoke["run"]
     assert "python -m scripts.verify_distribution --help" in release_smoke["run"]
-    assert native_rebuild == {
-        "name": "Rebuild and byte-verify Windows operator-presence helper",
-        "if": "runner.os == 'Windows'",
-        "shell": "bash",
-        "run": '"${AGENCY_CI_PYTHON}" -m scripts.build_windows_operator_presence',
-    }
-    assert artifact_steps.index(autocrlf) < artifact_steps.index(native_rebuild)
-    assert artifact_steps.index(native_rebuild) < artifact_steps.index(build)
+    assert artifact_steps.index(autocrlf) < artifact_steps.index(build)
     private_release = next(
         step for step in artifact_steps if step["name"] == "Prepare private release runtime"
     )
@@ -671,7 +602,7 @@ def test_maintained_release_instructions_require_canonical_git_blob_builder() ->
     from scripts.verify_distribution import REQUIRED_SDIST_FILES
 
     assert "scripts/build_distributions.py" in REQUIRED_SDIST_FILES
-    assert "scripts/build_windows_operator_presence.py" in REQUIRED_SDIST_FILES
+    assert "scripts/build_windows_operator_presence.py" not in REQUIRED_SDIST_FILES
     assert "scripts/platform_wheel.py" in REQUIRED_SDIST_FILES
     assert "scripts/prove_autocrlf_checkout.py" in REQUIRED_SDIST_FILES
     assert "scripts/release_contract.py" in REQUIRED_SDIST_FILES
@@ -874,7 +805,11 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
         "tests/test_roster_snapshot_generation.py",
         "tests/test_mcp_protocol_hardening.py",
         "tests/test_cli_parser_contract.py",
+        "tests/test_cli_upgrade.py",
+        "tests/test_update_service.py",
         "tests/test_native_installer.py",
+        "tests/test_host_uninstall.py",
+        "tests/test_cli_uninstall.py",
         "tests/test_host_boundary_hardening.py",
         "tests/test_cli_operator_presence.py",
         "tests/test_security_turn_boundaries.py",

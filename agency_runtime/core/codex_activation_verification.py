@@ -12,7 +12,6 @@ import math
 import os
 from collections.abc import Mapping
 
-CODEX_ACTIVATION_VERIFICATION_ACTION = "install.codex.verify-activation.v1"
 CODEX_ACTIVATION_EXISTING_STORE_ENV = "AGENCY_CANARY_REQUIRE_EXISTING_STORE"
 _PUBLIC_FIELDS = frozenset(
     {
@@ -34,7 +33,6 @@ _BOUND_FIELDS = _PUBLIC_FIELDS | frozenset(
         "func",
         "_operator_presence_family",
         "_operator_presence_dry_run_exempt",
-        "_operator_presence_prepared_action",
     }
 )
 
@@ -71,8 +69,6 @@ def is_exact_codex_activation_verification(namespace: object) -> bool:
         getattr(namespace, "command", None) == "install"
         and getattr(namespace, "_operator_presence_family", None) == "installation"
         and getattr(namespace, "_operator_presence_dry_run_exempt", None) is True
-        and getattr(namespace, "_operator_presence_prepared_action", None)
-        == CODEX_ACTIVATION_VERIFICATION_ACTION
         and getattr(namespace, "agent", None) == "codex"
         and getattr(namespace, "profile", None) is None
         and getattr(namespace, "all", False) is False
@@ -89,7 +85,6 @@ def is_exact_codex_activation_verification(namespace: object) -> bool:
 
 __all__ = [
     "CODEX_ACTIVATION_EXISTING_STORE_ENV",
-    "CODEX_ACTIVATION_VERIFICATION_ACTION",
     "is_exact_codex_activation_verification",
     "is_restricted_codex_activation_canary_environment",
 ]

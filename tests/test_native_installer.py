@@ -1866,6 +1866,7 @@ def test_install_defaults_to_user_dashboard_service(
     calls: list[dict[str, Any]] = []
     monkeypatch.setattr(cli, "load_config", lambda: AgencyConfig())
     monkeypatch.setattr(cli, "_store", lambda _cfg: object())
+    monkeypatch.setattr(installer, "detect_installed_agents", lambda: [])
     monkeypatch.setattr(
         installer,
         "seed_starter_roster",
@@ -1907,7 +1908,7 @@ def test_install_defaults_to_user_dashboard_service(
     assert callable(calls[0]["readiness_probe"])
 
 
-def test_install_blocks_environment_only_dashboard_settings_before_local_mutation(
+def test_dashboard_preflight_failure_does_not_block_harness_installation(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -1920,12 +1921,17 @@ def test_install_blocks_environment_only_dashboard_settings_before_local_mutatio
     monkeypatch.setenv("AGENCY_JUDGE_API_KEY", secret)
     monkeypatch.setattr(cli, "load_config", lambda: AgencyConfig())
 
-    def unexpected(*_args: Any, **_kwargs: Any) -> None:
-        raise AssertionError("install must fail before local mutation")
-
-    monkeypatch.setattr(cli, "_store", unexpected)
-    monkeypatch.setattr(installer, "seed_starter_roster", unexpected)
-    monkeypatch.setattr(installer, "install_agent_adapter", unexpected)
+    host_calls: list[str] = []
+    monkeypatch.setattr(cli, "_store", lambda _cfg: object())
+    monkeypatch.setattr(installer, "seed_starter_roster", lambda _store: 0)
+    monkeypatch.setattr(
+        installer,
+        "install_agent_adapter",
+        lambda host, _cfg: (
+            host_calls.append(host)
+            or {"ok": True, "complete": True, "host": host, "status": "registered"}
+        ),
+    )
     monkeypatch.setattr(
         dashboard_service,
         "plan_dashboard_service",
@@ -1943,7 +1949,7 @@ def test_install_blocks_environment_only_dashboard_settings_before_local_mutatio
 
     exit_code = cli.cmd_install(
         Namespace(
-            agent="codex",
+            agent="hermes",
             all=False,
             profile=None,
             json=True,
@@ -1957,7 +1963,8 @@ def test_install_blocks_environment_only_dashboard_settings_before_local_mutatio
 
     assert exit_code == 1
     assert report["roster_added"] == 0
-    assert report["hosts"] == []
+    assert host_calls == ["hermes"]
+    assert report["hosts"][0]["status"] == "registered"
     assert report["dashboard"]["non_durable_environment_overrides"] == [
         "AGENCY_DB_PATH",
         "AGENCY_JUDGE_API_KEY",
@@ -1978,6 +1985,7 @@ def test_install_no_dashboard_never_queries_or_mutates_service_manager(
 
     monkeypatch.setattr(cli, "load_config", lambda: AgencyConfig())
     monkeypatch.setattr(cli, "_store", lambda _cfg: object())
+    monkeypatch.setattr(installer, "detect_installed_agents", lambda: [])
     monkeypatch.setattr(installer, "seed_starter_roster", lambda _store: 0)
     monkeypatch.setattr(dashboard_service, "install_dashboard_service", unexpected)
     monkeypatch.setattr(dashboard_service, "plan_dashboard_service", unexpected)
@@ -2005,21 +2013,37 @@ def test_install_no_dashboard_never_queries_or_mutates_service_manager(
     }
 
 
-def test_install_all_with_no_detected_hosts_changes_no_local_state(
+def test_install_all_with_no_detected_hosts_runs_other_default_components(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     import agency_runtime.core.dashboard_service as dashboard_service
     import agency_runtime.core.installer as installer
+    from agency_runtime.cli import install_commands
     from agency_runtime.cli import main as cli
 
-    def unexpected(*_args, **_kwargs):
-        raise AssertionError("no-host install must not mutate local state")
-
     monkeypatch.setattr(cli, "load_config", lambda: AgencyConfig())
+    monkeypatch.setattr(cli, "_store", lambda _cfg: object())
     monkeypatch.setattr(installer, "detect_installed_agents", lambda: [])
-    monkeypatch.setattr(installer, "seed_starter_roster", unexpected)
-    monkeypatch.setattr(dashboard_service, "install_dashboard_service", unexpected)
+    monkeypatch.setattr(
+        install_commands, "dashboard_service_environment_overrides", lambda _cfg: {}
+    )
+    seeded: list[object] = []
+    monkeypatch.setattr(
+        installer,
+        "seed_starter_roster",
+        lambda store: seeded.append(store) or 0,
+    )
+    monkeypatch.setattr(
+        dashboard_service,
+        "install_dashboard_service",
+        lambda **_kwargs: {
+            "ok": True,
+            "exit_code": 0,
+            "status": "installed",
+            "changed": True,
+        },
+    )
 
     exit_code = cli.cmd_install(
         Namespace(
@@ -2035,16 +2059,11 @@ def test_install_all_with_no_detected_hosts_changes_no_local_state(
     )
     report = json.loads(capsys.readouterr().out)
 
-    assert exit_code == 1
+    assert exit_code == 0
+    assert len(seeded) == 1
     assert report["roster_added"] == 0
     assert report["hosts"] == []
-    assert report["dashboard"] == {
-        "changed": False,
-        "exit_code": 1,
-        "ok": False,
-        "reason": "no supported hosts detected",
-        "status": "not_attempted",
-    }
+    assert report["dashboard"]["status"] == "installed"
 
 
 def test_install_dry_run_includes_dashboard_plan_without_mutation(
@@ -2056,6 +2075,9 @@ def test_install_dry_run_includes_dashboard_plan_without_mutation(
 
     planned: list[dict[str, Any]] = []
     monkeypatch.setattr(cli, "load_config", lambda: AgencyConfig())
+    import agency_runtime.core.installer as installer
+
+    monkeypatch.setattr(installer, "detect_installed_agents", lambda: [])
     monkeypatch.setattr(
         dashboard_service,
         "plan_dashboard_service",
@@ -2093,6 +2115,23 @@ def test_install_dry_run_includes_dashboard_plan_without_mutation(
     assert exit_code == 0
     assert report["dashboard"]["dry_run"] is True
     assert len(planned) == 1
+
+
+def test_auto_discovered_config_native_plan_is_complete_without_executable() -> None:
+    from agency_runtime.cli.install_commands import _host_plans_complete
+
+    assert _host_plans_complete(
+        [
+            {
+                "ok": True,
+                "host": "zcode",
+                "host_discovered": True,
+                "executable": None,
+                "config_mutations_will_run": True,
+            }
+        ],
+        all_hosts=True,
+    )
 
 
 @pytest.mark.parametrize(

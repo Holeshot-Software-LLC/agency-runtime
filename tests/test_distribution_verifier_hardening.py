@@ -386,35 +386,15 @@ def test_full_release_set_binds_portable_and_windows_profiles_to_one_sdist(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     repository, payloads = _repository(tmp_path)
-    native_payloads = {
-        subject.NATIVE_OPERATOR_PRESENCE_EXECUTABLE: b"reviewed-pe",
-        "agency_runtime/native/windows/operator_presence/operator_presence_verifier.cpp": (
-            b"reviewed-source\n"
-        ),
-        "agency_runtime/native/windows/operator_presence/"
-        "operator_presence_verifier.provenance.json": b"{}\n",
-    }
-    for name, payload in native_payloads.items():
-        target = repository / name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(payload)
-    _git(repository, "add", "--all")
-    _git(repository, "commit", "-m", "native fixture")
-    payloads.update(native_payloads)
-
     dist = tmp_path / "dist"
     dist.mkdir()
-    portable_extra = dict(native_payloads)
-    portable_extra.pop(subject.NATIVE_OPERATOR_PRESENCE_EXECUTABLE)
     _wheel(
         dist / f"agency_runtime-{VERSION}-py3-none-any.whl",
         payloads[PACKAGE_PATH],
-        extra=portable_extra,
     )
     _wheel(
         dist / f"agency_runtime-{VERSION}-py3-none-win_amd64.whl",
         payloads[PACKAGE_PATH],
-        extra=native_payloads,
         wheel_payload=(
             b"Wheel-Version: 1.0\nGenerator: release-test\n"
             b"Root-Is-Purelib: false\nTag: py3-none-win_amd64\n"
@@ -424,7 +404,6 @@ def test_full_release_set_binds_portable_and_windows_profiles_to_one_sdist(
     monkeypatch.setattr(subject, "REQUIRED_PACKAGE_FILES", set())
     monkeypatch.setattr(subject, "REQUIRED_SDIST_FILES", set())
     monkeypatch.setattr(subject, "IMMUTABLE_THIRD_PARTY_FILE_SHA256", ())
-    monkeypatch.setattr(subject, "verify_payload_contract", lambda *_args: None)
 
     assert (
         subject.verify(
@@ -438,10 +417,9 @@ def test_full_release_set_binds_portable_and_windows_profiles_to_one_sdist(
 
 
 def test_portable_profile_rejects_every_executable_member_case_insensitively() -> None:
-    assert subject._native_operator_presence_failures(
+    assert subject._executable_payload_failures(
         {"agency_runtime/native/OTHER.ExE": b"payload"},
         artifact="portable wheel",
-        executable_forbidden=True,
     ) == ["portable wheel must not contain executable payloads: agency_runtime/native/OTHER.ExE"]
 
 
@@ -484,19 +462,18 @@ def _structural_pe(
 def test_portable_and_windows_profiles_reject_pe_payloads_under_data_names() -> None:
     payload = _structural_pe()
 
-    assert subject._native_operator_presence_failures(
+    assert subject._executable_payload_failures(
         {"agency_runtime/native/windows/operator_presence/review-copy.txt": payload},
         artifact="portable wheel",
-        executable_forbidden=True,
     ) == [
         "portable wheel must not contain PE payloads under non-executable names: "
         "agency_runtime/native/windows/operator_presence/review-copy.txt"
     ]
-    assert subject._native_operator_presence_failures(
+    assert subject._executable_payload_failures(
         {"agency_runtime/native/windows/operator_presence/review-copy.json": payload},
         artifact="Windows wheel",
     ) == [
-        "Windows wheel contains unexpected PE payloads: "
+        "Windows wheel must not contain PE payloads under non-executable names: "
         "agency_runtime/native/windows/operator_presence/review-copy.json"
     ]
 
@@ -529,10 +506,9 @@ def test_portable_profile_rejects_a_renamed_pe_with_a_large_dos_stub() -> None:
     payload = _structural_pe(pe_offset=(1024 * 1024) + 128)
 
     assert subject._is_structural_pe(payload) is True
-    assert subject._native_operator_presence_failures(
+    assert subject._executable_payload_failures(
         {name: payload},
         artifact="portable wheel",
-        executable_forbidden=True,
     ) == [f"portable wheel must not contain PE payloads under non-executable names: {name}"]
 
 

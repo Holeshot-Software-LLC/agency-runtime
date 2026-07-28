@@ -80,10 +80,9 @@ or adding an index-install claim.
 - [ ] Codex generated-bundle smoke proves the expected 8 hook events,
       commands, and timeout schema; native inventory proves plugin registration
       and enablement. Exact existing-install refresh through
-      `agency install --agent codex --no-dashboard` proves its prepared binding,
-      attended Windows Hello result, atomic publication, native remove/add,
-      exact postconditions, and compensation behavior. It is not evidence of a
-      missing-host bootstrap. Installation reports `activation_required` until
+      `agency install --agent codex --no-dashboard` proves native registration,
+      exact postconditions, and compensation behavior without an Agency-owned
+      Windows Hello prompt. Installation reports `activation_required` until
       an operator reviews and trusts the hooks through `/hooks` and
       `agency install --agent codex --verify-activation` records a successful
       current-profile canary. Close terminal TUIs opened before the candidate
@@ -115,27 +114,16 @@ or adding an index-install claim.
       the update schema and official target URL, performs checks asynchronously,
       and cannot invoke pip, host refresh, service restart, trust, or release
       mutation. Hook and MCP hot paths perform no update discovery.
-- [ ] Every persistent CLI mutation fails closed unless it prepares the exact
-      authoritative method, resolved resource identity, payload binding, and all
-      applicable revision/CAS tokens before an OS-backed non-exporting
-      verification, then revalidates that state inside the committing boundary.
-- [ ] The trusted native prompt displays one bounded human-readable action,
-      exact target, current-to-target transition, and material consequence;
-      approval never depends on interpreting an opaque digest alone.
+- [ ] Bare install auto-discovers every installed supported harness, selects the
+      dashboard unless `--no-dashboard` is present, and reports each component
+      independently. Harness trust remains native to the harness.
+- [ ] Every other persistent CLI mutation remains unavailable unless it gains a
+      separately valid authority and committing boundary.
 - [ ] Deferred stdin/prompt input is ingested before verification. Secret
       payload binding is one-time and internal; neither a secret value nor a
       stable secret-dependent guessing oracle crosses the trusted boundary.
-- [ ] Before any positive mutation is called production-ready, the supported OS
-      presence backend proves success, mismatch/race rejection, one same-stack
-      commit, and the exact postcondition under a real human interaction. Any
-      transferable capability additionally proves audience, expiry, and atomic
-      replay rejection. Static confirmations, bearer tokens, environment
-      credentials, and model-callable capabilities are not acceptable substitutes.
-- [ ] The exact Windows 11 x64 roster-rollback release candidate comes from the
-      platform-specific wheel, carries the approved signed helper, and passes an
-      attended Windows Hello success-and-denial canary. Source review,
-      availability, invalid-input smoke, and an unsigned helper do not satisfy
-      this gate.
+- [ ] Roster rollback and owned host uninstall prove they remain unavailable and
+      make no change; no retired native helper is packaged as a workaround.
 - [ ] Global and host status expose one committed generation across read-only
       CLI, dashboard, MCP, and generated host surfaces; the dormant Store
       mutation contract still proves stale-conflict, no-op, and single-increment
@@ -407,8 +395,8 @@ environment or `dist` parent may be rejected when inherited ACLs permit another
 account to replace the launcher or a newly created child.
 
 - [ ] The portable and `win_amd64` wheels contain the complete shared package
-      surface; only the Windows wheel contains the exact approved signed helper
-      and its native provenance/notices. The source distribution also contains
+      surface and neither contains an executable or structurally valid PE. The
+      source distribution also contains
       governance docs, the threat model, release scripts, tests, and
       self-contained examples under one explicit no-universal-PE build policy.
 - [ ] Artifact verification is pinned to the commit captured before build and
@@ -533,18 +521,11 @@ That result remains historical context, not current-candidate proof. The earlier
 failed evidence; neither an old exhaustive success nor the absence of a new
 optional exhaustive run decides the current scoped verdict.
 
-AR-143 now has one narrow prerelease positive slice: exact roster rollback on
-Windows 11 x64. Every dashboard and model-facing mutation remains read-only,
-and all other persistent CLI mutations fail closed. The helper is reviewed and
-byte-pinned, and AR-160's local implementation now derives the paired portable/
-`win_amd64` artifact set and independently verifies its merged three-artifact
-contract. Hosted Windows/Linux producer and merge proof remains pending because
-repository Actions billing is disabled. The helper is unsigned, and no attended
-release-candidate Windows Hello canary has run. AR-161 is blocked on owner-
-approved publisher identity and authorized legal review of the exact MSVC,
-Windows SDK, `/MT` static runtime, notices, and delivery channel. Neither that
-external trust gate nor the hosted proof can be completed by repository source
-alone.
+AR-197 retired the Agency-owned Windows Hello helper and its release surface.
+Harness installation now uses native harness lifecycle and trust. Roster
+rollback, owned host uninstall, dashboard/model-facing mutation, and generic
+positive controls remain unavailable. The paired portable/`win_amd64` artifact
+set must reject executable and disguised PE payloads in both profiles.
 
 Normal-profile Codex readiness still requires user-owned terminal-TUI `/hooks`
 review and a new session. AR-119 and AR-125 still require a benchmark-valid

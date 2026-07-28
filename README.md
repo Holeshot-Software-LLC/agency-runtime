@@ -336,7 +336,7 @@ cd agency-runtime
 python -m pip install .
 
 agency --version
-agency install --all --dry-run
+agency install --dry-run
 agency doctor
 ```
 
@@ -365,7 +365,7 @@ owner-controlled terminal; it reports
 `mutation_performed=false` and executes neither displayed mutation. The
 authenticated dashboard checks stale release/main metadata in the background
 and exposes the same fixed copy-only attended command. It cannot install
-packages, refresh Codex, restart itself, or bypass Windows operator presence. See
+packages, refresh Codex, restart itself, or bypass native harness trust. See
 [ADR-0107](docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md).
 
 The plan uses the current interpreter only after proving the Agency package and
@@ -384,44 +384,27 @@ entrypoint symlinks must resolve inside the exact tool prefix. If neither
 installer can be proven usable, planning fails closed rather than printing a
 command that cannot run.
 
-This unreleased source keeps persistent setup and control mutations fail-closed
-unless one bounded entry point satisfies its native operator-presence and
-operation-specific preconditions. Exact
-`agency roster rollback` prepares and revalidates one authoritative Store
-transition. Exact `agency install --agent codex --no-dashboard` refreshes an
-already managed, registered, and enabled Codex marketplace; it does not create
-a missing installation. The ownership-bound host uninstall described below is
-a separate attended mutation. These paths invoke the packaged native Windows
-consent window and consume its result only in the initiating call stack. Every
-other positive `configure`, `install`, service, host, agent, and retention
-mutation remains unavailable. Do not substitute a static confirmation, bearer
-token, environment variable, or model-callable credential for genuine operator
-presence. See
-[AR-143](docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md).
+Bare `agency install` installs the applicable suite: it initializes Agency's
+core state, discovers every installed supported harness on the current OS,
+installs or refreshes those integrations, and selects the dashboard service.
+`--agent <host>` narrows harness scope, `--no-dashboard` excludes the dashboard,
+and `--all` remains a compatible explicit spelling of automatic discovery.
+Each component reports independently, so dashboard failure does not erase a
+successful harness result and one harness failure does not suppress later
+selected harnesses. Use `--dry-run --json` for the complete write-free plan.
 
-That native slice is not yet a production distribution claim. The source now
-derives a portable `py3-none-any` profile on non-Windows-x64 hosts and a
-`py3-none-win_amd64` profile on supported Windows x64. The portable wheel keeps
-the native source, provenance, and notices for review but excludes only the PE.
-Each producer emits one wheel/source pair; the merge gate requires identical
-source distributions and shared wheel payloads before independently verifying
-the assembled two-wheel-plus-sdist unsigned review set. Hosted cross-OS proof remains
-pending because repository Actions billing is disabled. The helper is also
-unsigned: ADR-0099 keeps deterministic review bytes separate from
-owner-authorized signed delivery. AR-160 and AR-161 remain release gates,
-including hosted proof, compiler/runtime/SDK legal review, and an attended
-Windows Hello canary. Install from this repository only as prerelease source;
-no signed public artifact exists.
+Harness registration, enablement, and trust use each harness's native lifecycle;
+Agency no longer ships or invokes its own Windows Hello verifier. Persistent
+roster rollback, owned host uninstall, generic controls, and dashboard/model
+request mutations remain fail-closed until they have a separately valid
+authority boundary. See
+[ADR-0111](docs/decisions/0111-install-the-applicable-suite-by-default.md).
 
-The Codex refresh path freezes the configuration, database and generation
-identities, current target tree, candidate transaction plan, launcher, Codex
-executable and environment, and exact native inventory before asking for
-Windows Hello. Under the shared private host-integrations lock it re-prepares,
-atomically swaps the marketplace tree, removes and re-adds the native plugin,
-and proves the published tree and inventory. A bounded compensation path
-restores the prior tree and registration when a post-publication check fails. A
-process crash can still require recovery from the retained backup, so this is not yet the general
-fresh-host installer contract.
+Release artifacts remain canonical and reject executable names or structurally
+valid PE payloads under disguised names. The Windows and portable wheel profiles
+contain the same Python package payload; platform metadata remains explicit.
+Install from this repository only as prerelease source; no signed public
+artifact exists.
 
 **Codex** will also require you to approve command hooks. Agency installs the
 plugin, reports `activation_required`, and gives the exact next step. To refresh
@@ -453,9 +436,9 @@ agency install --agent zcode
 agency install --agent codex --rollback
 ```
 
-When positive installation is enabled, the dashboard installs by default as a
-per-user service (no admin access). `agency install --all --no-dashboard` omits
-it. Managed files and backups live under `~/.agency-runtime/`.
+The dashboard is selected by default as a per-user service (no admin access).
+`agency install --no-dashboard` omits it. Managed files and backups live under
+`~/.agency-runtime/`.
 
 Remove only Agency's native host integrations with a reviewed two-step plan:
 
@@ -474,19 +457,16 @@ artifact in its process chain, host profile environment, native plugin or
 marketplace source, gateway/ZCode state, or command plan invalidates the digest.
 Native provenance accepts only documented path aliases; an invalid, relative,
 or conflicting alias blocks even if another alias points at the
-managed target. A mutating plan then opens the native Windows confirmation action
-`uninstall.host-integrations.v1`. That prompt is bound to one operation UUID,
-the canonical hosts and transitions, outer plan and per-host binding hashes,
-the exact retained destinations, and fixed preservation/recovery policies; it
-is not a generic installation approval.
+managed target. A mutating uninstall plan currently stops at the retired
+authority boundary and makes no host change. The dry-run remains available for
+exact ownership and recovery review.
 
 Generic mutating install, rollback, native enable/disable toggle,
 prepared Codex refresh, and host uninstall share one owner-private
-`host-integrations.lock`. After Windows authority, uninstall acquires that lock,
-revalidates its full binding, and records intent before the first host mutation;
-denial writes no journal and every later host skipped after a failure is reported
-as `not_attempted`. Only a strict ownership-proven adapter tree is moved after
-native detachment is proven, to the exact destination
+`host-integrations.lock`. If a future authority boundary admits uninstall, it
+must revalidate the full binding before the first host mutation. Only a strict
+ownership-proven adapter tree may be moved after native detachment is proven,
+to the exact destination
 `~/.agency-runtime/backups/<host>/uninstall-<operation_uuid>`. Windows follows
 the validated directory through an open handle during rename, so a pathname
 swap cannot redirect retirement. Restore that exact bundle with the result's

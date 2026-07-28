@@ -17,14 +17,11 @@ related:
   - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
   - docs/roadmap/handoffs/issue-AR-196.md
   - agency_runtime/core/operator_presence.py
-  - agency_runtime/core/windows_operator_presence.py
   - agency_runtime/core/dashboard_service_install.py
   - agency_runtime/core/dashboard_service_core.py
   - agency_runtime/cli/service_commands.py
-  - agency_runtime/native/windows/operator_presence/operator_presence_verifier.cpp
   - tests/test_cli_operator_presence.py
   - tests/test_dashboard_service.py
-  - tests/test_windows_operator_presence.py
 supersedes: []
 superseded_by: null
 type: issue

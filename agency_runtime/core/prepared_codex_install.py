@@ -1,4 +1,4 @@
-"""Prepared, operator-verified refresh for an existing Codex adapter.
+"""Prepared refresh for an existing Codex adapter through Codex-native trust.
 
 This module intentionally does not implement generic installation.  It admits
 one exact positive slice: an already-owned, registered, and enabled Codex
@@ -282,14 +282,6 @@ def _make_binding(**values: str | int) -> _CodexInstallBinding:
     binding = _CodexInstallBinding(*ordered, _binding_digest(ordered))
     _codex_install_binding_primitives(binding)
     return binding
-
-
-def _verify_codex_install_operator_presence(binding: _CodexInstallBinding) -> None:
-    """Invoke the fixed native verifier without accepting caller injection."""
-
-    from agency_runtime.core.windows_operator_presence import _verify_codex_install_binding
-
-    _verify_codex_install_binding(binding)
 
 
 def _path_key(value: str | Path) -> str:
@@ -1340,8 +1332,8 @@ def _success_result(
         "hook_trust_status": "unverified",
         "canary_attestation_invalidated": False,
         "restart_required": not no_op,
-        "operator_presence_required": not no_op,
-        "operator_presence_verified": not no_op,
+        "operator_presence_required": False,
+        "operator_presence_verified": False,
         "no_op": no_op,
     }
 
@@ -1473,18 +1465,12 @@ def refresh_existing_codex_adapter(
     prepared = _prepare(cfg, home_dir=home_dir)
     if _is_noop(prepared):
         return _confirm_noop_under_lock(prepared, home_dir=home_dir)
-    verified = _codex_install_binding_primitives(prepared.binding)
-    _verify_codex_install_operator_presence(prepared.binding)
-    if _codex_install_binding_primitives(prepared.binding) != verified:
-        raise PreparedCodexInstallError(
-            "prepared Codex install changed during operator verification"
-        )
     with _install_lock(home_dir=home_dir):
         current_cfg = load_config(prepared.binding.config_path, reload=True)
         current = _prepare(current_cfg, home_dir=home_dir)
         if current.binding != prepared.binding:
             raise PreparedCodexInstallError(
-                "prepared Codex install state changed after operator verification; prepare again"
+                "prepared Codex install state changed before native registration; prepare again"
             )
         candidate = _published_candidate(prepared, publish_runtime=True)
         if candidate is None:  # pragma: no cover - publication contract

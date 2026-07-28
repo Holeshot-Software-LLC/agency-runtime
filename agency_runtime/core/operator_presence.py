@@ -19,10 +19,6 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
-from agency_runtime.core.codex_activation_verification import (
-    CODEX_ACTIVATION_VERIFICATION_ACTION,
-)
-
 _OPERATION_DOMAIN = b"agency.operator-presence.v1\x00"
 _MAX_OPERATION_BYTES = 128 * 1024
 _MAX_COLLECTION_ITEMS = 512
@@ -45,12 +41,7 @@ _COMMAND_PATH_FIELDS = (
     "dashboard_command",
     "dashboard_service_action",
 )
-_ROSTER_ROLLBACK_ACTION = "roster.rollback.v1"
-_ROSTER_ROLLBACK_PATH = ("roster", "rollback")
-_CODEX_INSTALL_ACTION = "install.codex.v1"
 _CODEX_INSTALL_PATH = ("install",)
-_HOST_UNINSTALL_ACTION = "uninstall.host-integrations.v1"
-_HOST_UNINSTALL_PATH = ("uninstall",)
 OPERATOR_PRESENCE_FAMILIES = frozenset(
     {
         "agent-governance",
@@ -141,59 +132,26 @@ def _command_path(namespace: argparse.Namespace) -> tuple[str, ...]:
     return tuple(parts)
 
 
-def _uses_prepared_operator_presence(namespace: argparse.Namespace) -> bool:
-    """Recognize the one parser leaf whose handler owns prepared verification.
+def _uses_harness_native_lifecycle(namespace: argparse.Namespace) -> bool:
+    """Recognize the exact operator-owned full-suite installer contract."""
 
-    The marker is an internal parser default, not an authorization value.  A
-    copied or malformed marker fails closed unless the parsed command path and
-    mutation family are the one reviewed prepared-mutation integration.
-    """
-
-    action = getattr(namespace, "_operator_presence_prepared_action", "")
-    if not action:
-        return False
+    if hasattr(namespace, "_operator_presence_prepared_action"):
+        raise OperatorPresenceError("retired operator-presence parser binding is invalid")
     family = getattr(namespace, "_operator_presence_family", "")
     path = _command_path(namespace)
-    if action == _ROSTER_ROLLBACK_ACTION:
-        if family != "roster-governance" or path != _ROSTER_ROLLBACK_PATH:
-            raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
-        return True
-    if action in {_CODEX_INSTALL_ACTION, CODEX_ACTIVATION_VERIFICATION_ACTION}:
-        if family != "installation" or path != _CODEX_INSTALL_PATH:
-            raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
-        from agency_runtime.core.codex_activation_verification import (
-            is_exact_codex_activation_verification,
-        )
-        from agency_runtime.core.prepared_codex_install import (
-            is_exact_prepared_codex_install,
-        )
+    if family != "installation" or path != _CODEX_INSTALL_PATH:
+        return False
+    from agency_runtime.core.install_lifecycle import is_exact_install_lifecycle
 
-        # The marker is attached to the install parser, but only this exact
-        # prepared mutation or the exact verification-only shape delegates its
-        # own authority boundary. Every other install mode retains the generic
-        # fail-closed boundary.
-        if action == _CODEX_INSTALL_ACTION:
-            return is_exact_prepared_codex_install(namespace)
-        if not is_exact_codex_activation_verification(namespace):
-            raise OperatorPresenceError("Codex activation-verification parser binding is invalid")
-        return True
-    if action == _HOST_UNINSTALL_ACTION:
-        if family != "installation" or path != _HOST_UNINSTALL_PATH:
-            raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
-        from agency_runtime.core.prepared_host_uninstall import (
-            is_exact_prepared_host_uninstall,
-        )
-
-        if not is_exact_prepared_host_uninstall(namespace):
-            raise OperatorPresenceError("host uninstall parser binding is invalid")
-        return not bool(getattr(namespace, "dry_run", False))
-    raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
+    if not is_exact_install_lifecycle(namespace):
+        raise OperatorPresenceError("install lifecycle parser binding is invalid")
+    return True
 
 
 def request_for_namespace(namespace: argparse.Namespace) -> OperatorPresenceRequest | None:
     """Build a request for an explicitly annotated mutating parser leaf."""
 
-    if _uses_prepared_operator_presence(namespace):
+    if _uses_harness_native_lifecycle(namespace):
         return None
     family = getattr(namespace, "_operator_presence_family", "")
     if not family:

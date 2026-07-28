@@ -473,25 +473,17 @@ def _roster_rollback_binding_primitives(
     return tuple(binding)
 
 
-def _verify_roster_rollback_operator_presence(binding: _RosterRollbackBinding) -> None:
-    """Invoke the fixed native verifier without accepting caller injection."""
+def _require_roster_rollback_authority(binding: _RosterRollbackBinding) -> None:
+    """Keep roster rollback closed after retirement of Agency-owned authority."""
 
-    from agency_runtime.core.windows_operator_presence import (
-        _verify_roster_rollback_binding,
-    )
-
-    _verify_roster_rollback_binding(binding)
+    _roster_rollback_binding_primitives(binding)
+    raise OperatorPresenceError("roster rollback is unavailable; no persistent change was made")
 
 
 def _roster_rollback_audit_evidence(
     binding: _RosterRollbackBinding,
 ) -> dict[str, str]:
-    """Project non-authorizing success provenance without verifier result data."""
-
-    from agency_runtime.core.windows_operator_presence import (
-        _EXPECTED_EXECUTABLE_SHA256,
-        _OPERATOR_PRESENCE_MECHANISM,
-    )
+    """Project immutable rollback-target evidence without authority claims."""
 
     _roster_rollback_binding_primitives(binding)
     return {
@@ -499,8 +491,6 @@ def _roster_rollback_audit_evidence(
         "activation_authority_kind": binding.activation_authority_kind,
         "activation_authority_digest": binding.activation_authority_digest,
         "workforce_identity_digest": binding.workforce_identity_digest,
-        "operator_presence_mechanism": _OPERATOR_PRESENCE_MECHANISM,
-        "operator_presence_helper_sha256": _EXPECTED_EXECUTABLE_SHA256,
     }
 
 
@@ -2363,11 +2353,11 @@ class RosterStoreMixin:
         expected_current_version: str,
         expected_current_hash: str,
     ) -> dict[str, Any]:
-        """Natively verify and atomically restore one exact immutable revision.
+        """Atomically restore one exact immutable revision when authority exists.
 
         This is the sole supported positive rollback coordinator.  It exposes
-        no preparation object, verifier dependency, receipt, boolean, or other
-        caller-supplied authorization value.
+        no caller-supplied authorization value. Product execution remains
+        fail-closed until a replacement authority boundary is accepted.
         """
 
         prepared = self._prepare_agent_revision_rollback(
@@ -2377,12 +2367,7 @@ class RosterStoreMixin:
             expected_current_hash=expected_current_hash,
         )
         verified_primitives = _roster_rollback_binding_primitives(prepared)
-        _verify_roster_rollback_operator_presence(prepared)
-        if _roster_rollback_binding_primitives(prepared) != verified_primitives:
-            raise OperatorPresenceError(
-                "prepared roster rollback changed after operator verification; "
-                "no persistent change was made"
-            )
+        _require_roster_rollback_authority(prepared)
         return self._commit_prepared_agent_revision_rollback(
             prepared,
             verified_primitives=verified_primitives,

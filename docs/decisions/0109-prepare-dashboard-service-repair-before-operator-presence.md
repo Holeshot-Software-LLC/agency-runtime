@@ -16,7 +16,6 @@ related:
   - docs/THREAT_MODEL.md
   - docs/TROUBLESHOOTING.md
   - agency_runtime/core/operator_presence.py
-  - agency_runtime/core/windows_operator_presence.py
   - agency_runtime/core/dashboard_service_install.py
   - docs/roadmap/handoffs/issue-AR-196.md
 supersedes: []
