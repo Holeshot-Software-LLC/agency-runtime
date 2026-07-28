@@ -3379,6 +3379,14 @@ and every offline routing gate. The current install remains untouched; attended
 refresh, renewed hook trust, and one fresh bounded live canary remain. No hosted
 or exhaustive workflow was run or is required for this checkpoint.
 
+One subsequent isolated-profile attempt from the exact wheel remained on the
+ordinary planner and selected `finops-engineer` plus `code-reviewer`. The
+exact-one-child verifier accepted no collaboration or activation, persisted no
+attestation, and closed the sole failed run; report SHA-256 is
+`65981b64...fae95`. It was not retried. Only the existing-Store current-profile
+contract admits the deterministic fixture, so this negative isolated result is
+not a substitute for the attended live gate.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their

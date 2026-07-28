@@ -70,10 +70,6 @@ the full acceptance history.
 - The named fast spine passes 522 tests with 5 platform skips; all 106 dashboard
   tests and every routing/delegation evaluation gate pass. Exhaustive coverage
   and six-version compatibility now run only on explicit `workflow_dispatch`.
-- AR-179 binds named standards to typed review. A fresh live route with two
-  serial Codex provider calls took about 59 seconds and truthfully abstained
-  when installed native capability could not satisfy eight planned units; it
-  did not fabricate activation, delegation, or a contractor hire.
 - One-shot application evaluation is deferred to post-production AR-178 and is
   not an AR-119/125 release gate.
 - AR-180 now isolates the exact activation measurement from semantic-planner
@@ -84,9 +80,6 @@ the full acceptance history.
   hook/proof chain still validates exact JSONL spawn/wait topology, native-hook
   grants, single consumption, child lifecycle, model receipt, finalization,
   header, and install-bound attestation.
-- Expired dashboard host inspection now neutralizes canary and maturity claims;
-  the Codex card labels verified evidence as the last successful activation
-  proof and renders its full content-free fingerprint without an execute button.
 - Exact `194d697` is installed. A fresh Codex process now reports all eight
   current plugin hooks enabled and trusted. A zero-token no-bypass startup probe
   persisted the nonce-bound one-unit `code-reviewer` route and ready preflight;
@@ -106,6 +99,11 @@ the full acceptance history.
   (`7d7d003e...a2209`) pass strict Twine and independent exact-commit
   verification. Fresh Python 3.13 install, dependency checks, all 8 packaged
   smoke checks, the installed option split, and every offline routing gate pass.
+- One isolated-profile attempt from that wheel followed the ordinary semantic
+  planner and selected `finops-engineer` plus `code-reviewer`; exact-one-child
+  proof correctly failed with no collaboration and closed its sole run. Report
+  SHA-256 is `65981b64...fae95`. Isolated mode cannot substitute for the
+  current-profile nonce-bound fixture, so no retry ran.
 - AR-185 now routes the exact verification-only command before generic install,
   binds success to a temporally fresh exact attestation, propagates no-create/
   migrate/repair Store mode through spawned hooks, and suppresses roster
@@ -121,7 +119,7 @@ the full acceptance history.
   zero-token no-bypass routing probe, but it predates the persisted-parent fix.
   Exact packaged candidate `1a58e5e` is ready; after the operator returns it
   needs one attended refresh, changed-hook trust, and fresh current-profile
-  canary. No preexisting attestation may satisfy that recheck.
+  canary. No preexisting or isolated attestation may satisfy that recheck.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, signed-delivery verification, and an
   attended Windows Hello success-and-denial canary. The remote session cannot

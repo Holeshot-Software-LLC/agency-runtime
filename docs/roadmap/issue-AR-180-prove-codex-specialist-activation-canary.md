@@ -155,6 +155,19 @@ not contain this correction. No activation or production `GO` is claimed until
 exact candidate `1a58e5e` receives attended refresh and hook trust, then passes
 one fresh current-profile canary.
 
+One bounded isolated-profile attempt from the exact wheel was retained as
+negative evidence, not retried. Isolated mode intentionally remained on ordinary
+semantic planning and selected two units, `finops-engineer` and `code-reviewer`,
+for trace `019fa6c9-1e2d-7021-acdd-5a4b08113f85`. The exact-one-child verifier
+rejected the invocation with no accepted collaboration, no activation evidence,
+no header, and no attestation, then closed its sole active run. The content-free
+12,614-byte report has SHA-256
+`65981b64cb441e550bcc949ed5dfbdd37c8c7a3201c062091d3215a36c1fae95`.
+This does not contradict or exercise the persisted-parent correction: the
+nonce-bound deterministic fixture is admitted only by the current-profile
+existing-Store verification contract. It confirms that isolated semantic
+planning cannot substitute for the final attended proof.
+
 ## Approach
 
 Define a deterministic, time-bounded Codex activation probe whose requested
