@@ -279,6 +279,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8c7d8df` | 2026-07-28 | fix(updates): bind attended installers to owning environment | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-28-8c7d8df-bind-attended-installers.md) |
 | `380f899` | 2026-07-28 | fix(codex): bind V2 hooks to native child evidence | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md), [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-28-380f899-bind-codex-v2-native-evidence.md) |
 | `d6611ca` | 2026-07-28 | fix(codex): fail fast on stale hook trust | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md), [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-28-d6611ca-fail-fast-codex-hook-trust.md) |
+| `9e86898` | 2026-07-28 | fix(windows): preserve owner control and service runtimes | [AR-193](../roadmap/issue-AR-193-preserve-authoritative-windows-master-reads.md), [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [detail](2026-07-28-9e86898-owner-control-service-runtimes.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
