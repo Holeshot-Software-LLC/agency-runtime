@@ -268,6 +268,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `640b6c5` | 2026-07-27 | docs(checkpoint): record exact Codex operator gate | [AR-187](../roadmap/issue-AR-187-isolate-native-host-lifecycle-cwd.md) | null |
 | `23dd496` | 2026-07-27 | fix(canary): request exact Codex child activation | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | null |
 | `5d39042` | 2026-07-27 | fix(canary): preserve one-unit Codex delegation | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | null |
+| `9c7a3d3` | 2026-07-27 | fix(canary): isolate activation from planner fanout | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
