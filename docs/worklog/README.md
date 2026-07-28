@@ -276,6 +276,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e21eab3` | 2026-07-28 | feat(updates): add immutable attended upgrade discovery | [AR-188](../roadmap/issue-AR-188-add-immutable-update-discovery.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-28-e21eab3-immutable-update-discovery.md) |
 | `7d6558a` | 2026-07-28 | feat(installer): add attended owned host uninstall | [AR-189](../roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) | [detail](2026-07-28-7d6558a-attended-owned-host-uninstall.md) |
 | `1011a89` | 2026-07-28 | docs(demo): record live uninstall preview | [AR-189](../roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) | null |
+| `8c7d8df` | 2026-07-28 | fix(updates): bind attended installers to owning environment | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-28-8c7d8df-bind-attended-installers.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
