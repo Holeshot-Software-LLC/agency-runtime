@@ -107,6 +107,18 @@ warning-strict canary and activation tests pass; an exact artifact refresh and
 live current-profile proof are the remaining gates. Tracker creation remains
 pending authorization.
 
+Exact `main` candidate `194d697` is installed as plugin
+`0.1.0+codex.edc73d72c476`, bundle `5f7913...`, install ID
+`44d37728-83b5-4377-b1f5-a8a9a403ccf3`. The first post-install approval used
+stale definitions retained by an already-open Codex process: Codex's own
+`hooks/list` reported all eight current entries as `modified`, so the verifier
+correctly produced no Store evidence. After a fresh Codex process and renewed
+approval, `hooks/list` reported all eight entries enabled and `trusted`. A
+zero-token, invalid-model `codex exec` probe without the trust bypass then
+persisted exactly one accepted `codex_activation_canary_contract` route, one
+`code-reviewer` unit, and a ready preflight before the expected model rejection.
+The exact live activation graph remains the next and only current gate.
+
 ## Approach
 
 Define a deterministic, time-bounded Codex activation probe whose requested

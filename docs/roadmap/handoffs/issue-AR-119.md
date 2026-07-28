@@ -100,6 +100,10 @@ the full acceptance history.
   user approved each generated eight-hook inventory in the terminal TUI. Their
   fresh failures were parent-only execution and then two-unit planner fanout,
   not trust-store bypass or stale evidence reuse.
+- Exact `194d697` is installed. A fresh Codex process now reports all eight
+  current plugin hooks enabled and trusted. A zero-token no-bypass startup probe
+  persisted the nonce-bound one-unit `code-reviewer` route and ready preflight;
+  one bounded live activation proof is the remaining AR-180 gate.
 - AR-185 now routes the exact verification-only command before generic install,
   binds success to a temporally fresh exact attestation, propagates no-create/
   migrate/repair Store mode through spawned hooks, and suppresses roster
@@ -111,10 +115,10 @@ the full acceptance history.
 
 ## exact-blocker
 
-- The deterministic activation-route candidate still needs a clean commit,
-  exact artifact build/install, one attended Codex refresh, renewed terminal-TUI
-  hook approval, and one fresh bounded current-profile canary. No preexisting
-  attestation may satisfy that recheck.
+- The installed deterministic activation-route candidate has current eight-hook
+  trust and a successful zero-token no-bypass routing probe. It still needs one
+  fresh bounded current-profile canary; no preexisting attestation may satisfy
+  that recheck.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, signed-delivery verification, and an
   attended Windows Hello success-and-denial canary. The remote session cannot
@@ -137,11 +141,11 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Commit and ledger the deterministic activation route after focused checks;
-   build and install that exact clean checkpoint.
-2. Run one attended Codex refresh, renew the generated hook inventory trust,
-   then run one bounded current-profile activation verification and inspect its
-   correlated read-only evidence.
+1. Run one bounded current-profile activation verification against installed
+   candidate `194d697` and inspect its correlated read-only evidence.
+2. If it passes, record the exact attestation and demo verdict. If it fails,
+   preserve the failure and fix only the smallest evidenced defect before one
+   more bounded attempt.
 
 ## verification
 
