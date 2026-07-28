@@ -518,6 +518,267 @@ def _process_result(stdout: str, *, timed_out: bool = False) -> SimpleNamespace:
     )
 
 
+def _write_codex_rollout(
+    root: Path,
+    thread_id: str,
+    events: list[dict[str, object]],
+    *,
+    day: str = "27",
+) -> Path:
+    directory = root / "2026" / "07" / day
+    directory.mkdir(parents=True, exist_ok=True)
+    for candidate in (root, root / "2026", root / "2026" / "07", directory):
+        candidate.chmod(0o700)
+    path = directory / f"rollout-2026-07-{day}T12-00-00-{thread_id}.jsonl"
+    path.write_text(
+        "\n".join(json.dumps(event) for event in events) + "\n",
+        encoding="utf-8",
+    )
+    path.chmod(0o600)
+    return path
+
+
+def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> None:
+    parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    receiver_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    tool_use_id = "call-native-spawn"
+    task_name = "unit_code_review"
+    original_task = "Review the implementation."
+    encrypted_parent_message = "gAAAAABopaque-parent-tool-ciphertext"
+    activation_token = "x" * 43
+    prompt_body = "You are the exact reviewer."
+    delivery = render_native_child_prompt_delivery(
+        original_task,
+        prompt_body,
+        host="codex",
+        parent_session_id=parent_id,
+        parent_trace_id="trace",
+        tool_use_id=tool_use_id,
+        work_unit_id="unit-code",
+        specialist_slug="code-reviewer",
+        specialist_version="v1",
+        specialist_prompt_hash=response_hash(prompt_body),
+        activation_token=activation_token,
+    )
+    rollout_root = tmp_path / "sessions"
+    _write_codex_rollout(
+        rollout_root,
+        parent_id,
+        [
+            {"type": "session_meta", "payload": {"id": parent_id, "source": "exec"}},
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "spawn-item",
+                    "name": "spawn_agent",
+                    "namespace": "collaboration",
+                    "call_id": tool_use_id,
+                    "arguments": json.dumps(
+                        {
+                            "fork_turns": "none",
+                            "message": encrypted_parent_message,
+                            "task_name": task_name,
+                        }
+                    ),
+                },
+            },
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "sub_agent_activity",
+                    "event_id": tool_use_id,
+                    "agent_thread_id": receiver_id,
+                    "agent_path": f"/root/{task_name}",
+                    "kind": "started",
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": tool_use_id,
+                    "output": json.dumps({"task_name": f"/root/{task_name}"}),
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "wait-item",
+                    "name": "wait_agent",
+                    "namespace": "collaboration",
+                    "call_id": "call-native-wait",
+                    "arguments": json.dumps({"timeout_ms": 60_000}),
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": "call-native-wait",
+                    "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
+                },
+            },
+        ],
+    )
+    child_path = _write_codex_rollout(
+        rollout_root,
+        receiver_id,
+        [
+            {
+                "type": "session_meta",
+                "payload": {
+                    "id": receiver_id,
+                    "source": {
+                        "subagent": {
+                            "thread_spawn": {
+                                "parent_thread_id": parent_id,
+                                "depth": 1,
+                                "agent_path": f"/root/{task_name}",
+                            }
+                        }
+                    },
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "developer",
+                    "content": [{"type": "input_text", "text": delivery}],
+                },
+            },
+            {"type": "event_msg", "payload": {"type": "task_complete"}},
+        ],
+    )
+    stdout = "\n".join(
+        json.dumps(event)
+        for event in [
+            {"type": "thread.started", "thread_id": parent_id},
+            {
+                "type": "item.completed",
+                "item": {
+                    "id": "stdout-wait",
+                    "type": "collab_tool_call",
+                    "tool": "wait",
+                    "sender_thread_id": parent_id,
+                    "receiver_thread_ids": [],
+                    "prompt": None,
+                    "agents_states": {},
+                    "status": "completed",
+                },
+            },
+            {
+                "type": "item.completed",
+                "item": {"type": "agent_message", "text": _valid_header()},
+            },
+            {"type": "turn.completed"},
+        ]
+    )
+
+    record = codex_canary_record(
+        _process_result(stdout),
+        profile_scope="current-profile",
+        rollout_root=rollout_root,
+    )
+
+    assert record["status"] == "completed"
+    collaboration = record["collaboration"]
+    assert collaboration["evidence_source"] == "persisted_rollout"
+    assert collaboration["spawn_count"] == 1
+    assert collaboration["wait_count"] == 1
+    assert collaboration["calls"][0]["native_task_name"] == task_name
+    assert collaboration["calls"][0]["event_type"] == "rollout_call_completed"
+    assert collaboration["calls"][0]["receiver_thread_ids"] == [receiver_id]
+    encoded = json.dumps(record)
+    assert activation_token not in encoded
+    assert prompt_body not in encoded
+    assert original_task not in encoded
+    assert encrypted_parent_message not in encoded
+
+    conflict = [json.loads(line) for line in stdout.splitlines()]
+    conflict[1]["item"]["receiver_thread_ids"] = ["019fa6a6-bbbb-7ccc-8ddd-eeffeeffeeff"]
+    conflict[1]["item"]["agents_states"] = {
+        "019fa6a6-bbbb-7ccc-8ddd-eeffeeffeeff": {"status": "completed"}
+    }
+    conflicting_record = codex_canary_record(
+        _process_result("\n".join(json.dumps(event) for event in conflict)),
+        profile_scope="current-profile",
+        rollout_root=rollout_root,
+    )
+    assert conflicting_record["status"] == "failed"
+
+    child_path.write_text(
+        child_path.read_text(encoding="utf-8")
+        + json.dumps(
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "nested-tool",
+                    "name": "spawn_agent",
+                    "namespace": "collaboration",
+                    "call_id": "nested-call",
+                    "arguments": "{}",
+                },
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    child_path.chmod(0o600)
+    nested_record = codex_canary_record(
+        _process_result(stdout),
+        profile_scope="current-profile",
+        rollout_root=rollout_root,
+    )
+    assert nested_record["status"] == "failed"
+
+
+def test_codex_v2_rollout_projection_fails_closed_on_ambiguous_parent(
+    tmp_path: Path,
+) -> None:
+    parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    rollout_root = tmp_path / "sessions"
+    events = [{"type": "session_meta", "payload": {"id": parent_id, "source": "exec"}}]
+    _write_codex_rollout(rollout_root, parent_id, events, day="27")
+    _write_codex_rollout(rollout_root, parent_id, events, day="28")
+    stdout = "\n".join(
+        [
+            json.dumps({"type": "thread.started", "thread_id": parent_id}),
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": _valid_header()},
+                }
+            ),
+            json.dumps({"type": "turn.completed"}),
+        ]
+    )
+
+    record = codex_canary_record(
+        _process_result(stdout),
+        profile_scope="current-profile",
+        rollout_root=rollout_root,
+    )
+
+    assert record["status"] == "failed"
+    assert "collaboration" not in record
+
+
+def test_codex_ephemeral_parent_failure_is_classified_without_raw_stderr() -> None:
+    parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    result = _process_result("")
+    result.returncode = 1
+    result.stderr = f"collab spawn failed: no thread with id: {parent_id}"
+
+    record = codex_canary_record(result, profile_scope="current-profile")
+
+    assert record["failure_reason"] == "native_collaboration_full_history_parent_unavailable"
+    assert parent_id not in json.dumps(record)
+
+
 def test_codex_jsonl_parser_projects_one_spawn_wait_chain_without_prompt_content() -> None:
     receiver_id = "019fa500-1111-7222-8333-444455556666"
     prompt = render_native_child_prompt_delivery(

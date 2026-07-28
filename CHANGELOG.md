@@ -37,6 +37,14 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex activation canaries now use a persisted non-ephemeral parent, force the
+  V2 collaboration surface, and request `fork_turns="none"` for their single
+  bounded child. The verifier reconstructs exact spawn, wait, parent-child,
+  child-completion, and no-grandchild evidence from owner-private bounded
+  rollouts without retaining prompt or reasoning content, then reconciles it
+  with the Agency Store. Product trials and native-only canaries remain outside
+  that activation topology; native-only execution is ephemeral with delegation
+  disabled and matching no-tool instructions.
 - The Codex current-profile activation canary now recognizes only its exact
   native-verified, nonce-bound diagnostic task and projects one read-only,
   no-tool `code-reviewer` unit without invoking the variable workforce planner.

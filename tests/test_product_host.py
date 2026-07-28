@@ -109,6 +109,29 @@ def test_codex_product_host_uses_isolated_workspace_write_profile(
     assert observed["invocation"]["workdir"] == str(tmp_path)
 
 
+def test_codex_product_backend_does_not_require_activation_rollout_topology(
+    tmp_path: Path,
+) -> None:
+    marketplace = tmp_path / "marketplace"
+    manifest = marketplace / ".agents" / "plugins" / "marketplace.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("{}", encoding="utf-8")
+
+    backend = product_host._codex_product_backend(
+        native={"managed_target": str(marketplace)},
+        db_path=tmp_path / "agency.db",
+        timeout=60,
+        master_enabled=True,
+        model="",
+        resolver=lambda _host: "codex",
+        runner=None,
+        environ={"HOME": str(tmp_path), "PATH": ""},
+    )
+
+    assert "--ephemeral" in backend.exec_options
+    assert backend.require_exact_activation_rollout is False
+
+
 def test_product_host_rejects_unsupported_hosts_and_prompt_drift(tmp_path: Path) -> None:
     prompt = "Build."
     with pytest.raises(ValueError, match="no proven isolated workspace-write"):

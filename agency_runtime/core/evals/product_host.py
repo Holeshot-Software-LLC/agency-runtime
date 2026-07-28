@@ -121,6 +121,7 @@ def _codex_product_backend(
         master_enabled=master_enabled,
         profile_scope="isolated-profile",
         exec_options=_codex_options(model),
+        require_exact_activation_rollout=False,
     )
 
 

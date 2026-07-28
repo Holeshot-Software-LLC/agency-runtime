@@ -119,6 +119,34 @@ persisted exactly one accepted `codex_activation_canary_contract` route, one
 `code-reviewer` unit, and a ready preflight before the expected model rejection.
 The exact live activation graph remains the next and only current gate.
 
+The bounded live attempt at 02:47 UTC then proved the trusted hooks and the
+deterministic route again: trace `019fa69e-79a0-7991-a0a0-f2a97db803e5`
+contained exactly one accepted `code-reviewer` unit. It produced no activation
+receipt, consumption, worker run, specialist load, or model receipt, and the
+verifier correctly closed the run as `canary_failed`. A same-binary controlled
+comparison isolated the host failure. The prior `--ephemeral` form took about
+73.5 seconds and returned `collab spawn failed: no thread with id`; the same
+request without `--ephemeral` completed in about 13.5 seconds and its persisted
+parent and child rollouts proved one `spawn_agent`, one `wait_agent`, one
+parent-child edge, and child completion. Codex exec JSONL omitted the successful
+V2 spawn and emitted a wait with no receivers, so stdout alone cannot establish
+the exact native topology.
+
+The source candidate removes `--ephemeral` only from the activation path,
+forces `multi_agent_v2`, and requires `fork_turns="none"`. Its verifier reads a
+fixed-depth, owner-private, size- and event-bounded parent/child rollout pair,
+requires stable identity and exact cardinality/order, rejects nested child
+activity, retains only content-free identities and hashes, and reconciles the
+lossy stdout projection before the existing Store proof runs. Persisted rollout
+proof is an explicit activation-only backend mode: deferred product trials keep
+their custom ephemeral response contract, while native-only canaries remain
+ephemeral with delegation disabled and matching no-tool developer instructions.
+The current focused package passes 156 warning-strict tests, plus lint, format,
+and whitespace checks. Installed checkpoint `194d697` does not contain this
+correction. No activation or production `GO` is claimed until an exact refreshed
+candidate receives attended hook trust and passes one fresh current-profile
+canary.
+
 ## Approach
 
 Define a deterministic, time-bounded Codex activation probe whose requested

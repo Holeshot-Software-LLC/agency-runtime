@@ -3354,6 +3354,27 @@ projection. Broad line-count-only decomposition is explicitly excluded from
 the production push; only those evidence-backed boundaries are candidates for
 the next package.
 
+### Persisted Codex activation checkpoint 2026-07-27
+
+The latest trusted live canary again reached the deterministic one-unit
+`code-reviewer` route but produced no native activation evidence. A bounded
+same-binary control established that Codex V2 delegation with `--ephemeral`
+cannot recover the parent history required by its default fork: it failed after
+about 73.5 seconds with a missing-parent error. The non-ephemeral form completed
+in about 13.5 seconds and persisted one exact spawn, wait, parent-child edge,
+and child completion even though exec JSONL omitted the successful spawn.
+
+AR-180 now owns a source correction that keeps the activation parent persisted,
+forces V2, requests `fork_turns="none"`, and reconciles bounded owner-private
+rollout identity with the existing Store proof without retaining prompt or
+reasoning content. The shared backend enables that contract only for Agency
+activation: deferred product trials retain their custom ephemeral response
+contract, and native-only canaries are ephemeral, delegation-disabled, and
+no-tool. The current focused package passes 156 warning-strict tests with lint
+and formatting clean. Installed checkpoint `194d697` predates the correction;
+attended refresh, renewed hook trust, and one fresh bounded live canary remain.
+No hosted or exhaustive workflow was run or is required for this checkpoint.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their

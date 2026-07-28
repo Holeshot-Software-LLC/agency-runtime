@@ -51,10 +51,16 @@ CODEX_CANARY_DEVELOPER_INSTRUCTIONS = (
     "the requested review directly, use no tools, and return one concise sentence. "
     "Otherwise you are the parent, and the user explicitly requested exactly one sub-agent "
     "for the whole unit: follow the injected [AGENCY DELEGATION PLAN], require exactly one "
-    "row, call spawn_agent exactly once with that row's exact native_task_name and exact "
-    "goal, and then call wait_agent exactly once with a 60000 ms timeout for that sole child. "
+    "row, call spawn_agent exactly once with fork_turns set to none, that row's exact "
+    "native_task_name, and exact goal, and then call wait_agent exactly once with a 60000 ms "
+    "timeout for that sole child. "
     "Use no other tools. Return the child's conclusion with the required Agency header. "
     "Do not modify files, call external services, or expose secrets."
+)
+CODEX_NATIVE_ONLY_DEVELOPER_INSTRUCTIONS = (
+    "This is a bounded Agency Runtime native-only installation canary. Reply with one "
+    "concise plain confirmation. Do not delegate, use tools, emit an Agency header, "
+    "modify files, call external services, or expose secrets."
 )
 NATIVE_ONLY_CANARY_PROMPT = (
     "Agency Runtime native-only installation canary. Reply with a concise plain "
@@ -71,9 +77,10 @@ CODEX_CURRENT_PROFILE_EXEC_OPTIONS = (
     "--json",
     "--color",
     "never",
-    "--ephemeral",
     "--ignore-rules",
     "--strict-config",
+    "--enable",
+    "multi_agent_v2",
     "--sandbox",
     "read-only",
     "-c",
@@ -95,6 +102,37 @@ CODEX_CURRENT_PROFILE_EXEC_OPTIONS = (
 )
 CODEX_CANARY_EXEC_OPTIONS = (
     *CODEX_CURRENT_PROFILE_EXEC_OPTIONS[:-1],
+    "--dangerously-bypass-hook-trust",
+    "-",
+)
+CODEX_NATIVE_ONLY_CURRENT_PROFILE_EXEC_OPTIONS = (
+    "--json",
+    "--color",
+    "never",
+    "--ephemeral",
+    "--ignore-rules",
+    "--strict-config",
+    "--sandbox",
+    "read-only",
+    "-c",
+    "features.shell_tool=false",
+    "-c",
+    "features.unified_exec=false",
+    "-c",
+    'web_search="disabled"',
+    "-c",
+    "apps._default.enabled=false",
+    "-c",
+    "mcp_servers={}",
+    "-c",
+    "agents.enabled=false",
+    "-c",
+    f"developer_instructions={json.dumps(CODEX_NATIVE_ONLY_DEVELOPER_INSTRUCTIONS)}",
+    "--skip-git-repo-check",
+    "-",
+)
+CODEX_NATIVE_ONLY_CANARY_EXEC_OPTIONS = (
+    *CODEX_NATIVE_ONLY_CURRENT_PROFILE_EXEC_OPTIONS[:-1],
     "--dangerously-bypass-hook-trust",
     "-",
 )
@@ -196,6 +234,7 @@ def _backend(
     master_enabled: bool = True,
     profile_scope: str = "isolated-profile",
     require_existing_store: bool = False,
+    require_exact_activation_rollout: bool = False,
 ):
     return _backends.backend(
         host,
@@ -208,6 +247,7 @@ def _backend(
         master_enabled=master_enabled,
         profile_scope=profile_scope,
         require_existing_store=require_existing_store,
+        require_exact_activation_rollout=require_exact_activation_rollout,
     )
 
 

@@ -203,6 +203,7 @@ def test_agency_canary_explicitly_requests_one_whole_unit_subagent() -> None:
         canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     )
     assert "wait_agent exactly once" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
+    assert "fork_turns set to none" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
 
 
 def test_canary_output_and_records_cover_empty_and_failed_results() -> None:
@@ -379,8 +380,20 @@ def test_prepare_live_invocation_uses_default_backend_contract(
     assert prepared.error is None
     assert calls[0]["native"] == _native()
     assert calls[0]["master_enabled"] is False
+    assert calls[0]["require_exact_activation_rollout"] is False
     assert prepared.prompt is not None
     assert prepared.prompt.startswith(canary.NATIVE_ONLY_CANARY_PROMPT)
+
+    agency = canary._prepare_live_invocation(
+        "codex",
+        path=tmp_path / "agency.db",
+        timeout=2,
+        native=_native(),
+        backend_factory=factory,
+        mode="agency",
+    )
+    assert agency.error is None
+    assert calls[1]["require_exact_activation_rollout"] is True
 
 
 def test_profile_and_proof_helpers_cover_current_and_receipt_failure() -> None:

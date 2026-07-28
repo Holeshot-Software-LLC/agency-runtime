@@ -770,6 +770,12 @@ def test_codex_safe_backend_isolates_auth_plugins_config_and_secrets(
         (
             json.dumps(
                 {
+                    "type": "thread.started",
+                    "thread_id": "019fa6a6-9432-7c70-a594-68ccdf7e4988",
+                }
+            ),
+            json.dumps(
+                {
                     "type": "item.completed",
                     "item": {"type": "agent_message", "text": _valid_header()},
                 }
@@ -824,6 +830,11 @@ def test_codex_safe_backend_isolates_auth_plugins_config_and_secrets(
 
     assert result["status"] == "completed"
     assert result["output"] == _valid_header()
+    assert result["collaboration"]["spawn_count"] == 0
+    assert result["collaboration"]["wait_count"] == 0
+    assert "--ephemeral" in calls[-1]["argv"]
+    assert "agents.enabled=false" in calls[-1]["argv"]
+    assert "multi_agent_v2" not in calls[-1]["argv"]
     assert (real_home / "auth.json").read_text(encoding="utf-8") == json.dumps({"token": secret})
     assert config.read_text(encoding="utf-8") == 'model = "real-profile"\n'
     flattened_argv = json.dumps([call["argv"] for call in calls])
@@ -985,8 +996,11 @@ def test_current_codex_cli_exposes_every_canary_command_capability(
     }:
         assert option in exec_help
     assert CODEX_CANARY_EXEC_OPTIONS[-1] == "-"
+    assert "--ephemeral" not in CODEX_CANARY_EXEC_OPTIONS
+    assert "--ephemeral" not in CODEX_CURRENT_PROFILE_EXEC_OPTIONS
     assert "--ignore-user-config" not in CODEX_CANARY_EXEC_OPTIONS
     assert "--ignore-rules" in CODEX_CANARY_EXEC_OPTIONS
+    assert "multi_agent_v2" in CODEX_CANARY_EXEC_OPTIONS
     assert "--dangerously-bypass-hook-trust" not in CODEX_CURRENT_PROFILE_EXEC_OPTIONS
     assert "--json" in help_text("plugin", "marketplace", "add")
     assert "--json" in help_text("plugin", "add")
@@ -1037,6 +1051,7 @@ def test_current_profile_codex_canary_uses_real_profile_without_trust_bypass(
         runner=runner,
         environ={"CODEX_HOME": str(real_home), "HOME": str(tmp_path), "PATH": "C:/tools"},
         profile_scope="current-profile",
+        require_exact_activation_rollout=True,
     )
     workdir = tmp_path / "empty-workdir"
     workdir.mkdir()

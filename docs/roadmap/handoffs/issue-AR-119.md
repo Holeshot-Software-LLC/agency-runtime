@@ -28,8 +28,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 5d390424eeb68fe94b3cf713c85a886fa196eefc
-minimum_ledger_commit: 5a26dbe19ebb967f38440552b28b11635a4c5598
+evidence_commit: 8f4c3b7542e22c12c7ae804d588ebcfc83fe1ef8
+minimum_ledger_commit: 2ecff13e71af5e0c01454454c663970c318868e7
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -42,17 +42,17 @@ the full acceptance history.
 
 ## checkpoint
 
-- Latest clean recovery pair is AR-180 `5d39042`/`5a26dbe`; the deterministic
-  activation-route implementation is the next bounded substantive checkpoint.
-- Branch `main` resolves to `5a26dbe`; `origin/main` remains `bef478a`. The user
+- Latest clean recovery pair is AR-180 `8f4c3b7`/`2ecff13`; the persisted Codex
+  collaboration correction is the next bounded substantive checkpoint.
+- Branch `main` resolves to `2ecff13`; `origin/main` remains `194d697`. The user
   authorized pushing the verified result. No manual/exhaustive workflow was
   dispatched.
 - User draft `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged
   and excluded from every commit.
-- Exact checkpoint `c71ce0a` is installed as plugin
-  `0.1.0+codex.4bced9ea8e5a`; its attended refresh and all eight hook approvals
-  succeeded. Its live canary reached Agency but planner fanout produced two
-  units, so activation correctly remained unverified.
+- Exact checkpoint `194d697` is installed as plugin
+  `0.1.0+codex.edc73d72c476`; all eight hooks are currently trusted for that
+  exact launcher. The source correction is intentionally not installed while
+  the operator is remote because its changed launcher will need attended trust.
 
 ## completed-evidence
 
@@ -70,10 +70,6 @@ the full acceptance history.
 - The named fast spine passes 522 tests with 5 platform skips; all 106 dashboard
   tests and every routing/delegation evaluation gate pass. Exhaustive coverage
   and six-version compatibility now run only on explicit `workflow_dispatch`.
-- ADR-0104's exact existing-install Codex refresh passes attended Windows Hello,
-  atomic publication, native remove/add, and postcondition proof. New install ID
-  is `7761d792-3dc3-4c92-8084-5cd524c63103`; bundle is `0c3696e1...084f3`;
-  native version is `0.1.0+codex.a106953cb0c7`; the exact prior backup remains.
 - AR-179 binds named standards to typed review. A fresh live route with two
   serial Codex provider calls took about 59 seconds and truthfully abstained
   when installed native capability could not satisfy eight planned units; it
@@ -91,19 +87,23 @@ the full acceptance history.
 - Expired dashboard host inspection now neutralizes canary and maturity claims;
   the Codex card labels verified evidence as the last successful activation
   proof and renders its full content-free fingerprint without an execute button.
-- AR-187 isolates native lifecycle commands from the ambient CWD without
-  relaxing repository-ancestor exclusion. Its 98 focused tests pass with one
-  platform skip. Exact `f3e8961` canonical wheel/source verification and strict
-  Twine pass; wheel SHA-256 is `395488c8...041fa`, sdist SHA-256 is
-  `5993c6a6...e329b`, and the installed uv receipt points to that exact wheel.
-- Two subsequent attended exact refreshes passed Windows owner presence and the
-  user approved each generated eight-hook inventory in the terminal TUI. Their
-  fresh failures were parent-only execution and then two-unit planner fanout,
-  not trust-store bypass or stale evidence reuse.
 - Exact `194d697` is installed. A fresh Codex process now reports all eight
   current plugin hooks enabled and trusted. A zero-token no-bypass startup probe
   persisted the nonce-bound one-unit `code-reviewer` route and ready preflight;
   one bounded live activation proof is the remaining AR-180 gate.
+- The 02:47 UTC bounded canary again proved trusted routing and one exact
+  `code-reviewer` unit, then failed truthfully with zero native activation
+  evidence. Controlled native Codex runs isolated the cause: V2 delegation
+  with `--ephemeral` could not recover its parent history and failed after about
+  73.5 seconds, while the non-ephemeral form completed in about 13.5 seconds and
+  persisted one spawn, one wait, one child edge, and child completion.
+- The source candidate now makes exact rollout reconciliation an explicit
+  activation-only contract. It removes `--ephemeral`, forces V2, uses
+  `fork_turns="none"`, and validates owner-private bounded parent/child rollouts
+  without retaining prompt or reasoning content. Deferred product trials keep
+  their custom ephemeral response contract. Native-only canaries are separately
+  ephemeral, delegation-disabled, and no-tool. The current focused package
+  passes 156 warning-strict tests with lint and formatting clean.
 - AR-185 now routes the exact verification-only command before generic install,
   binds success to a temporally fresh exact attestation, propagates no-create/
   migrate/repair Store mode through spawned hooks, and suppresses roster
@@ -115,10 +115,11 @@ the full acceptance history.
 
 ## exact-blocker
 
-- The installed deterministic activation-route candidate has current eight-hook
-  trust and a successful zero-token no-bypass routing probe. It still needs one
-  fresh bounded current-profile canary; no preexisting attestation may satisfy
-  that recheck.
+- The installed `194d697` candidate has current eight-hook trust and a successful
+  zero-token no-bypass routing probe, but it predates the persisted-parent fix.
+  The corrected source must be checkpointed, packaged, installed, and trusted
+  after the operator returns, then pass one fresh bounded current-profile
+  canary. No preexisting attestation may satisfy that recheck.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, signed-delivery verification, and an
   attended Windows Hello success-and-denial canary. The remote session cannot
@@ -141,9 +142,12 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Run one bounded current-profile activation verification against installed
-   candidate `194d697` and inspect its correlated read-only evidence.
-2. If it passes, record the exact attestation and demo verdict. If it fails,
+1. Finish the corrected source checkpoint and bounded local verification without
+   changing the installed launcher or trust state while the operator is remote.
+2. After the operator returns, build and verify the exact candidate, perform one
+   attended existing-install refresh, trust the changed eight-hook inventory,
+   and run one bounded current-profile activation verification.
+3. If it passes, record the exact attestation and demo verdict. If it fails,
    preserve the failure and fix only the smallest evidenced defect before one
    more bounded attempt.
 

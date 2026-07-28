@@ -298,6 +298,7 @@ def prepare_live_invocation(
                 master_enabled=master_enabled,
                 profile_scope=profile_scope,
                 require_existing_store=require_existing_store,
+                require_exact_activation_rollout=host == "codex" and mode == "agency",
             )
         else:
             backend = backend_factory(host, db_path=path, timeout=timeout)
@@ -410,8 +411,9 @@ def _codex_collaboration_chain(
         or len(wait_rows) != 1
         or spawn_rows[0].get("status") != "completed"
         or wait_rows[0].get("status") != "completed"
-        or spawn_rows[0].get("event_type") != "item.completed"
-        or wait_rows[0].get("event_type") != "item.completed"
+        or spawn_rows[0].get("event_type") not in {"item.completed", "rollout_call_completed"}
+        or wait_rows[0].get("event_type") not in {"item.completed", "rollout_call_completed"}
+        or spawn_rows[0].get("event_type") != wait_rows[0].get("event_type")
     ):
         return None, "", ("Codex did not prove exactly one completed spawn and one completed wait",)
     spawn = spawn_rows[0]
@@ -639,6 +641,8 @@ def codex_activation_failures(
         )
 
         expected_task_name = codex_task_name_for_work_unit(work_unit_id)
+    if spawn.get("native_task_name") not in {None, expected_task_name}:
+        failures.append("Codex spawned a different native task than the exact planned unit")
     synthetic_identity = (
         f"task:{expected_task_name}",
         f"codex-task:{expected_task_name}",
