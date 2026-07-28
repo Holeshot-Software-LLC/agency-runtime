@@ -19,6 +19,7 @@ from uuid import UUID, uuid4
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation.native_labels import (
+    CODEX_TASK_NAME_PATTERN,
     codex_task_name_for_work_unit,
     internal_work_unit_from_codex_task_name,
 )
@@ -26,6 +27,7 @@ from agency_runtime.core.header.finalize import (
     TERMINAL_ACTION_STATUS,
     TERMINAL_OUTCOME_MESSAGES,
 )
+from agency_runtime.core.installer_contracts import CODEX_NATIVE_SPAWN_HOOK_TOOL_NAMES
 from agency_runtime.core.native_child_activation import (
     NATIVE_CHILD_ACTIVATION_TOKEN_CHARS,
     NativeChildRunIdentity,
@@ -131,8 +133,8 @@ _DELEGATION_TOOL_NAMES = {
 _CODEX_SPAWN_TOOL_NAMES = frozenset(
     {
         "Agent",
-        "spawn_agent",
         "functions.collaboration.spawn_agent",
+        *CODEX_NATIVE_SPAWN_HOOK_TOOL_NAMES,
     }
 )
 _CLAUDE_AGENT_TOOL_NAME = "Agent"
@@ -378,6 +380,28 @@ def _pre_tool_use_denial(reason: object, *, host: str = "") -> dict[str, Any]:
     }
 
 
+def _native_child_response_mapping(host: str, tool_response: Any) -> dict[str, Any] | None:
+    """Return one bounded host response mapping without inventing provenance."""
+
+    projected_response = tool_response
+    if host == "codex" and isinstance(tool_response, str):
+        try:
+            decoded = safe_load_bounded_json(
+                tool_response,
+                maximum_bytes=MAX_CONTEXT_CHARS,
+                maximum_depth=8,
+                maximum_nodes=64,
+            )
+        except (BoundedJSONError, TypeError, ValueError):
+            return None
+        if not isinstance(decoded, dict):
+            return None
+        projected_response = decoded
+    if not isinstance(projected_response, dict):
+        return None
+    return projected_response
+
+
 def _native_child_tool_identity(
     host: str,
     tool_response: Any,
@@ -386,10 +410,12 @@ def _native_child_tool_identity(
 ) -> tuple[Any, NativeChildRunIdentity | None]:
     """Project only host-returned child identity into activation evidence."""
 
-    if not isinstance(tool_response, dict):
+    projected_response = _native_child_response_mapping(host, tool_response)
+    if projected_response is None:
         return tool_response, None
     agent_id = (
-        _first_string(tool_response, "agent_id", "agentId") or str(fallback_agent_id or "").strip()
+        _first_string(projected_response, "agent_id", "agentId")
+        or str(fallback_agent_id or "").strip()
     )
     if agent_id:
         try:
@@ -398,7 +424,7 @@ def _native_child_tool_identity(
             return tool_response, None
         return (
             {
-                **tool_response,
+                **projected_response,
                 "agent_id": identity.worker_id,
                 "native_run_id": identity.native_run_id,
             },
@@ -406,8 +432,19 @@ def _native_child_tool_identity(
         )
     if host != "codex":
         return tool_response, None
-    task_name = _first_string(tool_response, "task_name", "taskName")
+    task_name = _first_string(projected_response, "task_name", "taskName")
     if not task_name:
+        return tool_response, None
+    if task_name.startswith("/root/"):
+        path_parts = task_name.split("/")
+        if (
+            len(path_parts) < 3
+            or path_parts[:2] != ["", "root"]
+            or any(CODEX_TASK_NAME_PATTERN.fullmatch(part) is None for part in path_parts[2:])
+        ):
+            return tool_response, None
+        task_name = path_parts[-1]
+    if CODEX_TASK_NAME_PATTERN.fullmatch(task_name) is None:
         return tool_response, None
     try:
         identity = build_native_child_run_identity(
@@ -419,7 +456,8 @@ def _native_child_tool_identity(
         return tool_response, None
     return (
         {
-            **tool_response,
+            **projected_response,
+            "task_name": task_name,
             "agent_id": identity.worker_id,
             "native_run_id": identity.native_run_id,
         },
@@ -508,7 +546,7 @@ def _canonical_tool_call(
     canonical_delegate = _DELEGATION_TOOL_NAMES.get(tool_name)
     if host in {"claude", "zcode"} and tool_name == "Agent":
         canonical_delegate = "delegate_task"
-    elif host == "codex" and tool_name == "Agent":
+    elif host == "codex" and tool_name in _CODEX_SPAWN_TOOL_NAMES:
         canonical_delegate = "spawn_agent"
     if canonical_delegate:
         work_unit_id = _first_string(args, "work_unit_id", "workUnitId", "task_id", "taskId")
@@ -692,7 +730,20 @@ class HookBridge:
         payload: dict[str, Any],
     ) -> tuple[str, str, str]:
         correlation = self._correlation(payload)
-        trace_id = correlation.trace_id or self._unambiguous_open_trace(correlation.session_id)
+        trace_id = correlation.trace_id
+        run_reader = getattr(self.store, "get_run", None)
+        if trace_id and callable(run_reader):
+            try:
+                candidate = run_reader(trace_id)
+            except Exception:
+                candidate = None
+            if not (
+                isinstance(candidate, dict)
+                and candidate.get("session_id") == correlation.session_id
+                and candidate.get("status") in {"active", "evidence_only"}
+            ):
+                trace_id = ""
+        trace_id = trace_id or self._unambiguous_open_trace(correlation.session_id)
         return correlation.session_id, trace_id, correlation.work_unit_id
 
     def _issue_native_child_parent_scope(
@@ -1348,9 +1399,29 @@ class HookBridge:
             or work_unit_goal_hash(delivery.original_task) != assignment.goal_hash
         ):
             return delivery, tool_response, None, False
+        raw_response = _native_child_response_mapping(self.host, tool_response)
         projected_response, identity = _native_child_tool_identity(self.host, tool_response)
         if identity is None:
             return delivery, projected_response, None, False
+        if self.host == "codex":
+            response_task_name = _first_string(projected_response, "task_name", "taskName")
+            expected_task_name = _first_string(args, "task_name", "taskName")
+            tool_name = _optional_string(payload, "tool_name")
+            raw_task_name = _first_string(raw_response or {}, "task_name", "taskName")
+            if tool_name == "collaborationspawn_agent" and (
+                not isinstance(tool_response, str)
+                or not raw_task_name.startswith("/root/")
+                or response_task_name != expected_task_name
+                or set(projected_response) != {"task_name", "agent_id", "native_run_id"}
+            ):
+                return delivery, projected_response, identity, False
+            if response_task_name and response_task_name != expected_task_name:
+                return delivery, projected_response, identity, False
+        require_native_child_started = (
+            self.host == "codex"
+            and _optional_string(payload, "tool_name") in CODEX_NATIVE_SPAWN_HOOK_TOOL_NAMES
+        )
+        response_supplied_agent_id = bool(_first_string(raw_response or {}, "agent_id", "agentId"))
         lineage = {
             "worker_kind": identity.worker_kind,
             "worker_id": identity.worker_id,
@@ -1368,6 +1439,8 @@ class HookBridge:
                 work_unit_id=delivery.work_unit_id,
                 worker_id=identity.worker_id,
                 native_run_id=identity.native_run_id,
+                require_native_child_started=require_native_child_started,
+                match_native_child_identity=response_supplied_agent_id,
             )
         except ValueError:
             lineage_reader = getattr(self.store, "get_consumed_delegation_lineage", None)
@@ -1378,8 +1451,41 @@ class HookBridge:
                 trace_id=delivery.parent_trace_id,
                 specialist_slug=delivery.specialist_slug,
                 work_unit_id=delivery.work_unit_id,
+                activation_token=delivery.activation_token,
+                tool_use_id=delivery.tool_use_id,
             )
+            if require_native_child_started and isinstance(existing, dict):
+                if response_supplied_agent_id and existing != lineage:
+                    return delivery, projected_response, identity, False
+                try:
+                    identity = build_native_child_run_identity(
+                        worker_kind=existing["worker_kind"],
+                        worker_id=existing["worker_id"],
+                        native_run_id=existing["native_run_id"],
+                    )
+                except (KeyError, TypeError, ValueError):
+                    return delivery, projected_response, None, False
+                projected_response = {
+                    **projected_response,
+                    "agent_id": identity.worker_id,
+                    "native_run_id": identity.native_run_id,
+                }
+                return delivery, projected_response, identity, True
             return delivery, projected_response, identity, existing == lineage
+        if require_native_child_started:
+            try:
+                identity = build_native_child_run_identity(
+                    worker_kind=activation["worker_kind"],
+                    worker_id=activation["worker_id"],
+                    native_run_id=activation["native_run_id"],
+                )
+            except (KeyError, TypeError, ValueError):
+                return delivery, projected_response, None, False
+            projected_response = {
+                **projected_response,
+                "agent_id": identity.worker_id,
+                "native_run_id": identity.native_run_id,
+            }
         verified = (
             isinstance(activation, dict)
             and activation.get("slug") == delivery.specialist_slug
@@ -2284,7 +2390,12 @@ def _run_hook_stdio(
         result = HookBridge(host, store=active_store, _master=master).handle(payload)
         if not isinstance(result, dict):
             raise RuntimeError("hook bridge returned a non-object result")
-        blocked = result.get("continue") is False or result.get("decision") == "block"
+        hook_output = _dict_or_empty(result.get("hookSpecificOutput"))
+        blocked = (
+            result.get("continue") is False
+            or result.get("decision") == "block"
+            or hook_output.get("permissionDecision") == "deny"
+        )
         if blocked:
             mark_current_observation(
                 "denied",

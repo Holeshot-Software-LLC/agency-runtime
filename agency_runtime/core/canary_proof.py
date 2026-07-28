@@ -14,6 +14,15 @@ from agency_runtime.core.installer_contracts import (
 )
 from agency_runtime.core.private_paths import private_temporary_directory
 
+_INVOCATION_FAILURE_REASONS = frozenset(
+    {
+        "native_collaboration_full_history_parent_unavailable",
+        "codex_result_projection_unavailable",
+        "codex_output_projection_unavailable",
+        "codex_collaboration_projection_unavailable",
+    }
+)
+
 
 def _facade():
     """Resolve canary dependencies at call time for monkeypatch compatibility."""
@@ -810,24 +819,28 @@ def evaluate_proof(
             )
         )
         header_passed = header_valid
+    invocation = {
+        "backend": result.get("backend", host),
+        "status": result.get("status"),
+        "exit_code": result.get("exit_code"),
+        "timed_out": result.get("status") == "timed_out",
+        "stdout_truncated": bool(result.get("stdout_truncated")),
+        "stderr_truncated": bool(result.get("stderr_truncated")),
+        "header_valid": header_valid,
+        "header_missing": header_missing,
+        "profile_scope": result_scope,
+        "isolated_plugin": facade._render_isolated_plugin(
+            host,
+            isolated_plugin,
+            plugin_invoked=plugin_invoked,
+        ),
+        "collaboration": result.get("collaboration"),
+    }
+    failure_reason = result.get("failure_reason")
+    if failure_reason in _INVOCATION_FAILURE_REASONS:
+        invocation["failure_reason"] = failure_reason
     return CanaryProof(
-        invocation={
-            "backend": result.get("backend", host),
-            "status": result.get("status"),
-            "exit_code": result.get("exit_code"),
-            "timed_out": result.get("status") == "timed_out",
-            "stdout_truncated": bool(result.get("stdout_truncated")),
-            "stderr_truncated": bool(result.get("stderr_truncated")),
-            "header_valid": header_valid,
-            "header_missing": header_missing,
-            "profile_scope": result_scope,
-            "isolated_plugin": facade._render_isolated_plugin(
-                host,
-                isolated_plugin,
-                plugin_invoked=plugin_invoked,
-            ),
-            "collaboration": result.get("collaboration"),
-        },
+        invocation=invocation,
         result_scope=result_scope,
         passed=bool(
             process_ok

@@ -39,6 +39,7 @@ related:
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
   - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
+  - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
   - docs/RELEASE_CHECKLIST.md
 supersedes: []
 superseded_by: null
@@ -157,6 +158,18 @@ It assumes the operating-system account and Python interpreter are trusted.
   launch a same-labeled worker; the receipt proves exact prompt retrieval for the
   correlated work unit and a native execution, not prompt delivery to, or
   consumption by, that child.
+  Codex MultiAgentV2 also flattens the native tool namespace and name before
+  command-hook delivery. Agency accepts only the exact current flattened name,
+  exact persisted task label and goal, and bounded matching result path, then
+  atomically claims the sole unconsumed child start created after that grant.
+  Codex does not expose the spawning tool-use ID on `SubagentStart`, so this is
+  temporal/cardinality correlation rather than cryptographic process identity;
+  hostile same-account host/plugin code remains inside this residual boundary.
+  Every accepted Codex spawn spelling requires a unique unclaimed lifecycle
+  row. Bounded JSON decoding preserves whether the response supplied a child
+  identity so it must match that lifecycle on first use and replay; V2 also
+  requires a rooted AgentPath. Idempotent replay requires the exact consumed
+  token digest and tool-use ID.
   Forged host-native evidence also remains outside this local protocol boundary.
   Current MCP-backed workers retain generic delegated attribution even when a
   concrete child worker ID is visible.

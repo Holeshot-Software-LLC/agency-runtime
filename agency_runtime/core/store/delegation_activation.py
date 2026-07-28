@@ -196,6 +196,56 @@ def _consume_worker_binding(
     return worker_kind, stored_worker
 
 
+def _consumption_lineage(
+    conn: Any,
+    *,
+    require_native_child_started: bool,
+    receipt: Any,
+    host: str,
+    session_id: str,
+    trace_id: str,
+    work_unit_id: str,
+    worker_id: str,
+    native_run_id: str,
+    match_native_child_identity: bool,
+) -> tuple[str, str]:
+    """Atomically select one unclaimed lifecycle identity when V2 requires it."""
+
+    if type(require_native_child_started) is not bool:
+        raise TypeError("require_native_child_started must be a boolean")
+    if type(match_native_child_identity) is not bool:
+        raise TypeError("match_native_child_identity must be a boolean")
+    if not require_native_child_started:
+        return worker_id, native_run_id
+    child_rows = conn.execute(
+        "SELECT child.worker_id, child.native_run_id FROM worker_runs AS child "
+        "WHERE child.host = ? AND child.session_id = ? AND child.trace_id = ? "
+        "AND child.started_at >= ? "
+        "AND (child.work_unit_id = '' OR child.work_unit_id = ?) "
+        "AND (? = 0 OR (child.worker_id = ? AND child.native_run_id = ?)) "
+        "AND NOT EXISTS (SELECT 1 FROM delegation_activation_consumptions "
+        "AS consumed WHERE consumed.child_host = child.host "
+        "AND consumed.session_id = child.session_id "
+        "AND consumed.trace_id = child.trace_id "
+        "AND consumed.worker_id = child.worker_id "
+        "AND consumed.native_run_id = child.native_run_id) "
+        "ORDER BY child.started_at, child.rowid LIMIT 2",
+        (
+            host,
+            session_id,
+            trace_id,
+            str(receipt["created_at"]),
+            work_unit_id,
+            int(match_native_child_identity),
+            worker_id,
+            native_run_id,
+        ),
+    ).fetchall()
+    if len(child_rows) != 1:
+        raise ValueError("activation requires one unclaimed native-child lifecycle receipt")
+    return str(child_rows[0]["worker_id"]), str(child_rows[0]["native_run_id"])
+
+
 def attach_consumed_activation_to_delegation(
     conn: Any,
     *,
@@ -375,6 +425,8 @@ class DelegationActivationStoreMixin:
         trace_id: str,
         specialist_slug: str,
         work_unit_id: str,
+        activation_token: str = "",
+        tool_use_id: str = "",
     ) -> dict[str, str] | None:
         """Return authoritative native-child lineage for one consumed grant."""
 
@@ -387,15 +439,49 @@ class DelegationActivationStoreMixin:
             required=True,
         )
         unit = _work_unit_identity(work_unit_id, required=True)
+        token = str(activation_token or "").strip()
+        tool_use = validate_correlation_id(
+            tool_use_id,
+            field="tool_use_id",
+            required=False,
+        )
+        if bool(token) != bool(tool_use):
+            raise ValueError(
+                "activation_token and tool_use_id must be supplied together for replay proof"
+            )
+        if token and len(token) > _MAX_ACTIVATION_TOKEN_CHARS:
+            raise ValueError("activation_token is invalid")
+        token_hash = sha256(token.encode("utf-8", errors="surrogatepass")).hexdigest()
         conn = self._connect()
         try:
-            row = conn.execute(
-                "SELECT worker_kind, worker_id, native_run_id "
-                "FROM delegation_activation_consumptions "
-                "WHERE session_id = ? AND trace_id = ? AND work_unit_id = ? "
-                "AND specialist_slug = ? LIMIT 1",
-                (normalized_session, normalized_trace, unit, slug),
-            ).fetchone()
+            if token:
+                row = conn.execute(
+                    "SELECT consumed.worker_kind, consumed.worker_id, "
+                    "consumed.native_run_id "
+                    "FROM delegation_activation_consumptions AS consumed "
+                    "JOIN delegation_activation_receipts AS grant "
+                    "ON grant.id = consumed.legacy_activation_receipt_id "
+                    "AND grant.grant_id = consumed.grant_id "
+                    "WHERE consumed.session_id = ? AND consumed.trace_id = ? "
+                    "AND consumed.work_unit_id = ? AND consumed.specialist_slug = ? "
+                    "AND grant.token_hash = ? AND grant.tool_use_id = ? LIMIT 1",
+                    (
+                        normalized_session,
+                        normalized_trace,
+                        unit,
+                        slug,
+                        token_hash,
+                        tool_use,
+                    ),
+                ).fetchone()
+            else:
+                row = conn.execute(
+                    "SELECT worker_kind, worker_id, native_run_id "
+                    "FROM delegation_activation_consumptions "
+                    "WHERE session_id = ? AND trace_id = ? AND work_unit_id = ? "
+                    "AND specialist_slug = ? LIMIT 1",
+                    (normalized_session, normalized_trace, unit, slug),
+                ).fetchone()
             if row is None:
                 return None
             return {
@@ -740,6 +826,8 @@ class DelegationActivationStoreMixin:
         work_unit_id: str = "",
         worker_id: str = "",
         native_run_id: str = "",
+        require_native_child_started: bool = False,
+        match_native_child_identity: bool = False,
     ) -> dict[str, Any]:
         """Consume one grant and return its exact immutable prompt atomically."""
 
@@ -800,6 +888,18 @@ class DelegationActivationStoreMixin:
             grant = _stored_public_grant(receipt)
             if str(receipt["run_host"] or "").strip().casefold() != grant.host:
                 raise ValueError("activation grant failed integrity verification")
+            worker, native = _consumption_lineage(
+                conn,
+                require_native_child_started=require_native_child_started,
+                receipt=receipt,
+                host=grant.host,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+                work_unit_id=expected_unit,
+                worker_id=worker,
+                native_run_id=native,
+                match_native_child_identity=match_native_child_identity,
+            )
             worker_kind, expected_stored_worker = _consume_worker_binding(
                 receipt,
                 grant,

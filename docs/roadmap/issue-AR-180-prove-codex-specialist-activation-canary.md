@@ -3,7 +3,7 @@ title: "AR-180: Prove Codex specialist activation in the live canary"
 status: open
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [codex, canary, activation, delegation, production-readiness]
 related:
   - docs/roadmap/issue-AR-114-guided-codex-hook-activation.md
@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
+  - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
   - agency_runtime/core/canary.py
@@ -27,7 +28,7 @@ epic: host-integrations
 issue_id: AR-180
 priority: p0
 tracker_url: null
-depends_on: [AR-143, AR-182, AR-185]
+depends_on: [AR-143, AR-182, AR-185, AR-191]
 blocks: [AR-119]
 ---
 
@@ -167,6 +168,15 @@ This does not contradict or exercise the persisted-parent correction: the
 nonce-bound deterministic fixture is admitted only by the current-profile
 existing-Store verification contract. It confirms that isolated semantic
 planning cannot substitute for the final attended proof.
+
+The next trusted current-profile run then routed one exact `code-reviewer` unit
+and spawned one child, but the child received only generic identity context and
+spawned a grandchild. Primary-source inspection of Codex 0.145 isolated the
+boundary: MultiAgentV2's `collaboration.spawn_agent` reaches command hooks as
+`collaborationspawn_agent`, while the installed Agency matcher accepted only
+`spawn_agent`. AR-191 owns the exact alias, parent-trace, and truthful canary-
+projection corrections. Its live-envelope regressions pass; a fresh install
+and one bounded current-profile canary remain before activation can be claimed.
 
 ## Approach
 

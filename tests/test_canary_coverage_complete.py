@@ -212,7 +212,12 @@ def test_canary_output_and_records_cover_empty_and_failed_results() -> None:
     assert canary._codex_output('"scalar"\n{"type":"turn.completed"}') is None
     incomplete = canary._codex_canary_record(_result(stdout='{"type":"turn.completed"}'))
     assert incomplete["status"] == "failed"
-    assert incomplete["exit_code"] == 1
+    assert incomplete["exit_code"] == 0
+    assert incomplete["failure_reason"] == "codex_output_projection_unavailable"
+    unprojectable = canary._codex_canary_record(_result(stdout="{invalid"))
+    assert unprojectable["status"] == "failed"
+    assert unprojectable["exit_code"] == 0
+    assert unprojectable["failure_reason"] == "codex_result_projection_unavailable"
     assert canary._codex_canary_record(_result(returncode=1))["status"] == "failed"
     assert canary._claude_canary_record(_result(returncode=1))["status"] == "failed"
     invalid = canary._claude_canary_record(_result(stdout="{invalid"))

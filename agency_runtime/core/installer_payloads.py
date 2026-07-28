@@ -16,6 +16,7 @@ from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.configuration_persistence import resolve_config_path
 from agency_runtime.core.installer_contracts import (
     CODEX_HOOK_EVENTS,
+    CODEX_NATIVE_SPAWN_HOOK_MATCHER,
     HOOK_TIMEOUT_BUFFER_SECONDS,
     MAX_HOOK_TIMEOUT_SECONDS,
 )
@@ -270,7 +271,7 @@ def codex_hooks(
         ],
         "PreToolUse": [
             {
-                "matcher": "spawn_agent",
+                "matcher": CODEX_NATIVE_SPAWN_HOOK_MATCHER,
                 "hooks": [
                     handler(
                         "PreToolUse",

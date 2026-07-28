@@ -1694,6 +1694,7 @@ def test_two_real_hook_processes_preserve_parent_scope_for_one_consumer(
             {
                 "hook_event_name": "SubagentStart",
                 "session_id": "cross-process-parent",
+                "turn_id": "cross-process-child-turn",
                 "agent_id": "agent-42",
                 "agent_type": "worker",
             }
@@ -2128,6 +2129,70 @@ def test_hook_boundary_blocks_planned_child_when_bridge_fails(
     assert observation["correlation_digest"]
 
 
+def test_hook_observation_classifies_nested_planned_denial(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    from agency_runtime.adapters import hooks as hooks_module
+
+    class _DenyingBridge:
+        def handle(self, _payload: dict[str, Any]) -> dict[str, Any]:
+            return {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "deny",
+                    "permissionDecisionReason": "planned activation unavailable",
+                }
+            }
+
+    monkeypatch.setattr(
+        hooks_module,
+        "HookBridge",
+        lambda *_args, **_kwargs: _DenyingBridge(),
+    )
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    source = io.BytesIO(
+        json.dumps(
+            {
+                "hook_event_name": "PreToolUse",
+                "session_id": "session",
+                "turn_id": "trace",
+                "tool_name": "collaborationspawn_agent",
+                "tool_use_id": "tool-use",
+                "tool_input": {
+                    "task_name": "unit_0123456789",
+                    "message": "Review the implementation.",
+                },
+            }
+        ).encode()
+    )
+    sink = io.BytesIO()
+
+    assert (
+        run_hook_stdio(
+            "codex",
+            expected_event="PreToolUse",
+            input_stream=source,
+            output_stream=sink,
+        )
+        == 0
+    )
+
+    assert json.loads(sink.getvalue())["hookSpecificOutput"]["permissionDecision"] == "deny"
+    observations = [
+        json.loads(record.getMessage().split(" ", 1)[1])
+        for record in caplog.records
+        if record.getMessage().startswith("agency_observation ")
+    ]
+    observation = next(
+        item
+        for item in observations
+        if item.get("surface") == "hook" and item.get("operation") == "codex.pretooluse"
+    )
+    assert observation["outcome"] == "denied"
+    assert observation["reason_code"] == "planned_hook_denied"
+
+
 def test_expected_stop_discriminator_blocks_when_event_field_is_beyond_input_bound() -> None:
     source = io.BytesIO(
         b'{"last_assistant_message":"'
@@ -2183,7 +2248,7 @@ def test_hook_boundary_fails_open_on_duplicate_json_fields() -> None:
 
     assert status == 0
     assert json.loads(sink.getvalue()) == {}
-    assert "BoundedJSONError" in errors.getvalue()
+    assert "DuplicateJSONKeyError" in errors.getvalue()
     assert secret not in errors.getvalue()
 
 

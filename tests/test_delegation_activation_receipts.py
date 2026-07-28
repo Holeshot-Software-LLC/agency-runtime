@@ -325,6 +325,79 @@ def _activate(
     return prepared, loaded
 
 
+def test_flattened_codex_activation_requires_a_native_child_start(
+    tmp_path: Path,
+) -> None:
+    store, selected = _isolated_turn(tmp_path / "v2-lifecycle.db")
+    slug = selected[0]
+    work_unit_id = _activation_work_unit(store, slug)
+    prepared = store.prepare_delegation_activation(
+        session_id="session",
+        trace_id="trace",
+        specialist_slug=slug,
+        work_unit_id=work_unit_id,
+        grant_origin="native_hook",
+        tool_use_id="v2-spawn",
+    )
+    consume = {
+        "activation_token": str(prepared["activation_token"]),
+        "session_id": "session",
+        "trace_id": "trace",
+        "specialist_slug": slug,
+        "work_unit_id": work_unit_id,
+        "worker_id": f"task:{codex_task_name_for_work_unit(work_unit_id)}",
+        "native_run_id": f"codex-task:{codex_task_name_for_work_unit(work_unit_id)}",
+        "require_native_child_started": True,
+    }
+
+    with pytest.raises(ValueError, match="native-child lifecycle receipt"):
+        store.consume_delegation_activation(**consume)
+
+    store.record_native_child_started(
+        host="codex",
+        backend="spawn_agent",
+        session_id="session",
+        trace_id="trace",
+        work_unit_id=work_unit_id,
+        worker_id="agent-v2",
+        native_run_id="codex-agent:agent-v2",
+    )
+
+    with pytest.raises(ValueError, match="native-child lifecycle receipt"):
+        store.consume_delegation_activation(
+            **consume,
+            match_native_child_identity=True,
+        )
+
+    consumed = store.consume_delegation_activation(**consume)
+    assert consumed["slug"] == slug
+    assert consumed["worker_id"] == "agent-v2"
+    assert consumed["native_run_id"] == "codex-agent:agent-v2"
+    assert store.get_consumed_delegation_lineage(
+        session_id="session",
+        trace_id="trace",
+        specialist_slug=slug,
+        work_unit_id=work_unit_id,
+        activation_token=str(prepared["activation_token"]),
+        tool_use_id="v2-spawn",
+    ) == {
+        "worker_kind": "generic-worker",
+        "worker_id": "agent-v2",
+        "native_run_id": "codex-agent:agent-v2",
+    }
+    assert (
+        store.get_consumed_delegation_lineage(
+            session_id="session",
+            trace_id="trace",
+            specialist_slug=slug,
+            work_unit_id=work_unit_id,
+            activation_token="y" * 43,
+            tool_use_id="v2-spawn",
+        )
+        is None
+    )
+
+
 def test_isolated_activation_is_rejected_without_receipt_and_token_is_one_use(
     tmp_path: Path,
 ) -> None:
@@ -727,6 +800,16 @@ def test_hook_owned_delivery_injects_and_reciprocally_activates_exact_prompt(
     rewritten = output["updatedInput"]
     assert "[AGENCY EXACT SPECIALIST ACTIVATION v1]" in rewritten[task_field]
     response_key = "agent_id" if host == "codex" else "agentId"
+    if host == "codex":
+        bridge.handle(
+            {
+                "hook_event_name": "SubagentStart",
+                "session_id": "session",
+                "turn_id": "child-turn",
+                "agent_id": worker_id,
+                "agent_type": "worker",
+            }
+        )
     bridge.handle(
         {
             **payload,
@@ -745,6 +828,111 @@ def test_hook_owned_delivery_injects_and_reciprocally_activates_exact_prompt(
     assert activation["delegation_event_id"] == event["id"]
     assert event["activation_receipt_id"] == activation["id"]
     assert event["retrieved_specialist_slug"] == slug
+
+
+def _prepared_codex_hook_delivery(
+    tmp_path: Path,
+    *,
+    tool_name: str,
+) -> tuple[Store, HookBridge, dict[str, object], dict[str, object], str]:
+    store, result = _isolated_preflight(tmp_path / f"hook-response-{tool_name}.db", host="codex")
+    slug = result.selected_specialists[0]
+    unit = _activation_work_unit(store, slug)
+    goal = _planned_goal(result.context, unit)
+    worker_id = "agent-lifecycle"
+    bridge = HookBridge("codex", store=store)
+    payload: dict[str, object] = {
+        "hook_event_name": "PreToolUse",
+        "session_id": "session",
+        "turn_id": "trace",
+        "tool_use_id": f"{tool_name}-tool-use",
+        "tool_name": tool_name,
+        "tool_input": {
+            "task_name": codex_task_name_for_work_unit(unit),
+            "message": goal,
+        },
+    }
+    rewritten = bridge.handle(payload)["hookSpecificOutput"]["updatedInput"]
+    bridge.handle(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": "session",
+            "turn_id": "child-turn",
+            "agent_id": worker_id,
+            "agent_type": "worker",
+        }
+    )
+    return store, bridge, payload, rewritten, worker_id
+
+
+def test_codex_json_identity_must_match_lifecycle_on_initial_use_and_replay(
+    tmp_path: Path,
+) -> None:
+    store, bridge, payload, rewritten, worker_id = _prepared_codex_hook_delivery(
+        tmp_path,
+        tool_name="spawn_agent",
+    )
+    post_payload = {**payload, "hook_event_name": "PostToolUse"}
+
+    initial_forgery = bridge._consume_native_child_prompt_delivery(
+        event="PostToolUse",
+        payload=post_payload,
+        tool_input=rewritten,
+        tool_response=json.dumps({"agent_id": "agent-forged"}),
+        trace_id="trace",
+    )
+    assert initial_forgery[3] is False
+
+    accepted = bridge._consume_native_child_prompt_delivery(
+        event="PostToolUse",
+        payload=post_payload,
+        tool_input=rewritten,
+        tool_response=json.dumps({"agent_id": worker_id}),
+        trace_id="trace",
+    )
+    assert accepted[3] is True
+
+    replay_forgery = bridge._consume_native_child_prompt_delivery(
+        event="PostToolUse",
+        payload=post_payload,
+        tool_input=rewritten,
+        tool_response=json.dumps({"agent_id": "agent-forged"}),
+        trace_id="trace",
+    )
+    assert replay_forgery[3] is False
+    [activation] = store.get_completion_evidence_snapshot("session", "trace")[
+        "specialist_activations"
+    ]
+    assert activation["worker_id"] == worker_id
+
+
+def test_codex_v2_json_task_path_must_be_rooted_before_lifecycle_binding(
+    tmp_path: Path,
+) -> None:
+    _store, bridge, payload, rewritten, _worker_id = _prepared_codex_hook_delivery(
+        tmp_path,
+        tool_name="collaborationspawn_agent",
+    )
+    post_payload = {**payload, "hook_event_name": "PostToolUse"}
+    task_name = str(rewritten["task_name"])
+
+    unrooted = bridge._consume_native_child_prompt_delivery(
+        event="PostToolUse",
+        payload=post_payload,
+        tool_input=rewritten,
+        tool_response=json.dumps({"task_name": task_name}),
+        trace_id="trace",
+    )
+    assert unrooted[3] is False
+
+    rooted = bridge._consume_native_child_prompt_delivery(
+        event="PostToolUse",
+        payload=post_payload,
+        tool_input=rewritten,
+        tool_response=json.dumps({"task_name": f"/root/{task_name}"}),
+        trace_id="trace",
+    )
+    assert rooted[3] is True
 
 
 def test_all_selected_receipts_require_reciprocal_native_execution(tmp_path: Path) -> None:

@@ -1928,6 +1928,12 @@ def cmd_host_canary(
         timeout=float(args.timeout),
         mode=str(args.mode),
         profile_scope=str(getattr(args, "profile_scope", "isolated-profile")),
+        require_existing_store=(
+            args.agent == "codex"
+            and bool(args.execute)
+            and str(args.mode) == "agency"
+            and str(getattr(args, "profile_scope", "isolated-profile")) == "current-profile"
+        ),
     )
     if args.output:
         atomic_write_text(

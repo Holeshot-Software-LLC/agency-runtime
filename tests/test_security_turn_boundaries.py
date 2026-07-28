@@ -29,6 +29,7 @@ from agency_runtime.server import http
     [
         ("codex", "mcp__agency__agency.load_specialist", "agency_agents_load"),
         ("codex", "mcp__agency__agency_agents_delegate", "agency_agents_delegate"),
+        ("codex", "collaborationspawn_agent", "spawn_agent"),
         ("codex", "functions.collaboration.spawn_agent", "spawn_agent"),
         ("codex", "agency.record_skill_loaded", "skill_view"),
         ("claude", "Agent", "delegate_task"),
@@ -49,6 +50,55 @@ def test_authoritative_tool_names_require_exact_allowlisted_identity(
     assert observed == canonical
 
 
+def test_flattened_codex_spawn_identity_is_not_trusted_by_other_hosts() -> None:
+    observed, _arguments = hooks._canonical_tool_call(
+        "claude",
+        "collaborationspawn_agent",
+        {"task_name": "unit_code_review", "message": "review"},
+        {"agent_id": "worker"},
+    )
+
+    assert observed == "collaborationspawn_agent"
+
+
+@pytest.mark.parametrize(
+    ("response", "task_name"),
+    [
+        ('{"task_name":"/root/unit_0123456789"}', "unit_0123456789"),
+        ('{"task_name":"/root/parent/unit_0123456789"}', "unit_0123456789"),
+        (
+            '{"task_name":"/root/parent/agency_0123456789abcdef0123"}',
+            "agency_0123456789abcdef0123",
+        ),
+    ],
+)
+def test_codex_spawn_result_normalizes_bounded_agent_paths(
+    response: str,
+    task_name: str,
+) -> None:
+    projected, identity = hooks._native_child_tool_identity("codex", response)
+
+    assert projected["task_name"] == task_name
+    assert identity is not None
+
+
+def test_codex_spawn_result_rejects_noncanonical_agent_paths() -> None:
+    response = '{"task_name":"/root/../unit_0123456789"}'
+
+    assert hooks._native_child_tool_identity("codex", response) == (response, None)
+
+
+def test_codex_json_spawn_result_preserves_supplied_identity_provenance() -> None:
+    response = '{"agent_id":"agent-returned"}'
+
+    raw = hooks._native_child_response_mapping("codex", response)
+    projected, identity = hooks._native_child_tool_identity("codex", response)
+
+    assert raw == {"agent_id": "agent-returned"}
+    assert projected["agent_id"] == "agent-returned"
+    assert identity is not None
+
+
 @pytest.mark.parametrize(
     "tool_name",
     [
@@ -56,6 +106,8 @@ def test_authoritative_tool_names_require_exact_allowlisted_identity(
         "mcp__evil__agency_agents_delegate",
         "mcp__evil__agency.record_skill_loaded",
         "evil.delegate",
+        "evilcollaborationspawn_agent",
+        "collaborationspawn_agent_suffix",
         "functions.evil.spawn_agent",
     ],
 )

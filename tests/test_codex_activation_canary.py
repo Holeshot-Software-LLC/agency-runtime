@@ -82,16 +82,22 @@ def _finish_v2_chain_through_hooks(
         "hook_event_name": "PreToolUse",
         "session_id": session_id,
         "turn_id": trace_id,
-        "tool_name": "spawn_agent",
+        "cwd": "C:\\workspace",
+        "transcript_path": "C:\\state\\rollout.jsonl",
+        "permission_mode": "default",
+        "tool_name": "collaborationspawn_agent",
         "tool_use_id": tool_use_id,
         "tool_input": {
+            "fork_turns": "none",
             "task_name": task_name,
             "message": str(plan["goal"]),
-            "agent_type": "worker",
         },
     }
     pre_tool = bridge.handle(pre_payload)
     updated_input = pre_tool["hookSpecificOutput"]["updatedInput"]
+    assert updated_input["fork_turns"] == "none"
+    assert updated_input["task_name"] == task_name
+    assert set(updated_input) == {"fork_turns", "task_name", "message"}
     delivery = parse_native_child_prompt_delivery(updated_input["message"])
     assert delivery is not None
     assert delivery.tool_use_id == tool_use_id
@@ -101,6 +107,7 @@ def _finish_v2_chain_through_hooks(
         {
             "hook_event_name": "SubagentStart",
             "session_id": session_id,
+            "turn_id": "codex-child-turn",
             "agent_id": receiver_id,
             "agent_type": "worker",
         }
@@ -111,7 +118,7 @@ def _finish_v2_chain_through_hooks(
                 **pre_payload,
                 "hook_event_name": "PostToolUse",
                 "tool_input": updated_input,
-                "tool_response": {"task_name": task_name, "status": "accepted"},
+                "tool_response": json.dumps({"task_name": f"/root/{task_name}"}),
             }
         )
         == {}
@@ -708,6 +715,8 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
         rollout_root=rollout_root,
     )
     assert conflicting_record["status"] == "failed"
+    assert conflicting_record["exit_code"] == 0
+    assert conflicting_record["failure_reason"] == ("codex_collaboration_projection_unavailable")
 
     child_path.write_text(
         child_path.read_text(encoding="utf-8")
@@ -734,6 +743,8 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
         rollout_root=rollout_root,
     )
     assert nested_record["status"] == "failed"
+    assert nested_record["exit_code"] == 0
+    assert nested_record["failure_reason"] == "codex_collaboration_projection_unavailable"
 
 
 def test_codex_v2_rollout_projection_fails_closed_on_ambiguous_parent(
@@ -764,6 +775,8 @@ def test_codex_v2_rollout_projection_fails_closed_on_ambiguous_parent(
     )
 
     assert record["status"] == "failed"
+    assert record["exit_code"] == 0
+    assert record["failure_reason"] == "codex_collaboration_projection_unavailable"
     assert "collaboration" not in record
 
 

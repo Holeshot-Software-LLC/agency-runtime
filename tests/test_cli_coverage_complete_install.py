@@ -1049,11 +1049,27 @@ def test_on_off_status_and_canary_wrappers(tmp_path, monkeypatch, capsys):
     assert calls[-1]["inference"] == inference_snapshot()
 
     report = {"ready": True, "canary_passed": False}
-    monkeypatch.setattr(canary, "run_canary", lambda *_a, **_kw: report)
+    canary_calls = []
+
+    def run_canary(*call_args, **call_kwargs):
+        canary_calls.append((call_args, call_kwargs))
+        return report
+
+    monkeypatch.setattr(canary, "run_canary", run_canary)
     output_path = tmp_path / "canary.json"
     assert (
         subject.cmd_host_canary(args(agent="codex", output=str(output_path)), dependencies=deps)
         == 0
     )
     assert json.loads(output_path.read_text(encoding="utf-8")) == report
+    assert canary_calls[-1][1]["require_existing_store"] is False
     assert subject.cmd_host_canary(args(agent="codex", execute=True), dependencies=deps) == 1
+    assert canary_calls[-1][1]["require_existing_store"] is False
+    assert (
+        subject.cmd_host_canary(
+            args(agent="codex", execute=True, profile_scope="current-profile"),
+            dependencies=deps,
+        )
+        == 1
+    )
+    assert canary_calls[-1][1]["require_existing_store"] is True

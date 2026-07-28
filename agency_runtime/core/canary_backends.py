@@ -884,14 +884,17 @@ def codex_canary_record(
         rollout_not_before=rollout_not_before,
         rollout_not_after=rollout_not_after,
     )
-    if (
-        completed
-        and (output := facade._codex_output(result.stdout)) is not None
-        and collaboration is not None
-    ):
+    output = facade._codex_output(result.stdout) if completed else None
+    if completed and output is not None and collaboration is not None:
         record.update(output=output, collaboration=collaboration)
     elif completed:
-        record.update(status="failed", exit_code=1)
+        record["status"] = "failed"
+        if output is None and collaboration is None:
+            record["failure_reason"] = "codex_result_projection_unavailable"
+        elif output is None:
+            record["failure_reason"] = "codex_output_projection_unavailable"
+        else:
+            record["failure_reason"] = "codex_collaboration_projection_unavailable"
     return record
 
 

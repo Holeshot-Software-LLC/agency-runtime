@@ -522,7 +522,9 @@ def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget()
     assert "timeoutSec" not in codex_handler
     assert hook_timeout > judge_budget
     assert tuple(codex_hooks["hooks"]) == CODEX_HOOK_EVENTS
-    assert codex_hooks["hooks"]["PreToolUse"][0]["matcher"] == "spawn_agent"
+    assert codex_hooks["hooks"]["PreToolUse"][0]["matcher"] == (
+        r"^(?:spawn_agent|collaborationspawn_agent)$"
+    )
 
     claude_files, _ = _bundle_files("claude", cfg)
     claude_hooks = json.loads(claude_files["plugins/agency-preflight/hooks/hooks.json"])
