@@ -275,6 +275,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `29fd9a9` | 2026-07-27 | docs(production): record isolated Codex canary boundary | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [detail](2026-07-27-29fd9a9-isolated-codex-canary-boundary.md) |
 | `e21eab3` | 2026-07-28 | feat(updates): add immutable attended upgrade discovery | [AR-188](../roadmap/issue-AR-188-add-immutable-update-discovery.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-28-e21eab3-immutable-update-discovery.md) |
 | `7d6558a` | 2026-07-28 | feat(installer): add attended owned host uninstall | [AR-189](../roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) | [detail](2026-07-28-7d6558a-attended-owned-host-uninstall.md) |
+| `1011a89` | 2026-07-28 | docs(demo): record live uninstall preview | [AR-189](../roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
