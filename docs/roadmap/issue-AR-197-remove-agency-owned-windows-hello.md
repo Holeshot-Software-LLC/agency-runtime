@@ -15,6 +15,8 @@ related:
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
   - docs/roadmap/handoffs/issue-AR-196.md
+  - docs/roadmap/issue-AR-198-install-applicable-suite-by-default.md
+  - docs/decisions/0111-install-the-applicable-suite-by-default.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -23,7 +25,7 @@ issue_id: AR-197
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-185, AR-189, AR-196]
+blocks: [AR-185, AR-189, AR-196, AR-198]
 ---
 
 # AR-197: Remove Agency-owned Windows Hello
@@ -37,11 +39,12 @@ proved that the ceremony still cannot make a multi-resource lifecycle atomic.
 
 ## Current state
 
-The verifier remains packaged and exact Codex refresh, roster rollback, and
-owned host uninstall depend on it. Generic mutations fail closed. AR-196's
-partial service protocol was removed without commit. ADR-0110 now supersedes
-the wider presence requirement and makes removal the next bounded package.
-Tracker creation is pending explicit authorization.
+The verifier and its action-specific lifecycle have been removed from current
+product and release paths. Exact harness installation uses the harness-native
+lifecycle, while roster rollback and owned host uninstall remain fail-closed.
+ADR-0111 supersedes only ADR-0110's dashboard opt-in choice: full-suite install
+now includes the dashboard unless `--no-dashboard` is supplied. Tracker
+creation is pending explicit authorization.
 
 ## Approach
 
@@ -50,8 +53,8 @@ or Agency-owned governance/data mutation. Route routine plugin lifecycle through
 the harness's native registration and trust surface. Keep every other positive
 mutation fail-closed. Remove the native helper, protocol, provenance, packaging,
 distribution, signing, documentation, and tests only after no admitted path
-depends on it. Make dashboard installation explicit opt-in and keep it outside
-plugin activation.
+depends on it. Keep dashboard failure isolated from harness activation while
+selecting it by default under ADR-0111; `--no-dashboard` remains the opt-out.
 
 ## Dependencies
 
@@ -61,15 +64,15 @@ as a side effect of verifier removal.
 
 ## Acceptance
 
-- [ ] Codex plugin install/refresh uses Codex-native registration and hook trust
+- [x] Codex plugin install/refresh uses Codex-native registration and hook trust
   without Agency-owned Windows Hello or delegation override.
-- [ ] Other harnesses use only their documented native lifecycle and retain
+- [x] Other harnesses use only their documented native lifecycle and retain
   truthful enabled/loaded evidence.
-- [ ] MCP, hooks, broker, and dashboard remain unable to perform persistent
+- [x] MCP, hooks, broker, and dashboard remain unable to perform persistent
   Agency governance or data mutations.
-- [ ] Dashboard service is explicit opt-in and absent from plugin activation and
-  demo acceptance.
-- [ ] All verifier call sites, native assets, build/provenance rules, package
+- [x] Dashboard selection is independent from harness activation and can be
+  excluded with `--no-dashboard`.
+- [x] All verifier call sites, native assets, build/provenance rules, package
   contents, signing gates, docs, and tests are removed or explicitly retired.
 - [ ] Focused install, trust, activation, uninstall-planning, UI, packaging, and
   security tests pass before one fresh live Codex canary.

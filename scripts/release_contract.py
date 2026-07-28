@@ -75,43 +75,11 @@ WINDOWS_RESERVED_BASENAMES = frozenset(
 )
 WINDOWS_INVALID_CHARS = frozenset('<>:"|?*')
 
-NATIVE_OPERATOR_PRESENCE_SOURCE = (
-    "agency_runtime/native/windows/operator_presence/operator_presence_verifier.cpp"
-)
-NATIVE_OPERATOR_PRESENCE_EXECUTABLE = (
-    "agency_runtime/native/windows/operator_presence/operator_presence_verifier.exe"
-)
-NATIVE_OPERATOR_PRESENCE_PROVENANCE = (
-    "agency_runtime/native/windows/operator_presence/operator_presence_verifier.provenance.json"
-)
-NATIVE_OPERATOR_PRESENCE_FILES = frozenset(
-    {
-        NATIVE_OPERATOR_PRESENCE_SOURCE,
-        NATIVE_OPERATOR_PRESENCE_EXECUTABLE,
-        NATIVE_OPERATOR_PRESENCE_PROVENANCE,
-    }
-)
 DISTRIBUTION_LICENSE_FILES = (
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",
-    "agency_runtime/native/windows/operator_presence/LICENSE.cppwinrt.txt",
-    "agency_runtime/native/windows/operator_presence/LICENSE.microsoft-stl.txt",
-    "agency_runtime/native/windows/operator_presence/NOTICE.microsoft-stl.txt",
 )
-IMMUTABLE_THIRD_PARTY_FILE_SHA256 = (
-    (
-        "agency_runtime/native/windows/operator_presence/LICENSE.cppwinrt.txt",
-        "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
-    ),
-    (
-        "agency_runtime/native/windows/operator_presence/LICENSE.microsoft-stl.txt",
-        "7c68a47568bd633f7a71ee5e2038660a2cc62ce8a5405999e2b69fab3f37469c",
-    ),
-    (
-        "agency_runtime/native/windows/operator_presence/NOTICE.microsoft-stl.txt",
-        "4b8b8c5386b37247443a0591df1ae8deeb9be3cfe4a10e1c2e65d1486dac81cd",
-    ),
-)
+IMMUTABLE_THIRD_PARTY_FILE_SHA256: tuple[tuple[str, str], ...] = ()
 
 ARTIFACT_SET_PORTABLE = "portable"
 ARTIFACT_SET_WINDOWS_X64 = "windows-x64"
@@ -146,7 +114,7 @@ WINDOWS_X64_WHEEL_PROFILE = WheelProfile(
     name=ARTIFACT_SET_WINDOWS_X64,
     tag="py3-none-win_amd64",
     root_is_purelib=False,
-    includes_native_executable=True,
+    includes_native_executable=False,
 )
 WHEEL_PROFILES = {
     PORTABLE_WHEEL_PROFILE.name: PORTABLE_WHEEL_PROFILE,

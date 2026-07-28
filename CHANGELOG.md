@@ -26,6 +26,18 @@ changes rather than duplicating every commit.
 
 ## Unreleased
 
+### Changed
+
+- Bare `agency install` now discovers every installed supported harness for the
+  current OS and installs the applicable suite, including the dashboard by
+  default. `--agent` narrows harness scope, `--no-dashboard` opts out of the
+  dashboard, and component failures produce truthful partial results without
+  suppressing independent host work.
+- Agency-owned Windows Hello verification and its native executable, build,
+  packaging, and action protocols were retired. Harness install/refresh uses
+  native harness trust; roster rollback and owned host uninstall remain
+  unavailable rather than inheriting installation authority.
+
 ### Deprecated
 
 - The public `route_and_build_context(...)` convenience API is restored as a

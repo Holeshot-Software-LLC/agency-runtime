@@ -33,6 +33,11 @@ owns acceptance and the governing decisions own authority semantics.
 
 ## checkpoint
 
+- ADR-0111 supersedes the dashboard opt-in choice: bare `agency install` now
+  means full applicable suite and `--no-dashboard` is the opt-out.
+- AR-197 implementation removes the Agency-owned Windows Hello helper and keeps
+  roster rollback and owned host uninstall unavailable. Harness install uses
+  native harness lifecycle and dashboard failure is isolated from host work.
 - `main`, local `HEAD`, and `origin/main` are exact commit
   `850777897eee818545fd3d2569df8da850d6de03`.
 - Substantive AR-195 commit `42da990` separates the Codex activation parent
@@ -75,12 +80,10 @@ authorize the exact operation, and rollback cannot prove that the prior state
 was restored. The current documented install/repair remains intentionally
 fail-closed.
 
-More importantly, the attempted fix was solving the wrong demo dependency.
-Agency Runtime's core harness integration is a plugin; Codex already owns plugin
-registration and hook trust. The optional dashboard service should not be
-implicitly coupled to plugin install or require the plugin path to inherit the
-service's transaction complexity. The next decision must split these authority
-boundaries before any more service implementation.
+The attempted repair proved the dashboard service is an independent component
+transaction, not authority for harness work. ADR-0111 keeps it in the default
+suite while requiring its failure to remain isolated from host registration.
+`--no-dashboard` explicitly excludes it when a host-only repair is wanted.
 
 ## same-task-continuity
 
@@ -90,28 +93,23 @@ hosted workflow, tracker mutation, live Windows prompt, or service mutation.
 
 ## next-bounded-work-package
 
-1. Implement AR-197 under ADR-0110: remove Agency-owned Windows Hello and route
-   routine plugin lifecycle through each harness's native registration and trust
-   surface without granting model-facing mutation authority.
-2. Make dashboard installation explicit opt-in and keep it out of the plugin
-   activation/demo acceptance path. Verify `agency install --agent codex
-   --no-dashboard` is the canonical default behavior before changing code.
-3. Complete the already-pushed AR-195 path with one attended Codex native
-   refresh/trust and one activation canary; do not touch the dashboard service
-   during that package.
-4. Only if the persistent service is still desired, specify a small Python
+1. Finish AR-197 and AR-198 focused verification, write-free default-install
+   dry run, and local substantive/ledger checkpoints.
+2. Complete the already-pushed AR-195 path with one Codex-native refresh/trust
+   and one activation canary; use `--no-dashboard` to keep that proof scoped.
+3. Only if dashboard service installation still fails, specify a small Python
    state machine with states `prepared`, `presence_verified`,
    `bootstrap_started`, `bootstrap_proven`, `committed`, `rolled_back`, and
    `recovery_incomplete`. XState is a useful design reference, not a reason to
    add a JavaScript runtime.
-5. Give that future bootstrap worker a Store-write-free, broker-free mode and a
+4. Give that future bootstrap worker a Store-write-free, broker-free mode and a
    one-time coordinator commit handshake. Independently review its failure
    matrix before rebuilding the native helper or running another service canary.
 
 ## verification
 
 ~~~text
-python -m pytest tests/test_dashboard_service.py tests/test_dashboard_runtime.py tests/test_windows_operator_presence.py tests/test_cli_operator_presence.py -q -W error
+python -m pytest tests/test_native_installer.py tests/test_cli_parser_contract.py tests/test_cli_operator_presence.py -q -W error
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 python scripts/docs_metadata.py --check

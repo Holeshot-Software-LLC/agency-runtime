@@ -81,7 +81,7 @@ def _verify_operator_presence_below_shared_seam(monkeypatch: pytest.MonkeyPatch)
     )
     monkeypatch.setattr(
         roster,
-        "_verify_roster_rollback_operator_presence",
+        "_require_roster_rollback_authority",
         lambda _binding: None,
     )
 

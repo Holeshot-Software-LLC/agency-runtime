@@ -381,7 +381,7 @@ def test_prepared_uninstall_uses_canonical_transition_and_deterministic_retentio
     assert _tree_snapshot(tmp_path) == before
 
     bindings: list[Any] = []
-    monkeypatch.setattr(prepared, "_verify_host_uninstall_operator_presence", bindings.append)
+    monkeypatch.setattr(prepared, "_require_host_uninstall_authority", bindings.append)
     operation_id = _operation_id(host)
     results = _apply_prepared_host_uninstall(
         [host],
@@ -443,7 +443,7 @@ def test_prepared_uninstall_uses_retain_only_when_native_registration_is_absent(
     runner = UninstallNativeRunner("codex", target, present=False)
     plan = _plan("codex", tmp_path, runner)
     bindings: list[Any] = []
-    monkeypatch.setattr(prepared, "_verify_host_uninstall_operator_presence", bindings.append)
+    monkeypatch.setattr(prepared, "_require_host_uninstall_authority", bindings.append)
 
     result = _apply_prepared_host_uninstall(
         ["codex"],
@@ -474,7 +474,7 @@ def test_prepared_verifier_denial_causes_zero_host_mutation(
     def deny(_binding: object) -> None:
         raise PreparedHostUninstallError("operator denied prepared uninstall")
 
-    monkeypatch.setattr(prepared, "_verify_host_uninstall_operator_presence", deny)
+    monkeypatch.setattr(prepared, "_require_host_uninstall_authority", deny)
 
     with pytest.raises(PreparedHostUninstallError, match="operator denied"):
         _apply_prepared_host_uninstall(
@@ -502,7 +502,7 @@ def test_prepared_uninstall_rejects_stale_plan_before_verification(
     runner = UninstallNativeRunner("codex", target)
     plan = _plan("codex", tmp_path, runner)
     verified: list[object] = []
-    monkeypatch.setattr(prepared, "_verify_host_uninstall_operator_presence", verified.append)
+    monkeypatch.setattr(prepared, "_require_host_uninstall_authority", verified.append)
     runner.binding_revision = "changed-before-apply"
 
     with pytest.raises(PreparedHostUninstallError, match="changed before operator verification"):
@@ -537,7 +537,7 @@ def test_prepared_uninstall_rejects_binding_change_after_verification(
 
     monkeypatch.setattr(
         prepared,
-        "_verify_host_uninstall_operator_presence",
+        "_require_host_uninstall_authority",
         change_binding,
     )
 
@@ -784,7 +784,7 @@ def test_native_mutation_failure_redacts_raw_output(
     secret = "api-key-that-must-not-escape"
     runner = UninstallNativeRunner("codex", target, fail_mutation_secret=secret)
     plan = _plan("codex", tmp_path, runner)
-    monkeypatch.setattr(prepared, "_verify_host_uninstall_operator_presence", lambda _binding: None)
+    monkeypatch.setattr(prepared, "_require_host_uninstall_authority", lambda _binding: None)
 
     result = _apply_prepared_host_uninstall(
         ["codex"],
@@ -817,7 +817,7 @@ def test_marketplace_change_after_plugin_uninstall_blocks_bundle_retirement(
     target = Path(installed["target"])
     runner = UninstallNativeRunner("codex", target, remove_marketplace_on_uninstall=True)
     plan = _plan("codex", tmp_path, runner)
-    monkeypatch.setattr(prepared, "_verify_host_uninstall_operator_presence", lambda _binding: None)
+    monkeypatch.setattr(prepared, "_require_host_uninstall_authority", lambda _binding: None)
 
     result = _apply_prepared_host_uninstall(
         ["codex"],
@@ -846,7 +846,7 @@ def test_failed_native_detachment_retains_owned_tree_for_recovery(
     target = Path(installed["target"])
     runner = UninstallNativeRunner("hermes", target, sticky_plugin=True)
     plan = _plan("hermes", tmp_path, runner)
-    monkeypatch.setattr(prepared, "_verify_host_uninstall_operator_presence", lambda _binding: None)
+    monkeypatch.setattr(prepared, "_require_host_uninstall_authority", lambda _binding: None)
 
     result = _apply_prepared_host_uninstall(
         ["hermes"],
@@ -878,7 +878,7 @@ def test_absent_prepared_uninstall_is_idempotent_and_needs_no_verifier(
     def must_not_verify(_binding: object) -> None:
         raise AssertionError("non-mutating absent plan must not request operator verification")
 
-    monkeypatch.setattr(prepared, "_verify_host_uninstall_operator_presence", must_not_verify)
+    monkeypatch.setattr(prepared, "_require_host_uninstall_authority", must_not_verify)
     result = _apply_prepared_host_uninstall(
         ["codex"],
         expected_plan_digest=_digest([plan]),
@@ -913,7 +913,7 @@ def test_result_callback_failure_stops_later_host_mutation(
     runner = MultiHostRunner(hermes, codex)
     hosts = ("hermes", "codex")
     plans = [_plan(host, tmp_path, runner, resolver_hosts=hosts) for host in hosts]
-    monkeypatch.setattr(prepared, "_verify_host_uninstall_operator_presence", lambda _binding: None)
+    monkeypatch.setattr(prepared, "_require_host_uninstall_authority", lambda _binding: None)
     observed: list[str] = []
 
     def fail_journal_checkpoint(result: dict[str, Any]) -> None:

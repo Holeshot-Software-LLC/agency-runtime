@@ -36,7 +36,6 @@ try:  # Support both ``python -m scripts...`` and direct script execution.
         MAX_ARTIFACT_PHYSICAL_BYTES,
         MAX_TAR_CONTAINER_BYTES,
         MAX_ZIP_COMPRESSION_RATIO,
-        NATIVE_OPERATOR_PRESENCE_EXECUTABLE,
         safe_release_name,
     )
 except ModuleNotFoundError as exc:  # pragma: no cover - direct-script compatibility
@@ -57,7 +56,6 @@ except ModuleNotFoundError as exc:  # pragma: no cover - direct-script compatibi
         MAX_ARTIFACT_PHYSICAL_BYTES,
         MAX_TAR_CONTAINER_BYTES,
         MAX_ZIP_COMPRESSION_RATIO,
-        NATIVE_OPERATOR_PRESENCE_EXECUTABLE,
         safe_release_name,
     )
 
@@ -101,16 +99,8 @@ class _TarEntry:
 
 
 def _source_tar_file_mode_allowed(name: str, mode: int) -> bool:
-    if mode in SOURCE_TAR_FILE_MODES:
-        return True
-    parts = PurePosixPath(name).parts
-    if len(parts) < 2:
-        return False
-    relative = PurePosixPath(*parts[1:]).as_posix()
-    # setuptools receives CPython's synthetic Windows .exe execute bits and
-    # writes them into the raw sdist. Accept only the one governed native path
-    # and only the exact observed writable projection; canonical output is 0644.
-    return mode == 0o777 and relative == NATIVE_OPERATOR_PRESENCE_EXECUTABLE
+    del name
+    return mode in SOURCE_TAR_FILE_MODES
 
 
 def _sources_manifest_order_key(name: str) -> tuple[str, str]:

@@ -33,7 +33,6 @@ from packaging.requirements import InvalidRequirement, Requirement
 from packaging.utils import canonicalize_name
 
 try:  # Support both ``python -m scripts...`` and direct script execution.
-    from scripts.build_windows_operator_presence import verify_payload_contract
     from scripts.release_contract import (
         ARTIFACT_SET_HOST,
         ARTIFACT_SET_PORTABLE,
@@ -60,8 +59,6 @@ try:  # Support both ``python -m scripts...`` and direct script execution.
         MAX_TAR_CONTAINER_BYTES,
         MAX_TREE_MANIFEST_BYTES,
         MAX_ZIP_COMPRESSION_RATIO,
-        NATIVE_OPERATOR_PRESENCE_EXECUTABLE,
-        NATIVE_OPERATOR_PRESENCE_FILES,
         PORTABLE_WHEEL_PROFILE,
         RELEASE_SOURCE_PATHS,
         WheelProfile,
@@ -78,9 +75,6 @@ try:  # Support both ``python -m scripts...`` and direct script execution.
 except ModuleNotFoundError as exc:  # pragma: no cover - direct-script compatibility
     if exc.name != "scripts":
         raise
-    from build_windows_operator_presence import (  # type: ignore[no-redef]
-        verify_payload_contract,
-    )
     from release_contract import (  # type: ignore[no-redef]
         ARTIFACT_SET_HOST,
         ARTIFACT_SET_PORTABLE,
@@ -107,8 +101,6 @@ except ModuleNotFoundError as exc:  # pragma: no cover - direct-script compatibi
         MAX_TAR_CONTAINER_BYTES,
         MAX_TREE_MANIFEST_BYTES,
         MAX_ZIP_COMPRESSION_RATIO,
-        NATIVE_OPERATOR_PRESENCE_EXECUTABLE,
-        NATIVE_OPERATOR_PRESENCE_FILES,
         PORTABLE_WHEEL_PROFILE,
         RELEASE_SOURCE_PATHS,
         WheelProfile,
@@ -142,7 +134,6 @@ REQUIRED_PACKAGE_FILES = {
     "agency_runtime/dashboard/app.js",
     "agency_runtime/dashboard/charts.js",
     "agency_runtime/dashboard/index.html",
-    *NATIVE_OPERATOR_PRESENCE_FILES,
 }
 REQUIRED_SDIST_FILES = {
     ".editorconfig",
@@ -163,7 +154,6 @@ REQUIRED_SDIST_FILES = {
     "setup.py",
     "scripts/verify_distribution.py",
     "scripts/build_distributions.py",
-    "scripts/build_windows_operator_presence.py",
     "scripts/canonicalize_distributions.py",
     "scripts/prove_autocrlf_checkout.py",
     "scripts/platform_wheel.py",
@@ -2188,62 +2178,25 @@ def _pe_payload_names(payloads: dict[str, bytes]) -> list[str]:
     return sorted(name for name, payload in payloads.items() if _is_structural_pe(payload))
 
 
-def _native_operator_presence_failures(
+def _executable_payload_failures(
     payloads: dict[str, bytes],
     *,
     artifact: str,
-    executable_required: bool = False,
-    executable_forbidden: bool = False,
 ) -> list[str]:
-    source_name = "agency_runtime/native/windows/operator_presence/operator_presence_verifier.cpp"
-    executable_name = (
-        "agency_runtime/native/windows/operator_presence/operator_presence_verifier.exe"
-    )
-    provenance_name = (
-        "agency_runtime/native/windows/operator_presence/operator_presence_verifier.provenance.json"
-    )
-    required = {source_name, executable_name, provenance_name}
     observed_executables = sorted(name for name in payloads if name.casefold().endswith(".exe"))
     observed_pe_payloads = _pe_payload_names(payloads)
-    if executable_forbidden:
-        failures: list[str] = []
-        if observed_executables:
-            failures.append(
-                f"{artifact} must not contain executable payloads: {', '.join(observed_executables)}"
-            )
-        disguised_pe_payloads = sorted(set(observed_pe_payloads) - set(observed_executables))
-        if disguised_pe_payloads:
-            failures.append(
-                f"{artifact} must not contain PE payloads under non-executable names: "
-                f"{', '.join(disguised_pe_payloads)}"
-            )
-        return failures
-    unexpected_pe_payloads = sorted(set(observed_pe_payloads) - {executable_name})
-    if unexpected_pe_payloads:
-        return [f"{artifact} contains unexpected PE payloads: {', '.join(unexpected_pe_payloads)}"]
-    missing = sorted(required - set(payloads))
-    if missing:
-        if executable_required:
-            return [
-                f"{artifact} Windows operator-presence asset contract is incomplete: "
-                f"{', '.join(missing)}"
-            ]
-        return []
-    unexpected_executables = sorted(set(observed_executables) - {executable_name})
-    if unexpected_executables:
-        return [
-            f"{artifact} contains unexpected executable payloads: "
-            f"{', '.join(unexpected_executables)}"
-        ]
-    try:
-        verify_payload_contract(
-            payloads[source_name],
-            payloads[executable_name],
-            payloads[provenance_name],
+    failures: list[str] = []
+    if observed_executables:
+        failures.append(
+            f"{artifact} must not contain executable payloads: {', '.join(observed_executables)}"
         )
-    except RuntimeError as exc:
-        return [f"{artifact} Windows operator-presence asset contract failed: {exc}"]
-    return []
+    disguised_pe_payloads = sorted(set(observed_pe_payloads) - set(observed_executables))
+    if disguised_pe_payloads:
+        failures.append(
+            f"{artifact} must not contain PE payloads under non-executable names: "
+            f"{', '.join(disguised_pe_payloads)}"
+        )
+    return failures
 
 
 def _missing_file_failures(
@@ -2374,9 +2327,9 @@ def _wheel_profile_parity_failures(
             "portable wheel contains profile-exclusive payloads: "
             + ", ".join(sorted(portable_only))
         )
-    if windows_only != {NATIVE_OPERATOR_PRESENCE_EXECUTABLE}:
+    if windows_only:
         failures.append(
-            "Windows wheel profile-exclusive payloads must contain only the reviewed PE: "
+            "Windows wheel must not contain profile-exclusive package payloads: "
             + ", ".join(sorted(windows_only))
         )
     dist_info = f"agency_runtime-{version}.dist-info"
@@ -2942,7 +2895,6 @@ def verify(
     committed_support_files = set(committed_support)
     committed_sdist_files = committed_package_files | committed_support_files
     required_sdist_files = REQUIRED_SDIST_FILES | REQUIRED_PACKAGE_FILES | committed_sdist_files
-    native_assets_required = required_sdist_files >= NATIVE_OPERATOR_PRESENCE_FILES
     wheel_metadata_files = WHEEL_METADATA_FILES | {
         f"licenses/{name}" for name, _payload in project_contract.license_payloads
     }
@@ -2955,10 +2907,9 @@ def verify(
     failures.extend(_sdist_payload_contract_failures(sdist_payloads, committed_sdist_files))
     failures.extend(_junk_failures("sdist", sdist_names))
     failures.extend(
-        _native_operator_presence_failures(
+        _executable_payload_failures(
             sdist_payloads,
             artifact="sdist",
-            executable_required=native_assets_required,
         )
     )
     failures.extend(
@@ -2994,9 +2945,6 @@ def verify(
         )
         committed_profile = dict(committed_package)
         required_package_files = REQUIRED_PACKAGE_FILES | committed_package_files
-        if not profile.includes_native_executable:
-            committed_profile.pop(NATIVE_OPERATOR_PRESENCE_EXECUTABLE, None)
-            required_package_files.discard(NATIVE_OPERATOR_PRESENCE_EXECUTABLE)
         committed_profile_files = set(committed_profile)
         failures.extend(
             _immutable_third_party_failures(
@@ -3039,11 +2987,9 @@ def verify(
             )
         )
         failures.extend(
-            _native_operator_presence_failures(
+            _executable_payload_failures(
                 wheel_payloads,
                 artifact=artifact,
-                executable_required=(profile.includes_native_executable and native_assets_required),
-                executable_forbidden=not profile.includes_native_executable,
             )
         )
         failures.extend(

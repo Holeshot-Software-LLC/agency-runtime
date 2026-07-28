@@ -20,14 +20,11 @@ related:
   - agency_runtime/server/dashboard.py
   - agency_runtime/dashboard/dashboard-actions.js
   - agency_runtime/core/operator_presence.py
-  - agency_runtime/core/windows_operator_presence.py
   - agency_runtime/cli/main.py
   - agency_runtime/cli/roster_commands.py
   - agency_runtime/core/store/roster.py
-  - agency_runtime/native/windows/operator_presence/operator_presence_verifier.cpp
   - tests/test_cli_operator_presence.py
   - tests/test_prepared_roster_rollback.py
-  - tests/test_windows_operator_presence.py
 supersedes: []
 superseded_by: null
 type: issue

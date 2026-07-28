@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-import os
-
 from setuptools.command.bdist_wheel import bdist_wheel
-from setuptools.command.build_py import build_py
 
 try:  # The sdist and repository both expose the top-level scripts namespace.
     from scripts.release_contract import (
-        NATIVE_OPERATOR_PRESENCE_EXECUTABLE,
         WheelProfile,
         host_wheel_profile,
     )
@@ -17,41 +13,15 @@ except ModuleNotFoundError as exc:  # pragma: no cover - direct setup.py compati
     if exc.name != "scripts":
         raise
     from release_contract import (  # type: ignore[no-redef]
-        NATIVE_OPERATOR_PRESENCE_EXECUTABLE,
         WheelProfile,
         host_wheel_profile,
     )
-
-
-def _normalized_absolute_path(value: str) -> str:
-    return os.path.normcase(os.path.normpath(os.path.abspath(value)))
-
-
-def _executable_path_for_package(package: str, src_dir: str) -> str | None:
-    package_prefix = f"{package.replace('.', '/')}/"
-    if not NATIVE_OPERATOR_PRESENCE_EXECUTABLE.startswith(package_prefix):
-        return None
-    relative = NATIVE_OPERATOR_PRESENCE_EXECUTABLE.removeprefix(package_prefix)
-    return _normalized_absolute_path(os.path.join(src_dir, *relative.split("/")))
 
 
 def current_wheel_profile() -> WheelProfile:
     """Return the immutable profile selected from the actual build host."""
 
     return host_wheel_profile()
-
-
-class PlatformBuildPy(build_py):
-    """Exclude the Windows PE from every portable wheel build."""
-
-    def find_data_files(self, package: str, src_dir: str) -> list[str]:
-        files = list(super().find_data_files(package, src_dir))
-        if current_wheel_profile().includes_native_executable:
-            return files
-        executable = _executable_path_for_package(package, src_dir)
-        if executable is None:
-            return files
-        return [name for name in files if _normalized_absolute_path(name) != executable]
 
 
 class PlatformBdistWheel(bdist_wheel):
@@ -85,5 +55,4 @@ class PlatformBdistWheel(bdist_wheel):
 
 COMMAND_CLASSES = {
     "bdist_wheel": PlatformBdistWheel,
-    "build_py": PlatformBuildPy,
 }

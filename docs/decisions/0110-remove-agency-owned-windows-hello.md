@@ -1,6 +1,6 @@
 ---
 title: "Remove Agency-owned Windows Hello and use harness-native trust"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-28
 updated: 2026-07-28
@@ -19,7 +19,7 @@ related:
 supersedes:
   - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
   - docs/decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md
-superseded_by: null
+superseded_by: docs/decisions/0111-install-the-applicable-suite-by-default.md
 id: ADR-0110
 type: decision
 deciders: [maintainers]

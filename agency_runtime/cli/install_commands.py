@@ -209,10 +209,10 @@ def _resolve_install_targets(
     args: argparse.Namespace,
     detect_installed_agents: Callable[[], list[str]],
 ) -> list[str]:
-    """Resolve explicit or discovered host targets without changing host state."""
-    if args.all:
+    """Resolve one explicit host or auto-discover every installed host by default."""
+    if args.all or not args.agent:
         return detect_installed_agents()
-    return [args.agent] if args.agent else []
+    return [args.agent]
 
 
 def _dashboard_opt_out_result(*, dry_run: bool = False) -> dict[str, Any]:
@@ -244,9 +244,8 @@ def _host_plans_complete(
     *,
     all_hosts: bool,
 ) -> bool:
-    """Apply the stricter executable-evidence rule used by install --all."""
-    if all_hosts:
-        return bool(plans) and all(plan.get("ok") and plan.get("executable") for plan in plans)
+    """Require every selected native plan to be valid, including config-native hosts."""
+    del all_hosts
     return all(plan.get("ok") for plan in plans)
 
 
@@ -302,6 +301,7 @@ def _run_dry_run(
     *,
     profile_name: str,
     targets: list[str],
+    all_hosts: bool,
     dashboard_opted_out: bool,
     json_mode: bool,
     plan_agent_adapter: Callable[[str], dict[str, Any]],
@@ -314,7 +314,7 @@ def _run_dry_run(
         opted_out=dashboard_opted_out,
         plan_dashboard_service=plan_dashboard_service,
     )
-    plan_complete = _host_plans_complete(plans, all_hosts=args.all) and bool(
+    plan_complete = _host_plans_complete(plans, all_hosts=all_hosts) and bool(
         dashboard_plan.get("ok")
     )
     report = {
@@ -563,7 +563,18 @@ def _install_hosts(
     """Install selected host adapters and preserve partial-failure evidence."""
     results: list[dict[str, Any]] = []
     for host in targets:
-        result = install_agent_adapter(host, cfg)
+        try:
+            result = install_agent_adapter(host, cfg)
+        except Exception as exc:
+            result = {
+                "ok": False,
+                "complete": False,
+                "exit_code": 1,
+                "host": host,
+                "status": "failed_before_commit",
+                "changed": False,
+                "error": f"{type(exc).__name__}: {safe_display_token(str(exc), limit=500)}",
+            }
         if host == "codex" and host_inspector is not None and canary_runner is not None:
             _codex_activation_state(
                 result,
@@ -601,7 +612,7 @@ def _install_succeeded(
         result.get("ok") for result in host_results
     )
     if not host_results:
-        return successful and not all_hosts
+        return successful
     return successful and all(result.get("complete", result.get("ok")) for result in host_results)
 
 
@@ -1177,12 +1188,14 @@ def cmd_install(
 
     profile_name = _resolve_profile_name(args, cfg)
     targets = _resolve_install_targets(args, detect_installed_agents)
+    all_hosts = args.agent is None
     dashboard_opted_out = bool(getattr(args, "no_dashboard", False))
     if dry_run:
         return _run_dry_run(
             args,
             profile_name=profile_name,
             targets=targets,
+            all_hosts=all_hosts,
             dashboard_opted_out=dashboard_opted_out,
             json_mode=json_mode,
             plan_agent_adapter=plan_agent_adapter,
@@ -1190,32 +1203,9 @@ def cmd_install(
             dependencies=dependencies,
         )
 
-    if args.all and not targets:
-        return _fail_no_detected_hosts(
-            profile_name=profile_name,
-            json_mode=json_mode,
-            dependencies=dependencies,
-        )
-
+    dashboard_preflight: dict[str, Any] | None = None
     if not dashboard_opted_out and dashboard_service_environment_overrides(cfg):
-        dashboard_result = plan_dashboard_service(config_path=resolve_config_path())
-        if json_mode:
-            dependencies.emit_json(
-                {
-                    "ok": False,
-                    "complete": False,
-                    "profile": profile_name,
-                    "roster_added": 0,
-                    "roster_upgraded": 0,
-                    "hosts": [],
-                    "dashboard": dashboard_result,
-                    "error": dashboard_result.get("error", "dashboard service preflight failed"),
-                }
-            )
-        else:
-            print(f"❌ Dashboard service: {dashboard_result.get('error', 'preflight failed')}")
-            print("   No roster, host adapter, or service-manager state was changed.")
-        return 1
+        dashboard_preflight = plan_dashboard_service(config_path=resolve_config_path())
 
     from agency_runtime.core.windows_acl import require_restricted_windows_token
 
@@ -1272,11 +1262,36 @@ def cmd_install(
         else:
             print(f"❌ {error}")
         return 1
-    dashboard_result = _install_dashboard(
-        opted_out=dashboard_opted_out,
-        install_dashboard_service=install_dashboard_service,
-        dependencies=dependencies,
+    host_results = _install_hosts(
+        targets,
+        cfg,
+        all_hosts=all_hosts,
+        json_mode=json_mode,
+        install_agent_adapter=install_agent_adapter,
+        verify_activation=bool(getattr(args, "verify_activation", False)),
+        activation_timeout=float(getattr(args, "activation_timeout", 180.0)),
+        host_inspector=dependencies.host_inspector or inspect_host_installation,
+        canary_runner=dependencies.canary_runner or run_canary,
     )
+
+    if dashboard_preflight is not None:
+        dashboard_result = dashboard_preflight
+    else:
+        try:
+            dashboard_result = _install_dashboard(
+                opted_out=dashboard_opted_out,
+                install_dashboard_service=install_dashboard_service,
+                dependencies=dependencies,
+            )
+        except Exception as exc:
+            dashboard_result = {
+                "ok": False,
+                "complete": False,
+                "exit_code": 1,
+                "status": "failed_before_commit",
+                "changed": False,
+                "error": f"{type(exc).__name__}: {safe_display_token(str(exc), limit=500)}",
+            }
 
     if not json_mode:
         _render_install_summary(
@@ -1289,23 +1304,12 @@ def cmd_install(
             dashboard_result=dashboard_result,
             dashboard_opted_out=dashboard_opted_out,
         )
-        if args.all:
-            print(f"\n🔍 Detected {len(targets)} agent host(s): {', '.join(targets)}")
-
-    host_results = _install_hosts(
-        targets,
-        cfg,
-        all_hosts=args.all,
-        json_mode=json_mode,
-        install_agent_adapter=install_agent_adapter,
-        verify_activation=bool(getattr(args, "verify_activation", False)),
-        activation_timeout=float(getattr(args, "activation_timeout", 180.0)),
-        host_inspector=dependencies.host_inspector or inspect_host_installation,
-        canary_runner=dependencies.canary_runner or run_canary,
-    )
+        if all_hosts:
+            detected = ", ".join(targets) if targets else "none"
+            print(f"\n🔍 Auto-detected {len(targets)} agent host(s): {detected}")
 
     if not targets and not json_mode:
-        print("\n💡 Run `agency install --all --dry-run` to preview discovered host integrations.")
+        print("\n💡 No supported host harnesses were detected; other requested components ran.")
         print("   Run `agency dashboard` to open the local operations dashboard.")
     if json_mode:
         complete = _report_complete(dashboard_result, host_results)
@@ -1318,14 +1322,19 @@ def cmd_install(
                 "roster_upgraded": roster_upgraded,
                 "contractors_installed": contractors_installed,
                 "contractors_existing": contractors_existing,
+                "selected_hosts": "all_detected" if all_hosts else "explicit",
                 "hosts": host_results,
                 "dashboard": dashboard_result,
+                "partial": not complete
+                and bool(
+                    dashboard_result.get("ok") or any(item.get("ok") for item in host_results)
+                ),
             }
         )
     successful = _install_succeeded(
         dashboard_result,
         host_results,
-        all_hosts=args.all,
+        all_hosts=all_hosts,
     )
     return 0 if successful else 1
 

@@ -510,7 +510,6 @@ jobs:
       - name: Smoke release modules without installing the project
         run: |
           python -m scripts.build_distributions --help
-          python -m scripts.build_windows_operator_presence --help
           python -m scripts.verify_distribution --help
       - name: Prepare private release runtime
         shell: bash
@@ -532,10 +531,6 @@ jobs:
         run: >-
           "${AGENCY_CI_PYTHON}" -m scripts.prove_autocrlf_checkout
           --expected-commit "${AGENCY_RELEASE_COMMIT}"
-      - name: Rebuild and byte-verify Windows operator-presence helper
-        if: runner.os == 'Windows'
-        shell: bash
-        run: '"${AGENCY_CI_PYTHON}" -m scripts.build_windows_operator_presence'
       - name: Build wheel and source distribution
         shell: bash
         run: >-

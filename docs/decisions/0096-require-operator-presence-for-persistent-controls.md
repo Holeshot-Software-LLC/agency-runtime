@@ -18,7 +18,6 @@ related:
   - docs/decisions/0090-model-facing-control-paths-are-read-only.md
   - docs/THREAT_MODEL.md
   - agency_runtime/server/dashboard.py
-  - agency_runtime/core/windows_operator_presence.py
   - agency_runtime/core/store/roster.py
 supersedes:
   - docs/decisions/0090-model-facing-control-paths-are-read-only.md
