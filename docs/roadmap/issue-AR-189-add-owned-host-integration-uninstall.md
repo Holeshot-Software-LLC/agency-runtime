@@ -223,6 +223,18 @@ passes 31 tests, including a retained path containing PowerShell
 metacharacters. The result uses single-quoted PowerShell literals and `&`, not a
 CreateProcess-style command line misrepresented as shell-safe.
 
+From the clean `7d6558a`/`904aeb5` checkpoint, a live source-tree
+`agency uninstall --all --dry-run --json` completed successfully in 5.6 seconds.
+It inspected all five canonical hosts, selected only the ownership-proven Codex
+integration, confirmed the exact native plugin and marketplace source, and
+emitted a bound one-host removal plan while preserving the marketplace and all
+runtime data. It made no mutation and invoked no native confirmation. The same
+observation truthfully reported the installed Codex launcher attestation stale
+because its launcher artifacts have drifted; that broader activation condition
+does not weaken the uninstall preview because the actual current launcher chain
+is independently frozen into this plan, but it must not be described as fresh
+Agency loading evidence.
+
 This fast evidence covers the exact prepared native action, aggregate authority
 binding, shared lifecycle lock across every Agency lifecycle writer,
 deterministic retained destination, exact-backup recovery, and handle-bound

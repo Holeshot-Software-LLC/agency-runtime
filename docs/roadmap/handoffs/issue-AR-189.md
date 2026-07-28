@@ -16,8 +16,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-189
 branch: main
-evidence_commit: e21eab3583fd02e81a10302ee71fe064d454e83d
-minimum_ledger_commit: b1ecdcf1e2043853cef9e68153c67090c6060c1a
+evidence_commit: 7d6558a15d81162331e2f9e164b9691de1a94576
+minimum_ledger_commit: 904aeb5020d03d4638ae2a15fda0b856684682ee
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -30,11 +30,10 @@ owns the complete problem, approach, acceptance, and implementation evidence.
 
 ## checkpoint
 
-- Branch `main` entered this package at clean substantive/ledger pair
-  `e21eab3`/`b1ecdcf`; AR-189 is the current bounded substantive package and
-  requires its own parent-owned substantive/ledger checkpoint before live work.
-- Telemetry reported 14.5 percent remaining and requires a clean checkpoint,
-  not a task transfer or an exhaustive workflow.
+- Branch `main` contains the clean AR-189 substantive/ledger checkpoint
+  `7d6558a`/`904aeb5`.
+- Immediately before the live write-free evaluation, telemetry reported 73.6
+  percent remaining and required no additional checkpoint.
 - Scope is host-integration retirement only. Package removal, data purge,
   dashboard-service removal, host restart, marketplace deletion, tracker writes,
   publication, and hosted workflow dispatch are excluded.
@@ -86,15 +85,24 @@ owns the complete problem, approach, acceptance, and implementation evidence.
   authorized.
 - After final recovery-command rendering, the host-only suite passes 31 tests,
   including a retained path with PowerShell metacharacters.
+- A live `agency uninstall --all --dry-run --json` completed in 5.6 seconds,
+  inspected all five canonical hosts, selected only the owned Codex integration,
+  and emitted a complete bound plan without mutation or Windows confirmation.
+  It also reported existing Codex launcher-artifact drift and a stale canary;
+  that is not fresh activation evidence and remains separate from uninstall
+  planning correctness.
 
 ## exact-blocker
 
-- The current hardened implementation and documentation are not yet represented
-  by their own clean substantive/ledger commit pair. The parent task owns that
-  checkpoint now that fast verification passes.
 - A real mutating Windows canary requires the exact native consent interaction
   and an ownership-proven disposable integration. It must not be simulated or
-  inferred from unit tests. Write-free live planning remains safe to demo.
+  inferred from unit tests. The successful write-free live plan is sufficient
+  for the bounded demo verdict; it did not authorize removing the installed
+  Codex integration.
+- The installed Codex integration is registered and enabled, but its existing
+  launcher attestation is stale because launcher artifacts drifted. An attended
+  refresh and fresh activation proof belong to the broader production goal, not
+  this uninstall mutation surface.
 - Tracker creation is an outward-facing write pending explicit authorization.
   The missing tracker URL does not weaken local implementation or test evidence.
 - No current exhaustive corpus, coverage-shard, compatibility-matrix, hosted,
@@ -112,13 +120,12 @@ presence.
 
 ## next-bounded-work-package
 
-1. Create the parent-owned substantive and `docs(worklog):` ledger commits,
-   preserving the user draft and unrelated work.
-2. Run a fresh write-free live plan against the installed host inventory. If an
-   ownership-proven disposable Windows integration and operator are available,
-   perform one attended apply and prove native detachment, exact retention, and
-   idempotent re-plan; otherwise record the precise live limitation without
-   faking success.
+1. Push the reviewed checkpoint to `main` without dispatching the exhaustive
+   workflow.
+2. When an operator and ownership-proven disposable integration are available,
+   optionally perform one attended apply and prove native detachment, exact
+   retention, and idempotent re-plan. Do not remove the live Codex integration
+   merely to obtain this optional evidence.
 
 ## verification
 
