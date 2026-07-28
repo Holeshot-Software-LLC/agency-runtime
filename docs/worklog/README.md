@@ -283,6 +283,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `42da990` | 2026-07-28 | fix(codex): separate activation child goal | [AR-195](../roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md), [AR-196](../roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md) | [detail](2026-07-28-42da990-separate-codex-activation-child-goal.md) |
 | `8136510` | 2026-07-28 | docs(architecture): retire Agency Windows Hello | [AR-197](../roadmap/issue-AR-197-remove-agency-owned-windows-hello.md), [AR-196](../roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md) | [detail](2026-07-28-8136510-retire-agency-windows-hello.md) |
 | `f5ca172` | 2026-07-28 | feat(installer): install applicable suite by default | [AR-197](../roadmap/issue-AR-197-remove-agency-owned-windows-hello.md), [AR-198](../roadmap/issue-AR-198-install-applicable-suite-by-default.md) | [detail](2026-07-28-f5ca172-install-applicable-suite.md) |
+| `da012ab` | 2026-07-28 | docs(checkpoint): record full-suite installer verification | [AR-198](../roadmap/issue-AR-198-install-applicable-suite-by-default.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
