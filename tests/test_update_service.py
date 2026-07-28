@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -416,7 +417,7 @@ def test_check_timeout_is_one_total_deadline(
     assert status["error"] == "GitHub update check timed out"
 
 
-def test_attended_plan_pins_the_resolved_sha_and_never_executes() -> None:
+def _available_main_status() -> dict[str, Any]:
     selector = subject.normalize_update_selector(channel="main")
     target = {
         "kind": "main",
@@ -427,7 +428,7 @@ def test_attended_plan_pins_the_resolved_sha_and_never_executes() -> None:
         "url": f"https://github.com/{subject.REPOSITORY}/commit/{_MAIN_SHA}",
         "published_at": None,
     }
-    status = subject._status_from_entry(
+    return subject._status_from_entry(
         selector,
         _installed(),
         {"checked_at": 5_000, "expires_at": 6_000, "target": target, "error": None},
@@ -435,14 +436,585 @@ def test_attended_plan_pins_the_resolved_sha_and_never_executes() -> None:
         cache_hit=False,
     )
 
-    plan = subject.attended_upgrade_plan(status)
+
+def test_attended_plan_pins_the_resolved_sha_and_never_executes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    interpreter = str(Path("C:/owner tools/python.exe"))
+    monkeypatch.setattr(
+        subject,
+        "_attended_upgrade_install",
+        lambda source: (
+            [
+                interpreter,
+                "-I",
+                "-m",
+                "pip",
+                "--isolated",
+                "--disable-pip-version-check",
+                "install",
+                "--upgrade",
+                "--force-reinstall",
+                source,
+            ],
+            "pip",
+            interpreter,
+        ),
+    )
+
+    plan = subject.attended_upgrade_plan(_available_main_status())
 
     assert plan["mode"] == "attended-external"
+    assert plan["installer"] == "pip"
     assert plan["mutation_performed"] is False
     assert plan["requires_operator_presence"] is True
+    assert plan["commands"][0]["argv"][:4] == [interpreter, "-I", "-m", "pip"]
     assert f"@{_MAIN_SHA}" in plan["commands"][0]["display"]
     assert "@main" not in plan["commands"][0]["display"]
+    assert plan["commands"][1]["argv"][:4] == [
+        interpreter,
+        "-I",
+        "-m",
+        "agency_runtime.cli",
+    ]
     assert plan["commands"][1]["argv"][-3:] == ["--agent", "codex", "--no-dashboard"]
+
+
+def _prepared_interpreter(path: Path) -> subject.PreparedProcessArgv:
+    return subject.PreparedProcessArgv([str(path)], artifact_paths=(str(path),))
+
+
+def test_windows_upgrade_display_is_an_inert_powershell_invocation() -> None:
+    display = subject._display_argv(
+        [r"C:\Owner O'Brien & Co\uv.exe", "tool", "$(host); (unsafe)"],
+        platform_name="nt",
+    )
+
+    assert display == ("& 'C:\\Owner O''Brien & Co\\uv.exe' 'tool' '$(host); (unsafe)'")
+
+
+def test_upgrade_interpreter_rejects_a_repository_contained_prefix(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = tmp_path / "repository"
+    prefix = repository / ".venv"
+    executable = prefix / ("python.exe" if os.name == "nt" else "python")
+    executable.parent.mkdir(parents=True)
+    executable.write_bytes(b"python")
+    (repository / ".git").mkdir()
+    monkeypatch.setattr(subject.sys, "prefix", str(prefix))
+    monkeypatch.setattr(subject.sys, "executable", str(executable))
+    monkeypatch.setattr(subject, "validate_private_directory", lambda path: path.resolve())
+    monkeypatch.setattr(subject, "_upgrade_repository_roots", lambda: (repository,))
+    monkeypatch.setattr(
+        subject,
+        "distribution",
+        lambda _name: pytest.fail("repository environments must be rejected before metadata"),
+    )
+
+    with pytest.raises(PermissionError, match="inside a repository"):
+        subject._prepared_upgrade_interpreter()
+
+
+def test_uv_resolution_excludes_nested_repository_without_excluding_home(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "owner home"
+    prefix = home / "uv" / "tools" / "agency-runtime"
+    repository = home / "work" / "repository"
+    binary_directory = home / ".local" / "bin"
+    prefix.mkdir(parents=True)
+    (repository / ".git").mkdir(parents=True)
+    binary_directory.mkdir(parents=True)
+    executable = binary_directory / ("uv.exe" if os.name == "nt" else "uv")
+    executable.write_bytes(b"uv")
+    executable.chmod(0o700)
+    monkeypatch.setenv("PATH", str(binary_directory))
+
+    prepared = subject._prepared_uv_launcher(
+        prefix=prefix,
+        forbidden_roots=(repository,),
+    )
+
+    assert prepared is not None
+    assert Path(prepared[0]).resolve() == executable.resolve()
+
+
+def test_uv_resolution_rejects_a_nested_repository_from_a_broad_home(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "owner-home"
+    prefix = home / "uv" / "tools" / "agency-runtime"
+    repository = home / "work" / "evil-repository"
+    binary_directory = repository / "bin"
+    prefix.mkdir(parents=True)
+    (repository / ".git").mkdir(parents=True)
+    binary_directory.mkdir()
+    executable = binary_directory / ("uv.exe" if os.name == "nt" else "uv")
+    executable.write_bytes(b"uv")
+    executable.chmod(0o700)
+    monkeypatch.chdir(home)
+    monkeypatch.setenv("PATH", str(binary_directory))
+
+    assert subject._prepared_uv_launcher(prefix=prefix, forbidden_roots=()) is None
+
+
+def test_uv_resolution_fails_closed_when_preparation_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        subject,
+        "prepare_process_argv",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("unsafe uv")),
+    )
+
+    assert subject._prepared_uv_launcher(prefix=tmp_path, forbidden_roots=()) is None
+
+
+def test_attended_install_prefers_validated_uv_tool_even_when_pip_is_available(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prefix = tmp_path / "tool-environment"
+    prefix.mkdir()
+    (prefix / "uv-receipt.toml").write_text("receipt", encoding="utf-8")
+    interpreter = _prepared_interpreter(prefix / "python.exe")
+    uv_executable = str(tmp_path / "owner tools" / "uv.exe")
+    uv_launcher = _prepared_interpreter(Path(uv_executable))
+    monkeypatch.setattr(
+        subject,
+        "_prepared_upgrade_interpreter",
+        lambda: (interpreter, prefix, ()),
+    )
+    monkeypatch.setattr(
+        subject,
+        "_validated_agency_uv_tool_environment",
+        lambda **_kwargs: tmp_path / "bin" / "agency.exe",
+    )
+    monkeypatch.setattr(subject, "_prepared_uv_launcher", lambda **_kwargs: uv_launcher)
+    monkeypatch.setattr(
+        subject,
+        "_uv_tool_targets_current_environment",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(
+        subject,
+        "_pip_module_available",
+        lambda *_args, **_kwargs: pytest.fail("a uv-owned environment must not use pip"),
+    )
+
+    selected = subject._attended_upgrade_install("agency-runtime @ git+https://safe.test@abc")
+
+    assert selected is not None
+    command, installer, refresh_interpreter = selected
+    assert installer == "uv-tool"
+    assert refresh_interpreter == interpreter[0]
+    assert command[:7] == [
+        uv_executable,
+        "tool",
+        "install",
+        "--force",
+        "--refresh",
+        "--no-config",
+        "agency-runtime @ git+https://safe.test@abc",
+    ]
+    assert "pip" not in command
+
+
+def test_uv_target_probe_binds_tool_and_binary_directories(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tool_directory = tmp_path / "tools"
+    prefix = tool_directory / "agency-runtime"
+    binary_directory = tmp_path / "bin"
+    prefix.mkdir(parents=True)
+    binary_directory.mkdir()
+    entrypoint = binary_directory / ("agency.exe" if os.name == "nt" else "agency")
+    entrypoint.write_bytes(b"agency")
+    launcher = _prepared_interpreter(tmp_path / ("uv.exe" if os.name == "nt" else "uv"))
+    for key in subject.UV_TARGET_OVERRIDE_KEYS:
+        monkeypatch.delenv(key, raising=False)
+
+    def run(argv, **_kwargs):
+        value = binary_directory if "--bin" in argv else tool_directory
+        return subject.BoundedProcessResult(0, f"{value}\n", "")
+
+    monkeypatch.setattr(subject, "run_bounded_process", run)
+
+    assert subject._uv_tool_targets_current_environment(
+        launcher,
+        prefix=prefix,
+        entrypoint=entrypoint,
+    )
+
+
+@pytest.mark.parametrize("override", sorted(subject.UV_TARGET_OVERRIDE_KEYS))
+def test_uv_target_probe_rejects_environment_overrides(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    override: str,
+) -> None:
+    prefix = tmp_path / "tools" / "agency-runtime"
+    prefix.mkdir(parents=True)
+    entrypoint = tmp_path / "bin" / "agency"
+    entrypoint.parent.mkdir()
+    entrypoint.write_bytes(b"agency")
+    launcher = _prepared_interpreter(tmp_path / ("uv.exe" if os.name == "nt" else "uv"))
+    for key in subject.UV_TARGET_OVERRIDE_KEYS:
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv(override, str(tmp_path / "redirected"))
+    monkeypatch.setattr(
+        subject,
+        "_bounded_uv_directory",
+        lambda *_args, **_kwargs: pytest.fail("overrides must fail before probing uv"),
+    )
+
+    assert not subject._uv_tool_targets_current_environment(
+        launcher,
+        prefix=prefix,
+        entrypoint=entrypoint,
+    )
+
+
+def test_uv_target_probe_rejects_a_different_tool_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expected = tmp_path / "expected"
+    prefix = expected / "agency-runtime"
+    actual = tmp_path / "other-tools"
+    binary_directory = tmp_path / "bin"
+    for directory in (prefix, actual, binary_directory):
+        directory.mkdir(parents=True)
+    entrypoint = binary_directory / "agency"
+    entrypoint.write_bytes(b"agency")
+    launcher = _prepared_interpreter(tmp_path / ("uv.exe" if os.name == "nt" else "uv"))
+    for key in subject.UV_TARGET_OVERRIDE_KEYS:
+        monkeypatch.delenv(key, raising=False)
+
+    def run(argv, **_kwargs):
+        value = binary_directory if "--bin" in argv else actual
+        return subject.BoundedProcessResult(0, f"{value}\n", "")
+
+    monkeypatch.setattr(subject, "run_bounded_process", run)
+
+    assert not subject._uv_tool_targets_current_environment(
+        launcher,
+        prefix=prefix,
+        entrypoint=entrypoint,
+    )
+
+
+def test_uv_target_probe_rejects_a_renamed_agency_environment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tool_directory = tmp_path / "tools"
+    prefix = tool_directory / "renamed-environment"
+    binary_directory = tmp_path / "bin"
+    prefix.mkdir(parents=True)
+    binary_directory.mkdir()
+    entrypoint = binary_directory / ("agency.exe" if os.name == "nt" else "agency")
+    entrypoint.write_bytes(b"agency")
+    launcher = _prepared_interpreter(tmp_path / ("uv.exe" if os.name == "nt" else "uv"))
+    for key in subject.UV_TARGET_OVERRIDE_KEYS:
+        monkeypatch.delenv(key, raising=False)
+
+    def run(argv, **_kwargs):
+        value = binary_directory if "--bin" in argv else tool_directory
+        return subject.BoundedProcessResult(0, f"{value}\n", "")
+
+    monkeypatch.setattr(subject, "run_bounded_process", run)
+
+    assert not subject._uv_tool_targets_current_environment(
+        launcher,
+        prefix=prefix,
+        entrypoint=entrypoint,
+    )
+
+
+def test_attended_plan_fails_closed_without_pip_or_validated_uv_tool(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prefix = tmp_path / "environment"
+    prefix.mkdir()
+    interpreter = _prepared_interpreter(prefix / "python.exe")
+    monkeypatch.setattr(
+        subject,
+        "_prepared_upgrade_interpreter",
+        lambda: (interpreter, prefix, ()),
+    )
+    monkeypatch.setattr(subject, "_pip_module_available", lambda *_args, **_kwargs: False)
+
+    plan = subject.attended_upgrade_plan(_available_main_status())
+
+    assert plan["mode"] == "unavailable"
+    assert plan["mutation_performed"] is False
+    assert plan["commands"] == []
+    assert "no usable pip module" in plan["reason"]
+
+
+def test_attended_install_uses_isolated_pip_only_without_a_uv_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prefix = tmp_path / "environment"
+    prefix.mkdir()
+    interpreter = _prepared_interpreter(prefix / ("python.exe" if os.name == "nt" else "python"))
+    monkeypatch.setattr(
+        subject,
+        "_prepared_upgrade_interpreter",
+        lambda: (interpreter, prefix, ()),
+    )
+    monkeypatch.setattr(subject, "_pip_module_available", lambda *_args, **_kwargs: True)
+
+    selected = subject._attended_upgrade_install("agency-runtime @ git+https://safe.test@abc")
+
+    assert selected is not None
+    command, installer, refresh_interpreter = selected
+    assert installer == "pip"
+    assert refresh_interpreter == interpreter[0]
+    assert command == [
+        interpreter[0],
+        "-I",
+        "-m",
+        "pip",
+        "--isolated",
+        "--disable-pip-version-check",
+        "install",
+        "--upgrade",
+        "--force-reinstall",
+        "agency-runtime @ git+https://safe.test@abc",
+    ]
+
+
+def test_uv_tool_environment_requires_exact_bounded_agency_receipt(
+    tmp_path: Path,
+) -> None:
+    receipt = tmp_path / "uv-receipt.toml"
+    entrypoint = tmp_path / "bin" / ("agency.exe" if os.name == "nt" else "agency")
+    entrypoint.parent.mkdir()
+    entrypoint.write_bytes(b"launcher")
+    entrypoint.chmod(0o700)
+    receipt.write_text(
+        "[tool]\n"
+        'requirements = [{ name = "agency-runtime", git = "https://example.test/repo" }]\n'
+        "entrypoints = [\n"
+        f'    {{ name = "agency", install-path = "{entrypoint.as_posix()}", '
+        'from = "agency-runtime" },\n'
+        "]\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        subject._validated_agency_uv_tool_environment(prefix=tmp_path, forbidden_roots=())
+        == entrypoint
+    )
+
+    receipt.write_text(
+        "[unrelated]\n"
+        'requirements = [{ name = "agency-runtime", version = "1.0" }]\n'
+        "[tool]\n"
+        'requirements = [{ name = "unrelated", version = "1.0" }]\n'
+        "entrypoints = [\n"
+        f'    {{ name = "agency", install-path = "{entrypoint.as_posix()}", '
+        'from = "agency-runtime" },\n'
+        "]\n",
+        encoding="utf-8",
+    )
+    assert not subject._validated_agency_uv_tool_environment(
+        prefix=tmp_path,
+        forbidden_roots=(),
+    )
+
+
+def test_uv_tool_environment_rejects_a_different_entrypoint_name(tmp_path: Path) -> None:
+    entrypoint = tmp_path / "bin" / ("other.exe" if os.name == "nt" else "other")
+    entrypoint.parent.mkdir()
+    entrypoint.write_bytes(b"launcher")
+    entrypoint.chmod(0o700)
+    (tmp_path / "uv-receipt.toml").write_text(
+        "[tool]\n"
+        'requirements = [{ name = "agency-runtime", version = "1.0" }]\n'
+        "entrypoints = [\n"
+        f'    {{ name = "agency", install-path = "{entrypoint.as_posix()}", '
+        'from = "agency-runtime" },\n'
+        "]\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        subject._validated_agency_uv_tool_environment(prefix=tmp_path, forbidden_roots=()) is None
+    )
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        b"\xff\xfe",
+        b"[tool]\rrequirements = []\nentrypoints = []\n",
+        b"[tool]\nrequirements = []\nentrypoints = []\n[tool]\n",
+        (
+            b'[tool]\nrequirements = [{ name = "agency-runtime", name = "other" }]\n'
+            b"entrypoints = []\n"
+        ),
+    ],
+)
+def test_uv_tool_environment_rejects_ambiguous_receipts(
+    tmp_path: Path,
+    payload: bytes,
+) -> None:
+    (tmp_path / "uv-receipt.toml").write_bytes(payload)
+
+    assert not subject._validated_agency_uv_tool_environment(
+        prefix=tmp_path,
+        forbidden_roots=(),
+    )
+
+
+def test_uv_tool_environment_rejects_missing_and_oversized_receipts(tmp_path: Path) -> None:
+    assert not subject._validated_agency_uv_tool_environment(
+        prefix=tmp_path,
+        forbidden_roots=(),
+    )
+
+    (tmp_path / "uv-receipt.toml").write_bytes(b"x" * (subject.UV_RECEIPT_MAX_BYTES + 1))
+    assert not subject._validated_agency_uv_tool_environment(
+        prefix=tmp_path,
+        forbidden_roots=(),
+    )
+
+
+@pytest.mark.skipif(os.name == "nt", reason="uv uses copied launchers on Windows")
+def test_uv_tool_environment_accepts_only_an_in_prefix_posix_symlink(
+    tmp_path: Path,
+) -> None:
+    prefix = tmp_path / "tools" / "agency-runtime"
+    target = prefix / "bin" / "agency"
+    entrypoint = tmp_path / "bin" / "agency"
+    target.parent.mkdir(parents=True)
+    entrypoint.parent.mkdir()
+    target.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    target.chmod(0o700)
+    entrypoint.symlink_to(target)
+    (prefix / "uv-receipt.toml").write_text(
+        "[tool]\n"
+        'requirements = [{ name = "agency-runtime", version = "1.0" }]\n'
+        "entrypoints = [\n"
+        f'    {{ name = "agency", install-path = "{entrypoint}", '
+        'from = "agency-runtime" },\n'
+        "]\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        subject._validated_agency_uv_tool_environment(prefix=prefix, forbidden_roots=())
+        == entrypoint
+    )
+
+    outside = tmp_path / "outside" / "agency"
+    outside.parent.mkdir()
+    outside.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    outside.chmod(0o700)
+    entrypoint.unlink()
+    entrypoint.symlink_to(outside)
+    assert subject._validated_agency_uv_tool_environment(prefix=prefix, forbidden_roots=()) is None
+
+
+def test_pip_capability_requires_regular_entrypoint_inside_exact_prefix(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prefix = tmp_path / "environment"
+    package_root = prefix / "Lib" / "site-packages"
+    pip_root = package_root / "pip"
+    pip_root.mkdir(parents=True)
+    (pip_root / "__main__.py").write_text("raise SystemExit(0)\n", encoding="utf-8")
+
+    class PipDistribution:
+        def __init__(self) -> None:
+            self.metadata = {"Name": "pip"}
+
+        @staticmethod
+        def locate_file(_name: str) -> Path:
+            return package_root
+
+    monkeypatch.setattr(subject, "distribution", lambda _name: PipDistribution())
+    monkeypatch.setattr(
+        subject,
+        "run_bounded_process",
+        lambda *_args, **_kwargs: subject.BoundedProcessResult(0, "pip 1", ""),
+    )
+    interpreter = _prepared_interpreter(prefix / "python.exe")
+    assert subject._pip_module_available(interpreter, prefix=prefix) is True
+
+    outside = tmp_path / "outside"
+    (outside / "pip").mkdir(parents=True)
+    (outside / "pip" / "__main__.py").write_text("raise SystemExit(0)\n", encoding="utf-8")
+
+    class OutsideDistribution(PipDistribution):
+        @staticmethod
+        def locate_file(_name: str) -> Path:
+            return outside
+
+    monkeypatch.setattr(subject, "distribution", lambda _name: OutsideDistribution())
+    assert subject._pip_module_available(interpreter, prefix=prefix) is False
+
+
+@pytest.mark.parametrize(
+    "result",
+    [
+        subject.BoundedProcessResult(1, "", "broken"),
+        subject.BoundedProcessResult(0, "", "", timed_out=True),
+        subject.BoundedProcessResult(0, "pip", "", stdout_truncated=True),
+        subject.BoundedProcessResult(0, "pip", "", stderr_truncated=True),
+    ],
+)
+def test_pip_capability_requires_a_complete_successful_isolated_probe(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    result: subject.BoundedProcessResult,
+) -> None:
+    package_root = tmp_path / "Lib" / "site-packages"
+    (package_root / "pip").mkdir(parents=True)
+    (package_root / "pip" / "__main__.py").write_text("pass\n", encoding="utf-8")
+
+    class PipDistribution:
+        def __init__(self) -> None:
+            self.metadata = {"Name": "pip"}
+
+        @staticmethod
+        def locate_file(_name: str) -> Path:
+            return package_root
+
+    captured: dict[str, object] = {}
+
+    def run(argv, **kwargs):
+        captured["argv"] = list(argv)
+        captured.update(kwargs)
+        return result
+
+    monkeypatch.setattr(subject, "distribution", lambda _name: PipDistribution())
+    monkeypatch.setattr(subject, "run_bounded_process", run)
+    interpreter = _prepared_interpreter(tmp_path / "python.exe")
+
+    assert not subject._pip_module_available(interpreter, prefix=tmp_path)
+    assert captured["argv"][-6:] == [
+        "-I",
+        "-m",
+        "pip",
+        "--isolated",
+        "--disable-pip-version-check",
+        "--version",
+    ]
+    assert captured["cwd"] == str(tmp_path)
+    assert "PYTHONPATH" not in captured["env"]
 
 
 def test_cached_notice_validates_untrusted_label_before_terminal_output(

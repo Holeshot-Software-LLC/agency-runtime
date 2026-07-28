@@ -109,7 +109,10 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
                 print(f"  {index}. {command['display']}")
             if plan.get("commands"):
                 print("No command was executed by Agency Runtime.")
-    return 0 if status.get("checked") and not status.get("error") else 1
+    succeeded = bool(status.get("checked") and not status.get("error"))
+    if not check_only and payload["plan"].get("mode") == "unavailable":
+        succeeded = False
+    return 0 if succeeded else 1
 
 
 __all__ = ["cmd_upgrade", "cmd_version"]

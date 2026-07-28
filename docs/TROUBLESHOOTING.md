@@ -19,6 +19,7 @@ related:
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
+  - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0071-bound-native-delegation-correction.md
@@ -81,6 +82,20 @@ commits. `local_changes` means the commit matches but tracked files differ.
 `agency upgrade` only prints exact-SHA commands. Run them, if desired, in an
 owner-controlled terminal and then complete the normal Codex trust/activation
 steps; the dashboard cannot apply them.
+
+A uv-managed Agency tool intentionally has no `pip` module. Current builds
+validate the bounded `uv-receipt.toml` for this exact Agency tool environment,
+resolve `uv` outside repository-controlled roots, and require bounded no-config
+tool/bin directory probes to match the current prefix and receipt entry point
+before printing an exact-SHA `uv tool install` command. Target-changing uv/XDG
+environment overrides fail closed. Ordinary pip-capable environments retain the
+interpreter-bound isolated-mode pip command only when pip's regular entry point
+is inside the exact environment prefix and its bounded `pip --isolated
+--disable-pip-version-check --version` probe succeeds. Run a displayed plan
+unchanged in the same owner-controlled environment; regenerate it after any
+environment change. If neither path is proven, the plan reports `unavailable`
+with no command; do not add pip to the tool environment or copy a mutable
+`main` command around that failure.
 
 ## Host was not discovered
 

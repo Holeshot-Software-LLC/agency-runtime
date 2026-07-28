@@ -6,6 +6,7 @@ created: 2026-07-28
 updated: 2026-07-28
 tags: [cli, dashboard, release, security, operations]
 related:
+  - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/decisions/0091-least-privilege-subprocess-environments.md
   - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
@@ -30,7 +31,7 @@ issue_id: AR-188
 priority: p1
 tracker_url: null
 depends_on: []
-blocks: []
+blocks: [AR-190]
 ---
 
 # AR-188: Add immutable update discovery and attended upgrade plans
@@ -65,9 +66,10 @@ projects only that validated cache and schedules stale release/main checks in
 bounded daemon workers; hook and MCP hot paths never perform update I/O.
 
 `agency upgrade` does not install anything. It converts a resolved target into
-an exact commit-pinned pip command and a separate Codex refresh command for an
-owner-controlled terminal. The dashboard may copy that fixed attended command,
-but cannot execute it. Mutable `main` and arbitrary refs are reported as
+an exact commit-pinned package command that the current pip or validated
+Agency uv-tool environment can execute, plus a separate Codex refresh command
+for an owner-controlled terminal. The dashboard may copy that fixed attended
+command, but cannot execute it. Mutable `main` and arbitrary refs are reported as
 `different_target` when they differ; they are not called upgrades because
 direction cannot be proven without ancestry evidence. Canonical stable releases
 alone generate automatic update notices.
@@ -111,7 +113,8 @@ authorization for the outward-facing write.
   asynchronous, and hook/MCP paths perform no update work.
 - [x] The authenticated read-only dashboard traces `/api/update` through strict
   browser schema validation to one inert link and one fixed copy action.
-- [x] `agency upgrade` emits exact-SHA attended commands and truthfully reports
+- [x] `agency upgrade` emits environment-usable exact-SHA attended commands,
+  fails closed when no installer is proven, and truthfully reports
   `mutation_performed=false`.
 - [x] Focused CLI, cache, concurrency, timeout, dashboard API/UI, parser, and
   packaging-budget regressions pass.

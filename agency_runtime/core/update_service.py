@@ -30,6 +30,7 @@ from typing import Any
 from urllib.parse import quote, unquote, urlsplit
 
 from agency_runtime import __version__
+from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.configuration import restrict_private_file
 from agency_runtime.core.configuration_persistence import config_lock
@@ -43,9 +44,12 @@ from agency_runtime.core.private_paths import (
     validate_private_directory,
 )
 from agency_runtime.core.process_argv import (
+    PreparedProcessArgv,
+    freeze_persistent_process_argv,
     freeze_process_argv,
     prepare_process_argv,
     repository_forbidden_roots,
+    snapshot_persistent_artifact,
 )
 
 UPDATE_SCHEMA_VERSION = "agency.update.v1"
@@ -63,6 +67,19 @@ MAX_RESPONSE_BYTES = 256 * 1024
 MAX_CACHE_BYTES = 512 * 1024
 MAX_CACHE_ENTRIES = 16
 DASHBOARD_IDENTITY_TTL_SECONDS = 10.0
+UV_RECEIPT_MAX_BYTES = 64 * 1024
+PIP_ENTRYPOINT_MAX_BYTES = 1024 * 1024
+INSTALLER_PROBE_TIMEOUT_SECONDS = 5.0
+INSTALLER_PROBE_MAX_OUTPUT_CHARS = 4096
+UV_TARGET_OVERRIDE_KEYS = frozenset(
+    {
+        "UV_DATA_DIR",
+        "UV_TOOL_BIN_DIR",
+        "UV_TOOL_DIR",
+        "XDG_BIN_HOME",
+        "XDG_DATA_HOME",
+    }
+)
 
 _FULL_SHA = re.compile(r"[0-9a-f]{40}")
 _VERSION = re.compile(
@@ -75,6 +92,16 @@ _DASHBOARD_IDENTITY_LOCK = threading.Lock()
 _DASHBOARD_IDENTITY_CACHE: tuple[float, dict[str, Any]] | None = None
 _INFLIGHT_LOCK = threading.Lock()
 _INFLIGHT: set[str] = set()
+
+_UV_AGENCY_RECEIPT = re.compile(
+    r"\A\[tool\]\n"
+    r'requirements = \[\{ name = "agency-runtime"'
+    r"(?P<requirement_attributes>(?:, [^{}\n]+)?) \}\]\n"
+    r"entrypoints = \[\n"
+    r'    \{ name = "agency", install-path = "(?P<entrypoint>[^"\n]+)", '
+    r'from = "agency-runtime" \},\n'
+    r"\]\n?\Z"
+)
 
 JsonFetcher = Callable[[str, float], Mapping[str, Any]]
 Clock = Callable[[], float]
@@ -915,10 +942,344 @@ def check_for_update(
     return _status_from_entry(selector, installed, entry, now=now, cache_hit=False)
 
 
-def _display_argv(argv: list[str]) -> str:
-    if os.name == "nt":
-        return subprocess.list2cmdline(argv)
+def _display_argv(argv: list[str], *, platform_name: str | None = None) -> str:
+    if (platform_name or os.name) == "nt":
+        # This text is copied into an attended PowerShell session. CreateProcess
+        # quoting is not PowerShell quoting, and a quoted executable needs `&`.
+        def literal(value: str) -> str:
+            return "'" + value.replace("'", "''") + "'"
+
+        return "& " + " ".join(literal(value) for value in argv)
     return shlex.join(argv)
+
+
+def _path_is_within(path: Path, root: Path) -> bool:
+    try:
+        path.resolve(strict=True).relative_to(root.resolve(strict=True))
+    except (OSError, RuntimeError, ValueError):
+        return False
+    return True
+
+
+def _upgrade_repository_roots() -> tuple[Path, ...]:
+    """Return marker-derived repository roots without excluding an entire home."""
+
+    roots: list[Path] = []
+    for candidate in (Path.cwd(), Path(sys.executable).parent, Path(sys.prefix)):
+        roots.extend(repository_forbidden_roots(candidate, include_current=False))
+    return tuple(dict.fromkeys(roots))
+
+
+def _prepared_upgrade_interpreter() -> tuple[PreparedProcessArgv, Path, tuple[Path, ...]]:
+    """Bind the current Agency package to a trusted non-repository interpreter."""
+
+    prefix = validate_private_directory(Path(sys.prefix))
+    forbidden_roots = _upgrade_repository_roots()
+    if any(_path_is_within(prefix, root) for root in forbidden_roots):
+        raise PermissionError("the Agency interpreter environment is inside a repository")
+
+    executable = Path(os.path.abspath(os.path.expanduser(sys.executable)))
+    try:
+        executable.relative_to(prefix)
+    except ValueError as exc:
+        raise PermissionError("the Agency interpreter is outside its environment") from exc
+
+    package = distribution("agency-runtime")
+    if str(package.metadata.get("Name") or "").casefold() != "agency-runtime":
+        raise PermissionError("the Agency package identity is invalid")
+    package_root = Path(package.locate_file("")).resolve(strict=True)
+    if not _path_is_within(package_root, prefix):
+        raise PermissionError("the Agency package is outside its interpreter environment")
+
+    prepared = prepare_process_argv(
+        [str(executable)],
+        current_directory=prefix,
+        forbidden_roots=forbidden_roots,
+    )
+    freeze_persistent_process_argv(prepared, forbidden_roots=forbidden_roots)
+    return prepared, prefix, forbidden_roots
+
+
+def _installer_probe_environment() -> dict[str, str]:
+    """Return the minimal host environment needed for a read-only installer probe."""
+
+    allowed = {
+        "APPDATA",
+        "HOME",
+        "LOCALAPPDATA",
+        "SYSTEMROOT",
+        "TEMP",
+        "TMP",
+        "USERPROFILE",
+        "WINDIR",
+    }
+    environment = {key: value for key, value in os.environ.items() if key.upper() in allowed}
+    environment.update(
+        {
+            "NO_COLOR": "1",
+            "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+            "PIP_NO_INPUT": "1",
+            "PYTHONNOUSERSITE": "1",
+        }
+    )
+    return environment
+
+
+def _pip_module_available(
+    interpreter: PreparedProcessArgv,
+    *,
+    prefix: Path,
+) -> bool:
+    """Prove isolated pip runs from this exact interpreter environment."""
+
+    try:
+        package = distribution("pip")
+        if str(package.metadata.get("Name") or "").casefold() != "pip":
+            return False
+        package_root = Path(package.locate_file("")).resolve(strict=True)
+        if not _path_is_within(package_root, prefix):
+            return False
+        read_bounded_regular_file(
+            package_root / "pip" / "__main__.py",
+            limit=PIP_ENTRYPOINT_MAX_BYTES,
+            label="pip module entry point",
+        )
+        result = run_bounded_process(
+            interpreter.bind(
+                "-I",
+                "-m",
+                "pip",
+                "--isolated",
+                "--disable-pip-version-check",
+                "--version",
+            ),
+            timeout=INSTALLER_PROBE_TIMEOUT_SECONDS,
+            cwd=str(prefix),
+            env=_installer_probe_environment(),
+            max_output_chars=INSTALLER_PROBE_MAX_OUTPUT_CHARS,
+        )
+    except (KeyError, OSError, PackageNotFoundError, TypeError, ValueError):
+        return False
+    return bool(
+        result.returncode == 0
+        and not result.timed_out
+        and not result.stdout_truncated
+        and not result.stderr_truncated
+    )
+
+
+def _validated_agency_uv_tool_environment(
+    *,
+    prefix: Path,
+    forbidden_roots: tuple[Path, ...],
+) -> Path | None:
+    """Recognize uv's exact bounded receipt for this Agency tool environment."""
+
+    receipt = prefix / "uv-receipt.toml"
+    try:
+        payload = read_bounded_regular_file(
+            receipt,
+            limit=UV_RECEIPT_MAX_BYTES,
+            label="uv tool receipt",
+        )
+        text = payload.decode("utf-8").replace("\r\n", "\n")
+        if "\r" in text or any(
+            (ord(character) < 32 and character != "\n") or ord(character) == 127
+            for character in text
+        ):
+            return None
+        match = _UV_AGENCY_RECEIPT.fullmatch(text)
+        if match is None or "name =" in match.group("requirement_attributes"):
+            return None
+        entrypoint = Path(match.group("entrypoint"))
+        if not entrypoint.is_absolute():
+            return None
+        expected_entrypoint_name = "agency.exe" if os.name == "nt" else "agency"
+        observed_entrypoint_name = (
+            entrypoint.name.casefold() if os.name == "nt" else entrypoint.name
+        )
+        if observed_entrypoint_name != expected_entrypoint_name:
+            return None
+        validate_private_directory(entrypoint.parent)
+        entrypoint_identity = snapshot_persistent_artifact(
+            entrypoint,
+            require_executable=True,
+        )
+        resolved_entrypoint = Path(entrypoint_identity.resolved_path)
+        if os.name != "nt" and not _path_is_within(resolved_entrypoint, prefix):
+            return None
+        if any(
+            _path_is_within(candidate, root)
+            for root in forbidden_roots
+            for candidate in (entrypoint, resolved_entrypoint)
+        ):
+            return None
+    except (OSError, UnicodeDecodeError, ValueError):
+        return None
+    return entrypoint
+
+
+def _prepared_uv_launcher(
+    *,
+    prefix: Path,
+    forbidden_roots: tuple[Path, ...],
+) -> PreparedProcessArgv | None:
+    """Resolve and freeze a non-repository uv launcher without excluding home."""
+
+    try:
+        prepared = prepare_process_argv(
+            ["uv"],
+            current_directory=prefix,
+            forbidden_roots=forbidden_roots,
+        )
+        freeze_persistent_process_argv(prepared, forbidden_roots=forbidden_roots)
+        for identity in prepared.persistent_artifact_identities:
+            for candidate in (identity.lexical_path, identity.resolved_path):
+                if repository_forbidden_roots(
+                    Path(candidate).parent,
+                    include_current=False,
+                ):
+                    return None
+    except (FileNotFoundError, OSError, PermissionError, TypeError, ValueError):
+        return None
+    return prepared
+
+
+def _bounded_uv_directory(
+    uv_launcher: PreparedProcessArgv,
+    *arguments: str,
+    prefix: Path,
+) -> Path | None:
+    result = run_bounded_process(
+        uv_launcher.bind("tool", "dir", *arguments, "--no-config"),
+        timeout=INSTALLER_PROBE_TIMEOUT_SECONDS,
+        cwd=str(prefix),
+        env=_installer_probe_environment(),
+        max_output_chars=INSTALLER_PROBE_MAX_OUTPUT_CHARS,
+    )
+    if (
+        result.returncode != 0
+        or result.timed_out
+        or result.stdout_truncated
+        or result.stderr_truncated
+        or result.stderr.strip()
+    ):
+        return None
+    value = result.stdout.strip()
+    if (
+        not value
+        or "\n" in value
+        or "\r" in value
+        or any(ord(character) < 32 or ord(character) == 127 for character in value)
+    ):
+        return None
+    target = Path(value)
+    if not target.is_absolute():
+        return None
+    try:
+        return validate_private_directory(target)
+    except (OSError, ValueError):
+        return None
+
+
+def _uv_tool_targets_current_environment(
+    uv_launcher: PreparedProcessArgv,
+    *,
+    prefix: Path,
+    entrypoint: Path,
+) -> bool:
+    """Prove an unchanged no-config uv command targets this exact tool env."""
+
+    if any(key.upper() in UV_TARGET_OVERRIDE_KEYS for key in os.environ):
+        return False
+    tool_directory = _bounded_uv_directory(uv_launcher, prefix=prefix)
+    binary_directory = _bounded_uv_directory(uv_launcher, "--bin", prefix=prefix)
+    if tool_directory is None or binary_directory is None:
+        return False
+    try:
+        resolved_prefix = prefix.resolve(strict=True)
+        expected_prefix = (tool_directory / "agency-runtime").resolve(strict=False)
+        resolved_tool_directory = tool_directory.resolve(strict=True)
+        expected_tool_directory = prefix.parent.resolve(strict=True)
+        resolved_binary_directory = binary_directory.resolve(strict=True)
+        expected_binary_directory = entrypoint.parent.resolve(strict=True)
+    except (OSError, RuntimeError, ValueError):
+        return False
+    return bool(
+        resolved_prefix == expected_prefix
+        and resolved_tool_directory == expected_tool_directory
+        and resolved_binary_directory == expected_binary_directory
+    )
+
+
+def _attended_upgrade_install(source: str) -> tuple[list[str], str, str] | None:
+    """Choose an installer this exact environment can actually execute."""
+
+    try:
+        interpreter, prefix, forbidden_roots = _prepared_upgrade_interpreter()
+        receipt = prefix / "uv-receipt.toml"
+        try:
+            receipt.lstat()
+        except FileNotFoundError:
+            receipt_present = False
+        except OSError:
+            return None
+        else:
+            receipt_present = True
+
+        if receipt_present:
+            entrypoint = _validated_agency_uv_tool_environment(
+                prefix=prefix,
+                forbidden_roots=forbidden_roots,
+            )
+            if entrypoint is None:
+                return None
+            uv_launcher = _prepared_uv_launcher(
+                prefix=prefix,
+                forbidden_roots=forbidden_roots,
+            )
+            if uv_launcher is None:
+                return None
+            if not _uv_tool_targets_current_environment(
+                uv_launcher,
+                prefix=prefix,
+                entrypoint=entrypoint,
+            ):
+                return None
+            return (
+                [
+                    *uv_launcher,
+                    "tool",
+                    "install",
+                    "--force",
+                    "--refresh",
+                    "--no-config",
+                    source,
+                ],
+                "uv-tool",
+                interpreter[0],
+            )
+
+        if not _pip_module_available(interpreter, prefix=prefix):
+            return None
+        return (
+            [
+                interpreter[0],
+                "-I",
+                "-m",
+                "pip",
+                "--isolated",
+                "--disable-pip-version-check",
+                "install",
+                "--upgrade",
+                "--force-reinstall",
+                source,
+            ],
+            "pip",
+            interpreter[0],
+        )
+    except (KeyError, OSError, PackageNotFoundError, TypeError, ValueError):
+        return None
 
 
 def attended_upgrade_plan(status: Mapping[str, Any]) -> dict[str, Any]:
@@ -943,17 +1304,21 @@ def attended_upgrade_plan(status: Mapping[str, Any]) -> dict[str, Any]:
             "reason": "the installed source already matches the resolved target",
         }
     source = f"agency-runtime @ git+{REPOSITORY_GIT_URL}@{sha}"
-    install = [
-        sys.executable,
-        "-m",
-        "pip",
-        "install",
-        "--upgrade",
-        "--force-reinstall",
-        source,
-    ]
+    selected_install = _attended_upgrade_install(source)
+    if selected_install is None:
+        return {
+            "mode": "unavailable",
+            "mutation_performed": False,
+            "commands": [],
+            "reason": (
+                "the current installation has no usable pip module and is not a validated "
+                "Agency Runtime uv tool environment"
+            ),
+        }
+    install, installer, interpreter = selected_install
     refresh_codex = [
-        sys.executable,
+        interpreter,
+        "-I",
         "-m",
         "agency_runtime.cli",
         "install",
@@ -964,6 +1329,7 @@ def attended_upgrade_plan(status: Mapping[str, Any]) -> dict[str, Any]:
     commands = [install, refresh_codex]
     return {
         "mode": "attended-external",
+        "installer": installer,
         "mutation_performed": False,
         "commands": [{"argv": argv, "display": _display_argv(argv)} for argv in commands],
         "reason": (

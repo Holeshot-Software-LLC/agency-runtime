@@ -37,6 +37,15 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Attended upgrade plans now require a bounded isolated `pip --version` probe
+  to succeed from the exact trusted interpreter environment. Exact Agency
+  Runtime uv-tool environments instead receive a safely
+  resolved, exact-commit `uv tool install` command after their bounded uv
+  receipt, launcher, and default tool/bin targets are validated. Repository
+  launchers, target-changing environment overrides, and unknown no-pip
+  environments fail closed instead of receiving an unusable command. Windows
+  displays use inert PowerShell literals; POSIX uv entrypoint symlinks must
+  resolve back into the exact tool environment.
 - Codex activation canaries now use a persisted non-ephemeral parent, force the
   V2 collaboration surface, and request `fork_turns="none"` for their single
   bounded child. The verifier reconstructs exact spawn, wait, parent-child,

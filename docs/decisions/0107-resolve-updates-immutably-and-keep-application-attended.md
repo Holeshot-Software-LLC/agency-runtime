@@ -7,6 +7,7 @@ updated: 2026-07-28
 tags: [release, security, cli, dashboard, operations]
 related:
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
+  - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/worklog/README.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/decisions/0091-least-privilege-subprocess-environments.md
@@ -60,9 +61,18 @@ host paths do not check the network.
 
 Do not call a differing mutable ref an available upgrade. Only canonical release
 ordering can produce an automatic update notice. `agency upgrade` resolves the
-requested selector, then prints an exact-SHA pip command and a separate Codex
-refresh command. It never executes either. The dashboard remains read-only and
-may only display or copy the fixed attended command for an owner terminal.
+requested selector, then prints an exact-SHA package command and a separate
+Codex refresh command. It uses interpreter-bound isolated-mode pip only when a
+stable regular pip entry point is inside that exact private, non-repository
+prefix and a bounded `pip --isolated --disable-pip-version-check --version`
+probe succeeds. When the executing environment has no pip, it accepts only an
+exact bounded Agency uv-tool receipt, a safely resolved non-repository uv
+executable, and no-config tool/bin probes bound to the current environment.
+Target-changing uv/XDG environment overrides fail closed. A generated plan is
+valid only unchanged in the same owner-controlled environment. An unknown
+no-pip environment gets no install command. Agency never executes either step. The
+dashboard remains read-only and may only display or copy the fixed attended
+command for an owner terminal.
 
 ## Consequences
 
@@ -76,6 +86,9 @@ may only display or copy the fixed attended command for an owner terminal.
   reads and background refresh; update failure does not block runtime work.
 - Applying an update still requires an owner-controlled terminal and any native
   operator-presence/trust steps. This is deliberate, not a missing automation.
+- A uv-managed tool does not need pip injected into its private environment;
+  the attended plan uses its owning installer only after validating the exact
+  Agency receipt. Other no-pip environments fail closed.
 - A branch that differs from the installed commit is reported as different,
   not newer, until independent ancestry evidence exists.
 - The cache can be stale for its documented TTL and GitHub can be unavailable;
@@ -85,6 +98,8 @@ may only display or copy the fixed attended command for an owner terminal.
 
 - **Execute pip directly from `agency upgrade`.** Rejected because discovery
   would gain package mutation authority and could bypass attended host refresh.
+- **Always print `python -m pip`.** Rejected because uv tool environments omit
+  pip by design and the resulting command cannot run.
 - **Let the dashboard install or restart Agency.** Rejected because its bearer
   is observability authority, not proof of human presence.
 - **Install directly from `main`, a tag, or `latest`.** Rejected because the

@@ -359,13 +359,30 @@ credential. `--cached` performs no remote access, and
 `AGENCY_UPDATE_NOTICES=0` disables interactive cache notices.
 
 `agency upgrade` is deliberately a planner, not a self-modifying installer. It
-resolves the selector to one full immutable commit and prints the exact pip and
-Codex-refresh commands for review in an owner-controlled terminal; it reports
-`mutation_performed=false` and executes nothing. The authenticated dashboard
-checks stale release/main metadata in the background and exposes the same fixed
-copy-only attended command. It cannot install packages, refresh Codex, restart
-itself, or bypass Windows operator presence. See
+resolves the selector to one full immutable commit and prints an exact usable
+package-install command plus the Codex-refresh command for review in an
+owner-controlled terminal; it reports
+`mutation_performed=false` and executes neither displayed mutation. The
+authenticated dashboard checks stale release/main metadata in the background
+and exposes the same fixed copy-only attended command. It cannot install
+packages, refresh Codex, restart itself, or bypass Windows operator presence. See
 [ADR-0107](docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md).
+
+The plan uses the current interpreter only after proving the Agency package and
+regular `pip` entry point are inside that exact private, non-repository
+environment and a bounded isolated `pip --version` probe succeeds. A uv-managed
+Agency tool normally omits pip, so Agency instead requires the bounded uv
+receipt to identify this exact tool environment and a non-repository `uv`
+executable. Bounded `uv tool dir --no-config` probes must then prove that uv's
+default tool and executable directories own the current prefix and receipt
+entry point. Target-changing uv/XDG environment overrides fail closed. The
+planner then emits `uv tool install --force --refresh --no-config` against the
+same commit-pinned source. Run the displayed commands unchanged in the same
+owner-controlled environment; regenerate the plan after any environment
+change. Windows displays are inert PowerShell invocations, and POSIX uv
+entrypoint symlinks must resolve inside the exact tool prefix. If neither
+installer can be proven usable, planning fails closed rather than printing a
+command that cannot run.
 
 This unreleased source keeps persistent setup and control mutations fail-closed
 unless one bounded entry point satisfies its native operator-presence and

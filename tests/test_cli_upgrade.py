@@ -106,6 +106,21 @@ def test_upgrade_prints_an_attended_exact_sha_plan_without_executing(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setattr(subject, "check_for_update", lambda **_kwargs: _status())
+    monkeypatch.setattr(
+        subject,
+        "attended_upgrade_plan",
+        lambda _status: {
+            "mode": "attended-external",
+            "mutation_performed": False,
+            "commands": [
+                {
+                    "argv": ["safe-python", "-I", "-m", "pip", f"source@{'e' * 40}"],
+                    "display": f"safe-python -I -m pip source@{'e' * 40}",
+                }
+            ],
+            "reason": "review and run the exact immutable plan",
+        },
+    )
 
     assert cli_main(["upgrade", "--version", "1.3.0", "--json"]) == 0
 
@@ -115,6 +130,25 @@ def test_upgrade_prints_an_attended_exact_sha_plan_without_executing(
     command = payload["plan"]["commands"][0]
     assert f"@{'e' * 40}" in command["display"]
     assert "@v1.3.0" not in command["display"]
+
+
+def test_upgrade_returns_failure_when_no_safe_installer_plan_exists(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(subject, "check_for_update", lambda **_kwargs: _status())
+    monkeypatch.setattr(
+        subject,
+        "attended_upgrade_plan",
+        lambda _status: {
+            "mode": "unavailable",
+            "mutation_performed": False,
+            "commands": [],
+            "reason": "no trusted installer",
+        },
+    )
+
+    assert cli_main(["upgrade", "--version", "1.3.0", "--json"]) == 1
+    assert json.loads(capsys.readouterr().out)["plan"]["mode"] == "unavailable"
 
 
 def test_upgrade_check_reuses_fresh_cache_unless_refresh_is_explicit(

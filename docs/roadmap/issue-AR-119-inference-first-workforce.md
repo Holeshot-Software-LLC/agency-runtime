@@ -22,6 +22,7 @@ related:
   - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
+  - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
@@ -38,7 +39,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-179, AR-180, AR-185]
+depends_on: [AR-115, AR-116, AR-118, AR-179, AR-180, AR-185, AR-190]
 blocks: [AR-178]
 ---
 
