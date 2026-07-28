@@ -6,6 +6,8 @@ created: 2026-07-28
 updated: 2026-07-28
 tags: [windows, dashboard, service, security, operator-presence]
 related:
+  - docs/decisions/0110-remove-agency-owned-windows-hello.md
+  - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
   - docs/decisions/0031-optional-user-dashboard-service-and-shared-configuration.md
   - docs/decisions/0051-bind-dashboard-runtime-publication-to-validated-filesystem-identities.md
   - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
@@ -13,6 +15,7 @@ related:
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
   - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
+  - docs/roadmap/handoffs/issue-AR-196.md
   - agency_runtime/core/operator_presence.py
   - agency_runtime/core/windows_operator_presence.py
   - agency_runtime/core/dashboard_service_install.py
@@ -29,7 +32,7 @@ epic: security
 issue_id: AR-196
 priority: p0
 tracker_url: null
-depends_on: [AR-143, AR-161]
+depends_on: [AR-143, AR-161, AR-197]
 blocks: [AR-194]
 ---
 
@@ -46,27 +49,51 @@ mutation because it may auto-repair, so even a healthy read/open path is gated.
 
 ## Current state
 
-Exact installed revision `10ce6e0` can now inspect the Python-3.13-owned
-service from the Python-3.10 CLI and truthfully reports it installed, enabled,
-inactive, unreachable, stale, and repair-recommended. Running the documented
-repair command returns `unavailable: a non-exporting OS operator-presence
-verifier is not available` and dispatches no mutation. Existing Windows Hello
-support is action-specific to roster rollback, existing Codex refresh, and
-owned host uninstall; its result cannot safely authorize adjacent service
-state. Tracker creation remains pending explicit authorization.
+Exact installed revision `8507778` can inspect the Python-3.13-owned service
+from the Python-3.10 CLI and truthfully reports it installed, enabled, inactive,
+unreachable, stale, and repair-recommended. Running the documented repair
+command returns `unavailable: a non-exporting OS operator-presence verifier is
+not available` and dispatches no mutation. Existing Windows Hello support is
+action-specific to roster rollback, existing Codex refresh, and owned host
+uninstall; its result cannot safely authorize adjacent service state.
+
+A bounded implementation attempt proved that this is not merely a missing
+verifier action. Dashboard activation spans task registration, launcher-runtime
+publication, owner and Codex-broker credential descriptors, process identity,
+Store readiness, and retention maintenance. The draft also exposed unsafe
+rollback claims for surviving fresh or repaired workers, an opaque native
+prompt that omitted exact targets and material consequences, and a stable raw
+configuration digest that could depend on plaintext secrets. The entire draft
+was removed. The pushed source remains fail-closed and the exact findings and
+next package are captured in the active recovery capsule. Tracker creation
+remains pending explicit authorization.
 
 ## Approach
 
-Add one exact Windows 11 x64 prepared action for idempotent dashboard-service
-install-or-repair. Build a write-free immutable plan that binds the owner,
-configuration, manifest, task definition, runtime, Python/launcher identities,
-desired transition, and private publication plan. Show the human a bounded
-current-to-target consequence, invoke the pinned non-exporting verifier, then
-take the service lock and fully reprepare before any write. Reject every drift,
-denial, malformed verifier result, or postcondition failure with zero mutation
-or bounded rollback. Keep start, stop, restart, uninstall, and every generic
-family fail-closed. Make `service open` read-only: it may open a healthy service
-or tell the operator to run explicit install, but never repair implicitly.
+First decide and document the smaller product boundary: routine harness-plugin
+install, refresh, enablement, and trust should normally use each harness's
+native lifecycle rather than Agency adding a second Windows Hello ceremony.
+The optional dashboard service must be an explicit, separate opt-in and must
+not block plugin activation or the CEO demo. This requires a superseding ADR
+before implementation because ADR-0096 and ADR-0109 currently govern the wider
+presence requirement.
+
+If the persistent dashboard service remains a supported positive mutation,
+model it as an explicit two-phase Windows activation transaction rather than a
+verifier wrapper. The worker first enters a bounded bootstrap state that cannot
+initialize, migrate, prune, or otherwise write the Store and cannot publish a
+model-facing broker credential. After exact task, process, runtime, manifest,
+owner-descriptor, and loopback-health proof, the coordinator commits one
+activation transition that admits ordinary service behavior. Failure must stop
+and identify the exact candidate process, prove both runtime descriptors
+cleared, restore the exact prior task and manifest when present, and report any
+retained immutable launcher cache as an authorized consequence rather than a
+full rollback.
+
+Keep start, stop, restart, uninstall, active-but-drifted repair, and every
+generic family fail-closed until separately modeled. Make `service open`
+read-only: it may open a healthy service or tell the operator to run explicit
+install, but never repair implicitly.
 
 ## Dependencies
 

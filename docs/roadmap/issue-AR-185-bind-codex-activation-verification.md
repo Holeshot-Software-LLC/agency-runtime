@@ -6,6 +6,8 @@ created: 2026-07-27
 updated: 2026-07-27
 tags: [security, codex, installation, canary, operator-presence]
 related:
+  - docs/decisions/0110-remove-agency-owned-windows-hello.md
+  - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
   - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
   - docs/roadmap/issue-AR-193-preserve-authoritative-windows-master-reads.md
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
@@ -27,7 +29,7 @@ epic: security
 issue_id: AR-185
 priority: p0
 tracker_url: null
-depends_on: [AR-193, AR-195]
+depends_on: [AR-193, AR-195, AR-197]
 blocks:
   - AR-119
   - AR-180

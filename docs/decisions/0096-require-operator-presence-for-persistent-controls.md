@@ -6,6 +6,7 @@ created: 2026-07-26
 updated: 2026-07-28
 tags: [security, dashboard, browser, controls, user-presence]
 related:
+  - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
   - docs/decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
@@ -21,7 +22,7 @@ related:
   - agency_runtime/core/store/roster.py
 supersedes:
   - docs/decisions/0090-model-facing-control-paths-are-read-only.md
-superseded_by: null
+superseded_by: docs/decisions/0110-remove-agency-owned-windows-hello.md
 id: ADR-0096
 type: decision
 deciders: [maintainers]

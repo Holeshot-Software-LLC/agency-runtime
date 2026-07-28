@@ -6,6 +6,8 @@ created: 2026-07-28
 updated: 2026-07-28
 tags: [cli, host-integrations, installation, security, operations]
 related:
+  - docs/decisions/0110-remove-agency-owned-windows-hello.md
+  - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
   - docs/roadmap/handoffs/issue-AR-189.md
   - README.md
   - docs/TROUBLESHOOTING.md
@@ -37,7 +39,7 @@ epic: host-integrations
 issue_id: AR-189
 priority: p0
 tracker_url: null
-depends_on: []
+depends_on: [AR-197]
 blocks: []
 ---
 

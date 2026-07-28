@@ -43,7 +43,7 @@ Status meanings:
 - ADR-0058 Broker restricted Windows host controls through the authenticated dashboard → ADR-0090 Model-facing control paths are read-only
 - ADR-0059 Broker restricted Windows agent controls through narrow dashboard operations → ADR-0090 Model-facing control paths are read-only
 - ADR-0061 Validate brokered control transition receipts against deterministic CAS semantics → ADR-0090 Model-facing control paths are read-only
-- ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls
+- ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls → ADR-0110 Remove Agency-owned Windows Hello and use harness-native trust
 
 ## Architecture and integrations
 
@@ -158,7 +158,7 @@ Status meanings:
 | [ADR-0091](0091-least-privilege-subprocess-environments.md) | Build every subprocess environment from least privilege | Accepted |
 | [ADR-0092](0092-do-not-cache-positive-filesystem-trust.md) | Do not cache positive filesystem trust without complete authority identity | Accepted |
 | [ADR-0095](0095-complete-paginated-dashboard-collections.md) | Dashboard collection views expose complete paginated truth | Accepted |
-| [ADR-0096](0096-require-operator-presence-for-persistent-controls.md) | Require genuine operator presence for persistent controls | Accepted |
+| [ADR-0096](0096-require-operator-presence-for-persistent-controls.md) | Require genuine operator presence for persistent controls | Superseded |
 | [ADR-0097](0097-gate-expensive-ci-fanout-behind-quality-contracts.md) | Gate expensive CI fanout behind same-revision quality contracts | Accepted |
 | [ADR-0098](0098-pair-portable-and-win-amd64-wheels.md) | Pair portable and win_amd64 wheels for native delivery | Accepted |
 | [ADR-0099](0099-separate-reproducible-unsigned-builds-from-signed-delivery.md) | Separate reproducible unsigned builds from signed delivery | Accepted |
@@ -170,7 +170,8 @@ Status meanings:
 | [ADR-0105](0105-bound-delivery-to-live-demo-checkpoints.md) | Bound delivery to live demo checkpoints | Accepted |
 | [ADR-0106](0106-isolate-native-host-lifecycle-working-directories.md) | Isolate native host lifecycle working directories | Accepted |
 | [ADR-0107](0107-resolve-updates-immutably-and-keep-application-attended.md) | Resolve updates immutably and keep application attended | Accepted |
-| [ADR-0109](0109-prepare-dashboard-service-repair-before-operator-presence.md) | Prepare dashboard-service repair before operator presence | Accepted |
+| [ADR-0109](0109-prepare-dashboard-service-repair-before-operator-presence.md) | Prepare dashboard-service repair before operator presence | Superseded |
+| [ADR-0110](0110-remove-agency-owned-windows-hello.md) | Remove Agency-owned Windows Hello and use harness-native trust | Accepted |
 
 ## Documentation governance
 

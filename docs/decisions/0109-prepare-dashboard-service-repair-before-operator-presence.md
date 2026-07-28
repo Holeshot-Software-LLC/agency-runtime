@@ -1,11 +1,12 @@
 ---
 title: "Prepare dashboard-service repair before operator presence"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-28
 updated: 2026-07-28
 tags: [dashboard, service, windows, security, operator-presence]
 related:
+  - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
@@ -17,9 +18,9 @@ related:
   - agency_runtime/core/operator_presence.py
   - agency_runtime/core/windows_operator_presence.py
   - agency_runtime/core/dashboard_service_install.py
-  - agency_runtime/core/prepared_dashboard_service_install.py
+  - docs/roadmap/handoffs/issue-AR-196.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0110-remove-agency-owned-windows-hello.md
 id: ADR-0109
 type: decision
 deciders: [maintainers]

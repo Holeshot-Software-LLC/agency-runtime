@@ -214,6 +214,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-194` | [Inspect owned service runtimes across Python versions](issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | in_progress | p1 | operations | pending authorization |
 | `AR-195` | [Separate Codex canary parent and child goals](issue-AR-195-separate-codex-canary-parent-and-child-goals.md) | in_progress | p0 | host-integrations | pending authorization |
 | `AR-196` | [Authorize prepared dashboard-service install and repair](issue-AR-196-authorize-prepared-dashboard-service-repair.md) | in_progress | p0 | security | pending authorization |
+| `AR-197` | [Remove Agency-owned Windows Hello](issue-AR-197-remove-agency-owned-windows-hello.md) | in_progress | p0 | security | pending authorization |
 
 ## Traceability
 
@@ -417,6 +418,7 @@ not stable internal identifiers.
 | [AR-194](issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | `9e86898`; focused cross-interpreter inspection and target-Python binding passed; attended service repair pending; tracker creation pending authorization | [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md), [ADR-0050](../decisions/0050-isolate-installed-python-module-resolution.md) |
 | [AR-195](issue-AR-195-separate-codex-canary-parent-and-child-goals.md) | `42da990`; focused source and independent review passed; exact installed canary pending | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md) |
 | [AR-196](issue-AR-196-authorize-prepared-dashboard-service-repair.md) | `42da990` records the prepared-transaction decision; implementation and attended repair pending | [ADR-0109](../decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md) |
+| [AR-197](issue-AR-197-remove-agency-owned-windows-hello.md) | Decision captured; verifier removal and harness-native lifecycle implementation pending | [ADR-0110](../decisions/0110-remove-agency-owned-windows-hello.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
