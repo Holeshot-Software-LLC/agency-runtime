@@ -330,6 +330,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `196dedc` | 2026-07-29 | fix(workforce): restore ordinary software team anchors | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `2ee0306` | 2026-07-29 | docs(roadmap): record ordinary software team proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `c02a10a` | 2026-07-29 | fix(evidence): report workforce eligibility counts | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `0d6b011` | 2026-07-29 | docs(roadmap): record truthful eligibility proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
