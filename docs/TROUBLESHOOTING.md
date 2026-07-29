@@ -882,7 +882,7 @@ valid PE payload.
 After building or reviewing a replacement wheel, install that exact artifact
 into the interpreter recorded by `launcher_artifacts`, rerun
 `agency install --agent <host>`, and require a fresh live canary before claiming
-the host runtime is current. The canary must prove both the six-line header and
+the host runtime is current. The canary must prove both the seven-field header and
 correlated routing/finalization evidence; a zero host exit code alone is not
 sufficient.
 

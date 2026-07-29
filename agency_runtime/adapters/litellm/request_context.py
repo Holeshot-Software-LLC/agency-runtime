@@ -168,7 +168,7 @@ def _strip_agency_suffix(value: str) -> tuple[str, bool]:
     """Remove only an exact legacy Agency-owned suffix.
 
     A bare marker can be ordinary caller text.  Agency's rendered context has a
-    constrained first line and the complete six-line-header trailer, so both
+    constrained first line and the complete Agency-header trailer, so both
     are required before this boundary treats a suffix as runtime-owned.
     """
 

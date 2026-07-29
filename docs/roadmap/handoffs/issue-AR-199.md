@@ -20,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-199
-branch: codex/ar-199-subagent-start-consumption
-evidence_commit: 34e3180e465c175b07e1b0ae3c0b14106c36cca2
-minimum_ledger_commit: d1b9692fc7f41ff29f1efb4c12895982bdb5810f
+branch: codex/ar-199-seven-field-header
+evidence_commit: 8a96818c85c350ba50122f36e4872299ff22928a
+minimum_ledger_commit: 35c1abdd1eb5f70329e6ef16ab94c51db8b2fa36
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 ---
@@ -134,12 +134,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-PR 165 merged as `816db5b`; that exact install passed isolated-profile trace
-`019faf64-5aee-78e0-a5ab-657f782a6175` with one complete child chain and no
-trust prompt. Two ordinary tasks then required one correction each after an
-invalid first-pass manager value. Source now pins the resident pair and passes
-156 focused tests plus the complete fast spine; merge, exact install, trust,
-and first-pass proof remain.
+PR 167 merged the pinned-manager repair as `5a19586`; exact install replaced
+the on-disk bundle with `0.1.0+codex.1b65d565506c`. The already-open owner task
+still invoked removed bundle `0.1.0+codex.3082f29f362e`, then corrected a
+non-leading header. That is a failed stale-process attempt, not installed proof.
+Its correction also said six lines while requiring seven fields; the current
+follow-up derives the count from the authoritative field tuple.
 
 ## same-task-continuity
 
@@ -148,8 +148,8 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Merge and exact-install the first-pass header repair.
-2. Trust/restart Codex once, then prove an ordinary task needs no correction.
+1. Merge and exact-install the seven-line diagnostic repair.
+2. Fully stop Codex, trust/restart once, then prove a new ordinary task needs no correction.
 
 ## verification
 
