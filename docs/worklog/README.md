@@ -313,6 +313,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f09bc04` | 2026-07-29 | fix(codex): accept one correction in canary proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-f09bc04-accept-codex-correction-proof.md) |
 | `0521c8d` | 2026-07-29 | docs(roadmap): record accepted Codex source canary | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `46f03b2` | 2026-07-29 | docs(roadmap): record AR-199 fast verification | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `816db5b` | 2026-07-29 | Merge pull request #165 from Holeshot-Software-LLC/codex/ar-199-subagent-start-consumption | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `422bf32` | 2026-07-29 | docs(roadmap): record installed Codex proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
