@@ -327,7 +327,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `26aaecf` | 2026-07-29 | docs(roadmap): record zero-correction installed proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `511c389` | 2026-07-29 | docs(roadmap): record ordinary route boundary | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `48516b4` | 2026-07-29 | Merge pull request #170 from Holeshot-Software-LLC/codex/ar-199-zero-correction-canary | null | null |
-| `196dedc` | 2026-07-29 | fix(workforce): restore ordinary software team anchors | null | null |
+| `196dedc` | 2026-07-29 | fix(workforce): restore ordinary software team anchors | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `2ee0306` | 2026-07-29 | docs(roadmap): record ordinary software team proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
