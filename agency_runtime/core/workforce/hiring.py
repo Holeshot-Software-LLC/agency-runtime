@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
@@ -58,11 +59,24 @@ _CRITIC_SYSTEM = (
     "Return only the closed JSON contract."
 )
 
-_TEXT = {"type": "string", "minLength": 1, "maxLength": 2048}
+_TEXT = {"type": "string", "minLength": 1, "maxLength": 512}
+_ITEM_TEXT = {"type": "string", "minLength": 1, "maxLength": 160}
+_ITEM_TEXTS = {
+    "type": "array",
+    "items": _ITEM_TEXT,
+    "maxItems": 12,
+    "uniqueItems": True,
+}
 _IDENTIFIER = {
     "type": "string",
     "pattern": r"^[a-z0-9][a-z0-9_-]{0,127}$",
     "minLength": 1,
+    "maxLength": 128,
+}
+_SLUG = {
+    "type": "string",
+    "pattern": r"^[a-z0-9][a-z0-9-]{1,127}$",
+    "minLength": 2,
     "maxLength": 128,
 }
 _IDENTIFIERS = {
@@ -71,6 +85,7 @@ _IDENTIFIERS = {
     "maxItems": 12,
     "uniqueItems": True,
 }
+_ROUTING_IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9_-]{0,127}\Z")
 
 
 def _object(properties: Mapping[str, Any], required: Sequence[str]) -> dict[str, Any]:
@@ -83,69 +98,121 @@ def _object(properties: Mapping[str, Any], required: Sequence[str]) -> dict[str,
 
 
 _RELATIONSHIP = _object(
-    {"kind": _IDENTIFIER, "target": _IDENTIFIER},
+    {
+        "kind": {
+            "enum": [
+                "substitutes_for",
+                "complements",
+                "same_context_conflicts",
+                "selection_exclusive",
+                "requires",
+                "must_follow",
+                "must_review_independently",
+            ],
+            "type": "string",
+        },
+        "target": _IDENTIFIER,
+    },
     ("kind", "target"),
 )
 _CLOSEST = _object(
     {"worker": _IDENTIFIER, "insufficiency": _TEXT, "differentiation": _TEXT},
     ("worker", "insufficiency", "differentiation"),
 )
-_EVAL = _object(
+_POSITIVE_EVAL = _object(
     {
-        "case_id": _IDENTIFIER,
+        "case_id": {
+            "type": "string",
+            "pattern": r"^positive-[a-z0-9][a-z0-9-]{0,63}$",
+            "maxLength": 73,
+        },
         "scenario": _TEXT,
-        "expectation": {"enum": ["select", "select_other", "abstain"], "type": "string"},
+        "expectation": {"const": "select", "type": "string"},
+        "rationale": _TEXT,
+    },
+    ("case_id", "scenario", "expectation", "rationale"),
+)
+_NEGATIVE_EVAL = _object(
+    {
+        "case_id": {
+            "type": "string",
+            "pattern": r"^negative-[a-z0-9][a-z0-9-]{0,63}$",
+            "maxLength": 73,
+        },
+        "scenario": _TEXT,
+        "expectation": {"enum": ["select_other", "abstain"], "type": "string"},
         "rationale": _TEXT,
     },
     ("case_id", "scenario", "expectation", "rationale"),
 )
 _CONTRACT_PROPERTIES = {
     "schema_version": {"const": 1, "type": "integer"},
-    "slug": _IDENTIFIER,
+    "slug": _SLUG,
     "role": {"type": "string", "minLength": 1, "maxLength": 128},
     "narrow_scope": _TEXT,
-    "outcomes_owned": {**_IDENTIFIERS, "minItems": 1},
+    "outcomes_owned": {**_ITEM_TEXTS, "minItems": 1},
     "artifacts_produced": {
         "type": "array",
-        "items": _TEXT,
+        "items": _ITEM_TEXT,
         "minItems": 1,
         "maxItems": 12,
         "uniqueItems": True,
     },
-    "capabilities": {**_IDENTIFIERS, "minItems": 1},
+    "capabilities": {**_ITEM_TEXTS, "minItems": 1},
     "anti_capabilities": {
         "type": "array",
-        "items": _TEXT,
+        "items": _ITEM_TEXT,
         "minItems": 1,
         "maxItems": 12,
         "uniqueItems": True,
     },
     "preferred_scenarios": {
         "type": "array",
-        "items": _TEXT,
+        "items": _ITEM_TEXT,
         "minItems": 1,
         "maxItems": 12,
         "uniqueItems": True,
     },
     "avoided_scenarios": {
         "type": "array",
-        "items": _TEXT,
+        "items": _ITEM_TEXT,
         "minItems": 1,
         "maxItems": 12,
         "uniqueItems": True,
     },
     "forbidden_scenarios": {
         "type": "array",
-        "items": _TEXT,
+        "items": _ITEM_TEXT,
         "minItems": 1,
         "maxItems": 12,
         "uniqueItems": True,
     },
-    "lifecycle_phases": {**_IDENTIFIERS, "minItems": 1},
+    "lifecycle_phases": {
+        "type": "array",
+        "items": {
+            "enum": [
+                "discovery",
+                "planning",
+                "design",
+                "implementation",
+                "testing",
+                "integration",
+                "review",
+                "installation",
+                "observability",
+                "documentation",
+                "release",
+            ],
+            "type": "string",
+        },
+        "minItems": 1,
+        "maxItems": 12,
+        "uniqueItems": True,
+    },
     "authority": {"enum": ["advise", "modify", "plan", "review"], "type": "string"},
     "context_mode": {"enum": ["direct_safe", "isolated_only"], "type": "string"},
     "external_mutation": {"type": "boolean"},
-    "tools": {**_IDENTIFIERS, "minItems": 1},
+    "tools": {**_ITEM_TEXTS, "minItems": 1},
     "platforms": {
         "type": "array",
         "items": {"enum": ["windows", "linux"], "type": "string"},
@@ -162,7 +229,7 @@ _CONTRACT_PROPERTIES = {
     },
     "requirements": {
         "type": "array",
-        "items": _TEXT,
+        "items": _ITEM_TEXT,
         "minItems": 1,
         "maxItems": 12,
         "uniqueItems": True,
@@ -170,14 +237,24 @@ _CONTRACT_PROPERTIES = {
     "relationships": {"type": "array", "items": _RELATIONSHIP, "maxItems": 12},
     "evidence_requirements": {
         "type": "array",
-        "items": _TEXT,
+        "items": _ITEM_TEXT,
         "minItems": 1,
         "maxItems": 12,
         "uniqueItems": True,
     },
     "closest_workers": {"type": "array", "items": _CLOSEST, "minItems": 1, "maxItems": 12},
-    "positive_evaluations": {"type": "array", "items": _EVAL, "minItems": 1, "maxItems": 12},
-    "hard_negative_evaluations": {"type": "array", "items": _EVAL, "minItems": 1, "maxItems": 12},
+    "positive_evaluations": {
+        "type": "array",
+        "items": _POSITIVE_EVAL,
+        "minItems": 1,
+        "maxItems": 12,
+    },
+    "hard_negative_evaluations": {
+        "type": "array",
+        "items": _NEGATIVE_EVAL,
+        "minItems": 1,
+        "maxItems": 12,
+    },
 }
 _CONTRACT_SCHEMA = _object(_CONTRACT_PROPERTIES, tuple(_CONTRACT_PROPERTIES))
 _NEAREST = _object(
@@ -386,7 +463,14 @@ def _agent_document(
     """Compile one validated contract into the only supported worker document."""
 
     compiled = compile_contractor(contract)
-    artifacts = tuple(dict.fromkeys(contract.artifacts_produced))
+    artifacts = tuple(
+        dict.fromkeys(
+            item for item in contract.artifacts_produced if _ROUTING_IDENTIFIER.fullmatch(item)
+        )
+    )
+    tools = tuple(
+        dict.fromkeys(item for item in contract.tools if _ROUTING_IDENTIFIER.fullmatch(item))
+    )
     composition: dict[str, Any] = {
         "substitution_group": "",
         "substitutes_for": [],
@@ -415,9 +499,9 @@ def _agent_document(
         "task_types": list(artifacts),
         "preferred_when": list(contract.preferred_scenarios),
         "avoid_when": list(contract.avoided_scenarios + contract.forbidden_scenarios),
-        "required_tools": list(contract.tools),
-        "tool_classes": list(contract.tools),
-        "tool_affinity": list(contract.tools),
+        "required_tools": list(tools),
+        "tool_classes": list(tools),
+        "tool_affinity": list(tools),
         "supported_hosts": list(contract.hosts),
         "supported_platforms": list(contract.platforms),
         "authority": contract.authority,
@@ -481,6 +565,27 @@ def _contract_agent(
     if not required <= set(typed_staffing_coverage(unit, workforce)):
         raise ValueError("contractor does not cover its causing work unit")
     return agent, workforce
+
+
+def _bind_contract_to_causing_unit(
+    contract: EmploymentContract,
+    unit: WorkUnit,
+    context: StaffingContext | None,
+) -> EmploymentContract:
+    """Bind model-authored prose to the exact typed gap it was hired to cover."""
+
+    hosts = contract.hosts
+    if context is not None:
+        hosts = tuple(dict.fromkeys((context.host, *hosts)))
+    return replace(
+        contract,
+        artifacts_produced=tuple(dict.fromkeys((unit.artifact_kind, *contract.artifacts_produced))),
+        capabilities=tuple(dict.fromkeys((*unit.required_capabilities, *contract.capabilities))),
+        lifecycle_phases=tuple(dict.fromkeys((unit.lifecycle_phase, *contract.lifecycle_phases))),
+        tools=tuple(dict.fromkeys((*unit.required_tools, *contract.tools))),
+        platforms=tuple(dict.fromkeys((*unit.platforms, *contract.platforms))),
+        hosts=hosts,
+    )
 
 
 def _merged_composition(
@@ -786,6 +891,7 @@ def _validated_candidate(
     attempt: HiringInferenceAttempt,
     *,
     store: Any,
+    staffing_context: StaffingContext | None,
 ) -> _ValidatedCandidate | ContractorHiringOutcome:
     gap = raw.get("gap_evidence")
     duplicate = raw.get("duplicate_evidence")
@@ -815,6 +921,10 @@ def _validated_candidate(
         return failure("duplicate_decision_mismatch")
     try:
         contract = parse_employment_contract(raw.get("contract"))
+    except (TypeError, ValueError):
+        return failure("contract_invalid:employment_contract")
+    try:
+        contract = _bind_contract_to_causing_unit(contract, unit, staffing_context)
         if action == "amend":
             target = str(duplicate.get("coherent_amendment_target") or "")
             existing = next((item for item in contracts if item.agent_id == target), None)
@@ -830,7 +940,14 @@ def _validated_candidate(
             agent, workforce_contract = _contract_agent(contract, unit)
             worker = None
     except (TypeError, ValueError) as exc:
-        return failure(f"contract_invalid:{type(exc).__name__}")
+        detail = str(exc).casefold()
+        if "cover its causing work unit" in detail:
+            code = "contract_invalid:causing_unit_coverage"
+        elif "amendment" in detail:
+            code = "contract_invalid:amendment"
+        else:
+            code = "contract_invalid:candidate"
+        return failure(code)
     if action == "hire" and (
         contract.slug in known
         or any(_obvious_duplicate(workforce_contract, item) for item in contracts)
@@ -862,6 +979,7 @@ def hire_contractor_for_gap(
     session_id: str = "",
     trace_id: str = "",
     defer_commit: bool = False,
+    staffing_context: StaffingContext | None = None,
     invoker: StructuredInvoker = invoke_structured_provider_result,
 ) -> ContractorHiringOutcome:
     """Prove, criticize, persist, and immediately enable one narrow contractor."""
@@ -900,6 +1018,7 @@ def hire_contractor_for_gap(
         contracts,
         hire_attempt,
         store=store,
+        staffing_context=staffing_context,
     )
     if isinstance(candidate, ContractorHiringOutcome):
         return candidate

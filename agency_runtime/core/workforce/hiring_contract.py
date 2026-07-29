@@ -60,7 +60,7 @@ _CONTROL_PATTERN = re.compile(
     r")\s+(?:all\s+)?(?:previous|prior|system|developer|user|repository|host|tool|safety|approval|permission|policy|instructions?)"
     r"|(?:system|developer)\s+(?:message|prompt)"
     r"|(?:grant|elevate|expand)\s+(?:your\s+)?(?:authority|permissions?|privileges?)"
-    r"|(?:without|skip)\s+(?:human\s+)?(?:approval|confirmation|permission)"
+    r"|skip\s+(?:human\s+)?(?:approval|confirmation|permission)"
     r"|(?:do\s+not|never)\s+(?:follow|obey)\s+(?:the\s+)?(?:system|developer|user|repository|host|policy|instructions?)"
     r"|act\s+as\s+(?:the\s+)?(?:system|developer|administrator|root)"
 )
@@ -207,7 +207,14 @@ def _text(value: object, label: str, *, maximum: int = MAX_TEXT) -> str:
     result = " ".join(value.split())
     if not result or len(result) > maximum or any(ord(char) < 32 for char in result):
         raise ValueError(f"{label} is empty or exceeds its bound")
-    if _CONTROL_PATTERN.search(result):
+    unauthorized_without_approval = re.search(
+        r"(?i)\bwithout\s+(?:human\s+)?(?:approval|confirmation|permission)\b",
+        result,
+    )
+    explicit_safety_boundary = re.match(r"(?i)^(?:do\s+not|never)\b", result)
+    if _CONTROL_PATTERN.search(result) or (
+        unauthorized_without_approval is not None and explicit_safety_boundary is None
+    ):
         raise ValueError(f"{label} contains an instruction or policy override pattern")
     return result
 

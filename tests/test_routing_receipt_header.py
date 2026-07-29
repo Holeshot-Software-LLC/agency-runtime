@@ -421,6 +421,10 @@ def test_ready_receipt_persists_once_and_drives_all_six_header_fields(
     assert "required capabilities" in fields["why"]
     assert "Agency attempted inference" in fields["how_it_shaped_outcome"]
     assert "eligibility exclusions were applied" in fields["how_it_shaped_outcome"]
+    assert fields["actual_model_selected"].startswith(
+        "parent task: host-selected (not observable to Agency); workforce inference:"
+    )
+    assert fields["actual_model_selected"].endswith("specialist: not launched")
 
     first = finalize_header(
         "Body",

@@ -1255,6 +1255,13 @@ def _run_gap_hiring(
         unit_id = hireable[0]
         attempted_units.add(unit_id)
         unit = next(item for item in outcome.plan.units if item.unit_id == unit_id)
+        staffing_context = StaffingContext(
+            request.host,
+            request.platform,
+            frozenset(request.available_tools),
+            active_snapshot.generation,
+            None,
+        )
         hiring = hire_contractor_for_gap(
             request.user_message,
             unit,
@@ -1264,6 +1271,7 @@ def _run_gap_hiring(
             session_id=request.session_id,
             trace_id=request.trace_id,
             defer_commit=defer_commits,
+            staffing_context=staffing_context,
         )
         event = _hiring_event(unit_id, hiring)
         if hiring.pending_commit is not None:
@@ -1292,13 +1300,6 @@ def _run_gap_hiring(
                 store,
                 disabled_agents=frozenset(config.agents.disabled),
             )
-        )
-        staffing_context = StaffingContext(
-            request.host,
-            request.platform,
-            frozenset(request.available_tools),
-            active_snapshot.generation,
-            None,
         )
         outcome = restaff_after_hire(
             outcome,
