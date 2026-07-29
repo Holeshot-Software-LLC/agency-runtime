@@ -305,6 +305,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cc4ab2f` | 2026-07-29 | fix(codex): resolve post-tool unit from output | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-cc4ab2f-resolve-post-tool-unit-from-output.md) |
 | `f03fcfa` | 2026-07-29 | chore(codex): expose canary reconcile rejection | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-f03fcfa-canary-reconcile-diagnostic.md) |
 | `c256571` | 2026-07-29 | docs(roadmap): mark Codex diagnostic checkpoint | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `b276fca` | 2026-07-29 | fix(codex): persist canary reconcile rejection | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-b276fca-persist-canary-reconcile-rejection.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
