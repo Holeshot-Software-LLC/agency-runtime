@@ -148,6 +148,9 @@ def _emit_codex_reconciliation_diagnostic(
     *,
     resolved_work_unit: str,
     delivery_activated: bool,
+    store: Any,
+    session_id: str,
+    trace_id: str,
 ) -> None:
     """Emit one content-free rejection code only inside the activation canary."""
 
@@ -161,6 +164,14 @@ def _emit_codex_reconciliation_diagnostic(
     if reason not in CODEX_RECONCILIATION_DIAGNOSTIC_REASONS:
         raise ValueError("Codex reconciliation diagnostic reason is invalid")
     if is_restricted_codex_activation_canary_environment(os.environ):
+        recorder = getattr(store, "record_codex_canary_reconciliation_diagnostic", None)
+        if not callable(recorder):
+            raise RuntimeError("Codex canary diagnostic store is unavailable")
+        recorder(
+            session_id=session_id,
+            trace_id=trace_id,
+            reason=reason,
+        )
         print(
             f"agency_hook_diagnostic codex_post_tool_reconcile={reason}",
             file=sys.stderr,
@@ -2004,6 +2015,9 @@ class HookBridge:
             reconciliation_rejection,
             resolved_work_unit=resolved_codex_unit,
             delivery_activated=delivery_activated,
+            store=self.store,
+            session_id=correlation.session_id,
+            trace_id=trace_id,
         )
         reconciled_codex_specialist, tool_response, _delivery_identity = (
             self._reconciled_codex_projection(

@@ -846,7 +846,7 @@ def evaluate_proof(
         invocation["hook_trust"] = sanitize_codex_hook_trust_report(result["hook_trust"])
     if type(result.get("model_invocation_attempted")) is bool:
         invocation["model_invocation_attempted"] = result["model_invocation_attempted"]
-    hook_diagnostic = result.get("hook_diagnostic")
+    hook_diagnostic = result.get("hook_diagnostic") or evidence.get("hook_diagnostic")
     from agency_runtime.core.codex_activation_verification import (
         CODEX_RECONCILIATION_DIAGNOSTIC_REASONS,
     )

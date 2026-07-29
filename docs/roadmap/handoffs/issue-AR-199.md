@@ -127,14 +127,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   retains the exact unit, specialist version/hash, and real child UUID while
   PostToolUse still projects the synthetic task identity.
 - A canary-only content-free rejection code now identifies the exact strict
-  reconciliation guard without retaining raw stderr or callback content.
-  The activation file passes 18 tests; Ruff check and format pass.
+  reconciliation guard through bounded run metadata without retaining raw
+  stderr or callback content. The activation file passes 19 tests.
 
 ## exact-blocker
 
-The fixed-code diagnostic is checkpointed at `f03fcfa` but not yet refreshed.
-Its next isolated canary must identify one exact reconciliation guard before
-the evidence-derived repair can proceed.
+The Store-backed fixed-code diagnostic is the active clean checkpoint but has
+not yet been refreshed. Its next isolated canary must identify one exact guard
+before the evidence-derived repair can proceed.
 
 ## same-task-continuity
 
@@ -143,7 +143,7 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Refresh Codex from `f03fcfa` and capture the rejected guard.
+1. Refresh Codex from the Store-backed diagnostic and capture the rejected guard.
 2. Repair only that evidence-derived boundary and prove attestation.
 3. Run the named fast spine, push, merge, and exact-install.
 4. Run the fresh USB-style Codex proof and prepare the handoff.

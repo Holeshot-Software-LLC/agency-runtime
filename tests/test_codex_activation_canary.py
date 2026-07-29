@@ -1135,6 +1135,46 @@ def test_codex_canary_projects_only_one_fixed_hook_diagnostic() -> None:
     assert "hook_diagnostic" not in unsupported
 
 
+def test_codex_canary_snapshot_projects_persisted_hook_diagnostic(
+    configured_store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.workforce import inference
+
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    session_id = "codex-diagnostic-session"
+    trace_id = "codex-diagnostic-trace"
+    preflight = run_preflight(
+        configured_store,
+        session_id=session_id,
+        trace_id=trace_id,
+        user_message="Review the exact supplied change for correctness.",
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=session_id,
+            trace_id=trace_id,
+        ),
+    )
+
+    configured_store.record_codex_canary_reconciliation_diagnostic(
+        session_id=session_id,
+        trace_id=trace_id,
+        reason="response_shape_mismatch",
+    )
+    snapshot = configured_store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=str(preflight.routing["query_hash"]),
+    )
+
+    assert snapshot["hook_diagnostic"] == "response_shape_mismatch"
+
+
 def test_failed_current_profile_reverification_invalidates_prior_attestation(
     configured_store: Store,
 ) -> None:
