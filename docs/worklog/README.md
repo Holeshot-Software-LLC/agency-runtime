@@ -287,6 +287,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6fc3173` | 2026-07-28 | Merge pull request #157 from Holeshot-Software-LLC/codex/full-suite-install | null | null |
 | `02f4cfb` | 2026-07-28 | docs(routing): record Codex workforce evidence regression | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `518ad62` | 2026-07-28 | fix(routing): restore atomic Codex workforce evidence | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-28-518ad62-atomic-codex-workforce-evidence.md) |
+| `e686584` | 2026-07-28 | fix(codex): preserve encrypted child activation input | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-28-e686584-preserve-encrypted-codex-child-input.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
