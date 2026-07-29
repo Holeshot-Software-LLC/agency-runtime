@@ -132,7 +132,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-The fixed-code diagnostic is source-green but not yet checkpointed or refreshed.
+The fixed-code diagnostic is checkpointed at `f03fcfa` but not yet refreshed.
 Its next isolated canary must identify one exact reconciliation guard before
 the evidence-derived repair can proceed.
 
@@ -143,10 +143,10 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Commit the fixed-code diagnostic and ledger checkpoint.
-2. Refresh Codex and capture the exact rejected reconciliation guard.
-3. Repair that guard, prove attestation, and run the named fast spine.
-4. Push, merge, exact-install, then run the fresh USB-style Codex proof.
+1. Refresh Codex from `f03fcfa` and capture the rejected guard.
+2. Repair only that evidence-derived boundary and prove attestation.
+3. Run the named fast spine, push, merge, and exact-install.
+4. Run the fresh USB-style Codex proof and prepare the handoff.
 
 ## verification
 
