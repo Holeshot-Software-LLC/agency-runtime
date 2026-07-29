@@ -98,7 +98,7 @@ class FakeStore:
                 trace_id=kwargs["trace_id"],
                 host=kwargs["host"],
                 action="continue",
-                missing=None,
+                missing=kwargs.get("missing"),
                 response_hash=kwargs["response_hash"],
             )
             return {
@@ -1205,6 +1205,7 @@ def test_stop_verification_uses_host_continuation_shape_and_turn_trace() -> None
     adapter.verify_result = {
         "action": "continue",
         "message": "Correct the evidence header.",
+        "missing": ["agencies_delegated"],
     }
     store = FakeStore()
     bridge = HookBridge("codex", store=store, adapter=adapter)  # type: ignore[arg-type]
@@ -1227,6 +1228,7 @@ def test_stop_verification_uses_host_continuation_shape_and_turn_trace() -> None
     assert store.finalizations[0]["trace_id"] == "turn-stop"
     assert store.finalizations[0]["host"] == "codex"
     assert store.finalizations[0]["action"] == "continue"
+    assert store.finalizations[0]["missing"] == ["agencies_delegated"]
     assert result["stopReason"].endswith(
         f"<!-- agency-continuation:{store.finalizations[0]['id']} -->"
     )

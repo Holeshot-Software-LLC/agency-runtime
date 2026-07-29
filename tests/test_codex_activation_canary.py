@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import sys
 from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
@@ -44,6 +46,23 @@ def _valid_header() -> str:
         "How it shaped outcome: identified the bounded regression risk\n\n"
         "Stripping may remove whitespace that callers intentionally preserve."
     )
+
+
+def test_canary_module_import_does_not_depend_on_store_import_order() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from agency_runtime.core import canary; print(canary.CANARY_PROMPT)",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert canary.CANARY_PROMPT in completed.stdout
 
 
 def _ready_host(_host: str) -> dict[str, object]:

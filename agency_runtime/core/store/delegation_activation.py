@@ -17,7 +17,6 @@ from typing import Any
 
 from agency_runtime.core.agent_activation import agent_is_enabled
 from agency_runtime.core.correlation import validate_correlation_id
-from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
 from agency_runtime.core.delegation_status import (
     MAX_DELEGATION_AGENT_CHARS,
     MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
@@ -371,6 +370,10 @@ def attach_consumed_activation_to_delegation(
     is_public_grant = bool(str(receipt["grant_id"] or ""))
     promoted_child = None
     if is_public_grant and (not all(event_lineage) or event_lineage != receipt_lineage):
+        # Keep the Store layer importable before the delegation package finishes
+        # initializing; that package's ledger imports Store for its public API.
+        from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
+
         task_name = codex_task_name_for_work_unit(work_unit_id)
         synthetic_lineage = (
             str(receipt["worker_kind"] or ""),

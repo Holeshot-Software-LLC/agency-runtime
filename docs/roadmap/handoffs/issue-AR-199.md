@@ -126,18 +126,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   reciprocal activation, delegation, work-unit, and worker-run links.
 - Both callback orders are covered; all 20 activation-canary tests and all 35
   activation-receipt tests pass, with two platform skips in the latter.
-- Source-live trace `019faf17-be08-75a1-a074-8425eff20a71` proves exact
-  selection, activation, specialist load, spawn, wait, and header evidence;
-  only authoritative finalization remained unmet.
-- A non-empty Codex SubagentStop final message now closes that exact worker and
-  delegation without persisting content; empty stops remain outcome-free. The
-  20-test activation and 33-test cross-host hook files pass; the broader
-  activation-receipt rerun hit its no-output timeout.
+- Trace `019faf33-3766-7112-ab70-823e05dd598a` proves exact selection,
+  activation, specialist load, spawn, wait, worker exit zero, completed
+  delegation, and no stale hook diagnostic; finalization still continued.
+- Continuation receipts now retain only bounded missing-field codes, and the
+  Store promotion helper no longer creates an import-order cycle. Exact import,
+  continuation, and native-child regressions pass.
 
 ## exact-blocker
 
-The terminal-transition repair is focused-green but not yet source-live. The next
-canary must persist one accepted attestation before PR, merge, or exact install.
+The terminal repair is source-live, but the remaining finalization mismatch is
+not yet identified. The next canary must expose its bounded missing-field code.
 
 ## same-task-continuity
 
@@ -146,8 +145,8 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Create the clean source and ledger checkpoint for the terminal repair.
-2. Refresh Codex from source and prove the accepted activation attestation.
+1. Checkpoint the import and finalization-diagnostic repair.
+2. Refresh Codex and capture the exact bounded verifier mismatch.
 3. Run the named fast spine, push, merge, and exact-install.
 4. Run the fresh Codex proof and prepare the OpenClaw handoff.
 

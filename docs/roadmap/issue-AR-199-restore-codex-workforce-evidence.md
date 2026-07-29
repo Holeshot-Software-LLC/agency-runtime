@@ -86,6 +86,11 @@ header and zero unexpected tools. The remaining rejection moved one boundary
 later: Codex supplied the successful child's final assistant message, but the
 outcome-free SubagentStop projection left the worker exit code unset and the
 delegation at `delegated`, so finalization remained `continue`.
+Source-live trace `019faf33-3766-7112-ab70-823e05dd598a` proves the terminal
+repair: the exact delegation is `completed`, the linked worker ended with exit
+code zero, and the earlier temporal hook diagnostic is absent. Finalization
+still returned `continue`, but the continuation receipt discarded the
+verifier's missing-field codes, so that last policy mismatch was not traceable.
 
 ## Approach
 
@@ -165,6 +170,11 @@ message; empty stops remain outcome-free. The expected parent-PostToolUse
 activation gap is no longer emitted as a canary rejection because
 SubagentStart owns its later exact attachment.
 
+Continuation claims now retain the verifier's bounded missing-field codes while
+continuing to store only a response hash. The earlier Store promotion helper
+also resolves the Codex task-label utility lazily, preserving a clean
+fresh-process import order between Store and the public delegation package.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -197,6 +207,8 @@ model truth and resident-manager visibility.
   compact delegation, and worker-run receipt to the same exact work unit.
 - [x] A successful Codex SubagentStop closes the exact worker and delegation;
   an empty stop remains outcome-free and cannot fabricate success.
+- [x] A rejected native finalization retains bounded missing-field diagnostics
+  without persisting the response or specialist content.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

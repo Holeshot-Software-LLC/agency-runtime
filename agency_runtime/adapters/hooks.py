@@ -2470,6 +2470,12 @@ class HookBridge:
             trace_id=trace_id,
             response_text=final_response,
             retry_active=host_retry,
+            missing=(
+                [str(item) for item in verification["missing"]]
+                if isinstance(verification.get("missing"), list)
+                and all(isinstance(item, str) for item in verification["missing"])
+                else []
+            ),
         )
         if claim is None:
             return self._verification_failed(correlation.session_id, trace_id)
@@ -2521,6 +2527,7 @@ class HookBridge:
         trace_id: str,
         response_text: str,
         retry_active: bool,
+        missing: list[str] | None = None,
     ) -> dict[str, str] | None:
         """Atomically claim, replay, or exhaust one revision opportunity."""
 
@@ -2537,6 +2544,7 @@ class HookBridge:
                 host=self.host,
                 response_hash=digest,
                 retry_active=retry_active,
+                missing=list(missing or []),
             )
         except Exception:
             return None
