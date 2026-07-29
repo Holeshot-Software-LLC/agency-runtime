@@ -330,6 +330,15 @@ spawn and wait, one accepted finalization, a valid first-pass header, and zero
 corrections. Current-profile inspection separately reports all eight hooks as
 modified and stops before model invocation, so attended trust is still open.
 
+The first exact-installed ordinary product trace,
+`019fb03e-5ad6-7b70-8d22-bc8c7ee0d028`, is a bounded `NO-GO`. It persisted two
+successful Luna wrapper receipts and found 53 eligible workers, but its
+nine-unit plan selected nobody because the `architecture-record` / `design`
+unit had no eligible governed owner. Commit `b8c0a8d` fixes the contract bridge:
+architecture-category workers compile as architects and the unit anchors to
+`software-architect`. The focused contract and selection suites pass 50 tests
+with one platform skip; exact-installed rerun remains pending.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and

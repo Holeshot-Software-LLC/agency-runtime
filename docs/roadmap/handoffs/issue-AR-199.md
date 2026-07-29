@@ -21,7 +21,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-199
 branch: codex/ar-199-fbed-canary
-evidence_commit: fbed63abaf739d6a863113a221c09c8cfababc40
+evidence_commit: b8c0a8d6e089a2624d29085c97fb90f40716413c
 minimum_ledger_commit: 36d2ec67810eaffe014cc08a73402146276830d3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
@@ -35,6 +35,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   `fbed63abaf739d6a863113a221c09c8cfababc40`.
 - The uv tool reports exact build `0.1.0+gfbed63abaf73`; Codex bundle
   `0.1.0+codex.ae2086569c9e` is registered and enabled.
+- First ordinary product trace `019fb03e-5ad6-7b70-8d22-bc8c7ee0d028` is a
+  bounded `NO-GO`; repair `b8c0a8d` is source-only.
 - Owner-untracked files remain untouched.
 
 ## completed-evidence
@@ -47,6 +49,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   does not claim current-profile trust or persist a current-profile attestation.
 - Current-profile verification sees all eight hooks enabled but modified and
   stops before model invocation. That attended trust boundary remains open.
+- The ordinary product trace persisted two successful Luna wrapper receipts
+  and 53 eligible workers, but its nine-unit plan atomically abstained because
+  `unit-architecture` had no eligible `architecture-record` / `design` owner.
+- `b8c0a8d` compiles architecture-category roles correctly, anchors that unit
+  to `software-architect`, and passes 50 focused tests with one platform skip.
 - Local workforce search proves relevant enabled Windows/Codex workers exist,
   including `multi-agent-systems-architect`, `python-application-engineer`, and
   `code-reviewer`.
@@ -120,9 +127,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-Source, merge, exact installation, and the isolated zero-correction activation
-chain are `GO`. The ordinary multi-unit product proof is ready to run in the
-isolated profile. Persistent-profile trust remains attended.
+The architecture repair is locally `GO` but not merged or exact-installed.
+The first ordinary trace remains `NO-GO`; persistent-profile trust remains
+attended.
 
 ## same-task-continuity
 
@@ -130,9 +137,9 @@ Continue in this task. Do not rerun the passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. Run the bounded ordinary isolated-profile product proof.
-2. Audit specialist, delegation, provider/model, and header receipts together.
-3. Fix only the first proof-invalidating blocker or publish the final matrix.
+1. Run the fast production spine for `b8c0a8d`.
+2. Merge and exact-install it.
+3. Rerun the one bounded ordinary isolated-profile product proof.
 
 ## verification
 
