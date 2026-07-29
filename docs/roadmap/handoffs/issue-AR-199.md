@@ -20,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-199
-branch: codex/ar-199-seven-field-header
-evidence_commit: 210538f2172955b27ac0feeaf690aec20cc91243
-minimum_ledger_commit: 45f0fb7ebf49d85887cf52676c96ec45254bb824
+branch: codex/ar-199-zero-correction-canary
+evidence_commit: 26aaecf990d486cfbedfe1e94c2806ef2ad99f8f
+minimum_ledger_commit: 36d2ec67810eaffe014cc08a73402146276830d3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 ---
@@ -134,22 +134,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-Exact merge `85069f3` and bundle `0.1.0+codex.1366cdece66b` produced one
-complete isolated `code-reviewer` chain in trace
-`019fafb3-8200-7163-83b0-e2405c783a4c`, but required one Stop correction.
-That is `NO-GO`. The bounded repair injects the exact Store header after a
-successful wait and makes canary proof require one first-pass finalization;
-148 directly affected hook and canary tests pass.
+Exact merge `aa0d949` and bundle `0.1.0+codex.fc83b66da46d` pass trace
+`019fafc4-f1d8-76a1-ae07-16381ce00267`: one accepted finalization, zero
+corrections, one selected, loaded, delegated, and completed `code-reviewer`,
+exit zero, one spawn, and one wait. Local detection finds four units and
+relevant employees; authoritative planning awaits explicit external egress
+approval, and persistent-profile hook trust remains attended.
 
 ## same-task-continuity
 
 Continue in this task after the recovery and ledger commits. Do not create a
-new task. Rerun the live canary only after the exact merge is installed.
+new task. Do not rerun the now-passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. Commit, merge, and exact-install the post-wait header repair.
-2. Rerun the isolated activation canary once; correction count must be zero.
+1. After explicit egress approval, run the one bounded four-unit route.
+2. After attended trust, prove the fresh persistent Codex profile once.
 
 ## verification
 

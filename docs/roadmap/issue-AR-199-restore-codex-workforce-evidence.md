@@ -278,6 +278,26 @@ proof now requires exactly one authoritative finalization, reports
 `correction_count`, and exposes the validated header fields without response
 body content. The directly affected hook and canary suites pass 148 tests.
 
+Exact merge `aa0d94974cf89b0b21c6dfc47fa3798c95f24aa3` produced Codex bundle
+`0.1.0+codex.fc83b66da46d`. Isolated trace
+`019fafc4-f1d8-76a1-ae07-16381ce00267` is the first zero-correction live GO:
+it records exactly one accepted finalization, `correction_count: 0`, one
+selected and loaded `code-reviewer`, one completed delegation, worker exit
+zero, and exactly one spawn plus one wait. The accepted header reports both
+resident managers and the specialist. Its model field truthfully says the
+parent is host-selected and unobservable and that no specialist launch-model
+receipt exists; ordinary multi-unit selection and authoritative model-receipt
+proof therefore remain separate open packages.
+
+The exact-installed deterministic detector recognizes the bounded ordinary
+probe as four independent high-confidence units and marks it delegable. Local
+workforce reads confirm enabled matches including `codebase-onboarding-engineer`,
+`code-reviewer`, `test-results-analyzer`, `reality-checker`, and
+`model-qa-specialist`. That is a local precheck, not an authoritative plan:
+the configured planner is external `codex-subscription/gpt-5.6-luna`, and this
+package does not infer egress authorization. The launch-model receipt and
+persistent-profile trust steps remain explicit `NO-GO` or waiting boundaries.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -326,6 +346,12 @@ model truth and resident-manager visibility.
   contract without a stale hard-coded field count.
 - [x] Codex activation proof rejects every correction count above zero and
   projects the count explicitly.
+- [x] Exact-installed isolated trace
+  `019fafc4-f1d8-76a1-ae07-16381ce00267` completes one real-child specialist
+  chain with exactly one accepted finalization and zero corrections.
+- [x] The exact-installed detector recognizes the ordinary proof prompt as four
+  independent high-confidence units and local workforce reads find relevant
+  enabled employees without invoking the external planner.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.
