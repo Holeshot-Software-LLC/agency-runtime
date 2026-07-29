@@ -315,6 +315,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `46f03b2` | 2026-07-29 | docs(roadmap): record AR-199 fast verification | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `816db5b` | 2026-07-29 | Merge pull request #165 from Holeshot-Software-LLC/codex/ar-199-subagent-start-consumption | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `422bf32` | 2026-07-29 | docs(roadmap): record installed Codex proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `6ce4391` | 2026-07-29 | Merge pull request #166 from Holeshot-Software-LLC/codex/ar-199-installed-proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `f9cbca2` | 2026-07-29 | fix(codex): pin resident managers in first header | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-f9cbca2-pin-first-header-managers.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
