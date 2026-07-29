@@ -288,6 +288,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `02f4cfb` | 2026-07-28 | docs(routing): record Codex workforce evidence regression | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `518ad62` | 2026-07-28 | fix(routing): restore atomic Codex workforce evidence | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-28-518ad62-atomic-codex-workforce-evidence.md) |
 | `e686584` | 2026-07-28 | fix(codex): preserve encrypted child activation input | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-28-e686584-preserve-encrypted-codex-child-input.md) |
+| `ea73dd5` | 2026-07-29 | fix(codex): preserve exact child context framing | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-ea73dd5-preserve-exact-codex-child-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
