@@ -645,7 +645,9 @@ def test_software_architecture_record_has_an_eligible_governed_owner() -> None:
         }
     )
     shortlist = _typed_shortlists(plan, snapshot.contracts)[0]
-    assert shortlist["role_anchors"] == ["software-architect"]
+    # Architecture recall stays inference/contract-driven; do not add a
+    # hand-written software-engineering -> specialist mapping.
+    assert shortlist["role_anchors"] == []
     assert any(
         candidate["agent_id"] == "software-architect" for candidate in shortlist["candidates"]
     )
