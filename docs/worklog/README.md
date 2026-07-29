@@ -297,6 +297,22 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0d8cce1` | 2026-07-29 | fix(codex): complete isolated activation canary | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-0d8cce1-complete-isolated-activation-canary.md) |
 | `2e6a144` | 2026-07-29 | Merge pull request #163 from Holeshot-Software-LLC/codex/ar-199-isolated-canary-route | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `01150cd` | 2026-07-29 | fix(codex): accept documented spawn nickname | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-01150cd-accept-codex-spawn-nickname.md) |
+| `34e3180` | 2026-07-29 | Merge pull request #164 from Holeshot-Software-LLC/codex/ar-199-codex-spawn-nickname | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `f28b98a` | 2026-07-29 | fix(codex): consume activation before child delivery | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-f28b98a-consume-activation-before-child-delivery.md) |
+| `3cea397` | 2026-07-29 | fix(codex): accept isolated trust bypass notice | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `ef41cff` | 2026-07-29 | fix(codex): reconcile consumed child callback | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-ef41cff-reconcile-consumed-child-callback.md) |
+| `e41df93` | 2026-07-29 | fix(codex): reconcile missing post-tool identity | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-e41df93-reconcile-missing-post-tool-identity.md) |
+| `cc4ab2f` | 2026-07-29 | fix(codex): resolve post-tool unit from output | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-cc4ab2f-resolve-post-tool-unit-from-output.md) |
+| `f03fcfa` | 2026-07-29 | chore(codex): expose canary reconcile rejection | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-f03fcfa-canary-reconcile-diagnostic.md) |
+| `c256571` | 2026-07-29 | docs(roadmap): mark Codex diagnostic checkpoint | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `b276fca` | 2026-07-29 | fix(codex): persist canary reconcile rejection | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-b276fca-persist-canary-reconcile-rejection.md) |
+| `2e5eb45` | 2026-07-29 | fix(codex): promote real child activation lineage | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-2e5eb45-promote-real-codex-child-lineage.md) |
+| `c74c389` | 2026-07-29 | fix(codex): finalize successful native child | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-c74c389-finalize-successful-codex-native-child.md) |
+| `237bf8a` | 2026-07-29 | fix(codex): retain finalization mismatch evidence | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-237bf8a-retain-codex-finalization-mismatch.md) |
+| `591879a` | 2026-07-29 | fix(codex): restore Stop correction continuation | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-591879a-restore-codex-stop-correction.md) |
+| `f09bc04` | 2026-07-29 | fix(codex): accept one correction in canary proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-f09bc04-accept-codex-correction-proof.md) |
+| `0521c8d` | 2026-07-29 | docs(roadmap): record accepted Codex source canary | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `46f03b2` | 2026-07-29 | docs(roadmap): record AR-199 fast verification | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

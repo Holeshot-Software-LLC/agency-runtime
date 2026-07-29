@@ -62,3 +62,12 @@ not retained in lifecycle evidence.
 Merge and exact-install this commit, then rerun the isolated Codex activation
 canary. Only live activation consumption, specialist load, delegation, header,
 and attestation evidence can prove the boundary repaired.
+
+## Provenance correction
+
+Exact-installed merge `34e3180` emitted only `task_name` and still left the
+grant unconsumed. The optional-nickname compatibility remains valid, but it was
+not the live cause. Bounded Codex capture showed the two apparent rollout errors
+were only the explicit isolated trust-bypass notices. The remaining repair must
+consume against the authoritative real child lifecycle at SubagentStart before
+delivering specialist context.

@@ -39,7 +39,7 @@ activation canary rejects its own native child goal.
 
 ## Current state
 
-Exact installed revision `2e6a1448b26f39c67dc88faa1b4641ffc4b622b4`
+Exact installed revision `34e3180e465c175b07e1b0ae3c0b14106c36cca2`
 successfully registers Codex and ZCode. The merged repair slices now
 commit workforce receipts and deferred hires atomically, preserve Codex's
 encrypted spawn input, inject the exact specialist context at child start, bind
@@ -67,9 +67,47 @@ whereas trace `019fae5a-4815-7a82-a65e-66db8e35f203` used
 `codex_activation_canary_contract`, selected `code-reviewer`, emitted one unit,
 spawned once, and waited once. The child started and completed, but Codex's
 spawn result left the issued activation grant unconsumed and the specialist-load
-receipt absent. An exact-installed rerun after PR 163 disproved the initial
-mapping-only diagnosis. Codex v0.146 serializes an optional `nickname` beside
-`task_name`; Agency's strict raw-field validator rejected that documented field.
+receipt absent. Exact-installed reruns after PRs 163 and 164 disproved both the
+mapping-only and optional-nickname diagnoses: this configured Codex v0.146
+surface emitted exactly `{"task_name":"/root/unit_05d45f7553"}`. The live
+ordering instead records and delivers the real child at SubagentStart while the
+grant remains deferred to PostToolUse. After moving consumption to
+SubagentStart, traces through `019faeca-406f-7d20-b2e7-6b1741b5a8af` proved
+that PostToolUse does not resolve the original callback identity. Store-backed
+trace `019faef8-f76b-7740-9558-462e99f4abeb` then isolated the live ordering:
+parent PostToolUse records the synthetic task lineage before child
+SubagentStart consumes the exact grant against the real UUID. The final Store
+contains the correct activation, but no later edge promoted the already-created
+compact delegation, so finalization correctly stopped at `continue`.
+Source-live trace `019faf17-be08-75a1-a074-8425eff20a71` then proved that
+promotion repair end to end: one `code-reviewer` was selected, activated,
+loaded, spawned, waited, and linked through the real child UUID with a valid
+header and zero unexpected tools. The remaining rejection moved one boundary
+later: Codex supplied the successful child's final assistant message, but the
+outcome-free SubagentStop projection left the worker exit code unset and the
+delegation at `delegated`, so finalization remained `continue`.
+Source-live trace `019faf33-3766-7112-ab70-823e05dd598a` proves the terminal
+repair: the exact delegation is `completed`, the linked worker ended with exit
+code zero, and the earlier temporal hook diagnostic is absent. Finalization
+still returned `continue`, but the continuation receipt discarded the
+verifier's missing-field codes, so that last policy mismatch was not traceable.
+Trace `019faf3e-5eb6-7a92-9423-cb5b083fa285` then made the mismatch exact:
+the parent response retained every pre-execution header field except the stable
+`Skills loaded` value. Codex received `continue: false`, which terminates a Stop
+hook, instead of `decision: "block"`, which creates the documented corrective
+continuation prompt. The model therefore never received the authoritative
+post-child header rewrite.
+Trace `019faf49-67bc-7953-8ff2-64f33173ae79` proves that correction path live:
+Codex recorded one bounded `continue`, emitted the rewritten header, committed
+one authoritative `accept`, and closed the run as `completed`. The activation
+canary still reported failure only because its topology checker required
+exactly one finalization row and treated the legitimate correction-plus-accept
+pair as an incomplete graph.
+Source-live trace `019faf50-d5d7-7bf2-8c88-e1dfd791a4fe` passes the corrected
+canary with no unmet prerequisites. It proves exactly one route, plan, grant,
+consumption, native child, specialist load, completed delegation, bounded
+correction, authoritative accept, and completed run. Its isolated profile does
+not mutate the persistent current-profile attestation.
 
 ## Approach
 
@@ -107,6 +145,76 @@ shape as well as its JSON-string shape. For v0.146 spawn results it permits only
 binding, and retains the rooted task label, exact task-name, exact projected-key,
 persisted child-lifecycle, and one-use activation checks.
 
+The current follow-up consumes the opaque canary's exact native-hook grant at
+SubagentStart, after the real child UUID lifecycle is persisted and before the
+specialist context is returned. Exact tool-use, unit, specialist version, prompt
+hash, prompt body, worker, and native-run identities must all match. PostToolUse
+then reconciles the already-consumed lineage idempotently.
+
+Source-live trace `019faea3-4ea3-73a1-86c7-73443e519dc8` proves that repair:
+one activation consumption and one specialist load now bind the real Codex
+child UUID. The remaining verifier failure is limited to Codex's exact
+`--dangerously-bypass-hook-trust` notice being counted as an unexpected tool.
+The parser now excludes only that fixed host notice and rejects all other error
+items.
+
+PostToolUse resolves the planned unit from Codex's bounded rooted response and
+reconciles a missing host callback only when the Store already contains exactly
+one consumed native-hook activation for that task label, selected specialist
+version/hash, and real `codex-agent:<UUID>` child.
+It validates Codex's bounded rooted response before replacing the synthetic
+task projection; unconsumed, ambiguous, mismatched, or synthetic lineage still
+fails closed. A focused callback-ID rewrite regression joins the complete
+activation suite, which passes 19 tests.
+
+The canary projects one allowlisted, content-free PostToolUse reconciliation
+rejection code through bounded run metadata, with hook stderr retained only as
+a best-effort secondary source. That diagnostic identified
+`reference_activation_cardinality_mismatch` before SubagentStart consumption.
+The attachment transaction now recognizes only Agency's exact Codex synthetic
+task lineage, one consumed native-hook grant, and one matching real
+`codex-agent:<UUID>` lifecycle row. It atomically replaces the synthetic
+delegation lineage, links the activation receipt, and binds the worker row to
+the work unit. If SubagentStart wins first, the existing PostToolUse reconcile
+path remains authoritative; every ambiguous or lookalike shape still fails
+closed. The complete activation file passes 20 tests, including the observed
+PostToolUse-before-SubagentStart order.
+
+Codex's documented SubagentStop contract and current native source make a
+non-empty `last_assistant_message` the successful child-turn completion edge.
+The hook now records `ok` only for that exact signal and never persists the
+message; empty stops remain outcome-free. The expected parent-PostToolUse
+activation gap is no longer emitted as a canary rejection because
+SubagentStart owns its later exact attachment.
+
+Continuation claims now retain the verifier's bounded missing-field codes while
+continuing to store only a response hash. The earlier Store promotion helper
+also resolves the Codex task-label utility lazily, preserving a clean
+fresh-process import order between Store and the public delegation package.
+
+Codex Stop corrections now use `decision: "block"` and a bounded `reason`;
+terminal retry exhaustion continues to use `continue: false`. This restores one
+model correction pass without reopening a terminal response or changing
+ZCode's stricter always-block compatibility rule. Optional child identity is
+also initialized before every PostToolUse branch, preventing non-spawn tool
+events from reading an unbound local.
+
+The Codex activation proof now accepts either a direct authoritative accept or
+exactly one content-free correction followed by the authoritative accept. It
+still rejects more than one correction, a correction without missing fields,
+duplicate response hashes, nonterminal accepts, and every extra activation,
+delegation, child, load, route, trace, or plan row.
+
+The named fast production spine passes 651 tests with 6 skips, the dashboard
+suite passes 109 tests, and the routing evaluation passes every gate. A fresh
+ordinary Codex turn also rendered both resident managers and proposed
+`codebase-onboarding-engineer`, `minimal-change-engineer`, `code-reviewer`, and
+`test-results-analyzer`. That is selection evidence, not completed delegation:
+an intervening selection-explanation request superseded the launchable plan,
+and a reduced-context preflight on only the latest conversational sentence
+truthfully abstained. Exact-installed launch and model-receipt proof therefore
+remain open.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -135,6 +243,18 @@ model truth and resident-manager visibility.
   produces one read-only unit, spawns once, and waits once without a trust
   prompt; focused activation and receipt verification passes 68 tests with two
   platform skips.
+- [x] Source-live Codex canary passes the complete correction-plus-accept
+  activation graph with no unmet prerequisites.
+- [x] Both Codex callback orders bind the consumed specialist, real child UUID,
+  compact delegation, and worker-run receipt to the same exact work unit.
+- [x] A successful Codex SubagentStop closes the exact worker and delegation;
+  an empty stop remains outcome-free and cannot fabricate success.
+- [x] A rejected native finalization retains bounded missing-field diagnostics
+  without persisting the response or specialist content.
+- [x] Codex corrective Stop responses use the current documented continuation
+  shape while terminal outcomes remain non-looping.
+- [x] The named fast Python, dashboard, documentation, lint, and routing
+  evaluation gates pass locally.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

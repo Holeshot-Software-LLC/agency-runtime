@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import sys
 from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
@@ -12,7 +14,10 @@ from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core import canary
 from agency_runtime.core.activation_canary_contract import CODEX_ACTIVATION_CANARY_WORK_UNIT
 from agency_runtime.core.agent_activation import PROTECTED_AGENT_SLUGS
-from agency_runtime.core.canary_backends import codex_canary_record
+from agency_runtime.core.canary_backends import (
+    codex_canary_record,
+    codex_collaboration_evidence,
+)
 from agency_runtime.core.canary_proof import codex_activation_failures
 from agency_runtime.core.config import reset_config_cache
 from agency_runtime.core.delegation.events import mark_delegation_executed
@@ -41,6 +46,23 @@ def _valid_header() -> str:
         "How it shaped outcome: identified the bounded regression risk\n\n"
         "Stripping may remove whitespace that callers intentionally preserve."
     )
+
+
+def test_canary_module_import_does_not_depend_on_store_import_order() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from agency_runtime.core import canary; print(canary.CANARY_PROMPT)",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert canary.CANARY_PROMPT in completed.stdout
 
 
 def _ready_host(_host: str) -> dict[str, object]:
@@ -153,6 +175,11 @@ def _finish_v2_chain_through_hooks(
     assert delivery.original_task == str(plan["goal"])
     if opaque_canary:
         assert delivery.activation_token == "x" * 43
+        after_start = store.get_completion_evidence_snapshot(session_id, trace_id)
+        [started_activation] = after_start["specialist_activations"]
+        assert started_activation["specialist_slug"] == slug
+        assert started_activation["worker_id"] == receiver_id
+        assert started_activation["native_run_id"] == f"codex-agent:{receiver_id}"
     assert (
         bridge.handle(
             {
@@ -433,7 +460,7 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
         backend_factory=lambda *_args, **_kwargs: Backend(),
     )
 
-    assert report["canary_passed"] is True
+    assert report["canary_passed"] is True, report["unmet_prerequisites"]
     assert report["attestation_persisted"] is True
     assert report["evidence"]["proven"] is True
     assert report["evidence"]["cardinalities"] == {
@@ -452,6 +479,277 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
     assert attestation is not None
     assert attestation["proof_contract"] == "agency.codex-activation-canary.v1"
     assert len(attestation["proof_digest"]) == 64
+
+
+def test_codex_activation_proof_accepts_one_correction_before_authoritative_accept(
+    configured_store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = canary.CANARY_PROMPT + "\n\nCanary nonce: one-correction-accept"
+    result = _record_complete_v2_chain(
+        configured_store,
+        monkeypatch,
+        task=task,
+    )
+    evidence = configured_store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=response_hash(task),
+    )
+    [accepted] = evidence["finalizations"]
+    evidence["finalizations"] = [
+        {
+            **accepted,
+            "id": "correction-receipt",
+            "action": "continue",
+            "missing": ["agencies_loaded", "agencies_delegated"],
+            "response_hash": "0" * 64,
+            "terminal_status": None,
+        },
+        accepted,
+    ]
+    evidence["cardinalities"]["finalizations"] = 2
+
+    from agency_runtime.core.canary_proof import _codex_accepted_finalization
+
+    assert _codex_accepted_finalization(evidence) == accepted
+    assert evidence["run"]["terminal_finalization_id"] == accepted["id"]
+    authoritative_response_hash = response_hash(str(result["output"]))
+    assert accepted["response_hash"] == authoritative_response_hash
+
+    assert (
+        codex_activation_failures(
+            result=result,
+            evidence=evidence,
+            response_hash=authoritative_response_hash,
+        )
+        == ()
+    )
+
+
+def test_codex_post_tool_reconciles_subagent_start_consumption_without_callback_id(
+    configured_store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.workforce import inference
+
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    session_id = "codex-callback-rewrite-session"
+    trace_id = "codex-callback-rewrite-trace"
+    preflight = run_preflight(
+        configured_store,
+        session_id=session_id,
+        trace_id=trace_id,
+        user_message="Review the exact supplied change for correctness.",
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=session_id,
+            trace_id=trace_id,
+        ),
+    )
+    [plan] = preflight.delegation_plan
+    unit = str(plan["work_unit_id"])
+    slug = str(plan["recommended_agent"])
+    task_name = codex_task_name_for_work_unit(unit)
+    pre_tool_use_id = "call_pre_tool_identity"
+    configured_store.prepare_delegation_activation(
+        session_id=session_id,
+        trace_id=trace_id,
+        specialist_slug=slug,
+        work_unit_id=unit,
+        grant_origin="native_hook",
+        tool_use_id=pre_tool_use_id,
+    )
+    receiver_id = "019fa500-2222-7333-8444-555566667777"
+    configured_store.record_native_child_started(
+        host="codex",
+        backend="spawn_agent",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=receiver_id,
+        native_run_id=f"codex-agent:{receiver_id}",
+    )
+    consumed = configured_store.consume_delegation_activation(
+        activation_token="",
+        native_hook_tool_use_id=pre_tool_use_id,
+        session_id=session_id,
+        trace_id=trace_id,
+        specialist_slug=slug,
+        work_unit_id=unit,
+        worker_id=receiver_id,
+        native_run_id=f"codex-agent:{receiver_id}",
+        require_native_child_started=True,
+        match_native_child_identity=True,
+    )
+
+    assert (
+        HookBridge("codex", store=configured_store).handle(
+            {
+                "hook_event_name": "PostToolUse",
+                "session_id": session_id,
+                "turn_id": trace_id,
+                "cwd": "C:\\workspace",
+                "transcript_path": "C:\\state\\rollout.jsonl",
+                "permission_mode": "default",
+                "tool_name": "collaborationspawn_agent",
+                "tool_input": {
+                    "fork_turns": "none",
+                    "task_name": f"/root/{task_name}",
+                    "message": str(plan["goal"]),
+                },
+                "tool_response": json.dumps({"task_name": f"/root/{task_name}"}),
+            }
+        )
+        == {}
+    )
+    [delegation] = configured_store.get_delegations(trace_id)
+    assert delegation["status"] == "delegated"
+    assert delegation["activation_receipt_id"] == consumed["id"]
+    assert delegation["retrieved_specialist_slug"] == slug
+    assert delegation["executed_worker_id"] == receiver_id
+    assert delegation["native_run_id"] == f"codex-agent:{receiver_id}"
+
+
+def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
+    configured_store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Mirror Codex's live PostToolUse-before-SubagentStart callback order."""
+
+    from agency_runtime.core.policy.defaults import STARTER_ROSTER
+    from agency_runtime.core.workforce import inference
+
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    configured_store.reconcile_bundled_agents(STARTER_ROSTER)
+    session_id = "codex-live-order-session"
+    trace_id = "codex-live-order-trace"
+    preflight = run_preflight(
+        configured_store,
+        session_id=session_id,
+        trace_id=trace_id,
+        user_message=(canary.CANARY_PROMPT + "\n\nCanary nonce: 0123456789abcdef0123456789abcdef"),
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=session_id,
+            trace_id=trace_id,
+        ),
+    )
+    [plan] = preflight.delegation_plan
+    unit = str(plan["work_unit_id"])
+    slug = str(plan["recommended_agent"])
+    task_name = codex_task_name_for_work_unit(unit)
+    tool_use_id = "call_live_callback_order"
+    bridge = HookBridge("codex", store=configured_store)
+    pre_payload = {
+        "hook_event_name": "PreToolUse",
+        "session_id": session_id,
+        "turn_id": trace_id,
+        "cwd": "C:\\workspace",
+        "transcript_path": "C:\\state\\rollout.jsonl",
+        "permission_mode": "default",
+        "tool_name": "collaborationspawn_agent",
+        "tool_use_id": tool_use_id,
+        "tool_input": {
+            "fork_turns": "none",
+            "task_name": task_name,
+            "message": "gAAAAA" + "opaque-codex-canary-message" * 2,
+        },
+    }
+    pre_tool = bridge.handle(pre_payload)
+    assert pre_tool["hookSpecificOutput"] == {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "allow",
+    }
+    post_input = pre_payload["tool_input"]
+
+    assert (
+        bridge.handle(
+            {
+                **pre_payload,
+                "hook_event_name": "PostToolUse",
+                "tool_input": post_input,
+                "tool_response": json.dumps({"task_name": f"/root/{task_name}"}),
+            }
+        )
+        == {}
+    )
+    [synthetic] = configured_store.get_delegations(trace_id)
+    assert synthetic["executed_worker_id"] == f"task:{task_name}"
+    assert synthetic["native_run_id"] == f"codex-task:{task_name}"
+    assert not synthetic["activation_receipt_id"]
+
+    receiver_id = "019fa500-3333-7444-8555-666677778888"
+    start = bridge.handle(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": session_id,
+            "turn_id": "codex-child-turn",
+            "agent_id": receiver_id,
+            "agent_type": "worker",
+        }
+    )
+
+    delivered = parse_native_child_prompt_delivery(start["hookSpecificOutput"]["additionalContext"])
+    assert delivered is not None
+    assert delivered.work_unit_id == unit
+    [delegation] = configured_store.get_delegations(trace_id)
+    assert delegation["activation_receipt_id"]
+    assert delegation["retrieved_specialist_slug"] == slug
+    assert delegation["executed_worker_kind"] == "generic-worker"
+    assert delegation["executed_worker_id"] == receiver_id
+    assert delegation["native_run_id"] == f"codex-agent:{receiver_id}"
+    assert (
+        bridge.handle(
+            {
+                "hook_event_name": "SubagentStop",
+                "session_id": session_id,
+                "agent_id": receiver_id,
+                "agent_type": "worker",
+            }
+        )
+        == {}
+    )
+    [outcome_free] = configured_store.get_delegations(trace_id)
+    assert outcome_free["status"] == "delegated"
+    assert (
+        bridge.handle(
+            {
+                "hook_event_name": "SubagentStop",
+                "session_id": session_id,
+                "agent_id": receiver_id,
+                "agent_type": "worker",
+                "last_assistant_message": "The specialist completed the assigned review.",
+            }
+        )
+        == {}
+    )
+    [completed] = configured_store.get_delegations(trace_id)
+    assert completed["status"] == "completed"
+    evidence = configured_store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=response_hash(
+            canary.CANARY_PROMPT + "\n\nCanary nonce: 0123456789abcdef0123456789abcdef"
+        ),
+    )
+    [worker_run] = evidence["worker_runs"]
+    assert worker_run["delegation_event_id"] == delegation["id"]
+    assert worker_run["work_unit_id"] == unit
+    assert worker_run["exit_code"] == 0
+    assert worker_run["ended_at"]
 
 
 def test_codex_activation_proof_rejects_parent_only_manual_grant(
@@ -555,14 +853,19 @@ def test_codex_activation_proof_rejects_incomplete_or_mismatched_topology(
         assert any("exactly one completed spawn" in item for item in failures)
 
 
-def _process_result(stdout: str, *, timed_out: bool = False) -> SimpleNamespace:
+def _process_result(
+    stdout: str,
+    *,
+    timed_out: bool = False,
+    stderr: str = "",
+) -> SimpleNamespace:
     return SimpleNamespace(
         returncode=124 if timed_out else 0,
         timed_out=timed_out,
         stdout_truncated=False,
         stderr_truncated=False,
         stdout=stdout,
-        stderr="",
+        stderr=stderr,
     )
 
 
@@ -946,6 +1249,31 @@ def test_codex_jsonl_parser_projects_one_spawn_wait_chain_without_prompt_content
     assert "You are the exact reviewer" not in encoded
 
 
+def test_codex_jsonl_parser_ignores_only_exact_isolated_hook_trust_notice() -> None:
+    notice = {
+        "type": "item.completed",
+        "item": {
+            "id": "trust-notice",
+            "type": "error",
+            "message": "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run "
+            "without review for this invocation.",
+        },
+    }
+    other = {
+        "type": "item.completed",
+        "item": {"id": "other-error", "type": "error", "message": "different"},
+    }
+
+    accepted = codex_collaboration_evidence(json.dumps(notice))
+    rejected = codex_collaboration_evidence("\n".join(map(json.dumps, (notice, other))))
+
+    assert accepted is not None
+    assert accepted["unexpected_item_count"] == 0
+    assert rejected is not None
+    assert rejected["unexpected_item_count"] == 1
+    assert rejected["unexpected_item_types"] == ["error"]
+
+
 def test_codex_jsonl_parser_projects_non_allowlisted_tool_type_without_content() -> None:
     events = [
         {
@@ -967,6 +1295,84 @@ def test_codex_jsonl_parser_projects_non_allowlisted_tool_type_without_content()
     assert record["collaboration"]["unexpected_item_types"] == ["command_execution"]
     assert record["collaboration"]["unexpected_item_count"] == 1
     assert "sensitive command body" not in json.dumps(record)
+
+
+def test_codex_canary_projects_only_one_fixed_hook_diagnostic() -> None:
+    stdout = "\n".join(
+        map(
+            json.dumps,
+            (
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": _valid_header()},
+                },
+                {"type": "turn.completed"},
+            ),
+        )
+    )
+    stderr = (
+        "unrelated stderr\n"
+        "agency_hook_diagnostic codex_post_tool_reconcile=response_shape_mismatch\n"
+    )
+
+    record = codex_canary_record(_process_result(stdout, stderr=stderr))
+    ambiguous = codex_canary_record(
+        _process_result(
+            stdout,
+            stderr=(stderr + "agency_hook_diagnostic codex_post_tool_reconcile=lineage_mismatch\n"),
+        )
+    )
+    unsupported = codex_canary_record(
+        _process_result(
+            stdout,
+            stderr="agency_hook_diagnostic codex_post_tool_reconcile=arbitrary_label\n",
+        )
+    )
+
+    assert record["hook_diagnostic"] == "response_shape_mismatch"
+    assert "unrelated stderr" not in json.dumps(record)
+    assert "hook_diagnostic" not in ambiguous
+    assert "hook_diagnostic" not in unsupported
+
+
+def test_codex_canary_snapshot_projects_persisted_hook_diagnostic(
+    configured_store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.workforce import inference
+
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    session_id = "codex-diagnostic-session"
+    trace_id = "codex-diagnostic-trace"
+    preflight = run_preflight(
+        configured_store,
+        session_id=session_id,
+        trace_id=trace_id,
+        user_message="Review the exact supplied change for correctness.",
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=session_id,
+            trace_id=trace_id,
+        ),
+    )
+
+    configured_store.record_codex_canary_reconciliation_diagnostic(
+        session_id=session_id,
+        trace_id=trace_id,
+        reason="response_shape_mismatch",
+    )
+    snapshot = configured_store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=str(preflight.routing["query_hash"]),
+    )
+
+    assert snapshot["hook_diagnostic"] == "response_shape_mismatch"
 
 
 def test_failed_current_profile_reverification_invalidates_prior_attestation(

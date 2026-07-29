@@ -1536,6 +1536,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 "run.preflight_state AS run_preflight_state, "
                 "run.preflight_request_fingerprint AS run_request_fingerprint, "
                 "run.preflight_request_kind AS run_request_kind, "
+                "run.metadata AS run_metadata, "
                 "run.preflight_result AS run_preflight_result "
                 "FROM routing_decisions AS route JOIN runs AS run "
                 "ON run.trace_id = route.trace_id AND run.session_id = route.session_id "
@@ -1570,6 +1571,14 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 "request_fingerprint": str(row["run_request_fingerprint"] or ""),
                 "request_kind": str(row["run_request_kind"] or ""),
             }
+            from agency_runtime.core.codex_activation_verification import (
+                CODEX_RECONCILIATION_DIAGNOSTIC_REASONS,
+            )
+
+            run_metadata = decode_run_metadata(row["run_metadata"])
+            hook_diagnostic = str(run_metadata.get("canary_hook_diagnostic") or "")
+            if hook_diagnostic not in CODEX_RECONCILIATION_DIAGNOSTIC_REASONS:
+                hook_diagnostic = ""
 
             selected_ids = _project_canary_strings(
                 row["route_selected_ids"],
@@ -1649,6 +1658,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 cardinalities=cardinalities,
                 run=run,
                 route=route,
+                hook_diagnostic=hook_diagnostic,
             )
             if any(
                 cardinalities[name] > _CANARY_ACTIVATION_MAX_ROWS
@@ -2408,5 +2418,55 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                     (session_id,),
                 )
             return [dict(row) for row in cur.fetchall()]
+        finally:
+            conn.close()
+
+    def record_codex_canary_reconciliation_diagnostic(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        reason: str,
+    ) -> None:
+        """Persist one allowlisted, content-free canary rejection reason."""
+
+        from agency_runtime.core.codex_activation_verification import (
+            CODEX_RECONCILIATION_DIAGNOSTIC_REASONS,
+        )
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        if reason not in CODEX_RECONCILIATION_DIAGNOSTIC_REASONS:
+            raise ValueError("Codex reconciliation diagnostic reason is invalid")
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT metadata FROM runs WHERE session_id = ? AND trace_id = ? "
+                "AND host = 'codex' AND status IN ('active', 'evidence_only')",
+                (normalized_session, normalized_trace),
+            ).fetchone()
+            if row is None:
+                raise ValueError("active Codex canary run is unavailable")
+            metadata = decode_run_metadata(row["metadata"])
+            metadata["canary_hook_diagnostic"] = reason
+            cursor = conn.execute(
+                "UPDATE runs SET metadata = ?, "
+                f"last_activity_at = {STORE_CLOCK_SQL}, "  # nosec B608
+                "evidence_revision = evidence_revision + 1 "
+                "WHERE session_id = ? AND trace_id = ? "
+                "AND host = 'codex' AND status IN ('active', 'evidence_only')",
+                (
+                    project_run_metadata(metadata),
+                    normalized_session,
+                    normalized_trace,
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise RuntimeError("Codex canary diagnostic update lost its run")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()

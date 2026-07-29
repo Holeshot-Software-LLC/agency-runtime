@@ -62,6 +62,11 @@ changes rather than duplicating every commit.
   child decrypt errors with no final message. Isolated Agency canaries now mark
   their existing evidence Store so the nonce-bound request enters the same
   deterministic one-specialist activation route as current-profile verification.
+  For the opaque canary path, SubagentStart now consumes the exact native-hook
+  grant against the persisted real child UUID before returning specialist
+  context; PostToolUse remains an idempotent reconciliation boundary.
+  Isolated verification ignores only Codex's exact explicit hook-trust-bypass
+  notice; every other error or non-allowlisted tool item remains a failure.
 - Codex activation verification now separates its nonce-bound parent
   delegation request from the canonical direct child review goal. Deterministic
   routing and replay persist the child goal, the general PreToolUse exact-goal

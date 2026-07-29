@@ -147,10 +147,27 @@ class _PlanStore:
 
     def consume_delegation_activation(self, **kwargs: Any) -> dict[str, Any]:
         token = str(kwargs["activation_token"])
+        native_hook_tool_use_id = str(kwargs.get("native_hook_tool_use_id") or "")
         with self._lock:
-            if any(row["activation_token"] == token for row in self.consumed):
+            if any(
+                row["activation_token"] == token
+                and str(row.get("native_hook_tool_use_id") or "") == native_hook_tool_use_id
+                for row in self.consumed
+            ):
                 raise ValueError("already consumed")
-            prepared = next(row for row in self.prepared if row["activation_token"] == token)
+            matches = [
+                row
+                for row in self.prepared
+                if (
+                    row["activation_token"] == token
+                    if token
+                    else row.get("grant_origin") == "native_hook"
+                    and row.get("tool_use_id") == native_hook_tool_use_id
+                )
+            ]
+            if len(matches) != 1:
+                raise ValueError("activation grant is unavailable or ambiguous")
+            prepared = matches[0]
             slug = str(prepared["specialist_slug"])
             row = {
                 **kwargs,

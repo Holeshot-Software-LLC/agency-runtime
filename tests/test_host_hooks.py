@@ -98,7 +98,7 @@ class FakeStore:
                 trace_id=kwargs["trace_id"],
                 host=kwargs["host"],
                 action="continue",
-                missing=None,
+                missing=kwargs.get("missing"),
                 response_hash=kwargs["response_hash"],
             )
             return {
@@ -296,7 +296,7 @@ def test_realistic_prompt_to_stop_sequence_uses_one_turn_trace(
     )
 
     assert prompt["hookSpecificOutput"]["additionalContext"]
-    assert stopped["continue"] is False
+    assert stopped["decision"] == "block"
     activity = store.recent_runtime_activity(limit=20)
     assert activity["routing"][0]["trace_id"] == turn_id
     assert activity["finalizations"][0]["trace_id"] == turn_id
@@ -550,12 +550,8 @@ def test_no_turn_id_identical_digest_is_checked_against_current_evidence(
         }
     )
 
-    if host == "codex":
-        assert stopped["continue"] is False
-        correction = stopped["stopReason"]
-    else:
-        assert stopped["decision"] == "block"
-        correction = stopped["reason"]
+    assert stopped["decision"] == "block"
+    correction = stopped["reason"]
     assert "current-reviewer" in correction
     assert "<!-- agency-continuation:" in correction
     assert store.get_run("prior") == prior_run
@@ -1200,11 +1196,12 @@ def test_claude_failed_delegation_is_forwarded_as_failure_evidence() -> None:
     assert call["result"]["error"] == "worker timed out"
 
 
-def test_stop_verification_uses_host_continuation_shape_and_turn_trace() -> None:
+def test_stop_verification_uses_codex_correction_shape_and_turn_trace() -> None:
     adapter = FakeAdapter()
     adapter.verify_result = {
         "action": "continue",
         "message": "Correct the evidence header.",
+        "missing": ["agencies_delegated"],
     }
     store = FakeStore()
     bridge = HookBridge("codex", store=store, adapter=adapter)  # type: ignore[arg-type]
@@ -1220,16 +1217,15 @@ def test_stop_verification_uses_host_continuation_shape_and_turn_trace() -> None
         }
     )
 
-    assert result["continue"] is False
-    assert result["stopReason"].startswith("Correct the evidence header.")
+    assert result["decision"] == "block"
+    assert result["reason"].startswith("Correct the evidence header.")
     assert adapter.verify_calls[0]["session_id"] == "session-stop"
     assert adapter.verify_calls[0]["model"] == "gpt-5.6-codex"
     assert store.finalizations[0]["trace_id"] == "turn-stop"
     assert store.finalizations[0]["host"] == "codex"
     assert store.finalizations[0]["action"] == "continue"
-    assert result["stopReason"].endswith(
-        f"<!-- agency-continuation:{store.finalizations[0]['id']} -->"
-    )
+    assert store.finalizations[0]["missing"] == ["agencies_delegated"]
+    assert result["reason"].endswith(f"<!-- agency-continuation:{store.finalizations[0]['id']} -->")
 
 
 def test_stop_hook_active_revalidates_blocks_and_closes_exhausted_turn() -> None:
@@ -1287,8 +1283,8 @@ def test_identical_codex_stop_without_retry_flag_exhausts_after_one_block() -> N
     second = bridge.handle(dict(payload))
     third = bridge.handle(dict(payload))
 
-    assert first["continue"] is False
-    assert "<!-- agency-continuation:" in first["stopReason"]
+    assert first["decision"] == "block"
+    assert "<!-- agency-continuation:" in first["reason"]
     assert second["continue"] is False
     assert second["stopReason"].startswith("AGENCY RETRY EXHAUSTED:")
     assert third == second
@@ -1320,7 +1316,7 @@ def test_strongly_preferred_delegation_declines_once_then_replays_terminally() -
     terminal = bridge.handle(dict(payload))
     replay = bridge.handle(dict(payload))
 
-    assert first["continue"] is False
+    assert first["decision"] == "block"
     assert terminal["continue"] is False
     assert terminal["stopReason"].startswith("AGENCY DELEGATION DECLINED:")
     assert replay == terminal
@@ -1479,13 +1475,9 @@ def test_missing_or_blank_stop_response_fails_closed_and_exhausts_one_retry(
 
     first = bridge.handle(payload)
 
-    if host == "codex":
-        assert first["continue"] is False
-    else:
-        # Claude and ZCode both block via {"decision": "block", ...}. ZCode
-        # silently ignores the {"continue": False, "stopReason": ...} shape,
-        # so it must emit decision:block on every rejection. See AR-127.
-        assert first["decision"] == "block"
+    # A corrective Stop uses decision:block on every supported host. ZCode
+    # additionally requires that shape for terminal rejection. See AR-127.
+    assert first["decision"] == "block"
     assert store.get_run("turn-empty")["status"] == "active"
 
     payload["stop_hook_active"] = True
@@ -1816,8 +1808,8 @@ def test_codex_stdio_stop_corrects_then_accepts_exact_turn_header(tmp_path: Path
     )
     assert missing_header.returncode == 0, missing_header.stderr
     correction = json.loads(missing_header.stdout)
-    assert correction["continue"] is False
-    assert correction["stopReason"].startswith(
+    assert correction["decision"] == "block"
+    assert correction["reason"].startswith(
         "Your response is missing or has malformed Agency header fields:"
     )
 

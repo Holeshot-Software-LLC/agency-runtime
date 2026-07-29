@@ -24,6 +24,7 @@ RUN_METADATA_MAX_NODES = 64
 _SAFE_RUN_METADATA_FIELDS = frozenset(
     {
         "callback",
+        "canary_hook_diagnostic",
         "classifier_version",
         "continuation_of",
         "content_capture",

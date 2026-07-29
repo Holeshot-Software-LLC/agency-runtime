@@ -330,8 +330,9 @@ def attach_consumed_activation_to_delegation(
     if not event_id or not trace_id or not work_unit_id:
         return
     event = conn.execute(
-        "SELECT recommended_agent, executed_worker_kind, executed_worker_id, "
-        "native_run_id, activation_receipt_id FROM delegation_events WHERE id = ?",
+        "SELECT trace_id, session_id, host, work_unit_id, recommended_agent, backend, "
+        "executed_worker_kind, executed_worker_id, native_run_id, "
+        "activation_receipt_id FROM delegation_events WHERE id = ?",
         (event_id,),
     ).fetchone()
     if event is None or str(event["activation_receipt_id"] or ""):
@@ -339,7 +340,9 @@ def attach_consumed_activation_to_delegation(
     receipt = conn.execute(
         "SELECT grant.id, grant.grant_id, grant.specialist_slug, "
         "grant.specialist_version, grant.specialist_prompt_hash, "
-        "grant.worker_kind, grant.worker_id, grant.native_run_id "
+        "grant.worker_kind, grant.worker_id, grant.native_run_id, grant.child_host, "
+        "grant.grant_origin, grant.tool_use_id, grant.session_id, grant.trace_id, "
+        "grant.work_unit_id "
         "FROM delegation_activation_receipts AS grant "
         "LEFT JOIN delegation_activation_consumptions AS consumption "
         "ON consumption.legacy_activation_receipt_id = grant.id "
@@ -365,8 +368,53 @@ def attach_consumed_activation_to_delegation(
         str(receipt["native_run_id"] or ""),
     )
     is_public_grant = bool(str(receipt["grant_id"] or ""))
+    promoted_child = None
     if is_public_grant and (not all(event_lineage) or event_lineage != receipt_lineage):
-        return
+        # Keep the Store layer importable before the delegation package finishes
+        # initializing; that package's ledger imports Store for its public API.
+        from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
+
+        task_name = codex_task_name_for_work_unit(work_unit_id)
+        synthetic_lineage = (
+            str(receipt["worker_kind"] or ""),
+            f"task:{task_name}",
+            f"codex-task:{task_name}",
+        )
+        exact_codex_promotion = bool(
+            str(receipt["child_host"] or "") == "codex"
+            and str(receipt["grant_origin"] or "") == "native_hook"
+            and str(receipt["tool_use_id"] or "")
+            and str(receipt["session_id"] or "") == str(event["session_id"] or "")
+            and str(receipt["trace_id"] or "") == str(event["trace_id"] or "")
+            and str(receipt["work_unit_id"] or "") == str(event["work_unit_id"] or "")
+            and str(event["host"] or "") == "codex"
+            and str(event["backend"] or "") == "spawn_agent"
+            and str(event["recommended_agent"] or "") == str(receipt["specialist_slug"] or "")
+            and event_lineage == synthetic_lineage
+            and all(receipt_lineage)
+            and not receipt_lineage[1].startswith("task:")
+            and receipt_lineage[2] == f"codex-agent:{receipt_lineage[1]}"
+        )
+        if not exact_codex_promotion:
+            return
+        children = conn.execute(
+            "SELECT id, delegation_event_id, work_unit_id FROM worker_runs "
+            "WHERE session_id = ? AND trace_id = ? AND host = 'codex' "
+            "AND worker_id = ? AND native_run_id = ? ORDER BY rowid LIMIT 2",
+            (
+                receipt["session_id"],
+                receipt["trace_id"],
+                receipt["worker_id"],
+                receipt["native_run_id"],
+            ),
+        ).fetchall()
+        if len(children) != 1:
+            return
+        promoted_child = children[0]
+        if str(promoted_child["delegation_event_id"] or "") not in ("", event_id):
+            return
+        if str(promoted_child["work_unit_id"] or "") not in ("", work_unit_id):
+            return
     worker_kind, worker_id, native_run_id = receipt_lineage
     if not is_public_grant:
         worker_kind, worker_id, native_run_id = tuple(
@@ -377,7 +425,7 @@ def attach_consumed_activation_to_delegation(
                 strict=True,
             )
         )
-    conn.execute(
+    updated = conn.execute(
         "UPDATE delegation_events SET retrieved_specialist_slug = ?, "
         "retrieved_specialist_version = ?, retrieved_specialist_prompt_hash = ?, "
         "activation_receipt_id = ?, executed_worker_kind = ?, "
@@ -394,6 +442,8 @@ def attach_consumed_activation_to_delegation(
             event_id,
         ),
     )
+    if updated.rowcount != 1:
+        raise RuntimeError("delegation activation attachment postcondition failed")
     if is_public_grant:
         conn.execute(
             "UPDATE delegation_activation_receipts SET delegation_event_id = ? "
@@ -409,6 +459,15 @@ def attach_consumed_activation_to_delegation(
             "WHERE id = ? AND delegation_event_id IS NULL",
             (event_id, worker_kind, worker_id, native_run_id, receipt["id"]),
         )
+    if promoted_child is not None:
+        bound = conn.execute(
+            "UPDATE worker_runs SET delegation_event_id = ?, work_unit_id = ? "
+            "WHERE id = ? AND (delegation_event_id IS NULL OR delegation_event_id = '') "
+            "AND (work_unit_id = '' OR work_unit_id = ?)",
+            (event_id, work_unit_id, promoted_child["id"], work_unit_id),
+        )
+        if bound.rowcount != 1:
+            raise RuntimeError("Codex child delegation promotion postcondition failed")
 
 
 class DelegationActivationStoreMixin:
