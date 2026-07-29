@@ -1,7 +1,7 @@
 """Human-readable projections of bounded routing evidence codes.
 
 The durable receipt remains the machine-readable source of truth. This module
-only controls the six-line response header shown to people.
+only controls the fixed-field response header shown to people.
 """
 
 from __future__ import annotations

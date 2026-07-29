@@ -1812,6 +1812,10 @@ def test_codex_stdio_stop_corrects_then_accepts_exact_turn_header(tmp_path: Path
     assert correction["reason"].startswith(
         "Your response is missing or has malformed Agency header fields:"
     )
+    assert (
+        "Rewrite the response starting with the exact 7-line Agency header.\n\n"
+        "<!-- agency-continuation:"
+    ) in correction["reason"]
 
     accepted = _run_hook(
         "codex",

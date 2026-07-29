@@ -205,6 +205,11 @@ still rejects more than one correction, a correction without missing fields,
 duplicate response hashes, nonterminal accepts, and every extra activation,
 delegation, child, load, route, trace, or plan row.
 
+Header parser and formatter documentation no longer repeats a manually
+maintained line count. The user-facing Stop correction derives its line count
+from `HEADER_FIELDS`, and a native-hook regression pins the exact seven-line
+diagnostic.
+
 The named fast production spine passes 651 tests with 6 skips, the dashboard
 suite passes 109 tests, and the routing evaluation passes every gate. A fresh
 ordinary Codex turn also rendered both resident managers and proposed
@@ -238,6 +243,23 @@ the evidence header in substantive progress updates. Focused cross-host,
 context-ceiling, preflight, and hook coverage passes 156 tests. The named fast
 spine then passes 651 tests with 6 skips, the dashboard passes 109 tests, and
 the routing evaluation, Ruff, formatting, and documentation gates all pass.
+
+The first response in the already-open owner task still entered one Stop
+correction. Its hook path names removed bundle `0.1.0+codex.3082f29f362e`,
+while the only installed bundle is `0.1.0+codex.1b65d565506c`; that process is
+therefore stale and cannot prove or disprove the installed repair. The
+correction also exposed a separate current-source defect: the validator
+requires seven fields but called them an exact six-line header. The diagnostic
+now derives `7` from the authoritative field tuple instead of carrying a stale
+hard-coded count.
+
+The follow-up passes 66 focused header and native-hook tests. The named fast
+production spine passes 651 tests with 6 skips, the dashboard passes all 109
+tests, the routing evaluation passes every gate, and documentation, Ruff,
+formatting, and diff checks pass. A sandboxed Node worker first returned
+`spawn EPERM`; the canonical command passed outside that process boundary.
+Any live proof with a correction count above zero remains `NO-GO`, even when
+the bounded Stop backstop repairs the response.
 
 ## Dependencies
 
@@ -283,6 +305,8 @@ model truth and resident-manager visibility.
   canary with one complete real-child evidence chain and no trust prompt.
 - [x] Preflight pins the authoritative resident pair in final and substantive
   status headers while preserving every host context ceiling.
+- [x] Header correction diagnostics identify the authoritative seven-line
+  contract without a stale hard-coded field count.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

@@ -1,6 +1,6 @@
 """Agency response header contract.
 
-Every finalized Agency Runtime answer begins with six auditable lines that make
+Every finalized Agency Runtime answer begins with a fixed-field header that makes
 specialist use, delegation, skill context, and actual model selection explicit.
 """
 
@@ -313,7 +313,7 @@ def _clean(value: Any) -> str:
         return ""
     text = str(value).strip()
     # Header values are intentionally one line.  Preserve words, remove line
-    # breaks that would violate the six-line contract.
+    # breaks that would violate the fixed-field contract.
     return " ".join(text.splitlines()).strip()
 
 
@@ -341,7 +341,7 @@ def _split_header_body(response_text: str) -> tuple[list[str], str]:
 
 
 def parse_header(response_text: str) -> dict[str, str]:
-    """Parse the six-line Agency header from the beginning of response_text.
+    """Parse the Agency header from the beginning of response_text.
 
     Missing or malformed lines are omitted from the returned mapping.
     """
@@ -357,12 +357,12 @@ def parse_header(response_text: str) -> dict[str, str]:
 
 
 def format_header(fields: Mapping[str, Any]) -> str:
-    """Format fields as the exact six-line Agency header."""
+    """Format fields as the exact fixed-field Agency header."""
     return "\n".join(f"{label}: {_clean(fields.get(key, ''))}" for key, label in HEADER_FIELDS)
 
 
 def validate_header(response_text: str) -> tuple[bool, list[str]]:
-    """Validate that response_text starts with all six non-empty header fields."""
+    """Validate that response_text starts with every non-empty header field."""
     lines = response_text.splitlines()
     missing: list[str] = []
     if len(lines) < len(HEADER_FIELDS):
@@ -1081,7 +1081,8 @@ def validate_completion_policy(
             "message": (
                 "Your response is missing or has malformed Agency header fields: "
                 + ", ".join(missing)
-                + ". Rewrite the response starting with the exact six-line Agency header."
+                + f". Rewrite the response starting with the exact {len(HEADER_FIELDS)}-line "
+                "Agency header."
             ),
             "missing": missing,
         }
