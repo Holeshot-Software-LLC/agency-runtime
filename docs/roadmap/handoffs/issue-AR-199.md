@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-199
 branch: codex/ar-199-zero-correction-canary
-evidence_commit: a23f42abf89379b17bd602417bbd90ef5b8a1b97
-minimum_ledger_commit: 91336d21438b9c7ebf640c4f6e00d3a7c5f76c67
+evidence_commit: 26aaecf990d486cfbedfe1e94c2806ef2ad99f8f
+minimum_ledger_commit: 36d2ec67810eaffe014cc08a73402146276830d3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 ---
@@ -134,12 +134,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-Exact merge `aa0d949` and bundle `0.1.0+codex.fc83b66da46d` pass the isolated
-activation package in trace `019fafc4-f1d8-76a1-ae07-16381ce00267`: one
-accepted finalization, `correction_count: 0`, selected and loaded
-`code-reviewer`, completed delegation, worker exit zero, one spawn, and one
-wait. Ordinary multi-unit selection and an authoritative specialist
-launch-model receipt remain unproved independent packages.
+Exact merge `aa0d949` and bundle `0.1.0+codex.fc83b66da46d` pass trace
+`019fafc4-f1d8-76a1-ae07-16381ce00267`: one accepted finalization, zero
+corrections, one selected, loaded, delegated, and completed `code-reviewer`,
+exit zero, one spawn, and one wait. Local detection finds four units and
+relevant employees; authoritative planning awaits explicit external egress
+approval, and persistent-profile hook trust remains attended.
 
 ## same-task-continuity
 
@@ -148,8 +148,8 @@ new task. Do not rerun the now-passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. Prove an ordinary nontrivial multi-unit selection and assignment outcome.
-2. Inspect receipts; report an exact blocker if the model remains unavailable.
+1. After explicit egress approval, run the one bounded four-unit route.
+2. After attended trust, prove the fresh persistent Codex profile once.
 
 ## verification
 

@@ -289,6 +289,15 @@ parent is host-selected and unobservable and that no specialist launch-model
 receipt exists; ordinary multi-unit selection and authoritative model-receipt
 proof therefore remain separate open packages.
 
+The exact-installed deterministic detector recognizes the bounded ordinary
+probe as four independent high-confidence units and marks it delegable. Local
+workforce reads confirm enabled matches including `codebase-onboarding-engineer`,
+`code-reviewer`, `test-results-analyzer`, `reality-checker`, and
+`model-qa-specialist`. That is a local precheck, not an authoritative plan:
+the configured planner is external `codex-subscription/gpt-5.6-luna`, and this
+package does not infer egress authorization. The launch-model receipt and
+persistent-profile trust steps remain explicit `NO-GO` or waiting boundaries.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -340,6 +349,9 @@ model truth and resident-manager visibility.
 - [x] Exact-installed isolated trace
   `019fafc4-f1d8-76a1-ae07-16381ce00267` completes one real-child specialist
   chain with exactly one accepted finalization and zero corrections.
+- [x] The exact-installed detector recognizes the ordinary proof prompt as four
+  independent high-confidence units and local workforce reads find relevant
+  enabled employees without invoking the external planner.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.
