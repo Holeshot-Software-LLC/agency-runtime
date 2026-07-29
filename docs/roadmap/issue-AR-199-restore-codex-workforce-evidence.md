@@ -315,6 +315,12 @@ authoritative. Commit `c02a10a` carries the explicit eligible-catalog count into
 the durable projection while preserving the distinct retrieval count. The
 focused receipt and selector suites pass all 71 tests.
 
+The post-repair fast production checkpoint is green. The named Python spine
+passes 652 tests with 6 skips, the dashboard suite passes all 109 tests, the
+routing evaluation returns `passed: true`, and the documentation, Ruff, format,
+and diff gates pass. This closes source verification without substituting for
+the still-required exact-installed ordinary provider and delegation trace.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and

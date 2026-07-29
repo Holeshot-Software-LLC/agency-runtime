@@ -35,6 +35,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   in Codex and ZCode.
 - Current source repair `196dedc` is on
   `codex/ar-199-ordinary-continuation`; owner-untracked files remain untouched.
+- Truthful workforce eligibility projection `c02a10a` is on the same branch.
 - The preceding `511c389` / `3cb5602` pair was the clean starting checkpoint.
 
 ## completed-evidence
@@ -93,6 +94,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   tests with one platform skip, and targeted Ruff/format/diff checks pass.
 - `c02a10a` separates the explicit eligible-catalog count from unavailable
   legacy retrieval; 71 focused receipt and selector tests pass.
+- The post-repair named fast Python spine passes 652 tests with 6 skips, the
+  dashboard suite passes all 109 tests, and the routing evaluation reports
+  `passed: true`; documentation, Ruff, format, and diff checks also pass.
 - Tracker issue 161 now provides same-repository parity:
   https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 - PR 162 merged the hiring and model-scope repair as `279ef9e`; its exact
@@ -124,9 +128,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-Source selection and truthful eligibility projection are `GO`. Source is not
-yet merged or exact-installed. External planner replay remains disallowed
-without explicit egress approval; persistent-profile trust remains attended.
+Source selection, truthful eligibility projection, and the required fast spine
+are `GO`. Source is not yet merged or exact-installed. External planner replay
+remains disallowed without explicit egress approval; persistent-profile trust
+remains attended.
 
 ## same-task-continuity
 
@@ -135,8 +140,8 @@ new task. Do not rerun the now-passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. Run the named fast production spine.
-2. Merge, exact-install, then run the bounded ordinary proof.
+1. Open and merge the verified source PR.
+2. Exact-install the merge, then run the bounded ordinary proof.
 
 ## verification
 
