@@ -337,7 +337,10 @@ nine-unit plan selected nobody because the `architecture-record` / `design`
 unit had no eligible governed owner. Commit `b8c0a8d` fixes the contract bridge:
 architecture-category workers compile as architects and the unit anchors to
 `software-architect`. The focused contract and selection suites pass 50 tests
-with one platform skip; exact-installed rerun remains pending.
+with one platform skip. The named Python spine passes 653 tests with 6 skips,
+the dashboard passes all 109 tests, the 39-gate routing evaluation reports
+`passed: true`, and documentation and Ruff gates pass. Exact-installed rerun
+remains pending.
 
 ## Dependencies
 

@@ -54,6 +54,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   `unit-architecture` had no eligible `architecture-record` / `design` owner.
 - `b8c0a8d` compiles architecture-category roles correctly, anchors that unit
   to `software-architect`, and passes 50 focused tests with one platform skip.
+- The post-repair fast spine passes 653 tests with 6 skips, all 109 dashboard
+  tests, and all 39 routing-evaluation gates; docs and Ruff checks pass.
 - Local workforce search proves relevant enabled Windows/Codex workers exist,
   including `multi-agent-systems-architect`, `python-application-engineer`, and
   `code-reviewer`.
@@ -127,9 +129,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-The architecture repair is locally `GO` but not merged or exact-installed.
-The first ordinary trace remains `NO-GO`; persistent-profile trust remains
-attended.
+The architecture repair and fast spine are locally `GO` but not merged or
+exact-installed. The first ordinary trace remains `NO-GO`; persistent-profile
+trust remains attended.
 
 ## same-task-continuity
 
@@ -137,9 +139,8 @@ Continue in this task. Do not rerun the passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. Run the fast production spine for `b8c0a8d`.
-2. Merge and exact-install it.
-3. Rerun the one bounded ordinary isolated-profile product proof.
+1. Merge and exact-install `b8c0a8d`.
+2. Rerun the one bounded ordinary isolated-profile product proof.
 
 ## verification
 
