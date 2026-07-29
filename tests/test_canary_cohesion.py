@@ -108,6 +108,53 @@ def test_codex_setup_and_model_execution_refuse_an_exhausted_deadline(
     assert invoked is False
 
 
+def test_isolated_codex_activation_canary_marks_existing_store_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    calls: list[dict[str, Any]] = []
+
+    def runner(_argv: list[str], **kwargs: Any) -> SimpleNamespace:
+        calls.append(kwargs)
+        return _process_result()
+
+    monkeypatch.setattr(
+        canary,
+        "_prepare_private_host_home",
+        lambda runtime_home, **_kwargs: runtime_home / "codex",
+    )
+    monkeypatch.setattr(canary, "_isolated_canary_environment", lambda *_args: {})
+    monkeypatch.setattr(
+        canary,
+        "_project_isolated_runtime_control",
+        lambda *_args, **_kwargs: {"enabled": True},
+    )
+    monkeypatch.setattr(
+        canary._SafeCodexCanaryBackend,
+        "_install_plugin",
+        lambda _self, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        canary._SafeCodexCanaryBackend,
+        "_verify_plugin",
+        lambda _self, **_kwargs: None,
+    )
+    backend = canary._SafeCodexCanaryBackend(
+        executable="codex",
+        db_path=tmp_path / "agency.db",
+        timeout=10.0,
+        marketplace=tmp_path / "marketplace",
+        auth_source=tmp_path / "auth.json",
+        process_runner=runner,
+        source_env={},
+        require_exact_activation_rollout=True,
+    )
+
+    backend.execute(task="nonce-bound canary", workdir=str(tmp_path))
+
+    assert calls[-1]["env"]["AGENCY_CANARY_REQUIRE_EXISTING_STORE"] == "1"
+
+
 def test_claude_auth_preparation_consumes_the_same_execution_budget(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

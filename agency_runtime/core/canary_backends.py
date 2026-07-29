@@ -1232,6 +1232,12 @@ class SafeCodexCanaryBackend:
                 runtime_home,
                 self.db_path,
             )
+            if self.require_exact_activation_rollout:
+                from agency_runtime.core.codex_activation_verification import (
+                    CODEX_ACTIVATION_EXISTING_STORE_ENV,
+                )
+
+                env[CODEX_ACTIVATION_EXISTING_STORE_ENV] = "1"
             projected = facade._project_isolated_runtime_control(
                 runtime_home,
                 enabled=self.master_enabled,

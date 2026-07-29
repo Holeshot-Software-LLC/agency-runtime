@@ -55,8 +55,11 @@ changes rather than duplicating every commit.
   where it occupies the complete strict context envelope so identity guidance
   cannot alter its task or prompt hash,
   completion consumes the stored native-hook grant through exact lifecycle and
-  tool-call evidence, and rollout verification recognizes `agent_message`
-  delivery while rejecting child decrypt errors with no final message.
+  tool-call evidence for both JSON-string and native mapping spawn results, and
+  rollout verification recognizes `agent_message` delivery while rejecting
+  child decrypt errors with no final message. Isolated Agency canaries now mark
+  their existing evidence Store so the nonce-bound request enters the same
+  deterministic one-specialist activation route as current-profile verification.
 - Codex activation verification now separates its nonce-bound parent
   delegation request from the canonical direct child review goal. Deterministic
   routing and replay persist the child goal, the general PreToolUse exact-goal

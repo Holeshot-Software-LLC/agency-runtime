@@ -39,10 +39,12 @@ activation canary rejects its own native child goal.
 
 ## Current state
 
-Exact installed revision `f2f901d9d85fbe63d413ccc9d3bf01c976bcee2e`
-successfully registers Codex and ZCode. The three merged repair slices now
+Exact installed revision `279ef9e3547c3681431dd666dd278b731e627ca7`
+successfully registers Codex and ZCode. The merged repair slices now
 commit workforce receipts and deferred hires atomically, preserve Codex's
-encrypted spawn input, and inject the exact specialist context at child start.
+encrypted spawn input, inject the exact specialist context at child start, bind
+generated contractors to their causing unit, and keep parent, planner, and
+specialist model scopes distinct.
 
 A fresh USB-diagnostic task proved that inference is running: two provider
 attempts were recorded against `codex-subscription/gpt-5.6-luna`. The active
@@ -58,6 +60,15 @@ natural-language artifacts and safety boundaries, while the workforce contract
 requires exact normalized artifact, lifecycle, capability, tool, host, and
 platform identifiers. A generated contractor could therefore be valid prose
 but fail its own causing work unit or current host.
+
+The first source-level isolated canary after PR 162 proved the remaining route
+regression exactly: its predecessor planned two units and selected nobody,
+whereas trace `019fae5a-4815-7a82-a65e-66db8e35f203` used
+`codex_activation_canary_contract`, selected `code-reviewer`, emitted one unit,
+spawned once, and waited once. The child started and completed, but Codex's
+native mapping-shaped spawn result was rejected by a redundant string-only
+guard, leaving the issued activation grant unconsumed and the specialist-load
+receipt absent.
 
 ## Approach
 
@@ -88,6 +99,12 @@ labels matching provider receipts as workforce inference and explicitly states
 that the parent model is host-selected and not observable to Agency; it never
 promotes Luna into the parent or specialist slot.
 
+The isolated canary backend now marks its existing evidence Store before the
+nonce-bound request. The PostToolUse boundary accepts Codex's native mapping
+shape as well as its JSON-string shape while retaining the rooted task label,
+exact task-name, exact projected-key, persisted child-lifecycle, and one-use
+activation checks.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -112,6 +129,10 @@ model truth and resident-manager visibility.
   hiring availability, and exact canary goal binding.
 - [x] The current hiring and model-scope follow-up passes 177 broadened focused
   tests with one expected xfail; all 601 Python files pass Ruff.
+- [x] Source-level isolated canary routing selects exactly `code-reviewer`,
+  produces one read-only unit, spawns once, and waits once without a trust
+  prompt; focused activation and receipt verification passes 68 tests with two
+  platform skips.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.
