@@ -1025,3 +1025,18 @@ def test_isolated_parent_guidance_does_not_dispatch_an_untyped_worker() -> None:
 
     assert "No specialist assignment was accepted" in context
     assert "Do not dispatch an untyped native worker" in context
+
+
+def test_isolated_parent_guidance_pins_authoritative_resident_manager_header() -> None:
+    context = format_isolated_specialist_context(
+        [],
+        host="codex",
+        session_id="codex-session",
+        trace_id="trace",
+        nontrivial=False,
+        resident_managers=("agents-orchestrator", "chief-of-staff"),
+    )
+
+    assert "Agency/Agencies loaded: agents-orchestrator, chief-of-staff" in context
+    assert "copy its value exactly, never `none`" in context
+    assert "Agency/Agencies loaded: <agent-id" not in context

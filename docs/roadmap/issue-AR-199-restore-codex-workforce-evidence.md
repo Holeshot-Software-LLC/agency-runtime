@@ -225,6 +225,18 @@ The refreshed normal profile remains `hook_trust_status: unverified` and
 `restart_required: true`, so this is autonomous isolated-profile proof rather
 than attended current-profile activation or provider/model-receipt proof.
 
+Two subsequent ordinary Codex tasks exposed a first-pass header regression.
+The Conveyor status answer took 165 seconds before emitting
+`Agency/Agencies loaded: none`, then spent 11 seconds on one Stop correction;
+the dashboard telemetry answer took 264 seconds before the same invalid value
+and 19 seconds on its correction. Both persisted rollouts completed after one
+correction rather than an unbounded retry, but each duplicated the answer and
+failed first-pass acceptance. The preflight template had authoritative resident
+binding evidence while still presenting `none` as a valid loaded value. It now
+renders the exact resident pair, forbids replacing it with `none`, and requires
+the evidence header in substantive progress updates. Focused cross-host,
+context-ceiling, preflight, and hook coverage passes 156 tests.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -233,9 +245,9 @@ model truth and resident-manager visibility.
 
 ## Acceptance
 
-- [x] Every enabled Codex parent turn with a valid resident binding reports
-  `agents-orchestrator, chief-of-staff` as loaded, even when no specialist is
-  selected.
+- [ ] Every enabled Codex parent turn with a valid resident binding reports
+  `agents-orchestrator, chief-of-staff` on its first generated response, even
+  when no specialist is selected, without requiring Stop correction.
 - [x] Configured workforce provider attempts are committed as current-turn
   model receipts without leaving evidence behind after a failed preflight.
 - [x] Same-task gap hiring can use the governed Store without bypassing the
@@ -267,6 +279,8 @@ model truth and resident-manager visibility.
   evaluation gates pass locally.
 - [x] The exact merged revision passes the isolated-profile Codex activation
   canary with one complete real-child evidence chain and no trust prompt.
+- [x] Preflight pins the authoritative resident pair in final and substantive
+  status headers while preserving every host context ceiling.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

@@ -871,6 +871,7 @@ def _result_from_recipe(
             trace_id=trace_id,
             nontrivial=classification.selection_required,
             unit_plan=unit_agent_plan,
+            resident_managers=resident_managers,
         )
         delegation_context = (
             _continuation_delegation_context(

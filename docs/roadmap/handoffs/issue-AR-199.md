@@ -136,8 +136,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 PR 165 merged as `816db5b`; that exact install passed isolated-profile trace
 `019faf64-5aee-78e0-a5ab-657f782a6175` with one complete child chain and no
-trust prompt. The refreshed normal profile is activation-required and
-trust-unverified; attended ordinary delegation/model-receipt proof remains.
+trust prompt. Two ordinary tasks then required one correction each after an
+invalid first-pass manager value. Source now pins the resident pair and passes
+156 focused tests; merge, exact install, trust, and first-pass proof remain.
 
 ## same-task-continuity
 
@@ -146,8 +147,8 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Trust/restart the refreshed Codex terminal profile and verify activation.
-2. Run an ordinary contextual task, then prepare the OpenClaw handoff.
+1. Run the fast spine, merge, and exact-install the first-pass header repair.
+2. Trust/restart Codex once, then prove an ordinary task needs no correction.
 
 ## verification
 

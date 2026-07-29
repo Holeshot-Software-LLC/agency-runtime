@@ -253,7 +253,9 @@ def test_preflight_persists_trivial_kind_and_bounds_isolated_parent_context(
     assert len(result.context) <= 4_096
     assert "r" * 100 not in result.context
     assert "s" * 100 not in result.context
-    assert "Agency/Agencies loaded:" in result.context
+    assert "Agency/Agencies loaded: agents-orchestrator, chief-of-staff" in result.context
+    assert "copy its value exactly, never `none`" in result.context
+    assert "substantive progress updates and the final parent response" in result.context
     assert "Agency/Agencies delegated:" in result.context
     assert "Actual Model selected:" in result.context
     assert result.context.index("Agency/Agencies loaded:") < result.context.index(

@@ -8,7 +8,10 @@ from inspect import Parameter, signature
 from typing import Any
 
 from agency_runtime.core.agent_identity import agent_identity
-from agency_runtime.core.resident_managers import is_resident_manager_slug
+from agency_runtime.core.resident_managers import (
+    RESIDENT_MANAGER_SLUGS,
+    is_resident_manager_slug,
+)
 from agency_runtime.core.specialist_contracts import (
     MAX_DURABLE_SPECIALIST_REFERENCES,
     MAX_SELECTED_SPECIALISTS,
@@ -195,6 +198,7 @@ def format_isolated_specialist_context(
     trace_id: str,
     nontrivial: bool,
     unit_plan: Sequence[Mapping[str, Any]] = (),
+    resident_managers: Sequence[str] = (),
 ) -> str:
     """Return a compact recipe that keeps prompt bodies out of parent history."""
 
@@ -213,6 +217,18 @@ def format_isolated_specialist_context(
     if native_tool is None:
         raise ValueError(f"isolated specialist delivery is unsupported for host: {host}")
     slugs = ", ".join(reference.slug for reference in references) or "none"
+    resident_loaded = ", ".join(
+        slug
+        for slug in resident_managers
+        if isinstance(slug, str) and slug in RESIDENT_MANAGER_SLUGS
+    )
+    loaded_header_value = resident_loaded or "<agent-id[, agent-id...] or none>"
+    loaded_header_instruction = (
+        "`Agency/Agencies loaded` is fixed by current-turn resident evidence; "
+        "copy its value exactly, never `none`. "
+        if resident_loaded
+        else ""
+    )
     requirement = "Before substantive work" if nontrivial else "When specialist work is needed"
     if unit_plan:
         native_binding = {
@@ -260,11 +276,13 @@ def format_isolated_specialist_context(
         f"excluded from this persistent {normalized_host} parent transcript. "
         f"{execution_instruction}. Native worker labels are not Agency specialist identities. Preserve "
         "delegated goal text exactly from the current user request. Include the "
-        "Agency evidence header in the final parent response. Start the response with "
+        "Agency evidence header in substantive progress updates and the final parent "
+        "response. Start each such response with "
         "exactly these field labels, in this order, and fill values only from "
         "current-turn runtime evidence (use `none` or an explicit unavailable state "
-        "when evidence is absent):\n"
-        "Agency/Agencies loaded: <agent-id[, agent-id...] or none>\n"
+        "when evidence is absent). "
+        f"{loaded_header_instruction}\n"
+        f"Agency/Agencies loaded: {loaded_header_value}\n"
         "Agency/Agencies delegated: <agent-id[, agent-id...] or none>\n"
         "Skills loaded: <skill-id[, skill-id...] or none>\n"
         "Actual Model selected: <requested alias> -> <resolved provider/model or "
