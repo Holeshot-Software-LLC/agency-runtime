@@ -309,6 +309,12 @@ Commit `196dedc` binds those units to `codebase-onboarding-engineer`,
 assignments, and the focused selection-safety suite passes 24 tests with one
 platform skip. This is source proof; exact-installed ordinary proof remains.
 
+The same trace falsely reported `eligible_count: 0` because workforce routing
+does not use legacy retrieval and the receipt treated its unavailable count as
+authoritative. Commit `c02a10a` carries the explicit eligible-catalog count into
+the durable projection while preserving the distinct retrieval count. The
+focused receipt and selector suites pass all 71 tests.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -366,6 +372,8 @@ model truth and resident-manager visibility.
 - [x] The persisted ordinary three-unit local-page shape deterministically
   staffs `codebase-onboarding-engineer`, `frontend-developer`, and
   `code-reviewer` without a margin abstention.
+- [x] Workforce receipts report the explicit eligible catalog independently of
+  the unused legacy retrieval count.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

@@ -21,7 +21,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-199
 branch: codex/ar-199-ordinary-continuation
-evidence_commit: 196dedc1c91da281e589579f065a152c18c472ca
+evidence_commit: c02a10a7ad2425824c49883674f8d9b4e5b77dda
 minimum_ledger_commit: 36d2ec67810eaffe014cc08a73402146276830d3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
@@ -91,6 +91,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   `codebase-onboarding-engineer`, `frontend-developer`, and `code-reviewer`.
 - Post-fix replay accepts all three assignments; the focused suite passes 24
   tests with one platform skip, and targeted Ruff/format/diff checks pass.
+- `c02a10a` separates the explicit eligible-catalog count from unavailable
+  legacy retrieval; 71 focused receipt and selector tests pass.
 - Tracker issue 161 now provides same-repository parity:
   https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 - PR 162 merged the hiring and model-scope repair as `279ef9e`; its exact
@@ -122,8 +124,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-Source selection is now `GO` for the persisted ordinary three-unit shape.
-The same live trace still reports false `eligible_count: 0`, and source is not
+Source selection and truthful eligibility projection are `GO`. Source is not
 yet merged or exact-installed. External planner replay remains disallowed
 without explicit egress approval; persistent-profile trust remains attended.
 
@@ -134,8 +135,8 @@ new task. Do not rerun the now-passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. Correct and verify the false workforce eligibility receipt projection.
-2. Run the fast spine, merge, exact-install, then run the bounded ordinary proof.
+1. Run the named fast production spine.
+2. Merge, exact-install, then run the bounded ordinary proof.
 
 ## verification
 
