@@ -285,6 +285,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f5ca172` | 2026-07-28 | feat(installer): install applicable suite by default | [AR-197](../roadmap/issue-AR-197-remove-agency-owned-windows-hello.md), [AR-198](../roadmap/issue-AR-198-install-applicable-suite-by-default.md) | [detail](2026-07-28-f5ca172-install-applicable-suite.md) |
 | `da012ab` | 2026-07-28 | docs(checkpoint): record full-suite installer verification | [AR-198](../roadmap/issue-AR-198-install-applicable-suite-by-default.md) | null |
 | `6fc3173` | 2026-07-28 | Merge pull request #157 from Holeshot-Software-LLC/codex/full-suite-install | null | null |
+| `02f4cfb` | 2026-07-28 | docs(routing): record Codex workforce evidence regression | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
