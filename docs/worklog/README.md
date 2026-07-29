@@ -311,6 +311,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `237bf8a` | 2026-07-29 | fix(codex): retain finalization mismatch evidence | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-237bf8a-retain-codex-finalization-mismatch.md) |
 | `591879a` | 2026-07-29 | fix(codex): restore Stop correction continuation | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-591879a-restore-codex-stop-correction.md) |
 | `f09bc04` | 2026-07-29 | fix(codex): accept one correction in canary proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-f09bc04-accept-codex-correction-proof.md) |
+| `0521c8d` | 2026-07-29 | docs(roadmap): record accepted Codex source canary | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
