@@ -536,7 +536,7 @@ def test_codex_post_tool_reconciles_subagent_start_consumption_without_callback_
                 "tool_name": "collaborationspawn_agent",
                 "tool_input": {
                     "fork_turns": "none",
-                    "task_name": task_name,
+                    "task_name": f"/root/{task_name}",
                     "message": str(plan["goal"]),
                 },
                 "tool_response": json.dumps({"task_name": f"/root/{task_name}"}),

@@ -1536,7 +1536,10 @@ class HookBridge:
             return None
         task_name = _first_string(_dict_or_empty(tool_input), "task_name", "taskName")
         expected_task_name = codex_task_name_for_work_unit(work_unit_id)
-        if task_name != expected_task_name:
+        if task_name and task_name not in {
+            expected_task_name,
+            f"/root/{expected_task_name}",
+        }:
             return None
         raw_response = _native_child_response_mapping("codex", tool_response)
         projected_response, synthetic_identity = _native_child_tool_identity(
@@ -1637,6 +1640,41 @@ class HookBridge:
         if reconciled is None:
             return "", tool_response, identity
         return reconciled
+
+    def _resolve_codex_post_tool_unit(
+        self,
+        *,
+        tool_name: str,
+        tool_input: Any,
+        tool_response: Any,
+        session_id: str,
+        trace_id: str,
+    ) -> str:
+        """Resolve a planned unit from exact input or bounded native output."""
+
+        resolved = self._resolve_codex_task_name(
+            tool_name=tool_name,
+            tool_input=tool_input,
+            session_id=session_id,
+            trace_id=trace_id,
+        )
+        if resolved:
+            return resolved
+        response_projection, _response_identity = _native_child_tool_identity(
+            "codex",
+            tool_response,
+        )
+        response_task_name = _first_string(
+            _dict_or_empty(response_projection),
+            "task_name",
+            "taskName",
+        )
+        return self._resolve_codex_task_name(
+            tool_name=tool_name,
+            tool_input={"task_name": response_task_name},
+            session_id=session_id,
+            trace_id=trace_id,
+        )
 
     def _consume_native_child_prompt_delivery(
         self,
@@ -1920,9 +1958,10 @@ class HookBridge:
                     trace_id=trace_id,
                 )
             )
-        resolved_codex_unit = self._resolve_codex_task_name(
+        resolved_codex_unit = self._resolve_codex_post_tool_unit(
             tool_name=tool_name,
             tool_input=tool_input,
+            tool_response=observed_tool_response,
             session_id=correlation.session_id,
             trace_id=trace_id,
         )

@@ -126,9 +126,10 @@ child UUID. The remaining verifier failure is limited to Codex's exact
 The parser now excludes only that fixed host notice and rejects all other error
 items.
 
-PostToolUse now reconciles a missing host callback only when the Store already
-contains exactly one consumed native-hook activation for the exact planned task
-label, selected specialist version/hash, and real `codex-agent:<UUID>` child.
+PostToolUse resolves the planned unit from Codex's bounded rooted response and
+reconciles a missing host callback only when the Store already contains exactly
+one consumed native-hook activation for that task label, selected specialist
+version/hash, and real `codex-agent:<UUID>` child.
 It validates Codex's bounded rooted response before replacing the synthetic
 task projection; unconsumed, ambiguous, mismatched, or synthetic lineage still
 fails closed. A focused callback-ID rewrite regression joins the complete

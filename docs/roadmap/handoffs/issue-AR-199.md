@@ -126,8 +126,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 - Traces through `019faeca-406f-7d20-b2e7-6b1741b5a8af` isolated the next
   boundary: PostToolUse did not resolve the original callback identity, so the delegation
   retained its synthetic task label and Stop correctly returned `continue`.
-- The next source slice reconciles only an already-consumed native-hook grant for
-  one exact planned task label, specialist version/hash, and real child UUID.
+- The next source slice resolves the planned unit from Codex's bounded rooted
+  response, then reconciles only an already-consumed native-hook grant for one
+  exact task label, specialist version/hash, and real child UUID.
   The full activation file passes 17 tests; Ruff check and format pass.
 
 ## exact-blocker
