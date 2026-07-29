@@ -779,6 +779,64 @@ def test_codex_subagent_lifecycle_injects_exact_identity_and_child_owned_fallbac
     assert store.stopped == store.started
 
 
+def test_codex_opaque_canary_delivery_is_terminal_parseable_child_context() -> None:
+    from agency_runtime.core.activation_canary_contract import (
+        CODEX_ACTIVATION_CANARY_WORK_UNIT,
+    )
+
+    class OpaqueCanaryStore(_PlanStore):
+        def __init__(self) -> None:
+            super().__init__()
+            self.goals["unit-code"] = CODEX_ACTIVATION_CANARY_WORK_UNIT
+
+        def get_pending_native_hook_delivery(self, **_kwargs: Any) -> dict[str, str]:
+            prepared = self.prepared[0]
+            return {
+                "session_id": str(prepared["session_id"]),
+                "trace_id": str(prepared["trace_id"]),
+                "tool_use_id": str(prepared["tool_use_id"]),
+                "work_unit_id": str(prepared["work_unit_id"]),
+                "slug": "code-reviewer",
+                "version": "v1",
+                "prompt_hash": self.hashes["code-reviewer"],
+                "prompt_body": self.prompts["code-reviewer"],
+            }
+
+    store = OpaqueCanaryStore()
+    bridge = HookBridge("codex", store=store)  # type: ignore[arg-type]
+    pre = bridge.handle(
+        {
+            "hook_event_name": "PreToolUse",
+            "session_id": "codex-session",
+            "turn_id": "trace",
+            "tool_name": "collaborationspawn_agent",
+            "tool_use_id": "call-canary",
+            "tool_input": {
+                "fork_turns": "none",
+                "task_name": codex_task_name_for_work_unit("unit-code"),
+                "message": "gAAAAA" + "opaque-canary-ciphertext" * 2,
+            },
+        }
+    )
+    assert "updatedInput" not in pre["hookSpecificOutput"]
+
+    started = bridge.handle(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": "codex-session",
+            "agent_id": "agent-canary",
+            "agent_type": "worker",
+        }
+    )
+    context = started["hookSpecificOutput"]["additionalContext"]
+    delivery = parse_native_child_prompt_delivery(context)
+
+    assert delivery is not None
+    assert delivery.original_task == CODEX_ACTIVATION_CANARY_WORK_UNIT
+    assert delivery.specialist_slug == "code-reviewer"
+    assert context.endswith(store.prompts["code-reviewer"])
+
+
 def test_zcode_does_not_invent_undocumented_child_lifecycle_identity() -> None:
     class LifecycleStore(_PlanStore):
         def __init__(self) -> None:

@@ -77,7 +77,9 @@ the exact child lifecycle is persisted, injects that prompt through
 `SubagentStart`, and consumes the grant at `PostToolUse` using exact tool-call
 and lifecycle evidence. Rollout parsing now accepts the observed
 `agent_message` delivery shape and rejects task-complete records with a decrypt
-error or no final child message.
+error or no final child message. Live proof showed that the exact delivery must
+also be the complete `SubagentStart` context: prefix or suffix guidance changes
+the strict original-task or prompt-body hash boundary.
 
 ## Dependencies
 
@@ -102,7 +104,7 @@ model truth and resident-manager visibility.
 - [x] Focused tests cover header reconciliation, atomic receipt persistence,
   hiring availability, and exact canary goal binding.
 - [x] The named fast production spine and routing evaluation passed for the
-  first merged repair; the follow-up focused set passes 66 tests and still
+  first merged repair; the follow-up focused set passes 67 tests and still
   requires the proportional fast spine before its live rerun.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
