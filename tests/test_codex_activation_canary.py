@@ -462,7 +462,7 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
     assert len(attestation["proof_digest"]) == 64
 
 
-def test_codex_post_tool_reconciles_subagent_start_consumption_after_callback_id_rewrite(
+def test_codex_post_tool_reconciles_subagent_start_consumption_without_callback_id(
     configured_store: Store,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -534,7 +534,6 @@ def test_codex_post_tool_reconciles_subagent_start_consumption_after_callback_id
                 "transcript_path": "C:\\state\\rollout.jsonl",
                 "permission_mode": "default",
                 "tool_name": "collaborationspawn_agent",
-                "tool_use_id": "fc_post_tool_identity",
                 "tool_input": {
                     "fork_turns": "none",
                     "task_name": task_name,

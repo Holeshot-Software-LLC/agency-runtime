@@ -123,16 +123,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   isolated hook-trust-bypass notices, not hook failures.
 - Source-live traces now prove SubagentStart consumes the exact native-hook
   grant against the real child UUID before returning specialist context.
-- Trace `019faeaf-3917-7673-b9e7-cd149b7ac0ca` isolated the next boundary:
-  Codex projected a different PostToolUse callback identity, so the delegation
+- Traces through `019faeca-406f-7d20-b2e7-6b1741b5a8af` isolated the next
+  boundary: PostToolUse did not resolve the original callback identity, so the delegation
   retained its synthetic task label and Stop correctly returned `continue`.
-- The current source reconciles only an already-consumed native-hook grant for
+- The next source slice reconciles only an already-consumed native-hook grant for
   one exact planned task label, specialist version/hash, and real child UUID.
   The full activation file passes 17 tests; Ruff check and format pass.
 
 ## exact-blocker
 
-The callback reconciliation is source-green but not yet refreshed. A fresh
+Missing-callback reconciliation is source-green but not yet refreshed. A fresh
 isolated canary must prove completed delegation, a valid header, and attestation
 before the broader USB-style hiring task can close AR-199.
 

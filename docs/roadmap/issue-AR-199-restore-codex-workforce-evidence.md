@@ -72,8 +72,8 @@ mapping-only and optional-nickname diagnoses: this configured Codex v0.146
 surface emitted exactly `{"task_name":"/root/unit_05d45f7553"}`. The live
 ordering instead records and delivers the real child at SubagentStart while the
 grant remains deferred to PostToolUse. After moving consumption to
-SubagentStart, trace `019faeaf-3917-7673-b9e7-cd149b7ac0ca` proved that Codex
-projects a different PostToolUse callback identity: the consumed grant and real
+SubagentStart, traces through `019faeca-406f-7d20-b2e7-6b1741b5a8af` proved
+that PostToolUse does not resolve the original callback identity: the consumed grant and real
 child remained authoritative, but the compact delegation retained its
 synthetic task label and finalization correctly stopped at `continue`.
 
@@ -126,7 +126,7 @@ child UUID. The remaining verifier failure is limited to Codex's exact
 The parser now excludes only that fixed host notice and rejects all other error
 items.
 
-PostToolUse now reconciles a host-projected callback only when the Store already
+PostToolUse now reconciles a missing host callback only when the Store already
 contains exactly one consumed native-hook activation for the exact planned task
 label, selected specialist version/hash, and real `codex-agent:<UUID>` child.
 It validates Codex's bounded rooted response before replacing the synthetic

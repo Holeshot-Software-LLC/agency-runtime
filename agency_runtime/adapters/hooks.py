@@ -1532,7 +1532,7 @@ class HookBridge:
         ):
             return None
         correlation = self._correlation(payload, tool_input, tool_response)
-        if not correlation.session_id or not correlation.tool_use_id:
+        if not correlation.session_id:
             return None
         task_name = _first_string(_dict_or_empty(tool_input), "task_name", "taskName")
         expected_task_name = codex_task_name_for_work_unit(work_unit_id)
