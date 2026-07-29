@@ -83,9 +83,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   unplanned children retain the identity and fallback guidance. A new test
   round-trips the full context to the canonical canary goal and immutable
   prompt. The focused activation set passes 67 tests.
-- Context telemetry reported 49.0 percent remaining, so this source-and-focused-
-  verification slice requires the substantive and ledger checkpoint before the
-  fast spine and live evaluation.
+- Context telemetry at 49.0 percent required a clean checkpoint before live evaluation.
 - Fresh USB-task evidence proves workforce inference is active rather than
   absent. Two provider calls persisted `codex-subscription/gpt-5.6-luna`
   receipts, 219 workers were evaluated, none was eligible, and dynamic hiring
@@ -128,12 +126,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   reciprocal activation, delegation, work-unit, and worker-run links.
 - Both callback orders are covered; all 20 activation-canary tests and all 35
   activation-receipt tests pass, with two platform skips in the latter.
+- Source-live trace `019faf17-be08-75a1-a074-8425eff20a71` proves exact
+  selection, activation, specialist load, spawn, wait, and header evidence;
+  only authoritative finalization remained unmet.
+- A non-empty Codex SubagentStop final message now closes that exact worker and
+  delegation without persisting content; empty stops remain outcome-free. The
+  20-test activation and 33-test cross-host hook files pass; the broader
+  activation-receipt rerun hit its no-output timeout.
 
 ## exact-blocker
 
-The evidence-derived source repair is focused-green but not yet source-live.
-The next isolated canary must persist a complete accepted attestation before
-PR, merge, or exact-install claims can proceed.
+The terminal-transition repair is focused-green but not yet source-live. The next
+canary must persist one accepted attestation before PR, merge, or exact install.
 
 ## same-task-continuity
 
@@ -142,8 +146,8 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Create the clean source and ledger checkpoint for the promotion repair.
-2. Refresh Codex from source and prove the isolated activation attestation.
+1. Create the clean source and ledger checkpoint for the terminal repair.
+2. Refresh Codex from source and prove the accepted activation attestation.
 3. Run the named fast spine, push, merge, and exact-install.
 4. Run the fresh Codex proof and prepare the OpenClaw handoff.
 

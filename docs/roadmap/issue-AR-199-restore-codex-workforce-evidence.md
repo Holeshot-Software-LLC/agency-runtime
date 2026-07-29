@@ -79,6 +79,13 @@ parent PostToolUse records the synthetic task lineage before child
 SubagentStart consumes the exact grant against the real UUID. The final Store
 contains the correct activation, but no later edge promoted the already-created
 compact delegation, so finalization correctly stopped at `continue`.
+Source-live trace `019faf17-be08-75a1-a074-8425eff20a71` then proved that
+promotion repair end to end: one `code-reviewer` was selected, activated,
+loaded, spawned, waited, and linked through the real child UUID with a valid
+header and zero unexpected tools. The remaining rejection moved one boundary
+later: Codex supplied the successful child's final assistant message, but the
+outcome-free SubagentStop projection left the worker exit code unset and the
+delegation at `delegated`, so finalization remained `continue`.
 
 ## Approach
 
@@ -151,6 +158,13 @@ path remains authoritative; every ambiguous or lookalike shape still fails
 closed. The complete activation file passes 20 tests, including the observed
 PostToolUse-before-SubagentStart order.
 
+Codex's documented SubagentStop contract and current native source make a
+non-empty `last_assistant_message` the successful child-turn completion edge.
+The hook now records `ok` only for that exact signal and never persists the
+message; empty stops remain outcome-free. The expected parent-PostToolUse
+activation gap is no longer emitted as a canary rejection because
+SubagentStart owns its later exact attachment.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -181,6 +195,8 @@ model truth and resident-manager visibility.
   platform skips.
 - [x] Both Codex callback orders bind the consumed specialist, real child UUID,
   compact delegation, and worker-run receipt to the same exact work unit.
+- [x] A successful Codex SubagentStop closes the exact worker and delegation;
+  an empty stop remains outcome-free and cannot fabricate success.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

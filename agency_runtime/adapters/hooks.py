@@ -1542,9 +1542,25 @@ class HookBridge:
         }
 
     def _handle_codex_subagent_stop(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Record an exact Codex lifecycle stop without guessing task correlation."""
+        """Close an exact Codex child only when the host supplies its final message."""
 
-        self._record_native_child_lifecycle(payload, event="stopped")
+        lifecycle = self._record_native_child_lifecycle(payload, event="stopped")
+        final_message = _optional_string(payload, "last_assistant_message")
+        if lifecycle is None or not final_message.strip():
+            return {}
+        session_id, trace_id, work_unit_id, identity = lifecycle
+        recorder = getattr(self.store, "record_native_child_ended", None)
+        if callable(recorder) and trace_id:
+            recorder(
+                host=self.host,
+                backend=_native_child_backend(self.host),
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=work_unit_id,
+                worker_id=identity.worker_id,
+                native_run_id=identity.native_run_id,
+                outcome="ok",
+            )
         return {}
 
     def _reconcile_consumed_codex_child(
@@ -1619,7 +1635,15 @@ class HookBridge:
             and row.get("consumed_at")
         ]
         if len(references) != 1 or len(activations) != 1:
-            return None, "reference_activation_cardinality_mismatch"
+            # Parent PostToolUse currently precedes child SubagentStart, so one
+            # reference with no activation is pending rather than rejected.
+            reason = {
+                (1, 0): "",
+            }.get(
+                (len(references), len(activations)),
+                "reference_activation_cardinality_mismatch",
+            )
+            return None, reason
         reference = references[0]
         activation = activations[0]
         if activation.get("specialist_version") != reference.get("version") or activation.get(

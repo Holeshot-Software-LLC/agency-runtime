@@ -648,6 +648,33 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     assert delegation["executed_worker_kind"] == "generic-worker"
     assert delegation["executed_worker_id"] == receiver_id
     assert delegation["native_run_id"] == f"codex-agent:{receiver_id}"
+    assert (
+        bridge.handle(
+            {
+                "hook_event_name": "SubagentStop",
+                "session_id": session_id,
+                "agent_id": receiver_id,
+                "agent_type": "worker",
+            }
+        )
+        == {}
+    )
+    [outcome_free] = configured_store.get_delegations(trace_id)
+    assert outcome_free["status"] == "delegated"
+    assert (
+        bridge.handle(
+            {
+                "hook_event_name": "SubagentStop",
+                "session_id": session_id,
+                "agent_id": receiver_id,
+                "agent_type": "worker",
+                "last_assistant_message": "The specialist completed the assigned review.",
+            }
+        )
+        == {}
+    )
+    [completed] = configured_store.get_delegations(trace_id)
+    assert completed["status"] == "completed"
     evidence = configured_store.get_canary_activation_snapshot(
         host="codex",
         query_hash=response_hash(
@@ -657,6 +684,8 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     [worker_run] = evidence["worker_runs"]
     assert worker_run["delegation_event_id"] == delegation["id"]
     assert worker_run["work_unit_id"] == unit
+    assert worker_run["exit_code"] == 0
+    assert worker_run["ended_at"]
 
 
 def test_codex_activation_proof_rejects_parent_only_manual_grant(
