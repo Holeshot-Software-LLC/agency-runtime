@@ -294,11 +294,20 @@ def _compatibility(value: object) -> dict[str, Any]:
     }
 
 
-def _eligibility(value: object, retrieval: Mapping[str, Any]) -> dict[str, Any]:
+def _eligibility(
+    value: object,
+    retrieval: Mapping[str, Any],
+    *,
+    eligible_catalog_count: object = None,
+) -> dict[str, Any]:
     raw = value if isinstance(value, (list, tuple)) else []
     rejected_count = len(raw)
     samples = _rejections(raw)
-    eligible_count = _bounded_count(retrieval.get("full_roster_count"))
+    eligible_count = _bounded_count(
+        retrieval.get("full_roster_count")
+        if eligible_catalog_count is None
+        else eligible_catalog_count
+    )
     return {
         "eligible_count": eligible_count,
         "rejected_count": min(rejected_count, _MAX_COUNT),
@@ -424,7 +433,11 @@ def project_durable_routing_receipt(routing: Mapping[str, Any]) -> dict[str, Any
             origin_receipt_digest = _receipt_digest(origin)
     retrieval = _retrieval(routing.get("retrieval"))
     compatibility = _compatibility(routing.get("compatibility"))
-    eligibility = _eligibility(routing.get("eligibility_rejections"), retrieval)
+    eligibility = _eligibility(
+        routing.get("eligibility_rejections"),
+        retrieval,
+        eligible_catalog_count=routing.get("eligible_catalog_count"),
+    )
     receipt = {
         "receipt_version": ROUTING_RECEIPT_VERSION,
         "inference": {

@@ -887,6 +887,7 @@ def _attach_workforce_signals(
         work_units=_bounded_work_units(routing.get("work_units")),
         source_message_hash=request.source_message_hash,
         execution_context=dict(request.capability_receipt),
+        eligible_catalog_count=len(request.catalog),
         eligibility_rejections=[dict(item) for item in request.eligibility_rejections],
     )
     return routing

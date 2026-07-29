@@ -385,6 +385,7 @@ def test_workforce_route_does_not_expose_legacy_keyword_companions() -> None:
         SimpleNamespace(
             source_message_hash="a" * 64,
             capability_receipt={},
+            catalog=[{"slug": "application-integration-verifier"}],
             eligibility_rejections=(),
         ),  # type: ignore[arg-type]
         signals,
@@ -394,6 +395,7 @@ def test_workforce_route_does_not_expose_legacy_keyword_companions() -> None:
     assert result["companion_actions"] == []
     assert result["companion_ids"] == []
     assert result["selected_companion_ids"] == []
+    assert result["eligible_catalog_count"] == 1
     assert result["fallback_companion_ids"] == [
         "agents-orchestrator",
         "chief-of-staff",
