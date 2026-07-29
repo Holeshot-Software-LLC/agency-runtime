@@ -3,7 +3,7 @@ title: "AR-199 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
 tags: [handoff, codex, routing, workforce, evidence, recovery]
 related:
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
@@ -20,23 +20,23 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-199
-branch: codex/ar-199-restore-codex-workforce
-evidence_commit: 2c914b753000aaf9536fa89eb51f57ee7b5a1264
-minimum_ledger_commit: 39095e61857d77a610d98220ba2caaca151336c4
+branch: codex/ar-199-live-selection-followup
+evidence_commit: f2f901d9d85fbe63d413ccc9d3bf01c976bcee2e
+minimum_ledger_commit: 6739abd0f0503ceb0e59c583cd20214e05682bfe
 hard_checkpoint_percent: 50
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 ---
 
 # AR-199 active recovery capsule
 
 ## checkpoint
 
-- Exact merged revision `2c914b7` is installed globally and registered in
-  Codex and ZCode; the dashboard is active and reachable.
-- Fresh Codex terminal trust completed and a fresh task received the current
-  resident-manager kernel.
-- The repair is on `codex/ar-199-restore-codex-workforce`; the owner-untracked
-  analysis draft and `uv.lock` remain untouched.
+- Exact merged revision `f2f901d` is installed globally and registered in
+  Codex and ZCode.
+- The current repair is on `codex/ar-199-live-selection-followup`; the
+  owner-untracked analysis draft and `uv.lock` remain untouched.
+- Context telemetry is at 48.1 percent remaining, so this focused green slice
+  is being sealed before the named fast spine and live evaluation.
 
 ## completed-evidence
 
@@ -97,14 +97,34 @@ tracker_url: null
 - Context telemetry reported 49.0 percent remaining, so this source-and-focused-
   verification slice requires the substantive and ledger checkpoint before the
   fast spine and live evaluation.
+- Fresh USB-task evidence proves workforce inference is active rather than
+  absent. Two provider calls persisted `codex-subscription/gpt-5.6-luna`
+  receipts, 219 workers were evaluated, none was eligible, and dynamic hiring
+  declined with the opaque `contract_invalid:ValueError` code.
+- The owner-selected parent task model is Sol High. Luna is the separately
+  pinned workforce planner, so the old `Actual Model selected` wording was
+  semantically wrong even though its receipt was genuine.
+- The current source binds generated contracts to the exact causing artifact,
+  lifecycle, capabilities, tools, platforms, and current host before critic and
+  persistence. Natural-language artifact prose is no longer projected as a
+  typed identifier.
+- The hiring response schema now matches parser bounds and closed enums.
+  Explicit negative boundaries such as `Do not change drivers without human
+  approval` remain valid while permissive approval bypass language remains
+  rejected.
+- Header model projection now separates the unobservable host-selected parent,
+  workforce inference, and specialist launch evidence.
+- Broadened focused verification passes 177 tests with one expected xfail;
+  Ruff check and format pass all 601 Python files.
+- Tracker issue 161 now provides same-repository parity:
+  https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-End-to-end exact-installed Codex workforce execution is not yet proven. The
-live child now executes successfully; the remaining activation blocker is the
-strict context framing repaired in the current source slice. It still requires
-checkpoint, fast verification, merge, exact reinstall, and a passing live
-attestation before fresh-task header/model/delegation evidence.
+End-to-end exact-installed Codex workforce selection is not yet proven for the
+fresh USB-style gap. The local contractor and model-scope repair requires this
+checkpoint, the named fast spine, merge, exact reinstall, and a fresh task that
+persists a hire, specialist activation, delegation, and scoped model evidence.
 
 ## same-task-continuity
 
@@ -113,11 +133,11 @@ new task or rerun the live canary until focused source verification passes.
 
 ## next-bounded-work-package
 
-1. Commit the terminal-context repair and its ledger checkpoint.
-2. Run the proportional fast spine, push, open and merge the next follow-up PR.
-3. Reinstall that exact merge and run the live Codex activation verifier.
-4. Capture fresh-task resident-manager, specialist, delegation, and model
-   receipt evidence for the handoff.
+1. Commit this contractor/header repair and its ledger checkpoint.
+2. Run the proportional fast spine, push, open and merge the follow-up PR.
+3. Reinstall that exact merge and run a bypassed isolated activation canary.
+4. Run a fresh USB-style Codex task and capture resident-manager, contractor,
+   specialist, delegation, and scoped model receipt evidence.
 
 ## verification
 

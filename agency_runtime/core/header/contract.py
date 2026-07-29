@@ -771,6 +771,58 @@ def _model_line(receipt: Mapping[str, Any] | None, requested_model: str) -> str:
     return f"{tier_prefix}{requested} -> {target}"
 
 
+def _is_workforce_inference_receipt(
+    receipt: Mapping[str, Any] | None,
+    routing_receipt: Mapping[str, Any] | None,
+) -> bool:
+    """Identify a planner receipt without relabeling it as the parent or specialist model."""
+
+    if not isinstance(receipt, Mapping) or not isinstance(routing_receipt, Mapping):
+        return False
+    inference = routing_receipt.get("inference")
+    attempts = inference.get("provider_attempts") if isinstance(inference, Mapping) else None
+    if not isinstance(attempts, list):
+        return False
+    requested = _clean(receipt.get("requested_model"))
+    provider = _clean(receipt.get("resolved_provider"))
+    return any(
+        isinstance(attempt, Mapping)
+        and _clean(attempt.get("requested_model")) == requested
+        and (
+            not provider
+            or not _clean(attempt.get("provider_name"))
+            or _clean(attempt.get("provider_name")) == provider
+        )
+        for attempt in attempts
+    )
+
+
+def _scoped_model_line(
+    receipt: Mapping[str, Any] | None,
+    requested_model: str,
+    routing_receipt: Mapping[str, Any] | None,
+    *,
+    specialist_loaded: bool,
+) -> str:
+    """Keep parent, workforce-planner, and specialist model identities distinct."""
+
+    parent = "parent task: host-selected (not observable to Agency)"
+    specialist = (
+        "specialist: launch model not evidenced by this receipt"
+        if specialist_loaded
+        else "specialist: not launched"
+    )
+    if _is_workforce_inference_receipt(receipt, routing_receipt):
+        return (
+            f"{parent}; workforce inference: {_model_line(receipt, requested_model)}; {specialist}"
+        )
+    if receipt is not None:
+        return f"{parent}; observed execution receipt: {_model_line(receipt, requested_model)}"
+    if requested_model:
+        return f"{parent}; requested execution alias: {requested_model}; {specialist}"
+    return f"{parent}; {specialist}"
+
+
 def _delegation_line(delegations: list[dict[str, Any]]) -> str:
     if not delegations:
         return "none"
@@ -1289,7 +1341,12 @@ def fill_header_fields(
     filled["agencies_loaded"] = ", ".join(agents) if agents else "none"
     filled["agencies_delegated"] = _delegation_line(delegations)
     filled["skills_loaded"] = ", ".join(skills) if skills else "none"
-    filled["actual_model_selected"] = _model_line(model_receipt, model)
+    filled["actual_model_selected"] = _scoped_model_line(
+        model_receipt,
+        model,
+        routing_receipt,
+        specialist_loaded=bool(snapshot and snapshot.get("specialists")),
+    )
     filled["recruited_via"] = _recruited_via_line(routing_receipt)
     filled["why"] = humanize_reason_codes(_header_reason_codes(snapshot, routing_receipt))
     filled["how_it_shaped_outcome"] = humanize_effect_codes(

@@ -383,6 +383,46 @@ def test_inferred_gap_hires_registers_and_immediately_enables_contractor(tmp_pat
     assert [item.stage for item in outcome.attempts] == ["hiring", "hiring-critic"]
 
 
+def test_hire_binds_natural_language_contract_to_exact_causing_unit(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    response = _hiring_response()
+    response["contract"].update(
+        artifacts_produced=["USB diagnostic report"],
+        lifecycle_phases=["review"],
+        capabilities=["windows-usb-diagnostics"],
+        tools=["system-event-log"],
+        platforms=["linux"],
+        hosts=["openclaw"],
+        anti_capabilities=["Do not change drivers without human approval."],
+    )
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset({"repository-read"}),
+        1,
+    )
+
+    outcome = hire_contractor_for_gap(
+        "Investigate recurring USB connect and disconnect sounds on this Windows computer.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        staffing_context=context,
+        invoker=_invoker(response, {"approved": True, "reason_codes": []}),
+    )
+
+    assert outcome.hired is True
+    contract = outcome.hiring_case["contract_evidence"]
+    assert contract["artifact_kinds"][0] == "implementation-change"
+    assert contract["lifecycle_phases"][0] == "implementation"
+    assert contract["capability_ids"] == ["implementation"]
+    assert contract["tool_classes"][0] == "repository-read"
+    assert contract["platforms"][0] == "windows"
+    assert contract["hosts"][0] == "codex"
+    assert outcome.contract.anti_capabilities == ("do not change drivers without human approval.",)
+
+
 def test_atomic_preflight_route_does_not_publish_an_in_memory_cache(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -730,7 +770,7 @@ def test_amendment_rejects_authority_escalation_without_writing_case(tmp_path: P
     )
 
     assert outcome.status == "abstained"
-    assert outcome.reason_codes == ("contract_invalid:ValueError",)
+    assert outcome.reason_codes == ("contract_invalid:amendment",)
     assert store.list_hiring_cases(limit=10) == []
     assert store.get_workforce_worker(existing.agent_id)["revision"] == 0
 

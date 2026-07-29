@@ -3,7 +3,7 @@ title: "AR-199: Restore Codex workforce selection and evidence"
 status: in_progress
 category: roadmap
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
 tags: [codex, routing, workforce, receipts, resident-managers, regression]
 related:
   - docs/decisions/0003-response-telemetry-is-model-truth.md
@@ -21,7 +21,7 @@ type: issue
 epic: routing
 issue_id: AR-199
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 depends_on: []
 blocks: []
 ---
@@ -39,27 +39,25 @@ activation canary rejects its own native child goal.
 
 ## Current state
 
-Exact installed revision `6fc3173901af94d03f7d61a350a14892083e3735`
-successfully registered Codex and ZCode and started the dashboard. A fresh
-trusted Codex task received the resident-manager kernel, proving plugin load.
-The current local evidence store contains 272 active workers, 97 runs, 85
-routing decisions, zero model receipts, and one specialist-load row.
+Exact installed revision `f2f901d9d85fbe63d413ccc9d3bf01c976bcee2e`
+successfully registers Codex and ZCode. The three merged repair slices now
+commit workforce receipts and deferred hires atomically, preserve Codex's
+encrypted spawn input, and inject the exact specialist context at child start.
 
-The observed nontrivial turn was correctly classified with
-`selection_required=true`, and two configured provider calls returned applied
-structured responses. It produced four verified work units but no unit-agent
-plan. The content-free receipt reports 219 evaluated workers, zero eligible,
-capability/platform exclusions, and `hiring_store_unavailable`. Source review
-shows that preflight deliberately calls routing with `store=None`; this
-preserves ready-CAS atomicity but makes receipt persistence and same-task hiring
-unavailable. Passing the live store directly would reintroduce partial writes
-and is not an acceptable repair.
+A fresh USB-diagnostic task proved that inference is running: two provider
+attempts were recorded against `codex-subscription/gpt-5.6-luna`. The active
+roster still produced zero eligible workers, and governed hiring declined with
+`contract_invalid:ValueError`. The parent Codex task was configured by the
+owner as Sol High; Luna was only Agency's independently configured workforce
+planner. The existing `Actual Model selected` projection therefore conflated
+three distinct identities: parent task, workforce inference, and specialist
+execution.
 
-The first merged repair reached the trusted live canary and selected
-`code-reviewer`, but replacing Codex's opaque encrypted spawn message produced
-a mixed plaintext/encrypted child envelope. The child received the exact
-specialist prompt and then failed to decrypt the retained encrypted content;
-the verifier also omitted `agent_message` input while projecting delivery.
+Source reproduction isolated the hiring failure. The hiring JSON schema accepts
+natural-language artifacts and safety boundaries, while the workforce contract
+requires exact normalized artifact, lifecycle, capability, tool, host, and
+platform identifiers. A generated contractor could therefore be valid prose
+but fail its own causing work unit or current host.
 
 ## Approach
 
@@ -80,6 +78,15 @@ and lifecycle evidence. Rollout parsing now accepts the observed
 error or no final child message. Live proof showed that the exact delivery must
 also be the complete `SubagentStart` context: prefix or suffix guidance changes
 the strict original-task or prompt-body hash boundary.
+
+The current follow-up binds every validated employment contract to the exact
+typed causing work unit before criticism and persistence. It also aligns the
+provider JSON schema with the parser, keeps natural-language artifact prose out
+of typed routing identifiers, accepts explicit negative safety boundaries, and
+passes the current host into deterministic eligibility. Header model text now
+labels matching provider receipts as workforce inference and explicitly states
+that the parent model is host-selected and not observable to Agency; it never
+promotes Luna into the parent or specialist slot.
 
 ## Dependencies
 
@@ -103,9 +110,8 @@ model truth and resident-manager visibility.
   waits exactly once, and persists a complete attestation.
 - [x] Focused tests cover header reconciliation, atomic receipt persistence,
   hiring availability, and exact canary goal binding.
-- [x] The named fast production spine and routing evaluation passed for the
-  first merged repair; the follow-up focused set passes 67 tests and still
-  requires the proportional fast spine before its live rerun.
+- [x] The current hiring and model-scope follow-up passes 177 broadened focused
+  tests with one expected xfail; all 601 Python files pass Ruff.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

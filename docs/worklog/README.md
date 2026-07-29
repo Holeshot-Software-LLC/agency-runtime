@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-28
+updated: 2026-07-29
 tags: []
 related: []
 supersedes: []
@@ -287,8 +287,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6fc3173` | 2026-07-28 | Merge pull request #157 from Holeshot-Software-LLC/codex/full-suite-install | null | null |
 | `02f4cfb` | 2026-07-28 | docs(routing): record Codex workforce evidence regression | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `518ad62` | 2026-07-28 | fix(routing): restore atomic Codex workforce evidence | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-28-518ad62-atomic-codex-workforce-evidence.md) |
+| `2c914b7` | 2026-07-28 | Merge pull request #158 from Holeshot-Software-LLC/codex/ar-199-restore-codex-workforce | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `e686584` | 2026-07-28 | fix(codex): preserve encrypted child activation input | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-28-e686584-preserve-encrypted-codex-child-input.md) |
+| `3382b18` | 2026-07-28 | Merge pull request #159 from Holeshot-Software-LLC/codex/ar-199-restore-codex-workforce | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `ea73dd5` | 2026-07-29 | fix(codex): preserve exact child context framing | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-ea73dd5-preserve-exact-codex-child-context.md) |
+| `f2f901d` | 2026-07-29 | Merge pull request #160 from Holeshot-Software-LLC/codex/ar-199-restore-codex-workforce | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
