@@ -20,8 +20,8 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-199
-branch: codex/ar-199-zero-correction-canary
-evidence_commit: 26aaecf990d486cfbedfe1e94c2806ef2ad99f8f
+branch: codex/ar-199-ordinary-continuation
+evidence_commit: c02a10a7ad2425824c49883674f8d9b4e5b77dda
 minimum_ledger_commit: 36d2ec67810eaffe014cc08a73402146276830d3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
@@ -31,12 +31,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## checkpoint
 
-- Exact merged revision `34e3180` is installed globally and registered in
-  Codex and ZCode.
-- The current repair is on `codex/ar-199-subagent-start-consumption`; the
-  owner-untracked analysis draft and `uv.lock` remain untouched.
-- The preceding substantive and ledger pair is a clean checkpoint for the
-  current bounded repair.
+- Exact merge `aa0d949` and bundle `0.1.0+codex.fc83b66da46d` remain installed
+  in Codex and ZCode.
+- Current source repair `196dedc` is on
+  `codex/ar-199-ordinary-continuation`; owner-untracked files remain untouched.
+- Truthful workforce eligibility projection `c02a10a` is on the same branch.
+- The preceding `511c389` / `3cb5602` pair was the clean starting checkpoint.
 
 ## completed-evidence
 
@@ -84,25 +84,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   round-trips the full context to the canonical canary goal and immutable
   prompt. The focused activation set passes 67 tests.
 - Context telemetry at 49.0 percent required a clean checkpoint before live evaluation.
-- Fresh USB-task evidence proves workforce inference is active rather than
-  absent. Two provider calls persisted `codex-subscription/gpt-5.6-luna`
-  receipts, 219 workers were evaluated, none was eligible, and dynamic hiring
-  declined with the opaque `contract_invalid:ValueError` code.
-- The owner-selected parent task model is Sol High. Luna is the separately
-  pinned workforce planner, so the old `Actual Model selected` wording was
-  semantically wrong even though its receipt was genuine.
-- The current source binds generated contracts to the exact causing artifact,
-  lifecycle, capabilities, tools, platforms, and current host before critic and
-  persistence. Natural-language artifact prose is no longer projected as a
-  typed identifier.
-- The hiring response schema now matches parser bounds and closed enums.
-  Explicit negative boundaries such as `Do not change drivers without human
-  approval` remain valid while permissive approval bypass language remains
-  rejected.
-- Header model projection now separates the unobservable host-selected parent,
-  workforce inference, and specialist launch evidence.
-- Broadened focused verification passes 177 tests with one expected xfail;
-  Ruff check and format pass all 601 Python files.
+- Ordinary trace `019faf9a-625a-7a23-ba2d-2679a4401eb5` abstained on three
+  units, attempted hiring, and required one Stop correction, so it is `NO-GO`.
+- Local replay reproduced nonsensical discovery/review winners and
+  `selection_margin_too_low`; it made no external provider call.
+- `196dedc` anchors the same typed unit shape to
+  `codebase-onboarding-engineer`, `frontend-developer`, and `code-reviewer`.
+- Post-fix replay accepts all three assignments; the focused suite passes 24
+  tests with one platform skip, and targeted Ruff/format/diff checks pass.
+- `c02a10a` separates the explicit eligible-catalog count from unavailable
+  legacy retrieval; 71 focused receipt and selector tests pass.
+- The post-repair named fast Python spine passes 652 tests with 6 skips, the
+  dashboard suite passes all 109 tests, and the routing evaluation reports
+  `passed: true`; documentation, Ruff, format, and diff checks also pass.
 - Tracker issue 161 now provides same-repository parity:
   https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 - PR 162 merged the hiring and model-scope repair as `279ef9e`; its exact
@@ -134,12 +128,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-Exact merge `aa0d949` and bundle `0.1.0+codex.fc83b66da46d` pass trace
-`019fafc4-f1d8-76a1-ae07-16381ce00267`: one accepted finalization, zero
-corrections, one selected, loaded, delegated, and completed `code-reviewer`,
-exit zero, one spawn, and one wait. Local detection finds four units and
-relevant employees; authoritative planning awaits explicit external egress
-approval, and persistent-profile hook trust remains attended.
+Source selection, truthful eligibility projection, and the required fast spine
+are `GO`. Source is not yet merged or exact-installed. External planner replay
+remains disallowed without explicit egress approval; persistent-profile trust
+remains attended.
 
 ## same-task-continuity
 
@@ -148,8 +140,8 @@ new task. Do not rerun the now-passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. After explicit egress approval, run the one bounded four-unit route.
-2. After attended trust, prove the fresh persistent Codex profile once.
+1. Open and merge the verified source PR.
+2. Exact-install the merge, then run the bounded ordinary proof.
 
 ## verification
 

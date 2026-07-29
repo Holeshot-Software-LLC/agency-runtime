@@ -168,6 +168,36 @@ def test_routing_receipt_is_bounded_content_free_and_idempotent() -> None:
     assert normalize_durable_routing_receipt({"receipt_version": 999}) is None
 
 
+def test_workforce_receipt_uses_explicit_eligible_catalog_count() -> None:
+    routing = _routing("Build and review a local page.", "trace-workforce")
+    routing["retrieval"] = {"mode": "unavailable", "full_roster_count": 0}
+    routing["eligible_catalog_count"] = 192
+
+    receipt = project_durable_routing_receipt(routing)
+
+    assert receipt["retrieval"]["full_roster_count"] == 0
+    assert receipt["eligibility"] == {
+        "eligible_count": 192,
+        "rejected_count": 2,
+        "evaluated_count": 194,
+        "rejections": [
+            {
+                "slug": "linux-only",
+                "reason_code": "unsupported_tool_platform:windows",
+            },
+            {
+                "slug": "browser-worker",
+                "reason_code": "missing_capabilities:browser-automation",
+            },
+        ],
+        "rejection_reason_counts": [
+            {"reason_code": "missing_capabilities", "count": 1},
+            {"reason_code": "unsupported_tool_platform", "count": 1},
+        ],
+        "sample_truncated": False,
+    }
+
+
 def test_routing_receipt_projects_changed_declined_and_mixed_hiring_outcomes() -> None:
     routing = _routing("Implement and review the change.", "trace-hiring")
 
