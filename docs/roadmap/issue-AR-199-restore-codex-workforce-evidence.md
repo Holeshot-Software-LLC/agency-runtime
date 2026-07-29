@@ -115,6 +115,13 @@ specialist context is returned. Exact tool-use, unit, specialist version, prompt
 hash, prompt body, worker, and native-run identities must all match. PostToolUse
 then reconciles the already-consumed lineage idempotently.
 
+Source-live trace `019faea3-4ea3-73a1-86c7-73443e519dc8` proves that repair:
+one activation consumption and one specialist load now bind the real Codex
+child UUID. The remaining verifier failure is limited to Codex's exact
+`--dangerously-bypass-hook-trust` notice being counted as an unexpected tool.
+The parser now excludes only that fixed host notice and rejects all other error
+items.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and

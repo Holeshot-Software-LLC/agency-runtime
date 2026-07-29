@@ -805,6 +805,14 @@ def codex_collaboration_evidence(
                 continue
             item_type = str(item.get("type") or "").strip()
             if item_type != "collab_tool_call":
+                if (
+                    event.get("type") == "item.completed"
+                    and item_type == "error"
+                    and item.get("message")
+                    == "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run "
+                    "without review for this invocation."
+                ):
+                    continue
                 if item_type not in {"agent_message", "reasoning"}:
                     item_id = str(item.get("id") or "").strip()
                     unexpected_items[item_id or f"anonymous-{len(unexpected_items)}"] = (

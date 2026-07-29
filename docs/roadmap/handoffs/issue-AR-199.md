@@ -124,12 +124,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 - The current source consumes the exact native-hook grant at SubagentStart
   against the persisted real child UUID before returning specialist context;
   PostToolUse remains idempotent. Two exact activation tests pass.
+- Source-live trace `019faea3-4ea3-73a1-86c7-73443e519dc8` proves one activation
+  consumption and one specialist load. Its sole remaining failure was Codex's
+  exact isolated trust-bypass notice being counted as an unexpected tool; the
+  bounded parser fix ignores only that notice and passes three exact tests.
 
 ## exact-blocker
 
-The SubagentStart consumption repair is source-green but has not yet been
-installed into the Codex hook launcher. A fresh isolated canary must prove activation consumption,
-specialist load, completed delegation, a valid header, and attestation before
+The consumption repair is source-live, while the exact trust-notice parser fix
+is source-green but not yet refreshed. A fresh isolated canary must prove completed
+delegation, a valid header, and attestation before
 the broader USB-style hiring task can close AR-199.
 
 ## same-task-continuity

@@ -12,7 +12,10 @@ from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core import canary
 from agency_runtime.core.activation_canary_contract import CODEX_ACTIVATION_CANARY_WORK_UNIT
 from agency_runtime.core.agent_activation import PROTECTED_AGENT_SLUGS
-from agency_runtime.core.canary_backends import codex_canary_record
+from agency_runtime.core.canary_backends import (
+    codex_canary_record,
+    codex_collaboration_evidence,
+)
 from agency_runtime.core.canary_proof import codex_activation_failures
 from agency_runtime.core.config import reset_config_cache
 from agency_runtime.core.delegation.events import mark_delegation_executed
@@ -949,6 +952,31 @@ def test_codex_jsonl_parser_projects_one_spawn_wait_chain_without_prompt_content
     encoded = json.dumps(record)
     assert "x" * 43 not in encoded
     assert "You are the exact reviewer" not in encoded
+
+
+def test_codex_jsonl_parser_ignores_only_exact_isolated_hook_trust_notice() -> None:
+    notice = {
+        "type": "item.completed",
+        "item": {
+            "id": "trust-notice",
+            "type": "error",
+            "message": "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run "
+            "without review for this invocation.",
+        },
+    }
+    other = {
+        "type": "item.completed",
+        "item": {"id": "other-error", "type": "error", "message": "different"},
+    }
+
+    accepted = codex_collaboration_evidence(json.dumps(notice))
+    rejected = codex_collaboration_evidence("\n".join(map(json.dumps, (notice, other))))
+
+    assert accepted is not None
+    assert accepted["unexpected_item_count"] == 0
+    assert rejected is not None
+    assert rejected["unexpected_item_count"] == 1
+    assert rejected["unexpected_item_types"] == ["error"]
 
 
 def test_codex_jsonl_parser_projects_non_allowlisted_tool_type_without_content() -> None:
