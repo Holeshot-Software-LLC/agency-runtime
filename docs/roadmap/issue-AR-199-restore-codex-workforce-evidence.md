@@ -298,6 +298,17 @@ the configured planner is external `codex-subscription/gpt-5.6-luna`, and this
 package does not infer egress authorization. The launch-model receipt and
 persistent-profile trust steps remain explicit `NO-GO` or waiting boundaries.
 
+Ordinary trace `019faf9a-625a-7a23-ba2d-2679a4401eb5` is a current failure:
+its inferred three-unit local-page plan selected nobody, attempted hiring, and
+needed one Stop correction. A local replay of the same typed unit shape exposed
+the deterministic cause: generic software discovery ranked `finops-engineer`,
+generic page implementation did not own a frontend anchor, and implementation
+review ranked `accessibility-auditor`, ending in `selection_margin_too_low`.
+Commit `196dedc` binds those units to `codebase-onboarding-engineer`,
+`frontend-developer`, and `code-reviewer`. The replay now accepts all three
+assignments, and the focused selection-safety suite passes 24 tests with one
+platform skip. This is source proof; exact-installed ordinary proof remains.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -352,6 +363,9 @@ model truth and resident-manager visibility.
 - [x] The exact-installed detector recognizes the ordinary proof prompt as four
   independent high-confidence units and local workforce reads find relevant
   enabled employees without invoking the external planner.
+- [x] The persisted ordinary three-unit local-page shape deterministically
+  staffs `codebase-onboarding-engineer`, `frontend-developer`, and
+  `code-reviewer` without a margin abstention.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

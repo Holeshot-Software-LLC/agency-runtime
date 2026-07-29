@@ -318,11 +318,16 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6ce4391` | 2026-07-29 | Merge pull request #166 from Holeshot-Software-LLC/codex/ar-199-installed-proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `f9cbca2` | 2026-07-29 | fix(codex): pin resident managers in first header | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-f9cbca2-pin-first-header-managers.md) |
 | `8a96818` | 2026-07-29 | docs(roadmap): record first-header fast spine | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `5a19586` | 2026-07-29 | Merge pull request #167 from Holeshot-Software-LLC/codex/ar-199-deterministic-manager-header | null | null |
 | `210538f` | 2026-07-29 | fix(header): derive seven-line correction count | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-210538f-seven-field-header-diagnostic.md) |
 | `6910eda` | 2026-07-29 | docs(roadmap): record seven-field fast spine | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `85069f3` | 2026-07-29 | Merge pull request #168 from Holeshot-Software-LLC/codex/ar-199-seven-field-header | null | null |
 | `a23f42a` | 2026-07-29 | fix(codex): require zero-correction canary header | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-a23f42a-zero-correction-canary-header.md) |
+| `aa0d949` | 2026-07-29 | Merge pull request #169 from Holeshot-Software-LLC/codex/ar-199-zero-correction-canary | null | null |
 | `26aaecf` | 2026-07-29 | docs(roadmap): record zero-correction installed proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `511c389` | 2026-07-29 | docs(roadmap): record ordinary route boundary | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `48516b4` | 2026-07-29 | Merge pull request #170 from Holeshot-Software-LLC/codex/ar-199-zero-correction-canary | null | null |
+| `196dedc` | 2026-07-29 | fix(workforce): restore ordinary software team anchors | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
