@@ -552,6 +552,113 @@ def test_codex_post_tool_reconciles_subagent_start_consumption_without_callback_
     assert delegation["native_run_id"] == f"codex-agent:{receiver_id}"
 
 
+def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
+    configured_store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Mirror Codex's live PostToolUse-before-SubagentStart callback order."""
+
+    from agency_runtime.core.policy.defaults import STARTER_ROSTER
+    from agency_runtime.core.workforce import inference
+
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    configured_store.reconcile_bundled_agents(STARTER_ROSTER)
+    session_id = "codex-live-order-session"
+    trace_id = "codex-live-order-trace"
+    preflight = run_preflight(
+        configured_store,
+        session_id=session_id,
+        trace_id=trace_id,
+        user_message=(canary.CANARY_PROMPT + "\n\nCanary nonce: 0123456789abcdef0123456789abcdef"),
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=session_id,
+            trace_id=trace_id,
+        ),
+    )
+    [plan] = preflight.delegation_plan
+    unit = str(plan["work_unit_id"])
+    slug = str(plan["recommended_agent"])
+    task_name = codex_task_name_for_work_unit(unit)
+    tool_use_id = "call_live_callback_order"
+    bridge = HookBridge("codex", store=configured_store)
+    pre_payload = {
+        "hook_event_name": "PreToolUse",
+        "session_id": session_id,
+        "turn_id": trace_id,
+        "cwd": "C:\\workspace",
+        "transcript_path": "C:\\state\\rollout.jsonl",
+        "permission_mode": "default",
+        "tool_name": "collaborationspawn_agent",
+        "tool_use_id": tool_use_id,
+        "tool_input": {
+            "fork_turns": "none",
+            "task_name": task_name,
+            "message": "gAAAAA" + "opaque-codex-canary-message" * 2,
+        },
+    }
+    pre_tool = bridge.handle(pre_payload)
+    assert pre_tool["hookSpecificOutput"] == {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "allow",
+    }
+    post_input = pre_payload["tool_input"]
+
+    assert (
+        bridge.handle(
+            {
+                **pre_payload,
+                "hook_event_name": "PostToolUse",
+                "tool_input": post_input,
+                "tool_response": json.dumps({"task_name": f"/root/{task_name}"}),
+            }
+        )
+        == {}
+    )
+    [synthetic] = configured_store.get_delegations(trace_id)
+    assert synthetic["executed_worker_id"] == f"task:{task_name}"
+    assert synthetic["native_run_id"] == f"codex-task:{task_name}"
+    assert not synthetic["activation_receipt_id"]
+
+    receiver_id = "019fa500-3333-7444-8555-666677778888"
+    start = bridge.handle(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": session_id,
+            "turn_id": "codex-child-turn",
+            "agent_id": receiver_id,
+            "agent_type": "worker",
+        }
+    )
+
+    delivered = parse_native_child_prompt_delivery(start["hookSpecificOutput"]["additionalContext"])
+    assert delivered is not None
+    assert delivered.work_unit_id == unit
+    [delegation] = configured_store.get_delegations(trace_id)
+    assert delegation["activation_receipt_id"]
+    assert delegation["retrieved_specialist_slug"] == slug
+    assert delegation["executed_worker_kind"] == "generic-worker"
+    assert delegation["executed_worker_id"] == receiver_id
+    assert delegation["native_run_id"] == f"codex-agent:{receiver_id}"
+    evidence = configured_store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=response_hash(
+            canary.CANARY_PROMPT + "\n\nCanary nonce: 0123456789abcdef0123456789abcdef"
+        ),
+    )
+    [worker_run] = evidence["worker_runs"]
+    assert worker_run["delegation_event_id"] == delegation["id"]
+    assert worker_run["work_unit_id"] == unit
+
+
 def test_codex_activation_proof_rejects_parent_only_manual_grant(
     configured_store: Store,
     monkeypatch: pytest.MonkeyPatch,

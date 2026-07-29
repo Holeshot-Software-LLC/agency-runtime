@@ -73,9 +73,12 @@ surface emitted exactly `{"task_name":"/root/unit_05d45f7553"}`. The live
 ordering instead records and delivers the real child at SubagentStart while the
 grant remains deferred to PostToolUse. After moving consumption to
 SubagentStart, traces through `019faeca-406f-7d20-b2e7-6b1741b5a8af` proved
-that PostToolUse does not resolve the original callback identity: the consumed grant and real
-child remained authoritative, but the compact delegation retained its
-synthetic task label and finalization correctly stopped at `continue`.
+that PostToolUse does not resolve the original callback identity. Store-backed
+trace `019faef8-f76b-7740-9558-462e99f4abeb` then isolated the live ordering:
+parent PostToolUse records the synthetic task lineage before child
+SubagentStart consumes the exact grant against the real UUID. The final Store
+contains the correct activation, but no later edge promoted the already-created
+compact delegation, so finalization correctly stopped at `continue`.
 
 ## Approach
 
@@ -135,12 +138,18 @@ task projection; unconsumed, ambiguous, mismatched, or synthetic lineage still
 fails closed. A focused callback-ID rewrite regression joins the complete
 activation suite, which passes 19 tests.
 
-The canary now projects one allowlisted, content-free PostToolUse reconciliation
+The canary projects one allowlisted, content-free PostToolUse reconciliation
 rejection code through bounded run metadata, with hook stderr retained only as
-a best-effort secondary source. It never retains raw stderr, prompts, tool
-arguments, paths, tokens, or ambiguous multiple reasons. This diagnostic exists
-only in the exact activation-canary environment and cannot weaken proof. The
-complete activation file passes 19 tests.
+a best-effort secondary source. That diagnostic identified
+`reference_activation_cardinality_mismatch` before SubagentStart consumption.
+The attachment transaction now recognizes only Agency's exact Codex synthetic
+task lineage, one consumed native-hook grant, and one matching real
+`codex-agent:<UUID>` lifecycle row. It atomically replaces the synthetic
+delegation lineage, links the activation receipt, and binds the worker row to
+the work unit. If SubagentStart wins first, the existing PostToolUse reconcile
+path remains authoritative; every ambiguous or lookalike shape still fails
+closed. The complete activation file passes 20 tests, including the observed
+PostToolUse-before-SubagentStart order.
 
 ## Dependencies
 
@@ -170,6 +179,8 @@ model truth and resident-manager visibility.
   produces one read-only unit, spawns once, and waits once without a trust
   prompt; focused activation and receipt verification passes 68 tests with two
   platform skips.
+- [x] Both Codex callback orders bind the consumed specialist, real child UUID,
+  compact delegation, and worker-run receipt to the same exact work unit.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

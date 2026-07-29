@@ -121,20 +121,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 - Bounded live capture proved this configured v0.146 surface emitted only the
   exact rooted `task_name`. Its two apparent rollout errors were the explicit
   isolated hook-trust-bypass notices, not hook failures.
-- Source-live traces now prove SubagentStart consumes the exact native-hook
-  grant against the real child UUID before returning specialist context.
-- Trace `019faee3-7adf-7db0-b358-f74ffb3e5e51` proves the consumed activation
-  retains the exact unit, specialist version/hash, and real child UUID while
-  PostToolUse still projects the synthetic task identity.
-- A canary-only content-free rejection code now identifies the exact strict
-  reconciliation guard through bounded run metadata without retaining raw
-  stderr or callback content. The activation file passes 19 tests.
+- Trace `019faef8-f76b-7740-9558-462e99f4abeb` proves parent PostToolUse records
+  the synthetic task lineage before SubagentStart consumes the real child UUID.
+- The attachment transaction now promotes only that exact synthetic Codex
+  lineage to one consumed grant and one matching real lifecycle row, including
+  reciprocal activation, delegation, work-unit, and worker-run links.
+- Both callback orders are covered; all 20 activation-canary tests and all 35
+  activation-receipt tests pass, with two platform skips in the latter.
 
 ## exact-blocker
 
-The Store-backed fixed-code diagnostic is the active clean checkpoint but has
-not yet been refreshed. Its next isolated canary must identify one exact guard
-before the evidence-derived repair can proceed.
+The evidence-derived source repair is focused-green but not yet source-live.
+The next isolated canary must persist a complete accepted attestation before
+PR, merge, or exact-install claims can proceed.
 
 ## same-task-continuity
 
@@ -143,10 +142,10 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Refresh Codex from the Store-backed diagnostic and capture the rejected guard.
-2. Repair only that evidence-derived boundary and prove attestation.
+1. Create the clean source and ledger checkpoint for the promotion repair.
+2. Refresh Codex from source and prove the isolated activation attestation.
 3. Run the named fast spine, push, merge, and exact-install.
-4. Run the fresh USB-style Codex proof and prepare the handoff.
+4. Run the fresh Codex proof and prepare the OpenClaw handoff.
 
 ## verification
 
