@@ -653,14 +653,19 @@ def test_codex_activation_proof_rejects_incomplete_or_mismatched_topology(
         assert any("exactly one completed spawn" in item for item in failures)
 
 
-def _process_result(stdout: str, *, timed_out: bool = False) -> SimpleNamespace:
+def _process_result(
+    stdout: str,
+    *,
+    timed_out: bool = False,
+    stderr: str = "",
+) -> SimpleNamespace:
     return SimpleNamespace(
         returncode=124 if timed_out else 0,
         timed_out=timed_out,
         stdout_truncated=False,
         stderr_truncated=False,
         stdout=stdout,
-        stderr="",
+        stderr=stderr,
     )
 
 
@@ -1090,6 +1095,44 @@ def test_codex_jsonl_parser_projects_non_allowlisted_tool_type_without_content()
     assert record["collaboration"]["unexpected_item_types"] == ["command_execution"]
     assert record["collaboration"]["unexpected_item_count"] == 1
     assert "sensitive command body" not in json.dumps(record)
+
+
+def test_codex_canary_projects_only_one_fixed_hook_diagnostic() -> None:
+    stdout = "\n".join(
+        map(
+            json.dumps,
+            (
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": _valid_header()},
+                },
+                {"type": "turn.completed"},
+            ),
+        )
+    )
+    stderr = (
+        "unrelated stderr\n"
+        "agency_hook_diagnostic codex_post_tool_reconcile=response_shape_mismatch\n"
+    )
+
+    record = codex_canary_record(_process_result(stdout, stderr=stderr))
+    ambiguous = codex_canary_record(
+        _process_result(
+            stdout,
+            stderr=(stderr + "agency_hook_diagnostic codex_post_tool_reconcile=lineage_mismatch\n"),
+        )
+    )
+    unsupported = codex_canary_record(
+        _process_result(
+            stdout,
+            stderr="agency_hook_diagnostic codex_post_tool_reconcile=arbitrary_label\n",
+        )
+    )
+
+    assert record["hook_diagnostic"] == "response_shape_mismatch"
+    assert "unrelated stderr" not in json.dumps(record)
+    assert "hook_diagnostic" not in ambiguous
+    assert "hook_diagnostic" not in unsupported
 
 
 def test_failed_current_profile_reverification_invalidates_prior_attestation(

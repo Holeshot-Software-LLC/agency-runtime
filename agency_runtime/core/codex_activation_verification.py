@@ -13,6 +13,24 @@ import os
 from collections.abc import Mapping
 
 CODEX_ACTIVATION_EXISTING_STORE_ENV = "AGENCY_CANARY_REQUIRE_EXISTING_STORE"
+CODEX_RECONCILIATION_DIAGNOSTIC_REASONS = frozenset(
+    {
+        "boundary_mismatch",
+        "identity_invalid",
+        "identity_synthetic",
+        "lineage_mismatch",
+        "lineage_reader_unavailable",
+        "lineage_unavailable",
+        "plan_cardinality_mismatch",
+        "reference_activation_cardinality_mismatch",
+        "reference_activation_mismatch",
+        "response_identity_unavailable",
+        "response_shape_mismatch",
+        "session_unavailable",
+        "snapshot_unavailable",
+        "task_label_mismatch",
+    }
+)
 _PUBLIC_FIELDS = frozenset(
     {
         "activation_timeout",
@@ -85,6 +103,7 @@ def is_exact_codex_activation_verification(namespace: object) -> bool:
 
 __all__ = [
     "CODEX_ACTIVATION_EXISTING_STORE_ENV",
+    "CODEX_RECONCILIATION_DIAGNOSTIC_REASONS",
     "is_exact_codex_activation_verification",
     "is_restricted_codex_activation_canary_environment",
 ]

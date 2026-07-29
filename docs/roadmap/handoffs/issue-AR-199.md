@@ -123,19 +123,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   isolated hook-trust-bypass notices, not hook failures.
 - Source-live traces now prove SubagentStart consumes the exact native-hook
   grant against the real child UUID before returning specialist context.
-- Traces through `019faeca-406f-7d20-b2e7-6b1741b5a8af` isolated the next
-  boundary: PostToolUse did not resolve the original callback identity, so the delegation
-  retained its synthetic task label and Stop correctly returned `continue`.
-- The next source slice resolves the planned unit from Codex's bounded rooted
-  response, then reconciles only an already-consumed native-hook grant for one
-  exact task label, specialist version/hash, and real child UUID.
-  The full activation file passes 17 tests; Ruff check and format pass.
+- Trace `019faee3-7adf-7db0-b358-f74ffb3e5e51` proves the consumed activation
+  retains the exact unit, specialist version/hash, and real child UUID while
+  PostToolUse still projects the synthetic task identity.
+- A canary-only content-free rejection code now identifies the exact strict
+  reconciliation guard without retaining raw stderr or callback content.
+  The activation file passes 18 tests; Ruff check and format pass.
 
 ## exact-blocker
 
-Missing-callback reconciliation is source-green but not yet refreshed. A fresh
-isolated canary must prove completed delegation, a valid header, and attestation
-before the broader USB-style hiring task can close AR-199.
+The fixed-code diagnostic is source-green but not yet checkpointed or refreshed.
+Its next isolated canary must identify one exact reconciliation guard before
+the evidence-derived repair can proceed.
 
 ## same-task-continuity
 
@@ -144,11 +143,10 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Commit this callback-reconciliation source and ledger checkpoint.
-2. Refresh Codex from the checkpoint and rerun the isolated canary.
-3. Run the named fast spine, push, merge, and exact-install the follow-up.
-4. Run a fresh USB-style Codex task and capture resident-manager, contractor,
-   specialist, delegation, and scoped model receipt evidence.
+1. Commit the fixed-code diagnostic and ledger checkpoint.
+2. Refresh Codex and capture the exact rejected reconciliation guard.
+3. Repair that guard, prove attestation, and run the named fast spine.
+4. Push, merge, exact-install, then run the fresh USB-style Codex proof.
 
 ## verification
 

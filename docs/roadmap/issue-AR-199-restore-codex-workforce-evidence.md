@@ -133,7 +133,12 @@ version/hash, and real `codex-agent:<UUID>` child.
 It validates Codex's bounded rooted response before replacing the synthetic
 task projection; unconsumed, ambiguous, mismatched, or synthetic lineage still
 fails closed. A focused callback-ID rewrite regression joins the complete
-activation suite, which passes 17 tests.
+activation suite, which passes 18 tests.
+
+The canary now projects one allowlisted, content-free PostToolUse reconciliation
+rejection code from hook stderr. It never retains raw stderr, prompts, tool
+arguments, paths, tokens, or ambiguous multiple reasons. This diagnostic exists
+only in the exact activation-canary environment and cannot weaken proof.
 
 ## Dependencies
 

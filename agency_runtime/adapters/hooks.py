@@ -143,6 +143,30 @@ _NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN = "x" * NATIVE_CHILD_ACTIVATION_TOKEN_C
 _PLANNED_NATIVE_WORK_UNIT_PATTERN = re.compile(r"^unit-[0-9a-f]{10}$")
 
 
+def _emit_codex_reconciliation_diagnostic(
+    reason: str,
+    *,
+    resolved_work_unit: str,
+    delivery_activated: bool,
+) -> None:
+    """Emit one content-free rejection code only inside the activation canary."""
+
+    if not reason or not resolved_work_unit or delivery_activated:
+        return
+    from agency_runtime.core.codex_activation_verification import (
+        CODEX_RECONCILIATION_DIAGNOSTIC_REASONS,
+        is_restricted_codex_activation_canary_environment,
+    )
+
+    if reason not in CODEX_RECONCILIATION_DIAGNOSTIC_REASONS:
+        raise ValueError("Codex reconciliation diagnostic reason is invalid")
+    if is_restricted_codex_activation_canary_environment(os.environ):
+        print(
+            f"agency_hook_diagnostic codex_post_tool_reconcile={reason}",
+            file=sys.stderr,
+        )
+
+
 def _bounded_completion_reason(reason: object) -> str:
     """Keep one rejection within the native hook's byte-level JSON budget."""
 
@@ -1520,7 +1544,7 @@ class HookBridge:
         tool_response: Any,
         trace_id: str,
         work_unit_id: str,
-    ) -> tuple[str, Any, NativeChildRunIdentity] | None:
+    ) -> tuple[tuple[str, Any, NativeChildRunIdentity] | None, str]:
         """Recover only an exact SubagentStart-consumed Codex child projection."""
 
         tool_name = _optional_string(payload, "tool_name")
@@ -1530,45 +1554,45 @@ class HookBridge:
             or not trace_id
             or not work_unit_id
         ):
-            return None
+            return None, "boundary_mismatch"
         correlation = self._correlation(payload, tool_input, tool_response)
         if not correlation.session_id:
-            return None
+            return None, "session_unavailable"
         task_name = _first_string(_dict_or_empty(tool_input), "task_name", "taskName")
         expected_task_name = codex_task_name_for_work_unit(work_unit_id)
         if task_name and task_name not in {
             expected_task_name,
             f"/root/{expected_task_name}",
         }:
-            return None
+            return None, "task_label_mismatch"
         raw_response = _native_child_response_mapping("codex", tool_response)
         projected_response, synthetic_identity = _native_child_tool_identity(
             "codex",
             tool_response,
         )
         if raw_response is None or synthetic_identity is None:
-            return None
+            return None, "response_identity_unavailable"
         raw_task_name = _first_string(raw_response, "task_name", "taskName")
         if (
             set(raw_response) not in ({"task_name"}, {"task_name", "nickname"})
             or not raw_task_name.startswith("/root/")
             or _first_string(projected_response, "task_name", "taskName") != expected_task_name
         ):
-            return None
+            return None, "response_shape_mismatch"
         try:
             snapshot = self.store.get_completion_evidence_snapshot(
                 correlation.session_id,
                 trace_id,
             )
         except (RuntimeError, ValueError):
-            return None
+            return None, "snapshot_unavailable"
         plans = [
             row
             for row in snapshot.get("unit_agent_plan", [])
             if isinstance(row, dict) and row.get("work_unit_id") == work_unit_id
         ]
         if len(plans) != 1:
-            return None
+            return None, "plan_cardinality_mismatch"
         specialist_slug = str(plans[0].get("recommended_agent") or "")
         references = [
             row
@@ -1584,16 +1608,16 @@ class HookBridge:
             and row.get("consumed_at")
         ]
         if len(references) != 1 or len(activations) != 1:
-            return None
+            return None, "reference_activation_cardinality_mismatch"
         reference = references[0]
         activation = activations[0]
         if activation.get("specialist_version") != reference.get("version") or activation.get(
             "specialist_prompt_hash"
         ) != reference.get("hash"):
-            return None
+            return None, "reference_activation_mismatch"
         lineage_reader = getattr(self.store, "get_consumed_delegation_lineage", None)
         if not callable(lineage_reader):
-            return None
+            return None, "lineage_reader_unavailable"
         try:
             lineage = lineage_reader(
                 session_id=correlation.session_id,
@@ -1602,31 +1626,34 @@ class HookBridge:
                 work_unit_id=work_unit_id,
             )
         except (RuntimeError, ValueError):
-            return None
+            return None, "lineage_unavailable"
         expected_lineage = {
             "worker_kind": str(activation.get("worker_kind") or ""),
             "worker_id": str(activation.get("worker_id") or ""),
             "native_run_id": str(activation.get("native_run_id") or ""),
         }
         if lineage != expected_lineage:
-            return None
+            return None, "lineage_mismatch"
         try:
             identity = build_native_child_run_identity(**expected_lineage)
         except (TypeError, ValueError):
-            return None
+            return None, "identity_invalid"
         if (
             identity.worker_id.startswith("task:")
             or identity.native_run_id != f"codex-agent:{identity.worker_id}"
         ):
-            return None
+            return None, "identity_synthetic"
         return (
-            specialist_slug,
-            {
-                **projected_response,
-                "agent_id": identity.worker_id,
-                "native_run_id": identity.native_run_id,
-            },
-            identity,
+            (
+                specialist_slug,
+                {
+                    **projected_response,
+                    "agent_id": identity.worker_id,
+                    "native_run_id": identity.native_run_id,
+                },
+                identity,
+            ),
+            "",
         )
 
     @staticmethod
@@ -1966,12 +1993,17 @@ class HookBridge:
             trace_id=trace_id,
         )
         reconciled_codex_specialist = ""
-        reconciled = self._reconcile_consumed_codex_child(
+        reconciled, reconciliation_rejection = self._reconcile_consumed_codex_child(
             payload=payload,
             tool_input=tool_input,
             tool_response=observed_tool_response,
             trace_id=trace_id,
             work_unit_id=resolved_codex_unit if not delivery_activated else "",
+        )
+        _emit_codex_reconciliation_diagnostic(
+            reconciliation_rejection,
+            resolved_work_unit=resolved_codex_unit,
+            delivery_activated=delivery_activated,
         )
         reconciled_codex_specialist, tool_response, _delivery_identity = (
             self._reconciled_codex_projection(

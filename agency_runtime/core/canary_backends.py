@@ -868,6 +868,26 @@ def _codex_failure_reason(stderr: object) -> str | None:
     return None
 
 
+_CODEX_HOOK_DIAGNOSTIC_PATTERN = re.compile(
+    r"agency_hook_diagnostic codex_post_tool_reconcile="
+    r"(?P<reason>[a-z][a-z0-9_]{0,63})"
+)
+
+
+def _codex_hook_diagnostic(stderr: object) -> str | None:
+    """Project one fixed canary hook diagnostic without retaining raw stderr."""
+
+    if not isinstance(stderr, str):
+        return None
+    from agency_runtime.core.codex_activation_verification import (
+        CODEX_RECONCILIATION_DIAGNOSTIC_REASONS,
+    )
+
+    reasons = {match.group("reason") for match in _CODEX_HOOK_DIAGNOSTIC_PATTERN.finditer(stderr)}
+    reasons.intersection_update(CODEX_RECONCILIATION_DIAGNOSTIC_REASONS)
+    return next(iter(reasons)) if len(reasons) == 1 else None
+
+
 def codex_canary_record(
     result: Any,
     *,
@@ -896,6 +916,8 @@ def codex_canary_record(
         record["failure_reason"] = "codex_exec_timed_out"
     elif failure_reason := _codex_failure_reason(getattr(result, "stderr", "")):
         record["failure_reason"] = failure_reason
+    if hook_diagnostic := _codex_hook_diagnostic(getattr(result, "stderr", "")):
+        record["hook_diagnostic"] = hook_diagnostic
     collaboration = codex_collaboration_evidence(
         result.stdout,
         rollout_root=rollout_root,

@@ -846,6 +846,13 @@ def evaluate_proof(
         invocation["hook_trust"] = sanitize_codex_hook_trust_report(result["hook_trust"])
     if type(result.get("model_invocation_attempted")) is bool:
         invocation["model_invocation_attempted"] = result["model_invocation_attempted"]
+    hook_diagnostic = result.get("hook_diagnostic")
+    from agency_runtime.core.codex_activation_verification import (
+        CODEX_RECONCILIATION_DIAGNOSTIC_REASONS,
+    )
+
+    if hook_diagnostic in CODEX_RECONCILIATION_DIAGNOSTIC_REASONS:
+        invocation["hook_diagnostic"] = hook_diagnostic
     failure_reason = result.get("failure_reason")
     if isinstance(failure_reason, str) and failure_reason in CANARY_INVOCATION_FAILURE_REASONS:
         invocation["failure_reason"] = failure_reason
