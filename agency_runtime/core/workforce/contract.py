@@ -204,7 +204,9 @@ def _archetype(agent_id: str, authority: str, division: str, agent: Mapping[str,
         return "reviewer"
     if authority == "advise":
         return "advisor"
-    if "architecture" in task_types:
+    if "architecture" in task_types or any(
+        category == "architecture" or category.endswith("-architecture") for category in categories
+    ):
         return "architect"
     return "planner"
 
@@ -220,7 +222,7 @@ def _artifact_kinds(agent: Mapping[str, Any], archetype: str) -> tuple[str, ...]
         result.append("test-evidence")
         if str(agent.get("authority", "")).casefold() == "modify":
             result.append("test-code")
-    if "architecture" in tasks:
+    if "architecture" in tasks or archetype == "architect":
         result.append("architecture-record")
     if "implementation" in tasks and archetype == "implementer":
         result.append("implementation-change")
@@ -264,6 +266,8 @@ def _lifecycle_phases(agent: Mapping[str, Any], archetype: str) -> tuple[str, ..
         phases.insert(0, "documentation")
     if archetype == "tester":
         phases.insert(0, "testing")
+    if archetype == "architect":
+        phases.insert(0, "design")
     if archetype == "resident-manager":
         phases.insert(0, "coordination")
     return tuple(dict.fromkeys(phases)) or ("discovery",)

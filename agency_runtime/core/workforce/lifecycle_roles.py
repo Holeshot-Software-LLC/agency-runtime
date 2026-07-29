@@ -235,6 +235,12 @@ def _plan_anchors(unit: Any, tokens: frozenset[str]) -> tuple[str, ...]:
     return ()
 
 
+def _architecture_anchors(unit: Any, tokens: frozenset[str]) -> tuple[str, ...]:
+    if "software-engineering" in unit.domains:
+        return ("software-architect",)
+    return ()
+
+
 def role_anchors(unit: Any, *, request: str = "") -> tuple[str, ...]:
     """Return audited lifecycle owners for one typed work unit."""
 
@@ -270,6 +276,8 @@ def role_anchors(unit: Any, *, request: str = "") -> tuple[str, ...]:
         return _discovery_anchors(unit, scoped_tokens)
     if unit.artifact_kind == "plan" and unit.lifecycle_phase == "planning":
         return _plan_anchors(unit, tokens)
+    if unit.artifact_kind == "architecture-record" and unit.lifecycle_phase == "design":
+        return _architecture_anchors(unit, tokens)
     if unit.artifact_kind == "documentation":
         return ("technical-writer",)
     if unit.artifact_kind == "test-code" and unit.lifecycle_phase == "testing":

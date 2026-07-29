@@ -617,6 +617,67 @@ def test_local_page_workflow_anchors_the_ordinary_software_delivery_team() -> No
     }
 
 
+def test_software_architecture_record_has_an_eligible_governed_owner() -> None:
+    snapshot = _snapshot()
+    architect = next(
+        contract for contract in snapshot.contracts if contract.agent_id == "software-architect"
+    )
+    assert "architecture-record" in architect.artifact_kinds
+    assert "design" in architect.lifecycle_phases
+
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": "Build a local Python API and TypeScript dashboard.",
+            "units": [
+                _unit(
+                    "unit-architecture",
+                    "Design the local application boundaries and interfaces",
+                    "architecture-record",
+                    "design",
+                    ["software-engineering"],
+                    ["architecture"],
+                    "plan",
+                    "read_only",
+                    ["repository-read"],
+                )
+            ],
+        }
+    )
+    shortlist = _typed_shortlists(plan, snapshot.contracts)[0]
+    assert shortlist["role_anchors"] == ["software-architect"]
+    assert any(
+        candidate["agent_id"] == "software-architect" for candidate in shortlist["candidates"]
+    )
+
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset(
+            {
+                "code-execution",
+                "native-delegation",
+                "repository-read",
+                "repository-write",
+                "runtime-evidence",
+                "shell-execution",
+                "source-control",
+                "test-execution",
+            }
+        ),
+        snapshot.generation,
+    )
+    result = deterministic_staff_plan(
+        "Build a local Python API and TypeScript dashboard.",
+        plan,
+        snapshot,
+        config=AgencyConfig(),
+        context=context,
+    )
+    assert result.staffing.accepted
+    assert result.staffing.units[0].selected == ("software-architect",)
+
+
 def test_accessibility_review_anchors_the_audited_accessibility_specialist() -> None:
     plan = parse_work_unit_plan(
         {
