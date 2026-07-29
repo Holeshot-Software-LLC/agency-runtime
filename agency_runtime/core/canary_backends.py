@@ -357,7 +357,10 @@ def _codex_child_prompt_delivery(
         if not isinstance(payload, dict):
             continue
         texts: list[str] = []
-        if event.get("type") == "response_item" and payload.get("type") == "message":
+        if event.get("type") == "response_item" and payload.get("type") in {
+            "agent_message",
+            "message",
+        }:
             content = payload.get("content")
             if isinstance(content, list):
                 texts.extend(
@@ -580,16 +583,20 @@ def _codex_rollout_collaboration_evidence(
         not_after=not_after,
     )
     _assert_codex_child_rollout_is_tool_free(child_events)
-    if (
-        sum(
-            event.get("type") == "event_msg"
-            and isinstance(event.get("payload"), dict)
-            and event["payload"].get("type") == "task_complete"
-            for event in child_events
-        )
-        != 1
-    ):
+    completions = [
+        event["payload"]
+        for event in child_events
+        if event.get("type") == "event_msg"
+        and isinstance(event.get("payload"), dict)
+        and event["payload"].get("type") == "task_complete"
+    ]
+    if len(completions) != 1:
         raise ValueError("Codex child rollout did not prove one completion")
+    completion = completions[0]
+    if completion.get("error") not in {None, ""} or not isinstance(
+        completion.get("last_agent_message"), str
+    ):
+        raise ValueError("Codex child rollout completed without one successful final message")
     prompt_delivery = _codex_child_prompt_delivery(
         child_events,
         parent_thread_id=parent_thread_id,

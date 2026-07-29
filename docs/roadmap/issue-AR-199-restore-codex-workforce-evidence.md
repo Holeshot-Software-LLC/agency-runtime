@@ -55,20 +55,29 @@ preserves ready-CAS atomicity but makes receipt persistence and same-task hiring
 unavailable. Passing the live store directly would reintroduce partial writes
 and is not an acceptable repair.
 
-The normal-profile activation verifier separately reached its live canary, but
-the installed `PreToolUse` hook rejected the sole `spawn_agent` call because
-the emitted task did not exactly match the persisted work-unit goal. The result
-was `codex_collaboration_projection_unavailable`, not a hook-trust failure.
+The first merged repair reached the trusted live canary and selected
+`code-reviewer`, but replacing Codex's opaque encrypted spawn message produced
+a mixed plaintext/encrypted child envelope. The child received the exact
+specialist prompt and then failed to decrypt the retained encrypted content;
+the verifier also omitted `agent_message` input while projecting delivery.
 
 ## Approach
 
-The implementation now preserves the atomic preflight boundary while giving
+The implementation preserves the atomic preflight boundary while giving
 workforce routing governed Store reads. It projects bounded provider receipts
 and validated workforce changes as pending evidence, hydrates pending
 specialists through a nonpersistent view, and commits the allowed evidence only
 inside the winning ready CAS. It also recognizes Codex's opaque persisted spawn
 message only for the package-owned canary goal after exact parent, task-label,
 and assignment correlation; ordinary child goals retain exact equality.
+
+The follow-up preserves Codex's opaque tool input unchanged. It stages the
+native-hook grant at `PreToolUse`, retrieves one unambiguous prompt only after
+the exact child lifecycle is persisted, injects that prompt through
+`SubagentStart`, and consumes the grant at `PostToolUse` using exact tool-call
+and lifecycle evidence. Rollout parsing now accepts the observed
+`agent_message` delivery shape and rejects task-complete records with a decrypt
+error or no final child message.
 
 ## Dependencies
 
@@ -88,11 +97,13 @@ model truth and resident-manager visibility.
 - [ ] A nontrivial four-unit request against the active workforce produces a
   verified unit-agent plan or a complete truthful gap/hiring outcome; it does
   not silently collapse to a generic no-match result.
-- [ ] The Codex activation canary launches exactly one goal-bound specialist,
+- [x] Focused Codex activation tests launch exactly one goal-bound specialist,
   waits exactly once, and persists a complete attestation.
 - [x] Focused tests cover header reconciliation, atomic receipt persistence,
   hiring availability, and exact canary goal binding.
-- [ ] The named fast production spine and routing evaluation pass.
+- [x] The named fast production spine and routing evaluation passed for the
+  first merged repair; the follow-up focused set passes 66 tests and still
+  requires the proportional fast spine before its live rerun.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

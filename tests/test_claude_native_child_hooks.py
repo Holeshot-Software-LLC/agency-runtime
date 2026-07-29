@@ -561,13 +561,17 @@ def test_codex_v2_task_path_is_authoritative_native_child_identity() -> None:
         **payload,
         "hook_event_name": "PostToolUse",
         "tool_input": updated,
-        "tool_response": {"task_name": "/root/unit_code", "status": "accepted"},
+        "tool_response": {
+            "task_name": f"/root/{payload['tool_input']['task_name']}",
+            "status": "accepted",
+        },
     }
 
     assert bridge.handle(post) == {}
     [consumed] = store.consumed
-    assert consumed["worker_id"] == "task:/root/unit_code"
-    assert consumed["native_run_id"] == "codex-task:/root/unit_code"
+    expected_task = str(payload["tool_input"]["task_name"])
+    assert consumed["worker_id"] == f"task:{expected_task}"
+    assert consumed["native_run_id"] == f"codex-task:{expected_task}"
 
 
 def test_codex_v1_spawn_resolves_unique_plan_row_from_exact_message_goal() -> None:
