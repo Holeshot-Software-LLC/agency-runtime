@@ -584,6 +584,90 @@ def test_observe_fail_abandon_and_ready_replay_edges(tmp_path: Path) -> None:
     assert conflict["outcome"] == "conflict"
 
 
+def test_mark_preflight_ready_atomically_commits_projected_provider_receipts(
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.core.preflight_recipe import _content_free_routing_recipe
+
+    store = Store(tmp_path / "agency.db")
+    started = store.begin_preflight_attempt(
+        session_id="session",
+        trace_id="provider-receipts",
+        host="codex",
+        request_fingerprint=_DIGEST_A,
+        request_kind="nontrivial",
+    )
+    recipe, routing, refs = _ready_payload("provider-receipts")
+    routing["provider_attempts"] = [
+        {
+            "provider_name": "codex-subscription",
+            "provider_type": "cli",
+            "requested_model": "gpt-5.6-luna",
+            "model_group": "planning",
+            "actual_model": "gpt-5.6-luna",
+            "model_receipt_source": "cli.explicit_model_argument",
+            "status": "applied",
+            "reason_code": "",
+        },
+        {
+            "provider_name": "fallback-provider",
+            "provider_type": "http",
+            "requested_model": "fallback-model",
+            "model_group": "planning",
+            "actual_model": "",
+            "model_receipt_source": "unavailable",
+            "status": "failed",
+            "reason_code": "provider_unavailable",
+        },
+    ]
+    routing_recipe = _content_free_routing_recipe(routing, trace_id="provider-receipts")
+    assert routing_recipe["model_receipt_attempts"] == routing["provider_attempts"]
+
+    kwargs = {
+        "session_id": "session",
+        "trace_id": "provider-receipts",
+        "attempt_token": started["attempt_token"],
+        "recipe": {**recipe, "routing": routing_recipe},
+        "host": "codex",
+        "routing_evidence": routing_recipe,
+        "suggestions": [],
+        "specialist_refs": refs,
+    }
+    assert store.mark_preflight_ready(**kwargs) == {"outcome": "committed"}
+    assert store.mark_preflight_ready(**kwargs) == {"outcome": "replay"}
+
+    conn = store._connect()
+    try:
+        rows = conn.execute(
+            "SELECT requested_model, model_group, resolved_provider, resolved_model, "
+            "attempted_fallbacks, source, status FROM model_receipts "
+            "WHERE trace_id = ? ORDER BY attempted_fallbacks",
+            ("provider-receipts",),
+        ).fetchall()
+    finally:
+        conn.close()
+    assert [dict(row) for row in rows] == [
+        {
+            "requested_model": "gpt-5.6-luna",
+            "model_group": "planning",
+            "resolved_provider": "codex-subscription",
+            "resolved_model": "gpt-5.6-luna",
+            "attempted_fallbacks": 0,
+            "source": "wrapper",
+            "status": "success",
+        },
+        {
+            "requested_model": "fallback-model",
+            "model_group": "planning",
+            "resolved_provider": "fallback-provider",
+            "resolved_model": "unavailable",
+            "attempted_fallbacks": 1,
+            "source": "wrapper",
+            "status": "failed",
+        },
+    ]
+
+
 class _QueryResult:
     def __init__(self, row: Any = None, *, rowcount: int = 1) -> None:
         self._row = row

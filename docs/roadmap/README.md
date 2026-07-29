@@ -216,6 +216,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-196` | [Authorize prepared dashboard-service install and repair](issue-AR-196-authorize-prepared-dashboard-service-repair.md) | in_progress | p0 | security | pending authorization |
 | `AR-197` | [Remove Agency-owned Windows Hello](issue-AR-197-remove-agency-owned-windows-hello.md) | in_progress | p0 | security | pending authorization |
 | `AR-198` | [Install the applicable suite by default](issue-AR-198-install-applicable-suite-by-default.md) | done | p0 | host-integrations | pending authorization |
+| `AR-199` | [Restore Codex workforce selection and evidence](issue-AR-199-restore-codex-workforce-evidence.md) | in_progress | p0 | routing | pending authorization |
 
 ## Traceability
 
@@ -421,6 +422,7 @@ not stable internal identifiers.
 | [AR-196](issue-AR-196-authorize-prepared-dashboard-service-repair.md) | `42da990`, `8136510`; unsafe verifier draft removed; [active recovery capsule](handoffs/issue-AR-196.md); service remains fail-closed and decoupled from plugin activation | [ADR-0109](../decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md), [ADR-0110](../decisions/0110-remove-agency-owned-windows-hello.md) |
 | [AR-197](issue-AR-197-remove-agency-owned-windows-hello.md) | `8136510`, `f5ca172`; helper and action-specific release surface removed; fresh Codex activation canary pending | [ADR-0110](../decisions/0110-remove-agency-owned-windows-hello.md), [ADR-0111](../decisions/0111-install-the-applicable-suite-by-default.md) |
 | [AR-198](issue-AR-198-install-applicable-suite-by-default.md) | `f5ca172`, `da012ab`; focused tests, fast spine, dashboard UI, routing evaluation, and write-free default-install demo passed; [active recovery capsule](handoffs/issue-AR-198.md); tracker creation pending authorization | [ADR-0111](../decisions/0111-install-the-applicable-suite-by-default.md) |
+| [AR-199](issue-AR-199-restore-codex-workforce-evidence.md) | `02f4cfb`, `518ad62`; staged receipt, hiring, and opaque-canary repair passes focused verification; [active recovery capsule](handoffs/issue-AR-199.md); fast spine, live proof, and tracker creation pending | [ADR-0003](../decisions/0003-response-telemetry-is-model-truth.md), [ADR-0065](../decisions/0065-keep-compact-resident-manager-kernel.md), [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md), [ADR-0081](../decisions/0081-compile-contractors-from-governed-structured-contracts.md), [ADR-0083](../decisions/0083-use-capability-indexed-recall-and-bounded-inference.md), [ADR-0112](../decisions/0112-stage-preflight-workforce-evidence-until-ready.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

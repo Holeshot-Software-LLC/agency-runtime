@@ -10,11 +10,13 @@ import pytest
 
 from agency_runtime.core.config import AgencyConfig, ProviderEntry, WorkforceConfig
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
+from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
 from agency_runtime.core.selector.pipeline import _hireable_gap_units, route
 from agency_runtime.core.selector.receipt_projection import project_durable_routing_receipt
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.structured_provider import StructuredProviderResult
+from agency_runtime.core.unit_assignment import work_unit_id_from_text
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
     AuditContract,
@@ -23,6 +25,7 @@ from agency_runtime.core.workforce.contract import (
 )
 from agency_runtime.core.workforce.hiring import (
     apply_approved_hiring_case,
+    commit_pending_contractor_hiring,
     hire_contractor_for_gap,
     restaff_after_hire,
 )
@@ -378,6 +381,282 @@ def test_inferred_gap_hires_registers_and_immediately_enables_contractor(tmp_pat
     assert store.get_roster_entry("quantum-build-engineer") is not None
     assert "Hired Contractor · Quantum Build Engineer" in outcome.notification
     assert [item.stage for item in outcome.attempts] == ["hiring", "hiring-critic"]
+
+
+def test_atomic_preflight_route_does_not_publish_an_in_memory_cache(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.selector import pipeline
+
+    monkeypatch.setattr(
+        pipeline,
+        "_remember_routing",
+        lambda *_args, **_kwargs: pytest.fail("atomic preflight published a route cache entry"),
+    )
+
+    result = route(
+        "atomic-preflight-session",
+        "Review this implementation for correctness.",
+        [],
+        config=AgencyConfig(),
+        trace_id="atomic-preflight-trace",
+        host="codex",
+        platform="windows",
+        preflight_atomic=True,
+    )
+
+    assert result["trace_id"] == "atomic-preflight-trace"
+
+
+def test_deferred_hire_commits_only_with_the_preflight_ready_cas(tmp_path: Path) -> None:
+    from agency_runtime.core.preflight_recipe import _content_free_routing_recipe
+    from agency_runtime.core.store import preflight as store_preflight
+
+    store = Store(tmp_path / "agency.db")
+    pending = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        defer_commit=True,
+        session_id="session",
+        trace_id="deferred-hire",
+        invoker=_invoker(_hiring_response(), {"approved": True, "reason_codes": []}),
+    )
+    assert pending.pending_commit is not None
+    assert store.list_hiring_cases(limit=10) == []
+    assert store.get_roster_entry("quantum-build-engineer") is None
+
+    started = store.begin_preflight_attempt(
+        session_id="session",
+        trace_id="deferred-hire",
+        host="codex",
+        request_fingerprint="a" * 64,
+        request_kind="nontrivial",
+    )
+    routing = {
+        "trace_id": "deferred-hire",
+        "query_hash": "a" * 64,
+        "context_fingerprint": "b" * 64,
+        "status": "accepted",
+        "source": "workforce_inference",
+        "selected_ids": [],
+        "semantic_ids": [],
+        "confidence": 1.0,
+        "latency_ms": 0,
+        "work_units": {
+            "delegate": False,
+            "count": 1,
+            "confidence": "high",
+            "source": "verified-workforce-plan",
+        },
+        "workforce_unit_descriptors": [],
+        "workforce_unit_bindings": [],
+        "_pending_hiring_commits": [pending.pending_commit],
+    }
+    routing_recipe = _content_free_routing_recipe(routing, trace_id="deferred-hire")
+    projected = store_preflight._project_routing_evidence(
+        routing_recipe,
+        trace_id="deferred-hire",
+    )
+    assert projected is not None
+    recipe = {
+        "recipe_version": 5,
+        "policy_fingerprint": "c" * 64,
+        "session_id": "session",
+        "trace_id": "deferred-hire",
+        "host": "codex",
+        "delivery_mode": "isolated",
+        "context_limit": 4_096,
+        "routing": projected["decision"],
+        "specialist_refs": [],
+        "unit_assignment_agents": [],
+        "unit_agent_plan": [],
+        "trivial": False,
+        "roster_size": 1,
+    }
+    ready_arguments = {
+        "session_id": "session",
+        "trace_id": "deferred-hire",
+        "recipe": recipe,
+        "host": "codex",
+        "routing_evidence": routing_recipe,
+        "suggestions": [],
+        "specialist_refs": [],
+    }
+    assert store.mark_preflight_ready(
+        **ready_arguments,
+        attempt_token="stale-attempt",
+    ) == {"outcome": "cas_lost"}
+    assert store.list_hiring_cases(limit=10) == []
+    assert store.get_roster_entry("quantum-build-engineer") is None
+
+    committed = store.mark_preflight_ready(
+        **ready_arguments,
+        attempt_token=started["attempt_token"],
+    )
+
+    assert committed == {"outcome": "committed"}
+    assert store.get_workforce_worker("quantum-build-engineer")["state"] == "contractor"
+    assert store.list_hiring_cases(limit=10)[0]["status"] == "applied"
+    connection = store._connect()
+    try:
+        receipt_count = connection.execute(
+            "SELECT COUNT(*) FROM model_receipts WHERE trace_id = ?",
+            ("deferred-hire",),
+        ).fetchone()[0]
+    finally:
+        connection.close()
+    assert receipt_count == 2
+
+
+def test_deferred_hire_rechecks_the_daily_limit_at_commit(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    config = replace(
+        _config(),
+        workforce=replace(_config().workforce, max_hires_per_day=1),
+    )
+    pending = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=config,
+        defer_commit=True,
+        session_id="deferred-session",
+        trace_id="deferred-trace",
+        invoker=_invoker(_hiring_response(), {"approved": True, "reason_codes": []}),
+    )
+    assert pending.pending_commit is not None
+
+    competing = hire_contractor_for_gap(
+        "Implement the missing photonic compiler build integration.",
+        _photonic_unit(),
+        (_existing(),),
+        store=store,
+        config=config,
+        invoker=_invoker(
+            _hiring_response_for(_photonic_unit()),
+            {"approved": True, "reason_codes": []},
+        ),
+    )
+    assert competing.hired is True
+
+    with pytest.raises(RuntimeError, match="daily hiring limit changed before commit"):
+        commit_pending_contractor_hiring(pending.pending_commit, store=store)
+    assert store.get_roster_entry("quantum-build-engineer") is None
+
+
+def test_codex_preflight_hydrates_and_commits_a_deferred_contractor(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.selector import pipeline
+
+    store = Store(tmp_path / "agency.db")
+    session_id = "deferred-specialist-session"
+    trace_id = "deferred-specialist-trace"
+    message = "Implement the missing quantum compiler build integration."
+    pending = hire_contractor_for_gap(
+        message,
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        defer_commit=True,
+        session_id=session_id,
+        trace_id=trace_id,
+        invoker=_invoker(_hiring_response(), {"approved": True, "reason_codes": []}),
+    )
+    assert pending.pending_commit is not None
+    agent = pending.pending_commit.agent
+    from agency_runtime.core.workforce.routing_projection import (
+        workforce_work_units_from_descriptors,
+    )
+
+    descriptors = [
+        {
+            "ordinal": 1,
+            "artifact_kind": "implementation-change",
+            "lifecycle_phase": "implementation",
+            "authority": "modify",
+        }
+    ]
+    goal = workforce_work_units_from_descriptors(message, descriptors)[0]
+    unit_id = work_unit_id_from_text(goal)
+    routing = {
+        "selected_ids": ["quantum-build-engineer"],
+        "semantic_ids": ["quantum-build-engineer"],
+        "confidence": 1.0,
+        "top_score": 1.0,
+        "latency_ms": 0,
+        "candidate_count": 1,
+        "status": "accepted",
+        "source": "computed",
+        "query_hash": "a" * 64,
+        "context_fingerprint": "b" * 64,
+        "work_units": {
+            "delegate": True,
+            "count": 1,
+            "confidence": "high",
+            "source": "test-deferred-hire",
+            "units": [goal],
+        },
+        "workforce_unit_descriptors": descriptors,
+        "workforce_unit_bindings": [
+            {
+                "source_unit_id": "unit-quantum-build",
+                "work_unit_id": unit_id,
+                "selected": ["quantum-build-engineer"],
+                "delivery": "delegate",
+                "timing": "immediate",
+                "depends_on": [],
+                "parallelization": "parallel",
+                "mutation_scope": "workspace_write",
+                "artifact_kind": "implementation-change",
+                "required_tools": ["repository-read", "repository-write"],
+                "required_evidence": ["implementation evidence"],
+                "confidence": 1.0,
+                "margin": 1.0,
+            }
+        ],
+        "unit_assignment_agents": [
+            {
+                **agent,
+                "matched_work_unit_ids": [unit_id],
+                "primary_work_unit_ids": [unit_id],
+            }
+        ],
+        "provider_attempts": [],
+        "_pending_hiring_commits": [pending.pending_commit],
+    }
+    monkeypatch.setattr(pipeline, "route", lambda *_args, **_kwargs: dict(routing))
+    capability = native_adapter_capability_receipt(
+        "codex",
+        platform="windows",
+        session_id=session_id,
+        trace_id=trace_id,
+        available_tools=("repository-read", "repository-write", "native-delegation"),
+    )
+
+    result = run_preflight(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+        user_message=message,
+        host="codex",
+        capability_receipt=capability,
+    )
+
+    assert result.selected_specialists == ("quantum-build-engineer",)
+    assert result.delegation_plan[0]["recommended_agent"] == "quantum-build-engineer"
+    assert store.get_workforce_worker("quantum-build-engineer")["state"] == "contractor"
+    cases = store.get_hiring_cases_page_snapshot(limit=100)
+    assert any(
+        item["proposed_slug"] == "quantum-build-engineer" and item["status"] == "applied"
+        for item in cases["rows"]
+    )
 
 
 def test_disabled_covering_worker_prevents_duplicate_before_critic_or_write(tmp_path: Path) -> None:

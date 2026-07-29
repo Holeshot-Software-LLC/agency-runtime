@@ -302,7 +302,7 @@ def test_ordinary_exact_text_without_restricted_environment_uses_workforce_plann
     monkeypatch.setattr(
         pipeline,
         "_run_gap_hiring",
-        lambda outcome, request, config, store, snapshot, catalog: (
+        lambda outcome, request, config, store, snapshot, catalog, **_kwargs: (
             outcome,
             snapshot,
             catalog,
@@ -401,12 +401,21 @@ def test_activation_canary_preflight_replays_one_exact_selected_only_unit(
     assert parent_as_child["permissionDecision"] == "deny"
     assert "does not exactly match" in parent_as_child["permissionDecisionReason"]
 
-    hook_result = bridge.handle(hook_payload)
+    hook_result = bridge.handle(
+        {
+            **hook_payload,
+            "tool_input": {
+                **hook_payload["tool_input"],
+                "message": "gAAAAABopaque-parent-tool-ciphertext",
+            },
+        }
+    )
     updated = hook_result["hookSpecificOutput"]["updatedInput"]
     delivery = parse_native_child_prompt_delivery(updated["message"])
     assert delivery is not None
     assert delivery.original_task == CODEX_ACTIVATION_CANARY_WORK_UNIT
     assert updated["task_name"] == task_name
+
     snapshot = store.get_canary_activation_snapshot(
         host="codex",
         query_hash=result.routing["query_hash"],

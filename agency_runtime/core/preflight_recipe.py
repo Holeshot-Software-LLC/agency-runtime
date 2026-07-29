@@ -119,6 +119,7 @@ def _content_free_routing_recipe(
     """Project only bounded fields needed for audit and context replay."""
     from agency_runtime.core.selector.receipt_projection import (
         project_durable_routing_receipt,
+        project_model_receipt_attempts,
     )
 
     projected: dict[str, Any] = {
@@ -153,6 +154,23 @@ def _content_free_routing_recipe(
         "work_units": _work_unit_metadata(routing.get("work_units")),
         "routing_receipt": project_durable_routing_receipt(routing),
     }
+    model_receipt_attempts = project_model_receipt_attempts(routing.get("provider_attempts"))
+    if model_receipt_attempts is None:
+        raise RuntimeError("routing provider attempts are malformed or unbounded")
+    if model_receipt_attempts:
+        projected["model_receipt_attempts"] = model_receipt_attempts
+    pending_hiring = routing.get("_pending_hiring_commits")
+    if pending_hiring is not None:
+        from agency_runtime.core.workforce.hiring import PendingHiringCommit
+
+        if (
+            not isinstance(pending_hiring, list)
+            or len(pending_hiring) > 16
+            or any(not isinstance(item, PendingHiringCommit) for item in pending_hiring)
+        ):
+            raise RuntimeError("pending hiring commits are malformed or unbounded")
+        if pending_hiring:
+            projected["_pending_hiring_commits"] = list(pending_hiring)
     descriptors = _workforce_unit_descriptors(routing.get("workforce_unit_descriptors"))
     if descriptors or str(routing.get("source") or "").startswith("workforce_"):
         projected["workforce_unit_descriptors"] = descriptors

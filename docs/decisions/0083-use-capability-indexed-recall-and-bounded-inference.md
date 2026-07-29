@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-120-normalized-workforce-recruitment-index.md
   - docs/roadmap/issue-AR-121-inference-planning-and-staffing.md
+  - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
 supersedes: [docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md]
 superseded_by: null
 id: ADR-0083

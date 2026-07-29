@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import os
 import time
 import uuid
@@ -219,6 +220,71 @@ def _specialist_hydration_routing(
     if selected == routing.get("selected_ids"):
         return routing
     return {**routing, "selected_ids": selected}
+
+
+def _pending_hiring_specialist_view(
+    store: Store,
+    catalog: list[dict[str, Any]],
+    routing: Mapping[str, Any],
+) -> tuple[Store, list[dict[str, Any]]]:
+    """Expose validated pending specialists before their ready-CAS commit."""
+
+    commits = routing.get("_pending_hiring_commits")
+    if not isinstance(commits, list) or not commits:
+        return store, catalog
+    from agency_runtime.core.workforce.hiring import PendingHiringCommit
+
+    if any(not isinstance(item, PendingHiringCommit) for item in commits):
+        raise RuntimeError("pending hiring specialist view is malformed")
+    agents = {
+        str(item.agent.get("slug") or "").strip(): dict(item.agent)
+        for item in commits
+        if str(item.agent.get("slug") or "").strip() and item.projected_worker is not None
+    }
+    if not agents:
+        return store, catalog
+    active_catalog = [item for item in catalog if str(item.get("slug") or "").strip() not in agents]
+    active_catalog.extend(agents.values())
+    view = copy.copy(store)
+    stored_getter = store.get_specialist_prompt
+    stored_versioned_getter = store.get_versioned_specialist_prompt
+
+    def get_specialist_prompt(slug: str, **kwargs: Any) -> dict[str, Any] | None:
+        pending = agents.get(str(slug or "").strip())
+        if pending is None:
+            return stored_getter(slug, **kwargs)
+        prompt = dict(pending)
+        prompt["prompt_hash"] = str(prompt.get("hash") or "")
+        prompt["prompt_truncated"] = False
+        return prompt
+
+    def get_versioned_specialist_prompt(
+        slug: str,
+        version: str,
+        content_hash: str,
+        **kwargs: Any,
+    ) -> dict[str, Any] | None:
+        pending = agents.get(str(slug or "").strip())
+        if pending is None:
+            return stored_versioned_getter(slug, version, content_hash, **kwargs)
+        if (
+            str(pending.get("version") or "") != str(version or "").strip()
+            or str(pending.get("hash") or "") != str(content_hash or "").strip()
+        ):
+            return None
+        prompt_body = str(pending.get("prompt_body") or "")
+        maximum = max(1, min(int(kwargs.get("max_chars", 65_536)), 262_144))
+        return {
+            "slug": str(pending.get("slug") or ""),
+            "version": str(pending.get("version") or ""),
+            "hash": str(pending.get("hash") or ""),
+            "prompt_body": prompt_body[:maximum],
+            "prompt_truncated": len(prompt_body) > maximum,
+        }
+
+    view.get_specialist_prompt = get_specialist_prompt
+    view.get_versioned_specialist_prompt = get_versioned_specialist_prompt
+    return view, active_catalog
 
 
 def _selection_refs_for_recipe(
@@ -636,6 +702,7 @@ def _activate_or_close_direct_native_child(
 
 def _route_arguments(
     *,
+    store: Store,
     config: AgencyConfig,
     trace_id: str,
     classification: TurnClassification,
@@ -656,7 +723,8 @@ def _route_arguments(
 
     arguments: dict[str, Any] = {
         "config": config,
-        "store": None,
+        "store": store,
+        "preflight_atomic": True,
         "trace_id": trace_id,
         "turn_classification": classification,
         "host": host,
@@ -726,6 +794,7 @@ def _resolve_preflight_routing(
             "continuation_guard_invalid",
         )
     route_arguments = _route_arguments(
+        store=store,
         config=config,
         trace_id=trace_id,
         classification=classification,
@@ -1223,12 +1292,17 @@ def _prepare_preflight_evidence(
     )
     routing = dict(routing)
     routing["trace_id"] = trace_id
+    hydration_store, hydration_catalog = _pending_hiring_specialist_view(
+        store,
+        catalog,
+        routing,
+    )
     cache_owner = routing.get("_child_cache_owner")
     with ExitStack() as child_route_guard:
         if isinstance(cache_owner, Mapping):
             child_route_guard.callback(_abort_child_routing_bundle, store, routing)
         unit_assignment_agents, suggestions = _assignment_recipe(
-            catalog,
+            hydration_catalog,
             routing,
             continuation_snapshot,
             config,
@@ -1267,15 +1341,15 @@ def _prepare_preflight_evidence(
         }
         loaded = (
             hydrate_selected_specialist_references(
-                store,
-                catalog,
+                hydration_store,
+                hydration_catalog,
                 hydration_routing,
                 **hydration_arguments,
             )
             if delivery_mode == "isolated"
             else hydrate_selected_specialist_context(
-                store,
-                catalog,
+                hydration_store,
+                hydration_catalog,
                 hydration_routing,
                 record_evidence=False,
                 maximum_chars=specialist_budget,
@@ -1289,8 +1363,8 @@ def _prepare_preflight_evidence(
         )
         routing_recipe = _content_free_routing_recipe(routing, trace_id=trace_id)
         specialist_refs, selection_refs = _recipe_revision_refs(
-            store,
-            catalog,
+            hydration_store,
+            hydration_catalog,
             routing,
             suggestions,
             loaded,
@@ -1318,7 +1392,7 @@ def _prepare_preflight_evidence(
         if continuation_snapshot is not None:
             recipe["continuation_guard"] = continuation_snapshot["guard"]
         _result_from_recipe(
-            store,
+            hydration_store,
             recipe,
             session_id=session_id,
             trace_id=trace_id,

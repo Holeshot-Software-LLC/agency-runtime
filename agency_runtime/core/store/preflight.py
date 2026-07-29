@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 import re
@@ -19,6 +20,12 @@ from agency_runtime.core.installer_contracts import (
 from agency_runtime.core.preflight_versions import (
     PREFLIGHT_REPLAY_RECIPE_VERSION,
     SUPPORTED_PREFLIGHT_RECIPE_VERSIONS,
+)
+from agency_runtime.core.receipts.ingress import (
+    ReceiptProvenance as _ReceiptProvenance,
+)
+from agency_runtime.core.receipts.ingress import (
+    normalize_receipt_ingress as _normalize_receipt_ingress,
 )
 from agency_runtime.core.resident_manager_binding import (
     canonical_resident_manager_host,
@@ -88,7 +95,63 @@ class _ReadyEvidence:
     specialist_refs: list[dict[str, Any]]
     suggestions: list[dict[str, Any]]
     routing: dict[str, Any]
+    model_receipts: list[dict[str, Any]]
+    pending_hiring_commits: list[Any]
     resident_manager_binding: dict[str, Any] | None
+
+
+@dataclass(slots=True)
+class _ReadyTransactionState:
+    rollback_requested: bool = False
+
+
+class _ReadyTransactionConnection:
+    """Keep governed Store helpers inside the preflight ready transaction."""
+
+    def __init__(self, connection: Any, state: _ReadyTransactionState):
+        self._connection = connection
+        self._state = state
+
+    def execute(self, sql: str, parameters: object = ()) -> Any:
+        if self._state.rollback_requested:
+            raise RuntimeError("preflight ready transaction requested rollback")
+        if str(sql).lstrip().upper().startswith("BEGIN"):
+            return self._connection.execute("SELECT 1")
+        return self._connection.execute(sql, parameters)
+
+    def executemany(self, sql: str, parameters: object) -> Any:
+        if self._state.rollback_requested:
+            raise RuntimeError("preflight ready transaction requested rollback")
+        return self._connection.executemany(sql, parameters)
+
+    def commit(self) -> None:
+        if self._state.rollback_requested:
+            raise RuntimeError("preflight ready transaction requested rollback")
+
+    def rollback(self) -> None:
+        self._state.rollback_requested = True
+
+    def close(self) -> None:
+        return None
+
+    def __enter__(self) -> _ReadyTransactionConnection:
+        return self
+
+    def __exit__(self, exc_type: object, _exc: object, _tb: object) -> bool:
+        if exc_type is not None:
+            self._state.rollback_requested = True
+        return False
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._connection, name)
+
+
+def _ready_transaction_store(store: Any, connection: Any) -> tuple[Any, _ReadyTransactionState]:
+    state = _ReadyTransactionState()
+    bound = copy.copy(store)
+    proxy = _ReadyTransactionConnection(connection, state)
+    bound._connect = lambda: proxy
+    return bound, state
 
 
 def _request_fingerprint(value: object) -> str:
@@ -615,11 +678,29 @@ def _project_routing_evidence(value: object, *, trace_id: str) -> dict[str, Any]
         if bindings is None:
             return None
         safe_decision["workforce_unit_bindings"] = bindings
+    from agency_runtime.core.selector.receipt_projection import (
+        project_model_receipt_attempts,
+    )
+
+    model_receipts = project_model_receipt_attempts(value.get("model_receipt_attempts"))
+    if model_receipts is None:
+        return None
+    from agency_runtime.core.workforce.hiring import PendingHiringCommit
+
+    pending_hiring = value.get("_pending_hiring_commits", [])
+    if (
+        not isinstance(pending_hiring, list)
+        or len(pending_hiring) > 16
+        or any(not isinstance(item, PendingHiringCommit) for item in pending_hiring)
+    ):
+        return None
     return {
         "query_hash": query_hash,
         "context_fingerprint": context_fingerprint,
         "source": source,
         "decision": safe_decision,
+        "model_receipts": model_receipts,
+        "pending_hiring_commits": list(pending_hiring),
     }
 
 
@@ -668,6 +749,13 @@ def _prepare_ready_evidence(
         raise ValueError("routing evidence requires bounded content-free digests")
     if projected_recipe["routing"] != projected_routing["decision"]:
         raise ValueError("preflight recipe and routing evidence do not match")
+    for pending in projected_routing["pending_hiring_commits"]:
+        case_arguments = pending.case_arguments
+        if (
+            str(case_arguments.get("session_id") or "") != normalized_session
+            or str(case_arguments.get("trace_id") or "") != normalized_trace
+        ):
+            raise ValueError("pending hiring commit correlation does not match preflight")
     if projected_recipe["roster_size"] < len(projected_refs):
         raise ValueError("preflight roster size cannot be smaller than selected specialists")
     work_units = projected_recipe["routing"].get("work_units") or {}
@@ -690,12 +778,65 @@ def _prepare_ready_evidence(
         specialist_refs=projected_refs,
         suggestions=projected_suggestions,
         routing=projected_routing,
+        model_receipts=[
+            _normalize_receipt_ingress(
+                {
+                    "trace_id": normalized_trace,
+                    "session_id": normalized_session,
+                    "host": normalized_host,
+                    "requested_model": attempt["requested_model"],
+                    "model_group": attempt["model_group"],
+                    "resolved_provider": attempt["provider_name"],
+                    "resolved_model": attempt["actual_model"],
+                    "attempted_fallbacks": ordinal,
+                    "source": "wrapper",
+                    "status": ("success" if attempt["status"] == "applied" else "failed"),
+                },
+                provenance=_ReceiptProvenance.GENERIC,
+            )
+            for ordinal, attempt in enumerate(projected_routing["model_receipts"])
+        ],
+        pending_hiring_commits=projected_routing["pending_hiring_commits"],
         resident_manager_binding=(
             dict(projected_recipe["resident_manager_binding"])
             if isinstance(projected_recipe.get("resident_manager_binding"), dict)
             else None
         ),
     )
+
+
+def _commit_pending_hiring_evidence(
+    store: Any,
+    conn: Any,
+    evidence: _ReadyEvidence,
+) -> None:
+    """Commit validated hiring mutations and their receipts in the ready transaction."""
+
+    if not evidence.pending_hiring_commits:
+        return
+    from agency_runtime.core.workforce.hiring import (
+        commit_pending_contractor_hiring,
+    )
+
+    bound_store, transaction_state = _ready_transaction_store(store, conn)
+    for pending in evidence.pending_hiring_commits:
+        commit_pending_contractor_hiring(pending, store=bound_store)
+        for fallback_count, receipt in enumerate(
+            pending.case_arguments["model_evidence"]["receipts"]
+        ):
+            bound_store.record_model_receipt(
+                trace_id=evidence.trace_id,
+                session_id=evidence.session_id,
+                host=evidence.host,
+                requested_model=str(receipt.get("requested_model") or ""),
+                resolved_provider=str(receipt.get("provider") or ""),
+                resolved_model=str(receipt.get("actual_model") or ""),
+                attempted_fallbacks=fallback_count,
+                source="wrapper",
+                status="success",
+            )
+    if transaction_state.rollback_requested:
+        raise RuntimeError("pending hiring commit requested rollback")
 
 
 _CONTINUATION_ROUTING_FIELDS = (
@@ -1785,6 +1926,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
             if ready.rowcount != 1:
                 conn.rollback()
                 return {"outcome": "cas_lost"}
+            _commit_pending_hiring_evidence(self, conn, evidence)
             safe_decision = projected_routing["decision"]
             work_units = safe_decision.get("work_units") or {}
             conn.execute(
@@ -1812,6 +1954,32 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                     json.dumps(safe_decision, sort_keys=True),
                 ),
             )
+            for receipt in evidence.model_receipts:
+                conn.execute(
+                    "INSERT INTO model_receipts "
+                    "(id, trace_id, session_id, host, requested_model, model_group, "
+                    "resolved_provider, resolved_model, api_base, attempted_fallbacks, "
+                    "model_id, source, recorded_at, started_at, ended_at, status) "
+                    f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, {STORE_CLOCK_SQL}, "  # nosec B608
+                    "?, ?, ?)",
+                    (
+                        self._uuid(),
+                        normalized_trace,
+                        normalized_session,
+                        receipt["host"],
+                        receipt["requested_model"],
+                        receipt["model_group"],
+                        receipt["resolved_provider"],
+                        receipt["resolved_model"],
+                        receipt["api_base"],
+                        receipt["attempted_fallbacks"],
+                        receipt["model_id"],
+                        receipt["source"],
+                        receipt["started_at"] or now_value,
+                        receipt["ended_at"] or now_value,
+                        receipt["status"],
+                    ),
+                )
             for suggestion in projected_suggestions:
                 conn.execute(
                     "INSERT INTO delegation_events "

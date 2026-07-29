@@ -1213,6 +1213,8 @@ def _run_gap_hiring(
     store: Store | None,
     active_snapshot: WorkforceIndexSnapshot,
     active_catalog: list[dict[str, Any]],
+    *,
+    defer_commits: bool = False,
 ) -> tuple[Any, WorkforceIndexSnapshot, list[dict[str, Any]], list[dict[str, Any]]]:
     from agency_runtime.core.codex_activation_verification import (
         is_restricted_codex_activation_canary_environment,
@@ -1221,7 +1223,10 @@ def _run_gap_hiring(
     if is_restricted_codex_activation_canary_environment():
         return outcome, active_snapshot, active_catalog, []
 
-    from agency_runtime.core.roster.workforce import workforce_index_snapshot
+    from agency_runtime.core.roster.workforce import (
+        workforce_index_snapshot,
+        workforce_snapshot_with_contract,
+    )
     from agency_runtime.core.workforce.hiring import (
         hire_contractor_for_gap,
         restaff_after_hire,
@@ -1258,23 +1263,35 @@ def _run_gap_hiring(
             config=config,
             session_id=request.session_id,
             trace_id=request.trace_id,
+            defer_commit=defer_commits,
         )
-        events_by_unit[unit_id] = _hiring_event(unit_id, hiring)
-        _record_workforce_model_receipts(
-            store,
-            hiring,
-            session_id=request.session_id,
-            trace_id=request.trace_id,
-            host=request.host,
-        )
+        event = _hiring_event(unit_id, hiring)
+        if hiring.pending_commit is not None:
+            event["_pending_commit"] = hiring.pending_commit
+        events_by_unit[unit_id] = event
+        if not defer_commits:
+            _record_workforce_model_receipts(
+                store,
+                hiring,
+                session_id=request.session_id,
+                trace_id=request.trace_id,
+                host=request.host,
+            )
         if "daily_hiring_limit_reached" in hiring.reason_codes:
             daily_limit_reached = True
             break
         if not hiring.workforce_changed or hiring.worker is None:
             continue
-        active_snapshot = workforce_index_snapshot(
-            store,
-            disabled_agents=frozenset(config.agents.disabled),
+        active_snapshot = (
+            workforce_snapshot_with_contract(
+                active_snapshot,
+                hiring.pending_commit.workforce_contract,
+            )
+            if defer_commits and hiring.pending_commit is not None
+            else workforce_index_snapshot(
+                store,
+                disabled_agents=frozenset(config.agents.disabled),
+            )
         )
         staffing_context = StaffingContext(
             request.host,
@@ -1291,7 +1308,17 @@ def _run_gap_hiring(
             context=staffing_context,
             config=config,
         )
-        active_catalog = store.get_active_roster_as_catalog(disabled_agents=())
+        if defer_commits and hiring.pending_commit is not None:
+            pending_agent = hiring.pending_commit.agent
+            active_catalog = [
+                item
+                for item in active_catalog
+                if str(item.get("slug") or item.get("name") or "").strip().casefold()
+                != str(pending_agent.get("slug") or "").strip().casefold()
+            ]
+            active_catalog.append(dict(pending_agent))
+        else:
+            active_catalog = store.get_active_roster_as_catalog(disabled_agents=())
     events = _complete_gap_hiring_events(
         outcome,
         initial_gap_units,
@@ -1325,6 +1352,7 @@ def route(
     semantic_root_ids: tuple[str, ...] | None = None,
     workforce_snapshot: WorkforceIndexSnapshot | None = None,
     request: _RouteRequest | None = None,
+    preflight_atomic: bool = False,
 ) -> dict[str, Any]:
     """Run the full 8-layer routing pipeline.
 
@@ -1349,6 +1377,7 @@ def route(
         session_reused.
     """
     cfg = _get_config(config, store)
+    evidence_store = None if preflight_atomic else store
     trace_id = trace_id or str(uuid.uuid4())
     classification = _turn_classification(
         user_message,
@@ -1404,7 +1433,7 @@ def route(
             routing,
             request,
             classification,
-            store=store,
+            store=evidence_store,
             trace_id=trace_id,
         )
     activation_canary = _activation_canary_routing(request)
@@ -1418,7 +1447,7 @@ def route(
             activation_canary,
             request,
             classification,
-            store=store,
+            store=evidence_store,
             trace_id=trace_id,
         )
     fresh_selection_required = _requires_fresh_selection(classification)
@@ -1431,18 +1460,19 @@ def route(
                 exact,
                 request,
                 classification,
-                store=store,
+                store=evidence_store,
                 trace_id=trace_id,
             )
         signals = _route_signals(request)
         exact = _reuse_routing(exact, request, signals)
         if exact is not None:
-            _remember_routing(exact, request)
+            if not preflight_atomic:
+                _remember_routing(exact, request)
             return _finalize_classified_request(
                 exact,
                 request,
                 classification,
-                store=store,
+                store=evidence_store,
                 trace_id=trace_id,
             )
     signals = signals or _route_signals(request)
@@ -1452,7 +1482,7 @@ def route(
             reused,
             request,
             classification,
-            store=store,
+            store=evidence_store,
             trace_id=trace_id,
         )
     session_result = None
@@ -1469,7 +1499,7 @@ def route(
             reused,
             request,
             classification,
-            store=store,
+            store=evidence_store,
             trace_id=trace_id,
         )
     # `query_judge` makes inference mandatory when configured and otherwise
@@ -1502,7 +1532,7 @@ def route(
             routing_context_fingerprint=request.context_fingerprint,
         )
         _record_workforce_model_receipts(
-            store,
+            evidence_store,
             outcome,
             session_id=request.session_id,
             trace_id=request.trace_id,
@@ -1517,6 +1547,7 @@ def route(
             store,
             active_snapshot,
             active_catalog,
+            defer_commits=preflight_atomic,
         )
         routing = project_workforce_routing(
             outcome,
@@ -1526,17 +1557,25 @@ def route(
             contract_fingerprint=active_snapshot.contract_fingerprint,
         )
         if hiring_events:
+            pending_commits = [
+                event.pop("_pending_commit")
+                for event in hiring_events
+                if event.get("_pending_commit") is not None
+            ]
+            if pending_commits:
+                routing["_pending_hiring_commits"] = pending_commits
             routing["hiring_events"] = hiring_events
             # Preserve the original single-event surface for existing API/UI
             # clients while the plural field carries the complete task outcome.
             routing["hiring_event"] = hiring_events[0]
         routing = _attach_workforce_signals(routing, request, signals)
-        _remember_routing(routing, request)
+        if not preflight_atomic:
+            _remember_routing(routing, request)
         return _finalize_classified_request(
             routing,
             request,
             classification,
-            store=store,
+            store=evidence_store,
             trace_id=trace_id,
         )
 
@@ -1551,12 +1590,13 @@ def route(
         minimum=cfg.selector.min_confidence,
     )
     routing = _merge_computed_routing(routing, request, signals)
-    _remember_routing(routing, request)
+    if not preflight_atomic:
+        _remember_routing(routing, request)
     return _finalize_classified_request(
         routing,
         request,
         classification,
-        store=store,
+        store=evidence_store,
         trace_id=trace_id,
     )
 

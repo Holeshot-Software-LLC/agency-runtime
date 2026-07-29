@@ -1137,11 +1137,27 @@ class HookBridge:
                 )
             return {}
         if work_unit_goal_hash(task) != assignment.goal_hash:
-            return _pre_tool_use_denial(
-                "Agency refused this native child because its task does not exactly match "
-                "the persisted work-unit goal. Use the exact goal from the delegation plan.",
-                host=self.host,
+            from agency_runtime.core.activation_canary_contract import (
+                CODEX_ACTIVATION_CANARY_WORK_UNIT,
             )
+
+            if (
+                self.host == "codex"
+                and re.fullmatch(r"gAAAAA[A-Za-z0-9_-]{24,}={0,2}", task) is not None
+                and work_unit_goal_hash(CODEX_ACTIVATION_CANARY_WORK_UNIT) == assignment.goal_hash
+            ):
+                # Codex persists an opaque spawn message in current-profile
+                # rollouts. The closed-world canary goal is package-owned, and
+                # the unencrypted native task label already resolved exactly
+                # one persisted assignment, so recover that constant without
+                # weakening ordinary goal equality.
+                task = CODEX_ACTIVATION_CANARY_WORK_UNIT
+            else:
+                return _pre_tool_use_denial(
+                    "Agency refused this native child because its task does not exactly match "
+                    "the persisted work-unit goal. Use the exact goal from the delegation plan.",
+                    host=self.host,
+                )
         try:
             activation_contract = native_child_activation_contract(
                 task,

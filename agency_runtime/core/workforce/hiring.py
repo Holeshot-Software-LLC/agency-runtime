@@ -266,6 +266,7 @@ class ContractorHiringOutcome:
     contract: EmploymentContract | None = None
     attempts: tuple[HiringInferenceAttempt, ...] = ()
     notification: str = ""
+    pending_commit: PendingHiringCommit | None = None
 
     @property
     def hired(self) -> bool:
@@ -285,6 +286,22 @@ class _ValidatedCandidate:
     agent: dict[str, Any]
     workforce_contract: WorkforceContract
     target_worker: Mapping[str, Any] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PendingHiringCommit:
+    """Validated hiring mutation held until the owning preflight ready CAS."""
+
+    action: str
+    case_arguments: dict[str, Any]
+    agent: dict[str, Any]
+    recruitment_contract: dict[str, Any]
+    workforce_contract: WorkforceContract
+    max_hires_per_day: int
+    target_worker_id: str = ""
+    expected_revision: int = -1
+    projected_worker: dict[str, Any] | None = None
+    notification: str = ""
 
 
 StructuredInvoker = Callable[..., StructuredProviderResult | None]
@@ -844,6 +861,7 @@ def hire_contractor_for_gap(
     config: AgencyConfig,
     session_id: str = "",
     trace_id: str = "",
+    defer_commit: bool = False,
     invoker: StructuredInvoker = invoke_structured_provider_result,
 ) -> ContractorHiringOutcome:
     """Prove, criticize, persist, and immediately enable one narrow contractor."""
@@ -941,15 +959,15 @@ def hire_contractor_for_gap(
         for item in attempts
     ]
     contract_document = workforce_contract.to_dict()
-    case = store.create_hiring_case(
-        case_type=candidate.action,
-        proposed_slug=contract.slug,
-        work_unit_id=unit.unit_id,
-        request_hash=_digest(request),
-        gap_evidence=dict(gap),
-        duplicate_evidence=dict(duplicate),
-        contract_evidence=contract_document,
-        critic_evidence={
+    case_arguments = {
+        "case_type": candidate.action,
+        "proposed_slug": contract.slug,
+        "work_unit_id": unit.unit_id,
+        "request_hash": _digest(request),
+        "gap_evidence": dict(gap),
+        "duplicate_evidence": dict(duplicate),
+        "contract_evidence": contract_document,
+        "critic_evidence": {
             "approved": True,
             "reason_codes": critic.get("reason_codes", []),
             "receipt": receipts[-1],
@@ -965,16 +983,71 @@ def hire_contractor_for_gap(
             "compiled_prompt_hash": compiled.prompt_hash,
             "compiler_template_hash": CONTRACTOR_PROMPT_TEMPLATE_HASH,
         },
-        model_evidence={"inference_required": True, "receipts": receipts},
-        contract_hash=_digest(contract_document),
-        target_worker_id=(
+        "model_evidence": {"inference_required": True, "receipts": receipts},
+        "contract_hash": _digest(contract_document),
+        "target_worker_id": (
             "" if candidate.target_worker is None else str(candidate.target_worker["worker_id"])
         ),
-        session_id=session_id,
-        trace_id=trace_id,
-        risk_tier="high" if compiled.human_approval_required else "standard",
-        human_approval_required=compiled.human_approval_required,
+        "session_id": session_id,
+        "trace_id": trace_id,
+        "risk_tier": "high" if compiled.human_approval_required else "standard",
+        "human_approval_required": compiled.human_approval_required,
+    }
+    target = candidate.target_worker
+    status = "amended" if candidate.action == "amend" else "hired"
+    projected_worker = (
+        {
+            **({} if target is None else dict(target)),
+            "worker_id": compiled.worker_id if target is None else str(target["worker_id"]),
+            "agent_slug": contract.slug,
+            "display_label": (
+                compiled.display_name
+                if target is None
+                else str(target.get("display_label") or target.get("display_name") or contract.role)
+            ),
+            "current_version": str(agent["version"]),
+            "current_hash": str(agent["hash"]),
+        }
+        if not compiled.human_approval_required
+        else None
     )
+    notification = (
+        f"Expanded {projected_worker['display_label']} for {unit.unit_id} without creating a "
+        f"new worker. Preserved its identity and enabled revision "
+        f"{projected_worker['current_version']} for immediate assignment."
+        if candidate.action == "amend" and projected_worker is not None
+        else (
+            f"Hired Contractor · {contract.role} for {unit.unit_id}. "
+            f"No enabled worker covered {', '.join(gap.get('missing_capabilities', []))}. "
+            f"Enabled as {projected_worker['current_version']} and assigned immediately."
+            if projected_worker is not None
+            else ""
+        )
+    )
+    pending = PendingHiringCommit(
+        action=candidate.action,
+        case_arguments=case_arguments,
+        agent=agent,
+        recruitment_contract=contract_document,
+        workforce_contract=workforce_contract,
+        max_hires_per_day=config.workforce.max_hires_per_day,
+        target_worker_id="" if target is None else str(target["worker_id"]),
+        expected_revision=-1 if target is None else int(target["revision"]),
+        projected_worker=projected_worker,
+        notification=notification,
+    )
+    if defer_commit:
+        return ContractorHiringOutcome(
+            "approval_required" if compiled.human_approval_required else status,
+            (("high_risk_human_approval_required",) if compiled.human_approval_required else ()),
+            None,
+            projected_worker,
+            contract,
+            attempts,
+            notification,
+            pending,
+        )
+    case, worker = commit_pending_contractor_hiring(pending, store=store)
     if compiled.human_approval_required:
         return ContractorHiringOutcome(
             "approval_required",
@@ -984,49 +1057,48 @@ def hire_contractor_for_gap(
             contract,
             attempts,
         )
+    return ContractorHiringOutcome(status, (), case, worker, contract, attempts, notification)
+
+
+def commit_pending_contractor_hiring(
+    pending: PendingHiringCommit,
+    *,
+    store: Any,
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Apply one validated pending hire through the existing Store invariants."""
+
+    if pending.action == "hire" and _today_hires(store) >= pending.max_hires_per_day:
+        raise RuntimeError("daily hiring limit changed before commit")
+
+    case = store.create_hiring_case(**pending.case_arguments)
+    if bool(pending.case_arguments["human_approval_required"]):
+        return case, None
     case = store.transition_hiring_case(case["id"], status="audited")
-    if candidate.action == "amend":
-        target = candidate.target_worker
-        if target is None:
-            raise RuntimeError("validated amendment lost its target worker")
+    if pending.action == "amend":
         version_id = store.stage_agency_workforce_amendment(
-            agent,
-            expected_revision=int(target["revision"]),
+            pending.agent,
+            expected_revision=pending.expected_revision,
         )
         worker = store.apply_workforce_amendment(
-            str(target["worker_id"]),
-            expected_revision=int(target["revision"]),
+            pending.target_worker_id,
+            expected_revision=pending.expected_revision,
             agent_version_id=version_id,
-            recruitment_contract=contract_document,
+            recruitment_contract=pending.recruitment_contract,
             hiring_case_id=case["id"],
         )
-        status = "amended"
-        notification = (
-            f"Expanded {worker['display_label']} for {unit.unit_id} without creating a new "
-            f"worker. Preserved its identity and enabled revision {worker['current_version']} "
-            "for immediate assignment."
-        )
     else:
-        version_id = store.stage_agency_workforce_agent(agent)
+        version_id = store.stage_agency_workforce_agent(pending.agent)
         worker = store.register_workforce_worker(
-            agent_slug=contract.slug,
-            display_name=contract.role,
+            agent_slug=str(pending.case_arguments["proposed_slug"]),
+            display_name=str(pending.agent["display_name"]),
             origin="agency",
             employment_class="contractor",
             agent_version_id=version_id,
-            recruitment_contract=contract_document,
+            recruitment_contract=pending.recruitment_contract,
             relation="generated",
             hiring_case_id=case["id"],
         )
-        status = "hired"
-        notification = (
-            f"Hired Contractor · {contract.role} for {unit.unit_id}. "
-            f"No enabled worker covered {', '.join(gap.get('missing_capabilities', []))}. "
-            f"Enabled as {worker['current_version']} and assigned immediately."
-        )
-    return ContractorHiringOutcome(
-        status, (), store.get_hiring_case(case["id"]), worker, contract, attempts, notification
-    )
+    return store.get_hiring_case(case["id"]), worker
 
 
 def restaff_after_hire(
@@ -1102,7 +1174,9 @@ __all__ = [
     "HIRING_RESPONSE_SCHEMA",
     "ContractorHiringOutcome",
     "HiringInferenceAttempt",
+    "PendingHiringCommit",
     "apply_approved_hiring_case",
+    "commit_pending_contractor_hiring",
     "hire_contractor_for_gap",
     "restaff_after_hire",
 ]
