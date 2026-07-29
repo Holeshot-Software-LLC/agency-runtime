@@ -215,6 +215,16 @@ and a reduced-context preflight on only the latest conversational sentence
 truthfully abstained. Exact-installed launch and model-receipt proof therefore
 remain open.
 
+PR 165 merged the repair as `816db5b29a78faf8a09bd16eeecc987a15d3bc6c`.
+That exact revision was installed and refreshed into Codex. Isolated-profile
+trace `019faf64-5aee-78e0-a5ab-657f782a6175` then passed with one
+`code-reviewer` route, grant, consumption, real child UUID, specialist load,
+completed delegation, worker exit zero, spawn, wait, and accepted finalization;
+the header was valid and no hook diagnostic or unmet prerequisite remained.
+The refreshed normal profile remains `hook_trust_status: unverified` and
+`restart_required: true`, so this is autonomous isolated-profile proof rather
+than attended current-profile activation or provider/model-receipt proof.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -255,6 +265,8 @@ model truth and resident-manager visibility.
   shape while terminal outcomes remain non-looping.
 - [x] The named fast Python, dashboard, documentation, lint, and routing
   evaluation gates pass locally.
+- [x] The exact merged revision passes the isolated-profile Codex activation
+  canary with one complete real-child evidence chain and no trust prompt.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.
