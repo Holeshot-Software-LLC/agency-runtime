@@ -47,6 +47,12 @@ CODEX_NATIVE_SPAWN_HOOK_TOOL_NAMES = frozenset(
         "collaborationspawn_agent",
     }
 )
+CODEX_NATIVE_WAIT_HOOK_TOOL_NAMES = frozenset(
+    {
+        "wait_agent",
+        "collaborationwait_agent",
+    }
+)
 CODEX_NATIVE_SPAWN_HOOK_MATCHER = r"^(?:spawn_agent|collaborationspawn_agent)$"
 CODEX_HOOK_TRUST_SURFACE = "codex-terminal-tui"
 CODEX_HOOK_TRUST_COMMAND = "codex"

@@ -463,6 +463,8 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
     assert report["canary_passed"] is True, report["unmet_prerequisites"]
     assert report["attestation_persisted"] is True
     assert report["evidence"]["proven"] is True
+    assert report["invocation"]["correction_count"] == 0
+    assert report["invocation"]["header"]["agencies_loaded"]
     assert report["evidence"]["cardinalities"] == {
         "routes": 1,
         "runs": 1,
@@ -481,7 +483,7 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
     assert len(attestation["proof_digest"]) == 64
 
 
-def test_codex_activation_proof_accepts_one_correction_before_authoritative_accept(
+def test_codex_activation_proof_rejects_one_correction_before_authoritative_accept(
     configured_store: Store,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -511,18 +513,19 @@ def test_codex_activation_proof_accepts_one_correction_before_authoritative_acce
 
     from agency_runtime.core.canary_proof import _codex_accepted_finalization
 
-    assert _codex_accepted_finalization(evidence) == accepted
+    assert _codex_accepted_finalization(evidence) is None
     assert evidence["run"]["terminal_finalization_id"] == accepted["id"]
     authoritative_response_hash = response_hash(str(result["output"]))
     assert accepted["response_hash"] == authoritative_response_hash
 
-    assert (
-        codex_activation_failures(
-            result=result,
-            evidence=evidence,
-            response_hash=authoritative_response_hash,
-        )
-        == ()
+    failures = codex_activation_failures(
+        result=result,
+        evidence=evidence,
+        response_hash=authoritative_response_hash,
+    )
+    assert failures == (
+        "Codex canary required one complete first-pass activation chain without correction",
+        "Codex canary evidence graph was incomplete",
     )
 
 

@@ -1262,7 +1262,7 @@ def fill_header_fields(
 ) -> dict[str, str]:
     """Reconcile header fields with authoritative evidence for one turn.
 
-    All six fields are evidence fields: authored values never outrank current-
+    All header fields are evidence fields: authored values never outrank current-
     turn runtime records. Explanatory lines expose bounded reason/effect codes
     and report unavailable when the authoritative evidence is absent.
     """
