@@ -298,6 +298,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2e6a144` | 2026-07-29 | Merge pull request #163 from Holeshot-Software-LLC/codex/ar-199-isolated-canary-route | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `01150cd` | 2026-07-29 | fix(codex): accept documented spawn nickname | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-01150cd-accept-codex-spawn-nickname.md) |
 | `34e3180` | 2026-07-29 | Merge pull request #164 from Holeshot-Software-LLC/codex/ar-199-codex-spawn-nickname | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `f28b98a` | 2026-07-29 | fix(codex): consume activation before child delivery | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-f28b98a-consume-activation-before-child-delivery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
