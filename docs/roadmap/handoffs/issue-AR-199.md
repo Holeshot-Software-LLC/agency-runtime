@@ -126,17 +126,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   reciprocal activation, delegation, work-unit, and worker-run links.
 - Both callback orders are covered; all 20 activation-canary tests and all 35
   activation-receipt tests pass, with two platform skips in the latter.
-- Trace `019faf33-3766-7112-ab70-823e05dd598a` proves exact selection,
-  activation, specialist load, spawn, wait, worker exit zero, completed
-  delegation, and no stale hook diagnostic; finalization still continued.
-- Continuation receipts now retain only bounded missing-field codes, and the
-  Store promotion helper no longer creates an import-order cycle. Exact import,
-  continuation, and native-child regressions pass.
+- Trace `019faf3e-5eb6-7a92-9423-cb5b083fa285` proves the only final mismatch:
+  every dynamic post-child header field was stale except `Skills loaded`.
+- Codex corrections now emit documented `decision:block`; terminal outcomes
+  retain `continue:false`. The full hook file passes 87 tests, both native retry
+  cases pass, and non-spawn PostToolUse no longer reads an unbound identity.
 
 ## exact-blocker
 
-The terminal repair is source-live, but the remaining finalization mismatch is
-not yet identified. The next canary must expose its bounded missing-field code.
+The last mismatch is identified and the Stop protocol repair is focused-green,
+but it is not yet source-live. The next canary must persist accepted evidence.
 
 ## same-task-continuity
 
@@ -145,8 +144,8 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Checkpoint the import and finalization-diagnostic repair.
-2. Refresh Codex and capture the exact bounded verifier mismatch.
+1. Checkpoint the Codex Stop protocol repair.
+2. Refresh Codex and prove the accepted finalization.
 3. Run the named fast spine, push, merge, and exact-install.
 4. Run the fresh Codex proof and prepare the OpenClaw handoff.
 

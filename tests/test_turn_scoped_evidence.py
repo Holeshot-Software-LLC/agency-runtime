@@ -399,14 +399,8 @@ def test_stop_retry_terminally_stops_both_native_hosts_without_loop(
     terminal = bridge.handle(payload)
     exact_replay = bridge.handle(payload)
 
-    # PR #129: codex Stop returns the shared lifecycle shape
-    # {"continue": False, "stopReason": ...} rather than the legacy
-    # {"decision": "block"}. Claude still uses the legacy shape.
-    if host == "codex":
-        assert first["continue"] is False
-        assert "stopReason" in first
-    else:
-        assert first["decision"] == "block"
+    # A corrective Stop uses the documented decision:block continuation shape.
+    assert first["decision"] == "block"
     assert set(terminal) == {"continue", "stopReason"}
     assert terminal["continue"] is False
     assert terminal["stopReason"].startswith("AGENCY RETRY EXHAUSTED:")

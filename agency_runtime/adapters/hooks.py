@@ -2007,6 +2007,7 @@ class HookBridge:
         )
         observed_tool_response = tool_response
         delivery: NativeChildPromptDelivery | None = None
+        _delivery_identity: NativeChildRunIdentity | None = None
         delivery_activated = False
         if (self.host in {"claude", "zcode"} and tool_name == _CLAUDE_AGENT_TOOL_NAME) or (
             self.host == "codex" and tool_name in _CODEX_SPAWN_TOOL_NAMES
@@ -2747,11 +2748,6 @@ class HookBridge:
 
     def _reject_completion(self, reason: str, *, retry: bool) -> dict[str, Any]:
         """Return a host-native fail-closed completion result."""
-        if self.host == "codex":
-            # Current Codex Stop hooks accept the shared lifecycle shape.
-            # The legacy decision:block form can be ignored by Codex exec,
-            # leaving the model without correction context.
-            return _completion_rejection(reason, retry=True)
         if self.host == "zcode":
             # ZCode's Stop event only recognizes {"decision": "block", ...};
             # the {"continue": False, "stopReason": ...} lifecycle shape is an

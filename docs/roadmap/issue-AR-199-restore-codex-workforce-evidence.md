@@ -91,6 +91,12 @@ repair: the exact delegation is `completed`, the linked worker ended with exit
 code zero, and the earlier temporal hook diagnostic is absent. Finalization
 still returned `continue`, but the continuation receipt discarded the
 verifier's missing-field codes, so that last policy mismatch was not traceable.
+Trace `019faf3e-5eb6-7a92-9423-cb5b083fa285` then made the mismatch exact:
+the parent response retained every pre-execution header field except the stable
+`Skills loaded` value. Codex received `continue: false`, which terminates a Stop
+hook, instead of `decision: "block"`, which creates the documented corrective
+continuation prompt. The model therefore never received the authoritative
+post-child header rewrite.
 
 ## Approach
 
@@ -175,6 +181,13 @@ continuing to store only a response hash. The earlier Store promotion helper
 also resolves the Codex task-label utility lazily, preserving a clean
 fresh-process import order between Store and the public delegation package.
 
+Codex Stop corrections now use `decision: "block"` and a bounded `reason`;
+terminal retry exhaustion continues to use `continue: false`. This restores one
+model correction pass without reopening a terminal response or changing
+ZCode's stricter always-block compatibility rule. Optional child identity is
+also initialized before every PostToolUse branch, preventing non-spawn tool
+events from reading an unbound local.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -209,6 +222,8 @@ model truth and resident-manager visibility.
   an empty stop remains outcome-free and cannot fabricate success.
 - [x] A rejected native finalization retains bounded missing-field diagnostics
   without persisting the response or specialist content.
+- [x] Codex corrective Stop responses use the current documented continuation
+  shape while terminal outcomes remain non-looping.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.
