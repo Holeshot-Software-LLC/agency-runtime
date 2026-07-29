@@ -481,6 +481,51 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
     assert len(attestation["proof_digest"]) == 64
 
 
+def test_codex_activation_proof_accepts_one_correction_before_authoritative_accept(
+    configured_store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = canary.CANARY_PROMPT + "\n\nCanary nonce: one-correction-accept"
+    result = _record_complete_v2_chain(
+        configured_store,
+        monkeypatch,
+        task=task,
+    )
+    evidence = configured_store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=response_hash(task),
+    )
+    [accepted] = evidence["finalizations"]
+    evidence["finalizations"] = [
+        {
+            **accepted,
+            "id": "correction-receipt",
+            "action": "continue",
+            "missing": ["agencies_loaded", "agencies_delegated"],
+            "response_hash": "0" * 64,
+            "terminal_status": None,
+        },
+        accepted,
+    ]
+    evidence["cardinalities"]["finalizations"] = 2
+
+    from agency_runtime.core.canary_proof import _codex_accepted_finalization
+
+    assert _codex_accepted_finalization(evidence) == accepted
+    assert evidence["run"]["terminal_finalization_id"] == accepted["id"]
+    authoritative_response_hash = response_hash(str(result["output"]))
+    assert accepted["response_hash"] == authoritative_response_hash
+
+    assert (
+        codex_activation_failures(
+            result=result,
+            evidence=evidence,
+            response_hash=authoritative_response_hash,
+        )
+        == ()
+    )
+
+
 def test_codex_post_tool_reconciles_subagent_start_consumption_without_callback_id(
     configured_store: Store,
     monkeypatch: pytest.MonkeyPatch,

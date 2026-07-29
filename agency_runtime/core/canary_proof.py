@@ -542,6 +542,32 @@ def _codex_receipt_link_failures(
     return tuple(failures)
 
 
+def _codex_accepted_finalization(evidence: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    """Return the sole accept after at most one documented correction pass."""
+
+    raw_rows = evidence.get("finalizations")
+    if not isinstance(raw_rows, list) or len(raw_rows) not in {1, 2}:
+        return None
+    if not all(isinstance(row, Mapping) for row in raw_rows):
+        return None
+    rows = list(raw_rows)
+    accepted = rows[-1]
+    if accepted.get("action") != "accept" or accepted.get("terminal_status") != "completed":
+        return None
+    if len(rows) == 2:
+        correction = rows[0]
+        missing = correction.get("missing")
+        if (
+            correction.get("action") != "continue"
+            or correction.get("terminal_status") not in {None, ""}
+            or not isinstance(missing, list)
+            or not missing
+            or correction.get("response_hash") == accepted.get("response_hash")
+        ):
+            return None
+    return accepted
+
+
 def codex_activation_failures(
     *,
     result: Mapping[str, Any],
@@ -567,10 +593,11 @@ def codex_activation_failures(
         "activation_consumptions": 1,
         "worker_runs": 1,
         "specialist_loads": 1,
-        "finalizations": 1,
     }
-    if not isinstance(cardinalities, Mapping) or any(
-        cardinalities.get(field) != count for field, count in expected_cardinalities.items()
+    if (
+        not isinstance(cardinalities, Mapping)
+        or any(cardinalities.get(field) != count for field, count in expected_cardinalities.items())
+        or cardinalities.get("finalizations") not in {1, 2}
     ):
         failures.append("Codex canary topology was not exactly one complete activation chain")
 
@@ -582,7 +609,7 @@ def codex_activation_failures(
     consumption = _single_mapping(evidence, "activation_consumptions")
     worker = _single_mapping(evidence, "worker_runs")
     specialist_load = _single_mapping(evidence, "specialist_loads")
-    finalization = _single_mapping(evidence, "finalizations")
+    finalization = _codex_accepted_finalization(evidence)
     if any(
         item is None
         for item in (

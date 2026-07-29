@@ -97,6 +97,12 @@ the parent response retained every pre-execution header field except the stable
 hook, instead of `decision: "block"`, which creates the documented corrective
 continuation prompt. The model therefore never received the authoritative
 post-child header rewrite.
+Trace `019faf49-67bc-7953-8ff2-64f33173ae79` proves that correction path live:
+Codex recorded one bounded `continue`, emitted the rewritten header, committed
+one authoritative `accept`, and closed the run as `completed`. The activation
+canary still reported failure only because its topology checker required
+exactly one finalization row and treated the legitimate correction-plus-accept
+pair as an incomplete graph.
 
 ## Approach
 
@@ -187,6 +193,12 @@ model correction pass without reopening a terminal response or changing
 ZCode's stricter always-block compatibility rule. Optional child identity is
 also initialized before every PostToolUse branch, preventing non-spawn tool
 events from reading an unbound local.
+
+The Codex activation proof now accepts either a direct authoritative accept or
+exactly one content-free correction followed by the authoritative accept. It
+still rejects more than one correction, a correction without missing fields,
+duplicate response hashes, nonterminal accepts, and every extra activation,
+delegation, child, load, route, trace, or plan row.
 
 ## Dependencies
 
