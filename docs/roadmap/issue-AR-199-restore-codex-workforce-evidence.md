@@ -321,6 +321,15 @@ routing evaluation returns `passed: true`, and the documentation, Ruff, format,
 and diff gates pass. This closes source verification without substituting for
 the still-required exact-installed ordinary provider and delegation trace.
 
+PR 171 merged those repairs as exact commit
+`fbed63abaf739d6a863113a221c09c8cfababc40`, now installed as build
+`0.1.0+gfbed63abaf73` with Codex bundle `0.1.0+codex.ae2086569c9e`.
+Isolated trace `019fb039-193d-79c2-b771-5cdd2ad86065` passes the complete
+activation chain with one loaded and completed `code-reviewer`, one native
+spawn and wait, one accepted finalization, a valid first-pass header, and zero
+corrections. Current-profile inspection separately reports all eight hooks as
+modified and stops before model invocation, so attended trust is still open.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -380,6 +389,8 @@ model truth and resident-manager visibility.
   `code-reviewer` without a margin abstention.
 - [x] Workforce receipts report the explicit eligible catalog independently of
   the unused legacy retrieval count.
+- [x] Exact merge `fbed63a` passes an isolated-profile activation trace with one
+  completed specialist chain, a valid first-pass header, and zero corrections.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

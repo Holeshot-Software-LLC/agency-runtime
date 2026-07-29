@@ -332,6 +332,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c02a10a` | 2026-07-29 | fix(evidence): report workforce eligibility counts | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `0d6b011` | 2026-07-29 | docs(roadmap): record truthful eligibility proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `a465f38` | 2026-07-29 | docs(roadmap): record ordinary repair verification | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `fbed63a` | 2026-07-29 | Merge pull request #171 from Holeshot-Software-LLC/codex/ar-199-ordinary-continuation | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

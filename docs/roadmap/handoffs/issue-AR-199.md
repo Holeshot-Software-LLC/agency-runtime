@@ -20,8 +20,8 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-199
-branch: codex/ar-199-ordinary-continuation
-evidence_commit: c02a10a7ad2425824c49883674f8d9b4e5b77dda
+branch: codex/ar-199-fbed-canary
+evidence_commit: fbed63abaf739d6a863113a221c09c8cfababc40
 minimum_ledger_commit: 36d2ec67810eaffe014cc08a73402146276830d3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
@@ -31,21 +31,25 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## checkpoint
 
-- Exact merge `aa0d949` and bundle `0.1.0+codex.fc83b66da46d` remain installed
-  in Codex and ZCode.
-- Current source repair `196dedc` is on
-  `codex/ar-199-ordinary-continuation`; owner-untracked files remain untouched.
-- Truthful workforce eligibility projection `c02a10a` is on the same branch.
-- The preceding `511c389` / `3cb5602` pair was the clean starting checkpoint.
+- PR 171 merged the ordinary selection and eligibility repair as exact commit
+  `fbed63abaf739d6a863113a221c09c8cfababc40`.
+- The uv tool reports exact build `0.1.0+gfbed63abaf73`; Codex bundle
+  `0.1.0+codex.ae2086569c9e` is registered and enabled.
+- Owner-untracked files remain untouched.
 
 ## completed-evidence
 
+- Exact-installed isolated trace `019fb039-193d-79c2-b771-5cdd2ad86065`
+  passes with one selected and loaded `code-reviewer`, one native spawn and
+  wait, one completed delegation, worker exit zero, one accepted finalization,
+  a valid first-pass header, and `correction_count: 0`.
+- Its profile is explicitly isolated and uses Codex's hook-trust bypass; it
+  does not claim current-profile trust or persist a current-profile attestation.
+- Current-profile verification sees all eight hooks enabled but modified and
+  stops before model invocation. That attended trust boundary remains open.
 - Local workforce search proves relevant enabled Windows/Codex workers exist,
   including `multi-agent-systems-architect`, `python-application-engineer`, and
   `code-reviewer`.
-- The live activation canary passed hook-trust inspection, attempted one native
-  spawn, and was rejected by Agency's own exact-goal validator. No retry or
-  trust bypass ran.
 - Provider attempts are now projected into the ready evidence and committed as
   model receipts only with the winning CAS; replay does not duplicate them.
 - Governed hiring now stages validated contractor state, uses it for in-memory
@@ -53,18 +57,6 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   receipts inside the ready transaction. CAS loss leaves no workforce state.
 - The ready transaction rechecks the daily hiring limit under its immediate
   write lock. A competing hire makes the staged commit fail and roll back.
-- The Codex canary accepts the current opaque persisted spawn message only when
-  its package-owned goal, parent scope, task label, and assignment already
-  correlate. Ordinary goal mismatches remain denied.
-- Focused verification passes: 76 routing, receipt, hiring, and canary tests;
-  29 preflight-bound tests; and 7 durable-continuation tests with 6 platform
-  skips.
-- PR 158 merged as `2c914b7`; its exact install passed trust after the owner
-  restarted Codex and approved the refreshed hooks.
-- That live canary proved exact `code-reviewer` selection and prompt delivery,
-  then exposed a downstream Codex decrypt failure caused by replacing the
-  opaque tool input. The child rollout used `agent_message`, carried the exact
-  activation plus encrypted content, and ended with no final message.
 - The follow-up preserves the opaque input, injects the exact prompt only at
   the correlated child start, and consumes the grant by exact native-hook tool
   and lifecycle evidence. The parser now accepts `agent_message` and rejects
@@ -128,20 +120,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-Source selection, truthful eligibility projection, and the required fast spine
-are `GO`. Source is not yet merged or exact-installed. External planner replay
-remains disallowed without explicit egress approval; persistent-profile trust
-remains attended.
+Source, merge, exact installation, and the isolated zero-correction activation
+chain are `GO`. The ordinary multi-unit product proof is ready to run in the
+isolated profile. Persistent-profile trust remains attended.
 
 ## same-task-continuity
 
-Continue in this task after the recovery and ledger commits. Do not create a
-new task. Do not rerun the now-passing isolated activation package.
+Continue in this task. Do not rerun the passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. Open and merge the verified source PR.
-2. Exact-install the merge, then run the bounded ordinary proof.
+1. Run the bounded ordinary isolated-profile product proof.
+2. Audit specialist, delegation, provider/model, and header receipts together.
+3. Fix only the first proof-invalidating blocker or publish the final matrix.
 
 ## verification
 
