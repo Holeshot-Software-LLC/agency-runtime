@@ -1430,35 +1430,31 @@ class HookBridge:
                     )
                 except (KeyError, RuntimeError, ValueError):
                     exact_delivery = ""
+        if exact_delivery:
+            if len(exact_delivery) > MAX_CONTEXT_CHARS:
+                exact_delivery = (
+                    _CLAUDE_CHILD_IDENTITY_MARKER
+                    + "\nAgency could not deliver the exact specialist context within the "
+                    "host limit. Stop this child without substantive work."
+                )
+            return {
+                "hookSpecificOutput": {
+                    "hookEventName": "SubagentStart",
+                    "additionalContext": exact_delivery,
+                }
+            }
         context_lines = [
             _CLAUDE_CHILD_IDENTITY_MARKER,
-            "This identity belongs only to the current native Codex child.",
+            "This identity belongs only to the current native Codex child. It does not "
+            "load, select, or inherit an Agency specialist.",
             f"worker_kind={json.dumps(identity.worker_kind)}",
             f"worker_id={json.dumps(identity.worker_id, ensure_ascii=True)}",
             f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
+            "If no current recipe is present, independently call agency.preflight "
+            "before substantive work using the complete delegated assignment as "
+            "user_message and "
+            f"session_id={json.dumps(child_session_id, ensure_ascii=True)}.",
         ]
-        if exact_delivery:
-            context_lines.extend(
-                [
-                    "The installed hooks matched this child to one exact persisted "
-                    "specialist plan. Follow the activation below without calling "
-                    "prepare or load again; PostToolUse consumes the one-use receipt "
-                    "from authoritative launch evidence.",
-                    exact_delivery,
-                ]
-            )
-        else:
-            context_lines.extend(
-                [
-                    "No exact persisted specialist delivery was correlated to this "
-                    "child. This identity does not load, select, or inherit an Agency "
-                    "specialist.",
-                    "If no current recipe is present, independently call agency.preflight "
-                    "before substantive work using the complete delegated assignment as "
-                    "user_message and "
-                    f"session_id={json.dumps(child_session_id, ensure_ascii=True)}.",
-                ]
-            )
         if parent_scope is not None:
             context_lines.append(
                 "To join the parent controls exactly once, include "

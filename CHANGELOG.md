@@ -52,6 +52,8 @@ changes rather than duplicating every commit.
 - Codex activation hooks now preserve opaque encrypted collaboration messages
   instead of replacing them with mixed plaintext/encrypted input. The exact
   audited specialist prompt is delivered at the correlated child-start event,
+  where it occupies the complete strict context envelope so identity guidance
+  cannot alter its task or prompt hash,
   completion consumes the stored native-hook grant through exact lifecycle and
   tool-call evidence, and rollout verification recognizes `agent_message`
   delivery while rejecting child decrypt errors with no final message.

@@ -82,6 +82,18 @@ tracker_url: null
   the observed decrypt-error completion shape.
 - Follow-up focused verification passes 66 hook, Store, and activation-canary
   tests; Ruff and Python compilation checks pass.
+- PR 159 merged as `3382b18` and was exact-installed. After fresh owner trust,
+  its live canary successfully ran one `code-reviewer` child: the encrypted
+  task decoded, the child emitted a final response, and the parent completed
+  one spawn plus one wait without retry.
+- The verifier still rejected that successful rollout because identity and
+  fallback prose surrounded the exact delivery in `SubagentStart` context.
+  Strict parsing therefore included the prefix in `original_task` and the
+  suffix in `prompt_body`, invalidating both hashes.
+- The current slice makes the exact delivery the complete child-start context;
+  unplanned children retain the identity and fallback guidance. A new test
+  round-trips the full context to the canonical canary goal and immutable
+  prompt. The focused activation set passes 67 tests.
 - Context telemetry reported 49.0 percent remaining, so this source-and-focused-
   verification slice requires the substantive and ledger checkpoint before the
   fast spine and live evaluation.
@@ -89,9 +101,10 @@ tracker_url: null
 ## exact-blocker
 
 End-to-end exact-installed Codex workforce execution is not yet proven. The
-second source repair and focused verification are complete; the remaining
-gates are its fast spine, commit/merge, exact reinstall, live canary, and
-fresh-task header/model/delegation evidence.
+live child now executes successfully; the remaining activation blocker is the
+strict context framing repaired in the current source slice. It still requires
+checkpoint, fast verification, merge, exact reinstall, and a passing live
+attestation before fresh-task header/model/delegation evidence.
 
 ## same-task-continuity
 
@@ -100,9 +113,9 @@ new task or rerun the live canary until focused source verification passes.
 
 ## next-bounded-work-package
 
-1. Commit this decrypt-boundary repair and its ledger checkpoint.
-2. Run the proportional fast spine, push, open and merge the follow-up PR.
-3. Reinstall the exact merge and run the live Codex activation verifier.
+1. Commit the terminal-context repair and its ledger checkpoint.
+2. Run the proportional fast spine, push, open and merge the next follow-up PR.
+3. Reinstall that exact merge and run the live Codex activation verifier.
 4. Capture fresh-task resident-manager, specialist, delegation, and model
    receipt evidence for the handoff.
 
