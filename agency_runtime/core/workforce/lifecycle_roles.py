@@ -133,7 +133,9 @@ def _review_anchors(unit: Any, tokens: frozenset[str]) -> tuple[str, ...]:
         "data-flow",
     }:
         return ("application-integration-verifier",)
-    if "software-engineering" in unit.domains:
+    if "software-engineering" in unit.domains or (
+        "quality-assurance" in unit.domains and tokens & {"code", "implementation", "software"}
+    ):
         return ("code-reviewer",)
     return ()
 
@@ -162,6 +164,8 @@ def _implementation_anchors(unit: Any, tokens: frozenset[str]) -> tuple[str, ...
         result.append("typescript-application-engineer")
     if "python" in stacks:
         result.append("python-application-engineer")
+    if not result and tokens & {"frontend", "page", "ui", "web", "website"}:
+        result.append("frontend-developer")
     if (
         tokens & {"installer", "installation", "packaging", "upgrade", "uninstall"}
         or {
@@ -215,6 +219,12 @@ def _discovery_anchors(unit: Any, tokens: frozenset[str]) -> tuple[str, ...]:
         "structure",
         "trust",
     }:
+        return ("codebase-onboarding-engineer",)
+    if "software-engineering" in unit.domains:
+        # A discovery unit that precedes repository implementation still needs
+        # the audited codebase mapper even when the planner describes the
+        # requested product artifact (for example, a local page) instead of
+        # repeating the words codebase or repository in the outcome.
         return ("codebase-onboarding-engineer",)
     return ()
 

@@ -535,6 +535,88 @@ def test_untyped_implementation_anchors_the_governed_minimum_change_specialist()
     assert role_anchors(plan.units[0]) == ("minimal-change-engineer",)
 
 
+def test_local_page_workflow_anchors_the_ordinary_software_delivery_team() -> None:
+    request = "Build a page that can be loaded locally without hosting it."
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": request,
+            "units": [
+                _unit(
+                    "unit-discovery",
+                    "Analyze the local evidence page requirements",
+                    "analysis",
+                    "discovery",
+                    ["software-engineering"],
+                    ["analysis"],
+                    "advise",
+                    "read_only",
+                    ["repository-read"],
+                ),
+                _unit(
+                    "unit-implementation",
+                    "Implement the local evidence page",
+                    "implementation-change",
+                    "implementation",
+                    ["software-engineering"],
+                    ["implementation"],
+                    "modify",
+                    "workspace_write",
+                    ["repository-read", "repository-write", "code-execution"],
+                    depends_on=["unit-discovery"],
+                ),
+                _unit(
+                    "unit-review",
+                    "Review the local evidence page implementation",
+                    "review-report",
+                    "review",
+                    ["quality-assurance"],
+                    ["review"],
+                    "review",
+                    "read_only",
+                    ["repository-read"],
+                    depends_on=["unit-implementation"],
+                ),
+            ],
+        }
+    )
+
+    assert [role_anchors(unit, request=request) for unit in plan.units] == [
+        ("codebase-onboarding-engineer",),
+        ("frontend-developer",),
+        ("code-reviewer",),
+    ]
+    snapshot = _snapshot()
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset(
+            {
+                "code-execution",
+                "native-delegation",
+                "repository-read",
+                "repository-write",
+            }
+        ),
+        snapshot.generation,
+    )
+
+    result = deterministic_staff_plan(
+        request,
+        plan,
+        snapshot,
+        config=AgencyConfig(),
+        context=context,
+    )
+
+    assert result.staffing.accepted
+    assert {row.unit_id: row.selected for row in result.staffing.units} == {
+        "unit-discovery": ("codebase-onboarding-engineer",),
+        "unit-implementation": ("frontend-developer",),
+        "unit-review": ("code-reviewer",),
+    }
+
+
 def test_accessibility_review_anchors_the_audited_accessibility_specialist() -> None:
     plan = parse_work_unit_plan(
         {
@@ -764,7 +846,7 @@ def test_postgres_request_recovers_database_anchor_from_generic_analysis() -> No
     )
 
     assert role_anchors(plan.units[0], request=request) == ("database-optimizer",)
-    assert role_anchors(plan.units[0], request=generic_request) == ()
+    assert role_anchors(plan.units[0], request=generic_request) == ("codebase-onboarding-engineer",)
 
 
 def test_clinical_evidence_and_legal_review_anchor_bounded_specialists() -> None:
