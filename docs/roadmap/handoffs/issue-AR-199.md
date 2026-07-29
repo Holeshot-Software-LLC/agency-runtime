@@ -126,17 +126,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   reciprocal activation, delegation, work-unit, and worker-run links.
 - Both callback orders are covered; all 20 activation-canary tests and all 35
   activation-receipt tests pass, with two platform skips in the latter.
-- Trace `019faf49-67bc-7953-8ff2-64f33173ae79` proves one correction followed
-  by an authoritative accept, completed run, worker exit zero, and exact
-  specialist chain. Only the canary's one-finalization assumption rejected it.
-- Canary proof now permits either direct accept or one bounded correction then
-  accept while every other graph cardinality remains exact. Its focused
-  two-finalization regression passes.
+- Trace `019faf50-d5d7-7bf2-8c88-e1dfd791a4fe` passes source-live with no unmet
+  prerequisites: one exact activation chain, bounded correction, authoritative
+  accept, completed run, and valid header.
+- The isolated profile does not persist a current-profile attestation by
+  design; `canary_passed: true` is the scoped source-live proof.
 
 ## exact-blocker
 
-The runtime path is accepted source-live; only the updated proof topology is not
-yet live. The next canary must persist the attestation for that exact chain.
+Source-live is accepted. The remaining gates are the named fast spine, PR and
+merge, exact merged install, and fresh installed Codex proof.
 
 ## same-task-continuity
 
@@ -145,10 +144,9 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Checkpoint the corrected canary proof topology.
-2. Rerun the accepted source canary and persist its attestation.
-3. Run the named fast spine, push, merge, and exact-install.
-4. Run the fresh Codex proof and prepare the OpenClaw handoff.
+1. Checkpoint the accepted source-live canary.
+2. Run the named fast spine, push, merge, and exact-install.
+3. Run the fresh Codex proof and prepare the OpenClaw handoff.
 
 ## verification
 

@@ -103,6 +103,11 @@ one authoritative `accept`, and closed the run as `completed`. The activation
 canary still reported failure only because its topology checker required
 exactly one finalization row and treated the legitimate correction-plus-accept
 pair as an incomplete graph.
+Source-live trace `019faf50-d5d7-7bf2-8c88-e1dfd791a4fe` passes the corrected
+canary with no unmet prerequisites. It proves exactly one route, plan, grant,
+consumption, native child, specialist load, completed delegation, bounded
+correction, authoritative accept, and completed run. Its isolated profile does
+not mutate the persistent current-profile attestation.
 
 ## Approach
 
@@ -228,6 +233,8 @@ model truth and resident-manager visibility.
   produces one read-only unit, spawns once, and waits once without a trust
   prompt; focused activation and receipt verification passes 68 tests with two
   platform skips.
+- [x] Source-live Codex canary passes the complete correction-plus-accept
+  activation graph with no unmet prerequisites.
 - [x] Both Codex callback orders bind the consumed specialist, real child UUID,
   compact delegation, and worker-run receipt to the same exact work unit.
 - [x] A successful Codex SubagentStop closes the exact worker and delegation;
