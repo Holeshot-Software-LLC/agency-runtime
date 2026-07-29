@@ -153,6 +153,11 @@ def _finish_v2_chain_through_hooks(
     assert delivery.original_task == str(plan["goal"])
     if opaque_canary:
         assert delivery.activation_token == "x" * 43
+        after_start = store.get_completion_evidence_snapshot(session_id, trace_id)
+        [started_activation] = after_start["specialist_activations"]
+        assert started_activation["specialist_slug"] == slug
+        assert started_activation["worker_id"] == receiver_id
+        assert started_activation["native_run_id"] == f"codex-agent:{receiver_id}"
     assert (
         bridge.handle(
             {

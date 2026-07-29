@@ -39,7 +39,7 @@ activation canary rejects its own native child goal.
 
 ## Current state
 
-Exact installed revision `2e6a1448b26f39c67dc88faa1b4641ffc4b622b4`
+Exact installed revision `34e3180e465c175b07e1b0ae3c0b14106c36cca2`
 successfully registers Codex and ZCode. The merged repair slices now
 commit workforce receipts and deferred hires atomically, preserve Codex's
 encrypted spawn input, inject the exact specialist context at child start, bind
@@ -67,9 +67,11 @@ whereas trace `019fae5a-4815-7a82-a65e-66db8e35f203` used
 `codex_activation_canary_contract`, selected `code-reviewer`, emitted one unit,
 spawned once, and waited once. The child started and completed, but Codex's
 spawn result left the issued activation grant unconsumed and the specialist-load
-receipt absent. An exact-installed rerun after PR 163 disproved the initial
-mapping-only diagnosis. Codex v0.146 serializes an optional `nickname` beside
-`task_name`; Agency's strict raw-field validator rejected that documented field.
+receipt absent. Exact-installed reruns after PRs 163 and 164 disproved both the
+mapping-only and optional-nickname diagnoses: this configured Codex v0.146
+surface emitted exactly `{"task_name":"/root/unit_05d45f7553"}`. The live
+ordering instead records and delivers the real child at SubagentStart while the
+grant remains deferred to PostToolUse.
 
 ## Approach
 
@@ -106,6 +108,12 @@ shape as well as its JSON-string shape. For v0.146 spawn results it permits only
 `task_name` and the documented optional `nickname`, discards the nickname before
 binding, and retains the rooted task label, exact task-name, exact projected-key,
 persisted child-lifecycle, and one-use activation checks.
+
+The current follow-up consumes the opaque canary's exact native-hook grant at
+SubagentStart, after the real child UUID lifecycle is persisted and before the
+specialist context is returned. Exact tool-use, unit, specialist version, prompt
+hash, prompt body, worker, and native-run identities must all match. PostToolUse
+then reconciles the already-consumed lineage idempotently.
 
 ## Dependencies
 

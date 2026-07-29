@@ -20,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-199
-branch: codex/ar-199-codex-spawn-nickname
-evidence_commit: 2e6a1448b26f39c67dc88faa1b4641ffc4b622b4
-minimum_ledger_commit: 33f0d63c68e59e6c086aac29da4378e6459e19bb
+branch: codex/ar-199-subagent-start-consumption
+evidence_commit: 34e3180e465c175b07e1b0ae3c0b14106c36cca2
+minimum_ledger_commit: d1b9692fc7f41ff29f1efb4c12895982bdb5810f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 ---
@@ -31,9 +31,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## checkpoint
 
-- Exact merged revision `2e6a144` is installed globally and registered in
+- Exact merged revision `34e3180` is installed globally and registered in
   Codex and ZCode.
-- The current repair is on `codex/ar-199-codex-spawn-nickname`; the
+- The current repair is on `codex/ar-199-subagent-start-consumption`; the
   owner-untracked analysis draft and `uv.lock` remain untouched.
 - The preceding substantive and ledger pair is a clean checkpoint for the
   current bounded repair.
@@ -115,21 +115,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   and a fresh isolated routing evaluation passed every correctness and
   performance gate. Hosted checks did not start because the GitHub account's
   billing or spending limit blocked every job before execution.
-- PR 163 merged the isolated-route and mapping-compatibility slice as
-  `2e6a144`; that exact install again selected `code-reviewer`, spawned once,
-  waited once, and completed the child without a trust prompt, but still left
-  the activation grant unconsumed.
-- Authoritative Codex v0.146 source resolved the remaining boundary: its spawn
-  result is a JSON string containing `task_name` plus an optional `nickname`.
-  Agency's raw-field validator rejected the nickname after successful parsing.
-- Current source allows only `task_name` plus the documented optional
-  `nickname`, discards the nickname before lifecycle binding, and rejects every
-  other extra field. The full receipt file passes 35 tests with two skips.
+- PR 164 merged optional-nickname compatibility as `34e3180`; its exact install
+  again completed one selected `code-reviewer` child with a valid header but no
+  activation consumption or attestation.
+- Bounded live capture proved this configured v0.146 surface emitted only the
+  exact rooted `task_name`. Its two apparent rollout errors were the explicit
+  isolated hook-trust-bypass notices, not hook failures.
+- The current source consumes the exact native-hook grant at SubagentStart
+  against the persisted real child UUID before returning specialist context;
+  PostToolUse remains idempotent. Two exact activation tests pass.
 
 ## exact-blocker
 
-The Codex v0.146 nickname repair is source-green but is not yet merged or
-exact-installed. A fresh isolated canary must prove activation consumption,
+The SubagentStart consumption repair is source-green but has not yet been
+installed into the Codex hook launcher. A fresh isolated canary must prove activation consumption,
 specialist load, completed delegation, a valid header, and attestation before
 the broader USB-style hiring task can close AR-199.
 
@@ -140,10 +139,9 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Run the named fast spine for the bounded spawn-receipt repair.
-2. Commit the repair and ledger checkpoint, then push, open, and merge the
-   follow-up PR.
-3. Reinstall that exact merge and rerun the isolated activation canary.
+1. Commit the source and ledger checkpoint required by current telemetry.
+2. Refresh Codex from that source checkpoint and rerun the isolated canary.
+3. Run the named fast spine, then push, merge, and exact-install the follow-up.
 4. Run a fresh USB-style Codex task and capture resident-manager, contractor,
    specialist, delegation, and scoped model receipt evidence.
 

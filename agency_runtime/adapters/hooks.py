@@ -1427,6 +1427,28 @@ class HookBridge:
                         specialist_prompt_hash=assignment.specialist_prompt_hash,
                         activation_token=_NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN,
                     )
+                    activation = self.store.consume_delegation_activation(
+                        activation_token="",
+                        native_hook_tool_use_id=assignment.tool_use_id,
+                        session_id=session_id,
+                        trace_id=trace_id,
+                        specialist_slug=assignment.specialist_slug,
+                        work_unit_id=assignment.work_unit_id,
+                        worker_id=identity.worker_id,
+                        native_run_id=identity.native_run_id,
+                        require_native_child_started=True,
+                        match_native_child_identity=True,
+                    )
+                    if (
+                        activation.get("slug") != assignment.specialist_slug
+                        or activation.get("version") != assignment.specialist_version
+                        or activation.get("prompt_hash") != assignment.specialist_prompt_hash
+                        or activation.get("prompt_body") != pending.get("prompt_body")
+                        or activation.get("worker_kind") != identity.worker_kind
+                        or activation.get("worker_id") != identity.worker_id
+                        or activation.get("native_run_id") != identity.native_run_id
+                    ):
+                        raise ValueError("Codex child activation receipt did not match delivery")
                 except (KeyError, RuntimeError, ValueError):
                     exact_delivery = ""
         if exact_delivery:
