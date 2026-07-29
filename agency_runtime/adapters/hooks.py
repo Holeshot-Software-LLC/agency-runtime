@@ -456,7 +456,6 @@ def _native_child_tool_identity(
         return tool_response, None
     return (
         {
-            **projected_response,
             "task_name": task_name,
             "agent_id": identity.worker_id,
             "native_run_id": identity.native_run_id,
@@ -1557,6 +1556,7 @@ class HookBridge:
             raw_task_name = _first_string(raw_response or {}, "task_name", "taskName")
             if tool_name == "collaborationspawn_agent" and (
                 raw_response is None
+                or set(raw_response) not in ({"task_name"}, {"task_name", "nickname"})
                 or not raw_task_name.startswith("/root/")
                 or response_task_name != expected_task_name
                 or set(projected_response) != {"task_name", "agent_id", "native_run_id"}

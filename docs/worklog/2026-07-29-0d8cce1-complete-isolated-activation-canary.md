@@ -72,3 +72,12 @@ routing for ordinary text or enable dynamic hiring inside the canary.
 Merge and exact-install this commit, rerun the isolated canary to prove the
 complete activation graph and attestation, then run the fresh USB-style task
 needed to close AR-199.
+
+## Provenance correction
+
+The exact-installed rerun on merge `2e6a144` disproved the mapping-only root
+cause recorded above. The route marker and mapping compatibility remain valid,
+but authoritative Codex v0.146 source showed that the serialized spawn body may
+also contain an optional `nickname`. Agency's strict raw-field validator
+rejected that documented field, so a follow-up repair is required before this
+canary can be considered complete.

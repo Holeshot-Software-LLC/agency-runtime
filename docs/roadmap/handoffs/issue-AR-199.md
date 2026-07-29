@@ -20,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-199
-branch: codex/ar-199-isolated-canary-route
-evidence_commit: 279ef9e3547c3681431dd666dd278b731e627ca7
-minimum_ledger_commit: c4f78ea75649f770ff2a1c1333df93c765237669
+branch: codex/ar-199-codex-spawn-nickname
+evidence_commit: 2e6a1448b26f39c67dc88faa1b4641ffc4b622b4
+minimum_ledger_commit: 33f0d63c68e59e6c086aac29da4378e6459e19bb
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 ---
@@ -31,12 +31,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## checkpoint
 
-- Exact merged revision `279ef9e` is installed globally and registered in
+- Exact merged revision `2e6a144` is installed globally and registered in
   Codex and ZCode.
-- The current repair is on `codex/ar-199-isolated-canary-route`; the
+- The current repair is on `codex/ar-199-codex-spawn-nickname`; the
   owner-untracked analysis draft and `uv.lock` remain untouched.
-- Context telemetry reported 62.3 percent remaining immediately before the
-  source-level live canary, so the same task continues normally.
+- The preceding substantive and ledger pair is a clean checkpoint for the
+  current bounded repair.
 
 ## completed-evidence
 
@@ -115,23 +115,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   and a fresh isolated routing evaluation passed every correctness and
   performance gate. Hosted checks did not start because the GitHub account's
   billing or spending limit blocked every job before execution.
-- The first exact-installed isolated canary still crossed semantic planning,
-  produced two units, and selected nobody. The source repair marks the isolated
-  existing Store so the deterministic contract is recognized.
-- Source-level live trace `019fae5a-4815-7a82-a65e-66db8e35f203` then selected
-  exactly `code-reviewer`, persisted one unit and one activation grant, spawned
-  once, waited once, and completed the child without a trust prompt. This
-  proved the routing fix and exposed the next boundary: Codex supplied a native
-  mapping-shaped PostToolUse result, while a redundant guard required the
-  already-parsed result to have originated as a JSON string.
-- The current source accepts both bounded response representations while
-  retaining the exact rooted task label, projected response keys, child
-  lifecycle, and one-use grant checks. The exact four regression tests pass;
-  the adjacent activation and receipt suite passes 68 tests with two skips.
+- PR 163 merged the isolated-route and mapping-compatibility slice as
+  `2e6a144`; that exact install again selected `code-reviewer`, spawned once,
+  waited once, and completed the child without a trust prompt, but still left
+  the activation grant unconsumed.
+- Authoritative Codex v0.146 source resolved the remaining boundary: its spawn
+  result is a JSON string containing `task_name` plus an optional `nickname`.
+  Agency's raw-field validator rejected the nickname after successful parsing.
+- Current source allows only `task_name` plus the documented optional
+  `nickname`, discards the nickname before lifecycle binding, and rejects every
+  other extra field. The full receipt file passes 35 tests with two skips.
 
 ## exact-blocker
 
-The PostToolUse compatibility repair is source-green but is not yet merged or
+The Codex v0.146 nickname repair is source-green but is not yet merged or
 exact-installed. A fresh isolated canary must prove activation consumption,
 specialist load, completed delegation, a valid header, and attestation before
 the broader USB-style hiring task can close AR-199.
@@ -143,7 +140,7 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Run the named fast spine for the isolated route and PostToolUse repair.
+1. Run the named fast spine for the bounded spawn-receipt repair.
 2. Commit the repair and ledger checkpoint, then push, open, and merge the
    follow-up PR.
 3. Reinstall that exact merge and rerun the isolated activation canary.

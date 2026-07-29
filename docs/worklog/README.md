@@ -295,6 +295,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a05549f` | 2026-07-29 | fix(routing): bind hired specialists to live gaps | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-a05549f-bind-hired-specialists.md) |
 | `279ef9e` | 2026-07-29 | Merge pull request #162 from Holeshot-Software-LLC/codex/ar-199-live-selection-followup | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `0d8cce1` | 2026-07-29 | fix(codex): complete isolated activation canary | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-0d8cce1-complete-isolated-activation-canary.md) |
+| `2e6a144` | 2026-07-29 | Merge pull request #163 from Holeshot-Software-LLC/codex/ar-199-isolated-canary-route | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
