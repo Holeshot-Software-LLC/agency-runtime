@@ -205,6 +205,16 @@ still rejects more than one correction, a correction without missing fields,
 duplicate response hashes, nonterminal accepts, and every extra activation,
 delegation, child, load, route, trace, or plan row.
 
+The named fast production spine passes 651 tests with 6 skips, the dashboard
+suite passes 109 tests, and the routing evaluation passes every gate. A fresh
+ordinary Codex turn also rendered both resident managers and proposed
+`codebase-onboarding-engineer`, `minimal-change-engineer`, `code-reviewer`, and
+`test-results-analyzer`. That is selection evidence, not completed delegation:
+an intervening selection-explanation request superseded the launchable plan,
+and a reduced-context preflight on only the latest conversational sentence
+truthfully abstained. Exact-installed launch and model-receipt proof therefore
+remain open.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -243,6 +253,8 @@ model truth and resident-manager visibility.
   without persisting the response or specialist content.
 - [x] Codex corrective Stop responses use the current documented continuation
   shape while terminal outcomes remain non-looping.
+- [x] The named fast Python, dashboard, documentation, lint, and routing
+  evaluation gates pass locally.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.
