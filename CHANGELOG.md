@@ -55,7 +55,9 @@ changes rather than duplicating every commit.
   where it occupies the complete strict context envelope so identity guidance
   cannot alter its task or prompt hash,
   completion consumes the stored native-hook grant through exact lifecycle and
-  tool-call evidence for both JSON-string and native mapping spawn results, and
+  tool-call evidence for both JSON-string and native mapping spawn results,
+  permits and discards Codex v0.146's documented optional spawn `nickname`
+  before strict lifecycle binding while rejecting every other extra field, and
   rollout verification recognizes `agent_message` delivery while rejecting
   child decrypt errors with no final message. Isolated Agency canaries now mark
   their existing evidence Store so the nonce-bound request enters the same

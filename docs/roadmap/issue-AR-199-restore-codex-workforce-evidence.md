@@ -39,7 +39,7 @@ activation canary rejects its own native child goal.
 
 ## Current state
 
-Exact installed revision `279ef9e3547c3681431dd666dd278b731e627ca7`
+Exact installed revision `2e6a1448b26f39c67dc88faa1b4641ffc4b622b4`
 successfully registers Codex and ZCode. The merged repair slices now
 commit workforce receipts and deferred hires atomically, preserve Codex's
 encrypted spawn input, inject the exact specialist context at child start, bind
@@ -66,9 +66,10 @@ regression exactly: its predecessor planned two units and selected nobody,
 whereas trace `019fae5a-4815-7a82-a65e-66db8e35f203` used
 `codex_activation_canary_contract`, selected `code-reviewer`, emitted one unit,
 spawned once, and waited once. The child started and completed, but Codex's
-native mapping-shaped spawn result was rejected by a redundant string-only
-guard, leaving the issued activation grant unconsumed and the specialist-load
-receipt absent.
+spawn result left the issued activation grant unconsumed and the specialist-load
+receipt absent. An exact-installed rerun after PR 163 disproved the initial
+mapping-only diagnosis. Codex v0.146 serializes an optional `nickname` beside
+`task_name`; Agency's strict raw-field validator rejected that documented field.
 
 ## Approach
 
@@ -101,9 +102,10 @@ promotes Luna into the parent or specialist slot.
 
 The isolated canary backend now marks its existing evidence Store before the
 nonce-bound request. The PostToolUse boundary accepts Codex's native mapping
-shape as well as its JSON-string shape while retaining the rooted task label,
-exact task-name, exact projected-key, persisted child-lifecycle, and one-use
-activation checks.
+shape as well as its JSON-string shape. For v0.146 spawn results it permits only
+`task_name` and the documented optional `nickname`, discards the nickname before
+binding, and retains the rooted task label, exact task-name, exact projected-key,
+persisted child-lifecycle, and one-use activation checks.
 
 ## Dependencies
 

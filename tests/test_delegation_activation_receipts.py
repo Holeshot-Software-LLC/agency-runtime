@@ -955,6 +955,53 @@ def test_codex_v2_native_mapping_task_path_binds_started_child(
     assert accepted[3] is True
 
 
+def test_codex_v2_spawn_nickname_is_discarded_before_lifecycle_binding(
+    tmp_path: Path,
+) -> None:
+    _store, bridge, payload, rewritten, worker_id = _prepared_codex_hook_delivery(
+        tmp_path,
+        tool_name="collaborationspawn_agent",
+    )
+    task_name = str(rewritten["task_name"])
+
+    accepted = bridge._consume_native_child_prompt_delivery(
+        event="PostToolUse",
+        payload={**payload, "hook_event_name": "PostToolUse"},
+        tool_input=rewritten,
+        tool_response=json.dumps({"task_name": f"/root/{task_name}", "nickname": "Curie"}),
+        trace_id="trace",
+    )
+
+    assert accepted[1] == {
+        "task_name": task_name,
+        "agent_id": worker_id,
+        "native_run_id": f"codex-agent:{worker_id}",
+    }
+    assert accepted[3] is True
+
+
+def test_codex_v2_spawn_result_rejects_unreviewed_extra_fields(
+    tmp_path: Path,
+) -> None:
+    _store, bridge, payload, rewritten, _worker_id = _prepared_codex_hook_delivery(
+        tmp_path,
+        tool_name="collaborationspawn_agent",
+    )
+    task_name = str(rewritten["task_name"])
+
+    rejected = bridge._consume_native_child_prompt_delivery(
+        event="PostToolUse",
+        payload={**payload, "hook_event_name": "PostToolUse"},
+        tool_input=rewritten,
+        tool_response=json.dumps(
+            {"task_name": f"/root/{task_name}", "nickname": None, "extra": True}
+        ),
+        trace_id="trace",
+    )
+
+    assert rejected[3] is False
+
+
 def test_all_selected_receipts_require_reciprocal_native_execution(tmp_path: Path) -> None:
     store, selected = _isolated_turn(tmp_path / "reciprocal.db")
     bridge = HookBridge("codex", store=store)
