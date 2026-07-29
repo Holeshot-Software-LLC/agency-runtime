@@ -11,6 +11,7 @@ related:
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
+  - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
   - docs/roadmap/handoffs/issue-AR-199.md
@@ -61,13 +62,13 @@ was `codex_collaboration_projection_unavailable`, not a hook-trust failure.
 
 ## Approach
 
-Preserve the atomic preflight boundary. Project bounded provider receipts and
-governed workforce changes as pending evidence, validate them before the ready
-CAS, and commit the allowed evidence with the turn rather than giving the
-planner an unscoped live Store. Keep the two resident managers in completion
-evidence independently of specialist selection. Repair the activation canary's
-parent instruction or goal projection so its one native child uses the exact
-persisted goal without weakening `PreToolUse` validation.
+The implementation now preserves the atomic preflight boundary while giving
+workforce routing governed Store reads. It projects bounded provider receipts
+and validated workforce changes as pending evidence, hydrates pending
+specialists through a nonpersistent view, and commits the allowed evidence only
+inside the winning ready CAS. It also recognizes Codex's opaque persisted spawn
+message only for the package-owned canary goal after exact parent, task-label,
+and assignment correlation; ordinary child goals retain exact equality.
 
 ## Dependencies
 
@@ -77,19 +78,19 @@ model truth and resident-manager visibility.
 
 ## Acceptance
 
-- [ ] Every enabled Codex parent turn with a valid resident binding reports
+- [x] Every enabled Codex parent turn with a valid resident binding reports
   `agents-orchestrator, chief-of-staff` as loaded, even when no specialist is
   selected.
-- [ ] Configured workforce provider attempts are committed as current-turn
+- [x] Configured workforce provider attempts are committed as current-turn
   model receipts without leaving evidence behind after a failed preflight.
-- [ ] Same-task gap hiring can use the governed Store without bypassing the
+- [x] Same-task gap hiring can use the governed Store without bypassing the
   ready-CAS or creating partial workforce state.
 - [ ] A nontrivial four-unit request against the active workforce produces a
   verified unit-agent plan or a complete truthful gap/hiring outcome; it does
   not silently collapse to a generic no-match result.
 - [ ] The Codex activation canary launches exactly one goal-bound specialist,
   waits exactly once, and persists a complete attestation.
-- [ ] Focused tests cover header reconciliation, atomic receipt persistence,
+- [x] Focused tests cover header reconciliation, atomic receipt persistence,
   hiring availability, and exact canary goal binding.
 - [ ] The named fast production spine and routing evaluation pass.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,

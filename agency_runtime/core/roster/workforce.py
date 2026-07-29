@@ -139,4 +139,36 @@ def workforce_index_snapshot(
     )
 
 
-__all__ = ["WorkforceIndexSnapshot", "workforce_index_snapshot"]
+def workforce_snapshot_with_contract(
+    snapshot: WorkforceIndexSnapshot,
+    contract: WorkforceContract,
+) -> WorkforceIndexSnapshot:
+    """Project one validated pending hire/amendment without persisting it."""
+
+    replaced = False
+    contracts: list[WorkforceContract] = []
+    for current in snapshot.contracts:
+        if current.agent_id == contract.agent_id:
+            contracts.append(contract)
+            replaced = True
+        else:
+            contracts.append(current)
+    if not replaced:
+        contracts.append(contract)
+    canonical = tuple(contracts)
+    records = tuple(project_recruiter_index_record(item) for item in canonical)
+    return WorkforceIndexSnapshot(
+        generation=snapshot.generation + 1,
+        worker_count=snapshot.worker_count if replaced else snapshot.worker_count + 1,
+        contracts=canonical,
+        contract_fingerprint=workforce_index_fingerprint(canonical),
+        recruiter_fingerprint=recruiter_index_fingerprint(records),
+        recruiter_index=serialize_recruiter_index(records),
+    )
+
+
+__all__ = [
+    "WorkforceIndexSnapshot",
+    "workforce_index_snapshot",
+    "workforce_snapshot_with_contract",
+]

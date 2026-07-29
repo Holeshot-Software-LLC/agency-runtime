@@ -14,12 +14,13 @@ related:
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
+  - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-199
-branch: main
+branch: codex/ar-199-restore-codex-workforce
 evidence_commit: 6fc3173901af94d03f7d61a350a14892083e3735
 minimum_ledger_commit: 3bb4c48be2e60cc16b24a600bfbc98011063fe62
 hard_checkpoint_percent: 50
@@ -34,8 +35,8 @@ tracker_url: null
   Codex and ZCode; the dashboard is active and reachable.
 - Fresh Codex terminal trust completed and a fresh task received the current
   resident-manager kernel.
-- The repository remains on `main`; the owner-untracked analysis draft and
-  `uv.lock` remain untouched.
+- The repair is on `codex/ar-199-restore-codex-workforce`; the owner-untracked
+  analysis draft and `uv.lock` remain untouched.
 
 ## completed-evidence
 
@@ -56,13 +57,29 @@ tracker_url: null
 - The live activation canary passed hook-trust inspection, attempted one native
   spawn, and was rejected by Agency's own exact-goal validator. No retry or
   trust bypass ran.
+- Provider attempts are now projected into the ready evidence and committed as
+  model receipts only with the winning CAS; replay does not duplicate them.
+- Governed hiring now stages validated contractor state, uses it for in-memory
+  staffing and hydration, and commits the case, prompt, worker, and two hiring
+  receipts inside the ready transaction. CAS loss leaves no workforce state.
+- The ready transaction rechecks the daily hiring limit under its immediate
+  write lock. A competing hire makes the staged commit fail and roll back.
+- The Codex canary accepts the current opaque persisted spawn message only when
+  its package-owned goal, parent scope, task label, and assignment already
+  correlate. Ordinary goal mismatches remain denied.
+- Focused verification passes: 76 routing, receipt, hiring, and canary tests;
+  29 preflight-bound tests; and 7 durable-continuation tests with 6 platform
+  skips.
+- Context telemetry reported 49.0 percent remaining, so this source-and-focused-
+  verification slice requires the substantive and ledger checkpoint before the
+  fast spine and live evaluation.
 
 ## exact-blocker
 
-End-to-end Codex workforce execution is not proven. The repair must reconcile
-workforce receipt/hiring persistence with preflight atomicity and must repair
-the canary's exact goal without weakening native-child validation. A direct
-`store=None` to live-Store substitution is unsafe.
+End-to-end exact-installed Codex workforce execution is not yet proven. The
+source repair and focused verification are complete; the remaining gates are
+the named fast spine, merge, exact reinstall, live canary, and fresh-task
+header/model/delegation evidence.
 
 ## same-task-continuity
 
@@ -71,14 +88,11 @@ new task or rerun the live canary until focused source verification passes.
 
 ## next-bounded-work-package
 
-1. Add failing regression tests for resident-manager header reconciliation,
-   atomic provider receipt persistence, governed hiring availability, and exact
-   canary goal binding.
-2. Implement the smallest content-free staged-evidence path compatible with
-   `mark_preflight_ready` and its ready CAS.
-3. Run two bounded review passes, focused tests, and the named fast spine.
-4. Commit the repair and ledger, open and merge a PR, reinstall the exact merge,
-   and run one fresh live activation proof.
+1. Finish the second bounded review pass and run the named fast spine.
+2. Commit the repair and ledger, push, open and merge the PR.
+3. Reinstall the exact merge and run the live Codex activation verifier.
+4. Capture fresh-task resident-manager, specialist, delegation, and model
+   receipt evidence for the handoff.
 
 ## verification
 

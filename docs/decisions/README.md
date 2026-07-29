@@ -87,6 +87,7 @@ Status meanings:
 | [ADR-0080](0080-plan-before-recruiting-from-the-whole-workforce.md) | Plan before recruiting from the whole workforce | Superseded |
 | [ADR-0083](0083-use-capability-indexed-recall-and-bounded-inference.md) | Use capability-indexed recall and bounded inference | Accepted |
 | [ADR-0094](0094-durable-native-child-correlation.md) | Correlate native children durably and fail Agency-planned work closed | Accepted |
+| [ADR-0112](0112-stage-preflight-workforce-evidence-until-ready.md) | Stage preflight workforce evidence until ready | Accepted |
 
 ## Evidence and observability
 

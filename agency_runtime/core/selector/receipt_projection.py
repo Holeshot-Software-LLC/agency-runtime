@@ -136,6 +136,33 @@ def _provider_attempts(value: object) -> list[dict[str, Any]]:
     return attempts
 
 
+def project_model_receipt_attempts(value: object) -> list[dict[str, Any]] | None:
+    """Project bounded provider attempts needed for atomic model receipts."""
+
+    if value is None:
+        return []
+    if not isinstance(value, (list, tuple)) or len(value) > _MAX_PROVIDER_ATTEMPTS:
+        return None
+    attempts: list[dict[str, Any]] = []
+    for item in value:
+        if not isinstance(item, Mapping):
+            return None
+        attempts.append(
+            {
+                "provider_name": _identity(item.get("provider_name")) or "unavailable",
+                "provider_type": _code(item.get("provider_type")) or "unknown",
+                "requested_model": _identity(item.get("requested_model")),
+                "model_group": _identity(item.get("model_group")),
+                "actual_model": _identity(item.get("actual_model")),
+                "model_receipt_source": _code(item.get("model_receipt_source")) or "unavailable",
+                "status": _code(item.get("status")) or "unknown",
+                "reason_code": _reason_family(item.get("reason_code"))
+                or _reason_family(item.get("reason")),
+            }
+        )
+    return attempts
+
+
 def _hiring(value: object) -> dict[str, Any]:
     raw = value if isinstance(value, (list, tuple)) else []
     events: list[dict[str, Any]] = []

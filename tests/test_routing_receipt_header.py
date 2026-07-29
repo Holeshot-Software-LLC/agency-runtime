@@ -526,6 +526,10 @@ def test_legacy_ready_recipe_without_receipt_remains_readable_but_reports_unavai
             "UPDATE routing_decisions SET decision = ? WHERE id = ?",
             (json.dumps(decision, sort_keys=True), decision_row["id"]),
         )
+        connection.execute(
+            "DELETE FROM model_receipts WHERE trace_id = ?",
+            ("legacy-receipt",),
+        )
         connection.commit()
     finally:
         connection.close()
