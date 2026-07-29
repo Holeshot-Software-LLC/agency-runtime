@@ -27,7 +27,10 @@ from agency_runtime.core.header.finalize import (
     TERMINAL_ACTION_STATUS,
     TERMINAL_OUTCOME_MESSAGES,
 )
-from agency_runtime.core.installer_contracts import CODEX_NATIVE_SPAWN_HOOK_TOOL_NAMES
+from agency_runtime.core.installer_contracts import (
+    CODEX_NATIVE_SPAWN_HOOK_TOOL_NAMES,
+    CODEX_NATIVE_WAIT_HOOK_TOOL_NAMES,
+)
 from agency_runtime.core.native_child_activation import (
     NATIVE_CHILD_ACTIVATION_TOKEN_CHARS,
     NativeChildRunIdentity,
@@ -2124,7 +2127,96 @@ class HookBridge:
             tool_use_id=correlation.tool_use_id,
             agent_id=_optional_string(payload, "agent_id"),
         )
-        return {}
+        return self._codex_post_wait_header_output(
+            event=event,
+            tool_name=tool_name,
+            tool_response=observed_tool_response,
+            session_id=correlation.session_id,
+            trace_id=trace_id,
+            model=correlation.model,
+        )
+
+    def _codex_post_wait_header_output(
+        self,
+        *,
+        event: str,
+        tool_name: str,
+        tool_response: Any,
+        session_id: str,
+        trace_id: str,
+        model: str,
+    ) -> dict[str, Any]:
+        """Return bounded Codex PostToolUse context after a successful wait."""
+
+        context = self._codex_post_wait_header_context(
+            event=event,
+            tool_name=tool_name,
+            tool_response=tool_response,
+            session_id=session_id,
+            trace_id=trace_id,
+            model=model,
+        )
+        if not context:
+            return {}
+        return {
+            "hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "additionalContext": context[:MAX_CONTEXT_CHARS],
+            }
+        }
+
+    def _codex_post_wait_header_context(
+        self,
+        *,
+        event: str,
+        tool_name: str,
+        tool_response: Any,
+        session_id: str,
+        trace_id: str,
+        model: str,
+    ) -> str:
+        """Render the authoritative header immediately after a successful Codex wait."""
+
+        if (
+            self.host != "codex"
+            or event != "PostToolUse"
+            or tool_name not in CODEX_NATIVE_WAIT_HOOK_TOOL_NAMES
+            or not session_id
+            or not trace_id
+        ):
+            return ""
+        response = _native_child_response_mapping("codex", tool_response)
+        if (
+            response is None
+            or response.get("timed_out") is not False
+            or _first_string(response, "message") != "Wait completed."
+        ):
+            return ""
+        from agency_runtime.core.header.contract import (
+            EvidenceCorrelationError,
+            fill_header_fields,
+            format_header,
+        )
+
+        try:
+            header = format_header(
+                fill_header_fields(
+                    {},
+                    session_id,
+                    self.store,
+                    model,
+                    trace_id,
+                )
+            )
+        except (EvidenceCorrelationError, KeyError, RuntimeError, ValueError):
+            return ""
+        return (
+            "[AGENCY FINAL HEADER SNAPSHOT v1]\n"
+            "The native wait completed. Start the next substantive or final parent "
+            "response with these exact seven lines, unchanged, then add the response "
+            "body. This is current-turn Store evidence, not a suggested draft.\n"
+            f"{header}"
+        )
 
     def _handle_user_prompt_submit(self, payload: dict[str, Any]) -> dict[str, Any]:
         prompt = _required_string(payload, "prompt")

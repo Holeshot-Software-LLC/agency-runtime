@@ -210,6 +210,10 @@ maintained line count. The user-facing Stop correction derives its line count
 from `HEADER_FIELDS`, and a native-hook regression pins the exact seven-line
 diagnostic.
 
+The zero-correction acceptance contract supersedes the canary's former
+correction-plus-accept allowance. Stop correction remains a fail-closed runtime
+backstop, but it cannot satisfy activation proof.
+
 The named fast production spine passes 651 tests with 6 skips, the dashboard
 suite passes 109 tests, and the routing evaluation passes every gate. A fresh
 ordinary Codex turn also rendered both resident managers and proposed
@@ -261,6 +265,19 @@ formatting, and diff checks pass. A sandboxed Node worker first returned
 Any live proof with a correction count above zero remains `NO-GO`, even when
 the bounded Stop backstop repairs the response.
 
+Exact merge `85069f3b992b88b2a0d43e37a1f75f2d96045aa1` produced Codex bundle
+`0.1.0+codex.1366cdece66b`. Isolated trace
+`019fafb3-8200-7163-83b0-e2405c783a4c` proved one complete
+`code-reviewer` activation chain, but its first response omitted six header
+fields and required one correction 16 seconds later. The legacy canary called
+that pass; the owner acceptance contract calls it `NO-GO`.
+
+The bounded repair injects a Store-derived seven-line header snapshot after a
+successful Codex wait, immediately before final response generation. Canary
+proof now requires exactly one authoritative finalization, reports
+`correction_count`, and exposes the validated header fields without response
+body content. The directly affected hook and canary suites pass 148 tests.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -307,6 +324,8 @@ model truth and resident-manager visibility.
   status headers while preserving every host context ceiling.
 - [x] Header correction diagnostics identify the authoritative seven-line
   contract without a stale hard-coded field count.
+- [x] Codex activation proof rejects every correction count above zero and
+  projects the count explicitly.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

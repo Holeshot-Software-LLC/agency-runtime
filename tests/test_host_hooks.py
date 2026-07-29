@@ -1838,6 +1838,63 @@ def test_codex_stdio_stop_corrects_then_accepts_exact_turn_header(tmp_path: Path
     assert [item["action"] for item in reversed(finalizations)] == ["continue", "accept"]
 
 
+def test_codex_successful_wait_injects_authoritative_first_pass_header(
+    tmp_path: Path,
+) -> None:
+    db_path = tmp_path / "codex-post-wait-header.db"
+    store = Store(db_path)
+    by_slug = {str(agent["slug"]): agent for agent in bundled_roster()}
+    store._activate_prevalidated_agent(by_slug["agents-orchestrator"])
+    store._activate_prevalidated_agent(by_slug["chief-of-staff"])
+    session_id = "post-wait-header"
+    turn_id = "post-wait-header-turn"
+
+    prompt = _run_hook(
+        "codex",
+        db_path,
+        json.dumps(
+            {
+                "hook_event_name": "UserPromptSubmit",
+                "session_id": session_id,
+                "turn_id": turn_id,
+                "model": "gpt-5.6-codex",
+                "prompt": "Explain the current Agency Runtime selection state.",
+            }
+        ),
+    )
+    assert prompt.returncode == 0, prompt.stderr
+
+    waited = _run_hook(
+        "codex",
+        db_path,
+        json.dumps(
+            {
+                "hook_event_name": "PostToolUse",
+                "session_id": session_id,
+                "turn_id": turn_id,
+                "model": "gpt-5.6-codex",
+                "tool_name": "collaborationwait_agent",
+                "tool_use_id": "wait-call",
+                "tool_input": {"timeout_ms": 60_000},
+                "tool_response": {
+                    "message": "Wait completed.",
+                    "timed_out": False,
+                },
+            }
+        ),
+    )
+
+    assert waited.returncode == 0, waited.stderr
+    context = json.loads(waited.stdout)["hookSpecificOutput"]["additionalContext"]
+    assert context.startswith("[AGENCY FINAL HEADER SNAPSHOT v1]\n")
+    assert (
+        "Agency/Agencies loaded: agents-orchestrator, chief-of-staff\n"
+        "Agency/Agencies delegated: none\n"
+        "Skills loaded: none\n"
+    ) in context
+    assert context.count("Agency/Agencies loaded:") == 1
+
+
 @pytest.mark.parametrize(
     ("host", "include_turn_id"),
     [("codex", True), ("claude", False)],

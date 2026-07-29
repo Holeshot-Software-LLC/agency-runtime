@@ -543,28 +543,16 @@ def _codex_receipt_link_failures(
 
 
 def _codex_accepted_finalization(evidence: Mapping[str, Any]) -> Mapping[str, Any] | None:
-    """Return the sole accept after at most one documented correction pass."""
+    """Return the sole first-pass authoritative accept without a correction."""
 
     raw_rows = evidence.get("finalizations")
-    if not isinstance(raw_rows, list) or len(raw_rows) not in {1, 2}:
+    if not isinstance(raw_rows, list) or len(raw_rows) != 1:
         return None
-    if not all(isinstance(row, Mapping) for row in raw_rows):
+    accepted = raw_rows[0]
+    if not isinstance(accepted, Mapping):
         return None
-    rows = list(raw_rows)
-    accepted = rows[-1]
     if accepted.get("action") != "accept" or accepted.get("terminal_status") != "completed":
         return None
-    if len(rows) == 2:
-        correction = rows[0]
-        missing = correction.get("missing")
-        if (
-            correction.get("action") != "continue"
-            or correction.get("terminal_status") not in {None, ""}
-            or not isinstance(missing, list)
-            or not missing
-            or correction.get("response_hash") == accepted.get("response_hash")
-        ):
-            return None
     return accepted
 
 
@@ -597,9 +585,11 @@ def codex_activation_failures(
     if (
         not isinstance(cardinalities, Mapping)
         or any(cardinalities.get(field) != count for field, count in expected_cardinalities.items())
-        or cardinalities.get("finalizations") not in {1, 2}
+        or cardinalities.get("finalizations") != 1
     ):
-        failures.append("Codex canary topology was not exactly one complete activation chain")
+        failures.append(
+            "Codex canary required one complete first-pass activation chain without correction"
+        )
 
     run = evidence.get("run") if isinstance(evidence.get("run"), Mapping) else None
     route = evidence.get("route") if isinstance(evidence.get("route"), Mapping) else None
@@ -793,7 +783,7 @@ def evaluate_proof(
     default_profile_scope: str,
     mode: str = "agency",
 ) -> CanaryProof:
-    from agency_runtime.core.header.contract import validate_header
+    from agency_runtime.core.header.contract import parse_header, validate_header
 
     facade = _facade()
     response = facade._response_text(result.get("output"))
@@ -865,6 +855,17 @@ def evaluate_proof(
         ),
         "collaboration": result.get("collaboration"),
     }
+    if mode == "agency" and host == "codex":
+        cardinalities = evidence.get("cardinalities")
+        finalization_count = (
+            cardinalities.get("finalizations") if isinstance(cardinalities, Mapping) else None
+        )
+        invocation["correction_count"] = (
+            max(0, finalization_count - 1)
+            if isinstance(finalization_count, int) and not isinstance(finalization_count, bool)
+            else None
+        )
+        invocation["header"] = parse_header(response) if header_valid else {}
     if isinstance(result.get("hook_trust"), Mapping):
         from agency_runtime.core.codex_hook_trust import (
             sanitize_codex_hook_trust_report,

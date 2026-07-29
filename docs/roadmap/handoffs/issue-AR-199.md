@@ -134,12 +134,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-PR 167 merged the pinned-manager repair as `5a19586`; the open owner task
-still invoked removed bundle `0.1.0+codex.3082f29f362e`, so its correction is
-failed stale-process evidence, not installed proof. Follow-up `210538f`
-derives the seven-line count from the contract and passes 66 focused tests plus
-the complete fast spine. Merge, exact install, and bounded autonomous proof
-loops remain; any correction count above zero is `NO-GO`.
+Exact merge `85069f3` and bundle `0.1.0+codex.1366cdece66b` produced one
+complete isolated `code-reviewer` chain in trace
+`019fafb3-8200-7163-83b0-e2405c783a4c`, but required one Stop correction.
+That is `NO-GO`. The bounded repair injects the exact Store header after a
+successful wait and makes canary proof require one first-pass finalization;
+148 directly affected hook and canary tests pass.
 
 ## same-task-continuity
 
@@ -148,8 +148,8 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Merge and exact-install the seven-line diagnostic repair.
-2. Loop one bounded autonomous proof over each independent AR-199 acceptance item.
+1. Commit, merge, and exact-install the post-wait header repair.
+2. Rerun the isolated activation canary once; correction count must be zero.
 
 ## verification
 

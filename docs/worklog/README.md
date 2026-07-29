@@ -320,6 +320,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8a96818` | 2026-07-29 | docs(roadmap): record first-header fast spine | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `210538f` | 2026-07-29 | fix(header): derive seven-line correction count | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-210538f-seven-field-header-diagnostic.md) |
 | `6910eda` | 2026-07-29 | docs(roadmap): record seven-field fast spine | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `a23f42a` | 2026-07-29 | fix(codex): require zero-correction canary header | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-a23f42a-zero-correction-canary-header.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
