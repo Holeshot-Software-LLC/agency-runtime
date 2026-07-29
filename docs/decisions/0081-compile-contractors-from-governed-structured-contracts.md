@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-122-contractor-hiring-and-lifecycle.md
   - docs/roadmap/issue-AR-123-workforce-cli-and-dashboard.md
+  - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
 supersedes: []
 superseded_by: null
 id: ADR-0081

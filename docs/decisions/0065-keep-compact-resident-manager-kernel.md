@@ -8,6 +8,7 @@ tags: [orchestration, managers, context, compaction, lifecycle]
 related:
   - docs/roadmap/issue-AR-25-turn-scoped-specialist-evidence.md
   - docs/roadmap/issue-AR-57-durable-agency-wide-master-switch.md
+  - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/worklog/README.md
 supersedes: []

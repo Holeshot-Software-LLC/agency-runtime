@@ -23,6 +23,7 @@ related:
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
+  - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md

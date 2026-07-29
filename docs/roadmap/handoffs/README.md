@@ -76,3 +76,4 @@ behavior.
 - [AR-189 ownership-bound host uninstall](issue-AR-189.md)
 - [AR-190 uv-tool upgrade planning](issue-AR-190.md)
 - [AR-196 dashboard-service two-phase activation](issue-AR-196.md)
+- [AR-199 Codex workforce evidence restoration](issue-AR-199.md)
