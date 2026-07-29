@@ -309,6 +309,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2e5eb45` | 2026-07-29 | fix(codex): promote real child activation lineage | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-2e5eb45-promote-real-codex-child-lineage.md) |
 | `c74c389` | 2026-07-29 | fix(codex): finalize successful native child | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-c74c389-finalize-successful-codex-native-child.md) |
 | `237bf8a` | 2026-07-29 | fix(codex): retain finalization mismatch evidence | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-237bf8a-retain-codex-finalization-mismatch.md) |
+| `591879a` | 2026-07-29 | fix(codex): restore Stop correction continuation | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-591879a-restore-codex-stop-correction.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
