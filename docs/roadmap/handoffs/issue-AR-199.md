@@ -134,8 +134,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-Source-live and the named fast spine are accepted. The remaining gates are PR,
-merge, exact merged install, and fresh installed Codex delegation/model proof.
+PR 165 merged as `816db5b`; that exact install passed isolated-profile trace
+`019faf64-5aee-78e0-a5ab-657f782a6175` with one complete child chain and no
+trust prompt. The refreshed normal profile is activation-required and
+trust-unverified; attended ordinary delegation/model-receipt proof remains.
 
 ## same-task-continuity
 
@@ -144,9 +146,8 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Checkpoint the accepted fast spine.
-2. Push, merge, and exact-install.
-3. Run fresh Codex delegation/model proof and prepare the OpenClaw handoff.
+1. Trust/restart the refreshed Codex terminal profile and verify activation.
+2. Run an ordinary contextual task, then prepare the OpenClaw handoff.
 
 ## verification
 
