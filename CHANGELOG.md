@@ -49,6 +49,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex activation hooks now preserve opaque encrypted collaboration messages
+  instead of replacing them with mixed plaintext/encrypted input. The exact
+  audited specialist prompt is delivered at the correlated child-start event,
+  completion consumes the stored native-hook grant through exact lifecycle and
+  tool-call evidence, and rollout verification recognizes `agent_message`
+  delivery while rejecting child decrypt errors with no final message.
 - Codex activation verification now separates its nonce-bound parent
   delegation request from the canonical direct child review goal. Deterministic
   routing and replay persist the child goal, the general PreToolUse exact-goal

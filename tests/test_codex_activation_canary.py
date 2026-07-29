@@ -10,6 +10,7 @@ import pytest
 
 from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core import canary
+from agency_runtime.core.activation_canary_contract import CODEX_ACTIVATION_CANARY_WORK_UNIT
 from agency_runtime.core.agent_activation import PROTECTED_AGENT_SLUGS
 from agency_runtime.core.canary_backends import codex_canary_record
 from agency_runtime.core.canary_proof import codex_activation_failures
@@ -105,6 +106,8 @@ def _finish_v2_chain_through_hooks(
 ) -> dict[str, object]:
     tool_use_id = "spawn-tool-use"
     receiver_id = "019fa500-1111-7222-8333-444455556666"
+    encrypted_message = "gAAAAA" + "opaque-codex-canary-message" * 2
+    opaque_canary = str(plan["goal"]) == CODEX_ACTIVATION_CANARY_WORK_UNIT
     bridge = HookBridge("codex", store=store)
     pre_payload = {
         "hook_event_name": "PreToolUse",
@@ -118,20 +121,20 @@ def _finish_v2_chain_through_hooks(
         "tool_input": {
             "fork_turns": "none",
             "task_name": task_name,
-            "message": str(plan["goal"]),
+            "message": encrypted_message if opaque_canary else str(plan["goal"]),
         },
     }
     pre_tool = bridge.handle(pre_payload)
-    updated_input = pre_tool["hookSpecificOutput"]["updatedInput"]
-    assert updated_input["fork_turns"] == "none"
-    assert updated_input["task_name"] == task_name
-    assert set(updated_input) == {"fork_turns", "task_name", "message"}
-    delivery = parse_native_child_prompt_delivery(updated_input["message"])
-    assert delivery is not None
-    assert delivery.tool_use_id == tool_use_id
-    assert delivery.work_unit_id == unit
-    assert delivery.specialist_slug == slug
-    bridge.handle(
+    pre_output = pre_tool["hookSpecificOutput"]
+    if opaque_canary:
+        assert pre_output == {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "allow",
+        }
+        post_input = pre_payload["tool_input"]
+    else:
+        post_input = pre_output["updatedInput"]
+    start = bridge.handle(
         {
             "hook_event_name": "SubagentStart",
             "session_id": session_id,
@@ -140,12 +143,22 @@ def _finish_v2_chain_through_hooks(
             "agent_type": "worker",
         }
     )
+    delivery = parse_native_child_prompt_delivery(
+        start["hookSpecificOutput"]["additionalContext"] if opaque_canary else post_input["message"]
+    )
+    assert delivery is not None
+    assert delivery.tool_use_id == tool_use_id
+    assert delivery.work_unit_id == unit
+    assert delivery.specialist_slug == slug
+    assert delivery.original_task == str(plan["goal"])
+    if opaque_canary:
+        assert delivery.activation_token == "x" * 43
     assert (
         bridge.handle(
             {
                 **pre_payload,
                 "hook_event_name": "PostToolUse",
-                "tool_input": updated_input,
+                "tool_input": post_input,
                 "tool_response": json.dumps({"task_name": f"/root/{task_name}"}),
             }
         )
@@ -679,12 +692,19 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
             {
                 "type": "response_item",
                 "payload": {
-                    "type": "message",
+                    "type": "agent_message",
                     "role": "developer",
                     "content": [{"type": "input_text", "text": delivery}],
                 },
             },
-            {"type": "event_msg", "payload": {"type": "task_complete"}},
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "task_complete",
+                    "last_agent_message": "done",
+                    "error": None,
+                },
+            },
         ],
     )
     stdout = "\n".join(
@@ -745,6 +765,27 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
     assert conflicting_record["status"] == "failed"
     assert conflicting_record["exit_code"] == 0
     assert conflicting_record["failure_reason"] == ("codex_collaboration_projection_unavailable")
+
+    successful_child = child_path.read_text(encoding="utf-8")
+    failed_child_events = [json.loads(line) for line in successful_child.splitlines()]
+    failed_child_events[-1]["payload"].update(
+        last_agent_message=None,
+        error="encrypted child payload could not be decoded",
+    )
+    child_path.write_text(
+        "\n".join(json.dumps(event) for event in failed_child_events) + "\n",
+        encoding="utf-8",
+    )
+    child_path.chmod(0o600)
+    failed_child_record = codex_canary_record(
+        _process_result(stdout),
+        profile_scope="current-profile",
+        rollout_root=rollout_root,
+    )
+    assert failed_child_record["status"] == "failed"
+    assert failed_child_record["failure_reason"] == ("codex_collaboration_projection_unavailable")
+    child_path.write_text(successful_child, encoding="utf-8")
+    child_path.chmod(0o600)
 
     child_path.write_text(
         child_path.read_text(encoding="utf-8")

@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-199
 branch: codex/ar-199-restore-codex-workforce
-evidence_commit: 6fc3173901af94d03f7d61a350a14892083e3735
-minimum_ledger_commit: 3bb4c48be2e60cc16b24a600bfbc98011063fe62
+evidence_commit: 2c914b753000aaf9536fa89eb51f57ee7b5a1264
+minimum_ledger_commit: 39095e61857d77a610d98220ba2caaca151336c4
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -31,7 +31,7 @@ tracker_url: null
 
 ## checkpoint
 
-- Exact merged revision `6fc3173` is installed globally and registered in
+- Exact merged revision `2c914b7` is installed globally and registered in
   Codex and ZCode; the dashboard is active and reachable.
 - Fresh Codex terminal trust completed and a fresh task received the current
   resident-manager kernel.
@@ -70,6 +70,18 @@ tracker_url: null
 - Focused verification passes: 76 routing, receipt, hiring, and canary tests;
   29 preflight-bound tests; and 7 durable-continuation tests with 6 platform
   skips.
+- PR 158 merged as `2c914b7`; its exact install passed trust after the owner
+  restarted Codex and approved the refreshed hooks.
+- That live canary proved exact `code-reviewer` selection and prompt delivery,
+  then exposed a downstream Codex decrypt failure caused by replacing the
+  opaque tool input. The child rollout used `agent_message`, carried the exact
+  activation plus encrypted content, and ended with no final message.
+- The follow-up preserves the opaque input, injects the exact prompt only at
+  the correlated child start, and consumes the grant by exact native-hook tool
+  and lifecycle evidence. The parser now accepts `agent_message` and rejects
+  the observed decrypt-error completion shape.
+- Follow-up focused verification passes 66 hook, Store, and activation-canary
+  tests; Ruff and Python compilation checks pass.
 - Context telemetry reported 49.0 percent remaining, so this source-and-focused-
   verification slice requires the substantive and ledger checkpoint before the
   fast spine and live evaluation.
@@ -77,9 +89,9 @@ tracker_url: null
 ## exact-blocker
 
 End-to-end exact-installed Codex workforce execution is not yet proven. The
-source repair and focused verification are complete; the remaining gates are
-the named fast spine, merge, exact reinstall, live canary, and fresh-task
-header/model/delegation evidence.
+second source repair and focused verification are complete; the remaining
+gates are its fast spine, commit/merge, exact reinstall, live canary, and
+fresh-task header/model/delegation evidence.
 
 ## same-task-continuity
 
@@ -88,8 +100,8 @@ new task or rerun the live canary until focused source verification passes.
 
 ## next-bounded-work-package
 
-1. Finish the second bounded review pass and run the named fast spine.
-2. Commit the repair and ledger, push, open and merge the PR.
+1. Commit this decrypt-boundary repair and its ledger checkpoint.
+2. Run the proportional fast spine, push, open and merge the follow-up PR.
 3. Reinstall the exact merge and run the live Codex activation verifier.
 4. Capture fresh-task resident-manager, specialist, delegation, and model
    receipt evidence for the handoff.

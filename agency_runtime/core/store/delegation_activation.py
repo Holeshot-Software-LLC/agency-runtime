@@ -246,6 +246,73 @@ def _consumption_lineage(
     return str(child_rows[0]["worker_id"]), str(child_rows[0]["native_run_id"])
 
 
+def _activation_receipt_for_consumption(
+    conn: Any,
+    *,
+    token_hash: str,
+    native_tool_use: str,
+    session_id: str,
+    trace_id: str,
+    specialist_slug: str,
+    work_unit_id: str,
+) -> Any:
+    """Select one pending bearer or exact native-hook activation receipt."""
+
+    projection = (
+        "SELECT receipt.*, run.status AS run_status, "
+        "run.preflight_state AS run_preflight_state, run.host AS run_host, "
+        f"{_STORE_UNIX_SQL} AS store_now_unix FROM "  # nosec B608
+        "delegation_activation_receipts AS receipt JOIN runs AS run "
+        "ON run.trace_id = receipt.trace_id AND run.session_id = receipt.session_id "
+    )
+    if native_tool_use:
+        return conn.execute(
+            projection + "WHERE receipt.session_id = ? AND receipt.trace_id = ? "
+            "AND receipt.specialist_slug = ? AND receipt.work_unit_id = ? "
+            "AND receipt.grant_origin = 'native_hook' "
+            "AND receipt.tool_use_id = ? AND receipt.consumed_at IS NULL LIMIT 1",
+            (
+                session_id,
+                trace_id,
+                specialist_slug,
+                work_unit_id,
+                native_tool_use,
+            ),
+        ).fetchone()
+    return conn.execute(
+        projection + "WHERE receipt.token_hash = ? AND receipt.session_id = ? "
+        "AND receipt.trace_id = ? AND receipt.specialist_slug = ? "
+        "AND receipt.consumed_at IS NULL LIMIT 1",
+        (token_hash, session_id, trace_id, specialist_slug),
+    ).fetchone()
+
+
+def _validated_consumption_authority(
+    activation_token: object,
+    native_hook_tool_use_id: object,
+    *,
+    require_native_child_started: object,
+) -> tuple[str, str, str]:
+    """Validate one bearer or internal native-hook consumption authority."""
+
+    token = str(activation_token or "").strip()
+    native_tool_use = validate_correlation_id(
+        native_hook_tool_use_id,
+        field="native_hook_tool_use_id",
+        required=False,
+    )
+    if not token and not native_tool_use:
+        raise ValueError("activation_token is invalid")
+    if token and native_tool_use:
+        raise ValueError("supply exactly one of activation_token or native_hook_tool_use_id")
+    if token and len(token) > _MAX_ACTIVATION_TOKEN_CHARS:
+        raise ValueError("activation_token is invalid")
+    if native_tool_use and require_native_child_started is not True:
+        raise ValueError("native-hook activation requires native-child lifecycle evidence")
+    token_hash = sha256(token.encode("utf-8", errors="surrogatepass")).hexdigest()
+    return token, native_tool_use, token_hash
+
+
 def attach_consumed_activation_to_delegation(
     conn: Any,
     *,
@@ -445,10 +512,8 @@ class DelegationActivationStoreMixin:
             field="tool_use_id",
             required=False,
         )
-        if bool(token) != bool(tool_use):
-            raise ValueError(
-                "activation_token and tool_use_id must be supplied together for replay proof"
-            )
+        if token and not tool_use:
+            raise ValueError("tool_use_id is required with activation_token for replay proof")
         if token and len(token) > _MAX_ACTIVATION_TOKEN_CHARS:
             raise ValueError("activation_token is invalid")
         token_hash = sha256(token.encode("utf-8", errors="surrogatepass")).hexdigest()
@@ -474,6 +539,26 @@ class DelegationActivationStoreMixin:
                         tool_use,
                     ),
                 ).fetchone()
+            elif tool_use:
+                row = conn.execute(
+                    "SELECT consumed.worker_kind, consumed.worker_id, "
+                    "consumed.native_run_id "
+                    "FROM delegation_activation_consumptions AS consumed "
+                    "JOIN delegation_activation_receipts AS grant "
+                    "ON grant.id = consumed.legacy_activation_receipt_id "
+                    "AND grant.grant_id = consumed.grant_id "
+                    "WHERE consumed.session_id = ? AND consumed.trace_id = ? "
+                    "AND consumed.work_unit_id = ? AND consumed.specialist_slug = ? "
+                    "AND grant.grant_origin = 'native_hook' "
+                    "AND grant.tool_use_id = ? LIMIT 1",
+                    (
+                        normalized_session,
+                        normalized_trace,
+                        unit,
+                        slug,
+                        tool_use,
+                    ),
+                ).fetchone()
             else:
                 row = conn.execute(
                     "SELECT worker_kind, worker_id, native_run_id "
@@ -488,6 +573,123 @@ class DelegationActivationStoreMixin:
                 "worker_kind": str(row["worker_kind"]),
                 "worker_id": str(row["worker_id"]),
                 "native_run_id": str(row["native_run_id"]),
+            }
+        finally:
+            conn.close()
+
+    def get_pending_native_hook_delivery(
+        self,
+        *,
+        host: str,
+        session_id: str,
+        trace_id: str,
+        worker_id: str,
+        native_run_id: str,
+    ) -> dict[str, Any] | None:
+        """Return one exact prompt for a just-started native-hook child.
+
+        Codex keeps collaboration messages encrypted at the parent tool boundary.
+        The child-start hook therefore retrieves only a single unconsumed grant
+        whose issue time precedes this exact persisted lifecycle identity.  Any
+        concurrent or otherwise ambiguous candidate fails closed.
+        """
+
+        normalized_host = str(host or "").strip().casefold()
+        if normalized_host not in {"codex", "claude", "zcode"}:
+            raise ValueError("native child host is unsupported")
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        worker = _identity(
+            worker_id,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
+            field="worker_id",
+            required=True,
+        )
+        native = _identity(
+            native_run_id,
+            maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+            field="native_run_id",
+            required=True,
+        )
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT receipt.*, run.status AS run_status, "
+                "run.preflight_state AS run_preflight_state, run.host AS run_host, "
+                f"{_STORE_UNIX_SQL} AS store_now_unix "  # nosec B608
+                "FROM delegation_activation_receipts AS receipt "
+                "JOIN runs AS run ON run.trace_id = receipt.trace_id "
+                "AND run.session_id = receipt.session_id "
+                "JOIN worker_runs AS child ON child.host = receipt.child_host "
+                "AND child.session_id = receipt.session_id "
+                "AND child.trace_id = receipt.trace_id "
+                "AND child.worker_id = ? AND child.native_run_id = ? "
+                "AND child.started_at >= receipt.created_at "
+                "AND (child.work_unit_id = '' OR child.work_unit_id = receipt.work_unit_id) "
+                "WHERE receipt.child_host = ? AND receipt.session_id = ? "
+                "AND receipt.trace_id = ? AND receipt.grant_origin = 'native_hook' "
+                "AND receipt.consumed_at IS NULL "
+                "AND NOT EXISTS (SELECT 1 FROM delegation_activation_consumptions "
+                "AS consumed WHERE consumed.child_host = child.host "
+                "AND consumed.session_id = child.session_id "
+                "AND consumed.trace_id = child.trace_id "
+                "AND consumed.worker_id = child.worker_id "
+                "AND consumed.native_run_id = child.native_run_id) "
+                "ORDER BY receipt.created_at, receipt.rowid LIMIT 2",
+                (
+                    worker,
+                    native,
+                    normalized_host,
+                    normalized_session,
+                    normalized_trace,
+                ),
+            ).fetchall()
+            if not rows:
+                return None
+            if len(rows) != 1:
+                raise ValueError("native child prompt delivery is ambiguous")
+            receipt = rows[0]
+            if (
+                str(receipt["run_status"] or "") not in {"active", "evidence_only"}
+                or str(receipt["run_preflight_state"] or "") != "ready"
+                or str(receipt["run_host"] or "").strip().casefold() != normalized_host
+            ):
+                raise ValueError("native child prompt belongs to a non-ready turn")
+            grant = _stored_public_grant(receipt)
+            store_now = int(receipt["store_now_unix"])
+            if store_now < grant.issued_at or store_now > grant.expires_at:
+                raise ValueError("native child prompt delivery grant expired")
+            self._reject_disabled_specialist(
+                conn,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+                specialist_slug=grant.specialist.slug,
+            )
+            prompt = conn.execute(
+                "SELECT agent_slug, version, hash, content FROM agent_versions "
+                "WHERE agent_slug = ? AND version = ? AND hash = ? LIMIT 1",
+                (
+                    grant.specialist.slug,
+                    grant.specialist.version,
+                    grant.specialist.content_hash,
+                ),
+            ).fetchone()
+            if (
+                prompt is None
+                or not str(prompt["content"] or "").strip()
+                or len(str(prompt["content"])) > MAX_SPECIALIST_PROMPT_CHARS
+                or not content_identity_matches(prompt["content"], prompt["hash"])
+            ):
+                raise ValueError("authorized specialist prompt is unavailable or invalid")
+            return {
+                "session_id": normalized_session,
+                "trace_id": normalized_trace,
+                "tool_use_id": str(receipt["tool_use_id"]),
+                "work_unit_id": grant.work_unit_id,
+                "slug": grant.specialist.slug,
+                "version": grant.specialist.version,
+                "prompt_hash": grant.specialist.content_hash,
+                "prompt_body": str(prompt["content"]),
             }
         finally:
             conn.close()
@@ -819,7 +1021,8 @@ class DelegationActivationStoreMixin:
     def consume_delegation_activation(
         self,
         *,
-        activation_token: str,
+        activation_token: str = "",
+        native_hook_tool_use_id: str = "",
         session_id: str,
         trace_id: str,
         specialist_slug: str,
@@ -831,9 +1034,11 @@ class DelegationActivationStoreMixin:
     ) -> dict[str, Any]:
         """Consume one grant and return its exact immutable prompt atomically."""
 
-        token = str(activation_token or "").strip()
-        if not token or len(token) > _MAX_ACTIVATION_TOKEN_CHARS:
-            raise ValueError("activation_token is invalid")
+        _token, native_tool_use, token_hash = _validated_consumption_authority(
+            activation_token,
+            native_hook_tool_use_id,
+            require_native_child_started=require_native_child_started,
+        )
         normalized_session = validate_correlation_id(session_id, field="session_id")
         normalized_trace = validate_correlation_id(trace_id, field="trace_id")
         slug = _identity(
@@ -860,22 +1065,18 @@ class DelegationActivationStoreMixin:
             field="native_run_id",
             required=True,
         )
-        token_hash = sha256(token.encode("utf-8", errors="surrogatepass")).hexdigest()
-
         conn = self._connect()
         try:
             conn.execute("BEGIN IMMEDIATE")
-            receipt = conn.execute(
-                "SELECT receipt.*, run.status AS run_status, "
-                "run.preflight_state AS run_preflight_state, run.host AS run_host, "
-                f"{_STORE_UNIX_SQL} AS store_now_unix FROM "  # nosec B608
-                "delegation_activation_receipts AS receipt JOIN runs AS run "
-                "ON run.trace_id = receipt.trace_id AND run.session_id = receipt.session_id "
-                "WHERE receipt.token_hash = ? AND receipt.session_id = ? "
-                "AND receipt.trace_id = ? AND receipt.specialist_slug = ? "
-                "AND receipt.consumed_at IS NULL LIMIT 1",
-                (token_hash, normalized_session, normalized_trace, slug),
-            ).fetchone()
+            receipt = _activation_receipt_for_consumption(
+                conn,
+                token_hash=token_hash,
+                native_tool_use=native_tool_use,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+                specialist_slug=slug,
+                work_unit_id=expected_unit,
+            )
             if receipt is None:
                 raise ValueError("activation token is invalid, expired, or already consumed")
             if (

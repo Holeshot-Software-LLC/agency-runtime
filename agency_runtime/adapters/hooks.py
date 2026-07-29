@@ -508,6 +508,44 @@ def _native_child_pre_tool_output(
     return result
 
 
+def _recover_codex_opaque_canary_task(
+    host: str,
+    task: str,
+    *,
+    expected_goal_hash: str,
+) -> str:
+    """Recover only the package-owned canary hidden by Codex encryption."""
+
+    if host != "codex" or re.fullmatch(r"gAAAAA[A-Za-z0-9_-]{24,}={0,2}", task) is None:
+        return ""
+    from agency_runtime.core.activation_canary_contract import (
+        CODEX_ACTIVATION_CANARY_WORK_UNIT,
+    )
+
+    return (
+        CODEX_ACTIVATION_CANARY_WORK_UNIT
+        if work_unit_goal_hash(CODEX_ACTIVATION_CANARY_WORK_UNIT) == expected_goal_hash
+        else ""
+    )
+
+
+def _native_child_pre_tool_result(
+    result: dict[str, Any],
+    *,
+    preserve_codex_input: bool,
+) -> dict[str, Any]:
+    """Keep opaque Codex tool input native while allowing the verified call."""
+
+    if not preserve_codex_input:
+        return result
+    return {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "allow",
+        }
+    }
+
+
 def _native_work_unit_label(host: str, tool_name: str, args: dict[str, Any]) -> str:
     """Return only an explicit Agency recipe label from official native args."""
 
@@ -1136,22 +1174,21 @@ class HookBridge:
                     host=self.host,
                 )
             return {}
+        opaque_codex_task = False
         if work_unit_goal_hash(task) != assignment.goal_hash:
-            from agency_runtime.core.activation_canary_contract import (
-                CODEX_ACTIVATION_CANARY_WORK_UNIT,
+            recovered = _recover_codex_opaque_canary_task(
+                self.host,
+                task,
+                expected_goal_hash=assignment.goal_hash,
             )
-
-            if (
-                self.host == "codex"
-                and re.fullmatch(r"gAAAAA[A-Za-z0-9_-]{24,}={0,2}", task) is not None
-                and work_unit_goal_hash(CODEX_ACTIVATION_CANARY_WORK_UNIT) == assignment.goal_hash
-            ):
+            if recovered:
                 # Codex persists an opaque spawn message in current-profile
                 # rollouts. The closed-world canary goal is package-owned, and
                 # the unencrypted native task label already resolved exactly
                 # one persisted assignment, so recover that constant without
                 # weakening ordinary goal equality.
-                task = CODEX_ACTIVATION_CANARY_WORK_UNIT
+                task = recovered
+                opaque_codex_task = True
             else:
                 return _pre_tool_use_denial(
                     "Agency refused this native child because its task does not exactly match "
@@ -1246,7 +1283,15 @@ class HookBridge:
                 "the planned native child was not launched.",
                 host=self.host,
             )
-        return result
+        # Codex owns decryption and dispatch of collaboration messages. An
+        # updatedInput replacement leaves both the injected plaintext and the
+        # original encrypted block in the child envelope, which current Codex
+        # rejects during decryption. Preserve opaque native input exactly;
+        # SubagentStart retrieves the persisted grant and injects the context.
+        return _native_child_pre_tool_result(
+            result,
+            preserve_codex_input=opaque_codex_task,
+        )
 
     def _handle_claude_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Give this child its own identity without assigning any specialist."""
@@ -1305,7 +1350,7 @@ class HookBridge:
         return {}
 
     def _handle_codex_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Inject only exact native identity plus child-owned fallback routing."""
+        """Inject exact identity and any unambiguous staged Codex delivery."""
 
         lifecycle = self._record_native_child_lifecycle(payload, event="started")
         if lifecycle is None:
@@ -1318,23 +1363,102 @@ class HookBridge:
             identity=identity,
         )
         child_session_id = f"codex-child:{identity.worker_id}"
+        exact_delivery = ""
+        pending_reader = getattr(self.store, "get_pending_native_hook_delivery", None)
+        if callable(pending_reader) and trace_id:
+            try:
+                pending = pending_reader(
+                    host="codex",
+                    session_id=session_id,
+                    trace_id=trace_id,
+                    worker_id=identity.worker_id,
+                    native_run_id=identity.native_run_id,
+                )
+            except (RuntimeError, ValueError):
+                pending = None
+            if isinstance(pending, dict):
+                from agency_runtime.core.activation_canary_contract import (
+                    CODEX_ACTIVATION_CANARY_WORK_UNIT,
+                )
+
+                try:
+                    snapshot = self.store.get_completion_evidence_snapshot(
+                        session_id,
+                        trace_id,
+                    )
+                    assignment = self._assignment_from_snapshot(
+                        snapshot,
+                        session_id=session_id,
+                        trace_id=trace_id,
+                        tool_use_id=str(pending.get("tool_use_id") or ""),
+                        native_label=codex_task_name_for_work_unit(
+                            str(pending.get("work_unit_id") or "")
+                        ),
+                        host="codex",
+                    )
+                    pending_identity = (
+                        str(pending.get("work_unit_id") or ""),
+                        str(pending.get("slug") or ""),
+                        str(pending.get("version") or ""),
+                        str(pending.get("prompt_hash") or ""),
+                    )
+                    assignment_identity = (
+                        assignment.work_unit_id if assignment is not None else "",
+                        assignment.specialist_slug if assignment is not None else "",
+                        assignment.specialist_version if assignment is not None else "",
+                        assignment.specialist_prompt_hash if assignment is not None else "",
+                    )
+                    if (
+                        assignment is None
+                        or pending_identity != assignment_identity
+                        or assignment.goal_hash
+                        != work_unit_goal_hash(CODEX_ACTIVATION_CANARY_WORK_UNIT)
+                    ):
+                        raise ValueError("pending Codex delivery does not match the canary plan")
+                    exact_delivery = render_native_child_prompt_delivery(
+                        CODEX_ACTIVATION_CANARY_WORK_UNIT,
+                        str(pending.get("prompt_body") or ""),
+                        host="codex",
+                        parent_session_id=session_id,
+                        parent_trace_id=trace_id,
+                        tool_use_id=assignment.tool_use_id,
+                        work_unit_id=assignment.work_unit_id,
+                        specialist_slug=assignment.specialist_slug,
+                        specialist_version=assignment.specialist_version,
+                        specialist_prompt_hash=assignment.specialist_prompt_hash,
+                        activation_token=_NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN,
+                    )
+                except (KeyError, RuntimeError, ValueError):
+                    exact_delivery = ""
         context_lines = [
             _CLAUDE_CHILD_IDENTITY_MARKER,
-            "This identity belongs only to the current native Codex child. It "
-            "does not load, select, or inherit an Agency specialist.",
+            "This identity belongs only to the current native Codex child.",
             f"worker_kind={json.dumps(identity.worker_kind)}",
             f"worker_id={json.dumps(identity.worker_id, ensure_ascii=True)}",
             f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
-            "If this child's task contains [AGENCY EXACT SPECIALIST ACTIVATION v1], "
-            "the installed PreToolUse hook has already placed the exact audited prompt "
-            "inside this child and PostToolUse will consume its one-use receipt from "
-            "authoritative launch evidence. Follow that prompt without calling prepare "
-            "or load again.",
-            "If no current recipe is present, independently call agency.preflight "
-            "before substantive work using the complete delegated assignment as "
-            "user_message and "
-            f"session_id={json.dumps(child_session_id, ensure_ascii=True)}.",
         ]
+        if exact_delivery:
+            context_lines.extend(
+                [
+                    "The installed hooks matched this child to one exact persisted "
+                    "specialist plan. Follow the activation below without calling "
+                    "prepare or load again; PostToolUse consumes the one-use receipt "
+                    "from authoritative launch evidence.",
+                    exact_delivery,
+                ]
+            )
+        else:
+            context_lines.extend(
+                [
+                    "No exact persisted specialist delivery was correlated to this "
+                    "child. This identity does not load, select, or inherit an Agency "
+                    "specialist.",
+                    "If no current recipe is present, independently call agency.preflight "
+                    "before substantive work using the complete delegated assignment as "
+                    "user_message and "
+                    f"session_id={json.dumps(child_session_id, ensure_ascii=True)}.",
+                ]
+            )
         if parent_scope is not None:
             context_lines.append(
                 "To join the parent controls exactly once, include "
@@ -1352,6 +1476,12 @@ class HookBridge:
             "delegation without an authoritative activation receipt."
         )
         context = "\n".join(context_lines)
+        if len(context) > MAX_CONTEXT_CHARS:
+            context = (
+                _CLAUDE_CHILD_IDENTITY_MARKER
+                + "\nAgency could not deliver the exact specialist context within the "
+                "host limit. Stop this child without substantive work."
+            )
         return {
             "hookSpecificOutput": {
                 "hookEventName": "SubagentStart",
@@ -1379,7 +1509,12 @@ class HookBridge:
         args = _dict_or_empty(tool_input)
         raw_task = args.get("prompt" if self.host in {"claude", "zcode"} else "message")
         task = raw_task if isinstance(raw_task, str) else ""
-        delivery = parse_native_child_prompt_delivery(task)
+        delivery, native_hook_without_token = self._native_child_delivery(
+            payload=payload,
+            tool_input=tool_input,
+            task=task,
+            trace_id=trace_id,
+        )
         if delivery is None:
             return None, tool_response, None, False
         correlation = self._correlation(payload, tool_input, tool_response)
@@ -1448,7 +1583,8 @@ class HookBridge:
             return delivery, projected_response, identity, False
         try:
             activation = consumer(
-                activation_token=delivery.activation_token,
+                activation_token=("" if native_hook_without_token else delivery.activation_token),
+                native_hook_tool_use_id=(delivery.tool_use_id if native_hook_without_token else ""),
                 session_id=delivery.parent_session_id,
                 trace_id=delivery.parent_trace_id,
                 specialist_slug=delivery.specialist_slug,
@@ -1467,7 +1603,7 @@ class HookBridge:
                 trace_id=delivery.parent_trace_id,
                 specialist_slug=delivery.specialist_slug,
                 work_unit_id=delivery.work_unit_id,
-                activation_token=delivery.activation_token,
+                activation_token=("" if native_hook_without_token else delivery.activation_token),
                 tool_use_id=delivery.tool_use_id,
             )
             if require_native_child_started and isinstance(existing, dict):
@@ -1513,6 +1649,86 @@ class HookBridge:
             and activation.get("native_run_id") == identity.native_run_id
         )
         return delivery, projected_response, identity, verified
+
+    def _native_child_delivery(
+        self,
+        *,
+        payload: dict[str, Any],
+        tool_input: Any,
+        task: str,
+        trace_id: str,
+    ) -> tuple[NativeChildPromptDelivery | None, bool]:
+        """Parse plaintext delivery or recover one opaque Codex canary delivery."""
+
+        delivery = parse_native_child_prompt_delivery(task)
+        if delivery is not None:
+            return delivery, False
+        delivery = self._codex_opaque_native_child_delivery(
+            payload=payload,
+            tool_input=tool_input,
+            task=task,
+            trace_id=trace_id,
+        )
+        return delivery, delivery is not None
+
+    def _codex_opaque_native_child_delivery(
+        self,
+        *,
+        payload: dict[str, Any],
+        tool_input: Any,
+        task: str,
+        trace_id: str,
+    ) -> NativeChildPromptDelivery | None:
+        """Rebuild non-secret delivery evidence for one opaque Codex canary call."""
+
+        if self.host != "codex":
+            return None
+        assignment = self._resolve_native_child_assignment(
+            payload=payload,
+            tool_input=tool_input,
+            trace_id=trace_id,
+        )
+        recovered = (
+            _recover_codex_opaque_canary_task(
+                self.host,
+                task,
+                expected_goal_hash=assignment.goal_hash,
+            )
+            if assignment is not None
+            else ""
+        )
+        prompt_reader = getattr(self.store, "get_versioned_specialist_prompt", None)
+        if assignment is None or not recovered or not callable(prompt_reader):
+            return None
+        prompt = prompt_reader(
+            assignment.specialist_slug,
+            assignment.specialist_version,
+            assignment.specialist_prompt_hash,
+            max_chars=MAX_SPECIALIST_PROMPT_CHARS,
+        )
+        if (
+            not isinstance(prompt, dict)
+            or prompt.get("prompt_truncated") is not False
+            or prompt.get("version") != assignment.specialist_version
+            or prompt.get("hash") != assignment.specialist_prompt_hash
+            or not isinstance(prompt.get("prompt_body"), str)
+            or not prompt["prompt_body"]
+        ):
+            return None
+        rendered = render_native_child_prompt_delivery(
+            recovered,
+            prompt["prompt_body"],
+            host="codex",
+            parent_session_id=assignment.session_id,
+            parent_trace_id=assignment.trace_id,
+            tool_use_id=assignment.tool_use_id,
+            work_unit_id=assignment.work_unit_id,
+            specialist_slug=assignment.specialist_slug,
+            specialist_version=assignment.specialist_version,
+            specialist_prompt_hash=assignment.specialist_prompt_hash,
+            activation_token=_NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN,
+        )
+        return parse_native_child_prompt_delivery(rendered)
 
     def _handle_post_tool_use(
         self,
