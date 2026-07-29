@@ -121,20 +121,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 - Bounded live capture proved this configured v0.146 surface emitted only the
   exact rooted `task_name`. Its two apparent rollout errors were the explicit
   isolated hook-trust-bypass notices, not hook failures.
-- The current source consumes the exact native-hook grant at SubagentStart
-  against the persisted real child UUID before returning specialist context;
-  PostToolUse remains idempotent. Two exact activation tests pass.
-- Source-live trace `019faea3-4ea3-73a1-86c7-73443e519dc8` proves one activation
-  consumption and one specialist load. Its sole remaining failure was Codex's
-  exact isolated trust-bypass notice being counted as an unexpected tool; the
-  bounded parser fix ignores only that notice and passes three exact tests.
+- Source-live traces now prove SubagentStart consumes the exact native-hook
+  grant against the real child UUID before returning specialist context.
+- Trace `019faeaf-3917-7673-b9e7-cd149b7ac0ca` isolated the next boundary:
+  Codex projected a different PostToolUse callback identity, so the delegation
+  retained its synthetic task label and Stop correctly returned `continue`.
+- The current source reconciles only an already-consumed native-hook grant for
+  one exact planned task label, specialist version/hash, and real child UUID.
+  The full activation file passes 17 tests; Ruff check and format pass.
 
 ## exact-blocker
 
-The consumption repair is source-live, while the exact trust-notice parser fix
-is source-green but not yet refreshed. A fresh isolated canary must prove completed
-delegation, a valid header, and attestation before
-the broader USB-style hiring task can close AR-199.
+The callback reconciliation is source-green but not yet refreshed. A fresh
+isolated canary must prove completed delegation, a valid header, and attestation
+before the broader USB-style hiring task can close AR-199.
 
 ## same-task-continuity
 
@@ -143,9 +143,9 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Commit the source and ledger checkpoint required by current telemetry.
-2. Refresh Codex from that source checkpoint and rerun the isolated canary.
-3. Run the named fast spine, then push, merge, and exact-install the follow-up.
+1. Commit this callback-reconciliation source and ledger checkpoint.
+2. Refresh Codex from the checkpoint and rerun the isolated canary.
+3. Run the named fast spine, push, merge, and exact-install the follow-up.
 4. Run a fresh USB-style Codex task and capture resident-manager, contractor,
    specialist, delegation, and scoped model receipt evidence.
 

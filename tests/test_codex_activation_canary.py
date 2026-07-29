@@ -441,7 +441,7 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
         backend_factory=lambda *_args, **_kwargs: Backend(),
     )
 
-    assert report["canary_passed"] is True
+    assert report["canary_passed"] is True, report["unmet_prerequisites"]
     assert report["attestation_persisted"] is True
     assert report["evidence"]["proven"] is True
     assert report["evidence"]["cardinalities"] == {
@@ -460,6 +460,97 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
     assert attestation is not None
     assert attestation["proof_contract"] == "agency.codex-activation-canary.v1"
     assert len(attestation["proof_digest"]) == 64
+
+
+def test_codex_post_tool_reconciles_subagent_start_consumption_after_callback_id_rewrite(
+    configured_store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.workforce import inference
+
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    session_id = "codex-callback-rewrite-session"
+    trace_id = "codex-callback-rewrite-trace"
+    preflight = run_preflight(
+        configured_store,
+        session_id=session_id,
+        trace_id=trace_id,
+        user_message="Review the exact supplied change for correctness.",
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=session_id,
+            trace_id=trace_id,
+        ),
+    )
+    [plan] = preflight.delegation_plan
+    unit = str(plan["work_unit_id"])
+    slug = str(plan["recommended_agent"])
+    task_name = codex_task_name_for_work_unit(unit)
+    pre_tool_use_id = "call_pre_tool_identity"
+    configured_store.prepare_delegation_activation(
+        session_id=session_id,
+        trace_id=trace_id,
+        specialist_slug=slug,
+        work_unit_id=unit,
+        grant_origin="native_hook",
+        tool_use_id=pre_tool_use_id,
+    )
+    receiver_id = "019fa500-2222-7333-8444-555566667777"
+    configured_store.record_native_child_started(
+        host="codex",
+        backend="spawn_agent",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=receiver_id,
+        native_run_id=f"codex-agent:{receiver_id}",
+    )
+    consumed = configured_store.consume_delegation_activation(
+        activation_token="",
+        native_hook_tool_use_id=pre_tool_use_id,
+        session_id=session_id,
+        trace_id=trace_id,
+        specialist_slug=slug,
+        work_unit_id=unit,
+        worker_id=receiver_id,
+        native_run_id=f"codex-agent:{receiver_id}",
+        require_native_child_started=True,
+        match_native_child_identity=True,
+    )
+
+    assert (
+        HookBridge("codex", store=configured_store).handle(
+            {
+                "hook_event_name": "PostToolUse",
+                "session_id": session_id,
+                "turn_id": trace_id,
+                "cwd": "C:\\workspace",
+                "transcript_path": "C:\\state\\rollout.jsonl",
+                "permission_mode": "default",
+                "tool_name": "collaborationspawn_agent",
+                "tool_use_id": "fc_post_tool_identity",
+                "tool_input": {
+                    "fork_turns": "none",
+                    "task_name": task_name,
+                    "message": str(plan["goal"]),
+                },
+                "tool_response": json.dumps({"task_name": f"/root/{task_name}"}),
+            }
+        )
+        == {}
+    )
+    [delegation] = configured_store.get_delegations(trace_id)
+    assert delegation["status"] == "delegated"
+    assert delegation["activation_receipt_id"] == consumed["id"]
+    assert delegation["retrieved_specialist_slug"] == slug
+    assert delegation["executed_worker_id"] == receiver_id
+    assert delegation["native_run_id"] == f"codex-agent:{receiver_id}"
 
 
 def test_codex_activation_proof_rejects_parent_only_manual_grant(
