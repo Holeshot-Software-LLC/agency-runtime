@@ -301,6 +301,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f28b98a` | 2026-07-29 | fix(codex): consume activation before child delivery | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-f28b98a-consume-activation-before-child-delivery.md) |
 | `3cea397` | 2026-07-29 | fix(codex): accept isolated trust bypass notice | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `ef41cff` | 2026-07-29 | fix(codex): reconcile consumed child callback | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-ef41cff-reconcile-consumed-child-callback.md) |
+| `e41df93` | 2026-07-29 | fix(codex): reconcile missing post-tool identity | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-e41df93-reconcile-missing-post-tool-identity.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

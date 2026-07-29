@@ -43,6 +43,10 @@ activation consumption and specialist load, but the delegation retained
 regression reproduces the different callback identity after SubagentStart
 consumption and requires the delegation to bind the real child and grant.
 
+Subsequent trace `019faeca-406f-7d20-b2e7-6b1741b5a8af` showed that accepting
+a different nonempty identity was insufficient. Commit `e41df93` records the
+correct missing-identity boundary without weakening consumed-grant validation.
+
 ## Verification
 
 - All 17 tests in `tests/test_codex_activation_canary.py` passed.
