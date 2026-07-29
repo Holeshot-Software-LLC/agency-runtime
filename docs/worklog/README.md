@@ -292,6 +292,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3382b18` | 2026-07-28 | Merge pull request #159 from Holeshot-Software-LLC/codex/ar-199-restore-codex-workforce | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `ea73dd5` | 2026-07-29 | fix(codex): preserve exact child context framing | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-ea73dd5-preserve-exact-codex-child-context.md) |
 | `f2f901d` | 2026-07-29 | Merge pull request #160 from Holeshot-Software-LLC/codex/ar-199-restore-codex-workforce | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `a05549f` | 2026-07-29 | fix(routing): bind hired specialists to live gaps | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-a05549f-bind-hired-specialists.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
