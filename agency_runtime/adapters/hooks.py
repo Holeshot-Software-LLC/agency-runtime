@@ -1556,7 +1556,7 @@ class HookBridge:
             tool_name = _optional_string(payload, "tool_name")
             raw_task_name = _first_string(raw_response or {}, "task_name", "taskName")
             if tool_name == "collaborationspawn_agent" and (
-                not isinstance(tool_response, str)
+                raw_response is None
                 or not raw_task_name.startswith("/root/")
                 or response_task_name != expected_task_name
                 or set(projected_response) != {"task_name", "agent_id", "native_run_id"}

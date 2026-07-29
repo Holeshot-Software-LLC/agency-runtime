@@ -935,6 +935,26 @@ def test_codex_v2_json_task_path_must_be_rooted_before_lifecycle_binding(
     assert rooted[3] is True
 
 
+def test_codex_v2_native_mapping_task_path_binds_started_child(
+    tmp_path: Path,
+) -> None:
+    _store, bridge, payload, rewritten, _worker_id = _prepared_codex_hook_delivery(
+        tmp_path,
+        tool_name="collaborationspawn_agent",
+    )
+    task_name = str(rewritten["task_name"])
+
+    accepted = bridge._consume_native_child_prompt_delivery(
+        event="PostToolUse",
+        payload={**payload, "hook_event_name": "PostToolUse"},
+        tool_input=rewritten,
+        tool_response={"task_name": f"/root/{task_name}"},
+        trace_id="trace",
+    )
+
+    assert accepted[3] is True
+
+
 def test_all_selected_receipts_require_reciprocal_native_execution(tmp_path: Path) -> None:
     store, selected = _isolated_turn(tmp_path / "reciprocal.db")
     bridge = HookBridge("codex", store=store)

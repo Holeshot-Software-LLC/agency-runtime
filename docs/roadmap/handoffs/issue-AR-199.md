@@ -20,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-199
-branch: codex/ar-199-live-selection-followup
-evidence_commit: f2f901d9d85fbe63d413ccc9d3bf01c976bcee2e
-minimum_ledger_commit: 6739abd0f0503ceb0e59c583cd20214e05682bfe
+branch: codex/ar-199-isolated-canary-route
+evidence_commit: 279ef9e3547c3681431dd666dd278b731e627ca7
+minimum_ledger_commit: c4f78ea75649f770ff2a1c1333df93c765237669
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 ---
@@ -31,29 +31,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## checkpoint
 
-- Exact merged revision `f2f901d` is installed globally and registered in
+- Exact merged revision `279ef9e` is installed globally and registered in
   Codex and ZCode.
-- The current repair is on `codex/ar-199-live-selection-followup`; the
+- The current repair is on `codex/ar-199-isolated-canary-route`; the
   owner-untracked analysis draft and `uv.lock` remain untouched.
-- Context telemetry is at 48.1 percent remaining, so this focused green slice
-  is being sealed before the named fast spine and live evaluation.
+- Context telemetry reported 62.3 percent remaining immediately before the
+  source-level live canary, so the same task continues normally.
 
 ## completed-evidence
 
-- The first trusted production task proved a valid request-scoped binding for
-  `agents-orchestrator` and `chief-of-staff`.
-- The Store has 272 active workers, 97 runs, 85 routing decisions, zero model
-  receipts, and one specialist-load row.
-- A nontrivial revision turn required selection, ran two applied structured
-  provider calls, planned four work units, and still produced no unit-agent
-  plan. Its receipt records zero eligible workers and
-  `hiring_store_unavailable`.
 - Local workforce search proves relevant enabled Windows/Codex workers exist,
   including `multi-agent-systems-architect`, `python-application-engineer`, and
   `code-reviewer`.
-- Source inspection proves preflight passes `store=None` to routing, so atomic
-  ready commit is preserved while provider-receipt persistence and governed
-  hiring are unavailable.
 - The live activation canary passed hook-trust inspection, attempted one native
   spawn, and was rejected by Agency's own exact-goal validator. No retry or
   trust bypass ran.
@@ -118,24 +107,46 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   Ruff check and format pass all 601 Python files.
 - Tracker issue 161 now provides same-repository parity:
   https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
+- PR 162 merged the hiring and model-scope repair as `279ef9e`; its exact
+  revision is installed and the Codex integration was refreshed without a
+  trust prompt.
+- The named fast Python spine passed 651 tests with 6 skips, dashboard tests
+  passed 109, Ruff passed all 601 Python files, documentation checks passed,
+  and a fresh isolated routing evaluation passed every correctness and
+  performance gate. Hosted checks did not start because the GitHub account's
+  billing or spending limit blocked every job before execution.
+- The first exact-installed isolated canary still crossed semantic planning,
+  produced two units, and selected nobody. The source repair marks the isolated
+  existing Store so the deterministic contract is recognized.
+- Source-level live trace `019fae5a-4815-7a82-a65e-66db8e35f203` then selected
+  exactly `code-reviewer`, persisted one unit and one activation grant, spawned
+  once, waited once, and completed the child without a trust prompt. This
+  proved the routing fix and exposed the next boundary: Codex supplied a native
+  mapping-shaped PostToolUse result, while a redundant guard required the
+  already-parsed result to have originated as a JSON string.
+- The current source accepts both bounded response representations while
+  retaining the exact rooted task label, projected response keys, child
+  lifecycle, and one-use grant checks. The exact four regression tests pass;
+  the adjacent activation and receipt suite passes 68 tests with two skips.
 
 ## exact-blocker
 
-End-to-end exact-installed Codex workforce selection is not yet proven for the
-fresh USB-style gap. The local contractor and model-scope repair requires this
-checkpoint, the named fast spine, merge, exact reinstall, and a fresh task that
-persists a hire, specialist activation, delegation, and scoped model evidence.
+The PostToolUse compatibility repair is source-green but is not yet merged or
+exact-installed. A fresh isolated canary must prove activation consumption,
+specialist load, completed delegation, a valid header, and attestation before
+the broader USB-style hiring task can close AR-199.
 
 ## same-task-continuity
 
 Continue in this task after the recovery and ledger commits. Do not create a
-new task or rerun the live canary until focused source verification passes.
+new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Commit this contractor/header repair and its ledger checkpoint.
-2. Run the proportional fast spine, push, open and merge the follow-up PR.
-3. Reinstall that exact merge and run a bypassed isolated activation canary.
+1. Run the named fast spine for the isolated route and PostToolUse repair.
+2. Commit the repair and ledger checkpoint, then push, open, and merge the
+   follow-up PR.
+3. Reinstall that exact merge and rerun the isolated activation canary.
 4. Run a fresh USB-style Codex task and capture resident-manager, contractor,
    specialist, delegation, and scoped model receipt evidence.
 
@@ -158,7 +169,8 @@ git diff --check
 ## constraints
 
 - Preserve hook trust and exact native-child goal validation; never use a trust
-  bypass as production evidence.
+  bypass as current-profile production evidence. The isolated canary may use
+  Codex's explicit noninteractive hook-trust bypass inside its private profile.
 - Preserve ready-CAS atomicity; do not hand an unscoped live Store to a planner
   that can leave partial routing or workforce writes.
 - Do not rerun external-provider diagnostics without explicit egress approval.

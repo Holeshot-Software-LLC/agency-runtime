@@ -410,11 +410,23 @@ def test_activation_canary_preflight_replays_one_exact_selected_only_unit(
             },
         }
     )
-    updated = hook_result["hookSpecificOutput"]["updatedInput"]
-    delivery = parse_native_child_prompt_delivery(updated["message"])
+    assert hook_result["hookSpecificOutput"] == {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "allow",
+    }
+    start = bridge.handle(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": session_id,
+            "turn_id": "activation-canary-child-trace",
+            "agent_id": "activation-canary-child",
+            "agent_type": "worker",
+        }
+    )
+    delivery = parse_native_child_prompt_delivery(start["hookSpecificOutput"]["additionalContext"])
     assert delivery is not None
     assert delivery.original_task == CODEX_ACTIVATION_CANARY_WORK_UNIT
-    assert updated["task_name"] == task_name
+    assert hook_payload["tool_input"]["task_name"] == task_name
 
     snapshot = store.get_canary_activation_snapshot(
         host="codex",
