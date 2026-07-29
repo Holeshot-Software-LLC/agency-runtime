@@ -138,7 +138,8 @@ PR 165 merged as `816db5b`; that exact install passed isolated-profile trace
 `019faf64-5aee-78e0-a5ab-657f782a6175` with one complete child chain and no
 trust prompt. Two ordinary tasks then required one correction each after an
 invalid first-pass manager value. Source now pins the resident pair and passes
-156 focused tests; merge, exact install, trust, and first-pass proof remain.
+156 focused tests plus the complete fast spine; merge, exact install, trust,
+and first-pass proof remain.
 
 ## same-task-continuity
 
@@ -147,7 +148,7 @@ new task. Rerun the live canary only after the exact merge is installed.
 
 ## next-bounded-work-package
 
-1. Run the fast spine, merge, and exact-install the first-pass header repair.
+1. Merge and exact-install the first-pass header repair.
 2. Trust/restart Codex once, then prove an ordinary task needs no correction.
 
 ## verification

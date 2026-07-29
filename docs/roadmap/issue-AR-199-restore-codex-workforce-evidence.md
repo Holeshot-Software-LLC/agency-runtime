@@ -235,7 +235,9 @@ failed first-pass acceptance. The preflight template had authoritative resident
 binding evidence while still presenting `none` as a valid loaded value. It now
 renders the exact resident pair, forbids replacing it with `none`, and requires
 the evidence header in substantive progress updates. Focused cross-host,
-context-ceiling, preflight, and hook coverage passes 156 tests.
+context-ceiling, preflight, and hook coverage passes 156 tests. The named fast
+spine then passes 651 tests with 6 skips, the dashboard passes 109 tests, and
+the routing evaluation, Ruff, formatting, and documentation gates all pass.
 
 ## Dependencies
 
