@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-199
 branch: codex/ar-199-seven-field-header
-evidence_commit: 8a96818c85c350ba50122f36e4872299ff22928a
-minimum_ledger_commit: 35c1abdd1eb5f70329e6ef16ab94c51db8b2fa36
+evidence_commit: 210538f2172955b27ac0feeaf690aec20cc91243
+minimum_ledger_commit: 45f0fb7ebf49d85887cf52676c96ec45254bb824
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 ---
@@ -134,12 +134,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-PR 167 merged the pinned-manager repair as `5a19586`; exact install replaced
-the on-disk bundle with `0.1.0+codex.1b65d565506c`. The already-open owner task
-still invoked removed bundle `0.1.0+codex.3082f29f362e`, then corrected a
-non-leading header. That is a failed stale-process attempt, not installed proof.
-Its correction also said six lines while requiring seven fields; the current
-follow-up derives the count from the authoritative field tuple.
+PR 167 merged the pinned-manager repair as `5a19586`; the open owner task
+still invoked removed bundle `0.1.0+codex.3082f29f362e`, so its correction is
+failed stale-process evidence, not installed proof. Follow-up `210538f`
+derives the seven-line count from the contract and passes 66 focused tests plus
+the complete fast spine. Merge, exact install, and bounded autonomous proof
+loops remain; any correction count above zero is `NO-GO`.
 
 ## same-task-continuity
 
@@ -149,7 +149,7 @@ new task. Rerun the live canary only after the exact merge is installed.
 ## next-bounded-work-package
 
 1. Merge and exact-install the seven-line diagnostic repair.
-2. Fully stop Codex, trust/restart once, then prove a new ordinary task needs no correction.
+2. Loop one bounded autonomous proof over each independent AR-199 acceptance item.
 
 ## verification
 

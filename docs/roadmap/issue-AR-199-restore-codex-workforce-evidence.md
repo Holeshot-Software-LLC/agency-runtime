@@ -253,6 +253,14 @@ requires seven fields but called them an exact six-line header. The diagnostic
 now derives `7` from the authoritative field tuple instead of carrying a stale
 hard-coded count.
 
+The follow-up passes 66 focused header and native-hook tests. The named fast
+production spine passes 651 tests with 6 skips, the dashboard passes all 109
+tests, the routing evaluation passes every gate, and documentation, Ruff,
+formatting, and diff checks pass. A sandboxed Node worker first returned
+`spawn EPERM`; the canonical command passed outside that process boundary.
+Any live proof with a correction count above zero remains `NO-GO`, even when
+the bounded Stop backstop repairs the response.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
