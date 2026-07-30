@@ -38,6 +38,7 @@ _PUBLIC_FIELDS = frozenset(
         "activation_timeout",
         "agent",
         "all",
+        "autonomous",
         "backup",
         "command",
         "dry_run",
@@ -122,6 +123,7 @@ def is_exact_codex_activation_verification(namespace: object) -> bool:
         and getattr(namespace, "agent", None) == "codex"
         and getattr(namespace, "profile", None) is None
         and getattr(namespace, "all", False) is False
+        and getattr(namespace, "autonomous", False) is False
         and getattr(namespace, "dry_run", False) is False
         and getattr(namespace, "rollback", False) is False
         and getattr(namespace, "verify_activation", False) is True

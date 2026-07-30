@@ -302,6 +302,36 @@ def _project_content_free_work_units(value: object) -> dict[str, Any]:
     }
 
 
+def _project_workforce_replay_fields(value: Mapping[str, Any]) -> dict[str, Any] | None:
+    """Retain only the bounded workforce metadata required for exact replay."""
+
+    from agency_runtime.core.activation_canary_contract import (
+        CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+    )
+
+    has_descriptors = "workforce_unit_descriptors" in value
+    activation_canary = str(value.get("source") or "") == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
+    if not has_descriptors and not activation_canary:
+        return {}
+
+    from agency_runtime.core.workforce.routing_projection import (
+        project_workforce_unit_bindings,
+        project_workforce_unit_descriptors,
+    )
+
+    projected: dict[str, Any] = {}
+    if has_descriptors:
+        descriptors = project_workforce_unit_descriptors(value.get("workforce_unit_descriptors"))
+        if descriptors is None:
+            return None
+        projected["workforce_unit_descriptors"] = descriptors
+    bindings = project_workforce_unit_bindings(value.get("workforce_unit_bindings"))
+    if bindings is None:
+        return None
+    projected["workforce_unit_bindings"] = bindings
+    return projected
+
+
 def _project_recipe_routing(value: object, *, trace_id: str) -> dict[str, Any] | None:
     if not isinstance(value, Mapping):
         return None
@@ -311,20 +341,10 @@ def _project_recipe_routing(value: object, *, trace_id: str) -> dict[str, Any] |
     safe_decision.pop("provider", None)
     safe_decision["trace_id"] = trace_id
     safe_decision["work_units"] = _project_content_free_work_units(safe_work_units)
-    if "workforce_unit_descriptors" in value:
-        from agency_runtime.core.workforce.routing_projection import (
-            project_workforce_unit_bindings,
-            project_workforce_unit_descriptors,
-        )
-
-        descriptors = project_workforce_unit_descriptors(value.get("workforce_unit_descriptors"))
-        if descriptors is None:
-            return None
-        safe_decision["workforce_unit_descriptors"] = descriptors
-        bindings = project_workforce_unit_bindings(value.get("workforce_unit_bindings"))
-        if bindings is None:
-            return None
-        safe_decision["workforce_unit_bindings"] = bindings
+    workforce_fields = _project_workforce_replay_fields(value)
+    if workforce_fields is None:
+        return None
+    safe_decision.update(workforce_fields)
     return safe_decision
 
 
@@ -664,20 +684,10 @@ def _project_routing_evidence(value: object, *, trace_id: str) -> dict[str, Any]
     safe_decision["query_hash"] = query_hash
     safe_decision["context_fingerprint"] = context_fingerprint
     safe_decision["work_units"] = _project_content_free_work_units(safe_work_units)
-    if "workforce_unit_descriptors" in value:
-        from agency_runtime.core.workforce.routing_projection import (
-            project_workforce_unit_bindings,
-            project_workforce_unit_descriptors,
-        )
-
-        descriptors = project_workforce_unit_descriptors(value.get("workforce_unit_descriptors"))
-        if descriptors is None:
-            return None
-        safe_decision["workforce_unit_descriptors"] = descriptors
-        bindings = project_workforce_unit_bindings(value.get("workforce_unit_bindings"))
-        if bindings is None:
-            return None
-        safe_decision["workforce_unit_bindings"] = bindings
+    workforce_fields = _project_workforce_replay_fields(value)
+    if workforce_fields is None:
+        return None
+    safe_decision.update(workforce_fields)
     from agency_runtime.core.selector.receipt_projection import (
         project_model_receipt_attempts,
     )

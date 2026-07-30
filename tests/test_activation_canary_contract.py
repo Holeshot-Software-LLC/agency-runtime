@@ -1,4 +1,4 @@
-"""Deterministic, authority-bounded Codex activation-canary routing."""
+"""Inference-owned, authority-bounded Codex activation-canary routing."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ from agency_runtime.core.unit_assignment import (
     build_unit_agent_plan,
     hydrate_unit_agent_plan,
 )
-from tests.runtime_support import write_provider_config
+from tests.runtime_support import stub_inference_invoker, write_provider_config
 
 _CANARY_ENV = {
     "AGENCY_CANARY_MODE": "1",
@@ -156,32 +156,102 @@ def test_activation_canary_prompt_and_unit_fit_every_transport_bound() -> None:
     assert canary.CANARY_PROMPT == CODEX_ACTIVATION_CANARY_PROMPT
 
 
-def test_activation_canary_route_bypasses_planner_with_one_read_only_unit(
+def _inferred_projection(*, selected: str = "code-reviewer") -> dict[str, Any]:
+    work_unit_id = "unit-1111111111"
+    return {
+        "selected_ids": [selected],
+        "semantic_ids": [selected],
+        "confidence": 0.99,
+        "margin": 0.5,
+        "status": "accepted",
+        "source": "workforce_inference",
+        "inference_required": True,
+        "inference_attempted": True,
+        "inference_mode": "inferred",
+        "provider_attempts": [{"stage": "planner", "status": "applied"}],
+        "work_units": {
+            "count": 1,
+            "confidence": "high",
+            "source": "verified-workforce-plan",
+            "units": ["provider-derived diagnostic unit"],
+            "delegate": True,
+        },
+        "workforce_unit_descriptors": [
+            {
+                "ordinal": 1,
+                "artifact_kind": "review-report",
+                "lifecycle_phase": "review",
+                "authority": "review",
+            }
+        ],
+        "workforce_unit_bindings": [
+            {
+                "source_unit_id": "unit-work",
+                "work_unit_id": work_unit_id,
+                "selected": [selected],
+                "delivery": "delegate",
+                "timing": "immediate",
+                "depends_on": [],
+                "parallelization": "sequential",
+                "mutation_scope": "read_only",
+                "artifact_kind": "review-report",
+                "required_tools": [],
+                "required_evidence": ["review-report"],
+                "confidence": 0.99,
+            }
+        ],
+        "unit_assignment_agents": [
+            {
+                "slug": selected,
+                "name": "Inference-selected reviewer",
+                "description": "Reviews the bounded diagnostic.",
+                "capabilities": ["code review"],
+                "tags": ["review"],
+                "required_tools": [],
+                "evidence_requirements": ["review-report"],
+                "matched_work_unit_ids": [work_unit_id],
+                "primary_work_unit_ids": [work_unit_id],
+            }
+        ],
+    }
+
+
+def test_activation_canary_uses_inference_owned_selection(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from agency_runtime.core.workforce import inference
+    from agency_runtime.core.workforce import inference, routing_projection
 
     clear_cache()
     clear_session_routing()
+    calls: list[str] = []
+    outcome = SimpleNamespace(attempts=())
 
-    def forbidden_planner(*_args: Any, **_kwargs: Any) -> Any:
-        raise AssertionError("activation canary crossed semantic workforce planning")
+    def planner(message: str, *_args: Any, **_kwargs: Any) -> Any:
+        calls.append(message)
+        return outcome
 
-    monkeypatch.setattr(inference, "plan_and_staff_workforce", forbidden_planner)
+    monkeypatch.setattr(inference, "plan_and_staff_workforce", planner)
     monkeypatch.setattr(
         pipeline,
-        "_remember_routing",
-        lambda *_args, **_kwargs: pytest.fail("diagnostic route must not enter routing caches"),
+        "_run_gap_hiring",
+        lambda *_args, **_kwargs: pytest.fail(
+            "the read-only activation canary must not enter gap hiring"
+        ),
     )
+    monkeypatch.setattr(
+        routing_projection,
+        "project_workforce_routing",
+        lambda *_args, **_kwargs: _inferred_projection(),
+    )
+
     result = _route(monkeypatch)
 
+    assert calls == [_task()]
     assert result["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
     assert result["selected_ids"] == ["code-reviewer"]
-    assert result["semantic_ids"] == ["code-reviewer"]
-    assert result["inference_mode"] == "activation_canary_contract"
-    assert result["inference_required"] is False
-    assert result["inference_attempted"] is False
-    assert result["provider_attempts"] == []
+    assert result["inference_required"] is True
+    assert result["inference_attempted"] is True
+    assert result["provider_attempts"]
     assert result["work_units"] == {
         "count": 1,
         "confidence": "high",
@@ -189,98 +259,74 @@ def test_activation_canary_route_bypasses_planner_with_one_read_only_unit(
         "units": [CODEX_ACTIVATION_CANARY_WORK_UNIT],
         "delegate": True,
     }
-    assert "workforce_unit_bindings" not in result
     assert "workforce_unit_descriptors" not in result
-    assert len(result["unit_assignment_agents"]) == 1
-    assert result["unit_assignment_agents"][0]["slug"] == "code-reviewer"
-    assert result["unit_assignment_agents"][0].get("required_tools", []) == []
 
     plan = build_unit_agent_plan(result, AgencyConfig().delegation)
     assert len(plan) == 1
     assert plan[0]["recommended_agent"] == "code-reviewer"
-    assert plan[0]["mutation_scope"] == "read_only"
-    assert plan[0]["required_tools"] == []
     hydrated = hydrate_unit_agent_plan(result, plan)
-    assert len(hydrated) == 1
     assert hydrated[0]["goal"] == CODEX_ACTIVATION_CANARY_WORK_UNIT
 
 
-@pytest.mark.parametrize(
-    "drift",
-    [
-        {"authority": "modify"},
-        {"task_types": ["implementation"]},
-        {"context_mode": "isolated"},
-    ],
-)
-def test_activation_canary_route_abstains_on_specialist_authority_drift(
+def test_activation_canary_rejects_an_inference_team_outside_the_probe_contract(
     monkeypatch: pytest.MonkeyPatch,
-    drift: dict[str, Any],
 ) -> None:
-    from agency_runtime.core.workforce import inference
-
-    clear_cache()
-    clear_session_routing()
-    monkeypatch.setattr(
-        inference,
-        "plan_and_staff_workforce",
-        lambda *_args, **_kwargs: pytest.fail("planner must remain unreachable"),
+    request = SimpleNamespace(
+        user_message=_task(),
+        host="codex",
+        capability_status="native-contract-verified",
     )
-    catalog = _catalog()
-    catalog[0].update(drift)
+    for name, value in _CANARY_ENV.items():
+        monkeypatch.setenv(name, value)
+    routing = _inferred_projection()
+    routing["workforce_unit_bindings"][0]["mutation_scope"] = "workspace_write"
 
-    result = _route(monkeypatch, catalog=catalog)
+    result = pipeline._activation_canary_projection(routing, request)
 
-    assert result["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
-    assert result["status"] == "abstained"
+    assert result["source"] == "workforce_inference_failure"
+    assert result["status"] == "inference_invalid"
     assert result["selected_ids"] == []
     assert result["work_units"]["delegate"] is False
 
 
-def test_activation_canary_route_never_fabricates_a_missing_specialist(
+def test_activation_canary_rejects_missing_inference_attempt_evidence(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from agency_runtime.core.workforce import inference
-
-    clear_cache()
-    clear_session_routing()
-    monkeypatch.setattr(
-        inference,
-        "plan_and_staff_workforce",
-        lambda *_args, **_kwargs: pytest.fail("planner must remain unreachable"),
+    request = SimpleNamespace(
+        user_message=_task(),
+        host="codex",
+        capability_status="native-contract-verified",
     )
+    for name, value in _CANARY_ENV.items():
+        monkeypatch.setenv(name, value)
+    routing = _inferred_projection()
+    routing["inference_attempted"] = False
 
-    result = _route(monkeypatch, catalog=[])
+    result = pipeline._activation_canary_projection(routing, request)
 
-    assert result["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
-    assert result["status"] == "abstained"
+    assert result["source"] == "workforce_inference_failure"
     assert result["selected_ids"] == []
-    assert result["error"] == ("activation canary specialist is not eligible in the current roster")
+    assert "inference_attempted" in result["error"]
 
 
-def test_activation_canary_route_abstains_when_no_tool_contract_drifts(
+def test_activation_canary_rejects_missing_provider_attempt_receipts(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from agency_runtime.core.workforce import inference
-
-    clear_cache()
-    clear_session_routing()
-    monkeypatch.setattr(
-        inference,
-        "plan_and_staff_workforce",
-        lambda *_args, **_kwargs: pytest.fail("planner must remain unreachable"),
+    request = SimpleNamespace(
+        user_message=_task(),
+        host="codex",
+        capability_status="native-contract-verified",
     )
+    for name, value in _CANARY_ENV.items():
+        monkeypatch.setenv(name, value)
+    routing = _inferred_projection()
+    routing["provider_attempts"] = []
 
-    result = _route(monkeypatch, catalog=_catalog(required_tools=["repository-read"]))
+    result = pipeline._activation_canary_projection(routing, request)
 
-    assert result["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
-    assert result["status"] == "abstained"
+    assert result["source"] == "workforce_inference_failure"
     assert result["selected_ids"] == []
-    assert result["unit_assignment_agents"] == []
-    assert result["work_units"]["delegate"] is False
-    assert result["error"] == (
-        "activation canary specialist requires tools outside the no-tool contract"
-    )
+    assert "provider_attempts" in result["error"]
 
 
 def test_ordinary_exact_text_without_restricted_environment_uses_workforce_planner(
@@ -353,8 +399,8 @@ def test_activation_canary_preflight_replays_one_exact_selected_only_unit(
     )
     monkeypatch.setattr(
         inference,
-        "plan_and_staff_workforce",
-        lambda *_args, **_kwargs: pytest.fail("planner must remain unreachable"),
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
     )
     try:
         result = run_preflight(
@@ -369,6 +415,10 @@ def test_activation_canary_preflight_replays_one_exact_selected_only_unit(
         reset_config_cache()
 
     assert result.routing["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
+    inference_receipt = result.routing["routing_receipt"]["inference"]
+    assert inference_receipt["required"] is True
+    assert inference_receipt["attempted"] is True
+    assert inference_receipt["provider_attempts"]
     assert result.selected_specialists == ("code-reviewer",)
     assert len(result.delegation_plan) == 1
     plan = result.delegation_plan[0]

@@ -55,6 +55,14 @@ inference decision, exact specialist injection, native spawn, native child
 completion, and finalization are separate evidence stages. No earlier stage
 implies a later one.
 
+Specialist and team selection in that proof remains inference-owned. Codex
+encrypts the current-profile child message before hook delivery, so the exact
+activation probe may rehydrate its package-owned read-only diagnostic goal
+after inference has selected one eligible worker. That deterministic step may
+only validate and narrow the already selected worker's execution boundary; it
+cannot add, substitute, rank, or reorder a specialist. Missing, invalid, or
+unreceipted inference fails the canary before activation.
+
 The shared product test backbone validates installation payloads, invocation
 contracts, evidence schemas, failure semantics, and one-use specialist identity
 independently of the host. Each supported harness adapter then owns a bounded
@@ -85,4 +93,3 @@ does not grant persistent dashboard, MCP, hook, or broker mutation authority.
   neither proves a routed prompt or specialist lifecycle.
 - **Rely only on synthetic adapter tests.** Rejected because the real host owns
   environment propagation, hook scheduling, and native child behavior.
-

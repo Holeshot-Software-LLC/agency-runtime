@@ -1200,6 +1200,9 @@ def test_current_profile_codex_canary_fails_before_model_when_hook_trust_is_stal
         "failure_reason": "codex_hook_trust_not_ready",
         "hook_trust": _hook_trust_report("modified"),
         "model_invocation_attempted": False,
+        "trust_mode": "attended",
+        "trust_bypass_used": False,
+        "persistent_trust_changed": False,
     }
     assert model_calls == []
     assert len(trust_calls) == 1

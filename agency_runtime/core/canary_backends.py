@@ -1088,12 +1088,20 @@ class SafeCodexCanaryBackend:
     hook_event_diagnostics: bool = False
     hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None
     trusted_workdir: str = ""
+    trust_mode: str = "attended"
 
     def _exec_options(self) -> tuple[str, ...]:
+        if not isinstance(self.trust_mode, str) or self.trust_mode not in {
+            "attended",
+            "autonomous_bypass",
+        }:
+            raise ValueError("unsupported Codex hook trust mode")
         if self.exec_options is not None:
             return self.exec_options
         facade = _facade()
         if self.require_exact_activation_rollout:
+            if self.profile_scope == "current-profile" and self.trust_mode == "autonomous_bypass":
+                return facade.CODEX_CANARY_EXEC_OPTIONS
             return (
                 facade.CODEX_CURRENT_PROFILE_EXEC_OPTIONS
                 if self.profile_scope == "current-profile"
@@ -1127,7 +1135,11 @@ class SafeCodexCanaryBackend:
     ) -> dict[str, Any] | None:
         """Fail before a model call unless Codex trusts the exact Agency hooks."""
 
-        if self.profile_scope != "current-profile" or not self.require_exact_activation_rollout:
+        if (
+            self.profile_scope != "current-profile"
+            or not self.require_exact_activation_rollout
+            or self.trust_mode == "autonomous_bypass"
+        ):
             return None
         facade = _facade()
         timeout = facade._remaining_canary_timeout(
@@ -1194,6 +1206,26 @@ class SafeCodexCanaryBackend:
             "hook_trust": trust,
             "model_invocation_attempted": False,
         }
+
+    def _record_trust_mode(
+        self,
+        record: dict[str, Any],
+        *,
+        invocation_attempted: bool,
+    ) -> dict[str, Any]:
+        """Record the authority actually carried by the Codex exec invocation."""
+
+        options = self._exec_options()
+        bypass_configured = "--dangerously-bypass-hook-trust" in options
+        if self.trust_mode == "autonomous_bypass" and not bypass_configured:
+            raise ValueError("autonomous Codex hook bypass is missing from the invocation")
+        bypass_used = bool(invocation_attempted and bypass_configured)
+        record.update(
+            trust_mode="autonomous_bypass" if bypass_used else self.trust_mode,
+            trust_bypass_used=bypass_used,
+            persistent_trust_changed=False,
+        )
+        return record
 
     def _install_plugin(
         self,
@@ -1312,10 +1344,13 @@ class SafeCodexCanaryBackend:
                 deadline=deadline,
             )
             if trust_failure is not None:
-                return trust_failure
+                return self._record_trust_mode(trust_failure, invocation_attempted=False)
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
-                return _timeout_record("codex", profile_scope=self.profile_scope)
+                return self._record_trust_mode(
+                    _timeout_record("codex", profile_scope=self.profile_scope),
+                    invocation_attempted=False,
+                )
             rollout_not_before = (
                 facade.time.time() if self.require_exact_activation_rollout else None
             )
@@ -1331,18 +1366,21 @@ class SafeCodexCanaryBackend:
                 input_text=task,
                 max_output_chars=256_000,
             )
-            return facade._codex_canary_record(
-                result,
-                profile_scope=self.profile_scope,
-                rollout_root=(
-                    self.auth_source.parent / "sessions"
-                    if self.require_exact_activation_rollout
-                    else None
+            return self._record_trust_mode(
+                facade._codex_canary_record(
+                    result,
+                    profile_scope=self.profile_scope,
+                    rollout_root=(
+                        self.auth_source.parent / "sessions"
+                        if self.require_exact_activation_rollout
+                        else None
+                    ),
+                    rollout_not_before=rollout_not_before,
+                    rollout_not_after=(
+                        facade.time.time() if self.require_exact_activation_rollout else None
+                    ),
                 ),
-                rollout_not_before=rollout_not_before,
-                rollout_not_after=(
-                    facade.time.time() if self.require_exact_activation_rollout else None
-                ),
+                invocation_attempted=True,
             )
         with private_temporary_directory(prefix="codex-home") as runtime_home:
             codex_home = facade._prepare_private_host_home(
@@ -1380,10 +1418,13 @@ class SafeCodexCanaryBackend:
             if failure is not None:
                 if workspace_trust is not None:
                     failure["workspace_trust"] = workspace_trust
-                return failure
+                return self._record_trust_mode(failure, invocation_attempted=False)
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
-                return _timeout_record("codex")
+                return self._record_trust_mode(
+                    _timeout_record("codex"),
+                    invocation_attempted=False,
+                )
             rollout_not_before = (
                 facade.time.time() if self.require_exact_activation_rollout else None
             )
@@ -1411,7 +1452,7 @@ class SafeCodexCanaryBackend:
             )
             if workspace_trust is not None:
                 record["workspace_trust"] = workspace_trust
-            return record
+            return self._record_trust_mode(record, invocation_attempted=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1531,6 +1572,7 @@ def backend(
     require_existing_store: bool = False,
     require_exact_activation_rollout: bool = False,
     hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None,
+    trust_mode: str = "attended",
 ) -> SafeCodexCanaryBackend | SafeClaudeCanaryBackend:
     from agency_runtime.core.delegation.backends import run_bounded_process
 
@@ -1545,6 +1587,12 @@ def backend(
         raise ValueError(f"unsupported canary profile scope: {profile_scope}")
     if profile_scope == "current-profile" and host != "codex":
         raise ValueError("current-profile canaries support Codex only")
+    if not isinstance(trust_mode, str) or trust_mode not in facade.CANARY_TRUST_MODES:
+        raise ValueError(f"unsupported canary trust mode: {trust_mode}")
+    if trust_mode == "autonomous_bypass" and (
+        host != "codex" or profile_scope != "current-profile"
+    ):
+        raise ValueError("autonomous bypass canaries support Codex current-profile only")
     if type(require_existing_store) is not bool:
         raise TypeError("require_existing_store must be a boolean")
     if require_existing_store and (host != "codex" or profile_scope != "current-profile"):
@@ -1571,6 +1619,7 @@ def backend(
             require_existing_store=require_existing_store,
             require_exact_activation_rollout=require_exact_activation_rollout,
             hook_trust_inspector=hook_trust_inspector,
+            trust_mode=trust_mode,
         )
 
     original_home = Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()

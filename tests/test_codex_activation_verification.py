@@ -594,6 +594,40 @@ def test_existing_store_requirement_crosses_current_profile_process_boundary(
     assert calls[0]["env"]["AGENCY_CANARY_REQUIRE_EXISTING_STORE"] == "1"
 
 
+def test_autonomous_current_profile_uses_supported_bypass_without_trust_inspection(
+    tmp_path: Path,
+) -> None:
+    calls: list[dict[str, Any]] = []
+
+    def runner(argv: list[str], **kwargs: Any) -> BoundedProcessResult:
+        calls.append({"argv": argv, **kwargs})
+        return BoundedProcessResult(1, "", "")
+
+    backend = SafeCodexCanaryBackend(
+        executable="codex",
+        db_path=tmp_path / "agency.db",
+        timeout=1,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=runner,
+        source_env={},
+        profile_scope="current-profile",
+        require_existing_store=True,
+        require_exact_activation_rollout=True,
+        hook_trust_inspector=lambda *_args, **_kwargs: pytest.fail(
+            "persistent trust must not be inspected in autonomous bypass mode"
+        ),
+        trust_mode="autonomous_bypass",
+    )
+
+    result = backend.execute(task="canary", workdir=str(tmp_path))
+
+    assert "--dangerously-bypass-hook-trust" in calls[0]["argv"]
+    assert result["trust_mode"] == "autonomous_bypass"
+    assert result["trust_bypass_used"] is True
+    assert result["persistent_trust_changed"] is False
+
+
 def test_current_profile_hook_uses_existing_current_store_mode(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

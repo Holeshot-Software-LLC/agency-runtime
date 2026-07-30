@@ -287,7 +287,7 @@ activation flow:
 Codex Desktop's `/hooks` screen can show connector setup such as Zoom or
 Twilio. That is a different surface and does not review local command hooks.
 Agency does not reproduce Codex's private trust hashes or edit them directly;
-Codex currently exposes no supported non-interactive trust-grant API.
+attended mode always leaves approval to Codex.
 
 The refresh transaction reports installation completion separately from
 activation completion. The verification command uses the normal Codex profile
@@ -300,22 +300,40 @@ missing, changed, or rejected, installation remains incomplete and prints the
 same resumable steps. An isolated-profile canary is useful for package testing
 but cannot establish normal-profile readiness.
 
+For an owner-controlled fresh container or other disposable environment where
+no person can approve hook hashes, use the explicit autonomous transaction:
+
+```bash
+agency install --autonomous --verify-activation --json
+```
+
+That command uses Codex's supported `--dangerously-bypass-hook-trust` option for
+the exact activation invocation only. It does not edit or export persistent
+Codex trust state, and its evidence says `trust_mode=autonomous_bypass` and
+`trust_bypass_used=true`, never `trusted`. Auto-discovery still installs every
+detected supported harness and the default dashboard; Codex must be among the
+detected targets. Autonomous and attended modes must prove the same hook-start,
+inference, specialist, native-child, and finalization behavior. A refused or
+incomplete bypass is a named activation failure, not a trusted installation.
+
 ## `agency off` did not unregister the plugin
 
-The persistent soft-control contract remains reversible, but this unreleased
-source keeps generic positive control mutations unavailable:
+The persistent soft-control contract remains reversible. The owner CLI and the
+owner-authenticated dashboard expose the same supported host control:
 
 ```bash
 agency status --agent <host>
 agency off --agent <host> --dry-run --json
+agency off --agent <host> --json
+agency on --agent <host> --json
 ```
 
 The committed state is checked at every adapter boundary and preserves native
 registration. `status` reports native enablement, runtime soft control, and
-effective state separately; `unverified` is not the same as disabled. Positive
-control mutations return an authority-unavailable result. Harness installation
-is a separate native-lifecycle operation. The dashboard remains intentionally
-read-only.
+effective state separately; `unverified` is not the same as disabled. Owner
+mutations retain confirmation, generation, revision, ownership, and rollback
+checks. Broker, hook, MCP, and restricted brokerage identities remain
+read-only. Harness installation is a separate native-lifecycle operation.
 
 Use `agency off --agent <host> --native` only when you intend to change the
 host's plugin registry. Native control requires an inventory postcondition and

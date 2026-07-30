@@ -1,15 +1,9 @@
-"""Full 8-layer routing pipeline — the core selector.
+"""Inference-owned routing with deterministic classification and verification.
 
-Uses centralized config for all tunable values.
-
-Layer 0: Companion policy (deterministic action→agent mapping, <1ms)
-Layer 1: Domain context expansion
-Layer 2: LRU cache (content-hash + TTL)
-Layer 3: Session stickiness (token overlap reuse)
-Layer 4: Confidence bypass (only when no inference provider is configured)
-Layer 5: Token pre-narrow + LLM judge
-Layer 6: Token-only fallback (if LLM unavailable)
-Layer 7: Union companion policy results with semantic results
+Deterministic code may classify a turn, enforce eligibility and compatibility,
+or replay an exact durable inference decision. It never adds or reorders a
+specialist. Fresh selection-requiring turns therefore fail closed when their
+configured inference path is unavailable or invalid.
 """
 
 from __future__ import annotations
@@ -28,7 +22,6 @@ from typing import TYPE_CHECKING, Any
 
 from agency_runtime.core.activation_canary_contract import (
     CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
-    CODEX_ACTIVATION_CANARY_SPECIALIST,
     CODEX_ACTIVATION_CANARY_WORK_UNIT,
     CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
     is_exact_codex_activation_canary_task,
@@ -86,7 +79,6 @@ from agency_runtime.core.turn_intent import (
 )
 from agency_runtime.core.unit_assignment import (
     MAX_WORK_UNIT_PREVIEW_CHARS,
-    project_unit_assignment_agents,
 )
 
 logger = logging.getLogger("agency_runtime.selector.pipeline")
@@ -893,105 +885,100 @@ def _attach_workforce_signals(
     return routing
 
 
-def _activation_canary_routing(request: _RouteRequest) -> dict[str, Any] | None:
-    """Build the exact evidence-only route for the installed Codex canary.
+def _activation_canary_projection(
+    routing: dict[str, Any],
+    request: _RouteRequest,
+) -> dict[str, Any]:
+    """Bind an inference-selected diagnostic worker to the recoverable canary goal.
 
-    This path deliberately bypasses semantic planning variance, gap hiring, and
-    provider receipts.  It grants no new capability: the request must already
-    be a native-contract-verified Codex event, use the existing-current Store
-    canary environment, carry the exact nonce-bound diagnostic task, and expose
-    the expected no-tool specialist in the eligibility-filtered catalog.
+    Codex encrypts the parent collaboration message before current-profile hook
+    delivery. The package-owned diagnostic goal is therefore fixed and
+    recoverable, but the specialist decision remains entirely inference-owned.
+    This verifier may reject or rebind identity metadata; it never adds a worker.
     """
 
-    if request.workforce_snapshot is None or not is_exact_codex_activation_canary_task(
+    if not is_exact_codex_activation_canary_task(
         request.user_message,
         host=request.host,
         capability_status=request.capability_status,
     ):
-        return None
+        return routing
 
-    specialist = CODEX_ACTIVATION_CANARY_SPECIALIST
-    candidate = next(
-        (item for item in request.catalog if agent_identity(item) == specialist),
-        None,
+    bindings = routing.get("workforce_unit_bindings")
+    assignments = routing.get("unit_assignment_agents")
+    selected = routing.get("selected_ids")
+    violations: list[str] = []
+    checks = (
+        (routing.get("source") == "workforce_inference", "source"),
+        (routing.get("status") == "accepted", "status"),
+        (routing.get("inference_required") is True, "inference_required"),
+        (routing.get("inference_attempted") is True, "inference_attempted"),
+        (
+            isinstance(routing.get("provider_attempts"), list)
+            and bool(routing["provider_attempts"]),
+            "provider_attempts",
+        ),
+        (isinstance(selected, list) and len(selected) == 1, "selected_count"),
+        (isinstance(bindings, list) and len(bindings) == 1, "binding_count"),
+        (isinstance(assignments, list) and len(assignments) == 1, "assignment_count"),
     )
-    error = ""
-    assignment_agents: list[dict[str, Any]] = []
-    if specialist not in request.active_ids or candidate is None:
-        error = "activation canary specialist is not eligible in the current roster"
-    elif str(candidate.get("authority") or "").strip().casefold() != "review":
-        error = "activation canary specialist lacks review-only authority"
-    elif "review" not in {
-        str(item).strip().casefold()
-        for item in (
-            candidate.get("task_types")
-            if isinstance(candidate.get("task_types"), (list, tuple))
-            else ()
+    violations.extend(code for passed, code in checks if not passed)
+    valid = not violations
+    binding = dict(bindings[0]) if valid and isinstance(bindings[0], Mapping) else {}
+    assignment = dict(assignments[0]) if valid and isinstance(assignments[0], Mapping) else {}
+    if valid:
+        checks = (
+            (binding.get("selected") == selected, "binding_selection"),
+            (binding.get("delivery") == "delegate", "delivery"),
+            (binding.get("timing") == "immediate", "timing"),
+            (binding.get("depends_on") == [], "dependencies"),
+            (binding.get("mutation_scope") == "read_only", "mutation_scope"),
+            (binding.get("artifact_kind") == "review-report", "artifact_kind"),
+            (assignment.get("slug") == selected[0], "assignment_identity"),
         )
-    }:
-        error = "activation canary specialist lacks the reviewed task type"
-    elif str(candidate.get("context_mode") or "").strip().casefold() != "direct_safe":
-        error = "activation canary specialist lacks the direct-safe context contract"
-    elif bool(candidate.get("required_tools")):
-        error = "activation canary specialist requires tools outside the no-tool contract"
-    else:
-        try:
-            projected = project_unit_assignment_agents(
-                [
-                    {
-                        "slug": specialist,
-                        "name": candidate.get("name"),
-                        "description": candidate.get("description"),
-                        "capabilities": candidate.get("capabilities"),
-                        "tags": [
-                            *(candidate.get("tags") or []),
-                            *(candidate.get("categories") or []),
-                        ],
-                        "required_tools": [],
-                        "evidence_requirements": candidate.get("evidence_requirements"),
-                    }
-                ],
-                strict=True,
-            )
-        except (RuntimeError, ValueError):
-            projected = None
-        if projected is None or len(projected) != 1:
-            error = "activation canary specialist metadata is not safely projectable"
-        else:
-            assignment_agents = projected
+        violations.extend(code for passed, code in checks if not passed)
+        valid = not violations
+    if not valid:
+        return {
+            **routing,
+            "selected_ids": [],
+            "semantic_ids": [],
+            "status": "inference_invalid",
+            "source": "workforce_inference_failure",
+            "error": "activation_canary_contract_invalid:" + ",".join(violations),
+            "work_units": {
+                "count": 0,
+                "confidence": "none",
+                "source": CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+                "units": [],
+                "delegate": False,
+            },
+            "workforce_unit_bindings": [],
+            "workforce_unit_descriptors": [],
+            "unit_assignment_agents": [],
+        }
 
-    accepted = not error
-    return {
-        "selected_ids": [specialist] if accepted else [],
-        "semantic_ids": [specialist] if accepted else [],
-        "confidence": 1.0 if accepted else 0.0,
-        "margin": 1.0 if accepted else 0.0,
-        "latency_ms": 0,
-        "status": "accepted" if accepted else "abstained",
+    work_unit_id = work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT)
+    binding["work_unit_id"] = work_unit_id
+    binding["parallelization"] = "sequential"
+    binding["required_tools"] = []
+    assignment["matched_work_unit_ids"] = [work_unit_id]
+    assignment["primary_work_unit_ids"] = [work_unit_id]
+    projected = {
+        **routing,
         "source": CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
-        "error": error,
-        "candidate_count": 1 if candidate is not None else 0,
-        "top_score": 1.0 if accepted else 0.0,
-        "inference_configured": inference_is_configured(request.config),
-        "inference_required": False,
-        "inference_attempted": False,
-        "inference_mode": "activation_canary_contract",
-        "provider_attempts": [],
-        "inference_failures": [],
-        "workforce_cache_hits": [],
         "work_units": {
             "count": 1,
-            "confidence": "high" if accepted else "none",
+            "confidence": "high",
             "source": CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
             "units": [CODEX_ACTIVATION_CANARY_WORK_UNIT],
-            "delegate": accepted,
+            "delegate": True,
         },
-        "unit_assignment_agents": assignment_agents,
-        "disabled_candidate_shadows": [],
-        "unavailable_candidate_shadows": [],
-        "fallback_applied": False,
-        "fallback_considered": not accepted,
+        "workforce_unit_bindings": [binding],
+        "unit_assignment_agents": [assignment],
     }
+    projected.pop("workforce_unit_descriptors", None)
+    return projected
 
 
 def _apply_compatible_selection(
@@ -1453,20 +1440,6 @@ def route(
             store=evidence_store,
             trace_id=trace_id,
         )
-    activation_canary = _activation_canary_routing(request)
-    if activation_canary is not None:
-        activation_canary = _attach_workforce_signals(
-            activation_canary,
-            request,
-            _route_signals(request),
-        )
-        return _finalize_classified_request(
-            activation_canary,
-            request,
-            classification,
-            store=evidence_store,
-            trace_id=trace_id,
-        )
     fresh_selection_required = _requires_fresh_selection(classification)
     cached = None if fresh_selection_required else cache_get(request.cache_key)
     exact = _exact_cached_routing(cached, request)
@@ -1559,15 +1532,23 @@ def route(
         )
         active_snapshot = request.workforce_snapshot
         active_catalog = request.workforce_catalog
-        outcome, active_snapshot, active_catalog, hiring_events = _run_gap_hiring(
-            outcome,
-            request,
-            cfg,
-            store,
-            active_snapshot,
-            active_catalog,
-            defer_commits=preflight_atomic,
+        activation_canary = is_exact_codex_activation_canary_task(
+            request.user_message,
+            host=request.host,
+            capability_status=request.capability_status,
         )
+        if activation_canary:
+            hiring_events = []
+        else:
+            outcome, active_snapshot, active_catalog, hiring_events = _run_gap_hiring(
+                outcome,
+                request,
+                cfg,
+                store,
+                active_snapshot,
+                active_catalog,
+                defer_commits=preflight_atomic,
+            )
         routing = project_workforce_routing(
             outcome,
             active_catalog,
@@ -1575,6 +1556,7 @@ def route(
             roster_count=active_snapshot.worker_count,
             contract_fingerprint=active_snapshot.contract_fingerprint,
         )
+        routing = _activation_canary_projection(routing, request)
         if hiring_events:
             pending_commits = [
                 event.pop("_pending_commit")

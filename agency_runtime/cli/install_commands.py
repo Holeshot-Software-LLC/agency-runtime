@@ -133,16 +133,25 @@ def _validate_install_mode(args: argparse.Namespace) -> tuple[bool, bool, str | 
     dry_run = bool(getattr(args, "dry_run", False))
     backup = getattr(args, "backup", None)
     verify_activation = bool(getattr(args, "verify_activation", False))
+    autonomous = bool(getattr(args, "autonomous", False))
     if rollback_mode and dry_run:
         raise ValueError("install --rollback and --dry-run are mutually exclusive")
     if backup is not None and not rollback_mode:
         raise ValueError("install --backup requires --rollback")
+    if autonomous and not verify_activation:
+        raise ValueError("install --autonomous requires --verify-activation")
     if verify_activation:
         if rollback_mode or dry_run or backup is not None:
             raise ValueError(
                 "install --verify-activation cannot be combined with install or rollback modes"
             )
-        if (
+        if autonomous:
+            if getattr(args, "agent", None) not in {None, "codex"}:
+                raise ValueError(
+                    "install --autonomous --verify-activation requires Codex or automatic host "
+                    "discovery"
+                )
+        elif (
             getattr(args, "agent", None) != "codex"
             or bool(getattr(args, "all", False))
             or getattr(args, "profile", None) is not None
@@ -159,7 +168,7 @@ def _validate_install_mode(args: argparse.Namespace) -> tuple[bool, bool, str | 
             is_exact_codex_activation_verification,
         )
 
-        if not is_exact_codex_activation_verification(args):
+        if not autonomous and not is_exact_codex_activation_verification(args):
             raise ValueError("install --verify-activation shape is invalid")
     return rollback_mode, dry_run, backup
 
@@ -213,6 +222,20 @@ def _resolve_install_targets(
     if args.all or not args.agent:
         return detect_installed_agents()
     return [args.agent]
+
+
+def _require_autonomous_codex_target(
+    args: argparse.Namespace,
+    targets: list[str],
+) -> bool:
+    """Return autonomous mode after proving that Codex is in its exact scope."""
+
+    autonomous = bool(getattr(args, "autonomous", False))
+    if autonomous and "codex" not in targets:
+        raise ValueError(
+            "install --autonomous --verify-activation requires a selected or detected Codex host"
+        )
+    return autonomous
 
 
 def _dashboard_opt_out_result(*, dry_run: bool = False) -> dict[str, Any]:
@@ -442,12 +465,33 @@ def _mark_all_host_completion(result: dict[str, Any]) -> None:
         )
 
 
-def _codex_activation_required() -> dict[str, Any]:
+def _codex_activation_required(
+    *,
+    trust_mode: str = "attended",
+    trust_bypass_used: bool = False,
+) -> dict[str, Any]:
     """Return the resumable, user-approved activation contract for Codex."""
 
+    if trust_mode == "autonomous_bypass":
+        return {
+            "state": "activation_required",
+            "complete": False,
+            "trust_mode": "autonomous_bypass",
+            "trust_bypass_used": trust_bypass_used,
+            "persistent_profile_changed": False,
+            "approval_surface": None,
+            "approval_launch_command": None,
+            "desktop_slash_hooks_is_trust_ui": False,
+            "action": (
+                "Autonomous bypass activation was not proven; inspect the named failure stage. "
+                "No persistent Codex trust state was changed."
+            ),
+            "verification_command": "agency install --autonomous --verify-activation --json",
+        }
     return {
         "state": "activation_required",
         "complete": False,
+        "trust_mode": "attended",
         "trust_bypass_used": False,
         "approval_surface": CODEX_HOOK_TRUST_SURFACE,
         "approval_launch_command": CODEX_HOOK_TRUST_COMMAND,
@@ -464,22 +508,26 @@ def _codex_activation_state(
     timeout: float,
     inspector: Callable[[str], dict[str, Any]],
     canary_runner: Callable[..., dict[str, Any]],
+    autonomous: bool = False,
 ) -> None:
     """Attach current-profile readiness without mutating Codex trust state."""
 
     if not result.get("ok") or result.get("registered") is not True:
         return
     verification: dict[str, Any] | None = None
+    trust_mode = "autonomous_bypass" if autonomous else "attended"
     if verify:
         try:
-            candidate = canary_runner(
-                "codex",
-                execute=True,
-                confirm="RUN LIVE codex CURRENT-PROFILE CANARY",
-                timeout=timeout,
-                mode="agency",
-                profile_scope="current-profile",
-            )
+            canary_kwargs: dict[str, Any] = {
+                "execute": True,
+                "confirm": "RUN LIVE codex CURRENT-PROFILE CANARY",
+                "timeout": timeout,
+                "mode": "agency",
+                "profile_scope": "current-profile",
+            }
+            if autonomous:
+                canary_kwargs["trust_mode"] = trust_mode
+            candidate = canary_runner("codex", **canary_kwargs)
             verification = (
                 dict(candidate)
                 if isinstance(candidate, Mapping)
@@ -502,36 +550,60 @@ def _codex_activation_state(
     except Exception:
         inspected = {}
     attestation = inspected.get("canary_attestation")
-    latest_verification_passed = not verify or bool(
-        isinstance(verification, Mapping) and verification.get("canary_passed") is True
-    )
-    ready = bool(
-        latest_verification_passed
-        and inspected.get("canary") is True
-        and inspected.get("canary_attestation_status") == "verified"
-        and isinstance(attestation, Mapping)
-        and attestation.get("profile_scope") == "current-profile"
-    )
+    if autonomous:
+        ready = bool(
+            verify
+            and isinstance(verification, Mapping)
+            and verification.get("schema_version") == "agency.host_canary.v1"
+            and verification.get("profile_scope") == "current-profile"
+            and verification.get("trust_mode") == trust_mode
+            and verification.get("trust_bypass_used") is True
+            and verification.get("live_attempted") is True
+            and verification.get("canary_passed") is True
+            and verification.get("attestation_persisted") is False
+            and verification.get("unmet_prerequisites") == []
+        )
+    else:
+        latest_verification_passed = not verify or bool(
+            isinstance(verification, Mapping) and verification.get("canary_passed") is True
+        )
+        ready = bool(
+            latest_verification_passed
+            and inspected.get("canary") is True
+            and inspected.get("canary_attestation_status") == "verified"
+            and isinstance(attestation, Mapping)
+            and attestation.get("profile_scope") == "current-profile"
+        )
     if ready:
+        hook_trust_status = (
+            inspected.get("hook_trust_status") or "unverified" if autonomous else "trusted"
+        )
         result.update(
             {
                 "complete": True,
                 "maturity": "runtime-verified",
                 "canary": True,
-                "hook_trust_status": "trusted",
+                "hook_trust_status": hook_trust_status,
                 "hook_trust_action": None,
                 "activation": {
                     "state": "ready",
                     "complete": True,
-                    "trust_bypass_used": False,
+                    "trust_mode": trust_mode,
+                    "trust_bypass_used": autonomous,
                     "profile_scope": "current-profile",
+                    "persistent_profile_changed": False,
                 },
             }
         )
         if verification is not None:
             result["activation"]["verification"] = verification
         return
-    activation = _codex_activation_required()
+    activation = _codex_activation_required(
+        trust_mode=trust_mode,
+        trust_bypass_used=bool(
+            isinstance(verification, Mapping) and verification.get("trust_bypass_used") is True
+        ),
+    )
     if verification is not None:
         activation["state"] = "verification_failed"
         activation["verification"] = verification
@@ -543,7 +615,11 @@ def _codex_activation_state(
             "hook_trust_status": inspected.get("hook_trust_status") or "unverified",
             "hook_trust_action": activation["action"],
             "activation": activation,
-            "warning": "Codex files are installed, but Agency is not active in normal sessions.",
+            "warning": (
+                "Codex files are installed, but bypass-mode activation was not proven."
+                if autonomous
+                else "Codex files are installed, but Agency is not active in normal sessions."
+            ),
         }
     )
 
@@ -559,6 +635,7 @@ def _install_hosts(
     activation_timeout: float = 180.0,
     host_inspector: Callable[[str], dict[str, Any]] | None = None,
     canary_runner: Callable[..., dict[str, Any]] | None = None,
+    autonomous: bool = False,
 ) -> list[dict[str, Any]]:
     """Install selected host adapters and preserve partial-failure evidence."""
     results: list[dict[str, Any]] = []
@@ -582,6 +659,7 @@ def _install_hosts(
                 timeout=activation_timeout,
                 inspector=host_inspector,
                 canary_runner=canary_runner,
+                autonomous=autonomous,
             )
         elif all_hosts:
             _mark_all_host_completion(result)
@@ -1131,7 +1209,9 @@ def _run_exact_install_special_mode(
 ) -> int | None:
     """Dispatch the two exact install-parser modes before generic install work."""
 
-    if bool(getattr(args, "verify_activation", False)):
+    if bool(getattr(args, "verify_activation", False)) and not bool(
+        getattr(args, "autonomous", False)
+    ):
         return _run_codex_activation_verification(
             json_mode=json_mode,
             timeout=float(getattr(args, "activation_timeout", 180.0)),
@@ -1188,6 +1268,7 @@ def cmd_install(
 
     profile_name = _resolve_profile_name(args, cfg)
     targets = _resolve_install_targets(args, detect_installed_agents)
+    autonomous = _require_autonomous_codex_target(args, targets)
     all_hosts = args.agent is None
     dashboard_opted_out = bool(getattr(args, "no_dashboard", False))
     if dry_run:
@@ -1272,6 +1353,7 @@ def cmd_install(
         activation_timeout=float(getattr(args, "activation_timeout", 180.0)),
         host_inspector=dependencies.host_inspector or inspect_host_installation,
         canary_runner=dependencies.canary_runner or run_canary,
+        autonomous=autonomous,
     )
 
     if dashboard_preflight is not None:

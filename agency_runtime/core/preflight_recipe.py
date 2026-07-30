@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import partial
 from hashlib import sha256
@@ -172,8 +173,15 @@ def _content_free_routing_recipe(
         if pending_hiring:
             projected["_pending_hiring_commits"] = list(pending_hiring)
     descriptors = _workforce_unit_descriptors(routing.get("workforce_unit_descriptors"))
-    if descriptors or str(routing.get("source") or "").startswith("workforce_"):
-        projected["workforce_unit_descriptors"] = descriptors
+    source = str(routing.get("source") or "")
+    from agency_runtime.core.activation_canary_contract import (
+        CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+    )
+
+    activation_canary = source == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
+    if descriptors or source.startswith("workforce_") or activation_canary:
+        if not activation_canary:
+            projected["workforce_unit_descriptors"] = descriptors
         from agency_runtime.core.workforce.routing_projection import (
             project_workforce_unit_bindings,
         )
@@ -625,8 +633,16 @@ def _verified_work_units(recipe_routing: dict[str, Any], user_message: str) -> d
         )
 
         execution_context = project_host_capability_receipt(recipe_routing.get("execution_context"))
+        routing_receipt = recipe_routing.get("routing_receipt")
+        inference = (
+            routing_receipt.get("inference") if isinstance(routing_receipt, Mapping) else None
+        )
         if (
             recipe_routing.get("source") != CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
+            or not isinstance(inference, Mapping)
+            or inference.get("required") is not True
+            or inference.get("attempted") is not True
+            or not inference.get("provider_attempts")
             or execution_context is None
             or not is_exact_codex_activation_canary_task(
                 user_message,
@@ -735,7 +751,20 @@ def _replay_routing_from_recipe(
         ):
             raise RuntimeError("ready preflight legacy unit-agent plan does not match")
     elif rebuilt != unit_agent_plan:
-        raise RuntimeError("ready preflight unit-agent plan does not match")
+        mismatches: list[str] = []
+        if len(rebuilt) != len(unit_agent_plan):
+            mismatches.append("count")
+        for ordinal, (actual, expected) in enumerate(zip(rebuilt, unit_agent_plan, strict=False)):
+            if not isinstance(actual, dict) or not isinstance(expected, dict):
+                mismatches.append(f"row-{ordinal}:shape")
+                continue
+            mismatches.extend(
+                f"row-{ordinal}:{field}"
+                for field in sorted(set(actual) | set(expected))
+                if actual.get(field) != expected.get(field)
+            )
+        detail = ",".join(mismatches[:32]) or "unknown"
+        raise RuntimeError(f"ready preflight unit-agent plan does not match: {detail}")
     return replay
 
 

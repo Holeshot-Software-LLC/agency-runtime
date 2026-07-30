@@ -285,7 +285,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "5f68d4aa29628e4ffd7f40b0e92f8410fa17d61e8c7d95e8fab386f80755d774"
+EXPECTED_MANIFEST_SHA256 = "0e63624c3e031ea6b64c8803491ae754a6509df13e147d6c15f6c54ee0a61c1a"
 
 
 def _handler(name: str):
@@ -452,6 +452,15 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
     assert bindings == EXPECTED_BINDINGS
 
 
+def test_install_parser_exposes_explicit_autonomous_activation_mode() -> None:
+    parsed = _parser().parse_args(["install", "--autonomous", "--verify-activation", "--json"])
+
+    assert parsed.autonomous is True
+    assert parsed.verify_activation is True
+    assert parsed.agent is None
+    assert parsed.json is True
+
+
 @pytest.mark.parametrize(
     ("argv", "expected"),
     [
@@ -462,6 +471,7 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
                 "profile": None,
                 "all": False,
                 "agent": None,
+                "autonomous": False,
                 "dry_run": False,
                 "rollback": False,
                 "backup": None,

@@ -269,6 +269,75 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="activation-canary-accepts-no-inference-attempt",
+        invariant=(
+            "The Codex activation canary cannot select a worker without a recorded inference "
+            "attempt."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before='        (routing.get("inference_attempted") is True, "inference_attempted"),',
+        after='        (True, "inference_attempted"),',
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_rejects_missing_inference_attempt_evidence"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="activation-canary-accepts-no-provider-receipt",
+        invariant=(
+            "The Codex activation canary cannot select a worker without a nonempty provider "
+            "attempt receipt."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before="""            isinstance(routing.get("provider_attempts"), list)
+            and bool(routing["provider_attempts"]),""",
+        after="""            isinstance(routing.get("provider_attempts"), list)
+            and True,""",
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_rejects_missing_provider_attempt_receipts"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="activation-canary-enters-gap-hiring",
+        invariant="The read-only Codex activation canary cannot enter gap hiring.",
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before="        if activation_canary:\n            hiring_events = []",
+        after="        if False:\n            hiring_events = []",
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_uses_inference_owned_selection"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="activation-replay-drops-inferred-binding",
+        invariant=(
+            "The content-free activation recipe retains the exact inferred unit binding needed "
+            "for modern plan replay."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before=(
+            '    activation_canary = str(value.get("source") or "") == '
+            "CODEX_ACTIVATION_CANARY_ROUTE_SOURCE"
+        ),
+        after="    activation_canary = False",
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_preflight_replays_one_exact_selected_only_unit"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="modern-preflight-plan-drift-is-accepted",
+        invariant="Modern durable unit plans must exactly match their replayed construction.",
+        source_path="agency_runtime/core/preflight_recipe.py",
+        before="    elif rebuilt != unit_agent_plan:",
+        after="    elif False:",
+        test_node=(
+            "tests/test_turn_coverage_complete_header_preflight.py::"
+            "test_preflight_recipe_rejects_current_unit_plan_drift"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-host-restores-ephemeral-parent",
         invariant=(
             "Ordinary Codex product trials persist the parent turn required by native "
@@ -282,7 +351,7 @@ class _NominationSemantics:""",
     "--ignore-rules",""",
         test_node=(
             "tests/test_product_host.py::"
-            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
         ),
     ),
     DecisionMutation(
@@ -293,7 +362,7 @@ class _NominationSemantics:""",
         after='    "multi_agent_v1",',
         test_node=(
             "tests/test_product_host.py::"
-            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
         ),
     ),
     DecisionMutation(
@@ -304,7 +373,7 @@ class _NominationSemantics:""",
         after='    "agents.enabled=false",',
         test_node=(
             "tests/test_product_host.py::"
-            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
         ),
     ),
     DecisionMutation(
@@ -317,7 +386,7 @@ class _NominationSemantics:""",
         after="        require_existing_store=False,",
         test_node=(
             "tests/test_product_host.py::"
-            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
         ),
     ),
     DecisionMutation(
@@ -328,7 +397,34 @@ class _NominationSemantics:""",
         after="        hook_event_diagnostics=False,",
         test_node=(
             "tests/test_product_host.py::"
-            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-disables-exact-rollout-correlation",
+        invariant=(
+            "Codex product trials correlate collaboration events from the exact child rollout."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before="        require_exact_activation_rollout=True,",
+        after="        require_exact_activation_rollout=False,",
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-mislabels-hook-bypass-as-attended",
+        invariant=(
+            "Codex product trials record the supported one-invocation bypass without claiming "
+            "attended trust."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before='        trust_mode="autonomous_bypass",',
+        after='        trust_mode="attended",',
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
         ),
     ),
     DecisionMutation(

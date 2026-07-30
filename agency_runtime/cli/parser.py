@@ -213,6 +213,14 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         help="Do not register or start the optional per-user dashboard service",
     )
     install.add_argument(
+        "--autonomous",
+        action="store_true",
+        help=(
+            "Use the harness-supported hook-trust bypass for this explicit activation "
+            "verification without changing persistent trust state"
+        ),
+    )
+    install.add_argument(
         "--activation-timeout",
         type=float,
         default=180.0,

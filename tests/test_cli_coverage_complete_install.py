@@ -15,6 +15,7 @@ def args(**changes):
     values = {
         "agent": None,
         "all": False,
+        "autonomous": False,
         "activation_timeout": 180.0,
         "backup": None,
         "confirm": "",
@@ -102,6 +103,35 @@ def test_verify_activation_requires_the_exact_codex_only_shape(argv):
         subject._validate_install_mode(parsed)
 
 
+def test_autonomous_activation_uses_the_normal_full_install_path() -> None:
+    parsed = cli_main.build_parser().parse_args(
+        ["install", "--autonomous", "--verify-activation", "--json"]
+    )
+
+    assert subject._validate_install_mode(parsed) == (False, False, None)
+    assert (
+        subject._run_exact_install_special_mode(
+            parsed,
+            json_mode=True,
+            dependencies=dependencies()[0],
+        )
+        is None
+    )
+
+
+def test_autonomous_mode_requires_activation_and_codex_scope() -> None:
+    with pytest.raises(ValueError, match="requires --verify-activation"):
+        subject._validate_install_mode(
+            cli_main.build_parser().parse_args(["install", "--autonomous"])
+        )
+    with pytest.raises(ValueError, match="requires Codex or automatic host discovery"):
+        subject._validate_install_mode(
+            cli_main.build_parser().parse_args(
+                ["install", "--agent", "zcode", "--autonomous", "--verify-activation"]
+            )
+        )
+
+
 @pytest.mark.parametrize(
     ("change", "message"),
     [
@@ -176,7 +206,13 @@ def test_install_mode_profile_and_target_validation():
     assert subject._resolve_profile_name(args(), config()) == "standard"
     assert subject._resolve_install_targets(args(all=True), lambda: ["codex"]) == ["codex"]
     assert subject._resolve_install_targets(args(agent="claude"), lambda: []) == ["claude"]
-    assert subject._resolve_install_targets(args(), lambda: ["ignored"]) == []
+    assert subject._resolve_install_targets(args(), lambda: ["codex", "zcode"]) == [
+        "codex",
+        "zcode",
+    ]
+    assert subject._require_autonomous_codex_target(args(), ["zcode"]) is False
+    with pytest.raises(ValueError, match="requires a selected or detected Codex"):
+        subject._require_autonomous_codex_target(args(autonomous=True), ["zcode"])
 
 
 def test_rollback_validation_json_and_human_rendering(capsys):
@@ -256,8 +292,8 @@ def test_dashboard_plan_host_plan_and_dry_run_rendering(monkeypatch, capsys):
 
     complete = {"ok": True, "executable": "codex"}
     assert subject._host_plans_complete([complete], all_hosts=True)
-    assert not subject._host_plans_complete([], all_hosts=True)
-    assert not subject._host_plans_complete([{"ok": True, "executable": None}], all_hosts=True)
+    assert subject._host_plans_complete([], all_hosts=True)
+    assert subject._host_plans_complete([{"ok": True, "executable": None}], all_hosts=True)
     assert subject._host_plans_complete([{"ok": True}], all_hosts=False)
     plan = {
         "host": "codex",
@@ -305,6 +341,7 @@ def test_dry_run_reports_complete_and_incomplete(monkeypatch, capsys):
             args(all=True),
             profile_name="standard",
             targets=["codex"],
+            all_hosts=True,
             dashboard_opted_out=False,
             json_mode=True,
             plan_agent_adapter=planner,
@@ -319,6 +356,7 @@ def test_dry_run_reports_complete_and_incomplete(monkeypatch, capsys):
             args(),
             profile_name="standard",
             targets=[],
+            all_hosts=True,
             dashboard_opted_out=True,
             json_mode=False,
             plan_agent_adapter=planner,
@@ -333,6 +371,7 @@ def test_dry_run_reports_complete_and_incomplete(monkeypatch, capsys):
             args(all=True),
             profile_name="standard",
             targets=["codex"],
+            all_hosts=True,
             dashboard_opted_out=False,
             json_mode=True,
             plan_agent_adapter=lambda host: {
@@ -343,7 +382,7 @@ def test_dry_run_reports_complete_and_incomplete(monkeypatch, capsys):
             plan_dashboard_service=lambda **_kw: {"ok": True},
             dependencies=deps,
         )
-        == 1
+        == 0
     )
 
 
@@ -417,7 +456,7 @@ def test_host_completion_install_aggregation_and_seed(capsys, monkeypatch):
     assert subject._report_complete({"ok": True}, results)
     assert not subject._report_complete({"ok": False}, results)
     assert subject._install_succeeded({"ok": True}, [], all_hosts=False)
-    assert not subject._install_succeeded({"ok": True}, [], all_hosts=True)
+    assert subject._install_succeeded({"ok": True}, [], all_hosts=True)
     assert subject._install_succeeded({"ok": True}, results, all_hosts=True)
 
     class RosterStore:
@@ -520,6 +559,94 @@ def test_codex_install_verifies_activation_with_current_profile_canary():
             },
         )
     ]
+
+
+def test_codex_autonomous_install_proves_bypass_without_claiming_trust() -> None:
+    calls = []
+    verification = {
+        "schema_version": "agency.host_canary.v1",
+        "profile_scope": "current-profile",
+        "trust_mode": "autonomous_bypass",
+        "trust_bypass_used": True,
+        "live_attempted": True,
+        "canary_passed": True,
+        "attestation_persisted": False,
+        "unmet_prerequisites": [],
+    }
+
+    def canary_runner(*args, **kwargs):
+        calls.append((args, kwargs))
+        return verification
+
+    results = subject._install_hosts(
+        ["codex"],
+        config(),
+        all_hosts=True,
+        json_mode=True,
+        install_agent_adapter=lambda _host, _cfg: {
+            "host": "codex",
+            "ok": True,
+            "status": "registered",
+            "registered": True,
+        },
+        verify_activation=True,
+        activation_timeout=42,
+        host_inspector=lambda _host: {"hook_trust_status": "modified"},
+        canary_runner=canary_runner,
+        autonomous=True,
+    )
+
+    result = results[0]
+    assert result["complete"] is True
+    assert result["hook_trust_status"] == "modified"
+    assert result["activation"] == {
+        "state": "ready",
+        "complete": True,
+        "trust_mode": "autonomous_bypass",
+        "trust_bypass_used": True,
+        "profile_scope": "current-profile",
+        "persistent_profile_changed": False,
+        "verification": verification,
+    }
+    assert calls[0] == (
+        ("codex",),
+        {
+            "execute": True,
+            "confirm": "RUN LIVE codex CURRENT-PROFILE CANARY",
+            "timeout": 42,
+            "mode": "agency",
+            "profile_scope": "current-profile",
+            "trust_mode": "autonomous_bypass",
+        },
+    )
+
+
+def test_codex_autonomous_install_does_not_claim_an_unattempted_bypass() -> None:
+    result = {"host": "codex", "ok": True, "registered": True}
+
+    subject._codex_activation_state(
+        result,
+        verify=True,
+        timeout=1,
+        inspector=lambda _host: {"hook_trust_status": "modified"},
+        canary_runner=lambda *_args, **_kwargs: {
+            "schema_version": "agency.host_canary.v1",
+            "profile_scope": "current-profile",
+            "trust_mode": "autonomous_bypass",
+            "trust_bypass_used": False,
+            "live_attempted": False,
+            "canary_passed": False,
+            "attestation_persisted": False,
+            "unmet_prerequisites": ["model invocation was not attempted"],
+        },
+        autonomous=True,
+    )
+
+    assert result["complete"] is False
+    assert result["activation"]["state"] == "verification_failed"
+    assert result["activation"]["trust_mode"] == "autonomous_bypass"
+    assert result["activation"]["trust_bypass_used"] is False
+    assert result["hook_trust_status"] == "modified"
 
 
 def test_codex_activation_failure_is_resumable_and_sanitized():
@@ -638,8 +765,10 @@ def test_codex_activation_accepts_existing_current_profile_attestation_without_n
     assert result["activation"] == {
         "state": "ready",
         "complete": True,
+        "trust_mode": "attended",
         "trust_bypass_used": False,
         "profile_scope": "current-profile",
+        "persistent_profile_changed": False,
     }
 
 

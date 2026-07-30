@@ -8,6 +8,7 @@ tags: [routing, inference, workforce, safety, failure]
 related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - README.md
@@ -77,4 +78,3 @@ deterministic recruitment source for a substantive selection.
 - **Let resident managers select from memory.** Rejected because that recreates
   an unrecorded model or deterministic decision outside the governed inference
   path.
-
