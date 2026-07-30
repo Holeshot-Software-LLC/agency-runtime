@@ -22,6 +22,8 @@ from agency_runtime.core.workforce.fallback import (
     deterministic_work_plan,
 )
 from agency_runtime.core.workforce.inference import (
+    _RECRUITER_REPAIR_SYSTEM,
+    _RECRUITER_SYSTEM,
     NOMINATION_RESPONSE_SCHEMA,
     PLAN_RESPONSE_SCHEMA,
     WorkforceInferenceAttempt,
@@ -452,20 +454,30 @@ def test_balanced_recruiter_repairs_only_missing_work_unit_rows() -> None:
             _nominee("analysis-alternative", 0.90, "acceptable"),
         ],
     }
-    responses = iter(
-        (
-            _result(plan),
-            _result({"units": [first_row]}),
-            _result({"units": [second_row]}),
-        )
-    )
+    system_prompts: list[str] = []
+
+    def invoke(_provider, _prompt, _schema, **kwargs):
+        system_prompts.append(kwargs["system_prompt"])
+        if len(system_prompts) == 1:
+            return _result(plan)
+        if len(system_prompts) == 2:
+            return _result({"units": [first_row]})
+        repair_system = system_prompts[-1]
+        if (
+            "Return exactly one corrected unit row for every listed failed unit"
+            not in repair_system
+            or "Omit every unlisted planned unit" not in repair_system
+            or "Never omit a unit" in repair_system
+        ):
+            return None
+        return _result({"units": [second_row]})
 
     outcome = plan_and_staff_workforce(
         "Analyze two independent repository concerns.",
         snapshot,
         config=_config(),
         context=_context(),
-        invoker=lambda *_args, **_kwargs: next(responses),
+        invoker=invoke,
     )
 
     assert outcome.accepted
@@ -478,6 +490,7 @@ def test_balanced_recruiter_repairs_only_missing_work_unit_rows() -> None:
     assert outcome.attempts[1].validation_detail == (
         "workforce nomination failures: unit-analyze-second=missing_work_unit"
     )
+    assert "Return exactly one unit row for every planned unit" in system_prompts[1]
     assert [item.unit_id for item in outcome.staffing.units] == [
         "unit-analyze",
         "unit-analyze-second",
@@ -527,12 +540,21 @@ def test_recruiter_repair_receives_every_invalid_unit_and_preserves_valid_rows()
         allowed_candidate_ids=frozenset({"technical-analyst", "analysis-alternative"}),
     )
     prompts: list[str] = []
+    system_prompts: list[str] = []
     repair_unit_ids: list[str] = []
 
-    def invoke(_provider, prompt, _schema, **_kwargs):
+    def invoke(_provider, prompt, _schema, **kwargs):
         prompts.append(prompt)
+        system_prompts.append(kwargs["system_prompt"])
         if len(prompts) == 1:
             return _result({"units": nominations})
+        if (
+            "Return exactly one corrected unit row for every listed failed unit"
+            not in system_prompts[-1]
+            or "Omit every unlisted planned unit" not in system_prompts[-1]
+            or "Never omit a unit" in system_prompts[-1]
+        ):
+            return None
         feedback = prompt.partition("[RUNTIME VALIDATION FEEDBACK]")[2]
         repair_unit_ids.extend(unit_id for unit_id in invalid_unit_ids if unit_id in feedback)
         return _result({"units": [valid_by_id[unit_id] for unit_id in repair_unit_ids]})
@@ -542,11 +564,12 @@ def test_recruiter_repair_receives_every_invalid_unit_and_preserves_valid_rows()
         providers=(_provider(),),
         prompt="production-shaped nine-unit recruiter request",
         schema=NOMINATION_RESPONSE_SCHEMA,
-        system_prompt="recruit every planned unit",
+        system_prompt=_RECRUITER_SYSTEM,
         budget=_CallBudget(2),
         invoker=invoke,
         parser=parser.parse,
         before_provider=parser.reset,
+        repair_system_prompt=_RECRUITER_REPAIR_SYSTEM,
     )
 
     assert failure == ""
@@ -559,6 +582,7 @@ def test_recruiter_repair_receives_every_invalid_unit_and_preserves_valid_rows()
     assert "unit-analysis-03=staff_without_safe_team" in detail
     assert "unit-analysis-07=staff_without_safe_team" in detail
     assert prompts[1].count("staff_without_safe_team") == 2
+    assert "Return exactly one unit row for every planned unit" in system_prompts[0]
     assert repair_unit_ids == list(invalid_unit_ids)
     assert [item.unit_id for item in proposal.units] == [
         f"unit-analysis-{index:02d}" for index in range(1, 10)

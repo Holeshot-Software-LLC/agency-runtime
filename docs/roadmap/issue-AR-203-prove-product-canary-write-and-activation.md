@@ -11,6 +11,7 @@ related:
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
+  - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
   - docs/roadmap/handoffs/issue-AR-203.md
   - docs/worklog/README.md
 supersedes: []
@@ -121,6 +122,43 @@ passes 551 files, and Ruff check plus format validation pass all 603 Python
 inputs. The dashboard UI's restricted first attempt stopped at the outer
 sandbox's expected `spawn EPERM`; the authorized normal-owner rerun passed.
 
+PR 186 merged that exact repair as
+`830b878859318bc1288858ba65ba580bd98bf53e`. The immutable upgrade planner
+resolved that full revision, and exact build `0.1.0+g830b87885931` is installed
+for Codex and ZCode only. After the owner trusted the refreshed hooks and
+restarted Codex, trial `ar203-830b878-ordinary-02` proved the hook and route
+start: one route, one run, three model receipts, two finalizations, and nine
+typed work units were persisted under trace
+`019fb417-f166-7461-a1db-e53ee0007045`.
+
+The trial is terminal `NO-GO`. The planner response was applied, the recruiter
+response was rejected as `provider_response_contract_invalid`, and its bounded
+repair ended `provider_no_valid_response`. Routing therefore degraded and
+abstained with `workforce_inference_failed`; no specialist, hiring case, load,
+delegation, or worker run followed. The seven-field header was structurally
+present only after one correction, which independently fails the zero-correction
+gate. Isolated workspace trust was proven without changing the persistent
+profile, but the proof file was missing, the workspace stayed empty, and product
+validation correctly skipped as `workspace_write_not_proven`.
+
+The first source repair is now implemented without restoring deterministic
+selection. The bounded repair receives a distinct high-priority system contract
+that requests every listed failed row and explicitly omits retained rows. The
+durable route now projects only allowlisted planned-unit and invariant-code
+pairs, so a repeated rejection will expose the exact safe boundary rather than
+only `provider_response_contract_invalid`. Two review passes are complete. The
+changed boundary passes 107 tests with 1 skipped, and decision conformance kills
+21/21 mutations with zero survivors or invalid results and unchanged source.
+The named fast Python spine passes 675 tests with 6 skipped, dashboard UI passes
+109 tests, routing evaluation 1.3.0 passes every gate, documentation validation
+passes 551 files, and Ruff checks all 603 Python inputs.
+
+The delivery outcome is frozen as "README's main story works in reality" for
+the ordinary Codex path on this machine. Each package stops at its first
+terminal failure or 45 minutes, permits one live trial per exact build, and
+produces a durable evidence checkpoint before any repair. A second failure at
+the same causal boundary stops for owner direction instead of looping.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host
@@ -144,6 +182,11 @@ sandbox's expected `spawn EPERM`; the authorized normal-owner rerun passed.
 9. Keep multi-unit product evidence separate from the activation canary's
    deliberately single-child rollout parser, and isolate each Codex specialist
    child with `fork_turns=none`.
+10. Repair only the recruiter response acceptance and bounded-repair contract
+    proven by the exact live trace; keep online selection inference-owned.
+11. Require the replacement trial to accept a real specialist team for the
+    fixed robust prompt, or record a defensible gap and an actual hiring
+    decision; never manufacture hiring merely to satisfy the demo.
 
 ## Dependencies
 
@@ -170,5 +213,21 @@ demonstrates both mismatches.
   bounded hook-stage evidence without retaining hook input or raw stderr.
 - [x] Codex specialist launch instructions require `fork_turns=none` and the
   exact persisted native task name.
+- [x] PR 186 is merged and its exact revision is installed for Codex and ZCode
+  only without selecting the dashboard.
+- [x] The exact installed trial starts the hook and route, persists nine typed
+  work units, and distinguishes recruiter contract failure from activation,
+  hiring, delegation, and workspace-write evidence.
+- [x] The recruiter repair uses a non-contradictory partial-row system contract,
+  and durable rejection evidence is bounded to allowlisted unit/invariant pairs.
+- [x] The repaired boundary passes 107 focused tests with 1 skipped and kills
+  21/21 decision-conformance mutations.
+- [x] The repaired revision passes the named fast gate.
+- [ ] The repaired revision merges and is exact-installed for Codex and ZCode
+  only.
+- [ ] Recruiter response acceptance or bounded repair produces a defensible
+  inferred staffing plan for the fixed README-story prompt.
+- [ ] The replacement trial selects and launches at least one specialist/team,
+  or records a defensible gap plus an actual hiring decision.
 - [ ] The next ordinary canary reports exact activation evidence and can create
   required artifacts when workforce execution reaches the parent model.

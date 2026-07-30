@@ -33,6 +33,19 @@ _SECRET_PREFIXES = (
     "sk_",
 )
 _SENSITIVE_MARKERS = ("credential", "password", "secret", "token")
+_NOMINATION_UNIT_ID = re.compile(r"^unit-[a-z0-9][a-z0-9-]{0,62}$")
+_NOMINATION_FAILURE_CODES = frozenset(
+    {
+        "candidate_outside_detail_cards",
+        "gap_with_safe_team",
+        "invalid_candidate",
+        "invalid_decision",
+        "invalid_ranking",
+        "missing_work_unit",
+        "staff_without_safe_team",
+    }
+)
+_NOMINATION_FAILURE_PREFIX = "workforce nomination failures: "
 
 
 def bounded_receipt_text(value: object, *, maximum_bytes: int) -> str:
@@ -115,6 +128,41 @@ def _codes(value: object, *, limit: int = _MAX_CODES) -> list[str]:
     return result
 
 
+def _validation_failures(value: object) -> list[dict[str, str]]:
+    """Project only the allowlisted, content-free recruiter failure contract."""
+
+    raw: object = value
+    if isinstance(value, str):
+        if len(value.encode("utf-8")) > RECEIPT_DESCRIPTION_BYTES or not value.startswith(
+            _NOMINATION_FAILURE_PREFIX
+        ):
+            return []
+        parsed: list[dict[str, str]] = []
+        for item in value.removeprefix(_NOMINATION_FAILURE_PREFIX).split(","):
+            unit_id, separator, reason_code = item.partition("=")
+            if not separator:
+                return []
+            parsed.append({"unit_id": unit_id, "reason_code": reason_code})
+        raw = parsed
+    if not isinstance(raw, (list, tuple)) or not 1 <= len(raw) <= _MAX_STAFFING_UNITS:
+        return []
+    failures: list[dict[str, str]] = []
+    for item in raw:
+        if not isinstance(item, Mapping) or set(item) != {"unit_id", "reason_code"}:
+            return []
+        unit_id = str(item.get("unit_id") or "").strip().casefold()
+        reason_code = _code(item.get("reason_code"))
+        failure = {"unit_id": unit_id, "reason_code": reason_code}
+        if (
+            _NOMINATION_UNIT_ID.fullmatch(unit_id) is None
+            or reason_code not in _NOMINATION_FAILURE_CODES
+            or failure in failures
+        ):
+            return []
+        failures.append(failure)
+    return failures
+
+
 def _provider_attempts(value: object) -> list[dict[str, Any]]:
     if not isinstance(value, (list, tuple)):
         return []
@@ -122,18 +170,22 @@ def _provider_attempts(value: object) -> list[dict[str, Any]]:
     for ordinal, item in enumerate(value[:_MAX_PROVIDER_ATTEMPTS], start=1):
         if not isinstance(item, Mapping):
             continue
-        attempts.append(
-            {
-                "ordinal": ordinal,
-                "provider_name": _identity(item.get("provider_name")) or "unavailable",
-                "provider_type": _code(item.get("provider_type")) or "unknown",
-                "requested_model": _identity(item.get("requested_model")),
-                "model_group": _identity(item.get("model_group")),
-                "status": _code(item.get("status")) or "unknown",
-                "reason_code": _reason_family(item.get("reason"))
-                or _reason_family(item.get("reason_code")),
-            }
+        attempt = {
+            "ordinal": ordinal,
+            "provider_name": _identity(item.get("provider_name")) or "unavailable",
+            "provider_type": _code(item.get("provider_type")) or "unknown",
+            "requested_model": _identity(item.get("requested_model")),
+            "model_group": _identity(item.get("model_group")),
+            "status": _code(item.get("status")) or "unknown",
+            "reason_code": _reason_family(item.get("reason"))
+            or _reason_family(item.get("reason_code")),
+        }
+        validation_failures = _validation_failures(
+            item.get("validation_failures", item.get("validation_detail"))
         )
+        if validation_failures:
+            attempt["validation_failures"] = validation_failures
+        attempts.append(attempt)
     return attempts
 
 

@@ -46,12 +46,12 @@ single-unit error.
 
 ## Current state
 
-Fresh fast mode now funds planner, recruiter, and one recruiter repair. The
-live trace proves all three calls were made through the configured
-`codex-subscription` wrapper using requested and resolved model
-`gpt-5.6-luna`: one receipt succeeded and two failed. Route latency was
-114.200 seconds. The route ended `abstained` with zero selected, loaded, or
-delegated specialists and no hiring attempt.
+Fresh fast mode funds planner, recruiter, and one recruiter repair. Trial
+`ar203-830b878-ordinary-02` live-exercised that path through the configured
+`codex-subscription` wrapper: the planner produced nine typed units, the
+recruiter response was rejected as `provider_response_contract_invalid`, and
+the bounded repair returned `provider_no_valid_response`. The route correctly
+abstained with zero selected, loaded, delegated, or hired specialists.
 
 The implementation now collects an ordered allowlisted failure set across all
 planned units. Its same-provider accumulator removes failed rows, preserves
@@ -59,12 +59,22 @@ valid rows, and reconstructs a repaired proposal in exact plan order without
 adding or promoting a candidate. The production-shaped nine-unit regression
 repairs two independently invalid unit decisions in one bounded call.
 
-Focused runtime review passes 85 tests. Decision conformance passes a green
-baseline and kills all 13 curated mutations, including first-error-only
-recruiter validation, with zero survivors or invalid results and unchanged
-source inputs. The named fast production spine passes 675 tests with 6 skipped;
-the dashboard UI passes 109 tests; and routing evaluation 1.3.0 passes every
-correctness, policy, delegation, performance, startup, and scale gate.
+The live failure revealed that the repair user prompt allowed partial rows but
+the higher-priority ordinary recruiter system prompt still required every
+planned unit. The current repair gives the retry a distinct system contract
+that requires exactly the listed failed rows and explicitly omits retained
+rows. It also projects only allowlisted unit and invariant codes into the
+durable route so a repeated failure is attributable without retaining provider
+content.
+
+Two bounded review passes are complete. The changed recruiter/routing boundary
+passes 107 tests with 1 skipped. Decision conformance passes its baseline and
+kills all 21 curated mutations, including the real-system-prompt regression and
+durable failure-projection removal, with zero survivors or invalid results and
+unchanged source inputs. The named fast Python spine passes 675 tests with
+6 skipped, the dashboard UI passes 109 tests, Ruff checks all 603 Python inputs,
+and routing evaluation 1.3.0 passes every gate with routing p95 7.067 ms and
+cache-hit p95 1.430 ms. Documentation validation passes 551 files.
 
 PR 184 merged normally as exact main revision
 `dbd5502847b822825c7f3b99a18662949c98de0b`. GitHub refused every hosted job
@@ -72,11 +82,10 @@ before repository steps because the account payment or spending limit requires
 attention; no repository failure executed. Exact build
 `0.1.0+gdbd5502847b8` is installed, and only Codex and ZCode were refreshed.
 
-Final trial `ar203-dbd5502-ordinary-01` ended `NO-GO` before any Agency route
-or recruiter call was recorded. The isolated plugin was registered and enabled,
-but the exact activation snapshot returned `route_not_found` with every runtime
-cardinality zero. This does not invalidate the deterministic recruiter repair,
-but it also does not live-exercise or prove that repair in Codex.
+PR 186 later repaired the activation boundary, and exact build
+`0.1.0+g830b87885931` produced the live recruiter evidence above. That trial is
+terminal `NO-GO` and will not be rerun. The current source repair must pass the
+named fast gate, merge, and be exact-installed before one replacement trial.
 
 ## Approach
 
@@ -91,9 +100,13 @@ but it also does not live-exercise or prove that repair in Codex.
    merge corrected rows but may not add, reorder, or promote a specialist.
 5. Add a broad multi-unit regression and a decision-conformance mutation that
    restores first-error-only behavior.
-6. Run focused review and the named fast gate before merge and exact
-   Codex/ZCode installation. Do not spend another ordinary canary until the
-   AR-203 product-harness boundary is also repaired.
+6. Give the partial repair a distinct non-contradictory system contract and
+   mutation-test the real system prompt rather than a fake-provider shortcut.
+7. Persist only the allowlisted unit/invariant projection needed to diagnose a
+   rejected recruiter response.
+8. Run focused review and the named fast gate before merge and exact
+   Codex/ZCode installation. Spend only one replacement canary on that exact
+   build.
 
 ## Dependencies
 
@@ -116,7 +129,12 @@ ADR-0114 limits fast mode to one bounded semantic repair.
   behavior and passes with one bounded repair.
 - [x] The decision-conformance gate kills an exact mutation that restores
   first-error-only recruiter validation.
-- [x] Focused tests and the named fast production gate pass on the exact source
-  revision.
-- [x] The merged revision is exact-installed for Codex and ZCode before the
-  next ordinary canary.
+- [x] The partial repair receives a distinct high-priority system contract that
+  requests every failed row and no retained row.
+- [x] Durable receipts retain only allowlisted unit/invariant pairs and reject
+  malformed, unknown, or provider-authored validation detail.
+- [x] Focused tests and 21/21 decision-conformance mutations pass on the current
+  source revision.
+- [x] The named fast production gate passes on the exact source revision.
+- [ ] The merged revision is exact-installed for Codex and ZCode before the
+  one replacement ordinary canary.

@@ -32,6 +32,13 @@ valid rows, but its feedback did not carry the complete bounded failure set.
 Persisting raw provider responses or unknown candidate identifiers would make
 the diagnostic boundary unsafe.
 
+The first live trial to reach the repaired nine-unit path exposed a second
+contract conflict. The user prompt correctly requested only failed rows, while
+the higher-priority recruiter system prompt still required every planned unit
+and said never to omit one. A compliant provider therefore could not satisfy
+the partial-repair parser. The durable route also reduced that rejection to a
+generic reason family, hiding which governed unit invariant failed.
+
 ## Decision
 
 Recruiter semantic validation traverses every planned unit and returns one
@@ -46,6 +53,19 @@ a partial repair containing the listed failed units. It reconstructs the final
 proposal in exact plan order. Accumulated rows reset before a different provider
 is attempted.
 
+The repair call uses a distinct high-priority system contract. It requires
+exactly one corrected row for each listed failed planned unit, requires their
+listed order, and requires every unlisted planned unit to be omitted because
+the accumulator retains its validated row. The ordinary recruiter system
+continues to require one row for every planned unit.
+
+Durable provider-attempt evidence may project the exact bounded validation set
+as `unit_id` plus allowlisted `reason_code` pairs. The projection accepts only
+the governed failure prefix, planned-unit identifier shape, known invariant
+codes, cardinality limit, and duplicate-free structure. Malformed values,
+unknown codes, and provider-authored explanation text fail closed and are not
+persisted.
+
 Deterministic code may validate, reject, merge, and verify the inferred rows. It
 does not add, promote, or reorder an online candidate. The final safe-team
 verification remains authoritative and can return another bounded failure set.
@@ -55,8 +75,12 @@ verification remains authoritative and can return another bounded failure set.
 - One repair can address every discovered invalid unit instead of chasing one
   error at a time.
 - Repair prompts are smaller because already valid rows need not be repeated.
+- The repair system and user prompts now express one satisfiable partial-row
+  contract instead of conflicting full-plan and partial-plan requirements.
 - Validation evidence remains content-free and bounded by the planned-unit
   limit.
+- A failed live repair can identify the governed unit and invariant boundary
+  without retaining raw provider content.
 - A repair that omits a listed failed unit, introduces a new invalid row, or
   cannot form a safe team still fails closed when the call budget is exhausted.
 - The decision-conformance gate must kill first-error-only behavior with the

@@ -130,6 +130,36 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="recruiter-repair-restores-full-plan-system-contract",
+        invariant=(
+            "A partial recruiter repair receives a non-contradictory system contract that "
+            "requests only failed planned units."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="        repair_system_prompt=_RECRUITER_REPAIR_SYSTEM,",
+        after="        repair_system_prompt=_RECRUITER_SYSTEM,",
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_balanced_recruiter_repairs_only_missing_work_unit_rows"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="recruiter-failure-detail-dropped-from-durable-receipt",
+        invariant=(
+            "A durable route retains only the allowlisted unit and reason codes needed to "
+            "diagnose a recruiter rejection."
+        ),
+        source_path="agency_runtime/core/selector/receipt_projection.py",
+        before="""        if validation_failures:
+            attempt["validation_failures"] = validation_failures""",
+        after="""        if False and validation_failures:
+            attempt["validation_failures"] = validation_failures""",
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_routing_receipt_is_bounded_content_free_and_idempotent"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-host-falls-back-to-legacy-activity-summary",
         invariant=(
             "Codex Agency product trials consume the exact activation snapshot for the "

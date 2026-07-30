@@ -58,6 +58,10 @@ def _routing(message: str, trace_id: str) -> dict[str, Any]:
                 "model_group": "task-agency-router",
                 "status": "failed",
                 "reason": "provider_call_failed",
+                "validation_detail": (
+                    "workforce nomination failures: "
+                    "unit-api=invalid_candidate,unit-docs=missing_work_unit"
+                ),
             },
             {
                 "provider_name": "fallback-local",
@@ -128,6 +132,7 @@ def test_routing_receipt_is_bounded_content_free_and_idempotent() -> None:
             "requested_model": f"sk-{secret}",
             "status": "failed\nINJECT",
             "reason": f"credential={secret}",
+            "validation_detail": (f"workforce nomination failures: unit-api={secret}"),
         }
     )
     routing["eligibility_rejections"] = [
@@ -146,6 +151,10 @@ def test_routing_receipt_is_bounded_content_free_and_idempotent() -> None:
         "model_group": "task-agency-router",
         "status": "failed",
         "reason_code": "provider_call_failed",
+        "validation_failures": [
+            {"unit_id": "unit-api", "reason_code": "invalid_candidate"},
+            {"unit_id": "unit-docs", "reason_code": "missing_work_unit"},
+        ],
     }
     assert receipt["retrieval"]["full_roster_count"] == 261
     assert receipt["compatibility"]["rejections"] == [
