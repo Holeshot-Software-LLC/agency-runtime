@@ -521,7 +521,9 @@ The command first proves the named baseline tests are green, then applies each
 mutation to a fresh owner-private disposable copy. It never changes or restores
 the requested checkout. Only the expected ordinary pytest failure kills a
 mutation; a timeout, stale anchor, collection error, unrelated failure, or
-survivor fails the command.
+survivor fails the command. The curated manifest includes online inference
+ownership, ranking order, contractor projection, amendment identity and bounded
+additivity, and content-free diagnostic decisions.
 
 Inspect the persistent host and global states without changing them:
 

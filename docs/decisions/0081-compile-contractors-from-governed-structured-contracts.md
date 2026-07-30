@@ -3,13 +3,14 @@ title: "Compile contractors from governed structured contracts"
 status: accepted
 category: decisions
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-07-29
 tags: [contractors, hiring, security, roster]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-122-contractor-hiring-and-lifecycle.md
   - docs/roadmap/issue-AR-123-workforce-cli-and-dashboard.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
+  - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
 supersedes: []
 superseded_by: null
 id: ADR-0081
@@ -30,9 +31,12 @@ portability, and roster-bloat risks.
 Contractor creation is available only with configured inference and a durable
 gap proof against every workforce state. Inference emits a bounded structured
 employment contract; Agency compiles it through a fixed reviewed template and
-an independent critic validates safety and differentiation. Safe amendments
-version an existing worker; distinct gaps create stable contractor identities.
-Every lifecycle transition preserves versions, evidence, and superseding links.
+an independent critic validates safety and differentiation. Inference chooses
+the coherent amendment target; that existing worker then owns the revision's
+identity, authority, and context boundary. Additive projections preserve every
+existing value before accepting new values within the destination schema.
+Distinct gaps create stable contractor identities. Every lifecycle transition
+preserves versions, evidence, and superseding links.
 
 ## Consequences
 

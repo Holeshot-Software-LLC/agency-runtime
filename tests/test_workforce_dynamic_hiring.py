@@ -893,6 +893,82 @@ def test_coherent_gap_amends_existing_worker_without_roster_bloat(tmp_path: Path
     assert "quantum-build-systems" in outcome.hiring_case["contract_evidence"]["domains"]
 
 
+def test_amendment_binds_model_extension_slug_to_inferred_target(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    existing = _install_existing(store)
+    response = _amendment_response()
+    response["contract"]["slug"] = "quantum-build-review-extension"
+
+    outcome = hire_contractor_for_gap(
+        "Review the missing quantum compiler build integration.",
+        _amendment_unit(),
+        (existing,),
+        store=store,
+        config=_config(),
+        invoker=_invoker(response, {"approved": True, "reason_codes": []}),
+    )
+
+    assert outcome.status == "amended"
+    assert outcome.contract is not None
+    assert outcome.contract.slug == existing.agent_id
+    assert outcome.hiring_case["proposed_slug"] == existing.agent_id
+    assert outcome.worker["agent_slug"] == existing.agent_id
+    assert len(store.list_workforce_workers(limit=10)) == 1
+
+
+def test_amendment_preserves_existing_values_inside_smaller_workforce_bounds(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    existing = _install_existing(store)
+    response = _amendment_response()
+    response["contract"].update(
+        outcomes_owned=[f"owned-outcome-{index}" for index in range(12)],
+        artifacts_produced=["review-report", *(f"artifact-{index}" for index in range(11))],
+        capabilities=["review", *(f"capability-{index}" for index in range(11))],
+        preferred_scenarios=[f"Preferred scenario {index}." for index in range(12)],
+        avoided_scenarios=[f"Avoided scenario {index}." for index in range(12)],
+        forbidden_scenarios=[f"Forbidden scenario {index}." for index in range(12)],
+        tools=["repository-read", *(f"tool-{index}" for index in range(11))],
+    )
+
+    outcome = hire_contractor_for_gap(
+        "Review the missing quantum compiler build integration.",
+        _amendment_unit(),
+        (existing,),
+        store=store,
+        config=_config(),
+        invoker=_invoker(response, {"approved": True, "reason_codes": []}),
+    )
+
+    assert outcome.status == "amended"
+    amended = outcome.hiring_case["contract_evidence"]
+    employment = outcome.hiring_case["critic_evidence"]["employment_contract"]
+    assert len(employment["outcomes_owned"]) == 12
+    assert len(employment["preferred_scenarios"]) == 12
+    assert len(employment["avoided_scenarios"]) == 12
+    assert len(employment["forbidden_scenarios"]) == 12
+    assert len(amended["outcomes"]) == 8
+    assert len(amended["artifact_kinds"]) == 8
+    assert len(amended["tool_classes"]) == 8
+    assert len(amended["scope_qualifiers"]) == 4
+    assert len(amended["not_for"]) == 4
+    for field in (
+        "outcomes",
+        "capability_ids",
+        "artifact_kinds",
+        "lifecycle_phases",
+        "domains",
+        "stacks",
+        "tool_classes",
+        "hosts",
+        "platforms",
+        "scope_qualifiers",
+        "not_for",
+    ):
+        assert set(getattr(existing, field)) <= set(amended[field])
+
+
 def test_amendment_rejects_authority_escalation_without_writing_case(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     existing = _install_existing(store)
@@ -910,7 +986,37 @@ def test_amendment_rejects_authority_escalation_without_writing_case(tmp_path: P
     )
 
     assert outcome.status == "abstained"
-    assert outcome.reason_codes == ("contract_invalid:amendment",)
+    assert outcome.reason_codes == ("contract_invalid:amendment_authority_context",)
+    assert store.list_hiring_cases(limit=10) == []
+    assert store.get_workforce_worker(existing.agent_id)["revision"] == 0
+
+
+def test_amendment_reports_content_free_projection_stage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    existing = _install_existing(store)
+
+    def reject_projection(*_args, **_kwargs):
+        raise ValueError("workforce outcomes exceeds 8 items provider-secret")
+
+    monkeypatch.setattr(hiring_module, "project_workforce_contract", reject_projection)
+    outcome = hire_contractor_for_gap(
+        "Review the missing quantum compiler build integration.",
+        _amendment_unit(),
+        (existing,),
+        store=store,
+        config=_config(),
+        invoker=lambda provider, *_args, **_kwargs: _result(
+            _amendment_response(),
+            provider,
+        ),
+    )
+
+    assert outcome.status == "abstained"
+    assert outcome.reason_codes == ("contract_invalid:amendment_projection:outcomes",)
+    assert "provider-secret" not in " ".join(outcome.reason_codes)
     assert store.list_hiring_cases(limit=10) == []
     assert store.get_workforce_worker(existing.agent_id)["revision"] == 0
 

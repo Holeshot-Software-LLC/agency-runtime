@@ -6,6 +6,7 @@ created: 2026-07-29
 updated: 2026-07-29
 tags: [workforce, hiring, diagnostics, mutation-testing, inference, routing]
 related:
+  - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0113-prove-decision-conformance-with-isolated-mutations.md
@@ -38,6 +39,13 @@ The tests also pass while their ability to reject the exact historical
 regressions remains implicit. Coverage and green examples do not prove that the
 suite would catch configured-provider selection skipping inference, online role
 anchor promotion, or contractor schema-boundary regressions.
+
+The first AR-200 ordinary canary then proved a second opaque boundary:
+architecture staffed correctly, but the sole documentation gap selected an
+amendment and collapsed its post-parse rejection into
+`contract_invalid:amendment`. The contract asked inference to choose an existing
+target while separately allowing a model-authored contract identity, and its
+strictly additive merge could exceed the smaller workforce list bounds.
 
 ## Current state
 
@@ -85,21 +93,61 @@ identity. Both hosts are registered/enabled but runtime-unverified until a
 fresh process loads them; current-profile Codex hook trust remains an attended
 boundary and is not claimed by the isolated ordinary canary.
 
+The first AR-200 canary, trial `ar200-52d5635-ordinary-01`, ended `NO-GO` at
+trace `019fb0ed-b925-7622-9fcc-f8774f30110d`. It persisted two successful Luna
+wrapper receipts and relevant proposals for eight units, including
+`software-architect`, `section-508-accessibility-specialist`,
+`python-application-engineer`, `typescript-application-engineer`,
+`software-test-engineer`, `code-reviewer`,
+`application-integration-verifier`, `test-results-analyzer`, and
+`application-security-engineer`. The documentation unit nominated
+`technical-writer` first, but its inferred amendment failed with the generic
+amendment code. Atomic publication therefore yielded zero specialists,
+delegations, accepted finalizations, header evidence, corrections, or files.
+
+The bounded repair keeps selection inference-owned, binds amendment identity
+to the exact inference-selected existing target, preserves authority and
+context checks, and preserves every existing contract value before admitting
+new values within the destination bounds. Amendment failures now report
+content-free identity, authority/context, target-state, parent-prompt,
+projection, reconstruction, additivity, coverage, or construction stages. The
+curated gate now kills 7 of 7 mutations, including removal of amendment target
+binding and restoration of unbounded additive outcomes, with zero survivors or
+invalid results.
+
+A provider-free reproduction against an owner-private copy of the live
+272-worker store amended the actual `technical-writer` in place to revision 1,
+kept the worker count at 272, rebound a deliberately different model-authored
+slug to `technical-writer`, preserved every existing projected value, retained
+all 12 employment outcomes, and bounded the workforce outcomes to 8 and scope
+qualifiers to 4. The live store remained at revision 0 with the same hash.
+
+Final repair verification passes: 111 focused tests with 1 skip and 1 expected
+failure; 661 named-spine tests with 6 skips; 109 dashboard tests; every routing,
+policy, delegation, CLI-startup, latency, and 263/1,000/10,000-agent scale gate;
+537-document metadata and normal documentation validation; Ruff lint and
+format; and Git diff checks. The final private-copy decision proof again kills
+7 of 7 exact mutations with zero survivors or invalid results and leaves source
+inputs unchanged.
+
 ## Approach
 
 1. Split candidate validation into content-free, allowlisted stages and retain
    only stable reason codes in hiring and routing evidence.
 2. Reproduce the remaining employment-to-workforce projection mismatch with a
    deterministic schema-valid candidate and repair only that confirmed edge.
-3. Add `agency eval decision-conformance`, which first proves a green baseline,
+3. Bind an inferred amendment to its chosen worker identity and merge contract
+   fields additively within destination limits without changing online target
+   selection or silently changing authority.
+4. Add `agency eval decision-conformance`, which first proves a green baseline,
    copies the required source and tests into a private disposable directory,
    applies exact one-anchor mutations there, and requires the named test to fail
    normally for every mutation.
-4. Curate mutations for the historical online-inference, role-ordering, and
+5. Curate mutations for the historical online-inference, role-ordering, and
    contractor-boundary regressions. A timeout, collection error, stale anchor,
    wrong failing test, or infrastructure error is invalid evidence, never a
    killed mutation.
-5. Run focused review, the mutation proof, and the named fast production gate
+6. Run focused review, the mutation proof, and the named fast production gate
    before merge, exact installation, and one bounded ordinary Codex canary.
 
 ## Dependencies
@@ -124,8 +172,13 @@ contract introduced here.
   byte-for-byte unchanged in the source checkout.
 - [x] Curated mutations for configured-provider inference bypass, online role
   anchor reordering, contractor binding overflow, destination projection
-  overflow, and diagnostic collapse are all killed by their named focused
-  tests.
+  overflow, amendment identity drift, amendment destination overflow, and
+  diagnostic collapse are all killed by their named focused tests.
+- [x] An inferred amendment revises the exact selected existing worker, retains
+  every pre-existing bounded contract value, and cannot silently change its
+  authority or context mode.
+- [x] Amendment rejection evidence identifies an allowlisted content-free
+  stage without storing raw provider values or exception text.
 - [x] A mutation counts as killed only when pytest exits with an ordinary test
   failure and the expected node fails; stale anchors, timeouts, collection
   failures, and unrelated failures make the gate fail.

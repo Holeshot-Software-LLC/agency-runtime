@@ -38,6 +38,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
   `0.1.0+codex.bd6f67d99b7d` and ZCode were refreshed from that launcher.
 - AR-199's terminal ordinary trace remains `NO-GO`; it is evidence input, not a
   run to reinterpret or repeat before deterministic gates pass.
+- The first AR-200 ordinary trace also ended `NO-GO`; it proved that the
+  architecture gap is repaired and isolated the remaining gap to documentation
+  amendment construction. The bounded amendment repair is under verification.
 - Owner-untracked files remain untouched.
 
 ## completed-evidence
@@ -56,7 +59,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
   could survive into a private copy; the evaluator now rejects symlinks and
   Windows reparse points, with 10 conformance tests passing.
 - Focused behavior: 108 passed, 1 skipped, 1 expected failure.
-- Final decision-conformance proof: green baseline; 5 of 5 exact mutations
+- Initial decision-conformance proof: green baseline; 5 of 5 exact mutations
   killed; 0 survivors; 0 invalid results; every anchor occurred once; monitored
   package and selected-test inputs remained unchanged.
 - Named fast Python spine: 668 passed and 6 skipped. Dashboard UI: 109 passed.
@@ -78,13 +81,48 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
   53.8 percent immediately before the implementation checkpoint. It reported
   19.3 percent before live evaluation, so this merge/install recovery pair is
   the required clean hard checkpoint.
+- Telemetry reported 10.2 percent after the amendment repair's final fast gate;
+  this source and worklog-ledger pair is the required clean repair checkpoint
+  before PR, exact installation, and the final live canary.
+- Trial `ar200-52d5635-ordinary-01`, trace
+  `019fb0ed-b925-7622-9fcc-f8774f30110d`, persisted two successful Luna wrapper
+  receipts and relevant safe proposals for eight of nine units. Architecture
+  proposed `software-architect` plus `section-508-accessibility-specialist`;
+  the only gap was documentation, whose first nomination was
+  `technical-writer`. Its amendment collapsed to
+  `contract_invalid:amendment`, so atomic publication truthfully produced no
+  specialists, delegations, finalization, header, corrections, or artifacts.
+- The repair binds amendment identity to the inference-selected existing
+  target, preserves authority/context checks, keeps every existing contract
+  value before bounded additions, and emits content-free amendment stages.
+  Focused hiring and conformance modules pass 35 tests. The real isolated gate
+  has a green baseline and kills 7 of 7 mutations with 0 survivors and 0
+  invalid results; both new amendment anchors occur once and fail only their
+  named tests.
+- A provider-free reproduction on an owner-private copy of the real store
+  amended `technical-writer` in place from revision 0 to 1 without roster
+  growth. It rebound a deliberately different contract slug, retained 12
+  employment outcomes while bounding workforce outcomes to 8 and qualifiers to
+  4, preserved every existing projected value, and left the live worker at its
+  original revision and hash.
+- Final repair gate: 111 focused tests passed with 1 skip and 1 expected
+  failure; the named Python spine passed 661 tests with 6 skips; dashboard UI
+  passed 109 tests; all routing, policy, delegation, CLI-startup, latency, and
+  263/1,000/10,000-agent scale gates passed; 537 Markdown files validated; Ruff
+  and diff checks passed; and the final 7-mutation proof remained fully killed
+  with unchanged source.
+- A proposed source-level live diagnostic was denied because it would transmit
+  the active roster snapshot to the external provider. It was not retried or
+  bypassed; local contract analysis and isolated deterministic regressions are
+  the repair evidence before the governed final product canary.
 
 ## exact-blocker
 
-One ordinary Codex canary remains. The canary—not deterministic tests—must
-prove a relevant specialist chain, accepted finalization, model receipts, and
-zero header corrections. Current-profile trust is a separate attended status
-and does not block the isolated-profile product proof.
+The amendment repair still requires one focused review, the named fast gate,
+merge, and exact Codex/ZCode installation. Then one final ordinary Codex canary
+must prove a relevant specialist chain, accepted finalization, model receipts,
+and zero header corrections. Current-profile trust is a separate attended
+status and does not block the isolated-profile product proof.
 
 ## same-task-continuity
 
@@ -93,9 +131,12 @@ merge, exact installation, one bounded live canary, and evidence publication.
 
 ## next-bounded-work-package
 
-1. Commit this merge/install recovery checkpoint and its worklog ledger.
-2. Run one bounded ordinary Codex canary with the governed full-stack prompt.
-3. Publish its exact evidence to the local shareable report and close AR-200
+1. Complete one focused repair review and the named fast production gate.
+2. Commit the repair and ledger, open and merge its PR, and exact-install the
+   merge for Codex and ZCode only.
+3. Run one final bounded ordinary Codex canary with the governed full-stack
+   prompt.
+4. Publish its exact evidence to the local shareable report and close AR-200
    only if the scoped canary contract passes.
 
 ## verification

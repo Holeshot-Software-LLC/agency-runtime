@@ -17,6 +17,7 @@ from agency_runtime.core.structured_provider import (
 )
 from agency_runtime.core.workforce.contract import (
     MAX_OUTCOMES,
+    MAX_RELATIONSHIPS,
     MAX_TAXONOMY_ITEMS,
     MAX_TEXT_BYTES,
     WorkforceContract,
@@ -51,7 +52,9 @@ _HIRE_SYSTEM = (
     "including disabled and non-active workers. Return only the closed JSON contract. Hire "
     "only a distinct, reusable, narrowly scoped gap. If a disabled worker covers the gap, "
     "abstain. If one enabled worker is a coherent near-match, amend that worker additively "
-    "instead of creating a new identity. Never write executable instructions; "
+    "instead of creating a new identity. For an amendment, set contract.slug exactly to the "
+    "coherent_amendment_target and preserve that worker's authority and context mode. Never "
+    "write executable instructions; "
     "the runtime compiles descriptive contract data through a fixed template."
 )
 _CRITIC_SYSTEM = (
@@ -472,6 +475,24 @@ def _workforce_projection_reason(exc: TypeError | ValueError) -> str:
     return "contract_invalid:workforce_projection"
 
 
+def _amendment_projection_reason(exc: TypeError | ValueError) -> str:
+    """Map amendment projection failures to the same content-free field taxonomy."""
+
+    reason = _workforce_projection_reason(exc)
+    return reason.replace("workforce_projection", "amendment_projection", 1)
+
+
+def _bounded_additive(
+    existing: Sequence[str],
+    additions: Sequence[str],
+    *,
+    maximum: int,
+) -> list[str]:
+    """Preserve every validated existing value before admitting bounded additions."""
+
+    return list(dict.fromkeys((*existing, *additions)))[:maximum]
+
+
 def _attempt(
     stage: str, provider: ProviderEntry, result: StructuredProviderResult
 ) -> HiringInferenceAttempt:
@@ -696,7 +717,11 @@ def _merged_composition(
         "must_follow",
         "must_review_independently",
     ):
-        merged[field] = list(dict.fromkeys((*prior.get(field, ()), *extension.get(field, ()))))
+        merged[field] = _bounded_additive(
+            prior.get(field, ()),
+            extension.get(field, ()),
+            maximum=MAX_RELATIONSHIPS,
+        )
     merged["substitution_group"] = prior.get("substitution_group") or extension.get(
         "substitution_group", ""
     )
@@ -717,17 +742,17 @@ def _amendment_agent(
     """Build a byte-preserving, strictly additive amendment for one worker."""
 
     if contract.slug != existing.agent_id:
-        raise ValueError("amendment contract must preserve the worker slug")
+        raise _CandidateValidationFailure("contract_invalid:amendment_identity")
     if contract.authority != existing.authority or contract.context_mode != existing.context_mode:
-        raise ValueError("amendment cannot change worker authority or context mode")
+        raise _CandidateValidationFailure("contract_invalid:amendment_authority_context")
     if not existing.enabled or existing.employment not in {"contractor", "employee"}:
-        raise ValueError("only an enabled employee or contractor can be amended")
+        raise _CandidateValidationFailure("contract_invalid:amendment_target_state")
     current = store.get_specialist_prompt(existing.agent_id, max_chars=262_144)
     worker = store.get_workforce_worker(existing.agent_id)
     if current is None or current.get("prompt_truncated") is True:
-        raise ValueError("amendment requires the complete active parent prompt")
+        raise _CandidateValidationFailure("contract_invalid:amendment_parent_prompt")
     if str(worker.get("standing") or "") != "active":
-        raise ValueError("only an active worker can be amended")
+        raise _CandidateValidationFailure("contract_invalid:amendment_target_state")
 
     agent = _agent_document(
         contract,
@@ -751,25 +776,58 @@ def _amendment_agent(
     agent["name"] = existing.display_name
     agent["display_name"] = existing.display_name
     agent["archetype"] = existing.archetype
-    agent["outcomes"] = list(dict.fromkeys((*existing.outcomes, *agent["outcomes"])))
-    agent["artifact_kinds"] = list(
-        dict.fromkeys((*existing.artifact_kinds, *agent["artifact_kinds"]))
+    agent["outcomes"] = _bounded_additive(
+        existing.outcomes,
+        agent["outcomes"],
+        maximum=MAX_OUTCOMES,
     )
-    agent["lifecycle_phases"] = list(
-        dict.fromkeys((*existing.lifecycle_phases, *agent["lifecycle_phases"]))
+    agent["capability_ids"] = _bounded_additive(
+        existing.capability_ids,
+        (
+            expected_contract.capability_ids
+            if expected_contract is not None
+            else unit.required_capabilities
+            if unit is not None
+            else ()
+        ),
+        maximum=MAX_TAXONOMY_ITEMS,
     )
-    agent["tool_classes"] = list(dict.fromkeys((*existing.tool_classes, *agent["tool_classes"])))
+    agent["artifact_kinds"] = _bounded_additive(
+        existing.artifact_kinds,
+        agent["artifact_kinds"],
+        maximum=MAX_TAXONOMY_ITEMS,
+    )
+    agent["lifecycle_phases"] = _bounded_additive(
+        existing.lifecycle_phases,
+        agent["lifecycle_phases"],
+        maximum=MAX_TAXONOMY_ITEMS,
+    )
+    agent["tool_classes"] = _bounded_additive(
+        existing.tool_classes,
+        agent["tool_classes"],
+        maximum=MAX_TAXONOMY_ITEMS,
+    )
     agent["required_tools"] = list(agent["tool_classes"])
     agent["tool_affinity"] = list(agent["tool_classes"])
-    agent["supported_hosts"] = list(dict.fromkeys((*existing.hosts, *contract.hosts)))
-    agent["supported_platforms"] = list(dict.fromkeys((*existing.platforms, *contract.platforms)))
-    agent["scope_qualifiers"] = list(
-        dict.fromkeys((*existing.scope_qualifiers, *contract.preferred_scenarios))
+    agent["supported_hosts"] = _bounded_additive(
+        existing.hosts,
+        contract.hosts,
+        maximum=MAX_TAXONOMY_ITEMS,
     )
-    agent["not_for"] = list(
-        dict.fromkeys(
-            (*existing.not_for, *contract.avoided_scenarios, *contract.forbidden_scenarios)
-        )
+    agent["supported_platforms"] = _bounded_additive(
+        existing.platforms,
+        contract.platforms,
+        maximum=MAX_TAXONOMY_ITEMS,
+    )
+    agent["scope_qualifiers"] = _bounded_additive(
+        existing.scope_qualifiers,
+        contract.preferred_scenarios,
+        maximum=_MAX_SCOPE_QUALIFIERS,
+    )
+    agent["not_for"] = _bounded_additive(
+        existing.not_for,
+        (*contract.avoided_scenarios, *contract.forbidden_scenarios),
+        maximum=_MAX_SCOPE_QUALIFIERS,
     )
     agent["composition"] = _merged_composition(existing, agent["composition"])
     agent["conflicts_with"] = list(agent["composition"]["same_context_conflicts"])
@@ -789,11 +847,15 @@ def _amendment_agent(
         version=f"amendment-{CONTRACTOR_PROMPT_TEMPLATE_VERSION}-{suffix}",
         audit_revision=f"amendment-v1-{suffix}",
     )
-    amended = project_workforce_contract(agent, origin="agency")
+    try:
+        amended = project_workforce_contract(agent, origin="agency")
+    except (TypeError, ValueError) as exc:
+        raise _CandidateValidationFailure(_amendment_projection_reason(exc)) from None
     if expected_contract is not None and amended.to_dict() != expected_contract.to_dict():
-        raise ValueError("approved amendment evidence does not reproduce the candidate contract")
+        raise _CandidateValidationFailure("contract_invalid:amendment_reconstruction")
     for field in (
         "outcomes",
+        "capability_ids",
         "artifact_kinds",
         "lifecycle_phases",
         "domains",
@@ -801,13 +863,15 @@ def _amendment_agent(
         "tool_classes",
         "hosts",
         "platforms",
+        "scope_qualifiers",
+        "not_for",
     ):
         if not set(getattr(existing, field)) <= set(getattr(amended, field)):
-            raise ValueError(f"amendment would remove existing {field}")
+            raise _CandidateValidationFailure(f"contract_invalid:amendment_additivity:{field}")
     if unit is not None:
         required = set(typed_staffing_requirements(unit))
         if not required <= set(typed_staffing_coverage(unit, amended)):
-            raise ValueError("amendment does not cover its causing work unit")
+            raise _CandidateValidationFailure("contract_invalid:amendment_causing_unit_coverage")
     return agent, amended, worker
 
 
@@ -1026,6 +1090,11 @@ def _validated_candidate(
             existing = next((item for item in contracts if item.agent_id == target), None)
             if existing is None or target not in nearest_ids:
                 return failure("amendment_target_invalid")
+            # Inference owns the amend decision and exact target. Once chosen,
+            # the existing worker owns amendment identity; a model-authored new
+            # slug would contradict that decision and accidentally request a
+            # second identity instead of an additive revision.
+            contract = replace(contract, slug=existing.agent_id)
             agent, workforce_contract, worker = _amendment_agent(
                 contract,
                 unit,
@@ -1039,7 +1108,7 @@ def _validated_candidate(
         return failure(exc.reason_code)
     except (TypeError, ValueError):
         return failure(
-            "contract_invalid:amendment"
+            "contract_invalid:amendment_construction"
             if action == "amend"
             else "contract_invalid:candidate_construction"
         )
