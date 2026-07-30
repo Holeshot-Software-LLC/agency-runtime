@@ -18,7 +18,7 @@ type: worklog
 commit: d470993845eff66b525f854ec10198973ab505c1
 short: d470993
 date: 2026-07-30
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/187
 related_issues:
   - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
