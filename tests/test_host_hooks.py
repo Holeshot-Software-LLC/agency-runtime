@@ -1976,6 +1976,143 @@ def test_hook_boundary_fails_open_with_valid_json_for_bad_input(tmp_path: Path) 
     assert "host operation continues" in completed.stderr
 
 
+def test_codex_hook_emits_bounded_event_stages_only_in_explicit_canary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import runtime_control
+
+    monkeypatch.setattr(
+        runtime_control,
+        "read_enforcement_runtime_control",
+        lambda: ({"enabled": True}, "dashboard"),
+    )
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS", "1")
+    sink = io.BytesIO()
+    errors = io.StringIO()
+
+    assert (
+        run_hook_stdio(
+            "codex",
+            store=Store(tmp_path / "diagnostic.db"),
+            expected_event="SessionStart",
+            input_stream=io.BytesIO(
+                json.dumps(
+                    {
+                        "hook_event_name": "SessionStart",
+                        "session_id": "diagnostic-session",
+                    }
+                ).encode("utf-8")
+            ),
+            output_stream=sink,
+            error_stream=errors,
+        )
+        == 0
+    )
+
+    assert json.loads(sink.getvalue()) == {}
+    assert errors.getvalue().splitlines() == [
+        "agency_hook_diagnostic codex_hook_event=SessionStart stage=accepted",
+        "agency_hook_diagnostic codex_hook_event=SessionStart stage=completed",
+    ]
+
+
+def test_codex_hook_does_not_emit_event_stages_outside_explicit_canary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import runtime_control
+
+    monkeypatch.setattr(
+        runtime_control,
+        "read_enforcement_runtime_control",
+        lambda: ({"enabled": True}, "dashboard"),
+    )
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS", "1")
+    sink = io.BytesIO()
+    errors = io.StringIO()
+
+    assert (
+        run_hook_stdio(
+            "codex",
+            store=Store(tmp_path / "non-canary.db"),
+            expected_event="SessionStart",
+            input_stream=io.BytesIO(
+                json.dumps(
+                    {
+                        "hook_event_name": "SessionStart",
+                        "session_id": "non-canary-session",
+                    }
+                ).encode("utf-8")
+            ),
+            output_stream=sink,
+            error_stream=errors,
+        )
+        == 0
+    )
+
+    assert json.loads(sink.getvalue()) == {}
+    assert errors.getvalue() == ""
+
+
+def test_codex_hook_emits_failed_stage_when_the_handler_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters import hooks as hooks_module
+    from agency_runtime.core import runtime_control
+
+    class FailingBridge:
+        def handle(self, _payload: dict[str, Any]) -> dict[str, Any]:
+            raise RuntimeError("handler failure")
+
+    monkeypatch.setattr(
+        runtime_control,
+        "read_enforcement_runtime_control",
+        lambda: ({"enabled": True}, "dashboard"),
+    )
+    monkeypatch.setattr(
+        hooks_module,
+        "HookBridge",
+        lambda *_args, **_kwargs: FailingBridge(),
+    )
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS", "1")
+    sink = io.BytesIO()
+    errors = io.StringIO()
+
+    assert (
+        run_hook_stdio(
+            "codex",
+            store=Store(tmp_path / "failed-diagnostic.db"),
+            expected_event="SessionStart",
+            input_stream=io.BytesIO(
+                json.dumps(
+                    {
+                        "hook_event_name": "SessionStart",
+                        "session_id": "failed-diagnostic-session",
+                    }
+                ).encode("utf-8")
+            ),
+            output_stream=sink,
+            error_stream=errors,
+        )
+        == 0
+    )
+
+    assert json.loads(sink.getvalue()) == {}
+    lines = errors.getvalue().splitlines()
+    assert lines[:2] == [
+        "agency_hook_diagnostic codex_hook_event=SessionStart stage=accepted",
+        "agency_hook_diagnostic codex_hook_event=SessionStart stage=failed",
+    ]
+    assert "stage=completed" not in errors.getvalue()
+    assert lines[2] == "agency hook codex: RuntimeError; host operation continues"
+
+
 def test_hook_boundary_honors_installer_bound_disabled_control(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

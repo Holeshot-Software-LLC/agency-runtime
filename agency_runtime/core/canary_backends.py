@@ -920,6 +920,11 @@ _CODEX_HOOK_DIAGNOSTIC_PATTERN = re.compile(
     r"agency_hook_diagnostic codex_post_tool_reconcile="
     r"(?P<reason>[a-z][a-z0-9_]{0,63})"
 )
+_CODEX_HOOK_EVENT_DIAGNOSTIC_PATTERN = re.compile(
+    r"^agency_hook_diagnostic codex_hook_event=(?P<event>[A-Za-z]+) "
+    r"stage=(?P<stage>accepted|completed|failed)[ \t]*\r?$",
+    re.MULTILINE,
+)
 
 
 def _codex_hook_diagnostic(stderr: object) -> str | None:
@@ -934,6 +939,36 @@ def _codex_hook_diagnostic(stderr: object) -> str | None:
     reasons = {match.group("reason") for match in _CODEX_HOOK_DIAGNOSTIC_PATTERN.finditer(stderr)}
     reasons.intersection_update(CODEX_RECONCILIATION_DIAGNOSTIC_REASONS)
     return next(iter(reasons)) if len(reasons) == 1 else None
+
+
+def _codex_hook_events(stderr: object) -> dict[str, dict[str, int]]:
+    """Project bounded, allowlisted hook-stage counts without retaining stderr."""
+
+    if not isinstance(stderr, str):
+        return {}
+    from agency_runtime.core.codex_activation_verification import (
+        CODEX_HOOK_EVENT_DIAGNOSTIC_STAGES,
+        MAX_CODEX_HOOK_EVENT_DIAGNOSTIC_COUNT,
+        sanitize_codex_hook_event_diagnostics,
+    )
+    from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
+
+    allowed_events = frozenset(CODEX_HOOK_EVENTS)
+    counts: dict[str, dict[str, int]] = {}
+    for match in _CODEX_HOOK_EVENT_DIAGNOSTIC_PATTERN.finditer(stderr):
+        event = match.group("event")
+        stage = match.group("stage")
+        if event not in allowed_events:
+            continue
+        event_counts = counts.setdefault(
+            event,
+            dict.fromkeys(CODEX_HOOK_EVENT_DIAGNOSTIC_STAGES, 0),
+        )
+        event_counts[stage] = min(
+            MAX_CODEX_HOOK_EVENT_DIAGNOSTIC_COUNT,
+            event_counts[stage] + 1,
+        )
+    return sanitize_codex_hook_event_diagnostics(counts)
 
 
 def codex_canary_record(
@@ -966,6 +1001,8 @@ def codex_canary_record(
         record["failure_reason"] = failure_reason
     if hook_diagnostic := _codex_hook_diagnostic(getattr(result, "stderr", "")):
         record["hook_diagnostic"] = hook_diagnostic
+    if hook_events := _codex_hook_events(getattr(result, "stderr", "")):
+        record["hook_events"] = hook_events
     collaboration = codex_collaboration_evidence(
         result.stdout,
         rollout_root=rollout_root,
@@ -1048,6 +1085,7 @@ class SafeCodexCanaryBackend:
     require_existing_store: bool = False
     exec_options: tuple[str, ...] | None = None
     require_exact_activation_rollout: bool = False
+    hook_event_diagnostics: bool = False
     hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None
     trusted_workdir: str = ""
 
@@ -1066,6 +1104,19 @@ class SafeCodexCanaryBackend:
             if self.profile_scope == "current-profile"
             else facade.CODEX_NATIVE_ONLY_CANARY_EXEC_OPTIONS
         )
+
+    def _configure_canary_environment(self, env: dict[str, str]) -> None:
+        from agency_runtime.core.codex_activation_verification import (
+            CODEX_ACTIVATION_EXISTING_STORE_ENV,
+            CODEX_HOOK_EVENT_DIAGNOSTICS_ENV,
+        )
+
+        if self.require_existing_store or self.require_exact_activation_rollout:
+            env[CODEX_ACTIVATION_EXISTING_STORE_ENV] = "1"
+        if self.hook_event_diagnostics:
+            if not self.require_existing_store:
+                raise ValueError("hook event diagnostics require the existing Agency store")
+            env[CODEX_HOOK_EVENT_DIAGNOSTICS_ENV] = "1"
 
     def _verify_current_profile_hook_trust(
         self,
@@ -1254,12 +1305,7 @@ class SafeCodexCanaryBackend:
             env["AGENCY_DB_PATH"] = str(self.db_path.resolve())
             env["AGENCY_CANARY_MODE"] = "1"
             env["AGENCY_CANARY_MASTER_ENABLED"] = "1" if self.master_enabled else "0"
-            if self.require_existing_store:
-                from agency_runtime.core.codex_activation_verification import (
-                    CODEX_ACTIVATION_EXISTING_STORE_ENV,
-                )
-
-                env[CODEX_ACTIVATION_EXISTING_STORE_ENV] = "1"
+            self._configure_canary_environment(env)
             trust_failure = self._verify_current_profile_hook_trust(
                 workdir=workdir,
                 env=env,
@@ -1321,12 +1367,7 @@ class SafeCodexCanaryBackend:
                 runtime_home,
                 self.db_path,
             )
-            if self.require_exact_activation_rollout:
-                from agency_runtime.core.codex_activation_verification import (
-                    CODEX_ACTIVATION_EXISTING_STORE_ENV,
-                )
-
-                env[CODEX_ACTIVATION_EXISTING_STORE_ENV] = "1"
+            self._configure_canary_environment(env)
             projected = facade._project_isolated_runtime_control(
                 runtime_home,
                 enabled=self.master_enabled,

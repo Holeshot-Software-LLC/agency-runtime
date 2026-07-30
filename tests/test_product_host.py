@@ -138,6 +138,9 @@ def test_codex_product_host_uses_isolated_workspace_write_profile(
     ) == ("--sandbox", "workspace-write")
     assert "danger-full-access" not in options
     assert "--add-dir" not in options
+    assert "--ephemeral" not in options
+    assert options[options.index("--enable") + 1] == "multi_agent_v2"
+    assert "agents.enabled=true" in options
     assert options[-3:] == ("--model", "gpt-test", "-")
     assert observed["invocation"]["workdir"] == str(tmp_path)
 
@@ -220,6 +223,7 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
     manifest.parent.mkdir(parents=True)
     manifest.write_text("{}", encoding="utf-8")
     isolated_configs: list[str] = []
+    execution_environments: list[dict[str, str]] = []
 
     def runner(argv, *, cwd, env, input_text=None, **_kwargs):
         config = Path(env["CODEX_HOME"]) / "config.toml"
@@ -241,6 +245,7 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
                 "",
             )
         if "exec" in argv:
+            execution_environments.append(dict(env))
             stdout = "\n".join(
                 (
                     json.dumps(
@@ -284,6 +289,9 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
     parsed = tomllib.loads(isolated_configs[0])
     assert parsed == {"projects": {expected: {"trust_level": "trusted"}}}
     assert persistent_config.read_bytes() == persistent_bytes
+    assert execution_environments
+    assert execution_environments[0]["AGENCY_CANARY_REQUIRE_EXISTING_STORE"] == "1"
+    assert execution_environments[0]["AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS"] == "1"
 
 
 def test_product_host_reports_missing_workspace_write_proof_separately(
@@ -427,7 +435,7 @@ def test_product_host_rejects_a_preexisting_write_proof(
     assert proof.read_text(encoding="utf-8") == ("agency-runtime-product-write-proof:spoofed\n")
 
 
-def test_codex_product_backend_does_not_require_activation_rollout_topology(
+def test_codex_product_backend_persists_parent_without_single_child_rollout_constraint(
     tmp_path: Path,
 ) -> None:
     marketplace = tmp_path / "marketplace"
@@ -447,7 +455,11 @@ def test_codex_product_backend_does_not_require_activation_rollout_topology(
         workspace=tmp_path,
     )
 
-    assert "--ephemeral" in backend.exec_options
+    assert "--ephemeral" not in backend.exec_options
+    assert backend.exec_options[backend.exec_options.index("--enable") + 1] == "multi_agent_v2"
+    assert "agents.enabled=true" in backend.exec_options
+    assert backend.require_existing_store is True
+    assert backend.hook_event_diagnostics is True
     assert backend.require_exact_activation_rollout is False
 
 

@@ -28,6 +28,7 @@ from agency_runtime.core.header.finalize import (
     TERMINAL_OUTCOME_MESSAGES,
 )
 from agency_runtime.core.installer_contracts import (
+    CODEX_HOOK_EVENTS,
     CODEX_NATIVE_SPAWN_HOOK_TOOL_NAMES,
     CODEX_NATIVE_WAIT_HOOK_TOOL_NAMES,
 )
@@ -89,6 +90,34 @@ _CLAUDE_EVENTS = {
     "PostCompact",
     "SessionEnd",
 }
+
+
+def _codex_hook_event_diagnostic_enabled(host: str, event: object) -> bool:
+    if host != "codex" or event not in CODEX_HOOK_EVENTS:
+        return False
+    from agency_runtime.core.codex_activation_verification import (
+        is_codex_hook_event_diagnostics_environment,
+    )
+
+    return is_codex_hook_event_diagnostics_environment(os.environ)
+
+
+def _emit_codex_hook_event_diagnostic(
+    errors: TextIO,
+    event: str,
+    stage: str,
+) -> None:
+    """Emit one fixed canary marker without affecting the hook boundary."""
+
+    if not event:
+        return
+    with suppress(Exception):
+        print(
+            f"agency_hook_diagnostic codex_hook_event={event} stage={stage}",
+            file=errors,
+        )
+
+
 _VERIFICATION_UNAVAILABLE = (
     "Agency Runtime could not verify or persist the turn-scoped evidence contract. "
     "Do not publish this response; restore the evidence store and start a new turn."
@@ -2953,6 +2982,7 @@ def _run_hook_stdio(
     raw_bytes = b""
     oversized = False
     planned = False
+    diagnostic_event = ""
     try:
         raw = source.read(MAX_HOOK_INPUT_BYTES + 1)
         raw_bytes = raw.encode("utf-8") if isinstance(raw, str) else raw
@@ -2964,6 +2994,10 @@ def _run_hook_stdio(
             raise HookInputError("hook input must be one JSON object")
         if expected_event and payload.get("hook_event_name") != expected_event:
             raise HookInputError("hook event does not match the registered command")
+        payload_event = payload.get("hook_event_name")
+        if _codex_hook_event_diagnostic_enabled(host, payload_event):
+            diagnostic_event = str(payload_event)
+            _emit_codex_hook_event_diagnostic(errors, diagnostic_event, "accepted")
         for field in ("turn_id", "trace_id", "tool_use_id", "session_id"):
             correlation_value = _optional_string(payload, field)
             if not correlation_value:
@@ -3005,6 +3039,7 @@ def _run_hook_stdio(
             mark_current_observation("ok", "hook_response")
         else:
             mark_current_observation("ok", "pass_through")
+        _emit_codex_hook_event_diagnostic(errors, diagnostic_event, "completed")
     except (
         HookInputError,
         BoundedJSONError,
@@ -3013,6 +3048,7 @@ def _run_hook_stdio(
         ValueError,
         RuntimeError,
     ) as exc:
+        _emit_codex_hook_event_diagnostic(errors, diagnostic_event, "failed")
         result = _boundary_failure_result(
             payload,
             raw_bytes=raw_bytes,
@@ -3027,6 +3063,7 @@ def _run_hook_stdio(
         )
         print(f"agency hook {host}: {type(exc).__name__}; {outcome}", file=errors)
     except Exception as exc:  # Defensive boundary around adapters and storage.
+        _emit_codex_hook_event_diagnostic(errors, diagnostic_event, "failed")
         result = _boundary_failure_result(
             payload,
             raw_bytes=raw_bytes,

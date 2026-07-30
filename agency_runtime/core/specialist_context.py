@@ -232,7 +232,10 @@ def format_isolated_specialist_context(
     requirement = "Before substantive work" if nontrivial else "When specialist work is needed"
     if unit_plan:
         native_binding = {
-            "codex": "set `task_name` to that row's legal `native_task_name`",
+            "codex": (
+                "set `fork_turns` to `none` and set `task_name` to that row's "
+                "legal `native_task_name`"
+            ),
             "claude": "set `description` to that row's unchanged `work_unit_id`",
             "zcode": "set `description` to that row's unchanged `work_unit_id`",
             "hermes": "pass that row's unchanged `work_unit_id` and exact `goal`",

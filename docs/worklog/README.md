@@ -364,7 +364,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `097ce06` | 2026-07-30 | docs(roadmap): checkpoint AR-201 terminal trial | [AR-201](../roadmap/issue-AR-201-fund-default-workforce-repair.md) | null |
 | `9f3d72a` | 2026-07-30 | fix(runtime): converge recruiter and product proof | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | [detail](2026-07-30-9f3d72a-recruiter-product-proof.md) |
 | `d6b131a` | 2026-07-30 | docs(roadmap): record AR-202 and AR-203 fast gate | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
+| `dbd5502` | 2026-07-30 | Merge pull request #184 from Holeshot-Software-LLC/agent/ar-202-recruiter-repair-convergence | null | null |
 | `baaf603` | 2026-07-30 | docs(roadmap): record final AR-203 canary | [AR-200](../roadmap/issue-AR-200-diagnosable-decision-conformance.md), [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
+| `ee7adea` | 2026-07-30 | Merge pull request #185 from Holeshot-Software-LLC/agent/ar-202-recruiter-repair-convergence | null | null |
+| `4314b8f` | 2026-07-30 | fix(runtime): restore product hook activation boundary | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | [detail](2026-07-30-4314b8f-product-hook-activation-boundary.md) |
+| `e3d2aea` | 2026-07-30 | fix(evidence): harden hook stage diagnostics | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | [detail](2026-07-30-e3d2aea-hook-stage-diagnostics.md) |
+| `0c41a53` | 2026-07-30 | docs(roadmap): record AR-203 fast verification | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

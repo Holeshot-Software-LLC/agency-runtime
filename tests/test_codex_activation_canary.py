@@ -444,11 +444,16 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
 
     class Backend:
         def execute(self, **kwargs: object) -> dict[str, object]:
-            return _record_complete_v2_chain(
+            result = _record_complete_v2_chain(
                 configured_store,
                 monkeypatch,
                 task=str(kwargs["task"]),
             )
+            result["hook_events"] = {
+                "UserPromptSubmit": {"accepted": 1, "completed": 1, "failed": 0},
+                "Stop": {"accepted": 1, "completed": 1, "failed": 0},
+            }
+            return result
 
     report = canary.run_canary(
         "codex",
@@ -465,6 +470,10 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
     assert report["evidence"]["proven"] is True
     assert report["invocation"]["correction_count"] == 0
     assert report["invocation"]["header"]["agencies_loaded"]
+    assert report["invocation"]["hook_events"] == {
+        "UserPromptSubmit": {"accepted": 1, "completed": 1, "failed": 0},
+        "Stop": {"accepted": 1, "completed": 1, "failed": 0},
+    }
     assert report["evidence"]["cardinalities"] == {
         "routes": 1,
         "runs": 1,
@@ -1336,6 +1345,44 @@ def test_codex_canary_projects_only_one_fixed_hook_diagnostic() -> None:
     assert "unrelated stderr" not in json.dumps(record)
     assert "hook_diagnostic" not in ambiguous
     assert "hook_diagnostic" not in unsupported
+
+
+def test_codex_canary_projects_only_allowlisted_hook_event_diagnostics() -> None:
+    stdout = "\n".join(
+        map(
+            json.dumps,
+            (
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": _valid_header()},
+                },
+                {"type": "turn.completed"},
+            ),
+        )
+    )
+    stderr = (
+        "\r\n".join(
+            (
+                "unrelated stderr",
+                "agency_hook_diagnostic codex_hook_event=UserPromptSubmit stage=accepted",
+                "agency_hook_diagnostic codex_hook_event=UserPromptSubmit stage=completed",
+                "agency_hook_diagnostic codex_hook_event=PreToolUse stage=accepted",
+                "agency_hook_diagnostic codex_hook_event=PreToolUse stage=failed",
+                "agency_hook_diagnostic codex_hook_event=UnknownEvent stage=accepted",
+                "agency_hook_diagnostic codex_hook_event=Stop stage=arbitrary",
+            )
+        )
+        + "\r\n"
+    )
+
+    record = codex_canary_record(_process_result(stdout, stderr=stderr))
+
+    assert record["hook_events"] == {
+        "UserPromptSubmit": {"accepted": 1, "completed": 1, "failed": 0},
+        "PreToolUse": {"accepted": 1, "completed": 0, "failed": 1},
+    }
+    assert "unrelated stderr" not in json.dumps(record)
+    assert "UnknownEvent" not in json.dumps(record)
 
 
 def test_codex_canary_snapshot_projects_persisted_hook_diagnostic(
