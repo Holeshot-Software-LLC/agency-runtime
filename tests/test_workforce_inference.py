@@ -26,6 +26,9 @@ from agency_runtime.core.workforce.inference import (
     PLAN_RESPONSE_SCHEMA,
     WorkforceInferenceAttempt,
     WorkforceRoutingOutcome,
+    _CallBudget,
+    _invoke_stage,
+    _NominationAccumulator,
     _typed_shortlists,
     configured_workforce_providers,
     plan_and_staff_workforce,
@@ -472,11 +475,95 @@ def test_balanced_recruiter_repairs_only_missing_work_unit_rows() -> None:
         ("recruiter", "rejected"),
         ("recruiter", "applied"),
     ]
-    assert "missing work units: unit-analyze-second" in outcome.attempts[1].validation_detail
+    assert outcome.attempts[1].validation_detail == (
+        "workforce nomination failures: unit-analyze-second=missing_work_unit"
+    )
     assert [item.unit_id for item in outcome.staffing.units] == [
         "unit-analyze",
         "unit-analyze-second",
     ]
+
+
+def test_recruiter_repair_receives_every_invalid_unit_and_preserves_valid_rows() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"), _contract("analysis-alternative"))
+    plan_document = _plan_document()
+    plan_document["request_summary"] = "Analyze nine independent repository concerns."
+    plan_document["units"] = []
+    nominations: list[dict[str, Any]] = []
+    valid_by_id: dict[str, dict[str, Any]] = {}
+    invalid_unit_ids = ("unit-analysis-03", "unit-analysis-07")
+    for index in range(1, 10):
+        unit_id = f"unit-analysis-{index:02d}"
+        unit = json.loads(json.dumps(_plan_document()["units"][0]))
+        unit["unit_id"] = unit_id
+        unit["outcome"] = f"Complete independent technical analysis {index}"
+        unit["required_capabilities"] = ["analysis"]
+        plan_document["units"].append(unit)
+        valid_row = {
+            "unit_id": unit_id,
+            "decision": "staff",
+            "ranked_semantic": [
+                _nominee("technical-analyst", 0.98),
+                _nominee("analysis-alternative", 0.90, "acceptable"),
+            ],
+        }
+        valid_by_id[unit_id] = valid_row
+        if unit_id in invalid_unit_ids:
+            invalid_row = json.loads(json.dumps(valid_row))
+            invalid_row["ranked_semantic"] = [
+                _nominee("technical-analyst", 0.98, "forbidden"),
+                _nominee("analysis-alternative", 0.90, "forbidden"),
+            ]
+            nominations.append(invalid_row)
+        else:
+            nominations.append(valid_row)
+
+    plan = parse_work_unit_plan(plan_document)
+    parser = _NominationAccumulator(
+        plan,
+        snapshot,
+        config=_config(mode="fast"),
+        context=_context(),
+        allowed_candidate_ids=frozenset({"technical-analyst", "analysis-alternative"}),
+    )
+    prompts: list[str] = []
+    repair_unit_ids: list[str] = []
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        prompts.append(prompt)
+        if len(prompts) == 1:
+            return _result({"units": nominations})
+        feedback = prompt.partition("[RUNTIME VALIDATION FEEDBACK]")[2]
+        repair_unit_ids.extend(unit_id for unit_id in invalid_unit_ids if unit_id in feedback)
+        return _result({"units": [valid_by_id[unit_id] for unit_id in repair_unit_ids]})
+
+    proposal, attempts, failure = _invoke_stage(
+        stage="recruiter",
+        providers=(_provider(),),
+        prompt="production-shaped nine-unit recruiter request",
+        schema=NOMINATION_RESPONSE_SCHEMA,
+        system_prompt="recruit every planned unit",
+        budget=_CallBudget(2),
+        invoker=invoke,
+        parser=parser.parse,
+        before_provider=parser.reset,
+    )
+
+    assert failure == ""
+    assert proposal is not None
+    assert [attempt.status for attempt in attempts] == [
+        "rejected",
+        "applied",
+    ]
+    detail = attempts[0].validation_detail
+    assert "unit-analysis-03=staff_without_safe_team" in detail
+    assert "unit-analysis-07=staff_without_safe_team" in detail
+    assert prompts[1].count("staff_without_safe_team") == 2
+    assert repair_unit_ids == list(invalid_unit_ids)
+    assert [item.unit_id for item in proposal.units] == [
+        f"unit-analysis-{index:02d}" for index in range(1, 10)
+    ]
+    assert all(item.selected == ("technical-analyst",) for item in proposal.units)
 
 
 def test_inference_normalizes_duplicate_candidate_rows() -> None:
@@ -693,9 +780,39 @@ def test_staff_decision_without_safe_team_gets_one_bounded_inference_repair() ->
         "applied",
     ]
     assert outcome.attempts[1].validation_detail == (
-        "workforce staff decision cannot form a safe team: unit-analyze"
+        "workforce nomination failures: unit-analyze=staff_without_safe_team"
     )
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
+
+
+def test_recruiter_failure_detail_never_persists_unknown_candidate_content() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    unknown_candidate = "provider-secret-candidate-name"
+    invalid = _nomination_document(unknown_candidate)
+    invalid["units"][0]["ranked_semantic"][0]["positive_evidence"] = [
+        "provider-authored-private-rationale"
+    ]
+    responses = iter(
+        (
+            _result(_compact_plan_document()),
+            _result(invalid),
+            _result(_nomination_document()),
+        )
+    )
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely without retaining provider content.",
+        snapshot,
+        config=_config(mode="fast"),
+        context=_context(),
+        invoker=lambda *_args, **_kwargs: next(responses),
+    )
+
+    assert outcome.accepted
+    detail = outcome.attempts[1].validation_detail
+    assert detail == "workforce nomination failures: unit-analyze=invalid_candidate"
+    assert unknown_candidate not in detail
+    assert "provider-authored-private-rationale" not in detail
 
 
 def test_explicit_gap_decision_survives_as_hiring_signal() -> None:

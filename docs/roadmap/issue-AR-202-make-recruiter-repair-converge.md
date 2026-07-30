@@ -9,6 +9,7 @@ related:
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/decisions/0113-prove-decision-conformance-with-isolated-mutations.md
   - docs/decisions/0114-fund-one-default-workforce-semantic-repair.md
+  - docs/decisions/0115-aggregate-bounded-recruiter-repair-failures.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/handoffs/issue-AR-202.md
@@ -52,10 +53,17 @@ live trace proves all three calls were made through the configured
 114.200 seconds. The route ended `abstained` with zero selected, loaded, or
 delegated specialists and no hiring attempt.
 
-The existing accumulator can preserve valid rows and accept a partial repair,
-but semantic validation stops at the first failure and its regression fixtures
-exercise only one invalid condition. No test proves one repair can receive and
-resolve the complete bounded failure set for a nine-unit response.
+The implementation now collects an ordered allowlisted failure set across all
+planned units. Its same-provider accumulator removes failed rows, preserves
+valid rows, and reconstructs a repaired proposal in exact plan order without
+adding or promoting a candidate. The production-shaped nine-unit regression
+repairs two independently invalid unit decisions in one bounded call.
+
+Focused runtime review passes 85 tests. Decision conformance passes a green
+baseline and kills all 13 curated mutations, including first-error-only
+recruiter validation, with zero survivors or invalid results and unchanged
+source inputs. The named fast production spine, merge, install, and final
+ordinary canary remain pending.
 
 ## Approach
 
@@ -82,18 +90,18 @@ ADR-0114 limits fast mode to one bounded semantic repair.
 
 ## Acceptance
 
-- [ ] Recruiter semantic rejection exposes only bounded allowlisted unit and
+- [x] Recruiter semantic rejection exposes only bounded allowlisted unit and
   invariant codes; provider-authored content and unknown identifiers are never
   persisted.
-- [ ] One response containing at least two independently invalid unit decisions
+- [x] One response containing at least two independently invalid unit decisions
   reports both failures in the first rejection.
-- [ ] One same-provider partial repair can replace every rejected row while
+- [x] One same-provider partial repair can replace every rejected row while
   preserving already validated rows and exact plan order.
-- [ ] Deterministic verification never adds, reorders, or promotes an online
+- [x] Deterministic verification never adds, reorders, or promotes an online
   specialist while producing the complete failure set.
-- [ ] A broad nine-unit production-shaped regression fails under first-error
+- [x] A broad nine-unit production-shaped regression fails under first-error
   behavior and passes with one bounded repair.
-- [ ] The decision-conformance gate kills an exact mutation that restores
+- [x] The decision-conformance gate kills an exact mutation that restores
   first-error-only recruiter validation.
 - [ ] Focused tests and the named fast production gate pass on the exact source
   revision.

@@ -12,6 +12,7 @@ related:
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/decisions/0113-prove-decision-conformance-with-isolated-mutations.md
   - docs/decisions/0114-fund-one-default-workforce-semantic-repair.md
+  - docs/decisions/0115-aggregate-bounded-recruiter-repair-failures.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -39,6 +40,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 - Work continues from exact merged main on
   `agent/ar-202-recruiter-repair-convergence`.
 - Owner-untracked analysis and lock files remain untouched.
+- Recruiter validation now reports every discovered unit failure with only an
+  allowlisted code, preserves valid same-provider rows, and repairs two invalid
+  rows in one nine-unit regression.
+- Focused runtime review passes 85 tests. Decision conformance passes its
+  baseline and kills 13/13 curated mutations with no survivor or invalid result;
+  source inputs remain unchanged.
+- Context telemetry reported 47.8 percent remaining, so this reviewed source
+  slice requires a clean substantive and ledger checkpoint before the fast
+  production spine.
 
 ## completed-evidence
 
@@ -65,27 +75,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 
 ## exact-blocker
 
-The third call is now reachable, but one first-error semantic repair did not
-produce a valid nine-unit recruiter proposal. Durable evidence does not retain
-which bounded semantic invariants failed, and existing regressions prove only a
-single invalid condition.
+The source convergence boundary is repaired. Remaining blockers are the named
+fast production spine, merge, exact Codex/ZCode installation, and one final
+ordinary canary after the paired AR-203 harness repair.
 
 ## same-task-continuity
 
-Fix recruiter repair convergence first. Do not enlarge call budgets, revive
-deterministic online selection, tune unrelated roster content, or rerun the
-terminal AR-201 canary.
+Keep the completed recruiter boundary frozen while verifying and delivering the
+combined AR-202/AR-203 repair. Do not enlarge call budgets, revive deterministic
+online selection, tune unrelated roster content, or rerun the terminal AR-201
+canary.
 
 ## next-bounded-work-package
 
-1. Add a failing multi-unit regression that exposes more than one semantic
-   decision error in a single recruiter response.
-2. Implement bounded all-failure validation and same-provider partial repair
-   without changing inference authority.
-3. Add the exact decision-conformance mutation and run focused review.
-4. Run the named fast gate, merge, and exact-install only after the bounded
-   package is green.
-5. Repair AR-203 before spending the next single ordinary canary.
+1. Complete documentation validation and the named fast production spine.
+2. Commit the combined repair and its exact worklog ledger.
+3. Push, open the PR, resolve required checks, and merge.
+4. Install the exact merged revision for Codex and ZCode only.
+5. Run one final ordinary canary and publish the local evidence report.
 
 ## verification
 

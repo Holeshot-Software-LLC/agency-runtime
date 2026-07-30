@@ -89,6 +89,7 @@ Status meanings:
 | [ADR-0094](0094-durable-native-child-correlation.md) | Correlate native children durably and fail Agency-planned work closed | Accepted |
 | [ADR-0112](0112-stage-preflight-workforce-evidence-until-ready.md) | Stage preflight workforce evidence until ready | Accepted |
 | [ADR-0114](0114-fund-one-default-workforce-semantic-repair.md) | Fund one default workforce semantic repair | Accepted |
+| [ADR-0115](0115-aggregate-bounded-recruiter-repair-failures.md) | Aggregate bounded recruiter repair failures | Accepted |
 
 ## Evidence and observability
 
@@ -176,6 +177,7 @@ Status meanings:
 | [ADR-0110](0110-remove-agency-owned-windows-hello.md) | Remove Agency-owned Windows Hello and use harness-native trust | Superseded |
 | [ADR-0111](0111-install-the-applicable-suite-by-default.md) | Install the applicable suite by default | Accepted |
 | [ADR-0113](0113-prove-decision-conformance-with-isolated-mutations.md) | Prove decision conformance with isolated curated mutations | Accepted |
+| [ADR-0116](0116-bind-product-trials-to-exact-workspace-proof.md) | Bind product trials to exact isolated workspace proof | Accepted |
 
 ## Documentation governance
 

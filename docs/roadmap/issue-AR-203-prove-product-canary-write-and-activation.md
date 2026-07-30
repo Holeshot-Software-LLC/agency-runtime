@@ -1,6 +1,6 @@
 ---
 title: "AR-203: Prove product-canary workspace writes and exact activation"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-07-30
 updated: 2026-07-30
@@ -8,8 +8,10 @@ tags: [evaluation, codex, activation, sandbox, evidence, regression]
 related:
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
+  - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
+  - docs/roadmap/handoffs/issue-AR-203.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -49,10 +51,18 @@ but the product report used the incompatible summary projection. Collaboration
 projection also observed eight non-allowlisted command/MCP items and no Agency
 spawn/wait chain because staffing abstained.
 
-The product backend runs inside a private temporary Codex home and already
-bypasses hook trust only for the vetted isolated plugin. It does not yet create
-a trial-scoped trusted-project entry or otherwise prove the effective
-workspace-write state before grading artifacts.
+The product backend now writes one exact trusted-project entry into only the
+private temporary Codex home and verifies a hash-only attestation for that
+canonical workspace. It retains the workspace-write sandbox with no added write
+directory or general sandbox bypass. The same model invocation must create a
+fixed, prompt-bound sentinel; missing or unproven write evidence skips product
+grading, and a preexisting sentinel is rejected.
+
+Codex Agency mode now queries the exact activation snapshot using the hash of
+the wrapped prompt actually sent to the host while retaining the canonical
+product prompt hash separately. Focused review passes 85 tests. The two new
+product decision mutations are killed inside the 13/13 decision-conformance
+gate with zero survivors or invalid results.
 
 ## Approach
 
@@ -79,15 +89,15 @@ demonstrates both mismatches.
 
 ## Acceptance
 
-- [ ] Codex Agency product evaluation reads
+- [x] Codex Agency product evaluation reads
   `agency.canary-activation-evidence.v1` for the exact prompt hash and never
   reports that schema unavailable when the Store returns it.
-- [ ] The isolated Codex profile proves effective workspace-write authority for
+- [x] The isolated Codex profile proves effective workspace-write authority for
   the exact empty trial directory without changing persistent user trust.
-- [ ] The product backend retains sandboxing and cannot write outside the trial
+- [x] The product backend retains sandboxing and cannot write outside the trial
   directory.
-- [ ] A failed write proof stops before grading and is reported separately from
+- [x] A failed write proof stops before grading and is reported separately from
   workforce selection or product-quality failures.
-- [ ] Focused tests fail against both current defects and pass after repair.
+- [x] Focused tests fail against both current defects and pass after repair.
 - [ ] The next ordinary canary reports exact activation evidence and can create
   required artifacts when workforce execution reaches the parent model.

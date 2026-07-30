@@ -213,6 +213,7 @@ _codex_isolated_plugin_enabled = _backends.codex_isolated_plugin_enabled
 _isolated_canary_environment = _backends.isolated_canary_environment
 _project_isolated_runtime_control = _backends.project_isolated_runtime_control
 _prepare_private_host_home = _backends.prepare_private_host_home
+_project_isolated_codex_workspace_trust = _backends.project_isolated_codex_workspace_trust
 _process_succeeded = _backends.process_succeeded
 _codex_output = _backends.codex_output
 _codex_canary_record = _backends.codex_canary_record
