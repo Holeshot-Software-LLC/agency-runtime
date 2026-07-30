@@ -369,6 +369,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ee7adea` | 2026-07-30 | Merge pull request #185 from Holeshot-Software-LLC/agent/ar-202-recruiter-repair-convergence | null | null |
 | `4314b8f` | 2026-07-30 | fix(runtime): restore product hook activation boundary | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | [detail](2026-07-30-4314b8f-product-hook-activation-boundary.md) |
 | `e3d2aea` | 2026-07-30 | fix(evidence): harden hook stage diagnostics | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | [detail](2026-07-30-e3d2aea-hook-stage-diagnostics.md) |
+| `0c41a53` | 2026-07-30 | docs(roadmap): record AR-203 fast verification | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
