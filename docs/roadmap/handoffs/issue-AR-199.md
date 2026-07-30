@@ -21,7 +21,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-199
 branch: codex/ar-199-fbed-canary
-evidence_commit: 882b92036152094ebb9e4a81883edec6084c3d74
+evidence_commit: 9b50993215b4c800fe540632ca3a9f97ae6de91e
 minimum_ledger_commit: 36d2ec67810eaffe014cc08a73402146276830d3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
@@ -31,12 +31,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## checkpoint
 
-- PR 171 merged the ordinary selection and eligibility repair as exact commit
-  `fbed63abaf739d6a863113a221c09c8cfababc40`.
-- The uv tool reports exact build `0.1.0+gfbed63abaf73`; Codex bundle
-  `0.1.0+codex.ae2086569c9e` is registered and enabled.
+- PR 172 merged the inference-owned selection repair as exact commit
+  `9b50993215b4c800fe540632ca3a9f97ae6de91e`.
+- The uv tool reports exact build `0.1.0+g9b50993215b4`; Codex bundle
+  `0.1.0+codex.0fa5aeccbffe` is registered and enabled.
 - First ordinary product trace `019fb03e-5ad6-7b70-8d22-bc8c7ee0d028` is a
-  bounded `NO-GO`; the online inference repair through `882b920` is source-only.
+  bounded `NO-GO`; the second trace moved the blocker into dynamic hiring.
+- Second product trace `019fb064-6448-7853-955e-ad6896f3040b` is also a bounded
+  `NO-GO`: nine planned units, 53 eligible workers, two successful Luna wrapper
+  calls, zero bindings, zero delegations, and no accepted finalization.
 - Owner-untracked files remain untouched.
 
 ## completed-evidence
@@ -68,14 +71,30 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   formatting, and diff checks also pass on this exact source.
 - Provider attempts remain CAS-atomic model receipts; inferred staffing gaps
   remain eligible for bounded governed hiring rather than silent fallback.
-- Context telemetry was below the 50-percent clean-checkpoint threshold before
-  this source/recovery checkpoint; no live rerun is allowed before its ledger.
+- The second trace carried `repository-write`; its parent response's read-only
+  claim was not produced by Agency host eligibility.
+- Source reproduction proves `contract_invalid:candidate` was a schema-boundary
+  defect: exact unit binding expanded a 12-item employment list to 13, and the
+  downstream workforce contract has smaller eight/four-item maxima.
+- The compiler now preserves exact causing-unit facts first and caps every list
+  to its destination schema. Its schema-maximum persisted-hire regression passes.
+- The generated control skill description now advertises only the exact
+  `agency status`, `agency on`, and `agency off` messages accepted by its body.
+- Durable receipts now retain content-free unit nominations, safe proposals,
+  and staffing gap reason codes without changing selection authority.
+- Broadened focused verification passes 134 tests with one platform skip and
+  one expected xfail.
+- The named fast spine passes 654 tests with 6 skips, all 109 dashboard tests
+  pass, and every routing-evaluation, documentation, Ruff, formatting, and diff
+  gate is green.
 
 ## exact-blocker
 
-The online inference repair is fast-verified `GO` but not merged or
-exact-installed. The first ordinary trace remains `NO-GO`; persistent-profile
-trust remains attended but does not block an isolated-profile product rerun.
+The second ordinary trace failed before specialist launch because the one
+per-task hire attempt hit the contractor schema mismatch. The bounded source
+repair is fast-gate green; it still requires merge, exact install, and one final
+isolated-profile product rerun. Persistent-profile trust remains attended but
+does not block that rerun.
 
 ## same-task-continuity
 
@@ -83,8 +102,11 @@ Continue in this task. Do not rerun the passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. Merge and exact-install the branch.
-2. Rerun one bounded ordinary isolated-profile product proof and audit receipts.
+1. Create the clean source/recovery checkpoint.
+2. Merge and exact-install the repair.
+3. Run one final bounded ordinary isolated-profile product proof. If it fails,
+   report the new durable staffing or launch blocker and close this item `NO-GO`
+   rather than opening another repair loop.
 
 ## verification
 

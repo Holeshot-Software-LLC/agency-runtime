@@ -232,6 +232,72 @@ def test_routing_receipt_projects_changed_declined_and_mixed_hiring_outcomes() -
     assert project_durable_routing_receipt(routing)["hiring"]["outcome"] == "mixed"
 
 
+def test_routing_receipt_preserves_content_free_staffing_gap_evidence() -> None:
+    routing = _routing("Design, build, document, and review the change.", "trace-staffing")
+    secret = "TOP-SECRET-STAFFING-DETAIL"
+    routing["workforce_proposal"] = {
+        "units": [
+            {
+                "unit_id": "unit-architecture",
+                "required": ["software-architect"],
+                "acceptable": ["backend-service-engineer"],
+                "selected": [],
+                "abstention_reasons": ["no_safe_deterministic_team"],
+                "positive_evidence": [{"detail": secret}],
+            },
+            {
+                "unit_id": "unit-documentation",
+                "required": ["technical-writer"],
+                "acceptable": [],
+                "selected": ["technical-writer"],
+                "abstention_reasons": [],
+            },
+        ]
+    }
+    routing["workforce_staffing"] = {
+        "status": "abstained",
+        "units": [],
+        "abstention_reasons": [
+            {
+                "code": "no_safe_sufficient_team",
+                "unit_id": "unit-architecture",
+                "detail": secret,
+            },
+            {"code": "independent_assurance_missing", "detail": secret},
+        ],
+    }
+
+    receipt = project_durable_routing_receipt(routing)
+
+    assert receipt["staffing"] == {
+        "status": "abstained",
+        "units": [
+            {
+                "unit_id": "unit-architecture",
+                "nominated_ids": ["software-architect", "backend-service-engineer"],
+                "proposed_ids": [],
+                "reason_codes": [
+                    "no_safe_deterministic_team",
+                    "no_safe_sufficient_team",
+                ],
+            },
+            {
+                "unit_id": "unit-documentation",
+                "nominated_ids": ["technical-writer"],
+                "proposed_ids": ["technical-writer"],
+                "reason_codes": [],
+            },
+        ],
+        "global_reason_codes": ["independent_assurance_missing"],
+        "gap_count": 1,
+        "truncated": False,
+    }
+    assert "staffing:no_safe_deterministic_team" in receipt["reason_codes"]
+    assert "staffing:independent_assurance_missing" in receipt["reason_codes"]
+    assert normalize_durable_routing_receipt(receipt) == receipt
+    assert secret not in json.dumps(receipt)
+
+
 def test_disabled_higher_ranked_specialist_is_visible_in_header_evidence() -> None:
     routing = _routing("Implement the TypeScript change.", "trace-disabled")
     routing["disabled_candidate_shadows"] = [
@@ -339,6 +405,28 @@ def test_routing_receipt_projection_rejects_malformed_and_bounds_every_collectio
         "rejection_reason_counts": [],
         "sample_truncated": False,
     }
+    normalized_staffing = receipts._normalize_staffing(
+        {
+            "status": "bad value",
+            "units": [
+                None,
+                {
+                    "unit_id": "unit-build",
+                    "nominated_ids": [f"candidate-{index}" for index in range(8)],
+                    "proposed_ids": "invalid",
+                    "reason_codes": [f"reason-{index}" for index in range(12)],
+                },
+            ],
+            "global_reason_codes": [f"global-{index}" for index in range(12)],
+            "truncated": True,
+        }
+    )
+    assert normalized_staffing["status"] == "unavailable"
+    assert len(normalized_staffing["units"][0]["nominated_ids"]) == 4
+    assert len(normalized_staffing["units"][0]["reason_codes"]) == 8
+    assert len(normalized_staffing["global_reason_codes"]) == 8
+    assert normalized_staffing["gap_count"] == 1
+    assert normalized_staffing["truncated"] is True
     assert (
         receipts._routing_reason_codes(
             {},

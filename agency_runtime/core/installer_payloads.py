@@ -438,7 +438,7 @@ def agency_control_skill(host: str) -> str:
     forms = ", ".join(f"`{form}`" for form in RUNTIME_CONTROL_CONVERSATION_FORMS)
     return f"""---
 name: agency
-description: Inspect Agency Runtime for this host and route mutations to the operator.
+description: Use only when the user's entire message exactly matches agency status, agency on, or agency off.
 ---
 
 # Agency Runtime control

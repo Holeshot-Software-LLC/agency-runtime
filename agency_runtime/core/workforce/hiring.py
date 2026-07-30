@@ -16,6 +16,8 @@ from agency_runtime.core.structured_provider import (
     invoke_structured_provider_result,
 )
 from agency_runtime.core.workforce.contract import (
+    MAX_OUTCOMES,
+    MAX_TAXONOMY_ITEMS,
     WorkforceContract,
     parse_workforce_contract,
     project_workforce_contract,
@@ -23,6 +25,7 @@ from agency_runtime.core.workforce.contract import (
 from agency_runtime.core.workforce.hiring_contract import (
     CONTRACTOR_PROMPT_TEMPLATE_HASH,
     CONTRACTOR_PROMPT_TEMPLATE_VERSION,
+    MAX_ITEMS,
     EmploymentContract,
     compile_contractor,
     parse_employment_contract,
@@ -86,6 +89,7 @@ _IDENTIFIERS = {
     "uniqueItems": True,
 }
 _ROUTING_IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9_-]{0,127}\Z")
+_MAX_SCOPE_QUALIFIERS = 4
 
 
 def _object(properties: Mapping[str, Any], required: Sequence[str]) -> dict[str, Any]:
@@ -467,10 +471,17 @@ def _agent_document(
         dict.fromkeys(
             item for item in contract.artifacts_produced if _ROUTING_IDENTIFIER.fullmatch(item)
         )
-    )
+    )[:MAX_TAXONOMY_ITEMS]
     tools = tuple(
         dict.fromkeys(item for item in contract.tools if _ROUTING_IDENTIFIER.fullmatch(item))
-    )
+    )[:MAX_TAXONOMY_ITEMS]
+    outcomes = tuple(dict.fromkeys((*contract.capabilities, *contract.outcomes_owned)))[
+        :MAX_OUTCOMES
+    ]
+    scope_qualifiers = contract.preferred_scenarios[:_MAX_SCOPE_QUALIFIERS]
+    not_for = tuple(dict.fromkeys((*contract.avoided_scenarios, *contract.forbidden_scenarios)))[
+        :_MAX_SCOPE_QUALIFIERS
+    ]
     composition: dict[str, Any] = {
         "substitution_group": "",
         "substitutes_for": [],
@@ -497,8 +508,8 @@ def _agent_document(
         "capabilities": list(contract.outcomes_owned + contract.capabilities),
         "anti_capabilities": list(contract.anti_capabilities),
         "task_types": list(artifacts),
-        "preferred_when": list(contract.preferred_scenarios),
-        "avoid_when": list(contract.avoided_scenarios + contract.forbidden_scenarios),
+        "preferred_when": list(scope_qualifiers),
+        "avoid_when": list(not_for),
         "required_tools": list(tools),
         "tool_classes": list(tools),
         "tool_affinity": list(tools),
@@ -512,19 +523,19 @@ def _agent_document(
         "independence_group": f"contractor-{contract.slug}",
         "expected_output_contract": "; ".join(contract.artifacts_produced),
         "evidence_requirements": list(contract.evidence_requirements),
-        "outcomes": list(contract.outcomes_owned + contract.capabilities),
+        "outcomes": list(outcomes),
         "artifact_kinds": list(artifacts),
-        "lifecycle_phases": list(contract.lifecycle_phases),
-        "domains": list(domains),
-        "stacks": list(dict.fromkeys(stacks)),
+        "lifecycle_phases": list(contract.lifecycle_phases[:MAX_TAXONOMY_ITEMS]),
+        "domains": list(dict.fromkeys(domains))[:MAX_TAXONOMY_ITEMS],
+        "stacks": list(dict.fromkeys(stacks))[:MAX_TAXONOMY_ITEMS],
         # The hiring inference already produced preferred_scenarios; reuse them
         # as scope_qualifiers rather than issuing a second enrichment call in
         # the synchronous hiring turn (would double hiring latency). Contractors
         # are already fully typed (stacks/domains/capability_ids above derive
         # from the causing unit); batch enrichment (scripts/enrich_workforce_
         # contracts.py) refines qualifiers for the broader roster, not per-hire.
-        "scope_qualifiers": list(contract.preferred_scenarios),
-        "not_for": list(contract.avoided_scenarios + contract.forbidden_scenarios),
+        "scope_qualifiers": list(scope_qualifiers),
+        "not_for": list(not_for),
         "source": "agency-runtime",
         "source_id": "agency-dynamic-hiring",
         "source_version": str(CONTRACTOR_PROMPT_TEMPLATE_VERSION),
@@ -579,12 +590,18 @@ def _bind_contract_to_causing_unit(
         hosts = tuple(dict.fromkeys((context.host, *hosts)))
     return replace(
         contract,
-        artifacts_produced=tuple(dict.fromkeys((unit.artifact_kind, *contract.artifacts_produced))),
-        capabilities=tuple(dict.fromkeys((*unit.required_capabilities, *contract.capabilities))),
-        lifecycle_phases=tuple(dict.fromkeys((unit.lifecycle_phase, *contract.lifecycle_phases))),
-        tools=tuple(dict.fromkeys((*unit.required_tools, *contract.tools))),
-        platforms=tuple(dict.fromkeys((*unit.platforms, *contract.platforms))),
-        hosts=hosts,
+        artifacts_produced=tuple(dict.fromkeys((unit.artifact_kind, *contract.artifacts_produced)))[
+            :MAX_ITEMS
+        ],
+        capabilities=tuple(dict.fromkeys((*unit.required_capabilities, *contract.capabilities)))[
+            :MAX_ITEMS
+        ],
+        lifecycle_phases=tuple(dict.fromkeys((unit.lifecycle_phase, *contract.lifecycle_phases)))[
+            :MAX_ITEMS
+        ],
+        tools=tuple(dict.fromkeys((*unit.required_tools, *contract.tools)))[:MAX_ITEMS],
+        platforms=tuple(dict.fromkeys((*unit.platforms, *contract.platforms)))[:MAX_ITEMS],
+        hosts=hosts[:MAX_ITEMS],
     )
 
 

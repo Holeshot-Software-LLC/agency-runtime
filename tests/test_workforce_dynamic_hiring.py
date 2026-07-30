@@ -423,6 +423,43 @@ def test_hire_binds_natural_language_contract_to_exact_causing_unit(tmp_path: Pa
     assert outcome.contract.anti_capabilities == ("do not change drivers without human approval.",)
 
 
+def test_hire_compiles_schema_maximum_lists_into_bounded_workforce_contract(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    response = _hiring_response()
+    contract = response["contract"]
+    contract.update(
+        outcomes_owned=[f"owned-outcome-{index}" for index in range(12)],
+        artifacts_produced=[f"artifact-{index}" for index in range(12)],
+        capabilities=[f"capability-{index}" for index in range(12)],
+        preferred_scenarios=[f"Preferred scenario {index}." for index in range(12)],
+        avoided_scenarios=[f"Avoided scenario {index}." for index in range(12)],
+        forbidden_scenarios=[f"Forbidden scenario {index}." for index in range(12)],
+        tools=[f"tool-{index}" for index in range(12)],
+    )
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_invoker(response, {"approved": True, "reason_codes": []}),
+    )
+
+    assert outcome.hired is True
+    compiled = outcome.hiring_case["contract_evidence"]
+    assert len(compiled["outcomes"]) == 8
+    assert len(compiled["artifact_kinds"]) == 8
+    assert len(compiled["tool_classes"]) == 8
+    assert len(compiled["scope_qualifiers"]) == 4
+    assert len(compiled["not_for"]) == 4
+    assert compiled["artifact_kinds"][0] == "implementation-change"
+    assert compiled["capability_ids"] == ["implementation"]
+    assert compiled["tool_classes"][0] == "repository-read"
+
+
 def test_atomic_preflight_route_does_not_publish_an_in_memory_cache(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

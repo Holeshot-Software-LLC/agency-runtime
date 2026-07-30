@@ -353,7 +353,49 @@ routing, hiring, and child-coordination coverage passes 175 tests with one
 platform skip and one expected xfail. The exact source then passes the named
 Python spine with 653 tests and 6 skips, all 109 dashboard tests, every routing
 evaluation gate, and all documentation, Ruff, formatting, and diff checks.
-Merge, exact installation, and the bounded ordinary rerun remain pending.
+The bounded ordinary rerun remains pending.
+
+PR 172 merged the inference-owned selection repair as exact commit
+`9b50993215b4c800fe540632ca3a9f97ae6de91e`. That revision is installed as
+build `0.1.0+g9b50993215b4` with Codex bundle
+`0.1.0+codex.0fa5aeccbffe`; the adapter refresh completed without prompting for
+trust. The persistent profile remains `hook_trust_status: unverified` and
+requires a fresh Codex process for attended activation evidence. This does not
+block the explicit isolated-profile product proof, which remains the next
+bounded package.
+
+The second exact-installed ordinary product attempt is a bounded `NO-GO` at
+trace `019fb064-6448-7853-955e-ad6896f3040b`. It spent two successful Luna
+wrapper calls, planned nine typed units, and evaluated 53 eligible workers, but
+persisted zero specialist bindings or delegations. The host capability receipt
+included `repository-write`; the parent model's claim that the isolated
+workspace was read-only was therefore downstream behavior, not an Agency
+eligibility downgrade. The exact first failed repair edge was dynamic hiring:
+`unit-architecture` returned `contract_invalid:candidate`, after which the
+one-hire task budget left `unit-documentation` at `task_hiring_limit_reached`.
+
+Source reproduction found two compatible-schema boundary defects. Binding the
+causing unit prepended exact governed facts to provider lists already at the
+employment schema's 12-item maximum, producing 13 items before contractor
+compilation. A valid employment contract could also project 12 outcomes,
+artifacts, tools, and qualifiers into a workforce contract whose maxima are
+eight outcomes/taxonomy items and four qualifiers. The compiler now preserves
+causing-unit facts first and bounds every projection to its destination schema.
+A regression exercises schema-maximum provider output through persisted hiring
+and proves the compiled worker owns the exact artifact, capability, and tool.
+
+The generated Agency control skill also advertised a broad inspection purpose
+even though its body accepts only three exact control messages. Its description
+now matches that boundary so ordinary implementation prompts cannot discover
+the status skill as a general-purpose match. Finally, the durable routing
+receipt projects content-free per-unit inference nominations, verifier-safe
+proposals, and bounded abstention families. This does not add deterministic
+selection authority; it makes a future plan-to-binding failure traceable. The
+broadened focused routing, hiring, inference, selection, adapter, and product
+host suite passes 134 tests with one platform skip and one expected xfail.
+The named fast production spine then passes 654 tests with 6 skips, all 109
+dashboard tests pass, and every routing evaluation gate passes; documentation,
+Ruff, formatting, and diff checks are also green.
 
 ## Dependencies
 
@@ -422,3 +464,8 @@ model truth and resident-manager visibility.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.
+- [x] Schema-maximum dynamic hires compile into bounded workforce contracts
+  while preserving the causing unit's exact governed artifact, capability, and
+  tool facts.
+- [x] Durable receipts distinguish inference nominations from verifier-safe
+  proposals and retain content-free staffing gap reason families.
