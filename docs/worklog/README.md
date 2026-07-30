@@ -383,6 +383,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1d7b019` | 2026-07-30 | docs(roadmap): checkpoint AR-204 contract | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 | `ffec102` | 2026-07-30 | fix(authority): restore owner control dispatch | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-ffec102-owner-control-dispatch.md) |
 | `9212e52` | 2026-07-30 | docs(roadmap): checkpoint owner authority | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `c8c8020` | 2026-07-30 | fix(dashboard): restore owner control parity | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-c8c8020-dashboard-owner-control-parity.md) |
+| `f8607dd` | 2026-07-30 | docs(roadmap): checkpoint dashboard owner parity | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
