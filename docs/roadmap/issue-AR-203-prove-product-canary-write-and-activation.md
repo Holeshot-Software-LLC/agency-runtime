@@ -153,6 +153,32 @@ The named fast Python spine passes 675 tests with 6 skipped, dashboard UI passes
 109 tests, routing evaluation 1.3.0 passes every gate, documentation validation
 passes 551 files, and Ruff checks all 603 Python inputs.
 
+PR 187 merged that first recruiter repair as exact main revision
+`26a3911e371e42bc004faabaa2fd0b802bf50fdd`, and immutable upgrade installed
+exact build `0.1.0+g26a3911e371e`. Codex and ZCode were refreshed. The owner
+expanded this README-story proof to include the dashboard; its current-user
+service is installed, owned, enabled, active, manifest-current, and reachable.
+Opening the authenticated page remains an attended action because automated
+execution could not satisfy the non-exporting OS operator-presence verifier.
+
+Codex activation verification then stopped before model use: all eight managed
+events are present and enabled, but all eight hashes are `modified`, with zero
+trusted and zero managed by the settled trust record. No trust bypass was used,
+no attestation was written, and no model invocation was attempted. Because the
+post-merge Codex review found two valid P1 source defects, this build is
+invalidated before asking the owner to retrust it.
+
+The valid review fixes now enforce the recorded ordered failed-unit tuple
+before any accumulator mutation and hash sensitive planner-derived unit IDs in
+durable receipts. The third P1, alleging broken ledger ancestry, is disproven
+by merge `26a3911` preserving branch head `d01338d` and substantive commit
+`d470993`. The post-review boundary passes 108 tests with 1 skipped, and
+decision conformance kills 23/23 mutations with zero survivors or invalid
+results and unchanged source. Its named fast gate passes 675 Python tests with
+6 skipped, 109 dashboard UI tests, routing evaluation 1.3.0 with every gate
+green, documentation validation for 552 files, and Ruff check plus format
+validation for all 603 Python inputs.
+
 The delivery outcome is frozen as "README's main story works in reality" for
 the ordinary Codex path on this machine. Each package stops at its first
 terminal failure or 45 minutes, permits one live trial per exact build, and
@@ -187,6 +213,9 @@ the same causal boundary stops for owner direction instead of looping.
 11. Require the replacement trial to accept a real specialist team for the
     fixed robust prompt, or record a defensible gap and an actual hiring
     decision; never manufacture hiring merely to satisfy the demo.
+12. Resolve valid merged-PR review findings before retrust: enforce exact repair
+    IDs before mutation and sanitize sensitive planned-unit identities in
+    durable evidence.
 
 ## Dependencies
 
@@ -220,11 +249,17 @@ demonstrates both mismatches.
   hiring, delegation, and workspace-write evidence.
 - [x] The recruiter repair uses a non-contradictory partial-row system contract,
   and durable rejection evidence is bounded to allowlisted unit/invariant pairs.
-- [x] The repaired boundary passes 107 focused tests with 1 skipped and kills
-  21/21 decision-conformance mutations.
-- [x] The repaired revision passes the named fast gate.
-- [ ] The repaired revision merges and is exact-installed for Codex and ZCode
-  only.
+- [x] PR 187 merged and exact build `0.1.0+g26a3911e371e` was installed before
+  review invalidated it for live use.
+- [x] The post-review repair passes 108 focused tests with 1 skipped and kills
+  23/23 decision-conformance mutations.
+- [x] The post-review repair passes the named fast gate.
+- [ ] The post-review repair merges and is exact-installed for Codex, ZCode,
+  and the dashboard.
+- [x] The dashboard service is installed and locally reachable.
+- [ ] An attended browser opens and renders the authenticated dashboard page.
+- [ ] The owner trusts the final build's eight Codex hook hashes and activation
+  verification passes before the replacement trial.
 - [ ] Recruiter response acceptance or bounded repair produces a defensible
   inferred staffing plan for the fixed README-story prompt.
 - [ ] The replacement trial selects and launches at least one specialist/team,

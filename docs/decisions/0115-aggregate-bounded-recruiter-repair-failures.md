@@ -39,6 +39,13 @@ and said never to omit one. A compliant provider therefore could not satisfy
 the partial-repair parser. The durable route also reduced that rejection to a
 generic reason family, hiding which governed unit invariant failed.
 
+Post-merge review then proved that prompt compliance alone was insufficient.
+The accumulator still accepted any planned row on repair and wrote it into the
+retained-row map before checking semantics, so a schema-valid full-plan retry
+could silently replace a row outside the failed set. Review also showed that a
+shape-valid planner-derived unit ID could contain sensitive request vocabulary
+and enter the durable receipt verbatim.
+
 ## Decision
 
 Recruiter semantic validation traverses every planned unit and returns one
@@ -59,12 +66,19 @@ listed order, and requires every unlisted planned unit to be omitted because
 the accumulator retains its validated row. The ordinary recruiter system
 continues to require one row for every planned unit.
 
+The accumulator records that ordered failed-unit tuple. Before mutating any
+retained row, a repair response must contain exactly that tuple in exactly that
+order. An omitted, extra, reordered, or previously valid unit fails closed and
+cannot overwrite accumulated state.
+
 Durable provider-attempt evidence may project the exact bounded validation set
 as `unit_id` plus allowlisted `reason_code` pairs. The projection accepts only
 the governed failure prefix, planned-unit identifier shape, known invariant
 codes, cardinality limit, and duplicate-free structure. Malformed values,
 unknown codes, and provider-authored explanation text fail closed and are not
-persisted.
+persisted. Planned-unit IDs also pass through the bounded routing-identity
+projection; sensitive identifiers become stable one-way digests, and canonical
+digests remain idempotent when a receipt is normalized again.
 
 Deterministic code may validate, reject, merge, and verify the inferred rows. It
 does not add, promote, or reorder an online candidate. The final safe-team
@@ -81,6 +95,10 @@ verification remains authoritative and can return another bounded failure set.
   limit.
 - A failed live repair can identify the governed unit and invariant boundary
   without retaining raw provider content.
+- A provider cannot use a schema-valid full-plan retry to rewrite a row that
+  already passed validation.
+- A planner-derived identifier containing a sensitive marker is not persisted
+  in clear text.
 - A repair that omits a listed failed unit, introduces a new invalid row, or
   cannot form a safe team still fails closed when the call budget is exhausted.
 - The decision-conformance gate must kill first-error-only behavior with the

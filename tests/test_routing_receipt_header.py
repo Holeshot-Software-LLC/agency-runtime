@@ -125,6 +125,8 @@ def _ready_store(
 def test_routing_receipt_is_bounded_content_free_and_idempotent() -> None:
     routing = _routing("Audit evidence.", "trace")
     secret = "TOP-SECRET-PROMPT-BODY"
+    sensitive_unit_id = "unit-password-hunter2"
+    routing["provider_attempts"][0]["validation_detail"] += f",{sensitive_unit_id}=invalid_ranking"
     routing["provider_attempts"].append(
         {
             "provider_name": secret,
@@ -154,6 +156,10 @@ def test_routing_receipt_is_bounded_content_free_and_idempotent() -> None:
         "validation_failures": [
             {"unit_id": "unit-api", "reason_code": "invalid_candidate"},
             {"unit_id": "unit-docs", "reason_code": "missing_work_unit"},
+            {
+                "unit_id": "sha256:" + hashlib.sha256(sensitive_unit_id.encode()).hexdigest(),
+                "reason_code": "invalid_ranking",
+            },
         ],
     }
     assert receipt["retrieval"]["full_roster_count"] == 261
@@ -173,6 +179,7 @@ def test_routing_receipt_is_bounded_content_free_and_idempotent() -> None:
     }
     assert "hiring_not_attempted" in receipt["effect_codes"]
     assert secret not in json.dumps(receipt)
+    assert sensitive_unit_id not in json.dumps(receipt)
     assert "INJECT" not in json.dumps(receipt)
     assert normalize_durable_routing_receipt({"receipt_version": 999}) is None
 

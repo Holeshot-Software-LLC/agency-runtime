@@ -1291,9 +1291,11 @@ class _NominationAccumulator:
         self._context = context
         self._allowed_candidate_ids = allowed_candidate_ids
         self._rows: dict[str, Mapping[str, Any]] = {}
+        self._repair_unit_ids: tuple[str, ...] = ()
 
     def reset(self) -> None:
         self._rows.clear()
+        self._repair_unit_ids = ()
 
     def parse(self, value: Mapping[str, Any]) -> RecruiterProposal:
         if not isinstance(value, Mapping) or set(value) != {"units"}:
@@ -1302,7 +1304,8 @@ class _NominationAccumulator:
         if not isinstance(rows, list) or not rows or len(rows) > len(self._plan.units):
             raise ValueError("workforce nomination rows are invalid")
         expected = {unit.unit_id for unit in self._plan.units}
-        response_ids: set[str] = set()
+        response_ids: list[str] = []
+        response_rows: list[tuple[str, Mapping[str, Any]]] = []
         for row in rows:
             if not isinstance(row, Mapping) or set(row) != {
                 "unit_id",
@@ -1313,7 +1316,11 @@ class _NominationAccumulator:
             unit_id = str(row["unit_id"] or "").strip().casefold()
             if unit_id not in expected or unit_id in response_ids:
                 raise ValueError("workforce nominations contain an invalid work unit")
-            response_ids.add(unit_id)
+            response_ids.append(unit_id)
+            response_rows.append((unit_id, row))
+        if self._repair_unit_ids and tuple(response_ids) != self._repair_unit_ids:
+            raise ValueError("workforce nomination repair rows do not match failed units")
+        for unit_id, row in response_rows:
             self._rows[unit_id] = row
         semantics = _collect_nomination_semantics(
             self._rows,
@@ -1327,10 +1334,11 @@ class _NominationAccumulator:
             for failure in semantics.failures:
                 if failure.code != "missing_work_unit":
                     self._rows.pop(failure.unit_id, None)
+            self._repair_unit_ids = tuple(failure.unit_id for failure in semantics.failures)
             raise _NominationValidationError(semantics.failures)
         merged = {"units": [self._rows[unit.unit_id] for unit in self._plan.units]}
         try:
-            return _proposal_from_nominations(
+            proposal = _proposal_from_nominations(
                 merged,
                 self._plan,
                 self._snapshot,
@@ -1341,7 +1349,10 @@ class _NominationAccumulator:
         except _NominationValidationError as exc:
             for failure in exc.failures:
                 self._rows.pop(failure.unit_id, None)
+            self._repair_unit_ids = tuple(failure.unit_id for failure in exc.failures)
             raise
+        self._repair_unit_ids = ()
+        return proposal
 
 
 def _empty_staffing(code: str) -> StaffingDecision:

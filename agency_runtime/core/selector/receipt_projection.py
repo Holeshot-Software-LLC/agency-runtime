@@ -152,12 +152,16 @@ def _validation_failures(value: object) -> list[dict[str, str]]:
             return []
         unit_id = str(item.get("unit_id") or "").strip().casefold()
         reason_code = _code(item.get("reason_code"))
-        failure = {"unit_id": unit_id, "reason_code": reason_code}
+        unit_id_is_digest = unit_id.startswith("sha256:") and _DIGEST.fullmatch(
+            unit_id.removeprefix("sha256:")
+        )
         if (
-            _NOMINATION_UNIT_ID.fullmatch(unit_id) is None
-            or reason_code not in _NOMINATION_FAILURE_CODES
-            or failure in failures
-        ):
+            _NOMINATION_UNIT_ID.fullmatch(unit_id) is None and not unit_id_is_digest
+        ) or reason_code not in _NOMINATION_FAILURE_CODES:
+            return []
+        projected_unit_id = _identity(unit_id)
+        failure = {"unit_id": projected_unit_id, "reason_code": reason_code}
+        if not projected_unit_id or failure in failures:
             return []
         failures.append(failure)
     return failures
