@@ -18,9 +18,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-202
-branch: agent/ar-203-readme-story-proof
-evidence_commit: 1e54967eb51412bae862b160a36612f7c9d1ed4f
-minimum_ledger_commit: 0bb1614ef849903b9732ca4a0d02f910921389e5
+branch: agent/ar-203-readme-story-live-proof
+evidence_commit: b45bd28f6b82f4915e81b7b47c20f34a8e3b521b
+minimum_ledger_commit: d01338d7cb32e3880377b1c1487142916dd45a70
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 ---
@@ -45,6 +45,25 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 - Named fast Python passes 675 tests with 6 skipped; dashboard UI passes 109;
   routing evaluation 1.3.0 passes every gate; documentation validates 551
   files; and Ruff checks and formats all 603 Python inputs.
+- PR 187 merged normally as exact main revision
+  `26a3911e371e42bc004faabaa2fd0b802bf50fdd`; GitHub assigned no runner and
+  executed zero hosted steps because of the account payment/spending limit.
+- Exact build `0.1.0+g26a3911e371e` is installed. Codex and ZCode were
+  refreshed; the owner expanded scope to include the dashboard, whose service
+  is installed, owned, enabled, active, manifest-current, and reachable.
+- Post-merge Codex review raised three P1 threads. The ledger claim is disproven
+  by the preserved two-parent merge ancestry. Two source findings are valid:
+  repair accepted rows outside its failed tuple, and sensitive planned-unit IDs
+  could remain clear text in durable evidence.
+- The current source rejects a repair before mutation unless its ordered IDs
+  exactly match the recorded failures, and hashes sensitive unit IDs while
+  preserving receipt idempotence. Focused boundary: 108 passed, 1 skipped.
+  Decision conformance: 23/23 killed, zero survivors or invalid results, source
+  unchanged.
+- The post-review named fast gate passes: Python 675 passed and 6 skipped;
+  dashboard UI 109 passed; routing evaluation 1.3.0 passed every gate;
+  documentation validated 552 files; Ruff checked and format-validated all 603
+  Python inputs.
 - Owner-untracked analysis and lock files remain untouched.
 
 ## completed-evidence
@@ -64,9 +83,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 
 ## exact-blocker
 
-The source repair is reviewed and fast-green but not yet checkpointed, merged,
-or exact-installed. Live convergence remains unproven until the one replacement
-trial accepts a defensible specialist team.
+The post-review P1 repair is fast-green and frozen in local commit `b45bd28`,
+but it is not yet pushed, reviewed in its replacement PR, merged, or
+exact-installed. The installed PR 187 build is invalidated before live use; do
+not ask the owner to trust it or spend the replacement trial.
 
 ## same-task-continuity
 
@@ -76,9 +96,12 @@ existing specialists form a safe team.
 
 ## next-bounded-work-package
 
-1. Checkpoint the reviewed source plus docs and its ledger entry.
-2. PR, merge, and exact-install the revision for Codex and ZCode only.
-3. Run one replacement trial. It must accept at least one specialist/team for
+1. Push `b45bd28`, open its replacement PR, and keep only findings that
+   invalidate this bounded repair in scope.
+2. Merge and exact-install the accepted revision for Codex, ZCode, and
+   dashboard.
+3. Ask the owner to trust the final Codex hook hashes once, then run one
+   replacement trial. It must accept at least one specialist/team for
    the fixed prompt, or record a defensible gap and hiring decision.
 4. Stop for owner direction if the same recruiter boundary fails again.
 
@@ -104,5 +127,5 @@ git diff --check
   text.
 - Keep the one-repair fast budget fixed at three total calls.
 - Preserve terminal traces and owner-untracked files.
-- Touch only Codex and ZCode on this machine.
+- Touch only Codex, ZCode, and the owner-requested dashboard on this machine.
 - One live trial per exact installed build; correction count must equal zero.

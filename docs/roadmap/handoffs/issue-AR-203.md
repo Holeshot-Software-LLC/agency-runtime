@@ -18,9 +18,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-203
-branch: agent/ar-203-readme-story-proof
-evidence_commit: 1e54967eb51412bae862b160a36612f7c9d1ed4f
-minimum_ledger_commit: 0bb1614ef849903b9732ca4a0d02f910921389e5
+branch: agent/ar-203-readme-story-live-proof
+evidence_commit: b45bd28f6b82f4915e81b7b47c20f34a8e3b521b
+minimum_ledger_commit: d01338d7cb32e3880377b1c1487142916dd45a70
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -45,6 +45,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 - Named fast Python passes 675 tests with 6 skipped; dashboard UI passes 109;
   routing evaluation 1.3.0 passes every gate; documentation validates 551
   files; and Ruff checks and formats all 603 Python inputs.
+- PR 187 merged as exact main revision
+  `26a3911e371e42bc004faabaa2fd0b802bf50fdd`; exact build
+  `0.1.0+g26a3911e371e` is installed. Codex and ZCode were refreshed.
+- The owner expanded scope to the README dashboard. Its service is installed,
+  owned, enabled, active, manifest-current, reachable, and free of definition
+  drift. Releasing its authenticated URL remains attended because automation
+  cannot satisfy the OS operator-presence verifier.
+- Codex verification observed all eight enabled hook hashes as `modified`, zero
+  trusted, and attempted no model call. Do not trust this build: two valid
+  post-merge P1 findings invalidate it before the replacement trial.
+- The current source enforces the exact ordered repair tuple before mutation
+  and hashes sensitive planner-derived unit IDs in durable receipts. Focused
+  boundary: 108 passed, 1 skipped. Decision conformance: 23/23 killed, zero
+  survivors or invalid results, source unchanged.
+- The post-review named fast gate passes: Python 675 passed and 6 skipped;
+  dashboard UI 109 passed; routing evaluation 1.3.0 passed every gate;
+  documentation validated 552 files; Ruff checked and format-validated all 603
+  Python inputs.
 - The README-story goal is bounded to one ordinary Codex proof on this machine:
   first terminal failure or 45 minutes ends a package, one live trial is
   allowed per exact build, and a second failure at the same causal boundary
@@ -91,10 +109,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## exact-blocker
 
-Activation and planning work in the exact installed build. The first causal
-boundary has a fast-green source repair, but that repair has not been
-checkpointed, merged, or exact-installed. Selection, hiring, delegation, and
-workspace-write remain unproven until the replacement trial.
+The post-review P1 repair is fast-green and frozen in local commit `b45bd28`,
+but it has not been pushed, reviewed in its replacement PR, merged, or
+exact-installed. The current installed build must not be trusted or trialed.
+Selection, hiring, delegation, and workspace-write remain unproven.
 
 ## same-task-continuity
 
@@ -104,11 +122,15 @@ persistent trust, or reinterpret one corrected header as a first-pass success.
 
 ## next-bounded-work-package
 
-1. Checkpoint the reviewed repair and its exact verification evidence.
-2. PR and merge the slice, then exact-install it for Codex and ZCode only.
-3. Run one replacement trial for that exact build. Require correction count
+1. Push `b45bd28`, open its replacement PR, and keep only findings that
+   invalidate this bounded repair in scope.
+2. Merge the accepted slice, then exact-install it for Codex, ZCode, and the
+   dashboard.
+3. Ask the owner once to open the authenticated dashboard and trust the final
+   eight Codex hook hashes; verify activation.
+4. Run one replacement trial for that exact build. Require correction count
    zero plus a real accepted team, or a defensible gap with hiring evidence.
-4. A second failure at this same recruiter boundary stops for owner direction;
+5. A second failure at this same recruiter boundary stops for owner direction;
    otherwise checkpoint the next proven boundary and refresh the local report.
 
 ## verification
@@ -132,7 +154,7 @@ git diff --check
 - The product host retains sandboxing and receives no extra write root.
 - The sentinel proves one exact in-workspace write, not exhaustive host
   sandbox correctness.
-- Touch only Codex and ZCode on this machine.
+- Touch only Codex, ZCode, and the owner-requested dashboard on this machine.
 - Correction count greater than zero or absent is a final canary failure.
 - Do not launch more than one live trial for one exact installed build.
 - End a bounded package at its first terminal failure or 45 minutes.

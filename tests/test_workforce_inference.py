@@ -6,6 +6,8 @@ import json
 from dataclasses import replace
 from typing import Any
 
+import pytest
+
 from agency_runtime.core.config import AgencyConfig, ProviderEntry, WorkforceConfig
 from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 from agency_runtime.core.selector.pipeline import _record_workforce_model_receipts
@@ -31,6 +33,7 @@ from agency_runtime.core.workforce.inference import (
     _CallBudget,
     _invoke_stage,
     _NominationAccumulator,
+    _NominationValidationError,
     _typed_shortlists,
     configured_workforce_providers,
     plan_and_staff_workforce,
@@ -495,6 +498,50 @@ def test_balanced_recruiter_repairs_only_missing_work_unit_rows() -> None:
         "unit-analyze",
         "unit-analyze-second",
     ]
+
+
+def test_recruiter_repair_rejects_rows_outside_recorded_failure_set() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"), _contract("analysis-alternative"))
+    plan_document = _plan_document()
+    plan_document["units"][0]["required_capabilities"] = ["analysis"]
+    second = json.loads(json.dumps(plan_document["units"][0]))
+    second["unit_id"] = "unit-analyze-second"
+    second["outcome"] = "Complete a second independent technical analysis"
+    plan_document["units"].append(second)
+    plan = parse_work_unit_plan(plan_document)
+    parser = _NominationAccumulator(
+        plan,
+        snapshot,
+        config=_config(mode="fast"),
+        context=_context(),
+        allowed_candidate_ids=frozenset({"technical-analyst", "analysis-alternative"}),
+    )
+    first_row = _nomination_document()["units"][0]
+    first_row["ranked_semantic"].append(_nominee("analysis-alternative", 0.90, "acceptable"))
+    second_row = {
+        "unit_id": "unit-analyze-second",
+        "decision": "staff",
+        "ranked_semantic": [
+            _nominee("technical-analyst", 0.98),
+            _nominee("analysis-alternative", 0.90, "acceptable"),
+        ],
+    }
+    replacement_first = json.loads(json.dumps(first_row))
+    replacement_first["ranked_semantic"] = [
+        _nominee("analysis-alternative", 0.99),
+        _nominee("technical-analyst", 0.98, "acceptable"),
+    ]
+
+    with pytest.raises(_NominationValidationError) as initial:
+        parser.parse({"units": [first_row]})
+    assert [failure.unit_id for failure in initial.value.failures] == ["unit-analyze-second"]
+
+    with pytest.raises(ValueError, match="repair rows do not match failed units"):
+        parser.parse({"units": [replacement_first, second_row]})
+
+    proposal = parser.parse({"units": [second_row]})
+    assert proposal.units[0].selected == ("technical-analyst",)
+    assert proposal.units[1].selected == ("technical-analyst",)
 
 
 def test_recruiter_repair_receives_every_invalid_unit_and_preserves_valid_rows() -> None:

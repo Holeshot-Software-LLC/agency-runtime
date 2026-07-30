@@ -144,6 +144,22 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="recruiter-repair-allows-unlisted-row-overwrite",
+        invariant=(
+            "A recruiter repair must match the ordered failed-unit set before it can "
+            "replace any accumulated row."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""        if self._repair_unit_ids and tuple(response_ids) != self._repair_unit_ids:
+            raise ValueError("workforce nomination repair rows do not match failed units")""",
+        after="""        if False and self._repair_unit_ids and tuple(response_ids) != self._repair_unit_ids:
+            raise ValueError("workforce nomination repair rows do not match failed units")""",
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_recruiter_repair_rejects_rows_outside_recorded_failure_set"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="recruiter-failure-detail-dropped-from-durable-receipt",
         invariant=(
             "A durable route retains only the allowlisted unit and reason codes needed to "
@@ -154,6 +170,19 @@ class _NominationSemantics:""",
             attempt["validation_failures"] = validation_failures""",
         after="""        if False and validation_failures:
             attempt["validation_failures"] = validation_failures""",
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_routing_receipt_is_bounded_content_free_and_idempotent"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="recruiter-failure-sensitive-unit-id-not-sanitized",
+        invariant=("A durable recruiter failure hashes a sensitive planner-derived unit identity."),
+        source_path="agency_runtime/core/selector/receipt_projection.py",
+        before="""        projected_unit_id = _identity(unit_id)
+        failure = {"unit_id": projected_unit_id, "reason_code": reason_code}""",
+        after="""        projected_unit_id = unit_id
+        failure = {"unit_id": projected_unit_id, "reason_code": reason_code}""",
         test_node=(
             "tests/test_routing_receipt_header.py::"
             "test_routing_receipt_is_bounded_content_free_and_idempotent"

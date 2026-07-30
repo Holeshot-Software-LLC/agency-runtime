@@ -87,6 +87,33 @@ PR 186 later repaired the activation boundary, and exact build
 terminal `NO-GO` and will not be rerun. The current source repair must pass the
 named fast gate, merge, and be exact-installed before one replacement trial.
 
+[PR 187](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/187)
+merged the first repair as exact main revision
+`26a3911e371e42bc004faabaa2fd0b802bf50fdd`. Immutable upgrade installed exact
+build `0.1.0+g26a3911e371e`; Codex and ZCode were refreshed. At the owner's
+request, the dashboard was also installed and is owned, enabled, active,
+manifest-current, and reachable. Hosted CI, CodeQL, and dependency review
+received no runner and executed zero steps because GitHub refused them for the
+account payment or spending limit.
+
+The post-merge Codex review contained three P1 threads. Commit ancestry proves
+the ledger thread non-actionable: merge `26a3911` preserves branch head
+`d01338d`, including substantive `d470993` and its preceding checkpoints. The
+other two findings were valid and invalidate the installed build before a
+replacement trial: repair rows were not enforced against the recorded failed
+tuple, and a sensitive planner-derived unit ID could enter durable evidence in
+clear text.
+
+The current source enforces exact ordered repair IDs before mutating retained
+rows and hashes sensitive unit identities while keeping receipt normalization
+idempotent. The affected boundary passes 108 tests with 1 skipped. Decision
+conformance passes its baseline and kills 23/23 mutations with zero survivors
+or invalid results and unchanged source. The post-review named fast gate passes:
+675 Python tests with 6 skipped, 109 dashboard UI tests, routing evaluation
+1.3.0 with every gate green, documentation validation for 552 files, and Ruff
+check plus format validation for all 603 Python inputs. Local commit `b45bd28`
+freezes that reviewed tree pending its replacement pull request.
+
 ## Approach
 
 1. Represent recruiter semantic failures as a bounded, content-free set keyed
@@ -104,7 +131,10 @@ named fast gate, merge, and be exact-installed before one replacement trial.
    mutation-test the real system prompt rather than a fake-provider shortcut.
 7. Persist only the allowlisted unit/invariant projection needed to diagnose a
    rejected recruiter response.
-8. Run focused review and the named fast gate before merge and exact
+8. Enforce the ordered failed-unit tuple before any repair row can replace
+   accumulated state, and hash sensitive planner-derived unit identities in
+   durable receipts.
+9. Run focused review and the named fast gate before merge and exact
    Codex/ZCode installation. Spend only one replacement canary on that exact
    build.
 
@@ -133,8 +163,12 @@ ADR-0114 limits fast mode to one bounded semantic repair.
   requests every failed row and no retained row.
 - [x] Durable receipts retain only allowlisted unit/invariant pairs and reject
   malformed, unknown, or provider-authored validation detail.
-- [x] Focused tests and 21/21 decision-conformance mutations pass on the current
-  source revision.
-- [x] The named fast production gate passes on the exact source revision.
-- [ ] The merged revision is exact-installed for Codex and ZCode before the
+- [x] Repair rows must match the ordered failed-unit tuple before retained state
+  can change.
+- [x] Sensitive planner-derived unit IDs become stable one-way digests in
+  durable receipts, and normalized receipts remain idempotent.
+- [x] Focused tests pass 108 cases with 1 skipped, and 23/23
+  decision-conformance mutations are killed on the current source revision.
+- [x] The named fast production gate passes on the post-review source revision.
+- [ ] The post-review revision is merged and exact-installed before the
   one replacement ordinary canary.
