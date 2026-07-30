@@ -130,6 +130,16 @@ format; and Git diff checks. The final private-copy decision proof again kills
 7 of 7 exact mutations with zero survivors or invalid results and leaves source
 inputs unchanged.
 
+PR 177 merged the bounded amendment repair as exact main revision
+`8bb504ce3c76aca6f1a243750d90419c1375be08`. Its CI, CodeQL, and Dependency
+Review jobs were again refused before repository steps by the same GitHub
+account-payment or spending-limit condition, so the complete local gate remains
+the executable evidence. The immutable ref upgrade installed exact build
+`0.1.0+g8bb504ce3c76`; Codex was refreshed to managed bundle
+`0.1.0+codex.d6240568ca33` and ZCode was refreshed from the same launcher. Both
+hosts are registered and enabled. Current-profile Codex activation remains an
+attended fresh-process boundary, separate from the isolated product canary.
+
 ## Approach
 
 1. Split candidate validation into content-free, allowlisted stages and retain

@@ -17,9 +17,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-200
-branch: codex/ar-200-live-evidence
-evidence_commit: 52d563538daf049c7fa054c5c50cad05cf4b4bdf
-minimum_ledger_commit: 35a5d9fca981d70ffa2d9527e117b435660a8b21
+branch: codex/ar-200-final-evidence
+evidence_commit: 8bb504ce3c76aca6f1a243750d90419c1375be08
+minimum_ledger_commit: caae4538648291793af995e7c1ec03e3248ade40
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 ---
@@ -31,16 +31,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 - The deterministic package is demo-ready: exact content-free contractor
   diagnostics and the disposable-copy decision-conformance gate are
   implemented and verified.
-- PR 176 merged as exact main revision
-  `52d563538daf049c7fa054c5c50cad05cf4b4bdf`; live evidence continues on
-  `codex/ar-200-live-evidence`.
-- The uv tool is exact build `0.1.0+g52d563538daf`. Codex managed bundle
-  `0.1.0+codex.bd6f67d99b7d` and ZCode were refreshed from that launcher.
+- PR 177 merged the bounded amendment repair as exact main revision
+  `8bb504ce3c76aca6f1a243750d90419c1375be08`; final evidence continues on
+  `codex/ar-200-final-evidence`.
+- The uv tool is exact build `0.1.0+g8bb504ce3c76`. Codex managed bundle
+  `0.1.0+codex.d6240568ca33` and ZCode were refreshed from that launcher.
 - AR-199's terminal ordinary trace remains `NO-GO`; it is evidence input, not a
   run to reinterpret or repeat before deterministic gates pass.
-- The first AR-200 ordinary trace also ended `NO-GO`; it proved that the
-  architecture gap is repaired and isolated the remaining gap to documentation
-  amendment construction. The bounded amendment repair is under verification.
+- The first AR-200 ordinary trace ended `NO-GO`; its isolated documentation
+  amendment failure is repaired and fully verified. One final canary remains.
 - Owner-untracked files remain untouched.
 
 ## completed-evidence
@@ -68,15 +67,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 - Documentation metadata and normal validation pass for 536 Markdown files.
   Strict tracker mode separately reports the inherited AR-128 through AR-198
   parity backlog; AR-200 itself matches tracker issue 175.
-- GitHub CI run 30508950518, CodeQL run 30508950495, and Dependency Review run
-  30508950482 acquired no executable steps; GitHub annotated each with the
-  account payment or spending-limit refusal. PR 176 was therefore
-  administratively merged from the complete local gate.
-- Exact install records Codex install ID
-  `e1eab5e7-9250-4fc4-beed-7d8f3b37a76b` and ZCode install ID
-  `e09aac95-d1b6-4b2c-8fb0-29fb9f734e21`. Read-only doctor confirms SQLite
-  schema 38, 272 active agents, and the usable `codex-subscription` provider;
-  Codex trust and both live runtime loads remain unverified as expected.
+- PR 176 and PR 177 hosted gates acquired no repository steps; GitHub annotated
+  each CI, CodeQL, and Dependency Review entry with the same account-payment or
+  spending-limit refusal. Both were administratively merged from complete local
+  gates. PR 177's exact merge is `8bb504ce3c76aca6f1a243750d90419c1375be08`.
+- The current exact install records Codex install ID
+  `57f487f1-b354-4ca8-9f5e-89a9f04a2e72`, bundle
+  `0.1.0+codex.d6240568ca33`, and ZCode install ID
+  `77342e82-3b1a-4ca9-85ed-b79cbdf89f8e`. Both are registered and enabled;
+  current-profile Codex hook trust remains unverified as expected.
 - Context telemetry reported 87.5 percent remaining at package bootstrap and
   53.8 percent immediately before the implementation checkpoint. It reported
   19.3 percent before live evaluation, so this merge/install recovery pair is
@@ -118,11 +117,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 
 ## exact-blocker
 
-The amendment repair still requires one focused review, the named fast gate,
-merge, and exact Codex/ZCode installation. Then one final ordinary Codex canary
-must prove a relevant specialist chain, accepted finalization, model receipts,
-and zero header corrections. Current-profile trust is a separate attended
-status and does not block the isolated-profile product proof.
+One final ordinary Codex canary must prove a relevant specialist chain,
+accepted finalization, model receipts, and zero header corrections.
+Current-profile trust is a separate attended status and does not block the
+isolated-profile product proof.
 
 ## same-task-continuity
 
@@ -131,12 +129,9 @@ merge, exact installation, one bounded live canary, and evidence publication.
 
 ## next-bounded-work-package
 
-1. Complete one focused repair review and the named fast production gate.
-2. Commit the repair and ledger, open and merge its PR, and exact-install the
-   merge for Codex and ZCode only.
-3. Run one final bounded ordinary Codex canary with the governed full-stack
+1. Run one final bounded ordinary Codex canary with the governed full-stack
    prompt.
-4. Publish its exact evidence to the local shareable report and close AR-200
+2. Publish its exact evidence to the local shareable report and close AR-200
    only if the scoped canary contract passes.
 
 ## verification
