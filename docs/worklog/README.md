@@ -379,6 +379,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c8bed05` | 2026-07-30 | docs(roadmap): checkpoint PR 187 review repair | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
 | `5e3fab6` | 2026-07-30 | Merge pull request #188 from Holeshot-Software-LLC/agent/ar-203-readme-story-live-proof | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
 | `9ec3c3d` | 2026-07-30 | docs(roadmap): checkpoint PR 188 install boundary | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
+| `c387b65` | 2026-07-30 | docs(product): lock the executable README story | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-c387b65-executable-readme-story.md) |
+| `1d7b019` | 2026-07-30 | docs(roadmap): checkpoint AR-204 contract | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
