@@ -373,6 +373,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `830b878` | 2026-07-30 | Merge pull request #186 from Holeshot-Software-LLC/agent/ar-203-hook-start-workspace | null | null |
 | `e38f69d` | 2026-07-30 | docs(roadmap): checkpoint README story activation boundary | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
 | `1e54967` | 2026-07-30 | docs(roadmap): checkpoint README story recruiter failure | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
+| `d470993` | 2026-07-30 | fix(workforce): make recruiter repair partial and traceable | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | [detail](2026-07-30-d470993-partial-traceable-recruiter-repair.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
