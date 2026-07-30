@@ -11,6 +11,9 @@ from agency_runtime.core.evals.comparative import (
     evaluate_comparative_outcomes,
     load_comparative_jsonl,
 )
+from agency_runtime.core.evals.decision_conformance import (
+    run_decision_conformance_eval,
+)
 from agency_runtime.core.evals.full_roster import (
     DEFAULT_CANDIDATE_LIMIT,
     run_full_roster_selection_eval,
@@ -95,6 +98,34 @@ def cmd_eval_compare(args: argparse.Namespace) -> int:
     observations = load_comparative_jsonl(Path(args.input))
     print_json(evaluate_comparative_outcomes(observations))
     return 0
+
+
+def cmd_eval_decision_conformance(args: argparse.Namespace) -> int:
+    """Prove that focused tests kill the curated Agency decision mutations."""
+
+    report = run_decision_conformance_eval(
+        Path(args.repository),
+        timeout_seconds=float(args.timeout),
+    )
+    if args.json:
+        print_json(report)
+    else:
+        status = "passed" if report["passed"] else "failed"
+        counts = report["counts"]
+        print(
+            f"decision conformance {status}: "
+            f"killed={counts['killed']}/{counts['mutations']} "
+            f"survived={counts['survived']} invalid={counts['invalid']}"
+        )
+        print(
+            f"baseline	{report['baseline']['status']} "
+            f"source-unchanged={report['source_unchanged']}"
+        )
+        for item in report["mutations"]:
+            marker = "ok" if item["status"] == "killed" else "FAIL"
+            print(f"{marker}	{item['mutation_id']}	{item['status']}")
+        print(f"boundary	{report['evidence_boundary']}")
+    return 0 if report["passed"] else 1
 
 
 def cmd_eval_full_roster(args: argparse.Namespace) -> int:
@@ -277,6 +308,7 @@ def cmd_eval_product(args: argparse.Namespace) -> int:
 __all__ = [
     "DEFAULT_CANDIDATE_LIMIT",
     "cmd_eval_compare",
+    "cmd_eval_decision_conformance",
     "cmd_eval_full_roster",
     "cmd_eval_product",
     "cmd_eval_upstream_architecture",

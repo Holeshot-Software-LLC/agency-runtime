@@ -14,6 +14,7 @@ related:
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
+  - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/handoffs/issue-AR-199.md
 supersedes: []
 superseded_by: null
@@ -23,7 +24,7 @@ issue_id: AR-199
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 depends_on: []
-blocks: []
+blocks: [AR-200]
 ---
 
 # AR-199: Restore Codex workforce selection and evidence

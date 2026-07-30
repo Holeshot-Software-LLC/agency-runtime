@@ -3,7 +3,7 @@ title: "Contributing to Agency Runtime"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-28
+updated: 2026-07-29
 tags: [contributing, development]
 related:
   - AGENTS.md
@@ -97,6 +97,7 @@ python -m pytest \
   tests/test_workforce_hiring_contract.py \
   tests/test_workforce_selection_safety.py \
   tests/test_workforce_dynamic_hiring.py \
+  tests/test_decision_conformance.py \
   tests/test_delegation_p1_correctness.py \
   tests/test_store_turn_atomicity.py \
   tests/test_roster_snapshot_generation.py \
@@ -111,6 +112,7 @@ python -m pytest \
   -q -W error
 node --test tests/dashboard_ui.test.mjs
 agency eval routing --json --no-details
+agency eval decision-conformance --repository . --json
 git diff --check
 ```
 

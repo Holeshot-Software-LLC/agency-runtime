@@ -3,10 +3,11 @@ title: "Stage preflight workforce evidence until ready"
 status: accepted
 category: decisions
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
 tags: [routing, workforce, evidence, transactions, preflight]
 related:
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
+  - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/decisions/0003-response-telemetry-is-model-truth.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0093-atomic-finalization-evidence-batches.md

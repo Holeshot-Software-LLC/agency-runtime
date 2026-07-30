@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-28
+updated: 2026-07-29
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -25,6 +25,14 @@ Faithful commit history and reasoning-rich implementation notes remain in the
 changes rather than duplicating every commit.
 
 ## Unreleased
+
+### Added
+
+- `agency eval decision-conformance` proves a green focused baseline and then
+  kills curated online-inference, role-ordering, contractor-boundary, and
+  diagnostic-collapse mutations in owner-private disposable copies. It never
+  edits or restores the requested checkout, and invalid test execution cannot
+  masquerade as a killed mutation.
 
 ### Changed
 
@@ -48,6 +56,12 @@ changes rather than duplicating every commit.
   cycle, and will not be removed before 0.3.0.
 
 ### Fixed
+
+- Contractor hiring now reports allowlisted content-free validation stages
+  instead of collapsing every post-parse rejection into
+  `contract_invalid:candidate`. Full governed employment prose remains in the
+  compiled contract while its smaller workforce routing projection is bounded
+  by destination byte limits.
 
 - Codex activation hooks now preserve opaque encrypted collaboration messages
   instead of replacing them with mixed plaintext/encrypted input. The exact

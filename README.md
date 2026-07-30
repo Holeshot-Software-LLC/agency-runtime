@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-07-28
+updated: 2026-07-29
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
@@ -509,6 +509,19 @@ agency route "review this authentication design"
 agency explain "review this authentication design" --session-id demo
 agency eval routing --json --no-details
 ```
+
+From a development checkout with the dev dependencies installed, prove that
+the focused suite rejects Agency's curated decision regressions:
+
+```bash
+agency eval decision-conformance --repository . --json
+```
+
+The command first proves the named baseline tests are green, then applies each
+mutation to a fresh owner-private disposable copy. It never changes or restores
+the requested checkout. Only the expected ordinary pytest failure kills a
+mutation; a timeout, stale anchor, collection error, unrelated failure, or
+survivor fails the command.
 
 Inspect the persistent host and global states without changing them:
 

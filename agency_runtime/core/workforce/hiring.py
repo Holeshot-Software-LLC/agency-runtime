@@ -18,6 +18,7 @@ from agency_runtime.core.structured_provider import (
 from agency_runtime.core.workforce.contract import (
     MAX_OUTCOMES,
     MAX_TAXONOMY_ITEMS,
+    MAX_TEXT_BYTES,
     WorkforceContract,
     parse_workforce_contract,
     project_workforce_contract,
@@ -90,6 +91,41 @@ _IDENTIFIERS = {
 }
 _ROUTING_IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9_-]{0,127}\Z")
 _MAX_SCOPE_QUALIFIERS = 4
+_MAX_DISPLAY_NAME_BYTES = 128
+_WORKFORCE_PROJECTION_FIELDS = (
+    ("external workforce capability ids", "capability_ids"),
+    ("workforce capability id", "capability_ids"),
+    ("workforce composition.", "composition"),
+    ("workforce composition", "composition"),
+    ("workforce audit revision and version", "metadata"),
+    ("workforce hosts and platforms", "hosts_platforms"),
+    ("workforce contract", "contract_size"),
+    ("workforce version_hash", "version_hash"),
+    ("workforce artifact_kinds", "artifact_kinds"),
+    ("workforce lifecycle_phases", "lifecycle_phases"),
+    ("workforce scope_qualifiers", "scope_qualifiers"),
+    ("workforce tool_classes", "tool_classes"),
+    ("workforce capability_ids", "capability_ids"),
+    ("workforce display_name", "display_name"),
+    ("workforce context_mode", "context_mode"),
+    ("workforce audit.status", "audit_status"),
+    ("workforce audit.revision", "audit_revision"),
+    ("workforce outcomes", "outcomes"),
+    ("workforce domains", "domains"),
+    ("workforce stacks", "stacks"),
+    ("workforce not_for", "not_for"),
+    ("workforce authority", "authority"),
+    ("workforce division", "division"),
+    ("workforce archetype", "archetype"),
+    ("workforce employment", "employment"),
+    ("workforce enabled", "enabled"),
+    ("workforce platforms", "platforms"),
+    ("workforce hosts", "hosts"),
+    ("workforce version", "version"),
+    ("workforce origin", "origin"),
+    ("workforce agent_id", "agent_id"),
+    ("workforce worker_id", "worker_id"),
+)
 
 
 def _object(properties: Mapping[str, Any], required: Sequence[str]) -> dict[str, Any]:
@@ -369,6 +405,14 @@ class _ValidatedCandidate:
     target_worker: Mapping[str, Any] | None = None
 
 
+class _CandidateValidationFailure(ValueError):
+    """Carry one allowlisted validation code without retaining rejected content."""
+
+    def __init__(self, reason_code: str) -> None:
+        super().__init__(reason_code)
+        self.reason_code = reason_code
+
+
 @dataclass(frozen=True, slots=True)
 class PendingHiringCommit:
     """Validated hiring mutation held until the owning preflight ready CAS."""
@@ -406,6 +450,26 @@ def _json(value: object) -> str:
 
 def _digest(value: object) -> str:
     return hashlib.sha256(_json(value).encode("utf-8")).hexdigest()
+
+
+def _bounded_projection_text(value: str, *, maximum_bytes: int = MAX_TEXT_BYTES) -> str:
+    """Bound a validated prose field for the smaller workforce routing view."""
+
+    normalized = " ".join(value.split())
+    encoded = normalized.encode("utf-8")
+    if len(encoded) <= maximum_bytes:
+        return normalized
+    return encoded[:maximum_bytes].decode("utf-8", errors="ignore").rstrip()
+
+
+def _workforce_projection_reason(exc: TypeError | ValueError) -> str:
+    """Map controlled workforce validation messages to content-free field codes."""
+
+    detail = str(exc).casefold()
+    for marker, field in _WORKFORCE_PROJECTION_FIELDS:
+        if marker in detail:
+            return f"contract_invalid:workforce_projection:{field}"
+    return "contract_invalid:workforce_projection"
 
 
 def _attempt(
@@ -466,7 +530,10 @@ def _agent_document(
 ) -> dict[str, Any]:
     """Compile one validated contract into the only supported worker document."""
 
-    compiled = compile_contractor(contract)
+    try:
+        compiled = compile_contractor(contract)
+    except (TypeError, ValueError):
+        raise _CandidateValidationFailure("contract_invalid:employment_revalidation") from None
     artifacts = tuple(
         dict.fromkeys(
             item for item in contract.artifacts_produced if _ROUTING_IDENTIFIER.fullmatch(item)
@@ -496,12 +563,18 @@ def _agent_document(
     for relationship in contract.relationships:
         targets = composition.get(relationship.kind)
         if not isinstance(targets, list):
-            raise ValueError("contractor relationship is unsupported")
+            raise _CandidateValidationFailure("contract_invalid:relationship_projection") from None
         targets.append(relationship.target)
     return {
         "slug": contract.slug,
-        "name": contract.role,
-        "display_name": contract.role,
+        "name": _bounded_projection_text(
+            contract.role,
+            maximum_bytes=_MAX_DISPLAY_NAME_BYTES,
+        ),
+        "display_name": _bounded_projection_text(
+            contract.role,
+            maximum_bytes=_MAX_DISPLAY_NAME_BYTES,
+        ),
         "division": "specialized",
         "description": contract.narrow_scope,
         "categories": ["agency-contractor", *contract.capabilities[:4]],
@@ -523,7 +596,7 @@ def _agent_document(
         "independence_group": f"contractor-{contract.slug}",
         "expected_output_contract": "; ".join(contract.artifacts_produced),
         "evidence_requirements": list(contract.evidence_requirements),
-        "outcomes": list(outcomes),
+        "outcomes": [_bounded_projection_text(item) for item in outcomes],
         "artifact_kinds": list(artifacts),
         "lifecycle_phases": list(contract.lifecycle_phases[:MAX_TAXONOMY_ITEMS]),
         "domains": list(dict.fromkeys(domains))[:MAX_TAXONOMY_ITEMS],
@@ -534,8 +607,8 @@ def _agent_document(
         # are already fully typed (stacks/domains/capability_ids above derive
         # from the causing unit); batch enrichment (scripts/enrich_workforce_
         # contracts.py) refines qualifiers for the broader roster, not per-hire.
-        "scope_qualifiers": list(scope_qualifiers),
-        "not_for": list(not_for),
+        "scope_qualifiers": [_bounded_projection_text(item) for item in scope_qualifiers],
+        "not_for": [_bounded_projection_text(item) for item in not_for],
         "source": "agency-runtime",
         "source_id": "agency-dynamic-hiring",
         "source_version": str(CONTRACTOR_PROMPT_TEMPLATE_VERSION),
@@ -571,10 +644,13 @@ def _contract_agent(
         stacks=(*unit.languages, *unit.frameworks),
     )
     agent["capability_ids"] = list(unit.required_capabilities)
-    workforce = project_workforce_contract(agent, origin="agency")
+    try:
+        workforce = project_workforce_contract(agent, origin="agency")
+    except (TypeError, ValueError) as exc:
+        raise _CandidateValidationFailure(_workforce_projection_reason(exc)) from None
     required = set(typed_staffing_requirements(unit))
     if not required <= set(typed_staffing_coverage(unit, workforce)):
-        raise ValueError("contractor does not cover its causing work unit")
+        raise _CandidateValidationFailure("contract_invalid:causing_unit_coverage") from None
     return agent, workforce
 
 
@@ -942,6 +1018,9 @@ def _validated_candidate(
         return failure("contract_invalid:employment_contract")
     try:
         contract = _bind_contract_to_causing_unit(contract, unit, staffing_context)
+    except (TypeError, ValueError):
+        return failure("contract_invalid:unit_binding")
+    try:
         if action == "amend":
             target = str(duplicate.get("coherent_amendment_target") or "")
             existing = next((item for item in contracts if item.agent_id == target), None)
@@ -956,15 +1035,14 @@ def _validated_candidate(
         else:
             agent, workforce_contract = _contract_agent(contract, unit)
             worker = None
-    except (TypeError, ValueError) as exc:
-        detail = str(exc).casefold()
-        if "cover its causing work unit" in detail:
-            code = "contract_invalid:causing_unit_coverage"
-        elif "amendment" in detail:
-            code = "contract_invalid:amendment"
-        else:
-            code = "contract_invalid:candidate"
-        return failure(code)
+    except _CandidateValidationFailure as exc:
+        return failure(exc.reason_code)
+    except (TypeError, ValueError):
+        return failure(
+            "contract_invalid:amendment"
+            if action == "amend"
+            else "contract_invalid:candidate_construction"
+        )
     if action == "hire" and (
         contract.slug in known
         or any(_obvious_duplicate(workforce_contract, item) for item in contracts)
