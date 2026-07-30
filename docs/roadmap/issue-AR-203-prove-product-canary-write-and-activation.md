@@ -62,7 +62,9 @@ Codex Agency mode now queries the exact activation snapshot using the hash of
 the wrapped prompt actually sent to the host while retaining the canonical
 product prompt hash separately. Focused review passes 85 tests. The two new
 product decision mutations are killed inside the 13/13 decision-conformance
-gate with zero survivors or invalid results.
+gate with zero survivors or invalid results. The named fast production spine
+passes 675 tests with 6 skipped, the dashboard UI passes 109 tests, and routing
+evaluation 1.3.0 passes every configured gate.
 
 ## Approach
 

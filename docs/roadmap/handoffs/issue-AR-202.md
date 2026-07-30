@@ -19,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-202
 branch: agent/ar-202-recruiter-repair-convergence
-evidence_commit: ed4450e9cb55c656d70c94026b22f6caebbd45e1
-minimum_ledger_commit: ed4450e9cb55c656d70c94026b22f6caebbd45e1
+evidence_commit: 9f3d72a738dd9c374116cd2a64d6a18a572681ea
+minimum_ledger_commit: fdf4a36d8b5e117b75c8bc713b9e6464b1f78438
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 ---
@@ -49,6 +49,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 - Context telemetry reported 47.8 percent remaining, so this reviewed source
   slice requires a clean substantive and ledger checkpoint before the fast
   production spine.
+- The exact checkpoint is substantive commit `9f3d72a` plus ledger
+  `fdf4a36`.
+- Named fast Python spine: 675 passed, 6 skipped. Dashboard UI: 109 passed
+  after the outer sandbox's expected `spawn EPERM` required the authorized
+  rerun. Routing evaluation 1.3.0 passed every gate; routing p95 was 3.725 ms
+  and cache-hit p95 was 0.989 ms.
 
 ## completed-evidence
 
@@ -75,9 +81,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 
 ## exact-blocker
 
-The source convergence boundary is repaired. Remaining blockers are the named
-fast production spine, merge, exact Codex/ZCode installation, and one final
-ordinary canary after the paired AR-203 harness repair.
+The source convergence boundary and named fast gate are complete. Remaining
+blockers are PR merge, exact Codex/ZCode installation, and one final ordinary
+canary after the paired AR-203 harness repair.
 
 ## same-task-continuity
 
@@ -88,11 +94,9 @@ canary.
 
 ## next-bounded-work-package
 
-1. Complete documentation validation and the named fast production spine.
-2. Commit the combined repair and its exact worklog ledger.
-3. Push, open the PR, resolve required checks, and merge.
-4. Install the exact merged revision for Codex and ZCode only.
-5. Run one final ordinary canary and publish the local evidence report.
+1. Push, open the PR, resolve required checks, and merge.
+2. Install the exact merged revision for Codex and ZCode only.
+3. Run one final ordinary canary and publish the local evidence report.
 
 ## verification
 

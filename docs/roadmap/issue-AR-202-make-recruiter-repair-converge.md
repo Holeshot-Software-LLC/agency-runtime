@@ -62,8 +62,10 @@ repairs two independently invalid unit decisions in one bounded call.
 Focused runtime review passes 85 tests. Decision conformance passes a green
 baseline and kills all 13 curated mutations, including first-error-only
 recruiter validation, with zero survivors or invalid results and unchanged
-source inputs. The named fast production spine, merge, install, and final
-ordinary canary remain pending.
+source inputs. The named fast production spine passes 675 tests with 6 skipped;
+the dashboard UI passes 109 tests; and routing evaluation 1.3.0 passes every
+correctness, policy, delegation, performance, startup, and scale gate. Merge,
+install, and the final ordinary canary remain pending.
 
 ## Approach
 
@@ -103,7 +105,7 @@ ADR-0114 limits fast mode to one bounded semantic repair.
   behavior and passes with one bounded repair.
 - [x] The decision-conformance gate kills an exact mutation that restores
   first-error-only recruiter validation.
-- [ ] Focused tests and the named fast production gate pass on the exact source
+- [x] Focused tests and the named fast production gate pass on the exact source
   revision.
 - [ ] The merged revision is exact-installed for Codex and ZCode before the
   next ordinary canary.
