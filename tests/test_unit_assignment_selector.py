@@ -24,7 +24,7 @@ from agency_runtime.core.selector import judge, pipeline
 from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.unit_assignment import (
     MAX_UNIT_SELECTION_WORKERS,
-    _deterministic_unit_selection,
+    _compatible_unit_selection,
     _mutation_scope,
     _supports_unit_deliverable,
     assignment_agents_from_catalog,
@@ -423,7 +423,7 @@ def test_degraded_inference_does_not_promote_lexical_candidates(
     assert snapshot == []
 
 
-def test_no_config_path_is_deterministic_and_never_calls_a_provider(
+def test_no_config_path_fails_closed_and_never_calls_a_provider(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fail_provider(*_args: Any, **_kwargs: Any) -> None:
@@ -465,13 +465,23 @@ def test_no_config_path_is_deterministic_and_never_calls_a_provider(
     )
 
     assert first == second
-    assert [item["slug"] for item in first] == [
-        "database-specialist",
-        "technical-writer",
-    ]
+    assert first == []
 
 
-def test_offline_unit_fallback_uses_deliverable_compatible_reviewed_contracts() -> None:
+def test_unavailable_inference_cannot_be_reinterpreted_as_a_unit_assignment() -> None:
+    catalog = [_agent("code-reviewer", "code review")]
+    routing = {
+        "selected_ids": ["code-reviewer"],
+        "semantic_ids": ["code-reviewer"],
+        "status": "inference_unavailable",
+        "inference_configured": False,
+        "inference_mode": "unavailable",
+    }
+
+    assert _compatible_unit_selection("Review this patch", routing, catalog) == []
+
+
+def test_offline_unit_routing_never_recommends_reviewed_contracts() -> None:
     task = (
         "Audit the Python security model, implement the remediation, and update its "
         "operator documentation as independent work units."
@@ -516,11 +526,7 @@ def test_offline_unit_fallback_uses_deliverable_compatible_reviewed_contracts() 
         build_unit_agent_plan(planned_routing),
     )
 
-    assert [item["recommended_agent"] for item in plan] == [
-        "ai-generated-code-security-auditor",
-        "minimal-change-engineer",
-        "technical-writer",
-    ]
+    assert plan == []
     assert "clinical-evidence-agent" not in {
         specialist for item in plan for specialist in item["compatible_specialists"]
     }
@@ -568,10 +574,6 @@ def test_deliverable_filter_tolerates_absent_optional_taxonomy_lists() -> None:
         )
         is False
     )
-
-
-def test_deterministic_unit_selection_abstains_without_an_eligible_contract() -> None:
-    assert _deterministic_unit_selection("Review the security model", []) == []
 
 
 def test_mutating_review_units_require_positive_modify_authority() -> None:

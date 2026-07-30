@@ -829,7 +829,17 @@ def _resolve_preflight_routing(
 
     if not inference_is_configured(config):
         routing = pipeline.route(session_id, user_message, catalog, **route_arguments)
-        routing["child_routing_source"] = "deterministic_unconfigured"
+        routing.update(
+            selected_ids=[],
+            semantic_ids=[],
+            status="inference_unavailable",
+            source="inference_failure",
+            error="no inference provider is configured for child routing",
+            inference_configured=False,
+            inference_required=True,
+            inference_mode="unavailable",
+            child_routing_source="inference_unavailable",
+        )
         return routing, None, classification
 
     workforce_contract_fingerprint = str(
@@ -940,7 +950,7 @@ def _resolve_preflight_routing(
         routing["child_routing_source"] = "parent_budgeted_inference"
         return routing, None, classification
 
-    deterministic_config = replace(
+    inference_unavailable_config = replace(
         config,
         providers=(),
         judge=replace(
@@ -953,19 +963,19 @@ def _resolve_preflight_routing(
         ),
         ollama=replace(config.ollama, enabled=False),
     )
-    route_arguments["config"] = deterministic_config
+    route_arguments["config"] = inference_unavailable_config
     # PERF-01 carve-out: the pre-built request was constructed against the
-    # original config; the deterministic offline config changes the policy
+    # original config; the no-inference config changes the policy
     # fingerprint baked into the request, so it cannot be reused here.
     route_arguments.pop("request", None)
     routing = pipeline.route(session_id, user_message, catalog, **route_arguments)
-    deterministic_candidates = list(routing.get("selected_ids", []))
     routing.update(
         selected_ids=[],
+        semantic_ids=[],
         confidence=0.0,
         status="child_budget_abstained",
         source="child_budget_policy",
-        deterministic_candidate_ids=deterministic_candidates,
+        inference_mode="unavailable",
         child_routing_source=str(reservation["status"]),
         child_inference_budget_exhausted=reservation["status"] == "budget_exhausted",
     )
@@ -1145,14 +1155,13 @@ def _abstain_unplanned_isolated_selection(
         {
             **routing,
             "selected_ids": [],
-            "semantic_ids": list(dict.fromkeys([*routing.get("semantic_ids", []), *selected])),
+            "semantic_ids": [],
             "companion_ids": [],
             "confidence": 0.0,
             "status": "abstained",
             "source": "isolated_plan_policy",
             "work_units": bounded_units,
-            "deterministic_candidate_ids": selected,
-            "fallback_considered": True,
+            "fallback_considered": False,
             "fallback_applied": False,
         },
         [],

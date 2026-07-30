@@ -65,29 +65,90 @@ MUTATIONS: Final[tuple[DecisionMutation, ...]] = (
         ),
     ),
     DecisionMutation(
-        mutation_id="online-role-anchor-reorders-inference",
-        invariant="Online deterministic recall cannot reorder the inference ranking.",
+        mutation_id="missing-provider-restores-offline-staffing",
+        invariant="Missing inference fails without a deterministic specialist team.",
         source_path="agency_runtime/core/workforce/inference.py",
-        before="""        ranked = _calibrated_rankings(
-            scores,
-            minimum_margin=config.workforce.min_margin,
+        before="""    if not _inference_declared(config):
+        return _inference_failure(
+            mode=mode,
+            configured=False,
+            plan=None,
+            proposal=None,
+            attempts=(),
+            detail_codes=("workforce_provider_unavailable",),
+            calls_used=0,
         )""",
-        after="""        ranked = _calibrated_rankings(
-            scores,
-            minimum_margin=config.workforce.min_margin,
+        after="""    if not _inference_declared(config):
+        from agency_runtime.core.workforce.fallback import deterministic_plan_and_staff
+
+        offline = deterministic_plan_and_staff(
+            request,
+            snapshot,
+            config=config,
+            context=context,
         )
-        anchors = tuple(
-            agent_id for agent_id in _role_anchors(expected_unit) if agent_id in scores
-        )
-        if anchors:
-            anchor_ids = frozenset(anchors)
-            ranked = (
-                *((agent_id, 1.0) for agent_id in anchors),
-                *((agent_id, min(score, 0.99)) for agent_id, score in ranked if agent_id not in anchor_ids),
-            )""",
+        return WorkforceRoutingOutcome(
+            status="accepted",
+            mode=mode,
+            inference_mode="deterministic",
+            plan=offline.plan,
+            proposal=offline.proposal,
+            staffing=offline.staffing,
+            attempts=(),
+            abstention_codes=(),
+            calls_used=0,
+            decision_source="deterministic",
+        )""",
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_no_provider_declines_without_selecting_or_calling_the_model"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="online-plan-restores-deterministic-enrichment",
+        invariant="Production planning preserves the inference-authored plan without local additions.",
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""    return primary
+
+
+def _typed_shortlists(""",
+        after="""    from agency_runtime.core.workforce.intent import enrich_intent_plan
+
+    return enrich_intent_plan(primary, request=request, context=context)
+
+
+def _typed_shortlists(""",
         test_node=(
             "tests/test_workforce_selection_safety.py::"
-            "test_online_inference_ranking_is_not_reordered_by_a_role_anchor"
+            "test_production_staffing_entrypoints_have_no_deterministic_decider_dependency"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="unit-assignment-reinterprets-unavailable-inference",
+        invariant="An unavailable inference route cannot become an exact unit recommendation.",
+        source_path="agency_runtime/core/unit_assignment.py",
+        before='    if inference_mode not in {"inferred", "durable_reuse", "cached"}:',
+        after=(
+            '    if inference_mode not in {"inferred", "durable_reuse", "cached", "unavailable"}:'
+        ),
+        test_node=(
+            "tests/test_unit_assignment_selector.py::"
+            "test_unavailable_inference_cannot_be_reinterpreted_as_a_unit_assignment"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="unconfigured-child-preserves-specialist-selection",
+        invariant="An unconfigured child route clears every unproven specialist identity.",
+        source_path="agency_runtime/core/preflight.py",
+        before="""            selected_ids=[],
+            semantic_ids=[],
+            status="inference_unavailable",""",
+        after="""            selected_ids=list(routing.get("selected_ids", [])),
+            semantic_ids=list(routing.get("semantic_ids", [])),
+            status="inference_unavailable",""",
+        test_node=(
+            "tests/test_child_routing_coordination.py::"
+            "test_child_owner_failure_aborts_and_unconfigured_child_fails_closed"
         ),
     ),
     DecisionMutation(

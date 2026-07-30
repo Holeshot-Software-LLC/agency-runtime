@@ -1,4 +1,4 @@
-"""Semantic judge facade and deterministic routing fallbacks.
+"""Semantic judge facade with inference-owned specialist selection.
 
 Provider protocols, transport execution, and ordered attempt accounting live in
 small sibling modules.  This facade intentionally retains the historical names
@@ -46,12 +46,6 @@ _MAX_PROVIDER_ATTEMPTS = MAX_PROVIDER_CHAIN_ENTRIES
 _MAX_JUDGE_DEADLINE_SECONDS = 60.0
 _MAX_JUDGE_CANDIDATES = 20
 _MAX_SELECTED = 50
-_MAX_TOKEN_FALLBACK_SELECTED = 2
-_MIN_RELATIVE_FALLBACK_SCORE = 0.30
-_MIN_TOKEN_FALLBACK_SCORE = 3.0
-_MIN_TOKEN_FALLBACK_CONFIDENCE = 0.8
-_MAX_TOKEN_FALLBACK_CONFIDENCE = 0.95
-_TOKEN_FALLBACK_CONFIDENCE_SCORE_SPAN = 15.0
 
 
 def _agent_id(agent: dict[str, Any]) -> str:
@@ -72,26 +66,6 @@ def _validated_max_selected(value: Any) -> int:
     if not 1 <= value <= _MAX_SELECTED:
         raise ValueError(f"max_selected must be between 1 and {_MAX_SELECTED}")
     return value
-
-
-def _scored_selection(
-    candidates: list[dict[str, Any]],
-    scores: list[float],
-    max_selected: int,
-) -> list[str]:
-    """Keep strong deterministic matches without padding with weak positives."""
-    top_score = scores[0] if scores else 0.0
-    if top_score <= 0:
-        return []
-    cutoff = top_score * _MIN_RELATIVE_FALLBACK_SCORE
-    selected: list[str] = []
-    for agent, score in zip(candidates, scores, strict=True):
-        agent_id = _agent_id(agent)
-        if score >= cutoff and agent_id and agent_id not in selected:
-            selected.append(agent_id)
-            if len(selected) >= max_selected:
-                break
-    return selected
 
 
 def _bounded_confidence(value: Any) -> float | None:
@@ -155,7 +129,12 @@ def inference_is_configured(
     if config.providers:
         return True
     jc = judge_config or config.judge
-    return bool(jc.model and jc.base_url and (jc.api_key or jc.api_key_env))
+    legacy_declared = bool(
+        jc.model
+        and jc.base_url
+        and (jc.api_key or jc.api_key_env or jc.ollama_mode or _is_loopback_http_url(jc.base_url))
+    )
+    return legacy_declared
 
 
 def _network_target_signature(base_url: str, model: str) -> tuple[str, str]:
@@ -196,7 +175,7 @@ def _with_inference_evidence(
     attempts = [dict(receipt) for receipt in state.receipts]
     enriched.update(
         inference_configured=configured,
-        inference_required=configured,
+        inference_required=True,
         inference_attempted=state.count > 0,
         inference_mode=mode,
         provider_attempts=attempts,
@@ -258,86 +237,37 @@ def _empty_judge_result() -> dict[str, Any]:
     }
 
 
-def _confidence_bypass_result(
-    candidates: list[dict[str, Any]],
-    scores: list[float],
-    *,
-    max_sel: int,
-    threshold: float,
+def _inference_failure_result(
+    state: _AttemptState,
     candidate_count: int,
     top_score: float,
-) -> dict[str, Any] | None:
-    if top_score < threshold:
-        return None
-    selected_ids = _scored_selection(candidates, scores, max_sel)
-    if not selected_ids:
-        return None
-    return {
-        "selected_ids": selected_ids,
-        "confidence": min(0.99, 0.7 + top_score / 100),
+    *,
+    configured: bool,
+    detail: str = "",
+) -> dict[str, Any]:
+    """Fail closed without projecting a deterministic recommendation."""
+
+    invalid = any(
+        "invalid" in str(receipt.get("reason") or "").casefold()
+        or "contract" in str(receipt.get("reason") or "").casefold()
+        for receipt in state.receipts
+    )
+    status = "inference_invalid" if configured and invalid else "inference_unavailable"
+    failure = {
+        "selected_ids": [],
+        "confidence": 0.0,
         "latency_ms": 0,
-        "status": "confidence_bypass",
+        "status": status,
+        "source": "inference_failure",
+        "error": detail or status,
         "candidate_count": candidate_count,
         "top_score": top_score,
     }
-
-
-def _fallback_result(
-    state: _AttemptState,
-    candidates: list[dict[str, Any]],
-    scores: list[float],
-    candidate_count: int,
-    top_score: float,
-    max_sel: int,
-    lexical_ids: tuple[str, ...] = (),
-) -> dict[str, Any]:
-    fallback = _token_only_fallback(
-        candidates,
-        scores,
-        candidate_count,
-        top_score,
-        max_sel,
-        lexical_ids=lexical_ids,
-    )
-    return _with_cumulative_latency(fallback, state.started)
-
-
-def _degraded_result(
-    state: _AttemptState,
-    candidates: list[dict[str, Any]],
-    scores: list[float],
-    candidate_count: int,
-    top_score: float,
-    max_sel: int,
-    lexical_ids: tuple[str, ...] = (),
-) -> dict[str, Any]:
-    """Fail closed after mandatory inference exhausts its bounded chain."""
-
-    fallback = _fallback_result(
-        state,
-        candidates,
-        scores,
-        candidate_count,
-        top_score,
-        max_sel,
-        lexical_ids,
-    )
-    deterministic_ids = list(fallback.get("selected_ids", []))
-    fallback_status = str(fallback.get("status") or "unknown")
-    fallback.update(
-        selected_ids=[],
-        confidence=0.0,
-        status="degraded",
-        source="degraded_inference",
-        error="configured inference providers exhausted without a valid decision",
-        deterministic_fallback_status=fallback_status,
-        deterministic_candidate_ids=deterministic_ids,
-    )
     return _with_inference_evidence(
-        fallback,
+        _with_cumulative_latency(failure, state.started),
         state,
-        configured=True,
-        mode="degraded",
+        configured=configured,
+        mode="invalid" if status == "inference_invalid" else "unavailable",
     )
 
 
@@ -349,10 +279,11 @@ def query_judge(
     judge_config: JudgeConfig | None = None,
     max_selected: int | None = None,
 ) -> dict[str, Any]:
-    """Query configured providers and fall back deterministically.
+    """Query inference providers and fail closed when none returns a decision.
 
-    A nonempty typed provider chain is authoritative.  Legacy judge and Ollama
-    fallbacks are used only when no typed chain is configured.
+    Typed, legacy, and local providers are inference transports. Deterministic
+    retrieval may populate their candidate prompt, but it never selects a
+    specialist when inference is missing or invalid.
     """
     if not isinstance(task_description, str):
         raise TypeError("task_description must be a string")
@@ -372,21 +303,16 @@ def query_judge(
         return _with_retrieval_evidence(value, retrieval)
 
     if not catalog:
-        result["status"] = "no_catalog"
-        result["error"] = "agent catalog not loaded"
-        if not configured_inference:
-            return result
-        result.update(
-            status="degraded",
-            source="degraded_inference",
-            degraded_reason="no_catalog",
-            deterministic_fallback_status="no_catalog",
-        )
         return _with_inference_evidence(
-            result,
+            {
+                **result,
+                "status": "inference_invalid" if configured_inference else "inference_unavailable",
+                "source": "inference_failure",
+                "error": "agent catalog not loaded",
+            },
             state,
             configured=configured_inference,
-            mode="degraded",
+            mode="invalid" if configured_inference else "unavailable",
         )
 
     # Lexical narrowing cannot infer negation.  Exclude high-confidence opt-out
@@ -395,25 +321,6 @@ def query_judge(
     scores = list(retrieval.scores)
     candidate_count = len(candidates)
     top_score = scores[0] if scores else 0.0
-
-    if not configured_inference:
-        bypass_result = _confidence_bypass_result(
-            candidates,
-            scores,
-            max_sel=max_sel,
-            threshold=jc.confidence_bypass_threshold,
-            candidate_count=candidate_count,
-            top_score=top_score,
-        )
-        if bypass_result is not None:
-            return finish(
-                _with_inference_evidence(
-                    bypass_result,
-                    state,
-                    configured=False,
-                    mode="heuristic",
-                )
-            )
 
     provider_result = _try_provider_chain(
         state,
@@ -437,14 +344,12 @@ def query_judge(
 
     if cfg.providers:
         return finish(
-            _degraded_result(
+            _inference_failure_result(
                 state,
-                candidates,
-                scores,
                 candidate_count,
                 top_score,
-                max_sel,
-                retrieval.lexical_ids,
+                configured=True,
+                detail="configured inference providers exhausted without a valid decision",
             )
         )
 
@@ -490,91 +395,21 @@ def query_judge(
 
     if configured_inference:
         return finish(
-            _degraded_result(
+            _inference_failure_result(
                 state,
-                candidates,
-                scores,
                 candidate_count,
                 top_score,
-                max_sel,
-                retrieval.lexical_ids,
+                configured=True,
+                detail="configured inference providers exhausted without a valid decision",
             )
         )
 
-    fallback = _fallback_result(
-        state,
-        candidates,
-        scores,
-        candidate_count,
-        top_score,
-        max_sel,
-        retrieval.lexical_ids,
-    )
     return finish(
-        _with_inference_evidence(
-            fallback,
+        _inference_failure_result(
             state,
+            candidate_count,
+            top_score,
             configured=False,
-            mode="heuristic",
+            detail="no inference provider is configured",
         )
     )
-
-
-def _token_only_fallback(
-    candidates: list[dict[str, Any]],
-    scores: list[float],
-    candidate_count: int,
-    top_score: float,
-    max_sel: int,
-    *,
-    lexical_ids: tuple[str, ...] = (),
-) -> dict[str, Any]:
-    """Return bounded token-scored candidates without an LLM call.
-
-    Very low deterministic embedding scores are collision noise, not a
-    defensible specialist match.  Abstaining lets the resident coordinators
-    handle the request instead of confidently loading an unrelated domain.
-    """
-    lexical = set(lexical_ids)
-    deterministic = [
-        (candidate, score)
-        for candidate, score in zip(candidates, scores, strict=True)
-        if not lexical or _agent_id(candidate) in lexical
-    ]
-    bounded_candidates = [candidate for candidate, _score in deterministic]
-    bounded_scores = [score for _candidate, score in deterministic]
-    bounded_top_score = bounded_scores[0] if bounded_scores else 0.0
-    selected_ids = (
-        _scored_selection(
-            bounded_candidates,
-            bounded_scores,
-            min(max_sel, _MAX_TOKEN_FALLBACK_SELECTED),
-        )
-        if bounded_top_score >= _MIN_TOKEN_FALLBACK_SCORE
-        else []
-    )
-    has_signal = bool(selected_ids)
-    confidence = (
-        round(
-            min(
-                _MAX_TOKEN_FALLBACK_CONFIDENCE,
-                _MIN_TOKEN_FALLBACK_CONFIDENCE
-                + (
-                    max(0.0, bounded_top_score - _MIN_TOKEN_FALLBACK_SCORE)
-                    / _TOKEN_FALLBACK_CONFIDENCE_SCORE_SPAN
-                ),
-            ),
-            4,
-        )
-        if has_signal
-        else 0.0
-    )
-    return {
-        "selected_ids": selected_ids,
-        "confidence": confidence,
-        "latency_ms": 0,
-        "status": "token_fallback" if has_signal else "abstained",
-        "error": "" if has_signal else "no positive routing signal",
-        "candidate_count": candidate_count,
-        "top_score": bounded_top_score,
-    }

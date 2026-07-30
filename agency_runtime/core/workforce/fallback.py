@@ -1,4 +1,8 @@
-"""Conservative deterministic planning and recruitment when inference is absent."""
+"""Offline deterministic workforce oracle for tests and evaluations.
+
+Production routing does not import this module. ADR-0118 forbids using these
+helpers to select, recommend, activate, delegate, or hire a specialist.
+"""
 
 from __future__ import annotations
 

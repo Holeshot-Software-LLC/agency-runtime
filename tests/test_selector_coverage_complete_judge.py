@@ -354,20 +354,6 @@ def test_legacy_fallback_respects_exhausted_attempt_budget() -> None:
     )
 
 
-def test_confidence_bypass_requires_an_identified_scored_candidate() -> None:
-    assert (
-        judge._confidence_bypass_result(
-            [{}],
-            [10.0],
-            max_sel=1,
-            threshold=1.0,
-            candidate_count=1,
-            top_score=10.0,
-        )
-        is None
-    )
-
-
 def test_query_judge_returns_successful_legacy_fallback_with_cumulative_latency(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

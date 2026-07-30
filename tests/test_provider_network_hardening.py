@@ -165,7 +165,7 @@ def test_shared_detection_never_sends_credentials_to_unsafe_base(
     assert detect._fetch_model_list(base_url, "secret") == []
 
 
-def test_judge_caps_provider_attempts_and_falls_back_deterministically(
+def test_judge_caps_provider_attempts_and_fails_without_a_fallback_team(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: list[str] = []
@@ -184,10 +184,10 @@ def test_judge_caps_provider_attempts_and_falls_back_deterministically(
     result = judge.query_judge("review authentication security", CATALOG, config=cfg)
 
     assert len(calls) == judge._MAX_PROVIDER_ATTEMPTS
-    assert result["status"] == "degraded"
-    assert result["inference_mode"] == "degraded"
+    assert result["status"] == "inference_unavailable"
+    assert result["inference_mode"] == "unavailable"
     assert result["selected_ids"] == []
-    assert result["deterministic_candidate_ids"] == ["security-reviewer"]
+    assert "deterministic_candidate_ids" not in result
     assert len(result["provider_attempts"]) == judge._MAX_PROVIDER_ATTEMPTS
 
 
@@ -215,7 +215,7 @@ def test_judge_uses_only_remaining_end_to_end_deadline(
     result = judge.query_judge("review authentication security", CATALOG, config=cfg)
 
     assert timeouts == pytest.approx([10.0, 4.0])
-    assert result["status"] == "degraded"
+    assert result["status"] == "inference_unavailable"
     assert result["inference_attempted"] is True
     assert result["latency_ms"] == 10_000
 
@@ -252,7 +252,7 @@ def test_typed_provider_failure_does_not_retry_as_wrong_legacy_protocol(
     result = judge.query_judge("review authentication security", CATALOG, config=cfg)
 
     assert calls == ["https://api.anthropic.invalid/v1/messages"]
-    assert result["status"] == "degraded"
+    assert result["status"] == "inference_unavailable"
     assert result["provider_attempts"] == [
         {
             "provider_name": "anthropic",

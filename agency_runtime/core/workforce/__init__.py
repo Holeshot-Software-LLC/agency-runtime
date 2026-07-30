@@ -14,12 +14,6 @@ from agency_runtime.core.workforce.contract import (
     project_workforce_contract,
     workforce_index_fingerprint,
 )
-from agency_runtime.core.workforce.fallback import (
-    DeterministicWorkforceResult,
-    deterministic_plan_and_staff,
-    deterministic_rankings,
-    deterministic_work_plan,
-)
 from agency_runtime.core.workforce.hiring_contract import (
     CONTRACTOR_PROMPT_TEMPLATE_HASH,
     CONTRACTOR_PROMPT_TEMPLATE_VERSION,
@@ -56,7 +50,7 @@ from agency_runtime.core.workforce.staffing_verifier import (
     StaffingBudget,
     StaffingContext,
     StaffingDecision,
-    build_deterministic_proposal,
+    build_verified_proposal,
     verify_staffing,
 )
 
@@ -72,7 +66,6 @@ __all__ = [
     "CompiledContractor",
     "CompositionContract",
     "ContractorEvalCase",
-    "DeterministicWorkforceResult",
     "EmploymentContract",
     "RecruiterIndexRecord",
     "RecruiterProposal",
@@ -83,14 +76,11 @@ __all__ = [
     "WorkUnitPlan",
     "WorkforceComparison",
     "WorkforceContract",
-    "build_deterministic_proposal",
+    "build_verified_proposal",
     "classify_contractor_risk",
     "compare_workers",
     "compile_contractor",
     "consolidation_candidates",
-    "deterministic_plan_and_staff",
-    "deterministic_rankings",
-    "deterministic_work_plan",
     "nearest_workers",
     "parse_employment_contract",
     "parse_recruiter_proposal",

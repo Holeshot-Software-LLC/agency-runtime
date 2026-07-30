@@ -1231,6 +1231,13 @@ def build_deterministic_proposal(
     )
 
 
+# The same closed verifier composes an inference-authored ranking in production
+# and deterministic evaluation inputs in offline tests. Give the production
+# path an evidence-faithful name while retaining the historical helper as an
+# explicit compatibility surface for deterministic test fixtures.
+build_verified_proposal = build_deterministic_proposal
+
+
 __all__ = [
     "AbstentionReason",
     "StaffingBudget",
@@ -1238,6 +1245,7 @@ __all__ = [
     "StaffingDecision",
     "VerifiedUnitStaffing",
     "build_deterministic_proposal",
+    "build_verified_proposal",
     "typed_staffing_coverage",
     "typed_staffing_ineligibility",
     "typed_staffing_requirements",

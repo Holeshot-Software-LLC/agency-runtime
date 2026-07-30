@@ -9,7 +9,6 @@ import pytest
 from agency_runtime.core.workforce import (
     StaffingBudget,
     StaffingContext,
-    build_deterministic_proposal,
     parse_recruiter_proposal,
     parse_work_unit_plan,
     verify_staffing,
@@ -21,6 +20,7 @@ from agency_runtime.core.workforce.contract import (
     CompositionContract,
     WorkforceContract,
 )
+from agency_runtime.core.workforce.staffing_verifier import build_deterministic_proposal
 
 _HASH = "sha256:" + "a" * 64
 _GENERATION = 7

@@ -1,4 +1,4 @@
-"""Deterministic, bounded specialist assignment for detected work units."""
+"""Bounded projection of inference-owned specialist assignments to work units."""
 
 from __future__ import annotations
 
@@ -44,7 +44,6 @@ DELIVERABLE_KINDS = frozenset(
 MUTATION_SCOPES = frozenset({"read_only", "workspace_write", "external_write"})
 PARALLELIZATION_MODES = frozenset({"parallel", "sequential", "unspecified"})
 
-_AGENT_TOKEN_RE = re.compile(r"[a-z0-9]+")
 _WORK_UNIT_ID_RE = re.compile(r"unit-[0-9a-f]{10}")
 _DIGEST_RE = re.compile(r"[0-9a-f]{64}")
 _RATIONALE_CODE_RE = re.compile(r"[a-z0-9][a-z0-9:_-]{0,63}")
@@ -92,61 +91,6 @@ _DOC_DELIVERABLE_RE = re.compile(
     r"\b(?:document|documentation|docs|readme|write)\b",
     re.IGNORECASE,
 )
-_SIGNAL_STOPWORDS = frozenset(
-    {
-        "a",
-        "an",
-        "and",
-        "apply",
-        "for",
-        "in",
-        "of",
-        "on",
-        "or",
-        "specialist",
-        "the",
-        "to",
-        "with",
-    }
-)
-_ROLE_SIGNALS: dict[str, frozenset[str]] = {
-    "agent": frozenset({"agency", "agent", "delegate", "delegation", "orchestrate"}),
-    "architect": frozenset(
-        {"architect", "architecture", "design", "redesign", "structure", "workflow"}
-    ),
-    "data": frozenset({"data", "database", "dataset", "schema", "sql"}),
-    "database": frozenset({"data", "database", "migration", "schema", "sql"}),
-    "developer": frozenset(
-        {"build", "change", "code", "debug", "fix", "implement", "migrate", "refactor"}
-    ),
-    "designer": frozenset({"animation", "dashboard", "design", "redesign", "ui", "ux"}),
-    "devops": frozenset({"ci", "deploy", "install", "operations", "release"}),
-    "engineer": frozenset(
-        {"build", "configure", "debug", "fix", "implement", "optimize", "refactor"}
-    ),
-    "performance": frozenset({"benchmark", "latency", "optimize", "performance", "profile"}),
-    "reviewer": frozenset(
-        {"audit", "check", "inspect", "quality", "review", "test", "validate", "verify"}
-    ),
-    "security": frozenset(
-        {
-            "auth",
-            "authentication",
-            "harden",
-            "secure",
-            "security",
-            "threat",
-            "vulnerability",
-        }
-    ),
-    "tester": frozenset({"coverage", "eval", "test", "validate", "verify"}),
-    "testing": frozenset({"coverage", "eval", "test", "validate", "verify"}),
-    "ui": frozenset({"animation", "css", "dashboard", "interface", "ui", "ux", "visual"}),
-    "workflow": frozenset({"automation", "delegate", "pipeline", "process", "workflow"}),
-    "writer": frozenset(
-        {"document", "documentation", "docs", "readme", "write", "writer", "writing"}
-    ),
-}
 
 
 def _clean(value: Any, maximum: int) -> str:
@@ -400,23 +344,8 @@ def _assignment_catalog(
     return catalog_list, catalog_by_slug
 
 
-def _policy_selection_for_degraded_route(
-    unit_routing: Mapping[str, Any],
-    selected: list[str],
-) -> list[str]:
-    explicit_policy = {
-        *_bounded_agent_ids(unit_routing.get("selected_companion_ids")),
-        *(
-            _bounded_agent_ids(unit_routing.get("available_fallback_companion_ids"))
-            if unit_routing.get("fallback_applied") is True
-            else []
-        ),
-    }
-    return [slug for slug in selected if slug in explicit_policy]
-
-
 def _supports_unit_deliverable(unit: str, agent: Mapping[str, Any]) -> bool:
-    """Keep deterministic fallback inside the specialist's reviewed authority."""
+    """Apply hard reviewed-authority eligibility to an inferred assignment."""
 
     raw_task_types = agent.get("task_types")
     task_types = (
@@ -461,32 +390,6 @@ def _supports_unit_deliverable(unit: str, agent: Mapping[str, Any]) -> bool:
     return True
 
 
-def _deterministic_unit_selection(
-    unit: str,
-    catalog_list: list[dict[str, Any]],
-) -> list[str]:
-    """Select the strongest eligible reviewed contract for one exact unit."""
-
-    scored = [
-        (_agent_score(unit, slug, agent), index, slug)
-        for index, agent in enumerate(catalog_list)
-        if (slug := _clean(agent_identity(agent), MAX_AGENT_SLUG_CHARS).casefold())
-        and not is_resident_manager_slug(slug)
-        and _supports_unit_deliverable(unit, agent)
-    ]
-    winner = min(
-        (item for item in scored if item[0] > 0),
-        key=lambda item: (-item[0], item[1], item[2]),
-        default=None,
-    )
-    if winner is None:
-        return []
-    from agency_runtime.core.selector.compatibility import enforce_compatible_set
-
-    compatible = enforce_compatible_set([winner[2]], catalog_list, limit=1)
-    return list(compatible["selected_ids"])
-
-
 def _eligible_unit_catalog(
     unit_routing: Mapping[str, Any],
     catalog_list: list[dict[str, Any]],
@@ -522,42 +425,18 @@ def _compatible_unit_selection(
     ]
     inference_mode = str(unit_routing.get("inference_mode") or "")
     compatibility = unit_routing.get("compatibility")
-    if unit_routing.get("inference_configured") is True and inference_mode != "inferred":
-        selected = _policy_selection_for_degraded_route(unit_routing, selected)
+    if inference_mode not in {"inferred", "durable_reuse", "cached"}:
+        return []
+    semantic_ids = [
+        slug for slug in _bounded_agent_ids(unit_routing.get("semantic_ids")) if slug in selected
+    ]
+    if semantic_ids:
         compatibility = enforce_compatible_set(
-            selected,
+            semantic_ids,
             eligible_catalog,
-            limit=len(selected),
+            limit=len(semantic_ids),
         )
         selected = list(compatibility["selected_ids"])
-    elif inference_mode == "heuristic" and unit_routing.get("status") in {
-        "token_fallback",
-        "abstained",
-    }:
-        # A broad route should abstain when lexical evidence is weak. An exact
-        # delegated unit has a narrower contract: choose one reviewed,
-        # deliverable-compatible specialist from the host-eligible catalog.
-        selected = _deterministic_unit_selection(unit, eligible_catalog)
-        compatibility = enforce_compatible_set(
-            selected,
-            eligible_catalog,
-            limit=len(selected),
-        )
-        selected = list(compatibility["selected_ids"])
-    else:
-        semantic_ids = [
-            slug
-            for slug in _bounded_agent_ids(unit_routing.get("semantic_ids"))
-            if slug in selected
-        ]
-        if semantic_ids:
-            requested = semantic_ids[:1] if inference_mode == "heuristic" else semantic_ids
-            compatibility = enforce_compatible_set(
-                requested,
-                eligible_catalog,
-                limit=len(requested),
-            )
-            selected = list(compatibility["selected_ids"])
     if not isinstance(compatibility, Mapping):
         compatibility = enforce_compatible_set(
             selected,
@@ -761,9 +640,9 @@ def assignment_agents_from_catalog(
 ) -> list[dict[str, Any]]:
     """Route every delegated unit through the complete eligible catalog.
 
-    ``config=None`` deliberately constructs an unconfigured deterministic
-    selector for isolated contract callers. Authoritative preflight always
-    supplies its exact config and host-capability receipt.
+    ``config=None`` constructs an unconfigured selector that fails closed for
+    delegated units. Authoritative preflight supplies its exact provider config
+    and host-capability receipt.
     """
 
     units = _delegated_work_units(routing)
@@ -791,75 +670,6 @@ def assignment_agents_from_catalog(
     )
 
 
-def _tokens(value: str) -> frozenset[str]:
-    return frozenset(
-        token
-        for token in _AGENT_TOKEN_RE.findall(value.casefold())
-        if token not in _SIGNAL_STOPWORDS
-    )
-
-
-def _signal_score(
-    unit_tokens: frozenset[str],
-    value: str,
-    *,
-    exact_weight: int,
-    semantic_weight: int,
-) -> int:
-    signal_tokens = _tokens(value)
-    exact = exact_weight * len(unit_tokens.intersection(signal_tokens))
-    semantic = semantic_weight * sum(
-        len(unit_tokens.intersection(_ROLE_SIGNALS.get(token, frozenset())))
-        for token in signal_tokens
-    )
-    return exact + semantic
-
-
-def _agent_score(
-    unit: str,
-    agent: str,
-    metadata: Mapping[str, Any] | None,
-) -> int:
-    unit_tokens = _tokens(unit)
-    if not unit_tokens:
-        return 0
-    score = _signal_score(
-        unit_tokens,
-        agent,
-        exact_weight=8,
-        semantic_weight=3,
-    )
-    if metadata is None:
-        return score
-    score += _signal_score(
-        unit_tokens,
-        str(metadata.get("name") or ""),
-        exact_weight=6,
-        semantic_weight=2,
-    )
-    score += _signal_score(
-        unit_tokens,
-        str(metadata.get("description") or ""),
-        exact_weight=2,
-        semantic_weight=1,
-    )
-    for capability in metadata.get("capabilities") or ():
-        score += _signal_score(
-            unit_tokens,
-            str(capability),
-            exact_weight=7,
-            semantic_weight=4,
-        )
-    for tag in metadata.get("tags") or ():
-        score += _signal_score(
-            unit_tokens,
-            str(tag),
-            exact_weight=5,
-            semantic_weight=3,
-        )
-    return score
-
-
 def _recommended_agents(unit: str, routing: Mapping[str, Any]) -> list[str]:
     projected = project_unit_assignment_agents(routing.get("unit_assignment_agents")) or []
     catalog_assignment = any(item.get("matched_work_unit_ids") for item in projected)
@@ -880,26 +690,10 @@ def _recommended_agents(unit: str, routing: Mapping[str, Any]) -> list[str]:
         )
         return [primary, *(slug for slug in matched if slug != primary)] if primary else []
 
-    selected = [
-        slug
-        for slug in _bounded_agent_ids(routing.get("selected_ids"))
-        if not is_resident_manager_slug(slug)
-    ]
-    # A routed sole specialist carries stronger domain evidence than a bounded
-    # unit-token heuristic, even when its visible metadata is intentionally terse.
-    if len(selected) == 1:
-        return selected
-    metadata = {item["slug"]: item for item in projected}
-    scored = [
-        (_agent_score(unit, slug, metadata.get(slug)), index, slug)
-        for index, slug in enumerate(selected)
-    ]
-    matched = min(
-        (item for item in scored if item[0] > 0),
-        key=lambda item: (-item[0], item[1], item[2]),
-        default=None,
-    )
-    return [matched[2]] if matched is not None else []
+    # A team-level selection is not evidence that any particular specialist
+    # owns this exact unit. Only inference-authored unit claims (or their
+    # durable replay above) can create a delegation recommendation.
+    return []
 
 
 def work_unit_id_from_text(text: str) -> str:

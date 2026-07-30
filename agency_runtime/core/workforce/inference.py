@@ -30,10 +30,6 @@ from agency_runtime.core.workforce.intent import (
     COMPACT_INTENT_SYSTEM,
     compact_intent_taxonomy,
     compile_intent_plan,
-    enrich_intent_plan,
-)
-from agency_runtime.core.workforce.lifecycle_roles import (
-    role_anchors as _role_anchors,
 )
 from agency_runtime.core.workforce.plan_policy import plan_policy_violations
 from agency_runtime.core.workforce.planning_contracts import (
@@ -49,7 +45,7 @@ from agency_runtime.core.workforce.staffing_verifier import (
     StaffingBudget,
     StaffingContext,
     StaffingDecision,
-    build_deterministic_proposal,
+    build_verified_proposal,
     typed_staffing_coverage,
     typed_staffing_ineligibility,
     typed_staffing_requirements,
@@ -60,7 +56,6 @@ if TYPE_CHECKING:
     from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 
 MAX_REQUEST_BYTES = 64 * 1024
-MAX_UNIT_SHORTLIST = 4
 _PLANNING_CAPABILITIES = tuple(sorted(CORE_CAPABILITY_IDS))
 _WORKFORCE_ROUTING_POLICY_VERSION = "1"
 _CACHE_CREDENTIAL_KEY = secrets.token_bytes(32)
@@ -539,7 +534,6 @@ class WorkforceRoutingOutcome:
 # source derivation and HEADER_INSTRUCTION.
 _DECISION_SOURCE_LABELS: dict[str, str] = {
     "inferred": "inference",
-    "deterministic": "deterministic",
     "cached": "cached",
     "none": "none (declined)",
 }
@@ -910,7 +904,7 @@ def _compact_planner_prompt(
             "constraints": {
                 "max_primary_units": max_work_units,
                 "no_worker_names": True,
-                "assurance_is_derived_locally": True,
+                "inference_owns_complete_plan": True,
             },
         }
     )
@@ -932,11 +926,10 @@ def _parse_compact_plan(
         known_stacks=stacks,
         known_capability_ids=capabilities,
     )
-    plan = enrich_intent_plan(primary, request=request, context=context)
-    violations = plan_policy_violations(request, plan)
+    violations = plan_policy_violations(request, primary)
     if violations:
         raise ValueError("workforce plan is incomplete: " + ",".join(violations))
-    return plan
+    return primary
 
 
 def _typed_shortlists(
@@ -945,22 +938,19 @@ def _typed_shortlists(
     *,
     context: StaffingContext | None = None,
 ) -> list[dict[str, Any]]:
-    """Broad domain-eligible recall for each planned unit.
+    """Return canonical hard-recall evidence for each inferred work unit.
 
-    ADR-0087: the recall stage filters by domain, host, platform, and enabled
-    state — not by token matching or typed coverage scoring. Token matching
-    cannot bridge vocabulary gaps (e.g. "commit and push" vs "Git workflows").
-    The recruiter (inference) reads the actual intent against the candidate
-    descriptions and picks the best specialist. This function just ensures
-    the right candidates are in the pool for the recruiter to choose from.
+    ADR-0118 permits deterministic recall and hard validation, but forbids a
+    local ranking or role-anchor recommendation. Candidate rows are therefore
+    ordered only by stable identity and carry coverage facts, never a local
+    preference. The recruiter remains the first component allowed to rank.
     """
 
     result: list[dict[str, Any]] = []
     for unit in plan.units:
         required = typed_staffing_requirements(unit)
-        anchors = _role_anchors(unit)
         unit_domains = frozenset(unit.domains)
-        candidates = []
+        candidates: list[tuple[str, frozenset[str]]] = []
         for contract in contracts:
             # Broad eligibility: domain overlap and enabled.
             # Host filtering is NOT applied at recall — contracts may not
@@ -970,26 +960,16 @@ def _typed_shortlists(
             if not (domain_match and contract.enabled):
                 continue
             coverage = typed_staffing_coverage(unit, contract)
-            score = (1000 if contract.agent_id in anchors else 0) + len(coverage)
-            candidates.append((contract.agent_id, frozenset(coverage), score))
-        # Sort by anchor priority then coverage breadth, cap at MAX_UNIT_SHORTLIST.
-        # ADR-0087: this is BROAD recall — we send many candidates to the
-        # recruiter and let inference pick. The score is a rough ordering
-        # hint, not a definitive rank.
-        candidates.sort(key=lambda item: (-item[2], -len(item[1]), item[0]))
-        selected = candidates[: max(MAX_UNIT_SHORTLIST, 16)]
+            candidates.append((contract.agent_id, frozenset(coverage)))
+        selected = sorted(candidates, key=lambda item: item[0])
         result.append(
             {
                 "unit_id": unit.unit_id,
                 "requirements": list(required),
-                "role_anchors": [
-                    agent_id
-                    for agent_id in anchors
-                    if any(item[0] == agent_id for item in candidates)
-                ],
+                "role_anchors": [],
                 "candidates": [
                     {"agent_id": agent_id, "covers": sorted(covers)}
-                    for agent_id, covers, _semantic_overlap in selected
+                    for agent_id, covers in selected
                 ],
             }
         )
@@ -1073,7 +1053,7 @@ def _semantic_staffing_classes(
     )
 
     # Ineligible model-required picks cannot be executed, so they fall through to
-    # forbidden. This agrees with build_deterministic_proposal, which also moves
+    # forbidden. This agrees with the closed proposal verifier, which also moves
     # _eligibility-failing agents into forbidden, so required and forbidden never
     # overlap and the three sets partition the complete ranking.
     forbidden = model_forbidden | (model_required - required)
@@ -1245,7 +1225,7 @@ def _proposal_from_nominations(
     )
     if semantics.failures:
         raise _NominationValidationError(semantics.failures)
-    proposal = build_deterministic_proposal(
+    proposal = build_verified_proposal(
         plan,
         snapshot.contracts,
         semantics.rankings,
@@ -1422,7 +1402,6 @@ def _recruit_ambiguous_plan(
     # shortlist that couldn't bridge vocabulary gaps ("commit and push" vs
     # "Git workflows"). The recruiter can nominate any candidate from the
     # compact cards — full detail cards are built from its picks.
-    typed_shortlists = _typed_shortlists(plan, snapshot.contracts, context=context)
     # Build compact cards for all domain-eligible specialists
     compact_cards = []
     eligible_ids = set()
@@ -1460,7 +1439,7 @@ def _recruit_ambiguous_plan(
                 "exact_unit_ids_in_order": [unit.unit_id for unit in plan.units],
                 "one_row_per_unit": True,
                 "never_omit_a_unit": True,
-                "maximum_candidates_per_unit": MAX_UNIT_SHORTLIST + 1,
+                "maximum_candidates_per_unit": 16,
                 "maximum_selected_per_unit": config.workforce.max_selected_per_unit,
                 "maximum_selected_total": config.workforce.max_selected_total,
                 "staff_decision_requires_safe_typed_coverage": True,
@@ -1468,7 +1447,6 @@ def _recruit_ambiguous_plan(
                 "candidate_ids_must_come_from_detail_cards": True,
             },
             "detail_cards": detail_cards,
-            "typed_shortlists": typed_shortlists,
         }
     )
     providers = configured_workforce_providers(config, stage="recruiter")
@@ -1518,59 +1496,47 @@ def _inference_declared(config: AgencyConfig) -> bool:
     return bool(config.providers) or _legacy_provider(config) is not None
 
 
-def _deterministic_floor_outcome(
-    request: str,
-    snapshot: WorkforceIndexSnapshot,
+def _inference_failure(
     *,
-    config: AgencyConfig,
-    context: StaffingContext,
+    mode: str,
+    configured: bool,
+    plan: WorkUnitPlan | None,
+    proposal: RecruiterProposal | None,
+    attempts: Sequence[WorkforceInferenceAttempt],
+    detail_codes: Sequence[str],
+    calls_used: int,
+    staffing: StaffingDecision | None = None,
+    cache_hits: Sequence[str] = (),
 ) -> WorkforceRoutingOutcome:
-    """Run the deterministic typed-recall floor when no provider is configured.
+    """Return the only safe result when inference cannot own staffing."""
 
-    ADR-0088: Agency should add value without a configured provider. Rather
-    than decline outright (the prior ADR-0087 behavior), the runtime runs the
-    existing typed-coverage recall layer as an offline floor: a deterministic
-    keyword->typed-unit plan, whole-roster typed recall, role-anchor promotion,
-    and ``verify_staffing`` composition/coverage/eligibility validation. This is
-    NOT the old "keyword-luck" decider and NOT the upstream token-matcher -- it
-    matches on typed contract fields (artifact/lifecycle/domain/stack/capability/
-    authority) and enforces the same composition rules as the inference path.
-
-    The result is stamped ``inference_mode="deterministic"`` so it is never
-    mistaken for an inference pick: the deterministic floor cannot read intent,
-    so it is a best typed-guess, not an intent-aware selection. A user who wants
-    the intent-aware path configures a provider. If the floor abstains (trivial,
-    ambiguous, or no safe team), the turn is handed to the host's native
-    capability -- Agency injects no specialist rather than force a wrong pick.
-    """
-
-    from agency_runtime.core.workforce.fallback import deterministic_plan_and_staff
-
-    result = deterministic_plan_and_staff(request, snapshot, config=config, context=context)
-    if result.staffing.accepted and result.plan is not None and result.proposal is not None:
-        return WorkforceRoutingOutcome(
-            status="accepted",
-            mode=config.workforce.mode,
-            inference_mode="deterministic",
-            plan=result.plan,
-            proposal=result.proposal,
-            staffing=result.staffing,
-            attempts=(),
-            abstention_codes=(),
-            calls_used=0,
-            decision_source="deterministic",
+    invalid = bool(
+        any(item.status == "rejected" for item in attempts)
+        or any(
+            code
+            not in {
+                "workforce_call_budget_exhausted",
+                "workforce_provider_unavailable",
+                "workforce_inference_failed",
+            }
+            for code in detail_codes
+            if code
         )
-    codes = result.reason_codes or ("deterministic_floor_abstained",)
+    )
+    failure = "inference_invalid" if configured and invalid else "inference_unavailable"
+    details = tuple(dict.fromkeys(code for code in detail_codes if code and code != failure))
     return WorkforceRoutingOutcome(
-        status="declined",
-        mode=config.workforce.mode,
-        inference_mode="deterministic_abstained",
-        plan=result.plan,
-        proposal=result.proposal,
-        staffing=result.staffing,
-        attempts=(),
-        abstention_codes=codes,
-        calls_used=0,
+        status=failure,
+        mode=mode,
+        inference_mode="invalid" if failure == "inference_invalid" else "unavailable",
+        plan=plan,
+        proposal=proposal,
+        staffing=staffing or _empty_staffing(failure),
+        attempts=tuple(attempts),
+        abstention_codes=(failure, *details),
+        calls_used=calls_used,
+        cache_hits=tuple(cache_hits),
+        decision_source="none",
     )
 
 
@@ -1648,9 +1614,15 @@ def plan_and_staff_workforce(
     ask = _safe_request(request)
     mode = config.workforce.mode
     if not _inference_declared(config):
-        # ADR-0088: no provider -> run the deterministic typed-recall floor
-        # (best typed-guess, stamped "deterministic"), not a hard decline.
-        return _deterministic_floor_outcome(request, snapshot, config=config, context=context)
+        return _inference_failure(
+            mode=mode,
+            configured=False,
+            plan=None,
+            proposal=None,
+            attempts=(),
+            detail_codes=("workforce_provider_unavailable",),
+            calls_used=0,
+        )
     budget = _CallBudget(_mode_budget(config))
     attempts: list[WorkforceInferenceAttempt] = []
     cache_hits: list[str] = []
@@ -1706,22 +1678,22 @@ def plan_and_staff_workforce(
             workforce_cache_put(planner_cache_identity, parsed_plan)
     attempts.extend(stage_attempts)
     if parsed_plan is None:
-        return _abstained(
+        return _inference_failure(
             mode=mode,
+            configured=True,
             plan=None,
             proposal=None,
             attempts=attempts,
-            codes=(failure,),
+            detail_codes=(failure,),
             calls_used=budget.used,
             cache_hits=cache_hits,
         )
     plan = parsed_plan
 
-    # ADR-0087/ADR-0088: once a provider is configured, inference is the sole
+    # ADR-0118: once a provider is configured, inference is the sole
     # selection decider. Local typed logic supplies broad recall and may veto an
     # unsafe nomination, but it never preselects a team and never suppresses the
-    # recruiter. The deterministic staffing path is reserved for the explicit
-    # no-provider branch above.
+    # recruiter. There is no deterministic staffing branch.
     parsed_proposal, stage_attempts, failure, recruiter_cache_hit = _recruit_ambiguous_plan(
         request=ask,
         plan=plan,
@@ -1736,12 +1708,13 @@ def plan_and_staff_workforce(
         cache_hits.append("recruiter")
     attempts.extend(stage_attempts)
     if parsed_proposal is None:
-        return _abstained(
+        return _inference_failure(
             mode=mode,
+            configured=True,
             plan=plan,
             proposal=None,
             attempts=attempts,
-            codes=(failure,),
+            detail_codes=(failure,),
             calls_used=budget.used,
             cache_hits=cache_hits,
         )
@@ -1756,26 +1729,43 @@ def plan_and_staff_workforce(
 
     policy_violations = plan_policy_violations(ask, plan)
     if policy_violations:
-        return _abstained(
+        return _inference_failure(
             mode=mode,
+            configured=True,
             plan=plan,
             proposal=proposal,
             attempts=attempts,
-            codes=policy_violations,
+            detail_codes=policy_violations,
             calls_used=budget.used,
             cache_hits=cache_hits,
         )
 
     if not staffing.accepted:
-        return _abstained(
+        inference_declared_gap = any(
+            "inference-declared-gap" in unit.abstention_reasons for unit in proposal.units
+        )
+        if inference_declared_gap:
+            return _abstained(
+                mode=mode,
+                plan=plan,
+                proposal=proposal,
+                attempts=attempts,
+                codes=tuple(item.code for item in staffing.abstention_reasons),
+                calls_used=budget.used,
+                staffing=staffing,
+                inference_mode="inferred",
+                cache_hits=cache_hits,
+                decision_source="inferred",
+            )
+        return _inference_failure(
             mode=mode,
+            configured=True,
             plan=plan,
             proposal=proposal,
             attempts=attempts,
-            codes=tuple(item.code for item in staffing.abstention_reasons),
+            detail_codes=tuple(item.code for item in staffing.abstention_reasons),
             calls_used=budget.used,
             staffing=staffing,
-            inference_mode="inferred",
             cache_hits=cache_hits,
         )
 
@@ -1792,12 +1782,13 @@ def plan_and_staff_workforce(
         )
         attempts.extend(stage_attempts)
         if critic_reasons:
-            return _abstained(
+            return _inference_failure(
                 mode=mode,
+                configured=True,
                 plan=plan,
                 proposal=proposal,
                 attempts=attempts,
-                codes=critic_reasons,
+                detail_codes=critic_reasons,
                 calls_used=budget.used,
                 staffing=_empty_staffing(critic_reasons[0]),
                 cache_hits=cache_hits,

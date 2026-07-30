@@ -1519,10 +1519,11 @@ def route(
             store=evidence_store,
             trace_id=trace_id,
         )
-    # A workforce snapshot uses the inference-first workforce router below;
-    # its only deterministic selection path is the visibly stamped no-provider
-    # floor. The legacy judge branch remains for hosts without a workforce
-    # snapshot. Both branches operate on fresh new, revised, or rerouted intent.
+    # A workforce snapshot uses the inference-owned workforce router below.
+    # Deterministic code may recall and reject candidates but cannot select one;
+    # missing or invalid inference therefore returns an explicit empty failure.
+    # The legacy judge branch preserves the same rule for hosts without a
+    # workforce snapshot. Both branches operate on fresh intent.
     if request.workforce_snapshot is not None:
         from agency_runtime.core.workforce.inference import plan_and_staff_workforce
         from agency_runtime.core.workforce.routing_projection import (
@@ -1640,7 +1641,14 @@ def build_routing_context(routing: dict[str, Any], config: AgencyConfig | None =
 
     parts: list[str] = []
 
-    if not selected or confidence < cfg.selector.min_confidence:
+    if status in {"inference_unavailable", "inference_invalid"}:
+        parts.append(
+            "[AGENCY PREFLIGHT FAILURE] Specialist routing stopped with "
+            f"{status}. No specialist was selected, recommended, activated, delegated, "
+            "or hired. Configure or repair the inference provider and rerun this request; "
+            "resident managers may explain the failure but must not invent a team."
+        )
+    elif not selected or confidence < cfg.selector.min_confidence:
         if selected:
             agents_list = ", ".join(selected)
             parts.append(

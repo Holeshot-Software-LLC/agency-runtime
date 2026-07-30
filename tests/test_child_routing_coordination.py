@@ -25,7 +25,6 @@ from agency_runtime.core.preflight_recipe import (
     preflight_delivery_policy,
 )
 from agency_runtime.core.selector.delegation_detection import detect_work_units
-from agency_runtime.core.selector.judge import _scored_selection, _token_only_fallback
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.turn_intent import TurnState, classify_turn_intent
 from agency_runtime.core.unit_assignment import build_unit_agent_plan, work_unit_id_from_text
@@ -532,7 +531,8 @@ def test_unplanned_child_reuses_inferred_route_and_abstains_when_budget_is_zero(
     )
     abstained, _, _ = _resolve_preflight_routing(**arguments)
     assert abstained["selected_ids"] == []
-    assert abstained["deterministic_candidate_ids"] == ["code-reviewer"]
+    assert "deterministic_candidate_ids" not in abstained
+    assert abstained["semantic_ids"] == []
     assert abstained["status"] == "child_budget_abstained"
 
 
@@ -658,7 +658,8 @@ def test_parent_unit_reuse_rejects_unbound_or_ambiguous_assignments(case) -> Non
     )
 
     assert route_calls == [child_goal]
-    assert routing["child_routing_source"] == "deterministic_unconfigured"
+    assert routing["child_routing_source"] == "inference_unavailable"
+    assert routing["selected_ids"] == []
     assert routing.get("parent_unit_reused") is not True
 
 
@@ -972,7 +973,7 @@ def test_child_store_updates_existing_cache_and_bounds_long_ttl(tmp_path) -> Non
     assert store.read_child_routing_cache(key) == {"version": 2}
 
 
-def test_parent_correlation_timeout_and_score_boundaries() -> None:
+def test_parent_correlation_and_timeout_boundaries() -> None:
     assert _normalize_parent_correlation("", "") == ("", "")
     assert _normalize_parent_correlation("parent-session", "parent-trace") == (
         "parent-session",
@@ -985,17 +986,6 @@ def test_parent_correlation_timeout_and_score_boundaries() -> None:
         providers=(ProviderEntry(name="slow", timeout=90),),
     )
     assert _child_route_timeout(config) == 60.0
-    assert _scored_selection([], [], 2) == []
-    fallback = _token_only_fallback(
-        [{"slug": "semantic"}, {"slug": "weak-lexical"}],
-        [9.0, 1.0],
-        2,
-        9.0,
-        2,
-        lexical_ids=("weak-lexical",),
-    )
-    assert fallback["selected_ids"] == []
-    assert fallback["status"] == "abstained"
 
 
 def test_child_coalescing_waits_for_cache_and_uses_longest_timeout(monkeypatch) -> None:
@@ -1154,10 +1144,11 @@ def test_child_coalescing_timeout_abstains_without_duplicate_inference(monkeypat
     assert routing["status"] == "child_budget_abstained"
     assert routing["child_routing_source"] == "coalescing"
     assert routing["selected_ids"] == []
-    assert routing["deterministic_candidate_ids"] == ["code-reviewer"]
+    assert "deterministic_candidate_ids" not in routing
+    assert routing["semantic_ids"] == []
 
 
-def test_child_owner_failure_aborts_and_unconfigured_child_is_deterministic() -> None:
+def test_child_owner_failure_aborts_and_unconfigured_child_fails_closed() -> None:
     aborted = []
 
     class OwnerStore:
@@ -1201,7 +1192,7 @@ def test_child_owner_failure_aborts_and_unconfigured_child_is_deterministic() ->
         )
     assert aborted and aborted[0]["owner_token"] == "owner-token"
 
-    class DeterministicPipeline:
+    class UnconfiguredPipeline:
         @staticmethod
         def route(*_args, **_kwargs):
             return {"selected_ids": ["code-reviewer"]}
@@ -1221,11 +1212,13 @@ def test_child_owner_failure_aborts_and_unconfigured_child_is_deterministic() ->
         routing_fingerprint="routing",
         policy_fingerprint="policy",
         roster_generation=1,
-        pipeline=DeterministicPipeline,
+        pipeline=UnconfiguredPipeline,
         parent_session_id="parent-session",
         parent_trace_id="parent-trace",
     )
-    assert routing["child_routing_source"] == "deterministic_unconfigured"
+    assert routing["child_routing_source"] == "inference_unavailable"
+    assert routing["status"] == "inference_unavailable"
+    assert routing["selected_ids"] == []
 
 
 def test_budget_abstention_never_runs_exact_unit_routing() -> None:
