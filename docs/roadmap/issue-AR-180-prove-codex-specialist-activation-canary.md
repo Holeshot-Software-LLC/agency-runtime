@@ -3,12 +3,13 @@ title: "AR-180: Prove Codex specialist activation in the live canary"
 status: open
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-28
+updated: 2026-07-30
 tags: [codex, canary, activation, delegation, production-readiness]
 related:
   - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
   - docs/roadmap/issue-AR-114-guided-codex-hook-activation.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
@@ -16,6 +17,8 @@ related:
   - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
+  - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - agency_runtime/core/canary.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/canary_proof.py
@@ -192,13 +195,24 @@ Agency-side defect: verification must detect that settled trust state before a
 model call. One fresh-TUI approval, an authoritative 8/8 trusted inspection,
 and one bounded live canary remain before activation can be claimed.
 
+ADR-0118, ADR-0119, and AR-204 supersede the deterministic-selection part of
+that historical candidate. The current source sends every exact canary through
+normal workforce inference and requires durable provider-attempt and inferred-
+decision receipts. Only after inference selects exactly one eligible worker may
+the activation adapter validate and narrow that same worker to the fixed,
+package-owned, read-only diagnostic goal needed to recover Codex's encrypted
+current-profile child message. It cannot add or substitute a worker; absent or
+invalid inference closes the canary as `workforce_inference_failure`. Attended
+trust and the explicit invocation-only autonomous bypass are now separate
+adapters over the same behavioral proof.
+
 ## Approach
 
-Define a deterministic, time-bounded Codex activation probe whose requested
-work has one safe isolated unit and one eligible specialist. Recognize only the
-closed diagnostic form described above and bypass variable planning without
-granting authority or changing ordinary routing. Prove first that
-the non-interactive Codex surface exposes the required native delegation tool.
+Define a time-bounded Codex activation probe whose requested work has one safe
+isolated unit and one eligible specialist selected by configured inference.
+Require the inferred decision and its provider receipts before narrowing that
+same worker to the closed diagnostic execution boundary. Prove first that the
+non-interactive Codex surface exposes the required native delegation tool.
 The user-level probe must explicitly request exactly one sub-agent for the
 whole unit so the canary remains compatible with Codex's native delegation
 policy; indivisibility constrains fanout rather than prohibiting delegation.
@@ -206,23 +220,27 @@ Then require exactly one child launch, exact work-unit correlation, pre-LLM
 specialist delivery, one-use activation consumption, child completion, parent
 finalization, and a valid response header. Reject absent tools, topology drift,
 extra children, timeouts, unconsumed grants, parent-only prompt loading, and
-uncorrelated evidence. Keep shell, filesystem writes, external services, and
-hook-trust bypass disabled.
+uncorrelated evidence. Keep shell, filesystem writes, and external services
+disabled. Run the same proof through either attended native trust or the
+explicit per-invocation autonomous bypass without conflating the two.
 
 ## Dependencies
 
-ADR-0077 owns behavioral activation proof. ADR-0104 supplies the exact installed
-candidate, and AR-192 requires settled hook trust before provider-backed work.
+ADR-0119 owns behavioral activation proof and its two explicit trust modes.
+ADR-0118 requires inference-owned staffing. ADR-0104 supplies the exact
+installed candidate, and AR-192 remains the attended-mode trust preflight.
 The host must expose a non-interactive native-child surface that the canary can
 invoke safely; if it does not, activation needs a different attended probe
 instead of weakening the evidence gate.
 
 ## Acceptance
 
-- [x] The canary request deterministically produces exactly one bounded work unit
-  and one expected specialist without semantic-plan fanout.
+- [x] Configured inference selects exactly one expected specialist for the
+  bounded canary unit, with provider and inferred-decision receipts; no
+  deterministic fallback may choose or substitute that specialist.
 - [ ] Current-profile Codex exposes and invokes the supported native child tool
-  without hook-trust bypass, shell access, file writes, or external services.
+  through attended trust or the explicit autonomous bypass, without shell
+  access, file writes, or external services.
 - [ ] PreToolUse, SubagentStart, PostToolUse, SubagentStop, and Stop evidence is
   correlated to one session, trace, work unit, child, and install identity.
 - [ ] The expected specialist prompt is delivered only to the child and its

@@ -139,6 +139,28 @@ to restore offline staffing, deterministic plan enrichment, unavailable unit
 assignment, and unconfigured-child specialist retention. Ruff, format, and
 diff-integrity checks passed on the exact committed tree.
 
+The activation source candidate now exposes one explicit autonomous install
+transaction over the normal default-suite path. It uses Codex's supported hook-
+trust bypass only for the exact canary invocation, records that invocation as
+`autonomous_bypass`/`bypassed`, never mutates persistent trust, and cannot report
+runtime readiness without the same behavioral proof required in attended mode.
+Product-host evidence is bound to the exact activation rollout and workspace-
+write sentinel. The former deterministic canary specialist fixture is removed:
+normal workforce inference must select the worker and persist provider receipts
+before the adapter may narrow that same worker to the fixed read-only diagnostic
+goal. Missing or invalid inference fails visibly with no selected specialist.
+
+Commit `03dba75` contains the reviewed activation package. Its expanded bounded
+activation/product/preflight spine passed 287 warning-strict tests with one
+intentional platform skip. Review caught and repaired three additional fail-
+closed defects before commit: requested bypass was no longer mistaken for an
+invoked bypass; the read-only activation canary no longer enters gap hiring;
+and modern durable plan equality plus the bounded inferred binding now survive
+exact replay. The last complete local decision-conformance run passed its
+baseline and killed all 29 then-defined mutations with zero survivors and zero
+invalid mutations. Four review-added mutations are manifest-tested; their
+complete 33-mutation execution is the first post-checkpoint gate.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired
@@ -153,7 +175,7 @@ diff-integrity checks passed on the exact committed tree.
   visibly and selects, recommends, delegates, and hires no specialist.
 - [x] Deterministic recall and validation cannot become an online or offline
   specialist decider.
-- [ ] Attended and explicit autonomous native-install modes are both covered by
+- [x] Attended and explicit autonomous native-install modes are both covered by
   the shared adapter contract; trust status is never reported as activation.
 - [ ] Current Codex carries the exact activation contract into hook processes
   and proves hook start, route, exact specialist injection, and native child

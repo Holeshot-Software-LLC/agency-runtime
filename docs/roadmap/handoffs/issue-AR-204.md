@@ -17,7 +17,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-204
 branch: codex/ar-203-readme-story-final-proof
-evidence_commit: e1451ea9c1c8a816b7b6d556c6306cf9f28ed8ce
+evidence_commit: 03dba7538779f9c1bc64a9f6e06e5dbe9581db42
 minimum_ledger_commit: fe68f86e36a2f2d82ae681d02c67ae5d4a0e6a06
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
@@ -41,6 +41,11 @@ acceptance; this file records only current proof and the next package.
 - Commit `e1451ea` completes the third bounded package: production staffing and
   exact-unit delegation require inference-owned evidence and fail closed when
   inference is unavailable or invalid.
+- Commit `03dba75` completes the fourth bounded package: attended and explicit
+  autonomous activation share one behavioral proof, the supported bypass is
+  labeled from the exact invocation, product trials correlate the exact rollout
+  and workspace write, and activation specialist identity remains inference-
+  owned through durable replay.
 - Tracker [#189](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189)
   records AR-204 under `epic:product`.
 - AR-143 and AR-196 are `wont_do` and explicitly superseded by AR-204; their
@@ -82,11 +87,21 @@ acceptance; this file records only current proof and the next package.
   intentional skip. Decision conformance passed its baseline and killed all 26
   curated regressions with zero survivors or invalid mutations; source restore
   verification passed.
+- The expanded activation/product/preflight spine passed 287 warning-strict
+  tests with one intentional platform skip. It includes auto-discovered full-
+  suite autonomous install, actual-versus-requested bypass labeling, exact
+  rollout correlation, workspace-write evidence, no-hiring canary scope,
+  provider receipts, bounded inferred binding persistence, and modern plan
+  equality.
+- Decision conformance passed its last complete 29-mutation run with zero
+  survivors or invalid mutations. Four review-added mutations are manifest-
+  tested, bringing the pending complete evaluator to 33 mutations.
 
 ## exact-blocker
 
-Owner CLI/dashboard authority and inference-only staffing are repaired. Current
-production still lacks final proof at native activation propagation, response
+Owner CLI/dashboard authority, inference-only staffing, and the shared
+activation adapter contract are repaired and checkpointed. Current production
+still lacks final proof at native Codex propagation, terminal response/header
 correction, and rendered dashboard boundaries.
 
 ## same-task-continuity
@@ -97,14 +112,12 @@ the owner-untracked analysis draft and `uv.lock`.
 
 ## next-bounded-work-package
 
-1. Trace the exact Codex activation snapshot from product-host launch into the
-   hook process under the documented autonomous trust bypass.
-2. Repair any adapter/environment boundary that drops registration, bypass
-   mode, hook-start, route, specialist-injection, delegation, or workspace-write
-   evidence.
-3. Prove the shared activation contract in synthetic host tests before one
-   exact-build live canary.
-4. Checkpoint before terminal header enforcement work.
+1. Run the complete 33-mutation local decision-conformance evaluator and stop
+   on the first survivor or invalid mutation.
+2. Repair the terminal header boundary so missing, malformed, corrected, or
+   evidence-mismatched output fails the turn without a repair loop.
+3. Prove the terminal contract with focused tests, then checkpoint before the
+   dashboard live canary and final exact-build product trial.
 
 ## verification
 
