@@ -17,7 +17,7 @@ type: worklog
 commit: 99db59c
 short: 99db59c
 date: 2026-07-29
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/177
 related_issues:
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
 ---
