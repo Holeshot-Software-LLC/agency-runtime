@@ -64,8 +64,19 @@ baseline and kills all 13 curated mutations, including first-error-only
 recruiter validation, with zero survivors or invalid results and unchanged
 source inputs. The named fast production spine passes 675 tests with 6 skipped;
 the dashboard UI passes 109 tests; and routing evaluation 1.3.0 passes every
-correctness, policy, delegation, performance, startup, and scale gate. Merge,
-install, and the final ordinary canary remain pending.
+correctness, policy, delegation, performance, startup, and scale gate.
+
+PR 184 merged normally as exact main revision
+`dbd5502847b822825c7f3b99a18662949c98de0b`. GitHub refused every hosted job
+before repository steps because the account payment or spending limit requires
+attention; no repository failure executed. Exact build
+`0.1.0+gdbd5502847b8` is installed, and only Codex and ZCode were refreshed.
+
+Final trial `ar203-dbd5502-ordinary-01` ended `NO-GO` before any Agency route
+or recruiter call was recorded. The isolated plugin was registered and enabled,
+but the exact activation snapshot returned `route_not_found` with every runtime
+cardinality zero. This does not invalidate the deterministic recruiter repair,
+but it also does not live-exercise or prove that repair in Codex.
 
 ## Approach
 
@@ -107,5 +118,5 @@ ADR-0114 limits fast mode to one bounded semantic repair.
   first-error-only recruiter validation.
 - [x] Focused tests and the named fast production gate pass on the exact source
   revision.
-- [ ] The merged revision is exact-installed for Codex and ZCode before the
+- [x] The merged revision is exact-installed for Codex and ZCode before the
   next ordinary canary.

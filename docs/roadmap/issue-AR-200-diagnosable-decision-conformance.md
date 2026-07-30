@@ -215,6 +215,23 @@ terminal defects. The trial remains `NO-GO`: zero selected, loaded, delegated,
 or accepted activity; correction count null; zero artifacts; and zero of five
 product checks.
 
+The combined AR-202/AR-203 repair merged through PR 184 as
+`dbd5502847b822825c7f3b99a18662949c98de0b`, was exact-installed as
+`0.1.0+gdbd5502847b8`, and refreshed Codex and ZCode only. Local evidence is
+green: 85 focused tests, 13/13 decision mutations killed, 675 named-spine tests
+with 6 skips, 109 dashboard tests, and every routing 1.3.0 gate. Hosted jobs
+were refused before repository execution by GitHub billing enforcement.
+
+The one final ordinary trial, `ar203-dbd5502-ordinary-01`, is terminal
+`NO-GO` without a rerun. The isolated plugin was registered and enabled and
+the exact isolated trust projection was proven, but the Store had no matching
+route, the final response had no Agency header, and the prompt-bound workspace
+sentinel was missing. Correction count was zero; all activation, specialist,
+model, delegation, and finalization counts were zero. Product grading correctly
+skipped before checking the empty workspace. AR-200 therefore remains open:
+the source repairs are delivered, but the requested live workforce and
+delegation proof is still absent.
+
 ## Approach
 
 1. Split candidate validation into content-free, allowlisted stages and retain

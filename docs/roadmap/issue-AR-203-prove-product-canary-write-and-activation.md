@@ -66,6 +66,28 @@ gate with zero survivors or invalid results. The named fast production spine
 passes 675 tests with 6 skipped, the dashboard UI passes 109 tests, and routing
 evaluation 1.3.0 passes every configured gate.
 
+PR 184 merged normally as exact main revision
+`dbd5502847b822825c7f3b99a18662949c98de0b`; exact build
+`0.1.0+gdbd5502847b8` is installed and refreshed for Codex and ZCode only.
+Hosted GitHub jobs did not execute repository steps because account billing or
+spending-limit enforcement refused each job.
+
+The one authorized final trial, `ar203-dbd5502-ordinary-01`, is terminal
+`NO-GO`. Codex completed with host exit zero in 87.813 seconds and returned a
+nonempty response, while the product command correctly exited one. The exact
+isolated-workspace trust projection was proven without changing the persistent
+profile, but the model-written sentinel was absent, so effective
+workspace-write was not proven and product grading was skipped. The exact
+activation query returned `route_not_found`; all route, run, load, delegation,
+receipt, and finalization cardinalities were zero. The final response had no
+Agency header. Correction count was exactly zero, but that narrow result cannot
+compensate for a missing header and absent activation evidence.
+
+The orchestration process itself required elevated authority to create the
+`C:/tmp` trial directory before the restricted Codex run. That is concrete
+evidence of a workspace capability mismatch and is the first next diagnostic,
+but this trial does not prove it caused the separate missing Agency route.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host
@@ -94,7 +116,7 @@ demonstrates both mismatches.
 - [x] Codex Agency product evaluation reads
   `agency.canary-activation-evidence.v1` for the exact prompt hash and never
   reports that schema unavailable when the Store returns it.
-- [x] The isolated Codex profile proves effective workspace-write authority for
+- [ ] The isolated Codex profile proves effective workspace-write authority for
   the exact empty trial directory without changing persistent user trust.
 - [x] The product backend retains sandboxing and cannot write outside the trial
   directory.

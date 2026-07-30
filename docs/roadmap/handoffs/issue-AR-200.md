@@ -20,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-200
-branch: agent/ar-201-default-repair-budget
-evidence_commit: 57c34e609dec06b15b73ceacdd6ee8cf75c94e95
-minimum_ledger_commit: dca598cd8d6811b7407c7b32527e59a79b694431
+branch: agent/ar-202-recruiter-repair-convergence
+evidence_commit: dbd5502847b822825c7f3b99a18662949c98de0b
+minimum_ledger_commit: e9c006570eafa7db8814d87fe2655c1d2cea9a35
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 ---
@@ -40,9 +40,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 - The one allowed ordinary canary is terminal `NO-GO`; it is preserved and will
   not be rerun or reinterpreted.
 - AR-201 is merged, exact-installed, and live-proven to fund all three calls.
-  Follow-up implementation is bounded under AR-202 on
-  `agent/ar-202-recruiter-repair-convergence`; AR-203 separately owns the
-  product-harness defects.
+  AR-202 and AR-203 merged through PR 184 and exact build
+  `0.1.0+gdbd5502847b8` is installed for Codex and ZCode.
+- Final trial `ar203-dbd5502-ordinary-01` is terminal `NO-GO` and will not
+  be silently rerun.
 - Owner-untracked analysis and lock files remain untouched.
 
 ## completed-evidence
@@ -74,25 +75,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 
 ## exact-blocker
 
-The default budget defect is repaired. The terminal AR-201 trace used all three
-calls, but recruiter and recruiter repair both failed semantic validation. The
-product evaluator also consumed the wrong evidence projection and did not prove
-effective workspace-write authority. AR-202 and AR-203 own those blockers.
+All identified source repairs are merged and exact-installed. The final
+isolated run recorded no Agency route or header and did not prove effective
+workspace-write. Therefore the requested live staffing, delegation, model
+receipt, accepted finalization, and clean header proof remain absent.
 
 ## same-task-continuity
 
-Do not reopen AR-200 edge cases or rerun either terminal canary. Continue only
-AR-202 recruiter convergence and AR-203 product-proof repair, preserving
-inference authority and explicit operator budget overrides.
+Do not reinterpret deterministic gates as live proof or spend another canary
+without explicit authorization. Preserve inference authority, the exact
+terminal JSON, and the owner-untracked files.
 
 ## next-bounded-work-package
 
-1. Preserve the terminal AR-201 trial in the tracker and local evidence page.
-2. Implement AR-202's bounded all-failure recruiter repair and mutation proof.
-3. Repair AR-203's exact activation projection and trial-scoped workspace-write
-   proof.
-4. Run the named fast gate, merge, and exact-install Codex/ZCode.
-5. Spend only one new ordinary canary against the combined repairs.
+1. Preserve the terminal AR-203 trial in the tracker and local evidence page.
+2. Prove restricted-token ownership/write access for the exact trial directory.
+3. Instrument the isolated hook-start boundary without weakening trust or
+   sandboxing.
+4. Ask the owner before any replacement ordinary canary.
 
 ## verification
 

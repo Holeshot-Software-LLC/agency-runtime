@@ -19,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-203
 branch: agent/ar-202-recruiter-repair-convergence
-evidence_commit: 9f3d72a738dd9c374116cd2a64d6a18a572681ea
-minimum_ledger_commit: fdf4a36d8b5e117b75c8bc713b9e6464b1f78438
+evidence_commit: dbd5502847b822825c7f3b99a18662949c98de0b
+minimum_ledger_commit: e9c006570eafa7db8814d87fe2655c1d2cea9a35
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -31,8 +31,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 - AR-201 terminal trial `ar201-ed4450e-ordinary-01` remains preserved as
   `NO-GO`; it will not be rerun or reinterpreted.
-- The combined AR-202/AR-203 source repair is in focused review on
-  `agent/ar-202-recruiter-repair-convergence`.
+- PR 184 merged the combined repair normally as
+  `dbd5502847b822825c7f3b99a18662949c98de0b`.
+- Exact build `0.1.0+gdbd5502847b8` is installed; only Codex and ZCode were
+  refreshed.
 - Owner-untracked analysis and lock files remain untouched.
 - Context telemetry reported 47.8 percent remaining, so this reviewed source
   slice requires a clean substantive and ledger checkpoint before the fast
@@ -62,22 +64,42 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   after the outer sandbox's expected `spawn EPERM` required the authorized
   rerun. Routing evaluation 1.3.0 passed every gate; routing p95 was 3.725 ms
   and cache-hit p95 was 0.989 ms.
+- GitHub hosted jobs were refused before repository execution by account
+  billing enforcement.
+- Trial `ar203-dbd5502-ordinary-01` is terminal `NO-GO`: isolated trust was
+  proven, but workspace-write, Agency activation, and the final header were not.
+- Correction count was zero. Every runtime cardinality was zero, and product
+  grading correctly skipped before inspecting the empty workspace.
+- Canonical product prompt hash is
+  `sha256:e845c233e9a65eff66a8af626a333110449e6c90f8f4b46b0f6529ddd427152d`;
+  executed wrapper hash is
+  `sha256:3218b84c7cc13a7a8648ef9c65f6756d5dcba45b0d3ccc1553e302de27d5ddae`.
+- Codex completed with host exit zero in 87.813 seconds and a 308-character
+  response. The product command exited one after `route_not_found`,
+  `proof_file_missing`, and the absent header.
+- Exact workspace trust was `proven: true`, scoped to the disposable
+  workspace, and left persistent configuration unchanged. Effective
+  workspace-write was `proven: false`.
 
 ## exact-blocker
 
-The source boundary and named fast gate are complete, but the merged revision,
-exact Codex/ZCode installation, and one final ordinary canary do not yet exist.
+The exact activation and write-proof implementation, merge, and installation
+are complete. The final trial proved the isolated trust projection but not
+effective workspace-write, and it recorded no matching Agency route or header.
 
 ## same-task-continuity
 
-Do not launch another AR-201 trial. Finish the bounded combined repair, merge
-and exact-install it, then spend one final ordinary Codex product canary.
+Keep fail-closed grading and the bounded proof repair frozen. Do not add a
+general sandbox bypass, mutate persistent trust, add another write directory,
+or reinterpret `correction_count: 0` as a pass when the header is absent.
 
 ## next-bounded-work-package
 
-1. Push, open the PR, resolve required checks, and merge.
-2. Install the exact merged revision for Codex and ZCode only.
-3. Run one final ordinary product canary and publish the local evidence report.
+1. Reproduce the restricted-token ability to create and write the exact trial
+   directory before launching Codex.
+2. Add bounded hook-start evidence that distinguishes hook non-execution from a
+   Store query miss.
+3. Request explicit authorization before a replacement ordinary canary.
 
 ## verification
 
