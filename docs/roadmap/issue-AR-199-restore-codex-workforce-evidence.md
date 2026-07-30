@@ -353,7 +353,16 @@ routing, hiring, and child-coordination coverage passes 175 tests with one
 platform skip and one expected xfail. The exact source then passes the named
 Python spine with 653 tests and 6 skips, all 109 dashboard tests, every routing
 evaluation gate, and all documentation, Ruff, formatting, and diff checks.
-Merge, exact installation, and the bounded ordinary rerun remain pending.
+The bounded ordinary rerun remains pending.
+
+PR 172 merged the inference-owned selection repair as exact commit
+`9b50993215b4c800fe540632ca3a9f97ae6de91e`. That revision is installed as
+build `0.1.0+g9b50993215b4` with Codex bundle
+`0.1.0+codex.0fa5aeccbffe`; the adapter refresh completed without prompting for
+trust. The persistent profile remains `hook_trust_status: unverified` and
+requires a fresh Codex process for attended activation evidence. This does not
+block the explicit isolated-profile product proof, which remains the next
+bounded package.
 
 ## Dependencies
 

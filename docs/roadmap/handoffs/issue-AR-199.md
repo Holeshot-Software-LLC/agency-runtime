@@ -21,7 +21,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-199
 branch: codex/ar-199-fbed-canary
-evidence_commit: 882b92036152094ebb9e4a81883edec6084c3d74
+evidence_commit: 9b50993215b4c800fe540632ca3a9f97ae6de91e
 minimum_ledger_commit: 36d2ec67810eaffe014cc08a73402146276830d3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
@@ -31,12 +31,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## checkpoint
 
-- PR 171 merged the ordinary selection and eligibility repair as exact commit
-  `fbed63abaf739d6a863113a221c09c8cfababc40`.
-- The uv tool reports exact build `0.1.0+gfbed63abaf73`; Codex bundle
-  `0.1.0+codex.ae2086569c9e` is registered and enabled.
+- PR 172 merged the inference-owned selection repair as exact commit
+  `9b50993215b4c800fe540632ca3a9f97ae6de91e`.
+- The uv tool reports exact build `0.1.0+g9b50993215b4`; Codex bundle
+  `0.1.0+codex.0fa5aeccbffe` is registered and enabled.
 - First ordinary product trace `019fb03e-5ad6-7b70-8d22-bc8c7ee0d028` is a
-  bounded `NO-GO`; the online inference repair through `882b920` is source-only.
+  bounded `NO-GO`; its exact-installed repair is awaiting one rerun.
 - Owner-untracked files remain untouched.
 
 ## completed-evidence
@@ -73,9 +73,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-The online inference repair is fast-verified `GO` but not merged or
-exact-installed. The first ordinary trace remains `NO-GO`; persistent-profile
-trust remains attended but does not block an isolated-profile product rerun.
+The online inference repair is merged, exact-installed, and fast-verified. The
+first ordinary trace remains `NO-GO` until one isolated-profile product rerun;
+persistent-profile trust remains attended but does not block that rerun.
 
 ## same-task-continuity
 
@@ -83,8 +83,7 @@ Continue in this task. Do not rerun the passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. Merge and exact-install the branch.
-2. Rerun one bounded ordinary isolated-profile product proof and audit receipts.
+1. Rerun one bounded ordinary isolated-profile product proof and audit receipts.
 
 ## verification
 
