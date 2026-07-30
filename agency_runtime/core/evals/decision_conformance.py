@@ -149,6 +149,83 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="product-host-restores-ephemeral-parent",
+        invariant=(
+            "Ordinary Codex product trials persist the parent turn required by native "
+            "multi-agent delegation."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before="""    "never",
+    "--ignore-rules",""",
+        after="""    "never",
+    "--ephemeral",
+    "--ignore-rules",""",
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-disables-multi-agent-v2",
+        invariant="Ordinary Codex product trials explicitly enable native multi-agent V2.",
+        source_path="agency_runtime/core/evals/product_host.py",
+        before='    "multi_agent_v2",',
+        after='    "multi_agent_v1",',
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-disables-agents",
+        invariant="Ordinary Codex product trials explicitly enable the agents capability.",
+        source_path="agency_runtime/core/evals/product_host.py",
+        before='    "agents.enabled=true",',
+        after='    "agents.enabled=false",',
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-allows-store-bootstrap",
+        invariant=(
+            "Ordinary Codex product trials require the exact pre-existing Agency evidence store."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before="        require_existing_store=True,",
+        after="        require_existing_store=False,",
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-drops-hook-start-evidence",
+        invariant=("Agency-mode product trials capture content-free hook stage diagnostics."),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before="        hook_event_diagnostics=master_enabled,",
+        after="        hook_event_diagnostics=False,",
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-delegation-inherits-parent-history",
+        invariant=(
+            "Codex specialist launches exclude parent history while receiving the exact "
+            "hook-injected specialist context."
+        ),
+        source_path="agency_runtime/core/specialist_context.py",
+        before=('                "set `fork_turns` to `none` and set `task_name` to that row\'s "'),
+        after='                "set `task_name` to that row\'s "',
+        test_node=(
+            "tests/test_unit_aware_delegation.py::"
+            "test_isolated_native_hook_receives_exact_unit_agent_plan[codex]"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-grading-accepts-missing-write-proof",
         invariant=(
             "Product grading fails closed unless effective workspace-write evidence is true."

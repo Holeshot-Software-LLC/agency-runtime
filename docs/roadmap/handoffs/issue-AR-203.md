@@ -18,9 +18,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-203
-branch: agent/ar-202-recruiter-repair-convergence
-evidence_commit: dbd5502847b822825c7f3b99a18662949c98de0b
-minimum_ledger_commit: e9c006570eafa7db8814d87fe2655c1d2cea9a35
+branch: agent/ar-203-hook-start-workspace
+evidence_commit: baaf603fc65f4ea338bcdde19f60c60a4c6f96af
+minimum_ledger_commit: e5a11f2e77ba4589ae93e610f303946b0efdde48
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -36,9 +36,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 - Exact build `0.1.0+gdbd5502847b8` is installed; only Codex and ZCode were
   refreshed.
 - Owner-untracked analysis and lock files remain untouched.
-- Context telemetry reported 47.8 percent remaining, so this reviewed source
-  slice requires a clean substantive and ledger checkpoint before the fast
-  production spine.
+- A replacement live canary was not launched: the approval boundary requires
+  fresh explicit owner authorization after the prior authorized final trial.
+- Current context telemetry reports 85.7 percent remaining. This bounded launch
+  repair is being checkpointed before mutation evaluation and the fast spine.
 
 ## completed-evidence
 
@@ -80,12 +81,30 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 - Exact workspace trust was `proven: true`, scoped to the disposable
   workspace, and left persistent configuration unchanged. Effective
   workspace-write was `proven: false`.
+- Exact Store queries for both the canonical and wrapped product prompt hashes
+  returned no route, and the latest persisted route predates the final trial.
+  The missing activation is therefore a hook-start failure, not merely a
+  product-report hash mismatch.
+- The product launch contract now persists the parent turn, enables
+  `multi_agent_v2` and `agents.enabled=true`, and retains bounded
+  `workspace-write` with no added write root or full-access bypass.
+- Isolated product hooks now require the pre-existing Store. Optional
+  product-canary diagnostics project only canonical hook event names with
+  bounded accepted/completed/failed counts; raw stderr is never retained.
+- Product trials remain multi-unit and do not reuse the activation canary's
+  single-spawn rollout constraint. Codex specialist instructions require
+  `fork_turns=none` plus the row's exact native task name.
+- The repaired slice passes 26 focused tests, including red-to-green product
+  launch, environment, hook emission, hook projection, proof projection, and
+  two-unit delegation contracts. Mutation evaluation remains pending.
 
 ## exact-blocker
 
-The exact activation and write-proof implementation, merge, and installation
-are complete. The final trial proved the isolated trust projection but not
-effective workspace-write, and it recorded no matching Agency route or header.
+The prior exact activation and write-proof implementation is merged and
+installed, but the final trial recorded no matching Agency route or header.
+The newly identified stale product launch contract is repaired locally and
+awaits mutation evaluation, fast verification, review, merge, and exact
+installation before a replacement live canary.
 
 ## same-task-continuity
 
@@ -95,11 +114,11 @@ or reinterpret `correction_count: 0` as a pass when the header is absent.
 
 ## next-bounded-work-package
 
-1. Reproduce the restricted-token ability to create and write the exact trial
-   directory before launching Codex.
-2. Add bounded hook-start evidence that distinguishes hook non-execution from a
-   Store query miss.
-3. Request explicit authorization before a replacement ordinary canary.
+1. Kill every curated decision mutation and complete two bounded review passes.
+2. Run the named fast production spine and reach demo-ready.
+3. Merge and install the exact build for Codex and ZCode only.
+4. Request explicit authorization for one replacement ordinary canary, then use
+   its hook-stage evidence to distinguish non-invocation from handler failure.
 
 ## verification
 

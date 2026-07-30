@@ -42,6 +42,14 @@ does not inherit the current profile's trusted-project entries, and existing
 tests assert only the requested CLI flag, not the effective model-facing write
 contract.
 
+The terminal AR-203 trial exposed an earlier activation boundary as well. The
+ordinary product backend still launched Codex with `--ephemeral` and without
+`multi_agent_v2` or `agents.enabled=true`, even though the installation
+activation canary had already removed ephemeral mode and enabled both native
+agent controls. The product hook child also did not require the pre-existing
+evidence Store, and its result projection could not distinguish a hook that
+never started from one that accepted an event and then failed.
+
 ## Current state
 
 The Codex process completed with exit zero and the isolated Agency plugin was
@@ -88,6 +96,17 @@ The orchestration process itself required elevated authority to create the
 evidence of a workspace capability mismatch and is the first next diagnostic,
 but this trial does not prove it caused the separate missing Agency route.
 
+The current bounded repair removes `--ephemeral` from product execution,
+enables Codex multi-agent V2 and the agents capability, requires the exact
+existing Store in the isolated hook process, and records only allowlisted
+content-free accepted/completed/failed hook-stage counts. Ordinary product
+trials still do not opt into the activation canary's single-child rollout
+topology because the product goal requires multiple independent work units.
+Codex delegation context now requires `fork_turns=none` so each child receives
+only the exact hook-injected specialist context instead of inheriting the
+parent's full history. The new and directly affected tests currently pass 26
+focused cases; decision-conformance and the named fast spine remain pending.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host
@@ -104,6 +123,13 @@ but this trial does not prove it caused the separate missing Agency route.
    isolated read-only profile.
 6. Preserve product safety: no general sandbox bypass and no write authority
    outside the confirmed trial directory.
+7. Persist the ordinary Codex parent turn and explicitly enable native
+   multi-agent V2 plus the agents capability.
+8. Require hook children to open the exact existing Agency Store and expose
+   only bounded, allowlisted hook-stage counts in product evidence.
+9. Keep multi-unit product evidence separate from the activation canary's
+   deliberately single-child rollout parser, and isolate each Codex specialist
+   child with `fork_turns=none`.
 
 ## Dependencies
 
@@ -123,5 +149,12 @@ demonstrates both mismatches.
 - [x] A failed write proof stops before grading and is reported separately from
   workforce selection or product-quality failures.
 - [x] Focused tests fail against both current defects and pass after repair.
+- [x] Ordinary Codex product execution persists the parent turn, enables native
+  multi-agent V2 and agents, and does not impose the single-child activation
+  rollout topology.
+- [x] Product hook execution requires the exact existing Store and projects
+  bounded hook-stage evidence without retaining hook input or raw stderr.
+- [x] Codex specialist launch instructions require `fork_turns=none` and the
+  exact persisted native task name.
 - [ ] The next ordinary canary reports exact activation evidence and can create
   required artifacts when workforce execution reaches the parent model.
