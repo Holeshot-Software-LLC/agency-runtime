@@ -62,7 +62,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   recruiter now always run for a fresh configured-provider route; deterministic
   logic is limited to recall, safety vetoes, and the stamped no-provider floor.
 - Cross-layer focused verification passes 175 tests with one platform skip and
-  one expected xfail. Full fast verification is pending on this exact source.
+  one expected xfail.
+- The named Python spine passes 653 tests with 6 skips, all 109 dashboard tests
+  pass, and every routing-evaluation gate passes; documentation, Ruff,
+  formatting, and diff checks also pass on this exact source.
 - Provider attempts remain CAS-atomic model receipts; inferred staffing gaps
   remain eligible for bounded governed hiring rather than silent fallback.
 - Context telemetry was below the 50-percent clean-checkpoint threshold before
@@ -70,8 +73,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## exact-blocker
 
-The online inference repair is focused-test `GO` but not fast-verified, merged,
-or exact-installed. The first ordinary trace remains `NO-GO`; persistent-profile
+The online inference repair is fast-verified `GO` but not merged or
+exact-installed. The first ordinary trace remains `NO-GO`; persistent-profile
 trust remains attended but does not block an isolated-profile product rerun.
 
 ## same-task-continuity
@@ -80,9 +83,8 @@ Continue in this task. Do not rerun the passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. Complete the named fast verification spine and checkpoint its exact result.
-2. Merge and exact-install the branch.
-3. Rerun one bounded ordinary isolated-profile product proof and audit receipts.
+1. Merge and exact-install the branch.
+2. Rerun one bounded ordinary isolated-profile product proof and audit receipts.
 
 ## verification
 

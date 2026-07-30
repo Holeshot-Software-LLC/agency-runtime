@@ -350,8 +350,10 @@ determinism supplies broad recall and safety vetoes but cannot appoint or
 reorder workers. The visibly stamped no-provider branch retains the
 deterministic typed-recall floor. Focused inference, selection, staffing,
 routing, hiring, and child-coordination coverage passes 175 tests with one
-platform skip and one expected xfail. Full fast verification, merge,
-exact-installation, and the bounded ordinary rerun remain pending.
+platform skip and one expected xfail. The exact source then passes the named
+Python spine with 653 tests and 6 skips, all 109 dashboard tests, every routing
+evaluation gate, and all documentation, Ruff, formatting, and diff checks.
+Merge, exact installation, and the bounded ordinary rerun remain pending.
 
 ## Dependencies
 
