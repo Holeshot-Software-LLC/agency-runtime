@@ -19,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-202
 branch: agent/ar-202-recruiter-repair-convergence
-evidence_commit: 9f3d72a738dd9c374116cd2a64d6a18a572681ea
-minimum_ledger_commit: fdf4a36d8b5e117b75c8bc713b9e6464b1f78438
+evidence_commit: dbd5502847b822825c7f3b99a18662949c98de0b
+minimum_ledger_commit: e9c006570eafa7db8814d87fe2655c1d2cea9a35
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 ---
@@ -55,6 +55,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
   after the outer sandbox's expected `spawn EPERM` required the authorized
   rerun. Routing evaluation 1.3.0 passed every gate; routing p95 was 3.725 ms
   and cache-hit p95 was 0.989 ms.
+- PR 184 merged normally as `dbd5502847b822825c7f3b99a18662949c98de0b`.
+  Hosted jobs were refused before repository steps by GitHub account billing.
+- Exact build `0.1.0+gdbd5502847b8` is installed. Codex refresh install is
+  `0614affa-9f9d-44ea-b1e2-60e5485a3a22`; ZCode refresh install is
+  `486be569-74d9-4c6b-a61f-6334762e4cd5`.
+- Final trial `ar203-dbd5502-ordinary-01` is terminal `NO-GO` and will not
+  be rerun under the completed one-canary authorization.
 
 ## completed-evidence
 
@@ -81,22 +88,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 
 ## exact-blocker
 
-The source convergence boundary and named fast gate are complete. Remaining
-blockers are PR merge, exact Codex/ZCode installation, and one final ordinary
-canary after the paired AR-203 harness repair.
+The recruiter source boundary, merge, and exact installation are complete. The
+final canary did not record an Agency route, so no recruiter call occurred and
+live convergence remains unproven. AR-203 owns the preceding activation and
+workspace-proof boundary.
 
 ## same-task-continuity
 
-Keep the completed recruiter boundary frozen while verifying and delivering the
-combined AR-202/AR-203 repair. Do not enlarge call budgets, revive deterministic
-online selection, tune unrelated roster content, or rerun the terminal AR-201
-canary.
+Keep the completed recruiter boundary frozen. Do not enlarge call budgets,
+revive deterministic online selection, tune unrelated roster content, or
+reinterpret the final no-route canary as recruiter evidence.
 
 ## next-bounded-work-package
 
-1. Push, open the PR, resolve required checks, and merge.
-2. Install the exact merged revision for Codex and ZCode only.
-3. Run one final ordinary canary and publish the local evidence report.
+1. Preserve the final no-route trial and local evidence report.
+2. Resolve AR-203's restricted-workspace capability and hook-start boundary.
+3. Seek explicit authorization before spending any replacement canary.
 
 ## verification
 

@@ -364,6 +364,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `097ce06` | 2026-07-30 | docs(roadmap): checkpoint AR-201 terminal trial | [AR-201](../roadmap/issue-AR-201-fund-default-workforce-repair.md) | null |
 | `9f3d72a` | 2026-07-30 | fix(runtime): converge recruiter and product proof | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | [detail](2026-07-30-9f3d72a-recruiter-product-proof.md) |
 | `d6b131a` | 2026-07-30 | docs(roadmap): record AR-202 and AR-203 fast gate | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
+| `baaf603` | 2026-07-30 | docs(roadmap): record final AR-203 canary | [AR-200](../roadmap/issue-AR-200-diagnosable-decision-conformance.md), [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
