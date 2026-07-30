@@ -342,6 +342,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `78d6c21` | 2026-07-29 | docs(roadmap): record inference-only selection repair | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `e167964` | 2026-07-29 | docs(roadmap): record inference repair fast gate | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `9b50993` | 2026-07-29 | Merge pull request #172 from Holeshot-Software-LLC/codex/ar-199-fbed-canary | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `96d25e0` | 2026-07-29 | docs(roadmap): record exact inference repair install | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
