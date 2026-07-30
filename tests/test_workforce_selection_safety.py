@@ -391,7 +391,7 @@ def test_documentation_unit_selects_existing_technical_writer_without_false_gap(
     assert proposal.units[0].abstention_reasons == ()
 
 
-def test_code_review_anchor_cannot_be_demoted_by_a_plausible_wrong_neighbor() -> None:
+def test_online_inference_ranking_is_not_reordered_by_a_role_anchor() -> None:
     snapshot = _snapshot()
     plan = parse_work_unit_plan(
         {
@@ -457,7 +457,8 @@ def test_code_review_anchor_cannot_be_demoted_by_a_plausible_wrong_neighbor() ->
         context=context,
     )
 
-    assert proposal.units[0].selected == ("code-reviewer",)
+    assert proposal.units[0].selected == ("ai-generated-code-security-auditor",)
+    assert proposal.units[0].required == ()
     assert proposal.units[0].margin >= AgencyConfig().workforce.min_margin
     assert verify_staffing(plan, proposal, snapshot.contracts, context=context).accepted
 
@@ -1492,13 +1493,12 @@ def test_model_required_specialist_is_trusted_under_adr_0087() -> None:
     assert not set(proposal.units[0].required) & set(proposal.units[0].forbidden)
 
 
-def test_role_anchor_fallback_only_when_model_nominates_no_eligible_required() -> None:
-    # ADR-0087: role anchors are a recall/fallback safety net, not a gate that
-    # overrides the model. The fallback seeds required from eligible audited
-    # lifecycle owners ONLY when the model nominates no eligible required
-    # specialist, and it respects the model's explicit forbidden set. Exercise
-    # _semantic_staffing_classes directly with controlled inputs so the behavior
-    # is pinned independent of which roster candidates happen to be recalled.
+def test_online_inference_never_promotes_a_role_anchor_into_required() -> None:
+    # ADR-0087/ADR-0088: with a provider configured inference is the sole
+    # selection decider. A role anchor can shape recall, but it cannot become a
+    # required specialist after inference names no eligible required worker.
+    # Exercise _semantic_staffing_classes directly so this boundary cannot be
+    # obscured by the roster or proposal builder.
     snapshot = _snapshot()
     plan = parse_work_unit_plan(
         {
@@ -1534,17 +1534,16 @@ def test_role_anchor_fallback_only_when_model_nominates_no_eligible_required() -
     # stands in for a model that nominates the wrong specialist as required.
     ineligible = "software-test-engineer"
 
-    # Case 1: the model nominates an ineligible specialist as required. No
-    # eligible model-required pick exists, so the fallback seeds required from
-    # the eligible audited lifecycle owner.
+    # Case 1: the model nominates an ineligible specialist as required. Policy
+    # vetoes it, but does not replace it with the eligible audited lifecycle
+    # owner. The result remains a gap for hiring/abstention.
     required, acceptable, forbidden = _semantic_staffing_classes(
         unit,
         {ineligible: "required"},
-        {ineligible: 0.99, role_owner: 0.0},
         contracts_by_id,
         context,
     )
-    assert required == {role_owner}
+    assert required == set()
     assert ineligible not in acceptable  # ineligible -> forbidden
     assert ineligible in forbidden
     assert role_owner not in forbidden
@@ -1556,7 +1555,6 @@ def test_role_anchor_fallback_only_when_model_nominates_no_eligible_required() -
     required, acceptable, forbidden = _semantic_staffing_classes(
         unit,
         {ineligible: "required", role_owner: "forbidden"},
-        {ineligible: 0.99, role_owner: 0.90},
         contracts_by_id,
         context,
     )

@@ -951,30 +951,6 @@ def _calibrated_rankings(
     )
 
 
-def _prioritize_role_anchors(
-    ranked: Sequence[tuple[str, float]],
-    anchors: Sequence[str],
-    *,
-    minimum_margin: float,
-) -> tuple[tuple[str, float], ...]:
-    """Keep audited lifecycle owners above semantically plausible neighbors."""
-
-    available = {agent_id for agent_id, _score in ranked}
-    ordered_anchors = tuple(dict.fromkeys(item for item in anchors if item in available))
-    if not ordered_anchors:
-        return tuple(ranked)
-    anchor_ids = frozenset(ordered_anchors)
-    ceiling = round(max(0.0, 1.0 - max(float(minimum_margin), 0.01)), 6)
-    return (
-        *((agent_id, 1.0) for agent_id in ordered_anchors),
-        *(
-            (agent_id, min(score, ceiling))
-            for agent_id, score in ranked
-            if agent_id not in anchor_ids
-        ),
-    )
-
-
 def _valid_nomination_evidence(value: object) -> bool:
     if not isinstance(value, list):
         return False
@@ -991,22 +967,17 @@ def _valid_nomination_evidence(value: object) -> bool:
 def _semantic_staffing_classes(
     unit: WorkUnit,
     classifications: Mapping[str, str],
-    scores: Mapping[str, float],
     contracts_by_id: Mapping[str, WorkforceContract],
     context: StaffingContext,
 ) -> tuple[frozenset[str], frozenset[str], frozenset[str]]:
     """Bind model classifications to a clean required/acceptable/forbidden partition.
 
-    ADR-0087: with inference as the sole decider, the model's eligible
-    ``required`` nominations ARE the selection authority. Determinism must not
-    override an explicit model pick with role anchors (the prior behavior
-    replaced ``model_required`` with ``executable_anchors`` whenever any anchor
-    existed, demoting the model's genuine picks to ``acceptable`` and sometimes
-    landing a specialist in both required and forbidden). Role anchors survive
-    only as a fallback lifecycle-owner safety net for the degenerate case where
-    the model nominates no eligible required specialist. The returned classes
-    always form a clean partition of the ranked set: no agent is ever both
-    required and forbidden.
+    ADR-0087/ADR-0088: when inference is configured, the model's classifications
+    are the selection authority. Deterministic policy may reject an ineligible
+    nomination, but it must never add a role anchor or reorder the model's
+    ranking. Role anchors belong to recall ordering and the offline-only floor.
+    The returned classes form a clean partition of the ranked set: no agent is
+    ever both required and forbidden.
     """
 
     model_required = frozenset(
@@ -1028,22 +999,6 @@ def _semantic_staffing_classes(
         for agent_id in model_required
         if not typed_staffing_ineligibility(unit, contracts_by_id[agent_id], context)
     )
-
-    # Fallback only: when the model nominates no eligible required specialist,
-    # seed the unit's required set with eligible lifecycle owners that the model
-    # did not explicitly forbid. This is the deterministic safety net that keeps
-    # a unit owned by its audited specialist rather than abstaining. It never
-    # overrides a model pick because it runs only when the model offered no
-    # eligible required nomination, and it respects the model's explicit
-    # forbidden set.
-    if not required:
-        required = frozenset(
-            agent_id
-            for agent_id in _role_anchors(unit)
-            if agent_id in scores
-            and agent_id not in model_forbidden
-            and not typed_staffing_ineligibility(unit, contracts_by_id[agent_id], context)
-        )
 
     # Ineligible model-required picks cannot be executed, so they fall through to
     # forbidden. This agrees with build_deterministic_proposal, which also moves
@@ -1134,14 +1089,8 @@ def _proposal_from_nominations(
         required, acceptable, forbidden = _semantic_staffing_classes(
             expected_unit,
             classifications,
-            scores,
             contracts_by_id,
             context,
-        )
-        ranked = _prioritize_role_anchors(
-            ranked,
-            tuple(agent_id for agent_id in _role_anchors(expected_unit) if agent_id in required),
-            minimum_margin=config.workforce.min_margin,
         )
         rankings[expected_unit.unit_id] = tuple(ranked)
         semantic_required[expected_unit.unit_id] = required
@@ -1583,75 +1532,42 @@ def plan_and_staff_workforce(
         )
     plan = parsed_plan
 
-    from agency_runtime.core.workforce.fallback import deterministic_staff_plan
-
-    candidate_cache_identity = _stage_cache_identity(
-        "candidate",
+    # ADR-0087/ADR-0088: once a provider is configured, inference is the sole
+    # selection decider. Local typed logic supplies broad recall and may veto an
+    # unsafe nomination, but it never preselects a team and never suppresses the
+    # recruiter. The deterministic staffing path is reserved for the explicit
+    # no-provider branch above.
+    parsed_proposal, stage_attempts, failure, recruiter_cache_hit = _recruit_ambiguous_plan(
         request=ask,
+        plan=plan,
         snapshot=snapshot,
         config=config,
         context=context,
-        routing_context_fingerprint=routing_context_fingerprint,
+        budget=budget,
         invoker=invoker,
-        plan=plan,
-        extra={"staffing_budget": asdict(staffing_budget_for_config(config))},
+        routing_context_fingerprint=routing_context_fingerprint,
     )
-    recruited = workforce_cache_get(candidate_cache_identity)
-    if recruited is None:
-        recruited = deterministic_staff_plan(
-            ask,
-            plan,
-            snapshot,
-            config=config,
-            context=context,
-        )
-        workforce_cache_put(candidate_cache_identity, recruited)
-    else:
-        cache_hits.append("candidate")
-    proposal = recruited.proposal
-    staffing = recruited.staffing
-
-    # ADR-0087: inference is the primary specialist decider. With a provider
-    # configured (we passed the offline-decline check above), the recruiter
-    # ranks the recalled typed shortlist and nominates the best specialist(s)
-    # per unit or declares a gap. Run it whenever inference is available,
-    # regardless of mode; the deterministic candidate stage above is the recall
-    # input. Skip only when deterministic recall already accepted a complete,
-    # safe team (inference would merely confirm it) -- but never gate the
-    # recruiter behind mode or a narrow abstention-code predicate.
-    if _inference_declared(config) and not staffing.accepted:
-        parsed_proposal, stage_attempts, failure, recruiter_cache_hit = _recruit_ambiguous_plan(
-            request=ask,
+    if recruiter_cache_hit:
+        cache_hits.append("recruiter")
+    attempts.extend(stage_attempts)
+    if parsed_proposal is None:
+        return _abstained(
+            mode=mode,
             plan=plan,
-            snapshot=snapshot,
-            config=config,
-            context=context,
-            budget=budget,
-            invoker=invoker,
-            routing_context_fingerprint=routing_context_fingerprint,
+            proposal=None,
+            attempts=attempts,
+            codes=(failure,),
+            calls_used=budget.used,
+            cache_hits=cache_hits,
         )
-        if recruiter_cache_hit:
-            cache_hits.append("recruiter")
-        attempts.extend(stage_attempts)
-        if parsed_proposal is None:
-            return _abstained(
-                mode=mode,
-                plan=plan,
-                proposal=proposal,
-                attempts=attempts,
-                codes=(failure,),
-                calls_used=budget.used,
-                staffing=staffing,
-                cache_hits=cache_hits,
-            )
-        proposal = parsed_proposal
-        staffing = verify_staffing(
-            plan,
-            proposal,
-            snapshot.contracts,
-            context=context,
-            budget=staffing_budget_for_config(config),
-        )
+    proposal = parsed_proposal
+    staffing = verify_staffing(
+        plan,
+        proposal,
+        snapshot.contracts,
+        context=context,
+        budget=staffing_budget_for_config(config),
+    )
 
     policy_violations = plan_policy_violations(ask, plan)
     if policy_violations:
@@ -1665,17 +1581,6 @@ def plan_and_staff_workforce(
             cache_hits=cache_hits,
         )
 
-    if proposal is None:
-        return _abstained(
-            mode=mode,
-            plan=plan,
-            proposal=None,
-            attempts=attempts,
-            codes=recruited.reason_codes,
-            calls_used=budget.used,
-            staffing=staffing,
-            cache_hits=cache_hits,
-        )
     if not staffing.accepted:
         return _abstained(
             mode=mode,
