@@ -8,6 +8,8 @@ tags: [handoff, workforce, inference, budgets, evidence, recovery]
 related:
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
+  - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
+  - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/decisions/0114-fund-one-default-workforce-semantic-repair.md
   - docs/worklog/README.md
 supersedes: []
@@ -25,8 +27,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/180
 
 ## checkpoint
 
-- Work continues on `agent/ar-201-default-repair-budget` from exact merged main
-  `57c34e609dec06b15b73ceacdd6ee8cf75c94e95`.
+- PR 181 merged the repair as exact main revision
+  `ed4450e9cb55c656d70c94026b22f6caebbd45e1`; exact build
+  `0.1.0+ged4450e9cb55` is installed.
 - AR-200 trace `019fb31f-5da6-7dd0-a983-9b983f767b9f` is terminal `NO-GO` and
   will not be rerun or reinterpreted.
 - A focused test reproduced the two-call failure before implementation and now
@@ -34,6 +37,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/180
 - Two bounded local review passes are complete. The first corrected host-refresh
   ordering so generated timeouts follow the new effective budget; the second
   found no further authority, override, or fixed-evaluation control defect.
+- The operator set the persisted fast budget to three before refreshing Codex
+  and ZCode. Codex bundle `0.1.0+codex.2743f1b2ec20` serializes 185-second
+  hook timeouts; ZCode serializes 185000-millisecond timeouts.
+- Trial `ar201-ed4450e-ordinary-01` is terminal `NO-GO` and will not be rerun.
+- Work continues under AR-202 on
+  `agent/ar-202-recruiter-repair-convergence`.
 - Tracker issue 180 records this bounded follow-up.
 - Clean checkpoint `c604c47` plus ledger `94803c6` contains the complete source,
   test, decision, roadmap, and recovery slice.
@@ -41,9 +50,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/180
 
 ## completed-evidence
 
-- The terminal trace applied the planner, rejected the recruiter contract, and
-  stopped with `workforce_call_budget_exhausted` after two calls.
-- The trace recorded zero selected, loaded, or delegated specialists; zero
+- The preceding AR-200 trace applied the planner, rejected the recruiter
+  contract, and stopped with `workforce_call_budget_exhausted` after two calls.
+- That trace recorded zero selected, loaded, or delegated specialists; zero
   spawn/wait events; no accepted finalization; zero artifacts; and five failed
   product checks.
 - Fresh bundled, typed, loader, and validation defaults now agree on three fast
@@ -62,27 +71,39 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/180
 - Every routing, policy, delegation, CLI-startup, latency, and
   263/1,000/10,000-worker scale gate passes. Routing p95 is 4.328 ms,
   cache-hit p95 is 1.311 ms, and throughput is 97.06 calls/second.
+- The live trial recorded all three provider calls. Planner applied; recruiter
+  and recruiter repair were both `provider_response_contract_invalid` through
+  requested and resolved `gpt-5.6-luna` on `codex-subscription`.
+- Exact trace `019fb356-a245-7c40-897e-1f89bea151b5`, session
+  `019fb356-a1c7-7ca1-94dd-ce6ea9d355d8`, and prompt hash
+  `c2618e10519afb3ff610bb0fb54d063d0e4c731481a21d4b06ea1969e9162174`
+  are preserved. The exact activation snapshot is `proven: true`.
+- The route planned nine units but selected, loaded, and delegated zero
+  specialists. Finalization ended `retry_exhausted`, correction count is null,
+  the workspace is empty, and all five product checks failed.
 
 ## exact-blocker
 
-No human or trust blocker is active. The complete deterministic production gate
-is green. PR merge, exact tool install, deliberate current-profile budget
-update, refreshed Codex/ZCode bundles, and one ordinary canary remain.
+AR-201's scoped budget repair is exact-installed and live-proven reachable. The
+remaining goal is blocked by two new code defects, not by human trust:
+multi-unit recruiter repair did not converge (AR-202), and the product harness
+used the wrong proof projection while the isolated host reported read-only
+workspace policy (AR-203).
 
 ## same-task-continuity
 
-Keep this package limited to making the advertised repair reachable. Do not
-expand into provider-output tuning, broader latency work, or unrelated roster
-cleanup. Stop once if a genuine trust prompt cannot be bypassed.
+Preserve AR-201 as terminal evidence. Continue through AR-202, then AR-203; do
+not enlarge the call budget, revive deterministic online selection, or rerun
+this trial.
 
 ## next-bounded-work-package
 
-1. Commit this fast-verification checkpoint and its exact ledger.
-2. Open, inspect, and merge the authorized PR.
-3. Install the exact tool, deliberately set the local explicit fast budget to
-   three, then refresh Codex and ZCode so the generated timeout matches it.
-4. Run one new ordinary canary.
-5. Update the local report, tracker, roadmap, and capsules with the verdict.
+1. Update the local evidence page and tracker with the terminal trial.
+2. Implement AR-202's bounded all-failure recruiter repair and mutation proof.
+3. Repair AR-203's exact activation projection and trial-scoped workspace-write
+   proof.
+4. Run the named fast gate, merge, and exact-install Codex/ZCode.
+5. Only then spend one new ordinary canary against the combined repairs.
 
 ## verification
 

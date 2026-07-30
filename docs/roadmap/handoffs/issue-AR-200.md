@@ -8,6 +8,8 @@ tags: [handoff, workforce, hiring, mutation-testing, evidence, recovery]
 related:
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
+  - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
+  - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
@@ -37,8 +39,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
   `262e7e8c-4698-4e1c-8795-32cb0e8e852d`.
 - The one allowed ordinary canary is terminal `NO-GO`; it is preserved and will
   not be rerun or reinterpreted.
-- Follow-up implementation is bounded under AR-201 on
-  `agent/ar-201-default-repair-budget`.
+- AR-201 is merged, exact-installed, and live-proven to fund all three calls.
+  Follow-up implementation is bounded under AR-202 on
+  `agent/ar-202-recruiter-repair-convergence`; AR-203 separately owns the
+  product-harness defects.
 - Owner-untracked analysis and lock files remain untouched.
 
 ## completed-evidence
@@ -70,27 +74,25 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 
 ## exact-blocker
 
-The explicit inference decision contract is correct, but the installed default
-total budget of two calls funds only planner plus recruiter. If the recruiter is
-rejected, the promised one bounded semantic repair is unreachable. AR-201 owns
-the fresh-default repair and the later proof.
+The default budget defect is repaired. The terminal AR-201 trace used all three
+calls, but recruiter and recruiter repair both failed semantic validation. The
+product evaluator also consumed the wrong evidence projection and did not prove
+effective workspace-write authority. AR-202 and AR-203 own those blockers.
 
 ## same-task-continuity
 
-Do not reopen AR-200 edge cases or rerun its terminal canary. Continue only the
-AR-201 default-budget repair, preserving inference authority and explicit
-operator budget overrides.
+Do not reopen AR-200 edge cases or rerun either terminal canary. Continue only
+AR-202 recruiter convergence and AR-203 product-proof repair, preserving
+inference authority and explicit operator budget overrides.
 
 ## next-bounded-work-package
 
-1. Complete AR-201 review, focused tests, 10-mutation proof, and named fast gate.
-2. Merge and install the exact bounded-repair tool revision.
-3. Deliberately set this profile's explicit fast budget to three, then refresh
-   Codex and ZCode so their generated timeout matches the effective budget.
-4. Run one AR-201 ordinary canary and judge actual receipts, staffing,
-   delegation, finalization, header correction count, and artifacts.
-5. Update both issues, both capsules, tracker records, and the local evidence
-   page with the terminal verdict.
+1. Preserve the terminal AR-201 trial in the tracker and local evidence page.
+2. Implement AR-202's bounded all-failure recruiter repair and mutation proof.
+3. Repair AR-203's exact activation projection and trial-scoped workspace-write
+   proof.
+4. Run the named fast gate, merge, and exact-install Codex/ZCode.
+5. Spend only one new ordinary canary against the combined repairs.
 
 ## verification
 

@@ -14,6 +14,8 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
+  - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
+  - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/handoffs/issue-AR-200.md
 supersedes: []
 superseded_by: null
@@ -22,7 +24,7 @@ epic: testing
 issue_id: AR-200
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
-depends_on: [AR-119, AR-199, AR-201]
+depends_on: [AR-119, AR-199, AR-201, AR-202, AR-203]
 blocks: []
 ---
 
@@ -200,6 +202,18 @@ AR-201 records the bounded follow-up. Fresh defaults must fund planner,
 recruiter, and one semantic repair while preserving explicit lower budgets as
 operator-owned opt-outs. AR-200 remains open until the later ordinary canary
 proves the full workforce and delegation chain.
+
+AR-201 merged as `ed4450e9cb55c656d70c94026b22f6caebbd45e1`, was
+exact-installed, and refreshed Codex/ZCode with timeout evidence for all three
+calls. Trial `ar201-ed4450e-ordinary-01` proves the third call ran, but both the
+recruiter response and repair were rejected as
+`provider_response_contract_invalid`. The exact route snapshot is
+`agency.canary-activation-evidence.v1` with `proven: true`; nevertheless the
+product evaluator consumed the legacy summary and the isolated Codex response
+reported a read-only workspace policy. AR-202 and AR-203 own those distinct
+terminal defects. The trial remains `NO-GO`: zero selected, loaded, delegated,
+or accepted activity; correction count null; zero artifacts; and zero of five
+product checks.
 
 ## Approach
 
