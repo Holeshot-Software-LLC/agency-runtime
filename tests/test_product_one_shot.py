@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from agency_runtime.core.evals import product_one_shot
 from agency_runtime.core.evals.product_one_shot import (
     ProductHostExecution,
     product_trial_confirmation,
@@ -26,6 +27,7 @@ def _execution(*, contract: bool = True, status: str = "completed") -> ProductHo
         agency_evidence={"correlated": contract},
         requested_model="gpt-requested",
         actual_model="",
+        workspace_write_proven=True,
     )
 
 
@@ -130,3 +132,54 @@ def test_host_failure_or_missing_agency_evidence_cannot_pass(
     )
 
     assert not report.passed
+
+
+@pytest.mark.parametrize("write_proven", (False, None))
+def test_unproven_workspace_write_stops_before_product_grading(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    write_proven: bool | None,
+) -> None:
+    scenario = product_scenario("python-cli-service")
+    monkeypatch.setattr(
+        product_one_shot,
+        "validate_product_workspace",
+        lambda *_args, **_kwargs: pytest.fail("product grading ran without write proof"),
+    )
+
+    def executor(**_kwargs):
+        return ProductHostExecution(
+            host="codex",
+            mode="agency",
+            status="completed",
+            exit_code=0,
+            duration_ms=10,
+            profile_scope="isolated-profile",
+            runtime_contract_passed=False,
+            agency_evidence={"workspace_write": {"proven": False}},
+            workspace_write_proven=write_proven,
+            error="workspace_write_not_proven",
+        )
+
+    report = run_product_trial(
+        scenario,
+        trial_id="trial-write-failed",
+        host="codex",
+        mode="agency",
+        workspace=tmp_path,
+        timeout=60,
+        confirm=product_trial_confirmation(scenario.scenario_id, "codex", "agency"),
+        executor=executor,
+    )
+
+    assert not report.passed
+    assert report.validation == {
+        "schema_version": 1,
+        "scenario_id": scenario.scenario_id,
+        "workspace_digest": "",
+        "artifacts": [],
+        "checks": [],
+        "passed": False,
+        "status": "skipped",
+        "reason": "workspace_write_not_proven",
+    }

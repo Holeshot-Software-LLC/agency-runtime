@@ -6,15 +6,18 @@ import hashlib
 import math
 import os
 import shutil
+import stat
 import time
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, Final
 
 from agency_runtime.core import canary
+from agency_runtime.core.bounded_io import FileSizeLimitError, read_bounded_regular_file
 from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
 from agency_runtime.core.delegation.backends import run_bounded_process
 from agency_runtime.core.evals.product_one_shot import ProductHostExecution
+from agency_runtime.core.filesystem_trust import metadata_is_link_or_reparse_point
 from agency_runtime.core.installer import inspect_host_installation
 from agency_runtime.core.store.sqlite import Store, _default_db_path
 
@@ -39,6 +42,10 @@ CODEX_PRODUCT_EXEC_OPTIONS: Final[tuple[str, ...]] = (
 )
 PROVEN_PRODUCT_HOSTS: Final[frozenset[str]] = frozenset({"codex"})
 _MAX_RESPONSE_SUMMARY_CHARS: Final[int] = 256
+_WORKSPACE_WRITE_PROOF_FILE: Final[str] = ".agency-runtime-workspace-write-proof"
+_WORKSPACE_WRITE_PROOF_PREFIX: Final[str] = "agency-runtime-product-write-proof:"
+_WORKSPACE_WRITE_PROOF_SCHEMA: Final[str] = "agency.product-workspace-write-proof.v1"
+_WORKSPACE_TRUST_SCHEMA: Final[str] = "agency.codex-isolated-workspace-trust.v1"
 
 
 def _codex_options(model: str) -> tuple[str, ...]:
@@ -63,6 +70,131 @@ def _safe_error(prefix: str, exc: BaseException) -> str:
     return f"{prefix}: {type(exc).__name__}"[:_MAX_RESPONSE_SUMMARY_CHARS]
 
 
+def _prompt_with_workspace_write_proof(prompt: str, prompt_hash: str) -> tuple[str, str]:
+    token = _WORKSPACE_WRITE_PROOF_PREFIX + prompt_hash.removeprefix("sha256:")
+    wrapped = (
+        "[AGENCY PRODUCT HARNESS WORKSPACE-WRITE PROOF]\n"
+        "Before any other work, create the relative file "
+        f"`{_WORKSPACE_WRITE_PROOF_FILE}` containing this single line exactly:\n"
+        f"{token}\n"
+        "Leave that file in place for the harness. It is evidence only, not a product "
+        "artifact. Continue with the complete product request after creating it.\n"
+        "[END AGENCY PRODUCT HARNESS WORKSPACE-WRITE PROOF]\n\n"
+        f"{prompt}"
+    )
+    return wrapped, token
+
+
+def _prepare_workspace(workspace: Path) -> Path:
+    try:
+        resolved = workspace.expanduser().resolve(strict=True)
+        metadata = os.lstat(resolved)
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise ValueError("product workspace is unavailable") from exc
+    if metadata_is_link_or_reparse_point(metadata) or not stat.S_ISDIR(metadata.st_mode):
+        raise ValueError("product workspace must be a real directory")
+    proof = resolved / _WORKSPACE_WRITE_PROOF_FILE
+    try:
+        os.lstat(proof)
+    except FileNotFoundError:
+        return resolved
+    except OSError as exc:
+        raise ValueError("product workspace write proof cannot be inspected") from exc
+    raise ValueError("product workspace write proof must not preexist execution")
+
+
+def _workspace_identity(workspace: Path) -> str:
+    normalized = str(workspace)
+    if os.name == "nt":
+        normalized = normalized.casefold()
+    return "sha256:" + hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
+def _workspace_trust_evidence(
+    result: Mapping[str, Any],
+    *,
+    workspace: Path,
+) -> dict[str, Any]:
+    expected_hash = _workspace_identity(workspace)
+    candidate = result.get("workspace_trust")
+    proven = bool(
+        isinstance(candidate, Mapping)
+        and candidate.get("schema") == _WORKSPACE_TRUST_SCHEMA
+        and candidate.get("status") == "trusted"
+        and candidate.get("scope") == "exact-workspace"
+        and candidate.get("workspace_hash") == expected_hash
+        and candidate.get("persistent_profile_changed") is False
+    )
+    return {
+        "schema": _WORKSPACE_TRUST_SCHEMA,
+        "proven": proven,
+        "status": "trusted" if proven else "unproven",
+        "scope": "exact-workspace",
+        "workspace_hash": expected_hash,
+        "persistent_profile_changed": False if proven else None,
+        "reason": (
+            "exact_isolated_profile_projection"
+            if proven
+            else "workspace_trust_evidence_missing_or_mismatched"
+        ),
+    }
+
+
+def _workspace_write_evidence(workspace: Path, *, expected_token: str) -> dict[str, Any]:
+    evidence: dict[str, Any] = {
+        "schema": _WORKSPACE_WRITE_PROOF_SCHEMA,
+        "proven": False,
+        "relative_path": _WORKSPACE_WRITE_PROOF_FILE,
+        "reason": "proof_file_missing",
+        "removed_after_verification": False,
+    }
+    candidate = workspace / _WORKSPACE_WRITE_PROOF_FILE
+    try:
+        metadata = os.lstat(candidate)
+    except FileNotFoundError:
+        return evidence
+    except OSError:
+        evidence["reason"] = "proof_file_unavailable"
+        return evidence
+    if metadata_is_link_or_reparse_point(metadata) or not stat.S_ISREG(metadata.st_mode):
+        evidence["reason"] = "proof_file_unsafe"
+        return evidence
+    try:
+        payload = read_bounded_regular_file(
+            candidate,
+            limit=512,
+            label="product workspace-write proof",
+        )
+    except FileSizeLimitError:
+        evidence["reason"] = "proof_file_oversized"
+        return evidence
+    except OSError:
+        evidence["reason"] = "proof_file_unavailable"
+        return evidence
+    try:
+        content = payload.decode("utf-8")
+    except UnicodeDecodeError:
+        evidence["reason"] = "proof_file_invalid"
+        return evidence
+    if content not in {expected_token, expected_token + "\n", expected_token + "\r\n"}:
+        evidence["reason"] = "proof_file_content_mismatch"
+        return evidence
+    try:
+        candidate.unlink()
+    except OSError:
+        evidence["reason"] = "proof_file_cleanup_failed"
+        return evidence
+    if candidate.exists():
+        evidence["reason"] = "proof_file_cleanup_failed"
+        return evidence
+    evidence.update(
+        proven=True,
+        reason="exact_model_write_observed",
+        removed_after_verification=True,
+    )
+    return evidence
+
+
 def _failed_execution(
     *,
     host: str,
@@ -85,6 +217,7 @@ def _failed_execution(
         router="",
         response_summary="",
         error=error[:_MAX_RESPONSE_SUMMARY_CHARS],
+        workspace_write_proven=False,
     )
 
 
@@ -102,6 +235,7 @@ def _codex_product_backend(
     resolver: Callable[[str], str | None],
     runner: Callable[..., Any] | None,
     environ: Mapping[str, str],
+    workspace: Path,
 ) -> SafeCodexCanaryBackend:
     """Build the product backend without inheriting the shorter canary deadline."""
 
@@ -122,6 +256,7 @@ def _codex_product_backend(
         profile_scope="isolated-profile",
         exec_options=_codex_options(model),
         require_exact_activation_rollout=False,
+        trusted_workdir=str(workspace.resolve(strict=True)),
     )
 
 
@@ -154,12 +289,19 @@ def execute_product_host(
         raise ValueError(f"unsupported product trial mode: {normalized_mode}")
     if prompt_hash != _expected_prompt_hash(prompt):
         raise ValueError("product prompt hash does not match the executed prompt")
+    executed_prompt, write_proof_token = _prompt_with_workspace_write_proof(prompt, prompt_hash)
+    executed_prompt_hash = _expected_prompt_hash(executed_prompt)
 
     path = Path(db_path).expanduser() if db_path else _default_db_path()
     try:
+        resolved_workspace = _prepare_workspace(workspace)
         native = dict(inspector(normalized_host))
         store = Store(path)
-        before = store.recent_runtime_activity(limit=500)
+        before = (
+            None
+            if normalized_host == "codex" and normalized_mode == "agency"
+            else store.recent_runtime_activity(limit=500)
+        )
         source_environment = os.environ if environ is None else environ
         backend = _codex_product_backend(
             native=native,
@@ -170,6 +312,7 @@ def execute_product_host(
             master_enabled=normalized_mode == "agency",
             model=requested_model,
             environ=source_environment,
+            workspace=resolved_workspace,
         )
     except Exception as exc:
         return _failed_execution(
@@ -181,7 +324,11 @@ def execute_product_host(
         )
 
     try:
-        result = backend.execute(task=prompt, workdir=str(workspace), check=False)
+        result = backend.execute(
+            task=executed_prompt,
+            workdir=str(resolved_workspace),
+            check=False,
+        )
         if not isinstance(result, dict):
             raise TypeError("host result is not a mapping")
     except Exception as exc:
@@ -194,13 +341,27 @@ def execute_product_host(
         )
 
     try:
-        after = store.recent_runtime_activity(limit=500)
-        delta = canary._evidence_delta(before, after)
-        evidence = canary._evidence_summary(
-            delta,
-            normalized_host,
-            expected_query_hash=prompt_hash.removeprefix("sha256:"),
+        write_evidence = _workspace_write_evidence(
+            resolved_workspace,
+            expected_token=write_proof_token,
         )
+        trust_evidence = _workspace_trust_evidence(
+            result,
+            workspace=resolved_workspace,
+        )
+        if normalized_host == "codex" and normalized_mode == "agency":
+            evidence = store.get_canary_activation_snapshot(
+                host=normalized_host,
+                query_hash=executed_prompt_hash.removeprefix("sha256:"),
+            )
+        else:
+            after = store.recent_runtime_activity(limit=500)
+            delta = canary._evidence_delta(before, after)
+            evidence = canary._evidence_summary(
+                delta,
+                normalized_host,
+                expected_query_hash=executed_prompt_hash.removeprefix("sha256:"),
+            )
         proof = canary._evaluate_proof(
             normalized_host,
             result=result,
@@ -222,6 +383,10 @@ def execute_product_host(
         f"nonempty response captured ({len(response)} characters)" if response.strip() else ""
     )
     failures = tuple(str(item) for item in proof.failures)
+    if trust_evidence.get("proven") is not True:
+        failures = (*failures, "workspace_trust_not_proven")
+    if write_evidence.get("proven") is not True:
+        failures = (*failures, "workspace_write_not_proven")
     return ProductHostExecution(
         host=normalized_host,
         mode=normalized_mode,
@@ -229,11 +394,19 @@ def execute_product_host(
         exit_code=int(result.get("exit_code") or 0),
         duration_ms=_duration_ms(started),
         profile_scope=proof.result_scope,
-        runtime_contract_passed=proof.passed,
+        runtime_contract_passed=bool(
+            proof.passed
+            and trust_evidence.get("proven") is True
+            and write_evidence.get("proven") is True
+        ),
         agency_evidence={
             "mode": normalized_mode,
             "proof": proof.invocation,
             "runtime": evidence,
+            "workspace_trust": trust_evidence,
+            "workspace_write": write_evidence,
+            "product_prompt_hash": prompt_hash,
+            "executed_prompt_hash": executed_prompt_hash,
             "failures": list(failures),
         },
         requested_model=requested_model,
@@ -241,6 +414,7 @@ def execute_product_host(
         router="",
         response_summary=response_summary,
         error="; ".join(failures)[:_MAX_RESPONSE_SUMMARY_CHARS],
+        workspace_write_proven=write_evidence.get("proven") is True,
     )
 
 

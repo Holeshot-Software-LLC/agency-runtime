@@ -64,6 +64,17 @@ MAX_UNIT_SHORTLIST = 4
 _PLANNING_CAPABILITIES = tuple(sorted(CORE_CAPABILITY_IDS))
 _WORKFORCE_ROUTING_POLICY_VERSION = "1"
 _CACHE_CREDENTIAL_KEY = secrets.token_bytes(32)
+_NOMINATION_FAILURE_CODES = frozenset(
+    {
+        "candidate_outside_detail_cards",
+        "gap_with_safe_team",
+        "invalid_candidate",
+        "invalid_decision",
+        "invalid_ranking",
+        "missing_work_unit",
+        "staff_without_safe_team",
+    }
+)
 
 
 _PLANNER_SYSTEM = (
@@ -453,6 +464,30 @@ class WorkforceInferenceAttempt:
 
 
 @dataclass(frozen=True, slots=True)
+class _NominationFailure:
+    unit_id: str
+    code: str
+
+
+class _NominationValidationError(ValueError):
+    """Bounded recruiter failures containing only plan ids and allowlisted codes."""
+
+    def __init__(self, failures: Sequence[_NominationFailure]) -> None:
+        unique = tuple(dict.fromkeys(failures))
+        if not unique:
+            raise ValueError("nomination validation error requires at least one failure")
+        if any(
+            failure.code not in _NOMINATION_FAILURE_CODES
+            or re.fullmatch(r"unit-[a-z0-9][a-z0-9-]{0,62}", failure.unit_id) is None
+            for failure in unique
+        ):
+            raise ValueError("nomination validation failure is not allowlisted")
+        self.failures = unique
+        detail = ",".join(f"{failure.unit_id}={failure.code}" for failure in unique)
+        super().__init__(f"workforce nomination failures: {detail}")
+
+
+@dataclass(frozen=True, slots=True)
 class WorkforceRoutingOutcome:
     status: str
     mode: str
@@ -704,6 +739,8 @@ def _validation_detail(error: BaseException) -> str:
     detail = " ".join(str(error).split())
     if not detail or any(ord(character) < 32 for character in detail):
         return "structured response failed deterministic semantic validation"
+    if isinstance(error, _NominationValidationError):
+        return detail
     return detail[:256]
 
 
@@ -761,13 +798,22 @@ def _invoke_stage(
                     )
                 )
                 if semantic_attempt == 0:
-                    current_prompt = (
-                        f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
-                        "Your previous JSON matched the transport schema but failed a "
-                        f"deterministic semantic invariant: {detail}. Re-evaluate every identifier, "
-                        "dependency, ordering, uniqueness, plan binding, staffing decision, "
-                        "and typed coverage, then return one corrected JSON object only."
-                    )
+                    if isinstance(exc, _NominationValidationError):
+                        current_prompt = (
+                            f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
+                            f"The prior recruiter response failed these bounded invariants: {detail}. "
+                            "Return corrected rows for every listed planned unit. You may omit "
+                            "unlisted units because the runtime retains their validated rows. Do not "
+                            "add or reorder units. Return one corrected JSON object only."
+                        )
+                    else:
+                        current_prompt = (
+                            f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
+                            "Your previous JSON matched the transport schema but failed a "
+                            f"deterministic semantic invariant: {detail}. Re-evaluate every "
+                            "identifier, dependency, ordering, uniqueness, plan binding, staffing "
+                            "decision, and typed coverage, then return one corrected JSON object only."
+                        )
                     continue
                 break
             attempts.append(
@@ -1021,60 +1067,60 @@ def _validate_nomination_decisions(
     proposal: RecruiterProposal,
     decisions: Mapping[str, str],
 ) -> None:
+    failures: list[_NominationFailure] = []
     for unit, proposal_row in zip(plan.units, proposal.units, strict=True):
         decision = decisions[unit.unit_id]
         if decision == "staff" and not proposal_row.selected:
-            raise ValueError(f"workforce staff decision cannot form a safe team: {unit.unit_id}")
+            failures.append(_NominationFailure(unit.unit_id, "staff_without_safe_team"))
         if decision == "gap" and proposal_row.selected:
-            raise ValueError(f"workforce gap decision contains a safe team: {unit.unit_id}")
+            failures.append(_NominationFailure(unit.unit_id, "gap_with_safe_team"))
+    if failures:
+        raise _NominationValidationError(failures)
 
 
-def _proposal_from_nominations(
-    value: object,
+@dataclass(slots=True)
+class _NominationSemantics:
+    rankings: dict[str, tuple[tuple[str, float], ...]]
+    required: dict[str, frozenset[str]]
+    acceptable: dict[str, frozenset[str]]
+    forbidden: dict[str, frozenset[str]]
+    decisions: dict[str, str]
+    failures: tuple[_NominationFailure, ...]
+
+
+def _collect_nomination_semantics(
+    rows_by_unit: Mapping[str, Mapping[str, Any]],
     plan: WorkUnitPlan,
     snapshot: WorkforceIndexSnapshot,
     *,
     config: AgencyConfig,
     context: StaffingContext,
-    allowed_candidate_ids: frozenset[str] | None = None,
-) -> RecruiterProposal:
-    if not isinstance(value, Mapping) or set(value) != {"units"}:
-        raise ValueError("workforce nominations are invalid")
-    rows = value["units"]
-    if not isinstance(rows, list) or len(rows) != len(plan.units):
-        raise ValueError("workforce nominations must contain one row per work unit")
+    allowed_candidate_ids: frozenset[str] | None,
+) -> _NominationSemantics:
     contracts_by_id = {item.agent_id: item for item in snapshot.contracts}
     known = set(contracts_by_id)
-    rows_by_unit: dict[str, Mapping[str, Any]] = {}
-    for row in rows:
-        if not isinstance(row, Mapping) or set(row) != {
-            "unit_id",
-            "decision",
-            "ranked_semantic",
-        }:
-            raise ValueError("workforce nomination row is invalid")
-        unit_id = str(row["unit_id"] or "").strip().casefold()
-        if unit_id in rows_by_unit:
-            raise ValueError("workforce nominations contain duplicate work units")
-        rows_by_unit[unit_id] = row
     rankings: dict[str, tuple[tuple[str, float], ...]] = {}
     semantic_required: dict[str, frozenset[str]] = {}
     semantic_acceptable: dict[str, frozenset[str]] = {}
     semantic_forbidden: dict[str, frozenset[str]] = {}
     decisions: dict[str, str] = {}
-    if set(rows_by_unit) != {unit.unit_id for unit in plan.units}:
-        raise ValueError("workforce nominations do not match the plan")
+    failures: list[_NominationFailure] = []
     for expected_unit in plan.units:
-        row = rows_by_unit[expected_unit.unit_id]
+        row = rows_by_unit.get(expected_unit.unit_id)
+        if row is None:
+            failures.append(_NominationFailure(expected_unit.unit_id, "missing_work_unit"))
+            continue
         decision = str(row["decision"] or "").strip().casefold()
         if decision not in {"staff", "gap"}:
-            raise ValueError("workforce nomination decision is invalid")
-        decisions[expected_unit.unit_id] = decision
+            failures.append(_NominationFailure(expected_unit.unit_id, "invalid_decision"))
+            continue
         raw_ranks = row["ranked_semantic"]
         if not isinstance(raw_ranks, list) or not 1 <= len(raw_ranks) <= 16:
-            raise ValueError("workforce nomination ranking is invalid")
+            failures.append(_NominationFailure(expected_unit.unit_id, "invalid_ranking"))
+            continue
         scores: dict[str, float] = {}
         classifications: dict[str, str] = {}
+        invalid_candidate = False
         for item in raw_ranks:
             if not isinstance(item, Mapping) or set(item) != {
                 "agent_id",
@@ -1083,7 +1129,8 @@ def _proposal_from_nominations(
                 "positive_evidence",
                 "negative_evidence",
             }:
-                raise ValueError("workforce nomination candidate is invalid")
+                invalid_candidate = True
+                break
             agent_id = str(item["agent_id"] or "").strip().casefold()
             score = item["score"]
             classification = str(item["classification"] or "").strip().casefold()
@@ -1102,15 +1149,22 @@ def _proposal_from_nominations(
                 or (classification != "forbidden" and not positive)
                 or (agent_id in classifications and classifications[agent_id] != classification)
             ):
-                raise ValueError("workforce nomination candidate is invalid")
+                invalid_candidate = True
+                break
             scores[agent_id] = max(scores.get(agent_id, 0.0), float(score))
             classifications[agent_id] = classification
+        if invalid_candidate:
+            failures.append(_NominationFailure(expected_unit.unit_id, "invalid_candidate"))
+            continue
+        if allowed_candidate_ids is not None and set(scores) - allowed_candidate_ids:
+            failures.append(
+                _NominationFailure(expected_unit.unit_id, "candidate_outside_detail_cards")
+            )
+            continue
         ranked = _calibrated_rankings(
             scores,
             minimum_margin=config.workforce.min_margin,
         )
-        if allowed_candidate_ids is not None and set(scores) - allowed_candidate_ids:
-            raise ValueError("workforce nominations contain a candidate outside detail_cards")
         # ADR-0087: with broad-domain recall, the candidate pool is large (16+).
         # The recruiter is not required to rank every candidate — only the ones
         # it deems relevant. Forcing it to rank all 16+ would waste tokens and
@@ -1121,24 +1175,71 @@ def _proposal_from_nominations(
             contracts_by_id,
             context,
         )
+        decisions[expected_unit.unit_id] = decision
         rankings[expected_unit.unit_id] = tuple(ranked)
         semantic_required[expected_unit.unit_id] = required
         semantic_acceptable[expected_unit.unit_id] = acceptable
         semantic_forbidden[expected_unit.unit_id] = forbidden
+    return _NominationSemantics(
+        rankings=rankings,
+        required=semantic_required,
+        acceptable=semantic_acceptable,
+        forbidden=semantic_forbidden,
+        decisions=decisions,
+        failures=tuple(failures),
+    )
+
+
+def _proposal_from_nominations(
+    value: object,
+    plan: WorkUnitPlan,
+    snapshot: WorkforceIndexSnapshot,
+    *,
+    config: AgencyConfig,
+    context: StaffingContext,
+    allowed_candidate_ids: frozenset[str] | None = None,
+) -> RecruiterProposal:
+    if not isinstance(value, Mapping) or set(value) != {"units"}:
+        raise ValueError("workforce nominations are invalid")
+    rows = value["units"]
+    if not isinstance(rows, list) or not rows or len(rows) > len(plan.units):
+        raise ValueError("workforce nomination rows are invalid")
+    rows_by_unit: dict[str, Mapping[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, Mapping) or set(row) != {
+            "unit_id",
+            "decision",
+            "ranked_semantic",
+        }:
+            raise ValueError("workforce nomination row is invalid")
+        unit_id = str(row["unit_id"] or "").strip().casefold()
+        if unit_id not in {unit.unit_id for unit in plan.units} or unit_id in rows_by_unit:
+            raise ValueError("workforce nominations contain an invalid work unit")
+        rows_by_unit[unit_id] = row
+    semantics = _collect_nomination_semantics(
+        rows_by_unit,
+        plan,
+        snapshot,
+        config=config,
+        context=context,
+        allowed_candidate_ids=allowed_candidate_ids,
+    )
+    if semantics.failures:
+        raise _NominationValidationError(semantics.failures)
     proposal = build_deterministic_proposal(
         plan,
         snapshot.contracts,
-        rankings,
+        semantics.rankings,
         context=context,
         budget=staffing_budget_for_config(config),
-        semantic_required=semantic_required,
-        semantic_acceptable=semantic_acceptable,
-        semantic_forbidden=semantic_forbidden,
+        semantic_required=semantics.required,
+        semantic_acceptable=semantics.acceptable,
+        semantic_forbidden=semantics.forbidden,
         semantic_gap_units=frozenset(
-            unit_id for unit_id, decision in decisions.items() if decision == "gap"
+            unit_id for unit_id, decision in semantics.decisions.items() if decision == "gap"
         ),
     )
-    _validate_nomination_decisions(plan, proposal, decisions)
+    _validate_nomination_decisions(plan, proposal, semantics.decisions)
     # ADR-0087: inference explicitly decides whether each unit should be
     # staffed or is a real semantic gap. Deterministic policy verifies that the
     # decision agrees with typed coverage and eligibility, but never adds or
@@ -1195,18 +1296,33 @@ class _NominationAccumulator:
                 raise ValueError("workforce nominations contain an invalid work unit")
             response_ids.add(unit_id)
             self._rows[unit_id] = row
-        missing = [unit.unit_id for unit in self._plan.units if unit.unit_id not in self._rows]
-        if missing:
-            raise ValueError("workforce nominations are missing work units: " + ",".join(missing))
-        merged = {"units": [self._rows[unit.unit_id] for unit in self._plan.units]}
-        return _proposal_from_nominations(
-            merged,
+        semantics = _collect_nomination_semantics(
+            self._rows,
             self._plan,
             self._snapshot,
             config=self._config,
             context=self._context,
             allowed_candidate_ids=self._allowed_candidate_ids,
         )
+        if semantics.failures:
+            for failure in semantics.failures:
+                if failure.code != "missing_work_unit":
+                    self._rows.pop(failure.unit_id, None)
+            raise _NominationValidationError(semantics.failures)
+        merged = {"units": [self._rows[unit.unit_id] for unit in self._plan.units]}
+        try:
+            return _proposal_from_nominations(
+                merged,
+                self._plan,
+                self._snapshot,
+                config=self._config,
+                context=self._context,
+                allowed_candidate_ids=self._allowed_candidate_ids,
+            )
+        except _NominationValidationError as exc:
+            for failure in exc.failures:
+                self._rows.pop(failure.unit_id, None)
+            raise
 
 
 def _empty_staffing(code: str) -> StaffingDecision:

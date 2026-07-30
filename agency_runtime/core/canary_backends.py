@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+import os
 import re
 import stat
 from collections.abc import Callable, Mapping
@@ -178,6 +181,51 @@ def prepare_private_host_home(
     restrict_private_directory(host_home)
     _facade()._copy_bounded_auth(auth_source, host_home / auth_name, host=host)
     return host_home
+
+
+def project_isolated_codex_workspace_trust(
+    codex_home: Path,
+    *,
+    workdir: str,
+) -> dict[str, Any]:
+    """Trust one real workspace only inside one disposable Codex home."""
+
+    from agency_runtime.core.bounded_io import atomic_write_text, read_bounded_regular_file
+    from agency_runtime.core.configuration import restrict_private_file
+    from agency_runtime.core.filesystem_trust import metadata_is_link_or_reparse_point
+
+    try:
+        workspace = Path(workdir).expanduser().resolve(strict=True)
+        metadata = os.lstat(workspace)
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise ValueError("isolated Codex workspace is unavailable") from exc
+    if metadata_is_link_or_reparse_point(metadata) or not stat.S_ISDIR(metadata.st_mode):
+        raise ValueError("isolated Codex workspace must be a real directory")
+    normalized = str(workspace)
+    if os.name == "nt":
+        normalized = normalized.casefold()
+    config = codex_home / "config.toml"
+    if config.exists():
+        raise ValueError("isolated Codex config must not preexist workspace trust projection")
+    document = f'[projects.{json.dumps(normalized, ensure_ascii=False)}]\ntrust_level = "trusted"\n'
+    atomic_write_text(config, document)
+    restrict_private_file(config)
+    if (
+        read_bounded_regular_file(
+            config,
+            limit=16 * 1024,
+            label="isolated Codex config",
+        ).decode("utf-8")
+        != document
+    ):
+        raise RuntimeError("isolated Codex workspace trust projection changed during verification")
+    return {
+        "schema": "agency.codex-isolated-workspace-trust.v1",
+        "status": "trusted",
+        "scope": "exact-workspace",
+        "workspace_hash": "sha256:" + hashlib.sha256(normalized.encode("utf-8")).hexdigest(),
+        "persistent_profile_changed": False,
+    }
 
 
 def process_succeeded(result: Any) -> bool:
@@ -1001,6 +1049,7 @@ class SafeCodexCanaryBackend:
     exec_options: tuple[str, ...] | None = None
     require_exact_activation_rollout: bool = False
     hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None
+    trusted_workdir: str = ""
 
     def _exec_options(self) -> tuple[str, ...]:
         if self.exec_options is not None:
@@ -1257,6 +1306,16 @@ class SafeCodexCanaryBackend:
                 auth_name="auth.json",
                 host="Codex",
             )
+            workspace_trust: dict[str, Any] | None = None
+            if self.trusted_workdir:
+                expected_workdir = Path(self.trusted_workdir).expanduser().resolve(strict=True)
+                actual_workdir = Path(workdir).expanduser().resolve(strict=True)
+                if expected_workdir != actual_workdir:
+                    raise ValueError("isolated Codex invocation changed its trusted workspace")
+                workspace_trust = facade._project_isolated_codex_workspace_trust(
+                    codex_home,
+                    workdir=str(actual_workdir),
+                )
             env = facade._isolated_canary_environment(
                 self.source_env,
                 runtime_home,
@@ -1278,6 +1337,8 @@ class SafeCodexCanaryBackend:
             if failure is None:
                 failure = self._verify_plugin(workdir=workdir, env=env, deadline=deadline)
             if failure is not None:
+                if workspace_trust is not None:
+                    failure["workspace_trust"] = workspace_trust
                 return failure
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
@@ -1297,7 +1358,7 @@ class SafeCodexCanaryBackend:
                 input_text=task,
                 max_output_chars=256_000,
             )
-            return facade._codex_canary_record(
+            record = facade._codex_canary_record(
                 result,
                 rollout_root=(
                     codex_home / "sessions" if self.require_exact_activation_rollout else None
@@ -1307,6 +1368,9 @@ class SafeCodexCanaryBackend:
                     facade.time.time() if self.require_exact_activation_rollout else None
                 ),
             )
+            if workspace_trust is not None:
+                record["workspace_trust"] = workspace_trust
+            return record
 
 
 @dataclass(frozen=True, slots=True)
@@ -1497,6 +1561,7 @@ __all__ = [
     "managed_target",
     "prepare_private_host_home",
     "process_succeeded",
+    "project_isolated_codex_workspace_trust",
     "project_isolated_runtime_control",
     "remaining_timeout",
     "source_home",

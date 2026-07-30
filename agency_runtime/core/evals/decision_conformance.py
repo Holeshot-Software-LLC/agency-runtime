@@ -26,7 +26,12 @@ from agency_runtime.core.process_environment import least_privilege_subprocess_e
 SCHEMA: Final[str] = "agency-runtime.decision-conformance"
 VERSION: Final[int] = 1
 DEFAULT_TIMEOUT_SECONDS: Final[float] = 90.0
-_COPY_SUPPORT = ("conftest.py", "runtime_support.py", "__init__.py")
+_COPY_SUPPORT = (
+    "conftest.py",
+    "runtime_support.py",
+    "test_product_validation.py",
+    "__init__.py",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,12 +98,67 @@ MUTATIONS: Final[tuple[DecisionMutation, ...]] = (
         ),
         source_path="agency_runtime/core/workforce/inference.py",
         before="""        if decision == "staff" and not proposal_row.selected:
-            raise ValueError(f"workforce staff decision cannot form a safe team: {unit.unit_id}")""",
+            failures.append(_NominationFailure(unit.unit_id, "staff_without_safe_team"))""",
         after="""        if decision == "staff" and not proposal_row.selected:
             continue""",
         test_node=(
             "tests/test_workforce_inference.py::"
             "test_staff_decision_without_safe_team_gets_one_bounded_inference_repair"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="recruiter-validation-drops-later-unit-failures",
+        invariant=(
+            "One bounded recruiter repair receives every invalid planned unit, not only the first."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""    if failures:
+        raise _NominationValidationError(failures)
+
+
+@dataclass(slots=True)
+class _NominationSemantics:""",
+        after="""    if failures:
+        raise _NominationValidationError(failures[:1])
+
+
+@dataclass(slots=True)
+class _NominationSemantics:""",
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_recruiter_repair_receives_every_invalid_unit_and_preserves_valid_rows"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-falls-back-to-legacy-activity-summary",
+        invariant=(
+            "Codex Agency product trials consume the exact activation snapshot for the "
+            "executed prompt hash."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before="""        if normalized_host == "codex" and normalized_mode == "agency":
+            evidence = store.get_canary_activation_snapshot(
+                host=normalized_host,
+                query_hash=executed_prompt_hash.removeprefix("sha256:"),
+            )""",
+        after="""        if normalized_host == "codex" and normalized_mode == "agency":
+            evidence = store.recent_runtime_activity(limit=500)""",
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_agency_product_host_consumes_the_exact_activation_snapshot"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-grading-accepts-missing-write-proof",
+        invariant=(
+            "Product grading fails closed unless effective workspace-write evidence is true."
+        ),
+        source_path="agency_runtime/core/evals/product_one_shot.py",
+        before="        if execution.workspace_write_proven is not True",
+        after="        if execution.workspace_write_proven is False",
+        test_node=(
+            "tests/test_product_one_shot.py::"
+            "test_unproven_workspace_write_stops_before_product_grading[None]"
         ),
     ),
     DecisionMutation(

@@ -14,7 +14,10 @@ from pathlib import Path
 from typing import Any, Final
 
 from agency_runtime.core.evals.product_scenarios import ProductScenario
-from agency_runtime.core.evals.product_validation import validate_product_workspace
+from agency_runtime.core.evals.product_validation import (
+    PRODUCT_VALIDATION_SCHEMA_VERSION,
+    validate_product_workspace,
+)
 from agency_runtime.core.store.security import metadata_is_link_or_reparse_point
 
 PRODUCT_TRIAL_SCHEMA_VERSION: Final[int] = 1
@@ -39,6 +42,7 @@ class ProductHostExecution:
     router: str = ""
     response_summary: str = ""
     error: str = ""
+    workspace_write_proven: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,7 +179,20 @@ def run_product_trial(
         raise RuntimeError("product host executor returned invalid duration evidence")
     if execution.duration_ms > (bounded_timeout * 1000) + 1000:
         raise RuntimeError("product host executor exceeded its bounded duration evidence")
-    validation = validate_product_workspace(target, scenario).as_dict()
+    validation = (
+        {
+            "schema_version": PRODUCT_VALIDATION_SCHEMA_VERSION,
+            "scenario_id": scenario.scenario_id,
+            "workspace_digest": "",
+            "artifacts": [],
+            "checks": [],
+            "passed": False,
+            "status": "skipped",
+            "reason": "workspace_write_not_proven",
+        }
+        if execution.workspace_write_proven is not True
+        else validate_product_workspace(target, scenario).as_dict()
+    )
     projected = execution
     if execution.duration_ms == 0 and elapsed_ms > 0:
         projected = ProductHostExecution(

@@ -9,6 +9,8 @@ related:
   - docs/decisions/0114-fund-one-default-workforce-semantic-repair.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/handoffs/issue-AR-201.md
+  - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
+  - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -18,7 +20,7 @@ issue_id: AR-201
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/180
 depends_on: [AR-119]
-blocks: [AR-200]
+blocks: [AR-200, AR-202, AR-203]
 ---
 
 # AR-201: Fund the default workforce repair path
@@ -58,9 +60,24 @@ results while leaving the source checkout unchanged. The named Python spine
 passes 665 tests with 6 skips, all 109 dashboard UI tests pass, 603 Python files
 pass Ruff format, and 542 Markdown files validate. Every routing, policy,
 delegation, CLI-startup, latency, and 263/1,000/10,000-worker scale gate passes;
-routing p95 is 4.328 ms and cache-hit p95 is 1.311 ms. PR, exact tool
-installation, explicit current-profile budget update, Codex/ZCode refresh, and
-one new canary remain.
+routing p95 is 4.328 ms and cache-hit p95 is 1.311 ms. Those deterministic
+gates established the exact merge candidate later installed below.
+
+PR 181 merged as exact revision
+`ed4450e9cb55c656d70c94026b22f6caebbd45e1`, installed as build
+`0.1.0+ged4450e9cb55`. The operator deliberately set the persisted fast budget
+to three before Codex and ZCode refresh. Codex bundle
+`0.1.0+codex.2743f1b2ec20` uses 185-second hook timeouts and ZCode uses
+185000-millisecond timeouts.
+
+The one bounded trial `ar201-ed4450e-ordinary-01` is terminal `NO-GO`. It
+proves the repair call is now reachable: the planner applied, then recruiter
+calls two and three were both rejected as
+`provider_response_contract_invalid`. No specialist was selected, loaded, or
+delegated; no finalization was accepted; correction count is null; and the
+workspace failed all five checks. AR-202 owns recruiter convergence. AR-203
+owns the product evaluator's wrong evidence projection and unproven effective
+workspace-write policy.
 
 ## Approach
 
@@ -95,11 +112,11 @@ the default and explicit-override boundary.
   the exact regression that must kill it.
 - [x] Focused tests, the 10-mutation proof, and the named fast production gate
   pass on the exact source revision.
-- [ ] The PR is merged and the exact tool revision is installed.
-- [ ] This machine's explicit older fast budget is deliberately set to three
+- [x] The PR is merged and the exact tool revision is installed.
+- [x] This machine's explicit older fast budget is deliberately set to three
   before Codex and ZCode are refreshed from the exact tool revision.
-- [ ] The refreshed Codex and ZCode bundles use timeout evidence derived from
+- [x] The refreshed Codex and ZCode bundles use timeout evidence derived from
   the effective three-call budget.
 - [ ] One bounded ordinary Codex canary records accepted staffing, specialist
   launch/delegation, accepted finalization, and zero header corrections.
-- [ ] The local evidence page and tracker contain the terminal scoped verdict.
+- [x] The local evidence page and tracker contain the terminal scoped verdict.

@@ -496,6 +496,23 @@ version, plugin version, install ID, bundle digest, native state, or rollback
 change. Re-run a live canary only after reviewing those facts; do not edit the
 attestation manually.
 
+## Product evaluation reports workspace write not proven
+
+`agency eval product` requires an existing empty real workspace. For Codex,
+the evaluator creates a disposable profile that trusts only that exact
+workspace; it does not copy or edit the persistent profile's project-trust
+configuration. The host remains under `--sandbox workspace-write` with no
+additional write directory.
+
+The evaluated Codex invocation must create the harness sentinel before doing
+the product work. Do not create that file manually: a preexisting sentinel is a
+failed trial. Missing, null, mismatched, linked, oversized, or uncleanable
+evidence produces `workspace_write_not_proven` and skips product grading.
+Inspect `host_execution.agency_evidence.workspace_trust`,
+`workspace_write`, `product_prompt_hash`, and `executed_prompt_hash` in
+the JSON report. In Agency mode the runtime evidence must also be
+`agency.canary-activation-evidence.v1` for the exact executed prompt hash.
+
 ## Dashboard does not authenticate
 
 For an installed user service, inspect it and ask the CLI to open the current
