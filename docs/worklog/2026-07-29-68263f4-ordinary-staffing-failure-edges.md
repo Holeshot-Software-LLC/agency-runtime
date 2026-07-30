@@ -17,7 +17,7 @@ type: worklog
 commit: 68263f4
 short: 68263f4
 date: 2026-07-29
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/173
 related_issues:
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
 ---
