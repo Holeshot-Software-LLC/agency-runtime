@@ -312,8 +312,7 @@ def test_uninstall_parser_accepts_each_host_with_a_valid_plan_digest(host: str) 
     assert parsed.confirm_plan == "b" * 64
     assert parsed.dry_run is False
     assert parsed.json is True
-    assert parsed._operator_presence_family == "installation"
-    assert not hasattr(parsed, "_operator_presence_prepared_action")
+    assert not any(key.startswith("_operator_presence") for key in vars(parsed))
 
 
 @pytest.mark.parametrize(

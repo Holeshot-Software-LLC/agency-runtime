@@ -19,7 +19,6 @@ from agency_runtime.core.agent_activation import (
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.config import load_config
 from agency_runtime.core.config_binding import assert_store_config_binding
-from agency_runtime.core.operator_presence import OperatorPresenceError
 from agency_runtime.core.roster.bundled import (
     SOURCE_REPOSITORY,
     BundledRosterError,
@@ -460,24 +459,17 @@ def _roster_rollback_binding_primitives(
     """Return exact built-in primitives or reject an injected binding value."""
 
     if type(binding) is not _RosterRollbackBinding:
-        raise OperatorPresenceError("prepared roster rollback binding is invalid")
+        raise ValueError("prepared roster rollback binding is invalid")
     for field, value in zip(_RosterRollbackBinding._fields, binding, strict=True):
         if field in _ROSTER_ROLLBACK_STRING_FIELDS:
             if type(value) is not str:
-                raise OperatorPresenceError("prepared roster rollback binding is invalid")
+                raise ValueError("prepared roster rollback binding is invalid")
         elif field in _ROSTER_ROLLBACK_INTEGER_FIELDS:
             if type(value) is not int:
-                raise OperatorPresenceError("prepared roster rollback binding is invalid")
+                raise ValueError("prepared roster rollback binding is invalid")
         else:  # pragma: no cover - the exhaustive field test guards this invariant
             raise RuntimeError(f"unclassified roster rollback binding field: {field}")
     return tuple(binding)
-
-
-def _require_roster_rollback_authority(binding: _RosterRollbackBinding) -> None:
-    """Keep roster rollback closed after retirement of Agency-owned authority."""
-
-    _roster_rollback_binding_primitives(binding)
-    raise OperatorPresenceError("roster rollback is unavailable; no persistent change was made")
 
 
 def _roster_rollback_audit_evidence(
@@ -2262,19 +2254,18 @@ class RosterStoreMixin:
         self,
         prepared: _RosterRollbackBinding,
         *,
-        verified_primitives: tuple[str | int, ...],
+        prepared_primitives: tuple[str | int, ...],
     ) -> dict[str, Any]:
-        """Revalidate and apply only the coordinator's exact verified binding."""
+        """Revalidate and apply only the coordinator's exact prepared binding."""
 
-        prepared_primitives = _roster_rollback_binding_primitives(prepared)
+        observed_primitives = _roster_rollback_binding_primitives(prepared)
         if (
-            type(verified_primitives) is not tuple
-            or any(type(value) not in {str, int} for value in verified_primitives)
-            or prepared_primitives != verified_primitives
+            type(prepared_primitives) is not tuple
+            or any(type(value) not in {str, int} for value in prepared_primitives)
+            or observed_primitives != prepared_primitives
         ):
-            raise OperatorPresenceError(
-                "prepared roster rollback changed after operator verification; "
-                "no persistent change was made"
+            raise ValueError(
+                "prepared roster rollback changed after preparation; no persistent change was made"
             )
         assert_store_config_binding(self)
         config_path, database_path = _store_rollback_lexical_identities(self)
@@ -2353,11 +2344,12 @@ class RosterStoreMixin:
         expected_current_version: str,
         expected_current_hash: str,
     ) -> dict[str, Any]:
-        """Atomically restore one exact immutable revision when authority exists.
+        """Atomically restore one exact immutable revision through owner authority.
 
-        This is the sole supported positive rollback coordinator.  It exposes
-        no caller-supplied authorization value. Product execution remains
-        fail-closed until a replacement authority boundary is accepted.
+        This is the sole supported positive rollback coordinator. It freezes
+        exact Store, generation, current-revision, target-revision, activation-
+        authority, and workforce identities before the commit revalidates all
+        of them under an immediate transaction.
         """
 
         prepared = self._prepare_agent_revision_rollback(
@@ -2366,11 +2358,10 @@ class RosterStoreMixin:
             expected_current_version=expected_current_version,
             expected_current_hash=expected_current_hash,
         )
-        verified_primitives = _roster_rollback_binding_primitives(prepared)
-        _require_roster_rollback_authority(prepared)
+        prepared_primitives = _roster_rollback_binding_primitives(prepared)
         return self._commit_prepared_agent_revision_rollback(
             prepared,
-            verified_primitives=verified_primitives,
+            prepared_primitives=prepared_primitives,
         )
 
     def deactivate_agent(self, slug: str) -> None:

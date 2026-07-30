@@ -447,10 +447,10 @@ account to replace the launcher or a newly created child.
       hardening, manager-unavailable truth, start/stop/restart, uninstall,
       readiness, persistent-launcher drift refusal, and `--no-dashboard`
       without touching a real user manager.
-- [ ] Dashboard configuration tests cover bounded redacted read-only projections,
-      local-only enforcement, and rejection of every former configuration write.
-      CLI write contracts remain typed and revision-checked behind the separate
-      operator-presence boundary.
+- [ ] Dashboard configuration tests cover bounded redacted projections,
+      local-only enforcement, owner writes, and broker rejection without state
+      change. CLI and owner-dashboard write contracts remain typed, confirmed
+      where required, and revision-checked without a human-presence ceremony.
 - [ ] Dashboard live tests cover authenticated schema and metadata boundaries,
       stable revisions, one bounded activity read, stale-response cancellation,
       visibility lifecycle, terminal authentication, and capped retry behavior.

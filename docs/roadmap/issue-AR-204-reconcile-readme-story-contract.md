@@ -17,7 +17,9 @@ related:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
-supersedes: []
+supersedes:
+  - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
+  - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
 superseded_by: null
 type: issue
 epic: product

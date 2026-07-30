@@ -134,7 +134,7 @@ python scripts/docs_metadata.py --check
 python scripts/update_policy_availability.py --check
 python scripts/update_worklog.py --check
 python scripts/verify_docs.py
-python -m pytest tests/test_host_uninstall.py tests/test_cli_uninstall.py tests/test_windows_handle_rename.py tests/test_cli_parser_contract.py tests/test_cli_operator_presence.py tests/test_windows_operator_presence.py tests/test_windows_operator_presence_native_asset.py -q -W error
+python -m pytest tests/test_host_uninstall.py tests/test_cli_uninstall.py tests/test_windows_handle_rename.py tests/test_cli_parser_contract.py tests/test_cli_owner_authority.py tests/test_windows_operator_presence.py tests/test_windows_operator_presence_native_asset.py -q -W error
 python -m pytest tests/test_native_installer.py -k "rollback or toggle or native_installers_register_and_enable_with_host_lifecycle or unchanged_codex_reinstall" -q -W error
 python -m pytest tests/test_prepared_codex_install.py -k install_lock -q -W error
 node --test tests/dashboard_ui.test.mjs

@@ -322,13 +322,15 @@ host's plugin registry. Native control requires an inventory postcondition and
 may report `enablement_unverified` or a restart requirement instead of
 pretending success.
 
-## Roster rollback reports operator presence unavailable
+## Roster rollback rejects a prepared-state mismatch
 
-Roster rollback is unavailable and makes no persistent change. The former
-Agency-owned Windows Hello helper and its wheel payload were retired; do not
-restore or substitute that executable as a workaround. Refresh the current
-roster projection and use supported forward operations until rollback receives
-a separately designed authority boundary.
+Roster rollback is an owner CLI operation and does not require the retired
+Agency-owned Windows Hello helper. It prepares the exact Store identity, roster
+generation, current and target revisions, activation authority, and workforce
+projection, then revalidates them inside the committing transaction. A mismatch
+means another writer or configuration change made the prepared plan stale.
+Refresh the roster projection and rerun the explicit rollback with the current
+version and hash; do not reuse old compare-and-swap values.
 
 ## A host toggle reports a generation conflict
 

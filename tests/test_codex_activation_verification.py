@@ -14,7 +14,7 @@ import pytest
 from agency_runtime.adapters import hooks
 from agency_runtime.cli import install_commands
 from agency_runtime.cli import main as cli_main
-from agency_runtime.core import canary_proof, operator_presence, preflight
+from agency_runtime.core import canary_proof, preflight
 from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
 from agency_runtime.core.codex_activation_verification import (
     is_exact_codex_activation_verification,
@@ -141,7 +141,6 @@ def test_exact_cli_main_verification_reaches_only_one_bound_canary(
         emitted=emitted,
     )
     monkeypatch.setattr(cli_main, "_install_dependencies", lambda: dependencies)
-    monkeypatch.setattr(operator_presence, "_request_os_operator_presence", _forbidden)
     monkeypatch.setattr(install_commands, "_materialize_install_controls", _forbidden)
     monkeypatch.setattr(install_commands, "_run_prepared_codex_refresh", _forbidden)
     for name in (
@@ -200,13 +199,12 @@ def test_exact_cli_main_verification_reaches_only_one_bound_canary(
         ["install", "--agent", "codex", "--verify-activation", "--activation-timeout", "nan"],
     ],
 )
-def test_nearby_verification_shapes_fail_at_the_shared_presence_boundary(
+def test_nearby_verification_shapes_fail_the_closed_world_predicate(
     argv: list[str],
 ) -> None:
     parsed = cli_main.build_parser().parse_args(argv)
 
-    with pytest.raises(operator_presence.OperatorPresenceError, match="binding is invalid"):
-        operator_presence.request_for_namespace(parsed)
+    assert is_exact_codex_activation_verification(parsed) is False
 
 
 def test_future_public_install_flag_fails_the_closed_world_predicate() -> None:
@@ -216,8 +214,6 @@ def test_future_public_install_flag_fails_the_closed_world_predicate() -> None:
     parsed.future_install_flag = False
 
     assert is_exact_codex_activation_verification(parsed) is False
-    with pytest.raises(operator_presence.OperatorPresenceError, match="binding is invalid"):
-        operator_presence.request_for_namespace(parsed)
 
 
 def test_future_hidden_install_flag_fails_the_closed_world_predicate() -> None:
@@ -227,8 +223,6 @@ def test_future_hidden_install_flag_fails_the_closed_world_predicate() -> None:
     parsed._force_install = True
 
     assert is_exact_codex_activation_verification(parsed) is False
-    with pytest.raises(operator_presence.OperatorPresenceError, match="binding is invalid"):
-        operator_presence.request_for_namespace(parsed)
 
 
 def test_unpaired_surrogates_fail_closed_without_escaping_projection() -> None:
@@ -259,7 +253,6 @@ def test_prepared_refresh_remains_distinct_from_activation_verification() -> Non
     parsed = cli_main.build_parser().parse_args(["install", "--agent", "codex", "--no-dashboard"])
 
     assert is_exact_codex_activation_verification(parsed) is False
-    assert operator_presence.request_for_namespace(parsed) is None
 
 
 @pytest.mark.parametrize(

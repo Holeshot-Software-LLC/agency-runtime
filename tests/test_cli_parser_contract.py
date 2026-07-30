@@ -285,7 +285,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "f46bcd13715016ef6f64a8056d4351fa8873a9e1fabc6a32722d7d3545cfeec0"
+EXPECTED_MANIFEST_SHA256 = "5f68d4aa29628e4ffd7f40b0e92f8410fa17d61e8c7d95e8fab386f80755d774"
 
 
 def _handler(name: str):
@@ -469,8 +469,6 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
                 "verify_activation": False,
                 "activation_timeout": 180.0,
                 "json": False,
-                "_operator_presence_family": "installation",
-                "_operator_presence_dry_run_exempt": True,
                 "func": "cmd_install",
             },
         ),
@@ -484,8 +482,6 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
                 "stdin": True,
                 "prompt": False,
                 "clear": False,
-                "_operator_presence_family": "configuration",
-                "_operator_presence_dry_run_exempt": False,
                 "func": "cmd_config_set",
             },
         ),
@@ -515,8 +511,6 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
                 "dashboard_service_action": "install",
                 "dry_run": False,
                 "json": False,
-                "_operator_presence_family": "dashboard-service",
-                "_operator_presence_dry_run_exempt": True,
                 "func": "cmd_dashboard_service",
             },
         ),

@@ -69,7 +69,7 @@ substantive commit, and the required worklog ledger commit.
 ## verification
 
 ~~~text
-python -m pytest tests/test_native_installer.py tests/test_cli_parser_contract.py tests/test_cli_operator_presence.py -q -W error
+python -m pytest tests/test_native_installer.py tests/test_cli_parser_contract.py tests/test_cli_owner_authority.py -q -W error
 python -m pytest tests/test_platform_wheel.py tests/test_release_packaging.py tests/test_distribution_verifier_hardening.py tests/test_canonicalize_distributions.py -q -W error
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts

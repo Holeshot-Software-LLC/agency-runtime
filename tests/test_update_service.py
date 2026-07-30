@@ -467,7 +467,7 @@ def test_attended_plan_pins_the_resolved_sha_and_never_executes(
     assert plan["mode"] == "attended-external"
     assert plan["installer"] == "pip"
     assert plan["mutation_performed"] is False
-    assert plan["requires_operator_presence"] is True
+    assert plan["requires_owner_execution"] is True
     assert plan["commands"][0]["argv"][:4] == [interpreter, "-I", "-m", "pip"]
     assert f"@{_MAIN_SHA}" in plan["commands"][0]["display"]
     assert "@main" not in plan["commands"][0]["display"]

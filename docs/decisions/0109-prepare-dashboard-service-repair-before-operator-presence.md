@@ -13,9 +13,9 @@ related:
   - docs/decisions/0031-optional-user-dashboard-service-and-shared-configuration.md
   - docs/decisions/0051-bind-dashboard-runtime-publication-to-validated-filesystem-identities.md
   - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
+  - docs/decisions/0117-unify-owner-control-authority.md
   - docs/THREAT_MODEL.md
   - docs/TROUBLESHOOTING.md
-  - agency_runtime/core/operator_presence.py
   - agency_runtime/core/dashboard_service_install.py
   - docs/roadmap/handoffs/issue-AR-196.md
 supersedes: []

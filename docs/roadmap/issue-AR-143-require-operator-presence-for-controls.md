@@ -1,11 +1,13 @@
 ---
 title: "AR-143: Require genuine operator presence for persistent controls"
-status: open
+status: wont_do
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-07-30
 tags: [security, dashboard, browser, cli, controls, user-presence]
 related:
+  - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/decisions/0117-unify-owner-control-authority.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
   - docs/decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md
   - docs/THREAT_MODEL.md
@@ -19,14 +21,13 @@ related:
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - agency_runtime/server/dashboard.py
   - agency_runtime/dashboard/dashboard-actions.js
-  - agency_runtime/core/operator_presence.py
   - agency_runtime/cli/main.py
   - agency_runtime/cli/roster_commands.py
   - agency_runtime/core/store/roster.py
-  - tests/test_cli_operator_presence.py
+  - tests/test_cli_owner_authority.py
   - tests/test_prepared_roster_rollback.py
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
 type: issue
 epic: security
 issue_id: AR-143
@@ -37,6 +38,12 @@ blocks: [AR-180, AR-196]
 ---
 
 # AR-143: Require genuine operator presence for persistent controls
+
+> Superseded on 2026-07-30 by [AR-204](issue-AR-204-reconcile-readme-story-contract.md)
+> and [ADR-0117](../decisions/0117-unify-owner-control-authority.md). The
+> historical analysis below is preserved, but it no longer defines product
+> authority: normal owner CLI and owner-dashboard credentials may mutate while
+> hook, MCP, broker, and generated-host identities remain read-only.
 
 ## Problem
 

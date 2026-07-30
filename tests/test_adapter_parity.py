@@ -882,12 +882,12 @@ def test_openclaw_bridge_routes_user_prompts_and_bounds_revision_attempts(
     assert activity["finalizations"][0]["action"] == "retry_exhausted"
     assert store.get_run("bridge-turn")["status"] == "retry_exhausted"
     assert disabled["ok"] is False
-    assert disabled["error"] == "operator_presence_required"
+    assert disabled["error"] == "owner_control_required"
     assert disabled["runtime_enabled"] is True
     assert status["ok"] is True
     assert status["runtime_enabled"] is True
     assert enabled["ok"] is False
-    assert enabled["error"] == "operator_presence_required"
+    assert enabled["error"] == "owner_control_required"
     assert enabled["runtime_enabled"] is True
     assert enabled_status["runtime_enabled"] is True
     assert store.get_host_control("openclaw") == {

@@ -109,7 +109,7 @@ hosted workflow, tracker mutation, live Windows prompt, or service mutation.
 ## verification
 
 ~~~text
-python -m pytest tests/test_native_installer.py tests/test_cli_parser_contract.py tests/test_cli_operator_presence.py -q -W error
+python -m pytest tests/test_native_installer.py tests/test_cli_parser_contract.py tests/test_cli_owner_authority.py -q -W error
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 python scripts/docs_metadata.py --check

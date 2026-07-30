@@ -1,4 +1,4 @@
-"""Exact parser contract for the operator-owned full-suite installer."""
+"""Exact parser contract for the owner-controlled full-suite installer."""
 
 from __future__ import annotations
 
@@ -20,8 +20,6 @@ _FIELDS = frozenset(
         "no_dashboard",
         "activation_timeout",
         "json",
-        "_operator_presence_family",
-        "_operator_presence_dry_run_exempt",
         "func",
     }
 )
@@ -48,8 +46,6 @@ def is_exact_install_lifecycle(namespace: object) -> bool:
     timeout = getattr(namespace, "activation_timeout", None)
     if (
         getattr(namespace, "command", None) != "install"
-        or getattr(namespace, "_operator_presence_family", None) != "installation"
-        or getattr(namespace, "_operator_presence_dry_run_exempt", None) is not True
         or (profile is not None and profile not in PROFILES)
         or type(all_hosts) is not bool
         or (agent is not None and agent not in HOSTS)

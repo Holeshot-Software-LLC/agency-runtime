@@ -1336,7 +1336,7 @@ def attended_upgrade_plan(status: Mapping[str, Any]) -> dict[str, Any]:
             "Agency resolved an immutable source target but did not execute package or host "
             "mutations; review and run each command from an owner-controlled terminal"
         ),
-        "requires_operator_presence": True,
+        "requires_owner_execution": True,
         "requires_post_install_activation_check": True,
     }
 
