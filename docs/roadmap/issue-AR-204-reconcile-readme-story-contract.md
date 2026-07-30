@@ -108,11 +108,25 @@ dashboard-service recovery, host-control, security-turn, native-installer,
 upgrade, and release-contract boundaries. Ruff, formatting, metadata, policy,
 documentation, worklog-currentness, and staged whitespace checks passed.
 
+Commit `c8c8020` restores the owner dashboard surface end to end. The owner
+bearer now reaches the existing confirmation- and revision-bound mutation
+handlers; the broker bearer receives `403 owner control required` before its
+bounded request body can reach a handler. The packaged client again exposes
+configuration, maintenance, master, host, roster, workforce, and hiring
+controls while retaining current request correlation, lifecycle cancellation,
+bounded collections, activation disclosure, and stale-Store interlocks.
+
+The complete dashboard client suite passed 110 tests, including exact request
+bodies for all eight mutation endpoints. The dashboard authentication and
+server suite passed 145 tests with three platform skips. The restored HTML is
+byte-identical to the last owner-capable pre-regression Git blob, so no
+display-truncated or hand-reconstructed shell content remains.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired
   Agency-owned human-presence verifier.
-- [ ] The owner dashboard exposes the same supported configuration and runtime
+- [x] The owner dashboard exposes the same supported configuration and runtime
   controls as the CLI, while broker, hook, and MCP identities cannot mutate.
 - [x] `agency dashboard service open` can ensure an owned default-installed
   service is healthy and open it without an unavailable-presence error.

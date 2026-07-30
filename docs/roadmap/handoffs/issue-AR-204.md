@@ -17,7 +17,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-204
 branch: codex/ar-203-readme-story-final-proof
-evidence_commit: ffec1027ad18dee38469e710cd38049c00e3c9e2
+evidence_commit: c8c8020e43f565392fa63dfab46e2c6a4a4c0a51
 minimum_ledger_commit: fe68f86e36a2f2d82ae681d02c67ae5d4a0e6a06
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
@@ -35,6 +35,9 @@ acceptance; this file records only current proof and the next package.
 - The owner resolved all nine product ambiguities on 2026-07-30.
 - Commit `ffec102` implements the first bounded package: normal owner CLI and
   dashboard-service operations no longer enter the retired presence verifier.
+- Commit `c8c8020` completes the second bounded package: owner dashboard
+  controls dispatch through the same governed handlers while the broker stays
+  read-only.
 - Tracker [#189](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189)
   records AR-204 under `epic:product`.
 - AR-143 and AR-196 are `wont_do` and explicitly superseded by AR-204; their
@@ -63,13 +66,20 @@ acceptance; this file records only current proof and the next package.
   specialist injection, delegation, or finalization.
 - The owner explicitly authorized Codex's supported hook-trust bypass for this
   session. Bypassed evidence must never be labeled trusted.
+- The owner bearer reaches all eight dashboard mutation endpoints. Exact
+  confirmation, config revision, and host/master generation payloads are
+  client-tested; stale Store identity still disables affected controls.
+- The broker bearer receives `403 owner control required` for every mutation
+  endpoint and authority files remain byte-for-byte unchanged.
+- Dashboard verification is green: 110 client tests and 145 server/auth tests,
+  with three expected platform skips. Ruff, format, and diff checks for the
+  changed Python boundary pass.
 
 ## exact-blocker
 
-The owner CLI boundary is repaired. Current production still violates the
-contract at dashboard owner/broker dispatch and UI controls, offline staffing,
-native activation propagation, response correction, and rendered dashboard
-proof boundaries.
+Owner CLI and dashboard authority are repaired. Current production still
+violates the contract at offline staffing, native activation propagation,
+response correction, and rendered dashboard proof boundaries.
 
 ## same-task-continuity
 
@@ -79,12 +89,12 @@ the owner-untracked analysis draft and `uv.lock`.
 
 ## next-bounded-work-package
 
-1. Allow bounded dashboard mutations only for the owner bearer and keep the
-   broker bearer read-only.
-2. Restore the owner configuration/runtime/governance client controls removed
-   by the read-only production gate.
-3. Run focused dashboard server, auth-boundary, transaction, and UI tests.
-4. Checkpoint before beginning inference-only staffing.
+1. Remove deterministic specialist/team/hiring decisions from substantive
+   routing while preserving deterministic recall, eligibility, and validation.
+2. Make missing or invalid workforce inference fail loudly with no selected,
+   recommended, delegated, or hired specialist.
+3. Run focused routing, workforce, hiring, and decision-conformance tests.
+4. Checkpoint before native activation propagation work.
 
 ## verification
 
@@ -96,6 +106,8 @@ python -m pytest tests/test_dashboard_service.py tests/test_native_installer.py 
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 python scripts/verify_docs.py
+node --test tests/dashboard_ui.test.mjs
+python -m pytest tests/test_dashboard_auth_boundary_regression.py tests/test_dashboard.py -q -W error
 git diff --check
 ~~~
 
