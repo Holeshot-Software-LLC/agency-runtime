@@ -112,7 +112,12 @@ or invalid results and unchanged source. The post-review named fast gate passes:
 675 Python tests with 6 skipped, 109 dashboard UI tests, routing evaluation
 1.3.0 with every gate green, documentation validation for 552 files, and Ruff
 check plus format validation for all 603 Python inputs. Local commit `b45bd28`
-freezes that reviewed tree pending its replacement pull request.
+froze that reviewed tree. [PR 188](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/188)
+merged it with commit-preserving ancestry as exact main revision
+`5e3fab622b75f257e0ab4b74f1cc2c6d43b1d748`. The single Codex review P1
+named an unreachable synthetic `b2f414d`; the remote graph proves `b45bd28`
+and `c8bed05` are ancestors of the PR head, and GitHub reports no repository
+commit for that synthetic ID. Exact build `0.1.0+g5e3fab622b75` is installed.
 
 ## Approach
 
@@ -170,5 +175,5 @@ ADR-0114 limits fast mode to one bounded semantic repair.
 - [x] Focused tests pass 108 cases with 1 skipped, and 23/23
   decision-conformance mutations are killed on the current source revision.
 - [x] The named fast production gate passes on the post-review source revision.
-- [ ] The post-review revision is merged and exact-installed before the
+- [x] The post-review revision is merged and exact-installed before the
   one replacement ordinary canary.

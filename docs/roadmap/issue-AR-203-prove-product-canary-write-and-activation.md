@@ -178,7 +178,18 @@ results and unchanged source. Its named fast gate passes 675 Python tests with
 6 skipped, 109 dashboard UI tests, routing evaluation 1.3.0 with every gate
 green, documentation validation for 552 files, and Ruff check plus format
 validation for all 603 Python inputs. Local commit `b45bd28` freezes that
-reviewed tree pending its replacement pull request.
+reviewed tree. [PR 188](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/188)
+merged it with commit-preserving ancestry as exact main revision
+`5e3fab622b75f257e0ab4b74f1cc2c6d43b1d748`; its only Codex review P1 named
+an unreachable synthetic commit and was disproven by the remote graph plus the
+GitHub commit API.
+
+Exact build `0.1.0+g5e3fab622b75` is now installed. Codex refresh install ID
+is `a352175a-b4e9-456e-973c-90e76ddb77da`; ZCode is registered; the dashboard
+is owned, active, manifest-current, drift-free, and reachable. Codex activation
+preflight observed all eight expected events enabled but all eight hashes
+`modified`, with zero trusted and zero managed. It persisted no attestation
+and attempted no model call.
 
 The delivery outcome is frozen as "README's main story works in reality" for
 the ordinary Codex path on this machine. Each package stops at its first
@@ -255,7 +266,7 @@ demonstrates both mismatches.
 - [x] The post-review repair passes 108 focused tests with 1 skipped and kills
   23/23 decision-conformance mutations.
 - [x] The post-review repair passes the named fast gate.
-- [ ] The post-review repair merges and is exact-installed for Codex, ZCode,
+- [x] The post-review repair merges and is exact-installed for Codex, ZCode,
   and the dashboard.
 - [x] The dashboard service is installed and locally reachable.
 - [ ] An attended browser opens and renders the authenticated dashboard page.

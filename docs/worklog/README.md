@@ -377,6 +377,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `26a3911` | 2026-07-30 | Merge pull request #187 from Holeshot-Software-LLC/agent/ar-203-readme-story-proof | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
 | `b45bd28` | 2026-07-30 | fix(workforce): bind recruiter repair evidence | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | [detail](2026-07-30-b45bd28-bind-recruiter-repair-evidence.md) |
 | `c8bed05` | 2026-07-30 | docs(roadmap): checkpoint PR 187 review repair | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
+| `5e3fab6` | 2026-07-30 | Merge pull request #188 from Holeshot-Software-LLC/agent/ar-203-readme-story-live-proof | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

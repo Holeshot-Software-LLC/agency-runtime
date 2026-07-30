@@ -18,9 +18,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-202
-branch: agent/ar-203-readme-story-live-proof
-evidence_commit: b45bd28f6b82f4915e81b7b47c20f34a8e3b521b
-minimum_ledger_commit: d01338d7cb32e3880377b1c1487142916dd45a70
+branch: codex/ar-203-readme-story-final-proof
+evidence_commit: 5e3fab622b75f257e0ab4b74f1cc2c6d43b1d748
+minimum_ledger_commit: 650f6d625f1d1467af26661abba217d0f671c68e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 ---
@@ -64,6 +64,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
   dashboard UI 109 passed; routing evaluation 1.3.0 passed every gate;
   documentation validated 552 files; Ruff checked and format-validated all 603
   Python inputs.
+- PR 188 merged with commit-preserving ancestry as exact main revision
+  `5e3fab622b75f257e0ab4b74f1cc2c6d43b1d748`. Its only Codex P1 named a
+  synthetic commit absent from GitHub; the actual remote graph preserves both
+  ledgered commits. Hosted jobs again received no usable runner because of the
+  account payment/spending limit.
+- Exact build `0.1.0+g5e3fab622b75` is installed. Codex and ZCode refreshed;
+  the dashboard is owned, enabled, active, current, drift-free, and reachable.
+- Codex preflight found all eight events enabled and all eight hashes modified,
+  with zero trusted. It attempted no model call and persisted no attestation.
 - Owner-untracked analysis and lock files remain untouched.
 
 ## completed-evidence
@@ -83,10 +92,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 
 ## exact-blocker
 
-The post-review P1 repair is fast-green and frozen in local commit `b45bd28`,
-but it is not yet pushed, reviewed in its replacement PR, merged, or
-exact-installed. The installed PR 187 build is invalidated before live use; do
-not ask the owner to trust it or spend the replacement trial.
+The final build is installed and locally verified. Codex hook trust is the
+first remaining boundary and requires the owner in a fresh terminal TUI.
 
 ## same-task-continuity
 
@@ -96,12 +103,9 @@ existing specialists form a safe team.
 
 ## next-bounded-work-package
 
-1. Push `b45bd28`, open its replacement PR, and keep only findings that
-   invalidate this bounded repair in scope.
-2. Merge and exact-install the accepted revision for Codex, ZCode, and
-   dashboard.
-3. Ask the owner to trust the final Codex hook hashes once, then run one
-   replacement trial. It must accept at least one specialist/team for
+1. Ask the owner once to trust the final eight Codex hook hashes.
+2. Verify exact activation without reinstalling.
+3. Run one replacement trial. It must accept at least one specialist/team for
    the fixed prompt, or record a defensible gap and hiring decision.
 4. Stop for owner direction if the same recruiter boundary fails again.
 
