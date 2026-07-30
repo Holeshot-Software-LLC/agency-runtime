@@ -9,6 +9,7 @@ const CHARTS_SOURCE = readFileSync(CHARTS_PATH, "utf8");
 await import(pathToFileURL(CHARTS_PATH).href);
 const AgencyCharts = globalThis.AgencyCharts;
 const APP_PATH = fileURLToPath(new URL("../agency_runtime/dashboard/app.js", import.meta.url));
+const APP_SOURCE = readFileSync(APP_PATH, "utf8");
 const APP_URL = pathToFileURL(APP_PATH).href;
 const ACTIONS_SOURCE = readFileSync(
   fileURLToPath(new URL("../agency_runtime/dashboard/dashboard-actions.js", import.meta.url)),
@@ -695,7 +696,7 @@ test("app.js renders provider configuration without reflecting stored API keys",
   assert.equal(operations[0].action, "replace");
   assert.equal(operations[0].value, "replacement-secret");
 
-  assert.equal(harness.api.saveConfig, undefined);
+	assert.equal(typeof harness.api.saveConfig, "function");
   assert.throws(
     () => harness.api.appendSecretOperation([], "judge.api_key", "new", true),
     /either a new value or clear/i,
@@ -975,8 +976,13 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
   assert.match(text, /Loaded hiring case metadata/);
   assert.match(text, /applied · typescript-application-engineer/);
   assert.match(text, /Showing 12 of 14 loaded lifecycle and outcome records/);
-  assert.deepEqual(harness.node("workforce-action-kind").options, []);
-  assert.equal(harness.node("workforce-action-form").hidden, true);
+	assert.deepEqual(
+		harness.node("workforce-action-kind").options.map((option) => option.value),
+		["promote", "disable", "suspend", "retire", "merge"],
+	);
+	assert.equal(harness.node("workforce-action-form").hidden, false);
+	assert.equal(harness.node("workforce-action-worker").value, "typescript-application-engineer");
+	assert.equal(harness.node("workforce-action-revision").value, "2");
 
   harness.api.state.selectedWorkerDetail.lineage_total_count = "7";
   harness.api.state.selectedWorkerDetail.lineage_truncated = true;
@@ -994,9 +1000,13 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
     /1 hiring records shown \(bounded; total unavailable\)/,
   );
 
-  harness.api.state.selectedWorkerDetail.worker.state = "disabled";
-  harness.api.renderWorkerDetail();
-  assert.deepEqual(harness.node("workforce-action-kind").options, []);
+	harness.api.state.selectedWorkerDetail.worker.state = "disabled";
+	harness.api.renderWorkerDetail();
+	assert.deepEqual(
+		harness.node("workforce-action-kind").options.map((option) => option.value),
+		["enable", "suspend", "retire", "merge"],
+	);
+	assert.equal(harness.node("workforce-action-form").hidden, false);
 
   harness.api.state.selectedWorkerDetail.worker.state = "retired";
   harness.api.renderWorkerDetail();
@@ -1865,15 +1875,15 @@ test("Route Lab UI refuses duplicate and oversized host inventories before POST"
   }
 });
 
-test("read-only settings surface materializes the ZCode adapter field", () => {
-  const harness = createAppHarness(() => {
-    throw new Error("read-only surface setup does not fetch");
+test("owner settings surface materializes the ZCode adapter field", () => {
+	const harness = createAppHarness(() => {
+		throw new Error("owner surface setup does not fetch");
   });
   const grid = new FakeNode("adapter-grid");
   harness.missing("config-adapter-zcode");
   harness.select(".adapter-grid", [grid]);
 
-  assert.equal(harness.api.configureReadOnlySurface(), true);
+	assert.equal(harness.api.configureOwnerSurface(), true);
   assert.equal(grid.children.length, 1);
   const [label] = grid.children;
   assert.equal(label.textContent, "ZCode");
@@ -2359,14 +2369,22 @@ test("app.js roster and empty evidence renderers expose actionable, scoped contr
 
   harness.api.renderRoster();
   assert.equal(harness.node("roster-count").textContent, "2 enabled · 3 total");
-  const rosterNodes = descendants(harness.node("roster-grid"));
-  assert.ok(rosterNodes.some((node) => node.textContent === "no capability tags"));
-  assert.ok(rosterNodes.some((node) => node.className === "agent-card disabled"));
-  const agentButtons = rosterNodes.filter((node) => node.type === "button");
-  assert.equal(agentButtons.length, 0);
-  const snapshotNodes = descendants(harness.node("snapshot-list"));
-  const snapshotButtons = snapshotNodes.filter((node) => node.type === "button");
-  assert.deepEqual(snapshotButtons, []);
+	const rosterNodes = descendants(harness.node("roster-grid"));
+	assert.ok(rosterNodes.some((node) => node.textContent === "no capability tags"));
+	assert.ok(rosterNodes.some((node) => node.className === "agent-card disabled"));
+	const agentButtons = rosterNodes.filter((node) => node.type === "button");
+	assert.deepEqual(agentButtons.map((node) => node.textContent), [
+		"disable",
+		"enable",
+		"always enabled",
+	]);
+	assert.equal(agentButtons[0].disabled, false);
+	assert.equal(agentButtons[1].disabled, false);
+	assert.equal(agentButtons[2].disabled, true);
+	const snapshotNodes = descendants(harness.node("snapshot-list"));
+	const snapshotButtons = snapshotNodes.filter((node) => node.type === "button");
+	assert.deepEqual(snapshotButtons.map((node) => node.textContent), ["approve", "activate"]);
+	assert.ok(snapshotButtons.every((node) => node.disabled === false));
 
   harness.api.state.activity = {};
   harness.api.renderEvidence("delegations");
@@ -2953,10 +2971,14 @@ test("store identity drift stays visible and disables routing, roster, and host 
     runtime_control_generation: 1,
   }];
   harness.api.renderRouteHosts();
-  harness.api.renderHosts();
-  const hostButtons = descendants(harness.node("host-grid"))
-    .filter((node) => node.type === "button");
-  assert.deepEqual(hostButtons.map((node) => node.id), ["uninstall-copy-button"]);
+	harness.api.renderHosts();
+	const hostButtons = descendants(harness.node("host-grid"))
+		.filter((node) => node.type === "button");
+	assert.equal(hostButtons.length, 2);
+	assert.equal(hostButtons[0].textContent, "Restart required");
+	assert.equal(hostButtons[0].disabled, true);
+	assert.equal(hostButtons[0].listeners.size, 0);
+	assert.equal(hostButtons[1].id, "uninstall-copy-button");
 
   harness.api.state.roster = [{
     agent_slug: "reviewer",
@@ -2973,10 +2995,14 @@ test("store identity drift stays visible and disables routing, roster, and host 
   harness.api.renderRoster();
   const rosterButtons = descendants(harness.node("roster-grid"))
     .filter((node) => node.type === "button");
-  const snapshotButtons = descendants(harness.node("snapshot-list"))
-    .filter((node) => node.type === "button");
-  assert.deepEqual(rosterButtons, []);
-  assert.deepEqual(snapshotButtons, []);
+	const snapshotButtons = descendants(harness.node("snapshot-list"))
+		.filter((node) => node.type === "button");
+	assert.equal(rosterButtons.length, 1);
+	assert.equal(rosterButtons[0].disabled, true);
+	assert.equal(rosterButtons[0].listeners.size, 0);
+	assert.equal(snapshotButtons.length, 1);
+	assert.equal(snapshotButtons[0].disabled, true);
+	assert.equal(snapshotButtons[0].listeners.size, 0);
 
   const callsBeforeBlockedActions = calls.length;
   await harness.api.runRoute();
@@ -4021,9 +4047,17 @@ test("app.js renders sparse and changing runtime evidence defensively", () => {
     { executable_discovered: true, host: "enabled", inspection_status: "complete", runtime_control_generation: 0, runtime_enabled: true },
     { executable_discovered: true, host: "disabled", inspection_status: "complete", runtime_control_generation: 0, runtime_enabled: false },
   ];
-  harness.api.renderHosts();
-  const buttons = descendants(harness.node("host-grid")).filter((node) => node.type === "button");
-  assert.deepEqual(buttons.map((node) => node.id), ["uninstall-copy-button"]);
+	harness.api.renderHosts();
+	const buttons = descendants(harness.node("host-grid")).filter((node) => node.type === "button");
+	assert.deepEqual(buttons.map((node) => node.textContent), [
+		"State unknown",
+		"Disable",
+		"Enable",
+		"Copy uninstall preview",
+	]);
+	assert.equal(buttons[0].disabled, true);
+	assert.equal(buttons[1].disabled, false);
+	assert.equal(buttons[2].disabled, false);
 
   harness.api.state.activity = {
     finalizations: [{ action: "", missing: [], trace_id: "new" }],
@@ -5947,78 +5981,285 @@ test("dashboard update surface rejects cross-field and target-identity mismatche
   assert.match(LIVE_SOURCE, /safeUpdateTargetUrl/);
 });
 
-test("authenticated dashboard is a read-only monitoring surface with no mutation request client", () => {
-  const mutationEndpoints = [
+async function acceptOwnerConfirmation(harness, pending, phrase) {
+  await Promise.resolve();
+  assert.equal(harness.api.state.confirmation?.phrase, phrase);
+  harness.node("confirmation-input").value = phrase;
+  harness.api.finishConfirmation(true);
+  await pending;
+}
+
+test("owner dashboard controls dispatch confirmed revision-bound mutations", async () => {
+  const calls = [];
+  const mutationPaths = new Set([
     "/api/agents/toggle",
-    "/api/config\"",
+    "/api/config",
     "/api/hiring/approve",
     "/api/hosts/toggle",
     "/api/maintenance/trim",
     "/api/roster/action",
     "/api/runtime/toggle",
     "/api/workforce/action",
-  ];
-  for (const endpoint of mutationEndpoints) assert.doesNotMatch(ACTIONS_SOURCE, new RegExp(endpoint));
-  for (const callback of ["toggleAgent", "toggleHost", "rosterAction", "hiringApprove"]) {
-    assert.doesNotMatch(RENDER_SOURCE, new RegExp(`callbacks\\.${callback}`));
-  }
-  for (const id of ["trim-button", "trim-confirm", "trim-days"]) {
-    assert.doesNotMatch(INDEX_SOURCE, new RegExp(`id="${id}"`));
-  }
-  assert.match(INDEX_SOURCE, /Attended maintenance/);
-  assert.match(INDEX_SOURCE, /dashboard cannot delete runtime evidence/);
-
-  const harness = createAppHarness(() => {
-    throw new Error("read-only surface must not request mutations");
+  ]);
+  const harness = createAppHarness(async (path, options = {}) => {
+    calls.push({ path, options });
+    if (path === "/api/live?limit=100") {
+      return jsonResponse(200, {
+        activity: {},
+        master: {
+          enabled: false,
+          generation: 8,
+          schema_version: 1,
+          source: "dashboard",
+          updated_at: "2026-07-30T12:00:00Z",
+        },
+        overview: { status: "ok" },
+        revision: `owner-live-${calls.length}`,
+        sampled_at: "2026-07-30T12:00:00Z",
+        schema_version: 1,
+      });
+    }
+    if (path === "/api/control") {
+      return jsonResponse(200, controlSnapshot({
+        config: {
+          effective: { observability: { capture_content: false, retention_days: 31 } },
+          revision: "owner-control-config",
+        },
+      }));
+    }
+    if (path === "/api/config") {
+      return jsonResponse(200, {
+        effective: { observability: { capture_content: false, retention_days: 31 } },
+        restart_required_paths: [],
+        revision: "owner-saved-config",
+      });
+    }
+    if (path === "/api/maintenance/trim") {
+      return jsonResponse(200, { db_size_after_bytes: 1536 });
+    }
+    if (path === "/api/runtime/toggle") {
+      return jsonResponse(200, {
+        changed: true,
+        master: {
+          enabled: false,
+          generation: 8,
+          schema_version: 1,
+          source: "dashboard",
+          updated_at: "2026-07-30T12:00:00Z",
+        },
+        ok: true,
+      });
+    }
+    if (mutationPaths.has(path)) return jsonResponse(200, { ok: true });
+    throw new Error(`unexpected owner dashboard request: ${path}`);
   });
-  const configControls = [new FakeNode("config-input"), new FakeNode("config-select")];
+
+  const retention = new FakeNode("config-retention");
+  retention.dataset.configPath = "observability.retention_days";
+  retention.dataset.valueType = "integer";
+  retention.labels = [{ textContent: "Runtime retention days" }];
+  retention.value = "31";
+  harness.nodes.set("config-retention", retention);
+  harness.select("[data-config-path]", [retention]);
+  harness.api.state.config = { revision: "owner-original-config" };
+  harness.api.state.configBaseline.set("observability.retention_days", "30");
+  await acceptOwnerConfirmation(
+    harness,
+    harness.api.saveConfig({ preventDefault() {} }),
+    "SAVE CONFIG",
+  );
+
+  harness.node("trim-confirm").value = "TRIM RUNTIME DATA";
+  harness.node("trim-days").value = "45";
+  await harness.api.trimRuntime();
+
+  await acceptOwnerConfirmation(
+    harness,
+    harness.api.rosterAction("approve", "snapshot-owner"),
+    "APPROVE snapshot-owner",
+  );
+  await acceptOwnerConfirmation(
+    harness,
+    harness.api.toggleHost("codex", false, 4),
+    "DISABLE codex",
+  );
+
+  harness.api.state.controlConfigRevision = "owner-agent-revision";
+  await acceptOwnerConfirmation(
+    harness,
+    harness.api.toggleAgent("code-reviewer", false),
+    "DISABLE code-reviewer",
+  );
+
+  harness.api.state.master = {
+    enabled: true,
+    generation: 7,
+    schema_version: 1,
+    source: "dashboard",
+    updated_at: "2026-07-30T11:59:00Z",
+  };
+  await acceptOwnerConfirmation(
+    harness,
+    harness.api.toggleMaster(false),
+    "DISABLE AGENCY",
+  );
+
+  harness.node("workforce-action-kind").value = "suspend";
+  harness.node("workforce-action-worker").value = "typescript-application-engineer";
+  harness.node("workforce-action-target").value = "";
+  harness.node("workforce-action-reason").value = "Owner reviewed current evidence.";
+  harness.node("workforce-action-revision").value = "3";
+  await acceptOwnerConfirmation(
+    harness,
+    harness.api.workforceAction({ preventDefault() {} }),
+    "SUSPEND typescript-application-engineer",
+  );
+
+  await acceptOwnerConfirmation(
+    harness,
+    harness.api.hiringApprove("hiring-owner-1"),
+    "APPROVE hiring-owner-1",
+  );
+
+  const mutations = calls.filter(({ path }) => mutationPaths.has(path));
+  assert.deepEqual(mutations.map(({ path }) => path), [
+    "/api/config",
+    "/api/maintenance/trim",
+    "/api/roster/action",
+    "/api/hosts/toggle",
+    "/api/agents/toggle",
+    "/api/runtime/toggle",
+    "/api/workforce/action",
+    "/api/hiring/approve",
+  ]);
+  const bodies = Object.fromEntries(
+    mutations.map(({ path, options }) => [path, JSON.parse(options.body)]),
+  );
+  assert.deepEqual(bodies["/api/config"], {
+    confirmations: ["SAVE CONFIG"],
+    expected_revision: "owner-original-config",
+    operations: [{
+      op: "set",
+      path: "observability.retention_days",
+      value: 31,
+    }],
+  });
+  assert.deepEqual(bodies["/api/maintenance/trim"], {
+    confirm: "TRIM RUNTIME DATA",
+    older_than_days: 45,
+    vacuum: false,
+  });
+  assert.deepEqual(bodies["/api/roster/action"], {
+    action: "approve",
+    confirm: "APPROVE snapshot-owner",
+    snapshot_id: "snapshot-owner",
+  });
+  assert.deepEqual(bodies["/api/hosts/toggle"], {
+    confirm: "DISABLE codex",
+    enabled: false,
+    expected_generation: 4,
+    host: "codex",
+  });
+  assert.deepEqual(bodies["/api/agents/toggle"], {
+    confirm: "DISABLE code-reviewer",
+    enabled: false,
+    expected_revision: "owner-agent-revision",
+    slug: "code-reviewer",
+  });
+  assert.deepEqual(bodies["/api/runtime/toggle"], {
+    confirm: "DISABLE AGENCY",
+    enabled: false,
+    expected_generation: 7,
+  });
+  assert.deepEqual(bodies["/api/workforce/action"], {
+    action: "suspend",
+    confirm: "SUSPEND typescript-application-engineer",
+    expected_revision: 3,
+    into: "",
+    reason: "Owner reviewed current evidence.",
+    worker: "typescript-application-engineer",
+  });
+  assert.deepEqual(bodies["/api/hiring/approve"], {
+    approved_by: "dashboard-owner",
+    case_id: "hiring-owner-1",
+    confirm: "APPROVE hiring-owner-1",
+  });
+});
+
+test("authenticated dashboard exposes the owner control surface and mutation request client", () => {
+	const mutationEndpoints = [
+		"/api/agents/toggle",
+    "/api/config\"",
+    "/api/hiring/approve",
+    "/api/hosts/toggle",
+    "/api/maintenance/trim",
+    "/api/roster/action",
+		"/api/runtime/toggle",
+		"/api/workforce/action",
+	];
+	for (const endpoint of mutationEndpoints) assert.ok(ACTIONS_SOURCE.includes(endpoint));
+	for (const callback of ["toggleAgent", "toggleHost", "rosterAction"]) {
+		assert.match(RENDER_SOURCE, new RegExp(`callbacks\\.${callback}`));
+	}
+	assert.match(APP_SOURCE, /actions\.hiringApprove/);
+	for (const id of ["trim-button", "trim-confirm", "trim-days"]) {
+		assert.match(INDEX_SOURCE, new RegExp(`id="${id}"`));
+	}
+	assert.match(INDEX_SOURCE, /Trim runtime data/);
+	assert.match(INDEX_SOURCE, /dashboard and CLI use the same validated configuration writer/i);
+
+	const harness = createAppHarness(() => {
+		throw new Error("owner surface setup does not fetch");
+	});
+	const configControls = [new FakeNode("config-input"), new FakeNode("config-select")];
   harness.select(
     "#config-form input, #config-form select, #config-form textarea, #config-form button",
     configControls,
   );
-  harness.node("privacy-chip").textContent = "Metadata only";
-  assert.equal(harness.api.bindEvents(), true);
-  for (const name of [
-    "trimRuntime", "saveConfig", "rosterAction", "toggleAgent", "toggleHost",
-    "toggleMaster", "workforceAction", "hiringApprove",
-  ]) assert.equal(harness.api[name], undefined);
-  for (const id of [
-    "provider-builder-save", "provider-builder-remove",
-    "config-reset-button", "config-save-button", "workforce-action-submit",
-  ]) {
-    assert.equal(harness.node(id).disabled, true);
-    assert.equal(harness.node(id).hidden, true);
-    assert.equal(harness.node(id).listeners.size, 0);
-  }
-  for (const control of configControls) assert.equal(control.disabled, true);
-  assert.equal(harness.node("master-toggle").disabled, true);
-  assert.equal(harness.node("master-toggle").listeners.size, 0);
-  assert.equal(harness.node("workforce-action-form").hidden, true);
-  assert.equal(harness.node("confirmation-modal").hidden, true);
-  assert.equal(harness.node("config-change-count").textContent, "Read-only monitoring");
-  assert.equal(harness.node("privacy-chip").textContent, "Runtime metadata only");
-  harness.api.renderConfig({
+	harness.node("privacy-chip").textContent = "Metadata only";
+	assert.equal(harness.api.bindEvents(), true);
+	for (const name of [
+		"trimRuntime", "saveConfig", "rosterAction", "toggleAgent", "toggleHost",
+		"toggleMaster", "workforceAction", "hiringApprove",
+	]) assert.equal(typeof harness.api[name], "function");
+	for (const id of [
+		"provider-builder-save", "provider-builder-remove",
+		"config-reset-button", "trim-button",
+	]) {
+		assert.equal(harness.node(id).disabled, false);
+		assert.equal(harness.node(id).hidden, false);
+		assert.ok(harness.node(id).listeners.size > 0);
+	}
+	assert.ok(harness.node("config-form").listeners.get("submit")?.length > 0);
+	assert.ok(harness.node("workforce-action-form").listeners.get("submit")?.length > 0);
+	assert.ok(harness.node("confirmation-accept").listeners.get("click")?.length > 0);
+	assert.ok(harness.node("confirmation-cancel").listeners.get("click")?.length > 0);
+	for (const control of configControls) assert.equal(control.disabled, false);
+	assert.equal(harness.node("master-toggle").disabled, false);
+	assert.ok(harness.node("master-toggle").listeners.get("click")?.length > 0);
+	assert.equal(harness.node("privacy-chip").textContent, "Runtime metadata only");
+	harness.api.renderConfig({
     effective: {},
     environment_overrides: [],
-    path: "C:/Users/test/.agency-runtime/agency.yaml",
-    revision: "config-revision-after-refresh",
-  });
-  assert.equal(harness.node("config-change-count").textContent, "Read-only monitoring");
-  assert.equal(harness.node("config-save-button").disabled, true);
-  harness.node("config-providers").value = JSON.stringify([{ name: "owner-provider" }]);
-  harness.api.syncProviderSecretOptions();
-  assert.equal(harness.node("config-provider-secret-index").disabled, true);
+		path: "C:/Users/test/.agency-runtime/agency.yaml",
+		revision: "config-revision-after-refresh",
+	});
+	assert.equal(harness.node("config-change-count").textContent, "No unsaved changes");
+	assert.equal(harness.node("config-save-button").disabled, true);
+	harness.node("config-providers").value = JSON.stringify([{ name: "owner-provider" }]);
+	harness.api.syncProviderSecretOptions();
+	assert.equal(harness.node("config-provider-secret-index").options[0].textContent, "owner-provider");
 
-  harness.api.applyMasterState({
+	harness.api.applyMasterState({
     schema_version: 1,
     enabled: true,
     generation: 4,
-    updated_at: "2026-07-26T00:00:00Z",
-    source: "test",
-  });
-  assert.equal(harness.node("master-toggle").disabled, true);
-  assert.equal(
-    harness.node("master-toggle").attributes.get("aria-label"),
-    "Agency Runtime is enabled (read-only monitoring)",
-  );
+		updated_at: "2026-07-26T00:00:00Z",
+		source: "test",
+	});
+	assert.equal(harness.node("master-toggle").disabled, false);
+	assert.equal(
+		harness.node("master-toggle").attributes.get("aria-label"),
+		"Disable Agency Runtime globally",
+	);
 });
