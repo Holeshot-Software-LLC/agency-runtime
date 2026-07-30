@@ -397,6 +397,43 @@ The named fast production spine then passes 654 tests with 6 skips, all 109
 dashboard tests pass, and every routing evaluation gate passes; documentation,
 Ruff, formatting, and diff checks are also green.
 
+PR 173 merged the bounded repair as exact commit
+`4b422896191a0927eb3f23857a6351aee6574a2a`. GitHub CI, Dependency Review,
+and CodeQL did not acquire runners: each emitted the account payment or
+spending-limit annotation with no steps or logs. The exact local production
+gate above therefore remains the code evidence for the authorized admin merge.
+The CLI's immutable update plan installed exact build
+`0.1.0+g4b422896191a`, then refreshed Codex to bundle
+`0.1.0+codex.ab0113c57dce`. The transaction completed, registered, and enabled
+the plugin without an operator prompt. Persistent-profile trust remains
+`unverified` with restart required; the final isolated-profile product proof is
+not blocked by that attended boundary.
+
+Final exact-installed trace `019fb088-6084-70c1-b1c7-d5482881ac98` is the
+contractually terminal `NO-GO`; no third repair loop is opened. Both Luna
+planner/recruiter wrapper calls succeeded. The content-free staffing receipt
+proves relevant inference across the nine-unit plan: accepted proposals include
+`codebase-onboarding-engineer`, `python-application-engineer`,
+`typescript-application-engineer`, `software-test-engineer`, `code-reviewer`,
+`application-integration-verifier`, `test-results-analyzer`, and
+`application-security-engineer`. Architecture and documentation remained the
+two gaps despite nominations that included `software-architect` and
+`technical-writer`.
+
+The architecture gap carries `no-safe-deterministic-team`,
+`required_agents_missing`, `no_safe_sufficient_team`, and
+`recruiter_abstained`; documentation adds `independent_assurance_missing`.
+The one architecture hiring attempt still ended
+`contract_invalid:candidate`, so the destination-bounds repair did not close
+the complete live candidate-validation mismatch. The one-hire task budget then
+left documentation at `task_hiring_limit_reached`. All-or-nothing verification
+therefore published zero selected specialists and no delegation even though
+seven units had relevant safe proposals. The host exited zero after 269 seconds
+but created no product files, committed no accepted finalization, exhausted the
+single correction boundary, and left `correction_count` unavailable rather
+than zero. The first-pass response header was structurally valid and named both
+resident managers, but it is not completion proof.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -412,7 +449,7 @@ model truth and resident-manager visibility.
   model receipts without leaving evidence behind after a failed preflight.
 - [x] Same-task gap hiring can use the governed Store without bypassing the
   ready-CAS or creating partial workforce state.
-- [ ] A nontrivial four-unit request against the active workforce produces a
+- [x] A nontrivial four-unit request against the active workforce produces a
   verified unit-agent plan or a complete truthful gap/hiring outcome; it does
   not silently collapse to a generic no-match result.
 - [x] Focused Codex activation tests launch exactly one goal-bound specialist,
@@ -469,3 +506,5 @@ model truth and resident-manager visibility.
   tool facts.
 - [x] Durable receipts distinguish inference nominations from verifier-safe
   proposals and retain content-free staffing gap reason families.
+- [ ] The exact-installed ordinary product proof launches and completes its
+  relevant specialists with one accepted finalization and zero corrections.

@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-199
 branch: codex/ar-199-fbed-canary
-evidence_commit: 9b50993215b4c800fe540632ca3a9f97ae6de91e
-minimum_ledger_commit: 36d2ec67810eaffe014cc08a73402146276830d3
+evidence_commit: 4b422896191a0927eb3f23857a6351aee6574a2a
+minimum_ledger_commit: c9c7d4b49a290edd432c9332046f88cfd2c1dd50
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 ---
@@ -31,16 +31,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## checkpoint
 
-- PR 172 merged the inference-owned selection repair as exact commit
-  `9b50993215b4c800fe540632ca3a9f97ae6de91e`.
-- The uv tool reports exact build `0.1.0+g9b50993215b4`; Codex bundle
-  `0.1.0+codex.0fa5aeccbffe` is registered and enabled.
+- PR 173 merged the bounded staffing repair as exact commit
+  `4b422896191a0927eb3f23857a6351aee6574a2a`.
+- The uv tool reports exact build `0.1.0+g4b422896191a`; Codex bundle
+  `0.1.0+codex.ab0113c57dce` is registered and enabled.
+- CI, Dependency Review, and CodeQL never acquired runners because GitHub
+  reported an account payment or spending-limit block; no hosted test step ran.
 - First ordinary product trace `019fb03e-5ad6-7b70-8d22-bc8c7ee0d028` is a
   bounded `NO-GO`; the second trace moved the blocker into dynamic hiring.
 - Second product trace `019fb064-6448-7853-955e-ad6896f3040b` is also a bounded
   `NO-GO`: nine planned units, 53 eligible workers, two successful Luna wrapper
   calls, zero bindings, zero delegations, and no accepted finalization.
 - Owner-untracked files remain untouched.
+- Final product trace `019fb088-6084-70c1-b1c7-d5482881ac98` is the terminal
+  `NO-GO`; the two-repair-cycle contract prohibits another repair loop here.
 
 ## completed-evidence
 
@@ -87,26 +91,38 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 - The named fast spine passes 654 tests with 6 skips, all 109 dashboard tests
   pass, and every routing-evaluation, documentation, Ruff, formatting, and diff
   gate is green.
+- The final trace proves seven relevant safe proposals across nine units:
+  onboarding, Python API, TypeScript dashboard, API tests, code review, test
+  analysis/integration, and application security.
+- Architecture and documentation remain gaps despite relevant nominations for
+  `software-architect` and `technical-writer`. The durable reason families are
+  `required_agents_missing`, `no_safe_sufficient_team`, `recruiter_abstained`,
+  and, for documentation, `independent_assurance_missing`.
+- Architecture hiring still returned `contract_invalid:candidate`; the one-hire
+  budget then left documentation at `task_hiring_limit_reached`.
+- All-or-nothing verification published zero specialists or delegations. No
+  product file was created, no finalization was accepted, the run ended
+  `retry_exhausted`, and `correction_count` was unavailable rather than zero.
 
 ## exact-blocker
 
-The second ordinary trace failed before specialist launch because the one
-per-task hire attempt hit the contractor schema mismatch. The bounded source
-repair is fast-gate green; it still requires merge, exact install, and one final
-isolated-profile product rerun. Persistent-profile trust remains attended but
-does not block that rerun.
+AR-199's final ordinary product proof is `NO-GO`. Selection is demonstrably
+relevant for seven units, but the remaining architecture/documentation gaps,
+live contractor validation failure, all-or-nothing publication, and exhausted
+finalization boundary prevent specialist launch and product completion.
+Persistent-profile trust is separately attended and unresolved.
 
 ## same-task-continuity
 
-Continue in this task. Do not rerun the passing isolated activation package.
+Continue only through evidence publication and handoff. Do not rerun either the
+passing isolated activation package or the failed ordinary product package.
 
 ## next-bounded-work-package
 
-1. Create the clean source/recovery checkpoint.
-2. Merge and exact-install the repair.
-3. Run one final bounded ordinary isolated-profile product proof. If it fails,
-   report the new durable staffing or launch blocker and close this item `NO-GO`
-   rather than opening another repair loop.
+1. Publish the terminal proof matrix and local shareable report.
+2. Start a separately authorized package for live contractor-candidate
+   diagnostics and decision-conformance mutation tests; do not fold it back
+   into this bounded proof run.
 
 ## verification
 
