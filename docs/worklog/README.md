@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-29
+updated: 2026-07-30
 tags: []
 related: []
 supersedes: []
@@ -355,6 +355,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8bb504c` | 2026-07-29 | Merge pull request #177 from Holeshot-Software-LLC/codex/ar-200-live-evidence | [AR-200](../roadmap/issue-AR-200-diagnosable-decision-conformance.md) | null |
 | `e1a2f2d` | 2026-07-29 | docs(roadmap): record amendment repair install | [AR-200](../roadmap/issue-AR-200-diagnosable-decision-conformance.md) | null |
 | `fcc6812` | 2026-07-30 | docs(roadmap): record terminal AR-200 canary | [AR-200](../roadmap/issue-AR-200-diagnosable-decision-conformance.md) | null |
+| `f02b1af` | 2026-07-30 | Merge pull request #178 from Holeshot-Software-LLC/codex/ar-200-final-evidence | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
