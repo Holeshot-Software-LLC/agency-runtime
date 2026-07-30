@@ -101,8 +101,18 @@ def test_state_accepts_only_empty_or_whitespace_yaml_document(
     assert path.read_bytes() == content
 
 
-def test_default_workforce_mode_uses_one_compact_planner_call(tmp_path: Path) -> None:
-    assert load_config(tmp_path / "missing.yaml", reload=True).workforce.mode == "fast"
+def test_default_workforce_mode_funds_planner_recruiter_and_one_repair(tmp_path: Path) -> None:
+    workforce = load_config(tmp_path / "missing.yaml", reload=True).workforce
+
+    assert workforce.mode == "fast"
+    assert workforce.fast_call_budget == 3
+
+
+def test_explicit_fast_call_budget_remains_operator_owned(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    _write(path, {"workforce": {"fast_call_budget": 2}})
+
+    assert load_config(path, reload=True).workforce.fast_call_budget == 2
 
 
 def test_state_separates_redacted_persisted_and_effective_values(

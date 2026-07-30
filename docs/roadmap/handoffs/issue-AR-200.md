@@ -7,20 +7,20 @@ updated: 2026-07-30
 tags: [handoff, workforce, hiring, mutation-testing, evidence, recovery]
 related:
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
+  - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
-  - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
-  - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0113-prove-decision-conformance-with-isolated-mutations.md
+  - docs/decisions/0114-fund-one-default-workforce-semantic-repair.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-200
-branch: agent/ar-200-selection-hiring-proof
-evidence_commit: f02b1af6bef5eb885aca1a334bd3a1cfb1a50bf7
-minimum_ledger_commit: da40797c822330e922835eb31127d481be7d98e3
+branch: agent/ar-201-default-repair-budget
+evidence_commit: 57c34e609dec06b15b73ceacdd6ee8cf75c94e95
+minimum_ledger_commit: dca598cd8d6811b7407c7b32527e59a79b694431
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 ---
@@ -29,94 +29,73 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 
 ## checkpoint
 
-- Work continues on `agent/ar-200-selection-hiring-proof` from merged main
-  `f02b1af6bef5eb885aca1a334bd3a1cfb1a50bf7`.
-- The previous exact-installed build remains
-  `0.1.0+g8bb504ce3c76`; Codex bundle
-  `0.1.0+codex.d6240568ca33` and ZCode are registered and enabled.
-- The one prior final canary remains terminal `NO-GO`; it is evidence input,
-  not a result to reinterpret.
-- The bounded source repair is demo-ready after two review passes and the full
-  named fast gate. Merge, exact Codex/ZCode install, and exactly one new
-  ordinary canary remain.
-- Owner-untracked `docs/analysis/2026-07-25-deep-audit-findings.md` and
-  `uv.lock` remain untouched.
+- PR 179 merged the explicit inference-decision repair as exact main revision
+  `57c34e609dec06b15b73ceacdd6ee8cf75c94e95`.
+- Exact build `0.1.0+g57c34e609dec` is installed. Codex refresh install
+  `7a0a5b57-4d8b-47d1-afd3-166803f7f871` generated bundle
+  `0.1.0+codex.8bff77d9195e`; ZCode refresh install is
+  `262e7e8c-4698-4e1c-8795-32cb0e8e852d`.
+- The one allowed ordinary canary is terminal `NO-GO`; it is preserved and will
+  not be rerun or reinterpreted.
+- Follow-up implementation is bounded under AR-201 on
+  `agent/ar-201-default-repair-budget`.
+- Owner-untracked analysis and lock files remain untouched.
 
 ## completed-evidence
 
-- Prior trial `ar200-8bb504c-ordinary-02`, trace
-  `019fb121-2e4c-70e0-a286-7fe25fc2e5ba`, completed in 162.641 seconds with
-  two successful Luna wrapper receipts. Seven of nine units had safe proposals;
-  architecture and documentation were empty.
-- Architecture entered hiring and returned `gap_not_proven`; documentation
-  then received `task_hiring_limit_reached`. Atomic publication recorded no
-  specialists or delegations, the header was absent, correction count was null,
-  and all five product checks failed.
-- Root cause: nomination output classified candidates but did not record
-  whether inference intended `staff` or `gap`. Any structurally valid
-  nomination that could not form a typed-safe team was silently converted into
-  a contractor gap.
-- A declined hiring analysis also consumed `max_hires_per_task`, despite no
-  workforce change, and could starve the next proven gap.
-- Recruiter output now requires one explicit `staff|gap` decision per unit.
-  Contradictory safe-team evidence gets the same provider's one bounded semantic
-  repair; deterministic code cannot invent a gap or appoint/reorder a worker.
-- Only `inference-declared-gap` plus the verifier's closed safe no-team reason
-  set reaches independent whole-workforce hiring analysis.
-- Hiring evidence now distinguishes `hiring_inference_abstained`,
-  `hiring_gap_disputed`, and `hiring_action_invalid`. Stable verified-gap
-  reason codes enter the hiring prompt; provider prose does not enter evidence.
-- `max_hires_per_task` now counts applied hires/amendments. Each declared unit
-  remains single-attempt and each hiring analysis retains its configured call
-  budget.
-- Post-hire restaffing preserves the recruiter's required, acceptable,
-  forbidden, and still-declared-gap semantics instead of rebuilding an
-  inference-owned proposal from rankings alone.
-- Focused review suite: 121 passed, 1 skipped. Named Python spine: 664 passed,
-  6 skipped. Dashboard UI: 109 passed. All routing, policy, delegation, latency,
-  startup, and 263/1,000/10,000-worker scale gates pass.
-- Documentation metadata and normal validation pass for 538 Markdown files;
-  Ruff lint/format and diff checks pass.
-- Isolated decision conformance: green baseline; 9/9 exact mutations killed;
-  zero survivors; zero invalid results; source inputs unchanged. New mutations
-  reverse explicit staff repair and truthful hire-budget accounting.
-- No provider, install, current-profile trust, or live-canary action has been
-  taken in this package yet.
-- Context telemetry reported 55.5 percent remaining before the full gate, so no
-  threshold checkpoint was required; the forthcoming substantive/ledger pair
-  is the clean demo-ready checkpoint anyway.
+- Focused source suite passed 121 tests with 1 skip; the named Python spine
+  passed 664 with 6 skips; dashboard UI passed 109; every routing, policy,
+  delegation, latency, startup, and 263/1,000/10,000-worker scale gate passed.
+- Documentation, Ruff lint/format, and diff validation passed. The isolated
+  decision gate killed 9/9 exact mutations with no survivors or invalids.
+- PR 179 hosted jobs were refused before repository steps by GitHub account
+  billing; the complete local production gate is the executable evidence.
+- Trial `ar200-57c34e6-ordinary-03`, trace
+  `019fb31f-5da6-7dd0-a983-9b983f767b9f`, ran from the exact install without a
+  trust prompt. Codex exited zero; the evaluator ended `NO-GO` after 231 seconds.
+- The trace evaluated 272 workers, found 53 eligible, and produced nine work
+  unit descriptors. The planner receipt applied through the configured Luna
+  wrapper; the recruiter receipt was `provider_response_contract_invalid`.
+- The two attempts exhausted the installed fast budget. No third recruiter
+  repair call was possible; route status was abstained with
+  `workforce_call_budget_exhausted`.
+- Staffing recorded zero validated units, selected/loaded/delegated specialists,
+  spawn/wait events, hiring attempts, or applied changes.
+- No finalization was accepted, no artifact was written, and all five product
+  checks failed. All seven header fields were present on the first response,
+  but correction count was unavailable and the header is not an activity receipt.
+- The local evidence page is build-verified and serves the exact prompt, trial,
+  prompt hash, trace/session IDs, receipts, zero activity, mutation result, and
+  scoped claim boundary.
 
 ## exact-blocker
 
-No deterministic blocker is known. The package still needs the named fast gate,
-clean substantive/ledger checkpoint, authorized PR/merge, exact Codex and ZCode
-installation, and one fresh-process product canary. If host hook trust cannot be
-bypassed during install/canary, enter `waiting_for_operator` once and stop.
+The explicit inference decision contract is correct, but the installed default
+total budget of two calls funds only planner plus recruiter. If the recruiter is
+rejected, the promised one bounded semantic repair is unreachable. AR-201 owns
+the fresh-default repair and the later proof.
 
 ## same-task-continuity
 
-Finish this package without expanding into unrelated edge cleanup. Stop at the
-first real gate failure, repair only what invalidates the visible outcome, and
-rerun that gate. Run exactly one new ordinary canary after deterministic gates,
-merge, and exact installation.
+Do not reopen AR-200 edge cases or rerun its terminal canary. Continue only the
+AR-201 default-budget repair, preserving inference authority and explicit
+operator budget overrides.
 
 ## next-bounded-work-package
 
-1. Complete review pass two only for unresolved material findings.
-2. Run documentation checks, the named Python/dashboard/routing spine, and the
-   final 9-mutation proof.
-3. Commit the substantive recovery checkpoint and its exact worklog ledger.
-4. Push, open and inspect the PR, merge the authorized bounded change, and
-   exact-install it for Codex and ZCode.
-5. Run one ordinary Codex canary and judge receipts, selected/delegated workers,
-   accepted finalization, first-response header, and correction count.
-6. Update the local evidence page, tracker, roadmap, and this capsule with the
-   terminal scoped verdict.
+1. Complete AR-201 review, focused tests, 10-mutation proof, and named fast gate.
+2. Merge and install the exact bounded-repair tool revision.
+3. Deliberately set this profile's explicit fast budget to three, then refresh
+   Codex and ZCode so their generated timeout matches the effective budget.
+4. Run one AR-201 ordinary canary and judge actual receipts, staffing,
+   delegation, finalization, header correction count, and artifacts.
+5. Update both issues, both capsules, tracker records, and the local evidence
+   page with the terminal verdict.
 
 ## verification
 
 ~~~text
-python -m pytest tests/test_workforce_inference.py tests/test_workforce_selection_safety.py tests/test_workforce_dynamic_hiring.py tests/test_decision_conformance.py tests/test_routing_correctness.py -q -W error
+python -m pytest tests/test_workforce_inference.py tests/test_configuration.py tests/test_native_installer.py tests/test_decision_conformance.py -q -W error
 agency eval decision-conformance --json
 python scripts/docs_metadata.py --check
 python scripts/update_policy_availability.py --check
@@ -132,11 +111,8 @@ git diff --check
 
 ## constraints
 
-- Configured online selection remains inference-owned. Deterministic policy may
-  recall or reject but cannot add, promote, or reorder a specialist.
-- Never persist provider content or raw exception text in routing, hiring,
-  dashboard, or report evidence.
-- Mutation work occurs only in owner-private disposable copies; invalid
-  execution never counts as a killed mutation.
-- Preserve ready-CAS atomicity, hook trust, native-child goal validation, and
-  owner-untracked files.
+- Configured online selection remains inference-owned.
+- Deterministic policy may recall or reject but cannot add or reorder a worker.
+- Persist no provider content or raw exception text.
+- Preserve terminal traces, exact install identities, and owner-untracked files.
+- Stop at a genuine unbypassable trust prompt; touch only Codex and ZCode.

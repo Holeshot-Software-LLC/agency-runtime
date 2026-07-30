@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-29
+updated: 2026-07-30
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -88,6 +88,7 @@ Status meanings:
 | [ADR-0083](0083-use-capability-indexed-recall-and-bounded-inference.md) | Use capability-indexed recall and bounded inference | Accepted |
 | [ADR-0094](0094-durable-native-child-correlation.md) | Correlate native children durably and fail Agency-planned work closed | Accepted |
 | [ADR-0112](0112-stage-preflight-workforce-evidence-until-ready.md) | Stage preflight workforce evidence until ready | Accepted |
+| [ADR-0114](0114-fund-one-default-workforce-semantic-repair.md) | Fund one default workforce semantic repair | Accepted |
 
 ## Evidence and observability
 
