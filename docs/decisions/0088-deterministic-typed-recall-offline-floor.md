@@ -3,11 +3,12 @@ title: "Deterministic typed-recall is the offline floor"
 status: accepted
 category: decisions
 created: 2026-07-24
-updated: 2026-07-24
+updated: 2026-07-29
 tags: [routing, workforce, selection, inference, offline, AR-119]
 related:
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - agency_runtime/core/workforce/inference.py
   - agency_runtime/core/workforce/fallback.py
 supersedes:

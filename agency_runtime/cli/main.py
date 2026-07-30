@@ -305,6 +305,7 @@ cmd_explain = _roster.cmd_explain
 cmd_eval_delegation = _roster.cmd_eval_delegation
 cmd_eval_routing = _roster.cmd_eval_routing
 cmd_eval_compare = _evals.cmd_eval_compare
+cmd_eval_decision_conformance = _evals.cmd_eval_decision_conformance
 cmd_eval_full_roster = _evals.cmd_eval_full_roster
 cmd_eval_product = _evals.cmd_eval_product
 cmd_eval_upstream_architecture = _evals.cmd_eval_upstream_architecture
@@ -420,6 +421,7 @@ _COMMAND_NAMES = (
     "cmd_delegate",
     "cmd_doctor",
     "cmd_eval_compare",
+    "cmd_eval_decision_conformance",
     "cmd_eval_delegation",
     "cmd_eval_full_roster",
     "cmd_eval_product",

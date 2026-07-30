@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-27
+updated: 2026-07-29
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -24,6 +24,7 @@ related:
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
+  - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
@@ -41,7 +42,7 @@ issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 depends_on: [AR-115, AR-116, AR-118, AR-179, AR-180, AR-185, AR-190]
-blocks: [AR-178]
+blocks: [AR-178, AR-200]
 ---
 
 # AR-119: Implement inference-first real-time workforce and contractor lifecycle

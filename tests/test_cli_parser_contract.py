@@ -37,6 +37,7 @@ HANDLER_NAMES = (
     "cmd_delegate",
     "cmd_doctor",
     "cmd_eval_compare",
+    "cmd_eval_decision_conformance",
     "cmd_eval_delegation",
     "cmd_eval_full_roster",
     "cmd_eval_product",
@@ -128,6 +129,7 @@ EXPECTED_PATHS = (
     "agency doctor",
     "agency eval",
     "agency eval compare",
+    "agency eval decision-conformance",
     "agency eval delegation",
     "agency eval full-roster",
     "agency eval product",
@@ -224,6 +226,7 @@ EXPECTED_BINDINGS = {
     "agency delegate": "cmd_delegate",
     "agency doctor": "cmd_doctor",
     "agency eval compare": "cmd_eval_compare",
+    "agency eval decision-conformance": "cmd_eval_decision_conformance",
     "agency eval delegation": "cmd_eval_delegation",
     "agency eval full-roster": "cmd_eval_full_roster",
     "agency eval product": "cmd_eval_product",
@@ -282,7 +285,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "adb5c1b8126cdd81a54c327e68845d60b6f352018b84ea5ba244f06a7661bc63"
+EXPECTED_MANIFEST_SHA256 = "f46bcd13715016ef6f64a8056d4351fa8873a9e1fabc6a32722d7d3545cfeec0"
 
 
 def _handler(name: str):

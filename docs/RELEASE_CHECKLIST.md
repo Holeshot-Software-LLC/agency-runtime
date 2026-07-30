@@ -3,7 +3,7 @@ title: "Release Checklist"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-28
+updated: 2026-07-29
 tags: [release, verification]
 related:
   - CHANGELOG.md
@@ -163,6 +163,7 @@ python -m pytest tests -q -W error -p no:cacheprovider -m performance
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
 agency eval delegation --json
 agency eval routing --json --no-details
+agency eval decision-conformance --repository . --json
 agency eval full-roster --json --no-details
 ```
 

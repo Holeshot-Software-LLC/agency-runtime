@@ -17,6 +17,7 @@ from agency_runtime.core.selector.receipt_projection import project_durable_rout
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.structured_provider import StructuredProviderResult
 from agency_runtime.core.unit_assignment import work_unit_id_from_text
+from agency_runtime.core.workforce import hiring as hiring_module
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
     AuditContract,
@@ -458,6 +459,108 @@ def test_hire_compiles_schema_maximum_lists_into_bounded_workforce_contract(
     assert compiled["artifact_kinds"][0] == "implementation-change"
     assert compiled["capability_ids"] == ["implementation"]
     assert compiled["tool_classes"][0] == "repository-read"
+
+
+def test_hire_bounds_unicode_routing_projection_but_preserves_employment_contract(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    response = _hiring_response()
+    contract = response["contract"]
+    full_prose = "é" * 160
+    full_role = "É" * 100
+    contract.update(
+        role=full_role,
+        outcomes_owned=[full_prose],
+        preferred_scenarios=[full_prose],
+        avoided_scenarios=[full_prose],
+        forbidden_scenarios=[full_prose],
+    )
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_invoker(response, {"approved": True, "reason_codes": []}),
+    )
+
+    assert outcome.hired is True
+    evidence = outcome.hiring_case
+    assert evidence is not None
+    employment = evidence["critic_evidence"]["employment_contract"]
+    workforce = evidence["contract_evidence"]
+    assert employment["outcomes_owned"] == [full_prose]
+    assert employment["role"] == full_role
+    assert len(workforce["outcomes"][0].encode("utf-8")) <= 192
+    assert len(workforce["scope_qualifiers"][0].encode("utf-8")) <= 192
+    assert len(workforce["not_for"][0].encode("utf-8")) <= 192
+    assert len(workforce["display_name"].encode("utf-8")) <= 128
+
+
+@pytest.mark.parametrize(
+    ("validation_error", "expected"),
+    [
+        (
+            "workforce outcomes exceeds 8 items provider-secret",
+            "contract_invalid:workforce_projection:outcomes",
+        ),
+        (
+            "unexpected projection failure provider-secret",
+            "contract_invalid:workforce_projection",
+        ),
+    ],
+)
+def test_hire_reports_content_free_workforce_projection_stage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    validation_error: str,
+    expected: str,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+
+    def reject_projection(*_args, **_kwargs):
+        raise ValueError(validation_error)
+
+    monkeypatch.setattr(hiring_module, "project_workforce_contract", reject_projection)
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_invoker(_hiring_response(), {"approved": True, "reason_codes": []}),
+    )
+
+    assert outcome.status == "abstained"
+    assert outcome.reason_codes == (expected,)
+    assert "provider-secret" not in " ".join(outcome.reason_codes)
+    assert store.list_hiring_cases(limit=10) == []
+
+
+def test_hire_reports_content_free_employment_revalidation_stage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+
+    def reject_revalidation(*_args, **_kwargs):
+        raise ValueError("provider-secret")
+
+    monkeypatch.setattr(hiring_module, "compile_contractor", reject_revalidation)
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_invoker(_hiring_response(), {"approved": True, "reason_codes": []}),
+    )
+
+    assert outcome.status == "abstained"
+    assert outcome.reason_codes == ("contract_invalid:employment_revalidation",)
+    assert "provider-secret" not in " ".join(outcome.reason_codes)
 
 
 def test_atomic_preflight_route_does_not_publish_an_in_memory_cache(

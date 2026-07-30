@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-28
+updated: 2026-07-29
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -174,6 +174,7 @@ Status meanings:
 | [ADR-0109](0109-prepare-dashboard-service-repair-before-operator-presence.md) | Prepare dashboard-service repair before operator presence | Superseded |
 | [ADR-0110](0110-remove-agency-owned-windows-hello.md) | Remove Agency-owned Windows Hello and use harness-native trust | Superseded |
 | [ADR-0111](0111-install-the-applicable-suite-by-default.md) | Install the applicable suite by default | Accepted |
+| [ADR-0113](0113-prove-decision-conformance-with-isolated-mutations.md) | Prove decision conformance with isolated curated mutations | Accepted |
 
 ## Documentation governance
 

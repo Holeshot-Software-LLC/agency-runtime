@@ -1130,6 +1130,31 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
         help="Omit per-case details from the report",
     )
     _bind(eval_routing, handlers, "cmd_eval_routing")
+    eval_decision_conformance = eval_sub.add_parser(
+        "decision-conformance",
+        help="Prove focused tests kill curated routing and workforce decision mutations",
+    )
+    eval_decision_conformance.add_argument(
+        "--repository",
+        default=".",
+        help="Agency Runtime repository root to copy and evaluate",
+    )
+    eval_decision_conformance.add_argument(
+        "--timeout",
+        type=_positive_int,
+        default=90,
+        help="Per-test deadline in seconds (1 through 300)",
+    )
+    eval_decision_conformance.add_argument(
+        "--json",
+        action="store_true",
+        help="Print machine-readable mutation evidence",
+    )
+    _bind(
+        eval_decision_conformance,
+        handlers,
+        "cmd_eval_decision_conformance",
+    )
     eval_full_roster = eval_sub.add_parser(
         "full-roster",
         help="Evaluate complete packaged-roster retrieval and compatibility contracts",
