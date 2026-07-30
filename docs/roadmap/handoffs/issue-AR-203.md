@@ -19,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-203
 branch: agent/ar-203-readme-story-proof
-evidence_commit: baaf603fc65f4ea338bcdde19f60c60a4c6f96af
-minimum_ledger_commit: e5a11f2e77ba4589ae93e610f303946b0efdde48
+evidence_commit: 1e54967eb51412bae862b160a36612f7c9d1ed4f
+minimum_ledger_commit: 0bb1614ef849903b9732ca4a0d02f910921389e5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -36,8 +36,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   restarted before the trial.
 - Trial `ar203-830b878-ordinary-02` is terminal `NO-GO`. It proves activation
   and nine-unit planning, then fails at recruiter response acceptance/recovery.
-- No source repair has started. This checkpoint freezes the first causal
-  boundary before implementation.
+- The source repair gives bounded retry a distinct partial-row system contract
+  and adds safe durable unit/invariant failure evidence. No deterministic
+  specialist selection was added.
+- Two review passes are complete. The changed boundary passes 107 tests with
+  1 skipped, and decision conformance kills 21/21 mutations with zero survivors
+  or invalid results and unchanged source.
+- Named fast Python passes 675 tests with 6 skipped; dashboard UI passes 109;
+  routing evaluation 1.3.0 passes every gate; documentation validates 551
+  files; and Ruff checks and formats all 603 Python inputs.
 - The README-story goal is bounded to one ordinary Codex proof on this machine:
   first terminal failure or 45 minutes ends a package, one live trial is
   allowed per exact build, and a second failure at the same causal boundary
@@ -75,15 +82,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   named fast Python spine 675 passed and 6 skipped; dashboard UI 109 passed;
   routing evaluation 1.3.0 passed every gate; decision conformance killed 19/19
   mutations; documentation and Ruff checks passed.
+- The newly diagnosed contradiction was between the repair user prompt, which
+  allowed only failed rows, and the ordinary recruiter system prompt, which
+  required every planned row and prohibited omission.
+- The strengthened regression exercises the real system prompts, and durable
+  receipt coverage proves unknown codes and provider-authored content fail
+  closed.
 
 ## exact-blocker
 
-Activation and planning now work in the exact installed build. The first causal
-boundary is recruiter response contract acceptance: the configured inference
-provider produced a planner response the runtime accepted, then a recruiter
-response the runtime rejected, and one bounded repair could not produce a valid
-replacement. This is not a hook-start, trust, deterministic-selection, hiring,
-delegation, or workspace-grading failure.
+Activation and planning work in the exact installed build. The first causal
+boundary has a fast-green source repair, but that repair has not been
+checkpointed, merged, or exact-installed. Selection, hiring, delegation, and
+workspace-write remain unproven until the replacement trial.
 
 ## same-task-continuity
 
@@ -93,22 +104,17 @@ persistent trust, or reinterpret one corrected header as a first-pass success.
 
 ## next-bounded-work-package
 
-1. Publish this terminal trial in the local evidence page and checkpoint the
-   canonical roadmap state.
-2. Reproduce and repair only recruiter response acceptance or its one bounded
-   semantic repair; preserve inference-owned staffing and fail-closed evidence.
-3. Run focused tests, at most two review passes, decision conformance, and the
-   named fast verification spine. Stop at the first new terminal failure.
-4. PR and merge the reviewed slice, exact-install it for Codex and ZCode only,
-   then run one replacement trial for that new build.
-5. A second failure at this same recruiter boundary stops for owner direction;
-   otherwise publish the final local report and continue from the next proven
-   boundary.
+1. Checkpoint the reviewed repair and its exact verification evidence.
+2. PR and merge the slice, then exact-install it for Codex and ZCode only.
+3. Run one replacement trial for that exact build. Require correction count
+   zero plus a real accepted team, or a defensible gap with hiring evidence.
+4. A second failure at this same recruiter boundary stops for owner direction;
+   otherwise checkpoint the next proven boundary and refresh the local report.
 
 ## verification
 
 ~~~text
-python -m pytest tests/test_canary_cohesion.py tests/test_host_canary.py tests/test_product_host.py tests/test_product_one_shot.py tests/test_workforce_inference.py -q -W error
+python -m pytest tests/test_workforce_inference.py tests/test_routing_receipt_header.py tests/test_routing_correctness.py tests/test_workforce_selection_safety.py tests/test_decision_conformance.py -q -W error
 agency eval decision-conformance --repository . --json
 python scripts/context_handoff_status.py --json --threshold 50
 python scripts/docs_metadata.py --check

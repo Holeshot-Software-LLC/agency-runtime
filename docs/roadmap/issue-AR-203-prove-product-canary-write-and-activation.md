@@ -141,6 +141,18 @@ gate. Isolated workspace trust was proven without changing the persistent
 profile, but the proof file was missing, the workspace stayed empty, and product
 validation correctly skipped as `workspace_write_not_proven`.
 
+The first source repair is now implemented without restoring deterministic
+selection. The bounded repair receives a distinct high-priority system contract
+that requests every listed failed row and explicitly omits retained rows. The
+durable route now projects only allowlisted planned-unit and invariant-code
+pairs, so a repeated rejection will expose the exact safe boundary rather than
+only `provider_response_contract_invalid`. Two review passes are complete. The
+changed boundary passes 107 tests with 1 skipped, and decision conformance kills
+21/21 mutations with zero survivors or invalid results and unchanged source.
+The named fast Python spine passes 675 tests with 6 skipped, dashboard UI passes
+109 tests, routing evaluation 1.3.0 passes every gate, documentation validation
+passes 551 files, and Ruff checks all 603 Python inputs.
+
 The delivery outcome is frozen as "README's main story works in reality" for
 the ordinary Codex path on this machine. Each package stops at its first
 terminal failure or 45 minutes, permits one live trial per exact build, and
@@ -172,6 +184,9 @@ the same causal boundary stops for owner direction instead of looping.
    child with `fork_turns=none`.
 10. Repair only the recruiter response acceptance and bounded-repair contract
     proven by the exact live trace; keep online selection inference-owned.
+11. Require the replacement trial to accept a real specialist team for the
+    fixed robust prompt, or record a defensible gap and an actual hiring
+    decision; never manufacture hiring merely to satisfy the demo.
 
 ## Dependencies
 
@@ -203,7 +218,16 @@ demonstrates both mismatches.
 - [x] The exact installed trial starts the hook and route, persists nine typed
   work units, and distinguishes recruiter contract failure from activation,
   hiring, delegation, and workspace-write evidence.
+- [x] The recruiter repair uses a non-contradictory partial-row system contract,
+  and durable rejection evidence is bounded to allowlisted unit/invariant pairs.
+- [x] The repaired boundary passes 107 focused tests with 1 skipped and kills
+  21/21 decision-conformance mutations.
+- [x] The repaired revision passes the named fast gate.
+- [ ] The repaired revision merges and is exact-installed for Codex and ZCode
+  only.
 - [ ] Recruiter response acceptance or bounded repair produces a defensible
   inferred staffing plan for the fixed README-story prompt.
+- [ ] The replacement trial selects and launches at least one specialist/team,
+  or records a defensible gap plus an actual hiring decision.
 - [ ] The next ordinary canary reports exact activation evidence and can create
   required artifacts when workforce execution reaches the parent model.
