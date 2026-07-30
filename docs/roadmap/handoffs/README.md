@@ -79,3 +79,4 @@ behavior.
 - [AR-199 Codex workforce evidence restoration](issue-AR-199.md)
 - [AR-200 diagnosable decision conformance](issue-AR-200.md)
 - [AR-201 default workforce repair budget](issue-AR-201.md)
+- [AR-204 README-story contract reconciliation](issue-AR-204.md)

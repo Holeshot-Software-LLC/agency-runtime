@@ -1,6 +1,6 @@
 ---
 title: "Prove Codex hook activation behaviorally without bypassing trust"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-20
 updated: 2026-07-28
@@ -18,7 +18,7 @@ related:
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
 id: ADR-0077
 type: decision
 deciders: [maintainers]

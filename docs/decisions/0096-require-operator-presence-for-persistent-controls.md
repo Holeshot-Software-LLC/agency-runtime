@@ -1,6 +1,6 @@
 ---
 title: "Require genuine operator presence for persistent controls"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-26
 updated: 2026-07-28

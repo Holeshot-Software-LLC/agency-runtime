@@ -12,6 +12,9 @@ related:
   - docs/TROUBLESHOOTING.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/decisions/0108-retire-only-owned-host-integrations.md
+  - docs/decisions/0117-unify-owner-control-authority.md
+  - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
 supersedes: []
@@ -46,9 +49,10 @@ agent stays small.
 - 🔭 **Inference-first selection** — when a provider is configured, an intent
   planner decomposes the ask and a recruiter picks the best eligible specialist
   per work unit (or declares a real gap and hires a contractor).
-- 🧮 **Works offline too** — no provider? Agency falls back to a deterministic
-  typed-recall floor (a best typed-guess), stamped so it's never mistaken for an
-  inference pick. Configure a provider for intent-aware selection.
+- 🚨 **Fails loudly without inference** — deterministic code can recall and
+  validate candidates, but it never chooses a specialist. A substantive turn
+  without a valid inference decision selects nobody and reports the exact
+  provider failure.
 - 🧬 **Specialists bind into subagents** — when your host spins up a child, the
   exact audited specialist is injected for that one task with a one-use
   activation receipt.
@@ -97,9 +101,9 @@ Imagine your main agent has a company directory of 263 specialists.
 4. It **recalls** every approved, enabled specialist that could plausibly fit
    (typed contract fields: artifact, lifecycle, domain, stack, capability,
    authority).
-5. The **recruiter** (inference, when configured) picks the best eligible
-   specialist per unit — or declares a real gap. Offline, a deterministic
-   typed-recall floor makes a best typed-guess.
+5. The **recruiter** uses inference to pick the best eligible specialist per
+   unit — or declares a real gap. If inference is unavailable or invalid, the
+   route fails visibly and no specialist is suggested.
 6. If two specialists would conflict, Agency separates their work instead of
    putting both in one prompt.
 7. Small focused work loads into the current turn; larger or independent work is
@@ -198,7 +202,7 @@ explicit `native_child_started` / `native_child_ended` bridge actions.
 
 ## 🧑‍💼 Recruiter, gaps, and contractor hiring
 
-When a provider is configured, selection is inference-first:
+Selection is inference-owned:
 
 1. **Plan** — one compact inference call decomposes the ask into typed work units
    (outcome, artifact, lifecycle, domain, stack, capabilities, authority,
@@ -227,11 +231,12 @@ A declared gap is a contractor specification. Agency:
 - **Admits** the worker as a least-privilege, visibly-marked probationary
   contractor tied to the agency origin (`origin="agency"`,
   `employment="contractor"`), with a one-use activation receipt.
-- High-risk domains still require explicit human approval.
+- High-risk domains still require explicit owner approval.
 
 Contractors follow the **same audited, versioned, composition-bound path** as
-employees. **Promotion to employee is human-controlled** — an operator must act,
-and only after independently-verified successful assignments.
+employees. **Promotion to employee is owner-controlled** — an owner-authorized
+CLI or dashboard action must occur, and only after independently verified
+successful assignments.
 
 ---
 
@@ -262,9 +267,10 @@ The router reads the repository's stacks, not the literal words.
 | "Build a FluxUI dashboard" | inference | `senior-developer` (owns FluxUI/Livewire/Laravel) |
 | "Investigate and contain this production incident" | inference | discovery → analysis → recovery plan → operations |
 
-**No provider configured?** Agency falls back to a deterministic typed-recall
-floor (stamped `Recruited via: deterministic`) — a best typed-guess specialist
-rather than nothing. Configure a provider for the intent-aware picks above.
+**No provider configured, or no valid inference response?** Agency fails the
+substantive route visibly and selects no specialist. Deterministic recall may
+build the candidate shortlist and deterministic verification may reject unsafe
+model output, but neither is allowed to recommend a team.
 
 Try it yourself on your own repo:
 
@@ -277,8 +283,8 @@ agency explain "review this authentication design and propose tests"
 
 ## 🤖 Configure inference
 
-Agency works without a provider (deterministic typed-recall floor). Configure one
-for intent-aware selection.
+Agency requires a working provider for every substantive specialist-selection
+turn. Configure and validate one before expecting routing or hiring.
 
 ```bash
 agency configure          # guided setup
@@ -320,8 +326,9 @@ agency config set judge.model qwen3.5:2b
 agency config set delegation.child_inference_budget 4
 ```
 
-If a configured chain is unavailable, Agency reports selection is degraded
-rather than pretending deterministic candidates were model-selected.
+If the configured chain is unavailable or invalid, Agency reports a terminal
+selection failure rather than pretending deterministic candidates were
+model-selected.
 
 Default files: config `~/.agency-runtime/agency.yaml`, database
 `~/.agency-runtime/agency.db`, global switch `~/.agency-runtime/run/control.json`.
@@ -397,11 +404,11 @@ successful harness result and one harness failure does not suppress later
 selected harnesses. Use `--dry-run --json` for the complete write-free plan.
 
 Harness registration, enablement, and trust use each harness's native lifecycle;
-Agency no longer ships or invokes its own Windows Hello verifier. Persistent
-roster rollback, owned host uninstall, generic controls, and dashboard/model
-request mutations remain fail-closed until they have a separately valid
-authority boundary. See
-[ADR-0111](docs/decisions/0111-install-the-applicable-suite-by-default.md).
+Agency no longer ships or invokes its own Windows Hello verifier. Normal owner
+CLI commands and the automatically authenticated owner dashboard share the same
+configuration and control authority. Hook, MCP, and broker credentials remain
+read-only. See
+[ADR-0117](docs/decisions/0117-unify-owner-control-authority.md).
 
 Release artifacts remain canonical and reject executable names or structurally
 valid PE payloads under disguised names. The Windows and portable wheel profiles
@@ -409,9 +416,10 @@ contain the same Python package payload; platform metadata remains explicit.
 Install from this repository only as prerelease source; no signed public
 artifact exists.
 
-**Codex** will also require you to approve command hooks. Agency installs the
-plugin, reports `activation_required`, and gives the exact next step. To refresh
-an existing managed Codex adapter from this source, first run:
+**Codex** normally requires you to approve command hooks. Agency installs the
+plugin, reports registration, trust mode, and activation separately, and gives
+the exact next step. To refresh an existing managed Codex adapter from this
+source in attended mode, first run:
 
 ```bash
 agency install --agent codex --no-dashboard
@@ -427,10 +435,24 @@ session so the settled plugin can load, then run:
 agency install --agent codex --verify-activation
 ```
 
-Verification first asks Codex for the read-only hook inventory. It starts the
-bounded model-backed canary only when the exact eight Agency hooks are enabled
-and trusted; missing, changed, or unsettled trust fails quickly without using
-provider quota.
+Verification first asks Codex for the read-only hook inventory. In attended
+mode it starts the bounded model-backed canary only when the exact eight Agency
+hooks are enabled and trusted; missing, changed, or unsettled trust fails
+quickly without using provider quota.
+
+For an owner-controlled fresh container or other disposable environment, use
+the explicit autonomous mode after configuring inference through the same CLI
+surface:
+
+```bash
+agency install --autonomous --verify-activation --json
+```
+
+Autonomous mode may use the harness's supported noninteractive hook-trust bypass
+for that exact invocation. It records `trust_mode=autonomous_bypass` and never
+claims the hooks were trusted. Both modes must still prove hook start, route,
+exact specialist injection, native child execution, and finalization before
+reporting runtime readiness.
 
 The intended post-gate install and rollback commands include ZCode:
 
@@ -537,24 +559,29 @@ agency status
 agency off --agent codex --dry-run --json
 ```
 
-The data contracts retain reversible host, global, and per-agent controls, but
-positive CLI mutations other than the exact prerelease Windows 11 x64 roster
-rollback, existing-Codex refresh, and ownership-bound host uninstall remain
-unavailable until AR-143 is complete. The dashboard and every model-facing
-surface are read-only. The native rollback is not production-ready until AR-160
-and AR-161 close. `agents-orchestrator` and `chief-of-staff` remain
-the protected coordination pair.
+Owner CLI and dashboard controls use the same validated writers, exact
+confirmations, revision or generation checks, dry runs, ownership checks, and
+postconditions. Those are transaction-safety controls, not a human-presence
+ceremony. Hook, MCP, and broker identities remain read-only.
+`agents-orchestrator` and `chief-of-staff` remain the protected coordination
+pair.
 
 ---
 
 ## 📊 Operations dashboard
 
-The optional local dashboard shows live routing, delegation, provider health,
-model receipts, host status, roster and workforce evidence, recent turns, and
-cached/background update status.
-It is a local-only, bounded, read-only observability surface; every former
-mutation endpoint rejects both owner and broker bearers. See
-[ADR-0096](docs/decisions/0096-require-operator-presence-for-persistent-controls.md).
+The optional local dashboard is selected by default during installation and can
+be excluded with `--no-dashboard`. It shows live routing, delegation, provider
+health, model receipts, host status, roster and workforce evidence, recent
+turns, cached/background update status, and the same supported configuration
+and runtime controls as the owner CLI.
+
+`agency dashboard service open` is an owner convenience operation: it ensures
+an Agency-owned service is installed and running before opening its loopback
+page. Authentication is automatic through a per-launch bearer that is removed
+from browser history; it is request isolation, not a login or proof of human
+presence. Broker credentials remain read-only. See
+[ADR-0117](docs/decisions/0117-unify-owner-control-authority.md).
 
 ---
 
@@ -573,10 +600,11 @@ Why: Security review requested for auth code
 How it shaped outcome: Loaded code review + security auditor
 ```
 
-The **`Recruited via`** line is machine-stamped (`inference`, `deterministic`,
-`cached`, or `none`) — distinct from the model-authored `Why`. It tells you at a
-glance how the specialist was actually selected, including when the offline
-typed-recall floor fired.
+The **`Recruited via`** line is machine-stamped (`inference`, an inference-backed
+`cached` decision, or `none`) — distinct from the model-authored `Why`. The
+header is a compact projection of correlated Store evidence, not independent
+proof. A missing, malformed, corrected, or evidence-mismatched header makes the
+turn fail; successful product evidence requires correction count zero.
 
 ---
 

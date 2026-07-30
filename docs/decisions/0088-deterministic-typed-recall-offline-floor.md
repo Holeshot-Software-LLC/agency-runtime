@@ -1,6 +1,6 @@
 ---
 title: "Deterministic typed-recall is the offline floor"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-24
 updated: 2026-07-30
@@ -13,7 +13,7 @@ related:
   - agency_runtime/core/workforce/fallback.py
 supersedes:
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
-superseded_by: null
+superseded_by: docs/decisions/0118-require-inference-owned-staffing.md
 id: ADR-0088
 type: decision
 deciders: [maintainers]

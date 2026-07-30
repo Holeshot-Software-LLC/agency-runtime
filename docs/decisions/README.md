@@ -43,7 +43,9 @@ Status meanings:
 - ADR-0058 Broker restricted Windows host controls through the authenticated dashboard → ADR-0090 Model-facing control paths are read-only
 - ADR-0059 Broker restricted Windows agent controls through narrow dashboard operations → ADR-0090 Model-facing control paths are read-only
 - ADR-0061 Validate brokered control transition receipts against deterministic CAS semantics → ADR-0090 Model-facing control paths are read-only
-- ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls → ADR-0110 Remove Agency-owned Windows Hello and use harness-native trust → ADR-0111 Install the applicable suite by default
+- ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls → ADR-0110 Remove Agency-owned Windows Hello and use harness-native trust → ADR-0111 Install the applicable suite by default → ADR-0117 Unify owner CLI and dashboard control authority
+- ADR-0087 Inference decides from a relevance shortlist → ADR-0088 Deterministic typed-recall is the offline floor → ADR-0118 Require inference-owned specialist staffing
+- ADR-0077 Prove Codex hook activation behaviorally without bypassing trust → ADR-0119 Separate native trust modes from activation proof
 
 ## Architecture and integrations
 
@@ -90,6 +92,7 @@ Status meanings:
 | [ADR-0112](0112-stage-preflight-workforce-evidence-until-ready.md) | Stage preflight workforce evidence until ready | Accepted |
 | [ADR-0114](0114-fund-one-default-workforce-semantic-repair.md) | Fund one default workforce semantic repair | Accepted |
 | [ADR-0115](0115-aggregate-bounded-recruiter-repair-failures.md) | Aggregate bounded recruiter repair failures | Accepted |
+| [ADR-0118](0118-require-inference-owned-staffing.md) | Require inference-owned specialist staffing | Accepted |
 
 ## Evidence and observability
 
@@ -155,7 +158,7 @@ Status meanings:
 | [ADR-0074](0074-build-byte-deterministic-release-artifacts.md) | Build byte-deterministic release artifacts from canonical Git blobs | Accepted |
 | [ADR-0075](0075-preserve-config-trust-under-wsl-systemd.md) | Preserve configuration trust while adapting systemd hardening on WSL | Accepted |
 | [ADR-0076](0076-bind-isolated-canaries-to-explicit-agency-modes.md) | Bind isolated canaries to explicit Agency modes | Accepted |
-| [ADR-0077](0077-prove-codex-activation-behaviorally.md) | Prove Codex hook activation behaviorally without bypassing trust | Accepted |
+| [ADR-0077](0077-prove-codex-activation-behaviorally.md) | Prove Codex hook activation behaviorally without bypassing trust | Superseded |
 | [ADR-0082](0082-schedule-assurance-by-artifact-lifecycle.md) | Schedule assurance by artifact lifecycle | Accepted |
 | [ADR-0090](0090-model-facing-control-paths-are-read-only.md) | Model-facing control paths are read-only | Superseded |
 | [ADR-0091](0091-least-privilege-subprocess-environments.md) | Build every subprocess environment from least privilege | Accepted |
@@ -175,9 +178,11 @@ Status meanings:
 | [ADR-0107](0107-resolve-updates-immutably-and-keep-application-attended.md) | Resolve updates immutably and keep application attended | Accepted |
 | [ADR-0109](0109-prepare-dashboard-service-repair-before-operator-presence.md) | Prepare dashboard-service repair before operator presence | Superseded |
 | [ADR-0110](0110-remove-agency-owned-windows-hello.md) | Remove Agency-owned Windows Hello and use harness-native trust | Superseded |
-| [ADR-0111](0111-install-the-applicable-suite-by-default.md) | Install the applicable suite by default | Accepted |
+| [ADR-0111](0111-install-the-applicable-suite-by-default.md) | Install the applicable suite by default | Superseded |
 | [ADR-0113](0113-prove-decision-conformance-with-isolated-mutations.md) | Prove decision conformance with isolated curated mutations | Accepted |
 | [ADR-0116](0116-bind-product-trials-to-exact-workspace-proof.md) | Bind product trials to exact isolated workspace proof | Accepted |
+| [ADR-0117](0117-unify-owner-control-authority.md) | Unify owner CLI and dashboard control authority | Accepted |
+| [ADR-0119](0119-separate-native-trust-modes-from-activation-proof.md) | Separate native trust modes from activation proof | Accepted |
 
 ## Documentation governance
 
@@ -188,7 +193,7 @@ Status meanings:
 | [ADR-0085](0085-continue-in-task-after-context-checkpoints.md) | Continue in the current task after context checkpoints | Superseded |
 | [ADR-0086](0086-use-checkpoint-only-context-telemetry.md) | Use checkpoint-only context telemetry | Accepted |
 | [ADR-0087](0087-inference-decides-from-a-relevance-shortlist.md) | Inference decides specialist selection from a relevance shortlist | Accepted (offline-decline clause superseded by ADR-0088) |
-| [ADR-0088](0088-deterministic-typed-recall-offline-floor.md) | Deterministic typed-recall is the offline floor | Accepted |
+| [ADR-0088](0088-deterministic-typed-recall-offline-floor.md) | Deterministic typed-recall is the offline floor | Superseded |
 | [ADR-0089](0089-zcode-stop-rejections-use-decision-block.md) | ZCode Stop rejections use decision:block | Accepted |
 
 ## Maintenance rules
