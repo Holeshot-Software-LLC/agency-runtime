@@ -17,7 +17,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-204
 branch: codex/ar-203-readme-story-final-proof
-evidence_commit: 9ec3c3d0ff80c5565664a93fb3fd1a3a7be500d3
+evidence_commit: c387b6503813b7d34120f2406f9e8fdd965edd6d
 minimum_ledger_commit: ecfb24126d5f359cd6bc02070906bc9f73a21aef
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
@@ -33,7 +33,8 @@ acceptance; this file records only current proof and the next package.
 
 - The active goal remains `README's main story works in reality.`
 - The owner resolved all nine product ambiguities on 2026-07-30.
-- README and ADR-0117 through ADR-0119 now state the locked target contract.
+- Commit `c387b65` makes README and ADR-0117 through ADR-0119 state the
+  locked target contract.
 - Tracker [#189](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189)
   records AR-204 under `epic:product`.
 - No implementation change or new live canary has run in this package yet.
