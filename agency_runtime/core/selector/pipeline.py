@@ -1075,7 +1075,7 @@ def _record_workforce_model_receipts(
 
 
 def _hireable_gap_units(outcome: Any) -> tuple[str, ...]:
-    """Return proven uncovered units in plan order when their evidence is clean."""
+    """Return inference-declared uncovered units whose verifier evidence is clean."""
 
     allowed = {
         "coverage_evidence_mismatch",
@@ -1092,6 +1092,11 @@ def _hireable_gap_units(outcome: Any) -> tuple[str, ...]:
     }
     if global_codes - allowed:
         return ()
+    declared_gap_units = {
+        str(getattr(row, "unit_id", "") or "")
+        for row in tuple(getattr(getattr(outcome, "proposal", None), "units", ()) or ())
+        if "inference-declared-gap" in tuple(getattr(row, "abstention_reasons", ()) or ())
+    }
     plan = getattr(outcome, "plan", None)
     plan_units = tuple(getattr(plan, "units", ()) or ())
     result: list[str] = []
@@ -1102,7 +1107,11 @@ def _hireable_gap_units(outcome: Any) -> tuple[str, ...]:
             for item in reasons
             if str(getattr(item, "unit_id", "") or "") == unit_id
         }
-        if unit_id and "no_safe_sufficient_team" in unit_codes and unit_codes <= allowed:
+        if (
+            unit_id in declared_gap_units
+            and "no_safe_sufficient_team" in unit_codes
+            and unit_codes <= allowed
+        ):
             result.append(unit_id)
     return tuple(result)
 
@@ -1172,11 +1181,11 @@ def _complete_gap_hiring_events(
     outcome: Any,
     initial_gap_units: tuple[str, ...],
     events_by_unit: dict[str, dict[str, Any]],
-    attempted_units: set[str],
     *,
     hiring_allowed: bool,
     daily_limit_reached: bool,
     max_hires: int,
+    workforce_changes: int,
     store_available: bool,
 ) -> list[dict[str, Any]]:
     current_hireable = set(_hireable_gap_units(outcome))
@@ -1199,7 +1208,7 @@ def _complete_gap_hiring_events(
             )
         elif daily_limit_reached:
             reasons = ("daily_hiring_limit_reached",)
-        elif len(attempted_units) >= max_hires:
+        elif workforce_changes >= max_hires:
             reasons = ("task_hiring_limit_reached",)
         else:
             reasons = ("gap_evidence_not_hireable", *reason_codes)
@@ -1237,6 +1246,7 @@ def _run_gap_hiring(
     initial_gap_units = _all_gap_units(outcome)
     events_by_unit: dict[str, dict[str, Any]] = {}
     attempted_units: set[str] = set()
+    workforce_changes = 0
     applied_inference = any(
         str(getattr(item, "status", "") or "") == "applied" for item in outcome.attempts
     )
@@ -1251,7 +1261,7 @@ def _run_gap_hiring(
         hireable = tuple(
             unit_id for unit_id in _hireable_gap_units(outcome) if unit_id not in attempted_units
         )
-        if not hireable or len(attempted_units) >= config.workforce.max_hires_per_task:
+        if not hireable or workforce_changes >= config.workforce.max_hires_per_task:
             break
         unit_id = hireable[0]
         attempted_units.add(unit_id)
@@ -1273,6 +1283,10 @@ def _run_gap_hiring(
             trace_id=request.trace_id,
             defer_commit=defer_commits,
             staffing_context=staffing_context,
+            gap_reason_codes=(
+                "inference_declared_gap",
+                *_gap_unit_reason_codes(outcome, unit_id),
+            ),
         )
         event = _hiring_event(unit_id, hiring)
         if hiring.pending_commit is not None:
@@ -1291,6 +1305,7 @@ def _run_gap_hiring(
             break
         if not hiring.workforce_changed or hiring.worker is None:
             continue
+        workforce_changes += 1
         active_snapshot = (
             workforce_snapshot_with_contract(
                 active_snapshot,
@@ -1325,10 +1340,10 @@ def _run_gap_hiring(
         outcome,
         initial_gap_units,
         events_by_unit,
-        attempted_units,
         hiring_allowed=hiring_allowed,
         daily_limit_reached=daily_limit_reached,
         max_hires=config.workforce.max_hires_per_task,
+        workforce_changes=workforce_changes,
         store_available=store is not None,
     )
     return outcome, active_snapshot, active_catalog, events

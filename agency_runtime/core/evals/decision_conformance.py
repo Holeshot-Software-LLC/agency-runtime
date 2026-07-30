@@ -86,6 +86,41 @@ MUTATIONS: Final[tuple[DecisionMutation, ...]] = (
         ),
     ),
     DecisionMutation(
+        mutation_id="implicit-staffing-failure-becomes-hiring-gap",
+        invariant=(
+            "An online staff decision without a safe team is repaired by inference rather "
+            "than relabeled as a contractor gap."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""        if decision == "staff" and not proposal_row.selected:
+            raise ValueError(f"workforce staff decision cannot form a safe team: {unit.unit_id}")""",
+        after="""        if decision == "staff" and not proposal_row.selected:
+            continue""",
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_staff_decision_without_safe_team_gets_one_bounded_inference_repair"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="declined-hiring-analysis-consumes-hire-budget",
+        invariant=(
+            "A declined hiring analysis does not consume the task's workforce-change "
+            "allowance or starve a later declared gap."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before=(
+            "        if not hireable or workforce_changes >= config.workforce.max_hires_per_task:"
+        ),
+        after=(
+            "        if not hireable or len(attempted_units) >= "
+            "config.workforce.max_hires_per_task:"
+        ),
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="causing-unit-binding-overflows-employment-schema",
         invariant="Causing-unit facts stay inside the employment contract item bound.",
         source_path="agency_runtime/core/workforce/hiring.py",

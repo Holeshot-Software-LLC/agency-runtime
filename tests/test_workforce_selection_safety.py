@@ -360,6 +360,7 @@ def test_documentation_unit_selects_existing_technical_writer_without_false_gap(
             "units": [
                 {
                     "unit_id": "unit-documentation",
+                    "decision": "staff",
                     "ranked_semantic": [
                         {
                             "agent_id": agent_id,
@@ -438,6 +439,7 @@ def test_online_inference_ranking_is_not_reordered_by_a_role_anchor() -> None:
             "units": [
                 {
                     "unit_id": "unit-diagnosis",
+                    "decision": "staff",
                     "ranked_semantic": [
                         {
                             "agent_id": agent_id,
@@ -1226,6 +1228,7 @@ def test_captured_typescript_plan_forms_exact_safe_lifecycle_team_from_full_work
         rows.append(
             {
                 "unit_id": unit_id,
+                "decision": "staff",
                 "ranked_semantic": [
                     {
                         "agent_id": agent_id,
@@ -1370,6 +1373,7 @@ def test_live_shaped_multidomain_security_plan_recruits_the_exact_safe_team() ->
         rows.append(
             {
                 "unit_id": unit_id,
+                "decision": "staff",
                 "ranked_semantic": [
                     {
                         "agent_id": agent_id,
@@ -1452,6 +1456,7 @@ def test_model_required_specialist_is_trusted_under_adr_0087() -> None:
         "units": [
             {
                 "unit_id": "unit-exploitability-audit",
+                "decision": "staff",
                 "ranked_semantic": [
                     {
                         "agent_id": agent_id,

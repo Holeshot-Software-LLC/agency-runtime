@@ -6,8 +6,6 @@ import json
 from dataclasses import replace
 from typing import Any
 
-import pytest
-
 from agency_runtime.core.config import AgencyConfig, ProviderEntry, WorkforceConfig
 from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 from agency_runtime.core.selector.pipeline import _record_workforce_model_receipts
@@ -24,6 +22,7 @@ from agency_runtime.core.workforce.fallback import (
     deterministic_work_plan,
 )
 from agency_runtime.core.workforce.inference import (
+    NOMINATION_RESPONSE_SCHEMA,
     PLAN_RESPONSE_SCHEMA,
     WorkforceInferenceAttempt,
     WorkforceRoutingOutcome,
@@ -66,6 +65,13 @@ def test_planner_schema_matches_strict_identifier_and_required_array_contract() 
         assert unit[field]["minItems"] == 1
     for field in ("resources", "acceptance_evidence"):
         assert unit[field]["items"]["maxLength"] == MAX_LABEL_CHARS
+
+
+def test_recruiter_schema_requires_explicit_staff_or_gap_decision() -> None:
+    row = NOMINATION_RESPONSE_SCHEMA["properties"]["units"]["items"]
+
+    assert "decision" in row["required"]
+    assert row["properties"]["decision"]["enum"] == ["staff", "gap"]
 
 
 def _contract(agent_id: str, *, enabled: bool = True) -> WorkforceContract:
@@ -178,6 +184,7 @@ def _nomination_document(selected: str = "technical-analyst") -> dict[str, Any]:
         "units": [
             {
                 "unit_id": "unit-analyze",
+                "decision": "staff",
                 "ranked_semantic": [
                     _nominee(selected, 0.98),
                 ],
@@ -429,6 +436,7 @@ def test_balanced_recruiter_repairs_only_missing_work_unit_rows() -> None:
     first_row["ranked_semantic"].append(_nominee("analysis-alternative", 0.90, "acceptable"))
     second_row = {
         "unit_id": "unit-analyze-second",
+        "decision": "staff",
         "ranked_semantic": [
             _nominee("technical-analyst", 0.98),
             _nominee("analysis-alternative", 0.90, "acceptable"),
@@ -521,6 +529,9 @@ def test_inference_uses_semantic_order_without_trusting_uncalibrated_score_gaps(
         "technical-analyst",
     }
     assert prompts[1]["response_contract"]["candidate_ids_must_come_from_detail_cards"]
+    assert prompts[1]["response_contract"]["maximum_selected_per_unit"] == 4
+    assert prompts[1]["response_contract"]["staff_decision_requires_safe_typed_coverage"]
+    assert prompts[1]["response_contract"]["gap_decision_requires_no_safe_team"]
     assert outcome.proposal is not None
     row = outcome.proposal.units[0]
     assert [(item.agent_id, item.score) for item in row.ranked_semantic] == [
@@ -583,21 +594,12 @@ def test_configured_inference_failure_abstains_without_keyword_selection() -> No
     assert outcome.attempts[0].status == "failed"
 
 
-@pytest.mark.xfail(
-    reason=(
-        "ADR-0087 follow-up: deterministic recall (deterministic_staff_plan) can "
-        "accept a covering team before the recruiter registers the model's "
-        "forbidden set, so a wrong-but-structurally-valid model nomination is not "
-        "yet overridden by inference. Pre-existing on this branch; tracked as a "
-        "nomination-authority follow-up, not a regression of the WP1-WP3 fixes."
-    ),
-    strict=True,
-)
-def test_wrong_but_structurally_valid_selection_is_rejected_by_deterministic_staffing() -> None:
+def test_staff_decision_without_safe_team_gets_one_bounded_inference_repair() -> None:
     wrong = replace(
         _contract("wrong-neighbor"),
-        outcomes=("Marketing prose",),
-        domains=("marketing",),
+        outcomes=("Planning guidance",),
+        artifact_kinds=("plan",),
+        lifecycle_phases=("planning",),
     )
     snapshot = _snapshot(
         _contract("technical-analyst"),
@@ -608,6 +610,7 @@ def test_wrong_but_structurally_valid_selection_is_rejected_by_deterministic_sta
         "units": [
             {
                 "unit_id": "unit-analyze",
+                "decision": "staff",
                 "ranked_semantic": [
                     _nominee("wrong-neighbor", 0.99, "required"),
                     _nominee("technical-analyst", 0.90, "forbidden"),
@@ -616,13 +619,63 @@ def test_wrong_but_structurally_valid_selection_is_rejected_by_deterministic_sta
             }
         ]
     }
+    repaired = {
+        "units": [
+            {
+                "unit_id": "unit-analyze",
+                "decision": "staff",
+                "ranked_semantic": [
+                    _nominee("technical-analyst", 0.99, "required"),
+                    _nominee("analysis-alternative", 0.90, "acceptable"),
+                    _nominee("wrong-neighbor", 0.89, "forbidden"),
+                ],
+            }
+        ]
+    }
     responses = iter(
         (
             _result(_compact_plan_document()),
             _result(unsafe),
-            _result(unsafe),
+            _result(repaired),
         )
     )
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(balanced_call_budget=3),
+        context=_context(),
+        invoker=lambda *_args, **_kwargs: next(responses),
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 3
+    assert [attempt.status for attempt in outcome.attempts] == [
+        "applied",
+        "rejected",
+        "applied",
+    ]
+    assert outcome.attempts[1].validation_detail == (
+        "workforce staff decision cannot form a safe team: unit-analyze"
+    )
+    assert outcome.staffing.units[0].selected == ("technical-analyst",)
+
+
+def test_explicit_gap_decision_survives_as_hiring_signal() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"), _contract("analysis-alternative"))
+    gap = {
+        "units": [
+            {
+                "unit_id": "unit-analyze",
+                "decision": "gap",
+                "ranked_semantic": [
+                    _nominee("technical-analyst", 0.99, "forbidden"),
+                    _nominee("analysis-alternative", 0.90, "forbidden"),
+                ],
+            }
+        ]
+    }
+    responses = iter((_result(_compact_plan_document()), _result(gap)))
 
     outcome = plan_and_staff_workforce(
         "Analyze this implementation safely.",
@@ -633,14 +686,11 @@ def test_wrong_but_structurally_valid_selection_is_rejected_by_deterministic_sta
     )
 
     assert not outcome.accepted
-    # ADR-0087: a wrong nomination that yields no safe team is a declared gap,
-    # not an inference failure. The nomination parses; the deterministic
-    # builder cannot form a safe analysis team from a marketing-domain
-    # "required" pick while the real analysts are forbidden, so the outcome is
-    # not accepted with the gap visible rather than workforce_inference_failed.
+    assert outcome.inference_mode == "inferred"
+    assert outcome.calls_used == 2
     assert outcome.proposal is not None
     assert outcome.proposal.units[0].selected == ()
-    assert outcome.staffing.accepted is False
+    assert outcome.proposal.units[0].abstention_reasons == ("inference-declared-gap",)
 
 
 def test_inference_forbidden_near_neighbor_is_not_selected_despite_higher_score() -> None:
@@ -652,6 +702,7 @@ def test_inference_forbidden_near_neighbor_is_not_selected_despite_higher_score(
         "units": [
             {
                 "unit_id": "unit-analyze",
+                "decision": "staff",
                 "ranked_semantic": [
                     _nominee("plausible-wrong-neighbor", 0.99, "forbidden"),
                     _nominee("right-specialist", 0.90, "required"),

@@ -3,7 +3,7 @@ title: "AR-200: Make workforce decisions diagnosable and mutation-conformant"
 status: in_progress
 category: roadmap
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-07-30
 tags: [workforce, hiring, diagnostics, mutation-testing, inference, routing]
 related:
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
@@ -154,6 +154,28 @@ null rather than zero, and the empty workspace failed all five product checks.
 The local evidence page records the exact prompt, staffing receipt, model and
 finalization evidence, mutation report, and scoped verdict.
 
+The bounded follow-up identified a decision-provenance defect rather than a
+missing architecture specialist. Nomination output classified candidates but
+did not say whether inference intended to staff the unit or declare a gap. Any
+structurally valid nomination that the typed verifier could not assemble was
+therefore relabeled as `no_safe_sufficient_team` and admitted to hiring. A
+declined hiring analysis then counted against `max_hires_per_task`, starving
+the next declared unit even though no workforce change occurred.
+
+The repair requires inference to return `decision: staff|gap` for every unit.
+A staff decision without a safe typed team, or a gap decision with one, gets one
+bounded semantic repair from the same provider. Only an explicit gap carrying
+the verifier's closed safe reason set reaches independent hiring analysis.
+Hiring decline stages are now distinct and content-free, and only an applied
+hire or amendment spends the per-task allowance. Two bounded review passes are
+complete. The focused suite passes 121 tests with 1 skip; the named Python
+production spine passes 664 with 6 skips; dashboard UI passes 109; all routing,
+policy, delegation, latency, startup, and 263/1,000/10,000-worker scale gates
+pass; and 538 Markdown files validate. The final isolated evaluator has a green
+baseline and kills all 9 curated mutations with zero survivors or invalid
+results while leaving source inputs unchanged. Merge, exact install, and the
+single new ordinary canary remain ahead.
+
 ## Approach
 
 1. Split candidate validation into content-free, allowlisted stages and retain
@@ -173,6 +195,12 @@ finalization evidence, mutation report, and scoped verdict.
    killed mutation.
 6. Run focused review, the mutation proof, and the named fast production gate
    before merge, exact installation, and one bounded ordinary Codex canary.
+7. Require explicit inference-owned `staff` / `gap` decisions and send semantic
+   contradictions through the existing bounded repair path rather than
+   manufacturing a deterministic gap.
+8. Count only applied workforce changes against `max_hires_per_task`; keep each
+   declared unit single-attempt and the provider call budget independently
+   bounded.
 
 ## Dependencies
 
@@ -198,6 +226,14 @@ contract introduced here.
   anchor reordering, contractor binding overflow, destination projection
   overflow, amendment identity drift, amendment destination overflow, and
   diagnostic collapse are all killed by their named focused tests.
+- [x] Every configured-provider nomination explicitly says `staff` or `gap`;
+  contradictory typed evidence receives one bounded inference repair and is
+  never silently reclassified by deterministic code.
+- [x] Only an inference-declared gap with the verifier's safe no-team reason
+  closure enters hiring, and hiring decline stages remain content-free.
+- [x] A declined hiring analysis does not consume `max_hires_per_task` or starve
+  a later declared gap; the corresponding reversal is killed by the curated
+  mutation gate.
 - [x] An inferred amendment revises the exact selected existing worker, retains
   every pre-existing bounded contract value, and cannot silently change its
   authority or context mode.

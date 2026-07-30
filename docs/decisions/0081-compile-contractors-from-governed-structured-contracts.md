@@ -3,7 +3,7 @@ title: "Compile contractors from governed structured contracts"
 status: accepted
 category: decisions
 created: 2026-07-21
-updated: 2026-07-29
+updated: 2026-07-30
 tags: [contractors, hiring, security, roster]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -29,14 +29,21 @@ portability, and roster-bloat risks.
 ## Decision
 
 Contractor creation is available only with configured inference and a durable
-gap proof against every workforce state. Inference emits a bounded structured
-employment contract; Agency compiles it through a fixed reviewed template and
-an independent critic validates safety and differentiation. Inference chooses
-the coherent amendment target; that existing worker then owns the revision's
-identity, authority, and context boundary. Additive projections preserve every
-existing value before accepting new values within the destination schema.
-Distinct gaps create stable contractor identities. Every lifecycle transition
-preserves versions, evidence, and superseding links.
+gap proof against every workforce state. The recruiter must explicitly declare
+the unit a gap, the staffing verifier must confirm the exact safe no-team reason
+closure, and the hiring analyst must independently compare the need against the
+complete workforce. A recruiter staffing failure is not itself a gap.
+
+Inference emits a bounded structured employment contract; Agency compiles it
+through a fixed reviewed template and an independent critic validates safety
+and differentiation. Inference chooses the coherent amendment target; that
+existing worker then owns the revision's identity, authority, and context
+boundary. Additive projections preserve every existing value before accepting
+new values within the destination schema. Distinct gaps create stable
+contractor identities. `max_hires_per_task` counts applied workforce changes,
+not declined analyses, so one disputed gap cannot consume the allowance needed
+by a later proven gap. Every lifecycle transition preserves versions, evidence,
+and superseding links.
 
 ## Consequences
 
