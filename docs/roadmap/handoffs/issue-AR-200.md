@@ -3,12 +3,13 @@ title: "AR-200 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-07-30
 tags: [handoff, workforce, hiring, mutation-testing, evidence, recovery]
 related:
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
+  - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0113-prove-decision-conformance-with-isolated-mutations.md
@@ -17,9 +18,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-200
-branch: codex/ar-200-final-evidence
-evidence_commit: 8bb504ce3c76aca6f1a243750d90419c1375be08
-minimum_ledger_commit: caae4538648291793af995e7c1ec03e3248ade40
+branch: agent/ar-200-selection-hiring-proof
+evidence_commit: f02b1af6bef5eb885aca1a334bd3a1cfb1a50bf7
+minimum_ledger_commit: da40797c822330e922835eb31127d481be7d98e3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 ---
@@ -28,129 +29,94 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 
 ## checkpoint
 
-- The deterministic package is demo-ready: exact content-free contractor
-  diagnostics and the disposable-copy decision-conformance gate are
-  implemented and verified.
-- PR 177 merged the bounded amendment repair as exact main revision
-  `8bb504ce3c76aca6f1a243750d90419c1375be08`; final evidence continues on
-  `codex/ar-200-final-evidence`.
-- The uv tool is exact build `0.1.0+g8bb504ce3c76`. Codex managed bundle
-  `0.1.0+codex.d6240568ca33` and ZCode were refreshed from that launcher.
-- AR-199's terminal ordinary trace remains `NO-GO`; it is evidence input, not a
-  run to reinterpret or repeat before deterministic gates pass.
-- The first AR-200 ordinary trace ended `NO-GO`; its isolated documentation
-  amendment failure is repaired and fully verified.
-- The final AR-200 canary is now terminal `NO-GO`; no rerun is permitted in
-  this bounded package.
-- Owner-untracked files remain untouched.
+- Work continues on `agent/ar-200-selection-hiring-proof` from merged main
+  `f02b1af6bef5eb885aca1a334bd3a1cfb1a50bf7`.
+- The previous exact-installed build remains
+  `0.1.0+g8bb504ce3c76`; Codex bundle
+  `0.1.0+codex.d6240568ca33` and ZCode are registered and enabled.
+- The one prior final canary remains terminal `NO-GO`; it is evidence input,
+  not a result to reinterpret.
+- The bounded source repair is demo-ready after two review passes and the full
+  named fast gate. Merge, exact Codex/ZCode install, and exactly one new
+  ordinary canary remain.
+- Owner-untracked `docs/analysis/2026-07-25-deep-audit-findings.md` and
+  `uv.lock` remain untouched.
 
 ## completed-evidence
 
-- The confirmed live-edge reproduction was a character/byte boundary mismatch:
-  schema-valid 160-character Unicode employment prose can exceed the workforce
-  projection's 192-byte text bound. Only the routing projection is normalized
-  and byte-bounded; the governed employment contract remains complete.
-- Post-parse rejection evidence now uses stable validation-stage codes and
-  tests prove raw exception content, including a planted provider secret, does
-  not enter reason codes or failed-case storage.
-- The `beyond-test-coverage` sabotage mechanism was assessed. Agency will use
-  its mutation-sensitivity principle but not its in-place mutation/restoration
-  implementation.
-- Two focused review passes completed. The second found that package links
-  could survive into a private copy; the evaluator now rejects symlinks and
-  Windows reparse points, with 10 conformance tests passing.
-- Focused behavior: 108 passed, 1 skipped, 1 expected failure.
-- Initial decision-conformance proof: green baseline; 5 of 5 exact mutations
-  killed; 0 survivors; 0 invalid results; every anchor occurred once; monitored
-  package and selected-test inputs remained unchanged.
-- Named fast Python spine: 668 passed and 6 skipped. Dashboard UI: 109 passed.
-  Routing evaluation: every correctness, policy, delegation, latency, and
-  263/1,000/10,000-agent scale threshold passed.
-- Documentation metadata and normal validation pass for 536 Markdown files.
-  Strict tracker mode separately reports the inherited AR-128 through AR-198
-  parity backlog; AR-200 itself matches tracker issue 175.
-- PR 176 and PR 177 hosted gates acquired no repository steps; GitHub annotated
-  each CI, CodeQL, and Dependency Review entry with the same account-payment or
-  spending-limit refusal. Both were administratively merged from complete local
-  gates. PR 177's exact merge is `8bb504ce3c76aca6f1a243750d90419c1375be08`.
-- The current exact install records Codex install ID
-  `57f487f1-b354-4ca8-9f5e-89a9f04a2e72`, bundle
-  `0.1.0+codex.d6240568ca33`, and ZCode install ID
-  `77342e82-3b1a-4ca9-85ed-b79cbdf89f8e`. Both are registered and enabled;
-  current-profile Codex hook trust remains unverified as expected.
-- Context telemetry reported 87.5 percent remaining at package bootstrap and
-  53.8 percent immediately before the implementation checkpoint. It reported
-  19.3 percent before live evaluation, so this merge/install recovery pair is
-  the required clean hard checkpoint.
-- Telemetry reported 10.2 percent after the amendment repair's final fast gate;
-  this source and worklog-ledger pair is the required clean repair checkpoint
-  before PR, exact installation, and the final live canary.
-- Trial `ar200-52d5635-ordinary-01`, trace
-  `019fb0ed-b925-7622-9fcc-f8774f30110d`, persisted two successful Luna wrapper
-  receipts and relevant safe proposals for eight of nine units. Architecture
-  proposed `software-architect` plus `section-508-accessibility-specialist`;
-  the only gap was documentation, whose first nomination was
-  `technical-writer`. Its amendment collapsed to
-  `contract_invalid:amendment`, so atomic publication truthfully produced no
-  specialists, delegations, finalization, header, corrections, or artifacts.
-- The repair binds amendment identity to the inference-selected existing
-  target, preserves authority/context checks, keeps every existing contract
-  value before bounded additions, and emits content-free amendment stages.
-  Focused hiring and conformance modules pass 35 tests. The real isolated gate
-  has a green baseline and kills 7 of 7 mutations with 0 survivors and 0
-  invalid results; both new amendment anchors occur once and fail only their
-  named tests.
-- A provider-free reproduction on an owner-private copy of the real store
-  amended `technical-writer` in place from revision 0 to 1 without roster
-  growth. It rebound a deliberately different contract slug, retained 12
-  employment outcomes while bounding workforce outcomes to 8 and qualifiers to
-  4, preserved every existing projected value, and left the live worker at its
-  original revision and hash.
-- Final repair gate: 111 focused tests passed with 1 skip and 1 expected
-  failure; the named Python spine passed 661 tests with 6 skips; dashboard UI
-  passed 109 tests; all routing, policy, delegation, CLI-startup, latency, and
-  263/1,000/10,000-agent scale gates passed; 537 Markdown files validated; Ruff
-  and diff checks passed; and the final 7-mutation proof remained fully killed
-  with unchanged source.
-- A proposed source-level live diagnostic was denied because it would transmit
-  the active roster snapshot to the external provider. It was not retried or
-  bypassed; local contract analysis and isolated deterministic regressions are
-  the bounded repair evidence that preceded the final product canary.
-- Trial `ar200-8bb504c-ordinary-02`, trace
+- Prior trial `ar200-8bb504c-ordinary-02`, trace
   `019fb121-2e4c-70e0-a286-7fe25fc2e5ba`, completed in 162.641 seconds with
-  two successful Luna wrapper receipts and safe proposals for seven of nine
-  units. Architecture and documentation remained gaps. The only hiring call
-  returned `gap_not_proven`, documentation hit the task hiring limit, and
-  atomic publication produced zero specialists or delegations. Finalization
-  continued once for `evidence_verification` and ended `retry_exhausted`;
-  the header was absent, correction count was null, and all five product checks
-  failed against an empty workspace. The local report records the exact prompt
-  and correlated evidence.
+  two successful Luna wrapper receipts. Seven of nine units had safe proposals;
+  architecture and documentation were empty.
+- Architecture entered hiring and returned `gap_not_proven`; documentation
+  then received `task_hiring_limit_reached`. Atomic publication recorded no
+  specialists or delegations, the header was absent, correction count was null,
+  and all five product checks failed.
+- Root cause: nomination output classified candidates but did not record
+  whether inference intended `staff` or `gap`. Any structurally valid
+  nomination that could not form a typed-safe team was silently converted into
+  a contractor gap.
+- A declined hiring analysis also consumed `max_hires_per_task`, despite no
+  workforce change, and could starve the next proven gap.
+- Recruiter output now requires one explicit `staff|gap` decision per unit.
+  Contradictory safe-team evidence gets the same provider's one bounded semantic
+  repair; deterministic code cannot invent a gap or appoint/reorder a worker.
+- Only `inference-declared-gap` plus the verifier's closed safe no-team reason
+  set reaches independent whole-workforce hiring analysis.
+- Hiring evidence now distinguishes `hiring_inference_abstained`,
+  `hiring_gap_disputed`, and `hiring_action_invalid`. Stable verified-gap
+  reason codes enter the hiring prompt; provider prose does not enter evidence.
+- `max_hires_per_task` now counts applied hires/amendments. Each declared unit
+  remains single-attempt and each hiring analysis retains its configured call
+  budget.
+- Post-hire restaffing preserves the recruiter's required, acceptable,
+  forbidden, and still-declared-gap semantics instead of rebuilding an
+  inference-owned proposal from rankings alone.
+- Focused review suite: 121 passed, 1 skipped. Named Python spine: 664 passed,
+  6 skipped. Dashboard UI: 109 passed. All routing, policy, delegation, latency,
+  startup, and 263/1,000/10,000-worker scale gates pass.
+- Documentation metadata and normal validation pass for 538 Markdown files;
+  Ruff lint/format and diff checks pass.
+- Isolated decision conformance: green baseline; 9/9 exact mutations killed;
+  zero survivors; zero invalid results; source inputs unchanged. New mutations
+  reverse explicit staff repair and truthful hire-budget accounting.
+- No provider, install, current-profile trust, or live-canary action has been
+  taken in this package yet.
+- Context telemetry reported 55.5 percent remaining before the full gate, so no
+  threshold checkpoint was required; the forthcoming substantive/ledger pair
+  is the clean demo-ready checkpoint anyway.
 
 ## exact-blocker
 
-The amendment defect is closed, but ordinary live selection is not robust:
-architecture can still receive relevant nominations with no safe proposal, and
-same-turn hiring can decline that explicit gap as `gap_not_proven`. That leaves
-the atomic team empty before delegation. Current-profile trust remains a
-separate attended status and did not block the isolated canary.
+No deterministic blocker is known. The package still needs the named fast gate,
+clean substantive/ledger checkpoint, authorized PR/merge, exact Codex and ZCode
+installation, and one fresh-process product canary. If host hook trust cannot be
+bypassed during install/canary, enter `waiting_for_operator` once and stop.
 
 ## same-task-continuity
 
-Close this bounded package with the terminal trace and local evidence page. Do
-not turn its failed single canary into an unbounded repair-and-rerun loop.
+Finish this package without expanding into unrelated edge cleanup. Stop at the
+first real gate failure, repair only what invalidates the visible outcome, and
+rerun that gate. Run exactly one new ordinary canary after deterministic gates,
+merge, and exact installation.
 
 ## next-bounded-work-package
 
-1. Diagnose why a required architecture unit can retain relevant nominations
-   but lose every safe proposal, and why hiring calls that gap unproven.
-2. Add a decision-conformance mutation for the confirmed boundary before any
-   separately scoped install or live canary.
+1. Complete review pass two only for unresolved material findings.
+2. Run documentation checks, the named Python/dashboard/routing spine, and the
+   final 9-mutation proof.
+3. Commit the substantive recovery checkpoint and its exact worklog ledger.
+4. Push, open and inspect the PR, merge the authorized bounded change, and
+   exact-install it for Codex and ZCode.
+5. Run one ordinary Codex canary and judge receipts, selected/delegated workers,
+   accepted finalization, first-response header, and correction count.
+6. Update the local evidence page, tracker, roadmap, and this capsule with the
+   terminal scoped verdict.
 
 ## verification
 
 ~~~text
-python -m pytest tests/test_workforce_dynamic_hiring.py tests/test_workforce_inference.py tests/test_workforce_selection_safety.py tests/test_decision_conformance.py tests/test_cli_parser_contract.py -q -W error
+python -m pytest tests/test_workforce_inference.py tests/test_workforce_selection_safety.py tests/test_workforce_dynamic_hiring.py tests/test_decision_conformance.py tests/test_routing_correctness.py -q -W error
 agency eval decision-conformance --json
 python scripts/docs_metadata.py --check
 python scripts/update_policy_availability.py --check
@@ -161,20 +127,16 @@ ruff format --check agency_runtime tests scripts
 python -m pytest tests/test_senior_audit_hardening.py tests/test_configuration_namespace_security.py tests/test_executable_namespace_security.py tests/test_dashboard_auth_boundary_regression.py tests/test_dashboard_transaction_refactors.py tests/test_routing_correctness.py tests/test_workforce_hiring_contract.py tests/test_workforce_selection_safety.py tests/test_workforce_dynamic_hiring.py tests/test_delegation_p1_correctness.py tests/test_store_turn_atomicity.py tests/test_roster_snapshot_generation.py tests/test_mcp_protocol_hardening.py tests/test_cli_parser_contract.py tests/test_cli_upgrade.py tests/test_update_service.py tests/test_native_installer.py tests/test_host_uninstall.py tests/test_cli_uninstall.py tests/test_host_boundary_hardening.py tests/test_cli_operator_presence.py tests/test_security_turn_boundaries.py -q -W error
 node --test tests/dashboard_ui.test.mjs
 agency eval routing --json --no-details
-agency eval decision-conformance --repository . --json
 git diff --check
 ~~~
 
 ## constraints
 
-- Online specialist appointment remains inference-owned; deterministic logic
-  may recall candidates or veto unsafe nominations but cannot add or reorder an
-  online selection.
-- Never persist provider content or raw validation exception text in routing,
-  hiring, dashboard, or report evidence.
-- The mutation runner may read the requested checkout but may write only to its
-  private disposable copy; it must not invoke Git restoration commands.
-- Baseline failure, timeout, stale anchors, collection errors, and unrelated
-  test failures are terminal invalid evidence, not successful mutation kills.
-- Preserve ready-CAS atomicity, hook trust, exact native-child goal validation,
-  and owner-untracked files.
+- Configured online selection remains inference-owned. Deterministic policy may
+  recall or reject but cannot add, promote, or reorder a specialist.
+- Never persist provider content or raw exception text in routing, hiring,
+  dashboard, or report evidence.
+- Mutation work occurs only in owner-private disposable copies; invalid
+  execution never counts as a killed mutation.
+- Preserve ready-CAS atomicity, hook trust, native-child goal validation, and
+  owner-untracked files.

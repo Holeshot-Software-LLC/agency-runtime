@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-29
+updated: 2026-07-30
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -57,6 +57,14 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Configured inference now makes an explicit per-unit `staff` or `gap`
+  decision. Contradictory safe-team evidence gets one bounded inference repair
+  instead of becoming an implicit contractor gap, and only an explicit gap with
+  verifier-confirmed no-team evidence can reach hiring.
+- Declined or disputed contractor analyses no longer consume
+  `max_hires_per_task`; the cap now counts applied workforce changes, so a later
+  proven gap is not starved. Hiring evidence distinguishes inference abstention,
+  disputed gaps, and invalid actions without persisting provider prose.
 - Contractor hiring now reports allowlisted content-free validation stages
   instead of collapsing every post-parse rejection into
   `contract_invalid:candidate`. Full governed employment prose remains in the

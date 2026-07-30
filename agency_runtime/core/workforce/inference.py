@@ -109,10 +109,16 @@ _RECRUITER_SYSTEM = (
     "they actually do. Pick the specialist whose real-world expertise best matches "
     "the unit's intent, not just who has the most keyword overlaps.\n\n"
     "For every unit, rank the strongest semantic candidates in descending order. "
-    "Classify each as required, acceptable, or forbidden:\n"
+    "Set decision to staff when the ranked candidates can form the intended team, or gap "
+    "only when no supplied specialist or combination is semantically appropriate. Classify "
+    "each candidate as required, acceptable, or forbidden:\n"
     "- required: the specialist whose expertise is essential for this unit\n"
     "- acceptable: a valid alternative or complement\n"
     "- forbidden: unrelated, wrong specialty, or outside the unit's scope\n"
+    "A staff decision must leave enough required/acceptable candidates to cover every typed "
+    "requirement within response_contract.maximum_selected_per_unit. Do not mark a necessary "
+    "coverage complement forbidden merely because it is secondary. A gap decision must not "
+    "leave a safe team.\n"
     "Every required/acceptable candidate needs concise positive evidence (why they "
     "fit). Every forbidden candidate needs concise negative evidence (why they "
     "don't). Disabled or unavailable specialists can be acceptable but not required.\n\n"
@@ -397,6 +403,7 @@ _NOMINATION_ROW_SCHEMA = _closed_object(
             "pattern": r"^unit-[a-z0-9][a-z0-9-]{0,122}$",
             "type": "string",
         },
+        "decision": {"enum": ["staff", "gap"], "type": "string"},
         "ranked_semantic": {
             "items": _NOMINATION_RANK_SCHEMA,
             "maxItems": 16,
@@ -404,7 +411,7 @@ _NOMINATION_ROW_SCHEMA = _closed_object(
             "type": "array",
         },
     },
-    ("unit_id", "ranked_semantic"),
+    ("unit_id", "decision", "ranked_semantic"),
 )
 NOMINATION_RESPONSE_SCHEMA = _closed_object(
     {
@@ -758,8 +765,8 @@ def _invoke_stage(
                         f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
                         "Your previous JSON matched the transport schema but failed a "
                         f"deterministic semantic invariant: {detail}. Re-evaluate every identifier, "
-                        "dependency, ordering, uniqueness, and plan binding, then return one "
-                        "corrected JSON object only."
+                        "dependency, ordering, uniqueness, plan binding, staffing decision, "
+                        "and typed coverage, then return one corrected JSON object only."
                     )
                     continue
                 break
@@ -1009,6 +1016,19 @@ def _semantic_staffing_classes(
     return required, acceptable, forbidden
 
 
+def _validate_nomination_decisions(
+    plan: WorkUnitPlan,
+    proposal: RecruiterProposal,
+    decisions: Mapping[str, str],
+) -> None:
+    for unit, proposal_row in zip(plan.units, proposal.units, strict=True):
+        decision = decisions[unit.unit_id]
+        if decision == "staff" and not proposal_row.selected:
+            raise ValueError(f"workforce staff decision cannot form a safe team: {unit.unit_id}")
+        if decision == "gap" and proposal_row.selected:
+            raise ValueError(f"workforce gap decision contains a safe team: {unit.unit_id}")
+
+
 def _proposal_from_nominations(
     value: object,
     plan: WorkUnitPlan,
@@ -1027,7 +1047,11 @@ def _proposal_from_nominations(
     known = set(contracts_by_id)
     rows_by_unit: dict[str, Mapping[str, Any]] = {}
     for row in rows:
-        if not isinstance(row, Mapping) or set(row) != {"unit_id", "ranked_semantic"}:
+        if not isinstance(row, Mapping) or set(row) != {
+            "unit_id",
+            "decision",
+            "ranked_semantic",
+        }:
             raise ValueError("workforce nomination row is invalid")
         unit_id = str(row["unit_id"] or "").strip().casefold()
         if unit_id in rows_by_unit:
@@ -1037,10 +1061,15 @@ def _proposal_from_nominations(
     semantic_required: dict[str, frozenset[str]] = {}
     semantic_acceptable: dict[str, frozenset[str]] = {}
     semantic_forbidden: dict[str, frozenset[str]] = {}
+    decisions: dict[str, str] = {}
     if set(rows_by_unit) != {unit.unit_id for unit in plan.units}:
         raise ValueError("workforce nominations do not match the plan")
     for expected_unit in plan.units:
         row = rows_by_unit[expected_unit.unit_id]
+        decision = str(row["decision"] or "").strip().casefold()
+        if decision not in {"staff", "gap"}:
+            raise ValueError("workforce nomination decision is invalid")
+        decisions[expected_unit.unit_id] = decision
         raw_ranks = row["ranked_semantic"]
         if not isinstance(raw_ranks, list) or not 1 <= len(raw_ranks) <= 16:
             raise ValueError("workforce nomination ranking is invalid")
@@ -1105,14 +1134,15 @@ def _proposal_from_nominations(
         semantic_required=semantic_required,
         semantic_acceptable=semantic_acceptable,
         semantic_forbidden=semantic_forbidden,
+        semantic_gap_units=frozenset(
+            unit_id for unit_id, decision in decisions.items() if decision == "gap"
+        ),
     )
-    # ADR-0087: a unit with no safe team is a real capability gap, not an
-    # invalid nomination. The model ranked the candidates it could; if the
-    # deterministic builder cannot form a safe team for a unit, that unit's gap
-    # is signal that should reach the gap -> hire path in pipeline.route
-    # (_single_hireable_gap_unit + hire_contractor_for_gap), not a ValueError
-    # that makes the whole nomination read as "inference failed". Return the
-    # proposal with the gap visible (empty selected, abstention reasons).
+    _validate_nomination_decisions(plan, proposal, decisions)
+    # ADR-0087: inference explicitly decides whether each unit should be
+    # staffed or is a real semantic gap. Deterministic policy verifies that the
+    # decision agrees with typed coverage and eligibility, but never adds or
+    # reorders an online specialist.
     return proposal
 
 
@@ -1154,7 +1184,11 @@ class _NominationAccumulator:
         expected = {unit.unit_id for unit in self._plan.units}
         response_ids: set[str] = set()
         for row in rows:
-            if not isinstance(row, Mapping) or set(row) != {"unit_id", "ranked_semantic"}:
+            if not isinstance(row, Mapping) or set(row) != {
+                "unit_id",
+                "decision",
+                "ranked_semantic",
+            }:
                 raise ValueError("workforce nomination row is invalid")
             unit_id = str(row["unit_id"] or "").strip().casefold()
             if unit_id not in expected or unit_id in response_ids:
@@ -1281,6 +1315,10 @@ def _recruit_ambiguous_plan(
                 "one_row_per_unit": True,
                 "never_omit_a_unit": True,
                 "maximum_candidates_per_unit": MAX_UNIT_SHORTLIST + 1,
+                "maximum_selected_per_unit": config.workforce.max_selected_per_unit,
+                "maximum_selected_total": config.workforce.max_selected_total,
+                "staff_decision_requires_safe_typed_coverage": True,
+                "gap_decision_requires_no_safe_team": True,
                 "candidate_ids_must_come_from_detail_cards": True,
             },
             "detail_cards": detail_cards,

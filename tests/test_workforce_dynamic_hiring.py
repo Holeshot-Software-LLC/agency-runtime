@@ -862,6 +862,42 @@ def test_disabled_covering_worker_prevents_duplicate_before_critic_or_write(tmp_
     assert store.list_hiring_cases(limit=10) == []
 
 
+@pytest.mark.parametrize(
+    ("action", "gap_proven", "expected"),
+    [
+        ("abstain", True, "hiring_inference_abstained"),
+        ("hire", False, "hiring_gap_disputed"),
+    ],
+)
+def test_hiring_decline_preserves_its_decision_stage(
+    tmp_path: Path,
+    action: str,
+    gap_proven: bool,
+    expected: str,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    response = _hiring_response()
+    response["action"] = action
+    response["gap_evidence"]["gap_proven"] = gap_proven
+    if action == "abstain":
+        response["contract"] = None
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        gap_reason_codes=("inference_declared_gap", "no_safe_sufficient_team"),
+        invoker=lambda provider, *_args, **_kwargs: _result(response, provider),
+    )
+
+    assert outcome.status == "abstained"
+    assert outcome.reason_codes == (expected,)
+    assert len(outcome.attempts) == 1
+    assert store.list_hiring_cases(limit=10) == []
+
+
 def test_coherent_gap_amends_existing_worker_without_roster_bloat(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     existing = _install_existing(store)
@@ -1256,6 +1292,7 @@ def test_route_hires_and_assigns_real_gap_in_same_preflight(tmp_path: Path, monk
         budget=StaffingBudget(),
         semantic_required={implementation.unit_id: frozenset({existing.agent_id})},
         semantic_acceptable={review.unit_id: frozenset({existing.agent_id})},
+        semantic_gap_units=frozenset({implementation.unit_id}),
     )
     staffing = verify_staffing(
         plan,
@@ -1293,6 +1330,32 @@ def test_route_hires_and_assigns_real_gap_in_same_preflight(tmp_path: Path, monk
         abstention_codes=tuple(item.code for item in staffing.abstention_reasons),
         calls_used=1,
     )
+    implicit_proposal = build_deterministic_proposal(
+        plan,
+        snapshot.contracts,
+        {
+            implementation.unit_id: [(existing.agent_id, 0.9)],
+            review.unit_id: [(existing.agent_id, 0.9)],
+        },
+        context=context,
+        budget=StaffingBudget(),
+        semantic_required={implementation.unit_id: frozenset({existing.agent_id})},
+        semantic_acceptable={review.unit_id: frozenset({existing.agent_id})},
+    )
+    implicit_staffing = verify_staffing(
+        plan,
+        implicit_proposal,
+        snapshot.contracts,
+        context=context,
+        budget=StaffingBudget(),
+    )
+    assert (
+        _hireable_gap_units(
+            replace(inferred, proposal=implicit_proposal, staffing=implicit_staffing)
+        )
+        == ()
+    )
+    assert _hireable_gap_units(inferred) == (implementation.unit_id,)
     unsafe = replace(
         inferred,
         staffing=replace(
@@ -1343,18 +1406,34 @@ def test_route_hires_and_assigns_real_gap_in_same_preflight(tmp_path: Path, monk
 
 
 @pytest.mark.parametrize(
-    ("max_hires", "max_daily", "expected_statuses", "expected_calls", "accepted"),
+    (
+        "max_hires",
+        "max_daily",
+        "decline_first",
+        "expected_statuses",
+        "expected_calls",
+        "accepted",
+    ),
     [
-        (0, 3, ("not_attempted", "not_attempted"), (), False),
-        (1, 3, ("hired", "not_attempted"), ("unit-quantum-build",), False),
+        (0, 3, False, ("not_attempted", "not_attempted"), (), False),
+        (1, 3, False, ("hired", "not_attempted"), ("unit-quantum-build",), False),
+        (
+            1,
+            3,
+            True,
+            ("abstained", "hired"),
+            ("unit-quantum-build", "unit-photonic-build"),
+            False,
+        ),
         (
             2,
             3,
+            False,
             ("hired", "hired"),
             ("unit-quantum-build", "unit-photonic-build"),
             True,
         ),
-        (2, 0, ("abstained", "not_attempted"), ("unit-quantum-build",), False),
+        (2, 0, False, ("abstained", "not_attempted"), ("unit-quantum-build",), False),
     ],
 )
 def test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful(
@@ -1362,6 +1441,7 @@ def test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful(
     monkeypatch,
     max_hires: int,
     max_daily: int,
+    decline_first: bool,
     expected_statuses: tuple[str, ...],
     expected_calls: tuple[str, ...],
     accepted: bool,
@@ -1433,6 +1513,7 @@ def test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful(
             photonic.unit_id: frozenset({existing.agent_id}),
         },
         semantic_acceptable={review.unit_id: frozenset({existing.agent_id})},
+        semantic_gap_units=frozenset({quantum.unit_id, photonic.unit_id}),
     )
     staffing = verify_staffing(
         plan,
@@ -1473,13 +1554,17 @@ def test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful(
 
     def fake_hire(request, unit, contracts, **kwargs):
         calls.append(unit.unit_id)
+        response = _hiring_response_for(unit)
+        if decline_first and unit.unit_id == quantum.unit_id:
+            response["action"] = "abstain"
+            response["contract"] = None
         return real_hire(
             request,
             unit,
             contracts,
             **kwargs,
             invoker=_invoker(
-                _hiring_response_for(unit),
+                response,
                 {"approved": True, "reason_codes": []},
             ),
         )
@@ -1519,8 +1604,10 @@ def test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful(
         assert {tuple(item["reason_codes"]) for item in result["hiring_events"]} == {
             ("task_hiring_limit_reached",)
         }
-    if max_hires == 1:
+    if max_hires == 1 and not decline_first:
         assert result["hiring_events"][1]["reason_codes"] == ["task_hiring_limit_reached"]
+    if decline_first:
+        assert result["hiring_events"][0]["reason_codes"] == ["hiring_inference_abstained"]
     if max_daily == 0:
         assert result["hiring_events"][0]["reason_codes"] == ["daily_hiring_limit_reached"]
         assert result["hiring_events"][1]["reason_codes"] == ["daily_hiring_limit_reached"]

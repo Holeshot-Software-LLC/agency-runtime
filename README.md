@@ -206,11 +206,14 @@ When a provider is configured, selection is inference-first:
 2. **Recall** — deterministic, zero-false-negative typed recall reduces the whole
    workforce to the plausibly-relevant specialists.
 3. **Recruit** — the recruiter (one bounded inference call over the recall
-   shortlist) nominates the best eligible specialist per unit — `required`,
-   `acceptable`, or `forbidden` — or declares a real gap.
+   shortlist) explicitly decides `staff` or `gap` per unit and classifies each
+   nominated candidate as `required`, `acceptable`, or `forbidden`.
 4. **Verify** — deterministic code validates eligibility, composition, coverage,
-   and budget around the model's trusted nomination.
-5. **Gap → hire** — if no specialist covers a unit, Agency hires a contractor.
+   and budget around the model's decision. A contradictory `staff` or `gap`
+   result gets one bounded inference repair; code does not silently reverse it.
+5. **Gap → hire** — only an explicit gap with verifier-confirmed safe no-team
+   evidence enters independent whole-workforce contractor analysis. Declined
+   analysis does not consume the task's applied-hire allowance.
 
 ### Contractor hiring (`hire_contractor_for_gap`)
 
@@ -522,8 +525,9 @@ mutation to a fresh owner-private disposable copy. It never changes or restores
 the requested checkout. Only the expected ordinary pytest failure kills a
 mutation; a timeout, stale anchor, collection error, unrelated failure, or
 survivor fails the command. The curated manifest includes online inference
-ownership, ranking order, contractor projection, amendment identity and bounded
-additivity, and content-free diagnostic decisions.
+ownership, ranking order, explicit staff/gap decisions, truthful hire-budget
+accounting, contractor projection, amendment identity and bounded additivity,
+and content-free diagnostic decisions.
 
 Inspect the persistent host and global states without changing them:
 

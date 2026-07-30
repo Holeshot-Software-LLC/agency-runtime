@@ -203,6 +203,8 @@ def stub_inference_invoker(
             }
             for index, slug in enumerate(selected_slugs)
         ]
-        return _structured({"units": [{"unit_id": unit_id, "ranked_semantic": ranked}]})
+        return _structured(
+            {"units": [{"unit_id": unit_id, "decision": "staff", "ranked_semantic": ranked}]}
+        )
 
     return _invoke

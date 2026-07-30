@@ -3,7 +3,7 @@ title: "Deterministic typed-recall is the offline floor"
 status: accepted
 category: decisions
 created: 2026-07-24
-updated: 2026-07-29
+updated: 2026-07-30
 tags: [routing, workforce, selection, inference, offline, AR-119]
 related:
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
@@ -79,6 +79,16 @@ gap → verify → gap hires a contractor). The deterministic decider is still n
 runtime selection path when inference is available; it is the offline floor
 only.
 
+For the configured-provider path, the recruiter returns an explicit per-unit
+`staff` or `gap` decision with its required, acceptable, and forbidden
+candidates. A `staff` decision that cannot form a verifier-safe typed team and a
+`gap` decision that still contains such a team are semantic contradictions;
+Agency gives the same provider one bounded repair opportunity instead of
+silently changing the decision. Only an explicit `gap` plus the verifier's
+closed safe no-team evidence can enter contractor analysis. Deterministic code
+may reject or request repair, but it cannot invent a gap, add an online
+specialist, or reorder the inference ranking.
+
 ## Consequences
 
 - Agency provides value without a configured provider: a best typed-guess
@@ -93,6 +103,9 @@ only.
   coverage + composition vs. keyword luck) and strictly better than declining.
 - The roster — not the selector — remains the community-sync asset; no upstream
   selector is vendored.
+- Online staffing failures remain inference-visible repair events rather than
+  implicit contractor gaps, so hiring evidence preserves who made each
+  decision.
 
 ## Alternatives
 

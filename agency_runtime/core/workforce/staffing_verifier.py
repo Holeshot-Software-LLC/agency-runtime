@@ -974,6 +974,16 @@ def verify_staffing(
     )
 
 
+def _validated_semantic_gap_units(
+    plan: WorkUnitPlan,
+    semantic_gap_units: frozenset[str] | None,
+) -> frozenset[str]:
+    declared_gaps = semantic_gap_units or frozenset()
+    if declared_gaps - frozenset(unit.unit_id for unit in plan.units):
+        raise ValueError("semantic gap units must belong to the plan")
+    return declared_gaps
+
+
 def build_deterministic_proposal(
     plan: WorkUnitPlan,
     contracts: Sequence[WorkforceContract],
@@ -985,10 +995,12 @@ def build_deterministic_proposal(
     semantic_acceptable: Mapping[str, frozenset[str]] | None = None,
     semantic_forbidden: Mapping[str, frozenset[str]] | None = None,
     invariant_required: Mapping[str, frozenset[str]] | None = None,
+    semantic_gap_units: frozenset[str] | None = None,
 ) -> RecruiterProposal:
     """Build a verifier-compatible proposal from deterministic semantic ranks."""
 
     active_budget = budget or StaffingBudget()
+    declared_gaps = _validated_semantic_gap_units(plan, semantic_gap_units)
     roster = {item.agent_id: item for item in contracts}
     if len(roster) != len(contracts):
         raise ValueError("deterministic proposal roster contains duplicate agents")
@@ -1195,7 +1207,15 @@ def build_deterministic_proposal(
                 "timing": "after_artifact"
                 if unit.authority == "review" and unit.depends_on
                 else "immediate",
-                "abstention_reasons": [] if selected else ["no-safe-deterministic-team"],
+                "abstention_reasons": (
+                    []
+                    if selected
+                    else [
+                        "inference-declared-gap"
+                        if unit.unit_id in declared_gaps
+                        else "no-safe-deterministic-team"
+                    ]
+                ),
             }
         )
     return parse_recruiter_proposal(

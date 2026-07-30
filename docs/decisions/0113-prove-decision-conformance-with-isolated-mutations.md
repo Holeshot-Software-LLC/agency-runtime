@@ -3,7 +3,7 @@ title: "Prove decision conformance with isolated curated mutations"
 status: accepted
 category: decisions
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-07-30
 tags: [testing, mutation-testing, routing, workforce, evidence]
 related:
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
@@ -54,8 +54,9 @@ restore files, never imports mutated modules into its own process, rejects
 linked or reparse-point package inputs, and emits a bounded content-free JSON
 report. It fingerprints the copied package and selected test inputs before and
 after the run. The curated command includes both new-hire and amendment
-decision boundaries and belongs in the named fast production gate; exhaustive
-mutation fanout remains optional diagnostics.
+decision boundaries, the explicit online staff/gap boundary, and truthful
+workforce-change budgeting. It belongs in the named fast production gate;
+exhaustive mutation fanout remains optional diagnostics.
 
 ## Consequences
 
