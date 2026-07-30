@@ -18,7 +18,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-203
-branch: agent/ar-203-hook-start-workspace
+branch: agent/ar-203-readme-story-proof
 evidence_commit: baaf603fc65f4ea338bcdde19f60c60a4c6f96af
 minimum_ledger_commit: e5a11f2e77ba4589ae93e610f303946b0efdde48
 hard_checkpoint_percent: 50
@@ -29,17 +29,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## checkpoint
 
-- AR-201 terminal trial `ar201-ed4450e-ordinary-01` remains preserved as
-  `NO-GO`; it will not be rerun or reinterpreted.
-- PR 184 merged the combined repair normally as
-  `dbd5502847b822825c7f3b99a18662949c98de0b`.
-- Exact build `0.1.0+gdbd5502847b8` is installed; only Codex and ZCode were
-  refreshed.
+- PR 186 merged the reviewed launch repair as exact main revision
+  `830b878859318bc1288858ba65ba580bd98bf53e`.
+- The immutable planner installed exact build `0.1.0+g830b87885931`. Codex and
+  ZCode only were refreshed; the dashboard remained opted out.
+- Codex refresh completed with backup
+  `C:/Users/lucas/.agency-runtime/backups/codex/20260730T171035.758962Z`.
+  Normal-owner doctor reports `activation-required` because hook trust is not
+  automatically granted or inherited across the refreshed bundle.
+- ZCode refresh completed with backup
+  `C:/Users/lucas/.agency-runtime/backups/zcode/20260730T171120.087528Z` and
+  reports registered, enabled, restart required, and runtime unverified.
+- The README-story goal is bounded to one ordinary Codex proof on this machine:
+  first terminal failure or 45 minutes ends a package, one live trial is
+  allowed per exact build, and a second failure at the same causal boundary
+  stops for owner direction.
 - Owner-untracked analysis and lock files remain untouched.
 - A replacement live canary was not launched: the approval boundary requires
   fresh explicit owner authorization after the prior authorized final trial.
-- Current context telemetry reports 85.7 percent remaining. This bounded launch
-  repair is being checkpointed before mutation evaluation and the fast spine.
 
 ## completed-evidence
 
@@ -117,11 +124,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## exact-blocker
 
-The prior exact activation and write-proof implementation is merged and
-installed, but the final trial recorded no matching Agency route or header.
-The newly identified stale product launch contract is repaired locally and
-awaits mutation evaluation, fast verification, review, merge, and exact
-installation before a replacement live canary.
+The repaired product launch contract is merged and exact-installed. Codex now
+reports `activation-required`: every Codex process opened before the refresh
+must close, a fresh terminal TUI must trust all eight Agency hook events, and a
+fresh process must load the settled plugin. Agency will not bypass or claim
+that human trust boundary.
 
 ## same-task-continuity
 
@@ -131,11 +138,15 @@ or reinterpret `correction_count: 0` as a pass when the header is absent.
 
 ## next-bounded-work-package
 
-1. Commit the demo-ready verification record and its ledger entry.
-2. Open and merge the AR-203 pull request.
-3. Install the exact merged build for Codex and ZCode only.
-4. Request explicit authorization for one replacement ordinary canary, then use
-   its hook-stage evidence to distinguish non-invocation from handler failure.
+1. Owner closes every pre-refresh Codex process, opens a fresh terminal TUI,
+   trusts all eight Agency hook events, exits, and starts a fresh Codex process.
+2. Re-run normal-owner doctor and the read-only activation inventory. Stop if
+   trust or loading remains unsettled.
+3. Treat the owner's returned `done` as authorization for one exact-build live
+   trial, then run the ordinary README-story canary once.
+4. At the first terminal failure, publish the exact evidence checkpoint before
+   repairing only that causal boundary. At pass, publish the local evidence
+   page and close the correlated acceptance records.
 
 ## verification
 
@@ -160,3 +171,5 @@ git diff --check
   sandbox correctness.
 - Touch only Codex and ZCode on this machine.
 - Correction count greater than zero or absent is a final canary failure.
+- Do not launch more than one live trial for one exact installed build.
+- End a bounded package at its first terminal failure or 45 minutes.

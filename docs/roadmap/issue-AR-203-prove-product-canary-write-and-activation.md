@@ -121,6 +121,22 @@ passes 551 files, and Ruff check plus format validation pass all 603 Python
 inputs. The dashboard UI's restricted first attempt stopped at the outer
 sandbox's expected `spawn EPERM`; the authorized normal-owner rerun passed.
 
+PR 186 merged that exact repair as
+`830b878859318bc1288858ba65ba580bd98bf53e`. The immutable upgrade planner
+resolved that full revision, and exact build `0.1.0+g830b87885931` is now
+installed. Codex and ZCode only were refreshed; the dashboard remained opted
+out. ZCode is registered and enabled with restart required. Codex is registered
+and enabled, but normal-owner `agency doctor --json` reports
+`activation-required` because the refresh invalidated prior hook-trust
+evidence. The next step is therefore the documented human trust boundary, not
+another source repair or a bypass.
+
+The delivery outcome is frozen as "README's main story works in reality" for
+the ordinary Codex path on this machine. Each package stops at its first
+terminal failure or 45 minutes, permits one live trial per exact build, and
+produces a durable evidence checkpoint before any repair. A second failure at
+the same causal boundary stops for owner direction instead of looping.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host
@@ -170,5 +186,7 @@ demonstrates both mismatches.
   bounded hook-stage evidence without retaining hook input or raw stderr.
 - [x] Codex specialist launch instructions require `fork_turns=none` and the
   exact persisted native task name.
+- [x] PR 186 is merged and its exact revision is installed for Codex and ZCode
+  only without selecting the dashboard.
 - [ ] The next ordinary canary reports exact activation evidence and can create
   required artifacts when workforce execution reaches the parent model.
