@@ -122,6 +122,23 @@ server suite passed 145 tests with three platform skips. The restored HTML is
 byte-identical to the last owner-capable pre-regression Git blob, so no
 display-truncated or hand-reconstructed shell content remains.
 
+Commit `e1451ea` makes inference the sole production staffing authority.
+Missing provider configuration, unavailable inference, and invalid inference
+now produce explicit failure states with no selected, recommended, delegated,
+or hired specialist. Online planning preserves the model-authored plan without
+local enrichment; unit assignment requires exact inference-authored unit
+claims; child routing clears unproven specialist identities; and legacy judge
+paths can no longer restore confidence, token, or local-ranking fallbacks.
+Historical durable unit plans remain replayable only when their recorded unit
+and specialist identities still correlate to the same request and roster.
+
+The final focused package passed 368 tests with one intentional skip. The
+decision-conformance evaluation passed its baseline and killed all 26 curated
+regressions with zero survivors and zero invalid mutations, including attempts
+to restore offline staffing, deterministic plan enrichment, unavailable unit
+assignment, and unconfigured-child specialist retention. Ruff, format, and
+diff-integrity checks passed on the exact committed tree.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired
@@ -132,9 +149,9 @@ display-truncated or hand-reconstructed shell content remains.
   service is healthy and open it without an unavailable-presence error.
 - [x] Bare install selects the supported dashboard by default and
   `--no-dashboard` remains a complete opt-out.
-- [ ] A substantive turn without a valid inference provider decision fails
+- [x] A substantive turn without a valid inference provider decision fails
   visibly and selects, recommends, delegates, and hires no specialist.
-- [ ] Deterministic recall and validation cannot become an online or offline
+- [x] Deterministic recall and validation cannot become an online or offline
   specialist decider.
 - [ ] Attended and explicit autonomous native-install modes are both covered by
   the shared adapter contract; trust status is never reported as activation.
