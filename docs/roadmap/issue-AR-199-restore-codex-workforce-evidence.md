@@ -321,6 +321,40 @@ routing evaluation returns `passed: true`, and the documentation, Ruff, format,
 and diff gates pass. This closes source verification without substituting for
 the still-required exact-installed ordinary provider and delegation trace.
 
+PR 171 merged those repairs as exact commit
+`fbed63abaf739d6a863113a221c09c8cfababc40`, now installed as build
+`0.1.0+gfbed63abaf73` with Codex bundle `0.1.0+codex.ae2086569c9e`.
+Isolated trace `019fb039-193d-79c2-b771-5cdd2ad86065` passes the complete
+activation chain with one loaded and completed `code-reviewer`, one native
+spawn and wait, one accepted finalization, a valid first-pass header, and zero
+corrections. Current-profile inspection separately reports all eight hooks as
+modified and stops before model invocation, so attended trust is still open.
+
+The first exact-installed ordinary product trace,
+`019fb03e-5ad6-7b70-8d22-bc8c7ee0d028`, is a bounded `NO-GO`. It persisted two
+successful Luna wrapper receipts and found 53 eligible workers, but its
+nine-unit plan selected nobody because the `architecture-record` / `design`
+unit had no eligible governed owner. Commit `b8c0a8d` fixes the contract bridge:
+architecture-category workers compile as architects with
+`architecture-record` / `design` coverage. Commit `6ca745d` removes the
+temporary software-engineering-to-architect anchor and proves the broad typed
+shortlist recalls `software-architect` from its governed contract alone.
+
+That anchor review exposed a larger implementation violation of ADR-0088. The
+online path first built a deterministic team and skipped the inference
+recruiter whenever that team was accepted; after inference, a missing eligible
+`required` nomination could also be replaced or reordered by a deterministic
+role anchor. Commit `882b920` removes both online decision escape hatches.
+With a provider configured, every fresh route now runs planner plus recruiter;
+determinism supplies broad recall and safety vetoes but cannot appoint or
+reorder workers. The visibly stamped no-provider branch retains the
+deterministic typed-recall floor. Focused inference, selection, staffing,
+routing, hiring, and child-coordination coverage passes 175 tests with one
+platform skip and one expected xfail. The exact source then passes the named
+Python spine with 653 tests and 6 skips, all 109 dashboard tests, every routing
+evaluation gate, and all documentation, Ruff, formatting, and diff checks.
+Merge, exact installation, and the bounded ordinary rerun remain pending.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and
@@ -380,6 +414,11 @@ model truth and resident-manager visibility.
   `code-reviewer` without a margin abstention.
 - [x] Workforce receipts report the explicit eligible catalog independently of
   the unused legacy retrieval count.
+- [x] Exact merge `fbed63a` passes an isolated-profile activation trace with one
+  completed specialist chain, a valid first-pass header, and zero corrections.
+- [x] With a provider configured, fresh workforce routing always invokes the
+  inference recruiter; deterministic logic can recall or veto but cannot select
+  or reorder, while the stamped no-provider floor remains deterministic.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.

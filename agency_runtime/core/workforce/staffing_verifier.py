@@ -587,11 +587,10 @@ def _selection(
     if set(row.runner_up) & (set(row.selected) | set(row.forbidden)):
         _reason(reasons, "runner_up_set_invalid", unit_id=unit.unit_id)
     # ADR-0087: the model's eligible required nomination is the selection
-    # authority. Role anchors are a recall/fallback safety net only (see
-    # _semantic_staffing_classes), so determinism must NOT re-derive required
-    # from role_anchors and force eligible anchors into row.required. The
-    # guarantees below validate eligibility, composition, coverage, and budget
-    # around the trusted required set rather than re-deriving it.
+    # authority. Role anchors can order recall and drive the offline-only floor,
+    # but determinism must NOT re-derive required from role_anchors in an online
+    # proposal. The guarantees below validate eligibility, composition,
+    # coverage, and budget around the trusted required set.
     expected = _minimum_team_with_required(
         unit,
         executable,

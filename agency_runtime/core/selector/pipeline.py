@@ -1504,9 +1504,10 @@ def route(
             store=evidence_store,
             trace_id=trace_id,
         )
-    # `query_judge` makes inference mandatory when configured and otherwise
-    # performs a visible deterministic fallback. Both modes operate on a fresh
-    # selection for new, revised, or explicitly rerouted intent.
+    # A workforce snapshot uses the inference-first workforce router below;
+    # its only deterministic selection path is the visibly stamped no-provider
+    # floor. The legacy judge branch remains for hosts without a workforce
+    # snapshot. Both branches operate on fresh new, revised, or rerouted intent.
     if request.workforce_snapshot is not None:
         from agency_runtime.core.workforce.inference import plan_and_staff_workforce
         from agency_runtime.core.workforce.routing_projection import (

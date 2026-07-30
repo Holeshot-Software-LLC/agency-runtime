@@ -235,7 +235,7 @@ def _result(value: dict[str, Any], *, actual: str = "gpt-5.6-mini") -> Structure
     )
 
 
-def test_balanced_mode_accepts_clear_local_route_after_compact_plan_with_receipt() -> None:
+def test_balanced_mode_always_uses_inference_for_planning_and_selection() -> None:
     snapshot = _snapshot(
         _contract("technical-analyst"), _contract("disabled-specialist", enabled=False)
     )
@@ -244,10 +244,13 @@ def test_balanced_mode_accepts_clear_local_route_after_compact_plan_with_receipt
     def invoke(provider, prompt, _schema, **_kwargs):
         payload = json.loads(prompt)
         calls.append((provider.name, provider.model, prompt))
-        assert "roster" not in payload
-        assert "detail_cards" not in payload
-        assert "analysis" in payload["planning_taxonomy"]["known_capability_ids"]
-        return _result(_compact_plan_document())
+        if "planning_taxonomy" in payload:
+            assert "roster" not in payload
+            assert "detail_cards" not in payload
+            assert "analysis" in payload["planning_taxonomy"]["known_capability_ids"]
+            return _result(_compact_plan_document())
+        assert payload["detail_cards"]
+        return _result(_nomination_document())
 
     outcome = plan_and_staff_workforce(
         "Analyze this implementation safely.",
@@ -258,21 +261,20 @@ def test_balanced_mode_accepts_clear_local_route_after_compact_plan_with_receipt
     )
 
     assert outcome.accepted
-    assert outcome.calls_used == 1
-    assert [item.stage for item in outcome.attempts] == ["planner"]
+    assert outcome.calls_used == 2
+    assert [item.stage for item in outcome.attempts] == ["planner", "recruiter"]
     assert all(item.model_group == "router-alias" for item in outcome.attempts)
     assert all(item.actual_model == "gpt-5.6-mini" for item in outcome.attempts)
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
 
 
-def test_disabled_only_candidate_keeps_plan_and_surfaces_the_disabled_shadow() -> None:
+def test_disabled_only_candidate_cannot_be_appointed_by_online_fallback() -> None:
     snapshot = _snapshot(_contract("technical-analyst", enabled=False))
 
     # ADR-0087: with a provider configured the recruiter is primary. The planner
-    # applies; the deterministic candidate stage abstains (only candidate
-    # disabled); the recruiter runs. The disabled technical-analyst stays
-    # visible as a disabled shadow on the proposal and the outcome is not
-    # accepted (no executable specialist).
+    # and recruiter run, but the only nomination is outside the enabled
+    # candidate cards. The runtime must abstain rather than deterministically
+    # appointing that worker.
     responses = iter(
         [
             _result(_compact_plan_document()),
@@ -289,20 +291,22 @@ def test_disabled_only_candidate_keeps_plan_and_surfaces_the_disabled_shadow() -
     )
 
     assert not outcome.accepted
-    # The plan was applied by inference.
-    assert any(item.stage == "planner" and item.status == "applied" for item in outcome.attempts)
-    assert outcome.proposal is not None
-    assert outcome.proposal.units[0].disabled_shadows[0].agent_id == "technical-analyst"
+    assert [item.stage for item in outcome.attempts] == ["planner", "recruiter"]
+    assert outcome.proposal is None
+    assert outcome.decision_source == "none"
 
 
-def test_warm_route_reuses_version_bound_plan_and_candidate_without_inference() -> None:
+def test_warm_route_reuses_version_bound_plan_and_inference_selection() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     calls = 0
 
     def invoke(*_args, **_kwargs):
         nonlocal calls
         calls += 1
-        return _result(_compact_plan_document())
+        payload = json.loads(_args[1])
+        return _result(
+            _compact_plan_document() if "planning_taxonomy" in payload else _nomination_document()
+        )
 
     first = plan_and_staff_workforce(
         "Analyze this implementation safely.",
@@ -322,9 +326,9 @@ def test_warm_route_reuses_version_bound_plan_and_candidate_without_inference() 
     )
 
     assert first.accepted and second.accepted
-    assert calls == 1
+    assert calls == 2
     assert first.cache_hits == ()
-    assert second.cache_hits == ("plan", "candidate")
+    assert second.cache_hits == ("plan", "recruiter")
     assert second.calls_used == 0
     assert second.attempts == ()
 
@@ -338,7 +342,10 @@ def test_plan_cache_invalidates_on_every_external_routing_identity() -> None:
     def invoke(*_args, **_kwargs):
         nonlocal calls
         calls += 1
-        return _result(_compact_plan_document())
+        payload = json.loads(_args[1])
+        return _result(
+            _compact_plan_document() if "planning_taxonomy" in payload else _nomination_document()
+        )
 
     def run(
         request: str = "Analyze this implementation safely.",
@@ -371,7 +378,7 @@ def test_plan_cache_invalidates_on_every_external_routing_identity() -> None:
     run(current_config=replace(config, providers=(replace(config.providers[0], model="other"),)))
     run(current_config=replace(config, providers=(replace(config.providers[0], api_key="other"),)))
 
-    assert calls == 8
+    assert calls == 16
 
 
 def test_warm_ambiguous_route_reuses_bounded_recruiter_result() -> None:
@@ -407,7 +414,7 @@ def test_warm_ambiguous_route_reuses_bounded_recruiter_result() -> None:
 
     assert first.accepted and second.accepted
     assert calls == 2
-    assert second.cache_hits == ("plan", "candidate", "recruiter")
+    assert second.cache_hits == ("plan", "recruiter")
     assert second.calls_used == 0
 
 
@@ -531,6 +538,7 @@ def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() 
         (
             _result(invalid),
             _result(_compact_plan_document()),
+            _result(_nomination_document()),
         )
     )
     prompts: list[str] = []
@@ -548,9 +556,10 @@ def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() 
     )
 
     assert outcome.accepted
-    assert outcome.calls_used == 2
+    assert outcome.calls_used == 3
     assert [attempt.status for attempt in outcome.attempts] == [
         "rejected",
+        "applied",
         "applied",
     ]
     assert outcome.attempts[0].validation_detail == "work-unit plan contains duplicate unit ids"
@@ -706,6 +715,7 @@ def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
     responses = iter(
         (
             _result(_compact_plan_document()),
+            _result(_nomination_document()),
             _result({"approved": False, "reason_codes": ["wrong-neighbor-risk"]}),
         )
     )
@@ -718,24 +728,28 @@ def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
     )
 
     assert not outcome.accepted
-    assert outcome.calls_used == 2
-    assert [item.stage for item in outcome.attempts] == ["planner", "critic"]
+    assert outcome.calls_used == 3
+    assert [item.stage for item in outcome.attempts] == ["planner", "recruiter", "critic"]
     assert outcome.abstention_codes == ("staffing_critic_rejected", "wrong-neighbor-risk")
 
 
-def test_fast_mode_uses_one_call_and_runtime_binds_plan_and_roster_hashes() -> None:
+def test_fast_mode_uses_planner_and_recruiter_and_binds_runtime_hashes() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     outcome = plan_and_staff_workforce(
         "Analyze this implementation safely.",
         snapshot,
         config=_config("fast"),
         context=_context(),
-        invoker=lambda *_args, **_kwargs: _result(_compact_plan_document()),
+        invoker=lambda *_args, **_kwargs: _result(
+            _compact_plan_document()
+            if "planning_taxonomy" in json.loads(_args[1])
+            else _nomination_document()
+        ),
     )
 
     assert outcome.accepted
-    assert outcome.calls_used == 1
-    assert [item.stage for item in outcome.attempts] == ["planner"]
+    assert outcome.calls_used == 2
+    assert [item.stage for item in outcome.attempts] == ["planner", "recruiter"]
     assert outcome.proposal is not None and outcome.plan is not None
     assert outcome.proposal.plan_hash == outcome.plan.plan_hash
     assert outcome.proposal.roster_fingerprint == snapshot.contract_fingerprint
