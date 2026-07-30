@@ -335,12 +335,23 @@ The first exact-installed ordinary product trace,
 successful Luna wrapper receipts and found 53 eligible workers, but its
 nine-unit plan selected nobody because the `architecture-record` / `design`
 unit had no eligible governed owner. Commit `b8c0a8d` fixes the contract bridge:
-architecture-category workers compile as architects and the unit anchors to
-`software-architect`. The focused contract and selection suites pass 50 tests
-with one platform skip. The named Python spine passes 653 tests with 6 skips,
-the dashboard passes all 109 tests, the 39-gate routing evaluation reports
-`passed: true`, and documentation and Ruff gates pass. Exact-installed rerun
-remains pending.
+architecture-category workers compile as architects with
+`architecture-record` / `design` coverage. Commit `6ca745d` removes the
+temporary software-engineering-to-architect anchor and proves the broad typed
+shortlist recalls `software-architect` from its governed contract alone.
+
+That anchor review exposed a larger implementation violation of ADR-0088. The
+online path first built a deterministic team and skipped the inference
+recruiter whenever that team was accepted; after inference, a missing eligible
+`required` nomination could also be replaced or reordered by a deterministic
+role anchor. Commit `882b920` removes both online decision escape hatches.
+With a provider configured, every fresh route now runs planner plus recruiter;
+determinism supplies broad recall and safety vetoes but cannot appoint or
+reorder workers. The visibly stamped no-provider branch retains the
+deterministic typed-recall floor. Focused inference, selection, staffing,
+routing, hiring, and child-coordination coverage passes 175 tests with one
+platform skip and one expected xfail. Full fast verification, merge,
+exact-installation, and the bounded ordinary rerun remain pending.
 
 ## Dependencies
 
@@ -403,6 +414,9 @@ model truth and resident-manager visibility.
   the unused legacy retrieval count.
 - [x] Exact merge `fbed63a` passes an isolated-profile activation trace with one
   completed specialist chain, a valid first-pass header, and zero corrections.
+- [x] With a provider configured, fresh workforce routing always invokes the
+  inference recruiter; deterministic logic can recall or veto but cannot select
+  or reorder, while the stamped no-provider floor remains deterministic.
 - [ ] A fresh exact-installed Codex task visibly reports both resident managers,
   at least one accepted specialist for an explicit bounded work unit, and an
   authoritative provider/model receipt.
