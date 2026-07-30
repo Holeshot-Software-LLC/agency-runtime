@@ -110,7 +110,16 @@ mutations with zero survivors or invalid results. Two bounded review passes
 found and repaired Windows CRLF hook-marker parsing, added real handler-failure
 stage coverage, and corrected a stale multi-unit assertion that had accepted an
 unevidenced model line. The complete changed-component suite passes 200 tests
-under warning-strict mode. The named fast spine remains pending.
+under warning-strict mode.
+
+The exact post-review tree is demo-ready locally. The named fast Python spine
+passes 675 tests with 6 skipped, the dashboard UI passes 109 tests, and routing
+evaluation 1.3.0 passes every gate with routing p95 4.710 ms and cache-hit p95
+1.448 ms. A fresh decision-conformance run on the same tree again kills 19/19
+mutations with zero survivors or invalid results. Documentation validation
+passes 551 files, and Ruff check plus format validation pass all 603 Python
+inputs. The dashboard UI's restricted first attempt stopped at the outer
+sandbox's expected `spawn EPERM`; the authorized normal-owner rerun passed.
 
 ## Approach
 

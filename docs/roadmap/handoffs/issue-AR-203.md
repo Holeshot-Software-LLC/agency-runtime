@@ -107,6 +107,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   correction.
 - The complete product, activation, cohesion, hook, and multi-unit delegation
   component suite passes 200 tests under `-W error`.
+- The exact post-review fast gate is green: Python 675 passed and 6 skipped;
+  dashboard UI 109 passed; routing evaluation 1.3.0 passed every gate with
+  routing p95 4.710 ms and cache-hit p95 1.448 ms; current-tree decision
+  conformance killed 19/19 mutations with zero survivors or invalid results.
+- Documentation validation passes 551 files. Ruff check and format validation
+  pass all 603 Python inputs. The UI test's restricted first attempt hit the
+  expected Windows `spawn EPERM`; the authorized owner-process rerun passed.
 
 ## exact-blocker
 
@@ -124,9 +131,9 @@ or reinterpret `correction_count: 0` as a pass when the header is absent.
 
 ## next-bounded-work-package
 
-1. Commit the reviewed evidence hardening and its ledger record.
-2. Run the named fast production spine and reach demo-ready.
-3. Merge and install the exact build for Codex and ZCode only.
+1. Commit the demo-ready verification record and its ledger entry.
+2. Open and merge the AR-203 pull request.
+3. Install the exact merged build for Codex and ZCode only.
 4. Request explicit authorization for one replacement ordinary canary, then use
    its hook-stage evidence to distinguish non-invocation from handler failure.
 
