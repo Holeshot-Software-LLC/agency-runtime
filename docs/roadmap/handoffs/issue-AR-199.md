@@ -43,6 +43,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
   `NO-GO`: nine planned units, 53 eligible workers, two successful Luna wrapper
   calls, zero bindings, zero delegations, and no accepted finalization.
 - Owner-untracked files remain untouched.
+- Final product trace `019fb088-6084-70c1-b1c7-d5482881ac98` is the terminal
+  `NO-GO`; the two-repair-cycle contract prohibits another repair loop here.
 
 ## completed-evidence
 
@@ -89,24 +91,38 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 - The named fast spine passes 654 tests with 6 skips, all 109 dashboard tests
   pass, and every routing-evaluation, documentation, Ruff, formatting, and diff
   gate is green.
+- The final trace proves seven relevant safe proposals across nine units:
+  onboarding, Python API, TypeScript dashboard, API tests, code review, test
+  analysis/integration, and application security.
+- Architecture and documentation remain gaps despite relevant nominations for
+  `software-architect` and `technical-writer`. The durable reason families are
+  `required_agents_missing`, `no_safe_sufficient_team`, `recruiter_abstained`,
+  and, for documentation, `independent_assurance_missing`.
+- Architecture hiring still returned `contract_invalid:candidate`; the one-hire
+  budget then left documentation at `task_hiring_limit_reached`.
+- All-or-nothing verification published zero specialists or delegations. No
+  product file was created, no finalization was accepted, the run ended
+  `retry_exhausted`, and `correction_count` was unavailable rather than zero.
 
 ## exact-blocker
 
-The second ordinary trace failed before specialist launch because the one
-per-task hire attempt hit the contractor schema mismatch. The bounded repair is
-fast-gate green, merged, and exact-installed; it requires one final
-isolated-profile product rerun. Persistent-profile trust remains attended but
-does not block that rerun.
+AR-199's final ordinary product proof is `NO-GO`. Selection is demonstrably
+relevant for seven units, but the remaining architecture/documentation gaps,
+live contractor validation failure, all-or-nothing publication, and exhausted
+finalization boundary prevent specialist launch and product completion.
+Persistent-profile trust is separately attended and unresolved.
 
 ## same-task-continuity
 
-Continue in this task. Do not rerun the passing isolated activation package.
+Continue only through evidence publication and handoff. Do not rerun either the
+passing isolated activation package or the failed ordinary product package.
 
 ## next-bounded-work-package
 
-1. Run one final bounded ordinary isolated-profile product proof. If it fails,
-   report the new durable staffing or launch blocker and close this item `NO-GO`
-   rather than opening another repair loop.
+1. Publish the terminal proof matrix and local shareable report.
+2. Start a separately authorized package for live contractor-candidate
+   diagnostics and decision-conformance mutation tests; do not fold it back
+   into this bounded proof run.
 
 ## verification
 
