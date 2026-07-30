@@ -146,9 +146,10 @@ git diff --check
 
 - Use at most the bounded focused review passes and named fast verification.
   Do not dispatch or run the exhaustive workflow automatically.
-- Never treat a plan digest as operator presence, or one host's approval as
-  authority for a changed operation, selector, host, transition, destination,
-  or policy.
+- A plan digest is stale-write and exact-effect safety, not separate
+  authentication. Normal owner CLI execution supplies authority, but any
+  changed operation, selector, host, transition, destination, or policy still
+  requires a newly prepared plan.
 - Never delete an unowned, drifted, unexpected, marketplace-only, or ambiguous
   path or registration. Preserve all reported recovery material.
 - Do not claim ZCode compare-and-swap or run uninstall alongside an external

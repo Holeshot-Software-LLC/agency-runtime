@@ -50,8 +50,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   `0.1.0+g26a3911e371e` is installed. Codex and ZCode were refreshed.
 - The owner expanded scope to the README dashboard. Its service is installed,
   owned, enabled, active, manifest-current, reachable, and free of definition
-  drift. Releasing its authenticated URL remains attended because automation
-  cannot satisfy the OS operator-presence verifier.
+  drift. That old build still blocked authenticated open at the now-retired
+  presence verifier; AR-204 removes that gate for the replacement build.
 - Codex verification observed all eight enabled hook hashes as `modified`, zero
   trusted, and attempted no model call. Do not trust this build: two valid
   post-merge P1 findings invalidate it before the replacement trial.
@@ -71,7 +71,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 - Exact build `0.1.0+g5e3fab622b75` is installed. Codex refresh install ID is
   `a352175a-b4e9-456e-973c-90e76ddb77da`; ZCode is registered.
 - The dashboard is owned, enabled, active, current, drift-free, and reachable.
-  Its authenticated browser release still requires OS operator presence.
+  The exact installed build predates AR-204 owner-authority repair; authenticated
+  render and reversible owner configuration proof remain pending.
 - Codex preflight found all eight expected events enabled and all eight hashes
   modified, with zero trusted and zero managed. It attempted no model call and
   persisted no attestation.

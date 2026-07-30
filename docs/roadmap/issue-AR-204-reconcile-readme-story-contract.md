@@ -93,15 +93,30 @@ modes and separates trust from activation evidence. AR-119 retains the complete
 workforce implementation, while AR-203 retains exact Codex workspace and live
 product proof.
 
+## Implementation evidence
+
+Commit `ffec102` removes the retired shared presence dispatcher and parser
+metadata, restores prepared roster rollback to normal owner authority while
+retaining its exact Store/generation/revision revalidation, and keeps model-
+facing native controls read-only under an explicit `owner_control_required`
+result. The obsolete AR-143 and AR-196 contracts are now marked `wont_do` and
+superseded by this issue rather than left as apparently active requirements.
+
+Focused verification passed 708 tests with one platform skip across owner CLI,
+parser, install/uninstall, Codex activation-shape, prepared transaction,
+dashboard-service recovery, host-control, security-turn, native-installer,
+upgrade, and release-contract boundaries. Ruff, formatting, metadata, policy,
+documentation, worklog-currentness, and staged whitespace checks passed.
+
 ## Acceptance
 
-- [ ] Owner CLI configuration/control commands dispatch without the retired
+- [x] Owner CLI configuration/control commands dispatch without the retired
   Agency-owned human-presence verifier.
 - [ ] The owner dashboard exposes the same supported configuration and runtime
   controls as the CLI, while broker, hook, and MCP identities cannot mutate.
-- [ ] `agency dashboard service open` can ensure an owned default-installed
+- [x] `agency dashboard service open` can ensure an owned default-installed
   service is healthy and open it without an unavailable-presence error.
-- [ ] Bare install selects the supported dashboard by default and
+- [x] Bare install selects the supported dashboard by default and
   `--no-dashboard` remains a complete opt-out.
 - [ ] A substantive turn without a valid inference provider decision fails
   visibly and selects, recommends, delegates, and hires no specialist.

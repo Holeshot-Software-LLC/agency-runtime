@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-204
 branch: codex/ar-203-readme-story-final-proof
-evidence_commit: c387b6503813b7d34120f2406f9e8fdd965edd6d
-minimum_ledger_commit: ecfb24126d5f359cd6bc02070906bc9f73a21aef
+evidence_commit: ffec1027ad18dee38469e710cd38049c00e3c9e2
+minimum_ledger_commit: fe68f86e36a2f2d82ae681d02c67ae5d4a0e6a06
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 ---
@@ -33,20 +33,29 @@ acceptance; this file records only current proof and the next package.
 
 - The active goal remains `README's main story works in reality.`
 - The owner resolved all nine product ambiguities on 2026-07-30.
-- Commit `c387b65` makes README and ADR-0117 through ADR-0119 state the
-  locked target contract.
+- Commit `ffec102` implements the first bounded package: normal owner CLI and
+  dashboard-service operations no longer enter the retired presence verifier.
 - Tracker [#189](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189)
   records AR-204 under `epic:product`.
-- No implementation change or new live canary has run in this package yet.
+- AR-143 and AR-196 are `wont_do` and explicitly superseded by AR-204; their
+  historical records no longer govern current owner authority.
 - Exact installed build `5e3fab622b75f257e0ab4b74f1cc2c6d43b1d748`
   remains the last live-tested build and is not accepted as product proof.
 
 ## completed-evidence
 
-- Production currently has complete tested dashboard mutation handlers and CLI
-  writers behind blanket unavailable/read-only gates.
-- `dashboard service open` currently enters the retired presence verifier even
-  though its handler may install, repair, start, or restart an owned service.
+- Owner CLI parser leaves contain no presence metadata and dispatch directly to
+  their operation-specific safety boundaries.
+- `dashboard service open` reaches its ownership-checked recovery handler, which
+  may install, repair, start, or restart the owned service.
+- Prepared roster rollback now uses owner authority while preserving frozen
+  Store, database, generation, revision, activation-authority, and workforce
+  identities plus in-transaction revalidation.
+- Model-facing native controls remain read-only and return
+  `owner_control_required`; no broker/hook/MCP authority was widened.
+- Focused verification passed 708 tests with one platform skip. Ruff checked
+  all Python sources, 602 files were format-current, and 559 Markdown files
+  passed metadata and documentation validation.
 - The deterministic architecture-anchor helper reported by the owner is absent
   from current source, but ADR-0088 and offline fallback behavior still permit
   deterministic specialist selection.
@@ -57,9 +66,10 @@ acceptance; this file records only current proof and the next package.
 
 ## exact-blocker
 
-The documentation contract is frozen, but current production code still
-violates it at owner authority, offline staffing, native activation propagation,
-response correction, and dashboard usability boundaries.
+The owner CLI boundary is repaired. Current production still violates the
+contract at dashboard owner/broker dispatch and UI controls, offline staffing,
+native activation propagation, response correction, and rendered dashboard
+proof boundaries.
 
 ## same-task-continuity
 
@@ -69,21 +79,23 @@ the owner-untracked analysis draft and `uv.lock`.
 
 ## next-bounded-work-package
 
-1. Remove the retired human-presence dispatch gate from normal owner CLI and
-   dashboard service operations.
-2. Restore owner dashboard configuration/control clients and allow owner bearer
-   mutations while keeping broker credentials read-only.
-3. Run focused CLI, dashboard server, and dashboard UI tests.
-4. Update this capsule and checkpoint before beginning inference-only staffing.
+1. Allow bounded dashboard mutations only for the owner bearer and keep the
+   broker bearer read-only.
+2. Restore the owner configuration/runtime/governance client controls removed
+   by the read-only production gate.
+3. Run focused dashboard server, auth-boundary, transaction, and UI tests.
+4. Checkpoint before beginning inference-only staffing.
 
 ## verification
 
 ~~~text
-python scripts/docs_metadata.py --check
-python scripts/update_policy_availability.py --check
-python scripts/update_worklog.py --check
-python scripts/verify_docs.py --require-tracker
-python scripts/verify_tracker.py --allow-open-complete
+python -m pytest tests/test_cli_owner_authority.py tests/test_cli_parser_contract.py tests/test_cli_uninstall.py tests/test_codex_activation_verification.py -q -W error
+python -m pytest tests/test_prepared_codex_install.py tests/test_prepared_roster_rollback.py tests/test_store_sqlite_evidence_gap_coverage_ar91.py -q -W error
+python -m pytest tests/test_update_service.py tests/test_host_control.py tests/test_adapter_parity.py tests/test_security_turn_boundaries.py -q -W error
+python -m pytest tests/test_dashboard_service.py tests/test_native_installer.py tests/test_release_packaging.py tests/test_cli_upgrade.py -q -W error
+ruff check agency_runtime tests scripts
+ruff format --check agency_runtime tests scripts
+python scripts/verify_docs.py
 git diff --check
 ~~~
 
