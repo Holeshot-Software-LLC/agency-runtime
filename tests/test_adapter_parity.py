@@ -711,6 +711,10 @@ def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
     expected_control_path = str(tmp_path / ".agency-runtime" / "run" / "control.json")
 
     assert manifest["name"] == "agency-preflight"
+    assert (
+        "description: Use only when the user's entire message exactly matches agency status, "
+        "agency on, or agency off."
+    ) in skill
     if host == "codex":
         assert manifest["hooks"] == "./hooks/hooks.json"
         assert manifest["interface"]["defaultPrompt"]

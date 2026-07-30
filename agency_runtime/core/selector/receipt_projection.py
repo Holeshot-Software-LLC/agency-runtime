@@ -14,6 +14,7 @@ ROUTING_RECEIPT_VERSION = 1
 
 _MAX_IDS = 16
 _MAX_HIRING_EVENTS = 16
+_MAX_STAFFING_UNITS = 16
 _MAX_PROVIDER_ATTEMPTS = 16
 _MAX_REJECTION_SAMPLES = 32
 _MAX_REASON_COUNTS = 32
@@ -204,6 +205,92 @@ def _hiring(value: object) -> dict[str, Any]:
     }
 
 
+def _staffing(routing: Mapping[str, Any]) -> dict[str, Any]:
+    """Project inference nominations separately from verifier-safe proposals."""
+
+    raw_proposal = routing.get("workforce_proposal")
+    raw_staffing = routing.get("workforce_staffing")
+    proposal = raw_proposal if isinstance(raw_proposal, Mapping) else {}
+    staffing = raw_staffing if isinstance(raw_staffing, Mapping) else {}
+    raw_reasons = staffing.get("abstention_reasons")
+    reasons = raw_reasons if isinstance(raw_reasons, (list, tuple)) else []
+    by_unit: dict[str, list[str]] = {}
+    global_reasons: list[str] = []
+    for item in reasons:
+        if not isinstance(item, Mapping):
+            continue
+        code = _code(item.get("code"))
+        unit_id = _identity(item.get("unit_id"))
+        if not code:
+            continue
+        target = by_unit.setdefault(unit_id, []) if unit_id else global_reasons
+        if code not in target and len(target) < 8:
+            target.append(code)
+
+    raw_units = proposal.get("units")
+    source_units = raw_units if isinstance(raw_units, (list, tuple)) else []
+    units: list[dict[str, Any]] = []
+    for item in source_units[:_MAX_STAFFING_UNITS]:
+        if not isinstance(item, Mapping):
+            continue
+        unit_id = _identity(item.get("unit_id"))
+        if not unit_id:
+            continue
+        required = item.get("required")
+        acceptable = item.get("acceptable")
+        nominated = [
+            *(required if isinstance(required, (list, tuple)) else []),
+            *(acceptable if isinstance(acceptable, (list, tuple)) else []),
+        ]
+        proposal_reasons = _codes(item.get("abstention_reasons"), limit=4)
+        verifier_reasons = by_unit.get(unit_id, [])
+        units.append(
+            {
+                "unit_id": unit_id,
+                "nominated_ids": _ids(nominated, limit=4),
+                "proposed_ids": _ids(item.get("selected"), limit=4),
+                "reason_codes": _codes([*proposal_reasons, *verifier_reasons], limit=8),
+            }
+        )
+    return {
+        "status": _code(staffing.get("status")) or "unavailable",
+        "units": units,
+        "global_reason_codes": _codes(global_reasons, limit=8),
+        "gap_count": sum(not item["proposed_ids"] for item in units),
+        "truncated": len(source_units) > len(units),
+    }
+
+
+def _normalize_staffing(value: object) -> dict[str, Any]:
+    """Canonicalize an already projected staffing receipt."""
+
+    raw = value if isinstance(value, Mapping) else {}
+    raw_units = raw.get("units")
+    source_units = raw_units if isinstance(raw_units, (list, tuple)) else []
+    units: list[dict[str, Any]] = []
+    for item in source_units[:_MAX_STAFFING_UNITS]:
+        if not isinstance(item, Mapping):
+            continue
+        unit_id = _identity(item.get("unit_id"))
+        if not unit_id:
+            continue
+        units.append(
+            {
+                "unit_id": unit_id,
+                "nominated_ids": _ids(item.get("nominated_ids"), limit=4),
+                "proposed_ids": _ids(item.get("proposed_ids"), limit=4),
+                "reason_codes": _codes(item.get("reason_codes"), limit=8),
+            }
+        )
+    return {
+        "status": _code(raw.get("status")) or "unavailable",
+        "units": units,
+        "global_reason_codes": _codes(raw.get("global_reason_codes"), limit=8),
+        "gap_count": sum(not item["proposed_ids"] for item in units),
+        "truncated": raw.get("truncated") is True or len(source_units) > len(units),
+    }
+
+
 def _retrieval(value: object) -> dict[str, Any]:
     raw = value if isinstance(value, Mapping) else {}
     return {
@@ -354,6 +441,12 @@ def _routing_reason_codes(
     for event in hiring["events"]:
         for reason in event["reason_codes"]:
             append(f"hiring:{_reason_family(reason)}")
+    staffing = _staffing(routing)
+    for unit in staffing["units"]:
+        for reason in unit["reason_codes"]:
+            append(f"staffing:{_reason_family(reason)}")
+    for reason in staffing["global_reason_codes"]:
+        append(f"staffing:{_reason_family(reason)}")
     return codes
 
 
@@ -466,6 +559,7 @@ def project_durable_routing_receipt(routing: Mapping[str, Any]) -> dict[str, Any
         eligibility=eligibility,
     )
     receipt["hiring"] = _hiring(routing.get("hiring_events"))
+    receipt["staffing"] = _staffing(routing)
     if origin_receipt_digest:
         receipt["origin_receipt_digest"] = origin_receipt_digest
     return receipt
@@ -532,6 +626,7 @@ def normalize_durable_routing_receipt(value: object) -> dict[str, Any] | None:
     normalized["hiring"] = _hiring(
         raw_hiring.get("events") if isinstance(raw_hiring, Mapping) else None
     )
+    normalized["staffing"] = _normalize_staffing(value.get("staffing"))
     origin_digest = str(value.get("origin_receipt_digest") or "").strip().casefold()
     if _DIGEST.fullmatch(origin_digest) is not None:
         normalized["origin_receipt_digest"] = origin_digest
