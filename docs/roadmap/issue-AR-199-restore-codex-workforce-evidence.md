@@ -397,6 +397,18 @@ The named fast production spine then passes 654 tests with 6 skips, all 109
 dashboard tests pass, and every routing evaluation gate passes; documentation,
 Ruff, formatting, and diff checks are also green.
 
+PR 173 merged the bounded repair as exact commit
+`4b422896191a0927eb3f23857a6351aee6574a2a`. GitHub CI, Dependency Review,
+and CodeQL did not acquire runners: each emitted the account payment or
+spending-limit annotation with no steps or logs. The exact local production
+gate above therefore remains the code evidence for the authorized admin merge.
+The CLI's immutable update plan installed exact build
+`0.1.0+g4b422896191a`, then refreshed Codex to bundle
+`0.1.0+codex.ab0113c57dce`. The transaction completed, registered, and enabled
+the plugin without an operator prompt. Persistent-profile trust remains
+`unverified` with restart required; the final isolated-profile product proof is
+not blocked by that attended boundary.
+
 ## Dependencies
 
 AR-119 owns inference-first planning, staffing, and governed hiring. AR-195 and

@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-199
 branch: codex/ar-199-fbed-canary
-evidence_commit: 9b50993215b4c800fe540632ca3a9f97ae6de91e
-minimum_ledger_commit: 36d2ec67810eaffe014cc08a73402146276830d3
+evidence_commit: 4b422896191a0927eb3f23857a6351aee6574a2a
+minimum_ledger_commit: c9c7d4b49a290edd432c9332046f88cfd2c1dd50
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 ---
@@ -31,10 +31,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 
 ## checkpoint
 
-- PR 172 merged the inference-owned selection repair as exact commit
-  `9b50993215b4c800fe540632ca3a9f97ae6de91e`.
-- The uv tool reports exact build `0.1.0+g9b50993215b4`; Codex bundle
-  `0.1.0+codex.0fa5aeccbffe` is registered and enabled.
+- PR 173 merged the bounded staffing repair as exact commit
+  `4b422896191a0927eb3f23857a6351aee6574a2a`.
+- The uv tool reports exact build `0.1.0+g4b422896191a`; Codex bundle
+  `0.1.0+codex.ab0113c57dce` is registered and enabled.
+- CI, Dependency Review, and CodeQL never acquired runners because GitHub
+  reported an account payment or spending-limit block; no hosted test step ran.
 - First ordinary product trace `019fb03e-5ad6-7b70-8d22-bc8c7ee0d028` is a
   bounded `NO-GO`; the second trace moved the blocker into dynamic hiring.
 - Second product trace `019fb064-6448-7853-955e-ad6896f3040b` is also a bounded
@@ -91,8 +93,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 ## exact-blocker
 
 The second ordinary trace failed before specialist launch because the one
-per-task hire attempt hit the contractor schema mismatch. The bounded source
-repair is fast-gate green; it still requires merge, exact install, and one final
+per-task hire attempt hit the contractor schema mismatch. The bounded repair is
+fast-gate green, merged, and exact-installed; it requires one final
 isolated-profile product rerun. Persistent-profile trust remains attended but
 does not block that rerun.
 
@@ -102,9 +104,7 @@ Continue in this task. Do not rerun the passing isolated activation package.
 
 ## next-bounded-work-package
 
-1. Create the clean source/recovery checkpoint.
-2. Merge and exact-install the repair.
-3. Run one final bounded ordinary isolated-profile product proof. If it fails,
+1. Run one final bounded ordinary isolated-profile product proof. If it fails,
    report the new durable staffing or launch blocker and close this item `NO-GO`
    rather than opening another repair loop.
 
