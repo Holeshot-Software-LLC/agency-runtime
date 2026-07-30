@@ -19,7 +19,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-202
 branch: agent/ar-203-readme-story-live-proof
-evidence_commit: 26a3911e371e42bc004faabaa2fd0b802bf50fdd
+evidence_commit: b45bd28f6b82f4915e81b7b47c20f34a8e3b521b
 minimum_ledger_commit: d01338d7cb32e3880377b1c1487142916dd45a70
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
@@ -83,7 +83,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/182
 
 ## exact-blocker
 
-The post-review P1 repair is fast-green but not yet checkpointed, merged, or
+The post-review P1 repair is fast-green and frozen in local commit `b45bd28`,
+but it is not yet pushed, reviewed in its replacement PR, merged, or
 exact-installed. The installed PR 187 build is invalidated before live use; do
 not ask the owner to trust it or spend the replacement trial.
 
@@ -95,8 +96,10 @@ existing specialists form a safe team.
 
 ## next-bounded-work-package
 
-1. Checkpoint the fast-green post-review source plus docs.
-2. PR, merge, and exact-install the revision for Codex, ZCode, and dashboard.
+1. Push `b45bd28`, open its replacement PR, and keep only findings that
+   invalidate this bounded repair in scope.
+2. Merge and exact-install the accepted revision for Codex, ZCode, and
+   dashboard.
 3. Ask the owner to trust the final Codex hook hashes once, then run one
    replacement trial. It must accept at least one specialist/team for
    the fixed prompt, or record a defensible gap and hiring decision.

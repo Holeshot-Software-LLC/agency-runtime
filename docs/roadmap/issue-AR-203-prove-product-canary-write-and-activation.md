@@ -177,7 +177,8 @@ decision conformance kills 23/23 mutations with zero survivors or invalid
 results and unchanged source. Its named fast gate passes 675 Python tests with
 6 skipped, 109 dashboard UI tests, routing evaluation 1.3.0 with every gate
 green, documentation validation for 552 files, and Ruff check plus format
-validation for all 603 Python inputs.
+validation for all 603 Python inputs. Local commit `b45bd28` freezes that
+reviewed tree pending its replacement pull request.
 
 The delivery outcome is frozen as "README's main story works in reality" for
 the ordinary Codex path on this machine. Each package stops at its first

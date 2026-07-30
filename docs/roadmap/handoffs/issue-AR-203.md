@@ -19,7 +19,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-203
 branch: agent/ar-203-readme-story-live-proof
-evidence_commit: 26a3911e371e42bc004faabaa2fd0b802bf50fdd
+evidence_commit: b45bd28f6b82f4915e81b7b47c20f34a8e3b521b
 minimum_ledger_commit: d01338d7cb32e3880377b1c1487142916dd45a70
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
@@ -109,8 +109,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## exact-blocker
 
-The post-review P1 repair is fast-green but has not been checkpointed, merged,
-or exact-installed. The current installed build must not be trusted or trialed.
+The post-review P1 repair is fast-green and frozen in local commit `b45bd28`,
+but it has not been pushed, reviewed in its replacement PR, merged, or
+exact-installed. The current installed build must not be trusted or trialed.
 Selection, hiring, delegation, and workspace-write remain unproven.
 
 ## same-task-continuity
@@ -121,8 +122,9 @@ persistent trust, or reinterpret one corrected header as a first-pass success.
 
 ## next-bounded-work-package
 
-1. Checkpoint the fast-green post-review repair.
-2. PR and merge the slice, then exact-install it for Codex, ZCode, and the
+1. Push `b45bd28`, open its replacement PR, and keep only findings that
+   invalidate this bounded repair in scope.
+2. Merge the accepted slice, then exact-install it for Codex, ZCode, and the
    dashboard.
 3. Ask the owner once to open the authenticated dashboard and trust the final
    eight Codex hook hashes; verify activation.
