@@ -360,6 +360,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `57c34e6` | 2026-07-30 | Merge pull request #179 from Holeshot-Software-LLC/agent/ar-200-selection-hiring-proof | [AR-200](../roadmap/issue-AR-200-diagnosable-decision-conformance.md) | null |
 | `c604c47` | 2026-07-30 | fix(workforce): fund the default inference repair | [AR-201](../roadmap/issue-AR-201-fund-default-workforce-repair.md) | [detail](2026-07-30-c604c47-default-inference-repair-budget.md) |
 | `d942b24` | 2026-07-30 | docs(roadmap): record AR-201 fast verification | [AR-201](../roadmap/issue-AR-201-fund-default-workforce-repair.md) | null |
+| `ed4450e` | 2026-07-30 | Merge pull request #181 from Holeshot-Software-LLC/agent/ar-201-default-repair-budget | [AR-201](../roadmap/issue-AR-201-fund-default-workforce-repair.md) | null |
+| `097ce06` | 2026-07-30 | docs(roadmap): checkpoint AR-201 terminal trial | [AR-201](../roadmap/issue-AR-201-fund-default-workforce-repair.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
