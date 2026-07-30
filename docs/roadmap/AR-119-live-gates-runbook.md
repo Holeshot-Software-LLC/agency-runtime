@@ -56,9 +56,11 @@ roster/hiring/cache tests pass.
 Every live gate below requires at least one inference provider. The development
 config at `~/.agency-runtime/agency.yaml` has the codex-subscription provider
 (`gpt-5.6-luna`, low effort, transport codex); load it via `load_config()` (the
-direct `AgencyConfig()` constructor does not read the file). Also set
-`workforce.fast_call_budget = 2` (the default 1 exhausts the budget before the
-recruiter runs).
+direct `AgencyConfig()` constructor does not read the file). Fresh configurations
+default `workforce.fast_call_budget` to 3 so planning, recruitment, and one
+bounded semantic repair are all reachable. An older explicit value remains an
+operator-owned override and must be raised deliberately when this repair path is
+required.
 
 ---
 

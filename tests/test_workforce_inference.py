@@ -286,6 +286,7 @@ def test_disabled_only_candidate_cannot_be_appointed_by_online_fallback() -> Non
         [
             _result(_compact_plan_document()),
             _result(_nomination_document("technical-analyst")),
+            _result(_nomination_document("technical-analyst")),
         ]
     )
 
@@ -298,7 +299,13 @@ def test_disabled_only_candidate_cannot_be_appointed_by_online_fallback() -> Non
     )
 
     assert not outcome.accepted
-    assert [item.stage for item in outcome.attempts] == ["planner", "recruiter"]
+    assert outcome.calls_used == 3
+    assert [item.stage for item in outcome.attempts] == [
+        "planner",
+        "recruiter",
+        "recruiter",
+    ]
+    assert [item.status for item in outcome.attempts] == ["applied", "rejected", "rejected"]
     assert outcome.proposal is None
     assert outcome.decision_source == "none"
 
@@ -575,6 +582,36 @@ def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() 
     ]
     assert outcome.attempts[0].validation_detail == "work-unit plan contains duplicate unit ids"
     assert "work-unit plan contains duplicate unit ids" in prompts[1]
+
+
+def test_default_fast_mode_funds_recruiter_contract_repair_after_planning() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    invalid = _nomination_document()
+    del invalid["units"][0]["decision"]
+    responses = iter(
+        (
+            _result(_compact_plan_document()),
+            _result(invalid),
+            _result(_nomination_document()),
+        )
+    )
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(mode="fast"),
+        context=_context(),
+        invoker=lambda *_args, **_kwargs: next(responses),
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 3
+    assert [attempt.status for attempt in outcome.attempts] == [
+        "applied",
+        "rejected",
+        "applied",
+    ]
+    assert outcome.attempts[1].reason_code == "provider_response_contract_invalid"
 
 
 def test_configured_inference_failure_abstains_without_keyword_selection() -> None:

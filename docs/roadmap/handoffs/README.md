@@ -3,7 +3,7 @@ title: "Active recovery capsules"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-07-28
+updated: 2026-07-30
 tags: [handoff, context, codex, governance, recovery]
 related:
   - AGENTS.md
@@ -77,3 +77,5 @@ behavior.
 - [AR-190 uv-tool upgrade planning](issue-AR-190.md)
 - [AR-196 dashboard-service two-phase activation](issue-AR-196.md)
 - [AR-199 Codex workforce evidence restoration](issue-AR-199.md)
+- [AR-200 diagnosable decision conformance](issue-AR-200.md)
+- [AR-201 default workforce repair budget](issue-AR-201.md)

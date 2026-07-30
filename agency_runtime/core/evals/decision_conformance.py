@@ -102,6 +102,19 @@ MUTATIONS: Final[tuple[DecisionMutation, ...]] = (
         ),
     ),
     DecisionMutation(
+        mutation_id="default-fast-budget-removes-recruiter-repair",
+        invariant=(
+            "The default fast budget funds planning, recruitment, and one bounded semantic repair."
+        ),
+        source_path="agency_runtime/core/config.py",
+        before="    fast_call_budget: int = 3",
+        after="    fast_call_budget: int = 2",
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_default_fast_mode_funds_recruiter_contract_repair_after_planning"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="declined-hiring-analysis-consumes-hire-budget",
         invariant=(
             "A declined hiring analysis does not consume the task's workforce-change "

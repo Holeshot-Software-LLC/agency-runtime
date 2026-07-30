@@ -10,8 +10,10 @@ related:
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0113-prove-decision-conformance-with-isolated-mutations.md
+  - docs/decisions/0114-fund-one-default-workforce-semantic-repair.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
+  - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/handoffs/issue-AR-200.md
 supersedes: []
 superseded_by: null
@@ -20,7 +22,7 @@ epic: testing
 issue_id: AR-200
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
-depends_on: [AR-119, AR-199]
+depends_on: [AR-119, AR-199, AR-201]
 blocks: []
 ---
 
@@ -173,8 +175,31 @@ production spine passes 664 with 6 skips; dashboard UI passes 109; all routing,
 policy, delegation, latency, startup, and 263/1,000/10,000-worker scale gates
 pass; and 538 Markdown files validate. The final isolated evaluator has a green
 baseline and kills all 9 curated mutations with zero survivors or invalid
-results while leaving source inputs unchanged. Merge, exact install, and the
-single new ordinary canary remain ahead.
+results while leaving source inputs unchanged.
+
+PR 179 merged that repair as exact main revision
+`57c34e609dec06b15b73ceacdd6ee8cf75c94e95`. The immutable install reports
+build `0.1.0+g57c34e609dec`; Codex refresh install
+`7a0a5b57-4d8b-47d1-afd3-166803f7f871` generated bundle
+`0.1.0+codex.8bff77d9195e`, and ZCode refresh install
+`262e7e8c-4698-4e1c-8795-32cb0e8e852d` used the same source identity. No trust
+prompt blocked either refresh.
+
+The one new ordinary canary, trial `ar200-57c34e6-ordinary-03`, is terminal
+`NO-GO` at trace `019fb31f-5da6-7dd0-a983-9b983f767b9f`. The planner applied
+through the configured Luna wrapper, but the recruiter response failed its
+explicit decision contract. Planning and the rejected recruiter consumed the
+installed two-call fast budget, so the bounded recruiter repair never ran and
+the route stopped with `workforce_call_budget_exhausted`. It recorded zero
+selected, loaded, or delegated specialists; zero native spawn/wait events; no
+accepted finalization; zero artifacts; and five failed product checks. All
+seven header fields were structurally present on the first response, but that
+header is not specialist activity proof and correction count was unavailable.
+
+AR-201 records the bounded follow-up. Fresh defaults must fund planner,
+recruiter, and one semantic repair while preserving explicit lower budgets as
+operator-owned opt-outs. AR-200 remains open until the later ordinary canary
+proves the full workforce and delegation chain.
 
 ## Approach
 
