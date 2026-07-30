@@ -54,9 +54,13 @@ the default three-call path receives the corresponding timeout.
 The full focused inference, configuration, installer, and conformance suite
 passes 234 tests with 1 skip. The isolated decision gate proves a green
 baseline and kills all 10 curated mutations with zero survivors or invalid
-results while leaving the source checkout unchanged. The named fast production
-gate, PR, exact tool installation, explicit current-profile budget update,
-Codex/ZCode refresh, and one new canary remain.
+results while leaving the source checkout unchanged. The named Python spine
+passes 665 tests with 6 skips, all 109 dashboard UI tests pass, 603 Python files
+pass Ruff format, and 542 Markdown files validate. Every routing, policy,
+delegation, CLI-startup, latency, and 263/1,000/10,000-worker scale gate passes;
+routing p95 is 4.328 ms and cache-hit p95 is 1.311 ms. PR, exact tool
+installation, explicit current-profile budget update, Codex/ZCode refresh, and
+one new canary remain.
 
 ## Approach
 
@@ -89,7 +93,7 @@ the default and explicit-override boundary.
 - [x] Generated host timeout calculation covers the three-call default.
 - [x] The curated decision-conformance manifest reverses this default and names
   the exact regression that must kill it.
-- [ ] Focused tests, the 10-mutation proof, and the named fast production gate
+- [x] Focused tests, the 10-mutation proof, and the named fast production gate
   pass on the exact source revision.
 - [ ] The PR is merged and the exact tool revision is installed.
 - [ ] This machine's explicit older fast budget is deliberately set to three

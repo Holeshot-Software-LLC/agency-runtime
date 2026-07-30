@@ -15,8 +15,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-201
 branch: agent/ar-201-default-repair-budget
-evidence_commit: 57c34e609dec06b15b73ceacdd6ee8cf75c94e95
-minimum_ledger_commit: dca598cd8d6811b7407c7b32527e59a79b694431
+evidence_commit: c604c47685b26066f1c3dc4f3b5b9764b9436e1d
+minimum_ledger_commit: 94803c62f75ca83a92aa62e4632c4b1f2692af32
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/180
 ---
@@ -35,6 +35,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/180
   ordering so generated timeouts follow the new effective budget; the second
   found no further authority, override, or fixed-evaluation control defect.
 - Tracker issue 180 records this bounded follow-up.
+- Clean checkpoint `c604c47` plus ledger `94803c6` contains the complete source,
+  test, decision, roadmap, and recovery slice.
 - Owner-untracked analysis and lock files remain untouched.
 
 ## completed-evidence
@@ -54,13 +56,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/180
   the exact recruiter-repair regression.
 - Decision conformance passes with a green baseline, 10/10 mutations killed,
   zero survivors or invalid results, and source inputs unchanged.
+- Named Python production spine: 665 passed, 6 skipped. Dashboard UI: 109
+  passed. Ruff lint passes and 603 files are format-clean. Documentation
+  validation passes for 542 Markdown files.
+- Every routing, policy, delegation, CLI-startup, latency, and
+  263/1,000/10,000-worker scale gate passes. Routing p95 is 4.328 ms,
+  cache-hit p95 is 1.311 ms, and throughput is 97.06 calls/second.
 
 ## exact-blocker
 
-No human or trust blocker is active. The focused source slice, two reviews,
-documentation checks, and 10-mutation gate are complete. The named fast gate,
-PR merge, exact tool install, deliberate current-profile budget update,
-refreshed Codex/ZCode bundles, and one ordinary canary remain.
+No human or trust blocker is active. The complete deterministic production gate
+is green. PR merge, exact tool install, deliberate current-profile budget
+update, refreshed Codex/ZCode bundles, and one ordinary canary remain.
 
 ## same-task-continuity
 
@@ -70,13 +77,12 @@ cleanup. Stop once if a genuine trust prompt cannot be bypassed.
 
 ## next-bounded-work-package
 
-1. Commit this focused repair checkpoint and its exact ledger.
-2. Run the named fast production spine and final documentation checks.
-3. Open, inspect, and merge the authorized PR.
-4. Install the exact tool, deliberately set the local explicit fast budget to
+1. Commit this fast-verification checkpoint and its exact ledger.
+2. Open, inspect, and merge the authorized PR.
+3. Install the exact tool, deliberately set the local explicit fast budget to
    three, then refresh Codex and ZCode so the generated timeout matches it.
-5. Run one new ordinary canary.
-6. Update the local report, tracker, roadmap, and capsules with the verdict.
+4. Run one new ordinary canary.
+5. Update the local report, tracker, roadmap, and capsules with the verdict.
 
 ## verification
 

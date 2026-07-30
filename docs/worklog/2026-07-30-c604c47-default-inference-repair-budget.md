@@ -63,9 +63,14 @@ decision, and silent migration of explicit lower budgets.
   passed, 1 skipped.
 - Decision conformance: green baseline; 10/10 mutations killed; zero survivors
   or invalid results; source inputs unchanged.
+- Named Python production spine: 665 passed, 6 skipped; dashboard UI: 109
+  passed.
+- Routing evaluation 1.3.0 passed every routing, policy, delegation,
+  CLI-startup, performance, and 263/1,000/10,000-worker scale gate. Routing p95
+  was 4.328 ms and cache-hit p95 was 1.311 ms.
 - Documentation metadata and policy checks passed; normal validation passed for
-  541 Markdown files.
-- Focused Ruff lint and format checks passed; Git diff check passed.
+  542 Markdown files.
+- Full Ruff lint passed and 603 files were format-clean; Git diff check passed.
 
 ## Follow-ups
 
