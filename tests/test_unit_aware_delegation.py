@@ -1144,6 +1144,10 @@ def test_same_specialist_can_activate_for_two_out_of_order_native_work_units(
         evidence_snapshot=snapshot,
     )
     assert fields["agencies_delegated"] == (f"technical-writer via generic-worker/{backend}")
+    assert fields["actual_model_selected"] == (
+        "parent task: host-selected (not observable to Agency); "
+        "specialist: launch model not evidenced by this receipt"
+    )
     assert fields["why"].endswith(".")
     assert "specialist instructions were loaded" in fields["how_it_shaped_outcome"]
     draft = (
@@ -1164,7 +1168,12 @@ def test_same_specialist_can_activate_for_two_out_of_order_native_work_units(
         evidence_snapshot=snapshot,
     )
     assert stale is not None
-    assert stale["missing"] == ["agencies_delegated", "why", "how_it_shaped_outcome"]
+    assert stale["missing"] == [
+        "agencies_delegated",
+        "actual_model_selected",
+        "why",
+        "how_it_shaped_outcome",
+    ]
 
     authoritative_draft = format_header(fields) + "\n\nDone."
     assert (

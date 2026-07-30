@@ -104,8 +104,13 @@ trials still do not opt into the activation canary's single-child rollout
 topology because the product goal requires multiple independent work units.
 Codex delegation context now requires `fork_turns=none` so each child receives
 only the exact hook-injected specialist context instead of inheriting the
-parent's full history. The new and directly affected tests currently pass 26
-focused cases; decision-conformance and the named fast spine remain pending.
+parent's full history. The new and directly affected tests pass 26 focused
+cases. Decision conformance passes its baseline and kills all 19 curated
+mutations with zero survivors or invalid results. Two bounded review passes
+found and repaired Windows CRLF hook-marker parsing, added real handler-failure
+stage coverage, and corrected a stale multi-unit assertion that had accepted an
+unevidenced model line. The complete changed-component suite passes 200 tests
+under warning-strict mode. The named fast spine remains pending.
 
 ## Approach
 

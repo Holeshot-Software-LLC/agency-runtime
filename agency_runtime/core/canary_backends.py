@@ -922,7 +922,7 @@ _CODEX_HOOK_DIAGNOSTIC_PATTERN = re.compile(
 )
 _CODEX_HOOK_EVENT_DIAGNOSTIC_PATTERN = re.compile(
     r"^agency_hook_diagnostic codex_hook_event=(?P<event>[A-Za-z]+) "
-    r"stage=(?P<stage>accepted|completed|failed)[ \t]*$",
+    r"stage=(?P<stage>accepted|completed|failed)[ \t]*\r?$",
     re.MULTILINE,
 )
 

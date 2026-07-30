@@ -96,7 +96,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   `fork_turns=none` plus the row's exact native task name.
 - The repaired slice passes 26 focused tests, including red-to-green product
   launch, environment, hook emission, hook projection, proof projection, and
-  two-unit delegation contracts. Mutation evaluation remains pending.
+  two-unit delegation contracts.
+- Decision conformance passes its baseline and kills 19/19 curated mutations;
+  there are zero survivors, zero invalid results, and the source remains
+  unchanged.
+- Review pass one found and repaired Windows CRLF marker parsing and added a
+  real handler-failure stage test. Review pass two found no production defect,
+  then the broad component suite exposed one stale test expectation that still
+  accepted an unevidenced model line; the test now requires model-field
+  correction.
+- The complete product, activation, cohesion, hook, and multi-unit delegation
+  component suite passes 200 tests under `-W error`.
 
 ## exact-blocker
 
@@ -114,7 +124,7 @@ or reinterpret `correction_count: 0` as a pass when the header is absent.
 
 ## next-bounded-work-package
 
-1. Kill every curated decision mutation and complete two bounded review passes.
+1. Commit the reviewed evidence hardening and its ledger record.
 2. Run the named fast production spine and reach demo-ready.
 3. Merge and install the exact build for Codex and ZCode only.
 4. Request explicit authorization for one replacement ordinary canary, then use

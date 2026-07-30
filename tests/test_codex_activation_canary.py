@@ -1360,16 +1360,19 @@ def test_codex_canary_projects_only_allowlisted_hook_event_diagnostics() -> None
             ),
         )
     )
-    stderr = "\n".join(
-        (
-            "unrelated stderr",
-            "agency_hook_diagnostic codex_hook_event=UserPromptSubmit stage=accepted",
-            "agency_hook_diagnostic codex_hook_event=UserPromptSubmit stage=completed",
-            "agency_hook_diagnostic codex_hook_event=PreToolUse stage=accepted",
-            "agency_hook_diagnostic codex_hook_event=PreToolUse stage=failed",
-            "agency_hook_diagnostic codex_hook_event=UnknownEvent stage=accepted",
-            "agency_hook_diagnostic codex_hook_event=Stop stage=arbitrary",
+    stderr = (
+        "\r\n".join(
+            (
+                "unrelated stderr",
+                "agency_hook_diagnostic codex_hook_event=UserPromptSubmit stage=accepted",
+                "agency_hook_diagnostic codex_hook_event=UserPromptSubmit stage=completed",
+                "agency_hook_diagnostic codex_hook_event=PreToolUse stage=accepted",
+                "agency_hook_diagnostic codex_hook_event=PreToolUse stage=failed",
+                "agency_hook_diagnostic codex_hook_event=UnknownEvent stage=accepted",
+                "agency_hook_diagnostic codex_hook_event=Stop stage=arbitrary",
+            )
         )
+        + "\r\n"
     )
 
     record = codex_canary_record(_process_result(stdout, stderr=stderr))
