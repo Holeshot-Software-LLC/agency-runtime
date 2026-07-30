@@ -336,6 +336,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `57c4829` | 2026-07-29 | docs(roadmap): record exact installed canary proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `b8c0a8d` | 2026-07-29 | fix(workforce): bind software architecture units | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `bef8eaa` | 2026-07-29 | docs(roadmap): record architecture selection blocker | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `4513b3a` | 2026-07-29 | docs(roadmap): record architecture repair verification | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `6ca745d` | 2026-07-29 | refactor(workforce): keep architecture recall contract-driven | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
+| `882b920` | 2026-07-29 | fix(workforce): keep online selection inference-owned | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | [detail](2026-07-29-882b920-inference-owned-online-selection.md) |
+| `78d6c21` | 2026-07-29 | docs(roadmap): record inference-only selection repair | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
