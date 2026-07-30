@@ -116,6 +116,40 @@ MUTATIONS: Final[tuple[DecisionMutation, ...]] = (
         ),
     ),
     DecisionMutation(
+        mutation_id="amendment-target-identity-left-model-authored",
+        invariant=(
+            "An amendment revises the inference-selected existing worker instead of creating a "
+            "second model-authored identity."
+        ),
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before="            contract = replace(contract, slug=existing.agent_id)",
+        after="            contract = contract",
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_amendment_binds_model_extension_slug_to_inferred_target"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="amendment-outcomes-overflow-workforce-schema",
+        invariant=(
+            "An additive amendment preserves existing outcomes while respecting the smaller "
+            "workforce projection bound."
+        ),
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before="""    agent["outcomes"] = _bounded_additive(
+        existing.outcomes,
+        agent["outcomes"],
+        maximum=MAX_OUTCOMES,
+    )""",
+        after="""    agent["outcomes"] = list(
+        dict.fromkeys((*existing.outcomes, *agent["outcomes"]))
+    )""",
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_amendment_preserves_existing_values_inside_smaller_workforce_bounds"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="contractor-diagnostics-collapse",
         invariant="Post-parse contractor failures retain their content-free validation stage.",
         source_path="agency_runtime/core/workforce/hiring.py",

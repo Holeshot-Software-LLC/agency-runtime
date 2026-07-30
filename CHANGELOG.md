@@ -62,6 +62,10 @@ changes rather than duplicating every commit.
   `contract_invalid:candidate`. Full governed employment prose remains in the
   compiled contract while its smaller workforce routing projection is bounded
   by destination byte limits.
+- Inferred amendments now revise the exact inference-selected existing worker,
+  preserve its authority and context boundary, retain every existing contract
+  value before bounded additions, and report content-free amendment stages
+  instead of collapsing failures into `contract_invalid:amendment`.
 
 - Codex activation hooks now preserve opaque encrypted collaboration messages
   instead of replacing them with mixed plaintext/encrypted input. The exact

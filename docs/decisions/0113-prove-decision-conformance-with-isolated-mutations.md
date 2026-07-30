@@ -24,7 +24,9 @@ Agency has extensive example-based tests and quantitative routing gates, yet a
 green suite does not by itself prove those tests would reject the specific
 implementation reversals that previously bypassed online inference, promoted a
 deterministic role anchor over an inference ranking, or overflowed contractor
-schema boundaries. Broad mutation tools are too slow for the named fast gate,
+schema boundaries. The same proof must reject amendment identity drift and
+unbounded additive projection without turning model-authored target selection
+into deterministic routing. Broad mutation tools are too slow for the named fast gate,
 and mutating the owner checkout with Git-based restoration can overwrite work
 or turn restoration failure into data loss.
 
@@ -51,8 +53,9 @@ The evaluator never edits the requested checkout, never relies on Git to
 restore files, never imports mutated modules into its own process, rejects
 linked or reparse-point package inputs, and emits a bounded content-free JSON
 report. It fingerprints the copied package and selected test inputs before and
-after the run. The curated command belongs in the named fast production gate;
-exhaustive mutation fanout remains optional diagnostics.
+after the run. The curated command includes both new-hire and amendment
+decision boundaries and belongs in the named fast production gate; exhaustive
+mutation fanout remains optional diagnostics.
 
 ## Consequences
 
