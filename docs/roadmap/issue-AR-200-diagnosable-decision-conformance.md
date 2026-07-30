@@ -74,6 +74,17 @@ documentation validation passes for 536 files. Strict tracker validation still
 reports the repository's pre-existing AR-128 through AR-198 parity backlog;
 AR-200 itself is mapped to tracker issue 175.
 
+PR 176 merged the implementation as exact commit
+`52d563538daf049c7fa054c5c50cad05cf4b4bdf`. CI, CodeQL, and Dependency
+Review each failed before executing a step because GitHub reported an account
+payment or spending-limit block; the complete local gate above is therefore the
+implementation evidence. The immutable upgrade plan installed exact build
+`0.1.0+g52d563538daf`. Codex was refreshed to managed bundle
+`0.1.0+codex.bd6f67d99b7d`, and ZCode was refreshed from the same launcher
+identity. Both hosts are registered/enabled but runtime-unverified until a
+fresh process loads them; current-profile Codex hook trust remains an attended
+boundary and is not claimed by the isolated ordinary canary.
+
 ## Approach
 
 1. Split candidate validation into content-free, allowlisted stages and retain

@@ -349,6 +349,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `05ec457` | 2026-07-29 | docs(roadmap): record terminal ordinary product proof | [AR-199](../roadmap/issue-AR-199-restore-codex-workforce-evidence.md) | null |
 | `22db114` | 2026-07-29 | Merge pull request #174 from Holeshot-Software-LLC/codex/ar-199-fbed-canary | null | null |
 | `687078e` | 2026-07-29 | fix(workforce): make decisions diagnosable and mutation-conformant | [AR-200](../roadmap/issue-AR-200-diagnosable-decision-conformance.md) | [detail](2026-07-29-687078e-decision-conformance.md) |
+| `52d5635` | 2026-07-29 | Merge pull request #176 from Holeshot-Software-LLC/codex/ar-200-decision-conformance | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
