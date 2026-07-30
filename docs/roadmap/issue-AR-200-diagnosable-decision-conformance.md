@@ -140,6 +140,20 @@ the executable evidence. The immutable ref upgrade installed exact build
 hosts are registered and enabled. Current-profile Codex activation remains an
 attended fresh-process boundary, separate from the isolated product canary.
 
+The one final bounded canary, trial `ar200-8bb504c-ordinary-02`, is terminal
+`NO-GO` at trace `019fb121-2e4c-70e0-a286-7fe25fc2e5ba`. Codex completed
+with exit 0 in 162.641 seconds and the isolated plugin recorded a native host
+contract plus two successful `gpt-5.6-luna` wrapper receipts. Seven of nine
+units had relevant verifier-safe proposals, but architecture and documentation
+remained empty. Architecture consumed the one hiring call and abstained with
+`gap_not_proven`; documentation was then `task_hiring_limit_reached`.
+Atomic publication recorded zero selected, loaded, or delegated specialists.
+The Stop path recorded `continue` for `evidence_verification` and then
+`retry_exhausted`; all seven header fields were absent, correction count was
+null rather than zero, and the empty workspace failed all five product checks.
+The local evidence page records the exact prompt, staffing receipt, model and
+finalization evidence, mutation report, and scoped verdict.
+
 ## Approach
 
 1. Split candidate validation into content-free, allowlisted stages and retain
@@ -194,9 +208,10 @@ contract introduced here.
   failures, and unrelated failures make the gate fail.
 - [x] Focused tests and the named fast Python, dashboard, routing,
   documentation, formatting, and diff gates pass on the exact source revision.
-- [ ] The merged revision is installed exactly and one bounded ordinary Codex
-  canary reports relevant specialist/model evidence, at least one completed
-  specialist chain, one accepted finalization, and zero header corrections.
-- [ ] The local shareable evidence page is updated with the exact prompt,
+- [x] The merged revision is installed exactly for Codex and ZCode.
+- [ ] One bounded ordinary Codex canary reports relevant specialist/model
+  evidence, at least one completed specialist chain, one accepted finalization,
+  and zero header corrections. The terminal AR-200 canary did not satisfy this.
+- [x] The local shareable evidence page is updated with the exact prompt,
   selected and delegated agents, model receipts, correction count, mutation
   report, and scoped verdict.

@@ -39,7 +39,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 - AR-199's terminal ordinary trace remains `NO-GO`; it is evidence input, not a
   run to reinterpret or repeat before deterministic gates pass.
 - The first AR-200 ordinary trace ended `NO-GO`; its isolated documentation
-  amendment failure is repaired and fully verified. One final canary remains.
+  amendment failure is repaired and fully verified.
+- The final AR-200 canary is now terminal `NO-GO`; no rerun is permitted in
+  this bounded package.
 - Owner-untracked files remain untouched.
 
 ## completed-evidence
@@ -113,26 +115,37 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/175
 - A proposed source-level live diagnostic was denied because it would transmit
   the active roster snapshot to the external provider. It was not retried or
   bypassed; local contract analysis and isolated deterministic regressions are
-  the repair evidence before the governed final product canary.
+  the bounded repair evidence that preceded the final product canary.
+- Trial `ar200-8bb504c-ordinary-02`, trace
+  `019fb121-2e4c-70e0-a286-7fe25fc2e5ba`, completed in 162.641 seconds with
+  two successful Luna wrapper receipts and safe proposals for seven of nine
+  units. Architecture and documentation remained gaps. The only hiring call
+  returned `gap_not_proven`, documentation hit the task hiring limit, and
+  atomic publication produced zero specialists or delegations. Finalization
+  continued once for `evidence_verification` and ended `retry_exhausted`;
+  the header was absent, correction count was null, and all five product checks
+  failed against an empty workspace. The local report records the exact prompt
+  and correlated evidence.
 
 ## exact-blocker
 
-One final ordinary Codex canary must prove a relevant specialist chain,
-accepted finalization, model receipts, and zero header corrections.
-Current-profile trust is a separate attended status and does not block the
-isolated-profile product proof.
+The amendment defect is closed, but ordinary live selection is not robust:
+architecture can still receive relevant nominations with no safe proposal, and
+same-turn hiring can decline that explicit gap as `gap_not_proven`. That leaves
+the atomic team empty before delegation. Current-profile trust remains a
+separate attended status and did not block the isolated canary.
 
 ## same-task-continuity
 
-Continue in this task through implementation, deterministic verification,
-merge, exact installation, one bounded live canary, and evidence publication.
+Close this bounded package with the terminal trace and local evidence page. Do
+not turn its failed single canary into an unbounded repair-and-rerun loop.
 
 ## next-bounded-work-package
 
-1. Run one final bounded ordinary Codex canary with the governed full-stack
-   prompt.
-2. Publish its exact evidence to the local shareable report and close AR-200
-   only if the scoped canary contract passes.
+1. Diagnose why a required architecture unit can retain relevant nominations
+   but lose every safe proposal, and why hiring calls that gap unproven.
+2. Add a decision-conformance mutation for the confirmed boundary before any
+   separately scoped install or live canary.
 
 ## verification
 
