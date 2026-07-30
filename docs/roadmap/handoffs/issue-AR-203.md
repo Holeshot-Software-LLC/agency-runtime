@@ -31,122 +31,79 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 - PR 186 merged the reviewed launch repair as exact main revision
   `830b878859318bc1288858ba65ba580bd98bf53e`.
-- The immutable planner installed exact build `0.1.0+g830b87885931`. Codex and
-  ZCode only were refreshed; the dashboard remained opted out.
-- Codex refresh completed with backup
-  `C:/Users/lucas/.agency-runtime/backups/codex/20260730T171035.758962Z`.
-  Normal-owner doctor reports `activation-required` because hook trust is not
-  automatically granted or inherited across the refreshed bundle.
-- ZCode refresh completed with backup
-  `C:/Users/lucas/.agency-runtime/backups/zcode/20260730T171120.087528Z` and
-  reports registered, enabled, restart required, and runtime unverified.
+- Exact build `0.1.0+g830b87885931` is installed for Codex and ZCode only; the
+  dashboard remained opted out. The owner trusted the refreshed Codex hooks and
+  restarted before the trial.
+- Trial `ar203-830b878-ordinary-02` is terminal `NO-GO`. It proves activation
+  and nine-unit planning, then fails at recruiter response acceptance/recovery.
+- No source repair has started. This checkpoint freezes the first causal
+  boundary before implementation.
 - The README-story goal is bounded to one ordinary Codex proof on this machine:
   first terminal failure or 45 minutes ends a package, one live trial is
   allowed per exact build, and a second failure at the same causal boundary
   stops for owner direction.
 - Owner-untracked analysis and lock files remain untouched.
-- A replacement live canary was not launched: the approval boundary requires
-  fresh explicit owner authorization after the prior authorized final trial.
 
 ## completed-evidence
 
-- Product Agency mode consumes
-  `agency.canary-activation-evidence.v1` from the exact executed prompt hash.
-  A regression raises if the legacy recent-activity summary is requested.
-- A disposable Codex home receives one exact canonical workspace trust entry.
-  The persistent source configuration remains byte-identical.
-- The host command retains `--sandbox workspace-write`, supplies no
-  `--add-dir`, and does not request `danger-full-access`.
-- The same Codex invocation must create a fixed prompt-bound sentinel. The
-  harness accepts only its exact bounded regular-file value, removes it before
-  grading, and rejects preexisting, missing, mismatched, linked, oversized, or
-  uncleanable proof.
-- Missing or null workspace-write evidence skips product validation and cannot
-  pass the trial.
-- Focused runtime review passes 85 tests. Decision conformance passes its
-  baseline and kills 13/13 mutations with zero survivors or invalid results;
-  source inputs remain unchanged.
-- The exact checkpoint is substantive commit `9f3d72a` plus ledger
-  `fdf4a36`.
-- Named fast Python spine: 675 passed, 6 skipped. Dashboard UI: 109 passed
-  after the outer sandbox's expected `spawn EPERM` required the authorized
-  rerun. Routing evaluation 1.3.0 passed every gate; routing p95 was 3.725 ms
-  and cache-hit p95 was 0.989 ms.
-- GitHub hosted jobs were refused before repository execution by account
-  billing enforcement.
-- Trial `ar203-dbd5502-ordinary-01` is terminal `NO-GO`: isolated trust was
-  proven, but workspace-write, Agency activation, and the final header were not.
-- Correction count was zero. Every runtime cardinality was zero, and product
-  grading correctly skipped before inspecting the empty workspace.
-- Canonical product prompt hash is
-  `sha256:e845c233e9a65eff66a8af626a333110449e6c90f8f4b46b0f6529ddd427152d`;
+- Codex exited zero after 182.422 seconds; the product wrapper exited one after
+  183.335 seconds with empty stderr. The trial workspace remained empty.
+- Exact trace `019fb417-f166-7461-a1db-e53ee0007045` contains one route, one
+  run, three correlated model receipts, two finalizations, and nine typed work
+  units sourced from `verified-workforce-plan`.
+- Inference attempt one applied the planner response. Attempt two rejected the
+  recruiter response as `provider_response_contract_invalid`. Attempt three,
+  the bounded repair, failed as `provider_no_valid_response`.
+- The route ended `abstained`, the run ended `retry_exhausted`, and staffing
+  recorded `workforce_inference_failed`. Of 272 candidates, 53 were eligible
+  and 219 were rejected before inference-owned selection.
+- No specialist was selected. Hiring recorded `no_attempt`; loads,
+  delegations, worker runs, native spawns, and native waits were all zero.
+- The final response contained all seven header fields but required one Stop
+  correction. `correction_count: 1` independently fails the canary.
+- Isolated workspace trust was proven and the persistent profile was unchanged.
+  The proof file was missing, so effective workspace-write was not proven and
+  product validation correctly skipped.
+- Product prompt hash is
+  `sha256:092f36f658e877437f1434326bd39a57a8995bcf64860cdc60560e6ea915f852`;
   executed wrapper hash is
-  `sha256:3218b84c7cc13a7a8648ef9c65f6756d5dcba45b0d3ccc1553e302de27d5ddae`.
-- Codex completed with host exit zero in 87.813 seconds and a 308-character
-  response. The product command exited one after `route_not_found`,
-  `proof_file_missing`, and the absent header.
-- Exact workspace trust was `proven: true`, scoped to the disposable
-  workspace, and left persistent configuration unchanged. Effective
-  workspace-write was `proven: false`.
-- Exact Store queries for both the canonical and wrapped product prompt hashes
-  returned no route, and the latest persisted route predates the final trial.
-  The missing activation is therefore a hook-start failure, not merely a
-  product-report hash mismatch.
-- The product launch contract now persists the parent turn, enables
-  `multi_agent_v2` and `agents.enabled=true`, and retains bounded
-  `workspace-write` with no added write root or full-access bypass.
-- Isolated product hooks now require the pre-existing Store. Optional
-  product-canary diagnostics project only canonical hook event names with
-  bounded accepted/completed/failed counts; raw stderr is never retained.
-- Product trials remain multi-unit and do not reuse the activation canary's
-  single-spawn rollout constraint. Codex specialist instructions require
-  `fork_turns=none` plus the row's exact native task name.
-- The repaired slice passes 26 focused tests, including red-to-green product
-  launch, environment, hook emission, hook projection, proof projection, and
-  two-unit delegation contracts.
-- Decision conformance passes its baseline and kills 19/19 curated mutations;
-  there are zero survivors, zero invalid results, and the source remains
-  unchanged.
-- Review pass one found and repaired Windows CRLF marker parsing and added a
-  real handler-failure stage test. Review pass two found no production defect,
-  then the broad component suite exposed one stale test expectation that still
-  accepted an unevidenced model line; the test now requires model-field
-  correction.
-- The complete product, activation, cohesion, hook, and multi-unit delegation
-  component suite passes 200 tests under `-W error`.
-- The exact post-review fast gate is green: Python 675 passed and 6 skipped;
-  dashboard UI 109 passed; routing evaluation 1.3.0 passed every gate with
-  routing p95 4.710 ms and cache-hit p95 1.448 ms; current-tree decision
-  conformance killed 19/19 mutations with zero survivors or invalid results.
-- Documentation validation passes 551 files. Ruff check and format validation
-  pass all 603 Python inputs. The UI test's restricted first attempt hit the
-  expected Windows `spawn EPERM`; the authorized owner-process rerun passed.
+  `sha256:4e6ee868cf1d528016e3625d9bd8069bd2f71c8d7ebef020b26efb5a88b964f7`.
+- Workspace hash is
+  `sha256:e49c785ca29e47c943071c9b38914c19c0ac7095cad9d65569d25c9bb8542fe3`;
+  session ID is `019fb417-f0e7-7702-ac1b-5bf74e07c1dd`.
+- The merged source repair remains green: changed-component suite 200 passed;
+  named fast Python spine 675 passed and 6 skipped; dashboard UI 109 passed;
+  routing evaluation 1.3.0 passed every gate; decision conformance killed 19/19
+  mutations; documentation and Ruff checks passed.
 
 ## exact-blocker
 
-The repaired product launch contract is merged and exact-installed. Codex now
-reports `activation-required`: every Codex process opened before the refresh
-must close, a fresh terminal TUI must trust all eight Agency hook events, and a
-fresh process must load the settled plugin. Agency will not bypass or claim
-that human trust boundary.
+Activation and planning now work in the exact installed build. The first causal
+boundary is recruiter response contract acceptance: the configured inference
+provider produced a planner response the runtime accepted, then a recruiter
+response the runtime rejected, and one bounded repair could not produce a valid
+replacement. This is not a hook-start, trust, deterministic-selection, hiring,
+delegation, or workspace-grading failure.
 
 ## same-task-continuity
 
-Keep fail-closed grading and the bounded proof repair frozen. Do not add a
-general sandbox bypass, mutate persistent trust, add another write directory,
-or reinterpret `correction_count: 0` as a pass when the header is absent.
+Keep inference authoritative for online selection. Do not add deterministic
+role anchors, weaken fail-closed schemas, add a general sandbox bypass, mutate
+persistent trust, or reinterpret one corrected header as a first-pass success.
 
 ## next-bounded-work-package
 
-1. Owner closes every pre-refresh Codex process, opens a fresh terminal TUI,
-   trusts all eight Agency hook events, exits, and starts a fresh Codex process.
-2. Re-run normal-owner doctor and the read-only activation inventory. Stop if
-   trust or loading remains unsettled.
-3. Treat the owner's returned `done` as authorization for one exact-build live
-   trial, then run the ordinary README-story canary once.
-4. At the first terminal failure, publish the exact evidence checkpoint before
-   repairing only that causal boundary. At pass, publish the local evidence
-   page and close the correlated acceptance records.
+1. Publish this terminal trial in the local evidence page and checkpoint the
+   canonical roadmap state.
+2. Reproduce and repair only recruiter response acceptance or its one bounded
+   semantic repair; preserve inference-owned staffing and fail-closed evidence.
+3. Run focused tests, at most two review passes, decision conformance, and the
+   named fast verification spine. Stop at the first new terminal failure.
+4. PR and merge the reviewed slice, exact-install it for Codex and ZCode only,
+   then run one replacement trial for that new build.
+5. A second failure at this same recruiter boundary stops for owner direction;
+   otherwise publish the final local report and continue from the next proven
+   boundary.
 
 ## verification
 

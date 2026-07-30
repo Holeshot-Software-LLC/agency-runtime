@@ -11,6 +11,7 @@ related:
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
+  - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
   - docs/roadmap/handoffs/issue-AR-203.md
   - docs/worklog/README.md
 supersedes: []
@@ -123,13 +124,22 @@ sandbox's expected `spawn EPERM`; the authorized normal-owner rerun passed.
 
 PR 186 merged that exact repair as
 `830b878859318bc1288858ba65ba580bd98bf53e`. The immutable upgrade planner
-resolved that full revision, and exact build `0.1.0+g830b87885931` is now
-installed. Codex and ZCode only were refreshed; the dashboard remained opted
-out. ZCode is registered and enabled with restart required. Codex is registered
-and enabled, but normal-owner `agency doctor --json` reports
-`activation-required` because the refresh invalidated prior hook-trust
-evidence. The next step is therefore the documented human trust boundary, not
-another source repair or a bypass.
+resolved that full revision, and exact build `0.1.0+g830b87885931` is installed
+for Codex and ZCode only. After the owner trusted the refreshed hooks and
+restarted Codex, trial `ar203-830b878-ordinary-02` proved the hook and route
+start: one route, one run, three model receipts, two finalizations, and nine
+typed work units were persisted under trace
+`019fb417-f166-7461-a1db-e53ee0007045`.
+
+The trial is terminal `NO-GO`. The planner response was applied, the recruiter
+response was rejected as `provider_response_contract_invalid`, and its bounded
+repair ended `provider_no_valid_response`. Routing therefore degraded and
+abstained with `workforce_inference_failed`; no specialist, hiring case, load,
+delegation, or worker run followed. The seven-field header was structurally
+present only after one correction, which independently fails the zero-correction
+gate. Isolated workspace trust was proven without changing the persistent
+profile, but the proof file was missing, the workspace stayed empty, and product
+validation correctly skipped as `workspace_write_not_proven`.
 
 The delivery outcome is frozen as "README's main story works in reality" for
 the ordinary Codex path on this machine. Each package stops at its first
@@ -160,6 +170,8 @@ the same causal boundary stops for owner direction instead of looping.
 9. Keep multi-unit product evidence separate from the activation canary's
    deliberately single-child rollout parser, and isolate each Codex specialist
    child with `fork_turns=none`.
+10. Repair only the recruiter response acceptance and bounded-repair contract
+    proven by the exact live trace; keep online selection inference-owned.
 
 ## Dependencies
 
@@ -188,5 +200,10 @@ demonstrates both mismatches.
   exact persisted native task name.
 - [x] PR 186 is merged and its exact revision is installed for Codex and ZCode
   only without selecting the dashboard.
+- [x] The exact installed trial starts the hook and route, persists nine typed
+  work units, and distinguishes recruiter contract failure from activation,
+  hiring, delegation, and workspace-write evidence.
+- [ ] Recruiter response acceptance or bounded repair produces a defensible
+  inferred staffing plan for the fixed README-story prompt.
 - [ ] The next ordinary canary reports exact activation evidence and can create
   required artifacts when workforce execution reaches the parent model.
