@@ -71,8 +71,9 @@ immutable/terminal Store lifecycle, exact replay, second-spawn denial, and
 post-consumption next-spawn admission. Both new decision mutations are killed
 with unchanged source. The revised named fast spine is green through 594 docs,
 604 Ruff files, 636 warning-strict Python tests with six skips, 110 dashboard
-tests, and every routing gate. The full 71-mutation run remains pending after
-the required context checkpoint.
+tests, and every routing gate. Decision conformance passed its baseline, killed
+all 71 mutations with zero survivors or invalid results, and proved the source
+tree unchanged.
 
 ## Approach
 
@@ -117,7 +118,7 @@ serialized opaque launch semantics.
 - [x] A second opaque grant fails until `SubagentStart` consumes the first;
   exact same-tool replay remains idempotent.
 - [x] Focused warning-strict tests and curated mutations pass.
-- [ ] The revised named fast verification spine passes.
+- [x] The revised named fast verification spine passes.
 - [ ] The reviewed repair is merged and exact-installed.
 - [ ] One fresh exact-build activation and one product trial pass with zero
   corrections and proven workspace write.

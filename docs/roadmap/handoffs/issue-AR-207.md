@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-207-exact-product-proof
-evidence_commit: 552eb05aa47ba1e44bf7ae8e0743bcc0cfdde513
-minimum_ledger_commit: abd5ba95d3954196aedbc38a835f27494aca6b92
+evidence_commit: ae8505278b03a14944799664238421260cd1c8c9
+minimum_ledger_commit: acfdabc60a31c89a993a9ebc50049dc7e15e0adb
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -74,7 +74,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   tests, all 27 activation tests, and both new mutations with unchanged source.
 - The repaired spine is green through 594 docs, 604 Ruff files, 636
   warning-strict Python tests with six skips, 110 dashboard tests, and every
-  routing gate. Full 71-mutation conformance remains after this checkpoint.
+  routing gate. Conformance killed all 71 mutations with zero survivors or
+  invalid results, and the source tree remained unchanged.
 - Product session `019fb92d-694c-7e42-b553-ee53802bac99`, trace
   `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
   `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage
@@ -123,10 +124,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 Exact build `584b949` is consumed: activation passed, but its product trial is
-terminal `NO-GO`. AR-209's exact-path and serialized-launch repair is green
-through every pre-conformance named gate but is not yet 71-mutation-green,
-reviewed, merged, or exact-installed. No new live run is allowed before those
-boundaries pass.
+terminal `NO-GO`. AR-209's exact-path and serialized-launch repair is fully
+local-fast-green but is not yet reviewed, merged, or exact-installed. No new
+live run is allowed before those boundaries pass.
 
 ## same-task-continuity
 
@@ -137,7 +137,8 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Pass the revised named fast gate, review, merge, and exact-install AR-209.
+1. Push, resolve the two P1 review threads, obtain exact-head review, merge,
+   and exact-install AR-209.
 2. Repeat one activation and at most one product trial on the new exact build,
    then produce the local shareable evidence page and OpenClaw handoff.
 
