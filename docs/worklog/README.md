@@ -435,6 +435,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bb1122c` | 2026-07-31 | docs(roadmap): record exact routing replay | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 | `096570a` | 2026-07-31 | docs(roadmap): record fast-green product repair | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 | `dd85e7d` | 2026-07-31 | Merge pull request #201 from Holeshot-Software-LLC/codex/ar-207-product-routing-validation | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-208](../roadmap/issue-AR-208-preserve-codex-host-notices-in-product-evidence.md) | null |
+| `5375532` | 2026-07-31 | docs(roadmap): checkpoint exact merged activation | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-208](../roadmap/issue-AR-208-preserve-codex-host-notices-in-product-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
