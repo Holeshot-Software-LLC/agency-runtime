@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from agency_runtime.core.workforce.planning_contracts import WorkUnit, WorkUnitPlan
@@ -10,6 +11,14 @@ from agency_runtime.core.workforce.planning_contracts import WorkUnit, WorkUnitP
 _TOKENS = re.compile(r"[a-z0-9]+")
 _NEGATED_SCOPE = re.compile(
     r"\b(?:do\s+not|don't|must\s+not|never|without)\b[^.;\n]*",
+    re.IGNORECASE,
+)
+_NEGATED_EVIDENCE_SCOPE = re.compile(
+    r"\b(?:do(?:es)?\s+not|don't|doesn't|must\s+not|never|without)\b[^.;\n]*",
+    re.IGNORECASE,
+)
+_VERIFICATION_CLAUSE_BOUNDARY = re.compile(
+    r"(?:[.;,\n]|\b(?:after|before|following|once|prior\s+to|without)\b)",
     re.IGNORECASE,
 )
 _MUTATION = frozenset(
@@ -72,7 +81,89 @@ _SECURITY = frozenset(
         "vulnerabilities",
     }
 )
-_RELEASE = frozenset({"deploy", "deployment", "install", "installer", "release", "ship"})
+_RELEASE = frozenset(
+    {
+        "deploy",
+        "deployed",
+        "deploying",
+        "deployment",
+        "deployments",
+        "install",
+        "installation",
+        "installations",
+        "installed",
+        "installer",
+        "installers",
+        "installing",
+        "release",
+        "released",
+        "releases",
+        "releasing",
+        "ship",
+        "shipped",
+        "shipping",
+        "ships",
+    }
+)
+_RELEASE_OPERATIONS = {
+    "deployment": frozenset({"deploy", "deployed", "deploying", "deployment", "deployments"}),
+    "installation": frozenset(
+        {
+            "install",
+            "installation",
+            "installations",
+            "installed",
+            "installer",
+            "installers",
+            "installing",
+        }
+    ),
+    "release": frozenset(
+        {"release", "released", "releases", "releasing", "ship", "shipped", "shipping", "ships"}
+    ),
+}
+_POSITIVE_VERIFICATION = frozenset(
+    {
+        "confirm",
+        "confirmed",
+        "evidence",
+        "prove",
+        "proven",
+        "test",
+        "tested",
+        "validate",
+        "validated",
+        "validation",
+        "verification",
+        "verified",
+        "verify",
+    }
+)
+_VERIFICATION_RELATION_FILLERS = frozenset(
+    {
+        "a",
+        "actual",
+        "an",
+        "and",
+        "application",
+        "been",
+        "complete",
+        "completed",
+        "cross",
+        "for",
+        "has",
+        "in",
+        "is",
+        "of",
+        "on",
+        "platform",
+        "successful",
+        "successfully",
+        "that",
+        "the",
+        "was",
+    }
+)
 _ASSURANCE_TERMS = frozenset(
     {
         "assurance",
@@ -120,6 +211,115 @@ _NAMED_STANDARD = re.compile(
     re.IGNORECASE,
 )
 
+_PLAN_REPAIR_REQUIREMENTS = {
+    "plan_missing_implementation": (
+        "Add at least one implementation-change unit for the requested code mutation."
+    ),
+    "plan_missing_test_implementation": (
+        "Add a distinct test-code unit that authors or changes the tests."
+    ),
+    "plan_missing_independent_review": (
+        "Add a distinct review-report unit for independent artifact correctness review."
+    ),
+    "plan_missing_test_evidence_review": (
+        "Add a distinct test-evidence unit that independently runs or interprets test results."
+    ),
+    "plan_tests_not_ordered_after_implementation": (
+        "Place each test-code unit after its implementation-change dependency and reference that "
+        "earlier unit through depends_on."
+    ),
+    "plan_review_not_ordered_after_artifact": (
+        "Place an independent review-report after the implementation or test artifact it reviews "
+        "and reference that earlier unit through depends_on."
+    ),
+    "plan_test_evidence_not_ordered_after_tests": (
+        "Place the test-evidence unit after test-code and reference the earlier test-code unit "
+        "through depends_on."
+    ),
+    "plan_missing_security_review": (
+        "Add a separate security-domain review-report for the security-sensitive code."
+    ),
+    "plan_missing_code_correctness_review": (
+        "Add a non-security software-engineering review-report for code correctness; keep it "
+        "distinct from the security review."
+    ),
+    "plan_missing_release_verification": (
+        "Add downstream test-evidence whose outcome explicitly verifies the requested install, "
+        "deployment, or release."
+    ),
+    "plan_missing_documentation_change": (
+        "Add a documentation unit for the requested prose or documentation mutation."
+    ),
+    "plan_missing_documentation_review": (
+        "Add a downstream review-report for the requested documentation change."
+    ),
+    "plan_missing_codebase_discovery": (
+        "Add an earlier software-engineering analysis unit whose outcome maps the relevant "
+        "repository code paths."
+    ),
+    "plan_missing_regulated_assurance_review": (
+        "Add an independent review-report for the named regulated assurance work."
+    ),
+    "plan_missing_regulated_assurance_requirement": (
+        "Include every named regulated-assurance capability in an independent review-report."
+    ),
+    "plan_external_write_requires_separate_authorization": (
+        "Remove external-write authority from this plan; it requires a separate authorized turn."
+    ),
+}
+
+
+def planner_acceptance_contract() -> dict[str, object]:
+    """Describe deterministic plan vetoes without creating a plan for inference."""
+
+    return {
+        "code_mutation": {
+            "required_artifact_kinds": [
+                "implementation-change",
+                "test-code",
+                "review-report",
+                "test-evidence",
+            ],
+            "required_dependency_paths": [
+                "implementation-change -> test-code",
+                "implementation-change or test-code -> review-report",
+                "test-code -> test-evidence",
+            ],
+            "test_code_and_test_evidence_are_distinct": True,
+        },
+        "security_sensitive_code": {
+            "required_distinct_reviews": [
+                "software-engineering correctness review-report without security domain",
+                "security-domain exploitability review-report",
+            ]
+        },
+        "repository_security_or_code_path_mapping": {
+            "required_predecessor": "software-engineering analysis that maps repository code paths"
+        },
+        "documentation_mutation": {"required_artifact_kinds": ["documentation", "review-report"]},
+        "install_deploy_or_release": {
+            "required_downstream_artifact": (
+                "test-evidence whose outcome explicitly verifies install, deployment, or release"
+            )
+        },
+        "ordering": "Every depends_on ID must name an earlier unit in the same response.",
+    }
+
+
+def plan_policy_repair_guidance(violations: Sequence[str]) -> tuple[dict[str, str], ...]:
+    """Return bounded, allowlisted corrections for deterministic policy violations."""
+
+    return tuple(
+        {
+            "code": code,
+            "required_correction": _PLAN_REPAIR_REQUIREMENTS.get(
+                code,
+                "Rewrite the complete plan so it satisfies this deterministic safety invariant.",
+            ),
+        }
+        for code in dict.fromkeys(violations)
+    )
+
 
 def regulated_assurance_requirements(request: str) -> tuple[str, ...]:
     """Return canonical named-standard requirements for high-assurance work."""
@@ -166,6 +366,47 @@ def _unit_tokens(unit: object) -> frozenset[str]:
     values = [str(getattr(unit, "outcome", ""))]
     values.extend(str(item) for item in getattr(unit, "claims", ()))
     return frozenset(_TOKENS.findall(" ".join(values).casefold()))
+
+
+def _outcome_verifies_operation(outcome: str, vocabulary: frozenset[str]) -> bool:
+    actionable = _NEGATED_EVIDENCE_SCOPE.sub(" ", outcome).casefold()
+    relation_tokens = _VERIFICATION_RELATION_FILLERS | _POSITIVE_VERIFICATION | _RELEASE
+    for clause in _VERIFICATION_CLAUSE_BOUNDARY.split(actionable):
+        tokens = _TOKENS.findall(clause)
+        verification_indexes = [
+            index for index, token in enumerate(tokens) if token in _POSITIVE_VERIFICATION
+        ]
+        operation_indexes = [index for index, token in enumerate(tokens) if token in vocabulary]
+        for verification_index in verification_indexes:
+            for operation_index in operation_indexes:
+                left, right = sorted((verification_index, operation_index))
+                between = tokens[left + 1 : right]
+                if len(between) <= 8 and all(token in relation_tokens for token in between):
+                    return True
+    return False
+
+
+def _release_verification_covers_request(
+    request_tokens: frozenset[str],
+    plan: WorkUnitPlan,
+) -> bool:
+    requested_operations = tuple(
+        operation
+        for operation, vocabulary in _RELEASE_OPERATIONS.items()
+        if request_tokens & vocabulary
+    )
+    evidence_outcomes = tuple(
+        item.outcome
+        for item in plan.units
+        if item.artifact_kind == "test-evidence" and item.authority == "review"
+    )
+    return bool(requested_operations) and all(
+        any(
+            _outcome_verifies_operation(outcome, _RELEASE_OPERATIONS[operation])
+            for outcome in evidence_outcomes
+        )
+        for operation in requested_operations
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -265,12 +506,7 @@ def _code_mutation_violations(
         codes.append("plan_test_evidence_not_ordered_after_tests")
     if tokens & _SECURITY and not any("security" in item.domains for item in inventory.reviews):
         codes.append("plan_missing_security_review")
-    if tokens & _RELEASE and not any(
-        item.lifecycle_phase == "release"
-        and item.artifact_kind == "test-evidence"
-        and item.authority == "review"
-        for item in plan.units
-    ):
+    if tokens & _RELEASE and not _release_verification_covers_request(tokens, plan):
         codes.append("plan_missing_release_verification")
     return codes
 
@@ -352,4 +588,9 @@ def plan_policy_violations(request: str, plan: WorkUnitPlan) -> tuple[str, ...]:
     return tuple(dict.fromkeys(codes))
 
 
-__all__ = ["plan_policy_violations", "regulated_assurance_requirements"]
+__all__ = [
+    "plan_policy_repair_guidance",
+    "plan_policy_violations",
+    "planner_acceptance_contract",
+    "regulated_assurance_requirements",
+]

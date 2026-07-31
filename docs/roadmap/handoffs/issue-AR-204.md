@@ -3,175 +3,119 @@ title: "AR-204 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-07-31
 tags: [handoff, product, dashboard, inference, activation, automation]
 related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
+  - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
-  - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
+  - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-204
-branch: codex/ar-203-readme-story-final-proof
-evidence_commit: 03dba7538779f9c1bc64a9f6e06e5dbe9581db42
-minimum_ledger_commit: fe68f86e36a2f2d82ae681d02c67ae5d4a0e6a06
+branch: codex/ar-203-product-planner-repair
+evidence_commit: 81b887f57353c372bd4e798a085f65f443ca1e3f
+minimum_ledger_commit: 3010813eaac39c0d799817cca19e0419acfbde59
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 ---
 
 # AR-204 active recovery capsule
 
-Bounded recovery projection for making the README product story executable.
-The [canonical issue](../issue-AR-204-reconcile-readme-story-contract.md) owns
-acceptance; this file records only current proof and the next package.
+Bounded projection for making the README product story executable.
 
 ## checkpoint
 
-- The active goal remains `README's main story works in reality.`
-- The owner resolved all nine product ambiguities on 2026-07-30.
-- Commit `ffec102` implements the first bounded package: normal owner CLI and
-  dashboard-service operations no longer enter the retired presence verifier.
-- Commit `c8c8020` completes the second bounded package: owner dashboard
-  controls dispatch through the same governed handlers while the broker stays
-  read-only.
-- Commit `e1451ea` completes the third bounded package: production staffing and
-  exact-unit delegation require inference-owned evidence and fail closed when
-  inference is unavailable or invalid.
-- Commit `03dba75` completes the fourth bounded package: attended and explicit
-  autonomous activation share one behavioral proof, the supported bypass is
-  labeled from the exact invocation, product trials correlate the exact rollout
-  and workspace write, and activation specialist identity remains inference-
-  owned through durable replay.
-- The fifth bounded package is source-complete: ADR-0120 supersedes response
-  repair with pre-publication header construction and terminal first-invalid
-  failure across Codex, ZCode, Hermes, and OpenClaw.
-- The packaged source dashboard completed an authenticated rendered owner round
-  trip against a disposable private profile and restored its exact original
-  configuration hash.
-- The fast spine exposed and repaired the remaining legacy-route leak: terminal
-  inference failure now projects no policy-companion or fallback identity.
-- Routing report/corpus v1.4 is explicitly candidate-recall-only and passes all
-  checked-in recall, policy, delegation, scale, startup, and performance gates.
-- The complete 30-node baseline and all 38 curated mutations pass with zero
-  survivors, zero invalid results, and the source checkout unchanged.
-- Tracker [#189](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189)
-  records AR-204 under `epic:product`.
-- AR-143 and AR-196 are `wont_do` and explicitly superseded by AR-204; their
-  historical records no longer govern current owner authority.
-- Exact installed build `5e3fab622b75f257e0ab4b74f1cc2c6d43b1d748`
-  remains the last live-tested build and is not accepted as product proof.
+- The product contract remains frozen: default full-suite install with opt-outs;
+  mirrored owner CLI/dashboard controls; inference-only specialist staffing;
+  one parent-only steward; explicit attended or supported bypass activation;
+  first-pass evidence headers; and behavioral product proof.
+- PR 191 merged the source story as `cc322381ec932452f0575445dc174510e4caad6f`
+  and exact build `0.1.0+gcc322381ec93` is installed.
+- Exact activation proves one real inferred specialist delegation with zero
+  corrections. The only product trial for that build failed at workforce
+  preflight and produced no artifact, so the README story remains `NO-GO`.
+- Current source repairs that exact causal boundary and has accepted a real
+  nine-specialist team for the README-shaped prompt.
 
 ## completed-evidence
 
-- Owner CLI parser leaves contain no presence metadata and dispatch directly to
-  their operation-specific safety boundaries.
-- `dashboard service open` reaches its ownership-checked recovery handler, which
-  may install, repair, start, or restart the owned service.
-- Prepared roster rollback now uses owner authority while preserving frozen
-  Store, database, generation, revision, activation-authority, and workforce
-  identities plus in-transaction revalidation.
-- Model-facing native controls remain read-only and return
-  `owner_control_required`; no broker/hook/MCP authority was widened.
-- Focused verification passed 708 tests with one platform skip. Ruff checked
-  all Python sources, 602 files were format-current, and 559 Markdown files
-  passed metadata and documentation validation.
-- Production contains no architecture anchor, deterministic unit selector,
-  confidence bypass, token-only fallback, or online intent enrichment path.
-  Offline helper modules remain test/evaluation fixtures and are not exported
-  or called by production staffing entrypoints.
-- Codex registration and native trust inventory do not prove hook start, route,
-  specialist injection, delegation, or finalization.
-- The owner explicitly authorized Codex's supported hook-trust bypass for this
-  session. Bypassed evidence must never be labeled trusted.
-- The owner bearer reaches all eight dashboard mutation endpoints. Exact
-  confirmation, config revision, and host/master generation payloads are
-  client-tested; stale Store identity still disables affected controls.
-- The broker bearer receives `403 owner control required` for every mutation
-  endpoint and authority files remain byte-for-byte unchanged.
-- Dashboard verification is green: 110 client tests and 145 server/auth tests,
-  with three expected platform skips. Ruff, format, and diff checks for the
-  changed Python boundary pass.
-- Inference-only verification is green: 368 focused tests passed with one
-  intentional skip. Decision conformance passed its baseline and killed all 26
-  curated regressions with zero survivors or invalid mutations; source restore
-  verification passed.
-- The expanded activation/product/preflight spine passed 287 warning-strict
-  tests with one intentional platform skip. It includes auto-discovered full-
-  suite autonomous install, actual-versus-requested bypass labeling, exact
-  rollout correlation, workspace-write evidence, no-hiring canary scope,
-  provider receipts, bounded inferred binding persistence, and modern plan
-  equality.
-- Native Codex receives exact initial, updated, and post-wait final header
-  snapshots. Hermes/OpenClaw call `agency.finalize` before the natural final;
-  neither production adapter asks the model to revise an invalid response.
-- The finalization package passed 378 warning-strict tests with five platform
-  skips and a 144-test post-format regression. Ruff, format, metadata, policy,
-  documentation, and diff checks passed.
-- Decision conformance passed its 29-node baseline and killed all 37 curated
-  mutations in owner-private disposable copies with zero survivors, zero
-  invalid results, and the source checkout unchanged.
-- The packaged dashboard consumed and removed its fragment token, rendered
-  `Authenticated` and `Online`, rejected an unauthenticated config read with
-  `401`, and accepted the owner bearer with `200`.
-- The dashboard changed retention 37 to 38, the CLI independently observed 38,
-  and the dashboard restored 37. The file SHA-256 returned exactly from
-  `1bf901a9f9b746b4f4f647ecd33b31c7b045d6511ae58d6caabd5d3d8f42a0de`
-  to its original
-  `d527e0901ce83b85a110d476d82045458768e92686c0dee4ac8583230311e944`.
-- The disposable dashboard process was stopped and its token expired. This is
-  source-candidate evidence, not exact-installed product proof.
-- The terminal-failure regression and complete 38-mutation evaluator pass; the
-  full isolated run completed in 309.6 seconds.
+- Owner CLI/dashboard parity, authenticated reversible dashboard configuration,
+  default dashboard inclusion, autonomous installation, terminal first-invalid
+  headers, singleton stewardship, inference-only staffing, and product-host
+  write/activation correlation are implemented and locally tested.
+- Exact build activation recorded one grant, consumption, load, spawn, wait,
+  completed delegation, worker run, accepted finalization, and zero corrections.
+- Product trial `ar205-cc32238-readme-01` consumed that build's allowance and
+  proved the hook reached `preflight_failed`; the workspace remained empty.
+- The new planner/recruiter contract is still inference-owned. Deterministic
+  code supplies acceptance constraints, typed recall, and reject-only safety
+  checks; it does not plan, rank, select, or hire.
+- Focused verification passes 84 tests. The isolated conformance evaluator
+  passes its baseline and kills 44/44 curated mutations in 328.7 seconds with
+  zero survivors or invalid results.
+- The named fast Python spine passes 636 tests with 6 intentional skips;
+  dashboard UI passes 110; routing evaluation 1.4.0 passes every gate;
+  documentation validates 574 files; and Ruff checks all 602 Python inputs.
+- The exact committed-tree decision-conformance rerun passed its baseline and
+  killed 44/44 mutations in 327.7 seconds with zero survivors or invalid
+  results and unchanged source.
+- PR 192's first Codex review found three valid candidate defects. The bounded
+  fixes enforce configured planner limits before recruitment, require positive
+  release proof for each requested operation, and preserve explicitly requested
+  communication capability. The second and final broad review found four more
+  valid P1s in compact-budget clamping, operation-scoped proof, typed-recall
+  size, and descriptive negation. All seven findings are repaired. The changed
+  modules pass 83 tests; the wider routing/safety boundary passes 115 with one
+  intentional skip.
 
 ## exact-blocker
 
-Source behavior is repaired through truthful candidate-recall evaluation and
-the complete mutation gate. The remaining named fast spine, exact installation,
-and one native Codex product trial still own the next proof boundaries.
+The final-review repair, its commit/ledger checkpoint, and the final exact-tree
+gate are complete. PR 192 still needs merge, exact install, and one fresh
+product trial. README acceptance still requires the same run to prove a real
+team, planned native delegation, workspace artifacts, and zero corrections.
 
 ## same-task-continuity
 
-Continue in this task through bounded implementation packages. Do not dispatch
-hosted Actions while GitHub spending limits prevent runner execution. Preserve
-the owner-untracked analysis draft and `uv.lock`.
+Continue locally, stop at first failure, and do not dispatch hosted Actions
+while GitHub spending is unavailable. Preserve the owner-untracked analysis and
+lock files.
 
 ## next-bounded-work-package
 
-1. Complete the remaining named fast spine, then checkpoint.
-2. Merge and install that exact build for Codex, ZCode, and dashboard; run one
-   bypassed native Codex trial and generate its bounded local evidence page.
+1. Merge PR 192 and exact-install the build.
+2. Run one supported trust-bypassed native Codex product trial.
+3. Generate the local evidence page and OpenClaw handoff only from recorded
+   evidence.
 
 ## verification
 
 ~~~text
-python -m pytest tests/test_cli_owner_authority.py tests/test_cli_parser_contract.py tests/test_cli_uninstall.py tests/test_codex_activation_verification.py -q -W error
-python -m pytest tests/test_prepared_codex_install.py tests/test_prepared_roster_rollback.py tests/test_store_sqlite_evidence_gap_coverage_ar91.py -q -W error
-python -m pytest tests/test_update_service.py tests/test_host_control.py tests/test_adapter_parity.py tests/test_security_turn_boundaries.py -q -W error
-python -m pytest tests/test_dashboard_service.py tests/test_native_installer.py tests/test_release_packaging.py tests/test_cli_upgrade.py -q -W error
+python scripts/docs_metadata.py --check
+python scripts/update_policy_availability.py --check
+python scripts/update_worklog.py --check
+python scripts/verify_docs.py
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
-python scripts/verify_docs.py
+python -m pytest <named fast spine from AGENTS.md> -q -W error
 node --test tests/dashboard_ui.test.mjs
-python -m pytest tests/test_dashboard_auth_boundary_regression.py tests/test_dashboard.py -q -W error
-python -m pytest tests/test_workforce_inference.py tests/test_mandatory_inference.py tests/test_routing_correctness.py tests/test_workforce_selection_safety.py tests/test_unit_assignment_selector.py tests/test_unit_aware_delegation.py -q -W error
-agency eval decision-conformance --repository . --json
+agency eval routing --json --no-details
+python -c "from agency_runtime.cli.entrypoint import main; raise SystemExit(main())" eval decision-conformance --repository . --json
 git diff --check
 ~~~
 
 ## constraints
 
-- Dashboard and CLI parity covers supported configuration and runtime/governance
-  controls, not developer-only test or evaluation commands.
-- The dashboard bearer remains automatic loopback request isolation.
 - Deterministic code may recall and verify but never select a specialist.
-- Missing/invalid inference and malformed/corrected headers fail loudly.
-- Use the supported Codex autonomous trust bypass when needed; never edit
-  undocumented private trust state or claim bypassed hooks are trusted.
-- One live product trial per exact installed build; correction count must be
-  exactly zero.
+- Missing or invalid inference and malformed or corrected headers fail loudly.
+- Dashboard and CLI parity covers supported owner configuration and controls.
+- Supported Codex bypass never changes persistent trust or claims `trusted`.
+- One live product trial per exact installed build; corrections must equal zero.

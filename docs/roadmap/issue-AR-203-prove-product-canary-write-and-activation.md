@@ -3,7 +3,7 @@ title: "AR-203: Prove product-canary workspace writes and exact activation"
 status: in_progress
 category: roadmap
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-07-31
 tags: [evaluation, codex, activation, sandbox, evidence, regression]
 related:
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
@@ -197,6 +197,51 @@ terminal failure or 45 minutes, permits one live trial per exact build, and
 produces a durable evidence checkpoint before any repair. A second failure at
 the same causal boundary stops for owner direction instead of looping.
 
+[PR 191](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/191)
+merged the complete README-story source package as exact revision
+`cc322381ec932452f0575445dc174510e4caad6f`. Exact build
+`0.1.0+gcc322381ec93` is installed. Current-profile activation then proved a
+real `code-reviewer` route with one grant, consumption, specialist load, native
+spawn/wait, completed delegation, worker run, accepted finalization, and zero
+response corrections under trace `019fb676-df24-72c1-bf3e-af3a23222ff8`.
+
+The one product trial for that exact build,
+`ar205-cc32238-readme-01`, is terminal `NO-GO`. It ended after 49.327 seconds
+with CLI exit one and an empty workspace. Exact session evidence proves the
+hook ran and reached `preflight_failed`, but the product projection mislabeled
+that boundary as `route_not_found`. A bounded direct replay then identified the
+first causal defect: planner instructions omitted deterministic assurance
+requirements that the validator later vetoed, and recruiter inference lacked
+the exact typed uncovered-requirement evidence needed to distinguish a safe
+team from a roster gap.
+
+The current source candidate repairs those contracts without synthesizing a
+plan or selecting a worker deterministically. A real provider replay now
+accepts a nine-unit inference-authored plan and a nine-assignment specialist
+team spanning discovery, paired Python/TypeScript implementation, test
+authorship, correctness, security and accessibility review, documentation and
+documentation review, and independent test evidence. This is routing-boundary
+proof only. The named fast spine passes 636 tests with 6 intentional skips,
+dashboard UI passes 110 tests, routing evaluation 1.4.0 passes every gate,
+decision conformance kills 44/44 mutations, documentation validates 571 files,
+and Ruff checks all 602 Python inputs. The next exact merged build still needs
+one fresh product trial to prove delegation, workspace write, artifacts, and
+zero corrections together.
+
+[PR 192](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/192)
+is the reviewed merge candidate. Its first Codex review found three valid
+contract leaks: planner parsing ignored a configured work-unit limit below 16,
+release evidence could satisfy the wrong requested operation or negated prose,
+and documentation normalization removed explicitly requested communication
+capability. The second and final broad review found four additional P1
+boundaries: compact parsing rejected valid configured budgets above 16, release
+proof could mention rather than verify an operation, typed recall scaled as
+units by candidates, and evidence negation hid standards in remediation prose.
+All seven review findings are now repaired. The affected modules pass 83 tests;
+the wider routing, selection, hiring, and decision-conformance boundary passes
+115 tests with one intentional skip. Final exact-tree verification, merge,
+install, and the one fresh product trial remain.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host
@@ -270,9 +315,9 @@ demonstrates both mismatches.
   and the dashboard.
 - [x] The dashboard service is installed and locally reachable.
 - [ ] An attended browser opens and renders the authenticated dashboard page.
-- [ ] The owner trusts the final build's eight Codex hook hashes and activation
-  verification passes before the replacement trial.
-- [ ] Recruiter response acceptance or bounded repair produces a defensible
+- [x] Exact installed activation passes through attended trust or the supported
+  one-invocation bypass, with bypassed evidence never mislabeled trusted.
+- [x] Recruiter response acceptance or bounded repair produces a defensible
   inferred staffing plan for the fixed README-story prompt.
 - [ ] The replacement trial selects and launches at least one specialist/team,
   or records a defensible gap plus an actual hiring decision.

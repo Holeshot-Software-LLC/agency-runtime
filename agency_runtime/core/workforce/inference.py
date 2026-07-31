@@ -28,10 +28,15 @@ from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.intent import (
     COMPACT_INTENT_RESPONSE_SCHEMA,
     COMPACT_INTENT_SYSTEM,
+    MAX_PRIMARY_UNITS,
     compact_intent_taxonomy,
     compile_intent_plan,
 )
-from agency_runtime.core.workforce.plan_policy import plan_policy_violations
+from agency_runtime.core.workforce.plan_policy import (
+    plan_policy_repair_guidance,
+    plan_policy_violations,
+    planner_acceptance_contract,
+)
 from agency_runtime.core.workforce.planning_contracts import (
     MAX_LABEL_CHARS,
     MAX_TEXT_CHARS,
@@ -56,6 +61,7 @@ if TYPE_CHECKING:
     from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 
 MAX_REQUEST_BYTES = 64 * 1024
+MAX_TYPED_RECALL_CANDIDATES_PER_UNIT = 24
 _PLANNING_CAPABILITIES = tuple(sorted(CORE_CAPABILITY_IDS))
 _WORKFORCE_ROUTING_POLICY_VERSION = "1"
 _CACHE_CREDENTIAL_KEY = secrets.token_bytes(32)
@@ -70,6 +76,28 @@ _NOMINATION_FAILURE_CODES = frozenset(
         "staff_without_safe_team",
     }
 )
+_NOMINATION_REPAIR_REQUIREMENTS = {
+    "candidate_outside_detail_cards": (
+        "Use only candidate IDs present in detail_cards. typed_recall candidate rows are bounded "
+        "non-ranked evidence and need not repeat every available card."
+    ),
+    "gap_with_safe_team": (
+        "Re-evaluate the non-ranked typed_recall evidence. Declare staff only when a "
+        "semantically faithful required/acceptable combination covers every requirement."
+    ),
+    "invalid_candidate": "Return one schema-valid, non-duplicated ranking row.",
+    "invalid_decision": "Set decision to exactly staff or gap.",
+    "invalid_ranking": (
+        "For staff, rank at least one supplied candidate; for a proven gap, an empty ranking "
+        "is valid."
+    ),
+    "missing_work_unit": "Return the missing planned-unit row.",
+    "staff_without_safe_team": (
+        "Consult typed_recall for this unit. If uncovered_requirements is nonempty, declare gap. "
+        "Otherwise rank every semantically faithful coverage complement needed to cover all "
+        "requirements within maximum_selected_per_unit."
+    ),
+}
 
 
 _PLANNER_SYSTEM = (
@@ -122,6 +150,14 @@ _RECRUITER_SYSTEM = (
     "a gap so hiring inference can materialize the missing specialty. A gap may use an "
     "empty ranked_semantic list when no candidate card is even relevant; never invent a "
     "roster identity just to make the ranking nonempty.\n\n"
+    "typed_recall is deterministic, non-ranked evidence: requirements and uncovered_requirements "
+    "are exact over the full eligible roster; each included candidate's covers list is exact; "
+    "execution_eligible is a hard boundary. Candidate rows are a bounded coverage-first recall "
+    "sample and need not repeat every detail card, so omission is not exclusion. Do not guess "
+    "typed coverage from a display name or prose card. A nonempty uncovered_requirements list "
+    "proves that the current roster cannot staff that unit and requires a gap. Otherwise, selected "
+    "required/acceptable candidates must jointly cover every requirement within the configured "
+    "per-unit limit; deterministic verification rejects unsupported coverage.\n\n"
     "For every unit, rank the strongest semantic candidates in descending order. "
     "Set decision to staff when the ranked candidates can form the intended team, or gap "
     "only when no supplied specialist or combination is semantically appropriate. Classify "
@@ -149,7 +185,11 @@ _RECRUITER_REPAIR_SYSTEM = (
     "of failed planned-unit IDs and invariant codes. Return exactly one corrected unit row "
     "for every listed failed unit, in listed order. Omit every unlisted planned unit because "
     "the runtime retains its previously validated row.\n\n"
-    "For each listed unit, reason from the ideal specialist in an open-ended pool, then rank "
+    "For each listed unit, use typed_recall as bounded, non-ranked coverage evidence whose "
+    "requirements and uncovered_requirements are exact over the full roster. A nonempty "
+    "uncovered_requirements list requires a gap; otherwise a staff response must include every "
+    "semantically faithful coverage complement needed within the per-unit limit. Then reason "
+    "from the ideal specialist in an open-ended pool and rank "
     "only supplied candidates that faithfully match it in descending order. A repaired "
     "gap may use an empty ranked_semantic list when no supplied candidate is relevant. "
     "Never invent a roster identity. Then "
@@ -507,6 +547,19 @@ class _NominationValidationError(ValueError):
         super().__init__(f"workforce nomination failures: {detail}")
 
 
+class _PlanPolicyValidationError(ValueError):
+    """Bounded planner failures containing only local policy codes."""
+
+    def __init__(self, violations: Sequence[str]) -> None:
+        unique = tuple(dict.fromkeys(violations))
+        if not unique:
+            raise ValueError("plan policy validation error requires at least one violation")
+        if any(re.fullmatch(r"plan_[a-z0-9_]{1,95}", code) is None for code in unique):
+            raise ValueError("plan policy validation failure is not allowlisted")
+        self.violations = unique
+        super().__init__("workforce plan is incomplete: " + ",".join(unique))
+
+
 @dataclass(frozen=True, slots=True)
 class WorkforceRoutingOutcome:
     status: str
@@ -758,7 +811,7 @@ def _validation_detail(error: BaseException) -> str:
     detail = " ".join(str(error).split())
     if not detail or any(ord(character) < 32 for character in detail):
         return "structured response failed deterministic semantic validation"
-    if isinstance(error, _NominationValidationError):
+    if isinstance(error, (_NominationValidationError, _PlanPolicyValidationError)):
         return detail
     return detail[:256]
 
@@ -823,10 +876,42 @@ def _invoke_stage(
                         current_system_prompt = repair_system_prompt or system_prompt
                         current_prompt = (
                             f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
-                            f"The prior recruiter response failed these bounded invariants: {detail}. "
-                            "Return corrected rows for every listed planned unit. You may omit "
-                            "unlisted units because the runtime retains their validated rows. Do not "
-                            "add or reorder units. Return one corrected JSON object only."
+                            + _json_prompt(
+                                {
+                                    "failed_units": [
+                                        {
+                                            "unit_id": failure.unit_id,
+                                            "code": failure.code,
+                                            "required_correction": (
+                                                _NOMINATION_REPAIR_REQUIREMENTS[failure.code]
+                                            ),
+                                        }
+                                        for failure in exc.failures
+                                    ],
+                                    "prior_response_status": "rejected",
+                                    "required_action": (
+                                        "Return corrected rows for every listed planned unit. "
+                                        "Omit unlisted units because the runtime retains their "
+                                        "validated rows. Do not add or reorder units."
+                                    ),
+                                }
+                            )
+                        )
+                    elif isinstance(exc, _PlanPolicyValidationError):
+                        current_system_prompt = system_prompt
+                        current_prompt = (
+                            f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
+                            + _json_prompt(
+                                {
+                                    "prior_plan_status": "rejected",
+                                    "required_action": (
+                                        "Return one complete replacement plan authored by inference. "
+                                        "Keep every valid necessary unit, add or reorder the missing "
+                                        "units, and make every dependency point to an earlier unit."
+                                    ),
+                                    "violations": list(plan_policy_repair_guidance(exc.violations)),
+                                }
+                            )
                         )
                     else:
                         current_system_prompt = system_prompt
@@ -912,9 +997,10 @@ def _compact_planner_prompt(
                 capabilities,
             ),
             "constraints": {
-                "max_primary_units": max_work_units,
+                "max_primary_units": min(max_work_units, MAX_PRIMARY_UNITS),
                 "no_worker_names": True,
                 "inference_owns_complete_plan": True,
+                "plan_acceptance_contract": planner_acceptance_contract(),
             },
         }
     )
@@ -926,6 +1012,7 @@ def _parse_compact_plan(
     request: str,
     snapshot: WorkforceIndexSnapshot,
     context: StaffingContext,
+    max_work_units: int,
 ) -> WorkUnitPlan:
     domains, stacks, capabilities = _known_intent_vocabulary(snapshot)
     primary = compile_intent_plan(
@@ -935,10 +1022,11 @@ def _parse_compact_plan(
         known_domains=domains,
         known_stacks=stacks,
         known_capability_ids=capabilities,
+        max_work_units=max_work_units,
     )
     violations = plan_policy_violations(request, primary)
     if violations:
-        raise ValueError("workforce plan is incomplete: " + ",".join(violations))
+        raise _PlanPolicyValidationError(violations)
     return primary
 
 
@@ -960,7 +1048,8 @@ def _typed_shortlists(
     for unit in plan.units:
         required = typed_staffing_requirements(unit)
         unit_domains = frozenset(unit.domains)
-        candidates: list[tuple[str, frozenset[str]]] = []
+        candidates: list[tuple[str, frozenset[str], tuple[str, ...]]] = []
+        eligible_coverage: set[str] = set()
         for contract in contracts:
             # Broad eligibility: domain overlap and enabled.
             # Host filtering is NOT applied at recall — contracts may not
@@ -970,20 +1059,63 @@ def _typed_shortlists(
             if not (domain_match and contract.enabled):
                 continue
             coverage = typed_staffing_coverage(unit, contract)
-            candidates.append((contract.agent_id, frozenset(coverage)))
-        selected = sorted(candidates, key=lambda item: item[0])
+            ineligibility = (
+                () if context is None else typed_staffing_ineligibility(unit, contract, context)
+            )
+            if not ineligibility:
+                eligible_coverage.update(coverage)
+            candidates.append((contract.agent_id, frozenset(coverage), ineligibility))
+        selected = _bounded_typed_candidates(required, candidates)
         result.append(
             {
                 "unit_id": unit.unit_id,
                 "requirements": list(required),
+                "uncovered_requirements": sorted(set(required) - eligible_coverage),
                 "role_anchors": [],
+                "candidate_count": len(candidates),
+                "candidate_rows_complete": len(selected) == len(candidates),
                 "candidates": [
-                    {"agent_id": agent_id, "covers": sorted(covers)}
-                    for agent_id, covers in selected
+                    {
+                        "agent_id": agent_id,
+                        "covers": sorted(covers),
+                        "execution_eligible": not ineligibility,
+                        "ineligibility_reasons": list(ineligibility),
+                    }
+                    for agent_id, covers, ineligibility in selected
                 ],
             }
         )
     return result
+
+
+def _bounded_typed_candidates(
+    required: Sequence[str],
+    candidates: Sequence[tuple[str, frozenset[str], tuple[str, ...]]],
+) -> list[tuple[str, frozenset[str], tuple[str, ...]]]:
+    """Recall stable coverage evidence without ranking or selecting a worker."""
+
+    ordered = sorted(candidates, key=lambda item: item[0])
+    recalled: dict[str, tuple[str, frozenset[str], tuple[str, ...]]] = {}
+    required_set = set(required)
+    for candidate in ordered:
+        agent_id, covers, ineligibility = candidate
+        if not ineligibility and required_set <= covers:
+            recalled.setdefault(agent_id, candidate)
+            if len(recalled) >= MAX_TYPED_RECALL_CANDIDATES_PER_UNIT:
+                break
+    for requirement in required:
+        for candidate in ordered:
+            agent_id, covers, ineligibility = candidate
+            if not ineligibility and requirement in covers:
+                recalled.setdefault(agent_id, candidate)
+                break
+    for candidate in ordered:
+        if len(recalled) >= MAX_TYPED_RECALL_CANDIDATES_PER_UNIT:
+            break
+        recalled.setdefault(candidate[0], candidate)
+    return sorted(recalled.values(), key=lambda item: item[0])[
+        :MAX_TYPED_RECALL_CANDIDATES_PER_UNIT
+    ]
 
 
 def staffing_budget_for_config(config: AgencyConfig) -> StaffingBudget:
@@ -1414,10 +1546,11 @@ def _recruit_ambiguous_plan(
     # for ALL domain-eligible candidates to the recruiter. The recruiter reads
     # intent and picks the best specialists. This replaces the token-based
     # shortlist that couldn't bridge vocabulary gaps ("commit and push" vs
-    # "Git workflows"). The recruiter can nominate any candidate from the
-    # plus the complete bounded positive and negative activation contract. The
-    # recruiter may reason over those audited fields; deterministic code still
-    # only narrows and rejects and never chooses a worker.
+    # "Git workflows"). The recruiter can nominate any candidate from these
+    # cards using the complete bounded positive and negative activation
+    # contract. The recruiter may reason over those audited fields;
+    # deterministic code still only narrows and rejects and never chooses a
+    # worker.
     # Build compact cards for all domain-eligible specialists
     compact_cards = []
     eligible_ids = set()
@@ -1441,6 +1574,7 @@ def _recruit_ambiguous_plan(
                 )
     detail_cards = compact_cards
     allowed_candidate_ids = frozenset(eligible_ids)
+    typed_recall = _typed_shortlists(plan, snapshot.contracts, context=context)
     recruiter_prompt = _recruiter_prompt(
         {
             "request": request,
@@ -1462,8 +1596,10 @@ def _recruit_ambiguous_plan(
                 "staff_decision_requires_safe_typed_coverage": True,
                 "gap_decision_requires_no_safe_team": True,
                 "candidate_ids_must_come_from_detail_cards": True,
+                "typed_recall_is_non_ranked_evidence": True,
             },
             "detail_cards": detail_cards,
+            "typed_recall": typed_recall,
         }
     )
     providers = configured_workforce_providers(config, stage="recruiter")
@@ -1689,6 +1825,7 @@ def plan_and_staff_workforce(
                 request=ask,
                 snapshot=snapshot,
                 context=context,
+                max_work_units=min(config.workforce.max_work_units, MAX_PRIMARY_UNITS),
             ),
         )
         if isinstance(parsed_plan, WorkUnitPlan):

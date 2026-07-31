@@ -106,6 +106,35 @@ the exact installed product proof and final README-story acceptance.
 - Ruff, formatting, Markdown metadata, policy availability, documentation,
   worklog, dashboard UI, routing evaluation, and diff-integrity gates pass.
 - No exact installed Codex trial has been attempted for this source package.
+- PR 191 merged the package as exact revision `cc322381ec932452f0575445dc174510e4caad6f`.
+  Its exact installed activation proof selected and delegated `code-reviewer`
+  with zero corrections, but product trial `ar205-cc32238-readme-01` failed at
+  preflight before any workspace artifact was created.
+- The causal repair keeps deterministic code reject-only: planner policy is
+  provided to inference as an acceptance contract and structured correction,
+  while recruiter inference receives exact non-ranked typed coverage and
+  uncovered-requirement evidence. Neither boundary creates, ranks, or selects
+  a worker.
+- A live provider replay of the README-shaped Python API plus TypeScript
+  dashboard request accepted nine planned units and nine specialist
+  assignments, including paired implementation specialists and independent
+  testing, correctness, security, accessibility, documentation, and evidence
+  roles. The branch passes 84 focused tests, the 636-test named fast spine with
+  6 intentional skips, 110 dashboard tests, every routing gate, documentation
+  validation, and 44/44 curated mutations. Exact-installed product proof
+  remains.
+- PR 192's first Codex review found and prompted bounded repairs for configured
+  planner-unit enforcement, operation-specific positive release evidence, and
+  preservation of explicitly requested communication capability. The changes
+  remain reject-only/normalizing and do not plan, rank, select, or declare a
+  gap. The second and final broad review found four more P1 boundaries in
+  compact-limit clamping, release-proof scope, typed-recall size, and
+  descriptive negation. All seven review findings are now repaired. Typed
+  recall remains deterministic, stable, coverage-first, non-ranked, and capped
+  at 24 candidate evidence rows per unit while exact gap coverage is computed
+  over the full roster. The affected modules pass 83 tests, and the wider
+  safety boundary passes 115 tests with one intentional skip. Final exact-tree
+  verification remains before merge.
 
 ## Acceptance
 
