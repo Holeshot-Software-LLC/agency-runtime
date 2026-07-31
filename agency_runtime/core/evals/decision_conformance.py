@@ -807,6 +807,20 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="product-proof-allows-invalid-host-notice-projection",
+        invariant=(
+            "Malformed or missing Codex host-notice evidence cannot produce a passing "
+            "product proof."
+        ),
+        source_path="agency_runtime/core/canary_proof.py",
+        before="        and collaboration_projection is None\n",
+        after="        and False\n",
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_product_collaboration_projection_rejects_invalid_host_notice_evidence"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="preflight-failure-drops-terminal-receipt",
         invariant=(
             "Every owned terminal preflight failure persists one exact content-free receipt."

@@ -1,6 +1,6 @@
 ---
 title: "AR-208: Preserve exact Codex host notices in product evidence"
-status: done
+status: in_progress
 category: roadmap
 created: 2026-07-31
 updated: 2026-07-31
@@ -48,10 +48,14 @@ remain fatal.
 
 PR 201 preserves the validated fields through product evidence, merged as exact
 revision `dd85e7d981f9214104c61815b49f51e178896295`, and exact-installed cleanly.
-All four PR 198 review threads have evidence-backed replies and are resolved.
-The ancestry claim was closed only after Git proved `fb797f9` and `ab5812f`
-are ancestors of reviewed head `e492782` and merge `5328070`. Tracker #200 is
-closed as completed; the wider live product proof remains with AR-207.
+A late GitHub Codex review then identified that an invalid projection became
+`null` without participating in the product pass predicate. That P1 is valid:
+malformed notice evidence can still produce a passing verdict. Tracker #200 is
+reopened, and the repair now makes the projection itself a required proof gate.
+
+The review's separate ancestry claim is disproven by canonical Git history:
+`ea376a5`, `947dafb`, `bb1122c`, and `096570a` are all ancestors of reviewed
+head `57fba809` and merge `dd85e7d`.
 
 ## Approach
 
@@ -77,10 +81,10 @@ trial proves both the product projection and the wider README story.
 - [x] Product evidence retains validated `host_notice_types` and
   `host_notice_count`.
 - [x] Raw host messages never enter persisted product evidence.
-- [x] Unknown, near-match, duplicate, malformed, inconsistent, and unbounded
+- [ ] Unknown, near-match, duplicate, malformed, inconsistent, and unbounded
   notice data fail closed.
 - [x] ADR-0125 and reciprocal roadmap, decision, and worklog traceability are
   complete.
-- [x] Focused warning-strict tests and the named fast spine pass.
-- [x] Every PR 198 review thread has a commit-backed response and accurate
-  resolved disposition.
+- [ ] Focused warning-strict tests and the named fast spine pass.
+- [ ] Every PR 198 and PR 201 review thread has a commit-backed response and
+  accurate resolved disposition.
