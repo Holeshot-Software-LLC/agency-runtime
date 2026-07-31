@@ -250,7 +250,9 @@ gate; and decision conformance kills all 44 curated mutations, including
 removal of either new inference input. Merge/install and one fresh exact-build
 product trial remain.
 
-PR 192's first Codex review found three valid safety-contract leaks in the
+PR 192 merged as exact revision
+`9461099479f851b9440d825f889aa079950a298c`. Its first Codex review found three
+valid safety-contract leaks in the
 candidate: configured planner limits were not enforced during parsing,
 release proof did not match the specific positively verified operation, and
 explicit communication work could lose its typed capability. Those boundaries
@@ -259,9 +261,16 @@ second and final broad review found four more P1 boundaries: configured budgets
 above the compact ceiling, loosely scoped release verification, an unbounded
 unit-by-candidate recall matrix, and remediation prose misread as a negative
 instruction. All seven review findings are repaired without deterministic
-planning or selection. The affected modules pass 83 warning-strict tests; the
-wider safety boundary passes 115 tests with one intentional skip. Final
-exact-tree verification remains before merge.
+planning or selection. The exact merged build installed the README-default
+Codex, ZCode, and dashboard surfaces, then failed activation before any product
+trial because inference decomposed the explicitly indivisible canary into two
+units. After a one-unit constraint, a replay exposed a second mismatch: generic
+`analysis` instead of the requested `review-report`. Commit `271e5a0` carries
+both request-bound constraints through the inference prompt, schema, semantic
+parser, and cache identity. It never supplies a worker identity. A fresh
+cloned-Store hook replay accepted inference-selected `code-reviewer` with one
+unit, binding, and assignment. The repair still needs exact merge/install and
+native activation before the one fresh product trial.
 
 ## Acceptance
 

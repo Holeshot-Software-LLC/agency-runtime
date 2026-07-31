@@ -17,8 +17,8 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-205
-branch: codex/ar-203-product-planner-repair
-evidence_commit: 81b887f57353c372bd4e798a085f65f443ca1e3f
+branch: codex/ar-203-activation-planning-contract
+evidence_commit: 271e5a01d08b74dbe755662de997a32d04e5e735
 minimum_ledger_commit: 3010813eaac39c0d799817cca19e0419acfbde59
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
@@ -46,6 +46,10 @@ acceptance; this capsule records only current proof and the next package.
   staffing: inference receives exact plan vetoes and non-ranked typed coverage,
   while inference still authors the plan, ranks specialists, selects a team,
   and declares any gap.
+- PR 192 merged and its exact build reached activation inference, but the
+  canary's valid specialist selection was rejected because the inferred plan
+  did not preserve its explicit indivisible review shape. No product trial was
+  consumed on that build.
 - Owner-untracked `docs/analysis/2026-07-25-deep-audit-findings.md` and `uv.lock`
   remain untouched.
 
@@ -81,13 +85,18 @@ acceptance; this capsule records only current proof and the next package.
   descriptive negation. All seven findings are repaired; the changed modules
   pass 83 tests and the wider safety boundary passes 115 with one intentional
   skip.
+- Commit `271e5a0` constrains only the closed-world canary's unit count and
+  artifact type; inference still selected `code-reviewer`. The fresh cloned-
+  Store hook replay produced one accepted binding and assignment with immediate
+  delegation. Focused tests pass 72 cases and two new decision mutations cover
+  removal of either request-bound constraint.
 
 ## exact-blocker
 
-The source routing boundary, both review passes, and final exact-tree gate are
-complete. Merge, exact install, and one fresh product trial remain. No current
-build yet proves the specialist team, native delegation, workspace write,
-product artifacts, and zero corrections in one end-to-end run.
+The activation repair is committed and replay-proven but still needs the local
+fast gate, merge, exact install, and native activation proof. No current build
+yet proves a specialist team, native delegation, workspace write, product
+artifacts, and zero corrections in one end-to-end run.
 
 ## same-task-continuity
 
@@ -97,8 +106,9 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Merge PR 192 and install the exact merge for Codex, ZCode, and dashboard.
-2. Run one supported trust-bypassed product trial for that new exact build.
+1. Verify, merge, and exact-install the activation planning repair.
+2. Prove native activation, then run one supported-bypassed product trial for
+   that exact build.
 3. Require zero corrections, a real specialist route/delegation chain,
    workspace-write proof, and product artifacts; then generate the local report
    and OpenClaw handoff.

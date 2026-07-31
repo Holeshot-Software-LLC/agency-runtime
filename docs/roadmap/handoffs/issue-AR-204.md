@@ -20,8 +20,8 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-204
-branch: codex/ar-203-product-planner-repair
-evidence_commit: 81b887f57353c372bd4e798a085f65f443ca1e3f
+branch: codex/ar-203-activation-planning-contract
+evidence_commit: 271e5a01d08b74dbe755662de997a32d04e5e735
 minimum_ledger_commit: 3010813eaac39c0d799817cca19e0419acfbde59
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
@@ -44,6 +44,9 @@ Bounded projection for making the README product story executable.
   preflight and produced no artifact, so the README story remains `NO-GO`.
 - Current source repairs that exact causal boundary and has accepted a real
   nine-specialist team for the README-shaped prompt.
+- PR 192 merged and its exact build installed the README-default Codex, ZCode,
+  and dashboard surfaces. Activation reached inference but rejected an
+  over-decomposed canary before route commit; no product trial was consumed.
 
 ## completed-evidence
 
@@ -75,13 +78,18 @@ Bounded projection for making the README product story executable.
   size, and descriptive negation. All seven findings are repaired. The changed
   modules pass 83 tests; the wider routing/safety boundary passes 115 with one
   intentional skip.
+- Commit `271e5a0` fixes the exact activation mismatch by carrying the canary's
+  explicit one-unit `review-report` shape through inference. A fresh cloned-
+  Store hook replay accepted inference-selected `code-reviewer`, one binding,
+  and one immediate delegation assignment. Focused verification passes 72
+  warning-strict tests; native installed proof remains.
 
 ## exact-blocker
 
-The final-review repair, its commit/ledger checkpoint, and the final exact-tree
-gate are complete. PR 192 still needs merge, exact install, and one fresh
-product trial. README acceptance still requires the same run to prove a real
-team, planned native delegation, workspace artifacts, and zero corrections.
+The activation repair is committed and replay-proven but still needs its local
+fast gate, merge, exact install, and native activation proof. README acceptance
+then requires one fresh product trial to prove a real team, planned native
+delegation, workspace artifacts, and zero corrections in the same run.
 
 ## same-task-continuity
 
@@ -91,8 +99,9 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Merge PR 192 and exact-install the build.
-2. Run one supported trust-bypassed native Codex product trial.
+1. Verify, merge, and exact-install the activation planning repair.
+2. Prove native supported-bypass activation, then run the build's one product
+   trial.
 3. Generate the local evidence page and OpenClaw handoff only from recorded
    evidence.
 

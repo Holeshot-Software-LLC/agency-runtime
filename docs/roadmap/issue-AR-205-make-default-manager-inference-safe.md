@@ -123,7 +123,9 @@ the exact installed product proof and final README-story acceptance.
   6 intentional skips, 110 dashboard tests, every routing gate, documentation
   validation, and 44/44 curated mutations. Exact-installed product proof
   remains.
-- PR 192's first Codex review found and prompted bounded repairs for configured
+- PR 192 merged as exact revision
+  `9461099479f851b9440d825f889aa079950a298c`. Its first Codex review found and
+  prompted bounded repairs for configured
   planner-unit enforcement, operation-specific positive release evidence, and
   preservation of explicitly requested communication capability. The changes
   remain reject-only/normalizing and do not plan, rank, select, or declare a
@@ -132,9 +134,13 @@ the exact installed product proof and final README-story acceptance.
   descriptive negation. All seven review findings are now repaired. Typed
   recall remains deterministic, stable, coverage-first, non-ranked, and capped
   at 24 candidate evidence rows per unit while exact gap coverage is computed
-  over the full roster. The affected modules pass 83 tests, and the wider
-  safety boundary passes 115 tests with one intentional skip. Final exact-tree
-  verification remains before merge.
+  over the full roster. The exact build's activation attempt reached inference
+  but failed the closed-world canary shape before specialist launch: one replay
+  returned two units, and a constrained replay returned one generic analysis
+  unit. Commit `271e5a0` carries the explicit one-unit `review-report` request
+  into inference without supplying a worker identity. A fresh cloned-Store hook
+  replay accepted inference-selected `code-reviewer`, one verified binding, and
+  one immediate delegation assignment. Native exact-installed proof remains.
 
 ## Acceptance
 

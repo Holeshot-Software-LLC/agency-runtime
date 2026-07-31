@@ -368,6 +368,34 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="activation-canary-allows-plan-subdivision",
+        invariant=(
+            "The exact indivisible Codex activation request constrains inference to one planned "
+            "work unit."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before='                "max_planned_units": 1,',
+        after='                "max_planned_units": 2,',
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_uses_inference_owned_selection"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="activation-canary-allows-wrong-artifact",
+        invariant=(
+            "The exact Codex review canary constrains inference to the requested review-report "
+            "artifact."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before='                "required_planned_artifact_kind": "review-report",',
+        after='                "required_planned_artifact_kind": "analysis",',
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_uses_inference_owned_selection"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="activation-replay-drops-inferred-binding",
         invariant=(
             "The content-free activation recipe retains the exact inferred unit binding needed "

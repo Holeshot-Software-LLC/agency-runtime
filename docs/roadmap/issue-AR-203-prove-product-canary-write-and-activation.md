@@ -229,7 +229,8 @@ one fresh product trial to prove delegation, workspace write, artifacts, and
 zero corrections together.
 
 [PR 192](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/192)
-is the reviewed merge candidate. Its first Codex review found three valid
+merged as exact revision `9461099479f851b9440d825f889aa079950a298c`. Its
+first Codex review found three valid
 contract leaks: planner parsing ignored a configured work-unit limit below 16,
 release evidence could satisfy the wrong requested operation or negated prose,
 and documentation normalization removed explicitly requested communication
@@ -237,10 +238,17 @@ capability. The second and final broad review found four additional P1
 boundaries: compact parsing rejected valid configured budgets above 16, release
 proof could mention rather than verify an operation, typed recall scaled as
 units by candidates, and evidence negation hid standards in remediation prose.
-All seven review findings are now repaired. The affected modules pass 83 tests;
-the wider routing, selection, hiring, and decision-conformance boundary passes
-115 tests with one intentional skip. Final exact-tree verification, merge,
-install, and the one fresh product trial remain.
+All seven review findings are repaired. The exact tree passed the named fast
+spine, dashboard, routing, documentation, and 44/44 decision-conformance gates
+before merge. The exact build installed Codex, ZCode, and the dashboard, but
+activation failed before the product trial: accepted planner and recruiter
+responses produced two bindings for the explicitly indivisible review canary.
+A second isolated replay produced one binding with the wrong `analysis`
+artifact kind. Commit `271e5a0` binds that closed-world request to a one-unit
+`review-report` inference contract without selecting a worker. A fresh cloned-
+Store replay then accepted inference-selected `code-reviewer` with one binding,
+one assignment, immediate delegation, and no error. Exact merge/install and
+native activation of this repair remain before the one fresh product trial.
 
 ## Approach
 
