@@ -81,7 +81,10 @@ The focused re-review of head `60111f8` found that a long non-ASCII hook model
 could still consume the header reserve after the context-only check. The source
 candidate now rejects that metadata before preflight; its direct regression,
 one isolated mutation, and the 238-test affected boundary pass with one skip.
-This code change invalidates the prior full gate until it is rerun.
+Committed repair `7727c0c` then passes the named Python spine with 636 tests and
+6 skips, dashboard UI with 110 tests, every routing gate, all 53 decision
+mutations with zero survivors or invalid results and unchanged source, Ruff
+across 602 files, documentation validation for 579 files, and diff integrity.
 
 ## Consequences
 

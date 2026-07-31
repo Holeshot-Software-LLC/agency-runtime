@@ -320,7 +320,10 @@ the caller-controlled model value after the context-only byte check. The source
 candidate now rejects model metadata above 512 UTF-8 bytes before reservation
 or preflight. The 9,000-emoji regression proves no adapter call or reservation,
 the new mutation is killed, and the affected boundary passes 238 tests with one
-skip. The prior full gate is invalidated pending rerun.
+skip. Committed repair `7727c0c` then passes 636 named Python tests with 6
+skips, 110 dashboard tests, every routing gate, all 53 decision mutations with
+unchanged source, Ruff across 602 files, documentation validation for 579
+files, and clean diff integrity.
 
 ## Approach
 

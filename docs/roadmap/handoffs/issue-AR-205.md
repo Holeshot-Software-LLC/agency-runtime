@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-205
 branch: codex/ar-204-readme-product-proof
-evidence_commit: b9d9ec4dc49b448e3c9e7eb06d337795180aae71
-minimum_ledger_commit: 87b56fd119364ef42947405c5232bb7fd0e52914
+evidence_commit: 7727c0cd9bba3824acd3722c6c3964086667cfc9
+minimum_ledger_commit: 4081265af803f85ecafb5372a74e0fd06a93e110
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
 ---
@@ -119,16 +119,17 @@ acceptance; this capsule records only current proof and the next package.
 - Focused re-review of head 60111f8 found unbounded non-ASCII model metadata
   could overflow the appended Codex header. The source rejects it above 512
   UTF-8 bytes before reservation or preflight; its direct regression, isolated
-  mutation, and 238 affected tests with one skip pass. The prior full gate is
-  invalidated until rerun.
+  mutation, and 238 affected tests with one skip pass. The committed rerun
+  passes 636 named tests with 6 skips, 110 dashboard tests, every routing gate,
+  all 53 mutations with unchanged source, Ruff across 602 files, 579 validated
+  docs, and diff integrity.
 
 ## exact-blocker
 
 No current build proves a specialist team, native delegation, workspace write,
 product artifacts, and zero corrections in one end-to-end run. Product routing
-and the repaired context policy are focused-green; the invalidated full rerun,
-checkpoint commits, push and focused P1 re-review, merge, exact install, and the
-new-build trial remain.
+and the repaired context policy are fully fast-green; push and focused P1 re-
+review, merge, exact install, and the new-build trial remain.
 
 ## same-task-continuity
 
@@ -138,8 +139,8 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Commit the final-envelope repair, rerun the full fast gate and all 53
-   mutations, then push and complete the allowed focused P1 re-review.
+1. Record exact fast evidence, push, reply to the P1, and complete the allowed
+   focused high-severity re-review.
 2. Merge and exact-install the context policy plus AR-206, then prove native
    activation and run one supported-bypassed product trial for the new build.
 3. Require zero corrections, a real specialist or hired-contractor chain,

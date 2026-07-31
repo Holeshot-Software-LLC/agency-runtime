@@ -322,8 +322,10 @@ The focused re-review of head `60111f8` found one remaining final-envelope P1:
 the Codex header appended caller-controlled model text after the context-only
 byte check. Native correlation now rejects model metadata above 512 UTF-8 bytes
 before reservation or preflight. The exact 9,000-emoji regression, its isolated
-mutation, and 238 affected tests with one skip pass. The prior full gate is
-invalidated until this repair completes the same bounded verification.
+mutation, and 238 affected tests with one skip pass. Committed repair `7727c0c`
+then passes 636 named Python tests with 6 skips, 110 dashboard tests, every
+routing gate, all 53 decision mutations with unchanged source, Ruff across 602
+files, documentation validation for 579 files, and clean diff integrity.
 
 The same long-lived Codex task then exposed AR-206: its immutable old Stop hook
 rejected an intact 558-node ready routing decision because the correlation

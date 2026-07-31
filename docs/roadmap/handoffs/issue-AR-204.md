@@ -23,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-204
 branch: codex/ar-204-readme-product-proof
-evidence_commit: b9d9ec4dc49b448e3c9e7eb06d337795180aae71
-minimum_ledger_commit: 87b56fd119364ef42947405c5232bb7fd0e52914
+evidence_commit: 7727c0cd9bba3824acd3722c6c3964086667cfc9
+minimum_ledger_commit: 4081265af803f85ecafb5372a74e0fd06a93e110
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 ---
@@ -117,15 +117,17 @@ Bounded projection for making the README product story executable.
 - Focused re-review of head 60111f8 found the appended Codex header could still
   overflow through unbounded non-ASCII model metadata. The source rejects model
   values above 512 UTF-8 bytes before reservation or preflight; the direct
-  regression, isolated mutation, and 238 affected tests with one skip pass.
-  The prior full gate is invalidated until rerun.
+  regression, isolated mutation, and 238 affected tests with one skip pass. The
+  committed rerun passes 636 named tests with 6 skips, 110 dashboard tests,
+  every routing gate, all 53 mutations with unchanged source, Ruff across 602
+  files, 579 validated docs, and diff integrity.
 
 ## exact-blocker
 
 The source candidate passes activation prerequisites, complete-team routing,
-the AR-206 verifier, and the focused final-envelope boundary. README acceptance
-waits for the invalidated full rerun, checkpoint commits, push and focused P1
-re-review, merge, exact install, fresh-task activation, and one product trial.
+the AR-206 verifier, and the fully fast-green final-envelope boundary. README
+acceptance waits for push and focused P1 re-review, merge, exact install, fresh-
+task activation, and one product trial.
 
 ## same-task-continuity
 
@@ -135,8 +137,8 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Commit the final-envelope repair, rerun the full fast gate and all 53
-   mutations, then push and complete the allowed focused P1 re-review.
+1. Record exact fast evidence, push, reply to the P1, and complete the allowed
+   focused high-severity re-review.
 2. Merge, exact-install, re-prove activation with AR-206, and run one product
    trial for only that new exact build.
 3. Generate the local evidence page and OpenClaw handoff only after the product

@@ -182,7 +182,10 @@ the exact installed product proof and final README-story acceptance.
   metadata could overflow the final Codex header after ready. The source now
   rejects it above 512 UTF-8 bytes before reservation or preflight. Its direct
   regression, isolated mutation, and 238-test affected boundary pass with one
-  skip; the previous full gate is invalidated pending rerun.
+  skip. Commit `7727c0c` then passes the 636-test named Python spine with 6
+  skips, 110 dashboard tests, every routing gate, all 53 decision mutations
+  with unchanged source, Ruff across 602 files, 579 validated docs, and clean
+  diff integrity.
 
 ## Acceptance
 

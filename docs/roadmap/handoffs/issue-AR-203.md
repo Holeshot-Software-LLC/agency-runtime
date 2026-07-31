@@ -19,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-203
 branch: codex/ar-204-readme-product-proof
-evidence_commit: b9d9ec4dc49b448e3c9e7eb06d337795180aae71
-minimum_ledger_commit: 87b56fd119364ef42947405c5232bb7fd0e52914
+evidence_commit: 7727c0cd9bba3824acd3722c6c3964086667cfc9
+minimum_ledger_commit: 4081265af803f85ecafb5372a74e0fd06a93e110
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -125,14 +125,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   still overflow through unbounded non-ASCII model metadata. The source now
   rejects model values above 512 UTF-8 bytes before reservation or preflight;
   its direct regression and mutation pass, as do 238 affected tests with one
-  skip. This change invalidates the prior full gate until rerun.
+  skip. The committed rerun passes the 636-test named spine with 6 skips, all
+  110 dashboard tests, every routing gate, all 53 mutations with unchanged
+  source, Ruff across 602 files, 579 validated docs, and diff integrity.
 
 ## exact-blocker
 
 Installation and activation pass, gap hiring is separated correctly, and
-inference reaches accepted product teams. The final-envelope P1 is focused-
-green; its invalidated full gate, checkpoint commits, push, high-severity
-re-review, merge, and exact installation remain before one new-build trial.
+inference reaches accepted product teams. The final-envelope P1 is fully fast-
+green; push, its allowed high-severity re-review, merge, and exact installation
+remain before one new-build trial.
 
 ## same-task-continuity
 
@@ -142,8 +144,8 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-1. Commit the final-envelope repair, rerun the full fast gate and all 53
-   mutations, then push and obtain the allowed focused P1 re-review.
+1. Record the exact fast evidence, push, reply to the P1, and obtain the allowed
+   focused high-severity re-review.
 2. Merge, exact-install, and re-prove activation with the AR-206 verifier fix.
 3. Spend one product trial only on that new exact build. Require a real inferred
    team or hired contractor, planned delegation, workspace artifacts, and zero
