@@ -211,6 +211,14 @@ the parent emitted no delegation tool call or response.
   304-second outer wrapper expired at mutation 37 without terminating its
   descendants; the exact evaluator tree and 880 MB private-copy directory were
   removed before the one authoritative rerun.
+- PR 202 merged the repair with commit-preserving ancestry as exact revision
+  `584b949d75d013611c0fe3d26835f3057fc83466`. GitHub Codex acknowledged an
+  explicit review request but supplied no verdict or thread in the bounded
+  pre-merge window. Hosted jobs executed zero steps under the known spending
+  outage. The official VCS package is exact-installed as
+  `0.1.0+g584b949d75d0`; default install discovered only Codex and ZCode,
+  registered both, recreated and reached the dashboard, and stopped only at
+  the designed Codex activation continuation.
 
 ## Approach
 

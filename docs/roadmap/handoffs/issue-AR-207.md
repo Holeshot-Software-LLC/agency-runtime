@@ -21,9 +21,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-207-live-product-proof
-evidence_commit: dd85e7d981f9214104c61815b49f51e178896295
-minimum_ledger_commit: a3dca3a79d34d44d9bd8a7870e86a3bc2089e73b
+branch: codex/ar-207-exact-product-proof
+evidence_commit: 584b949d75d013611c0fe3d26835f3057fc83466
+minimum_ledger_commit: 25db6a806b1392465c951408a6eee02359c9a0e6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -35,6 +35,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - The active goal remains `README's main story works in reality.`
 - Earlier exact-build host-notice diagnostics and the `5ad4aef` product trial
   are consumed. Their bounded evidence remains canonical in AR-207.
+- PR 202 merged ADR-0126's authority repair as exact revision
+  `584b949d75d013611c0fe3d26835f3057fc83466`; its official VCS package is
+  exact-installed as `0.1.0+g584b949d75d0`.
+- Default install discovered only Codex and ZCode, registered both, and reached
+  the dashboard. Only the designed Codex activation continuation remains.
 - PR 201 merged the fast-green product projection repair as exact revision
   `dd85e7d981f9214104c61815b49f51e178896295`. Its official VCS package is
   installed; bare install discovered and registered only Codex and ZCode, then
@@ -120,8 +125,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 The exact `dd85e7d` product trial is terminal `NO-GO` and cannot be rerun. The
-accepted-plan authority repair is named-fast-green but still requires review,
-merge, exact install, and one trial on a new exact revision.
+new exact `584b949` build is installed and awaits one supported-bypass
+activation, then at most one product trial if activation passes.
 
 ## same-task-continuity
 
@@ -132,10 +137,9 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Push and review the named-fast-green accepted-plan authority repair.
-2. Merge and exact-install a new build.
-3. Run one fresh activation and one fresh product trial on that new build.
-4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
+1. Run one supported-bypass activation on exact build `584b949`.
+2. If activation passes, run one fresh product trial on that exact build.
+3. Prove a fresh-task `agency-steward` plus specialist header, then produce the
    local shareable evidence page and OpenClaw handoff.
 
 ## verification
