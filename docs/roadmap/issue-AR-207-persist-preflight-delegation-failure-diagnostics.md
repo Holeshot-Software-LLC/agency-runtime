@@ -203,6 +203,14 @@ the parent emitted no delegation tool call or response.
   focused product-host suite passes 21 warning-strict tests, and the new
   authority-removal and native-only-leak mutations are both killed with the
   source tree unchanged.
+- The authority repair is now named-fast-green: 589 documentation files, 603
+  Ruff files, 636 warning-strict Python tests with six skips, 110 dashboard UI
+  tests, and every routing gate passed. Decision conformance passed its
+  63.797-second baseline and killed all 66 mutations with zero survivors or
+  invalid results in 566.9 seconds; the source tree was unchanged. An initial
+  304-second outer wrapper expired at mutation 37 without terminating its
+  descendants; the exact evaluator tree and 880 MB private-copy directory were
+  removed before the one authoritative rerun.
 
 ## Approach
 

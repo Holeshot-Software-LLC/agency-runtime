@@ -48,7 +48,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   response or native spawn; all eight delegations remained `suggested`.
 - The missing edge was high-priority host authority: the product backend lacked
   the developer instruction used by the passing activation canary. ADR-0126's
-  bounded parent/child repair is focused-green and mutation-proven.
+  bounded parent/child repair is named-fast-green through all 66 mutations.
 - Product trial `ar207-5ad4aef-readme-01` is consumed and terminal `NO-GO`.
   Its persisted preflight failed at routing validation with an empty durable
   attempt list and no route, tool, response, header, or workspace write. That
@@ -106,22 +106,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   specialist load, worker lifecycle, exact child prompt delivery, and completed
   child. Extra parent product tools, missing rows, correction count above zero,
   or failed workspace-write evidence are terminal failures.
-- The focused product-host suite passed 20 tests; the named warning-strict
+- The focused product-host suite passed 21 tests; the named warning-strict
   Python spine passed 636 tests with six skips; dashboard UI passed 110 tests;
-  documentation validated 587 files; Ruff checked and formatted 603 files;
+  documentation validated 589 files; Ruff checked and formatted 603 files;
   and `git diff --check` passed.
-- The workspace CLI routing evaluation passed every gate, including 1.116 ms
-  cache-hit p95. Decision conformance passed its 62.531-second baseline, killed
-  all 64 curated mutations, retained zero survivors or invalid cases, and
-  proved the source tree unchanged.
+- The workspace routing evaluation passed every gate, including 1.466 ms
+  cache-hit p95 and the 10,000-agent tier. Decision conformance passed its
+  63.797-second baseline, killed all 66 mutations with zero survivors or
+  invalid results in 566.9 seconds, and proved the source tree unchanged.
 - Builds and trials `cc322381`, `f0fde9ee`, `6b49f17d`, and `5ad4aef` remain
   consumed and must not be rerun.
 
 ## exact-blocker
 
 The exact `dd85e7d` product trial is terminal `NO-GO` and cannot be rerun. The
-accepted-plan authority repair is focused-green but still requires the named
-fast gate, merge, exact install, and one trial on a new exact revision.
+accepted-plan authority repair is named-fast-green but still requires review,
+merge, exact install, and one trial on a new exact revision.
 
 ## same-task-continuity
 
@@ -132,7 +132,7 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Review the bounded accepted-plan authority repair and run the named fast gate.
+1. Push and review the named-fast-green accepted-plan authority repair.
 2. Merge and exact-install a new build.
 3. Run one fresh activation and one fresh product trial on that new build.
 4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
