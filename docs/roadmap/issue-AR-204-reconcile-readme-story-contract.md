@@ -3,7 +3,7 @@ title: "AR-204: Reconcile the README story contract"
 status: in_progress
 category: roadmap
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-07-31
 tags: [product, dashboard, cli, inference, activation, evidence, automation]
 related:
   - README.md
@@ -220,6 +220,16 @@ and killed all 38 curated mutations in 309.6 seconds. It recorded zero
 survivors, zero invalid mutations, and an unchanged source checkout, including
 the new terminal-inference companion/fallback regression.
 
+The AR-205 exact-specialist package then passed the expanded 42-mutation gate
+with zero survivors, zero invalid mutations, a green baseline, and an unchanged
+source checkout. The named warning-strict fast spine initially rejected one
+storage-only fingerprint fixture that still entered substantive routing without
+an adapter-origin receipt. Commit `35e1db5` made that fixture production-shaped;
+its focused node passed and the complete spine then passed 636 tests with six
+intentional skips. Documentation, Ruff, formatting, dashboard UI, routing, and
+diff-integrity gates are also green. Exact merged installation and the live
+Codex product trial remain.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired
@@ -245,7 +255,7 @@ the new terminal-inference companion/fallback regression.
   configuration read, one reversible owner write, and exact restoration.
 - [x] README, troubleshooting, threat model, roadmap, decisions, and tests state
   the same contract without stale operator-presence or offline-selection text.
-- [ ] The named fast verification spine passes before the live demo resumes.
+- [x] The named fast verification spine passes before the live demo resumes.
 - [ ] One exact installed build completes the README product trial with a real
   inferred specialist team, actual delegation where planned, a workspace
   artifact, and zero response corrections.

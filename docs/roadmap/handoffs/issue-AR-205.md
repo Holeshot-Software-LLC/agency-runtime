@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-205
 branch: codex/ar-203-readme-story-final-proof
-evidence_commit: 57f82c7f6502c907d0888e501ca57b0a64aa22f6
-minimum_ledger_commit: 0452790bf1d84f93fe4911b35bd6bcbb50a6b6d0
+evidence_commit: 35e1db588cbf280323cff0fd754e667bb91877cd
+minimum_ledger_commit: e63488d34acb6d4420c88a72b6608a1ee666f985
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
 ---
@@ -33,8 +33,8 @@ acceptance; this file records only the current proof and next package.
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- Commit `57f82c7` implements the source package; `0452790` is its exact
-  worklog/roadmap ledger.
+- Commit `57f82c7` implements the source package. Commit `35e1db5` repairs the
+  sole stale fast-spine fixture; `e63488d` is its exact worklog/roadmap ledger.
 - `agency-steward` is the sole resident infrastructure identity and cannot be
   selected, loaded, or delegated as a domain worker.
 - Recruiter inference defines the ideal role from an open-ended pool before it
@@ -64,15 +64,22 @@ acceptance; this file records only the current proof and next package.
 - Four new decision mutations and their named baseline tests pass: singleton
   steward, empty-candidate gap, distinct task specialist, and post-plan
   no-generalist enforcement.
+- The complete decision-conformance evaluator passed its baseline and killed
+  all 42 curated mutations with zero survivors, zero invalid mutations, and an
+  unchanged source checkout.
+- The named warning-strict fast spine passed 636 tests with six intentional
+  skips after its sole stale fingerprint fixture was made production-shaped.
+- Markdown metadata checked 571 documents; policy availability, documentation,
+  worklog, Ruff, formatting, routing evaluation, dashboard UI, and whitespace
+  gates all pass.
 - Owner-untracked `docs/analysis/2026-07-25-deep-audit-findings.md` and `uv.lock`
   remain untouched.
 
 ## exact-blocker
 
-The source package is checkpointed but not yet fully admitted. The expanded
-decision-conformance evaluator and named fast verification spine have not run
-against `57f82c7`; no PR/merge, exact install, or live Codex product trial has
-been attempted for this build.
+The locally verified source package has not yet been pushed, reviewed, merged,
+or installed. No exact-installed Codex product trial has been attempted for
+this build.
 
 ## same-task-continuity
 
@@ -83,11 +90,11 @@ and all pre-live gates are green.
 
 ## next-bounded-work-package
 
-1. Run the complete decision-conformance evaluator and named fast spine; repair
-   only failures that invalidate exact-specialist staffing.
-2. Update durable evidence, push, address PR review, and merge.
-3. Install the exact merged build for Codex, ZCode, and dashboard, then run one
+1. Push, open the PR, address only review findings that invalidate this package,
+   and merge.
+2. Install the exact merged build for Codex, ZCode, and dashboard, then run one
    supported trust-bypassed Codex trial with zero response corrections.
+3. Generate the local shareable evidence report and OpenClaw handoff.
 
 ## verification
 

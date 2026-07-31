@@ -3,7 +3,7 @@ title: "AR-205: Make the default manager inference-safe"
 status: in_progress
 category: roadmap
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-07-31
 tags: [product, routing, managers, inference, roster]
 related:
   - README.md
@@ -97,9 +97,14 @@ the exact installed product proof and final README-story acceptance.
   skips. The dashboard client remains green at 110 tests. The HTTP surface
   passed 98 tests with three intentional skips before its sole stale assertion
   was corrected and reverified directly.
-- Ruff checks all Python sources, tests, and scripts cleanly. Four new curated
-  decision mutations have current unique anchors and their named tests pass;
-  the complete decision-conformance run and named fast spine remain pending.
+- The complete decision-conformance evaluator passed its baseline and killed
+  all 42 curated mutations with zero survivors, zero invalid mutations, and an
+  unchanged source checkout.
+- The named warning-strict fast spine exposed one stale fingerprint fixture.
+  Commit `35e1db5` bound it to a real adapter-origin receipt; its focused node
+  passed and the complete rerun passed 636 tests with six intentional skips.
+- Ruff, formatting, Markdown metadata, policy availability, documentation,
+  worklog, dashboard UI, routing evaluation, and diff-integrity gates pass.
 - No exact installed Codex trial has been attempted for this source package.
 
 ## Acceptance
@@ -120,5 +125,6 @@ the exact installed product proof and final README-story acceptance.
   without a deterministic keyword or pre-created-agent rule.
 - [x] Recruiter inference reasons ideal-role-first against an open-ended pool
   and never selects a merely least-wrong generalist.
-- [ ] Focused tests, the named fast spine, decision mutations, and the exact
-  installed product trial pass with zero response corrections.
+- [x] Focused tests, the named fast spine, and all curated decision mutations
+  pass.
+- [ ] The exact installed product trial passes with zero response corrections.
