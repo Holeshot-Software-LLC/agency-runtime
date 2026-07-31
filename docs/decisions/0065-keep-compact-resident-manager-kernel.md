@@ -14,8 +14,7 @@ related:
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by:
-  - docs/decisions/0122-use-one-agency-native-resident-steward.md
+superseded_by: docs/decisions/0122-use-one-agency-native-resident-steward.md
 id: ADR-0065
 type: decision
 deciders: [maintainers]

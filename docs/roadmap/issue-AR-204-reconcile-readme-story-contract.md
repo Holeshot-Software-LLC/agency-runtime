@@ -31,7 +31,7 @@ issue_id: AR-204
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 depends_on: []
-blocks: []
+blocks: [AR-205]
 ---
 
 # AR-204: Reconcile the README story contract
