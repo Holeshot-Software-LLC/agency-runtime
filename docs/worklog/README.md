@@ -441,6 +441,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `146aa1d` | 2026-07-31 | docs(evidence): admit Codex delegation authority fast gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 | `584b949` | 2026-07-31 | Merge pull request #202 from Holeshot-Software-LLC/codex/ar-207-live-product-proof | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 | `5f0523d` | 2026-07-31 | docs(roadmap): checkpoint exact merged authority install | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
+| `b9d75b3` | 2026-07-31 | docs(roadmap): checkpoint exact authority activation | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
