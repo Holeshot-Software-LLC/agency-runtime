@@ -1042,6 +1042,16 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
             },
             {
                 "type": "item.completed",
+                "item": {
+                    "id": "skills-notice",
+                    "type": "error",
+                    "message": "Skill descriptions were shortened to fit the skills context "
+                    "budget. Codex can still see every skill, but some descriptions are shorter. "
+                    "Disable unused skills or plugins to leave more room for the rest.",
+                },
+            },
+            {
+                "type": "item.completed",
                 "item": {"type": "agent_message", "text": _valid_header()},
             },
             {"type": "turn.completed"},
@@ -1062,6 +1072,8 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
     assert collaboration["calls"][0]["native_task_name"] == task_name
     assert collaboration["calls"][0]["event_type"] == "rollout_call_completed"
     assert collaboration["calls"][0]["receiver_thread_ids"] == [receiver_id]
+    assert collaboration["host_notice_count"] == 1
+    assert collaboration["host_notice_types"] == ["skill_catalog_descriptions_shortened"]
     encoded = json.dumps(record)
     assert activation_token not in encoded
     assert prompt_body not in encoded
@@ -1383,6 +1395,19 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
             json.dumps(
                 {
                     "type": "item.completed",
+                    "item": {
+                        "id": "skills-notice",
+                        "type": "error",
+                        "message": "Skill descriptions were shortened to fit the skills context "
+                        "budget. Codex can still see every skill, but some descriptions are "
+                        "shorter. Disable unused skills or plugins to leave more room for the "
+                        "rest.",
+                    },
+                }
+            ),
+            json.dumps(
+                {
+                    "type": "item.completed",
                     "item": {"type": "agent_message", "text": _valid_header()},
                 }
             ),
@@ -1405,6 +1430,8 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
     assert collaboration["completed_wait_count"] == 2
     assert collaboration["completed_child_count"] == 2
     assert collaboration["child_tool_call_count"] == 2
+    assert collaboration["host_notice_count"] == 1
+    assert collaboration["host_notice_types"] == ["skill_catalog_descriptions_shortened"]
     assert [row["prompt_delivery"]["work_unit_id"] for row in collaboration["calls"]] == [*units]
     encoded = json.dumps(record)
     assert all(secret not in encoded for secret in secrets)
@@ -1507,8 +1534,8 @@ def test_codex_jsonl_parser_projects_one_spawn_wait_chain_without_prompt_content
     assert "You are the exact reviewer" not in encoded
 
 
-def test_codex_jsonl_parser_ignores_only_exact_isolated_hook_trust_notice() -> None:
-    notice = {
+def test_codex_jsonl_parser_classifies_only_exact_allowlisted_host_notices() -> None:
+    trust_notice = {
         "type": "item.completed",
         "item": {
             "id": "trust-notice",
@@ -1517,19 +1544,46 @@ def test_codex_jsonl_parser_ignores_only_exact_isolated_hook_trust_notice() -> N
             "without review for this invocation.",
         },
     }
-    other = {
+    skill_catalog_notice = {
         "type": "item.completed",
-        "item": {"id": "other-error", "type": "error", "message": "different"},
+        "item": {
+            "id": "skills-notice",
+            "type": "error",
+            "message": "Skill descriptions were shortened to fit the skills context budget. "
+            "Codex can still see every skill, but some descriptions are shorter. Disable unused "
+            "skills or plugins to leave more room for the rest.",
+        },
+    }
+    near_miss = {
+        "type": "item.completed",
+        "item": {
+            "id": "other-error",
+            "type": "error",
+            "message": skill_catalog_notice["item"]["message"] + " ",
+        },
     }
 
-    accepted = codex_collaboration_evidence(json.dumps(notice))
-    rejected = codex_collaboration_evidence("\n".join(map(json.dumps, (notice, other))))
+    accepted = codex_collaboration_evidence(
+        "\n".join(map(json.dumps, (trust_notice, skill_catalog_notice)))
+    )
+    rejected = codex_collaboration_evidence(
+        "\n".join(map(json.dumps, (trust_notice, skill_catalog_notice, near_miss)))
+    )
 
     assert accepted is not None
     assert accepted["unexpected_item_count"] == 0
+    assert accepted["host_notice_count"] == 2
+    assert accepted["host_notice_types"] == [
+        "hook_trust_bypass",
+        "skill_catalog_descriptions_shortened",
+    ]
     assert rejected is not None
     assert rejected["unexpected_item_count"] == 1
     assert rejected["unexpected_item_types"] == ["error"]
+    assert rejected["host_notice_count"] == 2
+    assert rejected["host_notice_types"] == accepted["host_notice_types"]
+    assert skill_catalog_notice["item"]["message"] not in json.dumps(accepted)
+    assert near_miss["item"]["message"] not in json.dumps(rejected)
 
 
 def test_codex_jsonl_parser_projects_non_allowlisted_tool_type_without_content() -> None:
