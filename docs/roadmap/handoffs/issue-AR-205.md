@@ -116,13 +116,19 @@ acceptance; this capsule records only current proof and the next package.
   byte-bounds the exact context envelope before ready and preserves version-11
   full-goal rendering. Four direct tests, 113 affected tests with one skip, six
   exact replay nodes with one skip, and both new mutations pass.
+- Focused re-review of head 60111f8 found unbounded non-ASCII model metadata
+  could overflow the appended Codex header. The source rejects it above 512
+  UTF-8 bytes before reservation or preflight; its direct regression, isolated
+  mutation, and 238 affected tests with one skip pass. The prior full gate is
+  invalidated until rerun.
 
 ## exact-blocker
 
 No current build proves a specialist team, native delegation, workspace write,
 product artifacts, and zero corrections in one end-to-end run. Product routing
-and the repaired context policy are fully fast-green; repaired-head push and
-re-review, merge, exact install, and the new-build trial remain.
+and the repaired context policy are focused-green; the invalidated full rerun,
+checkpoint commits, push and focused P1 re-review, merge, exact install, and the
+new-build trial remain.
 
 ## same-task-continuity
 
@@ -132,7 +138,8 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Push the fully fast-green repaired head and complete one focused re-review.
+1. Commit the final-envelope repair, rerun the full fast gate and all 53
+   mutations, then push and complete the allowed focused P1 re-review.
 2. Merge and exact-install the context policy plus AR-206, then prove native
    activation and run one supported-bypassed product trial for the new build.
 3. Require zero corrections, a real specialist or hired-contractor chain,

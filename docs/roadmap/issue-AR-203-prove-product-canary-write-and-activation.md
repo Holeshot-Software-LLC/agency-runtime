@@ -315,6 +315,13 @@ documentation validation for 578 files, and clean diff integrity. Ledger commit
 `87b56fd` records that exact checkpoint; repaired-head review, merge, exact
 installation, and the one new-build product trial remain.
 
+The focused re-review of head `60111f8` then found a third P1: Codex appended
+the caller-controlled model value after the context-only byte check. The source
+candidate now rejects model metadata above 512 UTF-8 bytes before reservation
+or preflight. The 9,000-emoji regression proves no adapter call or reservation,
+the new mutation is killed, and the affected boundary passes 238 tests with one
+skip. The prior full gate is invalidated pending rerun.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host
@@ -406,6 +413,8 @@ demonstrates both mismatches.
   envelope exceeds 48,000 encoded bytes under the 65,536-byte hook cap.
 - [x] Version-11 ready recipes retain their original full-goal rendering after
   upgrade; current shared-prefix rendering is policy-versioned.
+- [x] Oversized UTF-8 hook model metadata blocks before reservation or preflight
+  and cannot consume the reserved Codex first-pass-header budget after ready.
 - [ ] The replacement trial selects and launches at least one specialist/team,
   or records a defensible gap plus an actual hiring decision.
 - [ ] The next ordinary canary reports exact activation evidence and can create

@@ -57,6 +57,7 @@ from agency_runtime.core.unit_assignment import (
 MAX_HOOK_INPUT_BYTES = 1_048_576
 MAX_HOOK_OUTPUT_BYTES = 65_536
 MAX_CONTEXT_CHARS = 48_000
+MAX_HOOK_MODEL_BYTES = 512
 
 _CODEX_EVENTS = {
     "SessionStart",
@@ -322,6 +323,24 @@ def _optional_string(payload: dict[str, Any], key: str) -> str:
         return ""
     if not isinstance(value, str):
         raise HookInputError(f"{key} must be a string or null")
+    return value
+
+
+def _bounded_optional_utf8_string(
+    payload: dict[str, Any],
+    key: str,
+    *,
+    maximum_bytes: int,
+) -> str:
+    """Read one optional host string without admitting an oversized UTF-8 value."""
+
+    value = _optional_string(payload, key)
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise HookInputError(f"{key} must be valid UTF-8") from exc
+    if len(encoded) > maximum_bytes:
+        raise HookInputError(f"{key} exceeds the size limit")
     return value
 
 
@@ -768,7 +787,11 @@ class HookBridge:
             )
         except ValueError as exc:
             raise HookInputError(str(exc)) from exc
-        model = _optional_string(payload, "model")
+        model = _bounded_optional_utf8_string(
+            payload,
+            "model",
+            maximum_bytes=MAX_HOOK_MODEL_BYTES,
+        )
         work_unit_id = _first_string(
             args,
             "work_unit_id",
@@ -3113,6 +3136,7 @@ def run_hook_stdio(
 
 __all__ = [
     "MAX_HOOK_INPUT_BYTES",
+    "MAX_HOOK_MODEL_BYTES",
     "MAX_HOOK_OUTPUT_BYTES",
     "HookBridge",
     "HookCorrelation",

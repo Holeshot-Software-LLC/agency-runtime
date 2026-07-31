@@ -455,6 +455,26 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-user-prompt-admits-oversized-model-header",
+        invariant=(
+            "Codex rejects an oversized UTF-8 model identifier before preflight can commit "
+            "a route whose appended evidence header exceeds the final hook envelope."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before=(
+            "        model = _bounded_optional_utf8_string(\n"
+            "            payload,\n"
+            '            "model",\n'
+            "            maximum_bytes=MAX_HOOK_MODEL_BYTES,\n"
+            "        )"
+        ),
+        after='        model = _optional_string(payload, "model")',
+        test_node=(
+            "tests/test_host_hooks.py::"
+            "test_codex_rejects_oversized_utf8_model_before_preflight_ready"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="legacy-preflight-replay-uses-current-goal-renderer",
         invariant=(
             "A stored legacy recipe reconstructs the exact full-goal rendering governed by "

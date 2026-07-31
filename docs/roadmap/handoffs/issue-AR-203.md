@@ -121,13 +121,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   with full goals instead of version-12+ prefix compaction. Four direct tests,
   113 affected tests with one skip, six exact replay nodes with one skip, and
   both new mutations pass.
+- Focused re-review of head 60111f8 found the post-context Codex header could
+  still overflow through unbounded non-ASCII model metadata. The source now
+  rejects model values above 512 UTF-8 bytes before reservation or preflight;
+  its direct regression and mutation pass, as do 238 affected tests with one
+  skip. This change invalidates the prior full gate until rerun.
 
 ## exact-blocker
 
-Installation and activation pass, gap hiring is separated correctly, inference
-reaches accepted product teams, and the repaired context policy is fully
-fast-green. The remaining blocker is pushing and re-reviewing PR 195, then
-merge and exact installation before one new-build trial.
+Installation and activation pass, gap hiring is separated correctly, and
+inference reaches accepted product teams. The final-envelope P1 is focused-
+green; its invalidated full gate, checkpoint commits, push, high-severity
+re-review, merge, and exact installation remain before one new-build trial.
 
 ## same-task-continuity
 
@@ -137,7 +142,8 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-1. Push and obtain one focused re-review of the repaired PR 195 head.
+1. Commit the final-envelope repair, rerun the full fast gate and all 53
+   mutations, then push and obtain the allowed focused P1 re-review.
 2. Merge, exact-install, and re-prove activation with the AR-206 verifier fix.
 3. Spend one product trial only on that new exact build. Require a real inferred
    team or hired contractor, planned delegation, workspace artifacts, and zero

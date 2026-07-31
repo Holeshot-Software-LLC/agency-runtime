@@ -178,6 +178,11 @@ the exact installed product proof and final README-story acceptance.
   52/52 killed decision mutations with unchanged source, Ruff across 602 files,
   documentation validation for 578 files, and clean diff integrity. Ledger
   commit `87b56fd` records the exact checkpoint.
+- The focused re-review of head `60111f8` found that unbounded non-ASCII model
+  metadata could overflow the final Codex header after ready. The source now
+  rejects it above 512 UTF-8 bytes before reservation or preflight. Its direct
+  regression, isolated mutation, and 238-test affected boundary pass with one
+  skip; the previous full gate is invalidated pending rerun.
 
 ## Acceptance
 

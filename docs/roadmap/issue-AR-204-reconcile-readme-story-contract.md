@@ -318,6 +318,13 @@ gate passes, all 52 decision mutations are killed with unchanged source, Ruff
 validates 602 files, documentation validates 578 files, and diff integrity is
 clean. Ledger commit `87b56fd` records this exact pre-push checkpoint.
 
+The focused re-review of head `60111f8` found one remaining final-envelope P1:
+the Codex header appended caller-controlled model text after the context-only
+byte check. Native correlation now rejects model metadata above 512 UTF-8 bytes
+before reservation or preflight. The exact 9,000-emoji regression, its isolated
+mutation, and 238 affected tests with one skip pass. The prior full gate is
+invalidated until this repair completes the same bounded verification.
+
 The same long-lived Codex task then exposed AR-206: its immutable old Stop hook
 rejected an intact 558-node ready routing decision because the correlation
 reader retained a stale 256-node cap while the durable recipe admits 2,048.

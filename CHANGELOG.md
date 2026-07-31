@@ -65,7 +65,9 @@ changes rather than duplicating every commit.
   32,000 characters and a 48,000-byte exact UTF-8 UserPromptSubmit context
   envelope under the host's 65,536-byte output cap. Version-11 recipes retain
   their original full-goal rendering while current recipes use versioned
-  shared-prefix compaction.
+  shared-prefix compaction. Native hook model metadata is limited to 512 UTF-8
+  bytes before reservation or preflight, so a caller-controlled non-ASCII model
+  identifier cannot overflow the reserved first-pass header after ready.
 - A terminal `inference_unavailable` or `inference_invalid` route can no longer
   be repopulated with deterministic policy companions or fallback identities.
   Action classification remains available for diagnosis without becoming a
