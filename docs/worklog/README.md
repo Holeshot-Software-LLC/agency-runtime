@@ -450,6 +450,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5144cc9` | 2026-07-31 | docs(roadmap): checkpoint exact Codex grant gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
 | `40d1099` | 2026-07-31 | fix(codex): preserve path case and plaintext concurrency | [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
 | `075bc56` | 2026-07-31 | test(codex): keep plaintext slot regression bounded | [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
+| `bc6d15b` | 2026-07-31 | fix(eval): honor per-test conformance deadlines | [AR-210](../roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
