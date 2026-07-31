@@ -228,6 +228,19 @@ the parent emitted no delegation tool call or response.
   persisted. The header was valid on its first pass, Store proof was true,
   correction count was zero, and all three host notices were allowlisted. The
   activation is consumed and must not be rerun.
+- Product trial `ar207-584b949-readme-01` is consumed and terminal `NO-GO`.
+  Session `019fb9bf-8db3-7022-8acd-da0a80f8834b`, trace
+  `019fb9bf-8e2d-7691-b469-684c6e109872`, run
+  `8be205d8-dba0-4058-84b6-384cf774531c`, route
+  `72c71e63-5496-43c3-8c3d-d16eb6f4cc98`, and finalization
+  `a76ee95b-f659-4401-9a26-73a688daa116` prove an accepted eight-unit plan.
+  Codex attempted one native spawn and received one tool output, but no child
+  started and no wait followed. The collaboration diagnostic is
+  `parent_wait_missing`; all eight delegations remained `suggested`, with zero
+  grants, loads, workers, or completed delegations. Workspace trust and hook
+  bypass were proven, workspace write was not, the header was absent, and
+  correction count was zero. The failed edge has advanced from no spawn to
+  first-spawn output without child start. This build must not be rerun.
 
 ## Approach
 

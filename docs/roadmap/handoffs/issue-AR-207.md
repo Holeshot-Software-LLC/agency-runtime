@@ -49,9 +49,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `code-reviewer`, the complete native lifecycle, valid first-pass header,
   zero corrections, proven Store evidence, three admitted host notices, and
   no unexpected item. That activation is consumed and must not be rerun.
-- Product trial `ar207-dd85e7d-readme-01` is consumed and terminal `NO-GO`.
-  Inference accepted eight units and specialists, but Codex returned no parent
-  response or native spawn; all eight delegations remained `suggested`.
+- Product trial `ar207-584b949-readme-01` is consumed and terminal `NO-GO`.
+  Inference accepted eight units; Codex attempted the first native spawn, but
+  no child started and no wait followed. All delegations remained `suggested`.
 - The missing edge was high-priority host authority: the product backend lacked
   the developer instruction used by the passing activation canary. ADR-0126's
   bounded parent/child repair is named-fast-green through all 66 mutations.
@@ -71,13 +71,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   selected `code-reviewer`; one route, grant, consumption, load, worker,
   native child, completed delegation, and accepted finalization persisted.
   Header validity and Store evidence were proven with correction count zero.
-- Product session `019fb982-a686-79d1-bc6c-f605e64895fc`, trace
-  `019fb982-a702-7c11-b527-a4b5fa603250`, and run
-  `ec15beed-4ed4-4bc8-bdf6-1a19e4b4d926` reached ready with an accepted
-  eight-unit route. It retained eight suggested delegations but zero grants,
-  consumptions, loads, worker runs, native children, or completed delegations.
-  Codex exited zero with an empty response and no header; workspace trust and
-  hook bypass were proven, workspace write was not, and corrections were zero.
+- Product session `019fb9bf-8db3-7022-8acd-da0a80f8834b`, trace
+  `019fb9bf-8e2d-7691-b469-684c6e109872`, and run
+  `8be205d8-dba0-4058-84b6-384cf774531c` reached an accepted eight-unit route.
+  Parent rollout evidence contains one spawn call and its output, but zero
+  child starts or waits. Finalization was `delegation_declined`; workspace
+  trust and bypass were proven, workspace write was not, and corrections were zero.
 - Product session `019fb92d-694c-7e42-b553-ee53802bac99`, trace
   `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
   `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage
@@ -125,9 +124,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The exact `dd85e7d` product trial is terminal `NO-GO` and cannot be rerun. The
-new exact `584b949` activation passed and is consumed. At most one product
-trial remains for this exact build.
+Exact build `584b949` is consumed: activation passed, but its product trial is
+terminal `NO-GO`. The first failed edge is now first native spawn output to
+child start/wait; repair requires a new exact build.
 
 ## same-task-continuity
 
@@ -138,9 +137,9 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run one fresh product trial on exact build `584b949`.
-2. If it passes, prove a fresh-task `agency-steward` plus specialist header.
-3. Produce the local shareable evidence page and OpenClaw handoff.
+1. Diagnose the persisted first-spawn output without rerunning `584b949`.
+2. Repair that exact boundary, fast-verify, merge, and exact-install a new build.
+3. Repeat one activation and at most one product trial on the new exact build.
    local shareable evidence page and OpenClaw handoff.
 
 ## verification
@@ -172,6 +171,6 @@ git diff --check
 - Do not rerun activation or the product trial on exact build `5ad4aef`; both
   terminal results are recorded.
 - Do not rerun the passed activation or failed product trial on `dd85e7d`.
-- Do not rerun the passed activation on `584b949`.
+- Do not rerun the activation or product trial on `584b949`.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
