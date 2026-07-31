@@ -394,6 +394,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `67f0b96` | 2026-07-30 | docs(evidence): prove dashboard configuration round trip | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 | `9e3ca7f` | 2026-07-30 | fix(routing): preserve inference authority through evaluation | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-9e3ca7f-inference-authority-evaluation.md) |
 | `0b37270` | 2026-07-30 | docs(evidence): record AR-204 38-mutation gate | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `57f82c7` | 2026-07-31 | feat(workforce): require an exact specialist for every task | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | [detail](2026-07-31-57f82c7-exact-specialist-every-task.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
