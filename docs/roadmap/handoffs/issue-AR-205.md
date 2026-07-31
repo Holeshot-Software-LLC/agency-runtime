@@ -13,14 +13,15 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-205
 branch: codex/ar-203-activation-planning-contract
-evidence_commit: 8b8c78003c7784a84d496a3ec678a234131188e3
-minimum_ledger_commit: 8926c69faf52ec1b00860f57a4ad1ec6cd2f1f69
+evidence_commit: 839ddee4551ab99c8997e281caf9e1633788d9f8
+minimum_ledger_commit: 856191bac8f0b638dbbfcb303f01db404d84240f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
 ---
@@ -103,15 +104,16 @@ acceptance; this capsule records only current proof and the next package.
   long-lived task's old Stop verifier alone rejects the valid 558-node routing
   decision under a stale 256-node cap. The source repair aligns it with the
   2,048-node durable recipe bound and passes 22 focused warning-strict tests.
+- ADR-0123 is approved. Commit 839ddee raises only the persistent parent limit
+  to 32,000, proves the complete sixteen-unit shape, kills the 8,192 mutation,
+  and passes the 115-test focused boundary.
 
 ## exact-blocker
 
 No current build proves a specialist team, native delegation, workspace write,
 product artifacts, and zero corrections in one end-to-end run. Product routing
-now accepts complete teams; the remaining choice is whether persistent hosts
-may use the existing 32,000-character preflight ceiling. The alternative—cap
-or truncate the inferred team/goals to 8,192—conflicts with complete planning
-and exact child-task delivery.
+and the approved context policy are locally focused-green; exact-tree fast
+verification, merge, exact install, and the new-build trial remain.
 
 ## same-task-continuity
 
@@ -121,11 +123,9 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Obtain owner direction; recommended: raise the persistent-host ceiling to
-   32,000 while retaining exact validation and the 48,000 Codex hook cap.
-2. Implement, verify, and exact-install the context policy plus AR-206, then
-   prove native activation and run one supported-bypassed product trial for
-   only the new exact build.
+1. Run the named fast gates and complete decision conformance.
+2. Merge and exact-install the context policy plus AR-206, then prove native
+   activation and run one supported-bypassed product trial for the new build.
 3. Require zero corrections, a real specialist or hired-contractor chain,
    workspace-write proof, and product artifacts; then generate the local report
    and OpenClaw handoff.

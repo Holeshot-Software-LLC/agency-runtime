@@ -16,14 +16,15 @@ related:
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-204
 branch: codex/ar-203-activation-planning-contract
-evidence_commit: 8b8c78003c7784a84d496a3ec678a234131188e3
-minimum_ledger_commit: 8926c69faf52ec1b00860f57a4ad1ec6cd2f1f69
+evidence_commit: 839ddee4551ab99c8997e281caf9e1633788d9f8
+minimum_ledger_commit: 856191bac8f0b638dbbfcb303f01db404d84240f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 ---
@@ -101,14 +102,16 @@ Bounded projection for making the README product story executable.
   decision exactly matches the ready receipt, but the immutable old Stop hook
   rejects it under a stale 256-node verifier cap. The source now uses the
   durable 2,048-node bound and passes its focused regression and mutation tests.
+- ADR-0123 is approved and commit 839ddee uses the 32,000-character persistent
+  parent ceiling. A complete sixteen-unit regression crosses 8,192, its
+  legacy-cap mutation is killed, and the 115-test focused boundary passes.
 
 ## exact-blocker
 
-The exact installed build passes activation and the source candidate reaches
-accepted inferred product teams. README acceptance is waiting for owner
-direction after the same context ceiling failed twice. Raising persistent hosts
-to the existing 32,000-character preflight ceiling is recommended; forcing a
-smaller team would undercut the complete specialist-plan contract.
+The source candidate passes activation prerequisites, complete-team routing,
+the AR-206 evidence verifier, and the approved 32k focused boundary. README
+acceptance now waits for exact-tree fast verification, merge, exact install,
+fresh-task activation, and one new-build product trial.
 
 ## same-task-continuity
 
@@ -118,10 +121,8 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Resolve the context-ceiling choice; recommended: 32,000 characters with the
-   unchanged 48,000-character Codex hook boundary.
-2. Implement and verify only that policy, include the bounded AR-206 verifier
-   repair, then merge, exact-install, re-prove activation, and run one product
+1. Run the named fast gates and complete decision conformance.
+2. Merge, exact-install, re-prove activation with AR-206, and run one product
    trial for only that new exact build.
 3. Generate the local evidence page and OpenClaw handoff only after the product
    gate proves real execution and zero corrections.

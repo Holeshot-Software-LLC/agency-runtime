@@ -12,14 +12,15 @@ related:
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
+  - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-203
 branch: codex/ar-203-activation-planning-contract
-evidence_commit: f349c21c5ce6259b7337ec9d44c52e7b3aef156f
-minimum_ledger_commit: 2338c8fb995c550a0ce5ad534f52253185b37a82
+evidence_commit: 839ddee4551ab99c8997e281caf9e1633788d9f8
+minimum_ledger_commit: 856191bac8f0b638dbbfcb303f01db404d84240f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -105,16 +106,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 - Read-only sizing measures 8,120 characters for nine realistic units, 8,326
   for ten, and 9,534 for the configured maximum sixteen. The general preflight
   ceiling is 32,000 and the Codex hook ceiling is 48,000.
+- The owner approved ADR-0123. Commit 839ddee applies the 32,000-character
+  persistent-host ceiling, proves a complete sixteen-unit context crosses the
+  legacy limit, and kills the mutation restoring 8,192. The focused boundary
+  passes 115 tests; ledger commit 856191b records the checkpoint.
 
 ## exact-blocker
 
-Installation and activation pass, gap hiring is separated correctly, and
-inference now reaches accepted product teams. The remaining blocker is an
-owner policy choice: raise the persistent-host context ceiling above 8,192
-characters, or constrain valid teams/goals to that legacy ceiling. The evidence
-supports using the existing 32,000-character preflight ceiling; limiting teams
-would conflict with complete inference-owned planning. No new product trial may
-run until one choice is implemented, verified, merged, and exact-installed.
+Installation and activation pass, gap hiring is separated correctly, inference
+reaches accepted product teams, and the approved context policy is focused
+green. The remaining blocker is exact-tree fast verification, merge, and exact
+installation before one new-build product trial.
 
 ## same-task-continuity
 
@@ -124,12 +126,10 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-1. Obtain owner direction on the repeated context-ceiling boundary. Recommended:
-   set persistent hosts to the existing 32,000-character preflight ceiling while
-   retaining the 48,000-character hook cap and exact whole-context validation.
-2. Implement that one policy, run bounded gates, merge, exact-install, and
-   re-prove activation.
-3. Spend one product trial only on the new exact build. Require a real inferred
+1. Run the named fast gates and complete decision conformance on the committed
+   839ddee tree.
+2. Merge, exact-install, and re-prove activation with the AR-206 verifier fix.
+3. Spend one product trial only on that new exact build. Require a real inferred
    team or hired contractor, planned delegation, workspace artifacts, and zero
    corrections before producing the evidence page and OpenClaw handoff.
 
