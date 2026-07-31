@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
+  - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/handoffs/issue-AR-203.md
   - docs/worklog/README.md
 supersedes: []
@@ -22,7 +23,7 @@ epic: testing
 issue_id: AR-203
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
-depends_on: [AR-201]
+depends_on: [AR-201, AR-207]
 blocks: [AR-200]
 ---
 
@@ -324,6 +325,23 @@ skip. Committed repair `7727c0c` then passes 636 named Python tests with 6
 skips, 110 dashboard tests, every routing gate, all 53 decision mutations with
 unchanged source, Ruff across 602 files, documentation validation for 579
 files, and clean diff integrity.
+
+PR 195 merged exact reviewed head
+`bdd0f521c3da0eb97fe48ed1986a387482ac1c53` as revision
+`6b49f17d6787823f9ba78a8f09383001b6a77535`. Exact build
+`0.1.0+g6b49f17d6787` is installed for Codex, ZCode, and dashboard. Its
+supported-bypass activation passed with zero corrections and one complete
+inferred `code-reviewer` lifecycle.
+
+The build's one product trial, `ar205-6b49f17-readme-01`, is terminal
+`NO-GO` and must not be rerun. Inference accepted eight work units and nine
+specialists under route `ad20ea5c-c547-485a-89a6-f8e1372252e7`, but the turn
+recorded zero grants, consumptions, loads, worker runs, or native spawn/wait
+events. Stop finalized `delegation_declined`; the workspace remained empty,
+write proof was absent, no response/header was published, and correction count
+was zero only because nothing reached publication. AR-207 owns the content-free
+failure evidence and first downstream execution repair before a new-build
+trial.
 
 ## Approach
 

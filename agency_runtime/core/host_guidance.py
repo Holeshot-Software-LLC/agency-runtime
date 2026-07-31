@@ -50,10 +50,11 @@ def native_delegation_instruction(host: object) -> str:
             "native worker request and Agency evidence calls."
         )
     return (
-        f"{dispatch} The native host may refine, merge, or decline the proposed topology. "
-        "If it declines a preferred or strongly_preferred row, call "
-        "`agency.decline_delegation` once with the exact session_id, trace_id, "
-        "work_unit_id, recommended agent, and a concrete bounded reason."
+        f"{dispatch} Dispatch every persisted plan row exactly once; do not merge, omit, "
+        "or perform a planned specialist unit in the parent. If a row cannot be safely "
+        "dispatched, call `agency.decline_delegation` once with the exact session_id, "
+        "trace_id, work_unit_id, recommended agent, and a concrete bounded reason, then "
+        "stop the parent turn without claiming the planned outcome."
     )
 
 

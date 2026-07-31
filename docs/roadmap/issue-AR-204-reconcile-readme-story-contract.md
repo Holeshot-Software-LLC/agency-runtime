@@ -21,6 +21,7 @@ related:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
+  - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes:
@@ -32,7 +33,7 @@ epic: product
 issue_id: AR-204
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
-depends_on: [AR-206]
+depends_on: [AR-207]
 blocks: [AR-205]
 ---
 
@@ -333,6 +334,23 @@ reader retained a stale 256-node cap while the durable recipe admits 2,048.
 SQLite integrity and exact projection both pass. The bounded source repair and
 focused regression pass; the next exact installation must include this repair,
 and its Stop proof must run in a fresh task whose launcher can consume it.
+
+PR 195 merged exact reviewed head
+`bdd0f521c3da0eb97fe48ed1986a387482ac1c53` as revision
+`6b49f17d6787823f9ba78a8f09383001b6a77535`. Exact build
+`0.1.0+g6b49f17d6787` is installed for Codex, ZCode, and dashboard. A fresh
+supported-bypass activation proves AR-206, inference-selected `code-reviewer`,
+native spawn/wait, completed delegation, accepted finalization, and zero
+corrections.
+
+The exact build's one README product trial is terminal `NO-GO`. It accepted a
+nine-specialist team but issued no activation grant and launched no worker; the
+workspace remained empty and no response/header was published. A separate
+enabled diagnostic then ended `preflight_failed` with no route or model receipt
+because cleanup discards the caught failure. AR-207 tracker issue #196 now owns
+that bounded observability/execution boundary. The goal remains open until a
+new exact build proves native delegation, workspace artifacts, and zero
+corrections in the same product turn.
 
 ## Acceptance
 

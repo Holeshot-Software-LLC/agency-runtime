@@ -377,6 +377,46 @@ def test_canary_report_preserves_allowlisted_projection_failure_reason(
     assert report["invocation"]["failure_reason"] == ("codex_result_projection_unavailable")
 
 
+def test_canary_report_preserves_only_content_free_collaboration_diagnostic(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.db"
+    Store(path)
+
+    class FailedProjectionBackend:
+        def execute(self, **_kwargs):
+            return {
+                "backend": "codex",
+                "status": "failed",
+                "exit_code": 0,
+                "failure_reason": "codex_parent_spawn_missing",
+                "collaboration_diagnostic": {
+                    "schema": "agency.codex-collaboration-diagnostic.v1",
+                    "proven": False,
+                    "reason": "parent_spawn_missing",
+                    "parent_rollout_observed": True,
+                    "spawn_count": 0,
+                    "wait_count": 0,
+                    "tool_output_count": 0,
+                    "child_start_count": 0,
+                    "agent_message_count": 0,
+                    "unexpected_item_count": 0,
+                },
+            }
+
+    report = run_canary(
+        "codex",
+        execute=True,
+        confirm="RUN LIVE codex CANARY",
+        db_path=path,
+        inspector=_ready_host,
+        backend_factory=lambda *_args, **_kwargs: FailedProjectionBackend(),
+    )
+
+    assert report["invocation"]["failure_reason"] == "codex_parent_spawn_missing"
+    assert report["invocation"]["collaboration_diagnostic"]["reason"] == ("parent_spawn_missing")
+
+
 def test_canary_report_omits_unhashable_projection_metadata(tmp_path: Path) -> None:
     path = tmp_path / "agency.db"
     Store(path)

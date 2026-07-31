@@ -41,9 +41,9 @@ superseded_by: null
 For each request, Agency Runtime first asks inference who should own the work as
 if the specialist pool were unlimited. It reuses an audited roster specialist
 only when that worker faithfully fits the inferred ideal; otherwise it designs,
-audits, and hires a narrow contractor for the gap. The chosen specialist's
-instructions apply to that turn or child task and then leave the active context
-— your main agent stays small.
+audits, and hires a narrow contractor for the gap. Each chosen specialist's
+instructions apply only inside its exact child task and then leave the active
+context — your main agent stays small.
 
 **You get:**
 
@@ -111,9 +111,10 @@ with 263 audited specialists already on payroll.
    invalid, the prompt is blocked visibly and no generalist answer is allowed.
 6. If two specialists would conflict, Agency separates their work instead of
    putting both in one prompt.
-7. Small focused work loads into the current turn; larger or independent work is
-   delegated through the host's native subagent mechanism with the exact
-   specialist bound in.
+7. Every substantive work unit is delegated through the host's native subagent
+   mechanism with its exact specialist bound in. The parent coordinates those
+   workers but never substitutes for one; an undispatchable unit stops the turn
+   with an explicit decline instead of becoming generalist work.
 8. Agency records what really loaded, delegated, hired, and the model evidence.
 9. The response shows that evidence in a compact header. On the next request,
    specialists return to the pool.
@@ -137,9 +138,7 @@ flowchart LR
     G -- yes --> H["Hire contractor"]
     G -- no --> V["Verify team"]
     H --> V
-    V --> L["Load focused help"]
     V --> ND["Delegate via native subagent (exact specialist bound)"]
-    L --> E["Record evidence"]
     ND --> E
     E --> HDR["Response header (Recruited via: ...)"]
     HDR --> POOL["Specialists return to the pool"]
@@ -610,13 +609,13 @@ Every Agency response starts with an evidence header — a truth-receipt, not
 marketing:
 
 ```text
-Agency/Agencies loaded: code-reviewer
-Agency/Agencies delegated: none
+Agency/Agencies loaded: agency-steward, code-reviewer
+Agency/Agencies delegated: code-reviewer via generic-worker/spawn_agent
 Skills loaded: none
-Actual Model selected: gpt-5.6-luna -> codex/gpt-5.6-luna
+Actual Model selected: parent task: host-selected (not observable to Agency); workforce inference: gpt-5.6-luna -> codex/gpt-5.6-luna; specialist: launch model not evidenced by this receipt
 Recruited via: inference
 Why: Security review requested for auth code
-How it shaped outcome: Loaded code review + security auditor
+How it shaped outcome: The isolated reviewer completed the exact security-review unit
 ```
 
 The **`Recruited via`** line is machine-stamped (`inference`, an inference-backed

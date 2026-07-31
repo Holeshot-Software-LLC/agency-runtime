@@ -57,6 +57,7 @@ from agency_runtime.core.store.delegation_activation import (
 )
 from agency_runtime.core.store.preflight import (
     PreflightStoreMixin,
+    _decode_preflight_failure_receipt,
     _decode_preflight_recipe,
     _request_fingerprint,
 )
@@ -187,9 +188,11 @@ def _empty_canary_activation_snapshot(
             "worker_runs": 0,
             "specialist_loads": 0,
             "finalizations": 0,
+            "preflight_failures": 0,
         },
         "run": None,
         "route": None,
+        "preflight_failure": None,
         "unit_agent_plan": [],
         "delegations": [],
         "activation_grants": [],
@@ -198,6 +201,83 @@ def _empty_canary_activation_snapshot(
         "specialist_loads": [],
         "finalizations": [],
     }
+
+
+def _failed_preflight_canary_snapshot(
+    conn: Any,
+    *,
+    host: str,
+    query_hash: str,
+) -> dict[str, Any] | None:
+    """Resolve one exact failed preflight when no ready route was committed."""
+
+    rows = conn.execute(
+        "SELECT run.id, run.trace_id, run.session_id, run.host, run.started_at, "
+        "run.last_activity_at, run.evidence_revision, run.turn_sequence, run.ended_at, "
+        "run.status, run.terminal_finalization_id, run.preflight_state, "
+        "run.preflight_request_fingerprint, run.preflight_request_kind, "
+        "failure.id AS failure_id, failure.stage AS failure_stage, "
+        "failure.reason_code AS failure_reason_code, "
+        "failure.exception_category AS failure_exception_category, "
+        "failure.provider_attempts AS failure_provider_attempts, "
+        "failure.recorded_at AS failure_recorded_at "
+        "FROM runs AS run JOIN preflight_failure_receipts AS failure "
+        "ON failure.trace_id = run.trace_id AND failure.session_id = run.session_id "
+        "WHERE run.host = ? AND run.preflight_request_fingerprint = ? "
+        "AND run.status = 'preflight_failed' ORDER BY run.turn_sequence",
+        (host, query_hash),
+    ).fetchall()
+    if len(rows) != 1:
+        return None
+    row = rows[0]
+    session_id = validate_correlation_id(str(row["session_id"] or ""), field="session_id")
+    trace_id = validate_correlation_id(str(row["trace_id"] or ""), field="trace_id")
+    failure_row = {
+        "id": str(row["failure_id"] or ""),
+        "session_id": session_id,
+        "trace_id": trace_id,
+        "host": str(row["host"] or ""),
+        "stage": row["failure_stage"],
+        "reason_code": row["failure_reason_code"],
+        "exception_category": row["failure_exception_category"],
+        "provider_attempts": row["failure_provider_attempts"],
+        "recorded_at": str(row["failure_recorded_at"] or ""),
+    }
+    failure = {**failure_row, **_decode_preflight_failure_receipt(failure_row)}
+    snapshot = _empty_canary_activation_snapshot(
+        host=host,
+        query_hash=query_hash,
+        route_count=0,
+        reason="preflight_failed",
+    )
+    snapshot.update(
+        session_id=session_id,
+        trace_id=trace_id,
+        cardinalities={
+            **snapshot["cardinalities"],
+            "runs": 1,
+            "traces": 1,
+            "preflight_failures": 1,
+        },
+        run={
+            "id": str(row["id"] or ""),
+            "trace_id": trace_id,
+            "session_id": session_id,
+            "host": str(row["host"] or ""),
+            "started_at": str(row["started_at"] or ""),
+            "last_activity_at": str(row["last_activity_at"] or ""),
+            "evidence_revision": int(row["evidence_revision"] or 0),
+            "turn_sequence": int(row["turn_sequence"] or 0),
+            "ended_at": row["ended_at"],
+            "status": str(row["status"] or ""),
+            "terminal_finalization_id": row["terminal_finalization_id"],
+            "preflight_state": str(row["preflight_state"] or ""),
+            "request_fingerprint": str(row["preflight_request_fingerprint"] or ""),
+            "request_kind": str(row["preflight_request_kind"] or ""),
+        },
+        preflight_failure=failure,
+    )
+    return snapshot
 
 
 def _canary_scope_consistent(
@@ -1505,7 +1585,15 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             ).fetchone()
             route_count = int(route_count_row["count"] if route_count_row is not None else 0)
             if route_count != 1:
-                snapshot = _empty_canary_activation_snapshot(
+                snapshot = (
+                    _failed_preflight_canary_snapshot(
+                        conn,
+                        host=normalized_host,
+                        query_hash=normalized_hash,
+                    )
+                    if route_count == 0
+                    else None
+                ) or _empty_canary_activation_snapshot(
                     host=normalized_host,
                     query_hash=normalized_hash,
                     route_count=route_count,
@@ -1645,6 +1733,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 "worker_runs": int(counts["worker_runs"]),
                 "specialist_loads": int(counts["specialist_loads"]),
                 "finalizations": int(counts["finalizations"]),
+                "preflight_failures": 0,
             }
             snapshot = _empty_canary_activation_snapshot(
                 host=normalized_host,

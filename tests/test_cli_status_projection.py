@@ -86,6 +86,44 @@ def test_broker_projection_handles_empty_optional_receipts() -> None:
     assert status_projection.project_brokered_inference(expected) == expected
 
 
+def test_cli_dashboard_projection_includes_content_free_preflight_failure() -> None:
+    activity = {
+        "preflight_failures": [
+            {
+                "schema_version": "agency.preflight.failure.v1",
+                "stage": "routing",
+                "reason_code": "workforce_inference_failed",
+                "exception_category": "timeout",
+                "provider_attempts": [],
+                "recorded_at": "2026-07-31T13:00:00Z",
+                "trace_id": "failed-trace",
+                "host": "codex",
+            }
+        ]
+    }
+
+    expected = inference_operational_snapshot(_config(), activity)
+    projected = status_projection.project_brokered_inference(expected)
+
+    assert projected == expected
+    assert projected["state"] == "degraded"
+    assert projected["failure_count"] == 1
+    assert projected["recent_failures"] == [
+        {
+            "kind": "preflight_failure",
+            "status": "preflight_failed",
+            "schema_version": "agency.preflight.failure.v1",
+            "stage": "routing",
+            "reason_code": "workforce_inference_failed",
+            "exception_category": "timeout",
+            "provider_attempts": [],
+            "recorded_at": "2026-07-31T13:00:00Z",
+            "trace_id": "failed-trace",
+            "host": "codex",
+        }
+    ]
+
+
 def test_broker_projection_rejects_malformed_nested_shapes() -> None:
     with pytest.raises(ValueError, match="non-string"):
         status_projection._text(None, limit=32)

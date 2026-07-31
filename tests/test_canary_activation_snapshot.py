@@ -15,7 +15,7 @@ from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.store.sqlite import Store
 from tests.runtime_support import stub_inference_invoker, write_provider_config
 
-_REQUEST = "Review and refactor this Python code for security and correctness"
+_REQUEST = "Review this Python code for correctness"
 
 
 @pytest.fixture()
@@ -221,3 +221,51 @@ def test_canary_activation_snapshot_fails_closed_for_missing_or_ambiguous_route(
         store.get_canary_activation_snapshot(host="codex", query_hash=query_hash.upper())
     with pytest.raises(ValueError, match="supported execution host"):
         store.get_canary_activation_snapshot(host="unknown", query_hash=query_hash)
+
+
+def test_canary_activation_snapshot_projects_exact_preflight_failure(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.selector import pipeline
+
+    request = "Diagnose the exact preflight failure without retaining this request."
+    monkeypatch.setattr(
+        pipeline,
+        "route",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            TimeoutError("private provider timeout detail")
+        ),
+    )
+    with pytest.raises(TimeoutError, match="private provider timeout detail"):
+        run_preflight(
+            store,
+            session_id="failed-session",
+            trace_id="failed-trace",
+            user_message=request,
+            host="codex",
+            capability_receipt=native_adapter_capability_receipt(
+                "codex",
+                platform="windows" if os.name == "nt" else "linux",
+                session_id="failed-session",
+                trace_id="failed-trace",
+            ),
+        )
+
+    query_hash = sha256(request.encode("utf-8")).hexdigest()
+    snapshot = store.get_canary_activation_snapshot(host="codex", query_hash=query_hash)
+
+    assert snapshot["proven"] is False
+    assert snapshot["reason"] == "preflight_failed"
+    assert snapshot["session_id"] == "failed-session"
+    assert snapshot["trace_id"] == "failed-trace"
+    assert snapshot["cardinalities"]["routes"] == 0
+    assert snapshot["cardinalities"]["runs"] == 1
+    assert snapshot["cardinalities"]["preflight_failures"] == 1
+    assert snapshot["run"]["status"] == "preflight_failed"
+    assert snapshot["preflight_failure"]["stage"] == "routing"
+    assert snapshot["preflight_failure"]["reason_code"] == "routing_failed"
+    assert snapshot["preflight_failure"]["exception_category"] == "timeout"
+    encoded = json.dumps(snapshot, sort_keys=True)
+    assert request not in encoded
+    assert "private provider timeout detail" not in encoded

@@ -20,6 +20,10 @@ CANARY_INVOCATION_FAILURE_REASONS = frozenset(
         "codex_result_projection_unavailable",
         "codex_output_projection_unavailable",
         "codex_collaboration_projection_unavailable",
+        "codex_parent_spawn_missing",
+        "codex_parent_wait_missing",
+        "codex_native_tool_output_missing",
+        "codex_native_child_start_missing",
         "codex_hook_trust_not_ready",
         "codex_exec_timed_out",
     }
@@ -706,6 +710,400 @@ def codex_activation_failures(
     return tuple(dict.fromkeys(failures))
 
 
+def _codex_product_collaboration_spawns(
+    result: Mapping[str, Any],
+    *,
+    expected_parent_thread_id: str,
+) -> tuple[dict[str, tuple[Mapping[str, Any], str]], tuple[str, ...]]:
+    """Resolve exact completed product children by persisted work-unit identity."""
+
+    collaboration = result.get("collaboration")
+    if (
+        not isinstance(collaboration, Mapping)
+        or collaboration.get("schema") != "agency.codex-product-collaboration.v1"
+        or collaboration.get("evidence_source") != "persisted_rollout"
+    ):
+        return {}, ("Codex product collaboration evidence was not available",)
+    counts = {
+        name: collaboration.get(name)
+        for name in (
+            "spawn_count",
+            "wait_count",
+            "completed_wait_count",
+            "timed_out_wait_count",
+            "completed_child_count",
+            "failed_child_count",
+            "child_tool_call_count",
+            "parent_agent_message_count",
+            "unexpected_item_count",
+        )
+    }
+    if any(
+        not isinstance(value, int) or isinstance(value, bool) or value < 0
+        for value in counts.values()
+    ):
+        return {}, ("Codex product collaboration counts were invalid",)
+    spawn_count = counts["spawn_count"]
+    if counts["unexpected_item_count"] != 0:
+        return {}, ("Codex product parent performed a non-collaboration tool call",)
+    if (
+        not 1 <= spawn_count <= 16
+        or not 1 <= counts["wait_count"] <= 64
+        or counts["completed_wait_count"] < 1
+        or counts["completed_wait_count"] + counts["timed_out_wait_count"] != counts["wait_count"]
+        or counts["completed_child_count"] != spawn_count
+        or counts["failed_child_count"] != 0
+    ):
+        return {}, ("Codex product collaboration topology was incomplete",)
+    raw_calls = collaboration.get("calls")
+    if not isinstance(raw_calls, list) or len(raw_calls) != spawn_count:
+        return {}, ("Codex product spawn evidence did not match its child count",)
+    by_unit: dict[str, tuple[Mapping[str, Any], str]] = {}
+    receivers: set[str] = set()
+    parent_thread_id = ""
+    for row in raw_calls:
+        if (
+            not isinstance(row, Mapping)
+            or row.get("event_type") != "rollout_call_completed"
+            or row.get("tool") != "spawn_agent"
+            or row.get("status") != "completed"
+            or row.get("child_status") != "completed"
+            or row.get("evidence_source") != "persisted_rollout"
+        ):
+            return {}, ("Codex product spawn evidence was malformed",)
+        sender = str(row.get("sender_thread_id") or "")
+        if sender != expected_parent_thread_id:
+            return {}, ("Codex product child did not belong to the exact parent session",)
+        if parent_thread_id and sender != parent_thread_id:
+            return {}, ("Codex product spawns did not share one parent thread",)
+        parent_thread_id = sender
+        receiver_values = row.get("receiver_thread_ids")
+        if not isinstance(receiver_values, list) or len(receiver_values) != 1:
+            return {}, ("Codex product spawn did not identify one child",)
+        receiver = str(receiver_values[0] or "")
+        delivery = row.get("prompt_delivery")
+        if not receiver or receiver in receivers or not isinstance(delivery, Mapping):
+            return {}, ("Codex product child identity was missing or duplicated",)
+        work_unit_id = str(delivery.get("work_unit_id") or "")
+        if not work_unit_id or work_unit_id in by_unit:
+            return {}, ("Codex product work-unit delivery was missing or duplicated",)
+        receivers.add(receiver)
+        by_unit[work_unit_id] = (row, receiver)
+    return by_unit, ()
+
+
+def _codex_product_collaboration_projection(
+    result: Mapping[str, Any],
+    *,
+    expected_parent_thread_id: str,
+) -> dict[str, Any] | None:
+    """Return only the fixed content-free product collaboration report shape."""
+
+    collaboration = result.get("collaboration")
+    spawns, failures = _codex_product_collaboration_spawns(
+        result,
+        expected_parent_thread_id=expected_parent_thread_id,
+    )
+    if failures or not isinstance(collaboration, Mapping):
+        return None
+    aggregate_fields = (
+        "spawn_count",
+        "wait_count",
+        "completed_wait_count",
+        "timed_out_wait_count",
+        "completed_child_count",
+        "failed_child_count",
+        "child_tool_call_count",
+        "parent_agent_message_count",
+        "unexpected_item_count",
+    )
+    if any(
+        not isinstance(collaboration.get(field), int)
+        or isinstance(collaboration.get(field), bool)
+        or collaboration.get(field, -1) < 0
+        for field in aggregate_fields
+    ):
+        return None
+    calls = [
+        {
+            "id": row.get("id"),
+            "event_type": row.get("event_type"),
+            "tool": row.get("tool"),
+            "sender_thread_id": row.get("sender_thread_id"),
+            "receiver_thread_ids": list(row.get("receiver_thread_ids", [])),
+            "status": row.get("status"),
+            "prompt_delivery": {
+                field: delivery.get(field)
+                for field in (
+                    "host",
+                    "parent_session_id",
+                    "parent_trace_id",
+                    "tool_use_id",
+                    "work_unit_id",
+                    "specialist_slug",
+                    "specialist_version",
+                    "specialist_prompt_hash",
+                    "goal_hash",
+                )
+            },
+            "native_task_name": row.get("native_task_name"),
+            "child_status": row.get("child_status"),
+            "evidence_source": row.get("evidence_source"),
+        }
+        for row, _receiver in sorted(
+            spawns.values(),
+            key=lambda item: str(item[0].get("id") or ""),
+        )
+        for delivery in (
+            row.get("prompt_delivery") if isinstance(row.get("prompt_delivery"), Mapping) else {},
+        )
+    ]
+    return {
+        "schema": "agency.codex-product-collaboration.v1",
+        "calls": calls,
+        **{field: collaboration.get(field) for field in aggregate_fields},
+        "evidence_source": "persisted_rollout",
+    }
+
+
+def _product_rows_by_unit(
+    evidence: Mapping[str, Any],
+    field: str,
+    *,
+    expected_count: int,
+) -> dict[str, Mapping[str, Any]] | None:
+    values = evidence.get(field)
+    if not isinstance(values, list) or len(values) != expected_count:
+        return None
+    result: dict[str, Mapping[str, Any]] = {}
+    for value in values:
+        if not isinstance(value, Mapping):
+            return None
+        work_unit_id = str(value.get("work_unit_id") or "")
+        if not work_unit_id or work_unit_id in result:
+            return None
+        result[work_unit_id] = value
+    return result
+
+
+def _codex_product_loads_by_grant(
+    values: object,
+) -> tuple[dict[str, Mapping[str, Any]], tuple[str, ...]]:
+    if not isinstance(values, list):
+        return {}, ("Codex product specialist load evidence was unavailable",)
+    result: dict[str, Mapping[str, Any]] = {}
+    failures: list[str] = []
+    for value in values:
+        if not isinstance(value, Mapping):
+            failures.append("Codex product specialist load evidence was malformed")
+            continue
+        receipt_id = str(value.get("activation_receipt_id") or "")
+        if not receipt_id or receipt_id in result:
+            failures.append("Codex product specialist loads were missing or duplicated")
+            continue
+        result[receipt_id] = value
+    return result, tuple(dict.fromkeys(failures))
+
+
+def _codex_product_unit_failures(
+    *,
+    evidence: Mapping[str, Any],
+    plan: Mapping[str, Any],
+    delegation: Mapping[str, Any],
+    grant: Mapping[str, Any],
+    consumption: Mapping[str, Any],
+    worker: Mapping[str, Any],
+    spawn: Mapping[str, Any],
+    receiver_id: str,
+    specialist_load: Mapping[str, Any] | None,
+    run: Mapping[str, Any],
+    finalization: Mapping[str, Any],
+    response_hash: str,
+) -> tuple[str, ...]:
+    failures: list[str] = []
+    work_unit_id = str(plan.get("work_unit_id") or "")
+    specialist_slug = str(plan.get("recommended_agent") or "")
+    specialist_version = str(grant.get("specialist_version") or "")
+    specialist_prompt_hash = str(grant.get("specialist_prompt_hash") or "")
+    delivery = spawn.get("prompt_delivery")
+    expected_delivery = {
+        "host": "codex",
+        "parent_session_id": str(evidence.get("session_id") or ""),
+        "parent_trace_id": str(evidence.get("trace_id") or ""),
+        "work_unit_id": work_unit_id,
+        "specialist_slug": specialist_slug,
+        "specialist_version": specialist_version,
+        "specialist_prompt_hash": specialist_prompt_hash,
+        "goal_hash": str(plan.get("goal_hash") or ""),
+    }
+    if not isinstance(delivery, Mapping) or any(
+        delivery.get(field) != expected for field, expected in expected_delivery.items()
+    ):
+        return (f"Codex product unit {work_unit_id} had mismatched child delivery",)
+    from agency_runtime.core.delegation.native_labels import (
+        codex_task_name_for_work_unit,
+    )
+
+    expected_task_name = codex_task_name_for_work_unit(work_unit_id)
+    if spawn.get("native_task_name") != expected_task_name:
+        failures.append(f"Codex product unit {work_unit_id} used a different native task")
+    if grant.get("grant_origin") != "native_hook" or grant.get("tool_use_id") != delivery.get(
+        "tool_use_id"
+    ):
+        failures.append(f"Codex product unit {work_unit_id} lacked its native-hook grant")
+    consumed_identity = (
+        str(consumption.get("worker_id") or ""),
+        str(consumption.get("native_run_id") or ""),
+    )
+    allowed_identities = {
+        (f"task:{expected_task_name}", f"codex-task:{expected_task_name}"),
+        (receiver_id, f"codex-agent:{receiver_id}"),
+    }
+    if consumed_identity not in allowed_identities:
+        failures.append(f"Codex product unit {work_unit_id} had mismatched child identity")
+    if specialist_load is None:
+        failures.append(f"Codex product unit {work_unit_id} lacked its specialist load")
+        return tuple(failures)
+    failures.extend(
+        _codex_receipt_link_failures(
+            evidence=evidence,
+            run=run,
+            plan=plan,
+            delegation=delegation,
+            grant=grant,
+            consumption=consumption,
+            worker=worker,
+            specialist_load=specialist_load,
+            finalization=finalization,
+            receiver_id=receiver_id,
+            consumed_identity=consumed_identity,
+            response_hash=response_hash,
+        )
+    )
+    if delegation.get("status") != "completed" or not delegation.get("completed_at"):
+        failures.append(f"Codex product unit {work_unit_id} did not complete delegation")
+    return tuple(failures)
+
+
+def codex_product_activation_failures(
+    *,
+    result: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+    response_hash: str,
+) -> tuple[str, ...]:
+    """Require every exact product work unit to complete through one native child."""
+
+    if evidence.get("schema") != "agency.canary-activation-evidence.v1":
+        return ("exact Codex product activation evidence contract was not available",)
+    if evidence.get("proven") is not True:
+        reason = str(evidence.get("reason") or "not_proven")
+        return (f"exact Codex product activation evidence was not proven ({reason})",)
+    raw_plans = evidence.get("unit_agent_plan")
+    if (
+        not isinstance(raw_plans, list)
+        or not 1 <= len(raw_plans) <= 16
+        or any(not isinstance(item, Mapping) for item in raw_plans)
+    ):
+        return ("Codex product unit-agent plan was missing or invalid",)
+    plans: dict[str, Mapping[str, Any]] = {}
+    for raw in raw_plans:
+        work_unit_id = str(raw.get("work_unit_id") or "")
+        if not work_unit_id or work_unit_id in plans:
+            return ("Codex product unit-agent plan identities were missing or duplicated",)
+        plans[work_unit_id] = raw
+    unit_count = len(plans)
+    cardinalities = evidence.get("cardinalities")
+    expected_cardinalities = {
+        "routes": 1,
+        "runs": 1,
+        "traces": 1,
+        "unit_agent_plan": unit_count,
+        "delegations": unit_count,
+        "activation_grants": unit_count,
+        "activation_consumptions": unit_count,
+        "worker_runs": unit_count,
+        "specialist_loads": unit_count,
+        "finalizations": 1,
+        "preflight_failures": 0,
+    }
+    failures: list[str] = []
+    if not isinstance(cardinalities, Mapping) or any(
+        cardinalities.get(field) != count for field, count in expected_cardinalities.items()
+    ):
+        failures.append("Codex product did not prove one complete activation per planned unit")
+    run = evidence.get("run") if isinstance(evidence.get("run"), Mapping) else None
+    route = evidence.get("route") if isinstance(evidence.get("route"), Mapping) else None
+    finalization = _codex_accepted_finalization(evidence)
+    delegations = _product_rows_by_unit(evidence, "delegations", expected_count=unit_count)
+    grants = _product_rows_by_unit(evidence, "activation_grants", expected_count=unit_count)
+    consumptions = _product_rows_by_unit(
+        evidence,
+        "activation_consumptions",
+        expected_count=unit_count,
+    )
+    workers = _product_rows_by_unit(evidence, "worker_runs", expected_count=unit_count)
+    collaboration, collaboration_failures = _codex_product_collaboration_spawns(
+        result,
+        expected_parent_thread_id=str(evidence.get("session_id") or ""),
+    )
+    failures.extend(collaboration_failures)
+    specialist_loads, load_failures = _codex_product_loads_by_grant(
+        evidence.get("specialist_loads")
+    )
+    failures.extend(load_failures)
+    if any(
+        item is None
+        for item in (run, route, finalization, delegations, grants, consumptions, workers)
+    ):
+        failures.append("Codex product evidence graph was incomplete")
+        return tuple(dict.fromkeys(failures))
+    if len(collaboration) != unit_count:
+        failures.append("Codex product native child count did not match its planned units")
+    selected = {
+        str(value)
+        for field in ("selected_ids", "companion_ids")
+        for value in (route.get(field) if isinstance(route.get(field), list) else [])
+    }
+    planned_slugs = {str(plan.get("recommended_agent") or "") for plan in plans.values()}
+    if (
+        route.get("status") != "accepted"
+        or route.get("query_hash") != evidence.get("query_hash")
+        or not planned_slugs
+        or "" in planned_slugs
+        or not planned_slugs.issubset(selected)
+    ):
+        failures.append("Codex product route did not contain every planned specialist")
+    for work_unit_id, plan in plans.items():
+        delegation = delegations.get(work_unit_id)
+        grant = grants.get(work_unit_id)
+        consumption = consumptions.get(work_unit_id)
+        worker = workers.get(work_unit_id)
+        spawn_entry = collaboration.get(work_unit_id)
+        if any(item is None for item in (delegation, grant, consumption, worker, spawn_entry)):
+            failures.append(f"Codex product unit {work_unit_id} lacked exact execution evidence")
+            continue
+        spawn, receiver_id = spawn_entry
+        failures.extend(
+            _codex_product_unit_failures(
+                evidence=evidence,
+                plan=plan,
+                delegation=delegation,
+                grant=grant,
+                consumption=consumption,
+                worker=worker,
+                spawn=spawn,
+                receiver_id=receiver_id,
+                specialist_load=specialist_loads.get(str(grant.get("id") or "")),
+                run=run,
+                finalization=finalization,
+                response_hash=response_hash,
+            )
+        )
+    if len(specialist_loads) != unit_count:
+        failures.append("Codex product specialist load count did not match its planned units")
+    return tuple(dict.fromkeys(failures))
+
+
 def profile_is_proven(
     host: str,
     result_scope: str,
@@ -787,10 +1185,13 @@ def evaluate_proof(
     evidence: dict[str, Any],
     default_profile_scope: str,
     mode: str = "agency",
+    activation_contract: str = "canary",
 ) -> CanaryProof:
     from agency_runtime.core.header.contract import parse_header, validate_header
 
     facade = _facade()
+    if activation_contract not in {"canary", "product"}:
+        raise ValueError("unsupported Codex activation proof contract")
     response = facade._response_text(result.get("output"))
     response_nonempty = bool(response.strip())
     header_valid, header_missing = validate_header(response)
@@ -802,7 +1203,12 @@ def evaluate_proof(
     plugin_invoked = bool(evidence.get("correlated_trace_ids"))
     activation_failures: tuple[str, ...] | None = None
     if mode == "agency" and host == "codex":
-        activation_failures = codex_activation_failures(
+        activation_validator = (
+            codex_product_activation_failures
+            if activation_contract == "product"
+            else codex_activation_failures
+        )
+        activation_failures = activation_validator(
             result=result,
             evidence=evidence,
             response_hash=hashlib.sha256(
@@ -843,6 +1249,12 @@ def evaluate_proof(
             )
         )
         header_passed = header_valid
+    collaboration_projection = result.get("collaboration")
+    if activation_contract == "product":
+        collaboration_projection = _codex_product_collaboration_projection(
+            result,
+            expected_parent_thread_id=str(evidence.get("session_id") or ""),
+        )
     invocation = {
         "backend": result.get("backend", host),
         "status": result.get("status"),
@@ -858,8 +1270,10 @@ def evaluate_proof(
             isolated_plugin,
             plugin_invoked=plugin_invoked,
         ),
-        "collaboration": result.get("collaboration"),
+        "collaboration": collaboration_projection,
     }
+    if activation_contract == "product":
+        invocation["activation_contract"] = "product"
     if mode == "agency" and host == "codex":
         cardinalities = evidence.get("cardinalities")
         finalization_count = (
@@ -879,6 +1293,14 @@ def evaluate_proof(
         invocation["hook_trust"] = sanitize_codex_hook_trust_report(result["hook_trust"])
     if type(result.get("model_invocation_attempted")) is bool:
         invocation["model_invocation_attempted"] = result["model_invocation_attempted"]
+    from agency_runtime.core.canary_backends import (
+        sanitize_codex_collaboration_diagnostic,
+    )
+
+    if collaboration_diagnostic := sanitize_codex_collaboration_diagnostic(
+        result.get("collaboration_diagnostic")
+    ):
+        invocation["collaboration_diagnostic"] = collaboration_diagnostic
     from agency_runtime.core.codex_activation_verification import (
         sanitize_codex_hook_event_diagnostics,
     )

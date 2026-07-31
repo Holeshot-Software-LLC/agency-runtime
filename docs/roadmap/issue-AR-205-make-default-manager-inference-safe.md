@@ -9,6 +9,7 @@ related:
   - README.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
+  - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/decisions/0065-keep-compact-resident-manager-kernel.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
@@ -21,7 +22,7 @@ epic: product
 issue_id: AR-205
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
-depends_on: [AR-204]
+depends_on: [AR-204, AR-207]
 blocks: []
 ---
 
@@ -186,6 +187,13 @@ the exact installed product proof and final README-story acceptance.
   skips, 110 dashboard tests, every routing gate, all 53 decision mutations
   with unchanged source, Ruff across 602 files, 579 validated docs, and clean
   diff integrity.
+- PR 195 merged exact revision `6b49f17d6787823f9ba78a8f09383001b6a77535`.
+  Its activation proof passed with inference-selected `code-reviewer`, native
+  delegation, and zero corrections. Product trial
+  `ar205-6b49f17-readme-01` then accepted nine specialists but the parent
+  launched none. This confirms inference-first team selection works for the
+  README request; AR-207 owns the distinct missing delegation execution and
+  content-free failure-diagnostic boundary before another exact-build trial.
 
 ## Acceptance
 

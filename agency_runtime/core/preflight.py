@@ -22,6 +22,13 @@ from agency_runtime.core.host_capabilities import (
     HostCapabilityReceipt,
     current_host_capability_receipt,
 )
+from agency_runtime.core.preflight_failure import (
+    PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
+    default_preflight_failure_reason,
+    preflight_exception_category,
+    preflight_routing_failure_reason,
+    project_preflight_provider_attempts,
+)
 from agency_runtime.core.preflight_recipe import (
     MAX_PREFLIGHT_CONTEXT_CHARS as _MAX_PREFLIGHT_CONTEXT_CHARS,
 )
@@ -75,6 +82,48 @@ _MAX_CHILD_ROUTE_TIMEOUT_SECONDS = 60.0
 _CHILD_ROUTE_LEASE_MARGIN_SECONDS = 5.0
 _CHILD_ROUTE_BUNDLE_VERSION = 2
 _DIRECT_NATIVE_CHILD_HOSTS = frozenset({"hermes", "openclaw"})
+
+
+class _PreflightFailureDiagnostics:
+    """Track only allowlisted state needed if this attempt becomes terminal."""
+
+    __slots__ = ("provider_attempts", "reason_code", "stage")
+
+    def __init__(self) -> None:
+        self.stage = "lifecycle"
+        self.reason_code = default_preflight_failure_reason(self.stage)
+        self.provider_attempts: list[dict[str, Any]] = []
+
+    def enter(self, stage: str) -> None:
+        self.stage = stage
+        self.reason_code = default_preflight_failure_reason(stage)
+
+    def observe_routing(self, routing: Mapping[str, Any]) -> None:
+        attempts = project_preflight_provider_attempts(routing.get("provider_attempts"))
+        self.provider_attempts = [] if attempts is None else attempts
+        self.reason_code = preflight_routing_failure_reason(routing)
+
+    def mark_substantive_specialist_unavailable(self, routing: Mapping[str, Any]) -> None:
+        reason = preflight_routing_failure_reason(routing)
+        self.reason_code = (
+            reason
+            if reason
+            in {
+                "workforce_provider_unavailable",
+                "workforce_inference_failed",
+                "child_routing_unavailable",
+            }
+            else "substantive_specialist_unavailable"
+        )
+
+    def receipt(self, error: BaseException) -> dict[str, Any]:
+        return {
+            "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
+            "stage": self.stage,
+            "reason_code": self.reason_code,
+            "exception_category": preflight_exception_category(error),
+            "provider_attempts": self.provider_attempts,
+        }
 
 
 def _normalize_parent_correlation(
@@ -1263,6 +1312,7 @@ def _prepare_preflight_evidence(
     parent_session_id: str = "",
     parent_trace_id: str = "",
     route_request: Any = None,
+    diagnostics: _PreflightFailureDiagnostics | None = None,
 ) -> tuple[
     dict[str, Any],
     dict[str, Any],
@@ -1278,6 +1328,8 @@ def _prepare_preflight_evidence(
         hydrate_selected_specialist_references,
     )
 
+    if diagnostics is not None:
+        diagnostics.enter("routing")
     routing, continuation_snapshot, classification = _resolve_preflight_routing(
         store,
         session_id=session_id,
@@ -1301,7 +1353,9 @@ def _prepare_preflight_evidence(
     )
     routing = dict(routing)
     routing["trace_id"] = trace_id
-    _require_substantive_specialist(routing, classification)
+    if diagnostics is not None:
+        diagnostics.observe_routing(routing)
+    _require_substantive_specialist(routing, classification, diagnostics)
     hydration_store, hydration_catalog = _pending_hiring_specialist_view(
         store,
         catalog,
@@ -1311,6 +1365,8 @@ def _prepare_preflight_evidence(
     with ExitStack() as child_route_guard:
         if isinstance(cache_owner, Mapping):
             child_route_guard.callback(_abort_child_routing_bundle, store, routing)
+        if diagnostics is not None:
+            diagnostics.enter("assignment")
         unit_assignment_agents, suggestions = _assignment_recipe(
             hydration_catalog,
             routing,
@@ -1332,7 +1388,9 @@ def _prepare_preflight_evidence(
         # Isolated delivery may reject a selected identity that lacks an exact
         # child-activation plan. Recheck the normalized route so a malformed
         # pre-plan selection cannot bypass the no-generalist boundary.
-        _require_substantive_specialist(routing, classification)
+        _require_substantive_specialist(routing, classification, diagnostics)
+        if diagnostics is not None:
+            diagnostics.enter("context_hydration")
         if delivery_mode == "isolated":
             specialist_budget = MAX_SPECIALIST_CONTEXT_CHARS
         else:
@@ -1375,6 +1433,8 @@ def _prepare_preflight_evidence(
             suggestions=suggestions,
             loaded_slugs=loaded.slugs,
         )
+        if diagnostics is not None:
+            diagnostics.enter("context_delivery")
         routing_recipe = _content_free_routing_recipe(routing, trace_id=trace_id)
         specialist_refs, selection_refs = _recipe_revision_refs(
             hydration_store,
@@ -1430,6 +1490,7 @@ def _prepare_preflight_evidence(
 def _require_substantive_specialist(
     routing: Mapping[str, Any],
     classification: TurnClassification,
+    diagnostics: _PreflightFailureDiagnostics | None = None,
 ) -> None:
     """Prevent a resident-only parent model from answering substantive work.
 
@@ -1450,6 +1511,8 @@ def _require_substantive_specialist(
     )
     if selected:
         return
+    if diagnostics is not None:
+        diagnostics.mark_substantive_specialist_unavailable(routing)
     status = " ".join(str(routing.get("status") or "unavailable").split())[:64]
     source = " ".join(str(routing.get("source") or "unavailable").split())[:64]
     raise RuntimeError(
@@ -1564,7 +1627,9 @@ def run_preflight(
     normalized_reservation_token = str(reservation_token or "").strip()
     attempt_token = ""
     attempt_owner = False
+    diagnostics = _PreflightFailureDiagnostics()
     try:
+        diagnostics.enter("routing_snapshot")
         routing_snapshot = capture_routing_snapshot(store, config)
         cfg = routing_snapshot.config
         delivery_mode, context_limit = preflight_delivery_policy(
@@ -1592,6 +1657,7 @@ def run_preflight(
         )
         persisted_message = persisted_source if cfg.observability.capture_content else ""
         lease_seconds = hook_timeout_seconds(cfg)
+        diagnostics.enter("lifecycle")
         lifecycle = store.begin_preflight_attempt(
             trace_id=turn_trace_id,
             session_id=normalized_session,
@@ -1617,41 +1683,49 @@ def run_preflight(
         if not attempt_token:
             raise RuntimeError("preflight attempt identity was not persisted")
         if outcome == "reused_ready":
+            diagnostics.enter("ready_read")
+            reused_result = _read_ready_result(
+                store,
+                session_id=normalized_session,
+                trace_id=turn_trace_id,
+                attempt_token=attempt_token,
+                user_message=user_message,
+                config=cfg,
+                pipeline=pipeline,
+            )
+            diagnostics.enter("direct_activation")
             return _activate_or_close_direct_native_child(
                 store,
-                _read_ready_result(
-                    store,
-                    session_id=normalized_session,
-                    trace_id=turn_trace_id,
-                    attempt_token=attempt_token,
-                    user_message=user_message,
-                    config=cfg,
-                    pipeline=pipeline,
-                ),
+                reused_result,
                 **direct_activation_arguments,
             )
         if outcome == "reused_in_progress":
+            diagnostics.enter("ready_read")
+            reused_result = _await_ready_result(
+                store,
+                session_id=normalized_session,
+                trace_id=turn_trace_id,
+                attempt_token=attempt_token,
+                user_message=user_message,
+                config=cfg,
+                pipeline=pipeline,
+                timeout_seconds=lease_seconds,
+            )
+            diagnostics.enter("direct_activation")
             return _activate_or_close_direct_native_child(
                 store,
-                _await_ready_result(
-                    store,
-                    session_id=normalized_session,
-                    trace_id=turn_trace_id,
-                    attempt_token=attempt_token,
-                    user_message=user_message,
-                    config=cfg,
-                    pipeline=pipeline,
-                    timeout_seconds=lease_seconds,
-                ),
+                reused_result,
                 **direct_activation_arguments,
             )
         attempt_owner = outcome in {"started", "recovered_started"}
+        diagnostics.enter("resident_binding")
         resident_binding, resident_context = _resident_binding_for_preflight(
             store,
             session_id=normalized_session,
             trace_id=turn_trace_id,
             host=normalized_host,
         )
+        diagnostics.enter("routing_snapshot")
         routing_snapshot = _ensure_preflight_catalog(
             store,
             cfg,
@@ -1671,6 +1745,7 @@ def run_preflight(
         # it identically. The request is valid for reuse because catalog, cfg,
         # host/platform/capabilities, and capability_receipt are the same
         # objects threaded by alias into the eventual route() call.
+        diagnostics.enter("route_request")
         route_request = pipeline.build_route_request(
             normalized_session,
             user_message,
@@ -1711,6 +1786,7 @@ def run_preflight(
             "pipeline": pipeline,
             "parent_session_id": normalized_parent_session,
             "parent_trace_id": normalized_parent_trace,
+            "diagnostics": diagnostics,
         }
         recipe, routing_recipe, suggestions, specialist_refs, classification = (
             _prepare_with_bounded_continuation_reroute(
@@ -1719,6 +1795,7 @@ def run_preflight(
                 prepare_arguments=prepare_arguments,
             )
         )
+        diagnostics.enter("ready_commit")
         ready = _mark_ready_with_binding_replan(
             store,
             session_id=normalized_session,
@@ -1761,8 +1838,10 @@ def run_preflight(
                     pipeline=pipeline,
                     parent_session_id=normalized_parent_session,
                     parent_trace_id=normalized_parent_trace,
+                    diagnostics=diagnostics,
                 )
             )
+            diagnostics.enter("ready_commit")
             ready = _mark_ready_with_binding_replan(
                 store,
                 session_id=normalized_session,
@@ -1782,17 +1861,20 @@ def run_preflight(
             "replay",
         }:
             raise RuntimeError("preflight attempt became terminal before it reached ready")
+        diagnostics.enter("ready_read")
+        ready_result = _read_ready_result(
+            store,
+            session_id=normalized_session,
+            trace_id=turn_trace_id,
+            attempt_token=attempt_token,
+            user_message=user_message,
+            config=cfg,
+            pipeline=pipeline,
+        )
+        diagnostics.enter("direct_activation")
         return _activate_or_close_direct_native_child(
             store,
-            _read_ready_result(
-                store,
-                session_id=normalized_session,
-                trace_id=turn_trace_id,
-                attempt_token=attempt_token,
-                user_message=user_message,
-                config=cfg,
-                pipeline=pipeline,
-            ),
+            ready_result,
             **direct_activation_arguments,
         )
     except Exception as error:
@@ -1806,6 +1888,7 @@ def run_preflight(
                     trace_id=turn_trace_id,
                     attempt_token=attempt_token,
                     status="preflight_failed",
+                    failure_receipt=diagnostics.receipt(error),
                 )
             elif not attempt_token and normalized_reservation_token:
                 store.abandon_preflight_reservation(
@@ -1813,6 +1896,7 @@ def run_preflight(
                     trace_id=turn_trace_id,
                     reservation_token=normalized_reservation_token,
                     status="preflight_failed",
+                    failure_receipt=diagnostics.receipt(error),
                 )
         except Exception as cleanup_error:
             raise error from cleanup_error

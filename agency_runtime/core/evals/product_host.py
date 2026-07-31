@@ -278,6 +278,7 @@ def _codex_product_backend(
         exec_options=_codex_options(model),
         require_existing_store=True,
         require_exact_activation_rollout=True,
+        rollout_contract="product",
         hook_event_diagnostics=master_enabled,
         trusted_workdir=str(workspace.resolve(strict=True)),
         trust_mode="autonomous_bypass",
@@ -393,6 +394,7 @@ def execute_product_host(
             evidence=evidence,
             default_profile_scope="isolated-profile",
             mode=normalized_mode,
+            activation_contract="product",
         )
     except Exception as exc:
         return _failed_execution(
@@ -439,7 +441,13 @@ def execute_product_host(
             "failures": list(failures),
         },
         requested_model=requested_model,
-        actual_model="",
+        actual_model=str(
+            (
+                proof.invocation.get("header", {})
+                if isinstance(proof.invocation.get("header"), Mapping)
+                else {}
+            ).get("actual_model_selected", "")
+        ),
         router="",
         response_summary=response_summary,
         error="; ".join(failures)[:_MAX_RESPONSE_SUMMARY_CHARS],

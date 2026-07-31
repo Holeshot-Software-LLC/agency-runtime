@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
+  - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
@@ -35,18 +36,16 @@ acceptance; this capsule records only current proof and the next package.
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 193 merged exact revision `f0fde9ee929e13587f62dd85147cf63b18b5d37e`;
-  exact build `0.1.0+gf0fde9ee929e` is installed.
-- Current-profile supported-bypass activation selected `code-reviewer` through
-  real inference and completed grant, load, native spawn/wait, delegation,
-  worker run, and accepted finalization with zero corrections.
-- The only product trial for that build, `ar205-f0fde9e-readme-01`, is terminal
-  `NO-GO`; it reached `preflight_failed` after 101.1 seconds and left the
-  workspace empty. Do not rerun that build.
-- Exact-prompt private replay proves inference authored 11 specialized units
-  and staffed 10. It explicitly declared the documentation unit uncovered, but
-  gap hiring was never entered because the product harness was mistaken for
-  the read-only activation canary.
+- PR 195 merged exact revision `6b49f17d6787823f9ba78a8f09383001b6a77535`;
+  exact build `0.1.0+g6b49f17d6787` is installed.
+- Supported-bypass activation selected `code-reviewer` through inference and
+  completed grant, load, native spawn/wait, delegation, worker run, and accepted
+  finalization with zero corrections.
+- Product trial `ar205-6b49f17-readme-01` accepted eight specialized units and
+  nine specialists. It then launched none, published no response/header, and
+  left the workspace empty. The build's trial allowance is consumed.
+- AR-207 tracker issue #196 owns the missing delegation execution and adjacent
+  content-free failure-diagnostic boundary.
 - Owner-untracked `docs/analysis/2026-07-25-deep-audit-findings.md` and `uv.lock`
   remain untouched.
 
@@ -116,20 +115,18 @@ acceptance; this capsule records only current proof and the next package.
   byte-bounds the exact context envelope before ready and preserves version-11
   full-goal rendering. Four direct tests, 113 affected tests with one skip, six
   exact replay nodes with one skip, and both new mutations pass.
-- Focused re-review of head 60111f8 found unbounded non-ASCII model metadata
-  could overflow the appended Codex header. The source rejects it above 512
-  UTF-8 bytes before reservation or preflight; its direct regression, isolated
-  mutation, and 238 affected tests with one skip pass. The committed rerun
-  passes 636 named tests with 6 skips, 110 dashboard tests, every routing gate,
-  all 53 mutations with unchanged source, Ruff across 602 files, 579 validated
-  docs, and diff integrity.
+- PR 195's reviewed head passed 238 affected tests, the 636-test named spine
+  with 6 skips, 110 dashboard tests, every routing gate, all 53 mutations,
+  Ruff, 579 documentation files, and diff integrity before merge.
+- Product trace `019fb832-5f01-75d0-a3fe-e51bb2816771` is positive evidence
+  that inference designed and selected a defensible specialist team. Its zero
+  grants, loads, workers, and spawn/wait events isolate execution after staffing.
 
 ## exact-blocker
 
-No current build proves a specialist team, native delegation, workspace write,
-product artifacts, and zero corrections in one end-to-end run. Product routing
-and the repaired context policy are fully fast-green; push and focused P1 re-
-review, merge, exact install, and the new-build trial remain.
+Inference-first product staffing is now proven on the exact installed build.
+No build yet proves that team, native delegation, workspace artifacts, and zero
+corrections in the same product turn; execution stops after accepted staffing.
 
 ## same-task-continuity
 
@@ -139,13 +136,12 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Record exact fast evidence, push, reply to the P1, and complete the allowed
-   focused high-severity re-review.
-2. Merge and exact-install the context policy plus AR-206, then prove native
-   activation and run one supported-bypassed product trial for the new build.
-3. Require zero corrections, a real specialist or hired-contractor chain,
-   workspace-write proof, and product artifacts; then generate the local report
-   and OpenClaw handoff.
+1. Persist bounded content-free preflight/delegation diagnostics under AR-207.
+2. Repair the first demonstrated no-spawn cause; run focused tests, mutations,
+   and the named fast spine.
+3. Review, merge, exact-install, and spend one trial only on the new build.
+4. Require zero corrections, native execution, workspace artifacts, then emit
+   the local report and OpenClaw handoff.
 
 ## verification
 

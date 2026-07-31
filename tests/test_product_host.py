@@ -11,7 +11,9 @@ import pytest
 import tomllib
 
 from agency_runtime.core import canary
+from agency_runtime.core.canary_proof import codex_product_activation_failures
 from agency_runtime.core.delegation.backends import BoundedProcessResult
+from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
 from agency_runtime.core.evals import product_host
 from agency_runtime.core.evals.product_host import execute_product_host
 
@@ -31,6 +33,246 @@ def _workspace_trust(workdir: str) -> dict[str, object]:
         "workspace_hash": "sha256:" + hashlib.sha256(normalized.encode("utf-8")).hexdigest(),
         "persistent_profile_changed": False,
     }
+
+
+def _product_response() -> str:
+    return (
+        "Agency/Agencies loaded: agency-steward, python-application-engineer, "
+        "software-test-engineer\n"
+        "Agency/Agencies delegated: python-application-engineer via "
+        "generic-worker/spawn_agent, software-test-engineer via "
+        "generic-worker/spawn_agent\n"
+        "Skills loaded: none - no skill required\n"
+        "Actual Model selected: codex-subscription/gpt-5.6-sol\n"
+        "Recruited via: inference\n"
+        "Why: Two exact product units required implementation and test specialists.\n"
+        "How it shaped outcome: Both specialist children completed their exact units.\n\n"
+        "The product build completed."
+    )
+
+
+def _two_unit_product_evidence(query_hash: str, response: str) -> dict[str, object]:
+    session_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    trace_id = "product-trace"
+    finalization_id = "product-finalization"
+    specs = (
+        (
+            "unit-product-one",
+            "python-application-engineer",
+            "019fa6a6-a197-7a83-b3fb-d2c20411f608",
+        ),
+        (
+            "unit-product-two",
+            "software-test-engineer",
+            "019fa6a6-b208-7b94-c40c-e3d315220719",
+        ),
+    )
+    plans: list[dict[str, object]] = []
+    delegations: list[dict[str, object]] = []
+    grants: list[dict[str, object]] = []
+    consumptions: list[dict[str, object]] = []
+    workers: list[dict[str, object]] = []
+    loads: list[dict[str, object]] = []
+    calls: list[dict[str, object]] = []
+    for index, (unit, specialist, receiver_id) in enumerate(specs, start=1):
+        goal_hash = hashlib.sha256(f"goal-{index}".encode()).hexdigest()
+        prompt_hash = hashlib.sha256(f"prompt-{index}".encode()).hexdigest()
+        grant_id = f"grant-id-{index}"
+        grant_receipt_id = f"grant-receipt-{index}"
+        delegation_id = f"delegation-{index}"
+        tool_use_id = f"spawn-call-{index}"
+        task_name = codex_task_name_for_work_unit(unit)
+        plans.append(
+            {
+                "work_unit_id": unit,
+                "recommended_agent": specialist,
+                "goal_hash": goal_hash,
+                "delegation_strength": "strongly_preferred",
+            }
+        )
+        grants.append(
+            {
+                "id": grant_receipt_id,
+                "grant_id": grant_id,
+                "grant_origin": "native_hook",
+                "tool_use_id": tool_use_id,
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "work_unit_id": unit,
+                "specialist_slug": specialist,
+                "specialist_version": "v1",
+                "specialist_prompt_hash": prompt_hash,
+                "consumed_at": "2026-07-31T14:00:01Z",
+            }
+        )
+        consumptions.append(
+            {
+                "grant_id": grant_id,
+                "legacy_activation_receipt_id": grant_receipt_id,
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "work_unit_id": unit,
+                "specialist_slug": specialist,
+                "specialist_version": "v1",
+                "specialist_prompt_hash": prompt_hash,
+                "worker_id": receiver_id,
+                "native_run_id": f"codex-agent:{receiver_id}",
+            }
+        )
+        delegations.append(
+            {
+                "id": delegation_id,
+                "host": "codex",
+                "backend": "spawn_agent",
+                "work_unit_id": unit,
+                "recommended_agent": specialist,
+                "status": "completed",
+                "activation_receipt_id": grant_receipt_id,
+                "retrieved_specialist_slug": specialist,
+                "retrieved_specialist_version": "v1",
+                "retrieved_specialist_prompt_hash": prompt_hash,
+                "executed_worker_id": receiver_id,
+                "native_run_id": f"codex-agent:{receiver_id}",
+                "completed_at": "2026-07-31T14:01:00Z",
+            }
+        )
+        workers.append(
+            {
+                "delegation_event_id": delegation_id,
+                "backend": "spawn_agent",
+                "host": "codex",
+                "work_unit_id": unit,
+                "worker_id": receiver_id,
+                "native_run_id": f"codex-agent:{receiver_id}",
+                "started_at": "2026-07-31T14:00:01Z",
+                "ended_at": "2026-07-31T14:01:00Z",
+            }
+        )
+        loads.append(
+            {
+                "agent_slug": specialist,
+                "activation_receipt_id": grant_receipt_id,
+            }
+        )
+        calls.append(
+            {
+                "id": f"spawn-item-{index}",
+                "event_type": "rollout_call_completed",
+                "tool": "spawn_agent",
+                "sender_thread_id": session_id,
+                "receiver_thread_ids": [receiver_id],
+                "status": "completed",
+                "prompt_delivery": {
+                    "host": "codex",
+                    "parent_session_id": session_id,
+                    "parent_trace_id": trace_id,
+                    "tool_use_id": tool_use_id,
+                    "work_unit_id": unit,
+                    "specialist_slug": specialist,
+                    "specialist_version": "v1",
+                    "specialist_prompt_hash": prompt_hash,
+                    "goal_hash": goal_hash,
+                },
+                "native_task_name": task_name,
+                "child_status": "completed",
+                "evidence_source": "persisted_rollout",
+            }
+        )
+    return {
+        "schema": "agency.canary-activation-evidence.v1",
+        "proven": True,
+        "status": "resolved",
+        "reason": "exact_route_resolved",
+        "query_hash": query_hash,
+        "session_id": session_id,
+        "trace_id": trace_id,
+        "cardinalities": {
+            "routes": 1,
+            "runs": 1,
+            "traces": 1,
+            "unit_agent_plan": 2,
+            "delegations": 2,
+            "activation_grants": 2,
+            "activation_consumptions": 2,
+            "worker_runs": 2,
+            "specialist_loads": 2,
+            "finalizations": 1,
+            "preflight_failures": 0,
+        },
+        "run": {
+            "status": "completed",
+            "ended_at": "2026-07-31T14:01:01Z",
+            "terminal_finalization_id": finalization_id,
+        },
+        "route": {
+            "status": "accepted",
+            "query_hash": query_hash,
+            "selected_ids": [item[1] for item in specs],
+            "companion_ids": [],
+        },
+        "unit_agent_plan": plans,
+        "delegations": delegations,
+        "activation_grants": grants,
+        "activation_consumptions": consumptions,
+        "worker_runs": workers,
+        "specialist_loads": loads,
+        "finalizations": [
+            {
+                "id": finalization_id,
+                "action": "accept",
+                "terminal_status": "completed",
+                "response_hash": hashlib.sha256(response.encode()).hexdigest(),
+            }
+        ],
+        "collaboration": {
+            "schema": "agency.codex-product-collaboration.v1",
+            "calls": calls,
+            "spawn_count": 2,
+            "wait_count": 2,
+            "completed_wait_count": 2,
+            "timed_out_wait_count": 0,
+            "completed_child_count": 2,
+            "failed_child_count": 0,
+            "child_tool_call_count": 4,
+            "parent_agent_message_count": 1,
+            "unexpected_item_count": 0,
+            "evidence_source": "persisted_rollout",
+        },
+    }
+
+
+def test_product_proof_rejects_a_child_from_a_different_parent_session() -> None:
+    response = _product_response()
+    evidence = _two_unit_product_evidence("a" * 64, response)
+    collaboration = evidence["collaboration"]
+    assert isinstance(collaboration, dict)
+    calls = collaboration["calls"]
+    assert isinstance(calls, list)
+    calls[0]["sender_thread_id"] = "019fa6a6-9432-7c70-a594-68ccdf7e4999"
+
+    failures = codex_product_activation_failures(
+        result={"collaboration": collaboration},
+        evidence=evidence,
+        response_hash=hashlib.sha256(response.encode()).hexdigest(),
+    )
+
+    assert "Codex product child did not belong to the exact parent session" in failures
+
+
+def test_product_proof_rejects_parent_side_product_tool_execution() -> None:
+    response = _product_response()
+    evidence = _two_unit_product_evidence("a" * 64, response)
+    collaboration = evidence["collaboration"]
+    assert isinstance(collaboration, dict)
+    collaboration["unexpected_item_count"] = 1
+
+    failures = codex_product_activation_failures(
+        result={"collaboration": collaboration},
+        evidence=evidence,
+        response_hash=hashlib.sha256(response.encode()).hexdigest(),
+    )
+
+    assert "Codex product parent performed a non-collaboration tool call" in failures
 
 
 @dataclass(frozen=True)
@@ -214,6 +456,76 @@ def test_codex_agency_product_host_consumes_the_exact_activation_snapshot(
     }
     assert result.workspace_write_proven is True
     assert not (tmp_path / ".agency-runtime-workspace-write-proof").exists()
+
+
+def test_codex_product_host_uses_unmocked_multi_unit_product_proof(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: dict[str, object] = {}
+    response = _product_response()
+
+    class ExactStore:
+        def __init__(self, path: Path) -> None:
+            observed["db_path"] = path
+
+        def recent_runtime_activity(self, *, limit: int):
+            raise AssertionError(f"legacy activity summary was requested with limit={limit}")
+
+        def get_canary_activation_snapshot(self, *, host: str, query_hash: str):
+            observed["exact_request"] = (host, query_hash)
+            evidence = dict(observed["evidence"])
+            assert evidence["query_hash"] == query_hash
+            evidence.pop("collaboration")
+            return evidence
+
+    @dataclass(frozen=True)
+    class ProductBackend(_Backend):
+        def execute(self, *, task: str, workdir: str, check: bool):
+            record = super().execute(task=task, workdir=workdir, check=check)
+            evidence = _two_unit_product_evidence(
+                hashlib.sha256(task.encode()).hexdigest(), response
+            )
+            observed["evidence"] = evidence
+            record["output"] = response
+            record["collaboration"] = evidence["collaboration"]
+            record["collaboration"]["private_parent_prompt"] = "do-not-persist-parent"
+            record["collaboration"]["calls"][0]["private_child_message"] = "do-not-persist-child"
+            return record
+
+    monkeypatch.setattr(product_host, "Store", ExactStore)
+    monkeypatch.setattr(
+        product_host,
+        "_codex_product_backend",
+        lambda **kwargs: ProductBackend(
+            observed,
+            exec_options=product_host._codex_options(kwargs["model"]),
+        ),
+    )
+    prompt = "Build the exact two-unit product."
+
+    result = execute_product_host(
+        prompt=prompt,
+        prompt_hash=_hash(prompt),
+        host="codex",
+        mode="agency",
+        workspace=tmp_path,
+        timeout=600,
+        db_path=tmp_path / "agency.db",
+        inspector=lambda _host: {"managed_target": str(tmp_path)},
+        resolver=lambda _host: "codex",
+        environ={"HOME": str(tmp_path), "PATH": ""},
+    )
+
+    assert result.runtime_contract_passed is True, result.error
+    assert result.agency_evidence["proof"]["activation_contract"] == "product"
+    assert result.agency_evidence["proof"]["correction_count"] == 0
+    assert result.agency_evidence["proof"]["collaboration"]["spawn_count"] == 2
+    assert result.actual_model == "codex-subscription/gpt-5.6-sol"
+    assert result.workspace_write_proven is True
+    serialized_evidence = json.dumps(result.agency_evidence, sort_keys=True)
+    assert "do-not-persist-parent" not in serialized_evidence
+    assert "do-not-persist-child" not in serialized_evidence
 
 
 def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
@@ -496,6 +808,7 @@ def test_codex_product_backend_persists_parent_and_correlates_exact_rollout(
     assert backend.require_existing_store is True
     assert backend.hook_event_diagnostics is True
     assert backend.require_exact_activation_rollout is True
+    assert backend.rollout_contract == "product"
     assert backend.trust_mode == "autonomous_bypass"
 
 

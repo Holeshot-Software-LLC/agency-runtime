@@ -1841,6 +1841,7 @@ def test_dashboard_live_snapshot_is_authenticated_stable_and_changes_with_activi
     }
     assert set(first["activity"]) == {
         "runs",
+        "preflight_failures",
         "routing",
         "delegations",
         "receipts",

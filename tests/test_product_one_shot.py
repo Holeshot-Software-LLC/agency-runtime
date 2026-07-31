@@ -46,11 +46,29 @@ def test_product_trial_requires_exact_confirmation_before_host_execution(tmp_pat
             host="codex",
             mode="agency",
             workspace=tmp_path,
-            timeout=60,
+            timeout=600,
             confirm="",
             executor=executor,
         )
     assert not called
+
+
+def test_product_trial_rejects_a_deadline_too_short_for_the_complete_contract(
+    tmp_path: Path,
+) -> None:
+    scenario = product_scenario("python-cli-service")
+
+    with pytest.raises(ValueError, match="between 600 and 3600 seconds"):
+        run_product_trial(
+            scenario,
+            trial_id="trial-short-deadline",
+            host="codex",
+            mode="agency",
+            workspace=tmp_path,
+            timeout=599,
+            confirm=product_trial_confirmation(scenario.scenario_id, "codex", "agency"),
+            executor=lambda **_kwargs: pytest.fail("short product trial reached the host"),
+        )
 
 
 def test_product_trial_requires_an_existing_empty_real_workspace(tmp_path: Path) -> None:
@@ -64,7 +82,7 @@ def test_product_trial_requires_an_existing_empty_real_workspace(tmp_path: Path)
             host="codex",
             mode="agency",
             workspace=tmp_path,
-            timeout=60,
+            timeout=600,
             confirm=confirmation,
             executor=lambda **_kwargs: _execution(),
         )
@@ -95,7 +113,7 @@ def test_trial_passes_only_when_host_contract_and_hidden_validation_both_pass(
         host="codex",
         mode="agency",
         workspace=tmp_path,
-        timeout=60,
+        timeout=600,
         confirm=product_trial_confirmation(scenario.scenario_id, "codex", "agency"),
         executor=executor,
     )
@@ -126,7 +144,7 @@ def test_host_failure_or_missing_agency_evidence_cannot_pass(
         host="codex",
         mode="agency",
         workspace=tmp_path,
-        timeout=60,
+        timeout=600,
         confirm=product_trial_confirmation(scenario.scenario_id, "codex", "agency"),
         executor=executor,
     )
@@ -167,7 +185,7 @@ def test_unproven_workspace_write_stops_before_product_grading(
         host="codex",
         mode="agency",
         workspace=tmp_path,
-        timeout=60,
+        timeout=600,
         confirm=product_trial_confirmation(scenario.scenario_id, "codex", "agency"),
         executor=executor,
     )

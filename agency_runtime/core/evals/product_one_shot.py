@@ -24,6 +24,7 @@ PRODUCT_TRIAL_SCHEMA_VERSION: Final[int] = 1
 PRODUCT_TRIAL_MODES: Final[tuple[str, ...]] = ("agency", "native-only")
 PRODUCT_TRIAL_HOSTS: Final[tuple[str, ...]] = ("codex", "claude", "openclaw", "hermes", "zcode")
 MAX_PRODUCT_TRIAL_TIMEOUT_SECONDS: Final[float] = 3600.0
+MIN_PRODUCT_TRIAL_TIMEOUT_SECONDS: Final[float] = 600.0
 _ID = re.compile(r"[a-z0-9][a-z0-9-]{0,127}\Z")
 
 
@@ -101,10 +102,14 @@ def _timeout(value: float) -> float:
         isinstance(value, bool)
         or not isinstance(value, (int, float))
         or not math.isfinite(float(value))
-        or not 1 <= float(value) <= MAX_PRODUCT_TRIAL_TIMEOUT_SECONDS
+        or not MIN_PRODUCT_TRIAL_TIMEOUT_SECONDS
+        <= float(value)
+        <= MAX_PRODUCT_TRIAL_TIMEOUT_SECONDS
     ):
         raise ValueError(
-            f"timeout must be between 1 and {MAX_PRODUCT_TRIAL_TIMEOUT_SECONDS:g} seconds"
+            "timeout must be between "
+            f"{MIN_PRODUCT_TRIAL_TIMEOUT_SECONDS:g} and "
+            f"{MAX_PRODUCT_TRIAL_TIMEOUT_SECONDS:g} seconds"
         )
     return float(value)
 
@@ -211,6 +216,7 @@ def run_product_trial(
 
 __all__ = [
     "MAX_PRODUCT_TRIAL_TIMEOUT_SECONDS",
+    "MIN_PRODUCT_TRIAL_TIMEOUT_SECONDS",
     "PRODUCT_TRIAL_HOSTS",
     "PRODUCT_TRIAL_MODES",
     "PRODUCT_TRIAL_SCHEMA_VERSION",

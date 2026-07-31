@@ -682,6 +682,139 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="product-host-restores-one-child-rollout-contract",
+        invariant=(
+            "Codex product trials project every exact product child instead of applying the "
+            "one-child activation-canary topology."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before='        rollout_contract="product",',
+        after='        rollout_contract="canary",',
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-restores-code-reviewer-canary-proof",
+        invariant=(
+            "Codex product trials grade the complete inferred unit plan rather than the "
+            "one-unit code-reviewer activation canary."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before='            activation_contract="product",',
+        after='            activation_contract="canary",',
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_host_uses_unmocked_multi_unit_product_proof"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-guidance-restores-parent-plan-refinement",
+        invariant=(
+            "The parent dispatches every inferred product unit exactly once instead of "
+            "merging, omitting, or performing specialist units itself."
+        ),
+        source_path="agency_runtime/core/host_guidance.py",
+        before=(
+            '        f"{dispatch} Dispatch every persisted plan row exactly once; do not merge, omit, "'
+        ),
+        after=('        f"{dispatch} The host may refine, merge, or decline the suggested rows; "'),
+        test_node=(
+            "tests/test_delegation_operational_projection.py::"
+            "test_native_delegation_guidance_requires_every_exact_plan_row"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-proof-allows-parent-product-tools",
+        invariant=(
+            "The product parent coordinates exact children but never performs product work "
+            "through its own non-collaboration tools."
+        ),
+        source_path="agency_runtime/core/canary_proof.py",
+        before='    if counts["unexpected_item_count"] != 0:',
+        after='    if False and counts["unexpected_item_count"] != 0:',
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_product_proof_rejects_parent_side_product_tool_execution"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="preflight-failure-drops-terminal-receipt",
+        invariant=(
+            "Every owned terminal preflight failure persists one exact content-free receipt."
+        ),
+        source_path="agency_runtime/core/preflight.py",
+        before=(
+            "                    attempt_token=attempt_token,\n"
+            '                    status="preflight_failed",\n'
+            "                    failure_receipt=diagnostics.receipt(error),"
+        ),
+        after=(
+            "                    attempt_token=attempt_token,\n"
+            '                    status="preflight_failed",\n'
+            "                    failure_receipt=None,"
+        ),
+        test_node=(
+            "tests/test_preflight_bounds.py::"
+            "test_preflight_persists_request_kind_and_terminalizes_downstream_failure"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="preflight-failure-retains-raw-provider-content",
+        invariant=(
+            "Preflight failure receipts retain only allowlisted content-free provider attempts."
+        ),
+        source_path="agency_runtime/core/selector/receipt_projection.py",
+        before='        return f"sha256:{digest}"',
+        after="        return normalized",
+        test_node=(
+            "tests/test_preflight_bounds.py::"
+            "test_preflight_failure_receipt_projects_provider_attempts_without_content"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="exact-snapshot-collapses-preflight-failure",
+        invariant=(
+            "Exact activation evidence projects one correlated preflight failure instead of "
+            "collapsing it to route-not-found."
+        ),
+        source_path="agency_runtime/core/store/evidence.py",
+        before="                    if route_count == 0",
+        after="                    if False and route_count == 0",
+        test_node=(
+            "tests/test_canary_activation_snapshot.py::"
+            "test_canary_activation_snapshot_projects_exact_preflight_failure"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-diagnostic-erases-parent-spawn-failure",
+        invariant=(
+            "A completed Codex turn with no native spawn reports that exact content-free cause."
+        ),
+        source_path="agency_runtime/core/canary_backends.py",
+        before='    "parent_spawn_missing": "codex_parent_spawn_missing",',
+        after=('    "parent_spawn_missing": "codex_collaboration_projection_unavailable",'),
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_v2_rollout_reports_content_free_parent_spawn_failure"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-trial-restores-canary-sized-deadline",
+        invariant=(
+            "A full product trial receives at least ten minutes for inference, all specialist "
+            "units, validation, and final evidence."
+        ),
+        source_path="agency_runtime/core/evals/product_one_shot.py",
+        before="MIN_PRODUCT_TRIAL_TIMEOUT_SECONDS: Final[float] = 600.0",
+        after="MIN_PRODUCT_TRIAL_TIMEOUT_SECONDS: Final[float] = 1.0",
+        test_node=(
+            "tests/test_product_one_shot.py::"
+            "test_product_trial_rejects_a_deadline_too_short_for_the_complete_contract"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-host-mislabels-hook-bypass-as-attended",
         invariant=(
             "Codex product trials record the supported one-invocation bypass without claiming "
@@ -874,10 +1007,16 @@ class _NominationSemantics:""",
         ),
         source_path="agency_runtime/core/preflight.py",
         before=(
-            "        _require_substantive_specialist(routing, classification)\n"
+            "        _require_substantive_specialist(routing, classification, diagnostics)\n"
+            "        if diagnostics is not None:\n"
+            '            diagnostics.enter("context_hydration")\n'
             '        if delivery_mode == "isolated":'
         ),
-        after='        if delivery_mode == "isolated":',
+        after=(
+            "        if diagnostics is not None:\n"
+            '            diagnostics.enter("context_hydration")\n'
+            '        if delivery_mode == "isolated":'
+        ),
         test_node=(
             "tests/test_preflight_bounds.py::"
             "test_isolated_preflight_blocks_selection_without_an_activation_plan"

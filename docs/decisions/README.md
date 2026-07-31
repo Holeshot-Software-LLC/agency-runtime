@@ -190,6 +190,7 @@ Status meanings:
 | [ADR-0116](0116-bind-product-trials-to-exact-workspace-proof.md) | Bind product trials to exact isolated workspace proof | Accepted |
 | [ADR-0117](0117-unify-owner-control-authority.md) | Unify owner CLI and dashboard control authority | Accepted |
 | [ADR-0119](0119-separate-native-trust-modes-from-activation-proof.md) | Separate native trust modes from activation proof | Accepted |
+| [ADR-0124](0124-grade-product-trials-against-the-inferred-unit-graph.md) | Grade product trials against the inferred unit graph | Accepted |
 
 ## Documentation governance
 

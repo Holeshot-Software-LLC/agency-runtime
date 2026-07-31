@@ -180,17 +180,17 @@ def _finish_v2_chain_through_hooks(
         assert started_activation["specialist_slug"] == slug
         assert started_activation["worker_id"] == receiver_id
         assert started_activation["native_run_id"] == f"codex-agent:{receiver_id}"
-    assert (
-        bridge.handle(
-            {
-                **pre_payload,
-                "hook_event_name": "PostToolUse",
-                "tool_input": post_input,
-                "tool_response": json.dumps({"task_name": f"/root/{task_name}"}),
-            }
-        )
-        == {}
+    observed = bridge.handle(
+        {
+            **pre_payload,
+            "hook_event_name": "PostToolUse",
+            "tool_input": post_input,
+            "tool_response": json.dumps({"task_name": f"/root/{task_name}"}),
+        }
     )
+    observed_context = observed["hookSpecificOutput"]["additionalContext"]
+    assert observed_context.startswith("[AGENCY UPDATED HEADER SNAPSHOT v1]\n")
+    assert observed_context.count("Agency/Agencies loaded:") == 1
     assert (
         bridge.handle(
             {
@@ -478,6 +478,7 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
         "routes": 1,
         "runs": 1,
         "traces": 1,
+        "preflight_failures": 0,
         "unit_agent_plan": 1,
         "delegations": 1,
         "activation_grants": 1,
@@ -600,26 +601,26 @@ def test_codex_post_tool_reconciles_subagent_start_consumption_without_callback_
         match_native_child_identity=True,
     )
 
-    assert (
-        HookBridge("codex", store=configured_store).handle(
-            {
-                "hook_event_name": "PostToolUse",
-                "session_id": session_id,
-                "turn_id": trace_id,
-                "cwd": "C:\\workspace",
-                "transcript_path": "C:\\state\\rollout.jsonl",
-                "permission_mode": "default",
-                "tool_name": "collaborationspawn_agent",
-                "tool_input": {
-                    "fork_turns": "none",
-                    "task_name": f"/root/{task_name}",
-                    "message": str(plan["goal"]),
-                },
-                "tool_response": json.dumps({"task_name": f"/root/{task_name}"}),
-            }
-        )
-        == {}
+    observed = HookBridge("codex", store=configured_store).handle(
+        {
+            "hook_event_name": "PostToolUse",
+            "session_id": session_id,
+            "turn_id": trace_id,
+            "cwd": "C:\\workspace",
+            "transcript_path": "C:\\state\\rollout.jsonl",
+            "permission_mode": "default",
+            "tool_name": "collaborationspawn_agent",
+            "tool_input": {
+                "fork_turns": "none",
+                "task_name": f"/root/{task_name}",
+                "message": str(plan["goal"]),
+            },
+            "tool_response": json.dumps({"task_name": f"/root/{task_name}"}),
+        }
     )
+    observed_context = observed["hookSpecificOutput"]["additionalContext"]
+    assert observed_context.startswith("[AGENCY UPDATED HEADER SNAPSHOT v1]\n")
+    assert observed_context.count("Agency/Agencies loaded:") == 1
     [delegation] = configured_store.get_delegations(trace_id)
     assert delegation["status"] == "delegated"
     assert delegation["activation_receipt_id"] == consumed["id"]
@@ -1162,6 +1163,251 @@ def test_codex_v2_rollout_projection_fails_closed_on_ambiguous_parent(
     assert record["exit_code"] == 0
     assert record["failure_reason"] == "codex_collaboration_projection_unavailable"
     assert "collaboration" not in record
+
+
+def test_codex_v2_rollout_reports_content_free_parent_spawn_failure(
+    tmp_path: Path,
+) -> None:
+    parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    rollout_root = tmp_path / "sessions"
+    secret = "private parent reasoning that must never reach evidence"
+    _write_codex_rollout(
+        rollout_root,
+        parent_id,
+        [
+            {"type": "session_meta", "payload": {"id": parent_id, "source": "exec"}},
+            {
+                "type": "response_item",
+                "payload": {"type": "reasoning", "summary": secret},
+            },
+        ],
+    )
+    stdout = "\n".join(
+        [
+            json.dumps({"type": "thread.started", "thread_id": parent_id}),
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": _valid_header()},
+                }
+            ),
+            json.dumps({"type": "turn.completed"}),
+        ]
+    )
+
+    record = codex_canary_record(
+        _process_result(stdout),
+        profile_scope="current-profile",
+        rollout_root=rollout_root,
+    )
+
+    assert record["status"] == "failed"
+    assert record["failure_reason"] == "codex_parent_spawn_missing"
+    assert record["collaboration_diagnostic"] == {
+        "schema": "agency.codex-collaboration-diagnostic.v1",
+        "proven": False,
+        "reason": "parent_spawn_missing",
+        "parent_rollout_observed": True,
+        "spawn_count": 0,
+        "wait_count": 0,
+        "tool_output_count": 0,
+        "child_start_count": 0,
+        "agent_message_count": 0,
+        "unexpected_item_count": 0,
+    }
+    assert secret not in json.dumps(record)
+
+
+def test_codex_product_rollout_projects_two_exact_tool_using_children(
+    tmp_path: Path,
+) -> None:
+    parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    receiver_ids = (
+        "019fa6a6-a197-7a83-b3fb-d2c20411f608",
+        "019fa6a6-b208-7b94-c40c-e3d315220719",
+    )
+    units = ("unit-product-one", "unit-product-two")
+    task_names = tuple(codex_task_name_for_work_unit(unit) for unit in units)
+    rollout_root = tmp_path / "sessions"
+    parent_events: list[dict[str, object]] = [
+        {"type": "session_meta", "payload": {"id": parent_id, "source": "exec"}}
+    ]
+    secrets: list[str] = []
+    for index, (receiver_id, unit, task_name) in enumerate(
+        zip(receiver_ids, units, task_names, strict=True),
+        start=1,
+    ):
+        tool_use_id = f"call-product-spawn-{index}"
+        original_task = f"private product unit task {index}"
+        specialist_prompt = f"private specialist prompt {index}"
+        secrets.extend((original_task, specialist_prompt))
+        delivery = render_native_child_prompt_delivery(
+            original_task,
+            specialist_prompt,
+            host="codex",
+            parent_session_id=parent_id,
+            parent_trace_id="product-trace",
+            tool_use_id=tool_use_id,
+            work_unit_id=unit,
+            specialist_slug=f"product-specialist-{index}",
+            specialist_version="v1",
+            specialist_prompt_hash=response_hash(specialist_prompt),
+            activation_token="x" * 43,
+        )
+        parent_events.extend(
+            (
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call",
+                        "id": f"spawn-item-{index}",
+                        "name": "spawn_agent",
+                        "namespace": "collaboration",
+                        "call_id": tool_use_id,
+                        "arguments": json.dumps(
+                            {
+                                "fork_turns": "none",
+                                "message": f"encrypted-parent-message-{index}",
+                                "task_name": task_name,
+                            }
+                        ),
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "sub_agent_activity",
+                        "event_id": tool_use_id,
+                        "agent_thread_id": receiver_id,
+                        "agent_path": f"/root/{task_name}",
+                        "kind": "started",
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call_output",
+                        "call_id": tool_use_id,
+                        "output": json.dumps({"task_name": f"/root/{task_name}"}),
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call",
+                        "id": f"wait-item-{index}",
+                        "name": "wait_agent",
+                        "namespace": "collaboration",
+                        "call_id": f"call-product-wait-{index}",
+                        "arguments": json.dumps({} if index == 2 else {"timeout_ms": 60_000}),
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call_output",
+                        "call_id": f"call-product-wait-{index}",
+                        "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
+                    },
+                },
+            )
+        )
+        _write_codex_rollout(
+            rollout_root,
+            receiver_id,
+            [
+                {
+                    "type": "session_meta",
+                    "payload": {
+                        "id": receiver_id,
+                        "source": {
+                            "subagent": {
+                                "thread_spawn": {
+                                    "parent_thread_id": parent_id,
+                                    "depth": 1,
+                                    "agent_path": f"/root/{task_name}",
+                                }
+                            }
+                        },
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "agent_message",
+                        "role": "developer",
+                        "content": [{"type": "input_text", "text": delivery}],
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call",
+                        "id": f"child-tool-{index}",
+                        "name": "shell_command",
+                        "namespace": "functions",
+                        "call_id": f"child-call-{index}",
+                        "arguments": json.dumps({"command": f"private command {index}"}),
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call_output",
+                        "call_id": f"child-call-{index}",
+                        "output": json.dumps({"output": f"private output {index}"}),
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "task_complete",
+                        "last_agent_message": f"private completed result {index}",
+                        "error": None,
+                    },
+                },
+            ],
+        )
+        secrets.extend(
+            (
+                f"encrypted-parent-message-{index}",
+                f"private command {index}",
+                f"private output {index}",
+                f"private completed result {index}",
+            )
+        )
+    _write_codex_rollout(rollout_root, parent_id, parent_events)
+    stdout = "\n".join(
+        (
+            json.dumps({"type": "thread.started", "thread_id": parent_id}),
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": _valid_header()},
+                }
+            ),
+            json.dumps({"type": "turn.completed"}),
+        )
+    )
+
+    record = codex_canary_record(
+        _process_result(stdout),
+        profile_scope="current-profile",
+        rollout_root=rollout_root,
+        rollout_contract="product",
+    )
+
+    assert record["status"] == "completed"
+    collaboration = record["collaboration"]
+    assert collaboration["schema"] == "agency.codex-product-collaboration.v1"
+    assert collaboration["spawn_count"] == 2
+    assert collaboration["wait_count"] == 2
+    assert collaboration["completed_wait_count"] == 2
+    assert collaboration["completed_child_count"] == 2
+    assert collaboration["child_tool_call_count"] == 2
+    assert [row["prompt_delivery"]["work_unit_id"] for row in collaboration["calls"]] == [*units]
+    encoded = json.dumps(record)
+    assert all(secret not in encoded for secret in secrets)
 
 
 def test_codex_ephemeral_parent_failure_is_classified_without_raw_stderr() -> None:

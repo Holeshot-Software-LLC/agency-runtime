@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
+  - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
@@ -30,22 +31,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 193 merged exact revision `f0fde9ee929e13587f62dd85147cf63b18b5d37e`;
-  build `0.1.0+gf0fde9ee929e` is installed for Codex, ZCode, and dashboard.
-- Supported-bypass activation passed on that exact build with zero corrections.
-  Session `019fb729-5164-70f3-8b9e-e55902eb33c7`, trace
-  `019fb729-5d2e-73a3-8a3b-03a4a02f57b7`, and route
-  `c8950037-541e-4eb8-984a-a68f4db156f2` prove inferred `code-reviewer`, one
-  grant and consumption, specialist load, native spawn/wait, completed
-  delegation, worker run, and accepted finalization.
-- Product trial `ar205-f0fde9e-readme-01` is terminal `NO-GO`: 101.1 seconds,
-  host exit zero, CLI exit one, zero corrections, no response/header/route,
-  no workspace-write proof, and an empty workspace. Its allowance is consumed.
-- Production Store run `3833f8ae-34c2-4ebc-8f1c-9b481bd720e0`, session
-  `019fb72b-d385-72c1-92c5-baf6cec8cf5a`, trace
-  `019fb72b-d3f3-76c2-ba3f-1b7d5eb2519b` proves the hook reached
-  `preflight_failed`; this was not a trust, registration, or Codex-startup
-  failure.
+- PR 195 merged exact revision `6b49f17d6787823f9ba78a8f09383001b6a77535`;
+  build `0.1.0+g6b49f17d6787` is installed for Codex, ZCode, and dashboard.
+- Supported-bypass activation passed with zero corrections. Session
+  `019fb82c-61bc-7490-825e-981975e39b91`, trace
+  `019fb82c-6e14-74b1-add0-8021c121fdc2`, and route
+  `3634b192-94c8-4083-8559-54c8313323e3` prove inferred `code-reviewer`,
+  native spawn/wait, completed delegation, worker run, and finalization.
+- Product trial `ar205-6b49f17-readme-01` is terminal `NO-GO`: inference
+  accepted nine specialists, but no specialist launched, no response/header or
+  workspace-write proof followed, and the empty workspace failed validation.
+  Its allowance is consumed.
+- AR-207 tracker issue #196 owns the newly proven diagnostic/execution boundary.
 - The two owner-untracked files remain untouched.
 
 ## completed-evidence
@@ -121,35 +118,34 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   with full goals instead of version-12+ prefix compaction. Four direct tests,
   113 affected tests with one skip, six exact replay nodes with one skip, and
   both new mutations pass.
-- Focused re-review of head 60111f8 found the post-context Codex header could
-  still overflow through unbounded non-ASCII model metadata. The source now
-  rejects model values above 512 UTF-8 bytes before reservation or preflight;
-  its direct regression and mutation pass, as do 238 affected tests with one
-  skip. The committed rerun passes the 636-test named spine with 6 skips, all
-  110 dashboard tests, every routing gate, all 53 mutations with unchanged
-  source, Ruff across 602 files, 579 validated docs, and diff integrity.
+- PR 195's reviewed head passed 238 affected tests, the 636-test named spine
+  with 6 skips, all 110 dashboard tests, every routing gate, all 53 mutations,
+  Ruff, 579 documentation files, and diff integrity before merge.
+- Product trace `019fb832-5f01-75d0-a3fe-e51bb2816771` retained eight work
+  units, nine specialists, and eight suggested delegations, then zero grants,
+  loads, workers, or native spawn/wait and a `delegation_declined` finalization.
+- Diagnostic trace `019fb83f-3aa8-78f2-8f7c-06aaf71a7f0c` separately ended
+  `preflight_failed` with no route, model receipt, or retained failure reason.
 
 ## exact-blocker
 
-Installation and activation pass, gap hiring is separated correctly, and
-inference reaches accepted product teams. The final-envelope P1 is fully fast-
-green; push, its allowed high-severity re-review, merge, and exact installation
-remain before one new-build trial.
+Installation, activation, and inference-selected product staffing pass. The
+product path fails after staffing and before delegation execution; preflight
+cleanup also erases the adjacent failure reason needed for bounded diagnosis.
 
 ## same-task-continuity
 
 Keep inference authoritative. Do not add deterministic selection, weaken
 fail-closed validation, mutate private trust state, or rerun a product trial on
-`cc322381` or `f0fde9ee`.
+`cc322381`, `f0fde9ee`, or `6b49f17d`.
 
 ## next-bounded-work-package
 
-1. Record the exact fast evidence, push, reply to the P1, and obtain the allowed
-   focused high-severity re-review.
-2. Merge, exact-install, and re-prove activation with the AR-206 verifier fix.
-3. Spend one product trial only on that new exact build. Require a real inferred
-   team or hired contractor, planned delegation, workspace artifacts, and zero
-   corrections before producing the evidence page and OpenClaw handoff.
+1. Persist and project bounded content-free preflight/delegation failure facts.
+2. Repair the first demonstrated no-spawn cause using bounded controls.
+3. Review twice at most, run focused plus named fast gates, merge, and exact-
+   install before one fresh product trial.
+4. Produce the evidence page and OpenClaw handoff after the terminal trial.
 
 ## verification
 

@@ -14,6 +14,10 @@ from typing import Any
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.dashboard_operational import inference_operational_snapshot
 from agency_runtime.core.display import safe_display_token
+from agency_runtime.core.preflight_failure import (
+    PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
+    project_preflight_failure_receipt,
+)
 
 _PROVIDER_LIMIT = 4
 _FAILURE_LIMIT = 25
@@ -82,6 +86,26 @@ def _failure(raw: object) -> dict[str, Any]:
             "provider": _text(raw.get("provider"), limit=128),
             "created_at": _text(raw.get("created_at"), limit=128),
             "trace_id": _text(raw.get("trace_id"), limit=256),
+        }
+    if kind == "preflight_failure":
+        projected = project_preflight_failure_receipt(
+            {
+                "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
+                "stage": raw.get("stage"),
+                "reason_code": raw.get("reason_code"),
+                "exception_category": raw.get("exception_category"),
+                "provider_attempts": raw.get("provider_attempts"),
+            }
+        )
+        if projected is None or raw.get("status") != "preflight_failed":
+            raise ValueError("dashboard preflight failure receipt is invalid")
+        return {
+            "kind": kind,
+            "status": "preflight_failed",
+            **projected,
+            "recorded_at": _text(raw.get("recorded_at"), limit=128),
+            "trace_id": _text(raw.get("trace_id"), limit=256),
+            "host": _text(raw.get("host"), limit=64),
         }
     raise ValueError("dashboard inference failure kind is invalid")
 
