@@ -627,6 +627,11 @@ def _patch_preflight_dependencies(monkeypatch: pytest.MonkeyPatch) -> None:
         "hydrate_selected_specialist_context",
         lambda *_args, **_kwargs: specialist_context.LoadedSpecialistContext("", (), ()),
     )
+    monkeypatch.setattr(
+        preflight,
+        "_require_substantive_specialist",
+        lambda *_args, **_kwargs: None,
+    )
 
     # The shared workforce-snapshot path reads the live workforce via store._connect,
     # which the _AttemptStore double does not implement. This test exercises
@@ -938,7 +943,7 @@ def test_preflight_recipe_policy_fingerprint_covers_compatibility_versions() -> 
             recipe_version=version,
             context_policy_version=version,
         )
-        for version in (6, 7, 8, 10, 11)
+        for version in (6, 7, 8, 10, 11, 12)
     }
 
     assert len(set(fingerprints.values())) == len(fingerprints)

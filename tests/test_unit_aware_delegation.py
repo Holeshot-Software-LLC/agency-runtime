@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pytest
@@ -30,6 +31,10 @@ from agency_runtime.core.selector.delegation_detection import (
     WORK_UNIT_DETECTION_VERSION,
     _imperative_units,
     detect_work_units,
+)
+from agency_runtime.core.specialist_context import (
+    SpecialistPromptReference,
+    format_isolated_specialist_context,
 )
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.unit_assignment import (
@@ -254,7 +259,7 @@ def _install_exact_route(
     monkeypatch.setattr(pipeline, "route", fake_route)
 
 
-def test_mixed_dependency_route_never_emits_an_independent_delegation_plan(
+def test_mixed_dependency_route_without_an_exact_plan_fails_closed(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
 ) -> None:
@@ -267,28 +272,20 @@ def test_mixed_dependency_route_never_emits_an_independent_delegation_plan(
         selected_ids=["code-reviewer", "technical-writer"],
     )
     store = Store(tmp_path / "mixed-dependency.db")
-    result = HookBridge("codex", store=store).handle(
-        {
-            "hook_event_name": "UserPromptSubmit",
-            "session_id": "session",
-            "turn_id": "trace",
-            "prompt": prompt,
-        }
-    )
+    with pytest.raises(RuntimeError, match="no accepted specialist or contractor"):
+        HookBridge("codex", store=store).handle(
+            {
+                "hook_event_name": "UserPromptSubmit",
+                "session_id": "session",
+                "turn_id": "trace",
+                "prompt": prompt,
+            }
+        )
 
-    context = result["hookSpecificOutput"]["additionalContext"]
-    assert "[AGENCY DELEGATION PLAN]" not in context
-    assert "No specialist assignment was accepted" in context
-    snapshot = store.get_completion_evidence_snapshot("session", "trace")
-    assert snapshot["selected_specialists"] == []
-    receipt = store.get_ready_routing_receipt(
-        "session",
-        "trace",
-        evidence_revision=snapshot["evidence_revision"],
-    )
-    assert receipt is not None
-    assert "routing_status:abstained" in receipt["reason_codes"]
-    assert "selection_abstained" in receipt["effect_codes"]
+    run = store.get_run("trace")
+    assert run is not None
+    assert run["status"] == "preflight_failed"
+    assert run["preflight_state"] == ""
     assert store.get_delegations("trace") == []
 
 
@@ -1005,6 +1002,94 @@ def test_isolated_native_hook_receives_exact_unit_agent_plan(
             assert f"native_task_name={native_task_name}" in context
             assert "set `fork_turns` to `none`" in context
     assert len(context) <= preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS
+
+
+def test_isolated_multi_unit_context_encodes_one_shared_request_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import unit_assignment
+    from agency_runtime.core.resident_managers import RESIDENT_MANAGER_KERNEL
+
+    request = "Build the complete application with this fixed contract: " + "x" * 2_250
+    prefix = f"Request: {request}. Work unit "
+    specialists = (
+        "codebase-onboarding-engineer",
+        "software-architect",
+        "python-application-engineer",
+        "typescript-application-engineer",
+        "software-test-engineer",
+        "technical-writer",
+        "code-reviewer",
+        "application-security-engineer",
+        "application-integration-verifier",
+        "test-results-analyzer",
+    )
+    hydrated = []
+    plan = []
+    for ordinal in range(1, 10):
+        work_unit_id = f"unit-{ordinal:010x}"
+        dependencies = [] if ordinal == 1 else [f"unit-{ordinal - 1:010x}"]
+        hydrated.append(
+            {
+                "work_unit_id": work_unit_id,
+                "recommended_agent": specialists[(ordinal - 1) % len(specialists)],
+                "delegation_strength": "strongly_preferred",
+                "dependencies": dependencies,
+                "goal": f"{prefix}{ordinal}: produce the exact governed artifact.",
+            }
+        )
+        plan.append({"assignment_version": str(UNIT_AGENT_ASSIGNMENT_VERSION)})
+
+    monkeypatch.setattr(
+        unit_assignment,
+        "hydrate_unit_agent_plan",
+        lambda *_args, **_kwargs: hydrated,
+    )
+    delegation = preflight_recipe._isolated_delegation_context(
+        {},
+        host="codex",
+        unit_plan=plan,
+    )
+    references = tuple(
+        SpecialistPromptReference(
+            slug,
+            "1.0.0",
+            "sha256:" + f"{index:064x}",
+            "Bounded specialist.",
+            ("specialist-work",),
+        )
+        for index, slug in enumerate(specialists, 1)
+    )
+    specialist = format_isolated_specialist_context(
+        references,
+        host="codex",
+        session_id="product-session",
+        trace_id="product-trace",
+        nontrivial=True,
+        unit_plan=plan,
+        resident_managers=("agency-steward",),
+    )
+    execution = preflight_recipe._combine_context(
+        specialist,
+        delegation,
+        maximum_chars=preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS,
+    )
+    combined = preflight_recipe._combine_context(
+        RESIDENT_MANAGER_KERNEL,
+        execution,
+        maximum_chars=preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS,
+    )
+
+    assert delegation.count(request) == 1
+    lines = delegation.splitlines()
+    shared = json.loads(next(line for line in lines if line.startswith("shared_goal_prefix="))[19:])
+    suffixes = [
+        json.loads(line.rsplit("; goal_suffix=", 1)[1])
+        for line in lines
+        if "; goal_suffix=" in line
+    ]
+    assert [shared + suffix for suffix in suffixes] == [item["goal"] for item in hydrated]
+    assert len(combined) <= preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS
 
 
 @pytest.mark.parametrize(

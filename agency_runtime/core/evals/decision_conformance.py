@@ -368,6 +368,59 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="product-canary-suppresses-gap-hiring",
+        invariant=(
+            "An ordinary product task may hire an inference-declared specialist gap even when "
+            "its isolated hook requires the existing Store."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before="""    from agency_runtime.core.roster.workforce import (
+        workforce_index_snapshot,
+        workforce_snapshot_with_contract,
+    )""",
+        after="""    from agency_runtime.core.codex_activation_verification import (
+        is_restricted_codex_activation_canary_environment,
+    )
+
+    if is_restricted_codex_activation_canary_environment():
+        return outcome, active_snapshot, active_catalog, []
+
+    from agency_runtime.core.roster.workforce import (
+        workforce_index_snapshot,
+        workforce_snapshot_with_contract,
+    )""",
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_existing_store_product_canary_can_hire_an_inference_declared_gap"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="isolated-plan-repeats-full-request-per-unit",
+        invariant=(
+            "A bounded isolated delegation plan encodes one shared request prefix rather than "
+            "repeating the complete request in every specialist row."
+        ),
+        source_path="agency_runtime/core/preflight_recipe.py",
+        before=(
+            "    if len(prefix) < 128 or any(\n"
+            "        not goal.startswith(prefix) or len(goal) == len(prefix) for goal in goals\n"
+            "    ):\n"
+            '        return ""\n'
+            "    return prefix"
+        ),
+        after=(
+            "    if len(prefix) < 128 or any(\n"
+            "        not goal.startswith(prefix) or len(goal) == len(prefix) for goal in goals\n"
+            "    ):\n"
+            '        return ""\n'
+            '    return ""'
+        ),
+        test_node=(
+            "tests/test_unit_aware_delegation.py::"
+            "test_isolated_multi_unit_context_encodes_one_shared_request_prefix"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="activation-canary-allows-plan-subdivision",
         invariant=(
             "The exact indivisible Codex activation request constrains inference to one planned "
