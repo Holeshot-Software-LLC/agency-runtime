@@ -333,7 +333,12 @@ def test_codex_product_host_uses_isolated_workspace_write_profile(
 
     def backend_factory(**kwargs):
         observed["backend_kwargs"] = kwargs
-        return _Backend(observed, exec_options=product_host._codex_options(kwargs["model"]))
+        return _Backend(
+            observed,
+            exec_options=product_host._codex_options(
+                kwargs["model"], agency_mode=kwargs["master_enabled"]
+            ),
+        )
 
     monkeypatch.setattr(product_host, "_codex_product_backend", backend_factory)
     monkeypatch.setattr(
@@ -394,6 +399,18 @@ def test_codex_product_host_uses_isolated_workspace_write_profile(
     assert "--ephemeral" not in options
     assert options[options.index("--enable") + 1] == "multi_agent_v2"
     assert "agents.enabled=true" in options
+    developer_configs = [
+        option.removeprefix("developer_instructions=")
+        for option in options
+        if option.startswith("developer_instructions=")
+    ]
+    if enabled:
+        assert len(developer_configs) == 1
+        assert json.loads(developer_configs[0]) == (
+            product_host.CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS
+        )
+    else:
+        assert developer_configs == []
     assert options[-3:] == ("--model", "gpt-test", "-")
     assert observed["invocation"]["workdir"] == str(tmp_path)
 
@@ -852,11 +869,60 @@ def test_codex_product_backend_persists_parent_and_correlates_exact_rollout(
     assert "--ephemeral" not in backend.exec_options
     assert backend.exec_options[backend.exec_options.index("--enable") + 1] == "multi_agent_v2"
     assert "agents.enabled=true" in backend.exec_options
+    developer_configs = [
+        option.removeprefix("developer_instructions=")
+        for option in backend.exec_options
+        if option.startswith("developer_instructions=")
+    ]
+    assert developer_configs == [json.dumps(product_host.CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS)]
     assert backend.require_existing_store is True
     assert backend.hook_event_diagnostics is True
     assert backend.require_exact_activation_rollout is True
     assert backend.rollout_contract == "product"
     assert backend.trust_mode == "autonomous_bypass"
+
+
+def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_authority(
+    tmp_path: Path,
+) -> None:
+    marketplace = tmp_path / "marketplace"
+    manifest = marketplace / ".agents" / "plugins" / "marketplace.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("{}", encoding="utf-8")
+
+    backend = product_host._codex_product_backend(
+        native={"managed_target": str(marketplace)},
+        db_path=tmp_path / "agency.db",
+        timeout=60,
+        master_enabled=True,
+        model="",
+        resolver=lambda _host: "codex",
+        runner=None,
+        environ={"HOME": str(tmp_path), "PATH": ""},
+        workspace=tmp_path,
+    )
+
+    developer_configs = [
+        option.removeprefix("developer_instructions=")
+        for option in backend.exec_options
+        if option.startswith("developer_instructions=")
+    ]
+    assert len(developer_configs) == 1
+    instructions = json.loads(developer_configs[0])
+    assert instructions == product_host.CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS
+    for required_contract in (
+        "[AGENCY EXACT SPECIALIST ACTIVATION v1]",
+        "[AGENCY DELEGATION PLAN]",
+        "spawn_agent",
+        "wait_agent",
+        "fork_turns",
+        "native_task_name",
+        "depends_on",
+        "at most three concurrent children",
+        "Use no non-collaboration tools",
+        "do not delegate further",
+    ):
+        assert required_contract in instructions
 
 
 def test_product_host_rejects_unsupported_hosts_and_prompt_drift(tmp_path: Path) -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import os
 import shutil
@@ -21,7 +22,28 @@ from agency_runtime.core.filesystem_trust import metadata_is_link_or_reparse_poi
 from agency_runtime.core.installer import inspect_host_installation
 from agency_runtime.core.store.sqlite import Store, _default_db_path
 
-CODEX_PRODUCT_EXEC_OPTIONS: Final[tuple[str, ...]] = (
+CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS: Final[str] = (
+    "This is a bounded Agency Runtime product evaluation. If the current task contains "
+    "[AGENCY EXACT SPECIALIST ACTIVATION v1], you are a delegated specialist child: "
+    "perform only the exact injected specialist assignment directly, use permitted "
+    "workspace tools when the assignment requires them, do not call spawn_agent or "
+    "wait_agent, do not delegate further, and return one bounded evidence-backed result. "
+    "Otherwise, when the current task contains [AGENCY DELEGATION PLAN], you are the "
+    "non-working parent scheduler and the user has authorized native delegation for every "
+    "accepted persisted plan row. Respect each row's depends_on field. Schedule every row "
+    "exactly once, with no retries, in dependency-ready waves of at most three concurrent "
+    "children. For each row call spawn_agent with fork_turns set to none, task_name set to "
+    "that row's exact native_task_name, and message set to that row's exact decoded goal. "
+    "Call wait_agent as needed until every child in the current wave completes before "
+    "scheduling newly ready rows, and complete at least one non-timed-out wait after the "
+    "final spawn. Use no non-collaboration tools and perform no product work in the parent. "
+    "Do not merge, omit, broaden, decline, or duplicate an accepted row. After every child "
+    "finishes, consolidate only their reported outcomes and return the required Agency "
+    "header and bounded product result. If the task contains neither marker, follow the "
+    "ordinary native host policy without claiming Agency specialist execution."
+)
+
+_CODEX_PRODUCT_EXEC_PREFIX: Final[tuple[str, ...]] = (
     "--json",
     "--color",
     "never",
@@ -39,9 +61,21 @@ CODEX_PRODUCT_EXEC_OPTIONS: Final[tuple[str, ...]] = (
     "mcp_servers={}",
     "-c",
     "agents.enabled=true",
+)
+_CODEX_PRODUCT_EXEC_SUFFIX: Final[tuple[str, ...]] = (
     "--skip-git-repo-check",
     "--dangerously-bypass-hook-trust",
     "-",
+)
+CODEX_PRODUCT_EXEC_OPTIONS: Final[tuple[str, ...]] = (
+    *_CODEX_PRODUCT_EXEC_PREFIX,
+    "-c",
+    f"developer_instructions={json.dumps(CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS)}",
+    *_CODEX_PRODUCT_EXEC_SUFFIX,
+)
+_CODEX_NATIVE_ONLY_PRODUCT_EXEC_OPTIONS: Final[tuple[str, ...]] = (
+    *_CODEX_PRODUCT_EXEC_PREFIX,
+    *_CODEX_PRODUCT_EXEC_SUFFIX,
 )
 PROVEN_PRODUCT_HOSTS: Final[frozenset[str]] = frozenset({"codex"})
 _MAX_RESPONSE_SUMMARY_CHARS: Final[int] = 256
@@ -52,13 +86,16 @@ _WORKSPACE_TRUST_SCHEMA: Final[str] = "agency.codex-isolated-workspace-trust.v1"
 _HOOK_TRUST_SCHEMA: Final[str] = "agency.codex-hook-trust-mode.v1"
 
 
-def _codex_options(model: str) -> tuple[str, ...]:
+def _codex_options(model: str, *, agency_mode: bool = True) -> tuple[str, ...]:
+    base_options = (
+        CODEX_PRODUCT_EXEC_OPTIONS if agency_mode else _CODEX_NATIVE_ONLY_PRODUCT_EXEC_OPTIONS
+    )
     normalized = str(model or "").strip()
     if not normalized:
-        return CODEX_PRODUCT_EXEC_OPTIONS
+        return base_options
     if len(normalized) > 256 or any(character.isspace() for character in normalized):
         raise ValueError("model is invalid")
-    return (*CODEX_PRODUCT_EXEC_OPTIONS[:-1], "--model", normalized, "-")
+    return (*base_options[:-1], "--model", normalized, "-")
 
 
 def _expected_prompt_hash(prompt: str) -> str:
@@ -275,7 +312,7 @@ def _codex_product_backend(
         source_env=environ,
         master_enabled=master_enabled,
         profile_scope="isolated-profile",
-        exec_options=_codex_options(model),
+        exec_options=_codex_options(model, agency_mode=master_enabled),
         require_existing_store=True,
         require_exact_activation_rollout=True,
         rollout_contract="product",
@@ -456,6 +493,7 @@ def execute_product_host(
 
 
 __all__ = [
+    "CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS",
     "CODEX_PRODUCT_EXEC_OPTIONS",
     "PROVEN_PRODUCT_HOSTS",
     "execute_product_host",

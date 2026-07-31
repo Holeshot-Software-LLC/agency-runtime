@@ -13,6 +13,7 @@ related:
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
   - README.md
   - docs/worklog/README.md
 supersedes: []

@@ -19,6 +19,7 @@ related:
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0125-admit-only-exact-content-free-codex-host-notices.md
+  - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -172,6 +173,44 @@ the parent emitted no delegation tool call or response.
   cache-hit p95, while decision conformance passed its baseline, killed all 64
   curated mutations, retained zero survivors or invalid cases, and proved the
   source tree unchanged.
+- PR 201 merged the repair with commit-preserving ancestry as exact revision
+  `dd85e7d981f9214104c61815b49f51e178896295`. The official VCS package is
+  exact-installed. Bare install discovered and registered only Codex and ZCode,
+  then recreated, started, and reached the per-user dashboard; its only
+  incomplete component was the designed Codex activation continuation.
+- Supported-bypass activation session `019fb978-1242-7c30-9c93-38751f4f26ff`,
+  trace `019fb978-1ec4-7f91-a9b2-9ab47abb15d8`, and run
+  `810eab84-69f2-4bdd-a711-1eb8a59bcc89` passed on that exact build. Inference
+  selected `code-reviewer` and persisted the route, grant, consumption, load,
+  native child, worker, completed delegation, and accepted finalization. The
+  first-pass header was valid, Store evidence was proven, correction count was
+  zero, and all three Codex host notices mapped to the two admitted types.
+- The one allowed product trial on `dd85e7d`, trial
+  `ar207-dd85e7d-readme-01`, is terminal `NO-GO`. Session
+  `019fb982-a686-79d1-bc6c-f605e64895fc`, trace
+  `019fb982-a702-7c11-b527-a4b5fa603250`, and run
+  `ec15beed-4ed4-4bc8-bdf6-1a19e4b4d926` reached ready with eight inferred
+  units and eight selected specialists. All eight delegation rows remained
+  `suggested`; no grant, consumption, specialist load, worker run, native child,
+  or completed delegation followed. Codex exited zero with no response or
+  header, workspace trust and hook bypass were proven, workspace write was not,
+  and correction count was zero. The first failed boundary is therefore the
+  accepted-plan to parent-native `spawn_agent` handoff, not selection.
+- The exact cause is now isolated: unlike the passing activation canary, the
+  product backend supplied no Codex developer instruction authorizing its
+  accepted native delegation plan. ADR-0126 bounds that authority to exact
+  persisted rows, a collaboration-only parent, and non-recursive children. The
+  focused product-host suite passes 21 warning-strict tests, and the new
+  authority-removal and native-only-leak mutations are both killed with the
+  source tree unchanged.
+- The authority repair is now named-fast-green: 589 documentation files, 603
+  Ruff files, 636 warning-strict Python tests with six skips, 110 dashboard UI
+  tests, and every routing gate passed. Decision conformance passed its
+  63.797-second baseline and killed all 66 mutations with zero survivors or
+  invalid results in 566.9 seconds; the source tree was unchanged. An initial
+  304-second outer wrapper expired at mutation 37 without terminating its
+  descendants; the exact evaluator tree and 880 MB private-copy directory were
+  removed before the one authoritative rerun.
 
 ## Approach
 
