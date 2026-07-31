@@ -1396,6 +1396,37 @@ def _run_pytest(
     )
 
 
+def _run_baseline(
+    checkout: Path,
+    test_nodes: Sequence[str],
+    python_executable: str,
+    timeout_seconds: float,
+    source_root: Path,
+    *,
+    pytest_runner: PytestRunner,
+) -> _PytestRun:
+    """Run each baseline node under the documented per-test deadline."""
+
+    duration_ms = 0
+    for test_node in test_nodes:
+        result = pytest_runner(
+            checkout,
+            (test_node,),
+            python_executable,
+            timeout_seconds,
+            source_root,
+        )
+        duration_ms += result.duration_ms
+        if result.timed_out or result.exit_code != 0:
+            return _PytestRun(
+                exit_code=result.exit_code,
+                failed_nodes=result.failed_nodes,
+                duration_ms=duration_ms,
+                timed_out=result.timed_out,
+            )
+    return _PytestRun(exit_code=0, failed_nodes=(), duration_ms=duration_ms)
+
+
 def _relative_file(root: Path, relative: str) -> Path:
     candidate = Path(relative)
     if not candidate.parts or candidate.is_absolute() or ".." in candidate.parts:
@@ -1616,12 +1647,13 @@ def run_decision_conformance_eval(
     with private_temporary_directory(prefix="decision-conformance") as temporary:
         baseline_copy = temporary / "baseline"
         _copy_inputs(source_root, baseline_copy, mutations)
-        baseline_run = pytest_runner(
+        baseline_run = _run_baseline(
             baseline_copy,
             baseline_nodes,
             interpreter,
             float(timeout_seconds),
             source_root,
+            pytest_runner=pytest_runner,
         )
         baseline_passed = baseline_run.exit_code == 0 and not baseline_run.timed_out
         if baseline_passed:

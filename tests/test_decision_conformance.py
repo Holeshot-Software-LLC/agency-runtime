@@ -72,6 +72,53 @@ def test_mutation_classification_requires_the_expected_ordinary_failure(
     assert result["status"] == expected
 
 
+def test_baseline_gives_each_named_test_its_own_deadline(tmp_path: Path) -> None:
+    observed: list[tuple[tuple[str, ...], float]] = []
+
+    def runner(checkout, nodes, _python, timeout, source_root):
+        assert checkout == tmp_path
+        assert source_root == tmp_path
+        observed.append((tuple(nodes), timeout))
+        return conformance._PytestRun(0, (), 7)
+
+    result = conformance._run_baseline(
+        tmp_path,
+        ("tests/test_one.py::test_one", "tests/test_two.py::test_two"),
+        sys.executable,
+        90,
+        tmp_path,
+        pytest_runner=runner,
+    )
+
+    assert result == conformance._PytestRun(0, (), 14)
+    assert observed == [
+        (("tests/test_one.py::test_one",), 90),
+        (("tests/test_two.py::test_two",), 90),
+    ]
+
+
+def test_baseline_stops_after_the_first_failed_node(tmp_path: Path) -> None:
+    observed: list[str] = []
+
+    def runner(_checkout, nodes, _python, _timeout, _source_root):
+        observed.append(nodes[0])
+        if len(observed) == 1:
+            return conformance._PytestRun(0, (), 3)
+        return conformance._PytestRun(None, (), 5, timed_out=True)
+
+    result = conformance._run_baseline(
+        tmp_path,
+        ("test_one", "test_two", "test_three"),
+        sys.executable,
+        90,
+        tmp_path,
+        pytest_runner=runner,
+    )
+
+    assert result == conformance._PytestRun(None, (), 8, timed_out=True)
+    assert observed == ["test_one", "test_two"]
+
+
 def test_evaluator_mutates_only_private_copies(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
