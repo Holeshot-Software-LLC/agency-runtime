@@ -417,6 +417,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `81711c7` | 2026-07-31 | docs(evidence): admit persistent context fast gate | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 | `6fdb26c` | 2026-07-31 | docs(roadmap): bind proof checkpoint to PR branch | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 | `b9d9ec4` | 2026-07-31 | fix(preflight): bound encoded context and legacy replay | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | [detail](2026-07-31-b9d9ec4-encoded-context-legacy-replay.md) |
+| `9683a89` | 2026-07-31 | docs(evidence): admit encoded context fast gate | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
