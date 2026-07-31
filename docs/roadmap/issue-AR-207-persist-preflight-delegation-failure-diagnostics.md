@@ -98,6 +98,28 @@ the parent emitted no delegation tool call or response.
   validated 584 files, Ruff checked and formatted 603 files, routing passed
   every gate, decision conformance passed with source unchanged, and diff
   integrity passed.
+- PR 198 merged that repair as exact revision
+  `5328070cd048f42ce88e3bcb16e42f1e69cfae24`, which was then installed as an
+  official VCS package. The default full-suite install discovered only Codex
+  and ZCode, registered both, installed and reached the dashboard, and left
+  only the attended Codex activation ceremony incomplete as designed.
+- Autonomous activation session `019fb90b-dc97-7db0-891a-3aeea357ed3b`, trace
+  `019fb90b-e95d-7bf2-84ae-fd0efb150816`, again completed the exact
+  `code-reviewer` grant, load, native child, delegation, accepted finalization,
+  and zero-correction header. Attestation still failed because Codex emitted
+  the packaged `2% skills context budget` spelling rather than the generic
+  packaged spelling admitted by the first repair.
+- A bounded raw-JSONL diagnostic reproduced exactly two hook-bypass notices and
+  one `2%` skill-catalog notice with Codex exit zero. The installed binary
+  contains both the generic and `2%` sentences. The follow-up therefore adds
+  only the exact `2%` sentence to the same fixed notice type; arbitrary and
+  one-character near-miss errors remain fatal. All 25 activation-canary tests
+  pass after the follow-up.
+- The follow-up named fast gate is green: 636 warning-strict Python tests
+  passed with six skips, dashboard UI passed 110 tests, documentation validated
+  584 files, Ruff checked and formatted 603 files, routing passed every gate,
+  and all 63 curated mutations were killed with zero survivors or invalid
+  mutations. Decision conformance restored the source unchanged.
 
 ## Approach
 
@@ -144,7 +166,11 @@ those proofs exposed.
 - [x] Exact known Codex non-critical notices are content-free and traceable;
   near-miss or arbitrary `error` items remain fatal.
 - [x] The host-notice repair passes the named fast verification spine.
-- [ ] The Codex host-notice repair is reviewed, merged, and exact-installed
-  before any fresh product trial.
+- [x] Both exact Codex-packaged skill-catalog notice spellings pass the named
+  fast spine and the arbitrary-error mutation remains killed.
+- [ ] One fresh exact-build activation canary accepts the current Codex host
+  notices without admitting an unknown error.
+- [ ] The complete Codex host-notice repair is reviewed, merged, and
+  exact-installed before any fresh product trial.
 - [ ] One fresh exact-build product trial reaches native delegation and writes
   its workspace artifacts with zero response corrections.

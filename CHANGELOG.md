@@ -62,10 +62,10 @@ changes rather than duplicating every commit.
 ### Fixed
 
 - Codex 0.146 non-critical JSONL warnings are no longer misreported as parent
-  tool execution. The exact hook-bypass and skill-catalog-shortening notices
-  are projected as bounded content-free host notice types; unknown `error`
-  items and every non-collaboration tool remain fatal to activation and product
-  proof.
+  tool execution. The exact hook-bypass notice and both Codex-packaged
+  skill-catalog-shortening spellings, including the current `2%` wording, are
+  projected as bounded content-free host notice types; unknown `error` items
+  and every non-collaboration tool remain fatal to activation and product proof.
 - Persistent native-parent preflight is now dual-bounded before ready commit:
   32,000 characters and a 48,000-byte exact UTF-8 UserPromptSubmit context
   envelope under the host's 65,536-byte output cap. Version-11 recipes retain
