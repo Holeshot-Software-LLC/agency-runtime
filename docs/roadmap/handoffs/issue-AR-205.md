@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-205
 branch: codex/ar-203-product-planner-repair
-evidence_commit: cc322381ec932452f0575445dc174510e4caad6f
-minimum_ledger_commit: e7e8cc6a09fab27025e5fc5fc31e5e8e3cc023f6
+evidence_commit: 38e7e1c700a3ff429071ef42556040cfdc22469d
+minimum_ledger_commit: 2c70710b1d435cc95a5d256aea1d100322c9ae77
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
 ---
@@ -70,6 +70,9 @@ acceptance; this capsule records only current proof and the next package.
 - The named fast Python spine passes 636 tests with 6 intentional skips;
   dashboard UI passes 110; routing evaluation 1.4.0 passes every gate;
   documentation validates 571 files; and Ruff checks all 602 Python inputs.
+- The exact committed-tree decision-conformance rerun passed its baseline and
+  killed 44/44 mutations in 327.3 seconds with zero survivors or invalid
+  results and unchanged source.
 
 ## exact-blocker
 

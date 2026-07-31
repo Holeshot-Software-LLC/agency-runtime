@@ -73,13 +73,13 @@ requirement is presented to inference as evidence for a distinct contractor gap.
 - Dashboard UI passed 110 tests, routing evaluation 1.4.0 passed every gate,
   documentation validated 571 files, and all 602 Python inputs were
   format-current.
-- The 44-mutation evaluator passed before the final release-language
-  normalization; the exact committed-tree rerun is the first post-checkpoint
-  gate required by context telemetry.
+- The exact committed-tree decision-conformance evaluator passed its baseline
+  and killed 44/44 mutations in 327.3 seconds with zero survivors, zero invalid
+  results, and unchanged source.
 
 ## Follow-ups
 
-Run exact-tree decision conformance, publish and review the branch, install the
-exact merge for Codex, ZCode, and dashboard, and consume one fresh exact-build
-product trial. Generate the local evidence page and OpenClaw handoff only after
-that trial records zero corrections and full product evidence.
+Publish and review the branch, install the exact merge for Codex, ZCode, and
+dashboard, and consume one fresh exact-build product trial. Generate the local
+evidence page and OpenClaw handoff only after that trial records zero
+corrections and full product evidence.
