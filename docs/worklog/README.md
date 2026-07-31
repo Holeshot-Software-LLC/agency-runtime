@@ -413,6 +413,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8b8c780` | 2026-07-31 | fix(evidence): accept bounded ready routing receipts | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-206](../roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md) | null |
 | `7b6e921` | 2026-07-31 | docs(roadmap): checkpoint ready receipt verifier | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md), [AR-206](../roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md) | null |
 | `839ddee` | 2026-07-31 | fix(preflight): admit complete persistent-host teams | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
+| `6efd928` | 2026-07-31 | docs(roadmap): checkpoint approved persistent context | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
