@@ -15,7 +15,7 @@ type: worklog
 commit: 7ce640a36cd0eb74286976d712c7c7b23bc6215b
 short: 7ce640a
 date: 2026-07-31
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/199
 related_issues:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
 ---
