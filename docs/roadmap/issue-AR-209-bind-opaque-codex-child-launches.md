@@ -64,6 +64,12 @@ product rollout parser accepts v2 goal-hash evidence without retaining the
 goal, specialist prompt, encrypted message, child tools, or child result. Two
 focused decision mutations are killed with unchanged source.
 
+The complete named fast spine is green on source commit `552eb05` plus the
+v2 canary assertion correction: 593 documentation files, 603 Ruff files, 636
+warning-strict Python tests with six skips, 110 dashboard tests, and every
+routing gate passed. Decision conformance passed its baseline and killed all
+69 mutations with zero survivors or invalid results; source remained unchanged.
+
 ## Approach
 
 1. Recognize only the bounded Codex encrypted-message shape and require one
@@ -99,7 +105,7 @@ README story. ADR-0127 records the Codex-specific host contract.
 - [x] Product rollout evidence projects the v2 goal hash and excludes private
   task, prompt, tool, and result content.
 - [x] Focused warning-strict tests and curated mutations pass.
-- [ ] The named fast verification spine passes.
+- [x] The named fast verification spine passes.
 - [ ] The reviewed repair is merged and exact-installed.
 - [ ] One fresh exact-build activation and one product trial pass with zero
   corrections and proven workspace write.

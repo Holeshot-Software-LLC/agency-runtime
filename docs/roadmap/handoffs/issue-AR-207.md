@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-207-exact-product-proof
-evidence_commit: 584b949d75d013611c0fe3d26835f3057fc83466
-minimum_ledger_commit: 25db6a806b1392465c951408a6eee02359c9a0e6
+evidence_commit: 552eb05aa47ba1e44bf7ae8e0743bcc0cfdde513
+minimum_ledger_commit: abd5ba95d3954196aedbc38a835f27494aca6b92
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -74,6 +74,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   real-Store regression proves grant consumption, specialist load, worker
   identity, and completed delegation. Both focused decision mutations are
   killed with unchanged source.
+- The complete named fast spine is green: 593 docs, 603 Ruff files, 636
+  warning-strict Python tests with six skips, 110 dashboard tests, every routing
+  gate, and all 69 decision mutations with zero survivors or invalid results.
+  The evaluator baseline passed and source remained unchanged.
 - Product session `019fb92d-694c-7e42-b553-ee53802bac99`, trace
   `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
   `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage
@@ -122,9 +126,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 Exact build `584b949` is consumed: activation passed, but its product trial is
-terminal `NO-GO`. AR-209's first-spawn repair is focused-green but not yet
-named-fast-verified, reviewed, merged, or exact-installed. No new live run is
-allowed before those boundaries pass.
+terminal `NO-GO`. AR-209's first-spawn repair is focused- and named-fast-green
+but not yet reviewed, merged, or exact-installed. No new live run is allowed
+before those boundaries pass.
 
 ## same-task-continuity
 
@@ -135,9 +139,8 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run the named fast gate for AR-209 and stop at its first failure.
-2. Review, merge, and exact-install that exact repair.
-3. Repeat one activation and at most one product trial on the new exact build,
+1. Review, merge, and exact-install the AR-208/AR-209 repair.
+2. Repeat one activation and at most one product trial on the new exact build,
    then produce the local shareable evidence page and OpenClaw handoff.
 
 ## verification

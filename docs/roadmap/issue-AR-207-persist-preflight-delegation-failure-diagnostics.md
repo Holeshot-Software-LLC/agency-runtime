@@ -246,12 +246,15 @@ the parent emitted no delegation tool call or response.
 - AR-209 now identifies and repairs that exact edge. Codex encrypts arbitrary
   child messages before `PreToolUse`; the old hook recovered only the fixed
   canary goal, so activation was a false proxy for product delegation. The
-  source candidate binds a strictly shaped opaque message through its exact
-  persisted native label, stages the row's grant, and injects a token-free v2
+  `552eb05` source checkpoint binds a strictly shaped opaque message through
+  its exact persisted native label, stages the row's grant, and injects a token-free v2
   specialist context with the persisted goal hash at `SubagentStart`. A
   non-canary real-Store lifecycle, 97 focused tests, and both curated
-  opaque-child mutations pass. Named fast verification, review, merge, exact
-  install, and one fresh product trial remain.
+  opaque-child mutations pass. The named fast spine also passes: 593 docs, 603
+  Ruff files, 636 warning-strict Python tests with six skips, 110 dashboard
+  tests, all routing gates, and all 69 decision mutations with zero survivors
+  or invalid results. Review, merge, exact install, and one fresh product trial
+  remain.
 
 ## Approach
 

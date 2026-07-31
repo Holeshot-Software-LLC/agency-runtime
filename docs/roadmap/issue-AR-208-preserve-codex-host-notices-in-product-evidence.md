@@ -53,6 +53,11 @@ A late GitHub Codex review then identified that an invalid projection became
 malformed notice evidence can still produce a passing verdict. Tracker #200 is
 reopened, and the repair now makes the projection itself a required proof gate.
 
+Commit `e4ceb89` implements that fail-closed gate. The focused product suite,
+the named fast spine, and all 69 decision mutations now pass; every PR 198 and
+PR 201 review thread has an evidence-backed resolved disposition. The repair
+still requires reviewed merge before tracker #200 can close.
+
 The review's separate ancestry claim is disproven by canonical Git history:
 `ea376a5`, `947dafb`, `bb1122c`, and `096570a` are all ancestors of reviewed
 head `57fba809` and merge `dd85e7d`.
@@ -81,10 +86,11 @@ trial proves both the product projection and the wider README story.
 - [x] Product evidence retains validated `host_notice_types` and
   `host_notice_count`.
 - [x] Raw host messages never enter persisted product evidence.
-- [ ] Unknown, near-match, duplicate, malformed, inconsistent, and unbounded
+- [x] Unknown, near-match, duplicate, malformed, inconsistent, and unbounded
   notice data fail closed.
 - [x] ADR-0125 and reciprocal roadmap, decision, and worklog traceability are
   complete.
-- [ ] Focused warning-strict tests and the named fast spine pass.
-- [ ] Every PR 198 and PR 201 review thread has a commit-backed response and
+- [x] Focused warning-strict tests and the named fast spine pass.
+- [x] Every PR 198 and PR 201 review thread has a commit-backed response and
   accurate resolved disposition.
+- [ ] The fail-closed repair is reviewed, merged, and exact-installed.

@@ -67,7 +67,9 @@ were rejected.
 - Both new opaque-child decision mutations were killed with unchanged source.
 - Focused Ruff lint and formatting checks passed.
 - Documentation validation passed for all 592 Markdown files.
-- The named fast production spine remains the next gate.
+- The named fast spine passed: 636 warning-strict Python tests with six skips,
+  110 dashboard tests, every routing gate, and all 69 decision mutations with
+  zero survivors or invalid results; source remained unchanged.
 
 ## Follow-ups
 
