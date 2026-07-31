@@ -766,7 +766,9 @@ def _merge_computed_routing(
     selected_companion_ids = [
         slug for slug in signals.available_companion_ids if slug in merged_ids
     ]
-    fallback_considered = not inference_failed and not merged_ids
+    fallback_considered = (
+        bool(signals.fallback_companion_ids) and not inference_failed and not merged_ids
+    )
     fallback_applied = fallback_considered and bool(signals.available_fallback_companion_ids)
     if fallback_applied:
         merged_ids.extend(
@@ -867,7 +869,8 @@ def _attach_workforce_signals(
     active. Legacy keyword companions belong to the pre-workforce router and
     must not appear beside an inferred team: one generic policy token such as
     "contract" can otherwise make an unrelated business role look selected.
-    The explicit resident-manager fallback remains visible independently.
+    Legacy fallback fields remain as bounded compatibility telemetry but cannot
+    add a worker to an inference-owned team.
     """
 
     validation = signals.policy_validation
@@ -1282,6 +1285,7 @@ def _run_gap_hiring(
                 "inference_declared_gap",
                 *_gap_unit_reason_codes(outcome, unit_id),
             ),
+            allow_existing_worker_amendment=False,
         )
         event = _hiring_event(unit_id, hiring)
         if hiring.pending_commit is not None:
@@ -1420,7 +1424,7 @@ def route(
         # Exact controls and a proven pure acknowledgement backed by explicitly
         # current, no-pending state do not require semantic specialist
         # selection. Pure social conversation also stays with the resident
-        # managers. Resolve deterministic policy directly without spending a
+        # steward. Resolve deterministic policy directly without spending a
         # provider call or inheriting stale session stickiness.
         routing = _merge_computed_routing(
             {
@@ -1636,7 +1640,7 @@ def build_routing_context(routing: dict[str, Any], config: AgencyConfig | None =
             "[AGENCY PREFLIGHT FAILURE] Specialist routing stopped with "
             f"{status}. No specialist was selected, recommended, activated, delegated, "
             "or hired. Configure or repair the inference provider and rerun this request; "
-            "resident managers may explain the failure but must not invent a team."
+            "the resident steward records the failure but cannot answer the domain request."
         )
     elif not selected or confidence < cfg.selector.min_confidence:
         if selected:
@@ -1741,7 +1745,7 @@ HEADER_INSTRUCTION = (
     "  Agency/Agencies delegated: <agent-id>\n"
     "  Skills loaded: <skill-id[, skill-id...] or none>\n"
     "  Actual Model selected: <requested alias> -> <resolved provider/model>\n"
-    "  Recruited via: <inference | deterministic | cached | none>\n"
+    "  Recruited via: <inference | cached | none>\n"
     "  Why: <one line>\n"
     "  How it shaped outcome: <one line>"
 )

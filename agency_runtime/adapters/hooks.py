@@ -116,6 +116,11 @@ _VERIFICATION_UNAVAILABLE = (
     "Agency Runtime could not verify or persist the turn-scoped evidence contract. "
     "Do not publish this response; restore the evidence store and start a new turn."
 )
+_PREFLIGHT_UNAVAILABLE = (
+    "AGENCY PREFLIGHT FAILED: Agency could not produce and persist an accepted specialist "
+    "or contractor route. The parent model is not allowed to answer as a generalist. "
+    "Restore inference or staffing, then start a new turn."
+)
 _STOP_EVENT_DISCRIMINATOR = re.compile(
     rb'"hook_event_name"\s*:\s*"Stop"',
 )
@@ -230,7 +235,17 @@ def _boundary_failure_result(
     expected_event: str = "",
     host: str = "",
 ) -> dict[str, Any]:
-    """Block Agency-owned child launches and recognizable malformed Stop events."""
+    """Block failed preflight, Agency-owned launches, and malformed Stop events."""
+
+    parsed_user_prompt = (
+        isinstance(payload, dict) and payload.get("hook_event_name") == "UserPromptSubmit"
+    )
+    if expected_event == "UserPromptSubmit" or parsed_user_prompt:
+        # Codex documents decision:block for UserPromptSubmit. Blocking here is
+        # materially earlier than relying on the Stop verifier: a failed
+        # specialist route must never spend a parent-model turn producing a
+        # generalist answer that can only be rejected after generation.
+        return _completion_rejection(_PREFLIGHT_UNAVAILABLE, retry=False)
 
     if isinstance(payload, dict) and _agency_owned_native_child_pre_tool_use(payload, host):
         return _pre_tool_use_denial(_VERIFICATION_UNAVAILABLE, host=host)

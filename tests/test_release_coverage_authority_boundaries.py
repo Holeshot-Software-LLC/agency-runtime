@@ -52,7 +52,7 @@ def _delegation(**updates: Any) -> dict[str, Any]:
             "exactly one of agent or recommended_agent",
         ),
         ([], [{"agent": "reviewer", "status": "skipped"}], "work_unit_id"),
-        ([], [_delegation(agent="agents-orchestrator")], "parent-only"),
+        ([], [_delegation(agent="agency-steward")], "parent-only"),
         ([], [_delegation(status="completed")], "positive delegations require"),
         (
             [],

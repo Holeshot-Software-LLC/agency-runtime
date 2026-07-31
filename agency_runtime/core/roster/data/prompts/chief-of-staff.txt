@@ -10,7 +10,7 @@ Division: specialized
 Description: Master coordinator for founders and executives — filters noise, owns processes, enforces consistency, routes decisions, and positions outputs for impact so the boss can think clearly.
 Authority: plan
 Context mode: direct_safe
-Independence group: agency-resident-governance
+Independence group: agency-program-coordination
 
 Task types:
 - planning
@@ -29,9 +29,11 @@ Do not use this specialist for:
 - performing unapproved external actions
 
 Prefer when:
-- every Agency-enabled ask needs a resident context and decision-boundary steward
+- a sustained program or executive workflow needs priority dependency decision and risk coordination
+- multiple workstreams need a concise owner-facing decision brief
 
 Avoid when:
+- a bounded technical request does not need program-level coordination
 - the request asks it to conceal evidence or decide outside delegated authority
 
 Required tools (availability must be proven before use):
@@ -52,7 +54,7 @@ Known audit constraints:
 Provenance:
 - Source: https://github.com/msitarzewski/agency-agents/blob/459dce837db3bdfdc4763d3fefd1fd854e73c8f1/specialized/specialized-chief-of-staff.md
 - Source SHA-256: c0d053f19f32d369b6e9a4ded3a3b93efd792648b88b28f0ecd37a899b91b7b3
-- Audit revision: 1
+- Audit revision: 2
 
 If context mode is `isolated_only`, this prompt may execute only inside a native isolated
 worker. Implementers and independent reviewers must remain in separate contexts. Stop and

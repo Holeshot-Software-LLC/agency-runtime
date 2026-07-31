@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import logging
@@ -26,8 +27,94 @@ from agency_runtime.core.header.contract import finalize_header
 from agency_runtime.core.header.finalize import finalize_response, response_hash
 from agency_runtime.core.observability import RuntimeBoundary
 from agency_runtime.core.resident_managers import RESIDENT_MANAGER_KERNEL
-from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.store.sqlite import Store
+
+
+def _install_planned_hook_route(
+    monkeypatch: pytest.MonkeyPatch,
+    store: Store,
+) -> None:
+    from agency_runtime.core.selector import pipeline
+    from agency_runtime.core.unit_assignment import work_unit_id_from_text
+    from agency_runtime.core.workforce.routing_projection import (
+        workforce_work_units_from_descriptors,
+    )
+
+    slug = "hook-lifecycle-specialist"
+    store._activate_prevalidated_agent(
+        {
+            "slug": slug,
+            "name": "Hook Lifecycle Specialist",
+            "description": "Verifies the bounded native-hook lifecycle.",
+            "prompt_body": "Verify only the assigned native-hook lifecycle boundary.",
+            "version": "1.0.0",
+        }
+    )
+
+    def route(
+        _session_id: str,
+        user_message: str,
+        _catalog: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        descriptors = [
+            {
+                "ordinal": 1,
+                "artifact_kind": "test-evidence",
+                "lifecycle_phase": "testing",
+                "authority": "review",
+            }
+        ]
+        units = workforce_work_units_from_descriptors(user_message, descriptors)
+        unit_id = work_unit_id_from_text(units[0])
+        return {
+            "trace_id": str(kwargs.get("trace_id") or "ready"),
+            "selected_ids": [slug],
+            "confidence": 0.99,
+            "status": "applied",
+            "source": "test",
+            "query_hash": hashlib.sha256(user_message.encode()).hexdigest(),
+            "context_fingerprint": "c" * 64,
+            "work_units": {
+                "delegate": True,
+                "count": 1,
+                "units": units,
+                "source": "verified-workforce-plan",
+                "confidence": "high",
+            },
+            "workforce_unit_descriptors": descriptors,
+            "workforce_unit_bindings": [
+                {
+                    "source_unit_id": "unit-hook-lifecycle",
+                    "work_unit_id": unit_id,
+                    "selected": [slug],
+                    "delivery": "delegate",
+                    "timing": "immediate",
+                    "depends_on": [],
+                    "parallelization": "sequential",
+                    "mutation_scope": "read_only",
+                    "artifact_kind": "test-evidence",
+                    "required_tools": [],
+                    "required_evidence": ["hook lifecycle evidence"],
+                    "confidence": 0.99,
+                }
+            ],
+            "unit_assignment_agents": [
+                {
+                    "slug": slug,
+                    "name": "Hook Lifecycle Specialist",
+                    "description": "Verifies the bounded native-hook lifecycle.",
+                    "capabilities": ["hook lifecycle verification"],
+                    "tags": ["testing"],
+                    "required_tools": [],
+                    "evidence_requirements": ["hook lifecycle evidence"],
+                    "matched_work_unit_ids": [unit_id],
+                    "primary_work_unit_ids": [unit_id],
+                }
+            ],
+        }
+
+    monkeypatch.setattr(pipeline, "route", route)
 
 
 class FakeStore:
@@ -264,7 +351,7 @@ def test_codex_user_prompt_maps_to_native_additional_context() -> None:
     ]
 
 
-def test_realistic_prompt_to_stop_sequence_uses_one_turn_trace(
+def test_realistic_control_to_stop_sequence_uses_one_turn_trace(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -292,7 +379,7 @@ def test_realistic_prompt_to_stop_sequence_uses_one_turn_trace(
             "session_id": "session-correlated",
             "turn_id": turn_id,
             "model": "gpt-5.6-codex",
-            "prompt": "Review the authentication architecture and deployment controls.",
+            "prompt": "agency status",
         }
     )
     stopped = bridge.handle(
@@ -328,7 +415,7 @@ def test_new_external_prompt_abandons_prior_open_turns_with_exact_cas(
             "hook_event_name": "UserPromptSubmit",
             "session_id": "session",
             "turn_id": "current",
-            "prompt": "Review the durable session lifecycle.",
+            "prompt": "agency status",
         }
     )
 
@@ -351,7 +438,7 @@ def test_claude_no_turn_id_correlates_after_abandoning_crashed_turn(
         {
             "hook_event_name": "UserPromptSubmit",
             "session_id": "session",
-            "prompt": "Review authentication and delegation safety.",
+            "prompt": "agency status",
         }
     )
     [current] = store.get_open_traces_for_session("session")
@@ -393,7 +480,7 @@ def test_missing_turn_id_uses_only_the_unambiguous_open_routing_trace(
         {
             "hook_event_name": "UserPromptSubmit",
             "session_id": "shared-session",
-            "prompt": "Review the authentication architecture.",
+            "prompt": "agency status",
         }
     )
     bridge.handle(
@@ -976,6 +1063,7 @@ def test_preflight_none_does_not_close_preexisting_active_trace(tmp_path: Path) 
 def test_hook_cleanup_never_closes_a_reservation_promoted_to_ready(
     tmp_path: Path,
     adapter_outcome: str,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from agency_runtime.core.preflight import run_preflight
 
@@ -999,6 +1087,7 @@ def test_hook_cleanup_never_closes_a_reservation_promoted_to_ready(
             return None
 
     store = Store(tmp_path / "agency.db")
+    _install_planned_hook_route(monkeypatch, store)
     bridge = HookBridge(
         "codex",
         store=store,
@@ -1008,7 +1097,7 @@ def test_hook_cleanup_never_closes_a_reservation_promoted_to_ready(
         "hook_event_name": "UserPromptSubmit",
         "session_id": "session",
         "turn_id": "ready",
-        "prompt": "thanks",
+        "prompt": "agency status",
     }
 
     if adapter_outcome == "exception":
@@ -1584,7 +1673,7 @@ def test_agency_hook_keeps_explicit_config_identity_without_environment(tmp_path
             "session_id": "explicit-config-session",
             "turn_id": "explicit-config-turn",
             "model": "gpt-5.6-codex",
-            "prompt": "ping",
+            "prompt": "agency status",
         }
     )
     env = os.environ.copy()
@@ -1618,17 +1707,14 @@ def test_agency_hook_keeps_explicit_config_identity_without_environment(tmp_path
 
 def test_agency_hook_codex_runs_as_an_actual_stdin_process(tmp_path: Path) -> None:
     db_path = tmp_path / "codex-hook.db"
-    store = Store(db_path)
-    by_slug = {str(agent["slug"]): agent for agent in bundled_roster()}
-    store._activate_prevalidated_agent(by_slug["agents-orchestrator"])
-    store._activate_prevalidated_agent(by_slug["chief-of-staff"])
+    Store(db_path)
     event = json.dumps(
         {
             "hook_event_name": "UserPromptSubmit",
             "session_id": "real-codex",
             "turn_id": "turn-1",
             "model": "gpt-5.6-codex",
-            "prompt": "ping",
+            "prompt": "agency status",
         }
     )
 
@@ -1645,10 +1731,7 @@ def test_two_real_hook_processes_preserve_parent_scope_for_one_consumer(
     tmp_path: Path,
 ) -> None:
     db_path = tmp_path / "cross-process-parent-scope.db"
-    store = Store(db_path)
-    by_slug = {str(agent["slug"]): agent for agent in bundled_roster()}
-    store._activate_prevalidated_agent(by_slug["agents-orchestrator"])
-    store._activate_prevalidated_agent(by_slug["chief-of-staff"])
+    Store(db_path)
     parent = _run_hook(
         "codex",
         db_path,
@@ -1658,7 +1741,7 @@ def test_two_real_hook_processes_preserve_parent_scope_for_one_consumer(
                 "session_id": "cross-process-parent",
                 "turn_id": "cross-process-parent-turn",
                 "model": "gpt-5.6-codex",
-                "prompt": "ping",
+                "prompt": "agency status",
             }
         ),
     )
@@ -1742,9 +1825,6 @@ print(json.dumps({"ok": True, "scope": scope}, sort_keys=True))
 def test_codex_stdio_preflight_header_is_accepted_first_pass(tmp_path: Path) -> None:
     db_path = tmp_path / "codex-finalization.db"
     store = Store(db_path)
-    by_slug = {str(agent["slug"]): agent for agent in bundled_roster()}
-    store._activate_prevalidated_agent(by_slug["agents-orchestrator"])
-    store._activate_prevalidated_agent(by_slug["chief-of-staff"])
     session_id = "stdio-finalization"
     turn_id = "stdio-finalization-turn"
     model = "gpt-5.6-codex"
@@ -1758,7 +1838,7 @@ def test_codex_stdio_preflight_header_is_accepted_first_pass(tmp_path: Path) -> 
                 "session_id": session_id,
                 "turn_id": turn_id,
                 "model": model,
-                "prompt": "Explain the current Agency Runtime selection state.",
+                "prompt": "agency status",
             }
         ),
     )
@@ -1771,7 +1851,7 @@ def test_codex_stdio_preflight_header_is_accepted_first_pass(tmp_path: Path) -> 
         turn_id,
     )
     assert exact_response.startswith(
-        "Agency/Agencies loaded: agents-orchestrator, chief-of-staff\n"
+        "Agency/Agencies loaded: agency-steward\n"
         "Agency/Agencies delegated: none\n"
         "Skills loaded: none\n"
     )
@@ -1805,10 +1885,7 @@ def test_codex_successful_wait_injects_authoritative_first_pass_header(
     tmp_path: Path,
 ) -> None:
     db_path = tmp_path / "codex-post-wait-header.db"
-    store = Store(db_path)
-    by_slug = {str(agent["slug"]): agent for agent in bundled_roster()}
-    store._activate_prevalidated_agent(by_slug["agents-orchestrator"])
-    store._activate_prevalidated_agent(by_slug["chief-of-staff"])
+    Store(db_path)
     session_id = "post-wait-header"
     turn_id = "post-wait-header-turn"
 
@@ -1821,7 +1898,7 @@ def test_codex_successful_wait_injects_authoritative_first_pass_header(
                 "session_id": session_id,
                 "turn_id": turn_id,
                 "model": "gpt-5.6-codex",
-                "prompt": "Explain the current Agency Runtime selection state.",
+                "prompt": "agency status",
             }
         ),
     )
@@ -1851,7 +1928,7 @@ def test_codex_successful_wait_injects_authoritative_first_pass_header(
     context = json.loads(waited.stdout)["hookSpecificOutput"]["additionalContext"]
     assert context.startswith("[AGENCY FINAL HEADER SNAPSHOT v1]\n")
     assert (
-        "Agency/Agencies loaded: agents-orchestrator, chief-of-staff\n"
+        "Agency/Agencies loaded: agency-steward\n"
         "Agency/Agencies delegated: none\n"
         "Skills loaded: none\n"
     ) in context
@@ -1862,10 +1939,7 @@ def test_codex_successful_tool_use_injects_updated_first_pass_header(
     tmp_path: Path,
 ) -> None:
     db_path = tmp_path / "codex-post-tool-header.db"
-    store = Store(db_path)
-    by_slug = {str(agent["slug"]): agent for agent in bundled_roster()}
-    store._activate_prevalidated_agent(by_slug["agents-orchestrator"])
-    store._activate_prevalidated_agent(by_slug["chief-of-staff"])
+    Store(db_path)
     session_id = "post-tool-header"
     turn_id = "post-tool-header-turn"
 
@@ -1878,7 +1952,7 @@ def test_codex_successful_tool_use_injects_updated_first_pass_header(
                 "session_id": session_id,
                 "turn_id": turn_id,
                 "model": "gpt-5.6-codex",
-                "prompt": "Use the OpenAI documentation skill, then explain the result.",
+                "prompt": "agency status",
             }
         ),
     )
@@ -2266,6 +2340,49 @@ def test_hook_boundary_blocks_oversized_native_child_pre_tool_use(host: str) -> 
         assert result["decision"] == "block"
     else:
         assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+
+@pytest.mark.parametrize("host", ["codex", "zcode"])
+def test_hook_boundary_blocks_prompt_before_generalist_generation_when_preflight_fails(
+    host: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters import hooks as hooks_module
+
+    class _FailingBridge:
+        def handle(self, _payload: dict[str, Any]) -> dict[str, Any]:
+            raise RuntimeError("substantive turn has no accepted specialist")
+
+    monkeypatch.setattr(
+        hooks_module,
+        "HookBridge",
+        lambda *_args, **_kwargs: _FailingBridge(),
+    )
+    sink = io.BytesIO()
+
+    assert (
+        run_hook_stdio(
+            host,
+            expected_event="UserPromptSubmit",
+            input_stream=io.BytesIO(
+                json.dumps(
+                    {
+                        "hook_event_name": "UserPromptSubmit",
+                        "session_id": "session",
+                        "turn_id": "trace",
+                        "prompt": "Evaluate two unfamiliar code intelligence systems.",
+                    }
+                ).encode()
+            ),
+            output_stream=sink,
+        )
+        == 0
+    )
+
+    result = json.loads(sink.getvalue())
+    assert result["decision"] == "block"
+    assert "AGENCY PREFLIGHT FAILED" in result["reason"]
+    assert "not allowed to answer as a generalist" in result["reason"]
 
 
 def test_hook_boundary_blocks_planned_child_when_bridge_fails(

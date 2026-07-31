@@ -2966,14 +2966,15 @@
     "categories": [
       "specialized",
       "orchestration",
-      "resident-governance"
+      "multi-specialist-coordination"
     ],
     "capabilities": [
-      "interpret per-ask work shape",
-      "select compatible specialists",
-      "recommend bounded native delegation"
+      "decompose complex outcomes into bounded specialist work units",
+      "design dependency-aware delegation topology",
+      "define native handoff and evidence boundaries"
     ],
     "anti_capabilities": [
+      "selecting or adding workers outside the recorded inference decision",
       "replacing host-native scheduling",
       "loading a fixed hierarchy",
       "fabricating delegation or model receipts"
@@ -2984,10 +2985,12 @@
       "coordination"
     ],
     "preferred_when": [
-      "every Agency-enabled ask needs resident routing coordination and evidence boundaries"
+      "a request spans multiple specialist domains and needs bounded decomposition",
+      "an inference-selected team needs dependency-aware delegation and evidence handoffs"
     ],
     "avoid_when": [
-      "the request asks it to execute specialist work itself or claim unrecorded activity"
+      "a bounded request can be handled by one specialist without orchestration",
+      "the request asks it to choose workers beyond the inference decision execute specialist work or claim unrecorded activity"
     ],
     "required_tools": [],
     "supported_hosts": [
@@ -3004,10 +3007,10 @@
     "context_mode": "direct_safe",
     "conflicts_with": [],
     "requires": [],
-    "independence_group": "agency-resident-governance",
-    "expected_output_contract": "A turn-scoped routing recommendation naming compatible specialists, load-versus-delegate rationale, native-harness handoff boundaries, and required receipts.",
+    "independence_group": "agency-multi-specialist-orchestration",
+    "expected_output_contract": "A bounded decomposition and delegation topology for an inference-selected team, with dependencies, native-host handoff boundaries, and required receipts.",
     "evidence_requirements": [
-      "derive selection from the current ask and audited roster contracts",
+      "bind every named worker to the recorded inference staffing decision",
       "report only host-recorded loads delegations tools and reconciled model evidence"
     ],
     "model_requirements": [
@@ -3017,7 +3020,7 @@
     ],
     "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
     "content_hash": "3f900ee286eba5a809388ecc22ad860c4a3ef9ed7ff25488e80eac18f3a0f317",
-    "audit_revision": "1",
+    "audit_revision": "2",
     "audit_status": "approved",
     "findings": [
       "unsupported_memory_assumption",
@@ -5547,7 +5550,7 @@
     "categories": [
       "specialized",
       "coordination",
-      "resident-governance"
+      "program-coordination"
     ],
     "capabilities": [
       "maintain turn-level priorities and dependencies",
@@ -5566,9 +5569,11 @@
       "review"
     ],
     "preferred_when": [
-      "every Agency-enabled ask needs a resident context and decision-boundary steward"
+      "a sustained program or executive workflow needs priority dependency decision and risk coordination",
+      "multiple workstreams need a concise owner-facing decision brief"
     ],
     "avoid_when": [
+      "a bounded technical request does not need program-level coordination",
       "the request asks it to conceal evidence or decide outside delegated authority"
     ],
     "required_tools": [],
@@ -5586,7 +5591,7 @@
     "context_mode": "direct_safe",
     "conflicts_with": [],
     "requires": [],
-    "independence_group": "agency-resident-governance",
+    "independence_group": "agency-program-coordination",
     "expected_output_contract": "A concise state and decision brief with current objective, dependencies, specialist handoffs, material risks, approvals, next action, and no fabricated context.",
     "evidence_requirements": [
       "ground every status and dependency in current-turn or durable authorized records",
@@ -5599,7 +5604,7 @@
     ],
     "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
     "content_hash": "c0d053f19f32d369b6e9a4ded3a3b93efd792648b88b28f0ecd37a899b91b7b3",
-    "audit_revision": "1",
+    "audit_revision": "2",
     "audit_status": "approved",
     "findings": [
       "unsupported_memory_assumption",

@@ -71,6 +71,11 @@ changes rather than duplicating every commit.
   final response. Missing, malformed, stale, or mismatched natural output
   terminalizes without a continuation receipt or model repair, and successful
   product evidence therefore requires zero corrections.
+- Inference now defines the ideal owner from an open-ended role pool before
+  comparing roster cards. A real gap may contain zero relevant roster
+  candidates, and same-turn hiring creates a distinct task specialist rather
+  than expanding a near-match into a generalist. Failed substantive Codex and
+  ZCode preflight blocks at `UserPromptSubmit` before model generation.
 
 - Configured inference now makes an explicit per-unit `staff` or `gap`
   decision. Contradictory safe-team evidence gets one bounded inference repair
@@ -310,10 +315,10 @@ changes rather than duplicating every commit.
   before Store creation, correlation, routing, prompt activation, delegation,
   model evidence, or finalization, enabling clean fresh-session A/B testing
   without unregistering integrations or erasing history.
-- A compact, protected resident contract for `agents-orchestrator` and
-  `chief-of-staff`, with explicit manager authority and an explainable no-match
-  or justified-abstention fallback that does not append their complete upstream
-  prompts on every turn.
+- A compact, protected Agency-native `agency-steward` contract that owns only
+  outcome, scope, and evidence boundaries. It is not a selectable worker and
+  cannot replace a specialist; imported `agents-orchestrator` and
+  `chief-of-staff` remain ordinary optional roster roles.
 - Reversible config-backed per-agent availability contracts, with preserved
   roster history and protected default
   coordinators. Bounded exact-slug lookup keeps every governed agent reachable

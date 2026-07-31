@@ -1007,8 +1007,8 @@ def build_deterministic_proposal(
     rows: list[dict[str, Any]] = []
     for unit in plan.units:
         raw_ranks = rankings.get(unit.unit_id, ())
-        if not raw_ranks or len(raw_ranks) > 16:
-            raise ValueError("deterministic proposal requires one bounded ranking per unit")
+        if len(raw_ranks) > 16 or (not raw_ranks and unit.unit_id not in declared_gaps):
+            raise ValueError("verified proposal requires one bounded ranking per staffed unit")
         seen: set[str] = set()
         semantic: list[tuple[str, float]] = []
         for agent_id, score in raw_ranks:

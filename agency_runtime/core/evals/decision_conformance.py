@@ -152,6 +152,23 @@ def _typed_shortlists(""",
         ),
     ),
     DecisionMutation(
+        mutation_id="resident-steward-restores-imported-default-pair",
+        invariant=(
+            "Exactly one Agency-native steward is resident; imported managers remain optional "
+            "specialists."
+        ),
+        source_path="agency_runtime/core/resident_managers.py",
+        before=('RESIDENT_MANAGER_SLUGS: Final[tuple[str, ...]] = ("agency-steward",)'),
+        after=(
+            "RESIDENT_MANAGER_SLUGS: Final[tuple[str, ...]] = "
+            '("agents-orchestrator", "chief-of-staff")'
+        ),
+        test_node=(
+            "tests/test_resident_managers.py::"
+            "test_resident_identity_is_canonical_and_compatibility_aliases_share_it"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="implicit-staffing-failure-becomes-hiring-gap",
         invariant=(
             "An online staff decision without a safe team is repaired by inference rather "
@@ -188,6 +205,19 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_workforce_inference.py::"
             "test_recruiter_repair_receives_every_invalid_unit_and_preserves_valid_rows"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="recruiter-gap-requires-invented-roster-candidate",
+        invariant=(
+            "Recruiter inference may declare a real gap with zero ranked roster candidates."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before='            or (decision == "staff" and not raw_ranks)',
+        after="            or not raw_ranks",
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_open_ended_pool_can_declare_gap_without_inventing_a_roster_candidate"
         ),
     ),
     DecisionMutation(
@@ -523,11 +553,31 @@ class _NominationSemantics:""",
             "second model-authored identity."
         ),
         source_path="agency_runtime/core/workforce/hiring.py",
-        before="            contract = replace(contract, slug=existing.agent_id)",
-        after="            contract = contract",
+        before="    contract = replace(contract, slug=existing.agent_id)",
+        after="    contract = contract",
         test_node=(
             "tests/test_workforce_dynamic_hiring.py::"
             "test_amendment_binds_model_extension_slug_to_inferred_target"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="task-gap-restores-near-match-amendment",
+        invariant=(
+            "An ordinary task gap creates a distinct exact specialist instead of broadening "
+            "a near-match."
+        ),
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before=(
+            '    if action == "amend" and not allow_existing_worker_amendment:\n'
+            '        return failure("task_gap_requires_distinct_specialist")'
+        ),
+        after=(
+            '    if False and action == "amend" and not allow_existing_worker_amendment:\n'
+            '        return failure("task_gap_requires_distinct_specialist")'
+        ),
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_task_gap_rejects_near_match_amendment_in_open_ended_pool"
         ),
     ),
     DecisionMutation(
@@ -576,6 +626,23 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_routing_correctness.py::"
             "test_full_route_never_repopulates_inference_failure_from_policy"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="isolated-plan-normalization-bypasses-specialist-gate",
+        invariant=(
+            "An isolated route rejected for lacking a child-activation plan cannot reach the "
+            "parent as an accepted substantive turn."
+        ),
+        source_path="agency_runtime/core/preflight.py",
+        before=(
+            "        _require_substantive_specialist(routing, classification)\n"
+            '        if delivery_mode == "isolated":'
+        ),
+        after='        if delivery_mode == "isolated":',
+        test_node=(
+            "tests/test_preflight_bounds.py::"
+            "test_isolated_preflight_blocks_selection_without_an_activation_plan"
         ),
     ),
     DecisionMutation(

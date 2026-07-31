@@ -80,6 +80,7 @@ def test_recruiter_schema_requires_explicit_staff_or_gap_decision() -> None:
 
     assert "decision" in row["required"]
     assert row["properties"]["decision"]["enum"] == ["staff", "gap"]
+    assert "minItems" not in row["properties"]["ranked_semantic"]
 
 
 def _contract(agent_id: str, *, enabled: bool = True) -> WorkforceContract:
@@ -704,6 +705,96 @@ def test_inference_uses_semantic_order_without_trusting_uncalibrated_score_gaps(
         ("analysis-alternative", 0.9),
     ]
     assert row.margin == 0.1
+
+
+def test_recruiter_receives_complete_positive_and_negative_activation_contract() -> None:
+    qualifiers = tuple(f"preferred activation {index}" for index in range(1, 5))
+    exclusions = tuple(f"avoid activation {index}" for index in range(1, 5))
+    snapshot = _snapshot(
+        replace(
+            _contract("code-intelligence-evaluator"),
+            scope_qualifiers=qualifiers,
+            not_for=exclusions,
+        )
+    )
+    nominations = _nomination_document()
+    nominations["units"][0]["ranked_semantic"][0]["agent_id"] = "code-intelligence-evaluator"
+    prompts: list[dict[str, Any]] = []
+    systems: list[str] = []
+    responses = iter((_result(_compact_plan_document()), _result(nominations)))
+
+    def invoke(_provider, prompt, _schema, **kwargs):
+        prompts.append(json.loads(prompt))
+        systems.append(str(kwargs["system_prompt"]))
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Evaluate two code-intelligence tools for this repository.",
+        snapshot,
+        config=_config(),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert prompts[1]["detail_cards"] == [
+        {
+            "agent_id": "code-intelligence-evaluator",
+            "display_name": "Code Intelligence Evaluator",
+            "outcomes": ["Technical analysis"],
+            "scope_qualifiers": list(qualifiers),
+            "not_for": list(exclusions),
+        }
+    ]
+    assert "open-ended pool" in systems[1]
+    assert "who would I want handling this exact work" in systems[1]
+    assert "parent model or a generalist" in systems[1]
+    assert "declare a gap" in systems[1]
+
+
+def test_open_ended_pool_can_declare_gap_without_inventing_a_roster_candidate() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    novel_plan = _compact_plan_document()
+    novel_plan["request_summary"] = "Evaluate a quantum compiler build system."
+    novel_plan["units"][0].update(
+        outcome="Evaluate the quantum compiler build system",
+        domains=["quantum-build-systems"],
+        novel_capability="quantum-build-evaluation",
+    )
+    gap = {
+        "units": [
+            {
+                "unit_id": "unit-analyze",
+                "decision": "gap",
+                "ranked_semantic": [],
+            }
+        ]
+    }
+    recruiter_prompt: dict[str, Any] = {}
+    responses = iter((_result(novel_plan), _result(gap)))
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        if "detail_cards" in payload:
+            recruiter_prompt.update(payload)
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Evaluate an unfamiliar quantum compiler build system.",
+        snapshot,
+        config=_config(),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert recruiter_prompt["detail_cards"] == []
+    assert not outcome.accepted
+    assert outcome.inference_mode == "inferred"
+    assert outcome.decision_source == "inferred"
+    assert outcome.proposal is not None
+    assert outcome.proposal.units[0].ranked_semantic == ()
+    assert outcome.proposal.units[0].selected == ()
+    assert outcome.proposal.units[0].abstention_reasons == ("inference-declared-gap",)
 
 
 def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() -> None:

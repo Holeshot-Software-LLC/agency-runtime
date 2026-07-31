@@ -7,6 +7,7 @@ updated: 2026-07-30
 tags: [routing, inference, workforce, safety, failure]
 related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/decisions/0067-require-configured-inference-for-selection.md

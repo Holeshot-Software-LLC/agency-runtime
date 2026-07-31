@@ -264,7 +264,7 @@ def deterministic_work_plan(
     *,
     context: StaffingContext,
 ) -> tuple[WorkUnitPlan | None, tuple[str, ...]]:
-    """Build only high-signal typed units; ambiguous work stays with resident managers."""
+    """Build a reject-only offline oracle; ambiguous work remains unstaffed."""
 
     actionable_request = _NEGATED_SCOPE.sub(" ", request)
     tokens = _tokens(actionable_request)

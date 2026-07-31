@@ -1159,7 +1159,7 @@ def test_same_specialist_can_activate_for_two_out_of_order_native_work_units(
     assert fields["why"].endswith(".")
     assert "specialist instructions were loaded" in fields["how_it_shaped_outcome"]
     draft = (
-        "Agency/Agencies loaded: agents-orchestrator, chief-of-staff, technical-writer\n"
+        "Agency/Agencies loaded: agency-steward, technical-writer\n"
         f"Agency/Agencies delegated: generic-worker via {backend}\n"
         "Skills loaded: none\n"
         "Actual Model selected: unknown -> unavailable - no model receipt recorded\n"

@@ -1301,6 +1301,7 @@ def _prepare_preflight_evidence(
     )
     routing = dict(routing)
     routing["trace_id"] = trace_id
+    _require_substantive_specialist(routing, classification)
     hydration_store, hydration_catalog = _pending_hiring_specialist_view(
         store,
         catalog,
@@ -1328,6 +1329,10 @@ def _prepare_preflight_evidence(
             suggestions,
             delivery_mode=delivery_mode,
         )
+        # Isolated delivery may reject a selected identity that lacks an exact
+        # child-activation plan. Recheck the normalized route so a malformed
+        # pre-plan selection cannot bypass the no-generalist boundary.
+        _require_substantive_specialist(routing, classification)
         if delivery_mode == "isolated":
             specialist_budget = MAX_SPECIALIST_CONTEXT_CHARS
         else:
@@ -1420,6 +1425,37 @@ def _prepare_preflight_evidence(
             )
         child_route_guard.pop_all()
         return recipe, routing_recipe, suggestions, specialist_refs, classification
+
+
+def _require_substantive_specialist(
+    routing: Mapping[str, Any],
+    classification: TurnClassification,
+) -> None:
+    """Prevent a resident-only parent model from answering substantive work.
+
+    Planning, recruitment, gap hiring, and restaffing have all completed before
+    this boundary. A substantive turn that still has no non-resident identity is
+    therefore terminal: continuing would silently turn the host model into the
+    universal generalist ADR-0122 forbids.
+    """
+
+    if not classification.selection_required:
+        return
+    selected = tuple(
+        dict.fromkeys(
+            slug
+            for item in routing.get("selected_ids", ())
+            if (slug := str(item or "").strip().casefold()) and not is_resident_manager_slug(slug)
+        )
+    )
+    if selected:
+        return
+    status = " ".join(str(routing.get("status") or "unavailable").split())[:64]
+    source = " ".join(str(routing.get("source") or "unavailable").split())[:64]
+    raise RuntimeError(
+        "substantive Agency turn has no accepted specialist or contractor; "
+        f"status={status}; source={source}"
+    )
 
 
 def _prepare_with_bounded_continuation_reroute(

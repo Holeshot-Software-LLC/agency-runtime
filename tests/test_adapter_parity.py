@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -25,6 +26,94 @@ from agency_runtime.core.store.sqlite import Store
 from tests.runtime_support import ensure_private_test_directory
 
 ADAPTERS = [HermesAdapter, OpenClawAdapter, CodexAdapter, ClaudeAdapter, GenericAdapter]
+
+
+def _activate_test_specialist(store: Store, slug: str = "adapter-test-specialist") -> None:
+    store._activate_prevalidated_agent(
+        {
+            "slug": slug,
+            "name": slug.replace("-", " ").title(),
+            "description": "Handles the bounded adapter test request.",
+            "prompt_body": "Complete only the assigned bounded adapter test request.",
+            "version": "1.0.0",
+        }
+    )
+
+
+def _route_to_test_specialist(
+    monkeypatch: pytest.MonkeyPatch,
+    slug: str = "code-reviewer",
+) -> None:
+    from agency_runtime.core.selector import pipeline
+    from agency_runtime.core.unit_assignment import work_unit_id_from_text
+    from agency_runtime.core.workforce.routing_projection import (
+        workforce_work_units_from_descriptors,
+    )
+
+    def route(
+        _session_id: str,
+        user_message: str,
+        _catalog: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        descriptors = [
+            {
+                "ordinal": 1,
+                "artifact_kind": "review-report",
+                "lifecycle_phase": "review",
+                "authority": "review",
+            }
+        ]
+        units = workforce_work_units_from_descriptors(user_message, descriptors)
+        unit_id = work_unit_id_from_text(units[0])
+        return {
+            "trace_id": str(kwargs.get("trace_id") or "test-turn"),
+            "selected_ids": [slug],
+            "confidence": 0.99,
+            "status": "applied",
+            "source": "test",
+            "query_hash": hashlib.sha256(user_message.encode()).hexdigest(),
+            "context_fingerprint": "c" * 64,
+            "work_units": {
+                "delegate": True,
+                "count": 1,
+                "units": units,
+                "source": "verified-workforce-plan",
+                "confidence": "high",
+            },
+            "workforce_unit_descriptors": descriptors,
+            "workforce_unit_bindings": [
+                {
+                    "source_unit_id": "unit-work",
+                    "work_unit_id": unit_id,
+                    "selected": [slug],
+                    "delivery": "delegate",
+                    "timing": "immediate",
+                    "depends_on": [],
+                    "parallelization": "sequential",
+                    "mutation_scope": "read_only",
+                    "artifact_kind": "review-report",
+                    "required_tools": [],
+                    "required_evidence": ["adapter test evidence"],
+                    "confidence": 0.99,
+                }
+            ],
+            "unit_assignment_agents": [
+                {
+                    "slug": slug,
+                    "name": slug.replace("-", " ").title(),
+                    "description": "Handles the bounded adapter test request.",
+                    "capabilities": ["adapter boundary review"],
+                    "tags": ["test"],
+                    "required_tools": [],
+                    "evidence_requirements": ["adapter test evidence"],
+                    "matched_work_unit_ids": [unit_id],
+                    "primary_work_unit_ids": [unit_id],
+                }
+            ],
+        }
+
+    monkeypatch.setattr(pipeline, "route", route)
 
 
 def test_hermes_bridge_forwards_complete_parent_correlation() -> None:
@@ -795,13 +884,14 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
         "technical-writer",
     ):
         store._activate_prevalidated_agent(dict(starter_by_slug[slug]))
+    _route_to_test_specialist(monkeypatch)
 
     routed = handle(
         {
             "action": "preflight",
             "sessionId": "bridge",
             "traceId": "bridge-fallback",
-            "userMessage": "How do I cook a mushroom risotto?",
+            "userMessage": "thanks",
             "model": "task-general",
         }
     )
@@ -856,7 +946,7 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
     enabled = handle({"action": "control", "command": "on"})
     enabled_status = handle({"action": "control", "command": "status"})
 
-    assert "managers=agents-orchestrator,chief-of-staff" in routed["context"]
+    assert "managers=agency-steward" in routed["context"]
     assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in routed["context"]
     assert "call `agency.finalize` exactly once" in routed["context"]
     assert correlated["context"]
@@ -911,15 +1001,19 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
         "updated_at": None,
         "source": "default",
     }
-    assert "chief-of-staff" not in store.get_specialists_for_session("bridge")
+    assert store.get_specialists_for_session("bridge") == ["chief-of-staff"]
 
 
-def test_hermes_preflight_appends_exact_first_pass_header_snapshot(tmp_path: Path) -> None:
+def test_hermes_preflight_appends_exact_first_pass_header_snapshot(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     from agency_runtime.core.policy.defaults import STARTER_ROSTER
 
     store = Store(tmp_path / "hermes-preflight.db")
     for agent in STARTER_ROSTER:
         store._activate_prevalidated_agent(dict(agent))
+    _route_to_test_specialist(monkeypatch)
 
     result = hermes_bridge.handle(
         {
@@ -934,7 +1028,7 @@ def test_hermes_preflight_appends_exact_first_pass_header_snapshot(tmp_path: Pat
 
     assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in result["context"]
     assert "call `agency.finalize` exactly once" in result["context"]
-    assert "Agency/Agencies loaded: agents-orchestrator, chief-of-staff" in result["context"]
+    assert "Agency/Agencies loaded: agency-steward" in result["context"]
 
 
 def test_openclaw_blank_finalize_payload_is_terminal_and_exactly_replayed(
@@ -947,6 +1041,8 @@ def test_openclaw_blank_finalize_payload_is_terminal_and_exactly_replayed(
     from agency_runtime.core.store.sqlite import Store
 
     store = Store(tmp_path / "blank-finalize.db")
+    _activate_test_specialist(store)
+    _route_to_test_specialist(monkeypatch, "adapter-test-specialist")
     handle(
         {
             "action": "preflight",
@@ -994,6 +1090,9 @@ def test_openclaw_duplicate_invalid_callback_replays_one_terminal_outcome(
     from agency_runtime.adapters.openclaw.node_bridge import handle
     from agency_runtime.core.store.sqlite import Store
 
+    store = Store(tmp_path / "replayed-revision.db")
+    _activate_test_specialist(store)
+    _route_to_test_specialist(monkeypatch, "adapter-test-specialist")
     handle(
         {
             "action": "preflight",
@@ -1034,9 +1133,7 @@ def test_openclaw_duplicate_invalid_callback_replays_one_terminal_outcome(
     )
 
     assert gated["action"] == "replace"
-    assert Store(tmp_path / "replayed-revision.db").get_run("repeat-turn")["status"] == (
-        "response_invalid"
-    )
+    assert store.get_run("repeat-turn")["status"] == "response_invalid"
 
 
 def test_openclaw_visible_rejection_is_bounded_by_serialized_byte_budget() -> None:
@@ -1138,6 +1235,9 @@ def test_openclaw_never_emits_or_authenticates_an_internal_header_retry(
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "retry.db"))
     from agency_runtime.adapters.openclaw.node_bridge import handle
 
+    store = Store(tmp_path / "retry.db")
+    _activate_test_specialist(store)
+    _route_to_test_specialist(monkeypatch, "adapter-test-specialist")
     preflight = handle(
         {
             "action": "preflight",

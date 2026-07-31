@@ -120,7 +120,7 @@ def test_request_boundary_rejects_host_and_accepts_matching_origin() -> None:
     assert errors == []
 
 
-def test_trivial_preflight_seeds_and_selects_bundled_fallback(
+def test_trivial_preflight_seeds_steward_without_selecting_a_worker(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -147,18 +147,12 @@ def test_trivial_preflight_seeds_and_selects_bundled_fallback(
     preflight = payloads[0]
     trace_id = preflight["trace_id"]
     assert preflight["trivial"] is True
-    assert preflight["routing"]["selected_ids"] == [
-        "agents-orchestrator",
-        "chief-of-staff",
-    ]
-    assert preflight["routing"]["source"] == "policy_fallback"
+    assert preflight["routing"]["selected_ids"] == []
+    assert preflight["routing"]["status"] == "abstained"
     assert preflight["loaded_specialists"] == []
-    assert preflight["resident_managers"] == [
-        "agents-orchestrator",
-        "chief-of-staff",
-    ]
-    assert "agents-orchestrator, chief-of-staff" in preflight["context"]
-    assert "[Agency resident-manager kernel v1]" in preflight["context"]
+    assert preflight["resident_managers"] == ["agency-steward"]
+    assert "agency-steward" in preflight["context"]
+    assert "[Agency resident-steward kernel v2]" in preflight["context"]
     assert not any(line.startswith("[AGENCY LOADED]") for line in preflight["context"].splitlines())
     assert store.get_active_specialists_for_trace("fresh-http", trace_id) == []
 
@@ -171,7 +165,7 @@ def test_trivial_preflight_seeds_and_selects_bundled_fallback(
             "draft_text": "The turn is complete.",
         }
     )
-    assert "Agency/Agencies loaded: agents-orchestrator, chief-of-staff" in payloads[1]["text"]
+    assert "Agency/Agencies loaded: agency-steward" in payloads[1]["text"]
 
 
 def test_http_preflight_rejects_oversized_prompt_without_truncating(

@@ -12,11 +12,13 @@ related:
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
+  - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
   - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
+  - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes:

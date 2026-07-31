@@ -7,6 +7,7 @@ updated: 2026-07-30
 tags: [routing, evaluation, inference, recall, safety]
 related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-11-routing-evaluation-and-performance.md
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
   - docs/decisions/0118-require-inference-owned-staffing.md

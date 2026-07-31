@@ -38,17 +38,18 @@ superseded_by: null
   <img alt="Platforms" src="https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg"/>
 </p>
 
-For each request, Agency Runtime understands the work, searches an audited
-roster of specialists, and gives your host (Codex, Claude Code, ZCode, Hermes,
-or OpenClaw) a focused delegation plan. The chosen specialist's instructions
-apply to that turn or child task and then leave the active context — your main
-agent stays small.
+For each request, Agency Runtime first asks inference who should own the work as
+if the specialist pool were unlimited. It reuses an audited roster specialist
+only when that worker faithfully fits the inferred ideal; otherwise it designs,
+audits, and hires a narrow contractor for the gap. The chosen specialist's
+instructions apply to that turn or child task and then leave the active context
+— your main agent stays small.
 
 **You get:**
 
-- 🔭 **Inference-first selection** — when a provider is configured, an intent
-  planner decomposes the ask and a recruiter picks the best eligible specialist
-  per work unit (or declares a real gap and hires a contractor).
+- 🔭 **Ideal-specialist-first selection** — inference decomposes the ask, defines
+  who an exacting owner would want for each unit from an open-ended role pool,
+  then either reuses a faithful roster match or declares a real gap.
 - 🚨 **Fails loudly without inference** — deterministic code can recall and
   validate candidates, but it never chooses a specialist. A substantive turn
   without a valid inference decision selects nobody and reports the exact
@@ -57,7 +58,8 @@ agent stays small.
   exact audited specialist is injected for that one task with a one-use
   activation receipt.
 - 🧑‍💼 **Hires contractors on real gaps** — if no specialist fits, Agency
-  compiles, audits, and admits a least-privilege contractor in the same turn.
+  compiles, audits, and admits a least-privilege task specialist in the same
+  turn; it does not stretch a near-match into a generalist.
 - 📊 **Local dashboard + CLI** — live routing activity, model receipts,
   workforce lifecycle, and on/off controls.
 - 🪟 **Windows and Linux**, five native hosts.
@@ -74,8 +76,8 @@ specialist's full prompt into every turn balloons context and degrades the
 model. Agency Runtime is the middle path: a **company** of narrow audited
 specialists that your main agent recruits per turn.
 
-- **Per-turn best-specialist selection** across the whole enabled roster, not a
-  fixed prompt.
+- **Per-turn ideal-specialist selection** from an open-ended inference pool;
+  the enabled roster is a reusable cache, not the limit of available expertise.
 - **Inference reads intent** — it picks the specialist for *this* ask (e.g. a
   Git-workflow specialist for "design a branching strategy") that keyword
   matching could never find.
@@ -92,42 +94,48 @@ specialists that your main agent recruits per turn.
 
 ## 🧒 How it works (ELI5)
 
-Imagine your main agent has a company directory of 263 specialists.
+Imagine your main agent can staff from an unlimited catalog of possible roles,
+with 263 audited specialists already on payroll.
 
 1. You ask the main agent for something.
 2. Agency classifies the turn — new task, follow-up, approval, control command,
    or ordinary conversation.
-3. It **plans** the work into typed units (no agent names yet).
+3. It **plans** the work into typed units (no agent names yet) and describes
+   the ideal owner for each unit from the open-ended pool.
 4. It **recalls** every approved, enabled specialist that could plausibly fit
    (typed contract fields: artifact, lifecycle, domain, stack, capability,
    authority).
-5. The **recruiter** uses inference to pick the best eligible specialist per
-   unit — or declares a real gap. If inference is unavailable or invalid, the
-   route fails visibly and no specialist is suggested.
+5. The **recruiter** uses inference to accept a roster specialist only when it
+   faithfully matches that ideal. Zero relevant candidates is a valid explicit
+   gap, not a reason to invent a nearest worker. If inference is unavailable or
+   invalid, the prompt is blocked visibly and no generalist answer is allowed.
 6. If two specialists would conflict, Agency separates their work instead of
    putting both in one prompt.
 7. Small focused work loads into the current turn; larger or independent work is
    delegated through the host's native subagent mechanism with the exact
    specialist bound in.
-8. Agency records what really loaded, delegated, and the model evidence.
+8. Agency records what really loaded, delegated, hired, and the model evidence.
 9. The response shows that evidence in a compact header. On the next request,
    specialists return to the pool.
 
-A small permanent coordination pair (Agents Orchestrator + Chief of Staff) stays
-resident. They do not replace domain specialists.
+One compact Agency-native `agency-steward` stays resident to bind outcome,
+scope, and evidence. It is infrastructure, not a worker: it cannot select,
+execute, review, or answer substantive work. Imported `agents-orchestrator` and
+`chief-of-staff` remain ordinary optional roster specialists selected only when
+their audited activation contracts fit.
 
 ```mermaid
 flowchart LR
     U["Your request"] --> T["Classify turn"]
     T --> P["Plan typed work units"]
-    P --> R["Recall typed specialists"]
-    R --> D{"Inference configured?"}
-    D -- yes --> RC["Recruiter picks best / declares gap"]
-    D -- no --> DF["Deterministic typed-recall floor"]
+    P --> I["Infer ideal specialist from open-ended pool"]
+    I --> R["Recall typed roster matches"]
+    R --> D{"Inference decision valid?"}
+    D -- yes --> RC["Accept faithful match / declare gap"]
+    D -- no --> DF["Block prompt: no generalist answer"]
     RC --> G{"Real gap?"}
     G -- yes --> H["Hire contractor"]
     G -- no --> V["Verify team"]
-    DF --> V
     H --> V
     V --> L["Load focused help"]
     V --> ND["Delegate via native subagent (exact specialist bound)"]
@@ -207,15 +215,18 @@ Selection is inference-owned:
 1. **Plan** — one compact inference call decomposes the ask into typed work units
    (outcome, artifact, lifecycle, domain, stack, capabilities, authority,
    dependencies).
-2. **Recall** — deterministic, zero-false-negative typed recall reduces the whole
-   workforce to the plausibly-relevant specialists.
-3. **Recruit** — the recruiter (one bounded inference call over the recall
-   shortlist) explicitly decides `staff` or `gap` per unit and classifies each
-   nominated candidate as `required`, `acceptable`, or `forbidden`.
-4. **Verify** — deterministic code validates eligibility, composition, coverage,
+2. **Define the ideal** — inference asks who an exacting owner would want for
+   each unit if the possible-role pool were unlimited. The parent model and a
+   generalist are never candidates.
+3. **Recall** — deterministic typed recall returns plausibly relevant audited
+   workers without ranking or choosing them; an empty result remains valid.
+4. **Recruit** — the recruiter explicitly decides `staff` or `gap` per unit and
+   classifies only faithful roster candidates as `required`, `acceptable`, or
+   `forbidden`. A gap may contain no roster candidate at all.
+5. **Verify** — deterministic code validates eligibility, composition, coverage,
    and budget around the model's decision. A contradictory `staff` or `gap`
    result gets one bounded inference repair; code does not silently reverse it.
-5. **Gap → hire** — only an explicit gap with verifier-confirmed safe no-team
+6. **Gap → hire** — only an explicit gap with verifier-confirmed safe no-team
    evidence enters independent whole-workforce contractor analysis. Declined
    analysis does not consume the task's applied-hire allowance.
 
@@ -231,6 +242,8 @@ A declared gap is a contractor specification. Agency:
 - **Admits** the worker as a least-privilege, visibly-marked probationary
   contractor tied to the agency origin (`origin="agency"`,
   `employment="contractor"`), with a one-use activation receipt.
+- **Keeps roles narrow** — ordinary task staffing creates the exact missing
+  specialist instead of expanding a near-match into a broad generalist.
 - High-risk domains still require explicit owner approval.
 
 Contractors follow the **same audited, versioned, composition-bound path** as
@@ -568,8 +581,9 @@ Owner CLI and dashboard controls use the same validated writers, exact
 confirmations, revision or generation checks, dry runs, ownership checks, and
 postconditions. Those are transaction-safety controls, not a human-presence
 ceremony. Hook, MCP, and broker identities remain read-only.
-`agents-orchestrator` and `chief-of-staff` remain the protected coordination
-pair.
+The Agency-native `agency-steward` is the protected parent-only evidence kernel.
+It is not listed as a selectable worker; imported managers remain ordinary,
+reversible roster specialists.
 
 ---
 

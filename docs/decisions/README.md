@@ -48,6 +48,7 @@ Status meanings:
 - ADR-0030 Gate routing changes with versioned quantitative evaluation → ADR-0121 Gate deterministic recall without selection authority
 - ADR-0077 Prove Codex hook activation behaviorally without bypassing trust → ADR-0119 Separate native trust modes from activation proof
 - ADR-0071 Bound native delegation correction to one evidence-checked pass → ADR-0120 Construct evidence headers before first publication
+- ADR-0065 Keep a compact resident manager kernel at the parent boundary → ADR-0122 Use one Agency-native resident steward
 
 ## Architecture and integrations
 
@@ -96,6 +97,7 @@ Status meanings:
 | [ADR-0115](0115-aggregate-bounded-recruiter-repair-failures.md) | Aggregate bounded recruiter repair failures | Accepted |
 | [ADR-0118](0118-require-inference-owned-staffing.md) | Require inference-owned specialist staffing | Accepted |
 | [ADR-0121](0121-gate-deterministic-recall-without-selection-authority.md) | Gate deterministic recall without selection authority | Accepted |
+| [ADR-0122](0122-use-one-agency-native-resident-steward.md) | Use one Agency-native resident steward | Accepted |
 
 ## Evidence and observability
 
@@ -110,7 +112,7 @@ Status meanings:
 | [ADR-0027](0027-authoritative-runtime-evidence-traces.md) | Derive runtime claims from authoritative correlated evidence | Accepted |
 | [ADR-0045](0045-turn-scoped-specialist-activation.md) | Use turn-scoped specialist activation with immutable session history | Accepted |
 | [ADR-0047](0047-reconcile-litellm-model-and-router-evidence.md) | Reconcile LiteLLM actual-model and router evidence separately | Accepted |
-| [ADR-0065](0065-keep-compact-resident-manager-kernel.md) | Keep a compact resident manager kernel at the parent boundary | Accepted |
+| [ADR-0065](0065-keep-compact-resident-manager-kernel.md) | Keep a compact resident manager kernel at the parent boundary | Superseded |
 | [ADR-0093](0093-atomic-finalization-evidence-batches.md) | Commit one finalization evidence batch atomically | Accepted |
 | [ADR-0120](0120-construct-first-pass-evidence-headers.md) | Construct evidence headers before first publication | Accepted |
 

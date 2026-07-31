@@ -172,18 +172,18 @@ def test_projection_preserves_typed_relationships_without_promoting_conflicts() 
     assert contract.composition.requires == ()
 
 
-def test_disabled_shadow_contract_remains_visible_but_not_employed() -> None:
+def test_disabled_imported_manager_remains_visible_but_is_not_forced_employed() -> None:
     agents = _manifest_agents()
     writer = next(agent for agent in agents if agent["slug"] == "technical-writer")
     manager = next(agent for agent in agents if agent["slug"] == "chief-of-staff")
 
     disabled = project_workforce_contract(writer, disabled={"technical-writer"})
-    resident = project_workforce_contract(manager, disabled={"chief-of-staff"})
+    imported_manager = project_workforce_contract(manager, disabled={"chief-of-staff"})
 
     assert disabled.enabled is False
     assert disabled.employment == "disabled"
-    assert resident.enabled is True
-    assert resident.employment == "employee"
+    assert imported_manager.enabled is False
+    assert imported_manager.employment == "disabled"
 
 
 def test_full_index_fingerprint_is_order_independent_and_content_sensitive() -> None:

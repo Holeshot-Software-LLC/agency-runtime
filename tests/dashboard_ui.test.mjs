@@ -2356,7 +2356,7 @@ test("app.js roster and empty evidence renderers expose actionable, scoped contr
       name: "Security Reviewer",
     },
     { agent_slug: "generalist", capabilities: [], enabled: false },
-    { agent_slug: "chief-of-staff", capabilities: [], enabled: true, protected: true },
+    { agent_slug: "chief-of-staff", capabilities: [], enabled: true, protected: false },
   ];
   harness.api.state.rosterPage = {
     count: 3, total_count: 3, enabled_count: 2, disabled_count: 1, truncated: false,
@@ -2376,11 +2376,12 @@ test("app.js roster and empty evidence renderers expose actionable, scoped contr
 	assert.deepEqual(agentButtons.map((node) => node.textContent), [
 		"disable",
 		"enable",
-		"always enabled",
+		"disable",
 	]);
 	assert.equal(agentButtons[0].disabled, false);
 	assert.equal(agentButtons[1].disabled, false);
-	assert.equal(agentButtons[2].disabled, true);
+	assert.equal(agentButtons[2].disabled, false);
+	assert.match(INDEX_SOURCE, /Agency steward is protected infrastructure/i);
 	const snapshotNodes = descendants(harness.node("snapshot-list"));
 	const snapshotButtons = snapshotNodes.filter((node) => node.type === "button");
 	assert.deepEqual(snapshotButtons.map((node) => node.textContent), ["approve", "activate"]);

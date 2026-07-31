@@ -16,6 +16,7 @@ from agency_runtime.core.header.contract import parse_header
 from agency_runtime.core.header.finalize import finalize_response
 from agency_runtime.core.installer import ensure_no_match_fallback_roster, seed_starter_roster
 from agency_runtime.core.policy.defaults import NO_MATCH_FALLBACK_SLUGS, STARTER_ROSTER
+from agency_runtime.core.resident_managers import RESIDENT_MANAGER_SLUGS
 from agency_runtime.core.roster.bundled import SOURCE_REPOSITORY, bundled_manifest
 from agency_runtime.core.selector import pipeline
 from agency_runtime.core.selector.cache import clear_cache
@@ -47,22 +48,19 @@ def _offline_config() -> AgencyConfig:
     )
 
 
-def _fallback_only_store(path: Path) -> Store:
-    store = Store(path)
-    for entry in STARTER_ROSTER:
-        if entry["slug"] in NO_MATCH_FALLBACK_SLUGS:
-            store.activate_agent_if_missing(entry)
-    return store
+def _resident_only_store(path: Path) -> Store:
+    return Store(path)
 
 
-def test_fresh_seed_activates_both_bundled_fallback_prompts(tmp_path: Path) -> None:
+def test_fresh_seed_installs_imported_managers_without_a_worker_fallback(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     source_revision = bundled_manifest()["source"]["revision"]
 
     assert seed_starter_roster(store) == len(STARTER_ROSTER)
     assert seed_starter_roster(store) == 0
 
-    for slug in NO_MATCH_FALLBACK_SLUGS:
+    assert NO_MATCH_FALLBACK_SLUGS == ()
+    for slug in ("agents-orchestrator", "chief-of-staff"):
         entry = store.get_roster_entry(slug)
         prompt = store.get_specialist_prompt(slug)
 
@@ -76,7 +74,7 @@ def test_fresh_seed_activates_both_bundled_fallback_prompts(tmp_path: Path) -> N
         assert prompt["prompt_body"].strip()
 
 
-def test_fallback_ensure_skips_noop_writes_and_restores_external_removal(
+def test_removed_fallback_ensure_is_a_write_free_noop(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -107,35 +105,16 @@ def test_fallback_ensure_skips_noop_writes_and_restores_external_removal(
         if "FROM agent_active AS a JOIN agent_versions AS v" in statement
         and "WHERE a.agent_slug IN" in statement
     ]
-    assert len(presence_queries) == 1
-
-    conn = original_connect()
-    try:
-        conn.executemany(
-            "DELETE FROM agent_active WHERE agent_slug = ?",
-            [(slug,) for slug in NO_MATCH_FALLBACK_SLUGS],
-        )
-        conn.commit()
-    finally:
-        conn.close()
-    statements.clear()
-
-    assert ensure_no_match_fallback_roster(store) == len(NO_MATCH_FALLBACK_SLUGS)
-    assert sum(statement == "BEGIN IMMEDIATE" for statement in statements) == len(
-        NO_MATCH_FALLBACK_SLUGS
-    )
-    assert store.get_active_roster_slugs(NO_MATCH_FALLBACK_SLUGS) == frozenset(
-        NO_MATCH_FALLBACK_SLUGS
-    )
+    assert presence_queries == []
+    assert ensure_no_match_fallback_roster(store) == 0
+    assert not any(statement == "BEGIN IMMEDIATE" for statement in statements)
 
 
-def test_route_reserves_fallback_pair_until_primary_routing_has_no_match(
+def test_unconfigured_inference_never_restores_a_no_match_worker(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(pipeline, "load_policy", lambda *_args: load_bundled_policy())
     catalog = [dict(agent) for agent in STARTER_ROSTER]
-    fallback_ids = set(NO_MATCH_FALLBACK_SLUGS)
-
     no_match = pipeline.route(
         "fallback-session",
         "How do I cook a mushroom risotto?",
@@ -146,11 +125,9 @@ def test_route_reserves_fallback_pair_until_primary_routing_has_no_match(
     assert no_match["selected_ids"] == list(NO_MATCH_FALLBACK_SLUGS)
     assert no_match["semantic_ids"] == []
     assert no_match["fallback_companion_ids"] == list(NO_MATCH_FALLBACK_SLUGS)
-    assert no_match["fallback_considered"] is True
-    assert no_match["fallback_applied"] is True
-    assert no_match["status"] == "policy_fallback"
-    assert no_match["source"] == "policy_fallback"
-    assert no_match["semantic_status"] == "abstained"
+    assert no_match["fallback_considered"] is False
+    assert no_match["fallback_applied"] is False
+    assert no_match["status"] == "inference_unavailable"
 
     primary_match = pipeline.route(
         "fallback-session",
@@ -159,8 +136,8 @@ def test_route_reserves_fallback_pair_until_primary_routing_has_no_match(
         config=_offline_config(),
     )
 
-    assert primary_match["selected_ids"]
-    assert fallback_ids.isdisjoint(primary_match["selected_ids"])
+    assert primary_match["selected_ids"] == []
+    assert primary_match["status"] == "inference_unavailable"
     assert primary_match["fallback_considered"] is False
     assert primary_match["fallback_applied"] is False
 
@@ -183,12 +160,12 @@ def test_full_roster_polyseme_requires_an_unreal_domain_anchor(
     )
 
     assert unrelated["selected_ids"] == list(NO_MATCH_FALLBACK_SLUGS)
-    assert unrelated["semantic_status"] == "abstained"
+    assert unrelated["status"] == "inference_unavailable"
     assert engine_candidates[0]["slug"] == "unreal-technical-artist"
     assert engine_scores[0] > 0
 
 
-def test_trivial_no_signal_route_skips_semantic_judge_and_applies_fallback(
+def test_trivial_no_signal_route_skips_semantic_judge_without_a_worker_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(pipeline, "load_policy", lambda *_args: load_bundled_policy())
@@ -210,13 +187,14 @@ def test_trivial_no_signal_route_skips_semantic_judge_and_applies_fallback(
 
     assert result["selected_ids"] == list(NO_MATCH_FALLBACK_SLUGS)
     assert result["semantic_ids"] == []
-    assert result["semantic_status"] == "abstained"
-    assert result["status"] == "policy_fallback"
-    assert result["source"] == "policy_fallback"
+    assert result["status"] == "abstained"
+    assert result["fallback_considered"] is False
+    assert result["fallback_applied"] is False
+    assert result["selection_required"] is False
     assert result["candidate_count"] == 0
 
 
-def test_explain_receipt_distinguishes_policy_fallback_from_semantic_abstention(
+def test_explain_receipt_reports_inference_failure_without_a_fallback_identity(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(pipeline, "load_policy", lambda *_args: load_bundled_policy())
@@ -233,17 +211,15 @@ def test_explain_receipt_distinguishes_policy_fallback_from_semantic_abstention(
     )
 
     selection = receipt["signals"]["selection"]
-    assert selection["status"] == "policy_fallback"
-    assert selection["source"] == "policy_fallback"
-    assert selection["semantic_status"] == "abstained"
+    assert selection["status"] == "inference_unavailable"
     assert selection["semantic_ids"] == []
-    assert {item["source"] for item in receipt["selected"]} == {"policy_fallback"}
+    assert receipt["selected"] == []
     assert set(NO_MATCH_FALLBACK_SLUGS).isdisjoint(
         {item["slug"] for item in receipt["considered_candidates"]}
     )
 
 
-def test_fallback_agents_are_excluded_from_semantic_candidates(
+def test_no_match_policy_reserves_no_imported_manager_identity(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(pipeline, "load_policy", lambda *_args: load_bundled_policy())
@@ -255,13 +231,12 @@ def test_fallback_agents_are_excluded_from_semantic_candidates(
     )
     signals = pipeline._route_signals(request)
 
-    semantic_slugs = {str(agent["slug"]) for agent in pipeline._semantic_catalog(request, signals)}
+    assert signals.fallback_companion_ids == []
+    assert signals.available_fallback_companion_ids == []
+    assert signals.unavailable_fallback_companion_ids == []
 
-    assert set(NO_MATCH_FALLBACK_SLUGS).isdisjoint(semantic_slugs)
-    assert len(signals.fallback_companion_ids) == 2
 
-
-def test_confident_semantic_result_cannot_select_a_reserved_fallback_agent(
+def test_imported_orchestrator_is_an_ordinary_inference_candidate(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(pipeline, "load_policy", lambda *_args: load_bundled_policy())
@@ -283,13 +258,13 @@ def test_confident_semantic_result_cannot_select_a_reserved_fallback_agent(
         signals,
     )
 
-    assert result["semantic_ids"] == ["code-reviewer"]
-    assert "agents-orchestrator" not in result["selected_ids"]
+    assert result["semantic_ids"] == ["agents-orchestrator", "code-reviewer"]
+    assert result["selected_ids"] == ["agents-orchestrator", "code-reviewer"]
     assert result["fallback_considered"] is False
     assert result["fallback_applied"] is False
 
 
-def test_fresh_store_trivial_preflight_exposes_resident_pair_without_specialist_hydration(
+def test_fresh_store_trivial_preflight_exposes_steward_without_specialist_hydration(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -335,8 +310,8 @@ def test_fresh_store_trivial_preflight_exposes_resident_pair_without_specialist_
         result = preflight(adapter)
 
         assert result is not None
-        assert "managers=agents-orchestrator,chief-of-staff" in result["context"]
-        assert result["resident_managers"] == list(NO_MATCH_FALLBACK_SLUGS)
+        assert "managers=agency-steward" in result["context"]
+        assert result["resident_managers"] == list(RESIDENT_MANAGER_SLUGS)
         assert result["selected_specialists"] == []
         assert result["loaded_specialists"] == []
         assert store.get_specialists_for_session(session_id) == []
@@ -344,19 +319,19 @@ def test_fresh_store_trivial_preflight_exposes_resident_pair_without_specialist_
             assert "[AGENCY PREFLIGHT]" in result["context"]
             assert "[AGENCY LOADED]" not in result["context"]
         else:
-            assert "[Agency resident-manager kernel v1]" in result["context"]
+            assert "[Agency resident-steward kernel v2]" in result["context"]
 
 
 @pytest.mark.parametrize(
     ("host", "adapter_type"),
     (("codex", CodexAdapter), ("claude", ClaudeAdapter)),
 )
-def test_isolated_trivial_fallback_can_finalize_without_child_activation(
+def test_isolated_trivial_steward_can_finalize_without_child_activation(
     tmp_path: Path,
     host: str,
     adapter_type: type[CodexAdapter] | type[ClaudeAdapter],
 ) -> None:
-    store = _fallback_only_store(tmp_path / f"{host}-trivial.db")
+    store = _resident_only_store(tmp_path / f"{host}-trivial.db")
     adapter = adapter_type(store=store)
     trace_id = f"{host}-trivial-turn"
 
@@ -367,10 +342,10 @@ def test_isolated_trivial_fallback_can_finalize_without_child_activation(
     )
 
     assert preflight is not None
-    assert preflight["resident_managers"] == list(NO_MATCH_FALLBACK_SLUGS)
+    assert preflight["resident_managers"] == list(RESIDENT_MANAGER_SLUGS)
     assert preflight["selected_specialists"] == []
     assert preflight["loaded_specialists"] == []
-    assert "managers=agents-orchestrator,chief-of-staff" in preflight["context"]
+    assert "managers=agency-steward" in preflight["context"]
 
     finalized = finalize_response(
         "Acknowledged.",
@@ -380,9 +355,7 @@ def test_isolated_trivial_fallback_can_finalize_without_child_activation(
 
     assert finalized["action"] == "accept"
     assert finalized["missing"] == []
-    assert parse_header(finalized["text"])["agencies_loaded"] == (
-        "agents-orchestrator, chief-of-staff"
-    )
+    assert parse_header(finalized["text"])["agencies_loaded"] == ("agency-steward")
     assert store.get_run(trace_id)["status"] == "completed"
 
 
@@ -390,42 +363,25 @@ def test_isolated_trivial_fallback_can_finalize_without_child_activation(
     ("host", "adapter_type"),
     (("codex", CodexAdapter), ("claude", ClaudeAdapter)),
 )
-def test_isolated_nontrivial_manager_fallback_does_not_invent_child_activation(
+def test_isolated_nontrivial_turn_fails_before_a_generalist_answer(
     tmp_path: Path,
     host: str,
     adapter_type: type[CodexAdapter] | type[ClaudeAdapter],
 ) -> None:
-    store = _fallback_only_store(tmp_path / f"{host}-nontrivial.db")
+    store = _resident_only_store(tmp_path / f"{host}-nontrivial.db")
     adapter = adapter_type(store=store)
     trace_id = f"{host}-nontrivial-turn"
 
-    preflight = adapter.build_preflight_context(
-        f"{host}-session",
-        "Investigate this unusual request thoroughly and produce a durable implementation.",
-        trace_id=trace_id,
-    )
-
-    assert preflight is not None
-    assert preflight["resident_managers"] == list(NO_MATCH_FALLBACK_SLUGS)
-    assert preflight["selected_specialists"] == []
-    assert preflight["loaded_specialists"] == []
-    assert "managers=agents-orchestrator,chief-of-staff" in preflight["context"]
-
-    finalized = finalize_response(
-        "Implementation complete.",
-        {"session_id": f"{host}-session", "trace_id": trace_id, "host": host},
-        store,
-    )
-
-    assert finalized["action"] == "accept"
-    assert finalized["missing"] == []
-    assert parse_header(finalized["text"])["agencies_loaded"] == (
-        "agents-orchestrator, chief-of-staff"
-    )
-    assert store.get_run(trace_id)["status"] == "completed"
+    with pytest.raises(RuntimeError, match="no accepted specialist or contractor"):
+        adapter.build_preflight_context(
+            f"{host}-session",
+            "Investigate this unusual request thoroughly and produce a durable implementation.",
+            trace_id=trace_id,
+        )
+    assert store.get_specialists_for_session(f"{host}-session") == []
 
 
-def test_partial_legacy_roster_gains_fallback_without_overwriting_operator_entry(
+def test_partial_legacy_roster_preserves_operator_entry_without_a_fallback_write(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -453,12 +409,10 @@ def test_partial_legacy_roster_gains_fallback_without_overwriting_operator_entry
     )
 
     assert result is not None
-    assert "managers=agents-orchestrator,chief-of-staff" in result["context"]
+    assert "managers=agency-steward" in result["context"]
     assert store.get_roster_entry("operator-specialist") == before
     assert store.get_specialist_prompt("operator-specialist")["prompt_body"] == (
         "Preserve this operator-owned prompt."
     )
-    for slug in NO_MATCH_FALLBACK_SLUGS:
-        entry = store.get_roster_entry(slug)
-        assert entry["source"] == SOURCE_REPOSITORY
-        assert entry["source_id"] == "agency-agents"
+    assert store.get_roster_entry("agents-orchestrator") is None
+    assert store.get_roster_entry("chief-of-staff") is None

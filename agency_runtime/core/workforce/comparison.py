@@ -7,10 +7,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from agency_runtime.core.resident_managers import RESIDENT_MANAGER_SLUG_SET
 from agency_runtime.core.workforce.contract import WorkforceContract
 
 _TOKENS = re.compile(r"[a-z0-9]+")
-_RESIDENTS = frozenset({"agents-orchestrator", "chief-of-staff"})
 
 
 def _tokens(*values: str) -> frozenset[str]:
@@ -96,7 +96,7 @@ def compare_workers(
         or right.agent_id in left.composition.selection_exclusive
         or left.agent_id in right.composition.selection_exclusive
     )
-    resident = bool({left.agent_id, right.agent_id} & _RESIDENTS)
+    resident = bool({left.agent_id, right.agent_id} & RESIDENT_MANAGER_SLUG_SET)
     explicit_substitution = bool(
         right.agent_id in left.composition.substitutes_for
         or left.agent_id in right.composition.substitutes_for
@@ -135,7 +135,7 @@ def compare_workers(
     if conflicts:
         reasons.append("typed conflict requires separation")
     if resident:
-        reasons.append("resident managers are protected")
+        reasons.append("resident steward is protected")
     if explicit_substitution:
         reasons.append("typed substitution relationship exists")
     if merge_review_candidate:

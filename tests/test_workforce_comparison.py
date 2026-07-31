@@ -64,14 +64,14 @@ def test_conflicts_residents_and_invalid_bounds_never_become_merge_authority() -
     )
     conflict = compare_workers(left, conflicted)
     resident = compare_workers(
-        replace(left, worker_id="worker:resident", agent_id="chief-of-staff"),
+        replace(left, worker_id="worker:resident", agent_id="agency-steward"),
         replace(left, worker_id="worker:peer", agent_id="peer"),
     )
 
     assert conflict.recommendation == "keep_distinct"
     assert "typed conflict requires separation" in conflict.reasons
     assert resident.recommendation == "keep_distinct"
-    assert "resident managers are protected" in resident.reasons
+    assert "resident steward is protected" in resident.reasons
     with pytest.raises(ValueError, match="distinct workers"):
         compare_workers(left, left)
     for invalid in (True, 0, 101):

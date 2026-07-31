@@ -38,6 +38,102 @@ from agency_runtime.core.selector.delegation_detection import (
 from agency_runtime.core.specialist_context import _prompt_context_lines
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.turn_origin import native_adapter_turn_origin
+from agency_runtime.core.unit_assignment import work_unit_id_from_text
+
+
+def _activate_test_specialist(store: Store, slug: str = "implementer") -> None:
+    store._activate_prevalidated_agent(
+        {
+            "slug": slug,
+            "name": slug.replace("-", " ").title(),
+            "description": "Handles the bounded test request.",
+            "prompt_body": "Complete only the assigned bounded test request.",
+            "version": "1.0.0",
+        }
+    )
+
+
+def _test_specialist_routing(
+    user_message: str,
+    trace_id: str,
+    slug: str = "implementer",
+) -> dict[str, Any]:
+    from agency_runtime.core.workforce.routing_projection import (
+        workforce_work_units_from_descriptors,
+    )
+
+    descriptors = [
+        {
+            "ordinal": 1,
+            "artifact_kind": "review-report",
+            "lifecycle_phase": "review",
+            "authority": "review",
+        }
+    ]
+    units = workforce_work_units_from_descriptors(user_message, descriptors)
+    unit_id = work_unit_id_from_text(units[0])
+    return {
+        "trace_id": trace_id,
+        "selected_ids": [slug],
+        "confidence": 0.99,
+        "status": "applied",
+        "source": "test",
+        "query_hash": hashlib.sha256(user_message.encode()).hexdigest(),
+        "context_fingerprint": "c" * 64,
+        "work_units": {
+            "delegate": True,
+            "count": 1,
+            "units": units,
+            "source": "verified-workforce-plan",
+            "confidence": "high",
+        },
+        "workforce_unit_descriptors": descriptors,
+        "workforce_unit_bindings": [
+            {
+                "source_unit_id": "unit-work",
+                "work_unit_id": unit_id,
+                "selected": [slug],
+                "delivery": "delegate",
+                "timing": "immediate",
+                "depends_on": [],
+                "parallelization": "sequential",
+                "mutation_scope": "read_only",
+                "artifact_kind": "review-report",
+                "required_tools": [],
+                "required_evidence": ["test evidence"],
+                "confidence": 0.99,
+            }
+        ],
+        "unit_assignment_agents": [
+            {
+                "slug": slug,
+                "name": slug.replace("-", " ").title(),
+                "description": "Handles the bounded test request.",
+                "capabilities": ["bounded test work"],
+                "tags": ["test"],
+                "required_tools": [],
+                "evidence_requirements": ["test evidence"],
+                "matched_work_unit_ids": [unit_id],
+                "primary_work_unit_ids": [unit_id],
+            }
+        ],
+    }
+
+
+def _route_to_test_specialist(slug: str = "implementer"):
+    def route(
+        _session_id: str,
+        user_message: str,
+        _catalog: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        return _test_specialist_routing(
+            user_message,
+            str(kwargs.get("trace_id") or "test-turn"),
+            slug,
+        )
+
+    return route
 
 
 def test_direct_specialist_capsule_preserves_exact_prompt_whitespace() -> None:
@@ -169,8 +265,11 @@ def test_stale_reservation_token_cannot_promote_or_abandon_current_reservation(
 
 def test_preflight_fingerprint_conflict_preserves_existing_active_turn(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = Store(tmp_path / "agency.db")
+    _activate_test_specialist(store)
+    monkeypatch.setattr(pipeline, "route", _route_to_test_specialist())
     original_message = "Original request"
     first = run_preflight(
         store,
@@ -199,8 +298,6 @@ def test_preflight_persists_trivial_kind_and_bounds_isolated_parent_context(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from agency_runtime.core.selector.delegation_detection import detect_work_units
-
     store = Store(tmp_path / "agency.db")
     routing = {
         "trace_id": "bounded-turn",
@@ -253,7 +350,7 @@ def test_preflight_persists_trivial_kind_and_bounds_isolated_parent_context(
     assert len(result.context) <= 4_096
     assert "r" * 100 not in result.context
     assert "s" * 100 not in result.context
-    assert "Agency/Agencies loaded: agents-orchestrator, chief-of-staff" in result.context
+    assert "Agency/Agencies loaded: agency-steward" in result.context
     assert "copy its value exactly, never `none`" in result.context
     assert "substantive progress updates and the final parent response" in result.context
     assert "Agency/Agencies delegated:" in result.context
@@ -271,6 +368,8 @@ def test_oversized_complete_context_fails_before_ready_is_persisted(
     from agency_runtime.core import specialist_context
 
     store = Store(tmp_path / "oversized-context.db")
+    _activate_test_specialist(store)
+    monkeypatch.setattr(pipeline, "route", _route_to_test_specialist())
     monkeypatch.setattr(
         specialist_context,
         "format_isolated_specialist_context",
@@ -347,7 +446,7 @@ def test_direct_preflight_never_concatenates_unrelated_specialist_instructions(
     assert "REVIEWER-ONLY-DIRECTIVE" not in result.context
 
 
-def test_direct_preflight_filters_resident_managers_before_selecting_a_specialist(
+def test_direct_preflight_filters_resident_steward_before_selecting_a_specialist(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -365,7 +464,7 @@ def test_direct_preflight_filters_resident_managers_before_selecting_a_specialis
         pipeline,
         "route",
         lambda *_args, **_kwargs: {
-            "selected_ids": ["agents-orchestrator", "implementer", "chief-of-staff"],
+            "selected_ids": ["agency-steward", "implementer"],
             "confidence": 0.9,
             "status": "applied",
             "source": "test",
@@ -389,7 +488,7 @@ def test_direct_preflight_filters_resident_managers_before_selecting_a_specialis
     assert "REAL-SPECIALIST-DIRECTIVE" in result.context
 
 
-def test_direct_preflight_uses_resident_kernel_for_governed_fallback_pair(
+def test_direct_preflight_rejects_resident_only_fallback(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -398,7 +497,7 @@ def test_direct_preflight_uses_resident_kernel_for_governed_fallback_pair(
         pipeline,
         "route",
         lambda *_args, **_kwargs: {
-            "selected_ids": ["agents-orchestrator", "chief-of-staff"],
+            "selected_ids": ["agency-steward"],
             "confidence": 0.0,
             "status": "policy_fallback",
             "source": "policy_fallback",
@@ -408,42 +507,63 @@ def test_direct_preflight_uses_resident_kernel_for_governed_fallback_pair(
         },
     )
 
-    result = run_preflight(
-        store,
-        session_id="fallback-session",
-        user_message="Handle an unfamiliar request",
-        host="hermes",
-        trace_id="fallback-turn",
+    with pytest.raises(RuntimeError, match="no accepted specialist or contractor"):
+        run_preflight(
+            store,
+            session_id="fallback-session",
+            user_message="Handle an unfamiliar request",
+            host="hermes",
+            trace_id="fallback-turn",
+        )
+
+    assert store.get_specialists_for_session("fallback-session") == []
+
+
+def test_isolated_preflight_blocks_selection_without_an_activation_plan(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "missing-plan.db")
+    _activate_test_specialist(store)
+    message = "Review the runtime boundary."
+    monkeypatch.setattr(
+        pipeline,
+        "route",
+        lambda *_args, **_kwargs: {
+            "selected_ids": ["implementer"],
+            "confidence": 0.99,
+            "status": "applied",
+            "source": "test",
+            "query_hash": hashlib.sha256(message.encode()).hexdigest(),
+            "context_fingerprint": "c" * 64,
+            "work_units": detect_work_units(message),
+        },
     )
 
-    assert result.loaded_specialists == ()
-    assert result.selected_specialists == ()
-    assert result.resident_managers == RESIDENT_MANAGER_SLUGS
-    assert RESIDENT_MANAGER_KERNEL in result.context
-    assert store.get_specialists_for_session("fallback-session") == []
+    with pytest.raises(RuntimeError, match="no accepted specialist or contractor"):
+        run_preflight(
+            store,
+            session_id="missing-plan-session",
+            user_message=message,
+            host="codex",
+            trace_id="missing-plan-turn",
+        )
+
+    assert store.get_run("missing-plan-turn")["status"] == "preflight_failed"
 
 
 def test_ready_recipe_and_atomic_routing_evidence_never_persist_request_text(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from agency_runtime.core.selector.delegation_detection import detect_work_units
-
     store = Store(tmp_path / "agency.db")
+    _activate_test_specialist(store)
     secret = "ULTRA-SECRET-UNIT-TEXT"
     message = f"1. audit authentication {secret}\n2. harden dashboard transport {secret}"
-    work_units = detect_work_units(message)
     malicious_routing = {
-        "trace_id": "private-ready",
-        "selected_ids": [],
-        "confidence": 0.0,
-        "status": "abstained",
-        "source": "test",
+        **_test_specialist_routing(message, "private-ready"),
         "provider": f"provider-{secret}",
         "error": f"error-{secret}",
-        "query_hash": hashlib.sha256(message.encode()).hexdigest(),
-        "context_fingerprint": "c" * 64,
-        "work_units": work_units,
     }
     monkeypatch.setattr(
         pipeline,
@@ -485,25 +605,15 @@ def test_duplicate_ready_preflight_replays_without_selector_or_evidence_writes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from agency_runtime.core.selector.delegation_detection import detect_work_units
-
     store = Store(tmp_path / "agency.db")
+    _activate_test_specialist(store)
     message = "Review the runtime lifecycle."
     route_calls = 0
 
     def route_once(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
         nonlocal route_calls
         route_calls += 1
-        return {
-            "trace_id": "ready-replay",
-            "selected_ids": [],
-            "confidence": 0.0,
-            "status": "abstained",
-            "source": "test",
-            "query_hash": hashlib.sha256(message.encode()).hexdigest(),
-            "context_fingerprint": "c" * 64,
-            "work_units": detect_work_units(message),
-        }
+        return _test_specialist_routing(message, "ready-replay")
 
     monkeypatch.setattr(pipeline, "route", route_once)
     first = run_preflight(
@@ -627,10 +737,13 @@ def test_ready_replay_uses_immutable_prompt_and_persisted_roster_metadata(
 
 def test_ready_replay_fails_closed_under_changed_context_policy(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from dataclasses import replace
 
     store = Store(tmp_path / "agency.db")
+    _activate_test_specialist(store)
+    monkeypatch.setattr(pipeline, "route", _route_to_test_specialist())
     message = "Review this security patch."
     original_config = AgencyConfig()
     run_preflight(
@@ -676,9 +789,8 @@ def test_concurrent_duplicate_preflights_share_one_owner_and_one_outcome(
     monkeypatch: pytest.MonkeyPatch,
     owner_fails: bool,
 ) -> None:
-    from agency_runtime.core.selector.delegation_detection import detect_work_units
-
     store = Store(tmp_path / "agency.db")
+    _activate_test_specialist(store)
     message = "Audit the runtime lifecycle."
     reservation = store.reserve_session_turn(
         session_id="session",
@@ -708,16 +820,7 @@ def test_concurrent_duplicate_preflights_share_one_owner_and_one_outcome(
             raise RuntimeError("test route release timed out")
         if owner_fails:
             raise RuntimeError("planned owner failure")
-        return {
-            "trace_id": "shared-attempt",
-            "selected_ids": [],
-            "confidence": 0.0,
-            "status": "abstained",
-            "source": "test",
-            "query_hash": hashlib.sha256(message.encode()).hexdigest(),
-            "context_fingerprint": "c" * 64,
-            "work_units": detect_work_units(message),
-        }
+        return _test_specialist_routing(message, "shared-attempt")
 
     monkeypatch.setattr(store, "begin_preflight_attempt", observed_begin)
     monkeypatch.setattr(pipeline, "route", controlled_route)
@@ -810,10 +913,8 @@ def test_expired_owner_is_recovered_and_stale_token_cannot_commit_or_fail(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from agency_runtime.core.preflight_recipe import _content_free_routing_recipe
-    from agency_runtime.core.selector.delegation_detection import detect_work_units
-
     store = Store(tmp_path / "agency.db")
+    _activate_test_specialist(store)
     session_id = "session"
     trace_id = "crashed-owner"
     message = "Audit the runtime lifecycle."
@@ -881,16 +982,7 @@ def test_expired_owner_is_recovered_and_stale_token_cannot_commit_or_fail(
     finally:
         connection.close()
 
-    routing = {
-        "trace_id": trace_id,
-        "selected_ids": [],
-        "confidence": 0.0,
-        "status": "abstained",
-        "source": "test",
-        "query_hash": fingerprint,
-        "context_fingerprint": "c" * 64,
-        "work_units": detect_work_units(message),
-    }
+    routing = _test_specialist_routing(message, trace_id)
     monkeypatch.setattr(pipeline, "route", lambda *_args, **_kwargs: routing)
     begin_outcomes: list[str] = []
     original_begin = store.begin_preflight_attempt
@@ -937,12 +1029,9 @@ def test_expired_owner_is_recovered_and_stale_token_cannot_commit_or_fail(
         attempt_token=stale_token,
         recipe=ready_recipe,
         host="codex",
-        routing_evidence=_content_free_routing_recipe(
-            routing,
-            trace_id=trace_id,
-        ),
-        suggestions=[],
-        specialist_refs=[],
+        routing_evidence=ready_recipe["routing"],
+        suggestions=ready_recipe["unit_agent_plan"],
+        specialist_refs=ready_recipe["specialist_refs"],
     )
     assert stale_commit == {"outcome": "cas_lost"}
     assert (
@@ -958,7 +1047,11 @@ def test_expired_owner_is_recovered_and_stale_token_cannot_commit_or_fail(
     assert store.get_model_receipt(trace_id) is None
     assert store.get_skills_for_trace(session_id, trace_id) == []
     assert store.get_specialists_for_trace(session_id, trace_id) == []
-    assert store.get_delegations(trace_id) == []
+    delegations = store.get_delegations(trace_id)
+    assert [(row["recommended_agent"], row["status"]) for row in delegations] == [
+        ("implementer", "suggested")
+    ]
+    assert all(row["work_unit_id"] != "stale-unit" for row in delegations)
     connection = store._connect()
     try:
         stale_finalizations = connection.execute(
@@ -1331,8 +1424,13 @@ def test_suggestion_recording_refuses_overflow_and_requires_correlation() -> Non
     assert store.calls == []
 
 
-def test_public_model_receipt_requires_explicit_session_and_trace(tmp_path: Path) -> None:
+def test_public_model_receipt_requires_explicit_session_and_trace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     runtime = AgencyRuntime(str(tmp_path / "agency.db"))
+    _activate_test_specialist(runtime.store)
+    monkeypatch.setattr(pipeline, "route", _route_to_test_specialist())
 
     with pytest.raises(TypeError):
         runtime.record_model_receipt()  # type: ignore[call-arg]
@@ -1389,22 +1487,12 @@ def test_fresh_turn_builds_route_request_once_and_reuses_it(
 
     # Stub route() so the test exercises only the request-build/reuse path,
     # not the full selector (which needs a configured provider).
-    from agency_runtime.core.selector.delegation_detection import detect_work_units
-
     captured_request_kwargs: list[dict[str, Any]] = []
     message = "perform the task"
 
     def stub_route(_session_id, _message, _catalog, **kwargs):
         captured_request_kwargs.append(dict(kwargs))
-        return {
-            "selected_ids": [],
-            "confidence": 0.0,
-            "status": "applied",
-            "source": "test",
-            "query_hash": hashlib.sha256(message.encode()).hexdigest(),
-            "context_fingerprint": "c" * 64,
-            "work_units": detect_work_units(message),
-        }
+        return _test_specialist_routing(message, "dedup-turn")
 
     monkeypatch.setattr(pipeline, "build_route_request", counting_build)
     monkeypatch.setattr(pipeline, "route", stub_route)

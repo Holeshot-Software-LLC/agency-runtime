@@ -26,7 +26,7 @@ def test_bundled_policy_classifies_every_route_against_starter_roster() -> None:
 
     assert report["valid"] is True
     assert report["errors"] == []
-    assert report["unique_policy_slugs"] == 238
+    assert report["unique_policy_slugs"] == 236
     assert report["enabled_slugs"] == sorted(
         POLICY_ENABLED | {"app-store-optimizer", "mobile-app-builder"}
     )
@@ -84,7 +84,7 @@ def test_default_companions_are_separate_from_ordinary_action_detection() -> Non
     ) == list(NO_MATCH_FALLBACK_SLUGS)
 
 
-def test_no_match_fallback_requires_an_active_bundled_prompt() -> None:
+def test_no_match_never_restores_an_imported_manager_as_a_fallback() -> None:
     active = STARTER_SLUGS - {"chief-of-staff"}
 
     companions = detect_fallback_companions(
@@ -92,7 +92,7 @@ def test_no_match_fallback_requires_an_active_bundled_prompt() -> None:
         active_slugs=active,
     )
 
-    assert companions == ["agents-orchestrator"]
+    assert companions == []
 
 
 def test_unclassified_action_route_fails_validation() -> None:
@@ -165,7 +165,7 @@ def test_policy_cli_json_is_truthful_and_includes_division_routes(
 
     assert result == 0
     assert payload["valid"] is True
-    assert payload["unique_policy_slugs"] == 238
+    assert payload["unique_policy_slugs"] == 236
     assert payload["division_count"] == 6
     assert payload["disabled_count"] == 0
     assert payload["all_missing"] == []

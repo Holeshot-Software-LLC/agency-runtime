@@ -1648,7 +1648,7 @@ def test_mcp_preflight_host_and_decline_delegation_matrix(monkeypatch) -> None:
     assert (
         "resident"
         in mcp_tools._decline_delegation(
-            {**base, "agent": "chief-of-staff"},
+            {**base, "agent": "agency-steward"},
             store,
         )["error"]
     )

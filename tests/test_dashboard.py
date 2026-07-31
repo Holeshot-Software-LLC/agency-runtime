@@ -2721,7 +2721,7 @@ def test_dashboard_exact_lookup_returns_empty_result_without_leaking_prompt(dash
     assert "content" not in _nested_keys(payload)
 
 
-def test_dashboard_exact_lookup_preserves_protected_coordinator_state(dashboard_server):
+def test_dashboard_exact_lookup_treats_imported_manager_as_optional(dashboard_server):
     dashboard_server["store"]._activate_prevalidated_agent(
         next(agent for agent in bundled_roster() if agent["slug"] == "chief-of-staff")
     )
@@ -2732,7 +2732,7 @@ def test_dashboard_exact_lookup_preserves_protected_coordinator_state(dashboard_
     )
     assert status == 200
     assert payload["agents"][0]["enabled"] is True
-    assert payload["agents"][0]["protected"] is True
+    assert payload["agents"][0]["protected"] is False
 
 
 def test_dashboard_config_get_reports_redacted_revision_and_target(dashboard_server):
@@ -2836,17 +2836,14 @@ def test_dashboard_agent_toggle_is_authenticated_reversible_and_protected(dashbo
     assert status == 200
     assert enabled["config"]["effective"]["agents"]["disabled"] == []
 
-    dashboard_server["store"]._activate_prevalidated_agent(
-        next(agent for agent in bundled_roster() if agent["slug"] == "chief-of-staff")
-    )
     status, rejected, _headers = _json_response(
         dashboard_server,
         "/api/agents/toggle",
         method="POST",
         body={
-            "slug": "chief-of-staff",
+            "slug": "agency-steward",
             "enabled": False,
-            "confirm": "DISABLE chief-of-staff",
+            "confirm": "DISABLE agency-steward",
             "expected_revision": enabled["config"]["revision"],
         },
         token=dashboard_server["token"],

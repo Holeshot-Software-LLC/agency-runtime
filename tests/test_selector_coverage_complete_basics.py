@@ -526,7 +526,7 @@ def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
         turn_state={"state_known": True},
     )
     trivial_context = pipeline.build_routing_context(trivial_routing, cfg)
-    assert "agents-orchestrator, chief-of-staff" in trivial_context
+    assert "agency-steward" in trivial_context
     assert "source=policy_fallback" in trivial_context
 
 

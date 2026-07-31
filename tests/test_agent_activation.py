@@ -80,7 +80,7 @@ def test_config_schema_patch_and_raw_loader_share_protected_policy(
         "agents": {"disabled": ["code-reviewer"]}
     }
     with pytest.raises(ConfigValidationError, match="protected coordinator"):
-        validate_config_document({"agents": {"disabled": ["chief-of-staff"]}})
+        validate_config_document({"agents": {"disabled": ["agency-steward"]}})
     with pytest.raises(ConfigValidationError, match="unsupported fields"):
         validate_config_document({"agents": {"disabled": [], "unknown": True}})
 
@@ -96,7 +96,7 @@ def test_config_schema_patch_and_raw_loader_share_protected_policy(
     reset_config_cache()
     assert load_config().agents.disabled == ("code-reviewer",)
 
-    config_path.write_text("agents:\n  disabled: [agents-orchestrator]\n", encoding="utf-8")
+    config_path.write_text("agents:\n  disabled: [agency-steward]\n", encoding="utf-8")
     reset_config_cache()
     with pytest.raises(ValueError, match="protected coordinator"):
         load_config()
@@ -185,7 +185,9 @@ def test_cli_lists_toggles_and_reenables_preserved_agent(
     assert roster_commands.cmd_agents_list(SimpleNamespace(json=False)) == 0
     listed = capsys.readouterr().out
     assert "config\t" in listed
-    assert "protected\tagents-orchestrator" in listed
+    assert "enabled\tagents-orchestrator" in listed
+    assert "enabled\tchief-of-staff" in listed
+    assert "protected\tagents-orchestrator" not in listed
 
     assert roster_commands.cmd_agent_disable(SimpleNamespace(slug="code-reviewer")) == 0
     assert "code-reviewer is disabled" in capsys.readouterr().out
@@ -203,9 +205,13 @@ def test_cli_lists_toggles_and_reenables_preserved_agent(
     assert (
         next(row for row in payload["agents"] if row["slug"] == "code-reviewer")["enabled"] is True
     )
-    # PR #129: cmd_agent_disable catches ValueError and returns 1 (prints
-    # error) instead of raising. Assert the return code + message.
-    assert roster_commands.cmd_agent_disable(SimpleNamespace(slug="chief-of-staff")) == 1
+    assert roster_commands.cmd_agent_disable(SimpleNamespace(slug="chief-of-staff")) == 0
+    assert "chief-of-staff is disabled" in capsys.readouterr().out
+    assert roster_commands.cmd_agent_enable(SimpleNamespace(slug="chief-of-staff")) == 0
+    assert "chief-of-staff is enabled" in capsys.readouterr().out
+    # The parent-only steward has no roster prompt but its policy identity is
+    # still protected before roster lookup.
+    assert roster_commands.cmd_agent_disable(SimpleNamespace(slug="agency-steward")) == 1
     assert "protected coordinator" in capsys.readouterr().out
     assert roster_commands.cmd_agent_disable(SimpleNamespace(slug="missing-agent")) == 1
     assert "not present" in capsys.readouterr().out
@@ -220,7 +226,11 @@ def test_cli_parser_executes_agent_toggle_and_reports_protected_error(
     assert "code-reviewer is disabled" in capsys.readouterr().out
     assert cli_main.main(["agents", "enable", "code-reviewer"]) == 0
     assert "code-reviewer is enabled" in capsys.readouterr().out
-    assert cli_main.main(["agents", "disable", "agents-orchestrator"]) == 1
+    assert cli_main.main(["agents", "disable", "agents-orchestrator"]) == 0
+    assert "agents-orchestrator is disabled" in capsys.readouterr().out
+    assert cli_main.main(["agents", "enable", "agents-orchestrator"]) == 0
+    assert "agents-orchestrator is enabled" in capsys.readouterr().out
+    assert cli_main.main(["agents", "disable", "agency-steward"]) == 1
     assert "protected coordinator" in capsys.readouterr().out
 
 

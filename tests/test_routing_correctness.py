@@ -15,6 +15,7 @@ from agency_runtime.core.config import (
     ProviderEntry,
     SelectorConfig,
 )
+from agency_runtime.core.preflight import _require_substantive_specialist
 from agency_runtime.core.selector import judge as judge_module
 from agency_runtime.core.selector import pipeline as pipeline_module
 from agency_runtime.core.selector.cache import (
@@ -31,6 +32,7 @@ from agency_runtime.core.selector.stickiness import (
     session_check,
     session_put,
 )
+from agency_runtime.core.turn_intent import classify_turn_intent
 
 CATALOG_A = [
     {
@@ -92,6 +94,33 @@ def _offline_config(*, providers: tuple[ProviderEntry, ...] = ()) -> AgencyConfi
         judge=JudgeConfig(model="", confidence_bypass_threshold=999.0),
         ollama=OllamaConfig(enabled=False, model=""),
     )
+
+
+def test_substantive_turn_cannot_fall_through_to_a_resident_generalist() -> None:
+    substantive = classify_turn_intent(
+        "Evaluate ChunkHound against CodeGraph for this repository.",
+        {"state_known": True},
+    )
+    with pytest.raises(RuntimeError, match="no accepted specialist or contractor"):
+        _require_substantive_specialist(
+            {
+                "selected_ids": ["agency-steward"],
+                "status": "abstained",
+                "source": "workforce_inference",
+            },
+            substantive,
+        )
+
+    _require_substantive_specialist(
+        {
+            "selected_ids": ["code-intelligence-evaluator"],
+            "status": "accepted",
+            "source": "workforce_inference",
+        },
+        substantive,
+    )
+    acknowledgement = classify_turn_intent("ok", {"state_known": True})
+    _require_substantive_specialist({"selected_ids": []}, acknowledgement)
 
 
 def test_routing_fingerprint_covers_roster_config_and_policy() -> None:

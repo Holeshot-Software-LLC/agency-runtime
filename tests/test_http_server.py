@@ -6,6 +6,7 @@ ephemeral port and a tmp_path SQLite database.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -46,6 +47,79 @@ def _configure_inference(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Non
         "invoke_structured_provider_result",
         stub_inference_invoker(("code-reviewer",)),
     )
+
+
+def _route_to_code_reviewer(monkeypatch: pytest.MonkeyPatch) -> None:
+    from agency_runtime.core.selector import pipeline
+    from agency_runtime.core.unit_assignment import work_unit_id_from_text
+    from agency_runtime.core.workforce.routing_projection import (
+        workforce_work_units_from_descriptors,
+    )
+
+    def route(
+        _session_id: str,
+        user_message: str,
+        _catalog: list[dict[str, object]] | None = None,
+        **kwargs: object,
+    ) -> dict[str, object]:
+        descriptors = [
+            {
+                "ordinal": 1,
+                "artifact_kind": "review-report",
+                "lifecycle_phase": "review",
+                "authority": "review",
+            }
+        ]
+        units = workforce_work_units_from_descriptors(user_message, descriptors)
+        unit_id = work_unit_id_from_text(units[0])
+        return {
+            "trace_id": str(kwargs.get("trace_id") or "test-turn"),
+            "selected_ids": ["code-reviewer"],
+            "confidence": 0.99,
+            "status": "applied",
+            "source": "test",
+            "query_hash": hashlib.sha256(user_message.encode()).hexdigest(),
+            "context_fingerprint": "c" * 64,
+            "work_units": {
+                "delegate": True,
+                "count": 1,
+                "units": units,
+                "source": "verified-workforce-plan",
+                "confidence": "high",
+            },
+            "workforce_unit_descriptors": descriptors,
+            "workforce_unit_bindings": [
+                {
+                    "source_unit_id": "unit-work",
+                    "work_unit_id": unit_id,
+                    "selected": ["code-reviewer"],
+                    "delivery": "delegate",
+                    "timing": "immediate",
+                    "depends_on": [],
+                    "parallelization": "sequential",
+                    "mutation_scope": "read_only",
+                    "artifact_kind": "review-report",
+                    "required_tools": [],
+                    "required_evidence": ["review evidence"],
+                    "confidence": 0.99,
+                }
+            ],
+            "unit_assignment_agents": [
+                {
+                    "slug": "code-reviewer",
+                    "name": "Code Reviewer",
+                    "description": "Reviews the bounded HTTP test request.",
+                    "capabilities": ["code review"],
+                    "tags": ["review"],
+                    "required_tools": [],
+                    "evidence_requirements": ["review evidence"],
+                    "matched_work_unit_ids": [unit_id],
+                    "primary_work_unit_ids": [unit_id],
+                }
+            ],
+        }
+
+    monkeypatch.setattr(pipeline, "route", route)
 
 
 @pytest.fixture()
@@ -378,7 +452,11 @@ def test_roster_cursor_pages_are_stable_and_complete(http_server):
 # ── /preflight ──────────────────────────────────────────────────────────
 
 
-def test_preflight_returns_routing_and_context(http_server):
+def test_preflight_returns_routing_and_context(
+    http_server,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    _route_to_code_reviewer(monkeypatch)
     status, body = _post(
         http_server["base"],
         "/preflight",
@@ -418,7 +496,7 @@ def test_preflight_detects_trivial_messages(http_server):
     assert status == 200
     assert body["trivial"] is True
     assert body["context"] is not None
-    assert "agents-orchestrator, chief-of-staff" in body["context"]
+    assert "agency-steward" in body["context"]
 
 
 # ── /finalize ───────────────────────────────────────────────────────────
@@ -542,7 +620,11 @@ def test_finalize_records_skills_and_delegations(http_server):
     assert store.get_delegations_for_session("trace-2") == []
 
 
-def test_finalize_rejects_resident_manager_as_delegated_worker(http_server):
+def test_finalize_rejects_resident_steward_as_delegated_worker(
+    http_server,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    _route_to_code_reviewer(monkeypatch)
     run_preflight(
         http_server["store"],
         trace_id="trace-resident-worker",
@@ -561,7 +643,7 @@ def test_finalize_rejects_resident_manager_as_delegated_worker(http_server):
             "host": "test",
             "delegations": [
                 {
-                    "agent": "agents-orchestrator",
+                    "agent": "agency-steward",
                     "status": "completed",
                     "backend": "test-backend",
                     "work_unit_id": "unit-review",
@@ -575,7 +657,11 @@ def test_finalize_rejects_resident_manager_as_delegated_worker(http_server):
 
     assert status == 400
     assert "parent-only" in body["error"]
-    assert http_server["store"].get_delegations("trace-resident-worker") == []
+    delegations = http_server["store"].get_delegations("trace-resident-worker")
+    assert [(row["recommended_agent"], row["status"]) for row in delegations] == [
+        ("code-reviewer", "suggested")
+    ]
+    assert all(row["recommended_agent"] != "agency-steward" for row in delegations)
 
 
 def test_finalize_rejects_delegation_without_stable_work_unit_id(http_server):

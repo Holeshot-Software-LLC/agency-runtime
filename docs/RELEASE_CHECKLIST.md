@@ -132,7 +132,7 @@ or adding an index-install claim.
       unconfigured backend remains unavailable.
 - [ ] Each native child receives a fresh bounded Agency preflight for its exact
       assignment through the host's official lifecycle. Parent specialists and
-      resident managers do not leak into children as ordinary worker prompts,
+      the resident steward do not leak into children as ordinary worker prompts,
       and absent live hosts remain labelled contract-only.
 - [ ] Clean wheel and source-archive installs on Windows and Linux run the
       Agency runtime/dashboard selection regression against the complete roster:
@@ -191,9 +191,14 @@ agency eval compare --input path/to/paired-observations.jsonl
       against durable open/terminal state, unfinished work, pending questions or
       authorization, configuration/roster revisions, and retry evidence. Only a
       proven pure acknowledgement bypasses specialist consideration.
-- [ ] The resident `agents-orchestrator` and `chief-of-staff` contract remains
-      compact, protected, parent-only, hash-bound, and restored once after
-      compaction without accumulating complete prompt bodies.
+- [ ] The resident `agency-steward` contract remains compact, protected,
+      parent-only, hash-bound, and restored once after compaction without
+      accumulating complete prompt bodies. It cannot select or perform domain
+      work; imported managers remain optional workers.
+- [ ] For a novel-domain unit with zero relevant roster cards, inference records
+      an explicit empty-ranked gap, hiring materializes a narrow contractor, and
+      same-turn restaffing selects that contractor. A failed route blocks
+      `UserPromptSubmit` before any parent/generalist answer is generated.
 - [ ] `agency eval full-roster` proves every approved enabled routing card
       participates in lexical and semantic retrieval, candidate recall is
       `1.0`, identity-free target recall@10 is at least `0.99`, and the checked-in

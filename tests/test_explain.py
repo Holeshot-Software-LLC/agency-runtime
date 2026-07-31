@@ -285,7 +285,7 @@ def test_cli_route_marks_fresh_social_diagnostic_trivial(
     assert routing["selection_required"] is False
     assert routing["inference_attempted"] is False
     assert routing["provider_attempts"] == []
-    assert set(routing["selected_ids"]) <= {"agents-orchestrator", "chief-of-staff"}
+    assert set(routing["selected_ids"]) <= {"agency-steward"}
 
 
 @pytest.mark.parametrize("command", ["search", "route", "explain"])

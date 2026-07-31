@@ -781,9 +781,10 @@ agency explain "describe the concrete task" --session-id debug
 Configured inference is mandatory for conversation, new intent, revision, and
 any continuation that must reroute. The provider chain is tried in declared
 order within one bounded budget. Authentication failure, timeout, malformed
-output, an invalid selection, or exhaustion keeps the decision degraded; Agency
-may use only the resident managers for coordination and must not claim an
-inferred specialist. The dashboard lists configuration
+output, an invalid selection, or exhaustion keeps the decision degraded. The
+`UserPromptSubmit` boundary blocks the substantive prompt before parent-model
+generation; Agency does not fall through to its steward or the host generalist.
+The dashboard lists configuration
 readiness and recent persisted failures, but intentionally performs no live
 provider probe.
 
@@ -797,8 +798,10 @@ review cannot approve or activate a quarantined revision.
 ## No specialist is selected
 
 A proven pure acknowledgement can intentionally bypass specialist selection.
-Conversation and other selection-requiring turns still consider the roster but
-may explicitly abstain. For a meaningful task, inspect the active roster and
+Every other selection-requiring turn first infers the ideal specialist from an
+open-ended role pool. It either accepts a faithful roster match or declares a
+gap and attempts to create a narrow contractor. If neither path produces an
+accepted specialist, the prompt fails loudly. Inspect the active roster and
 decision receipt:
 
 ```bash
@@ -813,9 +816,9 @@ host/tool-ineligible, and conflict-rejected candidates before assuming retrieval
 failed. If inference is missing or its provider chain fails, the decision must
 remain visibly degraded with no selected, recommended, delegated, or hired
 specialist. Deterministic candidate recall may explain which shortlist boundary
-was inspected, but it cannot become a team. The protected resident managers may
-explain the failure or coordinate recovery; they are not reported as semantic
-domain matches.
+was inspected, but it cannot become a team. The protected `agency-steward`
+records the failed evidence boundary; it cannot answer, select, or act as a
+semantic domain match.
 
 `agency policy --json` exits nonzero when a required bundled specialist is not
 active or a route is not classified. `missing_enabled` identifies required
@@ -842,7 +845,9 @@ The JSON response includes the exact `config_path`. CLI and dashboard must point
 to that same identity. All governed agents are enabled by default, but an
 operator-disabled slug is excluded from new routing, search, prompt loads, and
 affected turn completion until it is re-enabled. `agents-orchestrator` and
-`chief-of-staff` are protected and cannot be disabled.
+`chief-of-staff` are imported optional specialists and can be disabled. The
+parent-only `agency-steward` is protected infrastructure and is not a selectable
+roster row.
 
 ## A custom companion policy is refused
 
