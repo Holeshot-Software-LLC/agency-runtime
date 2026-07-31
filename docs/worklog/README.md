@@ -448,6 +448,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5bed308` | 2026-07-31 | test(codex): align canary proof with opaque child contract | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-208](../roadmap/issue-AR-208-preserve-codex-host-notices-in-product-evidence.md), [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
 | `ae85052` | 2026-07-31 | fix(codex): scope and serialize opaque child grants | [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
 | `5144cc9` | 2026-07-31 | docs(roadmap): checkpoint exact Codex grant gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
+| `40d1099` | 2026-07-31 | fix(codex): preserve path case and plaintext concurrency | [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
