@@ -1,6 +1,6 @@
 ---
 title: "Bind opaque Codex children through exact plan labels"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-31
 updated: 2026-07-31
@@ -15,7 +15,7 @@ related:
   - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
 id: ADR-0127
 type: decision
 deciders: [maintainers]

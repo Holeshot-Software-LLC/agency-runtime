@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 39
+SCHEMA_VERSION = 40
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
@@ -729,6 +729,28 @@ CREATE TABLE IF NOT EXISTS native_child_parent_scopes (
     ),
     UNIQUE(host, parent_trace_id, worker_id, native_run_id),
     FOREIGN KEY (parent_trace_id) REFERENCES runs(trace_id) ON DELETE CASCADE
+);
+"""
+
+CODEX_NATIVE_PLAN_SCOPE_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS codex_native_plan_scopes (
+    id TEXT PRIMARY KEY
+        CHECK (typeof(id) = 'text' AND length(CAST(id AS BLOB)) BETWEEN 1 AND 128),
+    session_id TEXT NOT NULL
+        CHECK (typeof(session_id) = 'text'
+               AND length(CAST(session_id AS BLOB)) BETWEEN 1 AND 512),
+    trace_id TEXT NOT NULL
+        CHECK (typeof(trace_id) = 'text'
+               AND length(CAST(trace_id AS BLOB)) BETWEEN 1 AND 512),
+    work_unit_id TEXT NOT NULL
+        CHECK (typeof(work_unit_id) = 'text'
+               AND length(CAST(work_unit_id AS BLOB)) BETWEEN 1 AND 160),
+    scope_payload TEXT NOT NULL
+        CHECK (typeof(scope_payload) = 'text'
+               AND length(CAST(scope_payload AS BLOB)) BETWEEN 1 AND 8192),
+    created_at TEXT NOT NULL,
+    UNIQUE(trace_id, work_unit_id),
+    FOREIGN KEY (trace_id) REFERENCES runs(trace_id) ON DELETE CASCADE
 );
 """
 
@@ -1522,6 +1544,29 @@ CREATE TABLE IF NOT EXISTS native_child_parent_scopes (
     FOREIGN KEY (parent_trace_id) REFERENCES runs(trace_id) ON DELETE CASCADE
 );
 
+-- Private, ephemeral path authority for exact Codex plan rows. Unlike the
+-- content-free ready recipe, this table is never a public evidence projection;
+-- terminalization removes every unconsumed scope for the turn.
+CREATE TABLE IF NOT EXISTS codex_native_plan_scopes (
+    id TEXT PRIMARY KEY
+        CHECK (typeof(id) = 'text' AND length(CAST(id AS BLOB)) BETWEEN 1 AND 128),
+    session_id TEXT NOT NULL
+        CHECK (typeof(session_id) = 'text'
+               AND length(CAST(session_id AS BLOB)) BETWEEN 1 AND 512),
+    trace_id TEXT NOT NULL
+        CHECK (typeof(trace_id) = 'text'
+               AND length(CAST(trace_id AS BLOB)) BETWEEN 1 AND 512),
+    work_unit_id TEXT NOT NULL
+        CHECK (typeof(work_unit_id) = 'text'
+               AND length(CAST(work_unit_id AS BLOB)) BETWEEN 1 AND 160),
+    scope_payload TEXT NOT NULL
+        CHECK (typeof(scope_payload) = 'text'
+               AND length(CAST(scope_payload AS BLOB)) BETWEEN 1 AND 8192),
+    created_at TEXT NOT NULL,
+    UNIQUE(trace_id, work_unit_id),
+    FOREIGN KEY (trace_id) REFERENCES runs(trace_id) ON DELETE CASCADE
+);
+
 -- Read-path indexes used by hooks, the dashboard, and retention jobs.
 CREATE INDEX IF NOT EXISTS idx_runs_trace_id ON runs(trace_id);
 CREATE INDEX IF NOT EXISTS idx_runs_session_started ON runs(session_id, started_at DESC);
@@ -1557,6 +1602,8 @@ CREATE INDEX IF NOT EXISTS idx_child_routing_leases_parent
 ON child_routing_leases(parent_trace_id, expires_at);
 CREATE INDEX IF NOT EXISTS idx_native_child_parent_scopes_expiry
 ON native_child_parent_scopes(expires_unix, consumed_unix);
+CREATE INDEX IF NOT EXISTS idx_codex_native_plan_scopes_trace
+ON codex_native_plan_scopes(trace_id, work_unit_id);
 CREATE INDEX IF NOT EXISTS idx_agent_source_scans_source_created
 ON agent_source_scans(source_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_agent_source_scan_entries_slug
@@ -1694,6 +1741,7 @@ ALL_TABLES: tuple[str, ...] = (
     "child_routing_usage",
     "child_routing_leases",
     "native_child_parent_scopes",
+    "codex_native_plan_scopes",
     "agent_sources",
     "agent_downloads",
     "agent_candidates",
@@ -4500,6 +4548,45 @@ def create_native_child_parent_scope_trigger(conn: sqlite3.Connection) -> None:
     conn.execute(NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL)
 
 
+CODEX_NATIVE_PLAN_SCOPE_TRIGGER_SQL: dict[str, str] = {
+    "agency_codex_native_plan_scope_insert_guard": (
+        "CREATE TRIGGER agency_codex_native_plan_scope_insert_guard "
+        "BEFORE INSERT ON codex_native_plan_scopes WHEN NOT EXISTS ("
+        "SELECT 1 FROM runs WHERE session_id = NEW.session_id "
+        "AND trace_id = NEW.trace_id AND host = 'codex' AND status = 'active' "
+        "AND preflight_state = 'ready') BEGIN "
+        "SELECT RAISE(ABORT, 'Codex native plan scope requires one ready turn'); END"
+    ),
+    "agency_codex_native_plan_scope_immutable_update": (
+        "CREATE TRIGGER agency_codex_native_plan_scope_immutable_update "
+        "BEFORE UPDATE ON codex_native_plan_scopes BEGIN "
+        "SELECT RAISE(ABORT, 'Codex native plan scope is immutable'); END"
+    ),
+    "agency_codex_native_plan_scope_active_delete_guard": (
+        "CREATE TRIGGER agency_codex_native_plan_scope_active_delete_guard "
+        "BEFORE DELETE ON codex_native_plan_scopes WHEN EXISTS ("
+        "SELECT 1 FROM runs WHERE trace_id = OLD.trace_id "
+        "AND session_id = OLD.session_id AND status IN ('active', 'evidence_only')) BEGIN "
+        "SELECT RAISE(ABORT, 'active Codex native plan scope cannot be deleted'); END"
+    ),
+    "agency_codex_native_plan_scope_terminal_cleanup": (
+        "CREATE TRIGGER agency_codex_native_plan_scope_terminal_cleanup "
+        "AFTER UPDATE OF status ON runs WHEN NEW.status NOT IN ('active', 'evidence_only') "
+        "BEGIN DELETE FROM codex_native_plan_scopes WHERE trace_id = NEW.trace_id; END"
+    ),
+}
+CODEX_NATIVE_PLAN_SCOPE_TRIGGER_NAMES: tuple[str, ...] = tuple(CODEX_NATIVE_PLAN_SCOPE_TRIGGER_SQL)
+
+
+def create_codex_native_plan_scope_triggers(conn: sqlite3.Connection) -> None:
+    """Keep private Codex plan authority immutable and turn-scoped."""
+
+    for trigger_name in CODEX_NATIVE_PLAN_SCOPE_TRIGGER_NAMES:
+        conn.execute(f"DROP TRIGGER IF EXISTS {trigger_name}")  # nosec B608
+    for statement in CODEX_NATIVE_PLAN_SCOPE_TRIGGER_SQL.values():
+        conn.execute(statement)
+
+
 def _boolean_domain_trigger_sql() -> dict[str, str]:
     statements: dict[str, str] = {}
     for operation in ("INSERT", "UPDATE OF enabled, trusted_for_auto_approve"):
@@ -5112,6 +5199,7 @@ def migrate_schema(
         )
     create_delegation_activation_invariant_triggers(conn)
     create_native_child_parent_scope_trigger(conn)
+    create_codex_native_plan_scope_triggers(conn)
     create_boolean_domain_triggers(conn)
     create_activity_triggers(conn)
     create_agent_import_event_sequence_schema(

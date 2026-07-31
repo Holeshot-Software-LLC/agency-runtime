@@ -51,7 +51,6 @@ from agency_runtime.core.observability import (
 from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.unit_assignment import (
-    codex_opaque_native_child_activation_contract,
     native_child_activation_contract,
     work_unit_goal_hash,
 )
@@ -624,12 +623,7 @@ def _native_child_activation_contract_for_assignment(
     opaque_codex_task: bool,
 ) -> dict[str, Any]:
     if opaque_codex_task:
-        return codex_opaque_native_child_activation_contract(
-            goal_hash=assignment.goal_hash,
-            mutation_scope=assignment.mutation_scope,
-            resource_hashes=assignment.resource_hashes,
-            required_evidence=assignment.required_evidence,
-        )
+        raise ValueError("opaque Codex authority must come from the exact Store plan scope")
     return native_child_activation_contract(
         task,
         mutation_scope=assignment.mutation_scope,
@@ -694,6 +688,58 @@ def _native_child_delivery_output(
         assignment=assignment,
         activation_token=activation_token,
     )
+
+
+def _prepare_native_child_activation(
+    store: Any,
+    assignment: NativeChildAssignment,
+    *,
+    opaque_codex_task: bool,
+    activation_contract: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Issue one exact plaintext or Store-scoped opaque activation grant."""
+
+    method_name = (
+        "prepare_codex_opaque_native_child_activation"
+        if opaque_codex_task
+        else "prepare_delegation_activation"
+    )
+    preparer = getattr(store, method_name, None)
+    if not callable(preparer):
+        raise ValueError("native-child activation preparation is unavailable")
+    if opaque_codex_task:
+        activation = preparer(
+            session_id=assignment.session_id,
+            trace_id=assignment.trace_id,
+            work_unit_id=assignment.work_unit_id,
+            specialist_slug=assignment.specialist_slug,
+            specialist_version=assignment.specialist_version,
+            specialist_prompt_hash=assignment.specialist_prompt_hash,
+            goal_hash=assignment.goal_hash,
+            resource_hashes=assignment.resource_hashes,
+            required_evidence=assignment.required_evidence,
+            tool_use_id=assignment.tool_use_id,
+        )
+    else:
+        activation = preparer(
+            session_id=assignment.session_id,
+            trace_id=assignment.trace_id,
+            specialist_slug=assignment.specialist_slug,
+            work_unit_id=assignment.work_unit_id,
+            worker_kind="generic-worker",
+            grant_origin="native_hook",
+            tool_use_id=assignment.tool_use_id,
+            **(activation_contract or {}),
+        )
+    if (
+        not isinstance(activation, dict)
+        or activation.get("version") != assignment.specialist_version
+        or activation.get("prompt_hash") != assignment.specialist_prompt_hash
+    ):
+        raise ValueError("prepared activation identity does not match the plan")
+    if not str(activation.get("activation_token") or "") and not opaque_codex_task:
+        raise ValueError("prepared activation token is unavailable")
+    return activation
 
 
 def _project_native_child_goal(
@@ -1351,21 +1397,22 @@ class HookBridge:
                 "the persisted work-unit goal. Use the exact goal from the delegation plan.",
                 host=self.host,
             )
-        try:
-            activation_contract = _native_child_activation_contract_for_assignment(
-                task,
-                assignment,
-                opaque_codex_task=opaque_codex_task,
-            )
-        except ValueError:
-            return _pre_tool_use_denial(
-                "Agency could not verify this native child's planned mutation and evidence "
-                "boundary. Use the exact current delegation plan.",
-                host=self.host,
-            )
+        activation_contract: dict[str, Any] | None = None
+        if not opaque_codex_task:
+            try:
+                activation_contract = _native_child_activation_contract_for_assignment(
+                    task,
+                    assignment,
+                    opaque_codex_task=False,
+                )
+            except ValueError:
+                return _pre_tool_use_denial(
+                    "Agency could not verify this native child's planned mutation and evidence "
+                    "boundary. Use the exact current delegation plan.",
+                    host=self.host,
+                )
         prompt_reader = getattr(self.store, "get_versioned_specialist_prompt", None)
-        preparer = getattr(self.store, "prepare_delegation_activation", None)
-        if not callable(prompt_reader) or not callable(preparer):
+        if not callable(prompt_reader):
             return _pre_tool_use_denial(
                 "Agency could not access the exact planned specialist; the native child "
                 "was not launched as an untyped substitute.",
@@ -1408,24 +1455,13 @@ class HookBridge:
                 host=self.host,
             )
         try:
-            activation = preparer(
-                session_id=assignment.session_id,
-                trace_id=assignment.trace_id,
-                specialist_slug=assignment.specialist_slug,
-                work_unit_id=assignment.work_unit_id,
-                worker_kind="generic-worker",
-                grant_origin="native_hook",
-                tool_use_id=assignment.tool_use_id,
-                **activation_contract,
+            activation = _prepare_native_child_activation(
+                self.store,
+                assignment,
+                opaque_codex_task=opaque_codex_task,
+                activation_contract=activation_contract,
             )
-            if (
-                activation.get("version") != assignment.specialist_version
-                or activation.get("prompt_hash") != assignment.specialist_prompt_hash
-            ):
-                raise ValueError("prepared activation identity does not match the plan")
             activation_token = str(activation.get("activation_token") or "")
-            if not activation_token:
-                raise ValueError("prepared activation token is unavailable")
             result = _native_child_delivery_output(
                 args=args,
                 task_field=task_field,

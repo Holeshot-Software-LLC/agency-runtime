@@ -83,7 +83,7 @@ def test_schema_v38_accepts_zcode_and_guards_append_only_consumption(
     finally:
         connection.close()
     assert remaining == 0
-    assert version == SCHEMA_VERSION == 39
+    assert version == SCHEMA_VERSION == 40
 
 
 @pytest.mark.parametrize(
@@ -164,7 +164,7 @@ def test_schema_v38_upgrade_preserves_v35_activation_evidence_and_is_idempotent(
         finally:
             connection.close()
         assert tuple(row) == ("claude", "code-reviewer")
-        assert version == SCHEMA_VERSION == 39
+        assert version == SCHEMA_VERSION == 40
 
 
 def test_schema_v38_upgrade_adds_native_child_scope_authority_idempotently(
@@ -198,7 +198,7 @@ def test_schema_v38_upgrade_adds_native_child_scope_authority_idempotently(
             connection.close()
         assert {"token_hash", "parent_trace_id", "consumed_unix"}.issubset(columns)
         assert trigger is not None
-        assert version == SCHEMA_VERSION == 39
+        assert version == SCHEMA_VERSION == 40
 
 
 def test_schema_v38_upgrades_v37_attestation_and_hook_provenance_columns(
@@ -256,7 +256,7 @@ def test_schema_v38_upgrades_v37_attestation_and_hook_provenance_columns(
         assert attestation is not None
         assert attestation["proof_contract"] == ""
         assert attestation["proof_digest"] == ""
-        assert version == SCHEMA_VERSION == 39
+        assert version == SCHEMA_VERSION == 40
 
 
 @pytest.mark.parametrize(

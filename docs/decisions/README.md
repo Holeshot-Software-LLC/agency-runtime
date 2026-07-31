@@ -49,6 +49,7 @@ Status meanings:
 - ADR-0077 Prove Codex hook activation behaviorally without bypassing trust → ADR-0119 Separate native trust modes from activation proof
 - ADR-0071 Bound native delegation correction to one evidence-checked pass → ADR-0120 Construct evidence headers before first publication
 - ADR-0065 Keep a compact resident manager kernel at the parent boundary → ADR-0122 Use one Agency-native resident steward
+- ADR-0127 Bind opaque Codex children through exact plan labels → ADR-0128 Persist exact Codex plan authority and serialize opaque launches
 
 ## Architecture and integrations
 
@@ -193,7 +194,8 @@ Status meanings:
 | [ADR-0124](0124-grade-product-trials-against-the-inferred-unit-graph.md) | Grade product trials against the inferred unit graph | Accepted |
 | [ADR-0125](0125-admit-only-exact-content-free-codex-host-notices.md) | Admit only exact content-free Codex host notices | Accepted |
 | [ADR-0126](0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md) | Authorize exact product delegation at the Codex developer boundary | Accepted |
-| [ADR-0127](0127-bind-opaque-codex-children-through-exact-plan-labels.md) | Bind opaque Codex children through exact plan labels | Accepted |
+| [ADR-0127](0127-bind-opaque-codex-children-through-exact-plan-labels.md) | Bind opaque Codex children through exact plan labels | Superseded |
+| [ADR-0128](0128-persist-exact-codex-plan-authority-and-serialize-launches.md) | Persist exact Codex plan authority and serialize opaque launches | Accepted |
 
 ## Documentation governance
 

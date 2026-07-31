@@ -121,6 +121,24 @@ class _PlanStore:
             "prompt_hash": self.hashes[slug],
         }
 
+    def prepare_codex_opaque_native_child_activation(
+        self,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        return self.prepare_delegation_activation(
+            session_id=kwargs["session_id"],
+            trace_id=kwargs["trace_id"],
+            specialist_slug=kwargs["specialist_slug"],
+            work_unit_id=kwargs["work_unit_id"],
+            worker_kind="generic-worker",
+            grant_origin="native_hook",
+            tool_use_id=kwargs["tool_use_id"],
+            mutation_mode="read_only",
+            mutation_path_prefixes=[],
+            evidence_contract_id="agency-native-child-plan-v1",
+            evidence_requirements=["delegation-execution", "specialist-load"],
+        )
+
     def verify_pending_delegation_activation(self, **kwargs: Any) -> bool:
         with self._lock:
             matches = [

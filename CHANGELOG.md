@@ -66,7 +66,10 @@ changes rather than duplicating every commit.
   requires one exact persisted native task label, preserves the ciphertext,
   and injects a token-free goal-hash-bound v2 specialist context at
   `SubagentStart`; malformed, unpersisted, ambiguous, and external-write
-  launches remain closed.
+  launches remain closed. Exact preflight resource paths are staged privately
+  and carried into the one-use grant instead of broadening every write to `.`;
+  opaque launches are serialized until `SubagentStart` consumes the prior
+  grant, preventing ambiguous concurrent child attribution.
 - Codex 0.146 non-critical JSONL warnings are no longer misreported as parent
   tool execution. The exact hook-bypass notice and both Codex-packaged
   skill-catalog-shortening spellings, including the current `2%` wording, are

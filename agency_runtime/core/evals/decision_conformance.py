@@ -894,6 +894,47 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-opaque-child-restores-workspace-wide-grant",
+        invariant=(
+            "An ordinary Codex child receives only the path prefixes derived from its "
+            "exact preflight work unit, never an unconditional repository-wide grant."
+        ),
+        source_path="agency_runtime/core/unit_assignment.py",
+        before=(
+            "    path_prefixes = (\n"
+            "        []\n"
+            '        if normalized_scope == "read_only"\n'
+            '        else ["." if resource == "repository-workspace" else resource '
+            "for resource in resources]\n"
+            "    )"
+        ),
+        after=(
+            "    path_prefixes = (\n"
+            "        []\n"
+            '        if normalized_scope == "read_only"\n'
+            '        else ["."]\n'
+            "    )"
+        ),
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_preflight_stages_exact_path_for_ordinary_workspace_write"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-opaque-child-restores-concurrent-unconsumed-grants",
+        invariant=(
+            "Codex opaque launches remain serialized until SubagentStart consumes the "
+            "prior native-hook grant."
+        ),
+        source_path="agency_runtime/core/store/delegation_activation.py",
+        before="    if inflight is not None:\n",
+        after="    if False and inflight is not None:\n",
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_opaque_children_serialize_until_subagent_start_consumes_grant"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="preflight-failure-drops-terminal-receipt",
         invariant=(
             "Every owned terminal preflight failure persists one exact content-free receipt."

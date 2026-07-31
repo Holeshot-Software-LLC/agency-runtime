@@ -17,7 +17,7 @@ related:
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
-  - docs/decisions/0127-bind-opaque-codex-children-through-exact-plan-labels.md
+  - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -65,19 +65,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   before Agency's `PreToolUse` equality check. The old path recovered only the
   fixed canary goal, explaining why activation passed while product delegation
   could not start.
-- AR-209's source candidate admits only a strictly shaped opaque Codex message
-  whose native task label resolves exactly one persisted plan row. It preserves
-  the ciphertext, stages the exact grant, injects a token-free v2 specialist
-  context with the persisted goal hash at `SubagentStart`, and consumes it
-  against the observed child.
-- The candidate passes 97 focused warning-strict tests. Its arbitrary-goal
-  real-Store regression proves grant consumption, specialist load, worker
-  identity, and completed delegation. Both focused decision mutations are
-  killed with unchanged source.
-- The complete named fast spine is green: 593 docs, 603 Ruff files, 636
-  warning-strict Python tests with six skips, 110 dashboard tests, every routing
-  gate, and all 69 decision mutations with zero survivors or invalid results.
-  The evaluator baseline passed and source remained unchanged.
+- AR-209's repaired candidate binds each opaque native task label to one exact
+  private preflight path scope, preserves ciphertext, and injects the token-free
+  v2 specialist context at `SubagentStart`. Only a genuinely repository-wide
+  row receives `.`; ordinary file rows retain their exact paths.
+- Opaque launches are serialized until child start consumes the prior grant;
+  same-tool replay is idempotent. The repaired surface passes 202 warning-strict
+  tests, all 27 activation tests, and both new mutations with unchanged source.
+- The repaired spine is green through 594 docs, 604 Ruff files, 636
+  warning-strict Python tests with six skips, 110 dashboard tests, and every
+  routing gate. Full 71-mutation conformance remains after this checkpoint.
 - Product session `019fb92d-694c-7e42-b553-ee53802bac99`, trace
   `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
   `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage
@@ -126,9 +123,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 Exact build `584b949` is consumed: activation passed, but its product trial is
-terminal `NO-GO`. AR-209's first-spawn repair is focused- and named-fast-green
-but not yet reviewed, merged, or exact-installed. No new live run is allowed
-before those boundaries pass.
+terminal `NO-GO`. AR-209's exact-path and serialized-launch repair is green
+through every pre-conformance named gate but is not yet 71-mutation-green,
+reviewed, merged, or exact-installed. No new live run is allowed before those
+boundaries pass.
 
 ## same-task-continuity
 
@@ -139,7 +137,7 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Review, merge, and exact-install the AR-208/AR-209 repair.
+1. Pass the revised named fast gate, review, merge, and exact-install AR-209.
 2. Repeat one activation and at most one product trial on the new exact build,
    then produce the local shareable evidence page and OpenClaw handoff.
 

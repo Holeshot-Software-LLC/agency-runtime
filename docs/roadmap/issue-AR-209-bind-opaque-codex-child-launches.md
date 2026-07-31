@@ -12,6 +12,7 @@ related:
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
   - docs/decisions/0127-bind-opaque-codex-children-through-exact-plan-labels.md
+  - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -52,23 +53,26 @@ with its content-free goal hash, and consumes the grant against the observed
 child identity.
 
 Plaintext Codex, Claude, and ZCode launches retain exact goal equality and the
-v1 rewritten-task envelope. External-write rows remain undelegable. An opaque
-workspace-write row is bounded to the already isolated Codex workspace rather
-than attempting to reverse content-free resource hashes into paths.
+v1 rewritten-task envelope. External-write rows remain undelegable. Preflight
+now stages one bounded private Codex scope while it still has the transient
+resource paths. Every later native-hook grant is checked against that immutable
+scope: an exact file stays exact, and only the `repository-workspace` sentinel
+maps to `.`. The private rows are absent from public evidence and are removed
+when the parent turn terminalizes.
 
-The focused boundary passes 97 warning-strict tests. A real SQLite Store test
-now drives a non-canary goal through Codex's observed
-`PostToolUse`-before-`SubagentStart` callback order and proves grant
-consumption, specialist load, worker identity, and completed delegation. The
-product rollout parser accepts v2 goal-hash evidence without retaining the
-goal, specialist prompt, encrypted message, child tools, or child result. Two
-focused decision mutations are killed with unchanged source.
+Opaque Codex launches are also serialized. The same tool-use ID can replay its
+unconsumed grant idempotently, but a different plan row is denied until
+`SubagentStart` consumes the first grant. The product scheduler therefore runs
+one dependency-ready child at a time on this host.
 
-The complete named fast spine is green on source commit `552eb05` plus the
-v2 canary assertion correction: 593 documentation files, 603 Ruff files, 636
-warning-strict Python tests with six skips, 110 dashboard tests, and every
-routing gate passed. Decision conformance passed its baseline and killed all
-69 mutations with zero survivors or invalid results; source remained unchanged.
+The repaired changed surface passes 202 warning-strict tests, and the complete
+Codex activation file passes 27 tests. Focused regressions prove the exact path,
+immutable/terminal Store lifecycle, exact replay, second-spawn denial, and
+post-consumption next-spawn admission. Both new decision mutations are killed
+with unchanged source. The revised named fast spine is green through 594 docs,
+604 Ruff files, 636 warning-strict Python tests with six skips, 110 dashboard
+tests, and every routing gate. The full 71-mutation run remains pending after
+the required context checkpoint.
 
 ## Approach
 
@@ -81,16 +85,20 @@ routing gate passed. Decision conformance passed its baseline and killed all
    goal hash.
 4. Consume the staged grant only against one unambiguous observed child
    lifecycle identity, then reconcile callback order idempotently.
-5. Keep wrong labels, ambiguous traces, malformed opaque input, wrong
+5. Persist exact preflight-derived path authority privately and verify every
+   opaque Codex native-hook grant against it.
+6. Serialize opaque launches until the prior grant is consumed at child start.
+7. Keep wrong labels, ambiguous traces, malformed opaque input, wrong
    plaintext goals, external writes, missing prompts, and stale grants closed.
-6. Project only content-free goal-hash and lifecycle evidence through product
+8. Project only content-free goal-hash and lifecycle evidence through product
    grading.
 
 ## Dependencies
 
 AR-207 owns the product execution path that exposed this boundary. AR-203 owns
 workspace-write and exact product proof, while AR-204 owns the integrated
-README story. ADR-0127 records the Codex-specific host contract.
+README story. ADR-0128 supersedes ADR-0127 with exact private path authority and
+serialized opaque launch semantics.
 
 ## Acceptance
 
@@ -104,8 +112,12 @@ README story. ADR-0127 records the Codex-specific host contract.
   completed-delegation lifecycle.
 - [x] Product rollout evidence projects the v2 goal hash and excludes private
   task, prompt, tool, and result content.
+- [x] Exact file-specific path authority is staged atomically with ready state,
+  cannot be broadened or removed while active, and is cleaned at terminal state.
+- [x] A second opaque grant fails until `SubagentStart` consumes the first;
+  exact same-tool replay remains idempotent.
 - [x] Focused warning-strict tests and curated mutations pass.
-- [x] The named fast verification spine passes.
+- [ ] The revised named fast verification spine passes.
 - [ ] The reviewed repair is merged and exact-installed.
 - [ ] One fresh exact-build activation and one product trial pass with zero
   corrections and proven workspace write.

@@ -1103,7 +1103,7 @@ def test_preflight_helpers_cover_bounded_and_corrupt_store_inputs(
 
     classification = SimpleNamespace(turn_kind="continuation", reroute_required=False)
     fresh = SimpleNamespace(turn_kind="new_intent", reroute_required=True)
-    outcomes = iter([RuntimeError("stale"), ("recipe", "routing", [], [], fresh)])
+    outcomes = iter([RuntimeError("stale"), ("recipe", "routing", [], [], fresh, [])])
 
     def _prepare(*_args: Any, **_kwargs: Any) -> Any:
         result = next(outcomes)
