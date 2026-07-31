@@ -391,6 +391,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e0c66f9` | 2026-07-30 | docs(roadmap): checkpoint autonomous activation replay | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 | `3ec69c7` | 2026-07-30 | fix(finalization): require first-pass evidence headers | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-3ec69c7-first-pass-evidence-headers.md) |
 | `6956edb` | 2026-07-30 | docs(evidence): record AR-204 mutation gate | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `67f0b96` | 2026-07-30 | docs(evidence): prove dashboard configuration round trip | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
