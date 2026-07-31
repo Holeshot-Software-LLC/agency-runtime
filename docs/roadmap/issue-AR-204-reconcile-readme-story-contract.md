@@ -213,6 +213,11 @@ top-1 relevance is 1.0, forbidden-candidate rate is 0, and abstention accuracy
 is 1.0. Its production cache-path fixture is explicitly labelled synthetic
 inference evidence rather than hidden deterministic selection.
 
+The complete isolated decision-conformance rerun passed its 30-node baseline
+and killed all 38 curated mutations in 309.6 seconds. It recorded zero
+survivors, zero invalid mutations, and an unchanged source checkout, including
+the new terminal-inference companion/fallback regression.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired

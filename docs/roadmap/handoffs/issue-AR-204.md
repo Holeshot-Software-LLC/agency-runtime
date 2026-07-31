@@ -58,6 +58,8 @@ acceptance; this file records only current proof and the next package.
   inference failure now projects no policy-companion or fallback identity.
 - Routing report/corpus v1.4 is explicitly candidate-recall-only and passes all
   checked-in recall, policy, delegation, scale, startup, and performance gates.
+- The complete 30-node baseline and all 38 curated mutations pass with zero
+  survivors, zero invalid results, and the source checkout unchanged.
 - Tracker [#189](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189)
   records AR-204 under `epic:product`.
 - AR-143 and AR-196 are `wont_do` and explicitly superseded by AR-204; their
@@ -124,15 +126,14 @@ acceptance; this file records only current proof and the next package.
   `d527e0901ce83b85a110d476d82045458768e92686c0dee4ac8583230311e944`.
 - The disposable dashboard process was stopped and its token expired. This is
   source-candidate evidence, not exact-installed product proof.
-- The terminal-failure regression passes, and its isolated curated mutation is
-  killed with the source checkout unchanged. The complete 38-mutation run is
-  still required before the package reaches its demo-ready checkpoint.
+- The terminal-failure regression and complete 38-mutation evaluator pass; the
+  full isolated run completed in 309.6 seconds.
 
 ## exact-blocker
 
-Source behavior is repaired through truthful candidate-recall evaluation. The
-complete 38-mutation gate, remaining named fast spine, exact installation, and
-one native Codex product trial still own the next proof boundaries.
+Source behavior is repaired through truthful candidate-recall evaluation and
+the complete mutation gate. The remaining named fast spine, exact installation,
+and one native Codex product trial still own the next proof boundaries.
 
 ## same-task-continuity
 
@@ -142,7 +143,7 @@ the owner-untracked analysis draft and `uv.lock`.
 
 ## next-bounded-work-package
 
-1. Complete the 38-mutation gate and named fast spine, then checkpoint.
+1. Complete the remaining named fast spine, then checkpoint.
 2. Merge and install that exact build for Codex, ZCode, and dashboard; run one
    bypassed native Codex trial and generate its bounded local evidence page.
 
