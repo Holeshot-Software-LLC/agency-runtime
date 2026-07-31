@@ -22,26 +22,22 @@ from agency_runtime.core.header.finalize import (
     TERMINAL_OUTCOME_MESSAGES,
     response_hash,
 )
-from agency_runtime.core.retry_receipts import (
-    attach_retry_receipt,
-    normalize_receipt_id,
-)
 
 MAX_INPUT_BYTES = 1_048_576
 MAX_MODEL_CHARS = 512
 MAX_TOOL_NAME_CHARS = 512
-MAX_REVISION_CHARS = 48_000
 MAX_BRIDGE_OUTPUT_BYTES = 65_536
 MAX_VISIBLE_MESSAGE_JSON_BYTES = 40_000
+MAX_PREFLIGHT_CONTEXT_CHARS = 48_000
 _VERIFICATION_UNAVAILABLE = (
     "AGENCY EVIDENCE VERIFICATION UNAVAILABLE: Turn-scoped evidence could not be "
     "verified or persisted. Do not finalize this response; restore the evidence "
-    "store and retry."
+    "store and start a new turn."
 )
 _TERMINAL_REJECTION_MESSAGE = (
     "Agency Runtime blocked this response because its required evidence contract "
-    "remained invalid after the bounded revision. Start a new turn after restoring "
-    "the runtime or correcting the response."
+    "was invalid. No correction was requested or accepted; start a new turn after "
+    "restoring the runtime or fixing first-pass header generation."
 )
 _TERMINAL_MISMATCH_MESSAGE = (
     "AGENCY TURN TERMINAL: The submitted response does not match the exact response "
@@ -164,9 +160,81 @@ def _bounded_visible_message(message: object) -> str:
     return value
 
 
-def _revision(message: str = _VERIFICATION_UNAVAILABLE) -> dict[str, str]:
-    """Return the only fail-closed outcome supported by before_agent_finalize."""
-    return {"action": "continue", "message": _bounded_visible_message(message)}
+def _revision(message: str = _VERIFICATION_UNAVAILABLE) -> dict[str, Any]:
+    """Return a legacy-callable, non-corrective verification failure envelope."""
+    return _terminal_rejection_result(
+        status="verification_failed",
+        message=_bounded_visible_message(message),
+        final_response="",
+        trace_id="",
+    )
+
+
+def _header_snapshot_context(
+    adapter: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    model: str,
+) -> str:
+    """Render exact first-pass header guidance from current-turn Store evidence."""
+
+    if not session_id or not trace_id:
+        return ""
+    from agency_runtime.core.header.contract import (
+        EvidenceCorrelationError,
+        fill_header_fields,
+        format_header,
+    )
+
+    try:
+        header = format_header(
+            fill_header_fields(
+                {},
+                session_id,
+                adapter.store,
+                model,
+                trace_id,
+            )
+        )
+    except (EvidenceCorrelationError, KeyError, RuntimeError, TypeError, ValueError):
+        return ""
+    return (
+        "[AGENCY INITIAL HEADER SNAPSHOT v1]\n"
+        "Use these exact seven lines for substantive progress until Agency evidence "
+        "changes. Immediately before the natural final response, call `agency.finalize` "
+        f"exactly once with session_id `{session_id}`, trace_id `{trace_id}`, and the "
+        "response body as draft_text; emit its returned text byte-for-byte. That local "
+        "tool constructs the first visible header from current Store evidence. Never "
+        "guess changed values and never wait for a host correction.\n"
+        f"{header}"
+    )
+
+
+def _append_header_snapshot(
+    result: dict[str, Any],
+    adapter: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    model: str,
+) -> dict[str, Any]:
+    """Append an exact snapshot without exceeding the bridge context budget."""
+
+    snapshot = _header_snapshot_context(
+        adapter,
+        session_id=session_id,
+        trace_id=trace_id,
+        model=model,
+    )
+    if not snapshot:
+        return result
+    current = result.get("context")
+    base = current.rstrip() if isinstance(current, str) else ""
+    combined = f"{base}\n\n{snapshot}" if base else snapshot
+    if len(combined.encode("utf-8")) > MAX_PREFLIGHT_CONTEXT_CHARS:
+        return result
+    return {**result, "context": combined}
 
 
 def _recover_exact_terminal_trace(
@@ -275,7 +343,7 @@ def _exact_policy_terminal_state(
 ) -> str:
     """Return the exact policy-text terminal state for any final action."""
 
-    if not session_id or not trace_id or not final_response:
+    if not session_id or not trace_id:
         return ""
     getter = getattr(adapter.store, "get_authoritative_finalization", None)
     if not callable(getter):
@@ -375,10 +443,9 @@ def _revision_or_terminal_failure(
     final_response: str,
     trace_id: str,
 ) -> dict[str, Any]:
-    """Request one repair, then stop retrying an unverifiable response."""
+    """Stop one unverifiable response without requesting a correction."""
 
-    if attempt <= 0:
-        return _revision()
+    del attempt
     return _terminal_rejection_result(
         status="verification_failed",
         message=_VERIFICATION_UNAVAILABLE,
@@ -437,44 +504,6 @@ def _commit_terminal_outcome(
     )
 
 
-def _claim_continuation(
-    adapter: Any,
-    *,
-    session_id: str,
-    trace_id: str,
-    final_response: str,
-    attempt: int,
-    missing: list[str],
-) -> dict[str, str] | None:
-    """Atomically grant, replay, or exhaust this turn's single rewrite."""
-    try:
-        from agency_runtime.core.header.finalize import response_hash
-
-        result = adapter.store.claim_continuation(
-            session_id=session_id,
-            trace_id=trace_id,
-            host="openclaw",
-            response_hash=response_hash(final_response),
-            retry_active=attempt > 0,
-            missing=missing,
-        )
-    except Exception:
-        return None
-    if not isinstance(result, dict) or result.get("outcome") not in {
-        "claimed",
-        "replay",
-        "exhausted",
-    }:
-        return None
-    receipt_id = normalize_receipt_id(result.get("receipt_id"))
-    if result["outcome"] in {"claimed", "replay"} and not receipt_id:
-        return None
-    return {
-        "outcome": str(result["outcome"]),
-        "receipt_id": receipt_id,
-    }
-
-
 def _evaluate_pre_verify_policy(
     adapter: Any,
     *,
@@ -524,32 +553,6 @@ def _evaluate_pre_verify_policy(
     return decision
 
 
-def _visible_continuation(
-    decision: dict[str, Any],
-    *,
-    trace_id: str,
-    receipt_id: str = "",
-) -> dict[str, str]:
-    """Project an internal decision into OpenClaw's bounded host contract."""
-    message = _bounded_visible_message(decision.get("message"))
-    visible = {"action": "continue", "message": message, "turnId": trace_id}
-    if receipt_id:
-        with_receipt = attach_retry_receipt(
-            message,
-            receipt_id,
-            maximum_chars=MAX_REVISION_CHARS,
-        )
-        visible["message"] = _bounded_visible_message(with_receipt)
-        if visible["message"] == _VERIFICATION_UNAVAILABLE:
-            visible["message"] = attach_retry_receipt(
-                _VERIFICATION_UNAVAILABLE,
-                receipt_id,
-                maximum_chars=MAX_REVISION_CHARS,
-            )
-        visible["revisionId"] = receipt_id
-    return visible
-
-
 def _missing_fields(decision: dict[str, Any]) -> list[str]:
     """Return bounded string field names for durable diagnostics."""
     value = decision.get("missing")
@@ -580,15 +583,16 @@ def _safe_policy_decision(
         return None
 
 
-def _finish_exhausted_retry(
+def _finish_policy_rejection(
     adapter: Any,
     *,
     decision: dict[str, Any],
-    final_response: str,
+    policy_response: str,
+    response_binding: str,
     session_id: str,
     trace_id: str,
 ) -> dict[str, Any]:
-    """Bind the already verified response to one terminal retry outcome."""
+    """Bind the first verified policy violation to one terminal outcome."""
 
     if decision.get("runtime_disabled") is True:
         return {}
@@ -600,21 +604,22 @@ def _finish_exhausted_retry(
     rejection_action = (
         "delegation_declined"
         if decision.get("delegation_strength") == "strongly_preferred"
-        else "retry_exhausted"
+        else "response_invalid"
     )
     committed = _commit_terminal_outcome(
         adapter,
         session_id=session_id,
         trace_id=trace_id,
-        final_response=final_response,
+        final_response=policy_response,
         action=rejection_action,
         status=rejection_action,
         evidence_revision=revision,
         missing=_missing_fields(decision),
+        response_binding=response_binding,
     )
     if not committed:
         return _revision()
-    return _terminal_pre_verify_result(rejection_action, final_response, trace_id)
+    return _terminal_pre_verify_result(rejection_action, response_binding, trace_id)
 
 
 def _outbound_denial(
@@ -682,10 +687,16 @@ def _exact_outbound_terminal_state(
     if not callable(getter):
         return ""
     try:
-        rejected = getter(
+        legacy_rejected = getter(
             session_id,
             trace_id,
             action="retry_exhausted",
+            response_hash=digest,
+        )
+        response_invalid = getter(
+            session_id,
+            trace_id,
+            action="response_invalid",
             response_hash=digest,
         )
         delegation_declined = getter(
@@ -703,12 +714,19 @@ def _exact_outbound_terminal_state(
     except Exception:
         return "unavailable"
     if _matches_exact_terminal(
-        rejected,
+        legacy_rejected,
         action="retry_exhausted",
         status="retry_exhausted",
         digest=digest,
     ):
         return "retry_exhausted"
+    if _matches_exact_terminal(
+        response_invalid,
+        action="response_invalid",
+        status="response_invalid",
+        digest=digest,
+    ):
+        return "response_invalid"
     if _matches_exact_terminal(
         delegation_declined,
         action="delegation_declined",
@@ -810,7 +828,7 @@ def _handle_outbound_gate(
         trace_id=effective_trace,
         digest=digest,
     )
-    if terminal_state in {"retry_exhausted", "delegation_declined"}:
+    if terminal_state in {"response_invalid", "retry_exhausted", "delegation_declined"}:
         return _outbound_denial(
             digest,
             TERMINAL_OUTCOME_MESSAGES[terminal_state],
@@ -848,7 +866,7 @@ def _handle_outbound_gate(
     rejection_action = (
         "delegation_declined"
         if decision.get("delegation_strength") == "strongly_preferred"
-        else "retry_exhausted"
+        else "response_invalid"
     )
     committed = _commit_terminal_outcome(
         adapter,
@@ -869,47 +887,6 @@ def _handle_outbound_gate(
     if accepted:
         return _outbound_allowance(digest, trace_id=effective_trace)
     return _outbound_denial(digest)
-
-
-def _persist_continuation_decision(
-    adapter: Any,
-    decision: dict[str, Any],
-    *,
-    final_response: str,
-    session_id: str,
-    attempt: int,
-    trace_id: str,
-) -> dict[str, Any]:
-    """Persist one bounded continuation; acceptance belongs to outbound seal."""
-    if decision.get("action") != "continue":
-        return _revision()
-    revision = _evidence_revision(decision)
-    if revision is None:
-        return _revision()
-    missing = _missing_fields(decision)
-    claim = _claim_continuation(
-        adapter,
-        session_id=session_id,
-        trace_id=trace_id,
-        final_response=final_response,
-        attempt=attempt,
-        missing=missing,
-    )
-    if claim is None:
-        return _revision()
-    if claim["outcome"] in {"claimed", "replay"}:
-        return _visible_continuation(
-            decision,
-            trace_id=trace_id,
-            receipt_id=claim["receipt_id"],
-        )
-    return _finish_exhausted_retry(
-        adapter,
-        decision=decision,
-        final_response=final_response,
-        session_id=session_id,
-        trace_id=trace_id,
-    )
 
 
 def _handle_pre_verify(
@@ -950,12 +927,6 @@ def _handle_pre_verify(
             final_response=policy_response,
             trace_id=trace_id,
         )
-    if not policy_response:
-        return _revision_or_terminal_failure(
-            attempt=attempt,
-            final_response=policy_response,
-            trace_id=effective_trace or trace_id,
-        )
     if not session_id or not effective_trace:
         return _revision_or_terminal_failure(
             attempt=attempt,
@@ -978,10 +949,10 @@ def _handle_pre_verify(
         )
     if terminal_state == "completed":
         return {}
-    if terminal_state in {"retry_exhausted", "delegation_declined"}:
+    if terminal_state in {"response_invalid", "retry_exhausted", "delegation_declined"}:
         return _terminal_pre_verify_result(
             terminal_state,
-            policy_response,
+            final_response,
             effective_trace,
         )
 
@@ -1024,12 +995,12 @@ def _handle_pre_verify(
             if revision is not None
             else _revision()
         )
-    return _persist_continuation_decision(
+    return _finish_policy_rejection(
         adapter,
-        decision,
-        final_response=final_response,
+        decision=decision,
+        policy_response=policy_response,
+        response_binding=final_response,
         session_id=session_id,
-        attempt=attempt,
         trace_id=effective_trace,
     )
 
@@ -1234,6 +1205,13 @@ def handle(
                 native_run_id=_bounded_string(payload, "nativeRunId", limit=256),
             )
             or {}
+        )
+        result = _append_header_snapshot(
+            dict(result),
+            adapter,
+            session_id=session_id,
+            trace_id=trace_id,
+            model=model,
         )
         return {**result, "runtimeEnabled": True}
 

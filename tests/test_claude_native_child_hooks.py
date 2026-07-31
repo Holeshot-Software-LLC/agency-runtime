@@ -1034,9 +1034,9 @@ def test_isolated_parent_guidance_pins_authoritative_resident_manager_header() -
         session_id="codex-session",
         trace_id="trace",
         nontrivial=False,
-        resident_managers=("agents-orchestrator", "chief-of-staff"),
+        resident_managers=("agency-steward",),
     )
 
-    assert "Agency/Agencies loaded: agents-orchestrator, chief-of-staff" in context
+    assert "Agency/Agencies loaded: agency-steward" in context
     assert "copy its value exactly, never `none`" in context
     assert "Agency/Agencies loaded: <agent-id" not in context

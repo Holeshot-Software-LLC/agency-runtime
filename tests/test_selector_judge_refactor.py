@@ -334,7 +334,7 @@ def test_typed_provider_failure_never_enters_hidden_fallbacks(
     )
 
     assert attempted == ["configured"]
-    assert result["status"] == "degraded"
-    assert result["inference_mode"] == "degraded"
+    assert result["status"] == "inference_unavailable"
+    assert result["inference_mode"] == "unavailable"
     assert result["inference_required"] is True
     assert result["selected_ids"] == []

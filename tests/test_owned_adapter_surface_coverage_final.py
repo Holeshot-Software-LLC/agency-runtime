@@ -375,29 +375,6 @@ def test_hook_cleanup_and_terminal_helper_failures(monkeypatch) -> None:
     assert isinstance(caught.value.__cause__, OSError)
 
     bridge = _bridge()
-    assert (
-        bridge._claim_continuation(
-            session_id="s", trace_id="t", response_text="draft", retry_active=False
-        )
-        is None
-    )
-    bridge.store = SimpleNamespace(claim_continuation=lambda **_kwargs: {"outcome": "bad"})
-    assert (
-        bridge._claim_continuation(
-            session_id="s", trace_id="t", response_text="draft", retry_active=False
-        )
-        is None
-    )
-    bridge.store = SimpleNamespace(
-        claim_continuation=lambda **kwargs: {"outcome": "exhausted", "response_hash": "wrong"}
-    )
-    assert (
-        bridge._claim_continuation(
-            session_id="s", trace_id="t", response_text="draft", retry_active=False
-        )
-        is None
-    )
-
     assert not bridge._commit_terminal_finalization(
         session_id="s",
         trace_id="t",
@@ -451,50 +428,40 @@ def test_hook_cleanup_and_terminal_helper_failures(monkeypatch) -> None:
     assert invalid["action"] == "continue"
 
 
-def test_hook_continuation_stop_and_closure_edge_paths(monkeypatch) -> None:
+def test_hook_terminal_rejection_stop_and_closure_edge_paths(monkeypatch) -> None:
     bridge = _bridge()
     correlation = hooks.HookCorrelation("session", "trace", "", "", "")
     monkeypatch.setattr(bridge, "_verification_failed", lambda *_args: {"failed": True})
-    monkeypatch.setattr(bridge, "_claim_continuation", lambda **_kwargs: None)
-    assert bridge._handle_continuation_decision(
-        correlation=correlation,
-        trace_id="trace",
-        final_response="draft",
-        host_retry=True,
-        verification={"action": "continue"},
-    ) == {"failed": True}
-
-    monkeypatch.setattr(bridge, "_claim_continuation", lambda **_kwargs: {"outcome": "exhausted"})
-    assert (
-        bridge._handle_continuation_decision(
-            correlation=correlation,
-            trace_id="trace",
-            final_response="draft",
-            host_retry=True,
-            verification={"action": "continue", "runtime_disabled": True},
-        )
-        == {}
-    )
-
     monkeypatch.setattr(bridge, "_commit_terminal_finalization", lambda **_kwargs: False)
-    assert bridge._handle_continuation_decision(
+    assert bridge._handle_terminal_rejection(
         correlation=correlation,
         trace_id="trace",
         final_response="draft",
-        host_retry=True,
-        verification={"action": "accept", "evidence_revision": 1},
+        verification={"action": "continue", "evidence_revision": 1},
     ) == {"failed": True}
+
     monkeypatch.setattr(bridge, "_commit_terminal_finalization", lambda **_kwargs: True)
-    assert (
-        bridge._handle_continuation_decision(
-            correlation=correlation,
-            trace_id="trace",
-            final_response="draft",
-            host_retry=True,
-            verification={"action": "accept", "evidence_revision": 1},
-        )
-        == {}
+    monkeypatch.setattr(
+        bridge,
+        "_terminal_completion_result",
+        lambda action: {"terminal": action},
     )
+    assert bridge._handle_terminal_rejection(
+        correlation=correlation,
+        trace_id="trace",
+        final_response="draft",
+        verification={"action": "continue", "evidence_revision": 1},
+    ) == {"terminal": "response_invalid"}
+    assert bridge._handle_terminal_rejection(
+        correlation=correlation,
+        trace_id="trace",
+        final_response="draft",
+        verification={
+            "action": "continue",
+            "delegation_strength": "strongly_preferred",
+            "evidence_revision": 1,
+        },
+    ) == {"terminal": "delegation_declined"}
 
     monkeypatch.setattr(bridge, "_correlation", lambda _payload: correlation)
     monkeypatch.setattr(bridge, "_acknowledge_resident_manager_delivery", lambda **_kwargs: None)
@@ -593,43 +560,26 @@ def test_openclaw_private_fail_closed_helpers() -> None:
         status="completed",
         evidence_revision=1,
     )
-    adapter.store = SimpleNamespace(
-        claim_continuation=lambda **_kwargs: (_ for _ in ()).throw(OSError())
-    )
+    adapter.store = SimpleNamespace()
     assert (
-        node_bridge._claim_continuation(
+        node_bridge._header_snapshot_context(
             adapter,
             session_id="s",
             trace_id="t",
-            final_response="draft",
-            attempt=0,
-            missing=[],
+            model="m",
         )
-        is None
+        == ""
     )
-    adapter.store.claim_continuation = lambda **_kwargs: {"outcome": "invalid"}
+    unchanged = {"context": "existing"}
     assert (
-        node_bridge._claim_continuation(
+        node_bridge._append_header_snapshot(
+            unchanged,
             adapter,
             session_id="s",
             trace_id="t",
-            final_response="draft",
-            attempt=0,
-            missing=[],
+            model="m",
         )
-        is None
-    )
-    adapter.store.claim_continuation = lambda **_kwargs: {"outcome": "claimed"}
-    assert (
-        node_bridge._claim_continuation(
-            adapter,
-            session_id="s",
-            trace_id="t",
-            final_response="draft",
-            attempt=0,
-            missing=[],
-        )
-        is None
+        == unchanged
     )
 
 
@@ -678,12 +628,10 @@ def test_openclaw_policy_projection_failure_matrix(monkeypatch) -> None:
         is None
     )
 
-    visible = node_bridge._visible_continuation(
-        {"message": "x" * (node_bridge.MAX_VISIBLE_MESSAGE_JSON_BYTES - 3)},
-        trace_id="t",
-        receipt_id="00000000-0000-0000-0000-000000000001",
-    )
-    assert visible["revisionId"]
+    terminal = node_bridge._revision("x" * (node_bridge.MAX_VISIBLE_MESSAGE_JSON_BYTES + 1))
+    assert terminal["action"] == "terminal"
+    assert terminal["terminalStatus"] == "verification_failed"
+    assert "revisionId" not in terminal
 
     with pytest.raises(RuntimeError, match="terminal response evidence is inconsistent"):
         node_bridge._accept_exact_finalized_response(
@@ -722,62 +670,40 @@ def test_openclaw_persistence_and_preverify_edge_matrix(monkeypatch) -> None:
     adapter = SimpleNamespace()
     common = {
         "adapter": adapter,
-        "final_response": "draft",
+        "policy_response": "draft",
+        "response_binding": "draft",
         "session_id": "s",
         "trace_id": "t",
     }
     assert (
-        node_bridge._finish_exhausted_retry(
+        node_bridge._finish_policy_rejection(
             **common, decision={"action": "continue", "evidence_revision": 0}
-        )["action"]
-        == "continue"
+        )["terminalStatus"]
+        == "verification_failed"
     )
     assert (
-        node_bridge._finish_exhausted_retry(
+        node_bridge._finish_policy_rejection(
             **common, decision={"action": "continue", "runtime_disabled": True}
         )
         == {}
     )
     assert (
-        node_bridge._finish_exhausted_retry(
+        node_bridge._finish_policy_rejection(
             **common, decision={"action": "accept", "evidence_revision": 1}
-        )["action"]
-        == "continue"
+        )["terminalStatus"]
+        == "verification_failed"
     )
     monkeypatch.setattr(
         node_bridge,
         "_commit_terminal_outcome",
         lambda *_args, **_kwargs: True,
     )
-    rejected = node_bridge._finish_exhausted_retry(
+    rejected = node_bridge._finish_policy_rejection(
         **common, decision={"action": "continue", "evidence_revision": 1}
     )
     assert rejected["terminalRejected"] is True
+    assert rejected["terminalStatus"] == "response_invalid"
     assert len(rejected["responseHash"]) == 64
-
-    assert (
-        node_bridge._persist_continuation_decision(
-            adapter,
-            {"action": "accept"},
-            final_response="draft",
-            session_id="s",
-            attempt=0,
-            trace_id="t",
-        )["action"]
-        == "continue"
-    )
-    monkeypatch.setattr(node_bridge, "_claim_continuation", lambda *_args, **_kwargs: None)
-    assert (
-        node_bridge._persist_continuation_decision(
-            adapter,
-            {"action": "continue", "evidence_revision": 1},
-            final_response="draft",
-            session_id="s",
-            attempt=0,
-            trace_id="t",
-        )["action"]
-        == "continue"
-    )
     active = SimpleNamespace(
         runtime_enabled=lambda: True,
         store=SimpleNamespace(get_run=lambda _trace: {"session_id": "s", "status": "active"}),
@@ -794,8 +720,8 @@ def test_openclaw_persistence_and_preverify_edge_matrix(monkeypatch) -> None:
             session_id="s",
             trace_id="t",
             model="m",
-        )["action"]
-        == "continue"
+        )["terminalStatus"]
+        == "verification_failed"
     )
     monkeypatch.setattr(node_bridge, "_effective_pre_verify_trace", lambda *_args, **_kwargs: "t")
     monkeypatch.setattr(
@@ -810,8 +736,8 @@ def test_openclaw_persistence_and_preverify_edge_matrix(monkeypatch) -> None:
             session_id="s",
             trace_id="t",
             model="m",
-        )["action"]
-        == "continue"
+        )["terminalStatus"]
+        == "verification_failed"
     )
     monkeypatch.setattr(node_bridge, "_exact_policy_terminal_state", lambda *_args, **_kwargs: "")
     monkeypatch.setattr(
@@ -1410,10 +1336,11 @@ def test_openclaw_terminal_correlation_and_state_matrix() -> None:
     with pytest.raises(RuntimeError, match="correlation is invalid"):
         node_bridge._terminal_turn_status(adapter, "session", "trace")
 
-    assert node_bridge._visible_continuation(
-        {"message": "revise"},
-        trace_id="trace",
-    ) == {"action": "continue", "message": "revise", "turnId": "trace"}
+    failure = node_bridge._revision("verification unavailable")
+    assert failure["action"] == "terminal"
+    assert failure["terminalRejected"] is True
+    assert failure["terminalStatus"] == "verification_failed"
+    assert failure["turnId"] == ""
 
 
 def test_openclaw_outbound_rejection_preverify_and_native_child_matrix(monkeypatch) -> None:
@@ -1721,7 +1648,7 @@ def test_mcp_preflight_host_and_decline_delegation_matrix(monkeypatch) -> None:
     assert (
         "resident"
         in mcp_tools._decline_delegation(
-            {**base, "agent": "chief-of-staff"},
+            {**base, "agent": "agency-steward"},
             store,
         )["error"]
     )

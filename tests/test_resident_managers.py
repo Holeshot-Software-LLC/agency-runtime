@@ -34,6 +34,7 @@ from agency_runtime.core.unit_assignment import (
     assignment_agents_from_catalog,
     build_unit_agent_plan,
     project_unit_assignment_agents,
+    work_unit_id_from_text,
 )
 from agency_runtime.server.mcp_tools import dispatch_tool_call
 
@@ -79,7 +80,7 @@ class _BoundaryStore:
 
 
 def test_resident_kernel_is_compact_versioned_and_content_addressed() -> None:
-    assert RESIDENT_MANAGER_KERNEL_VERSION == 1
+    assert RESIDENT_MANAGER_KERNEL_VERSION == 2
     assert len(RESIDENT_MANAGER_KERNEL) <= MAX_RESIDENT_MANAGER_KERNEL_CHARS
     assert (
         hashlib.sha256(RESIDENT_MANAGER_KERNEL.encode("utf-8")).hexdigest()
@@ -89,9 +90,10 @@ def test_resident_kernel_is_compact_versioned_and_content_addressed() -> None:
     assert RESIDENT_MANAGER_KERNEL_REFERENCE.content_hash == RESIDENT_MANAGER_KERNEL_HASH
     assert RESIDENT_MANAGER_KERNEL_REFERENCE.slugs == RESIDENT_MANAGER_SLUGS
     assert not hasattr(RESIDENT_MANAGER_KERNEL_REFERENCE, "content")
-    assert "Chief of Staff owns the requested outcome" in RESIDENT_MANAGER_KERNEL
-    assert "Agents Orchestrator owns decomposition" in RESIDENT_MANAGER_KERNEL
-    assert "native host alone spawns" in RESIDENT_MANAGER_KERNEL
+    assert "Agency Steward owns the requested outcome" in RESIDENT_MANAGER_KERNEL
+    assert "recorded inference\nstaffing" in RESIDENT_MANAGER_KERNEL
+    assert "selects, ranks, hires" in RESIDENT_MANAGER_KERNEL
+    assert "native host alone owns worker lifecycle" in RESIDENT_MANAGER_KERNEL
     assert "parent-only" in RESIDENT_MANAGER_KERNEL
 
 
@@ -101,7 +103,7 @@ def test_resident_kernel_import_fails_when_the_budget_is_exceeded(
     real_len = builtins.len
 
     def _over_budget_len(value: Any) -> int:
-        if isinstance(value, str) and value.startswith("[Agency resident-manager kernel"):
+        if isinstance(value, str) and value.startswith("[Agency resident-steward kernel"):
             return MAX_RESIDENT_MANAGER_KERNEL_CHARS + 1
         return real_len(value)
 
@@ -115,10 +117,13 @@ def test_resident_kernel_import_fails_when_the_budget_is_exceeded(
 
 
 def test_resident_identity_is_canonical_and_compatibility_aliases_share_it() -> None:
-    assert RESIDENT_MANAGER_SLUGS == ("agents-orchestrator", "chief-of-staff")
+    assert RESIDENT_MANAGER_SLUGS == ("agency-steward",)
     assert RESIDENT_MANAGER_SLUG_SET == PROTECTED_AGENT_SLUGS
-    assert NO_MATCH_FALLBACK_SLUGS is RESIDENT_MANAGER_SLUGS
-    assert is_resident_manager_slug("  CHIEF-OF-STAFF ") is True
+    assert NO_MATCH_FALLBACK_SLUGS == ()
+    assert NO_MATCH_FALLBACK_SLUGS is not RESIDENT_MANAGER_SLUGS
+    assert is_resident_manager_slug("  AGENCY-STEWARD ") is True
+    assert is_resident_manager_slug("chief-of-staff") is False
+    assert is_resident_manager_slug("agents-orchestrator") is False
     assert is_resident_manager_slug("code-reviewer") is False
     assert resident_managers.is_current_resident_manager_kernel_reference(None) is False
     assert reject_resident_manager("code-reviewer", operation="be loaded") is None
@@ -131,24 +136,24 @@ def test_resident_identity_is_canonical_and_compatibility_aliases_share_it() -> 
     )
     with pytest.raises(ValueError, match="parent-only"):
         reject_resident_manager(
-            "agents-orchestrator",
+            "agency-steward",
             operation="be loaded as an ordinary specialist",
         )
     assert (
         resident_manager_boundary_error(
-            "chief-of-staff",
+            "agency-steward",
             operation="",
         )
-        == "resident manager 'chief-of-staff' is parent-only and cannot "
+        == "resident manager 'agency-steward' is parent-only and cannot "
         "be used as an ordinary specialist"
     )
 
 
 def test_resident_managers_are_rejected_from_assignment_metadata_and_plans() -> None:
     resident = {
-        "slug": "agents-orchestrator",
-        "name": "Agents Orchestrator",
-        "description": "Coordinates specialists.",
+        "slug": "agency-steward",
+        "name": "Agency Steward",
+        "description": "Protects the parent evidence boundary.",
     }
     specialist = {
         "slug": "technical-writer",
@@ -179,14 +184,20 @@ def test_resident_managers_are_rejected_from_assignment_metadata_and_plans() -> 
     assert assignment_agents_from_catalog([resident], manager_only) == []
     assert build_unit_agent_plan(manager_only) == []
 
+    unit_goals = ["Write installation documentation", "Update the README"]
+    claimed_specialist = {
+        **specialist,
+        "matched_work_unit_ids": [work_unit_id_from_text(item) for item in unit_goals],
+        "primary_work_unit_ids": [work_unit_id_from_text(item) for item in unit_goals],
+    }
     specialist_route = {
         **manager_only,
-        "selected_ids": ["agents-orchestrator", "technical-writer"],
-        "unit_assignment_agents": [resident, specialist],
+        "selected_ids": ["agency-steward", "technical-writer"],
+        "unit_assignment_agents": [resident, claimed_specialist],
         "work_units": {
             "delegate": True,
             "count": 2,
-            "units": ["Write installation documentation", "Update the README"],
+            "units": unit_goals,
         },
     }
     assert {row["recommended_agent"] for row in build_unit_agent_plan(specialist_route)} == {
@@ -198,8 +209,8 @@ def test_ordinary_specialist_hydration_omits_resident_manager_prompts() -> None:
     store = _BoundaryStore()
     loaded = hydrate_selected_specialist_context(
         store,  # type: ignore[arg-type]
-        [{"slug": "agents-orchestrator"}],
-        {"selected_ids": ["agents-orchestrator"]},
+        [{"slug": "agency-steward"}],
+        {"selected_ids": ["agency-steward"]},
         session_id="session",
         trace_id="trace",
     )
@@ -214,7 +225,7 @@ def test_ordinary_specialist_hydration_omits_resident_manager_prompts() -> None:
             store,  # type: ignore[arg-type]
             [
                 {
-                    "slug": "chief-of-staff",
+                    "slug": "agency-steward",
                     "version": "1.0.0",
                     "hash": "a" * 64,
                 }
@@ -231,7 +242,7 @@ def test_ordinary_specialist_hydration_omits_resident_manager_prompts() -> None:
             {
                 "session_id": "session",
                 "trace_id": "trace",
-                "slug": "agents-orchestrator",
+                "slug": "agency-steward",
             },
         ),
         (
@@ -239,7 +250,7 @@ def test_ordinary_specialist_hydration_omits_resident_manager_prompts() -> None:
             {
                 "session_id": "session",
                 "trace_id": "trace",
-                "slug": "chief-of-staff",
+                "slug": "agency-steward",
                 "work_unit_id": "unit-0123456789",
             },
         ),
@@ -248,7 +259,7 @@ def test_ordinary_specialist_hydration_omits_resident_manager_prompts() -> None:
             {
                 "session_id": "session",
                 "trace_id": "trace",
-                "agent": "agents-orchestrator",
+                "agent": "agency-steward",
                 "task": "Execute work",
                 "backend": "spawn_agent",
                 "work_unit_id": "unit-0123456789",
@@ -281,13 +292,13 @@ def test_public_evidence_boundaries_reject_resident_managers(
     monkeypatch.setattr(runtime, "_require_active_turn", lambda *_args: None)
 
     with pytest.raises(ValueError, match="parent-only"):
-        runtime.record_specialist("session", "chief-of-staff", trace_id="trace")
+        runtime.record_specialist("session", "agency-steward", trace_id="trace")
     with pytest.raises(ValueError, match="parent-only"):
         runtime.record_delegation(
             trace_id="trace",
             session_id="session",
             work_unit_id="unit-0123456789",
-            recommended_agent="agents-orchestrator",
+            recommended_agent="agency-steward",
             status="suggested",
         )
     assert store.mutations == []
@@ -302,7 +313,7 @@ def test_native_delegation_execution_does_not_promote_a_resident_manager() -> No
         trace_id="trace",
         host="codex",
         backend="spawn_agent",
-        agent="chief-of-staff",
+        agent="agency-steward",
         goal="Implement the change",
         work_unit_id="unit-0123456789",
         executed_worker_kind="native-agent",

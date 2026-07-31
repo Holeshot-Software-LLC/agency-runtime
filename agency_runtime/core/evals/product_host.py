@@ -49,6 +49,7 @@ _WORKSPACE_WRITE_PROOF_FILE: Final[str] = ".agency-runtime-workspace-write-proof
 _WORKSPACE_WRITE_PROOF_PREFIX: Final[str] = "agency-runtime-product-write-proof:"
 _WORKSPACE_WRITE_PROOF_SCHEMA: Final[str] = "agency.product-workspace-write-proof.v1"
 _WORKSPACE_TRUST_SCHEMA: Final[str] = "agency.codex-isolated-workspace-trust.v1"
+_HOOK_TRUST_SCHEMA: Final[str] = "agency.codex-hook-trust-mode.v1"
 
 
 def _codex_options(model: str) -> tuple[str, ...]:
@@ -198,6 +199,23 @@ def _workspace_write_evidence(workspace: Path, *, expected_token: str) -> dict[s
     return evidence
 
 
+def _hook_trust_evidence(result: Mapping[str, Any]) -> dict[str, Any]:
+    """Project the explicit one-invocation bypass without calling it trust."""
+
+    proven = bool(
+        result.get("trust_mode") == "autonomous_bypass"
+        and result.get("trust_bypass_used") is True
+        and result.get("persistent_trust_changed") is False
+    )
+    return {
+        "schema": _HOOK_TRUST_SCHEMA,
+        "proven": proven,
+        "trust_mode": "autonomous_bypass" if proven else "unproven",
+        "status": "bypassed" if proven else "unproven",
+        "persistent_trust_changed": False if proven else None,
+    }
+
+
 def _failed_execution(
     *,
     host: str,
@@ -259,9 +277,10 @@ def _codex_product_backend(
         profile_scope="isolated-profile",
         exec_options=_codex_options(model),
         require_existing_store=True,
-        require_exact_activation_rollout=False,
+        require_exact_activation_rollout=True,
         hook_event_diagnostics=master_enabled,
         trusted_workdir=str(workspace.resolve(strict=True)),
+        trust_mode="autonomous_bypass",
     )
 
 
@@ -354,6 +373,7 @@ def execute_product_host(
             result,
             workspace=resolved_workspace,
         )
+        hook_trust_evidence = _hook_trust_evidence(result)
         if normalized_host == "codex" and normalized_mode == "agency":
             evidence = store.get_canary_activation_snapshot(
                 host=normalized_host,
@@ -390,6 +410,8 @@ def execute_product_host(
     failures = tuple(str(item) for item in proof.failures)
     if trust_evidence.get("proven") is not True:
         failures = (*failures, "workspace_trust_not_proven")
+    if hook_trust_evidence.get("proven") is not True:
+        failures = (*failures, "hook_trust_bypass_not_proven")
     if write_evidence.get("proven") is not True:
         failures = (*failures, "workspace_write_not_proven")
     return ProductHostExecution(
@@ -402,6 +424,7 @@ def execute_product_host(
         runtime_contract_passed=bool(
             proof.passed
             and trust_evidence.get("proven") is True
+            and hook_trust_evidence.get("proven") is True
             and write_evidence.get("proven") is True
         ),
         agency_evidence={
@@ -409,6 +432,7 @@ def execute_product_host(
             "proof": proof.invocation,
             "runtime": evidence,
             "workspace_trust": trust_evidence,
+            "hook_trust": hook_trust_evidence,
             "workspace_write": write_evidence,
             "product_prompt_hash": prompt_hash,
             "executed_prompt_hash": executed_prompt_hash,

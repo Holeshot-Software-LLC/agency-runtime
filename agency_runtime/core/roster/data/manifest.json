@@ -620,25 +620,27 @@
     },
     {
       "anti_capabilities": [
+        "selecting or adding workers outside the recorded inference decision",
         "replacing host-native scheduling",
         "loading a fixed hierarchy",
         "fabricating delegation or model receipts"
       ],
-      "audit_revision": "1",
+      "audit_revision": "2",
       "audit_status": "approved",
       "authority": "plan",
       "avoid_when": [
-        "the request asks it to execute specialist work itself or claim unrecorded activity"
+        "a bounded request can be handled by one specialist without orchestration",
+        "the request asks it to choose workers beyond the inference decision execute specialist work or claim unrecorded activity"
       ],
       "capabilities": [
-        "interpret per-ask work shape",
-        "select compatible specialists",
-        "recommend bounded native delegation"
+        "decompose complex outcomes into bounded specialist work units",
+        "design dependency-aware delegation topology",
+        "define native handoff and evidence boundaries"
       ],
       "categories": [
         "specialized",
         "orchestration",
-        "resident-governance"
+        "multi-specialist-coordination"
       ],
       "conflicts_with": [],
       "context_mode": "direct_safe",
@@ -646,26 +648,27 @@
       "display_name": "Agents Orchestrator",
       "division": "specialized",
       "evidence_requirements": [
-        "derive selection from the current ask and audited roster contracts",
+        "bind every named worker to the recorded inference staffing decision",
         "report only host-recorded loads delegations tools and reconciled model evidence"
       ],
-      "expected_output_contract": "A turn-scoped routing recommendation naming compatible specialists, load-versus-delegate rationale, native-harness handoff boundaries, and required receipts.",
+      "expected_output_contract": "A bounded decomposition and delegation topology for an inference-selected team, with dependencies, native-host handoff boundaries, and required receipts.",
       "findings": [
         "unsupported_memory_assumption",
         "the raw fixed PM-to-architect-to-developer hierarchy conflicts with dynamic flat selection",
         "POSIX commands hard-coded paths persistent memory and autonomous retries must not govern host execution"
       ],
-      "independence_group": "agency-resident-governance",
+      "independence_group": "agency-multi-specialist-orchestration",
       "model_requirements": [
         "routing-inference",
         "conflict-detection",
         "uncertainty-calibration"
       ],
       "preferred_when": [
-        "every Agency-enabled ask needs resident routing coordination and evidence boundaries"
+        "a request spans multiple specialist domains and needs bounded decomposition",
+        "an inference-selected team needs dependency-aware delegation and evidence handoffs"
       ],
       "prompt_file": "prompts/agents-orchestrator.txt",
-      "prompt_hash": "a1f2d21995139852fe10f78f76ab884806dc8ed3733e6322d6d04597ebbf2a8b",
+      "prompt_hash": "67b9fa6f5a7da364b4a2e8d4015e0f61d350217445d349bfa65668f5c2402193",
       "relative_path": "specialized/agents-orchestrator.md",
       "required_tools": [],
       "requires": [],
@@ -687,7 +690,7 @@
         "routing",
         "coordination"
       ],
-      "version": "sha256:b21332ed3e821165631d35c64749ed0c1c7a789d38e8934c9c3700732ea22baf"
+      "version": "sha256:15c6123fab243efa53e388e080983d288c2b34056d2b783106be8e0ac6b2cb6a"
     },
     {
       "anti_capabilities": [
@@ -2950,10 +2953,11 @@
         "making health or attention diagnoses",
         "performing unapproved external actions"
       ],
-      "audit_revision": "1",
+      "audit_revision": "2",
       "audit_status": "approved",
       "authority": "plan",
       "avoid_when": [
+        "a bounded technical request does not need program-level coordination",
         "the request asks it to conceal evidence or decide outside delegated authority"
       ],
       "capabilities": [
@@ -2964,7 +2968,7 @@
       "categories": [
         "specialized",
         "coordination",
-        "resident-governance"
+        "program-coordination"
       ],
       "conflicts_with": [],
       "context_mode": "direct_safe",
@@ -2981,17 +2985,18 @@
         "the raw gatekeeper and proactive update rules exceed safe authority unless explicitly delegated",
         "energy and ADHD inferences plus permanent personal memory are sensitive and must remain inactive"
       ],
-      "independence_group": "agency-resident-governance",
+      "independence_group": "agency-program-coordination",
       "model_requirements": [
         "context-management",
         "prioritization",
         "uncertainty-calibration"
       ],
       "preferred_when": [
-        "every Agency-enabled ask needs a resident context and decision-boundary steward"
+        "a sustained program or executive workflow needs priority dependency decision and risk coordination",
+        "multiple workstreams need a concise owner-facing decision brief"
       ],
       "prompt_file": "prompts/chief-of-staff.txt",
-      "prompt_hash": "450cc1bd0508ccea390b463cb6ca305d763ab71e0cd8e2024c099e85afbc5e63",
+      "prompt_hash": "6d118c13d054fbb993876c81286f0a295e03a66250f1157d91a321f0332c78bf",
       "relative_path": "specialized/specialized-chief-of-staff.md",
       "required_tools": [],
       "requires": [],
@@ -3013,7 +3018,7 @@
         "coordination",
         "review"
       ],
-      "version": "sha256:0600987b6866bc44ef1d0e8b88d37c4b6674db1acd386036f12270e47d47bc4b"
+      "version": "sha256:268cd1ea2e8d8b0b39e90a0cc09b6c25c0155d71a4e733c717fd7e7872562d0d"
     },
     {
       "anti_capabilities": [

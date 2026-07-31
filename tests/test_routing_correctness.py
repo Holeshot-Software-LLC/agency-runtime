@@ -15,6 +15,7 @@ from agency_runtime.core.config import (
     ProviderEntry,
     SelectorConfig,
 )
+from agency_runtime.core.preflight import _require_substantive_specialist
 from agency_runtime.core.selector import judge as judge_module
 from agency_runtime.core.selector import pipeline as pipeline_module
 from agency_runtime.core.selector.cache import (
@@ -31,6 +32,7 @@ from agency_runtime.core.selector.stickiness import (
     session_check,
     session_put,
 )
+from agency_runtime.core.turn_intent import classify_turn_intent
 
 CATALOG_A = [
     {
@@ -92,6 +94,33 @@ def _offline_config(*, providers: tuple[ProviderEntry, ...] = ()) -> AgencyConfi
         judge=JudgeConfig(model="", confidence_bypass_threshold=999.0),
         ollama=OllamaConfig(enabled=False, model=""),
     )
+
+
+def test_substantive_turn_cannot_fall_through_to_a_resident_generalist() -> None:
+    substantive = classify_turn_intent(
+        "Evaluate ChunkHound against CodeGraph for this repository.",
+        {"state_known": True},
+    )
+    with pytest.raises(RuntimeError, match="no accepted specialist or contractor"):
+        _require_substantive_specialist(
+            {
+                "selected_ids": ["agency-steward"],
+                "status": "abstained",
+                "source": "workforce_inference",
+            },
+            substantive,
+        )
+
+    _require_substantive_specialist(
+        {
+            "selected_ids": ["code-intelligence-evaluator"],
+            "status": "accepted",
+            "source": "workforce_inference",
+        },
+        substantive,
+    )
+    acknowledgement = classify_turn_intent("ok", {"state_known": True})
+    _require_substantive_specialist({"selected_ids": []}, acknowledgement)
 
 
 def test_routing_fingerprint_covers_roster_config_and_policy() -> None:
@@ -298,7 +327,7 @@ def test_cache_and_session_state_are_thread_safe_and_bounded() -> None:
     )
 
 
-def test_zero_signal_token_fallback_abstains() -> None:
+def test_zero_signal_without_inference_fails_loudly() -> None:
     result = query_judge(
         "unrelated gibberish xyzzy",
         CATALOG_A,
@@ -307,10 +336,11 @@ def test_zero_signal_token_fallback_abstains() -> None:
 
     assert result["selected_ids"] == []
     assert result["confidence"] == 0.0
-    assert result["status"] == "abstained"
+    assert result["status"] == "inference_unavailable"
+    assert result["inference_required"] is True
 
 
-def test_low_signal_token_fallback_abstains_instead_of_loading_noise() -> None:
+def test_low_signal_without_inference_fails_instead_of_loading_noise() -> None:
     result = query_judge(
         "explain a runtime header and dashboard",
         [
@@ -328,10 +358,10 @@ def test_low_signal_token_fallback_abstains_instead_of_loading_noise() -> None:
 
     assert result["top_score"] < 2.0
     assert result["selected_ids"] == []
-    assert result["status"] == "abstained"
+    assert result["status"] == "inference_unavailable"
 
 
-def test_token_fallback_does_not_pad_with_zero_score_candidates() -> None:
+def test_no_inference_never_selects_even_a_strong_lexical_candidate() -> None:
     catalog = [
         {
             "slug": "technical-writer",
@@ -351,11 +381,51 @@ def test_token_fallback_does_not_pad_with_zero_score_candidates() -> None:
         config=_offline_config(),
     )
 
-    assert result["status"] == "token_fallback"
-    assert result["selected_ids"] == ["technical-writer"]
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
 
 
-def test_token_fallback_excludes_weak_incidental_matches() -> None:
+def test_full_route_never_repopulates_inference_failure_from_policy() -> None:
+    clear_cache()
+    clear_session_routing()
+    catalog = [
+        {
+            "slug": "application-security-engineer",
+            "name": "Application Security Engineer",
+            "description": "Reviews authentication security",
+        },
+        {
+            "slug": "code-reviewer",
+            "name": "Code Reviewer",
+            "description": "Reviews code",
+        },
+    ]
+
+    result = route(
+        "terminal-inference-failure",
+        "Review this authentication design for security risks",
+        catalog,
+        config=_offline_config(),
+    )
+
+    assert result["status"] == "inference_unavailable"
+    assert result["source"] == "inference_failure"
+    assert result["companion_actions"] == ["SECURITY"]
+    for field in (
+        "selected_ids",
+        "semantic_ids",
+        "companion_ids",
+        "available_companion_ids",
+        "unavailable_companion_ids",
+        "selected_companion_ids",
+        "fallback_companion_ids",
+    ):
+        assert result[field] == []
+    assert result["fallback_considered"] is False
+    assert result["fallback_applied"] is False
+
+
+def test_no_inference_never_promotes_a_strong_match_over_an_incidental_match() -> None:
     catalog = [
         {
             "slug": "performance-benchmarker",
@@ -375,18 +445,11 @@ def test_token_fallback_excludes_weak_incidental_matches() -> None:
         config=_offline_config(),
     )
 
-    assert result["selected_ids"] == ["performance-benchmarker"]
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
 
 
-def test_token_fallback_rejects_candidates_below_the_relative_floor() -> None:
-    assert judge_module._scored_selection(
-        [{"slug": "relevant"}, {"slug": "incidental"}],
-        [10.0, 2.9],
-        2,
-    ) == ["relevant"]
-
-
-def test_token_fallback_retains_comparable_multi_domain_matches() -> None:
+def test_no_inference_never_selects_comparable_multi_domain_matches() -> None:
     catalog = [
         {
             "slug": "security-specialist",
@@ -407,13 +470,11 @@ def test_token_fallback_retains_comparable_multi_domain_matches() -> None:
         max_selected=2,
     )
 
-    assert set(result["selected_ids"]) == {
-        "security-specialist",
-        "database-specialist",
-    }
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
 
 
-def test_token_fallback_excludes_negated_domain_and_keeps_affirmative_domains() -> None:
+def test_no_inference_never_turns_negation_filtering_into_selection() -> None:
     catalog = [
         {
             "slug": "ui-specialist",
@@ -442,13 +503,11 @@ def test_token_fallback_excludes_negated_domain_and_keeps_affirmative_domains() 
         max_selected=3,
     )
 
-    assert set(result["selected_ids"]) == {
-        "security-specialist",
-        "technical-writer",
-    }
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
 
 
-def test_agent_slug_only_catalog_is_selectable() -> None:
+def test_agent_slug_only_catalog_still_requires_inference() -> None:
     catalog = [
         {
             "agent_slug": "technical-writer",
@@ -463,7 +522,8 @@ def test_agent_slug_only_catalog_is_selectable() -> None:
         config=_offline_config(),
     )
 
-    assert result["selected_ids"] == ["technical-writer"]
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
 
 
 @pytest.mark.parametrize("max_selected", [0, -1, 51, True, 1.5])
@@ -518,11 +578,11 @@ def test_provider_cannot_select_candidate_omitted_from_bounded_prompt(
         config=_offline_config(providers=(provider,)),
     )
 
-    assert result["status"] == "degraded"
+    assert result["status"] == "inference_unavailable"
     assert f"agent-{judge_module._MAX_JUDGE_CANDIDATES:02d}" not in result["selected_ids"]
 
 
-def test_malformed_provider_content_falls_back_without_crashing(monkeypatch) -> None:
+def test_malformed_provider_content_fails_without_a_fallback_team(monkeypatch) -> None:
     provider = ProviderEntry(
         name="judge",
         model="judge-model",
@@ -543,9 +603,9 @@ def test_malformed_provider_content_falls_back_without_crashing(monkeypatch) -> 
         config=_offline_config(providers=(provider,)),
     )
 
-    assert result["status"] == "degraded"
+    assert result["status"] == "inference_unavailable"
     assert result["selected_ids"] == []
-    assert result["deterministic_candidate_ids"] == ["code-reviewer"]
+    assert "deterministic_candidate_ids" not in result
 
 
 def test_blank_candidate_identity_is_never_selected() -> None:
@@ -561,7 +621,7 @@ def test_blank_candidate_identity_is_never_selected() -> None:
     )
 
     assert result["selected_ids"] == []
-    assert result["status"] == "abstained"
+    assert result["status"] == "inference_unavailable"
 
 
 def test_semantically_invalid_provider_fails_over_and_bounds_confidence(monkeypatch) -> None:
@@ -644,5 +704,5 @@ def test_provider_latency_is_cumulative_and_duplicate_ollama_retry_is_skipped(mo
     )
 
     assert calls == 1
-    assert result["status"] == "degraded"
+    assert result["status"] == "inference_unavailable"
     assert result["latency_ms"] == 250

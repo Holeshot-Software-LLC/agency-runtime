@@ -1,4 +1,4 @@
-"""Stable, compact parent-context contract for Agency's resident managers."""
+"""Stable, compact parent-context contract for Agency's resident steward."""
 
 from __future__ import annotations
 
@@ -7,26 +7,22 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Final
 
-RESIDENT_MANAGER_KERNEL_VERSION: Final[int] = 1
+RESIDENT_MANAGER_KERNEL_VERSION: Final[int] = 2
 MAX_RESIDENT_MANAGER_KERNEL_CHARS: Final[int] = 1024
-RESIDENT_MANAGER_SLUGS: Final[tuple[str, str]] = (
-    "agents-orchestrator",
-    "chief-of-staff",
-)
+RESIDENT_MANAGER_SLUGS: Final[tuple[str, ...]] = ("agency-steward",)
 RESIDENT_MANAGER_SLUG_SET: Final[frozenset[str]] = frozenset(RESIDENT_MANAGER_SLUGS)
 
 RESIDENT_MANAGER_KERNEL: Final[str] = """\
-[Agency resident-manager kernel v1]
-Chief of Staff owns the requested outcome, scope, priorities, constraints, and acceptance
-gates. It does not select workers, prescribe execution, or claim completed work.
-Agents Orchestrator owns decomposition, compatible specialist selection, delegation
-recommendations, and evidence boundaries. It does not redefine the outcome, schedule native
-workers, or claim execution.
-The native host alone spawns, schedules, cancels, and recovers workers. Specialists execute
-bounded assignments; independent reviewers remain isolated.
-These managers are parent-only: never load or delegate them as ordinary specialists.
-Temporary specialist context is turn- or assignment-scoped. Report activity only from
-authoritative current-turn receipts."""
+[Agency resident-steward kernel v2]
+Agency Steward owns the requested outcome, scope, constraints, acceptance gates, and
+current-turn evidence boundary. It accepts specialist identities only from recorded inference
+staffing; missing or invalid evidence fails loudly. It never answers the domain request or
+selects, ranks, hires, schedules, executes, reviews, or claims specialist work. A substantive
+turn proceeds only with an accepted specialist or contractor receipt.
+Deterministic code may retrieve candidates and reject unsafe proposals; it never chooses a
+worker. The native host alone owns worker lifecycle. Specialists execute bounded assignments;
+independent reviewers remain isolated. Agency Steward is parent-only: never load or delegate
+it as a specialist. Specialist context is scoped. Report current-turn receipts only."""
 
 if len(RESIDENT_MANAGER_KERNEL) > MAX_RESIDENT_MANAGER_KERNEL_CHARS:
     raise RuntimeError("resident-manager kernel exceeds its context budget")
@@ -42,7 +38,7 @@ class ResidentManagerKernelReference:
 
     version: int
     content_hash: str
-    slugs: tuple[str, str]
+    slugs: tuple[str, ...]
 
     def as_dict(self) -> dict[str, object]:
         """Return the bounded content-free projection persisted with a turn."""

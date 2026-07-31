@@ -75,15 +75,8 @@ def _bind(
     parser: argparse.ArgumentParser,
     handlers: Handlers,
     name: str,
-    *,
-    operator_presence_family: str = "",
-    operator_presence_dry_run_exempt: bool = False,
 ) -> None:
-    defaults: dict[str, object] = {"func": handlers[name]}
-    if operator_presence_family:
-        defaults["_operator_presence_family"] = operator_presence_family
-        defaults["_operator_presence_dry_run_exempt"] = operator_presence_dry_run_exempt
-    parser.set_defaults(**defaults)
+    parser.set_defaults(func=handlers[name])
 
 
 def _runtime_control_action(action: str) -> str:
@@ -220,6 +213,14 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         help="Do not register or start the optional per-user dashboard service",
     )
     install.add_argument(
+        "--autonomous",
+        action="store_true",
+        help=(
+            "Use the harness-supported hook-trust bypass for this explicit activation "
+            "verification without changing persistent trust state"
+        ),
+    )
+    install.add_argument(
         "--activation-timeout",
         type=float,
         default=180.0,
@@ -230,8 +231,6 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         install,
         handlers,
         "cmd_install",
-        operator_presence_family="installation",
-        operator_presence_dry_run_exempt=True,
     )
 
 
@@ -278,8 +277,6 @@ def _register_uninstall(sub: Subparsers, handlers: Handlers) -> None:
         uninstall,
         handlers,
         "cmd_uninstall",
-        operator_presence_family="installation",
-        operator_presence_dry_run_exempt=True,
     )
 
 
@@ -314,8 +311,6 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
         on_p,
         handlers,
         "cmd_on",
-        operator_presence_family="runtime-control",
-        operator_presence_dry_run_exempt=True,
     )
 
     off_p = sub.add_parser(
@@ -348,8 +343,6 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
         off_p,
         handlers,
         "cmd_off",
-        operator_presence_family="runtime-control",
-        operator_presence_dry_run_exempt=True,
     )
 
     status_p = sub.add_parser(
@@ -422,7 +415,6 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
         configure,
         handlers,
         "cmd_configure",
-        operator_presence_family="configuration",
     )
 
     doctor = sub.add_parser("doctor", help="Check DB, config, providers, and adapter availability")
@@ -460,7 +452,6 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
         config_set,
         handlers,
         "cmd_config_set",
-        operator_presence_family="configuration",
     )
 
     config_provider = config_sub.add_parser(
@@ -524,7 +515,6 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
         provider_set,
         handlers,
         "cmd_config_provider_set",
-        operator_presence_family="configuration",
     )
     provider_remove = provider_sub.add_parser("remove", help="Remove a named provider")
     provider_remove.add_argument("name", help="Provider name")
@@ -532,7 +522,6 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
         provider_remove,
         handlers,
         "cmd_config_provider_remove",
-        operator_presence_family="configuration",
     )
 
     config_validate = config_sub.add_parser("validate", help="Validate config + reachability")
@@ -543,7 +532,6 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
         config_reset,
         handlers,
         "cmd_config_reset",
-        operator_presence_family="configuration",
     )
 
 
@@ -564,8 +552,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         sync,
         handlers,
         "cmd_sync",
-        operator_presence_family="roster-governance",
-        operator_presence_dry_run_exempt=True,
     )
 
     source = sub.add_parser("source", help="Manage roster sources")
@@ -582,7 +568,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         source_add,
         handlers,
         "cmd_source_add",
-        operator_presence_family="roster-governance",
     )
     source_list = source_sub.add_parser("list", help="List roster sources")
     _bind(source_list, handlers, "cmd_source_list")
@@ -597,7 +582,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         roster_diff,
         handlers,
         "cmd_roster_diff",
-        operator_presence_family="roster-governance",
     )
     roster_approve = roster_sub.add_parser("approve", help="Approve snapshot")
     roster_approve.add_argument("snapshot_id", help="Snapshot identifier to approve")
@@ -605,7 +589,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         roster_approve,
         handlers,
         "cmd_roster_approve",
-        operator_presence_family="roster-governance",
     )
     roster_activate = roster_sub.add_parser("activate", help="Activate approved snapshot")
     roster_activate.add_argument("snapshot_id", help="Approved snapshot identifier to activate")
@@ -613,7 +596,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         roster_activate,
         handlers,
         "cmd_roster_activate",
-        operator_presence_family="roster-governance",
     )
     roster_scans = roster_sub.add_parser(
         "scans",
@@ -674,7 +656,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         roster_retire,
         handlers,
         "cmd_roster_retire",
-        operator_presence_family="roster-governance",
     )
     roster_rollback = roster_sub.add_parser(
         "rollback",
@@ -701,7 +682,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         roster_rollback,
         handlers,
         "cmd_roster_rollback",
-        operator_presence_family="roster-governance",
     )
 
     roster_upstream = roster_sub.add_parser(
@@ -739,8 +719,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         upstream_import,
         handlers,
         "cmd_roster_upstream_import",
-        operator_presence_family="roster-governance",
-        operator_presence_dry_run_exempt=True,
     )
 
     roster_candidate = roster_sub.add_parser(
@@ -762,7 +740,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         candidate_audit,
         handlers,
         "cmd_roster_candidate_audit",
-        operator_presence_family="roster-governance",
     )
     candidate_findings = candidate_sub.add_parser(
         "findings",
@@ -786,7 +763,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         candidate_reject,
         handlers,
         "cmd_roster_candidate_reject",
-        operator_presence_family="roster-governance",
     )
     candidate_compare = candidate_sub.add_parser(
         "compare",
@@ -821,7 +797,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         agent_enable,
         handlers,
         "cmd_agent_enable",
-        operator_presence_family="agent-governance",
     )
     agent_disable = agents_sub.add_parser(
         "disable",
@@ -837,7 +812,6 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         agent_disable,
         handlers,
         "cmd_agent_disable",
-        operator_presence_family="agent-governance",
     )
 
     search = sub.add_parser("search", help="Search active roster")
@@ -962,7 +936,6 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
             action_parser,
             handlers,
             "cmd_workforce_transition",
-            operator_presence_family="workforce-governance",
         )
 
     merge = workforce_sub.add_parser("merge", help="Merge a worker into a coherent survivor")
@@ -983,7 +956,6 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
         merge,
         handlers,
         "cmd_workforce_transition",
-        operator_presence_family="workforce-governance",
     )
 
     amend = workforce_sub.add_parser(
@@ -998,7 +970,6 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
         amend,
         handlers,
         "cmd_hiring_approve",
-        operator_presence_family="hiring-governance",
     )
 
     for action, handler in (("enable", "cmd_agent_enable"), ("disable", "cmd_agent_disable")):
@@ -1016,7 +987,6 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
             toggle,
             handlers,
             handler,
-            operator_presence_family="workforce-governance",
         )
 
     contractor = sub.add_parser("contractor", help="Inspect newly hired contractors")
@@ -1074,7 +1044,6 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
         hiring_approve,
         handlers,
         "cmd_hiring_approve",
-        operator_presence_family="hiring-governance",
     )
 
 
@@ -1390,8 +1359,6 @@ def _register_database(sub: Subparsers, handlers: Handlers) -> None:
         db_trim,
         handlers,
         "cmd_db_trim",
-        operator_presence_family="database-maintenance",
-        operator_presence_dry_run_exempt=True,
     )
 
 
@@ -1446,7 +1413,6 @@ def _register_dashboard_service_actions(
                 action_parser,
                 handlers,
                 "cmd_dashboard_service",
-                operator_presence_family="dashboard-service",
             )
     install = service_sub.add_parser(
         "install", help="Register and start the current-user dashboard service"
@@ -1459,8 +1425,6 @@ def _register_dashboard_service_actions(
         install,
         handlers,
         "cmd_dashboard_service",
-        operator_presence_family="dashboard-service",
-        operator_presence_dry_run_exempt=True,
     )
     open_p = service_sub.add_parser("open", help="Resolve and open the live authenticated URL")
     open_p.add_argument(
@@ -1471,7 +1435,6 @@ def _register_dashboard_service_actions(
         open_p,
         handlers,
         "cmd_dashboard_service",
-        operator_presence_family="dashboard-service",
     )
 
 

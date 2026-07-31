@@ -1,6 +1,6 @@
 ---
 title: "Install the applicable suite by default"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-28
 updated: 2026-07-28
@@ -12,7 +12,7 @@ related:
   - docs/decisions/0110-remove-agency-owned-windows-hello.md
 supersedes:
   - docs/decisions/0110-remove-agency-owned-windows-hello.md
-superseded_by: null
+superseded_by: docs/decisions/0117-unify-owner-control-authority.md
 id: ADR-0111
 type: decision
 deciders: [maintainers]

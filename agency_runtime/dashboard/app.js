@@ -8,9 +8,16 @@ export function createDashboard(runtime = globalThis) {
 	const core = createCore(runtime);
 	const { document, window, state, byId, listen } = core;
 	const config = createConfigController(core);
-	const renderer = createRenderer(core, config);
+	let actions;
+	const renderer = createRenderer(core, config, {
+		rosterAction: (...args) => actions.rosterAction(...args),
+		toggleAgent: (...args) => actions.toggleAgent(...args),
+		toggleHost: (...args) => actions.toggleHost(...args),
+		selectWorker: (...args) => actions.selectWorker(...args),
+		hiringApprove: (...args) => actions.hiringApprove(...args),
+	});
 	const live = createLiveController(core, config, renderer);
-	const actions = createActionController(core, config, renderer, live);
+	actions = createActionController(core, config, renderer, live);
 
 	async function connectFromLocation() {
 		const generation = ++state.connection.generation;
@@ -107,8 +114,7 @@ export function createDashboard(runtime = globalThis) {
 		if (!event.persisted) destroy();
 	}
 
-	function configureReadOnlySurface() {
-		state.surfaceReadOnly = true;
+	function configureOwnerSurface() {
 		const manualProviderModel = byId("provider-builder-model");
 		if (manualProviderModel && !manualProviderModel.getAttribute("aria-label")) {
 			manualProviderModel.setAttribute(
@@ -139,40 +145,10 @@ export function createDashboard(runtime = globalThis) {
 				adapterGrid.append(label);
 			}
 		}
-		const hiddenMutationControls = [
-			"provider-builder-save",
-			"provider-builder-remove",
-			"config-reset-button",
-			"config-save-button",
-			"workforce-action-submit",
-		];
-		hiddenMutationControls.forEach((id) => {
-			const control = byId(id);
-			if (!control) return;
-			control.disabled = true;
-			control.hidden = true;
-			control.setAttribute("aria-hidden", "true");
-		});
-		const master = byId("master-toggle");
-		if (master) {
-			master.disabled = true;
-			master.setAttribute("aria-disabled", "true");
-		}
-		const workforceForm = byId("workforce-action-form");
-		if (workforceForm) workforceForm.hidden = true;
-		const confirmation = byId("confirmation-modal");
-		if (confirmation) confirmation.hidden = true;
 		const configForm = byId("config-form");
-		if (configForm) configForm.setAttribute("aria-label", "Effective configuration (read-only)");
+		if (configForm) configForm.setAttribute("aria-label", "Agency Runtime configuration");
 		const privacy = byId("privacy-chip");
 		if (privacy?.textContent === "Metadata only") privacy.textContent = "Runtime metadata only";
-		document.querySelectorAll(
-			"#config-form input, #config-form select, #config-form textarea, #config-form button",
-		).forEach((control) => {
-			control.disabled = true;
-		});
-		const changeCount = byId("config-change-count");
-		if (changeCount) changeCount.textContent = "Read-only monitoring";
 		return true;
 	}
 
@@ -204,7 +180,7 @@ export function createDashboard(runtime = globalThis) {
 			});
 		});
 		renderer.configureEvidenceTabs();
-		configureReadOnlySurface();
+		configureOwnerSurface();
 		listen(byId("refresh-button"), "click", async () => {
 			await live.refreshAll();
 			void live.refreshUpdateStatus();
@@ -223,6 +199,10 @@ export function createDashboard(runtime = globalThis) {
 		});
 		listen(byId("route-button"), "click", actions.runRoute);
 		listen(byId("route-host"), "change", renderer.renderRouteHosts);
+		listen(byId("trim-button"), "click", actions.trimRuntime);
+		listen(byId("trim-days"), "input", () => {
+			byId("trim-days").dataset.dirty = "true";
+		});
 		listen(byId("roster-search-form"), "submit", live.searchRoster);
 		listen(byId("roster-search-clear"), "click", live.clearRosterSearch);
 		const operationalFilters = byId("roster-operations-form");
@@ -250,9 +230,33 @@ export function createDashboard(runtime = globalThis) {
 		const hiringList = byId("hiring-list");
 		if (hiringList) {
 			listen(hiringList, "click", (event) => {
+				const approval = event.target?.closest?.("[data-hiring-approve-case]");
+				const approvalCaseId = String(approval?.dataset?.hiringApproveCase || "");
+				if (approvalCaseId && !approval.disabled) {
+					void actions.hiringApprove(approvalCaseId);
+					return;
+				}
 				const control = event.target?.closest?.("[data-hiring-evidence-case]");
 				const caseId = String(control?.dataset?.hiringEvidenceCase || "");
 				if (caseId && !control.disabled) void live.loadHiringEvidence(caseId);
+			});
+		}
+		listen(byId("config-form"), "submit", actions.saveConfig);
+		listen(byId("config-form"), "input", config.updateConfigDirtyState);
+		listen(byId("config-form"), "change", config.updateConfigDirtyState);
+		const workforceActionForm = byId("workforce-action-form");
+		if (workforceActionForm) listen(workforceActionForm, "submit", actions.workforceAction);
+		const providerSave = byId("provider-builder-save");
+		if (providerSave) {
+			listen(providerSave, "click", () => {
+				try {
+					const provider = config.upsertProviderDraft();
+					core.showNotice(
+						`Provider ${provider.name} staged with model/router ${provider.model || "default"}.`,
+					);
+				} catch (error) {
+					core.showNotice(error.message, true);
+				}
 			});
 		}
 		const providerType = byId("provider-builder-type");
@@ -284,11 +288,42 @@ export function createDashboard(runtime = globalThis) {
 				void config.loadWorkforceModels({ refresh: true });
 			});
 		}
+		const providerRemove = byId("provider-builder-remove");
+		if (providerRemove) {
+			listen(providerRemove, "click", () => {
+				try {
+					config.removeSelectedProvider();
+					core.showNotice("Provider removal staged.");
+				} catch (error) {
+					core.showNotice(error.message, true);
+				}
+			});
+		}
+		listen(byId("config-reset-button"), "click", () => {
+			const snapshot = state.pendingConfig || state.config;
+			if (snapshot) config.renderConfig(snapshot);
+		});
+		listen(byId("confirmation-cancel"), "click", () => core.finishConfirmation(false));
+		listen(byId("confirmation-accept"), "click", () => core.finishConfirmation(true));
+		listen(byId("confirmation-input"), "keydown", (event) => {
+			if (event.key === "Enter") {
+				event.preventDefault();
+				core.finishConfirmation(true);
+			} else if (event.key === "Escape") {
+				event.preventDefault();
+				core.finishConfirmation(false);
+			}
+		});
+		listen(document, "keydown", core.handleModalKeyboard);
 		const liveToggle = byId("live-toggle");
 		if (liveToggle) {
 			state.live.enabled = liveToggle.getAttribute("aria-pressed") !== "false";
 			live.syncLiveToggle();
 			listen(liveToggle, "click", () => setLiveEnabled(!state.live.enabled));
+		}
+		const masterToggle = byId("master-toggle");
+		if (masterToggle) {
+			listen(masterToggle, "click", () => actions.toggleMaster(state.master?.enabled === false));
 		}
 		listen(document, "visibilitychange", handleVisibilityChange);
 		listen(window, "pagehide", handlePageHide);
@@ -325,7 +360,7 @@ export function createDashboard(runtime = globalThis) {
 		handlePageShow,
 		handlePageHide,
 		bindEvents,
-		configureReadOnlySurface,
+		configureOwnerSurface,
 		start,
 		destroy,
 	};

@@ -1007,8 +1007,8 @@ def build_deterministic_proposal(
     rows: list[dict[str, Any]] = []
     for unit in plan.units:
         raw_ranks = rankings.get(unit.unit_id, ())
-        if not raw_ranks or len(raw_ranks) > 16:
-            raise ValueError("deterministic proposal requires one bounded ranking per unit")
+        if len(raw_ranks) > 16 or (not raw_ranks and unit.unit_id not in declared_gaps):
+            raise ValueError("verified proposal requires one bounded ranking per staffed unit")
         seen: set[str] = set()
         semantic: list[tuple[str, float]] = []
         for agent_id, score in raw_ranks:
@@ -1231,6 +1231,13 @@ def build_deterministic_proposal(
     )
 
 
+# The same closed verifier composes an inference-authored ranking in production
+# and deterministic evaluation inputs in offline tests. Give the production
+# path an evidence-faithful name while retaining the historical helper as an
+# explicit compatibility surface for deterministic test fixtures.
+build_verified_proposal = build_deterministic_proposal
+
+
 __all__ = [
     "AbstentionReason",
     "StaffingBudget",
@@ -1238,6 +1245,7 @@ __all__ = [
     "StaffingDecision",
     "VerifiedUnitStaffing",
     "build_deterministic_proposal",
+    "build_verified_proposal",
     "typed_staffing_coverage",
     "typed_staffing_ineligibility",
     "typed_staffing_requirements",

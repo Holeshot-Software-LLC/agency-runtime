@@ -5,13 +5,12 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from agency_runtime.core.resident_managers import RESIDENT_MANAGER_SLUGS
 from agency_runtime.core.roster.bundled import BundledRoster
 
-# Compatibility name for persisted policies and older callers. Resident managers
-# have their own compact parent-context lifecycle and are not ordinary fallback
-# workers, even though their governed source records remain in the complete roster.
-NO_MATCH_FALLBACK_SLUGS: tuple[str, str] = RESIDENT_MANAGER_SLUGS
+# Compatibility name for persisted policies and older callers. ADR-0122 removed
+# deterministic no-match workers: the Agency-native steward has its own compact
+# parent-context lifecycle and never enters the selectable roster.
+NO_MATCH_FALLBACK_SLUGS: tuple[str, ...] = ()
 
 # Keep the historical public name while loading the complete audited package
 # lazily. Normal installation is network-independent and verifies every manifest,

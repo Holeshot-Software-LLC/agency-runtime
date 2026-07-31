@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -25,6 +26,94 @@ from agency_runtime.core.store.sqlite import Store
 from tests.runtime_support import ensure_private_test_directory
 
 ADAPTERS = [HermesAdapter, OpenClawAdapter, CodexAdapter, ClaudeAdapter, GenericAdapter]
+
+
+def _activate_test_specialist(store: Store, slug: str = "adapter-test-specialist") -> None:
+    store._activate_prevalidated_agent(
+        {
+            "slug": slug,
+            "name": slug.replace("-", " ").title(),
+            "description": "Handles the bounded adapter test request.",
+            "prompt_body": "Complete only the assigned bounded adapter test request.",
+            "version": "1.0.0",
+        }
+    )
+
+
+def _route_to_test_specialist(
+    monkeypatch: pytest.MonkeyPatch,
+    slug: str = "code-reviewer",
+) -> None:
+    from agency_runtime.core.selector import pipeline
+    from agency_runtime.core.unit_assignment import work_unit_id_from_text
+    from agency_runtime.core.workforce.routing_projection import (
+        workforce_work_units_from_descriptors,
+    )
+
+    def route(
+        _session_id: str,
+        user_message: str,
+        _catalog: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        descriptors = [
+            {
+                "ordinal": 1,
+                "artifact_kind": "review-report",
+                "lifecycle_phase": "review",
+                "authority": "review",
+            }
+        ]
+        units = workforce_work_units_from_descriptors(user_message, descriptors)
+        unit_id = work_unit_id_from_text(units[0])
+        return {
+            "trace_id": str(kwargs.get("trace_id") or "test-turn"),
+            "selected_ids": [slug],
+            "confidence": 0.99,
+            "status": "applied",
+            "source": "test",
+            "query_hash": hashlib.sha256(user_message.encode()).hexdigest(),
+            "context_fingerprint": "c" * 64,
+            "work_units": {
+                "delegate": True,
+                "count": 1,
+                "units": units,
+                "source": "verified-workforce-plan",
+                "confidence": "high",
+            },
+            "workforce_unit_descriptors": descriptors,
+            "workforce_unit_bindings": [
+                {
+                    "source_unit_id": "unit-work",
+                    "work_unit_id": unit_id,
+                    "selected": [slug],
+                    "delivery": "delegate",
+                    "timing": "immediate",
+                    "depends_on": [],
+                    "parallelization": "sequential",
+                    "mutation_scope": "read_only",
+                    "artifact_kind": "review-report",
+                    "required_tools": [],
+                    "required_evidence": ["adapter test evidence"],
+                    "confidence": 0.99,
+                }
+            ],
+            "unit_assignment_agents": [
+                {
+                    "slug": slug,
+                    "name": slug.replace("-", " ").title(),
+                    "description": "Handles the bounded adapter test request.",
+                    "capabilities": ["adapter boundary review"],
+                    "tags": ["test"],
+                    "required_tools": [],
+                    "evidence_requirements": ["adapter test evidence"],
+                    "matched_work_unit_ids": [unit_id],
+                    "primary_work_unit_ids": [unit_id],
+                }
+            ],
+        }
+
+    monkeypatch.setattr(pipeline, "route", route)
 
 
 def test_hermes_bridge_forwards_complete_parent_correlation() -> None:
@@ -611,6 +700,20 @@ def test_generated_hermes_session_end_closes_only_the_exact_turn(
             self.finalized_trace = resolved
             return f"{draft_text}:{resolved}"
 
+        def evaluate_completion_policy(
+            self,
+            _final_response: str,
+            *,
+            session_id: str,
+            trace_id: str,
+            **_kwargs: Any,
+        ) -> dict[str, Any]:
+            revision = self.store.get_completion_evidence_snapshot(
+                session_id,
+                trace_id,
+            )["evidence_revision"]
+            return {"action": "accept", "evidence_revision": revision}
+
     adapter = LifecycleHermesAdapter(Store(tmp_path / "lifecycle.db"))
     from agency_runtime.adapters.hermes import bridge
 
@@ -619,11 +722,12 @@ def test_generated_hermes_session_end_closes_only_the_exact_turn(
         {"action": action, **dict(payload or {})}
     )
 
-    assert module._pre_llm_call(
+    first_preflight = module._pre_llm_call(
         session_id="session",
         turn_id="turn-a",
         user_message="first",
-    ) == {"context": "routed"}
+    )
+    assert first_preflight == {"context": "routed"}
     assert (
         module._on_session_end(
             session_id="session",
@@ -762,7 +866,7 @@ def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
     assert result["maturity"] == "staged-not-registered"
 
 
-def test_openclaw_bridge_routes_user_prompts_and_bounds_revision_attempts(
+def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_response(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "bridge.db"))
@@ -780,13 +884,14 @@ def test_openclaw_bridge_routes_user_prompts_and_bounds_revision_attempts(
         "technical-writer",
     ):
         store._activate_prevalidated_agent(dict(starter_by_slug[slug]))
+    _route_to_test_specialist(monkeypatch)
 
     routed = handle(
         {
             "action": "preflight",
             "sessionId": "bridge",
             "traceId": "bridge-fallback",
-            "userMessage": "How do I cook a mushroom risotto?",
+            "userMessage": "thanks",
             "model": "task-general",
         }
     )
@@ -841,20 +946,19 @@ def test_openclaw_bridge_routes_user_prompts_and_bounds_revision_attempts(
     enabled = handle({"action": "control", "command": "on"})
     enabled_status = handle({"action": "control", "command": "status"})
 
-    assert "managers=agents-orchestrator,chief-of-staff" in routed["context"]
+    assert "managers=agency-steward" in routed["context"]
+    assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in routed["context"]
+    assert "call `agency.finalize` exactly once" in routed["context"]
     assert correlated["context"]
     assert ordinary["context"]
     assert recorded == {}
-    assert verified["action"] == "continue"
-    assert "<!-- agency-continuation:" in verified["message"]
-    assert verified["revisionId"]
+    assert verified["action"] == "terminal"
+    assert verified["terminalRejected"] is True
+    assert verified["terminalStatus"] == "response_invalid"
     assert verified["turnId"] == "bridge-turn"
-    assert exhausted["action"] == "terminal"
-    assert exhausted["turnId"] == verified["turnId"]
-    assert "revisionId" not in exhausted
-    assert exhausted["terminalRejected"] is True
-    assert exhausted["terminalStatus"] == "retry_exhausted"
-    assert len(exhausted["responseHash"]) == 64
+    assert "revisionId" not in verified
+    assert len(verified["responseHash"]) == 64
+    assert exhausted == verified
     blocked_delivery = handle(
         {
             "action": "outbound_gate",
@@ -872,22 +976,22 @@ def test_openclaw_bridge_routes_user_prompts_and_bounds_revision_attempts(
         }
     )
     assert blocked_delivery["action"] == "replace"
-    assert blocked_delivery["responseHash"] == exhausted["responseHash"]
-    assert "AGENCY RETRY EXHAUSTED" in blocked_delivery["message"]
+    assert blocked_delivery["responseHash"] == verified["responseHash"]
+    assert "AGENCY RESPONSE INVALID" in blocked_delivery["message"]
     assert unrelated_delivery["action"] == "replace"
     assert unrelated_delivery["responseHash"] != blocked_delivery["responseHash"]
     activity = store.recent_runtime_activity(limit=20)
     assert any(row["trace_id"] == "bridge-turn" for row in activity["routing"])
     assert activity["finalizations"][0]["trace_id"] == "bridge-turn"
-    assert activity["finalizations"][0]["action"] == "retry_exhausted"
-    assert store.get_run("bridge-turn")["status"] == "retry_exhausted"
+    assert activity["finalizations"][0]["action"] == "response_invalid"
+    assert store.get_run("bridge-turn")["status"] == "response_invalid"
     assert disabled["ok"] is False
-    assert disabled["error"] == "operator_presence_required"
+    assert disabled["error"] == "owner_control_required"
     assert disabled["runtime_enabled"] is True
     assert status["ok"] is True
     assert status["runtime_enabled"] is True
     assert enabled["ok"] is False
-    assert enabled["error"] == "operator_presence_required"
+    assert enabled["error"] == "owner_control_required"
     assert enabled["runtime_enabled"] is True
     assert enabled_status["runtime_enabled"] is True
     assert store.get_host_control("openclaw") == {
@@ -897,18 +1001,48 @@ def test_openclaw_bridge_routes_user_prompts_and_bounds_revision_attempts(
         "updated_at": None,
         "source": "default",
     }
-    assert "chief-of-staff" not in store.get_specialists_for_session("bridge")
+    assert store.get_specialists_for_session("bridge") == ["chief-of-staff"]
 
 
-def test_openclaw_blank_finalize_payload_fails_closed_and_keeps_turn_active(
+def test_hermes_preflight_appends_exact_first_pass_header_snapshot(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.policy.defaults import STARTER_ROSTER
+
+    store = Store(tmp_path / "hermes-preflight.db")
+    for agent in STARTER_ROSTER:
+        store._activate_prevalidated_agent(dict(agent))
+    _route_to_test_specialist(monkeypatch)
+
+    result = hermes_bridge.handle(
+        {
+            "action": "pre_llm_call",
+            "session_id": "hermes-session",
+            "trace_id": "hermes-turn",
+            "user_message": "Review the authentication architecture.",
+            "model": "task-general",
+        },
+        adapter=HermesAdapter(store),
+    )
+
+    assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in result["context"]
+    assert "call `agency.finalize` exactly once" in result["context"]
+    assert "Agency/Agencies loaded: agency-steward" in result["context"]
+
+
+def test_openclaw_blank_finalize_payload_is_terminal_and_exactly_replayed(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "blank-finalize.db"))
     from agency_runtime.adapters.openclaw.node_bridge import handle
+    from agency_runtime.core.header.finalize import response_hash
     from agency_runtime.core.store.sqlite import Store
 
     store = Store(tmp_path / "blank-finalize.db")
+    _activate_test_specialist(store)
+    _route_to_test_specialist(monkeypatch, "adapter-test-specialist")
     handle(
         {
             "action": "preflight",
@@ -929,11 +1063,26 @@ def test_openclaw_blank_finalize_payload_fails_closed_and_keeps_turn_active(
         }
     )
 
-    assert result["action"] == "continue"
-    assert store.get_run("blank-turn")["status"] == "active"
+    assert result["action"] == "terminal"
+    assert result["terminalRejected"] is True
+    assert result["terminalStatus"] == "response_invalid"
+    assert result["responseHash"] == response_hash("")
+    assert (
+        handle(
+            {
+                "action": "pre_verify",
+                "sessionId": "blank-session",
+                "traceId": "blank-turn",
+                "finalResponse": "",
+                "model": "task-general",
+            }
+        )
+        == result
+    )
+    assert store.get_run("blank-turn")["status"] == "response_invalid"
 
 
-def test_openclaw_duplicate_revision_replays_then_explicit_retry_terminalizes(
+def test_openclaw_duplicate_invalid_callback_replays_one_terminal_outcome(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -941,6 +1090,9 @@ def test_openclaw_duplicate_revision_replays_then_explicit_retry_terminalizes(
     from agency_runtime.adapters.openclaw.node_bridge import handle
     from agency_runtime.core.store.sqlite import Store
 
+    store = Store(tmp_path / "replayed-revision.db")
+    _activate_test_specialist(store)
+    _route_to_test_specialist(monkeypatch, "adapter-test-specialist")
     handle(
         {
             "action": "preflight",
@@ -962,14 +1114,13 @@ def test_openclaw_duplicate_revision_replays_then_explicit_retry_terminalizes(
     replay = handle(payload)
     terminal = handle({**payload, "attempt": 1})
     exact_terminal_replay = handle({**payload, "attempt": 1})
-    assert first["revisionId"]
-    assert replay["action"] == "continue"
-    assert replay["revisionId"] == first["revisionId"]
-    assert terminal["action"] == "terminal"
-    assert terminal["terminalRejected"] is True
-    assert terminal["terminalStatus"] == "retry_exhausted"
-    assert "revisionId" not in terminal
-    assert exact_terminal_replay == terminal
+    assert first["action"] == "terminal"
+    assert first["terminalRejected"] is True
+    assert first["terminalStatus"] == "response_invalid"
+    assert "revisionId" not in first
+    assert replay == first
+    assert terminal == first
+    assert exact_terminal_replay == first
 
     gated = handle(
         {
@@ -982,27 +1133,23 @@ def test_openclaw_duplicate_revision_replays_then_explicit_retry_terminalizes(
     )
 
     assert gated["action"] == "replace"
-    assert Store(tmp_path / "replayed-revision.db").get_run("repeat-turn")["status"] == (
-        "retry_exhausted"
-    )
+    assert store.get_run("repeat-turn")["status"] == "response_invalid"
 
 
 def test_openclaw_visible_rejection_is_bounded_by_serialized_byte_budget() -> None:
     from agency_runtime.adapters.openclaw.node_bridge import (
         MAX_BRIDGE_OUTPUT_BYTES,
-        _visible_continuation,
+        _revision,
     )
 
-    result = _visible_continuation(
-        {"message": "🔥" * 20_000},
-        trace_id="turn",
-        receipt_id="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-    )
+    result = _revision("🔥" * 20_000)
     encoded = json.dumps(result, ensure_ascii=True, separators=(",", ":")).encode("ascii")
 
     assert len(encoded) <= MAX_BRIDGE_OUTPUT_BYTES
     assert "VERIFICATION UNAVAILABLE" in result["message"]
-    assert "<!-- agency-continuation:" in result["message"]
+    assert result["action"] == "terminal"
+    assert result["terminalStatus"] == "verification_failed"
+    assert "revisionId" not in result
 
 
 def test_openclaw_main_serialization_failure_keeps_pre_verify_fail_closed(
@@ -1017,7 +1164,9 @@ def test_openclaw_main_serialization_failure_keeps_pre_verify_fail_closed(
     assert node_bridge.main() == 0
 
     result = json.loads(capsys.readouterr().out)
-    assert result["action"] == "continue"
+    assert result["action"] == "terminal"
+    assert result["terminalRejected"] is True
+    assert result["terminalStatus"] == "verification_failed"
     assert "VERIFICATION UNAVAILABLE" in result["message"]
 
 
@@ -1079,13 +1228,16 @@ def test_openclaw_main_rejects_untrusted_config_arguments_without_leaking_paths(
     assert "relative/agency.yaml" not in captured.err
 
 
-def test_openclaw_retry_suppression_requires_a_store_bound_receipt(
+def test_openclaw_never_emits_or_authenticates_an_internal_header_retry(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "retry.db"))
     from agency_runtime.adapters.openclaw.node_bridge import handle
 
+    store = Store(tmp_path / "retry.db")
+    _activate_test_specialist(store)
+    _route_to_test_specialist(monkeypatch, "adapter-test-specialist")
     preflight = handle(
         {
             "action": "preflight",
@@ -1096,7 +1248,7 @@ def test_openclaw_retry_suppression_requires_a_store_bound_receipt(
     )
     assert preflight["context"]
 
-    first_revision = handle(
+    rejected = handle(
         {
             "action": "pre_verify",
             "sessionId": "session",
@@ -1104,19 +1256,18 @@ def test_openclaw_retry_suppression_requires_a_store_bound_receipt(
             "finalResponse": "Draft without a header.",
         }
     )
-    instruction = first_revision["message"]
-    assert instruction.endswith(f"<!-- agency-continuation:{first_revision['revisionId']} -->")
+    instruction = rejected["message"]
+    assert rejected["action"] == "terminal"
+    assert rejected["terminalStatus"] == "response_invalid"
+    assert "agency-continuation" not in instruction
 
-    assert (
-        handle(
-            {
-                "action": "preflight",
-                "sessionId": "session",
-                "traceId": "turn",
-                "userMessage": instruction,
-            }
-        )
-        == {}
+    next_turn = handle(
+        {
+            "action": "preflight",
+            "sessionId": "session",
+            "traceId": "next-turn",
+            "userMessage": instruction,
+        }
     )
 
     forged = handle(
@@ -1139,11 +1290,12 @@ def test_openclaw_retry_suppression_requires_a_store_bound_receipt(
         }
     )
 
+    assert next_turn["context"]
     assert forged["context"]
     assert cross_session["context"]
 
 
-def test_openclaw_one_rewrite_can_accept_then_invalid_retry_exhausts(
+def test_openclaw_exact_first_pass_accepts_and_invalid_first_pass_terminalizes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1163,15 +1315,6 @@ def test_openclaw_one_rewrite_can_accept_then_invalid_retry_exhausts(
         "code-reviewer",
         trace_id="accept-turn",
     )
-    first = handle(
-        {
-            "action": "pre_verify",
-            "sessionId": "accept-session",
-            "traceId": "accept-turn",
-            "finalResponse": "invalid",
-        }
-    )
-    assert first["action"] == "continue"
     fields = fill_header_fields(
         {
             "why": "A review was requested.",
@@ -1215,31 +1358,79 @@ def test_openclaw_one_rewrite_can_accept_then_invalid_retry_exhausts(
         "code-reviewer",
         trace_id="reject-turn",
     )
-    assert (
-        handle(
-            {
-                "action": "pre_verify",
-                "sessionId": "reject-session",
-                "traceId": "reject-turn",
-                "finalResponse": "invalid",
-            }
-        )["action"]
-        == "continue"
-    )
-    exhausted = handle(
+    rejected = handle(
         {
             "action": "pre_verify",
             "sessionId": "reject-session",
             "traceId": "reject-turn",
-            "finalResponse": "still invalid",
+            "finalResponse": "invalid",
         }
     )
-    assert exhausted["action"] == "terminal"
-    assert exhausted["turnId"] == "reject-turn"
-    assert "revisionId" not in exhausted
-    assert exhausted["terminalRejected"] is True
-    assert exhausted["terminalStatus"] == "retry_exhausted"
-    assert store.get_run("reject-turn")["status"] == "retry_exhausted"
+    replayed = handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "reject-session",
+            "traceId": "reject-turn",
+            "finalResponse": "invalid",
+            "attempt": 1,
+        }
+    )
+    assert rejected["action"] == "terminal"
+    assert rejected["turnId"] == "reject-turn"
+    assert "revisionId" not in rejected
+    assert rejected["terminalRejected"] is True
+    assert rejected["terminalStatus"] == "response_invalid"
+    assert replayed == rejected
+    assert store.get_run("reject-turn")["status"] == "response_invalid"
+
+
+def test_openclaw_accepts_exact_first_visible_response_constructed_by_finalize_tool(
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.adapters.openclaw.node_bridge import handle
+    from agency_runtime.server.mcp_tools import dispatch_tool_call
+
+    store = Store(tmp_path / "openclaw-first-pass.db")
+    store.create_run(
+        trace_id="first-pass-turn",
+        session_id="first-pass-session",
+        host="openclaw",
+        metadata={"request_kind": "trivial"},
+    )
+    finalized = dispatch_tool_call(
+        "agency.finalize",
+        {
+            "draft_text": "First visible response.",
+            "session_id": "first-pass-session",
+            "trace_id": "first-pass-turn",
+        },
+        store,
+    )
+
+    assert finalized["action"] == "accept"
+    assert (
+        handle(
+            {
+                "action": "pre_verify",
+                "sessionId": "first-pass-session",
+                "traceId": "first-pass-turn",
+                "finalResponse": finalized["text"],
+            },
+            adapter=OpenClawAdapter(store=store),
+        )
+        == {}
+    )
+    allowed = handle(
+        {
+            "action": "outbound_gate",
+            "sessionId": "first-pass-session",
+            "traceId": "first-pass-turn",
+            "finalResponse": finalized["text"],
+        },
+        adapter=OpenClawAdapter(store=store),
+    )
+    assert allowed["action"] == "allow"
+    assert allowed["turnId"] == "first-pass-turn"
 
 
 def test_openclaw_strong_delegation_decline_is_terminal_and_exactly_replayed(
@@ -1299,12 +1490,12 @@ def test_openclaw_strong_delegation_decline_is_terminal_and_exactly_replayed(
         adapter=adapter,
     )
 
-    assert first["action"] == "continue"
-    assert terminal["action"] == "terminal"
-    assert terminal["terminalStatus"] == "delegation_declined"
-    assert replay == terminal
-    assert omitted_trace == terminal
-    assert adapter.verify_calls == 2
+    assert first["action"] == "terminal"
+    assert first["terminalStatus"] == "delegation_declined"
+    assert terminal == first
+    assert replay == first
+    assert omitted_trace == first
+    assert adapter.verify_calls == 1
     assert store.get_run("decline-turn")["status"] == "delegation_declined"
 
     mismatch = handle(
@@ -1314,7 +1505,7 @@ def test_openclaw_strong_delegation_decline_is_terminal_and_exactly_replayed(
     assert mismatch["action"] == "terminal"
     assert mismatch["terminalStatus"] == "delegation_declined"
     assert mismatch["message"].startswith("AGENCY TURN TERMINAL:")
-    assert adapter.verify_calls == 2
+    assert adapter.verify_calls == 1
 
 
 def test_openclaw_recovers_exact_public_finalization_only_without_open_turns(
@@ -1375,9 +1566,11 @@ def test_openclaw_recovers_exact_public_finalization_only_without_open_turns(
             "finalResponse": finalized,
         }
     )
-    assert blocked["action"] == "continue"
-    assert "<!-- agency-continuation:" in blocked["message"]
-    assert store.get_run("newer-open-turn")["status"] == "active"
+    assert blocked["action"] == "terminal"
+    assert blocked["terminalRejected"] is True
+    assert blocked["terminalStatus"] == "response_invalid"
+    assert "revisionId" not in blocked
+    assert store.get_run("newer-open-turn")["status"] == "response_invalid"
     blocked_outbound = handle(
         {
             "action": "outbound_gate",
@@ -1613,15 +1806,16 @@ def test_generated_openclaw_plugin_is_native_openclaw_package(
     assert 'action: "control"' in code
     assert "event?.prompt" in code
     assert "event?.lastAssistantMessage" in code
-    assert "const attempt = nextFinalizeAttempt(event, ctx)" in code
-    assert "attempt," in code
+    assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" not in code
+    assert "attempt: 0" in code
     assert "agency_runtime.adapters.openclaw.node_bridge" in code
     assert "execFile" in code
     assert "createHash" in code
-    assert "revisionKey(decision, event, ctx)" in code
-    assert "decision?.turnId || traceId(event, ctx)" in code
+    assert "nextFinalizeAttempt" not in code
+    assert "revisionKey" not in code
     assert "decision?.revisionId" not in code
-    assert "maxAttempts: 1" in code
+    assert 'action: "revise"' not in code
+    assert "maxAttempts" not in code
     assert 'action: "outbound_gate"' in code
     assert "terminalRejected" in code
     assert 'idempotencyKey: "agency-preflight-header"' not in code

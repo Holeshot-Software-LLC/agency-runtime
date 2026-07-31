@@ -43,7 +43,12 @@ Status meanings:
 - ADR-0058 Broker restricted Windows host controls through the authenticated dashboard → ADR-0090 Model-facing control paths are read-only
 - ADR-0059 Broker restricted Windows agent controls through narrow dashboard operations → ADR-0090 Model-facing control paths are read-only
 - ADR-0061 Validate brokered control transition receipts against deterministic CAS semantics → ADR-0090 Model-facing control paths are read-only
-- ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls → ADR-0110 Remove Agency-owned Windows Hello and use harness-native trust → ADR-0111 Install the applicable suite by default
+- ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls → ADR-0110 Remove Agency-owned Windows Hello and use harness-native trust → ADR-0111 Install the applicable suite by default → ADR-0117 Unify owner CLI and dashboard control authority
+- ADR-0087 Inference decides from a relevance shortlist → ADR-0088 Deterministic typed-recall is the offline floor → ADR-0118 Require inference-owned specialist staffing
+- ADR-0030 Gate routing changes with versioned quantitative evaluation → ADR-0121 Gate deterministic recall without selection authority
+- ADR-0077 Prove Codex hook activation behaviorally without bypassing trust → ADR-0119 Separate native trust modes from activation proof
+- ADR-0071 Bound native delegation correction to one evidence-checked pass → ADR-0120 Construct evidence headers before first publication
+- ADR-0065 Keep a compact resident manager kernel at the parent boundary → ADR-0122 Use one Agency-native resident steward
 
 ## Architecture and integrations
 
@@ -70,7 +75,7 @@ Status meanings:
 | [ADR-0021](0021-full-companion-policy-with-precedence.md) | Load a full companion policy with explicit precedence | Accepted |
 | [ADR-0022](0022-omit-preflight-for-trivial-messages.md) | Omit preflight context for trivial messages | Superseded |
 | [ADR-0023](0023-default-companions-for-trivial-messages.md) | Load default companions even for trivial messages | Superseded |
-| [ADR-0030](0030-versioned-quantitative-evaluation-gates.md) | Gate routing changes with versioned quantitative evaluation | Accepted |
+| [ADR-0030](0030-versioned-quantitative-evaluation-gates.md) | Gate routing changes with versioned quantitative evaluation | Superseded |
 | [ADR-0033](0033-explicit-companion-route-availability.md) | Classify every companion route against explicit availability | Accepted |
 | [ADR-0035](0035-authoritative-bounded-provider-chain.md) | Use an authoritative bounded provider chain with allowlisted CLI transports | Accepted |
 | [ADR-0054](0054-unit-aware-assignment-and-event-driven-dag.md) | Use unit-aware specialist assignment and event-driven DAG scheduling | Superseded |
@@ -80,7 +85,7 @@ Status meanings:
 | [ADR-0068](0068-select-compatible-specialist-closures-per-unit.md) | Select compatible specialist closures per work unit | Accepted |
 | [ADR-0069](0069-enforce-conflicts-before-prompt-composition.md) | Enforce specialist conflicts before prompt composition | Accepted |
 | [ADR-0070](0070-run-child-specific-agency-activation.md) | Run child-specific Agency activation through native host lifecycles | Accepted |
-| [ADR-0071](0071-bound-native-delegation-correction.md) | Bound native delegation correction to one evidence-checked pass | Accepted |
+| [ADR-0071](0071-bound-native-delegation-correction.md) | Bound native delegation correction to one evidence-checked pass | Superseded |
 | [ADR-0072](0072-compare-task-outcomes-with-paired-trials.md) | Compare task outcomes with evidence-labelled paired trials | Accepted |
 | [ADR-0078](0078-present-human-routing-evidence-and-abstain-on-noise.md) | Present human routing evidence and abstain on weak heuristic noise | Accepted |
 | [ADR-0079](0079-route-native-children-once-and-bound-unplanned-reroutes.md) | Route native children once and bound unplanned reroutes | Accepted |
@@ -90,6 +95,9 @@ Status meanings:
 | [ADR-0112](0112-stage-preflight-workforce-evidence-until-ready.md) | Stage preflight workforce evidence until ready | Accepted |
 | [ADR-0114](0114-fund-one-default-workforce-semantic-repair.md) | Fund one default workforce semantic repair | Accepted |
 | [ADR-0115](0115-aggregate-bounded-recruiter-repair-failures.md) | Aggregate bounded recruiter repair failures | Accepted |
+| [ADR-0118](0118-require-inference-owned-staffing.md) | Require inference-owned specialist staffing | Accepted |
+| [ADR-0121](0121-gate-deterministic-recall-without-selection-authority.md) | Gate deterministic recall without selection authority | Accepted |
+| [ADR-0122](0122-use-one-agency-native-resident-steward.md) | Use one Agency-native resident steward | Accepted |
 
 ## Evidence and observability
 
@@ -104,8 +112,9 @@ Status meanings:
 | [ADR-0027](0027-authoritative-runtime-evidence-traces.md) | Derive runtime claims from authoritative correlated evidence | Accepted |
 | [ADR-0045](0045-turn-scoped-specialist-activation.md) | Use turn-scoped specialist activation with immutable session history | Accepted |
 | [ADR-0047](0047-reconcile-litellm-model-and-router-evidence.md) | Reconcile LiteLLM actual-model and router evidence separately | Accepted |
-| [ADR-0065](0065-keep-compact-resident-manager-kernel.md) | Keep a compact resident manager kernel at the parent boundary | Accepted |
+| [ADR-0065](0065-keep-compact-resident-manager-kernel.md) | Keep a compact resident manager kernel at the parent boundary | Superseded |
 | [ADR-0093](0093-atomic-finalization-evidence-batches.md) | Commit one finalization evidence batch atomically | Accepted |
+| [ADR-0120](0120-construct-first-pass-evidence-headers.md) | Construct evidence headers before first publication | Accepted |
 
 ## State and roster governance
 
@@ -155,7 +164,7 @@ Status meanings:
 | [ADR-0074](0074-build-byte-deterministic-release-artifacts.md) | Build byte-deterministic release artifacts from canonical Git blobs | Accepted |
 | [ADR-0075](0075-preserve-config-trust-under-wsl-systemd.md) | Preserve configuration trust while adapting systemd hardening on WSL | Accepted |
 | [ADR-0076](0076-bind-isolated-canaries-to-explicit-agency-modes.md) | Bind isolated canaries to explicit Agency modes | Accepted |
-| [ADR-0077](0077-prove-codex-activation-behaviorally.md) | Prove Codex hook activation behaviorally without bypassing trust | Accepted |
+| [ADR-0077](0077-prove-codex-activation-behaviorally.md) | Prove Codex hook activation behaviorally without bypassing trust | Superseded |
 | [ADR-0082](0082-schedule-assurance-by-artifact-lifecycle.md) | Schedule assurance by artifact lifecycle | Accepted |
 | [ADR-0090](0090-model-facing-control-paths-are-read-only.md) | Model-facing control paths are read-only | Superseded |
 | [ADR-0091](0091-least-privilege-subprocess-environments.md) | Build every subprocess environment from least privilege | Accepted |
@@ -175,9 +184,11 @@ Status meanings:
 | [ADR-0107](0107-resolve-updates-immutably-and-keep-application-attended.md) | Resolve updates immutably and keep application attended | Accepted |
 | [ADR-0109](0109-prepare-dashboard-service-repair-before-operator-presence.md) | Prepare dashboard-service repair before operator presence | Superseded |
 | [ADR-0110](0110-remove-agency-owned-windows-hello.md) | Remove Agency-owned Windows Hello and use harness-native trust | Superseded |
-| [ADR-0111](0111-install-the-applicable-suite-by-default.md) | Install the applicable suite by default | Accepted |
+| [ADR-0111](0111-install-the-applicable-suite-by-default.md) | Install the applicable suite by default | Superseded |
 | [ADR-0113](0113-prove-decision-conformance-with-isolated-mutations.md) | Prove decision conformance with isolated curated mutations | Accepted |
 | [ADR-0116](0116-bind-product-trials-to-exact-workspace-proof.md) | Bind product trials to exact isolated workspace proof | Accepted |
+| [ADR-0117](0117-unify-owner-control-authority.md) | Unify owner CLI and dashboard control authority | Accepted |
+| [ADR-0119](0119-separate-native-trust-modes-from-activation-proof.md) | Separate native trust modes from activation proof | Accepted |
 
 ## Documentation governance
 
@@ -188,7 +199,7 @@ Status meanings:
 | [ADR-0085](0085-continue-in-task-after-context-checkpoints.md) | Continue in the current task after context checkpoints | Superseded |
 | [ADR-0086](0086-use-checkpoint-only-context-telemetry.md) | Use checkpoint-only context telemetry | Accepted |
 | [ADR-0087](0087-inference-decides-from-a-relevance-shortlist.md) | Inference decides specialist selection from a relevance shortlist | Accepted (offline-decline clause superseded by ADR-0088) |
-| [ADR-0088](0088-deterministic-typed-recall-offline-floor.md) | Deterministic typed-recall is the offline floor | Accepted |
+| [ADR-0088](0088-deterministic-typed-recall-offline-floor.md) | Deterministic typed-recall is the offline floor | Superseded |
 | [ADR-0089](0089-zcode-stop-rejections-use-decision-block.md) | ZCode Stop rejections use decision:block | Accepted |
 
 ## Maintenance rules

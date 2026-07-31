@@ -66,6 +66,9 @@ class _Backend:
             "exit_code": 0,
             "output": "finished",
             "workspace_trust": _workspace_trust(workdir),
+            "trust_mode": "autonomous_bypass",
+            "trust_bypass_used": True,
+            "persistent_trust_changed": False,
         }
 
 
@@ -202,12 +205,20 @@ def test_codex_agency_product_host_consumes_the_exact_activation_snapshot(
     assert observed["exact_request"] == ("codex", executed_hash)
     assert result.agency_evidence["runtime"]["schema"] == ("agency.canary-activation-evidence.v1")
     assert result.agency_evidence["workspace_trust"]["proven"] is True
+    assert result.agency_evidence["hook_trust"] == {
+        "schema": "agency.codex-hook-trust-mode.v1",
+        "proven": True,
+        "trust_mode": "autonomous_bypass",
+        "status": "bypassed",
+        "persistent_trust_changed": False,
+    }
     assert result.workspace_write_proven is True
     assert not (tmp_path / ".agency-runtime-workspace-write-proof").exists()
 
 
 def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source_home = tmp_path / "source-home"
     source_codex = source_home / ".codex"
@@ -224,6 +235,20 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
     manifest.write_text("{}", encoding="utf-8")
     isolated_configs: list[str] = []
     execution_environments: list[dict[str, str]] = []
+    execution_argv: list[list[str]] = []
+    rollout_projection: dict[str, object] = {}
+
+    def project_record(_result, **kwargs):
+        rollout_projection.update(kwargs)
+        return {
+            "backend": "codex",
+            "profile_scope": "isolated-profile",
+            "status": "completed",
+            "exit_code": 0,
+            "output": "done",
+        }
+
+    monkeypatch.setattr(canary, "_codex_canary_record", project_record)
 
     def runner(argv, *, cwd, env, input_text=None, **_kwargs):
         config = Path(env["CODEX_HOME"]) / "config.toml"
@@ -245,6 +270,7 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
                 "",
             )
         if "exec" in argv:
+            execution_argv.append(list(argv))
             execution_environments.append(dict(env))
             stdout = "\n".join(
                 (
@@ -290,8 +316,17 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
     assert parsed == {"projects": {expected: {"trust_level": "trusted"}}}
     assert persistent_config.read_bytes() == persistent_bytes
     assert execution_environments
+    assert "--dangerously-bypass-hook-trust" in execution_argv[0]
+    assert result["trust_mode"] == "autonomous_bypass"
+    assert result["trust_bypass_used"] is True
+    assert result["persistent_trust_changed"] is False
     assert execution_environments[0]["AGENCY_CANARY_REQUIRE_EXISTING_STORE"] == "1"
     assert execution_environments[0]["AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS"] == "1"
+    assert Path(rollout_projection["rollout_root"]) == (
+        Path(execution_environments[0]["CODEX_HOME"]) / "sessions"
+    )
+    assert rollout_projection["rollout_not_before"] is not None
+    assert rollout_projection["rollout_not_after"] is not None
 
 
 def test_product_host_reports_missing_workspace_write_proof_separately(
@@ -435,7 +470,7 @@ def test_product_host_rejects_a_preexisting_write_proof(
     assert proof.read_text(encoding="utf-8") == ("agency-runtime-product-write-proof:spoofed\n")
 
 
-def test_codex_product_backend_persists_parent_without_single_child_rollout_constraint(
+def test_codex_product_backend_persists_parent_and_correlates_exact_rollout(
     tmp_path: Path,
 ) -> None:
     marketplace = tmp_path / "marketplace"
@@ -460,7 +495,8 @@ def test_codex_product_backend_persists_parent_without_single_child_rollout_cons
     assert "agents.enabled=true" in backend.exec_options
     assert backend.require_existing_store is True
     assert backend.hook_event_diagnostics is True
-    assert backend.require_exact_activation_rollout is False
+    assert backend.require_exact_activation_rollout is True
+    assert backend.trust_mode == "autonomous_bypass"
 
 
 def test_product_host_rejects_unsupported_hosts_and_prompt_drift(tmp_path: Path) -> None:

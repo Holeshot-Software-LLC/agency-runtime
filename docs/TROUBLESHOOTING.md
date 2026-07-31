@@ -24,6 +24,7 @@ related:
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0071-bound-native-delegation-correction.md
+  - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0073-own-subprocess-trees-atomically.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
@@ -287,7 +288,7 @@ activation flow:
 Codex Desktop's `/hooks` screen can show connector setup such as Zoom or
 Twilio. That is a different surface and does not review local command hooks.
 Agency does not reproduce Codex's private trust hashes or edit them directly;
-Codex currently exposes no supported non-interactive trust-grant API.
+attended mode always leaves approval to Codex.
 
 The refresh transaction reports installation completion separately from
 activation completion. The verification command uses the normal Codex profile
@@ -300,35 +301,55 @@ missing, changed, or rejected, installation remains incomplete and prints the
 same resumable steps. An isolated-profile canary is useful for package testing
 but cannot establish normal-profile readiness.
 
+For an owner-controlled fresh container or other disposable environment where
+no person can approve hook hashes, use the explicit autonomous transaction:
+
+```bash
+agency install --autonomous --verify-activation --json
+```
+
+That command uses Codex's supported `--dangerously-bypass-hook-trust` option for
+the exact activation invocation only. It does not edit or export persistent
+Codex trust state, and its evidence says `trust_mode=autonomous_bypass` and
+`trust_bypass_used=true`, never `trusted`. Auto-discovery still installs every
+detected supported harness and the default dashboard; Codex must be among the
+detected targets. Autonomous and attended modes must prove the same hook-start,
+inference, specialist, native-child, and finalization behavior. A refused or
+incomplete bypass is a named activation failure, not a trusted installation.
+
 ## `agency off` did not unregister the plugin
 
-The persistent soft-control contract remains reversible, but this unreleased
-source keeps generic positive control mutations unavailable:
+The persistent soft-control contract remains reversible. The owner CLI and the
+owner-authenticated dashboard expose the same supported host control:
 
 ```bash
 agency status --agent <host>
 agency off --agent <host> --dry-run --json
+agency off --agent <host> --json
+agency on --agent <host> --json
 ```
 
 The committed state is checked at every adapter boundary and preserves native
 registration. `status` reports native enablement, runtime soft control, and
-effective state separately; `unverified` is not the same as disabled. Positive
-control mutations return an authority-unavailable result. Harness installation
-is a separate native-lifecycle operation. The dashboard remains intentionally
-read-only.
+effective state separately; `unverified` is not the same as disabled. Owner
+mutations retain confirmation, generation, revision, ownership, and rollback
+checks. Broker, hook, MCP, and restricted brokerage identities remain
+read-only. Harness installation is a separate native-lifecycle operation.
 
 Use `agency off --agent <host> --native` only when you intend to change the
 host's plugin registry. Native control requires an inventory postcondition and
 may report `enablement_unverified` or a restart requirement instead of
 pretending success.
 
-## Roster rollback reports operator presence unavailable
+## Roster rollback rejects a prepared-state mismatch
 
-Roster rollback is unavailable and makes no persistent change. The former
-Agency-owned Windows Hello helper and its wheel payload were retired; do not
-restore or substitute that executable as a workaround. Refresh the current
-roster projection and use supported forward operations until rollback receives
-a separately designed authority boundary.
+Roster rollback is an owner CLI operation and does not require the retired
+Agency-owned Windows Hello helper. It prepares the exact Store identity, roster
+generation, current and target revisions, activation authority, and workforce
+projection, then revalidates them inside the committing transaction. A mismatch
+means another writer or configuration change made the prepared plan stale.
+Refresh the roster projection and rerun the explicit rollback with the current
+version and hash; do not reuse old compare-and-swap values.
 
 ## A host toggle reports a generation conflict
 
@@ -365,8 +386,10 @@ The canonical state is `~/.agency-runtime/run/control.json`. Do not edit, move,
 or delete it: missing, malformed, or unverifiable state intentionally fails
 enabled. On a restricted Windows host, a direct write may be unavailable even
 though the runtime can prove a canonical read-only state. The broker is
-intentionally read-only. A normal operator shell still cannot bypass the
-missing production presence verifier; use a dry run only:
+intentionally read-only. Agency has no separate presence verifier: a normal
+owner CLI invocation or the owner-authenticated dashboard may perform the
+governed mutation when it can reach the owner-private state. Use a dry run to
+diagnose a restricted shell without changing state:
 
 ```bash
 agency off --global --dry-run --json
@@ -639,12 +662,14 @@ for the next real external user turn or exact child assignment and carry the new
 `session_id`/`trace_id` through every load, skill, delegation, model, and
 finalization call.
 
-Stop feedback is part of the existing external turn, not a new user message. A
-strongly preferred delegation may claim one correction while its trace remains
-active. The next Stop must revalidate that same trace and then close with accept,
-explicit `delegation_declined`, or `retry_exhausted`; it must not open or reuse a
-terminal trace. Planned units that the host skips or declines need truthful
-nonexecution receipts, not fabricated specialist activations.
+Current header enforcement does not request Stop correction. Agency supplies or
+constructs the exact Store-backed header before first publication. The first
+missing, malformed, stale, or evidence-mismatched natural response closes as
+`response_invalid`, or `delegation_declined` for unresolved strongly preferred
+delegation, and cannot be retried on that trace. Historical `retry_exhausted`
+rows remain readable only for earlier builds. Planned units that the host skips
+or declines need truthful nonexecution receipts, not fabricated specialist
+activations.
 
 If a host repeats terminal-correlation feedback after a fresh preflight, its
 generated bundle may be older than the installed runtime. Inspect registration
@@ -756,24 +781,27 @@ agency explain "describe the concrete task" --session-id debug
 Configured inference is mandatory for conversation, new intent, revision, and
 any continuation that must reroute. The provider chain is tried in declared
 order within one bounded budget. Authentication failure, timeout, malformed
-output, an invalid selection, or exhaustion keeps the decision degraded; Agency
-may use only the resident managers for coordination and must not claim an
-inferred specialist. The dashboard lists configuration
+output, an invalid selection, or exhaustion keeps the decision degraded. The
+`UserPromptSubmit` boundary blocks the substantive prompt before parent-model
+generation; Agency does not fall through to its steward or the host generalist.
+The dashboard lists configuration
 readiness and recent persisted failures, but intentionally performs no live
 provider probe.
 
-Repair or reorder the configured providers, then rerun a fresh preflight. If
-deterministic routing is the intended operating mode, remove every inference
-provider and legacy judge/Ollama configuration deliberately through `agency
-configure`; do not leave a broken configured provider merely to obtain silent
-fallback. Candidate audit with `--require-inference` is also fail-closed: a
-degraded inference review cannot approve or activate a quarantined revision.
+Repair or reorder the configured providers, then rerun a fresh preflight. If no
+provider is configured, configure one before submitting a substantive task;
+Agency has no deterministic specialist-selection mode. Do not leave a broken
+provider configured in the hope of obtaining a silent fallback. Candidate
+audit with `--require-inference` is also fail-closed: a degraded inference
+review cannot approve or activate a quarantined revision.
 
 ## No specialist is selected
 
 A proven pure acknowledgement can intentionally bypass specialist selection.
-Conversation and other selection-requiring turns still consider the roster but
-may explicitly abstain. For a meaningful task, inspect the active roster and
+Every other selection-requiring turn first infers the ideal specialist from an
+open-ended role pool. It either accepts a faithful roster match or declares a
+gap and attempts to create a narrow contractor. If neither path produces an
+accepted specialist, the prompt fails loudly. Inspect the active roster and
 decision receipt:
 
 ```bash
@@ -785,10 +813,12 @@ agency explain "describe the concrete task" --session-id debug
 If the roster is empty, run `agency install` to seed missing starter agents or
 activate an approved roster snapshot. Check disabled, quarantined, retired,
 host/tool-ineligible, and conflict-rejected candidates before assuming retrieval
-failed. If inference is configured and its provider chain fails, the decision
-must remain visibly degraded; deterministic routing is available only as the
-explicit no-provider mode. The protected resident managers may coordinate a
-no-match turn, but they are not reported as semantic domain matches.
+failed. If inference is missing or its provider chain fails, the decision must
+remain visibly degraded with no selected, recommended, delegated, or hired
+specialist. Deterministic candidate recall may explain which shortlist boundary
+was inspected, but it cannot become a team. The protected `agency-steward`
+records the failed evidence boundary; it cannot answer, select, or act as a
+semantic domain match.
 
 `agency policy --json` exits nonzero when a required bundled specialist is not
 active or a route is not classified. `missing_enabled` identifies required
@@ -815,7 +845,9 @@ The JSON response includes the exact `config_path`. CLI and dashboard must point
 to that same identity. All governed agents are enabled by default, but an
 operator-disabled slug is excluded from new routing, search, prompt loads, and
 affected turn completion until it is re-enabled. `agents-orchestrator` and
-`chief-of-staff` are protected and cannot be disabled.
+`chief-of-staff` are imported optional specialists and can be disabled. The
+parent-only `agency-steward` is protected infrastructure and is not a selectable
+roster row.
 
 ## A custom companion policy is refused
 

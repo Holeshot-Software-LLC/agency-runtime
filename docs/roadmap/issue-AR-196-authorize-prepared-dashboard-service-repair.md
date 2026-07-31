@@ -1,11 +1,13 @@
 ---
 title: "AR-196: Authorize prepared dashboard-service install and repair"
-status: in_progress
+status: wont_do
 category: roadmap
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-30
 tags: [windows, dashboard, service, security, operator-presence]
 related:
+  - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0110-remove-agency-owned-windows-hello.md
   - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
   - docs/decisions/0031-optional-user-dashboard-service-and-shared-configuration.md
@@ -16,14 +18,13 @@ related:
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
   - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
   - docs/roadmap/handoffs/issue-AR-196.md
-  - agency_runtime/core/operator_presence.py
   - agency_runtime/core/dashboard_service_install.py
   - agency_runtime/core/dashboard_service_core.py
   - agency_runtime/cli/service_commands.py
-  - tests/test_cli_operator_presence.py
+  - tests/test_cli_owner_authority.py
   - tests/test_dashboard_service.py
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
 type: issue
 epic: security
 issue_id: AR-196
@@ -34,6 +35,12 @@ blocks: [AR-194]
 ---
 
 # AR-196: Authorize prepared dashboard-service install and repair
+
+> Superseded on 2026-07-30 by [AR-204](issue-AR-204-reconcile-readme-story-contract.md)
+> and [ADR-0117](../decisions/0117-unify-owner-control-authority.md). The
+> dashboard service remains ownership-, identity-, lock-, and postcondition-
+> checked, but it no longer requires a separate human-presence ceremony.
+> `dashboard service open` may repair or start the owned service.
 
 ## Problem
 

@@ -150,7 +150,7 @@ def test_configured_chain_cannot_be_bypassed_and_preserves_model_identity(
     ]
 
 
-def test_total_configured_chain_failure_is_explicitly_degraded(
+def test_total_configured_chain_failure_is_explicitly_unavailable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     providers = (_provider("first"), _provider("second"))
@@ -162,12 +162,12 @@ def test_total_configured_chain_failure_is_explicitly_degraded(
         config=_config(*providers),
     )
 
-    assert result["status"] == "degraded"
-    assert result["source"] == "degraded_inference"
-    assert result["inference_mode"] == "degraded"
+    assert result["status"] == "inference_unavailable"
+    assert result["source"] == "inference_failure"
+    assert result["inference_mode"] == "unavailable"
     assert result["inference_attempted"] is True
     assert result["selected_ids"] == []
-    assert result["deterministic_candidate_ids"] == ["security-reviewer"]
+    assert "deterministic_candidate_ids" not in result
     assert [entry["provider_name"] for entry in result["inference_failures"]] == [
         "first",
         "second",
@@ -175,23 +175,23 @@ def test_total_configured_chain_failure_is_explicitly_degraded(
     assert "inferred" not in result["status"]
 
 
-def test_configured_inference_without_a_catalog_is_visible_but_not_attempted() -> None:
+def test_configured_inference_without_a_catalog_is_invalid_and_not_attempted() -> None:
     result = judge.query_judge(
         "review authentication security",
         [],
         config=_config(_provider("configured")),
     )
 
-    assert result["status"] == "degraded"
-    assert result["degraded_reason"] == "no_catalog"
-    assert result["deterministic_fallback_status"] == "no_catalog"
-    assert result["inference_mode"] == "degraded"
+    assert result["status"] == "inference_invalid"
+    assert result["source"] == "inference_failure"
+    assert result["error"] == "agent catalog not loaded"
+    assert result["inference_mode"] == "invalid"
     assert result["inference_required"] is True
     assert result["inference_attempted"] is False
     assert result["provider_attempts"] == []
 
 
-def test_configured_local_inference_failure_is_degraded_and_recorded(
+def test_configured_local_inference_failure_is_unavailable_and_recorded(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = AgencyConfig(
@@ -212,8 +212,8 @@ def test_configured_local_inference_failure_is_degraded_and_recorded(
 
     result = judge.query_judge("review authentication", CATALOG, config=config)
 
-    assert result["status"] == "degraded"
-    assert result["inference_mode"] == "degraded"
+    assert result["status"] == "inference_unavailable"
+    assert result["inference_mode"] == "unavailable"
     assert result["provider_attempts"] == [
         {
             "provider_name": "required-local",
@@ -226,7 +226,7 @@ def test_configured_local_inference_failure_is_degraded_and_recorded(
     ]
 
 
-def test_optional_keyless_local_fallback_failure_uses_visible_heuristic_mode(
+def test_keyless_local_inference_failure_never_uses_a_heuristic_team(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = AgencyConfig(
@@ -248,11 +248,12 @@ def test_optional_keyless_local_fallback_failure_uses_visible_heuristic_mode(
 
     result = judge.query_judge("review authentication", CATALOG, config=config)
 
-    assert result["status"] == "token_fallback"
-    assert result["inference_configured"] is False
-    assert result["inference_required"] is False
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
+    assert result["inference_configured"] is True
+    assert result["inference_required"] is True
     assert result["inference_attempted"] is True
-    assert result["inference_mode"] == "heuristic"
+    assert result["inference_mode"] == "unavailable"
     assert [(item["provider_name"], item["status"]) for item in result["provider_attempts"]] == [
         ("legacy-judge", "failed"),
         ("ollama-fallback", "skipped"),
@@ -277,10 +278,10 @@ def test_declared_legacy_key_environment_is_mandatory_even_when_unset(
 
     result = judge.query_judge("review authentication", CATALOG, config=config)
 
-    assert result["status"] == "degraded"
+    assert result["status"] == "inference_unavailable"
     assert result["inference_configured"] is True
     assert result["inference_required"] is True
-    assert result["inference_mode"] == "degraded"
+    assert result["inference_mode"] == "unavailable"
     assert result["provider_attempts"][0]["provider_name"] == "legacy-judge"
 
 
@@ -354,7 +355,7 @@ def test_usable_legacy_key_disables_lexical_bypass(
     assert result["requested_model"] == "legacy-model"
 
 
-def test_no_configured_inference_retains_visible_heuristic_mode(
+def test_no_configured_inference_fails_without_a_heuristic_team(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = _config()
@@ -362,11 +363,12 @@ def test_no_configured_inference_retains_visible_heuristic_mode(
 
     result = judge.query_judge("review authentication", CATALOG, config=config)
 
-    assert result["status"] == "confidence_bypass"
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
     assert result["inference_configured"] is False
-    assert result["inference_required"] is False
+    assert result["inference_required"] is True
     assert result["inference_attempted"] is False
-    assert result["inference_mode"] == "heuristic"
+    assert result["inference_mode"] == "unavailable"
     assert result["provider_attempts"] == []
 
 

@@ -1,9 +1,8 @@
 """Exact CLI-shape recognition for Codex activation verification.
 
-The install parser also owns persistent installation modes.  Only the bounded
-current-profile verification form may bypass that mutation boundary: it runs a
-canary against an already installed Codex adapter and must never fall through
-to installation, roster, runtime-control, or dashboard work.
+The bounded current-profile verification form runs a canary against an already
+installed Codex adapter and must never fall through to installation, roster,
+runtime-control, or dashboard work.
 """
 
 from __future__ import annotations
@@ -39,6 +38,7 @@ _PUBLIC_FIELDS = frozenset(
         "activation_timeout",
         "agent",
         "all",
+        "autonomous",
         "backup",
         "command",
         "dry_run",
@@ -49,13 +49,7 @@ _PUBLIC_FIELDS = frozenset(
         "verify_activation",
     }
 )
-_BOUND_FIELDS = _PUBLIC_FIELDS | frozenset(
-    {
-        "func",
-        "_operator_presence_family",
-        "_operator_presence_dry_run_exempt",
-    }
-)
+_BOUND_FIELDS = _PUBLIC_FIELDS | frozenset({"func"})
 
 
 def is_restricted_codex_activation_canary_environment(
@@ -126,11 +120,10 @@ def is_exact_codex_activation_verification(namespace: object) -> bool:
         return False
     return bool(
         getattr(namespace, "command", None) == "install"
-        and getattr(namespace, "_operator_presence_family", None) == "installation"
-        and getattr(namespace, "_operator_presence_dry_run_exempt", None) is True
         and getattr(namespace, "agent", None) == "codex"
         and getattr(namespace, "profile", None) is None
         and getattr(namespace, "all", False) is False
+        and getattr(namespace, "autonomous", False) is False
         and getattr(namespace, "dry_run", False) is False
         and getattr(namespace, "rollback", False) is False
         and getattr(namespace, "verify_activation", False) is True

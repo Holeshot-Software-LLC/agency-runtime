@@ -1257,7 +1257,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
 
     server_version = "AgencyRuntimeDashboard/0.1"
 
-    _READ_ONLY_MUTATION_PATHS = frozenset(
+    _OWNER_MUTATION_PATHS = frozenset(
         {
             "/api/agents/toggle",
             "/api/config",
@@ -1486,19 +1486,11 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         if not path.startswith("/api/"):
             self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
             return
-        mutation = path in self._READ_ONLY_MUTATION_PATHS
+        mutation = path in self._OWNER_MUTATION_PATHS
         if not self._authorise_api_request(
             require_json=True,
-            allow_broker_for_read_only_denial=mutation,
+            require_owner=mutation,
         ):
-            return
-        if mutation:
-            self._drain_bounded_request_body()
-            self._json_error(
-                HTTPStatus.FORBIDDEN,
-                "dashboard is read-only; persistent mutations require an approved "
-                "user-presence boundary",
-            )
             return
         try:
             body = self._read_json_body()
@@ -1557,7 +1549,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         self,
         *,
         require_json: bool = False,
-        allow_broker_for_read_only_denial: bool = False,
+        require_owner: bool = False,
     ) -> bool:
         if not self._valid_host_header():
             self._json_error(HTTPStatus.BAD_REQUEST, "invalid Host header")
@@ -1597,9 +1589,11 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             self.path,
             self.command,
         )
-        if not owner_authorized and not (
-            broker_authorized and (broker_scope_allowed or allow_broker_for_read_only_denial)
-        ):
+        if require_owner and broker_authorized:
+            self._drain_bounded_request_body()
+            self._json_error(HTTPStatus.FORBIDDEN, "owner control required")
+            return False
+        if not owner_authorized and not broker_scope_allowed:
             self._json_error(HTTPStatus.UNAUTHORIZED, "authentication required")
             return False
 

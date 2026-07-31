@@ -16,6 +16,7 @@ from functools import lru_cache
 from typing import Any
 
 from agency_runtime.core.agent_identity import agent_identity
+from agency_runtime.core.resident_managers import RESIDENT_MANAGER_SLUG_SET
 from agency_runtime.core.workforce.capability_ontology import (
     CORE_CAPABILITY_IDS,
     normalize_capability_ids,
@@ -39,7 +40,7 @@ _EMPLOYMENT_STATES = frozenset(
 _AUDIT_STATES = frozenset({"approved", "quarantined", "retired"})
 _HOSTS = frozenset({"claude", "codex", "hermes", "openclaw", "zcode"})
 _PLATFORMS = frozenset({"linux", "windows"})
-_RESIDENTS = frozenset({"agents-orchestrator", "chief-of-staff"})
+_RESIDENTS = RESIDENT_MANAGER_SLUG_SET
 
 _DIVISION_DOMAINS = {
     "academic": "research",

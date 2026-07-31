@@ -187,7 +187,7 @@ def test_host_native_command_status_is_read_only_and_on_off_fail_closed(
     assert status["runtime_enabled"] is True
     assert denied_off["ok"] is False
     assert denied_off["mutation_denied"] is True
-    assert denied_off["error"] == "operator_presence_required"
+    assert denied_off["error"] == "owner_control_required"
     assert denied_off["runtime_enabled"] is True
     assert "remains enabled" in denied_off["message"]
     assert Store(path).get_host_control("hermes") == initial
@@ -205,7 +205,7 @@ def test_host_native_command_status_is_read_only_and_on_off_fail_closed(
 
     assert denied_on["ok"] is False
     assert denied_on["mutation_denied"] is True
-    assert denied_on["error"] == "operator_presence_required"
+    assert denied_on["error"] == "owner_control_required"
     assert denied_on["runtime_enabled"] is False
     assert "remains disabled" in denied_on["message"]
     assert Store(path).get_host_control("hermes") == disabled

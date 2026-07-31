@@ -1,9 +1,9 @@
 ---
 title: "Bound native delegation correction to one evidence-checked pass"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-30
 tags: [delegation, stop, retries, evidence, native-hosts]
 related:
   - docs/roadmap/issue-AR-87-bounded-native-delegation-plans.md
@@ -13,13 +13,18 @@ related:
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0120-construct-first-pass-evidence-headers.md
 id: ADR-0071
 type: decision
 deciders: [maintainers]
 ---
 
 # ADR-0071: Bound native delegation correction to one evidence-checked pass
+
+Superseded by
+[ADR-0120](0120-construct-first-pass-evidence-headers.md), which constructs the
+header before first publication and terminalizes an invalid natural response
+without a corrective pass.
 
 ## Context
 

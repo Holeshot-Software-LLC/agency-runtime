@@ -618,7 +618,7 @@ def test_failed_cli_falls_through_to_http_then_explicit_degradation(
         lambda *_a, **_kw: (_ for _ in ()).throw(TimeoutError()),
     )
     result = judge.query_judge("review authentication", CATALOG, config=cfg)
-    assert result["status"] == "degraded"
+    assert result["status"] == "inference_unavailable"
     assert result["selected_ids"] == []
     assert [entry["provider_name"] for entry in result["provider_attempts"]] == [
         "codex",
@@ -660,6 +660,6 @@ def test_nonempty_cli_chain_never_calls_removed_legacy_or_ollama(
 
     result = judge.query_judge("review authentication", CATALOG, config=cfg)
 
-    assert result["status"] == "degraded"
+    assert result["status"] == "inference_unavailable"
     assert result["selected_ids"] == []
     assert calls == []

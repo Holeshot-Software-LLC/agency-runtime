@@ -1,4 +1,4 @@
-"""Exact parser contract for the operator-owned full-suite installer."""
+"""Exact parser contract for the owner-controlled full-suite installer."""
 
 from __future__ import annotations
 
@@ -18,10 +18,9 @@ _FIELDS = frozenset(
         "verify_activation",
         "backup",
         "no_dashboard",
+        "autonomous",
         "activation_timeout",
         "json",
-        "_operator_presence_family",
-        "_operator_presence_dry_run_exempt",
         "func",
     }
 )
@@ -44,12 +43,11 @@ def is_exact_install_lifecycle(namespace: object) -> bool:
     verify_activation = getattr(namespace, "verify_activation", None)
     backup = getattr(namespace, "backup", None)
     no_dashboard = getattr(namespace, "no_dashboard", None)
+    autonomous = getattr(namespace, "autonomous", None)
     json_mode = getattr(namespace, "json", None)
     timeout = getattr(namespace, "activation_timeout", None)
     if (
         getattr(namespace, "command", None) != "install"
-        or getattr(namespace, "_operator_presence_family", None) != "installation"
-        or getattr(namespace, "_operator_presence_dry_run_exempt", None) is not True
         or (profile is not None and profile not in PROFILES)
         or type(all_hosts) is not bool
         or (agent is not None and agent not in HOSTS)
@@ -58,8 +56,10 @@ def is_exact_install_lifecycle(namespace: object) -> bool:
         or type(rollback) is not bool
         or type(verify_activation) is not bool
         or type(no_dashboard) is not bool
+        or type(autonomous) is not bool
         or type(json_mode) is not bool
         or sum((dry_run, rollback, verify_activation)) > 1
+        or (autonomous and not verify_activation)
         or (backup is not None and (not rollback or not isinstance(backup, str) or not backup))
         or isinstance(timeout, bool)
         or not isinstance(timeout, (int, float))
@@ -70,7 +70,7 @@ def is_exact_install_lifecycle(namespace: object) -> bool:
         return False
     if verify_activation:
         return bool(
-            agent == "codex"
+            (agent in {None, "codex"} if autonomous else agent == "codex")
             and not all_hosts
             and profile is None
             and backup is None

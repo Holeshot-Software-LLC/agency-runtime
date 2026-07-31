@@ -159,7 +159,7 @@ def handle_host_control_command(
     ``source`` remains accepted for wire compatibility with installed native
     adapters. It is deliberately never used to authorize a mutation: a model
     can invoke both the Hermes and OpenClaw command surfaces, and process
-    context is not operator presence.
+    context does not confer owner authority.
     """
     normalized = normalize_host(host)
     action = parse_host_control_arguments(raw_args).action
@@ -175,8 +175,7 @@ def handle_host_control_command(
     if mutation_denied:
         message = (
             f"Agency Runtime remains {state} for {normalized}; {action} was denied because "
-            "model-facing native controls are read-only and no operator-presence "
-            f"capability is available.{global_note}"
+            f"model-facing native controls are read-only.{global_note}"
         )
     else:
         message = f"Agency Runtime is {state} for {normalized}.{global_note}"
@@ -185,7 +184,7 @@ def handle_host_control_command(
         "host": normalized,
         "action": action,
         "mutation_denied": mutation_denied,
-        "error": "operator_presence_required" if mutation_denied else None,
+        "error": "owner_control_required" if mutation_denied else None,
         "runtime_enabled": bool(control["enabled"]),
         "master_enabled": global_enabled,
         "effective_enabled": effective,

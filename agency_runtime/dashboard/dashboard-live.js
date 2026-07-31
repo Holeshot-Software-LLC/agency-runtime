@@ -189,14 +189,14 @@ export function createLiveController(core, config, renderer) {
 				!known
 					? "Agency master state loading"
 					: enabled
-						? "Agency Runtime is enabled (read-only monitoring)"
-						: "Agency Runtime is disabled (read-only monitoring)",
+						? "Disable Agency Runtime globally"
+						: "Enable Agency Runtime globally",
 			);
 			toggle.dataset.state = !known ? "loading" : enabled ? "enabled" : "disabled";
-			toggle.disabled = true;
-			toggle.setAttribute("aria-disabled", "true");
+			if (toggle.getAttribute("aria-busy") !== "true") toggle.disabled = !known;
+			toggle.setAttribute("aria-disabled", String(toggle.disabled));
 			toggle.title = known
-				? `Generation ${master.generation} · ${enabled ? "Agency is active" : "Agency is bypassed"} · read-only`
+				? `Generation ${master.generation} · ${enabled ? "Agency is active" : "Agency is bypassed"}`
 				: "Loading Agency master state";
 		}
 		if (byId("master-label")) {

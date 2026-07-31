@@ -74,6 +74,7 @@ SAFE_CANARY_HOSTS = frozenset({"codex", "claude"})
 ISOLATED_CANARY_HOSTS = SAFE_CANARY_HOSTS
 CANARY_MODES = frozenset({"agency", "native-only"})
 CANARY_PROFILE_SCOPES = frozenset({"isolated-profile", "current-profile"})
+CANARY_TRUST_MODES = frozenset({"attended", "autonomous_bypass"})
 MAX_CANARY_TIMEOUT_SECONDS = 600.0
 CODEX_CURRENT_PROFILE_EXEC_OPTIONS = (
     "--json",
@@ -239,6 +240,7 @@ def _backend(
     require_existing_store: bool = False,
     require_exact_activation_rollout: bool = False,
     hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None,
+    trust_mode: str = "attended",
 ):
     return _backends.backend(
         host,
@@ -253,6 +255,7 @@ def _backend(
         require_existing_store=require_existing_store,
         require_exact_activation_rollout=require_exact_activation_rollout,
         hook_trust_inspector=hook_trust_inspector,
+        trust_mode=trust_mode,
     )
 
 
@@ -346,6 +349,7 @@ def _complete_successful_canary(
     preparation: Any,
     proof: Any,
     evidence: Mapping[str, Any],
+    trust_mode: str = "attended",
 ) -> None:
     current = _assess_readiness(
         host,
@@ -369,7 +373,12 @@ def _complete_successful_canary(
     ):
         report["attestation_persisted"] = False
         return
-    if mode == "native-only" or host != "codex" or assessment.profile_scope != "current-profile":
+    if (
+        mode == "native-only"
+        or host != "codex"
+        or assessment.profile_scope != "current-profile"
+        or trust_mode == "autonomous_bypass"
+    ):
         report["attestation_persisted"] = False
         report["canary_passed"] = True
         return
@@ -504,7 +513,13 @@ def _invalidate_prior_current_profile_attestation(
     return True
 
 
-def _validate_canary_request(host: str, *, mode: str, profile_scope: str) -> None:
+def _validate_canary_request(
+    host: str,
+    *,
+    mode: str,
+    profile_scope: str,
+    trust_mode: str = "attended",
+) -> None:
     """Reject unsupported canary combinations before any host or Store access."""
 
     if host not in SUPPORTED_HOSTS:
@@ -513,8 +528,16 @@ def _validate_canary_request(host: str, *, mode: str, profile_scope: str) -> Non
         raise ValueError(f"unsupported canary mode: {mode}")
     if profile_scope not in CANARY_PROFILE_SCOPES:
         raise ValueError(f"unsupported canary profile scope: {profile_scope}")
+    if not isinstance(trust_mode, str) or trust_mode not in CANARY_TRUST_MODES:
+        raise ValueError(f"unsupported canary trust mode: {trust_mode}")
     if profile_scope == "current-profile" and (host != "codex" or mode != "agency"):
         raise ValueError("current-profile canaries support Codex Agency mode only")
+    if trust_mode == "autonomous_bypass" and (
+        host != "codex" or mode != "agency" or profile_scope != "current-profile"
+    ):
+        raise ValueError(
+            "autonomous bypass canaries support Codex Agency current-profile mode only"
+        )
 
 
 def run_canary(
@@ -527,6 +550,7 @@ def run_canary(
     mode: str = "agency",
     profile_scope: str = "isolated-profile",
     require_existing_store: bool = False,
+    trust_mode: str = "attended",
     inspector: Callable[[str], dict[str, Any]] = _default_inspector,
     backend_factory: Callable[..., Any] = _backend,
 ) -> dict[str, Any]:
@@ -535,11 +559,16 @@ def run_canary(
         raise TypeError("require_existing_store must be a boolean")
     if require_existing_store and (host != "codex" or profile_scope != "current-profile"):
         raise ValueError("existing-store canaries support Codex current-profile only")
-    _validate_canary_request(host, mode=mode, profile_scope=profile_scope)
+    _validate_canary_request(
+        host,
+        mode=mode,
+        profile_scope=profile_scope,
+        trust_mode=trust_mode,
+    )
     timeout = _validated_timeout(timeout)
     path = Path(db_path).expanduser() if db_path else _default_db_path()
     assessment = _assess_readiness(host, path, inspector, profile_scope=profile_scope)
-    report = _readiness_report(host, assessment, mode=mode)
+    report = _readiness_report(host, assessment, mode=mode, trust_mode=trust_mode)
     master_before = _attach_master_readiness(report, mode=mode)
     if master_before is None:
         return report
@@ -562,6 +591,7 @@ def run_canary(
         mode=mode,
         profile_scope=assessment.profile_scope,
         require_existing_store=require_existing_store,
+        trust_mode=trust_mode,
     )
     if preparation.error:
         report["unmet_prerequisites"].append(preparation.error)
@@ -629,6 +659,10 @@ def run_canary(
             "evidence": outcome.evidence,
         }
     )
+    actual_trust_mode = outcome.result.get("trust_mode")
+    if isinstance(actual_trust_mode, str) and actual_trust_mode in CANARY_TRUST_MODES:
+        report["trust_mode"] = actual_trust_mode
+    report["trust_bypass_used"] = outcome.result.get("trust_bypass_used") is True
     report["unmet_prerequisites"].extend(proof.failures)
     if proof.passed:
         _complete_successful_canary(
@@ -642,6 +676,7 @@ def run_canary(
             preparation=preparation,
             proof=proof,
             evidence=outcome.evidence,
+            trust_mode=str(report["trust_mode"]),
         )
     else:
         _terminate_failed_canary_runs(

@@ -739,14 +739,10 @@ actions:
     - slug: operations-manager
       when: process optimization
   DEFAULT:
-    description: Any state-aware specialist-selection request that matches no narrower action
+    description: No deterministic worker fallback; valid inference owns staffing
     triggers:
     - _fallback_
-    always_include:
-    - slug: agents-orchestrator
-      reason: Ensure proper routing and delegation
-    - slug: chief-of-staff
-      reason: Filter noise, own processes, enforce consistency
+    always_include: []
     conditional:
     - slug: executive-summary-generator
       when: summarizing status
@@ -1294,7 +1290,6 @@ specialist_availability:
   - aeo-foundations-architect
   - agentic-identity-trust-architect
   - agentic-search-optimizer
-  - agents-orchestrator
   - ai-citation-strategist
   - ai-data-remediation-engineer
   - ai-engineer
@@ -1320,7 +1315,6 @@ specialist_availability:
   - cartography-designer
   - change-management-consultant
   - chief-financial-officer
-  - chief-of-staff
   - china-e-commerce-operator
   - china-market-localization-strategist
   - civil-engineer

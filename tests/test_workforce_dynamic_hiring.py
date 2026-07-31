@@ -898,11 +898,9 @@ def test_hiring_decline_preserves_its_decision_stage(
     assert store.list_hiring_cases(limit=10) == []
 
 
-def test_coherent_gap_amends_existing_worker_without_roster_bloat(tmp_path: Path) -> None:
+def test_task_gap_rejects_near_match_amendment_in_open_ended_pool(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     existing = _install_existing(store)
-    before = store.get_workforce_worker(existing.agent_id)
-    parent = store.get_specialist_prompt(existing.agent_id)
 
     outcome = hire_contractor_for_gap(
         "Review the missing quantum compiler build integration.",
@@ -916,17 +914,11 @@ def test_coherent_gap_amends_existing_worker_without_roster_bloat(tmp_path: Path
         ),
     )
 
-    assert outcome.status == "amended"
-    assert outcome.workforce_changed is True
-    assert outcome.worker["worker_id"] == before["worker_id"]
-    assert outcome.worker["revision"] == 1
+    assert outcome.status == "abstained"
+    assert outcome.reason_codes == ("task_gap_requires_distinct_specialist",)
     assert len(store.list_workforce_workers(limit=10)) == 1
-    assert outcome.hiring_case["case_type"] == "amend"
-    assert outcome.hiring_case["status"] == "applied"
-    current = store.get_specialist_prompt(existing.agent_id)
-    assert current["prompt_body"].startswith(parent["prompt_body"])
-    assert "--- Agency capability amendment ---" in current["prompt_body"]
-    assert "quantum-build-systems" in outcome.hiring_case["contract_evidence"]["domains"]
+    assert store.list_hiring_cases(limit=10) == []
+    assert store.get_workforce_worker(existing.agent_id)["revision"] == 0
 
 
 def test_amendment_binds_model_extension_slug_to_inferred_target(tmp_path: Path) -> None:
@@ -941,6 +933,7 @@ def test_amendment_binds_model_extension_slug_to_inferred_target(tmp_path: Path)
         (existing,),
         store=store,
         config=_config(),
+        allow_existing_worker_amendment=True,
         invoker=_invoker(response, {"approved": True, "reason_codes": []}),
     )
 
@@ -974,6 +967,7 @@ def test_amendment_preserves_existing_values_inside_smaller_workforce_bounds(
         (existing,),
         store=store,
         config=_config(),
+        allow_existing_worker_amendment=True,
         invoker=_invoker(response, {"approved": True, "reason_codes": []}),
     )
 
@@ -1015,6 +1009,7 @@ def test_amendment_rejects_authority_escalation_without_writing_case(tmp_path: P
         (existing,),
         store=store,
         config=_config(),
+        allow_existing_worker_amendment=True,
         invoker=lambda provider, *_args, **_kwargs: _result(
             _amendment_response(authority="modify"),
             provider,
@@ -1044,6 +1039,7 @@ def test_amendment_reports_content_free_projection_stage(
         (existing,),
         store=store,
         config=_config(),
+        allow_existing_worker_amendment=True,
         invoker=lambda provider, *_args, **_kwargs: _result(
             _amendment_response(),
             provider,
@@ -1068,6 +1064,7 @@ def test_high_risk_amendment_is_revision_bound_and_applies_only_after_approval(
         (existing,),
         store=store,
         config=_config(),
+        allow_existing_worker_amendment=True,
         invoker=_invoker(
             _amendment_response(external_mutation=True),
             {"approved": True, "reason_codes": []},
@@ -1285,12 +1282,12 @@ def test_route_hires_and_assigns_real_gap_in_same_preflight(tmp_path: Path, monk
         plan,
         snapshot.contracts,
         {
-            implementation.unit_id: [(existing.agent_id, 0.9)],
+            implementation.unit_id: [],
             review.unit_id: [(existing.agent_id, 0.9)],
         },
         context=context,
         budget=StaffingBudget(),
-        semantic_required={implementation.unit_id: frozenset({existing.agent_id})},
+        semantic_required={},
         semantic_acceptable={review.unit_id: frozenset({existing.agent_id})},
         semantic_gap_units=frozenset({implementation.unit_id}),
     )
@@ -1302,7 +1299,6 @@ def test_route_hires_and_assigns_real_gap_in_same_preflight(tmp_path: Path, monk
         budget=StaffingBudget(),
     )
     assert {
-        "required_agents_missing",
         "no_safe_sufficient_team",
         "recruiter_abstained",
     } <= {item.code for item in staffing.abstention_reasons}

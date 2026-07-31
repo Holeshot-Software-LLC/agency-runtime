@@ -239,6 +239,7 @@ def readiness_report(
     assessment: ReadinessAssessment,
     *,
     mode: str = "agency",
+    trust_mode: str = "attended",
 ) -> dict[str, Any]:
     confirmation = (
         f"RUN LIVE {host} CURRENT-PROFILE CANARY"
@@ -253,6 +254,8 @@ def readiness_report(
         "host": host,
         "mode": mode,
         "profile_scope": assessment.profile_scope,
+        "trust_mode": trust_mode,
+        "trust_bypass_used": False,
         "platform": assessment.platform,
         "native": assessment.native,
         "real_profile_native": assessment.native,
@@ -277,6 +280,7 @@ def prepare_live_invocation(
     mode: str = "agency",
     profile_scope: str = "isolated-profile",
     require_existing_store: bool = False,
+    trust_mode: str = "attended",
 ) -> LivePreparation:
     facade = _facade()
     try:
@@ -310,6 +314,7 @@ def prepare_live_invocation(
                 profile_scope=profile_scope,
                 require_existing_store=require_existing_store,
                 require_exact_activation_rollout=host == "codex" and mode == "agency",
+                trust_mode=trust_mode,
             )
         else:
             backend = backend_factory(host, db_path=path, timeout=timeout)

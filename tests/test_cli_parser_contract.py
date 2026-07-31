@@ -285,7 +285,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "f46bcd13715016ef6f64a8056d4351fa8873a9e1fabc6a32722d7d3545cfeec0"
+EXPECTED_MANIFEST_SHA256 = "0e63624c3e031ea6b64c8803491ae754a6509df13e147d6c15f6c54ee0a61c1a"
 
 
 def _handler(name: str):
@@ -452,6 +452,15 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
     assert bindings == EXPECTED_BINDINGS
 
 
+def test_install_parser_exposes_explicit_autonomous_activation_mode() -> None:
+    parsed = _parser().parse_args(["install", "--autonomous", "--verify-activation", "--json"])
+
+    assert parsed.autonomous is True
+    assert parsed.verify_activation is True
+    assert parsed.agent is None
+    assert parsed.json is True
+
+
 @pytest.mark.parametrize(
     ("argv", "expected"),
     [
@@ -462,6 +471,7 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
                 "profile": None,
                 "all": False,
                 "agent": None,
+                "autonomous": False,
                 "dry_run": False,
                 "rollback": False,
                 "backup": None,
@@ -469,8 +479,6 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
                 "verify_activation": False,
                 "activation_timeout": 180.0,
                 "json": False,
-                "_operator_presence_family": "installation",
-                "_operator_presence_dry_run_exempt": True,
                 "func": "cmd_install",
             },
         ),
@@ -484,8 +492,6 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
                 "stdin": True,
                 "prompt": False,
                 "clear": False,
-                "_operator_presence_family": "configuration",
-                "_operator_presence_dry_run_exempt": False,
                 "func": "cmd_config_set",
             },
         ),
@@ -515,8 +521,6 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
                 "dashboard_service_action": "install",
                 "dry_run": False,
                 "json": False,
-                "_operator_presence_family": "dashboard-service",
-                "_operator_presence_dry_run_exempt": True,
                 "func": "cmd_dashboard_service",
             },
         ),

@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
+import inspect
 import re
 from dataclasses import replace
 from functools import lru_cache
 
 import pytest
 
+from agency_runtime.core import preflight as preflight_module
+from agency_runtime.core import unit_assignment as unit_assignment_module
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.roster.bundled import BundledRoster
 from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
+from agency_runtime.core.selector import judge as judge_module
+from agency_runtime.core.workforce import inference as inference_module
 from agency_runtime.core.workforce.contract import (
     project_workforce_contract,
     workforce_index_fingerprint,
@@ -39,6 +44,35 @@ from agency_runtime.core.workforce.staffing_verifier import (
     build_deterministic_proposal,
     verify_staffing,
 )
+
+
+def test_production_staffing_entrypoints_have_no_deterministic_decider_dependency() -> None:
+    forbidden_by_module = {
+        inference_module: (
+            "workforce.fallback",
+            "enrich_intent_plan",
+            "build_deterministic_proposal",
+            "_deterministic_floor_outcome",
+        ),
+        judge_module: (
+            "_confidence_bypass_result",
+            "_scored_selection",
+            "_token_only_fallback",
+        ),
+        unit_assignment_module: (
+            "_agent_score",
+            "_deterministic_unit_selection",
+        ),
+        preflight_module: (
+            "deterministic_candidate_ids",
+            "deterministic_unconfigured",
+        ),
+    }
+
+    for module, forbidden_tokens in forbidden_by_module.items():
+        source = inspect.getsource(module)
+        for token in forbidden_tokens:
+            assert token not in source
 
 
 @lru_cache(maxsize=1)
@@ -286,12 +320,19 @@ def test_runtime_integration_shortlists_anchor_each_lifecycle_owner() -> None:
 
     shortlists = {row["unit_id"]: row for row in _typed_shortlists(plan, snapshot.contracts)}
 
-    assert shortlists["unit-routing-evidence"]["role_anchors"] == ["codebase-onboarding-engineer"]
-    assert shortlists["unit-live-integration"]["role_anchors"] == [
-        "application-integration-verifier",
-        "test-results-analyzer",
-    ]
-    assert shortlists["unit-staffing-audit"]["role_anchors"] == ["selection-safety-critic"]
+    assert all(shortlist["role_anchors"] == [] for shortlist in shortlists.values())
+    assert any(
+        candidate["agent_id"] == "codebase-onboarding-engineer"
+        for candidate in shortlists["unit-routing-evidence"]["candidates"]
+    )
+    assert any(
+        candidate["agent_id"] == "application-integration-verifier"
+        for candidate in shortlists["unit-live-integration"]["candidates"]
+    )
+    assert any(
+        candidate["agent_id"] == "selection-safety-critic"
+        for candidate in shortlists["unit-staffing-audit"]["candidates"]
+    )
 
 
 def test_runtime_request_recovers_codebase_anchor_from_generic_analysis() -> None:
@@ -345,9 +386,13 @@ def test_documentation_unit_selects_existing_technical_writer_without_false_gap(
     )
     shortlist = _typed_shortlists(plan, snapshot.contracts)[0]
 
-    assert shortlist["role_anchors"] == ["technical-writer"]
+    assert shortlist["role_anchors"] == []
     assert any(candidate["agent_id"] == "technical-writer" for candidate in shortlist["candidates"])
-    candidate_ids = [candidate["agent_id"] for candidate in shortlist["candidates"]]
+    all_candidate_ids = [candidate["agent_id"] for candidate in shortlist["candidates"]]
+    candidate_ids = [
+        "technical-writer",
+        *(item for item in all_candidate_ids if item != "technical-writer"),
+    ][:16]
 
     context = StaffingContext(
         "codex",
@@ -415,11 +460,11 @@ def test_online_inference_ranking_is_not_reordered_by_a_role_anchor() -> None:
     )
     shortlist = _typed_shortlists(plan, snapshot.contracts)[0]
     candidate_ids = [item["agent_id"] for item in shortlist["candidates"]]
-    assert shortlist["role_anchors"] == ["code-reviewer"]
+    assert shortlist["role_anchors"] == []
     ordered = [
         "ai-generated-code-security-auditor",
         *(item for item in candidate_ids if item != "ai-generated-code-security-auditor"),
-    ]
+    ][:16]
     context = StaffingContext(
         "codex",
         "windows",
@@ -1224,7 +1269,11 @@ def test_captured_typescript_plan_forms_exact_safe_lifecycle_team_from_full_work
         unit_id = shortlist["unit_id"]
         expected_agent = expected[unit_id]
         candidates = [item["agent_id"] for item in shortlist["candidates"]]
-        assert candidates[0] == expected_agent
+        assert expected_agent in candidates
+        inference_ranking = [
+            expected_agent,
+            *(item for item in candidates if item != expected_agent),
+        ][:16]
         rows.append(
             {
                 "unit_id": unit_id,
@@ -1243,7 +1292,7 @@ def test_captured_typescript_plan_forms_exact_safe_lifecycle_team_from_full_work
                             [] if agent_id == expected_agent else ["wrong-neighbor"]
                         ),
                     }
-                    for index, agent_id in enumerate(candidates)
+                    for index, agent_id in enumerate(inference_ranking)
                 ],
             }
         )
@@ -1369,7 +1418,12 @@ def test_live_shaped_multidomain_security_plan_recruits_the_exact_safe_team() ->
     for shortlist in _typed_shortlists(plan, snapshot.contracts):
         unit_id = shortlist["unit_id"]
         candidates = [item["agent_id"] for item in shortlist["candidates"]]
-        assert candidates[0] == expected[unit_id]
+        expected_agent = expected[unit_id]
+        assert expected_agent in candidates
+        inference_ranking = [
+            expected_agent,
+            *(item for item in candidates if item != expected_agent),
+        ][:16]
         rows.append(
             {
                 "unit_id": unit_id,
@@ -1378,11 +1432,17 @@ def test_live_shaped_multidomain_security_plan_recruits_the_exact_safe_team() ->
                     {
                         "agent_id": agent_id,
                         "score": round(1.0 - (index * 0.03), 2),
-                        "classification": "required" if index == 0 else "forbidden",
-                        "positive_evidence": ["decisive-scope-match"] if index == 0 else [],
-                        "negative_evidence": [] if index == 0 else ["wrong-neighbor"],
+                        "classification": (
+                            "required" if agent_id == expected_agent else "forbidden"
+                        ),
+                        "positive_evidence": (
+                            ["decisive-scope-match"] if agent_id == expected_agent else []
+                        ),
+                        "negative_evidence": (
+                            [] if agent_id == expected_agent else ["wrong-neighbor"]
+                        ),
                     }
-                    for index, agent_id in enumerate(candidates)
+                    for index, agent_id in enumerate(inference_ranking)
                 ],
             }
         )
@@ -1451,7 +1511,7 @@ def test_model_required_specialist_is_trusted_under_adr_0087() -> None:
         role_owner,
         "code-reviewer",
         *(item for item in candidates if item not in {"code-reviewer", role_owner}),
-    ]
+    ][:16]
     nominations = {
         "units": [
             {

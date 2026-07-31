@@ -1,9 +1,4 @@
-"""Closed-world task recognition for the Codex activation canary.
-
-The activation verifier measures the installed hook and native-child lifecycle,
-not the semantic workforce planner.  Only its exact current-profile child may
-use the deterministic one-unit route assembled by the selector pipeline.
-"""
+"""Closed-world task recognition for the inference-owned Codex activation canary."""
 
 from __future__ import annotations
 
@@ -23,8 +18,7 @@ CODEX_ACTIVATION_CANARY_PROMPT = (
     "Delegate that complete work unit to exactly one sub-agent; do not subdivide it further: "
     f"{CODEX_ACTIVATION_CANARY_WORK_UNIT}"
 )
-CODEX_ACTIVATION_CANARY_SPECIALIST = "code-reviewer"
-CODEX_ACTIVATION_CANARY_ROUTE_SOURCE = "codex_activation_canary_contract"
+CODEX_ACTIVATION_CANARY_ROUTE_SOURCE = "codex_activation_canary_inference"
 CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE = "activation-canary-contract"
 _CODEX_ACTIVATION_CANARY_TASK = re.compile(
     re.escape(CODEX_ACTIVATION_CANARY_PROMPT) + r"\n\nCanary nonce: (?P<nonce>[0-9a-f]{32})\Z"
@@ -52,7 +46,6 @@ def is_exact_codex_activation_canary_task(
 __all__ = [
     "CODEX_ACTIVATION_CANARY_PROMPT",
     "CODEX_ACTIVATION_CANARY_ROUTE_SOURCE",
-    "CODEX_ACTIVATION_CANARY_SPECIALIST",
     "CODEX_ACTIVATION_CANARY_WORK_UNIT",
     "CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE",
     "is_exact_codex_activation_canary_task",

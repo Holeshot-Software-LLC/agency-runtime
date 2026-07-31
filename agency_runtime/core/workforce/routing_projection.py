@@ -298,7 +298,7 @@ def project_workforce_routing(
     confidences = [float(item["confidence"]) for item in bindings]
     margins = [float(item["margin"]) for item in bindings]
     attempts = _provider_attempts(outcome)
-    inference_configured = outcome.inference_mode != "deterministic"
+    inference_configured = outcome.inference_mode != "unavailable"
     disabled_shadows = [
         asdict(shadow) for unit in staffing.units for shadow in unit.disabled_shadows
     ]
@@ -313,15 +313,15 @@ def project_workforce_routing(
         "latency_ms": sum(item.latency_ms for item in outcome.attempts),
         "status": outcome.status,
         "source": (
-            "workforce_deterministic"
-            if outcome.inference_mode == "deterministic"
+            "workforce_inference_failure"
+            if outcome.status in {"inference_unavailable", "inference_invalid"}
             else "workforce_inference"
         ),
         "error": ", ".join(outcome.abstention_codes),
         "candidate_count": roster_count,
         "top_score": max(confidences, default=0.0),
         "inference_configured": inference_configured,
-        "inference_required": inference_configured,
+        "inference_required": True,
         "inference_attempted": bool(outcome.calls_used),
         "inference_mode": outcome.inference_mode,
         "provider_attempts": attempts,
@@ -346,7 +346,7 @@ def project_workforce_routing(
         "disabled_candidate_shadows": disabled_shadows,
         "unavailable_candidate_shadows": unavailable_shadows,
         "fallback_applied": False,
-        "fallback_considered": not selected,
+        "fallback_considered": False,
     }
 
 

@@ -47,7 +47,7 @@ _EMPTY_VALUES = {
     "<none>",
     "<none | agent-id[, agent-id...]>",
     "<none | skill-id[, skill-id...]>",
-    "<inference | deterministic | cached | none>",
+    "<inference | cached | none>",
     "<one line>",
 }
 _EVIDENCE_CODE = re.compile(r"^[a-z0-9][a-z0-9_.:+-]{0,95}$")

@@ -288,13 +288,19 @@ def test_routing_eval_meets_published_thresholds() -> None:
     report = run_routing_eval()
 
     assert report["schema"] == "agency-runtime.routing-eval"
-    assert report["version"] == "1.3.0"
-    assert report["corpus"]["version"] == "1.3.0"
+    assert report["version"] == "1.4.0"
+    assert report["corpus"]["version"] == "1.4.0"
+    assert report["routing_contract"] == "deterministic_candidate_recall_only"
+    assert report["corpus"]["routing_contract"] == "deterministic_candidate_recall_only"
     assert report["passed"] is True
     assert all(gate["passed"] for gate in report["gates"])
-    assert report["metrics"]["routing"]["required_recall_at_3"] >= 0.97
-    assert report["metrics"]["routing"]["top_k_accuracy"] >= 0.95
-    assert report["metrics"]["routing"]["abstain_accuracy"] == 1.0
+    routing = report["metrics"]["routing"]
+    assert routing["candidate_precision_at_3"] >= 0.60
+    assert routing["required_candidate_recall_at_3"] >= 0.97
+    assert routing["required_candidate_case_recall_at_3"] >= 0.95
+    assert routing["candidate_top_1_relevance"] >= 0.90
+    assert routing["forbidden_candidate_rate"] == 0.0
+    assert routing["candidate_abstain_accuracy"] == 1.0
     assert report["metrics"]["policy"]["forbidden_case_rate"] == 0.0
     assert report["metrics"]["policy"]["macro_f1"] >= 0.95
     assert report["metrics"]["policy"]["companion_required_recall"] == 1.0

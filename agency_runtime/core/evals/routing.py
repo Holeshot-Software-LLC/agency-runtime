@@ -1,10 +1,10 @@
-"""Versioned quantitative evaluation for routing, policy, and delegation."""
+"""Versioned evaluation for candidate recall, policy, and delegation."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.delegation.lifecycle import (
     build_dependency_graph,
     normalize_work_units,
@@ -29,25 +29,28 @@ from agency_runtime.core.evals.data.routing_v1 import (
     VERSION as CORPUS_VERSION,
 )
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
-from agency_runtime.core.selector.cache import clear_cache
+from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.delegation_detection import detect_work_units
-from agency_runtime.core.selector.pipeline import route
+from agency_runtime.core.selector.intent_text import affirmative_intent
 from agency_runtime.core.selector.policy import detect_actions, load_bundled_policy
-from agency_runtime.core.selector.semantic_retrieval import clear_semantic_retrieval_cache
-from agency_runtime.core.selector.stickiness import clear_session_routing
+from agency_runtime.core.selector.semantic_retrieval import (
+    clear_semantic_retrieval_cache,
+    retrieve_candidate_union,
+)
 
 SCHEMA = "agency-runtime.routing-eval"
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 TOP_K = 3
+ROUTING_CONTRACT = "deterministic_candidate_recall_only"
 
 THRESHOLDS: dict[str, dict[str, float]] = {
     "routing": {
-        "precision_at_3_min": 0.75,
-        "required_recall_at_3_min": 0.97,
-        "top_k_accuracy_min": 0.95,
-        "top_1_accuracy_min": 0.90,
-        "forbidden_case_rate_max": 0.0,
-        "abstain_accuracy_min": 1.0,
+        "candidate_precision_at_3_min": 0.60,
+        "required_candidate_recall_at_3_min": 0.97,
+        "required_candidate_case_recall_at_3_min": 0.95,
+        "candidate_top_1_relevance_min": 0.90,
+        "forbidden_candidate_rate_max": 0.0,
+        "candidate_abstain_accuracy_min": 1.0,
     },
     "policy": {
         "macro_f1_min": 0.95,
@@ -109,23 +112,17 @@ def _routing_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]:
     abstain_cases = 0
     details: list[dict[str, Any]] = []
 
-    offline = AgencyConfig(
-        providers=(),
-        judge=JudgeConfig(model="", confidence_bypass_threshold=999.0),
-        ollama=OllamaConfig(enabled=False, model=""),
-    )
     for case in ROUTING_CASES:
-        clear_cache()
-        clear_session_routing()
-        decision = route(
-            f"eval-{case['id']}",
-            str(case["query"]),
+        retrieval = retrieve_candidate_union(
+            affirmative_intent(str(case["query"])),
             CATALOG,
-            config=offline,
+            lexical_retriever=pre_narrow,
         )
         predicted = [
-            str(item) for item in decision.get("semantic_ids", decision.get("selected_ids", []))
-        ][:TOP_K]
+            slug
+            for candidate in retrieval.candidates[:TOP_K]
+            if (slug := agent_identity(candidate))
+        ]
         required = {str(item) for item in case.get("required", [])}
         acceptable = {str(item) for item in case.get("acceptable", [])}
         forbidden = {str(item) for item in case.get("forbidden", [])}
@@ -153,13 +150,12 @@ def _routing_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]:
         details.append(
             {
                 "id": case["id"],
-                "predicted": predicted,
+                "authority": ROUTING_CONTRACT,
+                "candidate_ids": predicted,
                 "required": sorted(required),
                 "acceptable": sorted(acceptable),
-                "forbidden_hit": sorted(forbidden.intersection(predicted)),
-                "final_selected": list(decision.get("selected_ids", [])),
-                "status": decision.get("status"),
-                "trace_id": decision.get("trace_id"),
+                "forbidden_candidates": sorted(forbidden.intersection(predicted)),
+                "retrieval": retrieval.evidence(),
                 "passed": passed,
             }
         )
@@ -167,12 +163,12 @@ def _routing_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]:
     total_cases = len(ROUTING_CASES)
     return {
         "cases": total_cases,
-        "precision_at_3": _ratio(relevant_hits, predictions),
-        "required_recall_at_3": _ratio(required_hits, required_total),
-        "top_k_accuracy": _ratio(top_k_hits, required_cases),
-        "top_1_accuracy": _ratio(top_one_hits, required_cases),
-        "forbidden_case_rate": _ratio(forbidden_cases, total_cases),
-        "abstain_accuracy": _ratio(abstain_hits, abstain_cases),
+        "candidate_precision_at_3": _ratio(relevant_hits, predictions),
+        "required_candidate_recall_at_3": _ratio(required_hits, required_total),
+        "required_candidate_case_recall_at_3": _ratio(top_k_hits, required_cases),
+        "candidate_top_1_relevance": _ratio(top_one_hits, required_cases),
+        "forbidden_candidate_rate": _ratio(forbidden_cases, total_cases),
+        "candidate_abstain_accuracy": _ratio(abstain_hits, abstain_cases),
     }, details
 
 
@@ -380,7 +376,7 @@ def _retrieval_scale_metrics(report: dict[str, Any]) -> dict[str, Any]:
 
 
 def run_routing_eval(*, include_details: bool = True) -> dict[str, Any]:
-    """Run the offline deterministic routing evaluation and performance probe."""
+    """Run deterministic recall, policy, delegation, and performance probes."""
     clear_semantic_retrieval_cache()
     routing, routing_details = _routing_metrics()
     policy, policy_details = _policy_metrics()
@@ -408,9 +404,11 @@ def run_routing_eval(*, include_details: bool = True) -> dict[str, Any]:
     report: dict[str, Any] = {
         "schema": SCHEMA,
         "version": VERSION,
+        "routing_contract": ROUTING_CONTRACT,
         "corpus": {
             "schema": CORPUS_SCHEMA,
             "version": CORPUS_VERSION,
+            "routing_contract": ROUTING_CONTRACT,
             "routing_cases": len(ROUTING_CASES),
             "policy_cases": len(POLICY_CASES),
             "delegation_cases": len(DELEGATION_CASES),
@@ -430,4 +428,4 @@ def run_routing_eval(*, include_details: bool = True) -> dict[str, Any]:
     return report
 
 
-__all__ = ["SCHEMA", "THRESHOLDS", "VERSION", "run_routing_eval"]
+__all__ = ["ROUTING_CONTRACT", "SCHEMA", "THRESHOLDS", "VERSION", "run_routing_eval"]

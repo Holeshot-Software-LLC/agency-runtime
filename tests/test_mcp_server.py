@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import logging
@@ -482,8 +483,23 @@ def test_mcp_load_specialist_returns_prompt_and_records_evidence(tmp_path: Path)
     assert store.get_specialists_for_session("session-load") == ["code-reviewer"]
 
 
-def test_mcp_load_specialist_rejects_inexact_prompt_without_evidence(tmp_path: Path) -> None:
+def test_mcp_load_specialist_rejects_inexact_prompt_without_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.selector import pipeline
+    from agency_runtime.core.selector.delegation_detection import detect_work_units
+
     store = Store(tmp_path / "agency.db")
+    store._activate_prevalidated_agent(
+        {
+            "slug": "mcp-preflight-reviewer",
+            "name": "MCP Preflight Reviewer",
+            "description": "Owns the bounded preflight for this MCP boundary test.",
+            "version": "1.0",
+            "prompt_body": "Review the bounded MCP test request.",
+        }
+    )
     store._activate_prevalidated_agent(
         {
             "slug": "oversized-reviewer",
@@ -493,6 +509,25 @@ def test_mcp_load_specialist_rejects_inexact_prompt_without_evidence(tmp_path: P
             "prompt_body": "x" * 7_001,
         }
     )
+
+    def route(
+        _session_id: str,
+        user_message: str,
+        _catalog: list[dict[str, object]] | None = None,
+        **kwargs: object,
+    ) -> dict[str, object]:
+        return {
+            "trace_id": str(kwargs.get("trace_id") or "turn-oversized"),
+            "selected_ids": ["mcp-preflight-reviewer"],
+            "confidence": 0.99,
+            "status": "applied",
+            "source": "test",
+            "query_hash": hashlib.sha256(user_message.encode()).hexdigest(),
+            "context_fingerprint": "c" * 64,
+            "work_units": detect_work_units(user_message),
+        }
+
+    monkeypatch.setattr(pipeline, "route", route)
     run_preflight(
         store,
         session_id="session-oversized",
@@ -668,7 +703,7 @@ def test_mcp_preflight_persists_authoritative_routing_trace(tmp_path: Path) -> N
         store=store,
     )
 
-    assert result["context"].startswith("[Agency resident-manager kernel v1]")
+    assert result["context"].startswith("[Agency resident-steward kernel v2]")
     assert "[AGENCY PREFLIGHT]" in result["context"]
     assert result["selected_specialists"] == ["code-reviewer"]
     conn = store._connect()
@@ -720,10 +755,7 @@ def test_mcp_preflight_hydrates_specialist_for_same_trace_finalization(
         store=store,
     )
     assert finalized["action"] == "accept"
-    assert (
-        "Agency/Agencies loaded: agents-orchestrator, chief-of-staff, code-reviewer"
-        in finalized["text"]
-    )
+    assert "Agency/Agencies loaded: agency-steward, code-reviewer" in finalized["text"]
     assert store.get_run("turn")["status"] == "completed"
     assert store.get_active_specialists_for_trace("session", "turn") == []
 
@@ -752,7 +784,7 @@ def test_mcp_finalize_returns_header_text(tmp_path: Path) -> None:
     assert result["action"] == "accept"
     assert result["missing"] == []
     assert "Agency/Agencies loaded: code-reviewer" in result["text"]
-    assert "unknown -> unavailable" in result["text"]
+    assert "parent task: host-selected (not observable to Agency)" in result["text"]
     assert result["text"].endswith("Done.")
     conn = store._connect()
     try:

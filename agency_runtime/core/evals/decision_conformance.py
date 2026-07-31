@@ -65,29 +65,107 @@ MUTATIONS: Final[tuple[DecisionMutation, ...]] = (
         ),
     ),
     DecisionMutation(
-        mutation_id="online-role-anchor-reorders-inference",
-        invariant="Online deterministic recall cannot reorder the inference ranking.",
+        mutation_id="missing-provider-restores-offline-staffing",
+        invariant="Missing inference fails without a deterministic specialist team.",
         source_path="agency_runtime/core/workforce/inference.py",
-        before="""        ranked = _calibrated_rankings(
-            scores,
-            minimum_margin=config.workforce.min_margin,
+        before="""    if not _inference_declared(config):
+        return _inference_failure(
+            mode=mode,
+            configured=False,
+            plan=None,
+            proposal=None,
+            attempts=(),
+            detail_codes=("workforce_provider_unavailable",),
+            calls_used=0,
         )""",
-        after="""        ranked = _calibrated_rankings(
-            scores,
-            minimum_margin=config.workforce.min_margin,
+        after="""    if not _inference_declared(config):
+        from agency_runtime.core.workforce.fallback import deterministic_plan_and_staff
+
+        offline = deterministic_plan_and_staff(
+            request,
+            snapshot,
+            config=config,
+            context=context,
         )
-        anchors = tuple(
-            agent_id for agent_id in _role_anchors(expected_unit) if agent_id in scores
-        )
-        if anchors:
-            anchor_ids = frozenset(anchors)
-            ranked = (
-                *((agent_id, 1.0) for agent_id in anchors),
-                *((agent_id, min(score, 0.99)) for agent_id, score in ranked if agent_id not in anchor_ids),
-            )""",
+        return WorkforceRoutingOutcome(
+            status="accepted",
+            mode=mode,
+            inference_mode="deterministic",
+            plan=offline.plan,
+            proposal=offline.proposal,
+            staffing=offline.staffing,
+            attempts=(),
+            abstention_codes=(),
+            calls_used=0,
+            decision_source="deterministic",
+        )""",
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_no_provider_declines_without_selecting_or_calling_the_model"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="online-plan-restores-deterministic-enrichment",
+        invariant="Production planning preserves the inference-authored plan without local additions.",
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""    return primary
+
+
+def _typed_shortlists(""",
+        after="""    from agency_runtime.core.workforce.intent import enrich_intent_plan
+
+    return enrich_intent_plan(primary, request=request, context=context)
+
+
+def _typed_shortlists(""",
         test_node=(
             "tests/test_workforce_selection_safety.py::"
-            "test_online_inference_ranking_is_not_reordered_by_a_role_anchor"
+            "test_production_staffing_entrypoints_have_no_deterministic_decider_dependency"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="unit-assignment-reinterprets-unavailable-inference",
+        invariant="An unavailable inference route cannot become an exact unit recommendation.",
+        source_path="agency_runtime/core/unit_assignment.py",
+        before='    if inference_mode not in {"inferred", "durable_reuse", "cached"}:',
+        after=(
+            '    if inference_mode not in {"inferred", "durable_reuse", "cached", "unavailable"}:'
+        ),
+        test_node=(
+            "tests/test_unit_assignment_selector.py::"
+            "test_unavailable_inference_cannot_be_reinterpreted_as_a_unit_assignment"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="unconfigured-child-preserves-specialist-selection",
+        invariant="An unconfigured child route clears every unproven specialist identity.",
+        source_path="agency_runtime/core/preflight.py",
+        before="""            selected_ids=[],
+            semantic_ids=[],
+            status="inference_unavailable",""",
+        after="""            selected_ids=list(routing.get("selected_ids", [])),
+            semantic_ids=list(routing.get("semantic_ids", [])),
+            status="inference_unavailable",""",
+        test_node=(
+            "tests/test_child_routing_coordination.py::"
+            "test_child_owner_failure_aborts_and_unconfigured_child_fails_closed"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="resident-steward-restores-imported-default-pair",
+        invariant=(
+            "Exactly one Agency-native steward is resident; imported managers remain optional "
+            "specialists."
+        ),
+        source_path="agency_runtime/core/resident_managers.py",
+        before=('RESIDENT_MANAGER_SLUGS: Final[tuple[str, ...]] = ("agency-steward",)'),
+        after=(
+            "RESIDENT_MANAGER_SLUGS: Final[tuple[str, ...]] = "
+            '("agents-orchestrator", "chief-of-staff")'
+        ),
+        test_node=(
+            "tests/test_resident_managers.py::"
+            "test_resident_identity_is_canonical_and_compatibility_aliases_share_it"
         ),
     ),
     DecisionMutation(
@@ -127,6 +205,19 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_workforce_inference.py::"
             "test_recruiter_repair_receives_every_invalid_unit_and_preserves_valid_rows"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="recruiter-gap-requires-invented-roster-candidate",
+        invariant=(
+            "Recruiter inference may declare a real gap with zero ranked roster candidates."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before='            or (decision == "staff" and not raw_ranks)',
+        after="            or not raw_ranks",
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_open_ended_pool_can_declare_gap_without_inventing_a_roster_candidate"
         ),
     ),
     DecisionMutation(
@@ -208,6 +299,75 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="activation-canary-accepts-no-inference-attempt",
+        invariant=(
+            "The Codex activation canary cannot select a worker without a recorded inference "
+            "attempt."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before='        (routing.get("inference_attempted") is True, "inference_attempted"),',
+        after='        (True, "inference_attempted"),',
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_rejects_missing_inference_attempt_evidence"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="activation-canary-accepts-no-provider-receipt",
+        invariant=(
+            "The Codex activation canary cannot select a worker without a nonempty provider "
+            "attempt receipt."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before="""            isinstance(routing.get("provider_attempts"), list)
+            and bool(routing["provider_attempts"]),""",
+        after="""            isinstance(routing.get("provider_attempts"), list)
+            and True,""",
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_rejects_missing_provider_attempt_receipts"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="activation-canary-enters-gap-hiring",
+        invariant="The read-only Codex activation canary cannot enter gap hiring.",
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before="        if activation_canary:\n            hiring_events = []",
+        after="        if False:\n            hiring_events = []",
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_uses_inference_owned_selection"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="activation-replay-drops-inferred-binding",
+        invariant=(
+            "The content-free activation recipe retains the exact inferred unit binding needed "
+            "for modern plan replay."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before=(
+            '    activation_canary = str(value.get("source") or "") == '
+            "CODEX_ACTIVATION_CANARY_ROUTE_SOURCE"
+        ),
+        after="    activation_canary = False",
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_preflight_replays_one_exact_selected_only_unit"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="modern-preflight-plan-drift-is-accepted",
+        invariant="Modern durable unit plans must exactly match their replayed construction.",
+        source_path="agency_runtime/core/preflight_recipe.py",
+        before="    elif rebuilt != unit_agent_plan:",
+        after="    elif False:",
+        test_node=(
+            "tests/test_turn_coverage_complete_header_preflight.py::"
+            "test_preflight_recipe_rejects_current_unit_plan_drift"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-host-restores-ephemeral-parent",
         invariant=(
             "Ordinary Codex product trials persist the parent turn required by native "
@@ -221,7 +381,7 @@ class _NominationSemantics:""",
     "--ignore-rules",""",
         test_node=(
             "tests/test_product_host.py::"
-            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
         ),
     ),
     DecisionMutation(
@@ -232,7 +392,7 @@ class _NominationSemantics:""",
         after='    "multi_agent_v1",',
         test_node=(
             "tests/test_product_host.py::"
-            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
         ),
     ),
     DecisionMutation(
@@ -243,7 +403,7 @@ class _NominationSemantics:""",
         after='    "agents.enabled=false",',
         test_node=(
             "tests/test_product_host.py::"
-            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
         ),
     ),
     DecisionMutation(
@@ -256,7 +416,7 @@ class _NominationSemantics:""",
         after="        require_existing_store=False,",
         test_node=(
             "tests/test_product_host.py::"
-            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
         ),
     ),
     DecisionMutation(
@@ -267,7 +427,34 @@ class _NominationSemantics:""",
         after="        hook_event_diagnostics=False,",
         test_node=(
             "tests/test_product_host.py::"
-            "test_codex_product_backend_persists_parent_without_single_child_rollout_constraint"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-disables-exact-rollout-correlation",
+        invariant=(
+            "Codex product trials correlate collaboration events from the exact child rollout."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before="        require_exact_activation_rollout=True,",
+        after="        require_exact_activation_rollout=False,",
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-mislabels-hook-bypass-as-attended",
+        invariant=(
+            "Codex product trials record the supported one-invocation bypass without claiming "
+            "attended trust."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before='        trust_mode="autonomous_bypass",',
+        after='        trust_mode="attended",',
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
         ),
     ),
     DecisionMutation(
@@ -366,11 +553,31 @@ class _NominationSemantics:""",
             "second model-authored identity."
         ),
         source_path="agency_runtime/core/workforce/hiring.py",
-        before="            contract = replace(contract, slug=existing.agent_id)",
-        after="            contract = contract",
+        before="    contract = replace(contract, slug=existing.agent_id)",
+        after="    contract = contract",
         test_node=(
             "tests/test_workforce_dynamic_hiring.py::"
             "test_amendment_binds_model_extension_slug_to_inferred_target"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="task-gap-restores-near-match-amendment",
+        invariant=(
+            "An ordinary task gap creates a distinct exact specialist instead of broadening "
+            "a near-match."
+        ),
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before=(
+            '    if action == "amend" and not allow_existing_worker_amendment:\n'
+            '        return failure("task_gap_requires_distinct_specialist")'
+        ),
+        after=(
+            '    if False and action == "amend" and not allow_existing_worker_amendment:\n'
+            '        return failure("task_gap_requires_distinct_specialist")'
+        ),
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_task_gap_rejects_near_match_amendment_in_open_ended_pool"
         ),
     ),
     DecisionMutation(
@@ -402,6 +609,100 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_workforce_dynamic_hiring.py::"
             "test_hire_reports_content_free_employment_revalidation_stage"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="terminal-inference-failure-restores-policy-selection",
+        invariant=(
+            "A terminal inference failure cannot be repopulated by deterministic policy "
+            "companions or fallbacks."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before=(
+            '    inference_failed = semantic_status in {"inference_unavailable", '
+            '"inference_invalid"}'
+        ),
+        after="    inference_failed = False",
+        test_node=(
+            "tests/test_routing_correctness.py::"
+            "test_full_route_never_repopulates_inference_failure_from_policy"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="isolated-plan-normalization-bypasses-specialist-gate",
+        invariant=(
+            "An isolated route rejected for lacking a child-activation plan cannot reach the "
+            "parent as an accepted substantive turn."
+        ),
+        source_path="agency_runtime/core/preflight.py",
+        before=(
+            "        _require_substantive_specialist(routing, classification)\n"
+            '        if delivery_mode == "isolated":'
+        ),
+        after='        if delivery_mode == "isolated":',
+        test_node=(
+            "tests/test_preflight_bounds.py::"
+            "test_isolated_preflight_blocks_selection_without_an_activation_plan"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-terminal-invalid-restores-continuation-prompt",
+        invariant=(
+            "A terminal Codex response failure stops the turn instead of creating a "
+            "model-visible correction prompt."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before="        return self._reject_completion(message, retry=True)",
+        after="        return self._reject_completion(message, retry=False)",
+        test_node=(
+            "tests/test_host_hooks.py::"
+            "test_identical_codex_invalid_stop_is_terminal_and_exactly_replayed"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-preflight-drops-initial-header-snapshot",
+        invariant=(
+            "Codex receives the exact Store-backed header snapshot before its first visible "
+            "response."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before='            marker="INITIAL",',
+        after='            marker="REMOVED",',
+        test_node=(
+            "tests/test_host_hooks.py::test_codex_stdio_preflight_header_is_accepted_first_pass"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="openclaw-finalize-restores-model-revision",
+        invariant=(
+            "OpenClaw terminal verification never asks the model to revise a natural response."
+        ),
+        source_path="agency_runtime/core/installer_payload_openclaw.py",
+        before="""      if (decision?.terminalRejected === true) {{
+        rememberTerminalRejection(decision, event, ctx);
+        return undefined;
+      }}""",
+        after="""      if (decision?.terminalRejected === true) {{
+        rememberTerminalRejection(decision, event, ctx);
+        return {{ action: "revise", message: String(decision?.message || "") }};
+      }}""",
+        test_node=(
+            "tests/test_adapter_parity.py::"
+            "test_generated_openclaw_plugin_is_native_openclaw_package"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="hermes-transform-repairs-unfinalized-response",
+        invariant=(
+            "Hermes blocks an unfinalized natural response instead of repairing it after "
+            "generation."
+        ),
+        source_path="agency_runtime/adapters/hermes/bridge.py",
+        before='        if decision.get("action") != "accept":',
+        after='        if False and decision.get("action") != "accept":',
+        test_node=(
+            "tests/test_completion_policy_boundary.py::"
+            "test_hermes_transform_rejects_unfinalized_natural_response_without_repair"
         ),
     ),
 )

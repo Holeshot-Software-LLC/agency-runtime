@@ -849,7 +849,11 @@ def enrich_intent_plan(
     request: str,
     context: StaffingContext,
 ) -> WorkUnitPlan:
-    """Merge deterministic lifecycle assurance into inferred primary intent."""
+    """Build the retired offline assurance oracle used by tests and evaluations.
+
+    Production inference validates the model-authored primary plan and never
+    calls this helper.
+    """
 
     from agency_runtime.core.workforce.fallback import deterministic_work_plan
 
@@ -941,5 +945,4 @@ __all__ = [
     "MAX_PRIMARY_UNITS",
     "compact_intent_taxonomy",
     "compile_intent_plan",
-    "enrich_intent_plan",
 ]

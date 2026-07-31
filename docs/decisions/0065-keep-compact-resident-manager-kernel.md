@@ -1,18 +1,20 @@
 ---
 title: "Keep a compact resident manager kernel at the parent boundary"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-30
 tags: [orchestration, managers, context, compaction, lifecycle]
 related:
   - docs/roadmap/issue-AR-25-turn-scoped-specialist-evidence.md
   - docs/roadmap/issue-AR-57-durable-agency-wide-master-switch.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
+  - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
+  - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0122-use-one-agency-native-resident-steward.md
 id: ADR-0065
 type: decision
 deciders: [maintainers]

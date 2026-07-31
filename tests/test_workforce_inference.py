@@ -80,6 +80,7 @@ def test_recruiter_schema_requires_explicit_staff_or_gap_decision() -> None:
 
     assert "decision" in row["required"]
     assert row["properties"]["decision"]["enum"] == ["staff", "gap"]
+    assert "minItems" not in row["properties"]["ranked_semantic"]
 
 
 def _contract(agent_id: str, *, enabled: bool = True) -> WorkforceContract:
@@ -706,6 +707,96 @@ def test_inference_uses_semantic_order_without_trusting_uncalibrated_score_gaps(
     assert row.margin == 0.1
 
 
+def test_recruiter_receives_complete_positive_and_negative_activation_contract() -> None:
+    qualifiers = tuple(f"preferred activation {index}" for index in range(1, 5))
+    exclusions = tuple(f"avoid activation {index}" for index in range(1, 5))
+    snapshot = _snapshot(
+        replace(
+            _contract("code-intelligence-evaluator"),
+            scope_qualifiers=qualifiers,
+            not_for=exclusions,
+        )
+    )
+    nominations = _nomination_document()
+    nominations["units"][0]["ranked_semantic"][0]["agent_id"] = "code-intelligence-evaluator"
+    prompts: list[dict[str, Any]] = []
+    systems: list[str] = []
+    responses = iter((_result(_compact_plan_document()), _result(nominations)))
+
+    def invoke(_provider, prompt, _schema, **kwargs):
+        prompts.append(json.loads(prompt))
+        systems.append(str(kwargs["system_prompt"]))
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Evaluate two code-intelligence tools for this repository.",
+        snapshot,
+        config=_config(),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert prompts[1]["detail_cards"] == [
+        {
+            "agent_id": "code-intelligence-evaluator",
+            "display_name": "Code Intelligence Evaluator",
+            "outcomes": ["Technical analysis"],
+            "scope_qualifiers": list(qualifiers),
+            "not_for": list(exclusions),
+        }
+    ]
+    assert "open-ended pool" in systems[1]
+    assert "who would I want handling this exact work" in systems[1]
+    assert "parent model or a generalist" in systems[1]
+    assert "declare a gap" in systems[1]
+
+
+def test_open_ended_pool_can_declare_gap_without_inventing_a_roster_candidate() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    novel_plan = _compact_plan_document()
+    novel_plan["request_summary"] = "Evaluate a quantum compiler build system."
+    novel_plan["units"][0].update(
+        outcome="Evaluate the quantum compiler build system",
+        domains=["quantum-build-systems"],
+        novel_capability="quantum-build-evaluation",
+    )
+    gap = {
+        "units": [
+            {
+                "unit_id": "unit-analyze",
+                "decision": "gap",
+                "ranked_semantic": [],
+            }
+        ]
+    }
+    recruiter_prompt: dict[str, Any] = {}
+    responses = iter((_result(novel_plan), _result(gap)))
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        if "detail_cards" in payload:
+            recruiter_prompt.update(payload)
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Evaluate an unfamiliar quantum compiler build system.",
+        snapshot,
+        config=_config(),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert recruiter_prompt["detail_cards"] == []
+    assert not outcome.accepted
+    assert outcome.inference_mode == "inferred"
+    assert outcome.decision_source == "inferred"
+    assert outcome.proposal is not None
+    assert outcome.proposal.units[0].ranked_semantic == ()
+    assert outcome.proposal.units[0].selected == ()
+    assert outcome.proposal.units[0].abstention_reasons == ("inference-declared-gap",)
+
+
 def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     invalid = _compact_plan_document()
@@ -772,7 +863,7 @@ def test_default_fast_mode_funds_recruiter_contract_repair_after_planning() -> N
     assert outcome.attempts[1].reason_code == "provider_response_contract_invalid"
 
 
-def test_configured_inference_failure_abstains_without_keyword_selection() -> None:
+def test_configured_inference_failure_is_loud_without_keyword_selection() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     outcome = plan_and_staff_workforce(
         "Analyze this implementation safely.",
@@ -784,7 +875,11 @@ def test_configured_inference_failure_abstains_without_keyword_selection() -> No
 
     assert not outcome.accepted
     assert outcome.plan is None
-    assert outcome.abstention_codes == ("workforce_inference_failed",)
+    assert outcome.status == "inference_unavailable"
+    assert outcome.abstention_codes == (
+        "inference_unavailable",
+        "workforce_inference_failed",
+    )
     assert outcome.calls_used == 1
     assert outcome.attempts[0].status == "failed"
 
@@ -951,7 +1046,7 @@ def test_inference_forbidden_near_neighbor_is_not_selected_despite_higher_score(
     assert outcome.proposal.units[0].forbidden == ("plausible-wrong-neighbor",)
 
 
-def test_typed_shortlist_breaks_coverage_ties_with_unit_semantics() -> None:
+def test_typed_shortlist_is_canonical_recall_without_local_ranking() -> None:
     generic = replace(
         _contract("generic-evidence-reviewer"),
         outcomes=("Review accessibility compliance evidence",),
@@ -983,7 +1078,10 @@ def test_typed_shortlist_breaks_coverage_ties_with_unit_semantics() -> None:
 
     shortlist = _typed_shortlists(parsed, (generic, analyzer))
 
-    assert shortlist[0]["candidates"][0]["agent_id"] == "test-results-analyzer"
+    candidate_ids = [item["agent_id"] for item in shortlist[0]["candidates"]]
+    assert candidate_ids == sorted(candidate_ids)
+    assert candidate_ids == ["generic-evidence-reviewer", "test-results-analyzer"]
+    assert shortlist[0]["role_anchors"] == []
 
 
 def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
@@ -1006,7 +1104,12 @@ def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
     assert not outcome.accepted
     assert outcome.calls_used == 3
     assert [item.stage for item in outcome.attempts] == ["planner", "recruiter", "critic"]
-    assert outcome.abstention_codes == ("staffing_critic_rejected", "wrong-neighbor-risk")
+    assert outcome.status == "inference_invalid"
+    assert outcome.abstention_codes == (
+        "inference_invalid",
+        "staffing_critic_rejected",
+        "wrong-neighbor-risk",
+    )
 
 
 def test_fast_mode_uses_planner_and_recruiter_and_binds_runtime_hashes() -> None:
@@ -1058,21 +1161,19 @@ def test_no_provider_declines_without_selecting_or_calling_the_model() -> None:
         invoker=lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("called")),
     )
 
-    # ADR-0088: with no inference provider configured the runtime runs a
-    # deterministic typed-recall floor instead of declining. A non-trivial,
-    # non-ambiguous ask against a governable single specialist is accepted by
-    # that floor, but the model is never called (it cannot be, offline).
-    assert outcome.accepted
-    assert outcome.status == "accepted"
-    assert outcome.inference_mode == "deterministic"
-    assert outcome.decision_source == "deterministic"
+    assert not outcome.accepted
+    assert outcome.status == "inference_unavailable"
+    assert outcome.inference_mode == "unavailable"
+    assert outcome.decision_source == "none"
     assert outcome.calls_used == 0
     assert outcome.attempts == ()
-    assert outcome.abstention_codes == ()
-    assert outcome.plan is not None
-    assert outcome.staffing.accepted
-    assert len(outcome.staffing.units) == 1
-    assert outcome.staffing.units[0].selected == ("technical-analyst",)
+    assert outcome.abstention_codes == (
+        "inference_unavailable",
+        "workforce_provider_unavailable",
+    )
+    assert outcome.plan is None
+    assert outcome.proposal is None
+    assert outcome.staffing.units == ()
 
 
 def test_deterministic_plan_prioritizes_explicit_security_review_over_generic_code_terms() -> None:
@@ -1252,29 +1353,16 @@ def test_no_provider_code_change_declines_without_a_governed_team() -> None:
         context=_context(),
     )
 
-    # ADR-0088: with no provider the runtime runs the deterministic typed-recall
-    # floor. A complete governed team (implementer, tester, reviewer, results
-    # analyzer) on the bench is now staffed by that floor rather than declined,
-    # and the model is never called. The inference-path outcome that previously
-    # lived here moves to the inference suite; this test now anchors the floor's
-    # ability to assemble the governed team offline.
-    assert outcome.accepted
-    assert outcome.status == "accepted"
-    assert outcome.inference_mode == "deterministic"
-    assert outcome.decision_source == "deterministic"
+    assert not outcome.accepted
+    assert outcome.status == "inference_unavailable"
+    assert outcome.inference_mode == "unavailable"
+    assert outcome.decision_source == "none"
     assert outcome.calls_used == 0
     assert outcome.attempts == ()
-    assert outcome.abstention_codes == ()
-    assert outcome.plan is not None
-    assert outcome.staffing.accepted
-    assert len(outcome.staffing.units) == 4
-    staffed = {agent for unit in outcome.staffing.units for agent in unit.selected}
-    assert staffed == {
-        "python-application-engineer",
-        "software-test-engineer",
-        "code-reviewer",
-        "test-results-analyzer",
-    }
+    assert outcome.abstention_codes[0] == "inference_unavailable"
+    assert outcome.plan is None
+    assert outcome.proposal is None
+    assert outcome.staffing.units == ()
 
 
 def test_no_provider_ambiguous_or_trivial_request_declines() -> None:
@@ -1293,13 +1381,9 @@ def test_no_provider_ambiguous_or_trivial_request_declines() -> None:
         context=_context(),
     )
 
-    # ADR-0088: offline the deterministic floor still abstains on trivial or
-    # ambiguous intent rather than force a wrong typed pick. The decline is now
-    # stamped "deterministic_abstained" (decision_source "none") instead of the
-    # old "declined_no_provider" hard decline.
     for outcome in (trivial, ambiguous):
-        assert outcome.status == "declined"
-        assert outcome.inference_mode == "deterministic_abstained"
+        assert outcome.status == "inference_unavailable"
+        assert outcome.inference_mode == "unavailable"
         assert outcome.decision_source == "none"
         assert outcome.calls_used == 0
         assert outcome.plan is None

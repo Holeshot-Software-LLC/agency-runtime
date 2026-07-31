@@ -290,7 +290,7 @@ def format_isolated_specialist_context(
         "Skills loaded: <skill-id[, skill-id...] or none>\n"
         "Actual Model selected: <requested alias> -> <resolved provider/model or "
         "unavailable reason>\n"
-        "Recruited via: <inference | deterministic | cached | none>\n"
+        "Recruited via: <inference | cached | none>\n"
         "Why: <one evidence-grounded line>\n"
         "How it shaped outcome: <one evidence-grounded line>"
     )

@@ -27,14 +27,11 @@ MAX_OUTPUT_BYTES = 131_072
 MAX_DEPTH = 20
 MAX_NODES = 8_192
 MAX_TEXT_BYTES = 65_536
+MAX_PREFLIGHT_CONTEXT_BYTES = 48_000
 
 FINALIZATION_BLOCK_RESPONSE = (
     "Agency Runtime blocked an unverified draft because turn-scoped finalization "
     "did not accept it. Restore correlation and evidence, then start a new turn."
-)
-PRE_VERIFY_UNAVAILABLE = (
-    "Agency Runtime could not verify this draft. Restore turn correlation and "
-    "evidence, then retry once."
 )
 
 
@@ -44,6 +41,82 @@ def _bounded_text(value: object, *, maximum_bytes: int = MAX_TEXT_BYTES) -> str:
     if len(encoded) <= maximum_bytes:
         return text
     return encoded[:maximum_bytes].decode("utf-8", errors="ignore")
+
+
+def _header_snapshot_context(
+    adapter: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    model: str,
+) -> str:
+    """Render exact first-pass header guidance from current-turn Store evidence."""
+
+    if not session_id or not trace_id:
+        return ""
+    from agency_runtime.core.header.contract import (
+        EvidenceCorrelationError,
+        fill_header_fields,
+        format_header,
+    )
+
+    try:
+        header = format_header(
+            fill_header_fields(
+                {},
+                session_id,
+                adapter.store,
+                model,
+                trace_id,
+            )
+        )
+    except (
+        AttributeError,
+        EvidenceCorrelationError,
+        KeyError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+    ):
+        return ""
+    return (
+        "[AGENCY INITIAL HEADER SNAPSHOT v1]\n"
+        "Use these exact seven lines for substantive progress until Agency evidence "
+        "changes. Immediately before the natural final response, call `agency.finalize` "
+        f"exactly once with session_id `{session_id}`, trace_id `{trace_id}`, and the "
+        "response body as draft_text; emit its returned text byte-for-byte. That local "
+        "tool constructs the first visible header from current Store evidence. Never "
+        "guess changed values and never wait for a host correction.\n"
+        f"{header}"
+    )
+
+
+def _append_header_snapshot(
+    result: Any,
+    adapter: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    model: str,
+) -> Any:
+    """Append an exact snapshot without exceeding Hermes's context budget."""
+
+    if not isinstance(result, Mapping):
+        return result
+    snapshot = _header_snapshot_context(
+        adapter,
+        session_id=session_id,
+        trace_id=trace_id,
+        model=model,
+    )
+    if not snapshot:
+        return result
+    current = result.get("context")
+    base = current.rstrip() if isinstance(current, str) else ""
+    combined = f"{base}\n\n{snapshot}" if base else snapshot
+    if len(combined.encode("utf-8")) > MAX_PREFLIGHT_CONTEXT_BYTES:
+        return result
+    return {**dict(result), "context": combined}
 
 
 def _native_child_outcome(value: object) -> str:
@@ -103,16 +176,6 @@ def _attempt_number(value: object) -> int:
     return normalized if normalized >= 0 else 1
 
 
-def _bounded_continuation(decision: object = None) -> dict[str, str]:
-    message = ""
-    if isinstance(decision, Mapping):
-        message = _bounded_text(decision.get("message"), maximum_bytes=512)
-    return {
-        "action": "continue",
-        "message": message.strip() or PRE_VERIFY_UNAVAILABLE,
-    }
-
-
 def _terminalize_policy_rejection(
     adapter: HermesAdapter,
     final_response: str,
@@ -150,7 +213,7 @@ def _terminalize_policy_rejection(
         rejection_action = (
             "delegation_declined"
             if decision.get("delegation_strength") == "strongly_preferred"
-            else "retry_exhausted"
+            else "response_invalid"
         )
         committed = adapter.store.commit_terminal_finalization(
             session_id=session_id,
@@ -158,6 +221,7 @@ def _terminalize_policy_rejection(
             host="hermes",
             action=rejection_action,
             response_hash=replacement_hash,
+            policy_response_hash=response_hash(final_response),
             status=rejection_action,
             expected_evidence_revision=revision,
             missing=normalized_missing,
@@ -189,11 +253,9 @@ def _pre_verify(adapter: HermesAdapter, payload: Mapping[str, Any]) -> dict[str,
             trace_id=trace_id,
         )
     except Exception:
-        decision = _bounded_continuation()
+        return None
     if not isinstance(decision, dict) or decision.get("action") != "continue":
         return None
-    if attempt == 0:
-        return _bounded_continuation(decision)
     _terminalize_policy_rejection(
         adapter,
         final_response,
@@ -210,22 +272,46 @@ def _transform_output(adapter: HermesAdapter, payload: Mapping[str, Any]) -> str
     trace_id = _bounded_text(payload.get("trace_id"), maximum_bytes=512)
     model = _bounded_text(payload.get("model"), maximum_bytes=512)
     try:
+        effective_trace = adapter.resolve_turn_trace(session_id, trace_id)
+        from agency_runtime.core.header.finalize import accepted_response_run
+
+        replay = accepted_response_run(
+            adapter.store,
+            session_id,
+            effective_trace,
+            response_text,
+        )
+        if (
+            isinstance(replay, Mapping)
+            and replay.get("authoritative") is True
+            and replay.get("action") == "accept"
+            and replay.get("terminal_status") == "completed"
+            and replay.get("status") == "completed"
+        ):
+            return response_text
+        decision = adapter.evaluate_completion_policy(
+            response_text,
+            session_id=session_id,
+            model=model,
+            trace_id=effective_trace,
+        )
+        if decision.get("action") != "accept":
+            _terminalize_policy_rejection(
+                adapter,
+                response_text,
+                session_id,
+                effective_trace,
+                model,
+            )
+            return FINALIZATION_BLOCK_RESPONSE
         finalized = adapter.apply_finalization(
             response_text,
             session_id,
             model,
-            trace_id=trace_id,
+            trace_id=effective_trace,
         )
     except Exception as error:
-        result = getattr(error, "finalization_result", None)
-        if isinstance(result, dict) and result.get("action") != "accept":
-            _terminalize_policy_rejection(
-                adapter,
-                _bounded_text(result.get("text")),
-                session_id,
-                trace_id,
-                model,
-            )
+        del error
         return FINALIZATION_BLOCK_RESPONSE
     if isinstance(finalized, str) and finalized.strip():
         return _bounded_text(finalized)
@@ -312,8 +398,13 @@ def _pre_llm_call(
             native_worker_id=native_worker_id,
             native_run_id=native_run_id,
         )
-    return adapter.pre_llm_call_handler(
-        **handler_kwargs,
+    result = adapter.pre_llm_call_handler(**handler_kwargs)
+    return _append_header_snapshot(
+        result,
+        adapter,
+        session_id=session_id,
+        trace_id=resolved_trace_id,
+        model=str(handler_kwargs["model"]),
     )
 
 
@@ -472,7 +563,6 @@ __all__ = [
     "FINALIZATION_BLOCK_RESPONSE",
     "MAX_INPUT_BYTES",
     "MAX_OUTPUT_BYTES",
-    "PRE_VERIFY_UNAVAILABLE",
     "handle",
     "main",
 ]

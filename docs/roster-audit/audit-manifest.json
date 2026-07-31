@@ -79,8 +79,8 @@
           "specialized": 56
         },
         "review": "batch-specialized-review.md",
-        "artifact_sha256": "1b718b54b3e3aacd77b9f4668917b9b3bf20264d62998ea563e4a79528c457c0",
-        "review_sha256": "1264771a2e7039fc8714567743e83d45131adfa6965c853a68e610d85d1a6b89"
+        "artifact_sha256": "714a9c24705fb99899498807e8db6bd73d36ab52247f7b6f1ff48395d846152f",
+        "review_sha256": "0d1c2ad2528a35a1da2b2e94940c0dd6dede7044364469f0bcc17529d00bfd98"
       }
     }
   },

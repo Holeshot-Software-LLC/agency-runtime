@@ -3,7 +3,7 @@ title: "Roster semantic safety audit - specialized and spatial batch"
 status: active
 category: governance
 created: 2026-07-17
-updated: 2026-07-22
+updated: 2026-07-30
 tags:
   - roster
   - security
@@ -41,6 +41,14 @@ cancellation, stale-file, duplicate-symbol, hostile-input, and benchmark evidenc
 contracts. It permits bounded diagnosis before an implementation decision; it does
 not grant independent review authority, host mutation, global tool installation, or
 an unsupported performance claim.
+
+Audit revision 2 also narrows the two imported coordination roles to their defensible
+activation scopes. `agents-orchestrator` is preferred for multi-specialist
+decomposition and delegation design, while `chief-of-staff` is preferred for
+sustained program or executive coordination. Both now carry explicit negative
+criteria for bounded work that does not need their coordination layer. Neither
+role is universal or resident; the separate Agency-native `agency-steward`
+kernel owns the parent evidence boundary and is not part of this upstream batch.
 
 ## Scope and method
 
@@ -106,7 +114,7 @@ The nested game-development completion added exactly these **15** paths, coverin
 | Stale legal, market, and vendor facts | Fixed deadlines, code editions, platform fees, rates, margins, limits, SDK and engine APIs, UGC specifications, renderer capabilities, networking defaults, immigration rules, code sets, government program status, vendor capabilities, and product versions must be reverified against current primary sources for the target jurisdiction and date. |
 | Illustrative code and arithmetic | Embedded LSP, MCP, shader, GIS, identity, statistical, inventory, risk, structural, billing, Blender, Godot, Roblox, Unity, and Unreal examples are not trusted implementations. They include incomplete dependencies, authority contradictions, unsafe persistence, platform assumptions, fragile thresholds, method limitations, and untested performance or safety claims. |
 | Portability and host ownership | POSIX shell snippets, global installers, Apple-only toolchains, proprietary GIS and BIM applications, game engines, DCC tools, GPU profilers, cloud services, licensed code references, and vendor CLIs do not prove host availability. Bounded contracts are portable at the reasoning layer, while native builds and executions remain conditional on discovered host tools. |
-| Orchestration and instruction conflicts | The fixed agent hierarchy, forced delegation, mandatory registry mutation, hidden reasoning, universal response formats, and cross-repository companion dependency are inactive. The resident orchestrator and chief of staff produce recommendations and evidence boundaries while the native harness owns scheduling and execution. |
+| Orchestration and instruction conflicts | The fixed agent hierarchy, forced delegation, mandatory registry mutation, hidden reasoning, universal response formats, and cross-repository companion dependency are inactive. Imported coordination roles execute only an inference-selected bounded assignment; the Agency-native steward owns the parent evidence boundary and the native harness owns scheduling and execution. |
 
 No source in this batch required quarantine because each useful specialty could be
 separated from its unsafe authority through a bounded projection. Future revisions
@@ -156,9 +164,9 @@ Concrete dependencies are:
 - `report-distribution-agent → data-consolidation-agent`
 - `solution-engineer → technical-consultant`
 
-The resident-manager kernel keeps Agents Orchestrator and Chief of Staff present
-together outside ordinary specialist dependency closure, so their roster contracts
-must not encode a reciprocal `requires` cycle. Solution engineering requires
+Agents Orchestrator and Chief of Staff are ordinary inference-selected specialists;
+their roster contracts do not encode a reciprocal `requires` cycle. The separate
+Agency-native steward does not enter dependency closure. Solution engineering requires
 strategy framing, data consolidation requires validated extraction, and distribution
 requires a reviewed consolidated report. A raw prompt naming another persona does
 not otherwise self-activate it.

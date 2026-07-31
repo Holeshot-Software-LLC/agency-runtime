@@ -486,7 +486,7 @@ def test_delegate_normalizes_backend_outcomes(monkeypatch, outcome, expected_sta
 
 
 def test_delegate_rejects_invalid_timeout_and_backend(monkeypatch, capsys):
-    assert delegation.cmd_delegate(_args(agent="chief-of-staff")) == 2
+    assert delegation.cmd_delegate(_args(agent="agency-steward")) == 2
     assert "parent-only" in capsys.readouterr().err
     assert delegation.cmd_delegate(_args(timeout=float("nan"))) == 2
     assert "finite value" in capsys.readouterr().err

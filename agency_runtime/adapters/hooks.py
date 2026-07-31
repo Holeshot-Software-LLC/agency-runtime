@@ -47,12 +47,6 @@ from agency_runtime.core.observability import (
     correlate_current_observation,
     mark_current_observation,
 )
-from agency_runtime.core.retry_receipts import (
-    attach_retry_receipt as _attach_retry_receipt,
-)
-from agency_runtime.core.retry_receipts import (
-    normalize_receipt_id as _normalize_receipt_id,
-)
 from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.unit_assignment import (
@@ -121,6 +115,11 @@ def _emit_codex_hook_event_diagnostic(
 _VERIFICATION_UNAVAILABLE = (
     "Agency Runtime could not verify or persist the turn-scoped evidence contract. "
     "Do not publish this response; restore the evidence store and start a new turn."
+)
+_PREFLIGHT_UNAVAILABLE = (
+    "AGENCY PREFLIGHT FAILED: Agency could not produce and persist an accepted specialist "
+    "or contractor route. The parent model is not allowed to answer as a generalist. "
+    "Restore inference or staffing, then start a new turn."
 )
 _STOP_EVENT_DISCRIMINATOR = re.compile(
     rb'"hook_event_name"\s*:\s*"Stop"',
@@ -236,7 +235,17 @@ def _boundary_failure_result(
     expected_event: str = "",
     host: str = "",
 ) -> dict[str, Any]:
-    """Block Agency-owned child launches and recognizable malformed Stop events."""
+    """Block failed preflight, Agency-owned launches, and malformed Stop events."""
+
+    parsed_user_prompt = (
+        isinstance(payload, dict) and payload.get("hook_event_name") == "UserPromptSubmit"
+    )
+    if expected_event == "UserPromptSubmit" or parsed_user_prompt:
+        # Codex documents decision:block for UserPromptSubmit. Blocking here is
+        # materially earlier than relying on the Stop verifier: a failed
+        # specialist route must never spend a parent-model turn producing a
+        # generalist answer that can only be rejected after generation.
+        return _completion_rejection(_PREFLIGHT_UNAVAILABLE, retry=False)
 
     if isinstance(payload, dict) and _agency_owned_native_child_pre_tool_use(payload, host):
         return _pre_tool_use_denial(_VERIFICATION_UNAVAILABLE, host=host)
@@ -817,7 +826,7 @@ class HookBridge:
             for row in activity.get("finalizations", [])
             if isinstance(row, dict)
             and row.get("trace_id")
-            and row.get("action") in {"accept", "retry_exhausted"}
+            and row.get("action") in TERMINAL_ACTION_STATUS
         }
         open_traces = {
             str(row.get("trace_id"))
@@ -2156,7 +2165,7 @@ class HookBridge:
             tool_use_id=correlation.tool_use_id,
             agent_id=_optional_string(payload, "agent_id"),
         )
-        return self._codex_post_wait_header_output(
+        return self._codex_post_tool_header_output(
             event=event,
             tool_name=tool_name,
             tool_response=observed_tool_response,
@@ -2165,7 +2174,7 @@ class HookBridge:
             model=correlation.model,
         )
 
-    def _codex_post_wait_header_output(
+    def _codex_post_tool_header_output(
         self,
         *,
         event: str,
@@ -2175,7 +2184,7 @@ class HookBridge:
         trace_id: str,
         model: str,
     ) -> dict[str, Any]:
-        """Return bounded Codex PostToolUse context after a successful wait."""
+        """Return the latest bounded Codex header after recorded tool evidence."""
 
         context = self._codex_post_wait_header_context(
             event=event,
@@ -2185,6 +2194,19 @@ class HookBridge:
             trace_id=trace_id,
             model=model,
         )
+        if not context:
+            context = self._codex_header_snapshot_context(
+                session_id=session_id,
+                trace_id=trace_id,
+                model=model,
+                marker="UPDATED",
+                instruction=(
+                    "Agency recorded the preceding tool observation. Start the next "
+                    "substantive or final parent response with these exact seven lines, "
+                    "unchanged, then add the response body. A later Agency header snapshot "
+                    "for this turn supersedes this one."
+                ),
+            )
         if not context:
             return {}
         return {
@@ -2221,6 +2243,31 @@ class HookBridge:
             or _first_string(response, "message") != "Wait completed."
         ):
             return ""
+        return self._codex_header_snapshot_context(
+            session_id=session_id,
+            trace_id=trace_id,
+            model=model,
+            marker="FINAL",
+            instruction=(
+                "The native wait completed. Start the next substantive or final parent "
+                "response with these exact seven lines, unchanged, then add the response "
+                "body. This is current-turn Store evidence, not a suggested draft."
+            ),
+        )
+
+    def _codex_header_snapshot_context(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        model: str,
+        marker: str,
+        instruction: str,
+    ) -> str:
+        """Render one exact current-turn header without manufacturing evidence."""
+
+        if self.host != "codex" or not session_id or not trace_id:
+            return ""
         from agency_runtime.core.header.contract import (
             EvidenceCorrelationError,
             fill_header_fields,
@@ -2239,13 +2286,7 @@ class HookBridge:
             )
         except (EvidenceCorrelationError, KeyError, RuntimeError, ValueError):
             return ""
-        return (
-            "[AGENCY FINAL HEADER SNAPSHOT v1]\n"
-            "The native wait completed. Start the next substantive or final parent "
-            "response with these exact seven lines, unchanged, then add the response "
-            "body. This is current-turn Store evidence, not a suggested draft.\n"
-            f"{header}"
-        )
+        return f"[AGENCY {marker} HEADER SNAPSHOT v1]\n{instruction}\n{header}"
 
     def _handle_user_prompt_submit(self, payload: dict[str, Any]) -> dict[str, Any]:
         prompt = _required_string(payload, "prompt")
@@ -2282,10 +2323,24 @@ class HookBridge:
                 reservation,
             )
             return {}
+        header_context = self._codex_header_snapshot_context(
+            session_id=correlation.session_id,
+            trace_id=trace_id,
+            model=correlation.model,
+            marker="INITIAL",
+            instruction=(
+                "Start each substantive progress update and the final parent response "
+                "with these exact seven lines, unchanged, then add the response body. "
+                "A later Agency header snapshot for this turn supersedes this one."
+            ),
+        )
+        combined_context = f"{context.rstrip()}\n\n{header_context}" if header_context else context
+        if len(combined_context) > MAX_CONTEXT_CHARS:
+            combined_context = context
         return {
             "hookSpecificOutput": {
                 "hookEventName": "UserPromptSubmit",
-                "additionalContext": context[:MAX_CONTEXT_CHARS],
+                "additionalContext": combined_context[:MAX_CONTEXT_CHARS],
             }
         }
 
@@ -2549,11 +2604,10 @@ class HookBridge:
             self._close_turn(correlation.session_id, trace_id, "verification_failed")
             return self._reject_completion(_VERIFICATION_UNAVAILABLE, retry=True)
         if verification.get("action") == "continue":
-            return self._handle_continuation_decision(
+            return self._handle_terminal_rejection(
                 correlation=correlation,
                 trace_id=trace_id,
                 final_response=final_response,
-                host_retry=host_retry,
                 verification=verification,
             )
 
@@ -2572,58 +2626,27 @@ class HookBridge:
             return self._reject_completion(_VERIFICATION_UNAVAILABLE, retry=True)
         return {}
 
-    def _handle_continuation_decision(
+    def _handle_terminal_rejection(
         self,
         *,
         correlation: HookCorrelation,
         trace_id: str,
         final_response: str,
-        host_retry: bool,
         verification: dict[str, Any],
     ) -> dict[str, Any]:
-        """Claim one retry or terminalize the already revalidated response."""
+        """Bind the first invalid response as a loud, non-corrective failure."""
 
-        reason = str(
-            verification.get("message")
-            or "Agency Runtime evidence verification requires another pass."
-        )
-        claim = self._claim_continuation(
-            session_id=correlation.session_id,
-            trace_id=trace_id,
-            response_text=final_response,
-            retry_active=host_retry,
-            missing=(
-                [str(item) for item in verification["missing"]]
-                if isinstance(verification.get("missing"), list)
-                and all(isinstance(item, str) for item in verification["missing"])
-                else []
-            ),
-        )
-        if claim is None:
-            return self._verification_failed(correlation.session_id, trace_id)
-        if claim["outcome"] == "claimed":
-            return self._reject_completion(
-                _attach_retry_receipt(reason, claim["receipt_id"]),
-                retry=False,
-            )
-
-        # ``_handle_stop`` verified this exact response immediately before the
-        # atomic continuation claim.  Re-running the provider here caused the
-        # second Stop callback to be evaluated twice and made exact terminal
-        # replay observably non-idempotent.  The terminal commit below binds
-        # the verified evidence revision with a CAS, so a concurrent evidence
-        # change fails closed without another provider call.
-        if verification.get("runtime_disabled") is True:
-            return {}
-        if verification.get("action") == "accept":
-            action = "accept"
-            status = "completed"
-        elif verification.get("delegation_strength") == "strongly_preferred":
+        if verification.get("delegation_strength") == "strongly_preferred":
             action = "delegation_declined"
-            status = "delegation_declined"
         else:
-            action = "retry_exhausted"
-            status = "retry_exhausted"
+            action = "response_invalid"
+        status = TERMINAL_ACTION_STATUS[action]
+        missing = (
+            [str(item) for item in verification["missing"]]
+            if isinstance(verification.get("missing"), list)
+            and all(isinstance(item, str) for item in verification["missing"])
+            else []
+        )
         committed = self._commit_terminal_finalization(
             session_id=correlation.session_id,
             trace_id=trace_id,
@@ -2631,61 +2654,15 @@ class HookBridge:
             status=status,
             response_text=final_response,
             expected_evidence_revision=verification.get("evidence_revision"),
+            missing=missing,
         )
         if not committed:
             return self._verification_failed(correlation.session_id, trace_id)
-        if action == "accept":
-            return {}
         return self._terminal_completion_result(action)
 
     def _verification_failed(self, session_id: str, trace_id: str) -> dict[str, Any]:
         self._close_turn(session_id, trace_id, "verification_failed")
         return self._reject_completion(_VERIFICATION_UNAVAILABLE, retry=True)
-
-    def _claim_continuation(
-        self,
-        *,
-        session_id: str,
-        trace_id: str,
-        response_text: str,
-        retry_active: bool,
-        missing: list[str] | None = None,
-    ) -> dict[str, str] | None:
-        """Atomically claim, replay, or exhaust one revision opportunity."""
-
-        from agency_runtime.core.header.finalize import response_hash
-
-        claimer = getattr(self.store, "claim_continuation", None)
-        if not callable(claimer):
-            return None
-        digest = response_hash(response_text)
-        try:
-            result = claimer(
-                session_id=session_id,
-                trace_id=trace_id,
-                host=self.host,
-                response_hash=digest,
-                retry_active=retry_active,
-                missing=list(missing or []),
-            )
-        except Exception:
-            return None
-        if not isinstance(result, dict) or result.get("outcome") not in {
-            "claimed",
-            "replay",
-            "exhausted",
-        }:
-            return None
-        if result.get("response_hash") != digest:
-            return None
-        receipt_id = _normalize_receipt_id(result.get("receipt_id"))
-        if result["outcome"] in {"claimed", "replay"} and not receipt_id:
-            return None
-        return {
-            "outcome": str(result["outcome"]),
-            "receipt_id": receipt_id,
-            "response_hash": digest,
-        }
 
     def _commit_terminal_finalization(
         self,
@@ -2696,6 +2673,7 @@ class HookBridge:
         status: str,
         response_text: str,
         expected_evidence_revision: Any,
+        missing: list[str] | None = None,
     ) -> bool:
         """Atomically bind one terminal response outcome to its exact turn."""
         from agency_runtime.core.header.finalize import response_hash
@@ -2718,6 +2696,7 @@ class HookBridge:
             "response_hash": digest,
             "status": status,
             "expected_evidence_revision": expected_evidence_revision,
+            "missing": list(missing or []),
         }
         if action == "accept" and status == "completed":
             from agency_runtime.core.turn_intent import classify_pending_interaction
@@ -2849,12 +2828,20 @@ class HookBridge:
                 )
                 verification = {"action": "accept"} if legacy is None else legacy
         except Exception:
-            return {"action": "continue", "message": _VERIFICATION_UNAVAILABLE}
+            return {
+                "action": "continue",
+                "message": _VERIFICATION_UNAVAILABLE,
+                "verification_unavailable": True,
+            }
         if not isinstance(verification, dict) or verification.get("action") not in {
             "accept",
             "continue",
         }:
-            return {"action": "continue", "message": _VERIFICATION_UNAVAILABLE}
+            return {
+                "action": "continue",
+                "message": _VERIFICATION_UNAVAILABLE,
+                "verification_unavailable": True,
+            }
         revision = verification.get("evidence_revision")
         valid_revision = (
             isinstance(revision, int) and not isinstance(revision, bool) and revision > 0

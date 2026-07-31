@@ -247,8 +247,8 @@ def _install_exact_route(
             "context_fingerprint": "b" * 64,
             "source_message_hash": "c" * 64,
             "work_units": detect_work_units(user_message),
-            "inference_configured": False,
-            "inference_mode": "heuristic",
+            "inference_configured": True,
+            "inference_mode": "inferred",
         }
 
     monkeypatch.setattr(pipeline, "route", fake_route)
@@ -292,7 +292,7 @@ def test_mixed_dependency_route_never_emits_an_independent_delegation_plan(
     assert store.get_delegations("trace") == []
 
 
-def test_each_work_unit_gets_its_best_selected_specialist() -> None:
+def test_selected_team_is_not_reinterpreted_as_per_unit_assignments() -> None:
     routing = _routing(
         selected_ids=[
             "technical-writer",
@@ -310,17 +310,11 @@ def test_each_work_unit_gets_its_best_selected_specialist() -> None:
 
     plan = build_unit_agent_plan(routing)
 
-    assert [item["recommended_agent"] for item in plan] == [
-        "code-reviewer",
-        "technical-writer",
-        "security-engineer",
-        "workflow-architect",
-    ]
-    assert {item["assignment_version"] for item in plan} == {str(UNIT_AGENT_ASSIGNMENT_VERSION)}
+    assert plan == []
     assert preflight_recipe._suggestion_recipe(routing) == plan
 
 
-def test_metadata_disambiguates_opaque_agent_slugs() -> None:
+def test_unconfigured_metadata_routing_fails_closed() -> None:
     routing = _routing(
         selected_ids=["agent-01", "agent-02"],
         units=[
@@ -354,11 +348,11 @@ def test_metadata_disambiguates_opaque_agent_slugs() -> None:
 
     plan = build_unit_agent_plan(routing)
 
-    assert [item["recommended_agent"] for item in plan] == ["agent-01", "agent-02"]
-    assert {item["assignment_version"] for item in plan} == {str(UNIT_AGENT_ASSIGNMENT_VERSION)}
+    assert routing["unit_assignment_agents"] == []
+    assert plan == []
 
 
-def test_each_delegated_unit_can_select_a_specialist_outside_global_top_three() -> None:
+def test_exact_inference_assignment_can_select_a_specialist_outside_global_team() -> None:
     catalog = [
         {
             "slug": "code-reviewer",
@@ -401,7 +395,26 @@ def test_each_delegated_unit_can_select_a_specialist_outside_global_top_three() 
         ],
     )
 
-    snapshot = assignment_agents_from_catalog(catalog, routing)
+    database_unit_id = work_unit_id_from_text("Migrate the PostgreSQL database schema")
+    documentation_unit_id = work_unit_id_from_text("Write installation documentation in the README")
+    snapshot = project_unit_assignment_agents(
+        [
+            {
+                **catalog[3],
+                "tags": catalog[3]["categories"],
+                "matched_work_unit_ids": [database_unit_id],
+                "primary_work_unit_ids": [database_unit_id],
+            },
+            {
+                **catalog[1],
+                "tags": catalog[1]["categories"],
+                "matched_work_unit_ids": [documentation_unit_id],
+                "primary_work_unit_ids": [documentation_unit_id],
+            },
+        ],
+        strict=True,
+    )
+    assert snapshot is not None
     assignment_routing = {**routing, "unit_assignment_agents": snapshot}
     plan = build_unit_agent_plan(assignment_routing)
 
@@ -464,7 +477,7 @@ def test_non_delegated_routes_keep_selected_only_assignment_behavior(
     assert build_unit_agent_plan({**routing, "unit_assignment_agents": snapshot}) == []
 
 
-def test_missing_metadata_preserves_the_legacy_slug_only_assignment() -> None:
+def test_missing_unit_evidence_does_not_create_a_legacy_slug_assignment() -> None:
     routing = _routing(
         selected_ids=["technical-writer", "code-reviewer"],
         units=["Document the README", "Review the tests"],
@@ -472,14 +485,10 @@ def test_missing_metadata_preserves_the_legacy_slug_only_assignment() -> None:
 
     plan = build_unit_agent_plan(routing)
 
-    assert [item["recommended_agent"] for item in plan] == [
-        "technical-writer",
-        "code-reviewer",
-    ]
-    assert {item["assignment_version"] for item in plan} == {str(UNIT_AGENT_ASSIGNMENT_VERSION)}
+    assert plan == []
 
 
-def test_selected_only_metadata_recipe_remains_v2_compatible() -> None:
+def test_selected_only_metadata_does_not_create_a_new_unit_assignment() -> None:
     routing = _routing(
         selected_ids=["opaque-a", "opaque-b"],
         units=["Audit OAuth authentication", "Write installation documentation"],
@@ -503,8 +512,7 @@ def test_selected_only_metadata_recipe_remains_v2_compatible() -> None:
 
     plan = build_unit_agent_plan(routing)
 
-    assert [item["recommended_agent"] for item in plan] == ["opaque-a", "opaque-b"]
-    assert {item["assignment_version"] for item in plan} == {str(UNIT_AGENT_ASSIGNMENT_VERSION)}
+    assert plan == []
 
 
 def test_persisted_v2_assignment_recipe_remains_replayable(tmp_path) -> None:
@@ -533,14 +541,14 @@ def test_persisted_v2_assignment_recipe_remains_replayable(tmp_path) -> None:
         "work_units": detect_work_units(prompt),
         "unit_assignment_agents": metadata,
     }
-    current_plan = build_unit_agent_plan(routing)
+    units = detect_work_units(prompt)["units"]
     plan = [
         {
             "assignment_version": "2",
-            "work_unit_id": item["work_unit_id"],
-            "recommended_agent": item["recommended_agent"],
+            "work_unit_id": work_unit_id_from_text(unit),
+            "recommended_agent": agent,
         }
-        for item in current_plan
+        for unit, agent in zip(units, ("opaque-a", "opaque-b"), strict=True)
     ]
     config = AgencyConfig()
     recipe = {
@@ -883,7 +891,7 @@ def test_unmatched_units_do_not_fall_back_to_resident_managers() -> None:
     assert orchestrated == chief_led == unavailable == []
 
 
-def test_sole_domain_specialist_retains_the_stronger_route_evidence() -> None:
+def test_sole_domain_specialist_still_requires_exact_unit_evidence() -> None:
     plan = build_unit_agent_plan(
         _routing(
             selected_ids=["payments-billing-engineer"],
@@ -891,7 +899,7 @@ def test_sole_domain_specialist_retains_the_stronger_route_evidence() -> None:
         )
     )
 
-    assert plan[0]["recommended_agent"] == "payments-billing-engineer"
+    assert plan == []
 
 
 class _BatchStore:
@@ -966,8 +974,8 @@ def test_isolated_native_hook_receives_exact_unit_agent_plan(
             "context_fingerprint": "b" * 64,
             "source_message_hash": "c" * 64,
             "work_units": detect_work_units(user_message),
-            "inference_configured": False,
-            "inference_mode": "heuristic",
+            "inference_configured": True,
+            "inference_mode": "inferred",
         }
 
     monkeypatch.setattr(pipeline, "route", fake_route)
@@ -1151,7 +1159,7 @@ def test_same_specialist_can_activate_for_two_out_of_order_native_work_units(
     assert fields["why"].endswith(".")
     assert "specialist instructions were loaded" in fields["how_it_shaped_outcome"]
     draft = (
-        "Agency/Agencies loaded: agents-orchestrator, chief-of-staff, technical-writer\n"
+        "Agency/Agencies loaded: agency-steward, technical-writer\n"
         f"Agency/Agencies delegated: generic-worker via {backend}\n"
         "Skills loaded: none\n"
         "Actual Model selected: unknown -> unavailable - no model receipt recorded\n"

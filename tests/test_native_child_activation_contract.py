@@ -206,8 +206,8 @@ def test_unstable_work_unit_forms_are_rejected(work_unit_id: object) -> None:
         validate_native_child_work_unit_id(work_unit_id)
 
 
-@pytest.mark.parametrize("slug", ["agents-orchestrator", "chief-of-staff"])
-def test_resident_managers_cannot_be_selected_as_child_specialists(slug: str) -> None:
+@pytest.mark.parametrize("slug", ["agency-steward"])
+def test_resident_steward_cannot_be_selected_as_child_specialist(slug: str) -> None:
     with pytest.raises(ValueError, match="resident managers"):
         _specialist(slug=slug)
 

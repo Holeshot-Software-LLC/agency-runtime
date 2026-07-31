@@ -134,8 +134,8 @@ def test_base_preflight_projects_shared_turn_result_and_reads_persisted_request_
         trace_id="trivial-turn",
         routing={"status": "trivial"},
         context="fallback context",
-        loaded_specialists=("agents-orchestrator", "chief-of-staff"),
-        selected_specialists=("agents-orchestrator", "chief-of-staff"),
+        loaded_specialists=("agency-steward",),
+        selected_specialists=("agency-steward",),
         trivial=True,
         roster_size=9,
     )

@@ -181,7 +181,7 @@
       "weight_ns": 952938500
     },
     {
-      "path": "tests/test_cli_operator_presence.py",
+      "path": "tests/test_cli_owner_authority.py",
       "source_bytes": 9857,
       "source_sha256": "c99289bb57130747fa0e80b6018f23f71c4925e542e7266ceb179e8faab80f92",
       "weight_ns": 1301880600

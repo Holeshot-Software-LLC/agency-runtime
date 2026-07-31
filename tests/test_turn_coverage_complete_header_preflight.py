@@ -384,6 +384,21 @@ def test_preflight_recipe_bounds_and_verifies_content_free_replay() -> None:
         {
             "selected_ids": ["reviewer"],
             "work_units": {"delegate": True, "count": 2, "units": ["", "same", "same"]},
+            "workforce_unit_bindings": [
+                {
+                    "work_unit_id": delegation_events.work_unit_id_from_text("same"),
+                    "selected": ["reviewer"],
+                    "delivery": "delegate",
+                    "timing": "immediate",
+                    "depends_on": [],
+                    "parallelization": "sequential",
+                    "mutation_scope": "read_only",
+                    "artifact_kind": "review-report",
+                    "required_tools": [],
+                    "required_evidence": [],
+                    "confidence": 1.0,
+                }
+            ],
         }
     )
     assert len(suggestions) == 1
@@ -1653,6 +1668,23 @@ def test_delegation_suggestion_helpers_bound_and_dedupe_compatibility_rows() -> 
         )
 
     existing_id = delegation_events.work_unit_id_from_text("duplicate")
+    new_id = delegation_events.work_unit_id_from_text("new work")
+
+    def binding(work_unit_id: str) -> dict[str, Any]:
+        return {
+            "work_unit_id": work_unit_id,
+            "selected": ["reviewer"],
+            "delivery": "delegate",
+            "timing": "immediate",
+            "depends_on": [],
+            "parallelization": "sequential",
+            "mutation_scope": "read_only",
+            "artifact_kind": "review-report",
+            "required_tools": [],
+            "required_evidence": [],
+            "confidence": 1.0,
+        }
+
     compatibility = _DelegationRows([{"work_unit_id": existing_id}])
     recorded = delegation_events.record_suggested_delegations(
         compatibility,  # type: ignore[arg-type]
@@ -1666,12 +1698,11 @@ def test_delegation_suggestion_helpers_bound_and_dedupe_compatibility_rows() -> 
                 "count": 4,
                 "units": ["", "duplicate", "duplicate", "new work"],
             },
+            "workforce_unit_bindings": [binding(existing_id), binding(new_id)],
         },
     )
     assert recorded == 1
-    assert compatibility.recorded[0]["work_unit_id"] == delegation_events.work_unit_id_from_text(
-        "new work"
-    )
+    assert compatibility.recorded[0]["work_unit_id"] == new_id
 
 
 def test_selector_edge_projections_remain_bounded_and_fail_closed() -> None:

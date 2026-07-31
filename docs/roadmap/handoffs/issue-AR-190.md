@@ -112,8 +112,10 @@ git diff --check
   or exact-SHA release workflow unless the owner explicitly requests it.
 - Do not execute a displayed upgrade plan automatically. It is valid only
   unchanged in the same owner-controlled environment that generated it.
-- Do not simulate Windows Hello, hook trust, native child activation, or Agency
-  evidence. Stop visibly at genuine operator presence.
+- Do not simulate hook trust, native child activation, or Agency evidence.
+  Owner CLI execution needs no Agency presence ceremony; stop only at genuine
+  external credentials, signing, publication, or harness trust that lacks a
+  supported autonomous mode.
 - Do not stage or alter the user-owned analysis draft or `uv.lock`.
 - No tracker creation, package publication, tag, release, signing action, or
   exhaustive workflow dispatch without explicit authorization.

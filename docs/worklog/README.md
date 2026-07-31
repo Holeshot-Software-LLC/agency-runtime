@@ -377,6 +377,27 @@ This registry connects repository history to the roadmap and to optional detail 
 | `26a3911` | 2026-07-30 | Merge pull request #187 from Holeshot-Software-LLC/agent/ar-203-readme-story-proof | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
 | `b45bd28` | 2026-07-30 | fix(workforce): bind recruiter repair evidence | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | [detail](2026-07-30-b45bd28-bind-recruiter-repair-evidence.md) |
 | `c8bed05` | 2026-07-30 | docs(roadmap): checkpoint PR 187 review repair | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
+| `5e3fab6` | 2026-07-30 | Merge pull request #188 from Holeshot-Software-LLC/agent/ar-203-readme-story-live-proof | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
+| `9ec3c3d` | 2026-07-30 | docs(roadmap): checkpoint PR 188 install boundary | [AR-202](../roadmap/issue-AR-202-make-recruiter-repair-converge.md), [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md) | null |
+| `c387b65` | 2026-07-30 | docs(product): lock the executable README story | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-c387b65-executable-readme-story.md) |
+| `1d7b019` | 2026-07-30 | docs(roadmap): checkpoint AR-204 contract | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `ffec102` | 2026-07-30 | fix(authority): restore owner control dispatch | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-ffec102-owner-control-dispatch.md) |
+| `9212e52` | 2026-07-30 | docs(roadmap): checkpoint owner authority | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `c8c8020` | 2026-07-30 | fix(dashboard): restore owner control parity | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-c8c8020-dashboard-owner-control-parity.md) |
+| `f8607dd` | 2026-07-30 | docs(roadmap): checkpoint dashboard owner parity | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `e1451ea` | 2026-07-30 | fix(routing): require inference-owned staffing | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-e1451ea-inference-owned-staffing.md) |
+| `7621096` | 2026-07-30 | docs(roadmap): checkpoint inference-owned staffing | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `03dba75` | 2026-07-30 | fix(activation): bind autonomous proof to inferred replay | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-03dba75-autonomous-inferred-activation.md) |
+| `e0c66f9` | 2026-07-30 | docs(roadmap): checkpoint autonomous activation replay | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `3ec69c7` | 2026-07-30 | fix(finalization): require first-pass evidence headers | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-3ec69c7-first-pass-evidence-headers.md) |
+| `6956edb` | 2026-07-30 | docs(evidence): record AR-204 mutation gate | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `67f0b96` | 2026-07-30 | docs(evidence): prove dashboard configuration round trip | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `9e3ca7f` | 2026-07-30 | fix(routing): preserve inference authority through evaluation | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-9e3ca7f-inference-authority-evaluation.md) |
+| `0b37270` | 2026-07-30 | docs(evidence): record AR-204 38-mutation gate | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `57f82c7` | 2026-07-31 | feat(workforce): require an exact specialist for every task | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | [detail](2026-07-31-57f82c7-exact-specialist-every-task.md) |
+| `38d3e0a` | 2026-07-31 | docs(evidence): checkpoint AR-205 specialist boundary | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
+| `35e1db5` | 2026-07-31 | test(preflight): preserve fingerprint retry under specialist gate | [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
+| `1591cb8` | 2026-07-31 | docs(evidence): admit AR-205 local verification | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -18,7 +18,7 @@ related:
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - agency_runtime/core/codex_activation_verification.py
   - agency_runtime/core/canary_backends.py
-  - agency_runtime/core/operator_presence.py
+  - agency_runtime/core/codex_activation_verification.py
   - agency_runtime/adapters/hooks.py
   - agency_runtime/cli/install_commands.py
   - tests/test_codex_activation_verification.py

@@ -30,25 +30,23 @@ class _Response:
         return json.dumps(self.payload).encode("utf-8")
 
 
-def test_query_reports_empty_catalog_and_returns_confidence_bypass(
+def test_query_reports_empty_catalog_and_never_bypasses_inference(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     config = AgencyConfig(
         judge=JudgeConfig(confidence_bypass_threshold=0.0),
         ollama=OllamaConfig(enabled=False, model=""),
     )
-    assert judge.query_judge("review security", [], config=config) == {
-        "selected_ids": [],
-        "confidence": 0.0,
-        "latency_ms": 0,
-        "status": "no_catalog",
-        "error": "agent catalog not loaded",
-    }
+    empty = judge.query_judge("review security", [], config=config)
+    assert empty["selected_ids"] == []
+    assert empty["status"] == "inference_unavailable"
+    assert empty["error"] == "agent catalog not loaded"
+    assert empty["inference_required"] is True
 
     monkeypatch.setattr(judge, "pre_narrow", lambda *_args: (CATALOG, [10.0]))
     bypass = judge.query_judge("review security", CATALOG, config=config)
-    assert bypass["status"] == "confidence_bypass"
-    assert bypass["selected_ids"] == ["security-reviewer"]
+    assert bypass["status"] == "inference_unavailable"
+    assert bypass["selected_ids"] == []
 
 
 def test_duplicate_ollama_fallback_is_not_retried() -> None:

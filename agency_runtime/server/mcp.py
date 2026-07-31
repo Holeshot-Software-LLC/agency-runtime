@@ -220,7 +220,11 @@ MCP_TOOLS = [
     },
     {
         "name": "agency.finalize",
-        "description": "Finalize the agency header on a draft response.",
+        "description": (
+            "Construct and commit the exact first visible Agency response from a draft "
+            "body. Call once immediately before natural final output and emit returned "
+            "text byte-for-byte; this is not a post-response correction."
+        ),
         "inputSchema": _schema(
             {
                 "draft_text": _string(_MAX_DRAFT_CHARS),

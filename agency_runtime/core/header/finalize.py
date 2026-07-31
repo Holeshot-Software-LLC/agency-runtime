@@ -32,17 +32,24 @@ class FinalizationBatchResult(FinalizationResult):
 TERMINAL_ACTION_STATUS = {
     "accept": "completed",
     "delegation_declined": "delegation_declined",
+    "response_invalid": "response_invalid",
     "retry_exhausted": "retry_exhausted",
 }
 TERMINAL_OUTCOME_MESSAGES = {
     "delegation_declined": (
         "AGENCY DELEGATION DECLINED: The native host did not execute the strongly "
-        "preferred delegation after Agency's single correction opportunity. The turn is "
-        "terminal; no further correction is requested."
+        "preferred delegation. The turn is terminal; no correction was requested or "
+        "accepted."
+    ),
+    "response_invalid": (
+        "AGENCY RESPONSE INVALID: The submitted response did not satisfy the exact "
+        "current-turn evidence header contract. The turn is terminal; no correction was "
+        "requested or accepted."
     ),
     "retry_exhausted": (
-        "AGENCY RETRY EXHAUSTED: Agency used its single response-correction opportunity "
-        "and recorded this exact response as terminal. No further correction is requested."
+        "AGENCY RETRY EXHAUSTED: A legacy bounded response-correction flow exhausted its "
+        "opportunity and recorded this exact response as terminal. No further correction "
+        "is requested."
     ),
 }
 
@@ -84,7 +91,7 @@ def terminal_response_run(
 ) -> dict[str, Any] | None:
     """Return the authoritative terminal event for one exact response digest."""
 
-    if not session_id or not trace_id or not response_text:
+    if not session_id or not trace_id:
         return None
     getter = getattr(store, "get_authoritative_finalization", None)
     if not callable(getter):
@@ -156,7 +163,7 @@ def finalize_response(
     """Apply the Agency header finalization gate.
 
     Returns ``action='accept'`` when the response is finalizable, ``rewrite``
-    when any of the six required header fields remain missing after attempted
+    when any of the seven required header fields remain missing after attempted
     auto-fill, and ``continue`` when there is no substantive draft body yet.
     """
     metadata = dict(trace_metadata or {})

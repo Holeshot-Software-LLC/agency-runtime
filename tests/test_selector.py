@@ -274,8 +274,8 @@ def test_bundled_coding_policy_reserves_reality_checker_for_final_certification(
     assert "reality-checker" not in ordinary_companions
 
 
-def test_bundled_companion_policy_reserves_default_agents_for_fallback(monkeypatch, tmp_path):
-    """DEFAULT agents do not appear in ordinary deterministic action results."""
+def test_bundled_companion_policy_has_no_deterministic_worker_fallback(monkeypatch, tmp_path):
+    """DEFAULT never turns deterministic action results into worker selection."""
     monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing.yaml"))
     # Force reload of cached policy
     from agency_runtime.core.selector import policy as policy_mod
@@ -286,7 +286,7 @@ def test_bundled_companion_policy_reserves_default_agents_for_fallback(monkeypat
 
     assert "agents-orchestrator" not in companion_ids
     assert "chief-of-staff" not in companion_ids
-    assert detect_fallback_companions() == ["agents-orchestrator", "chief-of-staff"]
+    assert detect_fallback_companions() == []
 
 
 def test_bundled_policy_has_all_broad_actions(monkeypatch, tmp_path):

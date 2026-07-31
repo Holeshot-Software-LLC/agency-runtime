@@ -13,7 +13,7 @@ import pytest
 
 from agency_runtime.cli import main as cli_main
 from agency_runtime.cli.install_commands import InstallDependencies, cmd_install
-from agency_runtime.core import installer_filesystem, installer_inventory, operator_presence
+from agency_runtime.core import installer_filesystem, installer_inventory
 from agency_runtime.core import prepared_codex_install as prepared_install
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.installer_contracts import INSTALL_MANIFEST, NativeCommandResult
@@ -285,7 +285,6 @@ def test_exact_cli_shapes_delegate_to_the_prepared_coordinator(argv: list[str]) 
     args = cli_main.build_parser().parse_args(argv)
 
     assert prepared_install.is_exact_prepared_codex_install(args) is True
-    assert operator_presence.request_for_namespace(args) is None
 
 
 @pytest.mark.parametrize(
@@ -312,10 +311,10 @@ def test_every_nearby_install_shape_is_rejected_from_the_prepared_slice(
     assert prepared_install.is_exact_prepared_codex_install(args) is False
 
 
-def test_full_suite_codex_shape_uses_the_installer_boundary() -> None:
+def test_full_suite_codex_shape_is_not_the_prepared_refresh_slice() -> None:
     args = cli_main.build_parser().parse_args(["install", "--agent", "codex"])
 
-    assert operator_presence.request_for_namespace(args) is None
+    assert prepared_install.is_exact_prepared_codex_install(args) is False
 
 
 def test_exact_cli_dispatch_does_not_construct_the_generic_store(tmp_path: Path) -> None:
@@ -642,7 +641,7 @@ def test_forced_replacement_retains_backup_and_creates_new_install_lineage(
     assert second_manifest["backup_path"] == str(backup)
 
 
-def test_noop_rechecks_under_install_lock_without_agency_owned_verification(
+def test_noop_rechecks_under_install_lock(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -664,8 +663,6 @@ def test_noop_rechecks_under_install_lock_without_agency_owned_verification(
     assert result["ok"] is True
     assert result["status"] == "already_current"
     assert result["no_op"] is True
-    assert result["operator_presence_required"] is False
-    assert result["operator_presence_verified"] is False
     assert events == ["lock"]
 
 

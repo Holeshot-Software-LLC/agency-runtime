@@ -50,7 +50,7 @@ from agency_runtime.server.dashboard import (
     _provider_health,
 )
 
-_PRODUCTION_READ_ONLY_MUTATION_PATHS = DashboardHTTPHandler._READ_ONLY_MUTATION_PATHS
+_OWNER_MUTATION_PATHS = DashboardHTTPHandler._OWNER_MUTATION_PATHS
 
 
 def _verified_codex_record() -> dict[str, object]:
@@ -66,10 +66,6 @@ def _verified_codex_record() -> dict[str, object]:
 
 @pytest.fixture()
 def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    # Legacy handler tests keep exercising their validation/transaction logic
-    # directly through HTTP. AR-143's production default is read-only and is
-    # pinned independently by the exhaustive bearer-scope test below.
-    monkeypatch.setattr(DashboardHTTPHandler, "_READ_ONLY_MUTATION_PATHS", frozenset())
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
     monkeypatch.setenv("AGENCY_JUDGE_TIMEOUT", "0.05")
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "dashboard.db"))
@@ -286,7 +282,7 @@ def _insert_workforce_rows(
         conn.close()
 
 
-_READ_ONLY_DASHBOARD_MUTATIONS = {
+_OWNER_DASHBOARD_MUTATIONS = {
     "/api/agents/toggle": {"slug": "security-reviewer", "enabled": False},
     "/api/config": {"expected_revision": "missing", "operations": []},
     "/api/hiring/approve": {"case_id": "case-1", "approved_by": "operator"},
@@ -310,22 +306,14 @@ def _dashboard_authority_bytes(server: dict) -> dict[str, bytes]:
     return {str(path): path.read_bytes() for path in paths if path.is_file()}
 
 
-@pytest.mark.parametrize("path,body", _READ_ONLY_DASHBOARD_MUTATIONS.items())
-@pytest.mark.parametrize("token_name", ["token", "broker_token"])
-def test_every_dashboard_mutation_is_denied_for_every_bearer_without_state_change(
+@pytest.mark.parametrize("path,body", _OWNER_DASHBOARD_MUTATIONS.items())
+def test_every_dashboard_mutation_is_denied_for_broker_without_state_change(
     dashboard_server: dict,
-    monkeypatch: pytest.MonkeyPatch,
     path: str,
     body: dict,
-    token_name: str,
 ) -> None:
-    mutation_paths = frozenset(_READ_ONLY_DASHBOARD_MUTATIONS)
-    assert mutation_paths == _PRODUCTION_READ_ONLY_MUTATION_PATHS
-    monkeypatch.setattr(
-        DashboardHTTPHandler,
-        "_READ_ONLY_MUTATION_PATHS",
-        _PRODUCTION_READ_ONLY_MUTATION_PATHS,
-    )
+    mutation_paths = frozenset(_OWNER_DASHBOARD_MUTATIONS)
+    assert mutation_paths == _OWNER_MUTATION_PATHS
     before = _dashboard_authority_bytes(dashboard_server)
 
     status, payload, _headers = _json_response(
@@ -333,18 +321,13 @@ def test_every_dashboard_mutation_is_denied_for_every_bearer_without_state_chang
         path,
         method="POST",
         body=body,
-        token=dashboard_server[token_name],
+        token=dashboard_server["broker_token"],
     )
 
     assert status == 403
-    assert payload == {
-        "error": (
-            "dashboard is read-only; persistent mutations require an approved "
-            "user-presence boundary"
-        )
-    }
+    assert payload == {"error": "owner control required"}
     assert _dashboard_authority_bytes(dashboard_server) == before
-    assert mutation_paths == DashboardHTTPHandler._READ_ONLY_MUTATION_PATHS
+    assert mutation_paths == DashboardHTTPHandler._OWNER_MUTATION_PATHS
 
 
 @pytest.mark.parametrize("mutation", ["trim", "roster-approve", "host-toggle"])
@@ -728,8 +711,8 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"registration unknown" in script
     assert b"enablement unknown" in script
     assert b"runtime off" in script
-    assert b"Monitoring only; host controls are unavailable here." in script
-    assert b"Read-only monitoring" in script
+    assert b"callbacks.toggleHost" in script
+    assert b"callbacks.toggleAgent" in script
     assert b"Delegation dependency graph" in script
     assert b"receipt.signals?.work_units?.units" in script
     assert b'["id", "Decision"]' in script
@@ -739,10 +722,9 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"total_count" in script
     assert b"next_cursor" in script
     assert b"/api/agents/lookup?slug=" in script
-    assert b"/api/config" not in script
-    for mutation_path in _READ_ONLY_DASHBOARD_MUTATIONS.keys() - {"/api/config"}:
-        assert mutation_path.encode() not in script
-    assert b"APPLY LOCAL-ONLY PROFILE" not in script
+    for mutation_path in _OWNER_DASHBOARD_MUTATIONS:
+        assert mutation_path.encode() in script
+    assert b"APPLY LOCAL-ONLY PROFILE" in script
     assert b"window.prompt" not in script
     assert b"visibilitychange" in script
     assert b"AbortController" in script
@@ -801,6 +783,9 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b'data-config-path="server.host"' in raw
     assert b'id="config-loopback-hosts"' in raw
     assert b'data-config-path="providers"' in raw
+    assert b'id="trim-button"' in raw
+    assert b'id="workforce-action-form"' in raw
+    assert b'id="config-save-button"' in raw
     assert b'id="confirmation-modal"' in raw
     assert b"not a live provider probe" in raw
 
@@ -1791,8 +1776,8 @@ def test_dashboard_broker_token_is_scoped_to_bounded_control_endpoints(
             body={},
             token=dashboard_server["broker_token"],
         )
-        assert status == 401
-        assert payload == {"error": "authentication required"}
+        assert status == 403
+        assert payload == {"error": "owner control required"}
 
     status, payload, _headers = _json_response(
         dashboard_server,
@@ -2736,7 +2721,7 @@ def test_dashboard_exact_lookup_returns_empty_result_without_leaking_prompt(dash
     assert "content" not in _nested_keys(payload)
 
 
-def test_dashboard_exact_lookup_preserves_protected_coordinator_state(dashboard_server):
+def test_dashboard_exact_lookup_treats_imported_manager_as_optional(dashboard_server):
     dashboard_server["store"]._activate_prevalidated_agent(
         next(agent for agent in bundled_roster() if agent["slug"] == "chief-of-staff")
     )
@@ -2747,7 +2732,7 @@ def test_dashboard_exact_lookup_preserves_protected_coordinator_state(dashboard_
     )
     assert status == 200
     assert payload["agents"][0]["enabled"] is True
-    assert payload["agents"][0]["protected"] is True
+    assert payload["agents"][0]["protected"] is False
 
 
 def test_dashboard_config_get_reports_redacted_revision_and_target(dashboard_server):
@@ -2851,17 +2836,14 @@ def test_dashboard_agent_toggle_is_authenticated_reversible_and_protected(dashbo
     assert status == 200
     assert enabled["config"]["effective"]["agents"]["disabled"] == []
 
-    dashboard_server["store"]._activate_prevalidated_agent(
-        next(agent for agent in bundled_roster() if agent["slug"] == "chief-of-staff")
-    )
     status, rejected, _headers = _json_response(
         dashboard_server,
         "/api/agents/toggle",
         method="POST",
         body={
-            "slug": "chief-of-staff",
+            "slug": "agency-steward",
             "enabled": False,
-            "confirm": "DISABLE chief-of-staff",
+            "confirm": "DISABLE agency-steward",
             "expected_revision": enabled["config"]["revision"],
         },
         token=dashboard_server["token"],

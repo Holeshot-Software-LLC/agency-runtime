@@ -136,7 +136,7 @@ def _isolated_selector_state() -> Iterator[None]:
     reset_config_cache()
 
 
-def test_explain_route_returns_selection_receipt(_isolated_selector_state) -> None:
+def test_explain_route_returns_loud_inference_failure_receipt(_isolated_selector_state) -> None:
     config = AgencyConfig(
         judge=JudgeConfig(confidence_bypass_threshold=1.0),
         ollama=OllamaConfig(enabled=False, model=""),
@@ -145,11 +145,14 @@ def test_explain_route_returns_selection_receipt(_isolated_selector_state) -> No
     receipt = explain_route("s1", "review code", _catalog(), config=config, limit=2)
 
     assert receipt["schema_version"] == "agency.selection_explain.v1"
-    assert receipt["selected"][0]["slug"] == "fixture-code-reviewer"
-    assert receipt["signals"]["selection"]["status"] == "confidence_bypass"
+    assert receipt["selected"] == []
+    assert receipt["signals"]["selection"]["status"] == "inference_unavailable"
     assert receipt["signals"]["cache"]["key"]
-    assert receipt["considered_candidates"][0]["selected"] is True
-    assert receipt["rejected_candidates"][0]["slug"] == "fixture-technical-writer"
+    assert all(item["selected"] is False for item in receipt["considered_candidates"])
+    assert receipt["rejected_candidates"][0]["slug"] in {
+        "fixture-code-reviewer",
+        "fixture-technical-writer",
+    }
     assert "reason" in receipt["rejected_candidates"][0]
 
 
@@ -282,7 +285,7 @@ def test_cli_route_marks_fresh_social_diagnostic_trivial(
     assert routing["selection_required"] is False
     assert routing["inference_attempted"] is False
     assert routing["provider_attempts"] == []
-    assert set(routing["selected_ids"]) <= {"agents-orchestrator", "chief-of-staff"}
+    assert set(routing["selected_ids"]) <= {"agency-steward"}
 
 
 @pytest.mark.parametrize("command", ["search", "route", "explain"])

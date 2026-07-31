@@ -1,9 +1,9 @@
 ---
 title: "Gate routing changes with versioned quantitative evaluation"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-10
-updated: 2026-07-19
+updated: 2026-07-30
 tags: [routing, evaluation, performance]
 related:
   - docs/roadmap/issue-AR-88-compare-agency-native-outcomes.md
@@ -12,16 +12,21 @@ related:
   - docs/roadmap/issue-AR-103-import-windows-ctypes-fixtures-portably.md
   - docs/roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md
   - docs/roadmap/issue-AR-106-portable-windows-policy-and-posix-simulations.md
+  - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
 id: ADR-0030
 type: decision
 deciders: []
 ---
 
 # ADR-0030: Gate routing changes with versioned quantitative evaluation
+
+Superseded by
+[ADR-0121](0121-gate-deterministic-recall-without-selection-authority.md).
+The historical v1.1 metric contract remains below for provenance.
 
 ## Context
 

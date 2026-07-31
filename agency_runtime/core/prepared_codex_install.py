@@ -1332,8 +1332,6 @@ def _success_result(
         "hook_trust_status": "unverified",
         "canary_attestation_invalidated": False,
         "restart_required": not no_op,
-        "operator_presence_required": False,
-        "operator_presence_verified": False,
         "no_op": no_op,
     }
 

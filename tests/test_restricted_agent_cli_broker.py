@@ -447,7 +447,7 @@ def test_broker_rejects_identity_changes_between_pages(
         ({**_row("alpha-reviewer"), "capabilities": ["review", 7]}, "taxonomy"),
         ({**_row("alpha-reviewer"), "enabled": 1}, "JSON booleans"),
         ({**_row("alpha-reviewer"), "protected": True}, "protection state"),
-        ({**_row("chief-of-staff"), "protected": False}, "protection state"),
+        ({**_row("agency-steward"), "protected": False}, "protection state"),
     ],
 )
 def test_broker_rejects_malformed_agent_rows(value: Any, message: str) -> None:
@@ -737,9 +737,9 @@ def test_broker_projects_compact_activation_rows(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     rows = [
+        _activation_row("agency-steward"),
         _activation_row("alpha-reviewer"),
         _activation_row("beta-reviewer", enabled=False),
-        _activation_row("chief-of-staff"),
     ]
     monkeypatch.setattr(
         broker,
@@ -750,11 +750,11 @@ def test_broker_projects_compact_activation_rows(
     path, activation = broker.broker_activation_rows()
     assert path == _absolute_config_path()
     assert [row["slug"] for row in activation] == [
+        "agency-steward",
         "alpha-reviewer",
         "beta-reviewer",
-        "chief-of-staff",
     ]
-    assert activation[-1]["protected"] is True
+    assert activation[0]["protected"] is True
 
 
 def test_server_roster_revision_is_generation_bound_and_activation_independent() -> None:

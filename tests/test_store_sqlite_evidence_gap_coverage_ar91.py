@@ -443,18 +443,13 @@ def test_rollback_rejects_missing_or_corrupt_revision_state(
     assert connection.closed is True
 
 
-def test_rollback_noop_is_rejected_before_native_verification(
+def test_rollback_noop_is_rejected_before_commit(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = Store(tmp_path / "agency.db")
     agent = bundled_roster()[0]
     store.activate_agent(agent)
-    monkeypatch.setattr(
-        roster_subject,
-        "_verify_roster_rollback_operator_presence",
-        lambda _binding: pytest.fail("no-op reached native verification"),
-    )
+    generation = store.get_roster_generation()
 
     with pytest.raises(ValueError, match="already active"):
         store.rollback_agent_revision(
@@ -463,3 +458,5 @@ def test_rollback_noop_is_rejected_before_native_verification(
             expected_current_version=agent["version"],
             expected_current_hash=agent["hash"],
         )
+
+    assert store.get_roster_generation() == generation

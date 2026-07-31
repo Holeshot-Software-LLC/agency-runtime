@@ -10,9 +10,11 @@ import pytest
 
 from agency_runtime.adapters.hermes import bridge as hermes_bridge
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
+from agency_runtime.core.header.contract import finalize_header
 from agency_runtime.core.header.finalize import finalize_response, response_hash
 from agency_runtime.core.installer import install_agent_adapter
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.server.mcp_tools import dispatch_tool_call
 from tests.runtime_support import ensure_private_test_directory
 
 pytestmark = pytest.mark.usefixtures("private_installer_launcher")
@@ -69,6 +71,69 @@ def _load_generated_hermes(tmp_path: Path) -> ModuleType:
     module._invoke = invoke
     module._terminalize_policy_rejection = hermes_bridge._terminalize_policy_rejection
     return module
+
+
+def test_hermes_accepts_exact_first_visible_response_constructed_by_finalize_tool(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "hermes-first-pass.db")
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id="hermes-turn",
+        request_kind="trivial",
+    )
+
+    finalized = dispatch_tool_call(
+        "agency.finalize",
+        {
+            "draft_text": "First visible response.",
+            "session_id": "hermes-session",
+            "trace_id": "hermes-turn",
+        },
+        store,
+    )
+
+    assert finalized["action"] == "accept"
+    assert (
+        hermes_bridge.handle(
+            {
+                "action": "transform_llm_output",
+                "session_id": "hermes-session",
+                "trace_id": "hermes-turn",
+                "response_text": finalized["text"],
+            },
+            adapter=HermesAdapter(store),
+        )
+        == finalized["text"]
+    )
+    assert store.get_run("hermes-turn")["status"] == "completed"
+
+
+def test_hermes_transform_rejects_unfinalized_natural_response_without_repair(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "hermes-unfinalized.db")
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id="hermes-turn",
+        request_kind="trivial",
+    )
+
+    transformed = hermes_bridge.handle(
+        {
+            "action": "transform_llm_output",
+            "session_id": "hermes-session",
+            "trace_id": "hermes-turn",
+            "response_text": "Natural response without the Agency header.",
+        },
+        adapter=HermesAdapter(store),
+    )
+
+    assert transformed == hermes_bridge.FINALIZATION_BLOCK_RESPONSE
+    assert "Natural response" not in transformed
+    assert store.get_run("hermes-turn")["status"] == "response_invalid"
 
 
 def test_public_finalizer_rejects_nontrivial_turn_without_specialist(
@@ -245,9 +310,16 @@ def test_generated_hermes_output_hook_does_not_terminalize_generic_failure(
             raise RuntimeError("unexpected formatter failure")
 
     module._adapter = BrokenAdapter(store=store)
+    exact = finalize_header(
+        "Draft with an exact first-pass header.",
+        "session",
+        store,
+        "",
+        "turn",
+    )
 
     replacement = module._transform_llm_output(
-        "Draft without a header.",
+        exact,
         conversation_id="session",
         turn_id="turn",
     )
@@ -274,25 +346,32 @@ def test_generated_hermes_output_hook_rejects_open_delegation(tmp_path: Path) ->
 
     assert replacement == module._FINALIZATION_BLOCK_RESPONSE
     assert replacement != original
-    assert store.get_run("turn")["status"] == "retry_exhausted"
+    assert store.get_run("turn")["status"] == "response_invalid"
     terminal = store.get_authoritative_finalization(
         "session",
         "turn",
-        action="retry_exhausted",
+        action="response_invalid",
         response_hash=response_hash(module._FINALIZATION_BLOCK_RESPONSE),
     )
     assert terminal is not None
 
     _create_turn(store, session_id="session", trace_id="next-turn", request_kind="trivial")
-    next_response = module._transform_llm_output(
+    next_exact = finalize_header(
         "The next turn remains independently finalizable.",
+        "session",
+        store,
+        "",
+        "next-turn",
+    )
+    next_response = module._transform_llm_output(
+        next_exact,
         conversation_id="session",
     )
     assert next_response.endswith("The next turn remains independently finalizable.")
     assert store.get_run("next-turn")["status"] == "completed"
 
 
-def test_generated_hermes_pre_verify_uses_one_revision_then_safe_transform(
+def test_generated_hermes_pre_verify_fails_first_pass_then_safe_transform(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "pre-verify.db")
@@ -305,20 +384,17 @@ def test_generated_hermes_pre_verify_uses_one_revision_then_safe_transform(
 
     first = module._pre_verify("Invalid draft.", attempt=0, **native)
 
-    assert first["action"] == "continue"
-    assert 0 < len(first["message"]) <= 512
-    assert store.get_run("turn")["status"] == "active"
-
-    assert module._pre_verify("Still invalid.", attempt=1, **native) is None
-    assert store.get_run("turn")["status"] == "retry_exhausted"
-    assert module._transform_llm_output("Still invalid.", **native) == (
+    assert first is None
+    assert store.get_run("turn")["status"] == "response_invalid"
+    assert module._pre_verify("Invalid draft.", attempt=1, **native) is None
+    assert module._transform_llm_output("Invalid draft.", **native) == (
         module._FINALIZATION_BLOCK_RESPONSE
     )
     assert (
         store.get_authoritative_finalization(
             "session",
             "turn",
-            action="retry_exhausted",
+            action="response_invalid",
             response_hash=response_hash(module._FINALIZATION_BLOCK_RESPONSE),
         )
         is not None
@@ -338,11 +414,7 @@ def test_generated_hermes_pre_verify_failure_is_bounded_and_fail_closed(
 
     decision = module._pre_verify("Sensitive draft.", attempt=0)
 
-    assert decision == {
-        "action": "continue",
-        "message": module._PRE_VERIFY_UNAVAILABLE,
-    }
-    assert "secret" not in decision["message"]
+    assert decision is None
 
 
 def test_generated_hermes_adapter_construction_failure_never_leaks_draft(
@@ -358,10 +430,7 @@ def test_generated_hermes_adapter_construction_failure_never_leaks_draft(
     original = "Sensitive draft that must not be published."
 
     assert module._pre_verify(original, attempt="invalid") is None
-    assert module._pre_verify(original, attempt=0) == {
-        "action": "continue",
-        "message": module._PRE_VERIFY_UNAVAILABLE,
-    }
+    assert module._pre_verify(original, attempt=0) is None
     replacement = module._transform_llm_output(original)
     assert replacement == module._FINALIZATION_BLOCK_RESPONSE
     assert original not in replacement
@@ -425,13 +494,21 @@ def test_generated_hermes_output_hook_accepts_only_terminal_accept(tmp_path: Pat
     module = _load_generated_hermes(tmp_path)
     module._adapter = HermesAdapter(store=store)
 
-    response = module._transform_llm_output(
+    exact = finalize_header(
         "Substantive answer.",
+        "session",
+        store,
+        "",
+        "turn",
+    )
+    response = module._transform_llm_output(
+        exact,
         conversation_id="session",
         turn_id="turn",
     )
 
     assert response.endswith("Substantive answer.")
+    assert response == exact
     assert response.startswith("Agency/Agencies loaded: none\n")
     assert store.get_run("turn")["status"] == "completed"
     assert store.get_authoritative_finalization("session", "turn") is not None

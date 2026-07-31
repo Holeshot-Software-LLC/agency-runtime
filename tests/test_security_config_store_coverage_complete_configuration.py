@@ -130,7 +130,9 @@ def test_schema_delegation_thresholds_must_be_monotonic() -> None:
 
 def test_schema_agents_rejects_protected_coordinator_disablement() -> None:
     with pytest.raises(ConfigValidationError, match="protected coordinator"):
-        schema._validate_agents({"disabled": ["chief-of-staff"]})
+        schema._validate_agents({"disabled": ["agency-steward"]})
+
+    schema._validate_agents({"disabled": ["chief-of-staff"]})
 
 
 def test_patch_provider_and_nested_shape_guards() -> None:

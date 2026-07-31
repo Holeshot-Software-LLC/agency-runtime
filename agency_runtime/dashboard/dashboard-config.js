@@ -474,12 +474,6 @@ export function createConfigController(core) {
 
 	function updateConfigDirtyState() {
 		syncProviderSecretOptions();
-		if (state.surfaceReadOnly === true) {
-			state.configDirty = false;
-			byId("config-change-count").textContent = "Read-only monitoring";
-			byId("config-save-button").disabled = true;
-			return;
-		}
 		configControls().forEach((node) => {
 			node.removeAttribute("aria-invalid");
 			if (typeof node.setCustomValidity === "function") node.setCustomValidity("");

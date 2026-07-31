@@ -367,28 +367,20 @@ def test_header_replaces_noneish_loaded_reason_when_store_has_agency_evidence():
         assert filled["agencies_loaded"] == "senior-developer"
 
 
-def _activate_default_companions(store: Store) -> None:
-    from agency_runtime.core.roster.bundled import BundledRoster
-
-    bundled = {agent["slug"]: agent for agent in BundledRoster()}
-    for slug in ("agents-orchestrator", "chief-of-staff"):
-        store._activate_prevalidated_agent(bundled[slug])
-
-
 def test_control_preflight_binds_same_kernel_with_host_specific_receipts():
-    """Ping shares one kernel identity without conflating distinct host bindings."""
+    """Exact control turns share a kernel without conflating host bindings."""
     from agency_runtime.adapters.hermes.plugin import HermesAdapter
     from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 
     with tempfile.TemporaryDirectory() as tmpdir:
         hermes_store = Store(Path(tmpdir) / "hermes.db")
         openclaw_store = Store(Path(tmpdir) / "openclaw.db")
-        _activate_default_companions(hermes_store)
-        _activate_default_companions(openclaw_store)
 
-        hermes_result = HermesAdapter(store=hermes_store).build_preflight_context("s1", "ping")
+        hermes_result = HermesAdapter(store=hermes_store).build_preflight_context(
+            "s1", "agency status"
+        )
         openclaw_result = OpenClawAdapter(store=openclaw_store).build_preflight_context(
-            "s1", "ping"
+            "s1", "agency status"
         )
 
         assert hermes_result is not None
@@ -419,7 +411,7 @@ def test_control_preflight_binds_same_kernel_with_host_specific_receipts():
             evidence_snapshot=snapshot,
         )
         assert store_fields == snapshot_fields
-        assert store_fields["agencies_loaded"] == "agents-orchestrator, chief-of-staff"
+        assert store_fields["agencies_loaded"] == "agency-steward"
 
 
 def test_store_delegation():

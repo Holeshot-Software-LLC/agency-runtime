@@ -1,4 +1,4 @@
-"""TOCTOU and exact-effect tests for operator-confirmed roster rollback."""
+"""TOCTOU and exact-effect tests for owner-requested roster rollback."""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ from typing import Any
 import pytest
 
 from agency_runtime.core.config_binding import StoreConfigBindingError
-from agency_runtime.core.operator_presence import OperatorPresenceError
 from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.roster.revisions import content_digest, serialized_revision_metadata
 from agency_runtime.core.roster.sync import (
@@ -176,7 +175,7 @@ def _commit(store: Store, prepared: _RosterRollbackBinding) -> dict[str, Any]:
 
     return store._commit_prepared_agent_revision_rollback(
         prepared,
-        verified_primitives=tuple(prepared),
+        prepared_primitives=tuple(prepared),
     )
 
 
@@ -330,13 +329,7 @@ def test_coordinator_rejects_non_builtin_primitive_in_every_binding_field(
         "_prepare_agent_revision_rollback",
         lambda *_args, **_kwargs: forged,
     )
-    monkeypatch.setattr(
-        roster_subject,
-        "_require_roster_rollback_authority",
-        lambda _binding: pytest.fail("invalid binding reached native verification"),
-    )
-
-    with pytest.raises(OperatorPresenceError, match="binding is invalid"):
+    with pytest.raises(ValueError, match="binding is invalid"):
         owner.rollback_agent_revision(
             "security-reviewer",
             "sha256:" + "4" * 64,
@@ -345,30 +338,7 @@ def test_coordinator_rejects_non_builtin_primitive_in_every_binding_field(
         )
 
 
-def test_public_coordinator_denial_leaves_every_database_effect_unchanged(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    store, canonical, current, prepared = _prepared_bundle_target(tmp_path)
-    before = _effect_snapshot(store, prepared.slug)
-
-    def deny(_binding: _RosterRollbackBinding) -> None:
-        raise OperatorPresenceError("operator canceled")
-
-    monkeypatch.setattr(roster_subject, "_require_roster_rollback_authority", deny)
-
-    with pytest.raises(OperatorPresenceError, match="operator canceled"):
-        store.rollback_agent_revision(
-            prepared.slug,
-            canonical["version"],
-            expected_current_version=current["version"],
-            expected_current_hash=current["hash"],
-        )
-
-    assert _effect_snapshot(store, prepared.slug) == before
-
-
-def test_public_coordinator_owns_prepare_verify_and_same_store_commit_order(
+def test_public_coordinator_owns_prepare_and_same_store_commit_order(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -382,21 +352,18 @@ def test_public_coordinator_owns_prepare_verify_and_same_store_commit_order(
         calls.append(("prepare", id(owner), tuple(binding)))
         return binding
 
-    def verify(binding: _RosterRollbackBinding) -> None:
-        calls.append(("verify", id(store), tuple(binding)))
-
     def commit(
         owner: object,
         binding: _RosterRollbackBinding,
         *,
-        verified_primitives: tuple[str | int, ...],
+        prepared_primitives: tuple[str | int, ...],
     ) -> dict[str, Any]:
-        assert verified_primitives == tuple(binding)
-        calls.append(("commit", id(owner), verified_primitives))
+        assert prepared_primitives == tuple(binding)
+        calls.append(("commit", id(owner), prepared_primitives))
         return original_commit(
             owner,
             binding,
-            verified_primitives=verified_primitives,
+            prepared_primitives=prepared_primitives,
         )
 
     monkeypatch.setattr(
@@ -404,7 +371,6 @@ def test_public_coordinator_owns_prepare_verify_and_same_store_commit_order(
         "_prepare_agent_revision_rollback",
         prepare,
     )
-    monkeypatch.setattr(roster_subject, "_require_roster_rollback_authority", verify)
     monkeypatch.setattr(
         roster_subject.RosterStoreMixin,
         "_commit_prepared_agent_revision_rollback",
@@ -419,93 +385,12 @@ def test_public_coordinator_owns_prepare_verify_and_same_store_commit_order(
     )
 
     assert restored["version"] == canonical["version"]
-    assert [stage for stage, _store_id, _binding in calls] == ["prepare", "verify", "commit"]
+    assert [stage for stage, _store_id, _binding in calls] == ["prepare", "commit"]
     assert {store_id for _stage, store_id, _binding in calls} == {id(store)}
-    assert calls[0][2] == calls[1][2] == calls[2][2]
+    assert calls[0][2] == calls[1][2]
 
 
-def test_mutation_attempt_inside_verifier_cannot_reach_commit(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    store, canonical, current, prepared = _prepared_bundle_target(tmp_path)
-    before = _effect_snapshot(store, prepared.slug)
-
-    def mutate(binding: _RosterRollbackBinding) -> None:
-        object.__setattr__(binding, "target_hash", "9" * 64)
-
-    monkeypatch.setattr(roster_subject, "_require_roster_rollback_authority", mutate)
-
-    with pytest.raises(AttributeError, match="can't set attribute"):
-        store.rollback_agent_revision(
-            prepared.slug,
-            canonical["version"],
-            expected_current_version=current["version"],
-            expected_current_hash=current["hash"],
-        )
-
-    assert _effect_snapshot(store, prepared.slug) == before
-
-
-def test_verifier_return_cannot_substitute_second_valid_plan(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    store = Store(tmp_path / "agency.db")
-    source_id = store.add_agent_source(str(tmp_path / "source"), "source")
-    first, _snapshot_1, _candidate_1 = _activate_candidate(
-        store,
-        source_id,
-        slug="substitution-reviewer",
-        prompt="First governed prompt.",
-    )
-    second, _snapshot_2, _candidate_2 = _activate_candidate(
-        store,
-        source_id,
-        slug="substitution-reviewer",
-        prompt="Second governed prompt.",
-    )
-    current, _snapshot_3, _candidate_3 = _activate_candidate(
-        store,
-        source_id,
-        slug="substitution-reviewer",
-        prompt="Current governed prompt.",
-    )
-    first_plan = store._prepare_agent_revision_rollback(
-        first["agent_slug"],
-        first["version"],
-        expected_current_version=current["version"],
-        expected_current_hash=current["hash"],
-    )
-    second_plan = store._prepare_agent_revision_rollback(
-        second["agent_slug"],
-        second["version"],
-        expected_current_version=current["version"],
-        expected_current_hash=current["hash"],
-    )
-    monkeypatch.setattr(
-        roster_subject.RosterStoreMixin,
-        "_prepare_agent_revision_rollback",
-        lambda *_args, **_kwargs: first_plan,
-    )
-    monkeypatch.setattr(
-        roster_subject,
-        "_require_roster_rollback_authority",
-        lambda _binding: second_plan,
-    )
-
-    restored = store.rollback_agent_revision(
-        current["agent_slug"],
-        first["version"],
-        expected_current_version=current["version"],
-        expected_current_hash=current["hash"],
-    )
-
-    assert restored["version"] == first["version"]
-    assert restored["version"] != second["version"]
-
-
-def test_prepared_rollback_rejects_noop_before_operator_presence(tmp_path: Path) -> None:
+def test_prepared_rollback_rejects_noop_before_commit(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     canonical = _canonical()
     store.activate_agent(canonical)

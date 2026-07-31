@@ -218,7 +218,7 @@ jobs:
             tests/test_host_uninstall.py \
             tests/test_cli_uninstall.py \
             tests/test_host_boundary_hardening.py \
-            tests/test_cli_operator_presence.py \
+          tests/test_cli_owner_authority.py \
             tests/test_security_turn_boundaries.py \
             -q -W error
       - name: Prove decision-conformance mutations

@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-29
+updated: 2026-07-30
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -14,6 +14,7 @@ related:
   - docs/decisions/0085-continue-in-task-after-context-checkpoints.md
   - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
+  - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -24,6 +25,7 @@ related:
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
+  - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
@@ -3389,6 +3391,14 @@ attestation, and closed the sole failed run; report SHA-256 is
 `65981b64...fae95`. It was not retried. Only the existing-Store current-profile
 contract admits the deterministic fixture, so this negative isolated result is
 not a substitute for the attended live gate.
+
+That fixture description is retained as historical evidence only. ADR-0118 and
+AR-204 now require every production activation canary to obtain a valid
+inference decision and provider-attempt receipts before any specialist exists.
+The closed activation adapter may narrow only the already inferred worker to
+the package-owned read-only diagnostic goal needed for Codex replay; it cannot
+select, add, rank, or substitute a worker. Missing or invalid inference fails
+the canary visibly with no deterministic fallback.
 
 ### Still required before AR-119 can close
 
