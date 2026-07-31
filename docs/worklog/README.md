@@ -393,6 +393,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6956edb` | 2026-07-30 | docs(evidence): record AR-204 mutation gate | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 | `67f0b96` | 2026-07-30 | docs(evidence): prove dashboard configuration round trip | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 | `9e3ca7f` | 2026-07-30 | fix(routing): preserve inference authority through evaluation | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-9e3ca7f-inference-authority-evaluation.md) |
+| `0b37270` | 2026-07-30 | docs(evidence): record AR-204 38-mutation gate | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
