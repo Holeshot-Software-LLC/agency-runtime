@@ -10,6 +10,7 @@ related:
   - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
+  - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/worklog/README.md
 supersedes: []
@@ -46,6 +47,9 @@ acceptance; this file records only current proof and the next package.
   labeled from the exact invocation, product trials correlate the exact rollout
   and workspace write, and activation specialist identity remains inference-
   owned through durable replay.
+- The fifth bounded package is source-complete: ADR-0120 supersedes response
+  repair with pre-publication header construction and terminal first-invalid
+  failure across Codex, ZCode, Hermes, and OpenClaw.
 - Tracker [#189](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189)
   records AR-204 under `epic:product`.
 - AR-143 and AR-196 are `wont_do` and explicitly superseded by AR-204; their
@@ -93,16 +97,22 @@ acceptance; this file records only current proof and the next package.
   rollout correlation, workspace-write evidence, no-hiring canary scope,
   provider receipts, bounded inferred binding persistence, and modern plan
   equality.
+- Native Codex receives exact initial, updated, and post-wait final header
+  snapshots. Hermes/OpenClaw call `agency.finalize` before the natural final;
+  neither production adapter asks the model to revise an invalid response.
+- The finalization package passed 378 warning-strict tests with five platform
+  skips and a 144-test post-format regression. Ruff, format, metadata, policy,
+  documentation, and diff checks passed.
 - Decision conformance passed its last complete 29-mutation run with zero
-  survivors or invalid mutations. Four review-added mutations are manifest-
-  tested, bringing the pending complete evaluator to 33 mutations.
+  survivors or invalid mutations. Eight later mutations are manifest-tested,
+  bringing the pending complete evaluator to 37 mutations.
 
 ## exact-blocker
 
-Owner CLI/dashboard authority, inference-only staffing, and the shared
-activation adapter contract are repaired and checkpointed. Current production
-still lacks final proof at native Codex propagation, terminal response/header
-correction, and rendered dashboard boundaries.
+Owner authority, inference-only staffing, activation contracts, and first-pass
+header enforcement are repaired in source. Current production still lacks the
+complete 37-mutation result, rendered dashboard/configuration proof, named fast
+spine, exact installation, and one native Codex product trial.
 
 ## same-task-continuity
 
@@ -112,12 +122,12 @@ the owner-untracked analysis draft and `uv.lock`.
 
 ## next-bounded-work-package
 
-1. Run the complete 33-mutation local decision-conformance evaluator and stop
+1. Run the complete 37-mutation local decision-conformance evaluator and stop
    on the first survivor or invalid mutation.
-2. Repair the terminal header boundary so missing, malformed, corrected, or
-   evidence-mismatched output fails the turn without a repair loop.
-3. Prove the terminal contract with focused tests, then checkpoint before the
-   dashboard live canary and final exact-build product trial.
+2. Run the authenticated packaged-dashboard render plus one reversible owner
+   configuration mutation and exact restoration.
+3. Run the named fast spine, checkpoint, install that exact build for Codex and
+   ZCode plus dashboard, then run one bypassed native Codex product trial.
 
 ## verification
 

@@ -606,6 +606,13 @@ header is a compact projection of correlated Store evidence, not independent
 proof. A missing, malformed, corrected, or evidence-mismatched header makes the
 turn fail; successful product evidence requires correction count zero.
 
+Agency constructs that header before the first visible response. Native Codex
+receives exact Store-backed snapshots at preflight and after recorded tool or
+wait evidence. Hermes and OpenClaw call the local `agency.finalize` tool once
+immediately before their natural final response and emit its returned text
+unchanged. An invalid natural response is terminal: Agency does not ask the
+model to repair the header or count a repaired response as success.
+
 ---
 
 ## 📂 Roster & the upstream project

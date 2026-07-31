@@ -561,6 +561,66 @@ class _NominationSemantics:""",
             "test_hire_reports_content_free_employment_revalidation_stage"
         ),
     ),
+    DecisionMutation(
+        mutation_id="codex-terminal-invalid-restores-continuation-prompt",
+        invariant=(
+            "A terminal Codex response failure stops the turn instead of creating a "
+            "model-visible correction prompt."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before="        return self._reject_completion(message, retry=True)",
+        after="        return self._reject_completion(message, retry=False)",
+        test_node=(
+            "tests/test_host_hooks.py::"
+            "test_identical_codex_invalid_stop_is_terminal_and_exactly_replayed"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-preflight-drops-initial-header-snapshot",
+        invariant=(
+            "Codex receives the exact Store-backed header snapshot before its first visible "
+            "response."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before='            marker="INITIAL",',
+        after='            marker="REMOVED",',
+        test_node=(
+            "tests/test_host_hooks.py::test_codex_stdio_preflight_header_is_accepted_first_pass"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="openclaw-finalize-restores-model-revision",
+        invariant=(
+            "OpenClaw terminal verification never asks the model to revise a natural response."
+        ),
+        source_path="agency_runtime/core/installer_payload_openclaw.py",
+        before="""      if (decision?.terminalRejected === true) {{
+        rememberTerminalRejection(decision, event, ctx);
+        return undefined;
+      }}""",
+        after="""      if (decision?.terminalRejected === true) {{
+        rememberTerminalRejection(decision, event, ctx);
+        return {{ action: "revise", message: String(decision?.message || "") }};
+      }}""",
+        test_node=(
+            "tests/test_adapter_parity.py::"
+            "test_generated_openclaw_plugin_is_native_openclaw_package"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="hermes-transform-repairs-unfinalized-response",
+        invariant=(
+            "Hermes blocks an unfinalized natural response instead of repairing it after "
+            "generation."
+        ),
+        source_path="agency_runtime/adapters/hermes/bridge.py",
+        before='        if decision.get("action") != "accept":',
+        after='        if False and decision.get("action") != "accept":',
+        test_node=(
+            "tests/test_completion_policy_boundary.py::"
+            "test_hermes_transform_rejects_unfinalized_natural_response_without_repair"
+        ),
+    ),
 )
 
 PytestRunner = Callable[[Path, Sequence[str], str, float, Path], _PytestRun]

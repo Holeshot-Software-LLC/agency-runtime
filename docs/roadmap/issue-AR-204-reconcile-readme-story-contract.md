@@ -10,6 +10,7 @@ related:
   - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
+  - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
@@ -161,6 +162,23 @@ baseline and killed all 29 then-defined mutations with zero survivors and zero
 invalid mutations. Four review-added mutations are manifest-tested; their
 complete 33-mutation execution is the first post-checkpoint gate.
 
+The first-pass response package supersedes the former one-correction policy
+with ADR-0120. Native Codex now receives exact initial, updated, and final
+Store-backed header snapshots before publication. Hermes and OpenClaw direct
+the model through `agency.finalize` once before the natural final response and
+accept only the exact committed result. The first invalid natural response
+closes as `response_invalid` or `delegation_declined`; production no longer
+claims a continuation receipt, OpenClaw never requests `action: revise`, and
+Hermes exposes only a bounded safe failure response for an unverified draft.
+
+The bounded finalization spine passed 378 warning-strict tests with five
+platform skips, followed by a 144-test post-format regression. Ruff, formatting,
+metadata, policy availability, documentation validation, and whitespace checks
+passed. Four new curated mutations cover restoration of a Codex continuation
+prompt, removal of the initial Codex snapshot, restoration of OpenClaw model
+revision, and Hermes post-generation repair. The manifest contains 37
+mutations; its complete isolated execution remains the first next-package gate.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired
@@ -180,7 +198,7 @@ complete 33-mutation execution is the first post-checkpoint gate.
 - [ ] Current Codex carries the exact activation contract into hook processes
   and proves hook start, route, exact specialist injection, and native child
   lifecycle separately.
-- [ ] Missing, malformed, corrected, or evidence-mismatched headers cannot be
+- [x] Missing, malformed, corrected, or evidence-mismatched headers cannot be
   accepted as a successful turn; success requires correction count zero.
 - [ ] Dashboard success proves automatic token authentication, packaged render,
   configuration read, one reversible owner write, and exact restoration.

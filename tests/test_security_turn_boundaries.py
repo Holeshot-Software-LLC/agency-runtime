@@ -314,7 +314,9 @@ def test_openclaw_invalid_terminal_correlation_fails_closed(
     assert node_bridge.main() == 0
 
     result = json.loads(capsys.readouterr().out)
-    assert result["action"] == "continue"
+    assert result["action"] == "terminal"
+    assert result["terminalRejected"] is True
+    assert result["terminalStatus"] == "verification_failed"
 
 
 def _openclaw_transport_source() -> str:
@@ -403,16 +405,12 @@ def _openclaw_plugin_harness_source() -> str:
             "      }\n"
             "      let result = {};\n"
             "      if (payload.action === 'pre_verify') {\n"
-            "        result = payload.attempt > 0\n"
-            "          ? {\n"
-            "              action: 'continue', message: 'repair', turnId: payload.traceId,\n"
-            "              terminalRejected: true,\n"
-            "              responseHash: createHash('sha256').update(payload.finalResponse).digest('hex'),\n"
-            "            }\n"
-            "          : {\n"
-            "              action: 'continue', message: 'repair', turnId: payload.traceId,\n"
-            "              revisionId: '00000000-0000-0000-0000-000000000001',\n"
-            "            };\n"
+            "        result = {\n"
+            "          action: 'terminal', message: 'first-pass response invalid',\n"
+            "          terminalRejected: true, terminalStatus: 'response_invalid',\n"
+            "          turnId: payload.traceId,\n"
+            "          responseHash: createHash('sha256').update(payload.finalResponse).digest('hex'),\n"
+            "        };\n"
             "      } else if (payload.action === 'control') {\n"
             "        const denied = payload.command === 'off' || payload.command === 'on';\n"
             "        result = {\n"
@@ -617,7 +615,7 @@ if (uncaught !== 0) process.exit(33);
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
-def test_generated_openclaw_outbound_gate_blocks_upstream_retry_exhaustion(
+def test_generated_openclaw_outbound_gate_blocks_first_pass_rejection(
     tmp_path: Path,
 ) -> None:
     source = _openclaw_plugin_harness_source()
@@ -669,14 +667,14 @@ const firstDecision = await finalize(
   { lastAssistantMessage: natural, stopHookActive: false },
   context,
 );
-if (firstDecision?.action !== "revise" || firstDecision?.retry?.maxAttempts !== 1) process.exit(42);
+if (firstDecision !== undefined) process.exit(42);
 const decision = await finalize(
   { lastAssistantMessage: natural, stopHookActive: false },
   context,
 );
-// The second failure is a terminal bridge outcome, not another revise request.
-// OpenClaw may complete its native finalize lifecycle; the final-only outbound
-// gate below then denies the exact rejected response without reopening the turn.
+// The first failure is terminal and its exact replay remains terminal. OpenClaw
+// may complete its native finalize lifecycle; the final-only outbound gate below
+// denies the exact rejected response without requesting another model pass.
 if (decision !== undefined) process.exit(51);
 
 const fastPath = await outbound(

@@ -38,7 +38,7 @@ _FINALIZATION_BLOCK_RESPONSE = (
 )
 _PRE_VERIFY_UNAVAILABLE = (
     "Agency Runtime could not verify this draft. Restore turn correlation and "
-    "evidence, then retry once."
+    "evidence, then start a new turn."
 )
 
 
@@ -452,8 +452,6 @@ def _pre_verify(final_response="", attempt=0, **kwargs):
             },
         )
     except Exception:
-        if normalized_attempt == 0:
-            return {"action": "continue", "message": _PRE_VERIFY_UNAVAILABLE}
         return None
 
 

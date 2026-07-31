@@ -209,6 +209,17 @@ class FakeAdapter:
         return {"action": "accept", "evidence_revision": 1}
 
 
+def _assert_terminal_invalid(result: dict[str, Any], host: str) -> None:
+    if host == "zcode":
+        assert result["decision"] == "block"
+        message = result["reason"]
+    else:
+        assert result["continue"] is False
+        message = result["stopReason"]
+    assert message.startswith("AGENCY RESPONSE INVALID:")
+    assert "no correction was requested or accepted" in message
+
+
 def test_codex_user_prompt_maps_to_native_additional_context() -> None:
     adapter = FakeAdapter()
     store = FakeStore()
@@ -296,10 +307,11 @@ def test_realistic_prompt_to_stop_sequence_uses_one_turn_trace(
     )
 
     assert prompt["hookSpecificOutput"]["additionalContext"]
-    assert stopped["decision"] == "block"
+    _assert_terminal_invalid(stopped, "codex")
     activity = store.recent_runtime_activity(limit=20)
     assert activity["routing"][0]["trace_id"] == turn_id
     assert activity["finalizations"][0]["trace_id"] == turn_id
+    assert activity["finalizations"][0]["action"] == "response_invalid"
 
 
 def test_new_external_prompt_abandons_prior_open_turns_with_exact_cas(
@@ -365,10 +377,10 @@ def test_claude_no_turn_id_correlates_after_abandoning_crashed_turn(
     )
 
     assert store.get_skills_for_trace("session", current) == ["security-review"]
-    assert stopped["decision"] == "block"
+    _assert_terminal_invalid(stopped, "claude")
     finalizations = store.recent_runtime_activity(limit=20)["finalizations"]
     assert finalizations[0]["trace_id"] == current
-    assert finalizations[0]["action"] == "continue"
+    assert finalizations[0]["action"] == "response_invalid"
 
 
 def test_missing_turn_id_uses_only_the_unambiguous_open_routing_trace(
@@ -550,21 +562,16 @@ def test_no_turn_id_identical_digest_is_checked_against_current_evidence(
         }
     )
 
-    assert stopped["decision"] == "block"
-    correction = stopped["reason"]
-    assert "current-reviewer" in correction
-    assert "<!-- agency-continuation:" in correction
+    _assert_terminal_invalid(stopped, host)
     assert store.get_run("prior") == prior_run
-    assert store.get_run("current")["status"] == "active"
-    assert store.get_open_traces_for_session("session") == ["current"]
-    assert store.get_authoritative_finalization("session", "current") is None
+    assert store.get_run("current")["status"] == "response_invalid"
+    assert store.get_open_traces_for_session("session") == []
     current_events = [
         row
         for row in store.recent_runtime_activity(limit=20)["finalizations"]
         if row["trace_id"] == "current"
     ]
-    assert [row["action"] for row in current_events] == ["continue"]
-    assert correction.endswith(f"<!-- agency-continuation:{current_events[0]['id']} -->")
+    assert [row["action"] for row in current_events] == ["response_invalid"]
 
 
 def test_missing_turn_id_stays_uncorrelated_when_open_turns_are_ambiguous(
@@ -1196,7 +1203,7 @@ def test_claude_failed_delegation_is_forwarded_as_failure_evidence() -> None:
     assert call["result"]["error"] == "worker timed out"
 
 
-def test_stop_verification_uses_codex_correction_shape_and_turn_trace() -> None:
+def test_stop_verification_terminally_rejects_first_invalid_response() -> None:
     adapter = FakeAdapter()
     adapter.verify_result = {
         "action": "continue",
@@ -1217,18 +1224,17 @@ def test_stop_verification_uses_codex_correction_shape_and_turn_trace() -> None:
         }
     )
 
-    assert result["decision"] == "block"
-    assert result["reason"].startswith("Correct the evidence header.")
+    _assert_terminal_invalid(result, "codex")
     assert adapter.verify_calls[0]["session_id"] == "session-stop"
     assert adapter.verify_calls[0]["model"] == "gpt-5.6-codex"
     assert store.finalizations[0]["trace_id"] == "turn-stop"
     assert store.finalizations[0]["host"] == "codex"
-    assert store.finalizations[0]["action"] == "continue"
+    assert store.finalizations[0]["action"] == "response_invalid"
     assert store.finalizations[0]["missing"] == ["agencies_delegated"]
-    assert result["reason"].endswith(f"<!-- agency-continuation:{store.finalizations[0]['id']} -->")
+    assert store.run_status["turn-stop"] == "response_invalid"
 
 
-def test_stop_hook_active_revalidates_blocks_and_closes_exhausted_turn() -> None:
+def test_stop_hook_active_still_terminally_rejects_without_correction() -> None:
     adapter = FakeAdapter()
     adapter.verify_result = {
         "action": "continue",
@@ -1247,24 +1253,20 @@ def test_stop_hook_active_revalidates_blocks_and_closes_exhausted_turn() -> None
         }
     )
 
-    assert result["continue"] is False
-    assert result["stopReason"].startswith("AGENCY RETRY EXHAUSTED:")
-    assert "No further correction is requested" in result["stopReason"]
-    # The callback response is verified once, then its evidence revision is
-    # bound by the terminal CAS without a duplicate provider invocation.
+    _assert_terminal_invalid(result, "claude")
     assert len(adapter.verify_calls) == 1
     assert {call["trace_id"] for call in adapter.verify_calls} == {"turn-stop"}
-    assert store.finalizations[0]["action"] == "retry_exhausted"
+    assert store.finalizations[0]["action"] == "response_invalid"
     assert store.closed_turns == [
         {
             "session_id": "session-stop",
             "trace_id": "turn-stop",
-            "status": "retry_exhausted",
+            "status": "response_invalid",
         }
     ]
 
 
-def test_identical_codex_stop_without_retry_flag_exhausts_after_one_block() -> None:
+def test_identical_codex_invalid_stop_is_terminal_and_exactly_replayed() -> None:
     adapter = FakeAdapter()
     adapter.verify_result = {
         "action": "continue",
@@ -1283,20 +1285,15 @@ def test_identical_codex_stop_without_retry_flag_exhausts_after_one_block() -> N
     second = bridge.handle(dict(payload))
     third = bridge.handle(dict(payload))
 
-    assert first["decision"] == "block"
-    assert "<!-- agency-continuation:" in first["reason"]
-    assert second["continue"] is False
-    assert second["stopReason"].startswith("AGENCY RETRY EXHAUSTED:")
+    _assert_terminal_invalid(first, "codex")
+    assert second == first
     assert third == second
-    assert [event["action"] for event in store.finalizations] == [
-        "continue",
-        "retry_exhausted",
-    ]
-    assert store.run_status["turn-stop"] == "retry_exhausted"
-    assert len(adapter.verify_calls) == 2
+    assert [event["action"] for event in store.finalizations] == ["response_invalid"]
+    assert store.run_status["turn-stop"] == "response_invalid"
+    assert len(adapter.verify_calls) == 1
 
 
-def test_strongly_preferred_delegation_declines_once_then_replays_terminally() -> None:
+def test_strongly_preferred_delegation_declines_first_pass_and_replays_terminally() -> None:
     adapter = FakeAdapter()
     adapter.verify_result = {
         "action": "continue",
@@ -1316,23 +1313,20 @@ def test_strongly_preferred_delegation_declines_once_then_replays_terminally() -
     terminal = bridge.handle(dict(payload))
     replay = bridge.handle(dict(payload))
 
-    assert first["decision"] == "block"
-    assert terminal["continue"] is False
-    assert terminal["stopReason"].startswith("AGENCY DELEGATION DECLINED:")
+    assert first["continue"] is False
+    assert first["stopReason"].startswith("AGENCY DELEGATION DECLINED:")
+    assert terminal == first
     assert replay == terminal
-    assert [event["action"] for event in store.finalizations] == [
-        "continue",
-        "delegation_declined",
-    ]
+    assert [event["action"] for event in store.finalizations] == ["delegation_declined"]
     assert store.run_status["turn-stop"] == "delegation_declined"
-    assert len(adapter.verify_calls) == 2
+    assert len(adapter.verify_calls) == 1
 
     mismatched = bridge.handle(
         {**payload, "last_assistant_message": "A different terminal response"}
     )
     assert mismatched["continue"] is False
     assert mismatched["stopReason"].startswith("AGENCY TURN TERMINAL:")
-    assert len(adapter.verify_calls) == 2
+    assert len(adapter.verify_calls) == 1
 
 
 def test_stop_verifier_exception_blocks_instead_of_accepting() -> None:
@@ -1358,9 +1352,10 @@ def test_stop_verifier_exception_blocks_instead_of_accepting() -> None:
         }
     )
 
-    assert result["decision"] == "block"
-    assert "could not verify" in result["reason"]
-    assert store.finalizations[0]["action"] == "continue"
+    assert result["continue"] is False
+    assert "could not verify" in result["stopReason"]
+    assert store.finalizations == []
+    assert store.run_status["turn-stop"] == "verification_failed"
 
 
 def test_stop_persistence_exception_terminally_stops_verified_response() -> None:
@@ -1389,11 +1384,10 @@ def test_stop_persistence_exception_terminally_stops_verified_response() -> None
     assert "could not verify or persist" in result["stopReason"]
 
 
-def test_stop_malformed_retry_receipt_fails_closed() -> None:
-    class MalformedReceiptStore(FakeStore):
-        def record_finalization(self, **kwargs: Any) -> str:
-            self.finalizations.append(kwargs)
-            return "not-a-uuid"
+def test_stop_does_not_consult_legacy_retry_receipts() -> None:
+    class LegacyReceiptStore(FakeStore):
+        def claim_continuation(self, **_kwargs: Any) -> dict[str, str]:
+            raise AssertionError("the first-pass terminal path must not claim a retry")
 
     adapter = FakeAdapter()
     adapter.verify_result = {
@@ -1402,7 +1396,7 @@ def test_stop_malformed_retry_receipt_fails_closed() -> None:
     }
     bridge = HookBridge(
         "codex",
-        store=MalformedReceiptStore(),  # type: ignore[arg-type]
+        store=LegacyReceiptStore(),  # type: ignore[arg-type]
         adapter=adapter,
     )
 
@@ -1415,13 +1409,12 @@ def test_stop_malformed_retry_receipt_fails_closed() -> None:
         }
     )
 
-    assert result["continue"] is False
-    assert "could not verify or persist" in result["stopReason"]
+    _assert_terminal_invalid(result, "codex")
 
 
-def test_stop_continuation_claim_exception_fails_closed() -> None:
+def test_stop_terminal_commit_exception_fails_closed() -> None:
     class FailingStore(FakeStore):
-        def claim_continuation(self, **_kwargs: Any) -> dict[str, str]:
+        def commit_terminal_finalization(self, **_kwargs: Any) -> dict[str, Any]:
             raise OSError("database offline")
 
     adapter = FakeAdapter()
@@ -1451,7 +1444,7 @@ def test_stop_continuation_claim_exception_fails_closed() -> None:
 
 @pytest.mark.parametrize("host", ["codex", "claude", "zcode"])
 @pytest.mark.parametrize("message", [None, ""])
-def test_missing_or_blank_stop_response_fails_closed_and_exhausts_one_retry(
+def test_missing_or_blank_stop_response_fails_terminally_without_retry(
     tmp_path: Path,
     host: str,
     message: str | None,
@@ -1474,32 +1467,25 @@ def test_missing_or_blank_stop_response_fails_closed_and_exhausts_one_retry(
         payload["last_assistant_message"] = message
 
     first = bridge.handle(payload)
-
-    # A corrective Stop uses decision:block on every supported host. ZCode
-    # additionally requires that shape for terminal rejection. See AR-127.
-    assert first["decision"] == "block"
-    assert store.get_run("turn-empty")["status"] == "active"
+    _assert_terminal_invalid(first, host)
+    assert store.get_run("turn-empty")["status"] == "response_invalid"
 
     payload["stop_hook_active"] = True
-    retry = bridge.handle(payload)
-
-    # The retry-exhausted terminal path emits the lifecycle shape for codex
-    # and claude, but ZCode must still emit decision:block there too.
-    if host == "zcode":
-        assert retry["decision"] == "block"
-    else:
-        assert retry["continue"] is False
-    assert store.get_run("turn-empty")["status"] == "retry_exhausted"
+    replay = bridge.handle(payload)
+    assert replay == first
+    assert [row["action"] for row in store.recent_runtime_activity(limit=10)["finalizations"]] == [
+        "response_invalid"
+    ]
 
 
-def test_zcode_stop_rejection_always_uses_decision_block_regardless_of_retry(
+def test_zcode_stop_rejection_and_terminal_replay_use_decision_block(
     tmp_path: Path,
 ) -> None:
     """AR-127: ZCode only recognizes {"decision": "block", ...} on its Stop
     event. The {"continue": False, "stopReason": ...} lifecycle shape is an
     unknown field that ZCode silently ignores, collapsing a rejection into a
     pass-through accept. ZCode must therefore emit decision:block on every
-    rejection path, including retry-exhausted and verifier-unavailable.
+    rejection path, including terminal replay and verifier-unavailable.
     """
     adapter = FakeAdapter()
     adapter.verify_result = {
@@ -1518,7 +1504,7 @@ def test_zcode_stop_rejection_always_uses_decision_block_regardless_of_retry(
             "last_assistant_message": "Draft without the Agency header.",
         }
     )
-    # First rejection (claimed continuation): must be decision:block.
+    # First terminal rejection: must be decision:block.
     assert first == {"decision": "block", "reason": first["reason"]}
     assert "continue" not in first
     assert "stopReason" not in first
@@ -1532,7 +1518,7 @@ def test_zcode_stop_rejection_always_uses_decision_block_regardless_of_retry(
             "last_assistant_message": "Still missing the Agency header.",
         }
     )
-    # Retry-exhausted terminal path: must ALSO be decision:block, never the
+    # Exact terminal replay: must ALSO be decision:block, never the
     # lifecycle shape, or ZCode would silently accept the invalid response.
     assert exhausted["decision"] == "block"
     assert "continue" not in exhausted
@@ -1753,7 +1739,7 @@ print(json.dumps({"ok": True, "scope": scope}, sort_keys=True))
     assert "already consumed" in json.loads(replay.stdout)["error"]
 
 
-def test_codex_stdio_stop_corrects_then_accepts_exact_turn_header(tmp_path: Path) -> None:
+def test_codex_stdio_preflight_header_is_accepted_first_pass(tmp_path: Path) -> None:
     db_path = tmp_path / "codex-finalization.db"
     store = Store(db_path)
     by_slug = {str(agent["slug"]): agent for agent in bundled_roster()}
@@ -1777,45 +1763,24 @@ def test_codex_stdio_stop_corrects_then_accepts_exact_turn_header(tmp_path: Path
         ),
     )
     assert prompt.returncode == 0, prompt.stderr
-    corrected_response = finalize_header(
+    exact_response = finalize_header(
         "The runtime is active.",
         session_id,
         store,
         model,
         turn_id,
     )
-    assert corrected_response.startswith(
+    assert exact_response.startswith(
         "Agency/Agencies loaded: agents-orchestrator, chief-of-staff\n"
         "Agency/Agencies delegated: none\n"
         "Skills loaded: none\n"
     )
-    assert "reason_codes=" not in corrected_response
-    assert "effect_codes=" not in corrected_response
-    assert "business-strategist" not in corrected_response
-
-    missing_header = _run_hook(
-        "codex",
-        db_path,
-        json.dumps(
-            {
-                "hook_event_name": "Stop",
-                "session_id": session_id,
-                "turn_id": turn_id,
-                "model": model,
-                "last_assistant_message": "The runtime is active.",
-            }
-        ),
-    )
-    assert missing_header.returncode == 0, missing_header.stderr
-    correction = json.loads(missing_header.stdout)
-    assert correction["decision"] == "block"
-    assert correction["reason"].startswith(
-        "Your response is missing or has malformed Agency header fields:"
-    )
-    assert (
-        "Rewrite the response starting with the exact 7-line Agency header.\n\n"
-        "<!-- agency-continuation:"
-    ) in correction["reason"]
+    assert "reason_codes=" not in exact_response
+    assert "effect_codes=" not in exact_response
+    assert "business-strategist" not in exact_response
+    prompt_context = json.loads(prompt.stdout)["hookSpecificOutput"]["additionalContext"]
+    assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in prompt_context
+    assert exact_response.rsplit("\n\n", 1)[0] in prompt_context
 
     accepted = _run_hook(
         "codex",
@@ -1826,16 +1791,14 @@ def test_codex_stdio_stop_corrects_then_accepts_exact_turn_header(tmp_path: Path
                 "session_id": session_id,
                 "turn_id": turn_id,
                 "model": model,
-                "stop_hook_active": True,
-                "last_assistant_message": corrected_response,
+                "last_assistant_message": exact_response,
             }
         ),
     )
-
     assert accepted.returncode == 0, accepted.stderr
     assert json.loads(accepted.stdout) == {}
     finalizations = store.recent_runtime_activity(limit=10)["finalizations"]
-    assert [item["action"] for item in reversed(finalizations)] == ["continue", "accept"]
+    assert [item["action"] for item in reversed(finalizations)] == ["accept"]
 
 
 def test_codex_successful_wait_injects_authoritative_first_pass_header(
@@ -1892,6 +1855,56 @@ def test_codex_successful_wait_injects_authoritative_first_pass_header(
         "Agency/Agencies delegated: none\n"
         "Skills loaded: none\n"
     ) in context
+    assert context.count("Agency/Agencies loaded:") == 1
+
+
+def test_codex_successful_tool_use_injects_updated_first_pass_header(
+    tmp_path: Path,
+) -> None:
+    db_path = tmp_path / "codex-post-tool-header.db"
+    store = Store(db_path)
+    by_slug = {str(agent["slug"]): agent for agent in bundled_roster()}
+    store._activate_prevalidated_agent(by_slug["agents-orchestrator"])
+    store._activate_prevalidated_agent(by_slug["chief-of-staff"])
+    session_id = "post-tool-header"
+    turn_id = "post-tool-header-turn"
+
+    prompt = _run_hook(
+        "codex",
+        db_path,
+        json.dumps(
+            {
+                "hook_event_name": "UserPromptSubmit",
+                "session_id": session_id,
+                "turn_id": turn_id,
+                "model": "gpt-5.6-codex",
+                "prompt": "Use the OpenAI documentation skill, then explain the result.",
+            }
+        ),
+    )
+    assert prompt.returncode == 0, prompt.stderr
+
+    observed = _run_hook(
+        "codex",
+        db_path,
+        json.dumps(
+            {
+                "hook_event_name": "PostToolUse",
+                "session_id": session_id,
+                "turn_id": turn_id,
+                "model": "gpt-5.6-codex",
+                "tool_name": "skill_view",
+                "tool_use_id": "skill-call",
+                "tool_input": {"name": "openai-docs"},
+                "tool_response": {"status": "completed"},
+            }
+        ),
+    )
+
+    assert observed.returncode == 0, observed.stderr
+    context = json.loads(observed.stdout)["hookSpecificOutput"]["additionalContext"]
+    assert context.startswith("[AGENCY UPDATED HEADER SNAPSHOT v1]\n")
+    assert "Skills loaded: openai-docs\n" in context
     assert context.count("Agency/Agencies loaded:") == 1
 
 

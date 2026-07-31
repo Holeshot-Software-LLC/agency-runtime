@@ -46,6 +46,7 @@ Status meanings:
 - ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls → ADR-0110 Remove Agency-owned Windows Hello and use harness-native trust → ADR-0111 Install the applicable suite by default → ADR-0117 Unify owner CLI and dashboard control authority
 - ADR-0087 Inference decides from a relevance shortlist → ADR-0088 Deterministic typed-recall is the offline floor → ADR-0118 Require inference-owned specialist staffing
 - ADR-0077 Prove Codex hook activation behaviorally without bypassing trust → ADR-0119 Separate native trust modes from activation proof
+- ADR-0071 Bound native delegation correction to one evidence-checked pass → ADR-0120 Construct evidence headers before first publication
 
 ## Architecture and integrations
 
@@ -82,7 +83,7 @@ Status meanings:
 | [ADR-0068](0068-select-compatible-specialist-closures-per-unit.md) | Select compatible specialist closures per work unit | Accepted |
 | [ADR-0069](0069-enforce-conflicts-before-prompt-composition.md) | Enforce specialist conflicts before prompt composition | Accepted |
 | [ADR-0070](0070-run-child-specific-agency-activation.md) | Run child-specific Agency activation through native host lifecycles | Accepted |
-| [ADR-0071](0071-bound-native-delegation-correction.md) | Bound native delegation correction to one evidence-checked pass | Accepted |
+| [ADR-0071](0071-bound-native-delegation-correction.md) | Bound native delegation correction to one evidence-checked pass | Superseded |
 | [ADR-0072](0072-compare-task-outcomes-with-paired-trials.md) | Compare task outcomes with evidence-labelled paired trials | Accepted |
 | [ADR-0078](0078-present-human-routing-evidence-and-abstain-on-noise.md) | Present human routing evidence and abstain on weak heuristic noise | Accepted |
 | [ADR-0079](0079-route-native-children-once-and-bound-unplanned-reroutes.md) | Route native children once and bound unplanned reroutes | Accepted |
@@ -109,6 +110,7 @@ Status meanings:
 | [ADR-0047](0047-reconcile-litellm-model-and-router-evidence.md) | Reconcile LiteLLM actual-model and router evidence separately | Accepted |
 | [ADR-0065](0065-keep-compact-resident-manager-kernel.md) | Keep a compact resident manager kernel at the parent boundary | Accepted |
 | [ADR-0093](0093-atomic-finalization-evidence-batches.md) | Commit one finalization evidence batch atomically | Accepted |
+| [ADR-0120](0120-construct-first-pass-evidence-headers.md) | Construct evidence headers before first publication | Accepted |
 
 ## State and roster governance
 

@@ -57,6 +57,13 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Response evidence headers are now constructed before first publication.
+  Native Codex receives exact Store snapshots at preflight and after evidence
+  changes; Hermes and OpenClaw use `agency.finalize` once before their natural
+  final response. Missing, malformed, stale, or mismatched natural output
+  terminalizes without a continuation receipt or model repair, and successful
+  product evidence therefore requires zero corrections.
+
 - Configured inference now makes an explicit per-unit `staff` or `gap`
   decision. Contradictory safe-team evidence gets one bounded inference repair
   instead of becoming an implicit contractor gap, and only an explicit gap with

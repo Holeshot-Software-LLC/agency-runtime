@@ -302,7 +302,7 @@ def test_openclaw_bridge_normalizes_invalid_attempt_without_crashing(
     assert "closed" not in observed
 
 
-def test_openclaw_pre_verify_exception_requires_revision(
+def test_openclaw_pre_verify_exception_is_terminal_without_revision(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from agency_runtime.adapters.openclaw import node_bridge
@@ -325,11 +325,14 @@ def test_openclaw_pre_verify_exception_requires_revision(
         }
     )
 
-    assert result["action"] == "continue"
+    assert result["action"] == "terminal"
+    assert result["terminalRejected"] is True
+    assert result["terminalStatus"] == "verification_failed"
+    assert "revisionId" not in result
     assert "VERIFICATION UNAVAILABLE" in result["message"]
 
 
-def test_openclaw_pre_verify_store_construction_failure_requires_revision(
+def test_openclaw_pre_verify_store_construction_failure_is_terminal(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from agency_runtime.adapters.openclaw import node_bridge
@@ -349,7 +352,10 @@ def test_openclaw_pre_verify_store_construction_failure_requires_revision(
         }
     )
 
-    assert result["action"] == "continue"
+    assert result["action"] == "terminal"
+    assert result["terminalRejected"] is True
+    assert result["terminalStatus"] == "verification_failed"
+    assert "revisionId" not in result
     assert "VERIFICATION UNAVAILABLE" in result["message"]
 
 
@@ -395,7 +401,9 @@ def test_openclaw_enabled_accept_requires_evidence_revision(
         }
     )
 
-    assert result["action"] == "continue"
+    assert result["action"] == "terminal"
+    assert result["terminalRejected"] is True
+    assert result["terminalStatus"] == "verification_failed"
     assert store.get_run("turn")["status"] == "active"
     assert store.get_authoritative_finalization("session", "turn") is None
 
@@ -484,7 +492,7 @@ def test_openclaw_stale_evidence_cannot_terminalize(
     assert store.get_authoritative_finalization("session", "turn") is None
 
 
-def test_openclaw_concurrent_duplicate_callback_replays_one_receipt(
+def test_openclaw_concurrent_duplicate_callback_replays_one_terminal_outcome(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -521,18 +529,23 @@ def test_openclaw_concurrent_duplicate_callback_replays_one_receipt(
     with ThreadPoolExecutor(max_workers=2) as executor:
         results = list(executor.map(node_bridge.handle, (payload, payload)))
 
-    assert {result["revisionId"] for result in results} == {results[0]["revisionId"]}
-    assert store.get_run("turn")["status"] == "active"
+    assert results[0] == results[1]
+    assert results[0]["action"] == "terminal"
+    assert results[0]["terminalRejected"] is True
+    assert results[0]["terminalStatus"] == "response_invalid"
+    assert "revisionId" not in results[0]
+    assert store.get_run("turn")["status"] == "response_invalid"
 
     plain_adapter = OpenClawAdapter(store=store)
     monkeypatch.setattr(node_bridge, "OpenClawAdapter", lambda: plain_adapter)
-    exhausted = node_bridge.handle({**payload, "finalResponse": "changed invalid"})
+    mismatch = node_bridge.handle({**payload, "finalResponse": "changed invalid"})
 
-    assert exhausted["action"] == "terminal"
-    assert exhausted["terminalRejected"] is True
-    assert exhausted["terminalStatus"] == "retry_exhausted"
-    assert "revisionId" not in exhausted
-    assert store.get_run("turn")["status"] == "retry_exhausted"
+    assert mismatch["action"] == "terminal"
+    assert mismatch["terminalRejected"] is True
+    assert mismatch["terminalStatus"] == "response_invalid"
+    assert mismatch["message"].startswith("AGENCY TURN TERMINAL:")
+    assert "revisionId" not in mismatch
+    assert store.get_run("turn")["status"] == "response_invalid"
 
 
 def test_openclaw_bridge_main_fails_open_without_leaking_exception_text(
@@ -587,7 +600,10 @@ def test_openclaw_bridge_main_fails_closed_for_unexpected_pre_verify_exception(
     monkeypatch.setattr(sys, "stderr", stderr)
 
     assert node_bridge.main() == 0
-    assert json.loads(stdout.getvalue())["action"] == "continue"
+    result = json.loads(stdout.getvalue())
+    assert result["action"] == "terminal"
+    assert result["terminalRejected"] is True
+    assert result["terminalStatus"] == "verification_failed"
     assert "response publication blocked" in stderr.getvalue()
     assert "private verifier detail" not in stderr.getvalue()
 

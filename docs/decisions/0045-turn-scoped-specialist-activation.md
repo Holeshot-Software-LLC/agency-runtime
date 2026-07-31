@@ -22,6 +22,7 @@ related:
   - docs/decisions/0068-select-compatible-specialist-closures-per-unit.md
   - docs/decisions/0070-run-child-specific-agency-activation.md
   - docs/decisions/0071-bound-native-delegation-correction.md
+  - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/worklog/README.md
 supersedes:
   - docs/decisions/0007-six-line-evidence-header.md
@@ -79,8 +80,9 @@ consumed receipt set atomically and rejects missing, duplicated, stale, or
 mismatched retrieval. It also requires a reciprocal native delegation event
 with a host worker or tool-run identity for the same receipt and work unit.
 Selected units that the host does not execute close through an explicit decline,
-skip, or bounded `retry_exhausted` outcome; they never require or fabricate a
-load receipt. A parent preflight, a native worker label by itself, or a
+skip, or terminal response-invalid outcome; they never require or fabricate a
+load receipt. Historical `retry_exhausted` rows remain readable but are not
+created by current header enforcement. A parent preflight, a native worker label by itself, or a
 slug-only load can never manufacture exact-capability retrieval evidence.
 
 Keep delegation recommendation and execution identity separate. The planned
@@ -125,8 +127,8 @@ request kind and evidence lifecycle that Stop/finalization can close.
 
 Require explicit correlation at public evidence-mutation boundaries. Missing or
 ambiguous correlation fails closed rather than fabricating an empty authoritative
-state. Stop retries are revalidated and bounded; loop prevention does not bypass
-evidence reconciliation.
+state. The first invalid natural response terminalizes without Stop correction;
+loop prevention does not bypass evidence reconciliation.
 
 Persist a content-free request fingerprint, the typed state-aware
 classification, and its legacy `trivial` or `nontrivial` request-kind projection
@@ -140,24 +142,23 @@ Treat terminal state as monotonic. Evidence validation and mutation occur in the
 same write transaction as their insert, while terminal closure uses a
 compare-and-set from `active` or `evidence_only`. A later callback may read
 immutable historical evidence but cannot reopen the turn or rewrite
-`retry_exhausted`, `failed`, or another terminal outcome.
+`response_invalid`, historical `retry_exhausted`, `failed`, or another terminal
+outcome.
 
 Bound selector signals, detected work units, persisted suggestions, and the
 combined preflight context before iterating or writing. Stable planned work-unit
 IDs remain canonical when a host returns a different native child/run ID, and a
 failed or skipped outcome is sticky for that canonical unit.
 
-Completion enforcement follows real host capabilities. Claude Code retry
-exhaustion uses its terminal stop control. OpenClaw provides bounded draft
-revision but no permanent denial result at that surface, so ADR-0049 adds an
-audited synchronous outbound seal and keeps missing or bypassed delivery hooks
-as an explicit host trust boundary. Hermes exposes a bounded `pre_verify` nudge
-for code-edit turns but no model-retry
-result from its output transform. Its generated plugin catches hook exceptions
-and enforces through replacement: only an authoritative accept returns the
-finalized draft, while correlation, evidence, policy, persistence, or adapter
-failures return a bounded nonempty safe response that prevents the unverified
-draft from leaking. Runtime disablement remains an explicit pass-through.
+Completion enforcement follows real host capabilities. Codex receives exact
+Store-backed header snapshots before publication and its lifecycle stop shape
+terminalizes invalid output without a continuation prompt. ZCode uses its
+required native block shape. OpenClaw constructs the first visible response
+through `agency.finalize`; ADR-0049's audited synchronous outbound seal cancels
+an unaccepted payload. Hermes uses the same pre-publication finalizer and its
+output transform permits only an exact authoritative accept; any other draft is
+replaced by a bounded nonempty failure response. Runtime disablement remains an
+explicit pass-through.
 
 ## Consequences
 
@@ -179,7 +180,7 @@ draft from leaking. Runtime disablement remains an explicit pass-through.
 - Partial isolated activation cannot finalize executed work: every started,
   running, delegated, or completed isolated unit needs its own consumed one-use
   receipt and reciprocal native identity. Planned but unexecuted units close
-  truthfully through decline, skip, or bounded retry exhaustion instead of
+  truthfully through decline, skip, or terminal invalidity instead of
   becoming fabricated load evidence.
 - Historical recommendations remain auditable without being misreported as the
   worker or specialist that actually executed.
@@ -187,9 +188,9 @@ draft from leaking. Runtime disablement remains an explicit pass-through.
   attribution even when exact capability retrieval and a native tool run are recorded.
 - OpenClaw's host registration, equal-priority same-process plugin, and delivery-
   path bypass boundaries remain documented separately from its audited seal.
-- Hermes uses one documented `pre_verify` continuation on code-edit turns,
-  then relies on mandatory safe output replacement for every turn; the absence
-  of a host permanent-deny result remains explicit.
+- Hermes constructs the first visible response through the local finalizer and
+  relies on mandatory safe output replacement for an invalid natural draft;
+  the absence of a host permanent-deny result remains explicit.
 
 ## Alternatives
 

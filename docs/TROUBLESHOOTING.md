@@ -24,6 +24,7 @@ related:
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0071-bound-native-delegation-correction.md
+  - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0073-own-subprocess-trees-atomically.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
@@ -659,12 +660,14 @@ for the next real external user turn or exact child assignment and carry the new
 `session_id`/`trace_id` through every load, skill, delegation, model, and
 finalization call.
 
-Stop feedback is part of the existing external turn, not a new user message. A
-strongly preferred delegation may claim one correction while its trace remains
-active. The next Stop must revalidate that same trace and then close with accept,
-explicit `delegation_declined`, or `retry_exhausted`; it must not open or reuse a
-terminal trace. Planned units that the host skips or declines need truthful
-nonexecution receipts, not fabricated specialist activations.
+Current header enforcement does not request Stop correction. Agency supplies or
+constructs the exact Store-backed header before first publication. The first
+missing, malformed, stale, or evidence-mismatched natural response closes as
+`response_invalid`, or `delegation_declined` for unresolved strongly preferred
+delegation, and cannot be retried on that trace. Historical `retry_exhausted`
+rows remain readable only for earlier builds. Planned units that the host skips
+or declines need truthful nonexecution receipts, not fabricated specialist
+activations.
 
 If a host repeats terminal-correlation feedback after a fresh preflight, its
 generated bundle may be older than the installed runtime. Inspect registration

@@ -3,7 +3,7 @@ title: "ZCode Stop rejections use decision:block"
 status: accepted
 category: decisions
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-07-30
 tags: [governance, host-integrations, zcode, observability, reliability]
 related:
   - AGENTS.md
@@ -12,6 +12,7 @@ related:
   - tests/test_host_hooks.py
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
   - docs/decisions/0007-six-line-evidence-header.md
+  - docs/decisions/0120-construct-first-pass-evidence-headers.md
 supersedes: []
 superseded_by: null
 id: ADR-0089
@@ -58,19 +59,16 @@ for the `zcode` host on **every** rejection path, regardless of the caller's
 inverted in value, because ZCode and Codex recognize opposite shapes.
 
 The contract is locked by parametrizing the existing blank-stop-response test
-over `zcode` and by a dedicated regression test asserting the shape on both
-the claimed and exhausted continuation paths.
+over `zcode` and by a dedicated regression test asserting the shape on initial
+terminal rejection and exact terminal replay.
 
 ## Consequences
 
 - ZCode Stop rejections now reliably block. A response missing the Agency
   header can no longer be silently accepted because of retry state.
-- ZCode loses the retry-correction affordance that the lifecycle shape
-  carries for Codex: a rejected response is blocked rather than fed back to
-  the model with a correction reason in the same envelope. This is acceptable
-  because ZCode re-injects correction context via its own continuation
-  mechanism (the `<!-- agency-continuation:... -->` receipt already attached
-  to the reason), and because fail-closed behavior is the governing property.
+- ZCode rejects the first invalid response with its native block shape. Under
+  ADR-0120 no Agency continuation receipt is attached and the blocked response
+  cannot be counted as a corrected success.
 - The turn-5 "present header reported as missing" symptom observed in the
   originating session is **not** fixed by this decision. It stems from
   `last_assistant_message` reaching the hook as a truncated preview, and
@@ -82,9 +80,9 @@ the claimed and exhausted continuation paths.
 - **Teach ZCode to recognize the `{"continue": False, "stopReason": ...}`
   lifecycle shape.** Rejected: ZCode's hook contract is outside this
   repository's control, and the lifecycle shape is host-specific anyway.
-- **Always emit the lifecycle shape and rely on the continuation receipt.**
-  Rejected: it would leave ZCode with no effective block, preserving the
-  exact silent pass-through defect this decision removes.
+- **Always emit the lifecycle shape.** Rejected: it would leave ZCode with no
+  effective block, preserving the exact silent pass-through defect this
+  decision removes.
 - **Validate against the authoritative finalized text instead of the hook
   payload.** Out of scope here; it addresses the separate turn-5 defect and
   is left to the AR-127 follow-up.

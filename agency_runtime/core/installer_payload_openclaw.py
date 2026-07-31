@@ -25,7 +25,7 @@ import {{ createHash, randomUUID }} from "node:crypto";
 const PYTHON = {python};
 const MODULE_ARGS = ["-I", "-S", {bootstrap}, "agency_runtime.adapters.openclaw.node_bridge"{config_args}];
 const FINALIZATION_UNAVAILABLE = "Agency Runtime could not verify this response. Restore the local runtime and retry.";
-const TERMINAL_REJECTION_MESSAGE = "Agency Runtime blocked this response because its required evidence contract remained invalid after the bounded revision. Start a new turn after restoring the runtime or correcting the response.";
+const TERMINAL_REJECTION_MESSAGE = "Agency Runtime blocked this response because its required evidence contract was invalid. No correction was requested or accepted; start a new turn after restoring the runtime or fixing first-pass header generation.";
 const MAX_BRIDGE_INPUT_BYTES = 1024 * 1024;
 const MAX_BRIDGE_OUTPUT_BYTES = 128 * 1024;
 const MAX_BRIDGE_TEXT_BYTES = 64 * 1024;
@@ -42,7 +42,6 @@ const OUTBOUND_AUTHORIZATION_TTL_MS = 30 * 1000;
 const MAX_OUTBOUND_AUTHORIZATIONS = 128;
 const CONTROL_AUTHORIZATION_FIELD = "agencyRuntimeControlAuthorization";
 const terminalRejections = new Map();
-const finalizeAttempts = new Map();
 const outboundAuthorizations = new Map();
 const controlAuthorizations = new Map();
 const nativeChildParents = new Map();
@@ -377,13 +376,6 @@ function finalAssistantText(event) {{
   return String(event?.lastAssistantMessage || event?.finalAssistantText || event?.assistantText || event?.text || "");
 }}
 
-function revisionKey(decision, event, ctx) {{
-  const turn = String(decision?.turnId || traceId(event, ctx));
-  const correlation = `${{sessionId(event, ctx)}}\\0${{turn}}`;
-  const digest = createHash("sha256").update(correlation).digest("hex").slice(0, 32);
-  return `agency-preflight-header:${{digest}}`;
-}}
-
 function responseDigest(value) {{
   return createHash("sha256").update(String(value || ""), "utf8").digest("hex");
 }}
@@ -679,7 +671,7 @@ function consumeOutboundAuthorization(session, text) {{
 }}
 
 function terminalRejectionKey(session, run, text) {{
-  if (!session || !run || !text) return "";
+  if (!session || !run) return "";
   return `${{session}}\\0${{run}}\\0${{responseDigest(text)}}`;
 }}
 
@@ -690,27 +682,6 @@ function pruneTerminalRejections(now = Date.now()) {{
   while (terminalRejections.size >= MAX_TERMINAL_REJECTIONS) {{
     terminalRejections.delete(terminalRejections.keys().next().value);
   }}
-  for (const [key, state] of finalizeAttempts) {{
-    if (Number(state?.expiresAt || 0) <= now) finalizeAttempts.delete(key);
-  }}
-  while (finalizeAttempts.size >= MAX_TERMINAL_REJECTIONS) {{
-    finalizeAttempts.delete(finalizeAttempts.keys().next().value);
-  }}
-}}
-
-function nextFinalizeAttempt(event, ctx) {{
-  const session = sessionId(event, ctx);
-  const run = traceId(event, ctx);
-  if (!session || !run) return 0;
-  const now = Date.now();
-  pruneTerminalRejections(now);
-  const key = `${{session}}\\0${{run}}`;
-  const previous = Number(finalizeAttempts.get(key)?.count || 0);
-  finalizeAttempts.set(key, {{
-    count: Math.min(previous + 1, 2),
-    expiresAt: now + TERMINAL_REJECTION_TTL_MS,
-  }});
-  return previous > 0 ? 1 : 0;
 }}
 
 function rememberTerminalRejection(decision, event, ctx) {{
@@ -911,8 +882,15 @@ export default definePluginEntry({{
     api.on("before_agent_finalize", async (event, ctx) => {{
       const stateEpoch = ++runtimeStateEpoch;
       let decision;
-      const attempt = nextFinalizeAttempt(event, ctx);
       const finalText = finalAssistantText(event);
+      const verificationFailure = {{
+        action: "terminal",
+        message: FINALIZATION_UNAVAILABLE,
+        terminalRejected: true,
+        terminalStatus: "verification_failed",
+        responseHash: responseDigest(finalText),
+        turnId: traceId(event, ctx),
+      }};
       try {{
         decision = await invokeAgency({{
           action: "pre_verify",
@@ -920,59 +898,27 @@ export default definePluginEntry({{
           traceId: traceId(event, ctx),
           finalResponse: finalText,
           model: modelId(ctx),
-          attempt,
+          attempt: 0,
         }});
       }} catch {{
-        decision = attempt > 0
-          ? {{
-              action: "terminal",
-              message: FINALIZATION_UNAVAILABLE,
-              terminalRejected: true,
-              terminalStatus: "verification_failed",
-              responseHash: responseDigest(finalText),
-              turnId: traceId(event, ctx),
-            }}
-          : {{ action: "continue", message: FINALIZATION_UNAVAILABLE }};
+        decision = verificationFailure;
       }}
       const stateApplied = observeRuntimeState(decision, stateEpoch);
       if (!stateApplied) {{
         if (!runtimeEnabled) return undefined;
-        if (attempt > 0) {{
-          rememberTerminalRejection({{
-            action: "terminal",
-            message: FINALIZATION_UNAVAILABLE,
-            terminalRejected: true,
-            terminalStatus: "verification_failed",
-            responseHash: responseDigest(finalText),
-            turnId: traceId(event, ctx),
-          }}, event, ctx);
-          return undefined;
-        }}
-        return {{
-          action: "revise",
-          reason: FINALIZATION_UNAVAILABLE,
-          retry: {{
-            instruction: FINALIZATION_UNAVAILABLE,
-            idempotencyKey: revisionKey(decision, event, ctx),
-            maxAttempts: 1,
-          }},
-        }};
+        rememberTerminalRejection(verificationFailure, event, ctx);
+        return undefined;
       }}
       if (!runtimeEnabled) return undefined;
       if (decision?.terminalRejected === true) {{
         rememberTerminalRejection(decision, event, ctx);
         return undefined;
       }}
-      if (decision.action !== "continue") return undefined;
-      return {{
-        action: "revise",
-        reason: String(decision.message || "Agency Runtime response contract is incomplete."),
-        retry: {{
-          instruction: String(decision.message || "Repair the Agency Runtime response contract."),
-          idempotencyKey: revisionKey(decision, event, ctx),
-          maxAttempts: 1,
-        }},
-      }};
+      if (decision?.action === "allow_pending" || decision?.action === undefined) {{
+        return undefined;
+      }}
+      rememberTerminalRejection(verificationFailure, event, ctx);
+      return undefined;
     }}, {{ priority: 100, timeoutMs: {host_timeout_ms} }});
 
     api.on("reply_payload_sending", (event, ctx) => {{
