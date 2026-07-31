@@ -39,7 +39,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `584b949d75d013611c0fe3d26835f3057fc83466`; its official VCS package is
   exact-installed as `0.1.0+g584b949d75d0`.
 - Default install discovered only Codex and ZCode, registered both, and reached
-  the dashboard. Only the designed Codex activation continuation remains.
+  the dashboard. Supported-bypass activation then passed with inferred and
+  executed `code-reviewer`, a valid first-pass header, and zero corrections.
 - PR 201 merged the fast-green product projection repair as exact revision
   `dd85e7d981f9214104c61815b49f51e178896295`. Its official VCS package is
   installed; bare install discovered and registered only Codex and ZCode, then
@@ -64,11 +65,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## completed-evidence
 
-- Exact-installed activation session `019fb978-1242-7c30-9c93-38751f4f26ff`,
-  trace `019fb978-1ec4-7f91-a9b2-9ab47abb15d8`, and run
-  `810eab84-69f2-4bdd-a711-1eb8a59bcc89` passed on `dd85e7d`. Inference
-  selected `code-reviewer` and persisted one route, unit, grant, consumption,
-  load, worker, native child, completed delegation, and accepted finalization.
+- Exact-installed activation session `019fb9ba-b711-71f1-b7a8-746ae7e4b42f`,
+  trace `019fb9ba-c746-7341-8cd5-1e5b23b0f7dc`, and run
+  `5df7f288-bc5e-4fbb-94fe-602c56b7d21f` passed on `584b949`. Inference
+  selected `code-reviewer`; one route, grant, consumption, load, worker,
+  native child, completed delegation, and accepted finalization persisted.
   Header validity and Store evidence were proven with correction count zero.
 - Product session `019fb982-a686-79d1-bc6c-f605e64895fc`, trace
   `019fb982-a702-7c11-b527-a4b5fa603250`, and run
@@ -125,8 +126,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 The exact `dd85e7d` product trial is terminal `NO-GO` and cannot be rerun. The
-new exact `584b949` build is installed and awaits one supported-bypass
-activation, then at most one product trial if activation passes.
+new exact `584b949` activation passed and is consumed. At most one product
+trial remains for this exact build.
 
 ## same-task-continuity
 
@@ -137,9 +138,9 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run one supported-bypass activation on exact build `584b949`.
-2. If activation passes, run one fresh product trial on that exact build.
-3. Prove a fresh-task `agency-steward` plus specialist header, then produce the
+1. Run one fresh product trial on exact build `584b949`.
+2. If it passes, prove a fresh-task `agency-steward` plus specialist header.
+3. Produce the local shareable evidence page and OpenClaw handoff.
    local shareable evidence page and OpenClaw handoff.
 
 ## verification
@@ -171,5 +172,6 @@ git diff --check
 - Do not rerun activation or the product trial on exact build `5ad4aef`; both
   terminal results are recorded.
 - Do not rerun the passed activation or failed product trial on `dd85e7d`.
+- Do not rerun the passed activation on `584b949`.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

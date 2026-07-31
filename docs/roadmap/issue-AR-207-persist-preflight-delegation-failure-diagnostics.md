@@ -219,6 +219,15 @@ the parent emitted no delegation tool call or response.
   `0.1.0+g584b949d75d0`; default install discovered only Codex and ZCode,
   registered both, recreated and reached the dashboard, and stopped only at
   the designed Codex activation continuation.
+- The single supported-bypass activation on `584b949` passed. Session
+  `019fb9ba-b711-71f1-b7a8-746ae7e4b42f`, trace
+  `019fb9ba-c746-7341-8cd5-1e5b23b0f7dc`, and run
+  `5df7f288-bc5e-4fbb-94fe-602c56b7d21f` selected and executed
+  `code-reviewer`. One route, plan row, grant, consumption, specialist load,
+  native child, worker run, completed delegation, and accepted finalization
+  persisted. The header was valid on its first pass, Store proof was true,
+  correction count was zero, and all three host notices were allowlisted. The
+  activation is consumed and must not be rerun.
 
 ## Approach
 
