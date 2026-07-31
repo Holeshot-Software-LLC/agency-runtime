@@ -753,6 +753,25 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="product-proof-drops-host-notice-projection",
+        invariant=(
+            "Product proof preserves the same validated content-free Codex host notice "
+            "types and count observed by the backend."
+        ),
+        source_path="agency_runtime/core/canary_proof.py",
+        before=(
+            '        "host_notice_types": list(host_notice_types),\n'
+            '        "evidence_source": "persisted_rollout",\n'
+        ),
+        after=(
+            '        "host_notice_types": [],\n        "evidence_source": "persisted_rollout",\n'
+        ),
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_host_uses_unmocked_multi_unit_product_proof"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="preflight-failure-drops-terminal-receipt",
         invariant=(
             "Every owned terminal preflight failure persists one exact content-free receipt."

@@ -11,12 +11,14 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
+  - docs/roadmap/issue-AR-208-preserve-codex-host-notices-in-product-evidence.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
+  - docs/decisions/0125-admit-only-exact-content-free-codex-host-notices.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -25,7 +27,7 @@ epic: product
 issue_id: AR-207
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
-depends_on: [AR-206]
+depends_on: [AR-206, AR-208]
 blocks: [AR-203, AR-204, AR-205]
 ---
 
@@ -120,6 +122,56 @@ the parent emitted no delegation tool call or response.
   584 files, Ruff checked and formatted 603 files, routing passed every gate,
   and all 63 curated mutations were killed with zero survivors or invalid
   mutations. Decision conformance restored the source unchanged.
+- PR 199 merged the exact-sentence follow-up as revision
+  `5ad4aef8444d1437e2a29c1e9ac4df46dce7229f`. The official VCS package was
+  exact-installed, and the default full-suite refresh again discovered only
+  Codex and ZCode while keeping the dashboard reachable.
+- Autonomous activation session `019fb92a-8143-7772-97a6-03cc880685c0`, trace
+  `019fb92a-8d72-7f33-a30a-19d8480dbd64`, passed on that exact build. It
+  selected `code-reviewer` through inference and persisted one grant,
+  consumption, load, native child, completed delegation, accepted finalization,
+  valid first-pass header, zero corrections, and proven Store evidence. The two
+  admitted notice types accounted for all three host notices; no unexpected
+  item remained.
+- The one allowed product trial on `5ad4aef`, trial
+  `ar207-5ad4aef-readme-01`, is a terminal `NO-GO`. Session
+  `019fb92d-694c-7e42-b553-ee53802bac99`, trace
+  `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
+  `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` at stage
+  `routing` with reason `routing_failed`, exception category
+  `validation_error`, and zero provider attempts. No route, tool, response,
+  header, or workspace write was produced. Correction count remained zero.
+- The zero-attempt receipt did not prove that inference was never invoked.
+  A no-call replay of the exact 2,322-character wrapped prompt reached the
+  structured-provider boundary, disproving the earlier pre-provider diagnosis.
+- A fresh online replay against a private SQLite backup then completed planner
+  and recruiter calls on `gpt-5.6-luna` in 73.607 seconds. Session
+  `a851fa51-aff6-4f9a-8f6f-7941d0af7111`, trace
+  `53c878e2-37e3-4c4d-ac0e-708c1e7fe72c`, and run
+  `24a13190-37dc-40b0-85b8-e87ec3ad75ae` reached `ready` with eight inferred
+  work units and eight fitting specialists: `codebase-onboarding-engineer`,
+  `python-application-engineer`, `typescript-application-engineer`,
+  `software-test-engineer`, `code-reviewer`,
+  `application-security-engineer`, `application-integration-verifier`, and
+  `technical-writer`. The replay was preflight-only; it did not claim native
+  launch, delegation, product artifacts, or a product-trial pass.
+- The exact installed routing sources match the checkout byte-for-byte. The
+  consumed failure is therefore response- or state-specific and is not
+  currently reproducible as a deterministic routing defect. It remains a
+  terminal `NO-GO`; no product trial may be rerun on `5ad4aef`.
+- All four previously unresolved PR 198 Codex threads now have evidence-backed
+  replies and are resolved. The valid product-evidence gap is fixed by
+  `947dafb`; AR-208 maps to tracker #200 and ADR-0125. The alleged worklog
+  ancestry defect was closed only after Git proved both recorded commits are
+  ancestors of the reviewed revision.
+- The repaired branch is locally fast-green. The focused product-host suite
+  passed 20 tests; the named warning-strict Python spine passed 636 tests with
+  six skips; dashboard UI passed 110 tests; documentation validated 587 files;
+  Ruff checked and formatted 603 files; and `git diff --check` passed. The
+  workspace CLI routing evaluation passed every gate, including 1.116 ms
+  cache-hit p95, while decision conformance passed its baseline, killed all 64
+  curated mutations, retained zero survivors or invalid cases, and proved the
+  source tree unchanged.
 
 ## Approach
 
@@ -168,9 +220,9 @@ those proofs exposed.
 - [x] The host-notice repair passes the named fast verification spine.
 - [x] Both exact Codex-packaged skill-catalog notice spellings pass the named
   fast spine and the arbitrary-error mutation remains killed.
-- [ ] One fresh exact-build activation canary accepts the current Codex host
+- [x] One fresh exact-build activation canary accepts the current Codex host
   notices without admitting an unknown error.
-- [ ] The complete Codex host-notice repair is reviewed, merged, and
+- [x] The complete Codex host-notice repair is reviewed, merged, and
   exact-installed before any fresh product trial.
 - [ ] One fresh exact-build product trial reaches native delegation and writes
   its workspace artifacts with zero response corrections.

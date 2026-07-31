@@ -11,7 +11,10 @@ import pytest
 import tomllib
 
 from agency_runtime.core import canary
-from agency_runtime.core.canary_proof import codex_product_activation_failures
+from agency_runtime.core.canary_proof import (
+    _codex_product_collaboration_projection,
+    codex_product_activation_failures,
+)
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
 from agency_runtime.core.evals import product_host
@@ -236,6 +239,11 @@ def _two_unit_product_evidence(query_hash: str, response: str) -> dict[str, obje
             "child_tool_call_count": 4,
             "parent_agent_message_count": 1,
             "unexpected_item_count": 0,
+            "host_notice_types": [
+                "hook_trust_bypass",
+                "skill_catalog_descriptions_shortened",
+            ],
+            "host_notice_count": 3,
             "evidence_source": "persisted_rollout",
         },
     }
@@ -491,6 +499,7 @@ def test_codex_product_host_uses_unmocked_multi_unit_product_proof(
             record["collaboration"] = evidence["collaboration"]
             record["collaboration"]["private_parent_prompt"] = "do-not-persist-parent"
             record["collaboration"]["calls"][0]["private_child_message"] = "do-not-persist-child"
+            record["collaboration"]["private_host_notice_message"] = "do-not-persist-notice"
             return record
 
     monkeypatch.setattr(product_host, "Store", ExactStore)
@@ -521,11 +530,49 @@ def test_codex_product_host_uses_unmocked_multi_unit_product_proof(
     assert result.agency_evidence["proof"]["activation_contract"] == "product"
     assert result.agency_evidence["proof"]["correction_count"] == 0
     assert result.agency_evidence["proof"]["collaboration"]["spawn_count"] == 2
+    assert result.agency_evidence["proof"]["collaboration"]["host_notice_types"] == [
+        "hook_trust_bypass",
+        "skill_catalog_descriptions_shortened",
+    ]
+    assert result.agency_evidence["proof"]["collaboration"]["host_notice_count"] == 3
     assert result.actual_model == "codex-subscription/gpt-5.6-sol"
     assert result.workspace_write_proven is True
     serialized_evidence = json.dumps(result.agency_evidence, sort_keys=True)
     assert "do-not-persist-parent" not in serialized_evidence
     assert "do-not-persist-child" not in serialized_evidence
+    assert "do-not-persist-notice" not in serialized_evidence
+
+
+@pytest.mark.parametrize(
+    ("host_notice_types", "host_notice_count"),
+    [
+        (["unknown_notice"], 1),
+        (["hook_trust_bypass", "hook_trust_bypass"], 2),
+        (["hook_trust_bypass"], True),
+        (["hook_trust_bypass"], 0),
+        ([], 1),
+        (["hook_trust_bypass"], 5_001),
+        ("hook_trust_bypass", 1),
+    ],
+)
+def test_product_collaboration_projection_rejects_invalid_host_notice_evidence(
+    host_notice_types: object,
+    host_notice_count: object,
+) -> None:
+    response = _product_response()
+    evidence = _two_unit_product_evidence("a" * 64, response)
+    collaboration = evidence["collaboration"]
+    assert isinstance(collaboration, dict)
+    collaboration["host_notice_types"] = host_notice_types
+    collaboration["host_notice_count"] = host_notice_count
+
+    assert (
+        _codex_product_collaboration_projection(
+            {"collaboration": collaboration},
+            expected_parent_thread_id=str(evidence["session_id"]),
+        )
+        is None
+    )
 
 
 def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(

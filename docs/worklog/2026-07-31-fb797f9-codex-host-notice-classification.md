@@ -7,7 +7,9 @@ updated: 2026-07-31
 tags: [codex, canary, diagnostics, evidence, mutation]
 related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
+  - docs/roadmap/issue-AR-208-preserve-codex-host-notices-in-product-evidence.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
+  - docs/decisions/0125-admit-only-exact-content-free-codex-host-notices.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -15,9 +17,10 @@ type: worklog
 commit: fb797f9
 short: fb797f9
 date: 2026-07-31
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/198
 related_issues:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
+  - docs/roadmap/issue-AR-208-preserve-codex-host-notices-in-product-evidence.md
 ---
 
 # Worklog detail: Classify Codex non-critical host notices

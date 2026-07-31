@@ -20,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-207-codex-host-notice-percent
-evidence_commit: 5328070cd048f42ce88e3bcb16e42f1e69cfae24
-minimum_ledger_commit: e492782cd2ce68bb1a69347eb7f2aa9e6bc41cf9
+branch: codex/ar-207-product-routing-validation
+evidence_commit: bb1122ccb9e2dda4a763403363c83322af4f4f39
+minimum_ledger_commit: 5eaaf261244e2f04e6d4531caa236e9a2019a874
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -32,18 +32,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 197 merged exact revision
-  `3b5a00f7564e29aaf0ec68bd09547f8b8fa42c2e`; VCS build
-  `0.1.0+g3b5a00f7564e` was exact-installed for Codex, ZCode, and dashboard.
-- Activation execution on that build completed the exact specialist lifecycle
-  with zero corrections, but the canary failed because one Codex 0.146
-  non-critical warning was classified as a non-allowlisted tool.
-- No product trial was spent on `3b5a00f`. Three bounded activation diagnostics
-  are consumed and must not be rerun on that build.
-- PR 198 merged the first repair as
-  `5328070cd048f42ce88e3bcb16e42f1e69cfae24`; it was exact-installed as an
-  official VCS package. The default install discovered Codex and ZCode,
-  registered both, and installed a reachable dashboard.
+- Exact-installed builds `3b5a00f` and `5328070` each completed the specialist
+  lifecycle with zero corrections, then failed closed on Codex 0.146 host
+  notice spellings. Their bounded diagnostics are consumed; PRs 198 and 199
+  carry the two narrow exact-message repairs.
 - Activation on `5328070` completed the exact `code-reviewer` lifecycle and
   zero-correction header, then failed closed on Codex's exact `2% skills
   context budget` sentence. One bounded raw-JSONL diagnostic proved two exact
@@ -56,24 +48,50 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   skips, dashboard UI passed 110, docs validated 584, Ruff checked/formatted
   603, routing passed every gate, and all 63 curated mutations were killed with
   zero survivors or invalid mutations. Source restoration passed.
-- End-of-package context telemetry reported 37.1 percent remaining and requires
-  this fast-green follow-up to be sealed as a substantive/ledger recovery pair
-  before push. Continue in this same task after that checkpoint.
+- PR 199 merged the follow-up as exact revision
+  `5ad4aef8444d1437e2a29c1e9ac4df46dce7229f`; the official VCS package was
+  exact-installed and the default full-suite refresh again discovered Codex,
+  ZCode, and the reachable dashboard.
+- Autonomous activation passed on that exact build with inferred
+  `code-reviewer`, a complete native specialist lifecycle, a valid first-pass
+  header, zero corrections, proven Store evidence, three admitted host notices,
+  and no unexpected item.
+- Product trial `ar207-5ad4aef-readme-01` is consumed and terminal `NO-GO`.
+  Its persisted preflight failed at routing validation with an empty durable
+  attempt list and no route, tool, response, header, or workspace write. That
+  empty list did not prove inference was never entered.
+- An exact-prompt no-call replay reached the provider boundary. A fresh online
+  replay against a private Store backup then reached `ready` after two
+  `gpt-5.6-luna` calls, with eight inferred units and eight fitting specialists.
+- The `947dafb` product host-notice projection repair and corrected durable
+  evidence are locally fast-green; the next boundary is PR and exact install.
 
 ## completed-evidence
 
-- Activation session `019fb8da-969a-75d3-9ad7-686094d35324`, trace
-  `019fb8da-a3c4-78d0-bfc5-44cf6d9ea1c1` proved `code-reviewer`, one grant,
-  consumption, load, worker, native child, completed delegation, accepted
-  finalization, valid first-pass header, and correction count zero.
-- Its persisted parent rollout contains only `spawn_agent` and `wait_agent`;
-  Store activation evidence is proven. No repository, shell, MCP, or product
-  tool ran in the parent.
 - Exact-installed activation session `019fb90b-dc97-7db0-891a-3aeea357ed3b`,
   trace `019fb90b-e95d-7bf2-84ae-fd0efb150816`, selected `code-reviewer` and
   persisted one route, unit, grant, consumption, load, worker, native child,
   completed delegation, and accepted finalization. Its header was valid and
   correction count was zero; Store evidence was `proven=true`.
+- Exact-installed activation session `019fb92a-8143-7772-97a6-03cc880685c0`,
+  trace `019fb92a-8d72-7f33-a30a-19d8480dbd64`, passed on `5ad4aef`. It
+  selected `code-reviewer` through inference and persisted one route, unit,
+  grant, consumption, load, worker, native child, completed delegation, and
+  accepted finalization. Header validity and Store evidence were proven with
+  correction count zero.
+- Product session `019fb92d-694c-7e42-b553-ee53802bac99`, trace
+  `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
+  `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage
+  `routing`, reason `routing_failed`, exception category `validation_error`,
+  and zero provider attempts. Its exact workspace remained empty.
+- Cloned replay session `a851fa51-aff6-4f9a-8f6f-7941d0af7111`, trace
+  `53c878e2-37e3-4c4d-ac0e-708c1e7fe72c`, and run
+  `24a13190-37dc-40b0-85b8-e87ec3ad75ae` reached preflight `ready` in 73.607
+  seconds. It planned eight units and selected `codebase-onboarding-engineer`,
+  `python-application-engineer`, `typescript-application-engineer`,
+  `software-test-engineer`, `code-reviewer`,
+  `application-security-engineer`, `application-integration-verifier`, and
+  `technical-writer`. It did not execute or grade the product.
 - Codex 0.146 maps non-critical Warning, ConfigWarning, DeprecationNotice, and
   ModelRerouted notifications to completed JSONL items whose type is `error`.
 - The exact parent catalog retained all 67 skills but removed 11,805
@@ -95,35 +113,39 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   specialist load, worker lifecycle, exact child prompt delivery, and completed
   child. Extra parent product tools, missing rows, correction count above zero,
   or failed workspace-write evidence are terminal failures.
-- The named warning-strict Python spine passed 636 tests with six skips;
-  dashboard UI passed 110 tests; routing passed every gate; all 63 curated
-  decision mutations were killed with zero survivors or invalid mutations;
-  source restoration and `git diff --check` passed.
-- Documentation validation passed all 584 maintained Markdown files.
-- Builds and trials `cc322381`, `f0fde9ee`, and `6b49f17d` remain consumed and
-  must not be rerun.
+- The focused product-host suite passed 20 tests; the named warning-strict
+  Python spine passed 636 tests with six skips; dashboard UI passed 110 tests;
+  documentation validated 587 files; Ruff checked and formatted 603 files;
+  and `git diff --check` passed.
+- The workspace CLI routing evaluation passed every gate, including 1.116 ms
+  cache-hit p95. Decision conformance passed its 62.531-second baseline, killed
+  all 64 curated mutations, retained zero survivors or invalid cases, and
+  proved the source tree unchanged.
+- Builds and trials `cc322381`, `f0fde9ee`, `6b49f17d`, and `5ad4aef` remain
+  consumed and must not be rerun.
 
 ## exact-blocker
 
-The first host-notice repair admitted Codex's generic packaged sentence but the
-live 0.146 host emitted its packaged `2%` variant. The narrow follow-up is now
-fast-green and mutation-sensitive; it still needs review, merge, exact install,
-and one new-build activation canary. The product trial remains unspent until
-activation is green.
+The exact `5ad4aef` activation is green, but its one allowed product trial is a
+terminal routing `NO-GO`. The exact isolated replay no longer reproduces that
+validation exception and instead reaches a ready eight-specialist plan. All PR
+198 threads are resolved, including the confirmed product host-notice projection
+repair and its AR-208/#200/ADR-0125 records. The next hard boundary is therefore
+the repair PR, exact install, and new-build product trial, not an invented
+deterministic routing patch.
 
 ## same-task-continuity
 
 Keep inference authoritative and the parent non-generalist. Do not rerun any
-trial on `cc322381`, `f0fde9ee`, or `6b49f17d`. Do not mutate private trust
-state, label bypass as trust, dispatch hosted Actions, or touch the owner's two
-untracked files.
+trial on `cc322381`, `f0fde9ee`, `6b49f17d`, or `5ad4aef`. Do not mutate private
+trust state, label bypass as trust, dispatch hosted Actions, or touch the
+owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Commit, review, merge, and exact-install the narrow `2%` notice follow-up.
-2. Prove exact-build activation with the supported hook bypass once.
-3. Spend one fresh 1,800-second product trial on that exact build.
-4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
+1. Review, merge, and exact-install the fast-green host-notice repair.
+2. Run one activation canary and one fresh product trial on the new exact build.
+3. Prove a fresh-task `agency-steward` plus specialist header, then produce the
    local shareable evidence page and OpenClaw handoff.
 
 ## verification
@@ -139,8 +161,8 @@ ruff format --check agency_runtime tests scripts
 python -m pytest <focused AR-207 boundary> -q -W error
 python -m pytest <named fast spine from AGENTS.md> -q -W error
 node --test tests/dashboard_ui.test.mjs
-agency eval routing --json --no-details
-agency eval decision-conformance --repository . --json
+.venv\Scripts\agency.exe eval routing --json --no-details
+.venv\Scripts\agency.exe eval decision-conformance --repository . --json
 git diff --check
 ~~~
 
@@ -152,5 +174,7 @@ git diff --check
 - Do not rerun activation diagnostics on exact build `3b5a00f`.
 - Do not rerun activation on exact build `5328070`; its one canary and bounded
   raw-message diagnostic are complete.
+- Do not rerun activation or the product trial on exact build `5ad4aef`; both
+  terminal results are recorded.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
