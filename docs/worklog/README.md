@@ -410,6 +410,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `40560aa` | 2026-07-31 | docs(roadmap): checkpoint product hiring suppression | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 | `f349c21` | 2026-07-31 | fix(preflight): separate product hiring and compact unit goals | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 | `28a5f12` | 2026-07-31 | docs(roadmap): checkpoint repeated context ceiling | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
+| `8b8c780` | 2026-07-31 | fix(evidence): accept bounded ready routing receipts | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-206](../roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
