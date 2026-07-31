@@ -427,6 +427,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3b5a00f` | 2026-07-31 | Merge pull request #197 from Holeshot-Software-LLC/codex/ar-204-readme-product-proof | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 | `fb797f9` | 2026-07-31 | fix(codex): classify non-critical host notices | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | [detail](2026-07-31-fb797f9-codex-host-notice-classification.md) |
 | `ab5812f` | 2026-07-31 | docs(evidence): admit Codex host notice fast gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
+| `5328070` | 2026-07-31 | Merge pull request #198 from Holeshot-Software-LLC/codex/ar-207-codex-host-notice | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
+| `7ce640a` | 2026-07-31 | fix(codex): accept exact 2 percent skill notice | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | [detail](2026-07-31-7ce640a-exact-2-percent-skill-notice.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

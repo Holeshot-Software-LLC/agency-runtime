@@ -1045,7 +1045,7 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
                 "item": {
                     "id": "skills-notice",
                     "type": "error",
-                    "message": "Skill descriptions were shortened to fit the skills context "
+                    "message": "Skill descriptions were shortened to fit the 2% skills context "
                     "budget. Codex can still see every skill, but some descriptions are shorter. "
                     "Disable unused skills or plugins to leave more room for the rest.",
                 },
@@ -1398,7 +1398,7 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
                     "item": {
                         "id": "skills-notice",
                         "type": "error",
-                        "message": "Skill descriptions were shortened to fit the skills context "
+                        "message": "Skill descriptions were shortened to fit the 2% skills context "
                         "budget. Codex can still see every skill, but some descriptions are "
                         "shorter. Disable unused skills or plugins to leave more room for the "
                         "rest.",
@@ -1554,6 +1554,16 @@ def test_codex_jsonl_parser_classifies_only_exact_allowlisted_host_notices() -> 
             "skills or plugins to leave more room for the rest.",
         },
     }
+    skill_catalog_percent_notice = {
+        "type": "item.completed",
+        "item": {
+            "id": "skills-percent-notice",
+            "type": "error",
+            "message": "Skill descriptions were shortened to fit the 2% skills context budget. "
+            "Codex can still see every skill, but some descriptions are shorter. Disable unused "
+            "skills or plugins to leave more room for the rest.",
+        },
+    }
     near_miss = {
         "type": "item.completed",
         "item": {
@@ -1564,15 +1574,22 @@ def test_codex_jsonl_parser_classifies_only_exact_allowlisted_host_notices() -> 
     }
 
     accepted = codex_collaboration_evidence(
-        "\n".join(map(json.dumps, (trust_notice, skill_catalog_notice)))
+        "\n".join(
+            map(json.dumps, (trust_notice, skill_catalog_notice, skill_catalog_percent_notice))
+        )
     )
     rejected = codex_collaboration_evidence(
-        "\n".join(map(json.dumps, (trust_notice, skill_catalog_notice, near_miss)))
+        "\n".join(
+            map(
+                json.dumps,
+                (trust_notice, skill_catalog_notice, skill_catalog_percent_notice, near_miss),
+            )
+        )
     )
 
     assert accepted is not None
     assert accepted["unexpected_item_count"] == 0
-    assert accepted["host_notice_count"] == 2
+    assert accepted["host_notice_count"] == 3
     assert accepted["host_notice_types"] == [
         "hook_trust_bypass",
         "skill_catalog_descriptions_shortened",
@@ -1580,9 +1597,10 @@ def test_codex_jsonl_parser_classifies_only_exact_allowlisted_host_notices() -> 
     assert rejected is not None
     assert rejected["unexpected_item_count"] == 1
     assert rejected["unexpected_item_types"] == ["error"]
-    assert rejected["host_notice_count"] == 2
+    assert rejected["host_notice_count"] == 3
     assert rejected["host_notice_types"] == accepted["host_notice_types"]
     assert skill_catalog_notice["item"]["message"] not in json.dumps(accepted)
+    assert skill_catalog_percent_notice["item"]["message"] not in json.dumps(accepted)
     assert near_miss["item"]["message"] not in json.dumps(rejected)
 
 

@@ -32,6 +32,9 @@ CODEX_STDOUT_HOST_NOTICE_TYPES = frozenset(
 _CODEX_STDOUT_HOST_NOTICE_BY_MESSAGE = {
     "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run "
     "without review for this invocation.": "hook_trust_bypass",
+    "Skill descriptions were shortened to fit the 2% skills context budget. Codex can still "
+    "see every skill, but some descriptions are shorter. Disable unused skills or plugins "
+    "to leave more room for the rest.": "skill_catalog_descriptions_shortened",
     "Skill descriptions were shortened to fit the skills context budget. Codex can still "
     "see every skill, but some descriptions are shorter. Disable unused skills or plugins "
     "to leave more room for the rest.": "skill_catalog_descriptions_shortened",

@@ -20,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-207-codex-host-notice
-evidence_commit: 3b5a00f7564e29aaf0ec68bd09547f8b8fa42c2e
-minimum_ledger_commit: 71ba70633b32ab3e7db81d99b59f0d4815ed3085
+branch: codex/ar-207-codex-host-notice-percent
+evidence_commit: 5328070cd048f42ce88e3bcb16e42f1e69cfae24
+minimum_ledger_commit: e492782cd2ce68bb1a69347eb7f2aa9e6bc41cf9
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -40,17 +40,25 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   non-critical warning was classified as a non-allowlisted tool.
 - No product trial was spent on `3b5a00f`. Three bounded activation diagnostics
   are consumed and must not be rerun on that build.
-- The repair and two bounded review passes are complete on
-  `codex/ar-207-codex-host-notice`; all 25 warning-strict activation-canary
-  tests pass, and all 63 curated mutations are killed with zero survivors or
-  invalid mutations.
-- The named fast spine is green: 636 Python tests passed with six skips,
-  dashboard UI passed 110, docs validated 584, Ruff checked/formatted 603,
-  routing passed every gate, decision conformance passed with source unchanged,
-  and diff integrity passed.
-- Context telemetry reported 7.8 percent remaining. This capsule is the final
-  substantive checkpoint before push; its following ledger commit records the
-  exact SHA.
+- PR 198 merged the first repair as
+  `5328070cd048f42ce88e3bcb16e42f1e69cfae24`; it was exact-installed as an
+  official VCS package. The default install discovered Codex and ZCode,
+  registered both, and installed a reachable dashboard.
+- Activation on `5328070` completed the exact `code-reviewer` lifecycle and
+  zero-correction header, then failed closed on Codex's exact `2% skills
+  context budget` sentence. One bounded raw-JSONL diagnostic proved two exact
+  bypass notices plus that one sentence with Codex exit zero.
+- The installed Codex binary contains both its generic and `2%` skill notice
+  spellings. The follow-up branch admits only that second exact sentence under
+  the existing content-free notice type. All 25 warning-strict
+  activation-canary tests pass; arbitrary and near-miss errors remain fatal.
+- The follow-up named fast spine is green: 636 Python tests passed with six
+  skips, dashboard UI passed 110, docs validated 584, Ruff checked/formatted
+  603, routing passed every gate, and all 63 curated mutations were killed with
+  zero survivors or invalid mutations. Source restoration passed.
+- End-of-package context telemetry reported 37.1 percent remaining and requires
+  this fast-green follow-up to be sealed as a substantive/ledger recovery pair
+  before push. Continue in this same task after that checkpoint.
 
 ## completed-evidence
 
@@ -61,6 +69,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Its persisted parent rollout contains only `spawn_agent` and `wait_agent`;
   Store activation evidence is proven. No repository, shell, MCP, or product
   tool ran in the parent.
+- Exact-installed activation session `019fb90b-dc97-7db0-891a-3aeea357ed3b`,
+  trace `019fb90b-e95d-7bf2-84ae-fd0efb150816`, selected `code-reviewer` and
+  persisted one route, unit, grant, consumption, load, worker, native child,
+  completed delegation, and accepted finalization. Its header was valid and
+  correction count was zero; Store evidence was `proven=true`.
 - Codex 0.146 maps non-critical Warning, ConfigWarning, DeprecationNotice, and
   ModelRerouted notifications to completed JSONL items whose type is `error`.
 - The exact parent catalog retained all 67 skills but removed 11,805
@@ -92,10 +105,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The post-merge Codex 0.146 host-notice contradiction is repaired, reviewed,
-fast-green, and mutation-sensitive. The next gate is push, PR review, merge,
-exact install, and one fresh activation canary. The product trial remains
-unspent until activation is green.
+The first host-notice repair admitted Codex's generic packaged sentence but the
+live 0.146 host emitted its packaged `2%` variant. The narrow follow-up is now
+fast-green and mutation-sensitive; it still needs review, merge, exact install,
+and one new-build activation canary. The product trial remains unspent until
+activation is green.
 
 ## same-task-continuity
 
@@ -106,9 +120,8 @@ untracked files.
 
 ## next-bounded-work-package
 
-1. Push the clean checkpoint, review, merge, and
-   exact-install Codex, ZCode, and dashboard once.
-2. Prove exact-build activation with the supported hook bypass.
+1. Commit, review, merge, and exact-install the narrow `2%` notice follow-up.
+2. Prove exact-build activation with the supported hook bypass once.
 3. Spend one fresh 1,800-second product trial on that exact build.
 4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
    local shareable evidence page and OpenClaw handoff.
@@ -137,5 +150,7 @@ git diff --check
 - Only Codex, ZCode, and dashboard are in machine scope.
 - One live product trial per exact installed build; any correction is failure.
 - Do not rerun activation diagnostics on exact build `3b5a00f`.
+- Do not rerun activation on exact build `5328070`; its one canary and bounded
+  raw-message diagnostic are complete.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
