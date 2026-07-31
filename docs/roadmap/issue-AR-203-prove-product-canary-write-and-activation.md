@@ -9,6 +9,7 @@ related:
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
+  - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
@@ -288,14 +289,15 @@ with one intentional skip; Ruff and whitespace checks pass.
 The next two private exact-prompt replays both produced accepted inferred teams
 with no staffing reasons. The first reached nine units and ten specialists; the
 second reached ten units and nine specialists. Both then failed at the same
-8,192-character persistent-host context ceiling, so the bounded delivery rule
-requires owner direction before another repair. Read-only sizing proves the
+8,192-character persistent-host context ceiling. Read-only sizing proves the
 compact exact plan needs 8,120 characters at nine realistic units, 8,326 at
-ten, and 9,534 at the configured maximum sixteen. The existing general
-preflight ceiling is 32,000 characters and the Codex hook ceiling is 48,000.
-The recommended resolution is to use the 32,000-character preflight ceiling for
-persistent hosts rather than restrict inference-authored team completeness or
-truncate exact child goals.
+ten, and 9,534 at the configured maximum sixteen.
+
+The owner approved ADR-0123: persistent native parents now use the existing
+32,000-character preflight ceiling under the unchanged 48,000-character hook
+cap. A realistic sixteen-unit regression proves the complete context exceeds
+8,192 and fits the new ceiling. The curated mutation restoring 8,192 is killed,
+and the 115-test focused preflight/delegation/evidence boundary passes.
 
 ## Approach
 
@@ -331,9 +333,9 @@ truncate exact child goals.
 13. Scope no-hiring behavior to the exact closed-world activation task rather
     than every existing-Store canary process; ordinary product evaluation must
     execute verified inference-declared gap hiring.
-14. Resolve the repeated persistent-host context ceiling explicitly. Preserve
-    exact child goals and complete inference-authored teams; do not hide the
-    conflict through truncation or deterministic unit removal.
+14. Use the owner-approved 32,000-character persistent-host ceiling while
+    preserving exact child goals and complete inference-authored teams; never
+    truncate or deterministically remove units to fit the legacy limit.
 
 ## Dependencies
 
@@ -380,6 +382,8 @@ demonstrates both mismatches.
   one-invocation bypass, with bypassed evidence never mislabeled trusted.
 - [x] Recruiter response acceptance or bounded repair produces a defensible
   inferred staffing plan for the fixed README-story prompt.
+- [x] Persistent native parents accept a complete sixteen-unit context above
+  the legacy 8,192-character ceiling while remaining bounded to 32,000.
 - [ ] The replacement trial selects and launches at least one specialist/team,
   or records a defensible gap plus an actual hiring decision.
 - [ ] The next ordinary canary reports exact activation evidence and can create

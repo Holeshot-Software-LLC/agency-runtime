@@ -421,6 +421,20 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="persistent-host-restores-legacy-context-ceiling",
+        invariant=(
+            "Persistent native parents may carry the complete bounded specialist team and "
+            "delegation plan up to the general preflight ceiling."
+        ),
+        source_path="agency_runtime/core/preflight_recipe.py",
+        before="PERSISTENT_HOST_CONTEXT_CHARS = MAX_PREFLIGHT_CONTEXT_CHARS",
+        after="PERSISTENT_HOST_CONTEXT_CHARS = 8_192",
+        test_node=(
+            "tests/test_unit_aware_delegation.py::"
+            "test_isolated_multi_unit_context_encodes_one_shared_request_prefix"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="ready-routing-receipt-restores-legacy-node-cap",
         invariant=(
             "Ready routing receipts accept every structurally bounded decision admitted by "

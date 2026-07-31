@@ -13,6 +13,7 @@ related:
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
@@ -296,10 +297,13 @@ tests with one skip. Two subsequent exact-prompt replays accepted complete
 inferred teams with no staffing reasons but both exceeded the legacy 8,192-
 character persistent-host ceiling. The compact ten-unit shape is 8,326
 characters and the configured sixteen-unit maximum is about 9,534 with
-realistic identities. Because this is the second failure at the same causal
-boundary, work waits for owner direction. The recommended contract is the
-existing 32,000-character preflight ceiling under the unchanged 48,000-
-character Codex hook limit, not a smaller deterministic team.
+realistic identities.
+
+The owner approved ADR-0123 and the source now gives persistent native parents
+the existing 32,000-character preflight ceiling while retaining the unchanged
+48,000-character hook cap and whole-context failure. A realistic sixteen-unit
+regression crosses 8,192, the mutation restoring the legacy cap is killed, and
+the 115-test focused boundary passes.
 
 The same long-lived Codex task then exposed AR-206: its immutable old Stop hook
 rejected an intact 558-node ready routing decision because the correlation

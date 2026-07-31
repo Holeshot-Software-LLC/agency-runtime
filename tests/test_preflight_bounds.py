@@ -373,7 +373,7 @@ def test_oversized_complete_context_fails_before_ready_is_persisted(
     monkeypatch.setattr(
         specialist_context,
         "format_isolated_specialist_context",
-        lambda *_args, **_kwargs: "x" * 20_000,
+        lambda *_args, **_kwargs: "x" * (preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS + 1),
     )
 
     with pytest.raises(RuntimeError, match="exceeds the host delivery ceiling"):

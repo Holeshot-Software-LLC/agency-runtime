@@ -1026,7 +1026,7 @@ def test_isolated_multi_unit_context_encodes_one_shared_request_prefix(
     )
     hydrated = []
     plan = []
-    for ordinal in range(1, 10):
+    for ordinal in range(1, 17):
         work_unit_id = f"unit-{ordinal:010x}"
         dependencies = [] if ordinal == 1 else [f"unit-{ordinal - 1:010x}"]
         hydrated.append(
@@ -1089,6 +1089,7 @@ def test_isolated_multi_unit_context_encodes_one_shared_request_prefix(
         if "; goal_suffix=" in line
     ]
     assert [shared + suffix for suffix in suffixes] == [item["goal"] for item in hydrated]
+    assert len(combined) > 8_192
     assert len(combined) <= preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS
 
 

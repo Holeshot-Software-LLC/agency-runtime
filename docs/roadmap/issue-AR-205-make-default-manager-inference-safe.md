@@ -12,6 +12,7 @@ related:
   - docs/decisions/0065-keep-compact-resident-manager-kernel.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -157,9 +158,10 @@ the exact installed product proof and final README-story acceptance.
   Two exact-prompt replays then accepted complete nine- and ten-unit teams with
   no staffing reasons before the same 8,192-character delivery ceiling failed.
   Read-only sizing puts the ten-unit shape at 8,326 and the configured sixteen-
-  unit maximum at about 9,534. The repeated-boundary stop now requires owner
-  direction; using the existing 32,000-character preflight ceiling is the
-  recommended inference-preserving resolution.
+  unit maximum at about 9,534. The owner approved ADR-0123; persistent native
+  parents now use the 32,000-character preflight ceiling, a sixteen-unit
+  behavior regression crosses the former cap, its legacy-cap mutation is
+  killed, and the 115-test focused boundary passes.
 - AR-206 isolates a separate evidence-reader defect from this staffing result:
   a valid 558-node ready decision was rejected only because Stop correlation
   used a stale 256-node cap. The Store is healthy, exact projection matches,
