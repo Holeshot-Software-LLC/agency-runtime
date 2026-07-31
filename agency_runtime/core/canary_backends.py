@@ -23,6 +23,19 @@ _CODEX_THREAD_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-
 _CODEX_ROLLOUT_RESPONSE_TYPES = frozenset(
     {"agent_message", "function_call", "function_call_output", "message", "reasoning"}
 )
+CODEX_STDOUT_HOST_NOTICE_TYPES = frozenset(
+    {
+        "hook_trust_bypass",
+        "skill_catalog_descriptions_shortened",
+    }
+)
+_CODEX_STDOUT_HOST_NOTICE_BY_MESSAGE = {
+    "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run "
+    "without review for this invocation.": "hook_trust_bypass",
+    "Skill descriptions were shortened to fit the skills context budget. Codex can still "
+    "see every skill, but some descriptions are shorter. Disable unused skills or plugins "
+    "to leave more room for the rest.": "skill_catalog_descriptions_shortened",
+}
 _CODEX_ROLLOUT_CONTRACTS = frozenset({"canary", "product"})
 _CODEX_PRODUCT_COLLABORATION_SCHEMA = "agency.codex-product-collaboration.v1"
 _CODEX_PRODUCT_MAX_SPAWNS = 16
@@ -1016,6 +1029,8 @@ def _codex_product_rollout_collaboration_evidence(
         "unexpected_item_count": (
             unexpected_count + int(stdout_projection.get("unexpected_item_count") or 0)
         ),
+        "host_notice_types": list(stdout_projection.get("host_notice_types") or []),
+        "host_notice_count": int(stdout_projection.get("host_notice_count") or 0),
         "evidence_source": "persisted_rollout",
     }
 
@@ -1159,7 +1174,18 @@ def _merge_codex_rollout_evidence(
     rollout_projection["unexpected_item_count"] = (
         stdout_projection["unexpected_item_count"] + rollout_projection["unexpected_item_count"]
     )
+    rollout_projection["host_notice_types"] = list(stdout_projection["host_notice_types"])
+    rollout_projection["host_notice_count"] = stdout_projection["host_notice_count"]
     return rollout_projection
+
+
+def _codex_stdout_host_notice(event: Mapping[str, Any], item: Mapping[str, Any]) -> str | None:
+    """Classify one exact non-critical Codex JSONL notice without retaining its message."""
+
+    if event.get("type") != "item.completed" or item.get("type") != "error":
+        return None
+    message = item.get("message")
+    return _CODEX_STDOUT_HOST_NOTICE_BY_MESSAGE.get(message) if isinstance(message, str) else None
 
 
 def codex_collaboration_evidence(
@@ -1173,6 +1199,7 @@ def codex_collaboration_evidence(
 
     calls: dict[str, dict[str, Any]] = {}
     unexpected_items: dict[str, str] = {}
+    host_notices: list[str] = []
     try:
         for line in stdout.splitlines():
             if not line.strip():
@@ -1188,13 +1215,9 @@ def codex_collaboration_evidence(
                 continue
             item_type = str(item.get("type") or "").strip()
             if item_type != "collab_tool_call":
-                if (
-                    event.get("type") == "item.completed"
-                    and item_type == "error"
-                    and item.get("message")
-                    == "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run "
-                    "without review for this invocation."
-                ):
+                notice_type = _codex_stdout_host_notice(event, item)
+                if notice_type in CODEX_STDOUT_HOST_NOTICE_TYPES:
+                    host_notices.append(notice_type)
                     continue
                 if item_type not in {"agent_message", "reasoning"}:
                     item_id = str(item.get("id") or "").strip()
@@ -1216,6 +1239,8 @@ def codex_collaboration_evidence(
         "wait_count": sum(row["tool"] == "wait" for row in ordered),
         "unexpected_item_types": sorted(set(unexpected_items.values())),
         "unexpected_item_count": len(unexpected_items),
+        "host_notice_types": sorted(set(host_notices)),
+        "host_notice_count": len(host_notices),
     }
     if rollout_root is None:
         return stdout_projection

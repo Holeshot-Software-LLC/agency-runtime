@@ -740,6 +740,19 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-host-notice-accepts-arbitrary-errors",
+        invariant=(
+            "Only exact known Codex non-critical host notices bypass the unexpected-item gate."
+        ),
+        source_path="agency_runtime/core/canary_backends.py",
+        before="                if notice_type in CODEX_STDOUT_HOST_NOTICE_TYPES:\n",
+        after='                if item_type == "error":\n',
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_jsonl_parser_classifies_only_exact_allowlisted_host_notices"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="preflight-failure-drops-terminal-receipt",
         invariant=(
             "Every owned terminal preflight failure persists one exact content-free receipt."

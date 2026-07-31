@@ -20,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-204-readme-product-proof
-evidence_commit: 581891c124cf6a51070b190091570f32fbff3709
-minimum_ledger_commit: bdd0f521c3da0eb97fe48ed1986a387482ac1c53
+branch: codex/ar-207-codex-host-notice
+evidence_commit: 3b5a00f7564e29aaf0ec68bd09547f8b8fa42c2e
+minimum_ledger_commit: 71ba70633b32ab3e7db81d99b59f0d4815ed3085
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -32,46 +32,42 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 195 merged exact revision
-  `6b49f17d6787823f9ba78a8f09383001b6a77535`; build
-  `0.1.0+g6b49f17d6787` is installed for Codex, ZCode, and dashboard.
-- Supported-bypass activation passed with zero corrections under session
-  `019fb82c-61bc-7490-825e-981975e39b91`, trace
-  `019fb82c-6e14-74b1-add0-8021c121fdc2`, and route
-  `3634b192-94c8-4083-8559-54c8313323e3`.
-- Product trial `ar205-6b49f17-readme-01` is terminal `NO-GO`; its allowance is
-  consumed and must not be rerun.
-- Tracker issue [#196](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196)
-  owns the newly isolated content-free failure boundary.
-- The local AR-207 implementation, two bounded review passes, and named fast
-  spine are complete; it is not committed, merged, or installed yet.
+- PR 197 merged exact revision
+  `3b5a00f7564e29aaf0ec68bd09547f8b8fa42c2e`; VCS build
+  `0.1.0+g3b5a00f7564e` was exact-installed for Codex, ZCode, and dashboard.
+- Activation execution on that build completed the exact specialist lifecycle
+  with zero corrections, but the canary failed because one Codex 0.146
+  non-critical warning was classified as a non-allowlisted tool.
+- No product trial was spent on `3b5a00f`. Three bounded activation diagnostics
+  are consumed and must not be rerun on that build.
+- The repair and two bounded review passes are complete on
+  `codex/ar-207-codex-host-notice`; all 25 warning-strict activation-canary
+  tests pass, and all 63 curated mutations are killed with zero survivors or
+  invalid mutations. This capsule is part of the substantive recovery
+  checkpoint; the following ledger commit records its exact SHA.
+- Context telemetry reported 48.5 percent remaining; the clean merged
+  substantive/ledger checkpoint was reused before this bounded package.
 
 ## completed-evidence
 
-- Exact activation proves inference-selected `code-reviewer`, one grant and
-  consumption, specialist load, native spawn/wait, completed delegation,
-  worker run, accepted finalization, and correction count zero.
-- The product trial ran 100.174 seconds and exited one. Isolated workspace trust
-  and supported bypass were proven without persistent-profile mutation.
-- Product inference accepted eight verified work units and nine specialists:
-  onboarding, Python, frontend, TypeScript, test, review, security, integration,
-  and documentation roles.
-- The product trace retained eight suggested delegations but zero activation
-  grants, consumptions, loads, worker runs, or native spawn/wait events. Stop
-  finalized `delegation_declined` with missing `delegation_execution`.
-- The workspace remained empty, the proof sentinel was absent, response/header
-  publication was absent, and validation correctly skipped as
-  `workspace_write_not_proven`.
-- A disabled-Agency control returned exact `PROBE_OK` on `gpt-5.6-sol`.
-- A separate enabled read-only diagnostic produced an empty Codex turn and
-  trace `019fb83f-3aa8-78f2-8f7c-06aaf71a7f0c`. It ended
-  `preflight_failed` after 91.146 seconds with no route or model receipt.
-- Direct Store inspection proves only `runs` retained that diagnostic trace.
-  The source catch path currently discards the original exception and pending
-  inference attempts.
-- Reconstructed product preflight context is 8,471 characters; combined with
-  its header it is about 2,414 Codex tokens, below the host's default spill
-  threshold. Context spill is a robustness gap, not the proven cause.
+- Activation session `019fb8da-969a-75d3-9ad7-686094d35324`, trace
+  `019fb8da-a3c4-78d0-bfc5-44cf6d9ea1c1` proved `code-reviewer`, one grant,
+  consumption, load, worker, native child, completed delegation, accepted
+  finalization, valid first-pass header, and correction count zero.
+- Its persisted parent rollout contains only `spawn_agent` and `wait_agent`;
+  Store activation evidence is proven. No repository, shell, MCP, or product
+  tool ran in the parent.
+- Codex 0.146 maps non-critical Warning, ConfigWarning, DeprecationNotice, and
+  ModelRerouted notifications to completed JSONL items whose type is `error`.
+- The exact parent catalog retained all 67 skills but removed 11,805
+  description characters, averaging 177 per skill. Codex's threshold is 100,
+  so its exact skill-catalog-shortening notice was deterministic. The exact
+  sentence is also present in the installed Codex binary.
+- The repair projects `host_notice_count` and fixed `host_notice_types` without
+  retaining messages. Exact hook-bypass and skill-shortening notices pass;
+  arbitrary and one-character near-miss `error` messages remain unexpected.
+- Both accepted and rejected projections were proven to exclude the original
+  warning and near-miss message text.
 - Schema v39 now writes one immutable content-free preflight failure receipt
   atomically with terminal cleanup and exposes it through exact activation,
   status, and dashboard projections.
@@ -87,13 +83,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   decision mutations were killed with zero survivors or invalid mutations;
   source restoration and `git diff --check` passed.
 - Documentation validation passed all 582 maintained Markdown files, and
-  context telemetry reported 85.2 percent remaining before this checkpoint.
+  context telemetry reported 85.2 percent remaining before the prior
+  checkpoint.
+- Builds and trials `cc322381`, `f0fde9ee`, and `6b49f17d` remain consumed and
+  must not be rerun.
 
 ## exact-blocker
 
-The demonstrated code contradiction is repaired and locally verified. The
-remaining gate is delivery evidence: checkpoint and merge one reviewed
-revision, exact-install it, then spend that revision's sole product trial.
+The post-merge Codex 0.146 host-notice contradiction is repaired, reviewed,
+focused-green, and mutation-sensitive. The next gate is the named fast spine,
+then merge, exact install, and one fresh activation canary. The product trial
+remains unspent until activation is green.
 
 ## same-task-continuity
 
@@ -104,11 +104,12 @@ untracked files.
 
 ## next-bounded-work-package
 
-1. Create the substantive and ledger checkpoints, push, review, merge, and
+1. Run the named fast spine for the host-notice repair.
+2. Create the substantive and ledger checkpoints, push, review, merge, and
    exact-install Codex, ZCode, and dashboard once.
-2. Prove exact-build activation with the supported hook bypass.
-3. Spend one fresh 1,800-second product trial on that exact build.
-4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
+3. Prove exact-build activation with the supported hook bypass.
+4. Spend one fresh 1,800-second product trial on that exact build.
+5. Prove a fresh-task `agency-steward` plus specialist header, then produce the
    local shareable evidence page and OpenClaw handoff.
 
 ## verification
@@ -134,5 +135,6 @@ git diff --check
 - Product host remains sandboxed to the exact trial workspace.
 - Only Codex, ZCode, and dashboard are in machine scope.
 - One live product trial per exact installed build; any correction is failure.
+- Do not rerun activation diagnostics on exact build `3b5a00f`.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

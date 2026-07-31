@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-30
+updated: 2026-07-31
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -61,6 +61,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex 0.146 non-critical JSONL warnings are no longer misreported as parent
+  tool execution. The exact hook-bypass and skill-catalog-shortening notices
+  are projected as bounded content-free host notice types; unknown `error`
+  items and every non-collaboration tool remain fatal to activation and product
+  proof.
 - Persistent native-parent preflight is now dual-bounded before ready commit:
   32,000 characters and a 48,000-byte exact UTF-8 UserPromptSubmit context
   envelope under the host's 65,536-byte output cap. Version-11 recipes retain

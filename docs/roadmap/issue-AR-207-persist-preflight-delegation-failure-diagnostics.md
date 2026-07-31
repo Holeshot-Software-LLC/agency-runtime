@@ -76,6 +76,23 @@ the parent emitted no delegation tool call or response.
 - Product execution now has a 600-second minimum and retains the 1,800-second
   CLI default. README, troubleshooting, and ADR-0124 describe the same
   no-generalist contract.
+- PR 197 merged exact revision
+  `3b5a00f7564e29aaf0ec68bd09547f8b8fa42c2e`, and that VCS revision was
+  exact-installed for Codex, ZCode, and dashboard. Its activation execution
+  selected `code-reviewer`, completed one grant, load, worker, native child,
+  delegation, and accepted finalization with zero corrections, but proof
+  misclassified one Codex stdout `error` item as a non-allowlisted tool.
+- The authoritative parent rollout contains only `spawn_agent` and
+  `wait_agent`. Codex 0.146 serializes non-critical warnings as completed
+  `error` items; the exact canary catalog shortened 11,805 description
+  characters across 67 skills, averaging 177 characters per skill and
+  deterministically crossing Codex's 100-character warning threshold.
+- The bounded repair classifies the exact hook-bypass and
+  skill-catalog-shortening messages as content-free host notice types. Unknown
+  `error` items and non-collaboration tools remain unexpected and fatal.
+- Two bounded review passes found no remaining behavior defect. All 25
+  warning-strict activation-canary tests pass, and all 63 curated decision
+  mutations are killed with zero survivors or invalid mutations.
 
 ## Approach
 
@@ -91,7 +108,10 @@ the parent emitted no delegation tool call or response.
    product execution boundary. Keep the fixed activation canary separate from
    bounded multi-unit product grading, dispatch every accepted row exactly once,
    and fail if the parent performs product work.
-5. Keep inference authoritative, the parent non-generalist, and all raw prompt,
+5. Distinguish exact known Codex non-critical host notices from tool items,
+   preserve only allowlisted notice categories and counts, and reject every
+   unknown `error` item.
+6. Keep inference authoritative, the parent non-generalist, and all raw prompt,
    provider-response, stderr, path, and credential material out of durable
    evidence.
 
@@ -116,7 +136,10 @@ those proofs exposed.
 - [x] Focused warning-strict tests and the named fast spine pass.
 - [x] Curated mutations prove removal, overbroad retention, and projection
   regressions fail.
-- [ ] A reviewed exact build is merged and installed before any fresh product
-  trial.
+- [x] Exact known Codex non-critical notices are content-free and traceable;
+  near-miss or arbitrary `error` items remain fatal.
+- [ ] The host-notice repair passes the named fast verification spine.
+- [ ] The Codex host-notice repair is reviewed, merged, and exact-installed
+  before any fresh product trial.
 - [ ] One fresh exact-build product trial reaches native delegation and writes
   its workspace artifacts with zero response corrections.
