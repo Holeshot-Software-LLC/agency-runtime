@@ -426,6 +426,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6e2b3f4` | 2026-07-31 | fix(product): prove exact multi-unit specialist execution | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | [detail](2026-07-31-6e2b3f4-exact-multi-unit-specialist-execution.md) |
 | `3b5a00f` | 2026-07-31 | Merge pull request #197 from Holeshot-Software-LLC/codex/ar-204-readme-product-proof | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 | `fb797f9` | 2026-07-31 | fix(codex): classify non-critical host notices | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | [detail](2026-07-31-fb797f9-codex-host-notice-classification.md) |
+| `ab5812f` | 2026-07-31 | docs(evidence): admit Codex host notice fast gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
