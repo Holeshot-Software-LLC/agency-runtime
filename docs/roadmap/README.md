@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-30
+updated: 2026-07-31
 tags: [planning, tracker]
 related: []
 supersedes: []
@@ -223,6 +223,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-203` | [Prove product-canary workspace writes and exact activation](issue-AR-203-prove-product-canary-write-and-activation.md) | in_progress | p0 | testing | [#183](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183) |
 | `AR-204` | [Reconcile the README story contract](issue-AR-204-reconcile-readme-story-contract.md) | in_progress | p0 | product | [#189](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189) |
 | `AR-205` | [Make the default manager inference-safe](issue-AR-205-make-default-manager-inference-safe.md) | in_progress | p0 | product | [#190](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190) |
+| `AR-206` | [Accept bounded ready routing receipts](issue-AR-206-accept-bounded-ready-routing-receipts.md) | in_progress | p0 | product | [#194](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/194) |
 
 ## Traceability
 
@@ -435,6 +436,7 @@ not stable internal identifiers.
 | [AR-203](issue-AR-203-prove-product-canary-write-and-activation.md) | `097ce06`, `9f3d72a`, `d6b131a`, `dbd5502`, `baaf603`, `4314b8f`, `e3d2aea`, `0c41a53`, `830b878`, `e38f69d`, `1e54967`, `d470993`, `26a3911`, `b45bd28`, `c8bed05`, `5e3fab6`, `9ec3c3d`, `cc32238`, `38e7e1c`, `a5b0c33`, `0ecf1d9`, `81b887f`, `662faba`, `9461099`, `271e5a0`, `4460e10`, `f0fde9e`, `40560aa`, `f349c21`, `28a5f12`; [PR 193](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/193) is exact-installed and activation-complete; `f349c21` restores product gap hiring and compact exact goals, but two accepted inferred teams hit the same 8,192-character parent ceiling; owner context-budget direction is required; [tracker #183](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183); [active recovery capsule](handoffs/issue-AR-203.md) | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md), [ADR-0112](../decisions/0112-stage-preflight-workforce-evidence-until-ready.md), [ADR-0116](../decisions/0116-bind-product-trials-to-exact-workspace-proof.md) |
 | [AR-204](issue-AR-204-reconcile-readme-story-contract.md) | `c387b65`, `1d7b019`, `ffec102`, `9212e52`, `c8c8020`, `f8607dd`, `e1451ea`, `7621096`, `03dba75`, `e0c66f9`, `3ec69c7`, `6956edb`, `67f0b96`, `9e3ca7f`, `0b37270`, `57f82c7`, `38d3e0a`, `1591cb8`, `cc32238`, `38e7e1c`, `a5b0c33`, `0ecf1d9`, `81b887f`, `662faba`, `9461099`, `271e5a0`, `4460e10`, `f0fde9e`, `40560aa`, `f349c21`, `28a5f12`; exact activation passes and product routing accepts complete teams; repeated 8,192-character context failure waits for owner direction, with the existing 32,000-character preflight ceiling recommended; [tracker #189](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189) | [ADR-0117](../decisions/0117-unify-owner-control-authority.md), [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0119](../decisions/0119-separate-native-trust-modes-from-activation-proof.md), [ADR-0120](../decisions/0120-construct-first-pass-evidence-headers.md), [ADR-0121](../decisions/0121-gate-deterministic-recall-without-selection-authority.md), [ADR-0122](../decisions/0122-use-one-agency-native-resident-steward.md) |
 | [AR-205](issue-AR-205-make-default-manager-inference-safe.md) | `57f82c7`, `38d3e0a`, `35e1db5`, `1591cb8`, `cc32238`, `38e7e1c`, `a5b0c33`, `0ecf1d9`, `81b887f`, `662faba`, `9461099`, `271e5a0`, `4460e10`, `f0fde9e`, `40560aa`, `f349c21`, `28a5f12`; product inference now accepts complete nine- and ten-unit teams; exact child delivery exceeds the legacy 8,192-character parent limit, so context-budget direction remains before live proof; [tracker #190](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190) | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0122](../decisions/0122-use-one-agency-native-resident-steward.md) |
+| [AR-206](issue-AR-206-accept-bounded-ready-routing-receipts.md) | source/test repair pending checkpoint; [tracker #194](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/194) | [ADR-0112](../decisions/0112-stage-preflight-workforce-evidence-until-ready.md), [ADR-0120](../decisions/0120-construct-first-pass-evidence-headers.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

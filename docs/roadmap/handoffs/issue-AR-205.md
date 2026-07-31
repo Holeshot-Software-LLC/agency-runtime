@@ -98,6 +98,10 @@ acceptance; this capsule records only current proof and the next package.
   ten-unit plan needs 8,326 characters; the configured sixteen-unit maximum
   needs about 9,534 with realistic identities. This repeated boundary now waits
   for owner direction under the explicit stop contract.
+- AR-206 separately proves the current Store and ready receipt are intact; the
+  long-lived task's old Stop verifier alone rejects the valid 558-node routing
+  decision under a stale 256-node cap. The source repair aligns it with the
+  2,048-node durable recipe bound and passes 22 focused warning-strict tests.
 
 ## exact-blocker
 
@@ -118,8 +122,9 @@ passing direct routing replay as product success.
 
 1. Obtain owner direction; recommended: raise the persistent-host ceiling to
    32,000 while retaining exact validation and the 48,000 Codex hook cap.
-2. Implement, verify, merge, exact-install, and prove native activation, then run one supported-
-   bypassed product trial for only the new exact build.
+2. Implement, verify, and exact-install the context policy plus AR-206, then
+   prove native activation and run one supported-bypassed product trial for
+   only the new exact build.
 3. Require zero corrections, a real specialist or hired-contractor chain,
    workspace-write proof, and product artifacts; then generate the local report
    and OpenClaw handoff.

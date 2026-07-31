@@ -96,6 +96,10 @@ Bounded projection for making the README product story executable.
 - Sizing proves the compact form needs 8,326 characters for ten realistic units
   and 9,534 for the configured maximum sixteen; the general preflight and Codex
   hook ceilings are 32,000 and 48,000 respectively.
+- AR-206 proves this task's evidence Store is healthy. Its 558-node routing
+  decision exactly matches the ready receipt, but the immutable old Stop hook
+  rejects it under a stale 256-node verifier cap. The source now uses the
+  durable 2,048-node bound and passes its focused regression and mutation tests.
 
 ## exact-blocker
 
@@ -115,8 +119,9 @@ lock files.
 
 1. Resolve the context-ceiling choice; recommended: 32,000 characters with the
    unchanged 48,000-character Codex hook boundary.
-2. Implement and verify only that policy, then merge, exact-install, re-prove
-   activation, and run one product trial for only that new exact build.
+2. Implement and verify only that policy, include the bounded AR-206 verifier
+   repair, then merge, exact-install, re-prove activation, and run one product
+   trial for only that new exact build.
 3. Generate the local evidence page and OpenClaw handoff only after the product
    gate proves real execution and zero corrections.
 

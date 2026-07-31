@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core import preflight as preflight_module
 from agency_runtime.core.config import AgencyConfig, OllamaConfig
 from agency_runtime.core.header.contract import (
     EvidenceCorrelationError,
@@ -106,11 +107,17 @@ def _ready_store(
     monkeypatch: pytest.MonkeyPatch,
     *,
     trace_id: str,
+    routing_value: dict[str, Any] | None = None,
 ) -> tuple[Store, dict[str, Any]]:
     store = Store(tmp_path / f"{trace_id}.db")
     message = "Audit the routing evidence boundary."
-    routing = _routing(message, trace_id)
+    routing = routing_value or _routing(message, trace_id)
     monkeypatch.setattr(pipeline, "route", lambda *_args, **_kwargs: routing)
+    monkeypatch.setattr(
+        preflight_module,
+        "_require_substantive_specialist",
+        lambda *_args, **_kwargs: None,
+    )
     run_preflight(
         store,
         session_id="session",
@@ -120,6 +127,56 @@ def _ready_store(
         config=AgencyConfig(ollama=OllamaConfig(enabled=False, model="")),
     )
     return store, routing
+
+
+def test_ready_receipt_accepts_valid_routing_above_legacy_node_limit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    trace_id = "wide-ready-receipt"
+    message = "Audit the routing evidence boundary."
+    routing = _routing(message, trace_id)
+    routing["eligibility_rejections"] = [
+        {
+            "slug": f"agent-{index}",
+            "reason": "missing_capabilities:browser-automation",
+        }
+        for index in range(96)
+    ]
+    routing["provider_attempts"] = [
+        {
+            "provider_name": f"router-{attempt}",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-router",
+            "model_group": "task-agency-router",
+            "status": "failed",
+            "reason": "provider_response_contract_invalid",
+            "validation_failures": [
+                {
+                    "unit_id": f"unit-{unit}",
+                    "reason_code": "invalid_candidate",
+                }
+                for unit in range(16)
+            ],
+        }
+        for attempt in range(8)
+    ]
+    routing["routing_receipt"] = project_durable_routing_receipt(routing)
+    store, routing = _ready_store(
+        tmp_path,
+        monkeypatch,
+        trace_id=trace_id,
+        routing_value=routing,
+    )
+
+    snapshot = store.get_completion_evidence_snapshot("session", trace_id)
+    receipt = store.get_ready_routing_receipt(
+        "session",
+        trace_id,
+        evidence_revision=snapshot["evidence_revision"],
+    )
+
+    assert receipt == project_durable_routing_receipt(routing)
 
 
 def test_routing_receipt_is_bounded_content_free_and_idempotent() -> None:

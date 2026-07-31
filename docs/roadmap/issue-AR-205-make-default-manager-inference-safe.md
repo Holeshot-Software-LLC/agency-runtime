@@ -8,6 +8,7 @@ tags: [product, routing, managers, inference, roster]
 related:
   - README.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
   - docs/decisions/0065-keep-compact-resident-manager-kernel.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
@@ -159,6 +160,11 @@ the exact installed product proof and final README-story acceptance.
   unit maximum at about 9,534. The repeated-boundary stop now requires owner
   direction; using the existing 32,000-character preflight ceiling is the
   recommended inference-preserving resolution.
+- AR-206 isolates a separate evidence-reader defect from this staffing result:
+  a valid 558-node ready decision was rejected only because Stop correlation
+  used a stale 256-node cap. The Store is healthy, exact projection matches,
+  and the bounded verifier regression is green. Fresh-task proof follows the
+  next exact install; no staffing evidence is being inferred from the header.
 
 ## Acceptance
 

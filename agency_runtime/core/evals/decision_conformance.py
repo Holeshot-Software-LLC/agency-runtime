@@ -421,6 +421,62 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="ready-routing-receipt-restores-legacy-node-cap",
+        invariant=(
+            "Ready routing receipts accept every structurally bounded decision admitted by "
+            "the durable preflight recipe."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before="""def _routing_component_matches(
+    conn: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    routing: dict[str, Any],
+) -> bool:
+    rows = conn.execute(
+        "SELECT query_hash, context_fingerprint, source, decision "
+        "FROM routing_decisions WHERE session_id = ? AND trace_id = ? ORDER BY id",
+        (session_id, trace_id),
+    ).fetchall()
+    if len(rows) != 1:
+        return False
+    row = rows[0]
+    try:
+        decision = safe_load_bounded_json(
+            str(row["decision"] or ""),
+            maximum_bytes=64_000,
+            maximum_depth=8,
+            maximum_nodes=_MAX_RECIPE_NODES,
+        )""",
+        after="""def _routing_component_matches(
+    conn: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    routing: dict[str, Any],
+) -> bool:
+    rows = conn.execute(
+        "SELECT query_hash, context_fingerprint, source, decision "
+        "FROM routing_decisions WHERE session_id = ? AND trace_id = ? ORDER BY id",
+        (session_id, trace_id),
+    ).fetchall()
+    if len(rows) != 1:
+        return False
+    row = rows[0]
+    try:
+        decision = safe_load_bounded_json(
+            str(row["decision"] or ""),
+            maximum_bytes=64_000,
+            maximum_depth=8,
+            maximum_nodes=256,
+        )""",
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_ready_receipt_accepts_valid_routing_above_legacy_node_limit"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="activation-canary-allows-plan-subdivision",
         invariant=(
             "The exact indivisible Codex activation request constrains inference to one planned "

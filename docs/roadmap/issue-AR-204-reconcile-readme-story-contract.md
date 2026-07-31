@@ -19,6 +19,7 @@ related:
   - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
+  - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes:
@@ -30,7 +31,7 @@ epic: product
 issue_id: AR-204
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
-depends_on: []
+depends_on: [AR-206]
 blocks: [AR-205]
 ---
 
@@ -299,6 +300,13 @@ realistic identities. Because this is the second failure at the same causal
 boundary, work waits for owner direction. The recommended contract is the
 existing 32,000-character preflight ceiling under the unchanged 48,000-
 character Codex hook limit, not a smaller deterministic team.
+
+The same long-lived Codex task then exposed AR-206: its immutable old Stop hook
+rejected an intact 558-node ready routing decision because the correlation
+reader retained a stale 256-node cap while the durable recipe admits 2,048.
+SQLite integrity and exact projection both pass. The bounded source repair and
+focused regression pass; the next exact installation must include this repair,
+and its Stop proof must run in a fresh task whose launcher can consume it.
 
 ## Acceptance
 
