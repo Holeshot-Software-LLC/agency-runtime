@@ -107,13 +107,17 @@ acceptance; this capsule records only current proof and the next package.
 - ADR-0123 is approved. Commit 839ddee raises only the persistent parent limit
   to 32,000, proves the complete sixteen-unit shape, kills the 8,192 mutation,
   and passes the 115-test focused boundary.
+- The exact committed tree passes the named fast Python spine (636 passed,
+  6 skipped), dashboard UI (110 passed), every routing evaluation gate, Ruff
+  across 602 files, all 50 decision mutations with source unchanged, and
+  documentation validation for 577 files.
 
 ## exact-blocker
 
 No current build proves a specialist team, native delegation, workspace write,
 product artifacts, and zero corrections in one end-to-end run. Product routing
-and the approved context policy are locally focused-green; exact-tree fast
-verification, merge, exact install, and the new-build trial remain.
+and the approved context policy are locally fast-green; merge, exact install,
+and the new-build trial remain.
 
 ## same-task-continuity
 
@@ -123,10 +127,9 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Run the named fast gates and complete decision conformance.
-2. Merge and exact-install the context policy plus AR-206, then prove native
+1. Merge and exact-install the context policy plus AR-206, then prove native
    activation and run one supported-bypassed product trial for the new build.
-3. Require zero corrections, a real specialist or hired-contractor chain,
+2. Require zero corrections, a real specialist or hired-contractor chain,
    workspace-write proof, and product artifacts; then generate the local report
    and OpenClaw handoff.
 

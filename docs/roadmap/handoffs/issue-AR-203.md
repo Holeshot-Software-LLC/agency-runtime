@@ -110,13 +110,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   persistent-host ceiling, proves a complete sixteen-unit context crosses the
   legacy limit, and kills the mutation restoring 8,192. The focused boundary
   passes 115 tests; ledger commit 856191b records the checkpoint.
+- The exact committed tree passes the named fast Python spine (636 passed,
+  6 skipped), dashboard UI (110 passed), every routing evaluation gate, Ruff
+  across 602 files, and all 50 decision mutations with source unchanged.
+  Documentation validation passes for 577 files and the tree is whitespace
+  clean.
 
 ## exact-blocker
 
 Installation and activation pass, gap hiring is separated correctly, inference
-reaches accepted product teams, and the approved context policy is focused
-green. The remaining blocker is exact-tree fast verification, merge, and exact
-installation before one new-build product trial.
+reaches accepted product teams, and the approved context policy is fast-green.
+The remaining blocker is merge and exact installation before one new-build
+product trial.
 
 ## same-task-continuity
 
@@ -126,10 +131,8 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-1. Run the named fast gates and complete decision conformance on the committed
-   839ddee tree.
-2. Merge, exact-install, and re-prove activation with the AR-206 verifier fix.
-3. Spend one product trial only on that new exact build. Require a real inferred
+1. Merge, exact-install, and re-prove activation with the AR-206 verifier fix.
+2. Spend one product trial only on that new exact build. Require a real inferred
    team or hired contractor, planned delegation, workspace artifacts, and zero
    corrections before producing the evidence page and OpenClaw handoff.
 

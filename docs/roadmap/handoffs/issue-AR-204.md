@@ -105,13 +105,17 @@ Bounded projection for making the README product story executable.
 - ADR-0123 is approved and commit 839ddee uses the 32,000-character persistent
   parent ceiling. A complete sixteen-unit regression crosses 8,192, its
   legacy-cap mutation is killed, and the 115-test focused boundary passes.
+- The exact committed tree passes the named fast Python spine (636 passed,
+  6 skipped), dashboard UI (110 passed), every routing evaluation gate, Ruff
+  across 602 files, all 50 decision mutations with source unchanged, and
+  documentation validation for 577 files.
 
 ## exact-blocker
 
 The source candidate passes activation prerequisites, complete-team routing,
-the AR-206 evidence verifier, and the approved 32k focused boundary. README
-acceptance now waits for exact-tree fast verification, merge, exact install,
-fresh-task activation, and one new-build product trial.
+the AR-206 evidence verifier, and the approved 32k fast boundary. README
+acceptance now waits for merge, exact install, fresh-task activation, and one
+new-build product trial.
 
 ## same-task-continuity
 
@@ -121,10 +125,9 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Run the named fast gates and complete decision conformance.
-2. Merge, exact-install, re-prove activation with AR-206, and run one product
+1. Merge, exact-install, re-prove activation with AR-206, and run one product
    trial for only that new exact build.
-3. Generate the local evidence page and OpenClaw handoff only after the product
+2. Generate the local evidence page and OpenClaw handoff only after the product
    gate proves real execution and zero corrections.
 
 ## verification
