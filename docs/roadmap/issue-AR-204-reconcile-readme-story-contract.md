@@ -180,6 +180,21 @@ revision, and Hermes post-generation repair. The complete isolated evaluator
 passed its 29-node baseline and killed all 37 curated mutations in 323 seconds,
 with zero survivors, zero invalid results, and the source checkout unchanged.
 
+The packaged source dashboard passed its bounded owner round trip against an
+owner-private disposable configuration and Store. The browser consumed the
+one-time fragment token, removed it from the visible URL, rendered the Signal
+Observatory as `Authenticated` and `Online`, and exposed the same resolved
+configuration path and retention value as the CLI. An unauthenticated
+`/api/config` request returned `401`; the owner bearer returned `200`. The UI
+changed retention from 37 to 38, the CLI independently read 38, and the UI then
+restored 37. The configuration SHA-256 moved from
+`d527e0901ce83b85a110d476d82045458768e92686c0dee4ac8583230311e944` to
+`1bf901a9f9b746b4f4f647ecd33b31c7b045d6511ae58d6caabd5d3d8f42a0de`
+and returned exactly to the original hash after restoration. The isolated
+server was stopped and its token expired. This proves the source candidate's
+dashboard boundary; the exact merged installation still owns the final product
+trial.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired
@@ -201,7 +216,7 @@ with zero survivors, zero invalid results, and the source checkout unchanged.
   lifecycle separately.
 - [x] Missing, malformed, corrected, or evidence-mismatched headers cannot be
   accepted as a successful turn; success requires correction count zero.
-- [ ] Dashboard success proves automatic token authentication, packaged render,
+- [x] Dashboard success proves automatic token authentication, packaged render,
   configuration read, one reversible owner write, and exact restoration.
 - [ ] README, troubleshooting, threat model, roadmap, decisions, and tests state
   the same contract without stale operator-presence or offline-selection text.

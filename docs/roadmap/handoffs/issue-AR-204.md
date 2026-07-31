@@ -50,6 +50,9 @@ acceptance; this file records only current proof and the next package.
 - The fifth bounded package is source-complete: ADR-0120 supersedes response
   repair with pre-publication header construction and terminal first-invalid
   failure across Codex, ZCode, Hermes, and OpenClaw.
+- The packaged source dashboard completed an authenticated rendered owner round
+  trip against a disposable private profile and restored its exact original
+  configuration hash.
 - Tracker [#189](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189)
   records AR-204 under `epic:product`.
 - AR-143 and AR-196 are `wont_do` and explicitly superseded by AR-204; their
@@ -106,13 +109,23 @@ acceptance; this file records only current proof and the next package.
 - Decision conformance passed its 29-node baseline and killed all 37 curated
   mutations in owner-private disposable copies with zero survivors, zero
   invalid results, and the source checkout unchanged.
+- The packaged dashboard consumed and removed its fragment token, rendered
+  `Authenticated` and `Online`, rejected an unauthenticated config read with
+  `401`, and accepted the owner bearer with `200`.
+- The dashboard changed retention 37 to 38, the CLI independently observed 38,
+  and the dashboard restored 37. The file SHA-256 returned exactly from
+  `1bf901a9f9b746b4f4f647ecd33b31c7b045d6511ae58d6caabd5d3d8f42a0de`
+  to its original
+  `d527e0901ce83b85a110d476d82045458768e92686c0dee4ac8583230311e944`.
+- The disposable dashboard process was stopped and its token expired. This is
+  source-candidate evidence, not exact-installed product proof.
 
 ## exact-blocker
 
-Owner authority, inference-only staffing, activation contracts, and first-pass
-header enforcement are repaired in source. Current production still lacks the
-rendered dashboard/configuration proof, named fast spine, exact installation,
-and one native Codex product trial.
+Owner authority, inference-only staffing, activation contracts, first-pass
+header enforcement, and the rendered dashboard/configuration round trip are
+repaired and proved in source. Current production still lacks the named fast
+spine, exact installation, and one native Codex product trial.
 
 ## same-task-continuity
 
@@ -122,11 +135,9 @@ the owner-untracked analysis draft and `uv.lock`.
 
 ## next-bounded-work-package
 
-1. Run the authenticated packaged-dashboard render plus one reversible owner
-   configuration mutation and exact restoration.
-2. Run the named fast spine, checkpoint, install that exact build for Codex and
+1. Run the named fast spine, checkpoint, install that exact build for Codex and
    ZCode plus dashboard, then run one bypassed native Codex product trial.
-3. Generate the bounded local evidence page from the exact installed trial.
+2. Generate the bounded local evidence page from the exact installed trial.
 
 ## verification
 
