@@ -103,16 +103,16 @@ acceptance; this file records only current proof and the next package.
 - The finalization package passed 378 warning-strict tests with five platform
   skips and a 144-test post-format regression. Ruff, format, metadata, policy,
   documentation, and diff checks passed.
-- Decision conformance passed its last complete 29-mutation run with zero
-  survivors or invalid mutations. Eight later mutations are manifest-tested,
-  bringing the pending complete evaluator to 37 mutations.
+- Decision conformance passed its 29-node baseline and killed all 37 curated
+  mutations in owner-private disposable copies with zero survivors, zero
+  invalid results, and the source checkout unchanged.
 
 ## exact-blocker
 
 Owner authority, inference-only staffing, activation contracts, and first-pass
 header enforcement are repaired in source. Current production still lacks the
-complete 37-mutation result, rendered dashboard/configuration proof, named fast
-spine, exact installation, and one native Codex product trial.
+rendered dashboard/configuration proof, named fast spine, exact installation,
+and one native Codex product trial.
 
 ## same-task-continuity
 
@@ -122,12 +122,11 @@ the owner-untracked analysis draft and `uv.lock`.
 
 ## next-bounded-work-package
 
-1. Run the complete 37-mutation local decision-conformance evaluator and stop
-   on the first survivor or invalid mutation.
-2. Run the authenticated packaged-dashboard render plus one reversible owner
+1. Run the authenticated packaged-dashboard render plus one reversible owner
    configuration mutation and exact restoration.
-3. Run the named fast spine, checkpoint, install that exact build for Codex and
+2. Run the named fast spine, checkpoint, install that exact build for Codex and
    ZCode plus dashboard, then run one bypassed native Codex product trial.
+3. Generate the bounded local evidence page from the exact installed trial.
 
 ## verification
 

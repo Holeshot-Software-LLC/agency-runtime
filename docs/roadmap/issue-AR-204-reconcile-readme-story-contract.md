@@ -176,8 +176,9 @@ platform skips, followed by a 144-test post-format regression. Ruff, formatting,
 metadata, policy availability, documentation validation, and whitespace checks
 passed. Four new curated mutations cover restoration of a Codex continuation
 prompt, removal of the initial Codex snapshot, restoration of OpenClaw model
-revision, and Hermes post-generation repair. The manifest contains 37
-mutations; its complete isolated execution remains the first next-package gate.
+revision, and Hermes post-generation repair. The complete isolated evaluator
+passed its 29-node baseline and killed all 37 curated mutations in 323 seconds,
+with zero survivors, zero invalid results, and the source checkout unchanged.
 
 ## Acceptance
 
