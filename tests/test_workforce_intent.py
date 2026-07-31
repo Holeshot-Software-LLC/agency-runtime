@@ -624,6 +624,7 @@ def test_enrichment_keeps_integration_and_release_evidence_semantically_distinct
     (
         ("Verify installer test results", True),
         ("Does not verify deployment", True),
+        ("Verify test results before deployment", True),
         ("Verify deployment evidence", False),
     ),
 )
@@ -643,6 +644,12 @@ def test_release_evidence_matches_the_requested_positive_operation(
     violations = plan_policy_violations("Build and deploy the service.", plan)
 
     assert ("plan_missing_release_verification" in violations) is release_violation_expected
+
+
+def test_regulated_requirement_survives_descriptive_negative_failure() -> None:
+    request = "The avionics service does not meet DO-178C compliance; fix it."
+
+    assert regulated_assurance_requirements(request) == ("regulated-assurance-do-178c",)
 
 
 def test_enrichment_binds_early_assurance_to_later_local_test_artifacts() -> None:

@@ -70,15 +70,18 @@ Bounded projection for making the README product story executable.
 - PR 192's first Codex review found three valid candidate defects. The bounded
   fixes enforce configured planner limits before recruitment, require positive
   release proof for each requested operation, and preserve explicitly requested
-  communication capability. The changed modules pass 79 tests; the wider
-  routing/safety boundary passes 115 with one intentional skip.
+  communication capability. The second and final broad review found four more
+  valid P1s in compact-budget clamping, operation-scoped proof, typed-recall
+  size, and descriptive negation. All seven findings are repaired. The changed
+  modules pass 83 tests; the wider routing/safety boundary passes 115 with one
+  intentional skip.
 
 ## exact-blocker
 
-The first-review repair needs a commit/ledger checkpoint, second review pass,
-merge, exact install, and one fresh product trial. README acceptance still
-requires the same run to prove a real team, planned native delegation,
-workspace artifacts, and zero response corrections.
+The final-review repair needs a commit/ledger checkpoint, final exact-tree
+verification, merge, exact install, and one fresh product trial. README
+acceptance still requires the same run to prove a real team, planned native
+delegation, workspace artifacts, and zero response corrections.
 
 ## same-task-continuity
 
@@ -88,8 +91,8 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Commit and push the locally verified first-review repair plus exact ledger.
-2. Complete the second review pass, merge, and exact-install the new build.
+1. Commit and push the locally verified final-review repair plus exact ledger.
+2. Complete final exact-tree verification, merge, and exact-install the build.
 3. Run one supported trust-bypassed native Codex product trial.
 4. Generate the local evidence page and OpenClaw handoff only from recorded
    evidence.

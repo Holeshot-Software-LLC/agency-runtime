@@ -10,7 +10,15 @@ from agency_runtime.core.workforce.planning_contracts import WorkUnit, WorkUnitP
 
 _TOKENS = re.compile(r"[a-z0-9]+")
 _NEGATED_SCOPE = re.compile(
+    r"\b(?:do\s+not|don't|must\s+not|never|without)\b[^.;\n]*",
+    re.IGNORECASE,
+)
+_NEGATED_EVIDENCE_SCOPE = re.compile(
     r"\b(?:do(?:es)?\s+not|don't|doesn't|must\s+not|never|without)\b[^.;\n]*",
+    re.IGNORECASE,
+)
+_VERIFICATION_CLAUSE_BOUNDARY = re.compile(
+    r"(?:[.;,\n]|\b(?:after|before|following|once|prior\s+to|without)\b)",
     re.IGNORECASE,
 )
 _MUTATION = frozenset(
@@ -129,6 +137,31 @@ _POSITIVE_VERIFICATION = frozenset(
         "verification",
         "verified",
         "verify",
+    }
+)
+_VERIFICATION_RELATION_FILLERS = frozenset(
+    {
+        "a",
+        "actual",
+        "an",
+        "and",
+        "application",
+        "been",
+        "complete",
+        "completed",
+        "cross",
+        "for",
+        "has",
+        "in",
+        "is",
+        "of",
+        "on",
+        "platform",
+        "successful",
+        "successfully",
+        "that",
+        "the",
+        "was",
     }
 )
 _ASSURANCE_TERMS = frozenset(
@@ -335,6 +368,24 @@ def _unit_tokens(unit: object) -> frozenset[str]:
     return frozenset(_TOKENS.findall(" ".join(values).casefold()))
 
 
+def _outcome_verifies_operation(outcome: str, vocabulary: frozenset[str]) -> bool:
+    actionable = _NEGATED_EVIDENCE_SCOPE.sub(" ", outcome).casefold()
+    relation_tokens = _VERIFICATION_RELATION_FILLERS | _POSITIVE_VERIFICATION | _RELEASE
+    for clause in _VERIFICATION_CLAUSE_BOUNDARY.split(actionable):
+        tokens = _TOKENS.findall(clause)
+        verification_indexes = [
+            index for index, token in enumerate(tokens) if token in _POSITIVE_VERIFICATION
+        ]
+        operation_indexes = [index for index, token in enumerate(tokens) if token in vocabulary]
+        for verification_index in verification_indexes:
+            for operation_index in operation_indexes:
+                left, right = sorted((verification_index, operation_index))
+                between = tokens[left + 1 : right]
+                if len(between) <= 8 and all(token in relation_tokens for token in between):
+                    return True
+    return False
+
+
 def _release_verification_covers_request(
     request_tokens: frozenset[str],
     plan: WorkUnitPlan,
@@ -344,15 +395,15 @@ def _release_verification_covers_request(
         for operation, vocabulary in _RELEASE_OPERATIONS.items()
         if request_tokens & vocabulary
     )
-    evidence_tokens = tuple(
-        frozenset(_TOKENS.findall(_NEGATED_SCOPE.sub(" ", item.outcome).casefold()))
+    evidence_outcomes = tuple(
+        item.outcome
         for item in plan.units
         if item.artifact_kind == "test-evidence" and item.authority == "review"
     )
     return bool(requested_operations) and all(
         any(
-            tokens & _POSITIVE_VERIFICATION and tokens & _RELEASE_OPERATIONS[operation]
-            for tokens in evidence_tokens
+            _outcome_verifies_operation(outcome, _RELEASE_OPERATIONS[operation])
+            for outcome in evidence_outcomes
         )
         for operation in requested_operations
     )

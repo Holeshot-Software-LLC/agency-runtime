@@ -880,6 +880,35 @@ def test_planner_repair_enforces_configured_work_unit_limit_before_recruitment()
     assert "compact intent units must contain at most 8 items" in prompts[1]
 
 
+def test_planner_clamps_large_configured_limit_to_compact_schema_ceiling() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    responses = iter(
+        (
+            _result(_compact_plan_document()),
+            _result(_nomination_document()),
+        )
+    )
+    planner_limits: list[int] = []
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        if "constraints" in payload:
+            planner_limits.append(payload["constraints"]["max_primary_units"])
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(max_work_units=64),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 2
+    assert planner_limits == [16]
+
+
 def test_planner_repair_receives_exact_assurance_graph_and_remains_inference_owned() -> None:
     request = (
         "Build a Python API and TypeScript dashboard, validate state-changing operations for "
@@ -1454,6 +1483,41 @@ def test_typed_shortlist_is_canonical_recall_without_local_ranking() -> None:
     assert candidate_ids == sorted(candidate_ids)
     assert candidate_ids == ["generic-evidence-reviewer", "test-results-analyzer"]
     assert shortlist[0]["role_anchors"] == []
+
+
+def test_typed_recall_matrix_is_bounded_independently_of_roster_size() -> None:
+    unit_template = _plan_document()["units"][0]
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": "Analyze sixteen repository concerns.",
+            "units": [
+                {
+                    **unit_template,
+                    "unit_id": f"unit-analyze-{index}",
+                    "outcome": f"Complete technical analysis {index}",
+                }
+                for index in range(16)
+            ],
+        }
+    )
+    base = _contract("technical-analyst")
+    contracts = tuple(
+        replace(
+            base,
+            worker_id=f"worker:technical-analyst-{index:04d}",
+            agent_id=f"technical-analyst-{index:04d}",
+            display_name=f"Technical Analyst {index:04d}",
+        )
+        for index in range(500)
+    )
+
+    recall = _typed_shortlists(plan, contracts, context=_context())
+
+    assert all(row["candidate_count"] == 500 for row in recall)
+    assert all(row["candidate_rows_complete"] is False for row in recall)
+    assert all(len(row["candidates"]) <= 24 for row in recall)
+    assert len(json.dumps(recall, separators=(",", ":")).encode("utf-8")) <= 320 * 1024
 
 
 def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:

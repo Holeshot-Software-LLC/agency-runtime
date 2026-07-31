@@ -61,6 +61,7 @@ if TYPE_CHECKING:
     from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 
 MAX_REQUEST_BYTES = 64 * 1024
+MAX_TYPED_RECALL_CANDIDATES_PER_UNIT = 24
 _PLANNING_CAPABILITIES = tuple(sorted(CORE_CAPABILITY_IDS))
 _WORKFORCE_ROUTING_POLICY_VERSION = "1"
 _CACHE_CREDENTIAL_KEY = secrets.token_bytes(32)
@@ -77,7 +78,8 @@ _NOMINATION_FAILURE_CODES = frozenset(
 )
 _NOMINATION_REPAIR_REQUIREMENTS = {
     "candidate_outside_detail_cards": (
-        "Use only candidate IDs present in detail_cards and typed_recall."
+        "Use only candidate IDs present in detail_cards. typed_recall candidate rows are bounded "
+        "non-ranked evidence and need not repeat every available card."
     ),
     "gap_with_safe_team": (
         "Re-evaluate the non-ranked typed_recall evidence. Declare staff only when a "
@@ -148,13 +150,14 @@ _RECRUITER_SYSTEM = (
     "a gap so hiring inference can materialize the missing specialty. A gap may use an "
     "empty ranked_semantic list when no candidate card is even relevant; never invent a "
     "roster identity just to make the ranking nonempty.\n\n"
-    "typed_recall is deterministic, non-ranked evidence: requirements are exact; each "
-    "candidate's covers list is exact; execution_eligible is a hard boundary; and a nonempty "
-    "uncovered_requirements list proves that the current roster cannot staff that unit. Do not "
-    "guess typed coverage from a display name or prose card. When uncovered_requirements is "
-    "nonempty, declare a gap so hiring inference can design the missing specialist. Otherwise, "
-    "the required/acceptable candidates selected for staff must jointly cover every requirement "
-    "within the configured per-unit limit.\n\n"
+    "typed_recall is deterministic, non-ranked evidence: requirements and uncovered_requirements "
+    "are exact over the full eligible roster; each included candidate's covers list is exact; "
+    "execution_eligible is a hard boundary. Candidate rows are a bounded coverage-first recall "
+    "sample and need not repeat every detail card, so omission is not exclusion. Do not guess "
+    "typed coverage from a display name or prose card. A nonempty uncovered_requirements list "
+    "proves that the current roster cannot staff that unit and requires a gap. Otherwise, selected "
+    "required/acceptable candidates must jointly cover every requirement within the configured "
+    "per-unit limit; deterministic verification rejects unsupported coverage.\n\n"
     "For every unit, rank the strongest semantic candidates in descending order. "
     "Set decision to staff when the ranked candidates can form the intended team, or gap "
     "only when no supplied specialist or combination is semantically appropriate. Classify "
@@ -182,7 +185,8 @@ _RECRUITER_REPAIR_SYSTEM = (
     "of failed planned-unit IDs and invariant codes. Return exactly one corrected unit row "
     "for every listed failed unit, in listed order. Omit every unlisted planned unit because "
     "the runtime retains its previously validated row.\n\n"
-    "For each listed unit, use typed_recall as exact, non-ranked coverage evidence. A nonempty "
+    "For each listed unit, use typed_recall as bounded, non-ranked coverage evidence whose "
+    "requirements and uncovered_requirements are exact over the full roster. A nonempty "
     "uncovered_requirements list requires a gap; otherwise a staff response must include every "
     "semantically faithful coverage complement needed within the per-unit limit. Then reason "
     "from the ideal specialist in an open-ended pool and rank "
@@ -1061,13 +1065,15 @@ def _typed_shortlists(
             if not ineligibility:
                 eligible_coverage.update(coverage)
             candidates.append((contract.agent_id, frozenset(coverage), ineligibility))
-        selected = sorted(candidates, key=lambda item: item[0])
+        selected = _bounded_typed_candidates(required, candidates)
         result.append(
             {
                 "unit_id": unit.unit_id,
                 "requirements": list(required),
                 "uncovered_requirements": sorted(set(required) - eligible_coverage),
                 "role_anchors": [],
+                "candidate_count": len(candidates),
+                "candidate_rows_complete": len(selected) == len(candidates),
                 "candidates": [
                     {
                         "agent_id": agent_id,
@@ -1080,6 +1086,36 @@ def _typed_shortlists(
             }
         )
     return result
+
+
+def _bounded_typed_candidates(
+    required: Sequence[str],
+    candidates: Sequence[tuple[str, frozenset[str], tuple[str, ...]]],
+) -> list[tuple[str, frozenset[str], tuple[str, ...]]]:
+    """Recall stable coverage evidence without ranking or selecting a worker."""
+
+    ordered = sorted(candidates, key=lambda item: item[0])
+    recalled: dict[str, tuple[str, frozenset[str], tuple[str, ...]]] = {}
+    required_set = set(required)
+    for candidate in ordered:
+        agent_id, covers, ineligibility = candidate
+        if not ineligibility and required_set <= covers:
+            recalled.setdefault(agent_id, candidate)
+            if len(recalled) >= MAX_TYPED_RECALL_CANDIDATES_PER_UNIT:
+                break
+    for requirement in required:
+        for candidate in ordered:
+            agent_id, covers, ineligibility = candidate
+            if not ineligibility and requirement in covers:
+                recalled.setdefault(agent_id, candidate)
+                break
+    for candidate in ordered:
+        if len(recalled) >= MAX_TYPED_RECALL_CANDIDATES_PER_UNIT:
+            break
+        recalled.setdefault(candidate[0], candidate)
+    return sorted(recalled.values(), key=lambda item: item[0])[
+        :MAX_TYPED_RECALL_CANDIDATES_PER_UNIT
+    ]
 
 
 def staffing_budget_for_config(config: AgencyConfig) -> StaffingBudget:
@@ -1789,7 +1825,7 @@ def plan_and_staff_workforce(
                 request=ask,
                 snapshot=snapshot,
                 context=context,
-                max_work_units=config.workforce.max_work_units,
+                max_work_units=min(config.workforce.max_work_units, MAX_PRIMARY_UNITS),
             ),
         )
         if isinstance(parsed_plan, WorkUnitPlan):

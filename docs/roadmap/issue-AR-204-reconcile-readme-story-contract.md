@@ -255,9 +255,13 @@ candidate: configured planner limits were not enforced during parsing,
 release proof did not match the specific positively verified operation, and
 explicit communication work could lose its typed capability. Those boundaries
 are repaired without adding deterministic planning or selection. The repaired
-modules pass 79 warning-strict tests; the wider routing, selection, hiring, and
-decision-conformance boundary passes 115 tests with one intentional skip. A
-second review pass remains before merge.
+second and final broad review found four more P1 boundaries: configured budgets
+above the compact ceiling, loosely scoped release verification, an unbounded
+unit-by-candidate recall matrix, and remediation prose misread as a negative
+instruction. All seven review findings are repaired without deterministic
+planning or selection. The affected modules pass 83 warning-strict tests; the
+wider safety boundary passes 115 tests with one intentional skip. Final
+exact-tree verification remains before merge.
 
 ## Acceptance
 

@@ -233,10 +233,14 @@ is the reviewed merge candidate. Its first Codex review found three valid
 contract leaks: planner parsing ignored a configured work-unit limit below 16,
 release evidence could satisfy the wrong requested operation or negated prose,
 and documentation normalization removed explicitly requested communication
-capability. The bounded repairs now pass 79 planner/intent tests plus 115
-routing, selection, hiring, and decision-conformance tests with one intentional
-skip. A second review pass, exact merge/install, and the one fresh product
-trial remain.
+capability. The second and final broad review found four additional P1
+boundaries: compact parsing rejected valid configured budgets above 16, release
+proof could mention rather than verify an operation, typed recall scaled as
+units by candidates, and evidence negation hid standards in remediation prose.
+All seven review findings are now repaired. The affected modules pass 83 tests;
+the wider routing, selection, hiring, and decision-conformance boundary passes
+115 tests with one intentional skip. Final exact-tree verification, merge,
+install, and the one fresh product trial remain.
 
 ## Approach
 

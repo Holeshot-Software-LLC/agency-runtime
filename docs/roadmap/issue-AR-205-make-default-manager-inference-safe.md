@@ -127,9 +127,14 @@ the exact installed product proof and final README-story acceptance.
   planner-unit enforcement, operation-specific positive release evidence, and
   preservation of explicitly requested communication capability. The changes
   remain reject-only/normalizing and do not plan, rank, select, or declare a
-  gap. The repaired planner/intent modules pass 79 tests, and the wider safety
-  boundary passes 115 tests with one intentional skip. A second review pass is
-  pending before merge.
+  gap. The second and final broad review found four more P1 boundaries in
+  compact-limit clamping, release-proof scope, typed-recall size, and
+  descriptive negation. All seven review findings are now repaired. Typed
+  recall remains deterministic, stable, coverage-first, non-ranked, and capped
+  at 24 candidate evidence rows per unit while exact gap coverage is computed
+  over the full roster. The affected modules pass 83 tests, and the wider
+  safety boundary passes 115 tests with one intentional skip. Final exact-tree
+  verification remains before merge.
 
 ## Acceptance
 
