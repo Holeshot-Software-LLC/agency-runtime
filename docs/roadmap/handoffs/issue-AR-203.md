@@ -63,15 +63,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 - The exact committed-tree decision-conformance rerun passed its baseline and
   killed 44/44 mutations in 327.3 seconds with zero survivors or invalid
   results and unchanged source.
+- PR 192 is open and mergeable. Its first Codex review found three valid
+  contract leaks; configured planner limits, operation-specific positive
+  release proof, and explicitly requested communication coverage are now
+  repaired. The changed modules pass 79 warning-strict tests, and the wider
+  routing/safety boundary passes 115 tests with one intentional skip.
 
 ## exact-blocker
 
-The causal source boundary is repaired and fully verified locally, but the
-changed tree is not yet merged or installed. One fresh exact-build product trial must still
-prove route, delegation, workspace write, artifacts, and correction count zero
-together. The older report's `route_not_found` projection also understates its
-matching `preflight_failed` session and remains a traceability follow-up unless
-it blocks the final report.
+The causal source boundary and first-review findings are repaired locally, but
+the updated PR still needs its second review pass, merge, and exact install. One
+fresh exact-build product trial must then prove route, delegation, workspace
+write, artifacts, and correction count zero together. The older report's
+`route_not_found` projection also understates its matching `preflight_failed`
+session and remains a traceability follow-up unless it blocks the final report.
 
 ## same-task-continuity
 
@@ -81,9 +86,9 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-1. Create the durable substantive and immediate worklog-ledger checkpoint.
-2. Push, review, merge, and exact-install the new build for Codex, ZCode, and
-   dashboard.
+1. Commit and push the first-review repair plus its immediate ledger.
+2. Complete the second review pass, merge, and exact-install the new build for
+   Codex, ZCode, and dashboard.
 3. Run one supported bypassed product trial for that exact merge.
 4. If it passes, produce the local evidence page and OpenClaw handoff; if it
    fails, stop at the first newly proven causal boundary.

@@ -10,7 +10,7 @@ from agency_runtime.core.workforce.planning_contracts import WorkUnit, WorkUnitP
 
 _TOKENS = re.compile(r"[a-z0-9]+")
 _NEGATED_SCOPE = re.compile(
-    r"\b(?:do\s+not|don't|must\s+not|never|without)\b[^.;\n]*",
+    r"\b(?:do(?:es)?\s+not|don't|doesn't|must\s+not|never|without)\b[^.;\n]*",
     re.IGNORECASE,
 )
 _MUTATION = frozenset(
@@ -95,6 +95,40 @@ _RELEASE = frozenset(
         "shipped",
         "shipping",
         "ships",
+    }
+)
+_RELEASE_OPERATIONS = {
+    "deployment": frozenset({"deploy", "deployed", "deploying", "deployment", "deployments"}),
+    "installation": frozenset(
+        {
+            "install",
+            "installation",
+            "installations",
+            "installed",
+            "installer",
+            "installers",
+            "installing",
+        }
+    ),
+    "release": frozenset(
+        {"release", "released", "releases", "releasing", "ship", "shipped", "shipping", "ships"}
+    ),
+}
+_POSITIVE_VERIFICATION = frozenset(
+    {
+        "confirm",
+        "confirmed",
+        "evidence",
+        "prove",
+        "proven",
+        "test",
+        "tested",
+        "validate",
+        "validated",
+        "validation",
+        "verification",
+        "verified",
+        "verify",
     }
 )
 _ASSURANCE_TERMS = frozenset(
@@ -301,6 +335,29 @@ def _unit_tokens(unit: object) -> frozenset[str]:
     return frozenset(_TOKENS.findall(" ".join(values).casefold()))
 
 
+def _release_verification_covers_request(
+    request_tokens: frozenset[str],
+    plan: WorkUnitPlan,
+) -> bool:
+    requested_operations = tuple(
+        operation
+        for operation, vocabulary in _RELEASE_OPERATIONS.items()
+        if request_tokens & vocabulary
+    )
+    evidence_tokens = tuple(
+        frozenset(_TOKENS.findall(_NEGATED_SCOPE.sub(" ", item.outcome).casefold()))
+        for item in plan.units
+        if item.artifact_kind == "test-evidence" and item.authority == "review"
+    )
+    return bool(requested_operations) and all(
+        any(
+            tokens & _POSITIVE_VERIFICATION and tokens & _RELEASE_OPERATIONS[operation]
+            for tokens in evidence_tokens
+        )
+        for operation in requested_operations
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class _PlanInventory:
     implementation: tuple[WorkUnit, ...]
@@ -398,12 +455,7 @@ def _code_mutation_violations(
         codes.append("plan_test_evidence_not_ordered_after_tests")
     if tokens & _SECURITY and not any("security" in item.domains for item in inventory.reviews):
         codes.append("plan_missing_security_review")
-    if tokens & _RELEASE and not any(
-        item.artifact_kind == "test-evidence"
-        and item.authority == "review"
-        and bool(_unit_tokens(item) & _RELEASE)
-        for item in plan.units
-    ):
+    if tokens & _RELEASE and not _release_verification_covers_request(tokens, plan):
         codes.append("plan_missing_release_verification")
     return codes
 

@@ -73,13 +73,18 @@ acceptance; this capsule records only current proof and the next package.
 - The exact committed-tree decision-conformance rerun passed its baseline and
   killed 44/44 mutations in 327.3 seconds with zero survivors or invalid
   results and unchanged source.
+- PR 192's first Codex review found three valid candidate defects. The repairs
+  enforce the configured planner bound before recruitment, match positive
+  release proof to the requested operation, and retain communication when the
+  request names it. The changed modules pass 79 tests; the wider safety
+  boundary passes 115 with one intentional skip.
 
 ## exact-blocker
 
-The source routing boundary and full fast spine are green, but merge, exact
-install, and one fresh product trial remain. No current build yet proves the
-specialist team, native delegation, workspace write, product artifacts, and
-zero corrections in one end-to-end run.
+The source routing boundary and first-review fixes are green, but the second
+review pass, merge, exact install, and one fresh product trial remain. No
+current build yet proves the specialist team, native delegation, workspace
+write, product artifacts, and zero corrections in one end-to-end run.
 
 ## same-task-continuity
 
@@ -89,8 +94,9 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Commit the source package and immediate worklog ledger, push, review, merge,
-   and install the exact merge for Codex, ZCode, and dashboard.
+1. Commit and push the first-review repair and immediate worklog ledger, then
+   complete the second review pass, merge, and install the exact merge for
+   Codex, ZCode, and dashboard.
 2. Run one supported trust-bypassed product trial for that new exact build.
 3. Require zero corrections, a real specialist route/delegation chain,
    workspace-write proof, and product artifacts; then generate the local report

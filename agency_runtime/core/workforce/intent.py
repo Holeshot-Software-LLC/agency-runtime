@@ -32,6 +32,23 @@ MAX_PRIMARY_UNITS = MAX_WORK_UNITS
 _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9-]{0,127}")
 _UNIT_IDENTIFIER = re.compile(r"unit-[a-z0-9][a-z0-9-]{0,62}")
 _TOKENS = re.compile(r"[a-z0-9]+")
+_COMMUNICATION_REQUEST = frozenset(
+    {
+        "announcement",
+        "announcements",
+        "communicate",
+        "communicating",
+        "communication",
+        "communications",
+        "message",
+        "messages",
+        "messaging",
+        "notice",
+        "notices",
+        "notification",
+        "notifications",
+    }
+)
 _ARTIFACTS = (
     "analysis",
     "architecture-record",
@@ -467,8 +484,6 @@ def _unit_document(
         capabilities = [item for item in capabilities if item != "documentation"]
     elif artifact == "analysis":
         capabilities = [item for item in capabilities if item != "data-analysis"]
-    elif artifact == "documentation":
-        capabilities = [item for item in capabilities if item != "communication"]
     domains = _canonical_domains(
         declared_domains,
         artifact=artifact,
@@ -523,6 +538,20 @@ def _unit_document(
     }
 
 
+def _bounded_compact_units(value: object, *, maximum: int) -> Sequence[object]:
+    if (
+        isinstance(maximum, bool)
+        or not isinstance(maximum, int)
+        or not 1 <= maximum <= MAX_PRIMARY_UNITS
+    ):
+        raise ValueError(f"max_work_units must be between 1 and {MAX_PRIMARY_UNITS}")
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes, bytearray)) or not value:
+        raise ValueError("compact intent units must be a nonempty bounded list")
+    if len(value) > maximum:
+        raise ValueError(f"compact intent units must contain at most {maximum} items")
+    return value
+
+
 def compile_intent_plan(
     value: Mapping[str, Any],
     *,
@@ -531,6 +560,7 @@ def compile_intent_plan(
     known_domains: Sequence[str],
     known_stacks: Sequence[str],
     known_capability_ids: Sequence[str],
+    max_work_units: int = MAX_PRIMARY_UNITS,
 ) -> WorkUnitPlan:
     """Validate compact inferred intent and compile a complete typed primary plan."""
 
@@ -540,14 +570,7 @@ def compile_intent_plan(
         label="compact intent",
         fields=frozenset({"request_summary", "units"}),
     )
-    raw_units = raw["units"]
-    if (
-        not isinstance(raw_units, Sequence)
-        or isinstance(raw_units, (str, bytes, bytearray))
-        or not raw_units
-        or len(raw_units) > MAX_PRIMARY_UNITS
-    ):
-        raise ValueError("compact intent units must be a nonempty bounded list")
+    raw_units = _bounded_compact_units(raw["units"], maximum=max_work_units)
     domains = frozenset(str(item).casefold() for item in known_domains)
     stacks = frozenset(str(item).casefold() for item in known_stacks)
     capabilities = frozenset(str(item).casefold() for item in known_capability_ids)
@@ -597,6 +620,14 @@ def compile_intent_plan(
         }:
             document["required_capabilities"] = [
                 item for item in document["required_capabilities"] if item != "automation"
+            ]
+        if (
+            document["artifact_kind"] == "documentation"
+            and "communication" in document["required_capabilities"]
+            and not request_tokens & _COMMUNICATION_REQUEST
+        ):
+            document["required_capabilities"] = [
+                item for item in document["required_capabilities"] if item != "communication"
             ]
         if len(document["domains"]) > 1 and "research" in document["domains"]:
             # Research is a method capability when the unit already names its

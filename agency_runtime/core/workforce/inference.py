@@ -1008,6 +1008,7 @@ def _parse_compact_plan(
     request: str,
     snapshot: WorkforceIndexSnapshot,
     context: StaffingContext,
+    max_work_units: int,
 ) -> WorkUnitPlan:
     domains, stacks, capabilities = _known_intent_vocabulary(snapshot)
     primary = compile_intent_plan(
@@ -1017,6 +1018,7 @@ def _parse_compact_plan(
         known_domains=domains,
         known_stacks=stacks,
         known_capability_ids=capabilities,
+        max_work_units=max_work_units,
     )
     violations = plan_policy_violations(request, primary)
     if violations:
@@ -1787,6 +1789,7 @@ def plan_and_staff_workforce(
                 request=ask,
                 snapshot=snapshot,
                 context=context,
+                max_work_units=config.workforce.max_work_units,
             ),
         )
         if isinstance(parsed_plan, WorkUnitPlan):

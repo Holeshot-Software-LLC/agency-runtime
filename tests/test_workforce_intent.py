@@ -350,6 +350,22 @@ def test_compiler_drops_redundant_communication_from_documentation_artifact() ->
     assert unit.required_capabilities == ("documentation",)
 
 
+def test_compiler_preserves_explicitly_requested_documentation_communication() -> None:
+    value = _intent(
+        artifact="documentation",
+        domains=["software-engineering"],
+        stacks=[],
+        capabilities=["documentation", "communication"],
+    )
+
+    unit = _compile(
+        value,
+        request="Write the customer incident communication.",
+    ).units[0]
+
+    assert unit.required_capabilities == ("documentation", "communication")
+
+
 def test_compiler_keeps_test_artifacts_in_the_quality_assurance_domain() -> None:
     value = _intent(
         artifact="test-code",
@@ -601,6 +617,32 @@ def test_enrichment_keeps_integration_and_release_evidence_semantically_distinct
 
     assert ("application-integration-verifier", "test-results-analyzer") in evidence_owners
     assert ("cross-platform-release-verifier", "test-results-analyzer") in evidence_owners
+
+
+@pytest.mark.parametrize(
+    ("evidence_outcome", "release_violation_expected"),
+    (
+        ("Verify installer test results", True),
+        ("Does not verify deployment", True),
+        ("Verify deployment evidence", False),
+    ),
+)
+def test_release_evidence_matches_the_requested_positive_operation(
+    evidence_outcome: str,
+    release_violation_expected: bool,
+) -> None:
+    value = _intent(
+        artifact="test-evidence",
+        domains=["quality-assurance"],
+        stacks=[],
+        capabilities=["verification"],
+    )
+    value["units"][0]["outcome"] = evidence_outcome  # type: ignore[index]
+
+    plan = _compile(value, request="Build and deploy the service.")
+    violations = plan_policy_violations("Build and deploy the service.", plan)
+
+    assert ("plan_missing_release_verification" in violations) is release_violation_expected
 
 
 def test_enrichment_binds_early_assurance_to_later_local_test_artifacts() -> None:

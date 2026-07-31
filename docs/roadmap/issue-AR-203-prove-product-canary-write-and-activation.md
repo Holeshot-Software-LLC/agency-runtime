@@ -228,6 +228,16 @@ and Ruff checks all 602 Python inputs. The next exact merged build still needs
 one fresh product trial to prove delegation, workspace write, artifacts, and
 zero corrections together.
 
+[PR 192](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/192)
+is the reviewed merge candidate. Its first Codex review found three valid
+contract leaks: planner parsing ignored a configured work-unit limit below 16,
+release evidence could satisfy the wrong requested operation or negated prose,
+and documentation normalization removed explicitly requested communication
+capability. The bounded repairs now pass 79 planner/intent tests plus 115
+routing, selection, hiring, and decision-conformance tests with one intentional
+skip. A second review pass, exact merge/install, and the one fresh product
+trial remain.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host

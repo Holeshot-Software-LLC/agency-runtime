@@ -833,6 +833,53 @@ def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() 
     assert "work-unit plan contains duplicate unit ids" in prompts[1]
 
 
+def test_planner_repair_enforces_configured_work_unit_limit_before_recruitment() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    oversized = _compact_plan_document()
+    template = oversized["units"][0]
+    oversized["units"] = [
+        {
+            **template,
+            "unit_id": f"unit-analyze-{index}",
+            "outcome": f"Complete technical analysis {index}",
+        }
+        for index in range(9)
+    ]
+    repaired = _compact_plan_document()
+    responses = iter(
+        (
+            _result(oversized),
+            _result(repaired),
+            _result(_nomination_document()),
+        )
+    )
+    prompts: list[str] = []
+
+    def invoke(*args, **kwargs):
+        prompts.append(args[1])
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(max_work_units=8),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 3
+    assert [attempt.status for attempt in outcome.attempts] == [
+        "rejected",
+        "applied",
+        "applied",
+    ]
+    assert outcome.attempts[0].validation_detail == (
+        "compact intent units must contain at most 8 items"
+    )
+    assert "compact intent units must contain at most 8 items" in prompts[1]
+
+
 def test_planner_repair_receives_exact_assurance_graph_and_remains_inference_owned() -> None:
     request = (
         "Build a Python API and TypeScript dashboard, validate state-changing operations for "

@@ -250,6 +250,15 @@ gate; and decision conformance kills all 44 curated mutations, including
 removal of either new inference input. Merge/install and one fresh exact-build
 product trial remain.
 
+PR 192's first Codex review found three valid safety-contract leaks in the
+candidate: configured planner limits were not enforced during parsing,
+release proof did not match the specific positively verified operation, and
+explicit communication work could lose its typed capability. Those boundaries
+are repaired without adding deterministic planning or selection. The repaired
+modules pass 79 warning-strict tests; the wider routing, selection, hiring, and
+decision-conformance boundary passes 115 tests with one intentional skip. A
+second review pass remains before merge.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired

@@ -123,6 +123,13 @@ the exact installed product proof and final README-story acceptance.
   6 intentional skips, 110 dashboard tests, every routing gate, documentation
   validation, and 44/44 curated mutations. Exact-installed product proof
   remains.
+- PR 192's first Codex review found and prompted bounded repairs for configured
+  planner-unit enforcement, operation-specific positive release evidence, and
+  preservation of explicitly requested communication capability. The changes
+  remain reject-only/normalizing and do not plan, rank, select, or declare a
+  gap. The repaired planner/intent modules pass 79 tests, and the wider safety
+  boundary passes 115 tests with one intentional skip. A second review pass is
+  pending before merge.
 
 ## Acceptance
 
