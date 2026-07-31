@@ -289,6 +289,17 @@ canary. This is the next bounded product contradiction: activation must remain
 non-hiring, while an ordinary product request must be allowed to hire the
 narrow specialist inference says is missing.
 
+Commit `f349c21` repairs that separation and compactly encodes the one shared
+request prefix across exact native child goals. Its focused boundary passes 169
+tests with one skip. Two subsequent exact-prompt replays accepted complete
+inferred teams with no staffing reasons but both exceeded the legacy 8,192-
+character persistent-host ceiling. The compact ten-unit shape is 8,326
+characters and the configured sixteen-unit maximum is about 9,534 with
+realistic identities. Because this is the second failure at the same causal
+boundary, work waits for owner direction. The recommended contract is the
+existing 32,000-character preflight ceiling under the unchanged 48,000-
+character Codex hook limit, not a smaller deterministic team.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired

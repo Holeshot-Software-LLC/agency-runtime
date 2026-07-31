@@ -150,6 +150,15 @@ the exact installed product proof and final README-story acceptance.
   because the ordinary product process inherits an environment-wide read-only
   activation guard. The next repair is task-specific separation, not a new
   deterministic worker or a weaker staffing verifier.
+- Commit `f349c21` repairs that separation and keeps exact activation read-only.
+  It also encodes the shared request once across exact child goals and versions
+  the new context policy. The focused boundary passes 169 tests with one skip.
+  Two exact-prompt replays then accepted complete nine- and ten-unit teams with
+  no staffing reasons before the same 8,192-character delivery ceiling failed.
+  Read-only sizing puts the ten-unit shape at 8,326 and the configured sixteen-
+  unit maximum at about 9,534. The repeated-boundary stop now requires owner
+  direction; using the existing 32,000-character preflight ceiling is the
+  recommended inference-preserving resolution.
 
 ## Acceptance
 

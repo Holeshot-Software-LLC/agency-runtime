@@ -278,6 +278,25 @@ closed-world read-only activation canary. The next repair must keep activation
 read-only while allowing ordinary product preflight to act on an inference-
 declared contractor gap.
 
+Commit `f349c21` removes that environment-wide early return while retaining the
+exact activation task's closed-world no-hiring branch. It also replaces repeated
+copies of the complete request in each isolated delegation row with one exact
+JSON-encoded shared prefix plus exact per-unit suffixes, and advances the
+durable context recipe/policy to v12. The focused boundary passes 169 tests
+with one intentional skip; Ruff and whitespace checks pass.
+
+The next two private exact-prompt replays both produced accepted inferred teams
+with no staffing reasons. The first reached nine units and ten specialists; the
+second reached ten units and nine specialists. Both then failed at the same
+8,192-character persistent-host context ceiling, so the bounded delivery rule
+requires owner direction before another repair. Read-only sizing proves the
+compact exact plan needs 8,120 characters at nine realistic units, 8,326 at
+ten, and 9,534 at the configured maximum sixteen. The existing general
+preflight ceiling is 32,000 characters and the Codex hook ceiling is 48,000.
+The recommended resolution is to use the 32,000-character preflight ceiling for
+persistent hosts rather than restrict inference-authored team completeness or
+truncate exact child goals.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host
@@ -312,6 +331,9 @@ declared contractor gap.
 13. Scope no-hiring behavior to the exact closed-world activation task rather
     than every existing-Store canary process; ordinary product evaluation must
     execute verified inference-declared gap hiring.
+14. Resolve the repeated persistent-host context ceiling explicitly. Preserve
+    exact child goals and complete inference-authored teams; do not hide the
+    conflict through truncation or deterministic unit removal.
 
 ## Dependencies
 

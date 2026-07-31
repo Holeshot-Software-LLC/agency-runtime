@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-204
 branch: codex/ar-203-activation-planning-contract
-evidence_commit: 271e5a01d08b74dbe755662de997a32d04e5e735
-minimum_ledger_commit: 37f6f9532fdc66c48a68f3b447fc0c3ffe482fbb
+evidence_commit: f349c21c5ce6259b7337ec9d44c52e7b3aef156f
+minimum_ledger_commit: 2338c8fb995c550a0ce5ad534f52253185b37a82
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 ---
@@ -89,14 +89,21 @@ Bounded projection for making the README product story executable.
   The product replay also proves Codex advertised repository-write,
   test-execution, and native-delegation capabilities, excluding host eligibility
   as the current blocker.
+- Commit `f349c21` repairs product gap-hiring eligibility and removes repeated
+  full-request copies from the isolated delegation plan. The focused boundary
+  passes 169 tests with one skip. Two accepted product-shaped routes then hit
+  the same 8,192-character parent-context ceiling at nine and ten units.
+- Sizing proves the compact form needs 8,326 characters for ten realistic units
+  and 9,534 for the configured maximum sixteen; the general preflight and Codex
+  hook ceilings are 32,000 and 48,000 respectively.
 
 ## exact-blocker
 
-The exact installed build now passes activation. README acceptance remains
-blocked because the ordinary product harness shares the existing-Store canary
-environment with the read-only activation check, and the current gap-hiring
-guard cannot distinguish them. One narrow separation repair and one new exact-
-build product trial remain.
+The exact installed build passes activation and the source candidate reaches
+accepted inferred product teams. README acceptance is waiting for owner
+direction after the same context ceiling failed twice. Raising persistent hosts
+to the existing 32,000-character preflight ceiling is recommended; forcing a
+smaller team would undercut the complete specialist-plan contract.
 
 ## same-task-continuity
 
@@ -106,10 +113,10 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Repair and test the activation-canary/product-hiring separation without
-   weakening the activation canary or adding deterministic staffing.
-2. Merge, exact-install, re-prove activation, and run one product trial for only
-   that new exact build.
+1. Resolve the context-ceiling choice; recommended: 32,000 characters with the
+   unchanged 48,000-character Codex hook boundary.
+2. Implement and verify only that policy, then merge, exact-install, re-prove
+   activation, and run one product trial for only that new exact build.
 3. Generate the local evidence page and OpenClaw handoff only after the product
    gate proves real execution and zero corrections.
 

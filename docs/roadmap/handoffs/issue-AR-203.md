@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-203
 branch: codex/ar-203-activation-planning-contract
-evidence_commit: 271e5a01d08b74dbe755662de997a32d04e5e735
-minimum_ledger_commit: 37f6f9532fdc66c48a68f3b447fc0c3ffe482fbb
+evidence_commit: f349c21c5ce6259b7337ec9d44c52e7b3aef156f
+minimum_ledger_commit: 2338c8fb995c550a0ce5ad534f52253185b37a82
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -91,16 +91,30 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   responses were applied; inference authored 11 units and staffed 10; the
   documentation unit was an explicit `inference-declared-gap`; repository
   write and test capabilities were proven; and no hiring event ran.
+- Commit `f349c21` removes the environment-wide hiring suppression, preserves
+  the exact activation task's separate no-hiring branch, encodes the repeated
+  request prefix once across native unit goals, and advances the durable
+  context recipe to v12. Its focused boundary passes 169 tests with one
+  intentional skip; Ruff and whitespace checks pass.
+- A post-repair replay accepted nine planned units and ten specialists before
+  exposing the 8,192-character isolated-parent ceiling. After prefix encoding
+  and v12 alignment, a second replay accepted ten units and nine specialists
+  with no staffing reasons, then reached the same ceiling. Per the bounded
+  delivery contract, work stops at this repeated causal boundary for owner
+  direction.
+- Read-only sizing measures 8,120 characters for nine realistic units, 8,326
+  for ten, and 9,534 for the configured maximum sixteen. The general preflight
+  ceiling is 32,000 and the Codex hook ceiling is 48,000.
 
 ## exact-blocker
 
-The exact build passes installation and activation. The remaining first defect
-is a boundary conflation: the product harness sets the existing-Store canary
-environment needed for safe isolated evidence, while `_run_gap_hiring` treats
-that entire environment as the read-only activation canary and returns before
-ordinary product gap hiring. The repair must preserve the exact activation
-canary's no-hiring contract while allowing the ordinary product route to hire
-its inference-declared specialist gap.
+Installation and activation pass, gap hiring is separated correctly, and
+inference now reaches accepted product teams. The remaining blocker is an
+owner policy choice: raise the persistent-host context ceiling above 8,192
+characters, or constrain valid teams/goals to that legacy ceiling. The evidence
+supports using the existing 32,000-character preflight ceiling; limiting teams
+would conflict with complete inference-owned planning. No new product trial may
+run until one choice is implemented, verified, merged, and exact-installed.
 
 ## same-task-continuity
 
@@ -110,9 +124,11 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-1. Separate exact activation-canary read-only behavior from ordinary product
-   gap hiring and add focused regressions plus decision-conformance coverage.
-2. Run the bounded local gates, merge, exact-install, and re-prove activation.
+1. Obtain owner direction on the repeated context-ceiling boundary. Recommended:
+   set persistent hosts to the existing 32,000-character preflight ceiling while
+   retaining the 48,000-character hook cap and exact whole-context validation.
+2. Implement that one policy, run bounded gates, merge, exact-install, and
+   re-prove activation.
 3. Spend one product trial only on the new exact build. Require a real inferred
    team or hired contractor, planned delegation, workspace artifacts, and zero
    corrections before producing the evidence page and OpenClaw handoff.

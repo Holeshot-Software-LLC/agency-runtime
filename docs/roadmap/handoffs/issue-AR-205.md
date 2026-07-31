@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-205
 branch: codex/ar-203-activation-planning-contract
-evidence_commit: 271e5a01d08b74dbe755662de997a32d04e5e735
-minimum_ledger_commit: 37f6f9532fdc66c48a68f3b447fc0c3ffe482fbb
+evidence_commit: f349c21c5ce6259b7337ec9d44c52e7b3aef156f
+minimum_ledger_commit: 2338c8fb995c550a0ce5ad534f52253185b37a82
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
 ---
@@ -89,14 +89,24 @@ acceptance; this capsule records only current proof and the next package.
   Product preflight advertises repository-write, test-execution, and native-
   delegation capabilities; the remaining defect is the environment-wide
   early return that suppresses inference-declared contractor hiring.
+- Commit `f349c21` removes that early return while retaining exact activation
+  no-hiring behavior. It also deduplicates the shared request prefix across
+  exact child goals and versions the context policy. The focused boundary
+  passes 169 tests with one intentional skip.
+- Two fresh product-shaped replays accepted complete teams with no staffing
+  reasons, then failed at the same 8,192-character isolated-parent ceiling. A
+  ten-unit plan needs 8,326 characters; the configured sixteen-unit maximum
+  needs about 9,534 with realistic identities. This repeated boundary now waits
+  for owner direction under the explicit stop contract.
 
 ## exact-blocker
 
 No current build proves a specialist team, native delegation, workspace write,
-product artifacts, and zero corrections in one end-to-end run. The immediate
-blocker is now exact: preserve no-hiring behavior for the closed-world
-activation task, but permit ordinary product preflight to hire the narrow
-contractor that inference declared missing.
+product artifacts, and zero corrections in one end-to-end run. Product routing
+now accepts complete teams; the remaining choice is whether persistent hosts
+may use the existing 32,000-character preflight ceiling. The alternative—cap
+or truncate the inferred team/goals to 8,192—conflicts with complete planning
+and exact child-task delivery.
 
 ## same-task-continuity
 
@@ -106,8 +116,9 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Repair and verify activation-task-specific hiring suppression.
-2. Merge, exact-install, prove native activation, then run one supported-
+1. Obtain owner direction; recommended: raise the persistent-host ceiling to
+   32,000 while retaining exact validation and the 48,000 Codex hook cap.
+2. Implement, verify, merge, exact-install, and prove native activation, then run one supported-
    bypassed product trial for only the new exact build.
 3. Require zero corrections, a real specialist or hired-contractor chain,
    workspace-write proof, and product artifacts; then generate the local report
