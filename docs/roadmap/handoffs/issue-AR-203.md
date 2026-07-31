@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-203
 branch: codex/ar-203-product-planner-repair
-evidence_commit: 38e7e1c700a3ff429071ef42556040cfdc22469d
-minimum_ledger_commit: 2c70710b1d435cc95a5d256aea1d100322c9ae77
+evidence_commit: 81b887f57353c372bd4e798a085f65f443ca1e3f
+minimum_ledger_commit: 3010813eaac39c0d799817cca19e0419acfbde59
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -59,9 +59,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   44/44 mutations with zero survivors or invalid results.
 - The named fast Python spine passes 636 tests with 6 intentional skips;
   dashboard UI passes 110; routing evaluation 1.4.0 passes every gate;
-  documentation validates 571 files; and Ruff checks all 602 Python inputs.
+  documentation validates 574 files; and Ruff checks all 602 Python inputs.
 - The exact committed-tree decision-conformance rerun passed its baseline and
-  killed 44/44 mutations in 327.3 seconds with zero survivors or invalid
+  killed 44/44 mutations in 327.7 seconds with zero survivors or invalid
   results and unchanged source.
 - PR 192 is open and mergeable. Its first Codex review found three valid
   contract leaks; configured planner limits, operation-specific positive
@@ -74,12 +74,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## exact-blocker
 
-The causal source boundary and both review passes are repaired locally, but the
-updated tree still needs final exact-tree verification, merge, and exact
-install. One fresh exact-build product trial must then prove route, delegation,
-workspace write, artifacts, and correction count zero together. The older report's
-`route_not_found` projection also understates its matching `preflight_failed`
-session and remains a traceability follow-up unless it blocks the final report.
+The causal source boundary, both review passes, and the final exact-tree gate
+are complete. PR 192 still needs merge and exact install. One fresh exact-build
+product trial must then prove route, delegation, workspace write, artifacts,
+and correction count zero together. The older report's `route_not_found`
+projection also understates its matching `preflight_failed` session and remains
+a traceability follow-up unless it blocks the final report.
 
 ## same-task-continuity
 
@@ -89,11 +89,9 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-1. Commit and push the final-review repair plus its immediate ledger.
-2. Complete final exact-tree verification, merge, and exact-install the new
-   build for Codex, ZCode, and dashboard.
-3. Run one supported bypassed product trial for that exact merge.
-4. If it passes, produce the local evidence page and OpenClaw handoff; if it
+1. Merge PR 192 and exact-install the new build for Codex, ZCode, and dashboard.
+2. Run one supported bypassed product trial for that exact merge.
+3. If it passes, produce the local evidence page and OpenClaw handoff; if it
    fails, stop at the first newly proven causal boundary.
 
 ## verification

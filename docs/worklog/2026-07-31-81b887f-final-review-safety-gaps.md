@@ -71,10 +71,17 @@ not an exclusion from recruitment.
 - Ruff check and formatting pass all touched Python files.
 - Documentation metadata and validation pass 573 Markdown files; diff integrity
   is clean.
+- On the final committed tree, the named fast spine passes 636 tests with 6
+  intentional skips, the dashboard passes 110 tests, Ruff checks and formats
+  all 602 Python files, and documentation validation passes 574 Markdown files.
+- Routing evaluation 1.4.0 passes every gate. Decision conformance passes its
+  baseline, kills 44/44 mutations in 327.7 seconds, records no survivor or
+  invalid mutation, and leaves the source tree unchanged.
+- All seven comments from the two bounded PR review passes have repair replies,
+  and every review thread is resolved.
 
 ## Follow-ups
 
-Run the final exact-tree production spine, reply to and resolve the four review
-threads, merge and exact-install PR 192, then consume the one fresh product
-trial. Generate the local evidence page and OpenClaw handoff from recorded trial
+Merge and exact-install PR 192, then consume the one fresh product trial.
+Generate the local evidence page and OpenClaw handoff from recorded trial
 evidence only.

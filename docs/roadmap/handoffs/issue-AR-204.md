@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-204
 branch: codex/ar-203-product-planner-repair
-evidence_commit: 38e7e1c700a3ff429071ef42556040cfdc22469d
-minimum_ledger_commit: 2c70710b1d435cc95a5d256aea1d100322c9ae77
+evidence_commit: 81b887f57353c372bd4e798a085f65f443ca1e3f
+minimum_ledger_commit: 3010813eaac39c0d799817cca19e0419acfbde59
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 ---
@@ -63,9 +63,9 @@ Bounded projection for making the README product story executable.
   zero survivors or invalid results.
 - The named fast Python spine passes 636 tests with 6 intentional skips;
   dashboard UI passes 110; routing evaluation 1.4.0 passes every gate;
-  documentation validates 571 files; and Ruff checks all 602 Python inputs.
+  documentation validates 574 files; and Ruff checks all 602 Python inputs.
 - The exact committed-tree decision-conformance rerun passed its baseline and
-  killed 44/44 mutations in 327.3 seconds with zero survivors or invalid
+  killed 44/44 mutations in 327.7 seconds with zero survivors or invalid
   results and unchanged source.
 - PR 192's first Codex review found three valid candidate defects. The bounded
   fixes enforce configured planner limits before recruitment, require positive
@@ -78,10 +78,10 @@ Bounded projection for making the README product story executable.
 
 ## exact-blocker
 
-The final-review repair needs a commit/ledger checkpoint, final exact-tree
-verification, merge, exact install, and one fresh product trial. README
-acceptance still requires the same run to prove a real team, planned native
-delegation, workspace artifacts, and zero response corrections.
+The final-review repair, its commit/ledger checkpoint, and the final exact-tree
+gate are complete. PR 192 still needs merge, exact install, and one fresh
+product trial. README acceptance still requires the same run to prove a real
+team, planned native delegation, workspace artifacts, and zero corrections.
 
 ## same-task-continuity
 
@@ -91,10 +91,9 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Commit and push the locally verified final-review repair plus exact ledger.
-2. Complete final exact-tree verification, merge, and exact-install the build.
-3. Run one supported trust-bypassed native Codex product trial.
-4. Generate the local evidence page and OpenClaw handoff only from recorded
+1. Merge PR 192 and exact-install the build.
+2. Run one supported trust-bypassed native Codex product trial.
+3. Generate the local evidence page and OpenClaw handoff only from recorded
    evidence.
 
 ## verification

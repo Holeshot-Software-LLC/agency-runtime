@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-205
 branch: codex/ar-203-product-planner-repair
-evidence_commit: 38e7e1c700a3ff429071ef42556040cfdc22469d
-minimum_ledger_commit: 2c70710b1d435cc95a5d256aea1d100322c9ae77
+evidence_commit: 81b887f57353c372bd4e798a085f65f443ca1e3f
+minimum_ledger_commit: 3010813eaac39c0d799817cca19e0419acfbde59
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
 ---
@@ -69,9 +69,9 @@ acceptance; this capsule records only current proof and the next package.
   uncovered-gap evidence must reach inference.
 - The named fast Python spine passes 636 tests with 6 intentional skips;
   dashboard UI passes 110; routing evaluation 1.4.0 passes every gate;
-  documentation validates 571 files; and Ruff checks all 602 Python inputs.
+  documentation validates 574 files; and Ruff checks all 602 Python inputs.
 - The exact committed-tree decision-conformance rerun passed its baseline and
-  killed 44/44 mutations in 327.3 seconds with zero survivors or invalid
+  killed 44/44 mutations in 327.7 seconds with zero survivors or invalid
   results and unchanged source.
 - PR 192's first Codex review found three valid candidate defects. The repairs
   enforce the configured planner bound before recruitment, match positive
@@ -84,10 +84,10 @@ acceptance; this capsule records only current proof and the next package.
 
 ## exact-blocker
 
-The source routing boundary and both review passes are repaired, but final
-exact-tree verification, merge, exact install, and one fresh product trial
-remain. No current build yet proves the specialist team, native delegation,
-workspace write, product artifacts, and zero corrections in one end-to-end run.
+The source routing boundary, both review passes, and final exact-tree gate are
+complete. Merge, exact install, and one fresh product trial remain. No current
+build yet proves the specialist team, native delegation, workspace write,
+product artifacts, and zero corrections in one end-to-end run.
 
 ## same-task-continuity
 
@@ -97,9 +97,7 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Commit and push the final-review repair and immediate worklog ledger, then
-   complete final exact-tree verification, merge, and install the exact merge
-   for Codex, ZCode, and dashboard.
+1. Merge PR 192 and install the exact merge for Codex, ZCode, and dashboard.
 2. Run one supported trust-bypassed product trial for that new exact build.
 3. Require zero corrections, a real specialist route/delegation chain,
    workspace-write proof, and product artifacts; then generate the local report
