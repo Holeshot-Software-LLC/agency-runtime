@@ -444,6 +444,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b9d75b3` | 2026-07-31 | docs(roadmap): checkpoint exact authority activation | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 | `9516259` | 2026-07-31 | docs(roadmap): checkpoint first-spawn product failure | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 | `e4ceb89` | 2026-07-31 | fix(product): fail closed on invalid notice proof | [AR-208](../roadmap/issue-AR-208-preserve-codex-host-notices-in-product-evidence.md) | [detail](2026-07-31-e4ceb89-invalid-product-notice-proof.md) |
+| `552eb05` | 2026-07-31 | fix(codex): bind opaque child launches to exact plan rows | [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | [detail](2026-07-31-552eb05-opaque-codex-child-binding.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
