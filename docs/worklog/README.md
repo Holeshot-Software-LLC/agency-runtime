@@ -403,6 +403,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a5b0c33` | 2026-07-31 | docs(evidence): record inferred staffing conformance | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 | `0ecf1d9` | 2026-07-31 | fix(workforce): close inferred plan review gaps | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | [detail](2026-07-31-0ecf1d9-inferred-plan-review-gaps.md) |
 | `81b887f` | 2026-07-31 | fix(workforce): close final review safety gaps | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | [detail](2026-07-31-81b887f-final-review-safety-gaps.md) |
+| `662faba` | 2026-07-31 | docs(evidence): record final PR 192 verification | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
