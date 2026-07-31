@@ -8,9 +8,9 @@ tags: [handoff, preflight, delegation, codex, diagnostics, evidence]
 related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
+  - docs/roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
-  - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-207-exact-product-proof
-evidence_commit: ae8505278b03a14944799664238421260cd1c8c9
-minimum_ledger_commit: acfdabc60a31c89a993a9ebc50049dc7e15e0adb
+evidence_commit: bc6d15bb1789ef6298c64fa4904ab9941e01c882
+minimum_ledger_commit: 5297d2d7ea6a0665532bde14961c26177e6c9e67
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -71,14 +71,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   row receives `.`; ordinary file rows retain their exact paths.
 - Opaque launches are serialized until child start consumes the prior grant;
   same-tool replay is idempotent. The repaired surface passes 202 warning-strict
-  tests, all 27 activation tests, and both new mutations with unchanged source.
+  tests, all 28 activation tests, and both new mutations with unchanged source.
 - The repaired spine is green through 594 docs, 604 Ruff files, 636
   warning-strict Python tests with six skips, 110 dashboard tests, and every
   routing gate. Conformance killed all 71 mutations with zero survivors or
   invalid results, and the source tree remained unchanged.
 - Exact-head review on `aa68555` found case-folded authority and plaintext
-  over-serialization. Its first 73-mutation rerun timed out before mutation;
-  the direct slot regression and all 28 activation tests pass.
+  over-serialization. Its first 73-mutation baseline timed out before mutation.
+  AR-210's `bc6d15b` repair now enforces the documented per-test deadline.
 - Product session `019fb92d-694c-7e42-b553-ee53802bac99`, trace
   `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
   `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage
