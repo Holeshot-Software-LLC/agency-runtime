@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
+  - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
@@ -18,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-205
 branch: codex/ar-203-activation-planning-contract
-evidence_commit: f349c21c5ce6259b7337ec9d44c52e7b3aef156f
-minimum_ledger_commit: 2338c8fb995c550a0ce5ad534f52253185b37a82
+evidence_commit: 8b8c78003c7784a84d496a3ec678a234131188e3
+minimum_ledger_commit: 8926c69faf52ec1b00860f57a4ad1ec6cd2f1f69
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
 ---
