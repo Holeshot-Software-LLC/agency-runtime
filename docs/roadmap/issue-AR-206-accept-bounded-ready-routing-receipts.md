@@ -1,6 +1,6 @@
 ---
 title: "AR-206: Accept bounded ready routing receipts"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-31
 updated: 2026-07-31
@@ -8,6 +8,7 @@ tags: [product, evidence, hooks, routing, sqlite]
 related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
+  - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/worklog/README.md
@@ -19,7 +20,7 @@ issue_id: AR-206
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/194
 depends_on: []
-blocks: [AR-204]
+blocks: [AR-207]
 ---
 
 # AR-206: Accept bounded ready routing receipts
@@ -36,13 +37,18 @@ the Store and its receipt remain intact.
 
 ## Current state
 
-The current Codex task reproduced the defect against its exact Store record.
+The original Codex task reproduced the defect against its exact Store record.
 SQLite integrity passes; the stored decision is 8,611 characters and 558 JSON
 nodes; ordinary JSON decoding followed by the existing bounded projection
 exactly matches the ready receipt. Only the verifier's smaller structural limit
-causes the correlation failure. This task is already bound to an immutable old
-hook launcher, so a source repair cannot retroactively make its Stop hook read
-the new verifier.
+caused the correlation failure.
+
+PR 195 merged the repair in exact revision
+`6b49f17d6787823f9ba78a8f09383001b6a77535`; build
+`0.1.0+g6b49f17d6787` is installed. A fresh supported-bypass activation read the
+wide ready decision, completed native spawn/wait and delegation, and published
+an accepted finalization with zero corrections. AR-207 owns the separate
+preflight/delegation diagnostics exposed by the subsequent product trial.
 
 ## Approach
 
@@ -72,6 +78,6 @@ boundary exposed while pursuing those outcomes.
   former 256-node limit.
 - [x] A curated decision mutation restores the defect and is assigned to the
   focused regression.
-- [ ] The repair is committed, merged, and exact-installed.
-- [ ] A fresh Codex task proves the installed Stop hook can read a valid wide
+- [x] The repair is committed, merged, and exact-installed.
+- [x] A fresh Codex task proves the installed Stop hook can read a valid wide
   ready receipt without a correction or evidence-unavailable response.

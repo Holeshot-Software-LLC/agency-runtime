@@ -81,3 +81,4 @@ behavior.
 - [AR-201 default workforce repair budget](issue-AR-201.md)
 - [AR-204 README-story contract reconciliation](issue-AR-204.md)
 - [AR-205 inference-safe exact specialist staffing](issue-AR-205.md)
+- [AR-207 preflight and delegation failure diagnostics](issue-AR-207.md)

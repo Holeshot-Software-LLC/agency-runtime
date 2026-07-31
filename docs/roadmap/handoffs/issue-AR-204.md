@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
+  - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
@@ -39,18 +40,16 @@ Bounded projection for making the README product story executable.
   mirrored owner CLI/dashboard controls; inference-only specialist staffing;
   one parent-only steward; explicit attended or supported bypass activation;
   first-pass evidence headers; and behavioral product proof.
-- PR 193 merged exact revision `f0fde9ee929e13587f62dd85147cf63b18b5d37e`;
-  exact build `0.1.0+gf0fde9ee929e` installed the README-default Codex, ZCode,
-  and dashboard surfaces.
-- Its supported-bypass activation is correction-free and proves inferred
-  `code-reviewer`, specialist load, native spawn/wait, completed delegation,
-  worker run, and finalization on one exact trace.
-- Its sole product trial, `ar205-f0fde9e-readme-01`, is terminal `NO-GO` after
-  101.1 seconds: the hook reached `preflight_failed`, no route or response was
-  published, and the workspace remained empty. Do not rerun that build.
-- An exact-prompt private Store replay proves planning and recruiting applied,
-  10 of 11 units were staffed, and one documentation gap was declared, but the
-  product's restricted canary environment suppressed gap hiring entirely.
+- PR 195 merged exact revision `6b49f17d6787823f9ba78a8f09383001b6a77535`;
+  exact build `0.1.0+g6b49f17d6787` is installed for Codex, ZCode, and dashboard.
+- Supported-bypass activation is correction-free and proves AR-206 plus one
+  complete inference-selected `code-reviewer` lifecycle.
+- Product trial `ar205-6b49f17-readme-01` is terminal `NO-GO` after 100.174
+  seconds. Its accepted route contains eight units and nine specialists, but
+  it recorded no grant, load, worker run, or native spawn/wait. The workspace
+  remained empty and no response/header was published. Do not rerun this build.
+- AR-207 tracker issue #196 owns the content-free preflight/delegation failure
+  evidence and the next executable repair.
 
 ## completed-evidence
 
@@ -114,20 +113,20 @@ Bounded projection for making the README product story executable.
   output is checked before ready commit, and stored version-11 recipes retain
   their full-goal renderer. Four direct tests, 113 affected tests with one skip,
   six exact replay nodes with one skip, and both new mutations pass.
-- Focused re-review of head 60111f8 found the appended Codex header could still
-  overflow through unbounded non-ASCII model metadata. The source rejects model
-  values above 512 UTF-8 bytes before reservation or preflight; the direct
-  regression, isolated mutation, and 238 affected tests with one skip pass. The
-  committed rerun passes 636 named tests with 6 skips, 110 dashboard tests,
-  every routing gate, all 53 mutations with unchanged source, Ruff across 602
-  files, 579 validated docs, and diff integrity.
+- PR 195's exact reviewed head passed 238 affected tests, the 636-test named
+  spine with 6 skips, all 110 dashboard tests, every routing gate, all 53
+  mutations, Ruff, 579 documentation files, and diff integrity before merge.
+- A disabled-Agency Sol control returned exact `PROBE_OK`. A separate enabled
+  diagnostic ended `preflight_failed` after 91.146 seconds and retained only a
+  run row: no route, model receipt, or bounded failure reason. The source catch
+  path discards that evidence today.
 
 ## exact-blocker
 
-The source candidate passes activation prerequisites, complete-team routing,
-the AR-206 verifier, and the fully fast-green final-envelope boundary. README
-acceptance waits for push and focused P1 re-review, merge, exact install, fresh-
-task activation, and one product trial.
+Exact installation, activation, AR-206, and inference-selected product staffing
+pass. README acceptance is blocked after staffing: the parent did not execute
+native delegation, and adjacent preflight failures are not diagnosable without
+replay.
 
 ## same-task-continuity
 
@@ -137,12 +136,13 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Record exact fast evidence, push, reply to the P1, and complete the allowed
-   focused high-severity re-review.
-2. Merge, exact-install, re-prove activation with AR-206, and run one product
-   trial for only that new exact build.
-3. Generate the local evidence page and OpenClaw handoff only after the product
-   gate proves real execution and zero corrections.
+1. Persist and project bounded content-free preflight/delegation failure facts.
+2. Use bounded controls to repair the first demonstrated no-spawn cause; run
+   focused tests and decision mutations.
+3. Complete at most two review passes, run the named fast spine, merge, and
+   exact-install before one fresh product trial.
+4. Generate the local evidence page and OpenClaw handoff after that terminal
+   exact-build trial.
 
 ## verification
 
