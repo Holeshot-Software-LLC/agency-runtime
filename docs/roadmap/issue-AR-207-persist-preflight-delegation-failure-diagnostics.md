@@ -93,6 +93,11 @@ the parent emitted no delegation tool call or response.
 - Two bounded review passes found no remaining behavior defect. All 25
   warning-strict activation-canary tests pass, and all 63 curated decision
   mutations are killed with zero survivors or invalid mutations.
+- The exact checkpoint passed the named fast spine: 636 warning-strict Python
+  tests passed with six skips, dashboard UI passed 110 tests, documentation
+  validated 584 files, Ruff checked and formatted 603 files, routing passed
+  every gate, decision conformance passed with source unchanged, and diff
+  integrity passed.
 
 ## Approach
 
@@ -138,7 +143,7 @@ those proofs exposed.
   regressions fail.
 - [x] Exact known Codex non-critical notices are content-free and traceable;
   near-miss or arbitrary `error` items remain fatal.
-- [ ] The host-notice repair passes the named fast verification spine.
+- [x] The host-notice repair passes the named fast verification spine.
 - [ ] The Codex host-notice repair is reviewed, merged, and exact-installed
   before any fresh product trial.
 - [ ] One fresh exact-build product trial reaches native delegation and writes

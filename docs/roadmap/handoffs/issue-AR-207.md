@@ -43,10 +43,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - The repair and two bounded review passes are complete on
   `codex/ar-207-codex-host-notice`; all 25 warning-strict activation-canary
   tests pass, and all 63 curated mutations are killed with zero survivors or
-  invalid mutations. This capsule is part of the substantive recovery
-  checkpoint; the following ledger commit records its exact SHA.
-- Context telemetry reported 48.5 percent remaining; the clean merged
-  substantive/ledger checkpoint was reused before this bounded package.
+  invalid mutations.
+- The named fast spine is green: 636 Python tests passed with six skips,
+  dashboard UI passed 110, docs validated 584, Ruff checked/formatted 603,
+  routing passed every gate, decision conformance passed with source unchanged,
+  and diff integrity passed.
+- Context telemetry reported 7.8 percent remaining. This capsule is the final
+  substantive checkpoint before push; its following ledger commit records the
+  exact SHA.
 
 ## completed-evidence
 
@@ -79,21 +83,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   child. Extra parent product tools, missing rows, correction count above zero,
   or failed workspace-write evidence are terminal failures.
 - The named warning-strict Python spine passed 636 tests with six skips;
-  dashboard UI passed 110 tests; routing passed every gate; all 62 curated
+  dashboard UI passed 110 tests; routing passed every gate; all 63 curated
   decision mutations were killed with zero survivors or invalid mutations;
   source restoration and `git diff --check` passed.
-- Documentation validation passed all 582 maintained Markdown files, and
-  context telemetry reported 85.2 percent remaining before the prior
-  checkpoint.
+- Documentation validation passed all 584 maintained Markdown files.
 - Builds and trials `cc322381`, `f0fde9ee`, and `6b49f17d` remain consumed and
   must not be rerun.
 
 ## exact-blocker
 
 The post-merge Codex 0.146 host-notice contradiction is repaired, reviewed,
-focused-green, and mutation-sensitive. The next gate is the named fast spine,
-then merge, exact install, and one fresh activation canary. The product trial
-remains unspent until activation is green.
+fast-green, and mutation-sensitive. The next gate is push, PR review, merge,
+exact install, and one fresh activation canary. The product trial remains
+unspent until activation is green.
 
 ## same-task-continuity
 
@@ -104,12 +106,11 @@ untracked files.
 
 ## next-bounded-work-package
 
-1. Run the named fast spine for the host-notice repair.
-2. Create the substantive and ledger checkpoints, push, review, merge, and
+1. Push the clean checkpoint, review, merge, and
    exact-install Codex, ZCode, and dashboard once.
-3. Prove exact-build activation with the supported hook bypass.
-4. Spend one fresh 1,800-second product trial on that exact build.
-5. Prove a fresh-task `agency-steward` plus specialist header, then produce the
+2. Prove exact-build activation with the supported hook bypass.
+3. Spend one fresh 1,800-second product trial on that exact build.
+4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
    local shareable evidence page and OpenClaw handoff.
 
 ## verification
