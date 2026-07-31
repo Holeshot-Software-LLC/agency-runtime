@@ -20,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-207-codex-host-notice-percent
-evidence_commit: 5328070cd048f42ce88e3bcb16e42f1e69cfae24
-minimum_ledger_commit: e492782cd2ce68bb1a69347eb7f2aa9e6bc41cf9
+branch: codex/ar-207-product-routing-validation
+evidence_commit: 5ad4aef8444d1437e2a29c1e9ac4df46dce7229f
+minimum_ledger_commit: 5c35953da9ea827779eeec3d47ee8e28c436e50c
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -32,18 +32,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 197 merged exact revision
-  `3b5a00f7564e29aaf0ec68bd09547f8b8fa42c2e`; VCS build
-  `0.1.0+g3b5a00f7564e` was exact-installed for Codex, ZCode, and dashboard.
-- Activation execution on that build completed the exact specialist lifecycle
-  with zero corrections, but the canary failed because one Codex 0.146
-  non-critical warning was classified as a non-allowlisted tool.
-- No product trial was spent on `3b5a00f`. Three bounded activation diagnostics
-  are consumed and must not be rerun on that build.
-- PR 198 merged the first repair as
-  `5328070cd048f42ce88e3bcb16e42f1e69cfae24`; it was exact-installed as an
-  official VCS package. The default install discovered Codex and ZCode,
-  registered both, and installed a reachable dashboard.
+- Exact-installed builds `3b5a00f` and `5328070` each completed the specialist
+  lifecycle with zero corrections, then failed closed on Codex 0.146 host
+  notice spellings. Their bounded diagnostics are consumed; PRs 198 and 199
+  carry the two narrow exact-message repairs.
 - Activation on `5328070` completed the exact `code-reviewer` lifecycle and
   zero-correction header, then failed closed on Codex's exact `2% skills
   context budget` sentence. One bounded raw-JSONL diagnostic proved two exact
@@ -56,9 +48,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   skips, dashboard UI passed 110, docs validated 584, Ruff checked/formatted
   603, routing passed every gate, and all 63 curated mutations were killed with
   zero survivors or invalid mutations. Source restoration passed.
-- End-of-package context telemetry reported 37.1 percent remaining and requires
-  this fast-green follow-up to be sealed as a substantive/ledger recovery pair
-  before push. Continue in this same task after that checkpoint.
+- PR 199 merged the follow-up as exact revision
+  `5ad4aef8444d1437e2a29c1e9ac4df46dce7229f`; the official VCS package was
+  exact-installed and the default full-suite refresh again discovered Codex,
+  ZCode, and the reachable dashboard.
+- Autonomous activation passed on that exact build with inferred
+  `code-reviewer`, a complete native specialist lifecycle, a valid first-pass
+  header, zero corrections, proven Store evidence, three admitted host notices,
+  and no unexpected item.
+- Product trial `ar207-5ad4aef-readme-01` is consumed and terminal `NO-GO`.
+  Its persisted preflight failed at routing validation before any provider
+  attempt, route, tool, response, header, or workspace write.
 
 ## completed-evidence
 
@@ -74,6 +74,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   persisted one route, unit, grant, consumption, load, worker, native child,
   completed delegation, and accepted finalization. Its header was valid and
   correction count was zero; Store evidence was `proven=true`.
+- Exact-installed activation session `019fb92a-8143-7772-97a6-03cc880685c0`,
+  trace `019fb92a-8d72-7f33-a30a-19d8480dbd64`, passed on `5ad4aef`. It
+  selected `code-reviewer` through inference and persisted one route, unit,
+  grant, consumption, load, worker, native child, completed delegation, and
+  accepted finalization. Header validity and Store evidence were proven with
+  correction count zero.
+- Product session `019fb92d-694c-7e42-b553-ee53802bac99`, trace
+  `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
+  `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage
+  `routing`, reason `routing_failed`, exception category `validation_error`,
+  and zero provider attempts. Its exact workspace remained empty.
 - Codex 0.146 maps non-critical Warning, ConfigWarning, DeprecationNotice, and
   ModelRerouted notifications to completed JSONL items whose type is `error`.
 - The exact parent catalog retained all 67 skills but removed 11,805
@@ -100,30 +111,40 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   decision mutations were killed with zero survivors or invalid mutations;
   source restoration and `git diff --check` passed.
 - Documentation validation passed all 584 maintained Markdown files.
-- Builds and trials `cc322381`, `f0fde9ee`, and `6b49f17d` remain consumed and
-  must not be rerun.
+- Builds and trials `cc322381`, `f0fde9ee`, `6b49f17d`, and `5ad4aef` remain
+  consumed and must not be rerun.
 
 ## exact-blocker
 
-The first host-notice repair admitted Codex's generic packaged sentence but the
-live 0.146 host emitted its packaged `2%` variant. The narrow follow-up is now
-fast-green and mutation-sensitive; it still needs review, merge, exact install,
-and one new-build activation canary. The product trial remains unspent until
-activation is green.
+The exact `5ad4aef` activation is green, but its one allowed product trial
+failed at routing validation after route-request construction and before the
+provider was called. The persisted receipt intentionally excludes raw exception
+text, so the next bounded package must reproduce the same pre-provider failure
+against isolated or cloned Store state and capture the local traceback without
+spending another product trial. A thread-aware audit also found four unresolved
+PR 198 review threads: the product host-notice projection is a confirmed code
+gap; the claimed worklog ancestry defect is contradicted by current Git history;
+and the separate AR plus durable ADR records remain missing.
 
 ## same-task-continuity
 
 Keep inference authoritative and the parent non-generalist. Do not rerun any
-trial on `cc322381`, `f0fde9ee`, or `6b49f17d`. Do not mutate private trust
-state, label bypass as trust, dispatch hosted Actions, or touch the owner's two
-untracked files.
+trial on `cc322381`, `f0fde9ee`, `6b49f17d`, or `5ad4aef`. Do not mutate private
+trust state, label bypass as trust, dispatch hosted Actions, or touch the
+owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Commit, review, merge, and exact-install the narrow `2%` notice follow-up.
-2. Prove exact-build activation with the supported hook bypass once.
-3. Spend one fresh 1,800-second product trial on that exact build.
-4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
+1. Address every valid PR 198 review thread: preserve host notices in product
+   evidence, create the missing AR/tracker and ADR records, and document the Git
+   ancestry evidence for the invalid worklog claim.
+2. Reproduce the routing `validation_error` against isolated or cloned state
+   and retain the exact local exception without another product-host run.
+3. Repair that first boundary and prove both repairs with focused regression
+   tests plus the named fast spine.
+4. Review, merge, and exact-install a new build, then run one activation canary
+   and one fresh product trial on that build.
+5. Prove a fresh-task `agency-steward` plus specialist header, then produce the
    local shareable evidence page and OpenClaw handoff.
 
 ## verification
@@ -152,5 +173,7 @@ git diff --check
 - Do not rerun activation diagnostics on exact build `3b5a00f`.
 - Do not rerun activation on exact build `5328070`; its one canary and bounded
   raw-message diagnostic are complete.
+- Do not rerun activation or the product trial on exact build `5ad4aef`; both
+  terminal results are recorded.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

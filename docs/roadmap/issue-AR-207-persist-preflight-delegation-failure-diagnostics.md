@@ -120,6 +120,29 @@ the parent emitted no delegation tool call or response.
   584 files, Ruff checked and formatted 603 files, routing passed every gate,
   and all 63 curated mutations were killed with zero survivors or invalid
   mutations. Decision conformance restored the source unchanged.
+- PR 199 merged the exact-sentence follow-up as revision
+  `5ad4aef8444d1437e2a29c1e9ac4df46dce7229f`. The official VCS package was
+  exact-installed, and the default full-suite refresh again discovered only
+  Codex and ZCode while keeping the dashboard reachable.
+- Autonomous activation session `019fb92a-8143-7772-97a6-03cc880685c0`, trace
+  `019fb92a-8d72-7f33-a30a-19d8480dbd64`, passed on that exact build. It
+  selected `code-reviewer` through inference and persisted one grant,
+  consumption, load, native child, completed delegation, accepted finalization,
+  valid first-pass header, zero corrections, and proven Store evidence. The two
+  admitted notice types accounted for all three host notices; no unexpected
+  item remained.
+- The one allowed product trial on `5ad4aef`, trial
+  `ar207-5ad4aef-readme-01`, is a terminal `NO-GO`. Session
+  `019fb92d-694c-7e42-b553-ee53802bac99`, trace
+  `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
+  `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` at stage
+  `routing` with reason `routing_failed`, exception category
+  `validation_error`, and zero provider attempts. No route, tool, response,
+  header, or workspace write was produced. Correction count remained zero.
+- That consumed trial narrows the first remaining product boundary to a
+  validation exception inside routing after route-request construction and
+  before provider invocation. Diagnosis must use isolated or cloned state; the
+  product trial must not be rerun on `5ad4aef`.
 
 ## Approach
 
@@ -168,9 +191,9 @@ those proofs exposed.
 - [x] The host-notice repair passes the named fast verification spine.
 - [x] Both exact Codex-packaged skill-catalog notice spellings pass the named
   fast spine and the arbitrary-error mutation remains killed.
-- [ ] One fresh exact-build activation canary accepts the current Codex host
+- [x] One fresh exact-build activation canary accepts the current Codex host
   notices without admitting an unknown error.
-- [ ] The complete Codex host-notice repair is reviewed, merged, and
+- [x] The complete Codex host-notice repair is reviewed, merged, and
   exact-installed before any fresh product trial.
 - [ ] One fresh exact-build product trial reaches native delegation and writes
   its workspace artifacts with zero response corrections.
