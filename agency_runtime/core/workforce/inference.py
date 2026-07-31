@@ -29,6 +29,7 @@ from agency_runtime.core.workforce.intent import (
     COMPACT_INTENT_RESPONSE_SCHEMA,
     COMPACT_INTENT_SYSTEM,
     MAX_PRIMARY_UNITS,
+    compact_intent_response_schema,
     compact_intent_taxonomy,
     compile_intent_plan,
 )
@@ -982,6 +983,7 @@ def _compact_planner_prompt(
     context: StaffingContext,
     *,
     max_work_units: int,
+    required_artifact_kind: str | None = None,
 ) -> str:
     domains, stacks, capabilities = _known_intent_vocabulary(snapshot)
     return _json_prompt(
@@ -1001,6 +1003,11 @@ def _compact_planner_prompt(
                 "no_worker_names": True,
                 "inference_owns_complete_plan": True,
                 "plan_acceptance_contract": planner_acceptance_contract(),
+                **(
+                    {"required_artifact_kind": required_artifact_kind}
+                    if required_artifact_kind is not None
+                    else {}
+                ),
             },
         }
     )
@@ -1013,6 +1020,7 @@ def _parse_compact_plan(
     snapshot: WorkforceIndexSnapshot,
     context: StaffingContext,
     max_work_units: int,
+    required_artifact_kind: str | None = None,
 ) -> WorkUnitPlan:
     domains, stacks, capabilities = _known_intent_vocabulary(snapshot)
     primary = compile_intent_plan(
@@ -1024,6 +1032,10 @@ def _parse_compact_plan(
         known_capability_ids=capabilities,
         max_work_units=max_work_units,
     )
+    if required_artifact_kind is not None and any(
+        unit.artifact_kind != required_artifact_kind for unit in primary.units
+    ):
+        raise ValueError(f"compact intent units must use artifact kind {required_artifact_kind}")
     violations = plan_policy_violations(request, primary)
     if violations:
         raise _PlanPolicyValidationError(violations)
@@ -1755,6 +1767,8 @@ def plan_and_staff_workforce(
     context: StaffingContext,
     invoker: StructuredInvoker | None = None,
     routing_context_fingerprint: str = "",
+    max_planned_units: int | None = None,
+    required_planned_artifact_kind: str | None = None,
 ) -> WorkforceRoutingOutcome:
     """Plan, recruit, and verify one request without letting inference activate workers."""
 
@@ -1782,13 +1796,30 @@ def plan_and_staff_workforce(
     plan: WorkUnitPlan | None = None
     proposal: RecruiterProposal | None = None
 
+    configured_unit_limit = min(config.workforce.max_work_units, MAX_PRIMARY_UNITS)
+    if max_planned_units is None:
+        planning_unit_limit = configured_unit_limit
+    else:
+        if (
+            isinstance(max_planned_units, bool)
+            or not isinstance(max_planned_units, int)
+            or not 1 <= max_planned_units <= MAX_PRIMARY_UNITS
+        ):
+            raise ValueError(f"max_planned_units must be between 1 and {MAX_PRIMARY_UNITS}")
+        planning_unit_limit = min(configured_unit_limit, max_planned_units)
+    planner_schema = compact_intent_response_schema(
+        max_work_units=planning_unit_limit,
+        required_artifact_kind=required_planned_artifact_kind,
+    )
+
     # Every inferred mode spends its first call on a compact intent plan. Full
     # roster recall and hard eligibility remain local and deterministic.
     planner_prompt = _compact_planner_prompt(
         ask,
         snapshot,
         context,
-        max_work_units=config.workforce.max_work_units,
+        max_work_units=planning_unit_limit,
+        required_artifact_kind=required_planned_artifact_kind,
     )
     planner_providers = configured_workforce_providers(config, stage="planner")
     planner_cache_identity = _stage_cache_identity(
@@ -1801,9 +1832,9 @@ def plan_and_staff_workforce(
         invoker=invoker,
         providers=planner_providers,
         prompt=planner_prompt,
-        schema=COMPACT_INTENT_RESPONSE_SCHEMA,
+        schema=planner_schema,
         system_prompt=COMPACT_INTENT_SYSTEM,
-        extra={"max_work_units": config.workforce.max_work_units},
+        extra={"max_work_units": planning_unit_limit},
     )
     cached_plan = workforce_cache_get(planner_cache_identity)
     if isinstance(cached_plan, WorkUnitPlan):
@@ -1816,7 +1847,7 @@ def plan_and_staff_workforce(
             stage="planner",
             providers=planner_providers,
             prompt=planner_prompt,
-            schema=COMPACT_INTENT_RESPONSE_SCHEMA,
+            schema=planner_schema,
             system_prompt=COMPACT_INTENT_SYSTEM,
             budget=budget,
             invoker=invoker,
@@ -1825,7 +1856,8 @@ def plan_and_staff_workforce(
                 request=ask,
                 snapshot=snapshot,
                 context=context,
-                max_work_units=min(config.workforce.max_work_units, MAX_PRIMARY_UNITS),
+                max_work_units=planning_unit_limit,
+                required_artifact_kind=required_planned_artifact_kind,
             ),
         )
         if isinstance(parsed_plan, WorkUnitPlan):

@@ -284,6 +284,70 @@ def test_balanced_mode_always_uses_inference_for_planning_and_selection() -> Non
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
 
 
+def test_per_request_unit_limit_bounds_planner_prompt_schema_and_parser() -> None:
+    reviewer = replace(
+        _contract("code-reviewer"),
+        outcomes=("Code review",),
+        capability_ids=("review",),
+        artifact_kinds=("review-report",),
+        lifecycle_phases=("review",),
+        authority="review",
+    )
+    snapshot = _snapshot(reviewer)
+    planner_calls = 0
+
+    def invoke(provider, prompt, schema, **_kwargs):
+        nonlocal planner_calls
+        payload = json.loads(prompt.split("\n\n[RUNTIME VALIDATION FEEDBACK]", 1)[0])
+        if "planning_taxonomy" not in payload:
+            return _result(_nomination_document("code-reviewer"))
+        planner_calls += 1
+        assert payload["constraints"]["max_primary_units"] == 1
+        assert payload["constraints"]["required_artifact_kind"] == "review-report"
+        assert schema["properties"]["units"]["maxItems"] == 1
+        assert schema["properties"]["units"]["items"]["properties"]["artifact_kind"] == {
+            "enum": ["review-report"],
+            "type": "string",
+        }
+        document = _compact_plan_document()
+        if planner_calls == 1:
+            document["units"].append(
+                {
+                    **document["units"][0],
+                    "unit_id": "unit-extra",
+                    "depends_on": ["unit-analyze"],
+                }
+            )
+        else:
+            document["units"][0].update(
+                {
+                    "outcome": "Review the requested behavioral regression risk",
+                    "artifact_kind": "review-report",
+                    "capability_ids": ["review"],
+                }
+            )
+        return _result(document)
+
+    outcome = plan_and_staff_workforce(
+        "Treat this as exactly one indivisible analysis work unit.",
+        snapshot,
+        config=_config(),
+        context=_context(),
+        invoker=invoke,
+        max_planned_units=1,
+        required_planned_artifact_kind="review-report",
+    )
+
+    assert outcome.accepted
+    assert planner_calls == 2
+    assert len(outcome.plan.units) == 1
+    assert [item.status for item in outcome.attempts] == [
+        "rejected",
+        "applied",
+        "applied",
+    ]
+
+
 def test_disabled_only_candidate_cannot_be_appointed_by_online_fallback() -> None:
     snapshot = _snapshot(_contract("technical-analyst", enabled=False))
 

@@ -224,10 +224,12 @@ def test_activation_canary_uses_inference_owned_selection(
     clear_cache()
     clear_session_routing()
     calls: list[str] = []
+    planner_options: list[dict[str, Any]] = []
     outcome = SimpleNamespace(attempts=())
 
     def planner(message: str, *_args: Any, **_kwargs: Any) -> Any:
         calls.append(message)
+        planner_options.append(_kwargs)
         return outcome
 
     monkeypatch.setattr(inference, "plan_and_staff_workforce", planner)
@@ -247,6 +249,8 @@ def test_activation_canary_uses_inference_owned_selection(
     result = _route(monkeypatch)
 
     assert calls == [_task()]
+    assert planner_options[0]["max_planned_units"] == 1
+    assert planner_options[0]["required_planned_artifact_kind"] == "review-report"
     assert result["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
     assert result["selected_ids"] == ["code-reviewer"]
     assert result["inference_required"] is True
@@ -339,9 +343,11 @@ def test_ordinary_exact_text_without_restricted_environment_uses_workforce_plann
     monkeypatch.delenv("AGENCY_CANARY_MODE", raising=False)
     monkeypatch.delenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", raising=False)
     calls: list[str] = []
+    planner_options: list[dict[str, Any]] = []
 
     def fake_planner(message: str, *_args: Any, **_kwargs: Any) -> SimpleNamespace:
         calls.append(message)
+        planner_options.append(_kwargs)
         return SimpleNamespace(attempts=())
 
     monkeypatch.setattr(inference, "plan_and_staff_workforce", fake_planner)
@@ -371,6 +377,8 @@ def test_ordinary_exact_text_without_restricted_environment_uses_workforce_plann
     result = _route(monkeypatch, set_canary_env=False)
 
     assert calls == [_task()]
+    assert "max_planned_units" not in planner_options[0]
+    assert "required_planned_artifact_kind" not in planner_options[0]
     assert result["source"] == "workforce_inference"
 
 

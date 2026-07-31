@@ -1528,12 +1528,26 @@ def route(
             # surfaces unrelated to this exact work unit.
             None,
         )
+        activation_canary = is_exact_codex_activation_canary_task(
+            request.user_message,
+            host=request.host,
+            capability_status=request.capability_status,
+        )
+        planning_options = (
+            {
+                "max_planned_units": 1,
+                "required_planned_artifact_kind": "review-report",
+            }
+            if activation_canary
+            else {}
+        )
         outcome = plan_and_staff_workforce(
             request.user_message,
             request.workforce_snapshot,
             config=cfg,
             context=staffing_context,
             routing_context_fingerprint=request.context_fingerprint,
+            **planning_options,
         )
         _record_workforce_model_receipts(
             evidence_store,
@@ -1544,11 +1558,6 @@ def route(
         )
         active_snapshot = request.workforce_snapshot
         active_catalog = request.workforce_catalog
-        activation_canary = is_exact_codex_activation_canary_task(
-            request.user_message,
-            host=request.host,
-            capability_status=request.capability_status,
-        )
         if activation_canary:
             hiring_events = []
         else:
