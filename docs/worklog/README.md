@@ -420,6 +420,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9683a89` | 2026-07-31 | docs(evidence): admit encoded context fast gate | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 | `7727c0c` | 2026-07-31 | fix(hooks): bound final Codex header metadata | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | [detail](2026-07-31-7727c0c-final-codex-header-metadata.md) |
 | `581891c` | 2026-07-31 | docs(evidence): admit final Codex header fast gate | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
+| `dd3ca76` | 2026-07-31 | docs(roadmap): checkpoint AR-207 product execution failure | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
