@@ -389,6 +389,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7621096` | 2026-07-30 | docs(roadmap): checkpoint inference-owned staffing | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 | `03dba75` | 2026-07-30 | fix(activation): bind autonomous proof to inferred replay | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-03dba75-autonomous-inferred-activation.md) |
 | `e0c66f9` | 2026-07-30 | docs(roadmap): checkpoint autonomous activation replay | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
+| `3ec69c7` | 2026-07-30 | fix(finalization): require first-pass evidence headers | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | [detail](2026-07-30-3ec69c7-first-pass-evidence-headers.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
