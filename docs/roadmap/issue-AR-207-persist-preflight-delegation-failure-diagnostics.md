@@ -184,6 +184,17 @@ the parent emitted no delegation tool call or response.
   native child, worker, completed delegation, and accepted finalization. The
   first-pass header was valid, Store evidence was proven, correction count was
   zero, and all three Codex host notices mapped to the two admitted types.
+- The one allowed product trial on `dd85e7d`, trial
+  `ar207-dd85e7d-readme-01`, is terminal `NO-GO`. Session
+  `019fb982-a686-79d1-bc6c-f605e64895fc`, trace
+  `019fb982-a702-7c11-b527-a4b5fa603250`, and run
+  `ec15beed-4ed4-4bc8-bdf6-1a19e4b4d926` reached ready with eight inferred
+  units and eight selected specialists. All eight delegation rows remained
+  `suggested`; no grant, consumption, specialist load, worker run, native child,
+  or completed delegation followed. Codex exited zero with no response or
+  header, workspace trust and hook bypass were proven, workspace write was not,
+  and correction count was zero. The first failed boundary is therefore the
+  accepted-plan to parent-native `spawn_agent` handoff, not selection.
 
 ## Approach
 
