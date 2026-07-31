@@ -63,7 +63,12 @@ when the parent turn terminalizes.
 Opaque Codex launches are also serialized. The same tool-use ID can replay its
 unconsumed grant idempotently, but a different plan row is denied until
 `SubagentStart` consumes the first grant. The product scheduler therefore runs
-one dependency-ready child at a time on this host.
+one dependency-ready child at a time on this host. The exact-head review then
+found two narrower defects: capability paths lost case on case-sensitive
+repositories, and the slot guard also serialized plaintext token-correlated
+Codex grants. The follow-up candidate preserves canonical path case while using
+a separate folded contention key, and carries the actual opaque-launch decision
+into the Store so plaintext grants may coexist.
 
 The repaired changed surface passes 202 warning-strict tests, and the complete
 Codex activation file passes 27 tests. Focused regressions prove the exact path,
@@ -73,7 +78,8 @@ with unchanged source. The revised named fast spine is green through 594 docs,
 604 Ruff files, 636 warning-strict Python tests with six skips, 110 dashboard
 tests, and every routing gate. Decision conformance passed its baseline, killed
 all 71 mutations with zero survivors or invalid results, and proved the source
-tree unchanged.
+tree unchanged. The follow-up six-node focused boundary and all 27 activation
+tests pass; the revised full spine and 73-mutation run remain pending.
 
 ## Approach
 
@@ -117,8 +123,12 @@ serialized opaque launch semantics.
   cannot be broadened or removed while active, and is cleaned at terminal state.
 - [x] A second opaque grant fails until `SubagentStart` consumes the first;
   exact same-tool replay remains idempotent.
+- [x] Mixed-case canonical paths survive preflight and grant construction
+  unchanged while contention comparison remains conservative.
+- [x] Plaintext token-correlated Codex grants can coexist; only opaque
+  token-free launches use the single-slot guard.
 - [x] Focused warning-strict tests and curated mutations pass.
-- [x] The revised named fast verification spine passes.
+- [ ] The post-review named fast verification spine passes.
 - [ ] The reviewed repair is merged and exact-installed.
 - [ ] One fresh exact-build activation and one product trial pass with zero
   corrections and proven workspace write.

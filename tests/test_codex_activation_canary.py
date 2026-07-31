@@ -811,7 +811,7 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     assert worker_run["ended_at"]
 
 
-def test_codex_opaque_children_serialize_until_subagent_start_consumes_grant(
+def test_codex_opaque_children_serialize_while_plaintext_children_remain_correlated(
     configured_store: Store,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -948,6 +948,49 @@ def test_codex_opaque_children_serialize_until_subagent_start_consumes_grant(
     second_result = bridge.handle(spawn_payload(second, "call-second"))
     assert second_result["hookSpecificOutput"]["permissionDecision"] == "allow"
 
+    plaintext_session = "codex-plaintext-concurrent-session"
+    plaintext_trace = "codex-plaintext-concurrent-trace"
+    plaintext = run_preflight(
+        configured_store,
+        session_id=plaintext_session,
+        trace_id=plaintext_trace,
+        user_message="Review the same two bounded path-specific changes in plaintext mode.",
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=plaintext_session,
+            trace_id=plaintext_trace,
+        ),
+    )
+    plaintext_bridge = HookBridge("codex", store=configured_store)
+    for index, plan in enumerate(plaintext.delegation_plan, start=1):
+        result = plaintext_bridge.handle(
+            {
+                "hook_event_name": "PreToolUse",
+                "session_id": plaintext_session,
+                "turn_id": plaintext_trace,
+                "tool_name": "collaborationspawn_agent",
+                "tool_use_id": f"call-plaintext-{index}",
+                "tool_input": {
+                    "fork_turns": "none",
+                    "task_name": codex_task_name_for_work_unit(str(plan["work_unit_id"])),
+                    "message": str(plan["goal"]),
+                },
+            }
+        )
+        assert result["hookSpecificOutput"]["permissionDecision"] == "allow"
+    connection = configured_store._connect()
+    try:
+        unconsumed = connection.execute(
+            "SELECT COUNT(*) AS count FROM delegation_activation_receipts "
+            "WHERE trace_id = ? AND grant_origin = 'native_hook' AND consumed_at IS NULL",
+            (plaintext_trace,),
+        ).fetchone()["count"]
+    finally:
+        connection.close()
+    assert unconsumed == 2
+
 
 def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
     configured_store: Store,
@@ -960,7 +1003,7 @@ def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
     outcomes = (
         (
             "unit-discovery",
-            "Map the repository code path around src/product.py for the bounded CLI change.",
+            "Map the repository code path around Src/Product.py for the bounded CLI change.",
             "analysis",
             "software-engineering",
             "analysis",
@@ -969,7 +1012,7 @@ def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
         ),
         (
             "unit-product",
-            "Implement src/product.py with the bounded CLI change.",
+            "Implement Src/Product.py with the bounded CLI change.",
             "implementation-change",
             "software-engineering",
             "implementation",
@@ -987,7 +1030,7 @@ def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
         ),
         (
             "unit-review",
-            "Review src/product.py and tests/test_product.py for correctness.",
+            "Review Src/Product.py and tests/test_product.py for correctness.",
             "review-report",
             "software-engineering",
             "review",
@@ -1071,7 +1114,7 @@ def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
         configured_store,
         session_id=session_id,
         trace_id=trace_id,
-        user_message="Implement the bounded CLI change in src/product.py.",
+        user_message="Implement the bounded CLI change in Src/Product.py.",
         host="codex",
         capability_receipt=native_adapter_capability_receipt(
             "codex",
@@ -1086,7 +1129,7 @@ def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
         if row["recommended_agent"] == "python-application-engineer"
     )
     work_unit_id = str(plan["work_unit_id"])
-    assert "src/product.py" in plan["goal"]
+    assert "Src/Product.py" in plan["goal"]
     connection = configured_store._connect()
     try:
         row = connection.execute(
@@ -1098,7 +1141,7 @@ def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
         connection.close()
     scope = deserialize_codex_native_plan_scope(row["scope_payload"])
     assert scope.mutation_scope.mode == "workspace_write"
-    assert scope.mutation_scope.path_prefixes == ("src/product.py",)
+    assert scope.mutation_scope.path_prefixes == ("Src/Product.py",)
 
     result = HookBridge("codex", store=configured_store).handle(
         {
@@ -1126,7 +1169,7 @@ def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
         connection.close()
     grant = deserialize_native_child_activation_grant(grant_row["grant_payload"])
     assert grant.mutation_scope.mode == "workspace_write"
-    assert grant.mutation_scope.path_prefixes == ("src/product.py",)
+    assert grant.mutation_scope.path_prefixes == ("Src/Product.py",)
 
     connection = configured_store._connect()
     try:

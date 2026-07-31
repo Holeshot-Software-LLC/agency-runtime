@@ -833,7 +833,13 @@ def _looks_like_resource(value: str) -> bool:
 
 def _normalized_resource(value: str) -> str:
     normalized = posixpath.normpath(value.replace("\\", "/"))
-    return normalized.casefold()[:MAX_RESOURCE_CHARS]
+    return normalized[:MAX_RESOURCE_CHARS]
+
+
+def _resource_contention_key(value: object) -> str:
+    """Return a conservative identity without changing persisted path authority."""
+
+    return str(value or "").casefold()
 
 
 def _likely_resources(unit: str) -> list[str]:
@@ -865,11 +871,11 @@ def _resource_contention_plan(
     )
     for index, current in enumerate(candidates):
         current_id = str(current["work_unit_id"])
-        current_resources = set(current["resources"])
+        current_resources = {_resource_contention_key(item) for item in current["resources"]}
         if current_resources == {"repository-workspace"}:
             continue
         for previous in candidates[:index]:
-            previous_resources = set(previous["resources"])
+            previous_resources = {_resource_contention_key(item) for item in previous["resources"]}
             if previous_resources == {"repository-workspace"}:
                 continue
             if current_resources.isdisjoint(previous_resources):

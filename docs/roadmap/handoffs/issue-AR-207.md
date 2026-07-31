@@ -76,6 +76,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   warning-strict Python tests with six skips, 110 dashboard tests, and every
   routing gate. Conformance killed all 71 mutations with zero survivors or
   invalid results, and the source tree remained unchanged.
+- Exact-head review on `aa68555` found case-folded authority and plaintext
+  over-serialization. The follow-up preserves path case, folds only contention,
+  and gates only opaque grants. Six nodes and all 27 activation tests pass.
 - Product session `019fb92d-694c-7e42-b553-ee53802bac99`, trace
   `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
   `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage
@@ -124,9 +127,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 Exact build `584b949` is consumed: activation passed, but its product trial is
-terminal `NO-GO`. AR-209's exact-path and serialized-launch repair is fully
-local-fast-green but is not yet reviewed, merged, or exact-installed. No new
-live run is allowed before those boundaries pass.
+terminal `NO-GO`. AR-209's first repair was local-fast-green, but exact-head
+review found two valid defects. Their bounded follow-up is focused-green but not
+yet full-gate-green, rereviewed, merged, or exact-installed. No new live run is
+allowed before those boundaries pass.
 
 ## same-task-continuity
 
@@ -137,8 +141,8 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Push, resolve the two P1 review threads, obtain exact-head review, merge,
-   and exact-install AR-209.
+1. Pass the revised full gate, push, resolve the new P1/P2 threads, obtain a
+   clean exact-head review, merge, and exact-install AR-209.
 2. Repeat one activation and at most one product trial on the new exact build,
    then produce the local shareable evidence page and OpenClaw handoff.
 

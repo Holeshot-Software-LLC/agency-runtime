@@ -921,6 +921,20 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-path-authority-restores-case-folding",
+        invariant=(
+            "Canonical mutation paths preserve case; a separate folded key owns only "
+            "conservative contention matching."
+        ),
+        source_path="agency_runtime/core/unit_assignment.py",
+        before="    return normalized[:MAX_RESOURCE_CHARS]\n",
+        after="    return normalized.casefold()[:MAX_RESOURCE_CHARS]\n",
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_preflight_stages_exact_path_for_ordinary_workspace_write"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="codex-opaque-child-restores-concurrent-unconsumed-grants",
         invariant=(
             "Codex opaque launches remain serialized until SubagentStart consumes the "
@@ -931,7 +945,21 @@ class _NominationSemantics:""",
         after="    if False and inflight is not None:\n",
         test_node=(
             "tests/test_codex_activation_canary.py::"
-            "test_codex_opaque_children_serialize_until_subagent_start_consumes_grant"
+            "test_codex_opaque_children_serialize_while_plaintext_children_remain_correlated"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-plaintext-child-inherits-opaque-serialization",
+        invariant=(
+            "Only token-free opaque Codex grants serialize through child start; "
+            "plaintext token-correlated grants may coexist."
+        ),
+        source_path="agency_runtime/core/store/delegation_activation.py",
+        before="    if planned_scope is None or not opaque_launch:\n",
+        after="    if planned_scope is None:\n",
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_opaque_children_serialize_while_plaintext_children_remain_correlated"
         ),
     ),
     DecisionMutation(

@@ -299,12 +299,13 @@ def _require_open_codex_native_hook_slot(
     conn: Any,
     *,
     planned_scope: CodexNativePlanScope | None,
+    opaque_launch: bool,
     session_id: str,
     trace_id: str,
 ) -> None:
     """Serialize opaque launches through child-start grant consumption."""
 
-    if planned_scope is None:
+    if planned_scope is None or not opaque_launch:
         return
     inflight = conn.execute(
         "SELECT 1 FROM delegation_activation_receipts "
@@ -1267,6 +1268,7 @@ class DelegationActivationStoreMixin:
             _require_open_codex_native_hook_slot(
                 conn,
                 planned_scope=planned_codex_scope,
+                opaque_launch=_allow_codex_opaque_replay,
                 session_id=normalized_session,
                 trace_id=normalized_trace,
             )
