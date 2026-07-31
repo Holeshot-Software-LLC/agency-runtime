@@ -9,20 +9,22 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
+  - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
   - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-204
-branch: codex/ar-203-activation-planning-contract
-evidence_commit: 271e5a01d08b74dbe755662de997a32d04e5e735
-minimum_ledger_commit: 3010813eaac39c0d799817cca19e0419acfbde59
+branch: codex/ar-204-readme-product-proof
+evidence_commit: 7727c0cd9bba3824acd3722c6c3964086667cfc9
+minimum_ledger_commit: 4081265af803f85ecafb5372a74e0fd06a93e110
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 ---
@@ -37,16 +39,18 @@ Bounded projection for making the README product story executable.
   mirrored owner CLI/dashboard controls; inference-only specialist staffing;
   one parent-only steward; explicit attended or supported bypass activation;
   first-pass evidence headers; and behavioral product proof.
-- PR 191 merged the source story as `cc322381ec932452f0575445dc174510e4caad6f`
-  and exact build `0.1.0+gcc322381ec93` is installed.
-- Exact activation proves one real inferred specialist delegation with zero
-  corrections. The only product trial for that build failed at workforce
-  preflight and produced no artifact, so the README story remains `NO-GO`.
-- Current source repairs that exact causal boundary and has accepted a real
-  nine-specialist team for the README-shaped prompt.
-- PR 192 merged and its exact build installed the README-default Codex, ZCode,
-  and dashboard surfaces. Activation reached inference but rejected an
-  over-decomposed canary before route commit; no product trial was consumed.
+- PR 193 merged exact revision `f0fde9ee929e13587f62dd85147cf63b18b5d37e`;
+  exact build `0.1.0+gf0fde9ee929e` installed the README-default Codex, ZCode,
+  and dashboard surfaces.
+- Its supported-bypass activation is correction-free and proves inferred
+  `code-reviewer`, specialist load, native spawn/wait, completed delegation,
+  worker run, and finalization on one exact trace.
+- Its sole product trial, `ar205-f0fde9e-readme-01`, is terminal `NO-GO` after
+  101.1 seconds: the hook reached `preflight_failed`, no route or response was
+  published, and the workspace remained empty. Do not rerun that build.
+- An exact-prompt private Store replay proves planning and recruiting applied,
+  10 of 11 units were staffed, and one documentation gap was declared, but the
+  product's restricted canary environment suppressed gap hiring entirely.
 
 ## completed-evidence
 
@@ -83,13 +87,47 @@ Bounded projection for making the README product story executable.
   Store hook replay accepted inference-selected `code-reviewer`, one binding,
   and one immediate delegation assignment. Focused verification passes 72
   warning-strict tests; native installed proof remains.
+- PR 193 merged that repair; exact installation and native activation now pass.
+  The product replay also proves Codex advertised repository-write,
+  test-execution, and native-delegation capabilities, excluding host eligibility
+  as the current blocker.
+- Commit `f349c21` repairs product gap-hiring eligibility and removes repeated
+  full-request copies from the isolated delegation plan. The focused boundary
+  passes 169 tests with one skip. Two accepted product-shaped routes then hit
+  the same 8,192-character parent-context ceiling at nine and ten units.
+- Sizing proves the compact form needs 8,326 characters for ten realistic units
+  and 9,534 for the configured maximum sixteen; the general preflight and Codex
+  hook ceilings are 32,000 and 48,000 respectively.
+- AR-206 proves this task's evidence Store is healthy. Its 558-node routing
+  decision exactly matches the ready receipt, but the immutable old Stop hook
+  rejects it under a stale 256-node verifier cap. The source now uses the
+  durable 2,048-node bound and passes its focused regression and mutation tests.
+- ADR-0123 is approved and commit 839ddee uses the 32,000-character persistent
+  parent ceiling. A complete sixteen-unit regression crosses 8,192, its
+  legacy-cap mutation is killed, and the 115-test focused boundary passes.
+- The exact post-review committed tree passes the named fast Python spine (636
+  passed, 6 skipped), dashboard UI (110 passed), every routing evaluation gate,
+  Ruff across 602 files, all 52 decision mutations with zero survivors or
+  invalid results and unchanged source, and documentation validation for 578
+  files.
+- PR 195 review found and prompted two bounded repairs: exact encoded context
+  output is checked before ready commit, and stored version-11 recipes retain
+  their full-goal renderer. Four direct tests, 113 affected tests with one skip,
+  six exact replay nodes with one skip, and both new mutations pass.
+- Focused re-review of head 60111f8 found the appended Codex header could still
+  overflow through unbounded non-ASCII model metadata. The source rejects model
+  values above 512 UTF-8 bytes before reservation or preflight; the direct
+  regression, isolated mutation, and 238 affected tests with one skip pass. The
+  committed rerun passes 636 named tests with 6 skips, 110 dashboard tests,
+  every routing gate, all 53 mutations with unchanged source, Ruff across 602
+  files, 579 validated docs, and diff integrity.
 
 ## exact-blocker
 
-The activation repair is committed and replay-proven but still needs its local
-fast gate, merge, exact install, and native activation proof. README acceptance
-then requires one fresh product trial to prove a real team, planned native
-delegation, workspace artifacts, and zero corrections in the same run.
+The source candidate passes activation prerequisites, complete-team routing,
+the AR-206 verifier, and the fully fast-green final-envelope boundary. README
+acceptance waits for push and focused P1 re-review, merge, exact install, fresh-
+task activation, and one product trial.
 
 ## same-task-continuity
 
@@ -99,11 +137,12 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Verify, merge, and exact-install the activation planning repair.
-2. Prove native supported-bypass activation, then run the build's one product
-   trial.
-3. Generate the local evidence page and OpenClaw handoff only from recorded
-   evidence.
+1. Record exact fast evidence, push, reply to the P1, and complete the allowed
+   focused high-severity re-review.
+2. Merge, exact-install, re-prove activation with AR-206, and run one product
+   trial for only that new exact build.
+3. Generate the local evidence page and OpenClaw handoff only after the product
+   gate proves real execution and zero corrections.
 
 ## verification
 

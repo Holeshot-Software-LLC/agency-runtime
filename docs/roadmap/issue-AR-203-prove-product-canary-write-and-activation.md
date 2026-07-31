@@ -9,6 +9,7 @@ related:
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
+  - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
@@ -250,6 +251,80 @@ Store replay then accepted inference-selected `code-reviewer` with one binding,
 one assignment, immediate delegation, and no error. Exact merge/install and
 native activation of this repair remain before the one fresh product trial.
 
+[PR 193](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/193)
+merged that repair as exact revision
+`f0fde9ee929e13587f62dd85147cf63b18b5d37e`. Exact build
+`0.1.0+gf0fde9ee929e` is installed, and supported-bypass activation passed with
+zero corrections. The activation trace proves inference-selected
+`code-reviewer`, grant issuance and consumption, specialist load, native
+spawn/wait, completed delegation, worker run, and accepted finalization.
+
+The build's one product trial, `ar205-f0fde9e-readme-01`, is terminal
+`NO-GO`. It ended after 101.1 seconds with host exit zero and product-command
+exit one. The workspace remained empty, workspace-write was unproven, and no
+response or header was published. Store run
+`3833f8ae-34c2-4ebc-8f1c-9b481bd720e0` correlates the exact executed prompt to
+`preflight_failed`, excluding trust, registration, and host startup as the
+failure boundary.
+
+A private cloned-Store replay verified both prompt hashes and reproduced the
+failure without consuming another product trial. Planner and recruiter
+responses were applied. Inference authored 11 specialist units and staffed 10,
+then explicitly declared the documentation unit uncovered. Codex supplied
+repository-write, test-execution, and native-delegation capabilities, but no
+hiring event ran. The causal defect is the environment-wide early return in
+`_run_gap_hiring`: the product harness uses the exact-existing-Store canary
+environment for isolated evidence, and that guard mistakes it for the
+closed-world read-only activation canary. The next repair must keep activation
+read-only while allowing ordinary product preflight to act on an inference-
+declared contractor gap.
+
+Commit `f349c21` removes that environment-wide early return while retaining the
+exact activation task's closed-world no-hiring branch. It also replaces repeated
+copies of the complete request in each isolated delegation row with one exact
+JSON-encoded shared prefix plus exact per-unit suffixes, and advances the
+durable context recipe/policy to v12. The focused boundary passes 169 tests
+with one intentional skip; Ruff and whitespace checks pass.
+
+The next two private exact-prompt replays both produced accepted inferred teams
+with no staffing reasons. The first reached nine units and ten specialists; the
+second reached ten units and nine specialists. Both then failed at the same
+8,192-character persistent-host context ceiling. Read-only sizing proves the
+compact exact plan needs 8,120 characters at nine realistic units, 8,326 at
+ten, and 9,534 at the configured maximum sixteen.
+
+The owner approved ADR-0123: persistent native parents now use the existing
+32,000-character preflight ceiling. A realistic sixteen-unit regression proves
+the complete context exceeds 8,192 and fits the new ceiling. The curated
+mutation restoring 8,192 is killed, and the 115-test focused
+preflight/delegation/evidence boundary passes.
+
+PR 195 review then found two valid compatibility boundaries. A multibyte
+context could fit the character limit but overflow the 65,536-byte hook output,
+and a stored version-11 recipe could be reconstructed with version-12
+shared-prefix rendering. Version 13 now rejects an exact context envelope above
+48,000 encoded bytes before ready commit and renders version-11 goals in their
+original full-row form. Four direct regressions pass, the wider affected
+boundary passes 113 tests with one skip, exact replay nodes pass 5 with one
+skip, and both new decision mutations are killed.
+
+Committed repair `b9d9ec4` then passed the complete invalidated gate: 636 named
+Python tests with 6 skips, 110 dashboard tests, every routing-evaluation gate,
+52/52 killed decision mutations with unchanged source, Ruff across 602 files,
+documentation validation for 578 files, and clean diff integrity. Ledger commit
+`87b56fd` records that exact checkpoint; repaired-head review, merge, exact
+installation, and the one new-build product trial remain.
+
+The focused re-review of head `60111f8` then found a third P1: Codex appended
+the caller-controlled model value after the context-only byte check. The source
+candidate now rejects model metadata above 512 UTF-8 bytes before reservation
+or preflight. The 9,000-emoji regression proves no adapter call or reservation,
+the new mutation is killed, and the affected boundary passes 238 tests with one
+skip. Committed repair `7727c0c` then passes 636 named Python tests with 6
+skips, 110 dashboard tests, every routing gate, all 53 decision mutations with
+unchanged source, Ruff across 602 files, documentation validation for 579
+files, and clean diff integrity.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host
@@ -281,6 +356,14 @@ native activation of this repair remain before the one fresh product trial.
 12. Resolve valid merged-PR review findings before retrust: enforce exact repair
     IDs before mutation and sanitize sensitive planned-unit identities in
     durable evidence.
+13. Scope no-hiring behavior to the exact closed-world activation task rather
+    than every existing-Store canary process; ordinary product evaluation must
+    execute verified inference-declared gap hiring.
+14. Use the owner-approved 32,000-character persistent-host ceiling while
+    preserving exact child goals and complete inference-authored teams; never
+    truncate or deterministically remove units to fit the legacy limit.
+15. Bound the exact encoded hook envelope before ready commit and reconstruct
+    stored recipes with the renderer owned by their recorded policy version.
 
 ## Dependencies
 
@@ -327,6 +410,14 @@ demonstrates both mismatches.
   one-invocation bypass, with bypassed evidence never mislabeled trusted.
 - [x] Recruiter response acceptance or bounded repair produces a defensible
   inferred staffing plan for the fixed README-story prompt.
+- [x] Persistent native parents accept a complete sixteen-unit context above
+  the legacy 8,192-character ceiling while remaining bounded to 32,000.
+- [x] Multibyte persistent context fails before ready when its exact context
+  envelope exceeds 48,000 encoded bytes under the 65,536-byte hook cap.
+- [x] Version-11 ready recipes retain their original full-goal rendering after
+  upgrade; current shared-prefix rendering is policy-versioned.
+- [x] Oversized UTF-8 hook model metadata blocks before reservation or preflight
+  and cannot consume the reserved Codex first-pass-header budget after ready.
 - [ ] The replacement trial selects and launches at least one specialist/team,
   or records a defensible gap plus an actual hiring decision.
 - [ ] The next ordinary canary reports exact activation evidence and can create

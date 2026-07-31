@@ -16,6 +16,7 @@ from agency_runtime.core.bounded_values import bounded_unique_strings
 from agency_runtime.core.config import AgencyConfig, DelegationConfig
 from agency_runtime.core.host_capabilities import project_host_capability_receipt
 from agency_runtime.core.preflight_versions import (
+    PREFLIGHT_CONTEXT_POLICY_VERSION,
     PREFLIGHT_REPLAY_RECIPE_VERSION,
     SUPPORTED_PREFLIGHT_RECIPE_VERSIONS,
 )
@@ -43,7 +44,8 @@ from agency_runtime.core.turn_intent import (
 
 MAX_PREFLIGHT_CONTEXT_CHARS = 32_000
 LITELLM_PREFLIGHT_CONTEXT_CHARS = 16_384
-PERSISTENT_HOST_CONTEXT_CHARS = 8_192
+PERSISTENT_HOST_CONTEXT_CHARS = MAX_PREFLIGHT_CONTEXT_CHARS
+PERSISTENT_HOST_CONTEXT_OUTPUT_BYTES = 48_000
 _SUPPORTED_PREFLIGHT_RECIPE_VERSIONS = SUPPORTED_PREFLIGHT_RECIPE_VERSIONS
 _PREFLIGHT_OBSERVER_INITIAL_POLL_SECONDS = 0.025
 _PREFLIGHT_OBSERVER_MAX_POLL_SECONDS = 0.25
@@ -229,11 +231,29 @@ def _suggestion_recipe(
     return build_unit_agent_plan(routing, delegation)
 
 
+def _shared_delegation_goal_prefix(goals: list[str]) -> str:
+    """Return the exact request prefix repeated by typed workforce unit goals."""
+
+    if len(goals) < 2 or any(not isinstance(goal, str) or not goal for goal in goals):
+        return ""
+    marker = ". Work unit "
+    marker_at = goals[0].rfind(marker)
+    if marker_at < 0:
+        return ""
+    prefix = goals[0][: marker_at + len(marker)]
+    if len(prefix) < 128 or any(
+        not goal.startswith(prefix) or len(goal) == len(prefix) for goal in goals
+    ):
+        return ""
+    return prefix
+
+
 def _isolated_delegation_context(
     routing: dict[str, Any],
     *,
     host: str,
     unit_plan: list[dict[str, Any]],
+    context_policy_version: int = PREFLIGHT_CONTEXT_POLICY_VERSION,
 ) -> str:
     """Render an exact, bounded unit plan for persistent native-host parents."""
 
@@ -284,12 +304,25 @@ def _isolated_delegation_context(
                     "likely_files_or_resources": ["repository-workspace"],
                 }
             )
+    goals = [str(item.get("goal") or "") for item in hydrated]
+    shared_goal_prefix = (
+        _shared_delegation_goal_prefix(goals) if int(context_policy_version) >= 12 else ""
+    )
     lines = [
         "[AGENCY DELEGATION PLAN] Current-turn work units; the native host remains the scheduler.",
-        "Dispatch with the exact native label and goal shown. Hooks bind the audited specialist "
-        "and its full assignment contract only inside that child. Decline a row explicitly with "
-        "agency.decline_delegation when native delegation is not appropriate.",
+        "Dispatch with the exact native label and goal encoded below. Hooks bind the audited "
+        "specialist and its full assignment contract only inside that child. Decline a row "
+        "explicitly with agency.decline_delegation when native delegation is not appropriate.",
     ]
+    if shared_goal_prefix:
+        lines.extend(
+            (
+                f"shared_goal_prefix={json.dumps(shared_goal_prefix, ensure_ascii=False)}",
+                "For every row, set the native child message to the exact concatenation of the "
+                "JSON-decoded shared_goal_prefix and that row's JSON-decoded goal_suffix; add no "
+                "separator and change no character.",
+            )
+        )
     normalized_host = str(host or "").strip().casefold()
     if normalized_host == "codex":
         from agency_runtime.core.delegation.native_labels import (
@@ -304,10 +337,17 @@ def _isolated_delegation_context(
             else ""
         )
         dependencies = ",".join(item.get("dependencies", ())) or "none"
+        goal = str(item["goal"])
+        goal_field = "goal"
+        if shared_goal_prefix:
+            if not goal.startswith(shared_goal_prefix):
+                raise RuntimeError("isolated delegation goal prefix no longer matches")
+            goal = goal[len(shared_goal_prefix) :]
+            goal_field = "goal_suffix"
         lines.append(
             f"- unit={work_unit_id}; agent={item['recommended_agent']}; "
             f"strength={item['delegation_strength']}; depends_on={dependencies}"
-            f"{native_label}; goal={json.dumps(item['goal'], ensure_ascii=False)}"
+            f"{native_label}; {goal_field}={json.dumps(goal, ensure_ascii=False)}"
         )
     lines.append(native_delegation_instruction(normalized_host))
     return "\n".join(lines)
@@ -392,6 +432,41 @@ def _combine_context(
     return combined
 
 
+def _persistent_host_context_output_bytes(context: str) -> int:
+    """Return the exact context-only UserPromptSubmit envelope size."""
+
+    payload = {
+        "hookSpecificOutput": {
+            "hookEventName": "UserPromptSubmit",
+            "additionalContext": str(context or ""),
+        }
+    }
+    return (
+        len(
+            json.dumps(
+                payload,
+                allow_nan=False,
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        )
+        + 1
+    )
+
+
+def _require_persistent_host_context_output(
+    context: str,
+    *,
+    delivery_mode: str,
+) -> None:
+    """Reject an isolated context that cannot fit the bounded hook envelope."""
+
+    if delivery_mode != "isolated":
+        return
+    if _persistent_host_context_output_bytes(context) > PERSISTENT_HOST_CONTEXT_OUTPUT_BYTES:
+        raise RuntimeError("specialist recipe exceeds the encoded host delivery ceiling")
+
+
 def _context_policy_fingerprint(
     config: AgencyConfig,
     pipeline: Any,
@@ -407,7 +482,9 @@ def _context_policy_fingerprint(
     specialist, or combined-context formatting semantics change.
     """
     effective_context_version = (
-        int(context_policy_version) if context_policy_version is not None else int(recipe_version)
+        int(context_policy_version)
+        if context_policy_version is not None
+        else int(PREFLIGHT_CONTEXT_POLICY_VERSION)
     )
     policy = {
         "recipe_version": int(recipe_version),
@@ -439,6 +516,8 @@ def _context_policy_fingerprint(
             "child_inference_concurrency": config.delegation.child_inference_concurrency,
             "child_cache_ttl_seconds": config.delegation.child_cache_ttl_seconds,
         }
+    if effective_context_version >= 13:
+        policy["persistent_host_context_output_bytes"] = PERSISTENT_HOST_CONTEXT_OUTPUT_BYTES
     encoded = json.dumps(policy, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return sha256(encoded).hexdigest()
 
@@ -940,6 +1019,7 @@ def _result_from_recipe(
                 replay_routing,
                 host=str(recipe.get("host") or "unknown"),
                 unit_plan=unit_agent_plan,
+                context_policy_version=int(recipe_version),
             )
         )
         execution_context = _combine_context(
@@ -973,6 +1053,7 @@ def _result_from_recipe(
                     replay_routing,
                     host=str(recipe.get("host") or "unknown"),
                     unit_plan=unit_agent_plan,
+                    context_policy_version=int(recipe_version),
                 ),
                 maximum_chars=context_limit,
             )
@@ -994,6 +1075,10 @@ def _result_from_recipe(
             maximum_chars=context_limit,
         )
         loaded_slugs = selected.slugs
+    _require_persistent_host_context_output(
+        context,
+        delivery_mode=str(delivery_mode),
+    )
     return PreflightResult(
         session_id=session_id,
         trace_id=trace_id,

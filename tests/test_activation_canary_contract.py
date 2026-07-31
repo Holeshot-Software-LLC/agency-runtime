@@ -272,6 +272,98 @@ def test_activation_canary_uses_inference_owned_selection(
     assert hydrated[0]["goal"] == CODEX_ACTIVATION_CANARY_WORK_UNIT
 
 
+def test_existing_store_product_canary_can_hire_an_inference_declared_gap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.workforce import hiring as hiring_module
+
+    for name, value in _CANARY_ENV.items():
+        monkeypatch.setenv(name, value)
+    unit_id = "unit-05-documentation"
+    unit = SimpleNamespace(unit_id=unit_id)
+    outcome = SimpleNamespace(
+        inference_mode="inferred",
+        attempts=(SimpleNamespace(status="applied"),),
+        plan=SimpleNamespace(units=(unit,)),
+        proposal=SimpleNamespace(
+            units=(
+                SimpleNamespace(
+                    unit_id=unit_id,
+                    abstention_reasons=("inference-declared-gap",),
+                ),
+            )
+        ),
+        staffing=SimpleNamespace(
+            abstention_reasons=(
+                SimpleNamespace(
+                    unit_id=unit_id,
+                    code="required_agents_missing",
+                ),
+                SimpleNamespace(
+                    unit_id=unit_id,
+                    code="no_safe_sufficient_team",
+                ),
+                SimpleNamespace(
+                    unit_id=unit_id,
+                    code="recruiter_abstained",
+                ),
+            )
+        ),
+    )
+    request = SimpleNamespace(
+        user_message="Build the complete application in this workspace.",
+        host="codex",
+        platform="windows",
+        available_tools=("repository-write", "test-execution"),
+        session_id="product-canary-session",
+        trace_id="product-canary-trace",
+    )
+    snapshot = SimpleNamespace(generation=7, contracts=())
+    calls: list[str] = []
+
+    def hire(*_args: Any, **_kwargs: Any) -> SimpleNamespace:
+        calls.append(unit_id)
+        return SimpleNamespace(
+            status="declined",
+            reason_codes=("hiring_response_invalid",),
+            hiring_case=None,
+            worker=None,
+            notification="",
+            attempts=(),
+            workforce_changed=False,
+            pending_commit=None,
+        )
+
+    monkeypatch.setattr(hiring_module, "hire_contractor_for_gap", hire)
+
+    routed, routed_snapshot, routed_catalog, events = pipeline._run_gap_hiring(
+        outcome,
+        request,
+        AgencyConfig(),
+        object(),
+        snapshot,
+        [],
+        defer_commits=True,
+    )
+
+    assert calls == [unit_id]
+    assert routed is outcome
+    assert routed_snapshot is snapshot
+    assert routed_catalog == []
+    assert events == [
+        {
+            "unit_id": unit_id,
+            "status": "declined",
+            "reason_codes": ["hiring_response_invalid"],
+            "case_id": "",
+            "worker": "",
+            "version": "",
+            "notification": "",
+            "calls_used": 0,
+        }
+    ]
+
+
 def test_activation_canary_rejects_an_inference_team_outside_the_probe_contract(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

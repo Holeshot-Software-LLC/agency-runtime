@@ -24,7 +24,6 @@ from agency_runtime.core.installer_contracts import (
     CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
     CODEX_HOOK_EVENTS,
 )
-from agency_runtime.core.selector import pipeline
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -666,7 +665,7 @@ def test_current_profile_hook_uses_existing_current_store_mode(
     ]
 
 
-def test_restricted_activation_canary_skips_catalog_and_hiring_mutations(
+def test_restricted_activation_canary_skips_catalog_mutations(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
@@ -684,15 +683,3 @@ def test_restricted_activation_canary_skips_catalog_and_hiring_mutations(
         )
         is snapshot
     )
-
-    outcome = object()
-    workforce_snapshot = object()
-    catalog: list[dict[str, Any]] = []
-    assert pipeline._run_gap_hiring(
-        outcome,
-        object(),
-        object(),
-        object(),
-        workforce_snapshot,
-        catalog,
-    ) == (outcome, workforce_snapshot, catalog, [])

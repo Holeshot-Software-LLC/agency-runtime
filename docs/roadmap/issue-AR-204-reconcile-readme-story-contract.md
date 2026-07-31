@@ -13,12 +13,14 @@ related:
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
   - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
+  - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes:
@@ -30,7 +32,7 @@ epic: product
 issue_id: AR-204
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
-depends_on: []
+depends_on: [AR-206]
 blocks: [AR-205]
 ---
 
@@ -272,6 +274,66 @@ cloned-Store hook replay accepted inference-selected `code-reviewer` with one
 unit, binding, and assignment. The repair still needs exact merge/install and
 native activation before the one fresh product trial.
 
+PR 193 merged the activation repair as exact revision
+`f0fde9ee929e13587f62dd85147cf63b18b5d37e`; build
+`0.1.0+gf0fde9ee929e` is installed. Supported-bypass activation now passes with
+zero corrections and complete route, specialist-load, native delegation,
+worker-run, and finalization evidence. The build's sole product trial,
+`ar205-f0fde9e-readme-01`, nevertheless failed during preflight and left the
+workspace empty.
+
+Exact-prompt replay against a private Store copy proves the product path had a
+valid Codex capability receipt and applied both inference stages. Inference
+planned 11 units, staffed 10, and declared one documentation gap. The runtime
+did not attempt hiring because the product harness's existing-Store canary
+environment is currently treated as synonymous with the read-only activation
+canary. This is the next bounded product contradiction: activation must remain
+non-hiring, while an ordinary product request must be allowed to hire the
+narrow specialist inference says is missing.
+
+Commit `f349c21` repairs that separation and compactly encodes the one shared
+request prefix across exact native child goals. Its focused boundary passes 169
+tests with one skip. Two subsequent exact-prompt replays accepted complete
+inferred teams with no staffing reasons but both exceeded the legacy 8,192-
+character persistent-host ceiling. The compact ten-unit shape is 8,326
+characters and the configured sixteen-unit maximum is about 9,534 with
+realistic identities.
+
+The owner approved ADR-0123 and the source now gives persistent native parents
+the existing 32,000-character preflight ceiling with whole-context failure. A
+realistic sixteen-unit regression crosses 8,192, the mutation restoring the
+legacy cap is killed, and the 115-test focused boundary passes.
+
+PR 195 review found two valid gaps in that candidate. Version 13 now rejects a
+context-only UserPromptSubmit envelope above 48,000 encoded bytes before ready
+commit, leaving bounded headroom under the host's 65,536-byte hard output cap.
+Recipe reconstruction also gates shared-prefix rendering by the stored policy
+version, so version-11 recipes keep their original full-goal rows. The four
+direct regressions, 113-test affected boundary with one skip, six exact replay
+nodes with one skip, and both new decision mutations pass.
+
+Committed repair `b9d9ec4` passes the complete invalidated gate: the named
+Python spine is 636 passed with 6 skips, dashboard UI is 110/110, every routing
+gate passes, all 52 decision mutations are killed with unchanged source, Ruff
+validates 602 files, documentation validates 578 files, and diff integrity is
+clean. Ledger commit `87b56fd` records this exact pre-push checkpoint.
+
+The focused re-review of head `60111f8` found one remaining final-envelope P1:
+the Codex header appended caller-controlled model text after the context-only
+byte check. Native correlation now rejects model metadata above 512 UTF-8 bytes
+before reservation or preflight. The exact 9,000-emoji regression, its isolated
+mutation, and 238 affected tests with one skip pass. Committed repair `7727c0c`
+then passes 636 named Python tests with 6 skips, 110 dashboard tests, every
+routing gate, all 53 decision mutations with unchanged source, Ruff across 602
+files, documentation validation for 579 files, and clean diff integrity.
+
+The same long-lived Codex task then exposed AR-206: its immutable old Stop hook
+rejected an intact 558-node ready routing decision because the correlation
+reader retained a stale 256-node cap while the durable recipe admits 2,048.
+SQLite integrity and exact projection both pass. The bounded source repair and
+focused regression pass; the next exact installation must include this repair,
+and its Stop proof must run in a fresh task whose launcher can consume it.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired
@@ -288,7 +350,7 @@ native activation before the one fresh product trial.
   specialist decider.
 - [x] Attended and explicit autonomous native-install modes are both covered by
   the shared adapter contract; trust status is never reported as activation.
-- [ ] Current Codex carries the exact activation contract into hook processes
+- [x] Current Codex carries the exact activation contract into hook processes
   and proves hook start, route, exact specialist injection, and native child
   lifecycle separately.
 - [x] Missing, malformed, corrected, or evidence-mismatched headers cannot be

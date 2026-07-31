@@ -368,6 +368,188 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="product-canary-suppresses-gap-hiring",
+        invariant=(
+            "An ordinary product task may hire an inference-declared specialist gap even when "
+            "its isolated hook requires the existing Store."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before="""    from agency_runtime.core.roster.workforce import (
+        workforce_index_snapshot,
+        workforce_snapshot_with_contract,
+    )""",
+        after="""    from agency_runtime.core.codex_activation_verification import (
+        is_restricted_codex_activation_canary_environment,
+    )
+
+    if is_restricted_codex_activation_canary_environment():
+        return outcome, active_snapshot, active_catalog, []
+
+    from agency_runtime.core.roster.workforce import (
+        workforce_index_snapshot,
+        workforce_snapshot_with_contract,
+    )""",
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_existing_store_product_canary_can_hire_an_inference_declared_gap"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="isolated-plan-repeats-full-request-per-unit",
+        invariant=(
+            "A bounded isolated delegation plan encodes one shared request prefix rather than "
+            "repeating the complete request in every specialist row."
+        ),
+        source_path="agency_runtime/core/preflight_recipe.py",
+        before=(
+            "    if len(prefix) < 128 or any(\n"
+            "        not goal.startswith(prefix) or len(goal) == len(prefix) for goal in goals\n"
+            "    ):\n"
+            '        return ""\n'
+            "    return prefix"
+        ),
+        after=(
+            "    if len(prefix) < 128 or any(\n"
+            "        not goal.startswith(prefix) or len(goal) == len(prefix) for goal in goals\n"
+            "    ):\n"
+            '        return ""\n'
+            '    return ""'
+        ),
+        test_node=(
+            "tests/test_unit_aware_delegation.py::"
+            "test_isolated_multi_unit_context_encodes_one_shared_request_prefix"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="persistent-host-restores-legacy-context-ceiling",
+        invariant=(
+            "Persistent native parents may carry the complete bounded specialist team and "
+            "delegation plan up to the general preflight ceiling."
+        ),
+        source_path="agency_runtime/core/preflight_recipe.py",
+        before="PERSISTENT_HOST_CONTEXT_CHARS = MAX_PREFLIGHT_CONTEXT_CHARS",
+        after="PERSISTENT_HOST_CONTEXT_CHARS = 8_192",
+        test_node=(
+            "tests/test_unit_aware_delegation.py::"
+            "test_isolated_multi_unit_context_encodes_one_shared_request_prefix"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="persistent-host-drops-encoded-output-bound",
+        invariant=(
+            "Persistent native-parent context is rejected before ready commit when its exact "
+            "UTF-8 hook envelope exceeds the reserved output budget."
+        ),
+        source_path="agency_runtime/core/preflight_recipe.py",
+        before=(
+            "    if _persistent_host_context_output_bytes(context) "
+            "> PERSISTENT_HOST_CONTEXT_OUTPUT_BYTES:"
+        ),
+        after=(
+            "    if False and _persistent_host_context_output_bytes(context) "
+            "> PERSISTENT_HOST_CONTEXT_OUTPUT_BYTES:"
+        ),
+        test_node=(
+            "tests/test_preflight_bounds.py::"
+            "test_multibyte_complete_context_fails_before_ready_is_persisted"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-user-prompt-admits-oversized-model-header",
+        invariant=(
+            "Codex rejects an oversized UTF-8 model identifier before preflight can commit "
+            "a route whose appended evidence header exceeds the final hook envelope."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before=(
+            "        model = _bounded_optional_utf8_string(\n"
+            "            payload,\n"
+            '            "model",\n'
+            "            maximum_bytes=MAX_HOOK_MODEL_BYTES,\n"
+            "        )"
+        ),
+        after='        model = _optional_string(payload, "model")',
+        test_node=(
+            "tests/test_host_hooks.py::"
+            "test_codex_rejects_oversized_utf8_model_before_preflight_ready"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="legacy-preflight-replay-uses-current-goal-renderer",
+        invariant=(
+            "A stored legacy recipe reconstructs the exact full-goal rendering governed by "
+            "its recorded context-policy version."
+        ),
+        source_path="agency_runtime/core/preflight_recipe.py",
+        before=(
+            "    shared_goal_prefix = (\n"
+            "        _shared_delegation_goal_prefix(goals) "
+            'if int(context_policy_version) >= 12 else ""\n'
+            "    )"
+        ),
+        after="    shared_goal_prefix = _shared_delegation_goal_prefix(goals)",
+        test_node=(
+            "tests/test_unit_aware_delegation.py::"
+            "test_v11_isolated_context_preserves_full_goal_rows"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="ready-routing-receipt-restores-legacy-node-cap",
+        invariant=(
+            "Ready routing receipts accept every structurally bounded decision admitted by "
+            "the durable preflight recipe."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before="""def _routing_component_matches(
+    conn: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    routing: dict[str, Any],
+) -> bool:
+    rows = conn.execute(
+        "SELECT query_hash, context_fingerprint, source, decision "
+        "FROM routing_decisions WHERE session_id = ? AND trace_id = ? ORDER BY id",
+        (session_id, trace_id),
+    ).fetchall()
+    if len(rows) != 1:
+        return False
+    row = rows[0]
+    try:
+        decision = safe_load_bounded_json(
+            str(row["decision"] or ""),
+            maximum_bytes=64_000,
+            maximum_depth=8,
+            maximum_nodes=_MAX_RECIPE_NODES,
+        )""",
+        after="""def _routing_component_matches(
+    conn: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    routing: dict[str, Any],
+) -> bool:
+    rows = conn.execute(
+        "SELECT query_hash, context_fingerprint, source, decision "
+        "FROM routing_decisions WHERE session_id = ? AND trace_id = ? ORDER BY id",
+        (session_id, trace_id),
+    ).fetchall()
+    if len(rows) != 1:
+        return False
+    row = rows[0]
+    try:
+        decision = safe_load_bounded_json(
+            str(row["decision"] or ""),
+            maximum_bytes=64_000,
+            maximum_depth=8,
+            maximum_nodes=256,
+        )""",
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_ready_receipt_accepts_valid_routing_above_legacy_node_limit"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="activation-canary-allows-plan-subdivision",
         invariant=(
             "The exact indivisible Codex activation request constrains inference to one planned "

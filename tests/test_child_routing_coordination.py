@@ -1268,6 +1268,10 @@ def test_failed_preflight_validation_aborts_unpublished_child_bundle(tmp_path, m
         "agency_runtime.core.preflight._result_from_recipe",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("replay rejected")),
     )
+    monkeypatch.setattr(
+        "agency_runtime.core.preflight._require_substantive_specialist",
+        lambda *_args, **_kwargs: None,
+    )
     config = AgencyConfig(
         providers=(ProviderEntry(name="codex", type="cli", transport="codex"),),
         delegation=DelegationConfig(child_inference_budget=1),

@@ -18,8 +18,10 @@ import pytest
 
 from agency_runtime.adapters.hooks import (
     MAX_HOOK_INPUT_BYTES,
+    MAX_HOOK_MODEL_BYTES,
     MAX_HOOK_OUTPUT_BYTES,
     HookBridge,
+    HookInputError,
     _write_output,
     run_hook_stdio,
 )
@@ -349,6 +351,28 @@ def test_codex_user_prompt_maps_to_native_additional_context() -> None:
             "host": "codex",
         }
     ]
+
+
+def test_codex_rejects_oversized_utf8_model_before_preflight_ready() -> None:
+    adapter = FakeAdapter()
+    store = FakeStore()
+    bridge = HookBridge("codex", store=store, adapter=adapter)  # type: ignore[arg-type]
+    oversized_model = "🔥" * 9_000
+
+    assert len(oversized_model.encode("utf-8")) > MAX_HOOK_MODEL_BYTES
+    with pytest.raises(HookInputError, match="model exceeds the size limit"):
+        bridge.handle(
+            {
+                "hook_event_name": "UserPromptSubmit",
+                "session_id": "session-utf8-model",
+                "turn_id": "turn-utf8-model",
+                "model": oversized_model,
+                "prompt": "Review the bounded final Codex envelope",
+            }
+        )
+
+    assert adapter.preflight_calls == []
+    assert store.reservations == []
 
 
 def test_realistic_control_to_stop_sequence_uses_one_turn_trace(

@@ -373,7 +373,7 @@ def test_oversized_complete_context_fails_before_ready_is_persisted(
     monkeypatch.setattr(
         specialist_context,
         "format_isolated_specialist_context",
-        lambda *_args, **_kwargs: "x" * 20_000,
+        lambda *_args, **_kwargs: "x" * (preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS + 1),
     )
 
     with pytest.raises(RuntimeError, match="exceeds the host delivery ceiling"):
@@ -393,6 +393,50 @@ def test_oversized_complete_context_fails_before_ready_is_persisted(
         state = connection.execute(
             "SELECT preflight_state FROM runs WHERE trace_id = ?",
             ("oversized-context",),
+        ).fetchone()["preflight_state"]
+    finally:
+        connection.close()
+    assert state != "ready"
+
+
+def test_multibyte_complete_context_fails_before_ready_is_persisted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import specialist_context
+
+    store = Store(tmp_path / "multibyte-context.db")
+    _activate_test_specialist(store)
+    monkeypatch.setattr(pipeline, "route", _route_to_test_specialist())
+    multibyte_context = "🔥" * 12_000
+    assert len(multibyte_context) < preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS
+    assert (
+        preflight_recipe._persistent_host_context_output_bytes(multibyte_context)
+        > preflight_recipe.PERSISTENT_HOST_CONTEXT_OUTPUT_BYTES
+    )
+    monkeypatch.setattr(
+        specialist_context,
+        "format_isolated_specialist_context",
+        lambda *_args, **_kwargs: multibyte_context,
+    )
+
+    with pytest.raises(RuntimeError, match="encoded host delivery ceiling"):
+        run_preflight(
+            store,
+            session_id="session",
+            user_message="Review the runtime",
+            host="codex",
+            trace_id="multibyte-context",
+        )
+
+    run = store.get_run("multibyte-context")
+    assert run is not None
+    assert run["status"] == "preflight_failed"
+    connection = store._connect()
+    try:
+        state = connection.execute(
+            "SELECT preflight_state FROM runs WHERE trace_id = ?",
+            ("multibyte-context",),
         ).fetchone()["preflight_state"]
     finally:
         connection.close()

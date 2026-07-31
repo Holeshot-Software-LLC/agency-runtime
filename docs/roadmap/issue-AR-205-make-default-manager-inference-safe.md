@@ -8,9 +8,11 @@ tags: [product, routing, managers, inference, roster]
 related:
   - README.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
   - docs/decisions/0065-keep-compact-resident-manager-kernel.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -141,6 +143,49 @@ the exact installed product proof and final README-story acceptance.
   into inference without supplying a worker identity. A fresh cloned-Store hook
   replay accepted inference-selected `code-reviewer`, one verified binding, and
   one immediate delegation assignment. Native exact-installed proof remains.
+- PR 193 merged exact revision
+  `f0fde9ee929e13587f62dd85147cf63b18b5d37e`; its installed activation proof is
+  correction-free and includes the complete inferred specialist lifecycle.
+  Product trial `ar205-f0fde9e-readme-01` then failed in preflight. A private
+  exact-prompt replay showed inference planned 11 units, staffed 10, and
+  declared the documentation unit an explicit gap. No contractor was hired
+  because the ordinary product process inherits an environment-wide read-only
+  activation guard. The next repair is task-specific separation, not a new
+  deterministic worker or a weaker staffing verifier.
+- Commit `f349c21` repairs that separation and keeps exact activation read-only.
+  It also encodes the shared request once across exact child goals and versions
+  the new context policy. The focused boundary passes 169 tests with one skip.
+  Two exact-prompt replays then accepted complete nine- and ten-unit teams with
+  no staffing reasons before the same 8,192-character delivery ceiling failed.
+  Read-only sizing puts the ten-unit shape at 8,326 and the configured sixteen-
+  unit maximum at about 9,534. The owner approved ADR-0123; persistent native
+  parents now use the 32,000-character preflight ceiling, a sixteen-unit
+  behavior regression crosses the former cap, its legacy-cap mutation is
+  killed, and the 115-test focused boundary passes.
+- AR-206 isolates a separate evidence-reader defect from this staffing result:
+  a valid 558-node ready decision was rejected only because Stop correlation
+  used a stale 256-node cap. The Store is healthy, exact projection matches,
+  and the bounded verifier regression is green. Fresh-task proof follows the
+  next exact install; no staffing evidence is being inferred from the header.
+- PR 195 review found two valid delivery-policy gaps after the 32k approval:
+  multibyte context could overflow the encoded hook output, and version-11
+  recipes could receive the newer compressed renderer. Version 13 rejects the
+  exact context envelope above 48,000 encoded bytes before ready and preserves
+  version-11 full-goal rows. Both new regressions and mutations pass without
+  adding a deterministic worker or selector.
+- Committed repair `b9d9ec4` passes the complete invalidated gate: 636 named
+  Python tests with 6 skips, 110 dashboard tests, every routing-evaluation gate,
+  52/52 killed decision mutations with unchanged source, Ruff across 602 files,
+  documentation validation for 578 files, and clean diff integrity. Ledger
+  commit `87b56fd` records the exact checkpoint.
+- The focused re-review of head `60111f8` found that unbounded non-ASCII model
+  metadata could overflow the final Codex header after ready. The source now
+  rejects it above 512 UTF-8 bytes before reservation or preflight. Its direct
+  regression, isolated mutation, and 238-test affected boundary pass with one
+  skip. Commit `7727c0c` then passes the 636-test named Python spine with 6
+  skips, 110 dashboard tests, every routing gate, all 53 decision mutations
+  with unchanged source, Ruff across 602 files, 579 validated docs, and clean
+  diff integrity.
 
 ## Acceptance
 

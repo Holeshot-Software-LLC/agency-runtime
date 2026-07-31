@@ -9,17 +9,19 @@ related:
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
+  - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-205
-branch: codex/ar-203-activation-planning-contract
-evidence_commit: 271e5a01d08b74dbe755662de997a32d04e5e735
-minimum_ledger_commit: 3010813eaac39c0d799817cca19e0419acfbde59
+branch: codex/ar-204-readme-product-proof
+evidence_commit: 7727c0cd9bba3824acd3722c6c3964086667cfc9
+minimum_ledger_commit: 4081265af803f85ecafb5372a74e0fd06a93e110
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
 ---
@@ -33,23 +35,18 @@ acceptance; this capsule records only current proof and the next package.
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 191 merged the frozen README-story source as exact revision
-  `cc322381ec932452f0575445dc174510e4caad6f`; exact build
-  `0.1.0+gcc322381ec93` is installed.
-- Current-profile activation selected `code-reviewer` through real workforce
-  inference and completed one grant, load, native spawn/wait, delegation,
+- PR 193 merged exact revision `f0fde9ee929e13587f62dd85147cf63b18b5d37e`;
+  exact build `0.1.0+gf0fde9ee929e` is installed.
+- Current-profile supported-bypass activation selected `code-reviewer` through
+  real inference and completed grant, load, native spawn/wait, delegation,
   worker run, and accepted finalization with zero corrections.
-- The only product trial for that exact build,
-  `ar205-cc32238-readme-01`, is terminal `NO-GO`; it stopped at preflight and
-  left the workspace empty. Do not rerun that build.
-- The current branch repairs the first causal boundary without deterministic
-  staffing: inference receives exact plan vetoes and non-ranked typed coverage,
-  while inference still authors the plan, ranks specialists, selects a team,
-  and declares any gap.
-- PR 192 merged and its exact build reached activation inference, but the
-  canary's valid specialist selection was rejected because the inferred plan
-  did not preserve its explicit indivisible review shape. No product trial was
-  consumed on that build.
+- The only product trial for that build, `ar205-f0fde9e-readme-01`, is terminal
+  `NO-GO`; it reached `preflight_failed` after 101.1 seconds and left the
+  workspace empty. Do not rerun that build.
+- Exact-prompt private replay proves inference authored 11 specialized units
+  and staffed 10. It explicitly declared the documentation unit uncovered, but
+  gap hiring was never entered because the product harness was mistaken for
+  the read-only activation canary.
 - Owner-untracked `docs/analysis/2026-07-25-deep-audit-findings.md` and `uv.lock`
   remain untouched.
 
@@ -90,13 +87,49 @@ acceptance; this capsule records only current proof and the next package.
   Store hook replay produced one accepted binding and assignment with immediate
   delegation. Focused tests pass 72 cases and two new decision mutations cover
   removal of either request-bound constraint.
+- PR 193 merged that repair and native exact-installed activation is now green.
+  Product preflight advertises repository-write, test-execution, and native-
+  delegation capabilities; the remaining defect is the environment-wide
+  early return that suppresses inference-declared contractor hiring.
+- Commit `f349c21` removes that early return while retaining exact activation
+  no-hiring behavior. It also deduplicates the shared request prefix across
+  exact child goals and versions the context policy. The focused boundary
+  passes 169 tests with one intentional skip.
+- Two fresh product-shaped replays accepted complete teams with no staffing
+  reasons, then failed at the same 8,192-character isolated-parent ceiling. A
+  ten-unit plan needs 8,326 characters; the configured sixteen-unit maximum
+  needs about 9,534 with realistic identities. This repeated boundary now waits
+  for owner direction under the explicit stop contract.
+- AR-206 separately proves the current Store and ready receipt are intact; the
+  long-lived task's old Stop verifier alone rejects the valid 558-node routing
+  decision under a stale 256-node cap. The source repair aligns it with the
+  2,048-node durable recipe bound and passes 22 focused warning-strict tests.
+- ADR-0123 is approved. Commit 839ddee raises only the persistent parent limit
+  to 32,000, proves the complete sixteen-unit shape, kills the 8,192 mutation,
+  and passes the 115-test focused boundary.
+- The exact post-review committed tree passes the named fast Python spine (636
+  passed, 6 skipped), dashboard UI (110 passed), every routing evaluation gate,
+  Ruff across 602 files, all 52 decision mutations with zero survivors or
+  invalid results and unchanged source, and documentation validation for 578
+  files.
+- PR 195 review found two valid context-delivery gaps. Version 13 now
+  byte-bounds the exact context envelope before ready and preserves version-11
+  full-goal rendering. Four direct tests, 113 affected tests with one skip, six
+  exact replay nodes with one skip, and both new mutations pass.
+- Focused re-review of head 60111f8 found unbounded non-ASCII model metadata
+  could overflow the appended Codex header. The source rejects it above 512
+  UTF-8 bytes before reservation or preflight; its direct regression, isolated
+  mutation, and 238 affected tests with one skip pass. The committed rerun
+  passes 636 named tests with 6 skips, 110 dashboard tests, every routing gate,
+  all 53 mutations with unchanged source, Ruff across 602 files, 579 validated
+  docs, and diff integrity.
 
 ## exact-blocker
 
-The activation repair is committed and replay-proven but still needs the local
-fast gate, merge, exact install, and native activation proof. No current build
-yet proves a specialist team, native delegation, workspace write, product
-artifacts, and zero corrections in one end-to-end run.
+No current build proves a specialist team, native delegation, workspace write,
+product artifacts, and zero corrections in one end-to-end run. Product routing
+and the repaired context policy are fully fast-green; push and focused P1 re-
+review, merge, exact install, and the new-build trial remain.
 
 ## same-task-continuity
 
@@ -106,10 +139,11 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Verify, merge, and exact-install the activation planning repair.
-2. Prove native activation, then run one supported-bypassed product trial for
-   that exact build.
-3. Require zero corrections, a real specialist route/delegation chain,
+1. Record exact fast evidence, push, reply to the P1, and complete the allowed
+   focused high-severity re-review.
+2. Merge and exact-install the context policy plus AR-206, then prove native
+   activation and run one supported-bypassed product trial for the new build.
+3. Require zero corrections, a real specialist or hired-contractor chain,
    workspace-write proof, and product artifacts; then generate the local report
    and OpenClaw handoff.
 

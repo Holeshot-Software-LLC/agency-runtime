@@ -962,7 +962,7 @@ def _routing_component_matches(
             str(row["decision"] or ""),
             maximum_bytes=64_000,
             maximum_depth=8,
-            maximum_nodes=256,
+            maximum_nodes=_MAX_RECIPE_NODES,
         )
     except (TypeError, ValueError):
         return False
