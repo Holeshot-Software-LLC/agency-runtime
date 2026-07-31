@@ -430,6 +430,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5328070` | 2026-07-31 | Merge pull request #198 from Holeshot-Software-LLC/codex/ar-207-codex-host-notice | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 | `7ce640a` | 2026-07-31 | fix(codex): accept exact 2 percent skill notice | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | [detail](2026-07-31-7ce640a-exact-2-percent-skill-notice.md) |
 | `5ad4aef` | 2026-07-31 | Merge pull request #199 from Holeshot-Software-LLC/codex/ar-207-codex-host-notice-percent | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
+| `ea376a5` | 2026-07-31 | docs(roadmap): checkpoint exact product routing failure | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
