@@ -57,18 +57,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   header, zero corrections, proven Store evidence, three admitted host notices,
   and no unexpected item.
 - Product trial `ar207-5ad4aef-readme-01` is consumed and terminal `NO-GO`.
-  Its persisted preflight failed at routing validation before any provider
-  attempt, route, tool, response, header, or workspace write.
+  Its persisted preflight failed at routing validation with an empty durable
+  attempt list and no route, tool, response, header, or workspace write. That
+  empty list did not prove inference was never entered.
+- An exact-prompt no-call replay reached the provider boundary. A fresh online
+  replay against a private Store backup then reached `ready` after two
+  `gpt-5.6-luna` calls, with eight inferred units and eight fitting specialists.
 
 ## completed-evidence
 
-- Activation session `019fb8da-969a-75d3-9ad7-686094d35324`, trace
-  `019fb8da-a3c4-78d0-bfc5-44cf6d9ea1c1` proved `code-reviewer`, one grant,
-  consumption, load, worker, native child, completed delegation, accepted
-  finalization, valid first-pass header, and correction count zero.
-- Its persisted parent rollout contains only `spawn_agent` and `wait_agent`;
-  Store activation evidence is proven. No repository, shell, MCP, or product
-  tool ran in the parent.
 - Exact-installed activation session `019fb90b-dc97-7db0-891a-3aeea357ed3b`,
   trace `019fb90b-e95d-7bf2-84ae-fd0efb150816`, selected `code-reviewer` and
   persisted one route, unit, grant, consumption, load, worker, native child,
@@ -85,6 +82,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage
   `routing`, reason `routing_failed`, exception category `validation_error`,
   and zero provider attempts. Its exact workspace remained empty.
+- Cloned replay session `a851fa51-aff6-4f9a-8f6f-7941d0af7111`, trace
+  `53c878e2-37e3-4c4d-ac0e-708c1e7fe72c`, and run
+  `24a13190-37dc-40b0-85b8-e87ec3ad75ae` reached preflight `ready` in 73.607
+  seconds. It planned eight units and selected `codebase-onboarding-engineer`,
+  `python-application-engineer`, `typescript-application-engineer`,
+  `software-test-engineer`, `code-reviewer`,
+  `application-security-engineer`, `application-integration-verifier`, and
+  `technical-writer`. It did not execute or grade the product.
 - Codex 0.146 maps non-critical Warning, ConfigWarning, DeprecationNotice, and
   ModelRerouted notifications to completed JSONL items whose type is `error`.
 - The exact parent catalog retained all 67 skills but removed 11,805
@@ -116,15 +121,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The exact `5ad4aef` activation is green, but its one allowed product trial
-failed at routing validation after route-request construction and before the
-provider was called. The persisted receipt intentionally excludes raw exception
-text, so the next bounded package must reproduce the same pre-provider failure
-against isolated or cloned Store state and capture the local traceback without
-spending another product trial. A thread-aware audit also found four unresolved
-PR 198 review threads: the product host-notice projection is a confirmed code
-gap; the claimed worklog ancestry defect is contradicted by current Git history;
-and the separate AR plus durable ADR records remain missing.
+The exact `5ad4aef` activation is green, but its one allowed product trial is a
+terminal routing `NO-GO`. The exact isolated replay no longer reproduces that
+validation exception and instead reaches a ready eight-specialist plan. All PR
+198 threads are resolved, including the confirmed product host-notice projection
+repair and its AR-208/#200/ADR-0125 records. The next hard boundary is therefore
+the new-build product trial, not an invented deterministic routing patch.
 
 ## same-task-continuity
 
@@ -135,16 +137,11 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Address every valid PR 198 review thread: preserve host notices in product
-   evidence, create the missing AR/tracker and ADR records, and document the Git
-   ancestry evidence for the invalid worklog claim.
-2. Reproduce the routing `validation_error` against isolated or cloned state
-   and retain the exact local exception without another product-host run.
-3. Repair that first boundary and prove both repairs with focused regression
-   tests plus the named fast spine.
-4. Review, merge, and exact-install a new build, then run one activation canary
-   and one fresh product trial on that build.
-5. Prove a fresh-task `agency-steward` plus specialist header, then produce the
+1. Run focused checks and the named fast spine for the PR 198 host-notice
+   projection repair and corrected durable evidence.
+2. Review, merge, and exact-install that new build.
+3. Run one activation canary and one fresh product trial on the new exact build.
+4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
    local shareable evidence page and OpenClaw handoff.
 
 ## verification

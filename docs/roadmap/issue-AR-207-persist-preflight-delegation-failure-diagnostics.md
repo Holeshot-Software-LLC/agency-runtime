@@ -141,10 +141,29 @@ the parent emitted no delegation tool call or response.
   `routing` with reason `routing_failed`, exception category
   `validation_error`, and zero provider attempts. No route, tool, response,
   header, or workspace write was produced. Correction count remained zero.
-- That consumed trial narrows the first remaining product boundary to a
-  validation exception inside routing after route-request construction and
-  before provider invocation. Diagnosis must use isolated or cloned state; the
-  product trial must not be rerun on `5ad4aef`.
+- The zero-attempt receipt did not prove that inference was never invoked.
+  A no-call replay of the exact 2,322-character wrapped prompt reached the
+  structured-provider boundary, disproving the earlier pre-provider diagnosis.
+- A fresh online replay against a private SQLite backup then completed planner
+  and recruiter calls on `gpt-5.6-luna` in 73.607 seconds. Session
+  `a851fa51-aff6-4f9a-8f6f-7941d0af7111`, trace
+  `53c878e2-37e3-4c4d-ac0e-708c1e7fe72c`, and run
+  `24a13190-37dc-40b0-85b8-e87ec3ad75ae` reached `ready` with eight inferred
+  work units and eight fitting specialists: `codebase-onboarding-engineer`,
+  `python-application-engineer`, `typescript-application-engineer`,
+  `software-test-engineer`, `code-reviewer`,
+  `application-security-engineer`, `application-integration-verifier`, and
+  `technical-writer`. The replay was preflight-only; it did not claim native
+  launch, delegation, product artifacts, or a product-trial pass.
+- The exact installed routing sources match the checkout byte-for-byte. The
+  consumed failure is therefore response- or state-specific and is not
+  currently reproducible as a deterministic routing defect. It remains a
+  terminal `NO-GO`; no product trial may be rerun on `5ad4aef`.
+- All four previously unresolved PR 198 Codex threads now have evidence-backed
+  replies and are resolved. The valid product-evidence gap is fixed by
+  `947dafb`; AR-208 maps to tracker #200 and ADR-0125. The alleged worklog
+  ancestry defect was closed only after Git proved both recorded commits are
+  ancestors of the reviewed revision.
 
 ## Approach
 
