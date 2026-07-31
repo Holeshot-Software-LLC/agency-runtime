@@ -20,10 +20,13 @@ from typing import Any
 from agency_runtime import __version__
 from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig
-from agency_runtime.core.selector.cache import clear_cache
+from agency_runtime.core.selector.cache import cache_put, clear_cache
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
-from agency_runtime.core.selector.compatibility import clear_eligibility_cache
-from agency_runtime.core.selector.pipeline import route
+from agency_runtime.core.selector.compatibility import (
+    clear_eligibility_cache,
+    enforce_compatible_set,
+)
+from agency_runtime.core.selector.pipeline import build_route_request, route
 from agency_runtime.core.selector.semantic_retrieval import (
     RevisionedCatalog,
     clear_semantic_retrieval_cache,
@@ -430,8 +433,10 @@ def run_candidate_microbenchmark(
     consistent = consistent and all(result == expected for result in concurrent_results)
 
     # Measure the complete pipeline cache path, including context fingerprint
-    # validation and per-request trace generation. The provider chain is
-    # explicitly offline so this remains deterministic and network-free.
+    # validation and per-request trace generation. Seed one explicitly marked
+    # inference-shaped fixture under the exact production cache key. This keeps
+    # the benchmark deterministic and network-free without granting offline
+    # deterministic routing authority to select a specialist.
     offline = AgencyConfig(
         providers=(),
         judge=JudgeConfig(model="", confidence_bypass_threshold=999.0),
@@ -450,6 +455,36 @@ def run_candidate_microbenchmark(
             previous_turn_kind="new_intent",
             active_plan=True,
         ),
+    )
+    cache_request = build_route_request(
+        "benchmark-cache-seed",
+        cache_query,
+        catalog,
+        offline,
+        trace_id="benchmark-cache-seed",
+    )
+    seed_id = agent_identity(cache_request.catalog[0])
+    compatibility = enforce_compatible_set(
+        [seed_id],
+        cache_request.catalog,
+        limit=offline.judge.max_selected,
+    )
+    if compatibility["selected_ids"] != [seed_id]:
+        raise RuntimeError("cache benchmark fixture did not satisfy compatibility")
+    cache_put(
+        cache_request.cache_key,
+        {
+            "selected_ids": [seed_id],
+            "semantic_ids": [seed_id],
+            "confidence": 1.0,
+            "latency_ms": 0,
+            "status": "accepted",
+            "source": "synthetic_inference_benchmark_fixture",
+            "source_message_hash": cache_request.source_message_hash,
+            "compatibility": compatibility,
+            "fallback_applied": False,
+            "fallback_companion_ids": [],
+        },
     )
     cache_warm = route(
         "benchmark-cache-warm",
@@ -516,6 +551,7 @@ def run_candidate_microbenchmark(
         "concurrent_total_ms": round(concurrent_ms, 3),
         "concurrent_calls_per_second": round(concurrent_calls / max(concurrent_ms / 1000, 1e-9), 2),
         "deterministic": consistent,
+        "cache_seed_authority": "synthetic_inference_receipt",
         "cache_hit_samples": len(cache_latencies_ms),
         "cache_hit_p50_ms": round(statistics.median(cache_latencies_ms), 3),
         "cache_hit_p95_ms": round(

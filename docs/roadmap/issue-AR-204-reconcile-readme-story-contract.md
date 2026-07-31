@@ -11,6 +11,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
+  - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
@@ -195,6 +196,23 @@ server was stopped and its token expired. This proves the source candidate's
 dashboard boundary; the exact merged installation still owns the final product
 trial.
 
+The named fast spine then exposed a remaining inference-authority defect rather
+than accepting a false green report: the legacy route preserved
+`inference_unavailable` but merged a deterministic policy companion into
+`selected_ids`. The route now suppresses every specialist identity projection
+on terminal inference failure while retaining only action classification for
+diagnosis. Its focused 26-test routing suite passes, and the new curated
+mutation proves restoring the deterministic merge fails the exact regression.
+
+ADR-0121 supersedes the obsolete offline-selection interpretation of the
+routing gate. Report/corpus v1.4 measures the exact production candidate-union
+recall path under `deterministic_candidate_recall_only`; it does not claim a
+selected team. The standalone command passes all gates across 37 routing, 30
+policy, and 22 delegation cases: required candidate and case recall are 1.0,
+top-1 relevance is 1.0, forbidden-candidate rate is 0, and abstention accuracy
+is 1.0. Its production cache-path fixture is explicitly labelled synthetic
+inference evidence rather than hidden deterministic selection.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired
@@ -218,7 +236,7 @@ trial.
   accepted as a successful turn; success requires correction count zero.
 - [x] Dashboard success proves automatic token authentication, packaged render,
   configuration read, one reversible owner write, and exact restoration.
-- [ ] README, troubleshooting, threat model, roadmap, decisions, and tests state
+- [x] README, troubleshooting, threat model, roadmap, decisions, and tests state
   the same contract without stale operator-presence or offline-selection text.
 - [ ] The named fast verification spine passes before the live demo resumes.
 - [ ] One exact installed build completes the README product trial with a real

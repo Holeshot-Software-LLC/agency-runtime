@@ -36,6 +36,10 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- `agency eval routing` v1.4 now measures deterministic candidate recall rather
+  than presenting an offline no-provider route as specialist selection. The
+  report labels shortlist authority explicitly, retains policy, delegation,
+  scale, startup, and performance gates, and labels its synthetic cache seed.
 - Bare `agency install` now discovers every installed supported harness for the
   current OS and installs the applicable suite, including the dashboard by
   default. `--agent` narrows harness scope, `--no-dashboard` opts out of the
@@ -57,6 +61,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- A terminal `inference_unavailable` or `inference_invalid` route can no longer
+  be repopulated with deterministic policy companions or fallback identities.
+  Action classification remains available for diagnosis without becoming a
+  specialist recommendation.
 - Response evidence headers are now constructed before first publication.
   Native Codex receives exact Store snapshots at preflight and after evidence
   changes; Hermes and OpenClaw use `agency.finalize` once before their natural

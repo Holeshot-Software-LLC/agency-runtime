@@ -11,6 +11,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
+  - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/worklog/README.md
 supersedes: []
@@ -53,6 +54,10 @@ acceptance; this file records only current proof and the next package.
 - The packaged source dashboard completed an authenticated rendered owner round
   trip against a disposable private profile and restored its exact original
   configuration hash.
+- The fast spine exposed and repaired the remaining legacy-route leak: terminal
+  inference failure now projects no policy-companion or fallback identity.
+- Routing report/corpus v1.4 is explicitly candidate-recall-only and passes all
+  checked-in recall, policy, delegation, scale, startup, and performance gates.
 - Tracker [#189](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189)
   records AR-204 under `epic:product`.
 - AR-143 and AR-196 are `wont_do` and explicitly superseded by AR-204; their
@@ -119,13 +124,15 @@ acceptance; this file records only current proof and the next package.
   `d527e0901ce83b85a110d476d82045458768e92686c0dee4ac8583230311e944`.
 - The disposable dashboard process was stopped and its token expired. This is
   source-candidate evidence, not exact-installed product proof.
+- The terminal-failure regression passes, and its isolated curated mutation is
+  killed with the source checkout unchanged. The complete 38-mutation run is
+  still required before the package reaches its demo-ready checkpoint.
 
 ## exact-blocker
 
-Owner authority, inference-only staffing, activation contracts, first-pass
-header enforcement, and the rendered dashboard/configuration round trip are
-repaired and proved in source. Current production still lacks the named fast
-spine, exact installation, and one native Codex product trial.
+Source behavior is repaired through truthful candidate-recall evaluation. The
+complete 38-mutation gate, remaining named fast spine, exact installation, and
+one native Codex product trial still own the next proof boundaries.
 
 ## same-task-continuity
 
@@ -135,9 +142,9 @@ the owner-untracked analysis draft and `uv.lock`.
 
 ## next-bounded-work-package
 
-1. Run the named fast spine, checkpoint, install that exact build for Codex and
-   ZCode plus dashboard, then run one bypassed native Codex product trial.
-2. Generate the bounded local evidence page from the exact installed trial.
+1. Complete the 38-mutation gate and named fast spine, then checkpoint.
+2. Merge and install that exact build for Codex, ZCode, and dashboard; run one
+   bypassed native Codex trial and generate its bounded local evidence page.
 
 ## verification
 

@@ -167,6 +167,11 @@ agency eval decision-conformance --repository . --json
 agency eval full-roster --json --no-details
 ```
 
+The routing report's `deterministic_candidate_recall_only` contract measures
+the production shortlist, policy/delegation classification, and performance.
+It does not prove specialist selection; provider-backed and exact live runtime
+receipts own that evidence.
+
 When independently collected paired observations exist, validate them
 separately; this command does not create live-host evidence:
 

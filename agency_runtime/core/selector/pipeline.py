@@ -733,17 +733,23 @@ def _merge_computed_routing(
     request: _RouteRequest,
     signals: _RouteSignals,
 ) -> dict[str, Any]:
-    fallback_ids = set(signals.fallback_companion_ids)
-    proposed_semantic_ids = [
-        slug
-        for slug in _bounded_unique_strings(routing.get("selected_ids"))
-        if slug in request.active_ids and slug not in fallback_ids
-    ]
-    proposed_ids = list(proposed_semantic_ids)
-    for companion_id in signals.available_companion_ids:
-        if companion_id not in proposed_ids:
-            proposed_ids.append(companion_id)
     semantic_status = str(routing.get("status") or "unknown")
+    inference_failed = semantic_status in {"inference_unavailable", "inference_invalid"}
+    fallback_ids = set(signals.fallback_companion_ids)
+    proposed_semantic_ids = (
+        []
+        if inference_failed
+        else [
+            slug
+            for slug in _bounded_unique_strings(routing.get("selected_ids"))
+            if slug in request.active_ids and slug not in fallback_ids
+        ]
+    )
+    proposed_ids = list(proposed_semantic_ids)
+    if not inference_failed:
+        for companion_id in signals.available_companion_ids:
+            if companion_id not in proposed_ids:
+                proposed_ids.append(companion_id)
     routing["selected_ids"] = proposed_ids
     routing = _apply_compatible_selection(
         routing,
@@ -751,7 +757,7 @@ def _merge_computed_routing(
         limit=request.config.judge.max_selected,
         review_overflow_ids=(
             tuple(signals.available_companion_ids)
-            if _explicit_review_requested(request.user_message)
+            if not inference_failed and _explicit_review_requested(request.user_message)
             else ()
         ),
     )
@@ -760,16 +766,16 @@ def _merge_computed_routing(
     selected_companion_ids = [
         slug for slug in signals.available_companion_ids if slug in merged_ids
     ]
-    fallback_considered = not merged_ids
+    fallback_considered = not inference_failed and not merged_ids
     fallback_applied = fallback_considered and bool(signals.available_fallback_companion_ids)
     if fallback_applied:
         merged_ids.extend(
             slug for slug in signals.available_fallback_companion_ids if slug not in merged_ids
         )
 
-    companion_ids = list(signals.companion_ids)
-    available_companion_ids = list(signals.available_companion_ids)
-    unavailable_companion_ids = list(signals.unavailable_companion_ids)
+    companion_ids = [] if inference_failed else list(signals.companion_ids)
+    available_companion_ids = [] if inference_failed else list(signals.available_companion_ids)
+    unavailable_companion_ids = [] if inference_failed else list(signals.unavailable_companion_ids)
     if fallback_considered:
         companion_ids.extend(
             slug for slug in signals.available_fallback_companion_ids if slug not in companion_ids
@@ -797,7 +803,9 @@ def _merge_computed_routing(
         available_companion_ids=_bounded_unique_strings(available_companion_ids),
         unavailable_companion_ids=_bounded_unique_strings(unavailable_companion_ids),
         selected_companion_ids=_bounded_unique_strings(selected_companion_ids),
-        fallback_companion_ids=_bounded_unique_strings(signals.fallback_companion_ids),
+        fallback_companion_ids=(
+            [] if inference_failed else _bounded_unique_strings(signals.fallback_companion_ids)
+        ),
         fallback_considered=fallback_considered,
         fallback_applied=fallback_applied,
         policy_validation={

@@ -121,6 +121,16 @@ def test_install_shape_remains_closed_world_without_presence_metadata() -> None:
     parsed.future_install_flag = False
     assert is_exact_install_lifecycle(parsed) is False
 
+    autonomous = cli_main.build_parser().parse_args(
+        ["install", "--autonomous", "--verify-activation"]
+    )
+    assert is_exact_install_lifecycle(autonomous) is True
+    autonomous.autonomous = "true"
+    assert is_exact_install_lifecycle(autonomous) is False
+
+    unpaired = cli_main.build_parser().parse_args(["install", "--autonomous"])
+    assert is_exact_install_lifecycle(unpaired) is False
+
 
 def test_retired_operator_presence_module_is_not_shipped() -> None:
     package_root = Path(cli_main.__file__).resolve().parents[1]

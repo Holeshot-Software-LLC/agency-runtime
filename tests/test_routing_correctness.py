@@ -356,6 +356,46 @@ def test_no_inference_never_selects_even_a_strong_lexical_candidate() -> None:
     assert result["selected_ids"] == []
 
 
+def test_full_route_never_repopulates_inference_failure_from_policy() -> None:
+    clear_cache()
+    clear_session_routing()
+    catalog = [
+        {
+            "slug": "application-security-engineer",
+            "name": "Application Security Engineer",
+            "description": "Reviews authentication security",
+        },
+        {
+            "slug": "code-reviewer",
+            "name": "Code Reviewer",
+            "description": "Reviews code",
+        },
+    ]
+
+    result = route(
+        "terminal-inference-failure",
+        "Review this authentication design for security risks",
+        catalog,
+        config=_offline_config(),
+    )
+
+    assert result["status"] == "inference_unavailable"
+    assert result["source"] == "inference_failure"
+    assert result["companion_actions"] == ["SECURITY"]
+    for field in (
+        "selected_ids",
+        "semantic_ids",
+        "companion_ids",
+        "available_companion_ids",
+        "unavailable_companion_ids",
+        "selected_companion_ids",
+        "fallback_companion_ids",
+    ):
+        assert result[field] == []
+    assert result["fallback_considered"] is False
+    assert result["fallback_applied"] is False
+
+
 def test_no_inference_never_promotes_a_strong_match_over_an_incidental_match() -> None:
     catalog = [
         {

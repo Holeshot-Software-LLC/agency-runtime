@@ -9,7 +9,7 @@ known harmful confusions.  An abstain case must produce no positive candidate.
 from __future__ import annotations
 
 SCHEMA = "agency-runtime.routing-corpus"
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 
 CATALOG: list[dict[str, object]] = [
     {

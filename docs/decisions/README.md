@@ -45,6 +45,7 @@ Status meanings:
 - ADR-0061 Validate brokered control transition receipts against deterministic CAS semantics → ADR-0090 Model-facing control paths are read-only
 - ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls → ADR-0110 Remove Agency-owned Windows Hello and use harness-native trust → ADR-0111 Install the applicable suite by default → ADR-0117 Unify owner CLI and dashboard control authority
 - ADR-0087 Inference decides from a relevance shortlist → ADR-0088 Deterministic typed-recall is the offline floor → ADR-0118 Require inference-owned specialist staffing
+- ADR-0030 Gate routing changes with versioned quantitative evaluation → ADR-0121 Gate deterministic recall without selection authority
 - ADR-0077 Prove Codex hook activation behaviorally without bypassing trust → ADR-0119 Separate native trust modes from activation proof
 - ADR-0071 Bound native delegation correction to one evidence-checked pass → ADR-0120 Construct evidence headers before first publication
 
@@ -73,7 +74,7 @@ Status meanings:
 | [ADR-0021](0021-full-companion-policy-with-precedence.md) | Load a full companion policy with explicit precedence | Accepted |
 | [ADR-0022](0022-omit-preflight-for-trivial-messages.md) | Omit preflight context for trivial messages | Superseded |
 | [ADR-0023](0023-default-companions-for-trivial-messages.md) | Load default companions even for trivial messages | Superseded |
-| [ADR-0030](0030-versioned-quantitative-evaluation-gates.md) | Gate routing changes with versioned quantitative evaluation | Accepted |
+| [ADR-0030](0030-versioned-quantitative-evaluation-gates.md) | Gate routing changes with versioned quantitative evaluation | Superseded |
 | [ADR-0033](0033-explicit-companion-route-availability.md) | Classify every companion route against explicit availability | Accepted |
 | [ADR-0035](0035-authoritative-bounded-provider-chain.md) | Use an authoritative bounded provider chain with allowlisted CLI transports | Accepted |
 | [ADR-0054](0054-unit-aware-assignment-and-event-driven-dag.md) | Use unit-aware specialist assignment and event-driven DAG scheduling | Superseded |
@@ -94,6 +95,7 @@ Status meanings:
 | [ADR-0114](0114-fund-one-default-workforce-semantic-repair.md) | Fund one default workforce semantic repair | Accepted |
 | [ADR-0115](0115-aggregate-bounded-recruiter-repair-failures.md) | Aggregate bounded recruiter repair failures | Accepted |
 | [ADR-0118](0118-require-inference-owned-staffing.md) | Require inference-owned specialist staffing | Accepted |
+| [ADR-0121](0121-gate-deterministic-recall-without-selection-authority.md) | Gate deterministic recall without selection authority | Accepted |
 
 ## Evidence and observability
 

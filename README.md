@@ -535,6 +535,11 @@ agency explain "review this authentication design" --session-id demo
 agency eval routing --json --no-details
 ```
 
+`agency eval routing` is an offline deterministic candidate-recall, policy,
+delegation, and performance gate. Its candidate IDs are shortlist evidence for
+inference, not selected or recommended specialists. Substantive specialist
+selection requires a valid configured inference decision and runtime receipt.
+
 From a development checkout with the dev dependencies installed, prove that
 the focused suite rejects Agency's curated decision regressions:
 

@@ -105,12 +105,43 @@ def test_native_response_id_reconciles_to_planned_task_and_sessions_spawn(
             "count": 2,
             "units": ["audit delegation", "add regression tests"],
         },
+        "workforce_unit_bindings": [
+            {
+                "work_unit_id": work_unit_id_from_text("audit delegation"),
+                "selected": ["code-reviewer"],
+                "delivery": "delegate",
+                "timing": "immediate",
+                "depends_on": [],
+                "parallelization": "parallel",
+                "mutation_scope": "read_only",
+                "artifact_kind": "review-report",
+                "required_tools": [],
+                "required_evidence": ["review-report"],
+                "confidence": 1.0,
+            },
+            {
+                "work_unit_id": work_unit_id_from_text("add regression tests"),
+                "selected": ["code-reviewer"],
+                "delivery": "delegate",
+                "timing": "immediate",
+                "depends_on": [],
+                "parallelization": "parallel",
+                "mutation_scope": "workspace_write",
+                "artifact_kind": "test-code",
+                "required_tools": [],
+                "required_evidence": ["test-evidence"],
+                "confidence": 1.0,
+            },
+        ],
     }
-    record_suggested_delegations(
-        store,
-        session_id="session",
-        host="openclaw",
-        routing=routing,
+    assert (
+        record_suggested_delegations(
+            store,
+            session_id="session",
+            host="openclaw",
+            routing=routing,
+        )
+        == 2
     )
 
     OpenClawAdapter(store=store).post_tool_call_handler(

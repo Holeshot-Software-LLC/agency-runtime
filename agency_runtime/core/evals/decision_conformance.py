@@ -562,6 +562,23 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="terminal-inference-failure-restores-policy-selection",
+        invariant=(
+            "A terminal inference failure cannot be repopulated by deterministic policy "
+            "companions or fallbacks."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before=(
+            '    inference_failed = semantic_status in {"inference_unavailable", '
+            '"inference_invalid"}'
+        ),
+        after="    inference_failed = False",
+        test_node=(
+            "tests/test_routing_correctness.py::"
+            "test_full_route_never_repopulates_inference_failure_from_policy"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="codex-terminal-invalid-restores-continuation-prompt",
         invariant=(
             "A terminal Codex response failure stops the turn instead of creating a "

@@ -386,8 +386,10 @@ The canonical state is `~/.agency-runtime/run/control.json`. Do not edit, move,
 or delete it: missing, malformed, or unverifiable state intentionally fails
 enabled. On a restricted Windows host, a direct write may be unavailable even
 though the runtime can prove a canonical read-only state. The broker is
-intentionally read-only. A normal operator shell still cannot bypass the
-missing production presence verifier; use a dry run only:
+intentionally read-only. Agency has no separate presence verifier: a normal
+owner CLI invocation or the owner-authenticated dashboard may perform the
+governed mutation when it can reach the owner-private state. Use a dry run to
+diagnose a restricted shell without changing state:
 
 ```bash
 agency off --global --dry-run --json
@@ -785,12 +787,12 @@ inferred specialist. The dashboard lists configuration
 readiness and recent persisted failures, but intentionally performs no live
 provider probe.
 
-Repair or reorder the configured providers, then rerun a fresh preflight. If
-deterministic routing is the intended operating mode, remove every inference
-provider and legacy judge/Ollama configuration deliberately through `agency
-configure`; do not leave a broken configured provider merely to obtain silent
-fallback. Candidate audit with `--require-inference` is also fail-closed: a
-degraded inference review cannot approve or activate a quarantined revision.
+Repair or reorder the configured providers, then rerun a fresh preflight. If no
+provider is configured, configure one before submitting a substantive task;
+Agency has no deterministic specialist-selection mode. Do not leave a broken
+provider configured in the hope of obtaining a silent fallback. Candidate
+audit with `--require-inference` is also fail-closed: a degraded inference
+review cannot approve or activate a quarantined revision.
 
 ## No specialist is selected
 
@@ -808,10 +810,12 @@ agency explain "describe the concrete task" --session-id debug
 If the roster is empty, run `agency install` to seed missing starter agents or
 activate an approved roster snapshot. Check disabled, quarantined, retired,
 host/tool-ineligible, and conflict-rejected candidates before assuming retrieval
-failed. If inference is configured and its provider chain fails, the decision
-must remain visibly degraded; deterministic routing is available only as the
-explicit no-provider mode. The protected resident managers may coordinate a
-no-match turn, but they are not reported as semantic domain matches.
+failed. If inference is missing or its provider chain fails, the decision must
+remain visibly degraded with no selected, recommended, delegated, or hired
+specialist. Deterministic candidate recall may explain which shortlist boundary
+was inspected, but it cannot become a team. The protected resident managers may
+explain the failure or coordinate recovery; they are not reported as semantic
+domain matches.
 
 `agency policy --json` exits nonzero when a required bundled specialist is not
 active or a route is not classified. `missing_enabled` identifies required
