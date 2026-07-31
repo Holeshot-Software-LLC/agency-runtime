@@ -172,6 +172,18 @@ the parent emitted no delegation tool call or response.
   cache-hit p95, while decision conformance passed its baseline, killed all 64
   curated mutations, retained zero survivors or invalid cases, and proved the
   source tree unchanged.
+- PR 201 merged the repair with commit-preserving ancestry as exact revision
+  `dd85e7d981f9214104c61815b49f51e178896295`. The official VCS package is
+  exact-installed. Bare install discovered and registered only Codex and ZCode,
+  then recreated, started, and reached the per-user dashboard; its only
+  incomplete component was the designed Codex activation continuation.
+- Supported-bypass activation session `019fb978-1242-7c30-9c93-38751f4f26ff`,
+  trace `019fb978-1ec4-7f91-a9b2-9ab47abb15d8`, and run
+  `810eab84-69f2-4bdd-a711-1eb8a59bcc89` passed on that exact build. Inference
+  selected `code-reviewer` and persisted the route, grant, consumption, load,
+  native child, worker, completed delegation, and accepted finalization. The
+  first-pass header was valid, Store evidence was proven, correction count was
+  zero, and all three Codex host notices mapped to the two admitted types.
 
 ## Approach
 

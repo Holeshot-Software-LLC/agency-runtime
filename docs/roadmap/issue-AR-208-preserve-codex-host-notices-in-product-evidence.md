@@ -1,6 +1,6 @@
 ---
 title: "AR-208: Preserve exact Codex host notices in product evidence"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-31
 updated: 2026-07-31
@@ -46,12 +46,12 @@ exact packaged spelling. Activation evidence retains fixed notice types and a
 count without raw messages, and arbitrary or one-character near-miss errors
 remain fatal.
 
-The unresolved PR 198 review thread correctly identifies that
-`_codex_product_collaboration_projection` omits both notice fields. Two other
-valid review threads require this issue and ADR-0125. A fourth thread's claim
-that the worklog cites non-ancestor SHAs is disproven by current Git history:
-`fb797f9` and `ab5812f` are both ancestors of reviewed head `e492782` and merge
-`5328070` retains that ancestry.
+PR 201 preserves the validated fields through product evidence, merged as exact
+revision `dd85e7d981f9214104c61815b49f51e178896295`, and exact-installed cleanly.
+All four PR 198 review threads have evidence-backed replies and are resolved.
+The ancestry claim was closed only after Git proved `fb797f9` and `ab5812f`
+are ancestors of reviewed head `e492782` and merge `5328070`. Tracker #200 is
+closed as completed; the wider live product proof remains with AR-207.
 
 ## Approach
 
@@ -74,13 +74,13 @@ trial proves both the product projection and the wider README story.
 
 ## Acceptance
 
-- [ ] Product evidence retains validated `host_notice_types` and
+- [x] Product evidence retains validated `host_notice_types` and
   `host_notice_count`.
-- [ ] Raw host messages never enter persisted product evidence.
-- [ ] Unknown, near-match, duplicate, malformed, inconsistent, and unbounded
+- [x] Raw host messages never enter persisted product evidence.
+- [x] Unknown, near-match, duplicate, malformed, inconsistent, and unbounded
   notice data fail closed.
-- [ ] ADR-0125 and reciprocal roadmap, decision, and worklog traceability are
+- [x] ADR-0125 and reciprocal roadmap, decision, and worklog traceability are
   complete.
-- [ ] Focused warning-strict tests and the named fast spine pass.
-- [ ] Every PR 198 review thread has a commit-backed response and accurate
+- [x] Focused warning-strict tests and the named fast spine pass.
+- [x] Every PR 198 review thread has a commit-backed response and accurate
   resolved disposition.
