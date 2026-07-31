@@ -164,6 +164,14 @@ the parent emitted no delegation tool call or response.
   `947dafb`; AR-208 maps to tracker #200 and ADR-0125. The alleged worklog
   ancestry defect was closed only after Git proved both recorded commits are
   ancestors of the reviewed revision.
+- The repaired branch is locally fast-green. The focused product-host suite
+  passed 20 tests; the named warning-strict Python spine passed 636 tests with
+  six skips; dashboard UI passed 110 tests; documentation validated 587 files;
+  Ruff checked and formatted 603 files; and `git diff --check` passed. The
+  workspace CLI routing evaluation passed every gate, including 1.116 ms
+  cache-hit p95, while decision conformance passed its baseline, killed all 64
+  curated mutations, retained zero survivors or invalid cases, and proved the
+  source tree unchanged.
 
 ## Approach
 

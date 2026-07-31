@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-207-product-routing-validation
-evidence_commit: 5ad4aef8444d1437e2a29c1e9ac4df46dce7229f
-minimum_ledger_commit: 5c35953da9ea827779eeec3d47ee8e28c436e50c
+evidence_commit: bb1122ccb9e2dda4a763403363c83322af4f4f39
+minimum_ledger_commit: 5eaaf261244e2f04e6d4531caa236e9a2019a874
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -63,6 +63,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - An exact-prompt no-call replay reached the provider boundary. A fresh online
   replay against a private Store backup then reached `ready` after two
   `gpt-5.6-luna` calls, with eight inferred units and eight fitting specialists.
+- The `947dafb` product host-notice projection repair and corrected durable
+  evidence are locally fast-green; the next boundary is PR and exact install.
 
 ## completed-evidence
 
@@ -111,11 +113,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   specialist load, worker lifecycle, exact child prompt delivery, and completed
   child. Extra parent product tools, missing rows, correction count above zero,
   or failed workspace-write evidence are terminal failures.
-- The named warning-strict Python spine passed 636 tests with six skips;
-  dashboard UI passed 110 tests; routing passed every gate; all 63 curated
-  decision mutations were killed with zero survivors or invalid mutations;
-  source restoration and `git diff --check` passed.
-- Documentation validation passed all 584 maintained Markdown files.
+- The focused product-host suite passed 20 tests; the named warning-strict
+  Python spine passed 636 tests with six skips; dashboard UI passed 110 tests;
+  documentation validated 587 files; Ruff checked and formatted 603 files;
+  and `git diff --check` passed.
+- The workspace CLI routing evaluation passed every gate, including 1.116 ms
+  cache-hit p95. Decision conformance passed its 62.531-second baseline, killed
+  all 64 curated mutations, retained zero survivors or invalid cases, and
+  proved the source tree unchanged.
 - Builds and trials `cc322381`, `f0fde9ee`, `6b49f17d`, and `5ad4aef` remain
   consumed and must not be rerun.
 
@@ -126,7 +131,8 @@ terminal routing `NO-GO`. The exact isolated replay no longer reproduces that
 validation exception and instead reaches a ready eight-specialist plan. All PR
 198 threads are resolved, including the confirmed product host-notice projection
 repair and its AR-208/#200/ADR-0125 records. The next hard boundary is therefore
-the new-build product trial, not an invented deterministic routing patch.
+the repair PR, exact install, and new-build product trial, not an invented
+deterministic routing patch.
 
 ## same-task-continuity
 
@@ -137,11 +143,9 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run focused checks and the named fast spine for the PR 198 host-notice
-   projection repair and corrected durable evidence.
-2. Review, merge, and exact-install that new build.
-3. Run one activation canary and one fresh product trial on the new exact build.
-4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
+1. Review, merge, and exact-install the fast-green host-notice repair.
+2. Run one activation canary and one fresh product trial on the new exact build.
+3. Prove a fresh-task `agency-steward` plus specialist header, then produce the
    local shareable evidence page and OpenClaw handoff.
 
 ## verification
@@ -157,8 +161,8 @@ ruff format --check agency_runtime tests scripts
 python -m pytest <focused AR-207 boundary> -q -W error
 python -m pytest <named fast spine from AGENTS.md> -q -W error
 node --test tests/dashboard_ui.test.mjs
-agency eval routing --json --no-details
-agency eval decision-conformance --repository . --json
+.venv\Scripts\agency.exe eval routing --json --no-details
+.venv\Scripts\agency.exe eval decision-conformance --repository . --json
 git diff --check
 ~~~
 
