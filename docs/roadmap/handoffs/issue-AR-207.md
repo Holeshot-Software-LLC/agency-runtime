@@ -7,6 +7,7 @@ updated: 2026-07-31
 tags: [handoff, preflight, delegation, codex, diagnostics, evidence]
 related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
+  - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
@@ -16,6 +17,7 @@ related:
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
+  - docs/decisions/0127-bind-opaque-codex-children-through-exact-plan-labels.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -41,27 +43,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Default install discovered only Codex and ZCode, registered both, and reached
   the dashboard. Supported-bypass activation then passed with inferred and
   executed `code-reviewer`, a valid first-pass header, and zero corrections.
-- PR 201 merged the fast-green product projection repair as exact revision
-  `dd85e7d981f9214104c61815b49f51e178896295`. Its official VCS package is
-  installed; bare install discovered and registered only Codex and ZCode, then
-  recreated, started, and reached the dashboard.
-- Supported-bypass activation passed on `dd85e7d` with inferred
-  `code-reviewer`, the complete native lifecycle, valid first-pass header,
-  zero corrections, proven Store evidence, three admitted host notices, and
-  no unexpected item. That activation is consumed and must not be rerun.
 - Product trial `ar207-584b949-readme-01` is consumed and terminal `NO-GO`.
   Inference accepted eight units; Codex attempted the first native spawn, but
   no child started and no wait followed. All delegations remained `suggested`.
-- The missing edge was high-priority host authority: the product backend lacked
-  the developer instruction used by the passing activation canary. ADR-0126's
-  bounded parent/child repair is named-fast-green through all 66 mutations.
-- Product trial `ar207-5ad4aef-readme-01` is consumed and terminal `NO-GO`.
-  Its persisted preflight failed at routing validation with an empty durable
-  attempt list and no route, tool, response, header, or workspace write. That
-  empty list did not prove inference was never entered.
-- An exact-prompt no-call replay reached the provider boundary. A fresh online
-  replay against a private Store backup then reached `ready` after two
-  `gpt-5.6-luna` calls, with eight inferred units and eight fitting specialists.
 
 ## completed-evidence
 
@@ -77,6 +61,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   Parent rollout evidence contains one spawn call and its output, but zero
   child starts or waits. Finalization was `delegation_declined`; workspace
   trust and bypass were proven, workspace write was not, and corrections were zero.
+- Two retained real-host spawns prove Codex encrypts arbitrary child messages
+  before Agency's `PreToolUse` equality check. The old path recovered only the
+  fixed canary goal, explaining why activation passed while product delegation
+  could not start.
+- AR-209's source candidate admits only a strictly shaped opaque Codex message
+  whose native task label resolves exactly one persisted plan row. It preserves
+  the ciphertext, stages the exact grant, injects a token-free v2 specialist
+  context with the persisted goal hash at `SubagentStart`, and consumes it
+  against the observed child.
+- The candidate passes 97 focused warning-strict tests. Its arbitrary-goal
+  real-Store regression proves grant consumption, specialist load, worker
+  identity, and completed delegation. Both focused decision mutations are
+  killed with unchanged source.
 - Product session `019fb92d-694c-7e42-b553-ee53802bac99`, trace
   `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
   `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage
@@ -125,8 +122,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 Exact build `584b949` is consumed: activation passed, but its product trial is
-terminal `NO-GO`. The first failed edge is now first native spawn output to
-child start/wait; repair requires a new exact build.
+terminal `NO-GO`. AR-209's first-spawn repair is focused-green but not yet
+named-fast-verified, reviewed, merged, or exact-installed. No new live run is
+allowed before those boundaries pass.
 
 ## same-task-continuity
 
@@ -137,10 +135,10 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Diagnose the persisted first-spawn output without rerunning `584b949`.
-2. Repair that exact boundary, fast-verify, merge, and exact-install a new build.
-3. Repeat one activation and at most one product trial on the new exact build.
-   local shareable evidence page and OpenClaw handoff.
+1. Run the named fast gate for AR-209 and stop at its first failure.
+2. Review, merge, and exact-install that exact repair.
+3. Repeat one activation and at most one product trial on the new exact build,
+   then produce the local shareable evidence page and OpenClaw handoff.
 
 ## verification
 

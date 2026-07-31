@@ -21,6 +21,7 @@ from agency_runtime.core.roster.revisions import content_digest_identity, conten
 from agency_runtime.core.store.version_identity import normalize_version_identity
 
 NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 1
+CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 2
 MAX_NATIVE_CHILD_DELIVERY_METADATA_BYTES: Final[int] = 2_048
 MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS: Final[int] = 256
 
@@ -35,7 +36,18 @@ _MARKER_SUFFIX = " -->"
 _MARKER_PATTERN = re.compile(
     re.escape(_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
 )
-_FIELDS = frozenset(
+_CODEX_OPAQUE_SECTION = (
+    "[AGENCY EXACT SPECIALIST ACTIVATION v2]\n"
+    "Codex delivered the native assignment separately. The host hook bound the "
+    "exact audited specialist below to that persisted work-unit row. Treat these "
+    "as turn-scoped specialist instructions; do not copy them into the parent, "
+    "another worker, status text, or the final response.\n"
+)
+_CODEX_OPAQUE_MARKER_PREFIX = "<!-- agency-native-child-delivery:v2:"
+_CODEX_OPAQUE_MARKER_PATTERN = re.compile(
+    re.escape(_CODEX_OPAQUE_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
+)
+_V1_FIELDS = frozenset(
     {
         "version",
         "host",
@@ -49,6 +61,21 @@ _FIELDS = frozenset(
         "activation_token",
     }
 )
+_V2_FIELDS = frozenset(
+    {
+        "version",
+        "host",
+        "parent_session_id",
+        "parent_trace_id",
+        "tool_use_id",
+        "work_unit_id",
+        "specialist_slug",
+        "specialist_version",
+        "specialist_prompt_hash",
+        "goal_hash",
+    }
+)
+_DIGEST_PATTERN = re.compile(r"[0-9a-f]{64}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +91,7 @@ class NativeChildPromptDelivery:
     specialist_version: str
     specialist_prompt_hash: str
     activation_token: str
+    goal_hash: str
     original_task: str
     prompt_body: str
 
@@ -81,7 +109,11 @@ def _encoded_metadata(value: dict[str, Any]) -> str:
     return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
 
 
-def _decoded_metadata(value: str) -> dict[str, Any] | None:
+def _decoded_metadata(
+    value: str,
+    *,
+    expected_fields: frozenset[str],
+) -> dict[str, Any] | None:
     try:
         padding = "=" * (-len(value) % 4)
         payload = base64.b64decode(value + padding, altchars=b"-_", validate=True)
@@ -95,9 +127,52 @@ def _decoded_metadata(value: str) -> dict[str, Any] | None:
         )
     except (TypeError, ValueError):
         return None
-    if not isinstance(result, dict) or frozenset(result) != _FIELDS:
+    if not isinstance(result, dict) or frozenset(result) != expected_fields:
         return None
     return result
+
+
+def _identity_metadata(
+    *,
+    envelope_version: int,
+    host: object,
+    parent_session_id: object,
+    parent_trace_id: object,
+    tool_use_id: object,
+    work_unit_id: object,
+    specialist_slug: object,
+    specialist_version: object,
+    specialist_prompt_hash: object,
+) -> dict[str, Any]:
+    normalized_host = str(host or "").strip().casefold()
+    if normalized_host not in {"codex", "claude", "zcode"}:
+        raise ValueError("native-child prompt delivery host is unsupported")
+    session_id = validate_correlation_id(parent_session_id, field="parent_session_id")
+    trace_id = validate_correlation_id(parent_trace_id, field="parent_trace_id")
+    use_id = validate_correlation_id(tool_use_id, field="tool_use_id")
+    unit_id = validate_correlation_id(work_unit_id, field="work_unit_id")
+    slug = normalize_agent_slug(specialist_slug)
+    normalized_specialist_version = str(specialist_version or "").strip()
+    if (
+        not normalized_specialist_version
+        or normalize_version_identity(normalized_specialist_version)
+        != normalized_specialist_version
+    ):
+        raise ValueError("specialist_version is invalid")
+    content_hash = str(specialist_prompt_hash or "").strip().casefold()
+    if content_digest_identity(content_hash) is None:
+        raise ValueError("specialist_prompt_hash is invalid")
+    return {
+        "version": envelope_version,
+        "host": normalized_host,
+        "parent_session_id": session_id,
+        "parent_trace_id": trace_id,
+        "tool_use_id": use_id,
+        "work_unit_id": unit_id,
+        "specialist_slug": slug,
+        "specialist_version": normalized_specialist_version,
+        "specialist_prompt_hash": content_hash,
+    }
 
 
 def _metadata(
@@ -112,35 +187,51 @@ def _metadata(
     specialist_prompt_hash: object,
     activation_token: object,
 ) -> dict[str, Any]:
-    normalized_host = str(host or "").strip().casefold()
-    if normalized_host not in {"codex", "claude", "zcode"}:
-        raise ValueError("native-child prompt delivery host is unsupported")
-    session_id = validate_correlation_id(parent_session_id, field="parent_session_id")
-    trace_id = validate_correlation_id(parent_trace_id, field="parent_trace_id")
-    use_id = validate_correlation_id(tool_use_id, field="tool_use_id")
-    unit_id = validate_correlation_id(work_unit_id, field="work_unit_id")
-    slug = normalize_agent_slug(specialist_slug)
-    version = str(specialist_version or "").strip()
-    if not version or normalize_version_identity(version) != version:
-        raise ValueError("specialist_version is invalid")
-    content_hash = str(specialist_prompt_hash or "").strip().casefold()
-    if content_digest_identity(content_hash) is None:
-        raise ValueError("specialist_prompt_hash is invalid")
+    metadata = _identity_metadata(
+        envelope_version=NATIVE_CHILD_PROMPT_DELIVERY_VERSION,
+        host=host,
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        tool_use_id=tool_use_id,
+        work_unit_id=work_unit_id,
+        specialist_slug=specialist_slug,
+        specialist_version=specialist_version,
+        specialist_prompt_hash=specialist_prompt_hash,
+    )
     token = str(activation_token or "").strip()
     if not token or len(token) > MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS:
         raise ValueError("activation_token is invalid")
-    return {
-        "version": NATIVE_CHILD_PROMPT_DELIVERY_VERSION,
-        "host": normalized_host,
-        "parent_session_id": session_id,
-        "parent_trace_id": trace_id,
-        "tool_use_id": use_id,
-        "work_unit_id": unit_id,
-        "specialist_slug": slug,
-        "specialist_version": version,
-        "specialist_prompt_hash": content_hash,
-        "activation_token": token,
-    }
+    metadata["activation_token"] = token
+    return metadata
+
+
+def _codex_opaque_metadata(
+    *,
+    parent_session_id: object,
+    parent_trace_id: object,
+    tool_use_id: object,
+    work_unit_id: object,
+    specialist_slug: object,
+    specialist_version: object,
+    specialist_prompt_hash: object,
+    goal_hash: object,
+) -> dict[str, Any]:
+    metadata = _identity_metadata(
+        envelope_version=CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION,
+        host="codex",
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        tool_use_id=tool_use_id,
+        work_unit_id=work_unit_id,
+        specialist_slug=specialist_slug,
+        specialist_version=specialist_version,
+        specialist_prompt_hash=specialist_prompt_hash,
+    )
+    digest = str(goal_hash or "").strip().casefold()
+    if _DIGEST_PATTERN.fullmatch(digest) is None:
+        raise ValueError("goal_hash is invalid")
+    metadata["goal_hash"] = digest
+    return metadata
 
 
 def render_native_child_prompt_delivery(
@@ -180,28 +271,84 @@ def render_native_child_prompt_delivery(
     return f"{original_task}{_SECTION}{marker}\n{prompt_body}"
 
 
+def render_codex_opaque_native_child_prompt_delivery(
+    prompt_body: object,
+    *,
+    parent_session_id: object,
+    parent_trace_id: object,
+    tool_use_id: object,
+    work_unit_id: object,
+    specialist_slug: object,
+    specialist_version: object,
+    specialist_prompt_hash: object,
+    goal_hash: object,
+) -> str:
+    """Render content-free Codex child context bound to one persisted goal hash."""
+
+    if not isinstance(prompt_body, str) or not prompt_body:
+        raise ValueError("specialist prompt body must be a non-empty string")
+    metadata = _codex_opaque_metadata(
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        tool_use_id=tool_use_id,
+        work_unit_id=work_unit_id,
+        specialist_slug=specialist_slug,
+        specialist_version=specialist_version,
+        specialist_prompt_hash=specialist_prompt_hash,
+        goal_hash=goal_hash,
+    )
+    if not content_identity_matches(prompt_body, metadata["specialist_prompt_hash"]):
+        raise ValueError("specialist prompt body failed exact identity verification")
+    marker = f"{_CODEX_OPAQUE_MARKER_PREFIX}{_encoded_metadata(metadata)}{_MARKER_SUFFIX}"
+    return f"{_CODEX_OPAQUE_SECTION}{marker}\n{prompt_body}"
+
+
 def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelivery | None:
     """Recover the last valid exact envelope from a rewritten native child task."""
 
     if not isinstance(value, str) or not value:
         return None
-    matches = list(_MARKER_PATTERN.finditer(value))
-    for match in reversed(matches):
-        metadata = _decoded_metadata(match.group(1))
+    matches = [
+        (match.start(), NATIVE_CHILD_PROMPT_DELIVERY_VERSION, match)
+        for match in _MARKER_PATTERN.finditer(value)
+    ]
+    matches.extend(
+        (
+            match.start(),
+            CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION,
+            match,
+        )
+        for match in _CODEX_OPAQUE_MARKER_PATTERN.finditer(value)
+    )
+    for _start, envelope_version, match in sorted(matches, reverse=True):
+        fields = _V1_FIELDS if envelope_version == 1 else _V2_FIELDS
+        metadata = _decoded_metadata(match.group(1), expected_fields=fields)
         if metadata is None:
             continue
         try:
-            normalized = _metadata(
-                host=metadata.get("host"),
-                parent_session_id=metadata.get("parent_session_id"),
-                parent_trace_id=metadata.get("parent_trace_id"),
-                tool_use_id=metadata.get("tool_use_id"),
-                work_unit_id=metadata.get("work_unit_id"),
-                specialist_slug=metadata.get("specialist_slug"),
-                specialist_version=metadata.get("specialist_version"),
-                specialist_prompt_hash=metadata.get("specialist_prompt_hash"),
-                activation_token=metadata.get("activation_token"),
-            )
+            if envelope_version == NATIVE_CHILD_PROMPT_DELIVERY_VERSION:
+                normalized = _metadata(
+                    host=metadata.get("host"),
+                    parent_session_id=metadata.get("parent_session_id"),
+                    parent_trace_id=metadata.get("parent_trace_id"),
+                    tool_use_id=metadata.get("tool_use_id"),
+                    work_unit_id=metadata.get("work_unit_id"),
+                    specialist_slug=metadata.get("specialist_slug"),
+                    specialist_version=metadata.get("specialist_version"),
+                    specialist_prompt_hash=metadata.get("specialist_prompt_hash"),
+                    activation_token=metadata.get("activation_token"),
+                )
+            else:
+                normalized = _codex_opaque_metadata(
+                    parent_session_id=metadata.get("parent_session_id"),
+                    parent_trace_id=metadata.get("parent_trace_id"),
+                    tool_use_id=metadata.get("tool_use_id"),
+                    work_unit_id=metadata.get("work_unit_id"),
+                    specialist_slug=metadata.get("specialist_slug"),
+                    specialist_version=metadata.get("specialist_version"),
+                    specialist_prompt_hash=metadata.get("specialist_prompt_hash"),
+                    goal_hash=metadata.get("goal_hash"),
+                )
         except ValueError:
             continue
         if metadata != normalized:
@@ -219,9 +366,22 @@ def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelive
             normalized["specialist_prompt_hash"],
         ):
             continue
-        section_start = value.rfind(_SECTION, 0, match.start())
-        if section_start < 0 or section_start + len(_SECTION) != match.start():
-            continue
+        if envelope_version == NATIVE_CHILD_PROMPT_DELIVERY_VERSION:
+            section_start = value.rfind(_SECTION, 0, match.start())
+            if section_start < 0 or section_start + len(_SECTION) != match.start():
+                continue
+            original_task = value[:section_start]
+            from agency_runtime.core.unit_assignment import work_unit_goal_hash
+
+            goal_hash = work_unit_goal_hash(original_task)
+            activation_token = normalized["activation_token"]
+        else:
+            section_start = value.rfind(_CODEX_OPAQUE_SECTION, 0, match.start())
+            if section_start != 0 or len(_CODEX_OPAQUE_SECTION) != match.start():
+                continue
+            original_task = ""
+            goal_hash = normalized["goal_hash"]
+            activation_token = ""
         return NativeChildPromptDelivery(
             host=normalized["host"],
             parent_session_id=normalized["parent_session_id"],
@@ -231,18 +391,21 @@ def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelive
             specialist_slug=normalized["specialist_slug"],
             specialist_version=normalized["specialist_version"],
             specialist_prompt_hash=normalized["specialist_prompt_hash"],
-            activation_token=normalized["activation_token"],
-            original_task=value[:section_start],
+            activation_token=activation_token,
+            goal_hash=goal_hash,
+            original_task=original_task,
             prompt_body=prompt_body,
         )
     return None
 
 
 __all__ = [
+    "CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION",
     "MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS",
     "MAX_NATIVE_CHILD_DELIVERY_METADATA_BYTES",
     "NATIVE_CHILD_PROMPT_DELIVERY_VERSION",
     "NativeChildPromptDelivery",
     "parse_native_child_prompt_delivery",
+    "render_codex_opaque_native_child_prompt_delivery",
     "render_native_child_prompt_delivery",
 ]

@@ -821,6 +821,79 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-opaque-child-restores-canary-only-delivery",
+        invariant=(
+            "Any exact persisted Codex product row can receive its specialist context; "
+            "opaque delivery is not restricted to the fixed activation canary."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before=(
+            "                    if assignment is None or pending_identity != "
+            "assignment_identity:\n"
+            '                        raise ValueError("pending Codex delivery does not '
+            'match the exact plan")\n'
+            "                    exact_delivery = "
+            "render_codex_opaque_native_child_prompt_delivery("
+        ),
+        after=(
+            "                    if assignment is None or pending_identity != "
+            "assignment_identity:\n"
+            '                        raise ValueError("pending Codex delivery does not '
+            'match the exact plan")\n'
+            "                    from agency_runtime.core.activation_canary_contract import (\n"
+            "                        CODEX_ACTIVATION_CANARY_WORK_UNIT,\n"
+            "                    )\n"
+            "                    if assignment.goal_hash != work_unit_goal_hash(\n"
+            "                        CODEX_ACTIVATION_CANARY_WORK_UNIT\n"
+            "                    ):\n"
+            '                        raise ValueError("pending Codex delivery is not the '
+            'activation canary")\n'
+            "                    exact_delivery = "
+            "render_codex_opaque_native_child_prompt_delivery("
+        ),
+        test_node=(
+            "tests/test_claude_native_child_hooks.py::"
+            "test_codex_opaque_product_delivery_is_goal_hash_bound_child_context"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-opaque-child-drops-goal-hash-binding",
+        invariant=("Opaque Codex child context carries the exact persisted work-unit goal hash."),
+        source_path="agency_runtime/adapters/hooks.py",
+        before=(
+            "                    exact_delivery = "
+            "render_codex_opaque_native_child_prompt_delivery(\n"
+            '                        str(pending.get("prompt_body") or ""),\n'
+            "                        parent_session_id=session_id,\n"
+            "                        parent_trace_id=trace_id,\n"
+            "                        tool_use_id=assignment.tool_use_id,\n"
+            "                        work_unit_id=assignment.work_unit_id,\n"
+            "                        specialist_slug=assignment.specialist_slug,\n"
+            "                        specialist_version=assignment.specialist_version,\n"
+            "                        specialist_prompt_hash=assignment.specialist_prompt_hash,\n"
+            "                        goal_hash=assignment.goal_hash,\n"
+            "                    )"
+        ),
+        after=(
+            "                    exact_delivery = "
+            "render_codex_opaque_native_child_prompt_delivery(\n"
+            '                        str(pending.get("prompt_body") or ""),\n'
+            "                        parent_session_id=session_id,\n"
+            "                        parent_trace_id=trace_id,\n"
+            "                        tool_use_id=assignment.tool_use_id,\n"
+            "                        work_unit_id=assignment.work_unit_id,\n"
+            "                        specialist_slug=assignment.specialist_slug,\n"
+            "                        specialist_version=assignment.specialist_version,\n"
+            "                        specialist_prompt_hash=assignment.specialist_prompt_hash,\n"
+            '                        goal_hash="0" * 64,\n'
+            "                    )"
+        ),
+        test_node=(
+            "tests/test_claude_native_child_hooks.py::"
+            "test_codex_opaque_product_delivery_is_goal_hash_bound_child_context"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="preflight-failure-drops-terminal-receipt",
         invariant=(
             "Every owned terminal preflight failure persists one exact content-free receipt."

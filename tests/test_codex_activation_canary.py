@@ -28,10 +28,12 @@ from agency_runtime.core.host_capabilities import native_adapter_capability_rece
 from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
 from agency_runtime.core.native_child_prompt_delivery import (
     parse_native_child_prompt_delivery,
+    render_codex_opaque_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
 )
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.unit_assignment import work_unit_goal_hash
 from tests.runtime_support import stub_inference_invoker, write_provider_config
 
 
@@ -172,14 +174,17 @@ def _finish_v2_chain_through_hooks(
     assert delivery.tool_use_id == tool_use_id
     assert delivery.work_unit_id == unit
     assert delivery.specialist_slug == slug
-    assert delivery.original_task == str(plan["goal"])
     if opaque_canary:
-        assert delivery.activation_token == "x" * 43
+        assert delivery.original_task == ""
+        assert delivery.goal_hash == str(plan["goal_hash"])
+        assert delivery.activation_token == ""
         after_start = store.get_completion_evidence_snapshot(session_id, trace_id)
         [started_activation] = after_start["specialist_activations"]
         assert started_activation["specialist_slug"] == slug
         assert started_activation["worker_id"] == receiver_id
         assert started_activation["native_run_id"] == f"codex-agent:{receiver_id}"
+    else:
+        assert delivery.original_task == str(plan["goal"])
     observed = bridge.handle(
         {
             **pre_payload,
@@ -643,16 +648,15 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
         "invoke_structured_provider_result",
         stub_inference_invoker(("code-reviewer",)),
     )
-    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
-    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
     configured_store.reconcile_bundled_agents(STARTER_ROSTER)
     session_id = "codex-live-order-session"
     trace_id = "codex-live-order-trace"
+    task = "Review the supplied implementation as one exact specialist work unit."
     preflight = run_preflight(
         configured_store,
         session_id=session_id,
         trace_id=trace_id,
-        user_message=(canary.CANARY_PROMPT + "\n\nCanary nonce: 0123456789abcdef0123456789abcdef"),
+        user_message=task,
         host="codex",
         capability_receipt=native_adapter_capability_receipt(
             "codex",
@@ -679,7 +683,7 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
         "tool_input": {
             "fork_turns": "none",
             "task_name": task_name,
-            "message": "gAAAAA" + "opaque-codex-canary-message" * 2,
+            "message": "gAAAAA" + "opaque-codex-product-message" * 2,
         },
     }
     pre_tool = bridge.handle(pre_payload)
@@ -719,6 +723,8 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     delivered = parse_native_child_prompt_delivery(start["hookSpecificOutput"]["additionalContext"])
     assert delivered is not None
     assert delivered.work_unit_id == unit
+    assert delivered.original_task == ""
+    assert delivered.goal_hash == str(plan["goal_hash"])
     [delegation] = configured_store.get_delegations(trace_id)
     assert delegation["activation_receipt_id"]
     assert delegation["retrieved_specialist_slug"] == slug
@@ -754,9 +760,7 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     assert completed["status"] == "completed"
     evidence = configured_store.get_canary_activation_snapshot(
         host="codex",
-        query_hash=response_hash(
-            canary.CANARY_PROMPT + "\n\nCanary nonce: 0123456789abcdef0123456789abcdef"
-        ),
+        query_hash=response_hash(task),
     )
     [worker_run] = evidence["worker_runs"]
     assert worker_run["delegation_event_id"] == delegation["id"]
@@ -1253,10 +1257,8 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
         original_task = f"private product unit task {index}"
         specialist_prompt = f"private specialist prompt {index}"
         secrets.extend((original_task, specialist_prompt))
-        delivery = render_native_child_prompt_delivery(
-            original_task,
+        delivery = render_codex_opaque_native_child_prompt_delivery(
             specialist_prompt,
-            host="codex",
             parent_session_id=parent_id,
             parent_trace_id="product-trace",
             tool_use_id=tool_use_id,
@@ -1264,7 +1266,7 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
             specialist_slug=f"product-specialist-{index}",
             specialist_version="v1",
             specialist_prompt_hash=response_hash(specialist_prompt),
-            activation_token="x" * 43,
+            goal_hash=work_unit_goal_hash(original_task),
         )
         parent_events.extend(
             (

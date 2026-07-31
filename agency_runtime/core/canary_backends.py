@@ -438,7 +438,6 @@ def _codex_child_prompt_delivery(
     from agency_runtime.core.native_child_prompt_delivery import (
         parse_native_child_prompt_delivery,
     )
-    from agency_runtime.core.unit_assignment import work_unit_goal_hash
 
     deliveries: dict[tuple[str, ...], dict[str, Any]] = {}
     for event in events:
@@ -481,7 +480,7 @@ def _codex_child_prompt_delivery(
                 "specialist_slug": delivery.specialist_slug,
                 "specialist_version": delivery.specialist_version,
                 "specialist_prompt_hash": delivery.specialist_prompt_hash,
-                "goal_hash": work_unit_goal_hash(delivery.original_task),
+                "goal_hash": delivery.goal_hash,
             }
             identity = tuple(str(projection[key]) for key in sorted(projection))
             deliveries[identity] = projection
@@ -1048,7 +1047,6 @@ def _codex_collaboration_call_projection(
     from agency_runtime.core.native_child_prompt_delivery import (
         parse_native_child_prompt_delivery,
     )
-    from agency_runtime.core.unit_assignment import work_unit_goal_hash
 
     item_id = str(item.get("id") or "").strip()
     tool = str(item.get("tool") or "").strip()
@@ -1096,7 +1094,7 @@ def _codex_collaboration_call_projection(
             "specialist_slug": delivery.specialist_slug,
             "specialist_version": delivery.specialist_version,
             "specialist_prompt_hash": delivery.specialist_prompt_hash,
-            "goal_hash": work_unit_goal_hash(delivery.original_task),
+            "goal_hash": delivery.goal_hash,
         }
         if delivery is not None
         else None

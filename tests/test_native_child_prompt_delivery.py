@@ -8,8 +8,10 @@ import pytest
 
 from agency_runtime.core.native_child_prompt_delivery import (
     parse_native_child_prompt_delivery,
+    render_codex_opaque_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
 )
+from agency_runtime.core.unit_assignment import work_unit_goal_hash
 
 
 def _render(*, task: str = "Review auth", prompt: str = "Exact specialist prompt") -> str:
@@ -43,6 +45,55 @@ def test_delivery_round_trip_preserves_original_task_and_exact_prompt() -> None:
     assert parsed.work_unit_id == "unit-auth"
     assert parsed.specialist_slug == "code-reviewer"
     assert parsed.activation_token == "one-use-token"
+    assert parsed.goal_hash == work_unit_goal_hash("Review auth")
+
+
+def test_codex_opaque_delivery_round_trip_preserves_only_goal_hash_and_prompt() -> None:
+    prompt = "Exact specialist prompt"
+    goal_hash = work_unit_goal_hash("Implement the requested product unit.")
+    rendered = render_codex_opaque_native_child_prompt_delivery(
+        prompt,
+        parent_session_id="session",
+        parent_trace_id="trace",
+        tool_use_id="call-opaque",
+        work_unit_id="unit-product",
+        specialist_slug="product-engineer",
+        specialist_version="v1",
+        specialist_prompt_hash=sha256(prompt.encode()).hexdigest(),
+        goal_hash=goal_hash,
+    )
+
+    parsed = parse_native_child_prompt_delivery(rendered)
+
+    assert parsed is not None
+    assert parsed.host == "codex"
+    assert parsed.original_task == ""
+    assert parsed.activation_token == ""
+    assert parsed.goal_hash == goal_hash
+    assert parsed.prompt_body == prompt
+    assert "Implement the requested product unit." not in rendered
+
+
+def test_codex_opaque_delivery_rejects_goal_hash_or_prompt_tampering() -> None:
+    prompt = "Exact specialist prompt"
+    values = {
+        "parent_session_id": "session",
+        "parent_trace_id": "trace",
+        "tool_use_id": "call-opaque",
+        "work_unit_id": "unit-product",
+        "specialist_slug": "product-engineer",
+        "specialist_version": "v1",
+        "specialist_prompt_hash": sha256(prompt.encode()).hexdigest(),
+        "goal_hash": work_unit_goal_hash("Implement the product unit."),
+    }
+    rendered = render_codex_opaque_native_child_prompt_delivery(prompt, **values)
+
+    assert parse_native_child_prompt_delivery(rendered + " tampered") is None
+    with pytest.raises(ValueError, match="goal_hash"):
+        render_codex_opaque_native_child_prompt_delivery(
+            prompt,
+            **{**values, "goal_hash": "not-a-digest"},
+        )
 
 
 @pytest.mark.parametrize("host", ["codex", "claude", "zcode"])

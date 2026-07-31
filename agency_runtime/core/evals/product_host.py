@@ -24,7 +24,8 @@ from agency_runtime.core.store.sqlite import Store, _default_db_path
 
 CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS: Final[str] = (
     "This is a bounded Agency Runtime product evaluation. If the current task contains "
-    "[AGENCY EXACT SPECIALIST ACTIVATION v1], you are a delegated specialist child: "
+    "[AGENCY EXACT SPECIALIST ACTIVATION v1] or "
+    "[AGENCY EXACT SPECIALIST ACTIVATION v2], you are a delegated specialist child: "
     "perform only the exact injected specialist assignment directly, use permitted "
     "workspace tools when the assignment requires them, do not call spawn_agent or "
     "wait_agent, do not delegate further, and return one bounded evidence-backed result. "

@@ -18,6 +18,7 @@ from agency_runtime.core.unit_assignment import (
     _looks_like_resource,
     _plan_hash,
     build_unit_agent_plan,
+    codex_opaque_native_child_activation_contract,
     hydrate_unit_agent_plan,
     native_child_activation_contract,
     work_unit_id_from_text,
@@ -149,6 +150,40 @@ def test_native_child_activation_rehydrates_exact_scope_and_content_free_evidenc
             goal,
             mutation_scope="external_write",
             resource_hashes=[_plan_hash(resource)],
+            required_evidence=[],
+        )
+
+
+def test_opaque_codex_activation_binds_hash_and_workspace_sandbox() -> None:
+    contract = codex_opaque_native_child_activation_contract(
+        goal_hash=_plan_hash("Implement the exact product unit."),
+        mutation_scope="workspace_write",
+        resource_hashes=[_plan_hash("src/product.py")],
+        required_evidence=["targeted-tests"],
+    )
+
+    assert contract == {
+        "mutation_mode": "workspace_write",
+        "mutation_path_prefixes": ["."],
+        "evidence_contract_id": "agency-codex-opaque-native-child-plan-v2",
+        "evidence_requirements": [
+            "delegation-execution",
+            "specialist-load",
+            "targeted-tests",
+        ],
+    }
+    with pytest.raises(ValueError, match="goal hash"):
+        codex_opaque_native_child_activation_contract(
+            goal_hash="not-a-digest",
+            mutation_scope="workspace_write",
+            resource_hashes=[_plan_hash("src/product.py")],
+            required_evidence=[],
+        )
+    with pytest.raises(ValueError, match="external writes"):
+        codex_opaque_native_child_activation_contract(
+            goal_hash=_plan_hash("Publish the result."),
+            mutation_scope="external_write",
+            resource_hashes=[_plan_hash("repository-workspace")],
             required_evidence=[],
         )
 

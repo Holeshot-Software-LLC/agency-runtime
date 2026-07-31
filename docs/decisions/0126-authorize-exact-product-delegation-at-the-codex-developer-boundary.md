@@ -7,9 +7,11 @@ updated: 2026-07-31
 tags: [codex, product, delegation, authority, security, evaluation]
 related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
+  - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/decisions/0094-durable-native-child-correlation.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
+  - docs/decisions/0127-bind-opaque-codex-children-through-exact-plan-labels.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -49,10 +51,11 @@ three marker-scoped behaviors:
    dispatch every accepted persisted row exactly once, preserve the exact
    `native_task_name` and decoded goal, respect `depends_on`, and use
    dependency-ready waves of at most three concurrent children.
-2. A child containing `[AGENCY EXACT SPECIALIST ACTIVATION v1]` performs only
-   its hook-injected specialist assignment. It may use permitted workspace
-   tools for that assignment but may not spawn, wait for, or delegate to more
-   workers.
+2. A child containing a versioned `[AGENCY EXACT SPECIALIST ACTIVATION]`
+   marker performs only its hook-injected specialist assignment. Plaintext
+   task delivery uses v1; opaque Codex delivery uses ADR-0127's token-free v2
+   context. The child may use permitted workspace tools for that assignment
+   but may not spawn, wait for, or delegate to more workers.
 3. An Agency-mode task containing neither marker receives no delegation
    authority from this instruction and follows ordinary native-host policy.
 

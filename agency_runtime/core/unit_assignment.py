@@ -714,6 +714,24 @@ def work_unit_goal_hash(value: Any) -> str:
     return _plan_hash(_normalized_goal(value))
 
 
+def _native_child_evidence_requirements(required_evidence: Any) -> list[str]:
+    if not isinstance(required_evidence, (list, tuple)):
+        raise ValueError("native child activation evidence requirements are malformed")
+    evidence = ["delegation-execution", "specialist-load"]
+    for item in required_evidence:
+        normalized = str(item or "").strip().casefold()
+        if normalized and _EVIDENCE_TOKEN_RE.fullmatch(normalized) is None:
+            normalized = (
+                "evidence-"
+                + hashlib.sha256(normalized.encode("utf-8", errors="surrogatepass")).hexdigest()[
+                    :32
+                ]
+            )
+        if normalized and normalized not in evidence:
+            evidence.append(normalized)
+    return evidence
+
+
 def native_child_activation_contract(
     goal: Any,
     *,
@@ -740,25 +758,45 @@ def native_child_activation_contract(
         if normalized_scope == "read_only"
         else ["." if resource == "repository-workspace" else resource for resource in resources]
     )
-    if not isinstance(required_evidence, (list, tuple)):
-        raise ValueError("native child activation evidence requirements are malformed")
-    evidence = ["delegation-execution", "specialist-load"]
-    for item in required_evidence:
-        normalized = str(item or "").strip().casefold()
-        if normalized and _EVIDENCE_TOKEN_RE.fullmatch(normalized) is None:
-            normalized = (
-                "evidence-"
-                + hashlib.sha256(normalized.encode("utf-8", errors="surrogatepass")).hexdigest()[
-                    :32
-                ]
-            )
-        if normalized and normalized not in evidence:
-            evidence.append(normalized)
     return {
         "mutation_mode": normalized_scope,
         "mutation_path_prefixes": path_prefixes,
         "evidence_contract_id": "agency-native-child-plan-v1",
-        "evidence_requirements": evidence,
+        "evidence_requirements": _native_child_evidence_requirements(required_evidence),
+    }
+
+
+def codex_opaque_native_child_activation_contract(
+    *,
+    goal_hash: Any,
+    mutation_scope: Any,
+    resource_hashes: Any,
+    required_evidence: Any,
+) -> dict[str, Any]:
+    """Authorize one label-bound Codex child without reconstructing hidden task text."""
+
+    normalized_goal_hash = str(goal_hash or "").strip().casefold()
+    if _DIGEST_RE.fullmatch(normalized_goal_hash) is None:
+        raise ValueError("opaque Codex child activation goal hash is invalid")
+    if not isinstance(resource_hashes, (list, tuple)) or not resource_hashes:
+        raise ValueError("opaque Codex child activation resources are malformed")
+    normalized_resources = [str(item or "").strip().casefold() for item in resource_hashes]
+    if (
+        len(normalized_resources) > MAX_PLAN_LIST_ITEMS
+        or len(set(normalized_resources)) != len(normalized_resources)
+        or any(_DIGEST_RE.fullmatch(item) is None for item in normalized_resources)
+    ):
+        raise ValueError("opaque Codex child activation resources are malformed")
+    normalized_scope = str(mutation_scope or "").strip().casefold()
+    if normalized_scope == "external_write":
+        raise ValueError("external writes cannot be delegated by a native child activation")
+    if normalized_scope not in {"read_only", "workspace_write"}:
+        raise ValueError("opaque Codex child activation mutation scope is unsupported")
+    return {
+        "mutation_mode": normalized_scope,
+        "mutation_path_prefixes": [] if normalized_scope == "read_only" else ["."],
+        "evidence_contract_id": "agency-codex-opaque-native-child-plan-v2",
+        "evidence_requirements": _native_child_evidence_requirements(required_evidence),
     }
 
 
@@ -1335,6 +1373,7 @@ __all__ = [
     "UNIT_AGENT_ASSIGNMENT_VERSION",
     "assignment_agents_from_catalog",
     "build_unit_agent_plan",
+    "codex_opaque_native_child_activation_contract",
     "hydrate_unit_agent_plan",
     "native_child_activation_contract",
     "project_unit_agent_plan",

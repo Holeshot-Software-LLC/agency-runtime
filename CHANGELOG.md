@@ -61,6 +61,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Arbitrary Codex specialist children are no longer rejected solely because
+  Codex encrypts their collaboration message before `PreToolUse`. Agency now
+  requires one exact persisted native task label, preserves the ciphertext,
+  and injects a token-free goal-hash-bound v2 specialist context at
+  `SubagentStart`; malformed, unpersisted, ambiguous, and external-write
+  launches remain closed.
 - Codex 0.146 non-critical JSONL warnings are no longer misreported as parent
   tool execution. The exact hook-bypass notice and both Codex-packaged
   skill-catalog-shortening spellings, including the current `2%` wording, are

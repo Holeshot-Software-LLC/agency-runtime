@@ -193,6 +193,7 @@ Status meanings:
 | [ADR-0124](0124-grade-product-trials-against-the-inferred-unit-graph.md) | Grade product trials against the inferred unit graph | Accepted |
 | [ADR-0125](0125-admit-only-exact-content-free-codex-host-notices.md) | Admit only exact content-free Codex host notices | Accepted |
 | [ADR-0126](0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md) | Authorize exact product delegation at the Codex developer boundary | Accepted |
+| [ADR-0127](0127-bind-opaque-codex-children-through-exact-plan-labels.md) | Bind opaque Codex children through exact plan labels | Accepted |
 
 ## Documentation governance
 

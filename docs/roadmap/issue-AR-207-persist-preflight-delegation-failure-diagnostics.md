@@ -8,6 +8,7 @@ tags: [product, evidence, preflight, delegation, codex, diagnostics]
 related:
   - README.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
+  - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
@@ -17,6 +18,7 @@ related:
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0127-bind-opaque-codex-children-through-exact-plan-labels.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0125-admit-only-exact-content-free-codex-host-notices.md
   - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
@@ -28,7 +30,7 @@ epic: product
 issue_id: AR-207
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
-depends_on: [AR-206, AR-208]
+depends_on: [AR-206, AR-208, AR-209]
 blocks: [AR-203, AR-204, AR-205]
 ---
 
@@ -241,6 +243,15 @@ the parent emitted no delegation tool call or response.
   bypass were proven, workspace write was not, the header was absent, and
   correction count was zero. The failed edge has advanced from no spawn to
   first-spawn output without child start. This build must not be rerun.
+- AR-209 now identifies and repairs that exact edge. Codex encrypts arbitrary
+  child messages before `PreToolUse`; the old hook recovered only the fixed
+  canary goal, so activation was a false proxy for product delegation. The
+  source candidate binds a strictly shaped opaque message through its exact
+  persisted native label, stages the row's grant, and injects a token-free v2
+  specialist context with the persisted goal hash at `SubagentStart`. A
+  non-canary real-Store lifecycle, 97 focused tests, and both curated
+  opaque-child mutations pass. Named fast verification, review, merge, exact
+  install, and one fresh product trial remain.
 
 ## Approach
 
