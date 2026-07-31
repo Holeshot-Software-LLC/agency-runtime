@@ -77,8 +77,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   routing gate. Conformance killed all 71 mutations with zero survivors or
   invalid results, and the source tree remained unchanged.
 - Exact-head review on `aa68555` found case-folded authority and plaintext
-  over-serialization. The follow-up preserves path case, folds only contention,
-  and gates only opaque grants. Six nodes and all 27 activation tests pass.
+  over-serialization. Its first 73-mutation rerun timed out before mutation;
+  the direct slot regression and all 28 activation tests pass.
 - Product session `019fb92d-694c-7e42-b553-ee53802bac99`, trace
   `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
   `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage

@@ -78,8 +78,9 @@ with unchanged source. The revised named fast spine is green through 594 docs,
 604 Ruff files, 636 warning-strict Python tests with six skips, 110 dashboard
 tests, and every routing gate. Decision conformance passed its baseline, killed
 all 71 mutations with zero survivors or invalid results, and proved the source
-tree unchanged. The follow-up six-node focused boundary and all 27 activation
-tests pass; the revised full spine and 73-mutation run remain pending.
+tree unchanged. The follow-up six-node focused boundary and all 28 activation
+tests pass. Its first 73-mutation attempt timed out at the 90-second baseline
+before any mutation ran; source remained unchanged and the default rerun remains.
 
 ## Approach
 

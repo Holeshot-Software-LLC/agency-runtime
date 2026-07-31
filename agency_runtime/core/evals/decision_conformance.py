@@ -945,7 +945,7 @@ class _NominationSemantics:""",
         after="    if False and inflight is not None:\n",
         test_node=(
             "tests/test_codex_activation_canary.py::"
-            "test_codex_opaque_children_serialize_while_plaintext_children_remain_correlated"
+            "test_codex_opaque_children_serialize_until_subagent_start_consumes_grant"
         ),
     ),
     DecisionMutation(
@@ -959,7 +959,7 @@ class _NominationSemantics:""",
         after="    if planned_scope is None:\n",
         test_node=(
             "tests/test_codex_activation_canary.py::"
-            "test_codex_opaque_children_serialize_while_plaintext_children_remain_correlated"
+            "test_codex_plaintext_grants_skip_the_opaque_serialization_slot"
         ),
     ),
     DecisionMutation(
