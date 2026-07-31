@@ -19,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-203
 branch: codex/ar-204-readme-product-proof
-evidence_commit: 839ddee4551ab99c8997e281caf9e1633788d9f8
-minimum_ledger_commit: 856191bac8f0b638dbbfcb303f01db404d84240f
+evidence_commit: b9d9ec4dc49b448e3c9e7eb06d337795180aae71
+minimum_ledger_commit: 87b56fd119364ef42947405c5232bb7fd0e52914
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -110,11 +110,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   persistent-host ceiling, proves a complete sixteen-unit context crosses the
   legacy limit, and kills the mutation restoring 8,192. The focused boundary
   passes 115 tests; ledger commit 856191b records the checkpoint.
-- The exact committed tree passes the named fast Python spine (636 passed,
-  6 skipped), dashboard UI (110 passed), every routing evaluation gate, Ruff
-  across 602 files, and all 50 decision mutations with source unchanged.
-  Documentation validation passes for 577 files and the tree is whitespace
-  clean.
+- The exact post-review committed tree passes the named fast Python spine (636
+  passed, 6 skipped), dashboard UI (110 passed), every routing evaluation gate,
+  Ruff across 602 files, and all 52 decision mutations with zero survivors or
+  invalid results and unchanged source. Documentation validation passes for 578
+  files and the tree is whitespace clean.
 - PR 195 review found two valid boundaries. The source candidate now rejects a
   multibyte context above the 48,000-byte exact envelope reserve before ready,
   keeps the 65,536-byte hook output hard cap, and renders version-11 recipes
@@ -125,9 +125,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ## exact-blocker
 
 Installation and activation pass, gap hiring is separated correctly, inference
-reaches accepted product teams, and the approved context policy is fast-green.
-The remaining blocker is rerunning the invalidated fast gates, pushing the PR
-195 review repairs, merge, and exact installation before one new-build trial.
+reaches accepted product teams, and the repaired context policy is fully
+fast-green. The remaining blocker is pushing and re-reviewing PR 195, then
+merge and exact installation before one new-build trial.
 
 ## same-task-continuity
 
@@ -137,8 +137,7 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-1. Run the named fast gate and all 52 decision mutations, then push and obtain
-   one focused re-review of the repaired PR head.
+1. Push and obtain one focused re-review of the repaired PR 195 head.
 2. Merge, exact-install, and re-prove activation with the AR-206 verifier fix.
 3. Spend one product trial only on that new exact build. Require a real inferred
    team or hired contractor, planned delegation, workspace artifacts, and zero

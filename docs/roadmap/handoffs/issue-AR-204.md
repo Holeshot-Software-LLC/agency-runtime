@@ -23,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-204
 branch: codex/ar-204-readme-product-proof
-evidence_commit: 839ddee4551ab99c8997e281caf9e1633788d9f8
-minimum_ledger_commit: 856191bac8f0b638dbbfcb303f01db404d84240f
+evidence_commit: b9d9ec4dc49b448e3c9e7eb06d337795180aae71
+minimum_ledger_commit: 87b56fd119364ef42947405c5232bb7fd0e52914
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 ---
@@ -105,10 +105,11 @@ Bounded projection for making the README product story executable.
 - ADR-0123 is approved and commit 839ddee uses the 32,000-character persistent
   parent ceiling. A complete sixteen-unit regression crosses 8,192, its
   legacy-cap mutation is killed, and the 115-test focused boundary passes.
-- The exact committed tree passes the named fast Python spine (636 passed,
-  6 skipped), dashboard UI (110 passed), every routing evaluation gate, Ruff
-  across 602 files, all 50 decision mutations with source unchanged, and
-  documentation validation for 577 files.
+- The exact post-review committed tree passes the named fast Python spine (636
+  passed, 6 skipped), dashboard UI (110 passed), every routing evaluation gate,
+  Ruff across 602 files, all 52 decision mutations with zero survivors or
+  invalid results and unchanged source, and documentation validation for 578
+  files.
 - PR 195 review found and prompted two bounded repairs: exact encoded context
   output is checked before ready commit, and stored version-11 recipes retain
   their full-goal renderer. Four direct tests, 113 affected tests with one skip,
@@ -117,9 +118,9 @@ Bounded projection for making the README product story executable.
 ## exact-blocker
 
 The source candidate passes activation prerequisites, complete-team routing,
-the AR-206 evidence verifier, and the approved 32k fast boundary. README
-acceptance now waits for the invalidated fast-gate rerun, repaired-head
-re-review, merge, exact install, fresh-task activation, and one product trial.
+the AR-206 evidence verifier, and the repaired 32k fast boundary. README
+acceptance now waits for repaired-head push and re-review, merge, exact install,
+fresh-task activation, and one product trial.
 
 ## same-task-continuity
 
@@ -129,8 +130,7 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Run the named fast gate and all 52 decision mutations, push, and complete one
-   focused re-review.
+1. Push the fully fast-green head and complete one focused re-review.
 2. Merge, exact-install, re-prove activation with AR-206, and run one product
    trial for only that new exact build.
 3. Generate the local evidence page and OpenClaw handoff only after the product

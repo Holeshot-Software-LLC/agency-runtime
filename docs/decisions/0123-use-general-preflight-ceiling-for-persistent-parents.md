@@ -63,6 +63,15 @@ Do not truncate, silently omit, or deterministically shrink an inference-owned
 team to meet a smaller legacy limit. The exact accepted plan either fits the
 bounded parent context or fails loudly.
 
+## Implementation evidence
+
+Commit `b9d9ec4` implements the encoded-output and versioned-replay boundaries.
+On its committed tree, the named Python spine passes 636 tests with 6 skips,
+dashboard UI passes 110 tests, every routing-evaluation gate passes, all 52
+curated decision mutations are killed with zero survivors or invalid results
+and unchanged source, Ruff validates 602 files, documentation validates 578
+files, and diff integrity is clean. Ledger commit `87b56fd` records the repair.
+
 ## Consequences
 
 - Complete inferred teams up to the configured sixteen-unit maximum can reach

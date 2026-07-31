@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-205
 branch: codex/ar-204-readme-product-proof
-evidence_commit: 839ddee4551ab99c8997e281caf9e1633788d9f8
-minimum_ledger_commit: 856191bac8f0b638dbbfcb303f01db404d84240f
+evidence_commit: b9d9ec4dc49b448e3c9e7eb06d337795180aae71
+minimum_ledger_commit: 87b56fd119364ef42947405c5232bb7fd0e52914
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
 ---
@@ -107,10 +107,11 @@ acceptance; this capsule records only current proof and the next package.
 - ADR-0123 is approved. Commit 839ddee raises only the persistent parent limit
   to 32,000, proves the complete sixteen-unit shape, kills the 8,192 mutation,
   and passes the 115-test focused boundary.
-- The exact committed tree passes the named fast Python spine (636 passed,
-  6 skipped), dashboard UI (110 passed), every routing evaluation gate, Ruff
-  across 602 files, all 50 decision mutations with source unchanged, and
-  documentation validation for 577 files.
+- The exact post-review committed tree passes the named fast Python spine (636
+  passed, 6 skipped), dashboard UI (110 passed), every routing evaluation gate,
+  Ruff across 602 files, all 52 decision mutations with zero survivors or
+  invalid results and unchanged source, and documentation validation for 578
+  files.
 - PR 195 review found two valid context-delivery gaps. Version 13 now
   byte-bounds the exact context envelope before ready and preserves version-11
   full-goal rendering. Four direct tests, 113 affected tests with one skip, six
@@ -120,8 +121,8 @@ acceptance; this capsule records only current proof and the next package.
 
 No current build proves a specialist team, native delegation, workspace write,
 product artifacts, and zero corrections in one end-to-end run. Product routing
-and the repaired context policy are locally focused-green; the invalidated fast
-gate, repaired-head re-review, merge, exact install, and new-build trial remain.
+and the repaired context policy are fully fast-green; repaired-head push and
+re-review, merge, exact install, and the new-build trial remain.
 
 ## same-task-continuity
 
@@ -131,8 +132,7 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Run the named fast gate and all 52 decision mutations, push, and complete one
-   focused re-review.
+1. Push the fully fast-green repaired head and complete one focused re-review.
 2. Merge and exact-install the context policy plus AR-206, then prove native
    activation and run one supported-bypassed product trial for the new build.
 3. Require zero corrections, a real specialist or hired-contractor chain,

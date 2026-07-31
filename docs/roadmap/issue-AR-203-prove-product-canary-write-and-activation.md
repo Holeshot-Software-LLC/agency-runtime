@@ -308,6 +308,13 @@ original full-row form. Four direct regressions pass, the wider affected
 boundary passes 113 tests with one skip, exact replay nodes pass 5 with one
 skip, and both new decision mutations are killed.
 
+Committed repair `b9d9ec4` then passed the complete invalidated gate: 636 named
+Python tests with 6 skips, 110 dashboard tests, every routing-evaluation gate,
+52/52 killed decision mutations with unchanged source, Ruff across 602 files,
+documentation validation for 578 files, and clean diff integrity. Ledger commit
+`87b56fd` records that exact checkpoint; repaired-head review, merge, exact
+installation, and the one new-build product trial remain.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host

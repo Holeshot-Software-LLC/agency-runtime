@@ -312,6 +312,12 @@ version, so version-11 recipes keep their original full-goal rows. The four
 direct regressions, 113-test affected boundary with one skip, six exact replay
 nodes with one skip, and both new decision mutations pass.
 
+Committed repair `b9d9ec4` passes the complete invalidated gate: the named
+Python spine is 636 passed with 6 skips, dashboard UI is 110/110, every routing
+gate passes, all 52 decision mutations are killed with unchanged source, Ruff
+validates 602 files, documentation validates 578 files, and diff integrity is
+clean. Ledger commit `87b56fd` records this exact pre-push checkpoint.
+
 The same long-lived Codex task then exposed AR-206: its immutable old Stop hook
 rejected an intact 558-node ready routing decision because the correlation
 reader retained a stale 256-node cap while the durable recipe admits 2,048.

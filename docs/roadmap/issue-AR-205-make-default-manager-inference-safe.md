@@ -173,6 +173,11 @@ the exact installed product proof and final README-story acceptance.
   exact context envelope above 48,000 encoded bytes before ready and preserves
   version-11 full-goal rows. Both new regressions and mutations pass without
   adding a deterministic worker or selector.
+- Committed repair `b9d9ec4` passes the complete invalidated gate: 636 named
+  Python tests with 6 skips, 110 dashboard tests, every routing-evaluation gate,
+  52/52 killed decision mutations with unchanged source, Ruff across 602 files,
+  documentation validation for 578 files, and clean diff integrity. Ledger
+  commit `87b56fd` records the exact checkpoint.
 
 ## Acceptance
 
