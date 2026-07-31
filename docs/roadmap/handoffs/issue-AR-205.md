@@ -19,7 +19,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-205
-branch: codex/ar-203-activation-planning-contract
+branch: codex/ar-204-readme-product-proof
 evidence_commit: 839ddee4551ab99c8997e281caf9e1633788d9f8
 minimum_ledger_commit: 856191bac8f0b638dbbfcb303f01db404d84240f
 hard_checkpoint_percent: 50
