@@ -29,6 +29,7 @@ CODEX_STDOUT_HOST_NOTICE_TYPES = frozenset(
         "skill_catalog_descriptions_shortened",
     }
 )
+CODEX_STDOUT_HOST_NOTICE_COUNT_MAX = _CODEX_ROLLOUT_MAX_LINES
 _CODEX_STDOUT_HOST_NOTICE_BY_MESSAGE = {
     "`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run "
     "without review for this invocation.": "hook_trust_bypass",

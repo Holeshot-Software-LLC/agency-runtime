@@ -11,12 +11,14 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
+  - docs/roadmap/issue-AR-208-preserve-codex-host-notices-in-product-evidence.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
+  - docs/decisions/0125-admit-only-exact-content-free-codex-host-notices.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -25,7 +27,7 @@ epic: product
 issue_id: AR-207
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
-depends_on: [AR-206]
+depends_on: [AR-206, AR-208]
 blocks: [AR-203, AR-204, AR-205]
 ---
 

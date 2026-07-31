@@ -806,6 +806,11 @@ def _codex_product_collaboration_projection(
     )
     if failures or not isinstance(collaboration, Mapping):
         return None
+    from agency_runtime.core.canary_backends import (
+        CODEX_STDOUT_HOST_NOTICE_COUNT_MAX,
+        CODEX_STDOUT_HOST_NOTICE_TYPES,
+    )
+
     aggregate_fields = (
         "spawn_count",
         "wait_count",
@@ -816,12 +821,25 @@ def _codex_product_collaboration_projection(
         "child_tool_call_count",
         "parent_agent_message_count",
         "unexpected_item_count",
+        "host_notice_count",
     )
     if any(
         not isinstance(collaboration.get(field), int)
         or isinstance(collaboration.get(field), bool)
         or collaboration.get(field, -1) < 0
         for field in aggregate_fields
+    ):
+        return None
+    host_notice_types = collaboration.get("host_notice_types")
+    host_notice_count = collaboration.get("host_notice_count")
+    if (
+        not isinstance(host_notice_types, list)
+        or any(type(item) is not str for item in host_notice_types)
+        or host_notice_types != sorted(set(host_notice_types))
+        or any(item not in CODEX_STDOUT_HOST_NOTICE_TYPES for item in host_notice_types)
+        or host_notice_count > CODEX_STDOUT_HOST_NOTICE_COUNT_MAX
+        or host_notice_count < len(host_notice_types)
+        or bool(host_notice_count) != bool(host_notice_types)
     ):
         return None
     calls = [
@@ -862,6 +880,7 @@ def _codex_product_collaboration_projection(
         "schema": "agency.codex-product-collaboration.v1",
         "calls": calls,
         **{field: collaboration.get(field) for field in aggregate_fields},
+        "host_notice_types": list(host_notice_types),
         "evidence_source": "persisted_rollout",
     }
 
