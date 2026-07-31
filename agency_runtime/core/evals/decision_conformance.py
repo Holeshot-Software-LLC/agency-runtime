@@ -645,6 +645,41 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="product-host-drops-explicit-delegation-authority",
+        invariant=(
+            "Codex product trials give the parent explicit authority to dispatch every "
+            "accepted plan row and prevent delegated children from recursively spawning."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before=(
+            '    f"developer_instructions={json.dumps(CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS)}",'
+        ),
+        after='    "developer_instructions=\\"\\"",',
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_supplies_bounded_parent_and_child_delegation_authority"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-only-product-host-inherits-agency-delegation-authority",
+        invariant=(
+            "Codex product delegation authority is injected only for Agency mode and is "
+            "absent from native-only trials."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before=(
+            "    base_options = (\n"
+            "        CODEX_PRODUCT_EXEC_OPTIONS if agency_mode else "
+            "_CODEX_NATIVE_ONLY_PRODUCT_EXEC_OPTIONS\n"
+            "    )"
+        ),
+        after="    base_options = CODEX_PRODUCT_EXEC_OPTIONS",
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_host_uses_isolated_workspace_write_profile"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-host-allows-store-bootstrap",
         invariant=(
             "Ordinary Codex product trials require the exact pre-existing Agency evidence store."

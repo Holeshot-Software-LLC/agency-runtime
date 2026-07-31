@@ -19,6 +19,7 @@ related:
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0125-admit-only-exact-content-free-codex-host-notices.md
+  - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -195,6 +196,13 @@ the parent emitted no delegation tool call or response.
   header, workspace trust and hook bypass were proven, workspace write was not,
   and correction count was zero. The first failed boundary is therefore the
   accepted-plan to parent-native `spawn_agent` handoff, not selection.
+- The exact cause is now isolated: unlike the passing activation canary, the
+  product backend supplied no Codex developer instruction authorizing its
+  accepted native delegation plan. ADR-0126 bounds that authority to exact
+  persisted rows, a collaboration-only parent, and non-recursive children. The
+  focused product-host suite passes 21 warning-strict tests, and the new
+  authority-removal and native-only-leak mutations are both killed with the
+  source tree unchanged.
 
 ## Approach
 

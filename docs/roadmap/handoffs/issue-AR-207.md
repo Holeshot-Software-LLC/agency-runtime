@@ -15,6 +15,7 @@ related:
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
+  - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -45,6 +46,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Product trial `ar207-dd85e7d-readme-01` is consumed and terminal `NO-GO`.
   Inference accepted eight units and specialists, but Codex returned no parent
   response or native spawn; all eight delegations remained `suggested`.
+- The missing edge was high-priority host authority: the product backend lacked
+  the developer instruction used by the passing activation canary. ADR-0126's
+  bounded parent/child repair is focused-green and mutation-proven.
 - Product trial `ar207-5ad4aef-readme-01` is consumed and terminal `NO-GO`.
   Its persisted preflight failed at routing validation with an empty durable
   attempt list and no route, tool, response, header, or workspace write. That
@@ -115,10 +119,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The exact `dd85e7d` package, full-suite install, dashboard, and activation are
-green, but its product trial is terminal `NO-GO`. Selection now works: the
-first failed edge is accepted plan to parent-native `spawn_agent`. No trial may
-be rerun on this build; repair must be proven on a new exact revision.
+The exact `dd85e7d` product trial is terminal `NO-GO` and cannot be rerun. The
+accepted-plan authority repair is focused-green but still requires the named
+fast gate, merge, exact install, and one trial on a new exact revision.
 
 ## same-task-continuity
 
@@ -129,9 +132,8 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Diagnose and repair the accepted-plan to first-native-spawn boundary without
-   another live trial on `dd85e7d`.
-2. Run the focused and named fast gates, merge, and exact-install a new build.
+1. Review the bounded accepted-plan authority repair and run the named fast gate.
+2. Merge and exact-install a new build.
 3. Run one fresh activation and one fresh product trial on that new build.
 4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
    local shareable evidence page and OpenClaw handoff.

@@ -192,6 +192,7 @@ Status meanings:
 | [ADR-0119](0119-separate-native-trust-modes-from-activation-proof.md) | Separate native trust modes from activation proof | Accepted |
 | [ADR-0124](0124-grade-product-trials-against-the-inferred-unit-graph.md) | Grade product trials against the inferred unit graph | Accepted |
 | [ADR-0125](0125-admit-only-exact-content-free-codex-host-notices.md) | Admit only exact content-free Codex host notices | Accepted |
+| [ADR-0126](0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md) | Authorize exact product delegation at the Codex developer boundary | Accepted |
 
 ## Documentation governance
 
