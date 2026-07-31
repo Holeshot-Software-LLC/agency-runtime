@@ -29,7 +29,10 @@ from agency_runtime.core.store.initialization_lock import storage_initialization
 from agency_runtime.core.store.maintenance import MaintenanceStoreMixin
 from agency_runtime.core.store.native_child import NativeChildStoreMixin
 from agency_runtime.core.store.observed_sqlite import ObservedSQLiteConnection
-from agency_runtime.core.store.preflight import _decode_preflight_recipe
+from agency_runtime.core.store.preflight import (
+    _decode_preflight_failure_receipt,
+    _decode_preflight_recipe,
+)
 from agency_runtime.core.store.projections import (
     API_BASE_LIMIT,
     DELEGATION_DETAIL_LIMIT,
@@ -1688,6 +1691,22 @@ class Store(
                 bool(run["ended_at"]) or bool(run["terminal_finalization_id"])
             ):
                 raise RuntimeError("open Agency turn has inconsistent terminal state")
+            failure_row = conn.execute(
+                "SELECT id, session_id, trace_id, host, stage, reason_code, "
+                "exception_category, provider_attempts, recorded_at "
+                "FROM preflight_failure_receipts WHERE session_id = ? AND trace_id = ?",
+                (normalized_session, normalized_trace),
+            ).fetchone()
+            preflight_failure = (
+                None
+                if failure_row is None
+                else {
+                    **dict(failure_row),
+                    **_decode_preflight_failure_receipt(failure_row),
+                }
+            )
+            if str(run["status"] or "") == "preflight_failed" and preflight_failure is None:
+                raise RuntimeError("terminal preflight failure receipt is unavailable")
             receipt = conn.execute(
                 "SELECT id, trace_id, session_id, host, requested_model, model_group, "
                 "resolved_provider, resolved_model, attempted_fallbacks, model_id, "
@@ -1826,6 +1845,7 @@ class Store(
                 "resident_managers": resident_managers,
                 "resident_manager_kernel": resident_manager_kernel,
                 "resident_manager_binding": resident_manager_binding,
+                "preflight_failure": preflight_failure,
                 "preflight_recipe_version": (
                     int(recipe["recipe_version"]) if recipe is not None else 0
                 ),

@@ -23,6 +23,30 @@ _CODEX_THREAD_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-
 _CODEX_ROLLOUT_RESPONSE_TYPES = frozenset(
     {"agent_message", "function_call", "function_call_output", "message", "reasoning"}
 )
+_CODEX_ROLLOUT_CONTRACTS = frozenset({"canary", "product"})
+_CODEX_PRODUCT_COLLABORATION_SCHEMA = "agency.codex-product-collaboration.v1"
+_CODEX_PRODUCT_MAX_SPAWNS = 16
+_CODEX_PRODUCT_MAX_WAITS = 64
+CODEX_COLLABORATION_DIAGNOSTIC_SCHEMA = "agency.codex-collaboration-diagnostic.v1"
+CODEX_COLLABORATION_DIAGNOSTIC_REASONS = frozenset(
+    {
+        "parent_rollout_unavailable",
+        "parent_spawn_missing",
+        "parent_spawn_ambiguous",
+        "parent_wait_missing",
+        "parent_wait_ambiguous",
+        "native_tool_output_missing",
+        "native_child_start_missing",
+        "native_collaboration_topology_invalid",
+    }
+)
+_CODEX_COLLABORATION_DIAGNOSTIC_COUNT_MAX = _CODEX_ROLLOUT_MAX_LINES
+_CODEX_COLLABORATION_FAILURE_REASON_BY_DIAGNOSTIC = {
+    "parent_spawn_missing": "codex_parent_spawn_missing",
+    "parent_wait_missing": "codex_parent_wait_missing",
+    "native_tool_output_missing": "codex_native_tool_output_missing",
+    "native_child_start_missing": "codex_native_child_start_missing",
+}
 
 
 def _facade():
@@ -685,6 +709,317 @@ def _codex_rollout_collaboration_evidence(
     }
 
 
+def _codex_product_rollout_call_data(
+    events: list[dict[str, Any]],
+) -> tuple[
+    list[dict[str, Any]],
+    dict[str, dict[str, Any]],
+    list[dict[str, Any]],
+    int,
+    int,
+]:
+    """Collect product collaboration calls while ignoring product tool content."""
+
+    calls: list[dict[str, Any]] = []
+    raw_outputs: list[tuple[str, object]] = []
+    activities: list[dict[str, Any]] = []
+    unexpected_item_count = 0
+    agent_message_count = 0
+    call_ids: set[str] = set()
+    for index, event in enumerate(events):
+        payload = event.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        if event.get("type") == "event_msg" and payload.get("type") == "sub_agent_activity":
+            activities.append(payload)
+            continue
+        if event.get("type") != "response_item":
+            continue
+        item_type = str(payload.get("type") or "").strip()
+        if item_type in {"agent_message", "message"}:
+            agent_message_count += 1
+            continue
+        if item_type == "reasoning":
+            continue
+        if item_type == "function_call":
+            item_id = str(payload.get("id") or "").strip()
+            call_id = str(payload.get("call_id") or "").strip()
+            name = str(payload.get("name") or "").strip()
+            namespace = str(payload.get("namespace") or "").strip()
+            if namespace != "collaboration" or name not in {"spawn_agent", "wait_agent"}:
+                unexpected_item_count += 1
+                continue
+            if (
+                not item_id
+                or len(item_id) > 256
+                or not call_id
+                or len(call_id) > 256
+                or call_id in call_ids
+            ):
+                raise ValueError("invalid Codex product collaboration identity")
+            call_ids.add(call_id)
+            calls.append(
+                {
+                    "id": item_id,
+                    "call_id": call_id,
+                    "name": name,
+                    "arguments": _codex_rollout_mapping(
+                        payload.get("arguments"),
+                        label=f"product {name} arguments",
+                    ),
+                    "index": index,
+                }
+            )
+            continue
+        if item_type == "function_call_output":
+            call_id = str(payload.get("call_id") or "").strip()
+            if call_id:
+                raw_outputs.append((call_id, payload.get("output")))
+            continue
+        unexpected_item_count += 1
+    outputs: dict[str, dict[str, Any]] = {}
+    for call_id, output in raw_outputs:
+        if call_id not in call_ids:
+            continue
+        if call_id in outputs:
+            raise ValueError("duplicate Codex product collaboration output")
+        outputs[call_id] = _codex_rollout_mapping(
+            output,
+            label="product collaboration output",
+        )
+    return calls, outputs, activities, unexpected_item_count, agent_message_count
+
+
+def _codex_product_spawn_projection(
+    spawn: dict[str, Any],
+    *,
+    outputs: Mapping[str, dict[str, Any]],
+    activities: list[dict[str, Any]],
+    rollout_root: Path,
+    parent_thread_id: str,
+    not_before: float | None,
+    not_after: float | None,
+) -> tuple[dict[str, Any], int]:
+    """Prove one exact product child without retaining its task or response."""
+
+    arguments = spawn["arguments"]
+    if (
+        set(arguments) != {"fork_turns", "message", "task_name"}
+        or arguments.get("fork_turns") != "none"
+        or not isinstance(arguments.get("message"), str)
+        or not isinstance(arguments.get("task_name"), str)
+    ):
+        raise ValueError("Codex product spawn arguments exceeded the exact contract")
+    native_task_name = str(arguments["task_name"]).strip()
+    if not native_task_name or len(native_task_name) > 128:
+        raise ValueError("Codex product spawn task name was invalid")
+    output = outputs.get(spawn["call_id"])
+    if (
+        not isinstance(output, dict)
+        or set(output) not in ({"task_name"}, {"task_name", "nickname"})
+        or not isinstance(output.get("task_name"), str)
+        or not str(output["task_name"]).endswith(f"/{native_task_name}")
+        or (
+            "nickname" in output
+            and (not isinstance(output.get("nickname"), str) or len(str(output["nickname"])) > 128)
+        )
+    ):
+        raise ValueError("Codex product spawn output did not match its native task")
+    matching_activities = [
+        activity
+        for activity in activities
+        if activity.get("event_id") == spawn["call_id"] and activity.get("kind") == "started"
+    ]
+    if len(matching_activities) != 1:
+        raise ValueError("Codex product spawn did not identify one native child start")
+    activity = matching_activities[0]
+    receiver_id = _codex_thread_id(activity.get("agent_thread_id"))
+    expected_path = f"/root/{native_task_name}"
+    if activity.get("agent_path") != expected_path or output["task_name"] != expected_path:
+        raise ValueError("Codex product child path did not match its native task")
+    child_events = _codex_rollout_events(
+        rollout_root,
+        receiver_id,
+        parent_thread_id=parent_thread_id,
+        expected_agent_path=expected_path,
+        not_before=not_before,
+        not_after=not_after,
+    )
+    completions = [
+        event["payload"]
+        for event in child_events
+        if event.get("type") == "event_msg"
+        and isinstance(event.get("payload"), dict)
+        and event["payload"].get("type") == "task_complete"
+    ]
+    if len(completions) != 1:
+        raise ValueError("Codex product child did not prove one completion")
+    completion = completions[0]
+    if completion.get("error") not in {None, ""} or not isinstance(
+        completion.get("last_agent_message"), str
+    ):
+        raise ValueError("Codex product child did not complete successfully")
+    prompt_delivery = _codex_child_prompt_delivery(
+        child_events,
+        parent_thread_id=parent_thread_id,
+        tool_use_id=spawn["call_id"],
+    )
+    from agency_runtime.core.delegation.native_labels import (
+        codex_task_name_for_work_unit,
+    )
+
+    if native_task_name != codex_task_name_for_work_unit(prompt_delivery["work_unit_id"]):
+        raise ValueError("Codex product child task did not match its delivered work unit")
+    child_tool_call_count = sum(
+        event.get("type") == "response_item"
+        and isinstance(event.get("payload"), dict)
+        and event["payload"].get("type") in {"function_call", "custom_tool_call"}
+        for event in child_events
+    )
+    return (
+        {
+            "id": spawn["id"],
+            "event_type": "rollout_call_completed",
+            "tool": "spawn_agent",
+            "sender_thread_id": parent_thread_id,
+            "receiver_thread_ids": [receiver_id],
+            "status": "completed",
+            "prompt_delivery": prompt_delivery,
+            "native_task_name": native_task_name,
+            "child_status": "completed",
+            "evidence_source": "persisted_rollout",
+        },
+        child_tool_call_count,
+    )
+
+
+def _codex_product_wait_counts(
+    waits: list[dict[str, Any]],
+    *,
+    outputs: Mapping[str, dict[str, Any]],
+    last_spawn_index: int,
+) -> tuple[int, int]:
+    completed = 0
+    timed_out = 0
+    completed_after_last_spawn = False
+    for wait in waits:
+        arguments = wait["arguments"]
+        timeout_ms = arguments.get("timeout_ms") if isinstance(arguments, dict) else None
+        if set(arguments) not in (set(), {"timeout_ms"}) or (
+            "timeout_ms" in arguments
+            and (
+                not isinstance(timeout_ms, int)
+                or isinstance(timeout_ms, bool)
+                or not 1 <= timeout_ms <= 600_000
+            )
+        ):
+            raise ValueError("Codex product wait arguments exceeded the bounded contract")
+        output = outputs.get(wait["call_id"])
+        if (
+            not isinstance(output, dict)
+            or set(output) != {"message", "timed_out"}
+            or not isinstance(output.get("message"), str)
+            or len(str(output["message"])) > 256
+            or type(output.get("timed_out")) is not bool
+        ):
+            raise ValueError("Codex product wait output was invalid")
+        if output["timed_out"]:
+            timed_out += 1
+        else:
+            completed += 1
+            completed_after_last_spawn = (
+                completed_after_last_spawn or wait["index"] > last_spawn_index
+            )
+    if completed == 0 or not completed_after_last_spawn:
+        raise ValueError("Codex product parent did not complete a wait after its final spawn")
+    return completed, timed_out
+
+
+def _codex_product_rollout_collaboration_evidence(
+    stdout: str,
+    rollout_root: Path,
+    *,
+    not_before: float | None,
+    not_after: float | None,
+) -> dict[str, Any]:
+    """Project a bounded exact multi-unit product collaboration topology."""
+
+    parent_thread_id = _codex_stdout_thread_id(stdout)
+    if parent_thread_id is None:
+        raise ValueError("Codex product stdout omitted its parent thread")
+    events = _codex_rollout_events(
+        rollout_root,
+        parent_thread_id,
+        parent_thread_id=None,
+        expected_agent_path=None,
+        not_before=not_before,
+        not_after=not_after,
+    )
+    calls, outputs, activities, unexpected_count, agent_message_count = (
+        _codex_product_rollout_call_data(events)
+    )
+    spawns = [call for call in calls if call["name"] == "spawn_agent"]
+    waits = [call for call in calls if call["name"] == "wait_agent"]
+    if not 1 <= len(spawns) <= _CODEX_PRODUCT_MAX_SPAWNS:
+        raise ValueError("Codex product spawn cardinality was invalid")
+    if not 1 <= len(waits) <= _CODEX_PRODUCT_MAX_WAITS:
+        raise ValueError("Codex product wait cardinality was invalid")
+    if set(outputs) != {call["call_id"] for call in calls}:
+        raise ValueError("Codex product collaboration outputs did not match its calls")
+    projected_spawns: list[dict[str, Any]] = []
+    child_tool_call_count = 0
+    for spawn in spawns:
+        projected, tool_count = _codex_product_spawn_projection(
+            spawn,
+            outputs=outputs,
+            activities=activities,
+            rollout_root=rollout_root,
+            parent_thread_id=parent_thread_id,
+            not_before=not_before,
+            not_after=not_after,
+        )
+        projected_spawns.append(projected)
+        child_tool_call_count += tool_count
+    receiver_ids = [row["receiver_thread_ids"][0] for row in projected_spawns]
+    task_names = [row["native_task_name"] for row in projected_spawns]
+    if len(set(receiver_ids)) != len(receiver_ids) or len(set(task_names)) != len(task_names):
+        raise ValueError("Codex product children were not distinct")
+    completed_waits, timed_out_waits = _codex_product_wait_counts(
+        waits,
+        outputs=outputs,
+        last_spawn_index=max(spawn["index"] for spawn in spawns),
+    )
+    stdout_projection = codex_collaboration_evidence(stdout)
+    if stdout_projection is None or (
+        stdout_projection["spawn_count"] > len(spawns)
+        or stdout_projection["wait_count"] > len(waits)
+    ):
+        raise ValueError("Codex product stdout contradicted its persisted rollout")
+    observed_receivers = {
+        str(receiver)
+        for row in stdout_projection["calls"]
+        for receiver in row.get("receiver_thread_ids", [])
+    }
+    if not observed_receivers.issubset(set(receiver_ids)):
+        raise ValueError("Codex product stdout identified a different child")
+    return {
+        "schema": _CODEX_PRODUCT_COLLABORATION_SCHEMA,
+        "calls": projected_spawns,
+        "spawn_count": len(projected_spawns),
+        "wait_count": len(waits),
+        "completed_wait_count": completed_waits,
+        "timed_out_wait_count": timed_out_waits,
+        "completed_child_count": len(projected_spawns),
+        "failed_child_count": 0,
+        "child_tool_call_count": child_tool_call_count,
+        "parent_agent_message_count": agent_message_count,
+        "unexpected_item_count": (
+            unexpected_count + int(stdout_projection.get("unexpected_item_count") or 0)
+        ),
+        "evidence_source": "persisted_rollout",
+    }
+
+
 def _codex_collaboration_call_projection(
     event: dict[str, Any],
     item: dict[str, Any],
@@ -908,6 +1243,154 @@ def codex_collaboration_evidence(
         return None
 
 
+def _codex_rollout_content_free_counts(
+    events: list[dict[str, Any]],
+) -> dict[str, int]:
+    """Count native lifecycle shapes without retaining rollout content."""
+
+    counts = {
+        "spawn_count": 0,
+        "wait_count": 0,
+        "tool_output_count": 0,
+        "child_start_count": 0,
+        "agent_message_count": 0,
+        "unexpected_item_count": 0,
+    }
+    for event in events:
+        payload = event.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        if event.get("type") == "event_msg":
+            if payload.get("type") == "sub_agent_activity" and payload.get("kind") == "started":
+                counts["child_start_count"] += 1
+            continue
+        if event.get("type") != "response_item":
+            continue
+        item_type = str(payload.get("type") or "").strip()
+        if item_type == "function_call":
+            name = str(payload.get("name") or "").strip()
+            namespace = str(payload.get("namespace") or "").strip()
+            if namespace == "collaboration" and name == "spawn_agent":
+                counts["spawn_count"] += 1
+            elif namespace == "collaboration" and name == "wait_agent":
+                counts["wait_count"] += 1
+            else:
+                counts["unexpected_item_count"] += 1
+        elif item_type == "function_call_output":
+            counts["tool_output_count"] += 1
+        elif item_type in {"agent_message", "message"}:
+            counts["agent_message_count"] += 1
+        elif item_type != "reasoning":
+            counts["unexpected_item_count"] += 1
+    return counts
+
+
+def _codex_collaboration_diagnostic_reason(
+    counts: Mapping[str, int],
+    *,
+    rollout_contract: str,
+) -> str:
+    if counts["spawn_count"] == 0:
+        return "parent_spawn_missing"
+    if rollout_contract == "canary" and counts["spawn_count"] != 1:
+        return "parent_spawn_ambiguous"
+    if counts["wait_count"] == 0:
+        return "parent_wait_missing"
+    if rollout_contract == "canary" and counts["wait_count"] != 1:
+        return "parent_wait_ambiguous"
+    if counts["tool_output_count"] < counts["spawn_count"] + counts["wait_count"]:
+        return "native_tool_output_missing"
+    if counts["child_start_count"] < counts["spawn_count"]:
+        return "native_child_start_missing"
+    return "native_collaboration_topology_invalid"
+
+
+def _codex_rollout_collaboration_diagnostic(
+    stdout: str,
+    rollout_root: Path,
+    *,
+    not_before: float | None,
+    not_after: float | None,
+    rollout_contract: str,
+) -> dict[str, Any]:
+    """Explain one failed exact projection using only bounded safe counts."""
+
+    empty_counts = {
+        "spawn_count": 0,
+        "wait_count": 0,
+        "tool_output_count": 0,
+        "child_start_count": 0,
+        "agent_message_count": 0,
+        "unexpected_item_count": 0,
+    }
+    try:
+        parent_thread_id = _codex_stdout_thread_id(stdout)
+        if parent_thread_id is None:
+            raise ValueError("Codex did not announce a parent rollout")
+        events = _codex_rollout_events(
+            rollout_root,
+            parent_thread_id,
+            parent_thread_id=None,
+            expected_agent_path=None,
+            not_before=not_before,
+            not_after=not_after,
+        )
+    except (OSError, TypeError, ValueError):
+        return {
+            "schema": CODEX_COLLABORATION_DIAGNOSTIC_SCHEMA,
+            "proven": False,
+            "reason": "parent_rollout_unavailable",
+            "parent_rollout_observed": False,
+            **empty_counts,
+        }
+    counts = _codex_rollout_content_free_counts(events)
+    return {
+        "schema": CODEX_COLLABORATION_DIAGNOSTIC_SCHEMA,
+        "proven": False,
+        "reason": _codex_collaboration_diagnostic_reason(
+            counts,
+            rollout_contract=rollout_contract,
+        ),
+        "parent_rollout_observed": True,
+        **counts,
+    }
+
+
+def sanitize_codex_collaboration_diagnostic(value: object) -> dict[str, Any] | None:
+    """Strictly project the content-free collaboration failure contract."""
+
+    expected = {
+        "schema",
+        "proven",
+        "reason",
+        "parent_rollout_observed",
+        "spawn_count",
+        "wait_count",
+        "tool_output_count",
+        "child_start_count",
+        "agent_message_count",
+        "unexpected_item_count",
+    }
+    if not isinstance(value, Mapping) or set(value) != expected:
+        return None
+    if (
+        value.get("schema") != CODEX_COLLABORATION_DIAGNOSTIC_SCHEMA
+        or value.get("proven") is not False
+        or value.get("reason") not in CODEX_COLLABORATION_DIAGNOSTIC_REASONS
+        or type(value.get("parent_rollout_observed")) is not bool
+    ):
+        return None
+    for name in expected - {"schema", "proven", "reason", "parent_rollout_observed"}:
+        count = value.get(name)
+        if (
+            not isinstance(count, int)
+            or isinstance(count, bool)
+            or not 0 <= count <= _CODEX_COLLABORATION_DIAGNOSTIC_COUNT_MAX
+        ):
+            return None
+    return {name: value[name] for name in expected}
+
+
 def _codex_failure_reason(stderr: object) -> str | None:
     """Classify allowlisted Codex failures without retaining raw stderr."""
 
@@ -978,8 +1461,11 @@ def codex_canary_record(
     rollout_root: Path | None = None,
     rollout_not_before: float | None = None,
     rollout_not_after: float | None = None,
+    rollout_contract: str = "canary",
 ) -> dict[str, Any]:
     facade = _facade()
+    if rollout_contract not in _CODEX_ROLLOUT_CONTRACTS:
+        raise ValueError("unsupported Codex rollout contract")
     completed = facade._process_succeeded(result)
     timed_out = bool(result.timed_out)
     record: dict[str, Any] = {
@@ -1003,18 +1489,48 @@ def codex_canary_record(
         record["hook_diagnostic"] = hook_diagnostic
     if hook_events := _codex_hook_events(getattr(result, "stderr", "")):
         record["hook_events"] = hook_events
-    collaboration = codex_collaboration_evidence(
-        result.stdout,
-        rollout_root=rollout_root,
-        rollout_not_before=rollout_not_before,
-        rollout_not_after=rollout_not_after,
-    )
+    if rollout_root is not None and rollout_contract == "product":
+        try:
+            collaboration = _codex_product_rollout_collaboration_evidence(
+                result.stdout,
+                rollout_root,
+                not_before=rollout_not_before,
+                not_after=rollout_not_after,
+            )
+        except (OSError, TypeError, ValueError):
+            collaboration = None
+    else:
+        collaboration = codex_collaboration_evidence(
+            result.stdout,
+            rollout_root=rollout_root,
+            rollout_not_before=rollout_not_before,
+            rollout_not_after=rollout_not_after,
+        )
+    collaboration_diagnostic = None
+    if completed and collaboration is None and rollout_root is not None:
+        collaboration_diagnostic = _codex_rollout_collaboration_diagnostic(
+            result.stdout,
+            rollout_root,
+            not_before=rollout_not_before,
+            not_after=rollout_not_after,
+            rollout_contract=rollout_contract,
+        )
+        record["collaboration_diagnostic"] = collaboration_diagnostic
     output = facade._codex_output(result.stdout) if completed else None
     if completed and output is not None and collaboration is not None:
         record.update(output=output, collaboration=collaboration)
     elif completed:
         record["status"] = "failed"
-        if output is None and collaboration is None:
+        diagnostic_reason = (
+            _CODEX_COLLABORATION_FAILURE_REASON_BY_DIAGNOSTIC.get(
+                collaboration_diagnostic["reason"]
+            )
+            if collaboration_diagnostic is not None
+            else None
+        )
+        if diagnostic_reason is not None:
+            record["failure_reason"] = diagnostic_reason
+        elif output is None and collaboration is None:
             record["failure_reason"] = "codex_result_projection_unavailable"
         elif output is None:
             record["failure_reason"] = "codex_output_projection_unavailable"
@@ -1085,6 +1601,7 @@ class SafeCodexCanaryBackend:
     require_existing_store: bool = False
     exec_options: tuple[str, ...] | None = None
     require_exact_activation_rollout: bool = False
+    rollout_contract: str = "canary"
     hook_event_diagnostics: bool = False
     hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None
     trusted_workdir: str = ""
@@ -1329,6 +1846,10 @@ class SafeCodexCanaryBackend:
     ) -> dict[str, Any]:
         del check
         facade = _facade()
+        if self.rollout_contract not in _CODEX_ROLLOUT_CONTRACTS:
+            raise ValueError("unsupported Codex rollout contract")
+        if self.rollout_contract == "product" and not self.require_exact_activation_rollout:
+            raise ValueError("product rollout contract requires exact rollout evidence")
         deadline = facade.time.monotonic() + self.timeout
         if self.profile_scope == "current-profile":
             from agency_runtime.core.cli_transport import safe_cli_environment
@@ -1379,6 +1900,7 @@ class SafeCodexCanaryBackend:
                     rollout_not_after=(
                         facade.time.time() if self.require_exact_activation_rollout else None
                     ),
+                    rollout_contract=self.rollout_contract,
                 ),
                 invocation_attempted=True,
             )
@@ -1449,6 +1971,7 @@ class SafeCodexCanaryBackend:
                 rollout_not_after=(
                     facade.time.time() if self.require_exact_activation_rollout else None
                 ),
+                rollout_contract=self.rollout_contract,
             )
             if workspace_trust is not None:
                 record["workspace_trust"] = workspace_trust

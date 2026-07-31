@@ -139,6 +139,7 @@ _HOST_INSPECTION_CACHE_SECONDS = 3.0
 _HOST_INSPECTION_DEADLINE_SECONDS = 2.0
 _ACTIVITY_NAMES = (
     "runs",
+    "preflight_failures",
     "routing",
     "delegations",
     "receipts",

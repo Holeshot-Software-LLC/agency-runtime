@@ -41,7 +41,16 @@ _FILTER_FIELDS = frozenset(
 )
 _CANDIDATE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,255}\Z")
 _FAILURE_STATES = frozenset(
-    {"cancelled", "degraded", "error", "failed", "failure", "timed_out", "timeout"}
+    {
+        "cancelled",
+        "degraded",
+        "error",
+        "failed",
+        "failure",
+        "preflight_failed",
+        "timed_out",
+        "timeout",
+    }
 )
 _SUCCESS_STATES = frozenset({"applied", "completed", "inferred", "ok", "success"})
 _SAFE_ACTIVE_FIELDS = (
@@ -721,6 +730,9 @@ def inference_operational_snapshot(
     raw_receipts = activity.get("receipts", ())
     receipts = [item for item in raw_receipts if isinstance(item, Mapping)]
     routing = [item for item in activity.get("routing", ()) if isinstance(item, Mapping)]
+    preflight_failures = [
+        item for item in activity.get("preflight_failures", ()) if isinstance(item, Mapping)
+    ]
     configured = inference_is_configured(config)
     chain = []
     for index, provider in enumerate(_provider_chain(config)):
@@ -756,6 +768,21 @@ def inference_operational_snapshot(
                     "trace_id": str(decision.get("trace_id") or "")[:256],
                 }
             )
+    failures.extend(
+        {
+            "kind": "preflight_failure",
+            "status": "preflight_failed",
+            "schema_version": "agency.preflight.failure.v1",
+            "stage": str(receipt.get("stage") or "")[:32],
+            "reason_code": str(receipt.get("reason_code") or "")[:96],
+            "exception_category": str(receipt.get("exception_category") or "")[:32],
+            "provider_attempts": list(receipt.get("provider_attempts") or ()),
+            "recorded_at": str(receipt.get("recorded_at") or ""),
+            "trace_id": str(receipt.get("trace_id") or "")[:256],
+            "host": str(receipt.get("host") or "")[:64],
+        }
+        for receipt in preflight_failures
+    )
     failures.sort(
         key=lambda item: str(item.get("recorded_at") or item.get("created_at") or ""),
         reverse=True,
@@ -768,6 +795,13 @@ def inference_operational_snapshot(
         if latest_routing is not None
         else "unknown"
     )
+    latest_preflight = preflight_failures[0] if preflight_failures else None
+    if latest_preflight is not None and (
+        latest_routing is None
+        or str(latest_preflight.get("recorded_at") or "")
+        >= str(latest_routing.get("created_at") or "")
+    ):
+        latest_status = "preflight_failed"
     if not configured:
         state = "not_configured"
     elif latest_status in _FAILURE_STATES:
@@ -782,7 +816,10 @@ def inference_operational_snapshot(
         "configured": configured,
         "required_for_eligible_turns": configured,
         "state": state,
-        "evidence": "configuration readiness plus recent persisted routing/model receipts",
+        "evidence": (
+            "configuration readiness plus recent persisted routing, model, and "
+            "content-free preflight failure receipts"
+        ),
         "provider_chain": chain,
         "latest_model_resolution": latest_receipt,
         "recent_failures": failures[:bounded_limit],

@@ -24,6 +24,7 @@ const EVIDENCE_COLUMNS = {
 	routing: [["trace_id", "Trace"], ["id", "Decision"], ["status", "Outcome"], ["semantic_status", "Semantic result"], ["source", "Source"], ["selected_ids", "Selected"], ["fallback_applied", "Fallback applied"], ["fallback_companion_ids", "Fallback policy IDs"], ["created_at", "Created"]],
 	receipts: [["requested_model", "Requested"], ["model_group", "LiteLLM router / model group"], ["resolved_provider", "Actual provider"], ["resolved_model", "Actual model"], ["host", "Host"], ["status", "Status"], ["source", "Source"], ["ended_at", "Ended"]],
 	runs: [["trace_id", "Trace"], ["session_id", "Session"], ["host", "Host"], ["status", "Status"], ["started_at", "Started"], ["ended_at", "Ended"]],
+	preflight_failures: [["trace_id", "Trace"], ["host", "Host"], ["stage", "Failed stage"], ["reason_code", "Reason"], ["exception_category", "Category"], ["recorded_at", "Recorded"]],
 	finalizations: [["trace_id", "Trace"], ["host", "Host"], ["action", "Action"], ["missing", "Missing"], ["created_at", "Created"]],
 };
 
@@ -350,12 +351,19 @@ export function createRenderer(core, config, callbacks) {
 				const copy = el("div");
 				const title = failure.kind === "model_receipt"
 					? `${failure.requested_model || "unidentified model"} · ${failure.status || "failed"}`
-					: `${failure.provider || "routing inference"} · ${failure.status || "degraded"}`;
+					: failure.kind === "preflight_failure"
+						? `${failure.stage || "preflight"} · ${failure.reason_code || "failed"}`
+						: `${failure.provider || "routing inference"} · ${failure.status || "degraded"}`;
 				copy.append(strong( "", title));
 				if (failure.kind === "model_receipt") {
 					copy.append(
 						small( "", `Router: ${failure.router || "none"}`),
 						small( "", `Actual: ${failure.actual_provider || "unavailable"} / ${failure.actual_model || "unavailable"}`),
+					);
+				} else if (failure.kind === "preflight_failure") {
+					copy.append(
+						small( "", `Host: ${failure.host || "unknown"} · ${failure.exception_category || "unavailable"}`),
+						small( "", `Trace: ${failure.trace_id || "unavailable"} · ${(failure.provider_attempts || []).length} provider attempt(s)`),
 					);
 				} else copy.append(small( "", `Trace: ${failure.trace_id || "unavailable"}`));
 				row.append(copy, el("time", "", formatTime(failure.recorded_at || failure.created_at)));

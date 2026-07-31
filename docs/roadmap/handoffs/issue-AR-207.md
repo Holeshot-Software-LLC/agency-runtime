@@ -13,6 +13,8 @@ related:
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
+  - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -41,6 +43,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   consumed and must not be rerun.
 - Tracker issue [#196](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196)
   owns the newly isolated content-free failure boundary.
+- The local AR-207 implementation, two bounded review passes, and named fast
+  spine are complete; it is not committed, merged, or installed yet.
 
 ## completed-evidence
 
@@ -68,13 +72,28 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Reconstructed product preflight context is 8,471 characters; combined with
   its header it is about 2,414 Codex tokens, below the host's default spill
   threshold. Context spill is a robustness gap, not the proven cause.
+- Schema v39 now writes one immutable content-free preflight failure receipt
+  atomically with terminal cleanup and exposes it through exact activation,
+  status, and dashboard projections.
+- Product rollout evidence now accepts one through sixteen exact specialist
+  children, correlates each child to the parent session and persisted unit, and
+  removes all child prompts, tool arguments, outputs, and final messages.
+- Product proof requires every planned unit's delegation, grant, consumption,
+  specialist load, worker lifecycle, exact child prompt delivery, and completed
+  child. Extra parent product tools, missing rows, correction count above zero,
+  or failed workspace-write evidence are terminal failures.
+- The named warning-strict Python spine passed 636 tests with six skips;
+  dashboard UI passed 110 tests; routing passed every gate; all 62 curated
+  decision mutations were killed with zero survivors or invalid mutations;
+  source restoration and `git diff --check` passed.
+- Documentation validation passed all 582 maintained Markdown files, and
+  context telemetry reported 85.2 percent remaining before this checkpoint.
 
 ## exact-blocker
 
-Selection and exact installation work. The README trial fails after accepted
-staffing but before native delegation execution, while the adjacent preflight
-failure path erases the information needed to repair that boundary without
-replay.
+The demonstrated code contradiction is repaired and locally verified. The
+remaining gate is delivery evidence: checkpoint and merge one reviewed
+revision, exact-install it, then spend that revision's sole product trial.
 
 ## same-task-continuity
 
@@ -85,15 +104,12 @@ untracked files.
 
 ## next-bounded-work-package
 
-1. Persist and project a bounded content-free preflight failure receipt.
-2. Add bounded parent hook/turn facts that distinguish injection, output,
-   spawn/wait, and Stop reconciliation for accepted routes.
-3. Run focused tests and decision mutations; use bounded diagnostics to repair
-   the first demonstrated execution cause.
-4. Complete at most two review passes, run the named fast spine, merge, and
-   exact-install before one fresh product trial.
-5. Produce the local shareable evidence page and OpenClaw handoff after the
-   terminal exact-build trial.
+1. Create the substantive and ledger checkpoints, push, review, merge, and
+   exact-install Codex, ZCode, and dashboard once.
+2. Prove exact-build activation with the supported hook bypass.
+3. Spend one fresh 1,800-second product trial on that exact build.
+4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
+   local shareable evidence page and OpenClaw handoff.
 
 ## verification
 

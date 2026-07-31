@@ -173,7 +173,142 @@ def test_preflight_persists_request_kind_and_terminalizes_downstream_failure(
 
     assert store.get_turn_request_kind("session", "failed-turn") == "nontrivial"
     assert store.get_run("failed-turn")["status"] == "preflight_failed"
+    receipt = store.get_preflight_failure_receipt("session", "failed-turn")
+    assert receipt is not None
+    assert receipt["schema_version"] == "agency.preflight.failure.v1"
+    assert receipt["stage"] == "routing"
+    assert receipt["reason_code"] == "routing_failed"
+    assert receipt["exception_category"] == "runtime_error"
+    assert receipt["provider_attempts"] == []
+    assert (
+        store.get_completion_evidence_snapshot("session", "failed-turn")["preflight_failure"]
+        == receipt
+    )
     assert store.get_open_traces_for_session("session") == []
+
+
+def test_preflight_failure_receipt_projects_provider_attempts_without_content(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    secret = "sk-secret-provider-value"
+    response = "provider response must never be retained"
+    prompt = "private prompt must never be retained"
+
+    def failed_inference(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+        return {
+            "selected_ids": [],
+            "status": "inference_invalid",
+            "source": "workforce_inference_failure",
+            "provider_attempts": [
+                {
+                    "stage": "planner",
+                    "provider_name": secret,
+                    "provider_type": "cli",
+                    "requested_model": "gpt-5.6-luna",
+                    "model_group": "workforce",
+                    "actual_model": "",
+                    "model_receipt_source": "unavailable",
+                    "status": "failed",
+                    "reason_code": "provider_timeout",
+                    "prompt": prompt,
+                    "response": response,
+                    "stderr": r"C:\private\provider.stderr",
+                }
+            ],
+        }
+
+    monkeypatch.setattr(pipeline, "route", failed_inference)
+
+    with pytest.raises(RuntimeError, match="no accepted specialist"):
+        run_preflight(
+            store,
+            session_id="session",
+            user_message="Audit and harden the runtime.",
+            host="codex",
+            trace_id="inference-failed",
+        )
+
+    receipt = store.get_preflight_failure_receipt("session", "inference-failed")
+    assert receipt is not None
+    assert receipt["stage"] == "routing"
+    assert receipt["reason_code"] == "workforce_inference_failed"
+    assert receipt["exception_category"] == "runtime_error"
+    assert receipt["provider_attempts"] == [
+        {
+            "stage": "planner",
+            "provider_name": receipt["provider_attempts"][0]["provider_name"],
+            "provider_type": "cli",
+            "requested_model": "gpt-5.6-luna",
+            "model_group": "workforce",
+            "actual_model": "",
+            "model_receipt_source": "unavailable",
+            "status": "failed",
+            "reason_code": "provider_timeout",
+        }
+    ]
+    assert receipt["provider_attempts"][0]["provider_name"].startswith("sha256:")
+    connection = store._connect()
+    try:
+        durable = connection.execute(
+            "SELECT provider_attempts FROM preflight_failure_receipts "
+            "WHERE trace_id = 'inference-failed'"
+        ).fetchone()["provider_attempts"]
+    finally:
+        connection.close()
+    for forbidden in (secret, response, prompt, "provider.stderr"):
+        assert forbidden not in durable
+    [activity] = store.recent_dashboard_activity(limit=10)["preflight_failures"]
+    assert activity["trace_id"] == "inference-failed"
+    assert activity["stage"] == "routing"
+    assert activity["reason_code"] == "workforce_inference_failed"
+    assert activity["provider_attempts"] == receipt["provider_attempts"]
+
+
+def test_schema_v39_backfills_and_immutably_scopes_legacy_preflight_failure(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.db"
+    store = Store(path)
+    started = store.begin_preflight_attempt(
+        session_id="session",
+        trace_id="legacy-failure",
+        request_fingerprint=hashlib.sha256(b"legacy failure").hexdigest(),
+        request_kind="nontrivial",
+        host="codex",
+    )
+    assert store.fail_preflight_attempt(
+        session_id="session",
+        trace_id="legacy-failure",
+        attempt_token=started["attempt_token"],
+    )
+    connection = store._connect()
+    try:
+        connection.execute(
+            "DELETE FROM preflight_failure_receipts WHERE trace_id = 'legacy-failure'"
+        )
+        connection.execute("DELETE FROM schema_version")
+        connection.execute("INSERT INTO schema_version (version) VALUES (38)")
+        connection.commit()
+    finally:
+        connection.close()
+
+    migrated = Store(path)
+    receipt = migrated.get_preflight_failure_receipt("session", "legacy-failure")
+    assert receipt is not None
+    assert receipt["stage"] == "lifecycle"
+    assert receipt["reason_code"] == "preflight_lifecycle_failed"
+    assert receipt["exception_category"] == "unavailable"
+    connection = migrated._connect()
+    try:
+        with pytest.raises(sqlite3.IntegrityError, match="immutable"):
+            connection.execute(
+                "UPDATE preflight_failure_receipts SET stage = 'routing' "
+                "WHERE trace_id = 'legacy-failure'"
+            )
+    finally:
+        connection.close()
 
 
 @pytest.mark.parametrize("failure", ["config", "classification", "begin_attempt"])
@@ -218,6 +353,10 @@ def test_early_preflight_failure_closes_its_hook_reservation(
         )
 
     assert store.get_run("reserved")["status"] == "preflight_failed"
+    receipt = store.get_preflight_failure_receipt("session", "reserved")
+    assert receipt is not None
+    assert receipt["stage"] in {"routing_snapshot", "lifecycle"}
+    assert receipt["exception_category"] == "runtime_error"
     assert store.get_open_traces_for_session("session") == []
 
 
@@ -1309,6 +1448,7 @@ def test_failure_first_prevents_late_ready_commit(
         specialist_refs=[],
     ) == {"outcome": "cas_lost"}
     assert store.get_run("failure-wins")["status"] == "preflight_failed"
+    assert store.get_preflight_failure_receipt("session", "failure-wins") is not None
     assert store.runtime_table_counts()["routing_decisions"] == 0
 
 

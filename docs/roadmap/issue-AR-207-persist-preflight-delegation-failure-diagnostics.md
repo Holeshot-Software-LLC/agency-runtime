@@ -15,6 +15,8 @@ related:
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
+  - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -64,6 +66,16 @@ the parent emitted no delegation tool call or response.
   one native specialist lifecycle, accepted finalization, and zero corrections.
   The defect is therefore request/path-specific, not a blanket installation
   failure.
+- The local repair now persists schema-v39 `agency.preflight.failure.v1`
+  receipts and projects them through exact activation, CLI, and dashboard
+  evidence. Raw prompts, responses, errors, paths, and credentials are excluded.
+- The product harness now grades one through sixteen exact inferred work units
+  instead of applying the fixed one-child activation canary. Every planned row
+  must reach its own persisted child, activation, load, worker, and completed
+  delegation; a parent-side non-collaboration tool call fails the trial.
+- Product execution now has a 600-second minimum and retains the 1,800-second
+  CLI default. README, troubleshooting, and ADR-0124 describe the same
+  no-generalist contract.
 
 ## Approach
 
@@ -76,7 +88,9 @@ the parent emitted no delegation tool call or response.
 3. Preserve bounded Codex hook and turn-event facts needed to distinguish
    context injection, model output, native spawn/wait, and Stop reconciliation.
 4. Use those diagnostics plus bounded controls to repair the first demonstrated
-   product execution boundary before spending one trial on a new exact build.
+   product execution boundary. Keep the fixed activation canary separate from
+   bounded multi-unit product grading, dispatch every accepted row exactly once,
+   and fail if the parent performs product work.
 5. Keep inference authoritative, the parent non-generalist, and all raw prompt,
    provider-response, stderr, path, and credential material out of durable
    evidence.
@@ -91,16 +105,16 @@ those proofs exposed.
 
 ## Acceptance
 
-- [ ] Every `preflight_failed` run has one correlated, bounded, content-free
+- [x] Every `preflight_failed` run has one correlated, bounded, content-free
   failure receipt.
-- [ ] Failure evidence retains no prompt, provider response, exception message,
+- [x] Failure evidence retains no prompt, provider response, exception message,
   filesystem path, credential, or raw stderr.
-- [ ] Exact product evidence reports the failed stage and allowlisted reason
+- [x] Exact product evidence reports the failed stage and allowlisted reason
   instead of only `route_not_found` or an empty turn.
-- [ ] Accepted-route/no-delegation evidence distinguishes missing parent spawn
+- [x] Accepted-route/no-delegation evidence distinguishes missing parent spawn
   from hook injection, child activation, and Stop failure.
-- [ ] Focused warning-strict tests and the named fast spine pass.
-- [ ] Curated mutations prove removal, overbroad retention, and projection
+- [x] Focused warning-strict tests and the named fast spine pass.
+- [x] Curated mutations prove removal, overbroad retention, and projection
   regressions fail.
 - [ ] A reviewed exact build is merged and installed before any fresh product
   trial.

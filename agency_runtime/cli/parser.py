@@ -1294,7 +1294,7 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
         "--timeout",
         type=float,
         default=1800.0,
-        help="End-to-end host deadline in seconds (1 through 3600)",
+        help="End-to-end host deadline in seconds (600 through 3600)",
     )
     eval_product.add_argument(
         "--model",

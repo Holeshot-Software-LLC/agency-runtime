@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 38
+SCHEMA_VERSION = 39
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
@@ -756,6 +756,59 @@ CREATE TABLE IF NOT EXISTS runs (
     preflight_request_kind TEXT NOT NULL DEFAULT '',
     preflight_result TEXT NOT NULL DEFAULT ''
 );
+
+-- One immutable, content-free diagnostic for every terminal preflight failure.
+CREATE TABLE IF NOT EXISTS preflight_failure_receipts (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    trace_id TEXT NOT NULL UNIQUE,
+    host TEXT NOT NULL DEFAULT 'unknown'
+        CHECK (typeof(host) = 'text'
+               AND length(CAST(host AS BLOB)) BETWEEN 1 AND 64),
+    stage TEXT NOT NULL CHECK (stage IN (
+        'lifecycle', 'resident_binding', 'routing_snapshot', 'route_request',
+        'routing', 'assignment', 'context_hydration', 'context_delivery',
+        'ready_commit', 'ready_read', 'direct_activation'
+    )),
+    reason_code TEXT NOT NULL CHECK (reason_code IN (
+        'preflight_lifecycle_failed', 'resident_binding_failed',
+        'routing_snapshot_failed', 'route_request_failed', 'routing_failed',
+        'workforce_provider_unavailable', 'workforce_inference_failed',
+        'substantive_specialist_unavailable', 'child_routing_unavailable',
+        'assignment_failed', 'context_hydration_failed',
+        'context_delivery_failed', 'ready_commit_failed', 'ready_read_failed',
+        'direct_activation_failed'
+    )),
+    exception_category TEXT NOT NULL CHECK (exception_category IN (
+        'timeout', 'validation_error', 'permission_error', 'host_error',
+        'runtime_error', 'internal_error', 'unavailable'
+    )),
+    provider_attempts TEXT NOT NULL DEFAULT '[]'
+        CHECK (typeof(provider_attempts) = 'text'
+               AND length(CAST(provider_attempts AS BLOB)) BETWEEN 2 AND 32768
+               AND json_valid(provider_attempts)
+               AND json_type(provider_attempts) = 'array'
+               AND json_array_length(provider_attempts) <= 16),
+    recorded_at TEXT NOT NULL,
+    FOREIGN KEY (trace_id) REFERENCES runs(trace_id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER IF NOT EXISTS agency_preflight_failure_scope_insert
+BEFORE INSERT ON preflight_failure_receipts
+WHEN NOT EXISTS (
+    SELECT 1 FROM runs WHERE runs.trace_id = NEW.trace_id
+    AND COALESCE(runs.session_id, '') = NEW.session_id AND runs.host = NEW.host
+    AND runs.status = 'preflight_failed'
+)
+BEGIN
+    SELECT RAISE(ABORT, 'preflight failure receipt scope mismatch');
+END;
+
+CREATE TRIGGER IF NOT EXISTS agency_preflight_failure_immutable
+BEFORE UPDATE ON preflight_failure_receipts
+BEGIN
+    SELECT RAISE(ABORT, 'preflight failure receipt is immutable');
+END;
 
 -- Model receipts (what actually ran)
 CREATE TABLE IF NOT EXISTS model_receipts (
@@ -1621,6 +1674,7 @@ BEGIN SELECT RAISE(ABORT, 'agent hiring approval is immutable'); END;
 
 ALL_TABLES: tuple[str, ...] = (
     "runs",
+    "preflight_failure_receipts",
     "model_receipts",
     "skills_loaded",
     "specialists_loaded",
@@ -1668,6 +1722,11 @@ ALL_TABLES: tuple[str, ...] = (
 
 RUNTIME_TABLE_TIMESTAMPS: dict[str, str] = {
     "runs": "last_activity_at",
+    "preflight_failure_receipts": (
+        "COALESCE((SELECT activity.last_activity_at FROM runs AS activity "
+        "WHERE activity.trace_id = preflight_failure_receipts.trace_id), "
+        "preflight_failure_receipts.recorded_at)"
+    ),
     "model_receipts": (
         "COALESCE((SELECT activity.last_activity_at FROM runs AS activity "
         "WHERE activity.trace_id = model_receipts.trace_id), '')"
@@ -1718,6 +1777,7 @@ RUNTIME_DELETE_ORDER: tuple[str, ...] = (
     "delegation_activation_receipts",
     "worker_runs",
     "delegation_events",
+    "preflight_failure_receipts",
     "model_receipts",
     "skills_loaded",
     "specialists_loaded",
@@ -4499,6 +4559,7 @@ def create_activity_triggers(conn: sqlite3.Connection) -> None:
         "agency_runs_update_activity",
     ]
     correlated_tables = {
+        "preflight_failure_receipts": "NEW.trace_id",
         "model_receipts": "NEW.trace_id",
         "skills_loaded": "NEW.trace_id",
         "specialists_loaded": "NEW.trace_id",
@@ -4905,6 +4966,15 @@ def migrate_schema(
         "TEXT NOT NULL DEFAULT ''",
     )
     ensure_column(conn, "runs", "preflight_result", "TEXT NOT NULL DEFAULT ''")
+    conn.execute(
+        "INSERT OR IGNORE INTO preflight_failure_receipts "
+        "(id, session_id, trace_id, host, stage, reason_code, exception_category, "
+        "provider_attempts, recorded_at) "
+        "SELECT 'migration:preflight-failure:' || id, COALESCE(session_id, ''), "
+        "trace_id, host, 'lifecycle', 'preflight_lifecycle_failed', "
+        "'unavailable', '[]', COALESCE(ended_at, NULLIF(last_activity_at, ''), started_at) "
+        "FROM runs WHERE status = 'preflight_failed'"
+    )
     ensure_column(conn, "finalization_events", "response_hash", "TEXT")
     ensure_column(conn, "finalization_events", "policy_response_hash", "TEXT")
     ensure_column(conn, "finalization_events", "terminal_status", "TEXT")

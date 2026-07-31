@@ -884,18 +884,22 @@ That is intentional; it never turns a no-op into completed work.
 Each detected work unit has its own compatible specialist closure; do not assume
 the first parent specialist owns every unit. Unit routing considers the complete
 approved enabled roster and uses configured inference when semantic selection
-is required. A unit with no eligible match remains unmatched—protected resident
-managers coordinate the parent and are never substituted as domain workers.
+is required. A unit with no eligible match remains an explicit gap—the
+Agency-native resident steward preserves the parent boundary and is never
+substituted as a domain worker.
 
-Selection is still only a plan. The native host may refine, merge, schedule, or
-decline units. Only units it actually starts require one-use child activation
-and reciprocal native worker/run evidence; skipped, declined, or
-retry-exhausted units close as nonexecution. Dependents enter the ready queue
-only after every one of their own prerequisites has an authoritative successful
-result. A slow independent unit no longer blocks a ready branch, but a failed,
-missing, duplicate, or malformed prerequisite recursively skips its descendants.
-Inspect the exact work-unit IDs and dependency edges when the observed order
-differs from a simple topological level list.
+Selection is still only a plan, but the native host must dispatch every accepted
+row exactly once. It may schedule independent rows concurrently and preserve
+dependency order; it may not merge or omit rows or perform their specialist work
+in the parent. If a row cannot be dispatched safely, record one explicit decline
+and stop the parent without claiming the planned outcome. Only units the host
+actually starts can produce one-use child activation and reciprocal native
+worker/run evidence. Dependents enter the ready queue only after every one of
+their own prerequisites has an authoritative successful result. A slow
+independent unit does not block a ready branch, but a failed, missing, duplicate,
+or malformed prerequisite recursively prevents its descendants from producing a
+successful turn. Inspect the exact work-unit IDs and dependency edges when the
+observed order differs from a simple topological level list.
 
 ## An executable is found but refused before launch
 

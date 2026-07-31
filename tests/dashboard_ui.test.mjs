@@ -5194,6 +5194,17 @@ test("operational dashboard renders governed roster, quarantine, and inference e
           trace_id: "trace-safe",
           created_at: isoBefore(2_000),
         },
+        {
+          kind: "preflight_failure",
+          status: "preflight_failed",
+          stage: "routing",
+          reason_code: "workforce_inference_failed",
+          exception_category: "timeout",
+          provider_attempts: [{ status: "failed" }],
+          host: "codex",
+          trace_id: "trace-preflight",
+          recorded_at: isoBefore(3_000),
+        },
         { kind: "model_receipt" },
         { kind: "routing" },
       ],
@@ -5218,6 +5229,9 @@ test("operational dashboard renders governed roster, quarantine, and inference e
     .map((node) => node.textContent).join(" ");
   assert.match(failureText, /Actual: anthropic \/ claude-production/);
   assert.match(failureText, /Trace: trace-safe/);
+  assert.match(failureText, /routing · workforce_inference_failed/);
+  assert.match(failureText, /Host: codex · timeout/);
+  assert.match(failureText, /Trace: trace-preflight · 1 provider attempt/);
   assert.match(failureText, /unidentified model · failed/);
   assert.match(failureText, /routing inference · degraded/);
 

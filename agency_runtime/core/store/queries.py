@@ -22,6 +22,12 @@ RECENT_ACTIVITY_QUERIES: Mapping[str, str] = {
         "source, recorded_at, started_at, ended_at, status FROM model_receipts "
         "ORDER BY recorded_at DESC, id DESC LIMIT ?"
     ),
+    "preflight_failures": (
+        "SELECT id, session_id, trace_id, host, stage, reason_code, "
+        "exception_category, provider_attempts, recorded_at "
+        "FROM preflight_failure_receipts "
+        "ORDER BY recorded_at DESC, id DESC LIMIT ?"
+    ),
     "delegations": (
         "SELECT id, trace_id, session_id, host, work_unit_id, recommended_agent, "
         "status, backend, executed_worker_kind, executed_worker_id, native_run_id, "
@@ -228,6 +234,11 @@ def _project_routing_field(key: str, value: object) -> object:
 
 _OPEN_TRACE_RETENTION_GUARDS: Mapping[str, str] = {
     "runs": "runs.status NOT IN ('active', 'evidence_only')",
+    "preflight_failure_receipts": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = "
+        "preflight_failure_receipts.trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
     "model_receipts": (
         "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = model_receipts.trace_id "
         "AND runs.status IN ('active', 'evidence_only'))"
@@ -382,6 +393,37 @@ def normalize_activity_rows(
         _normalize_finalizations(rows)
     elif name == "routing":
         _normalize_routing(rows)
+    elif name == "preflight_failures":
+        from agency_runtime.core.preflight_failure import (
+            MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
+            PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
+            project_preflight_failure_receipt,
+        )
+
+        for row in rows:
+            try:
+                attempts = safe_load_bounded_json(
+                    str(row.get("provider_attempts") or ""),
+                    maximum_bytes=MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
+                    maximum_depth=4,
+                    maximum_nodes=512,
+                )
+            except (TypeError, ValueError) as exc:
+                raise RuntimeError(
+                    "preflight failure activity failed integrity validation"
+                ) from exc
+            projected = project_preflight_failure_receipt(
+                {
+                    "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
+                    "stage": row.get("stage"),
+                    "reason_code": row.get("reason_code"),
+                    "exception_category": row.get("exception_category"),
+                    "provider_attempts": attempts,
+                }
+            )
+            if projected is None:
+                raise RuntimeError("preflight failure activity failed integrity validation")
+            row.update(projected)
     return rows
 
 
@@ -465,6 +507,8 @@ def retention_predicates(
             [
                 "NOT EXISTS (SELECT 1 FROM model_receipts "
                 "WHERE model_receipts.trace_id = runs.trace_id)",
+                "NOT EXISTS (SELECT 1 FROM preflight_failure_receipts "
+                "WHERE preflight_failure_receipts.trace_id = runs.trace_id)",
                 "NOT EXISTS (SELECT 1 FROM skills_loaded "
                 "WHERE skills_loaded.trace_id = runs.trace_id)",
                 "NOT EXISTS (SELECT 1 FROM specialists_loaded "

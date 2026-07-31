@@ -17,6 +17,12 @@ from agency_runtime.core.installer_contracts import (
     HOOK_TIMEOUT_BUFFER_SECONDS,
     MAX_HOOK_TIMEOUT_SECONDS,
 )
+from agency_runtime.core.preflight_failure import (
+    MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
+    PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
+    default_preflight_failure_receipt,
+    project_preflight_failure_receipt,
+)
 from agency_runtime.core.preflight_versions import (
     PREFLIGHT_REPLAY_RECIPE_VERSION,
     SUPPORTED_PREFLIGHT_RECIPE_VERSIONS,
@@ -191,6 +197,54 @@ def _request_kind(value: object) -> str:
         return ""
     request_kind = str(parsed.get("request_kind") or "")
     return request_kind if request_kind in {"trivial", "nontrivial"} else ""
+
+
+def _prepare_preflight_failure_receipt(
+    value: Mapping[str, Any] | None,
+) -> tuple[dict[str, Any], str]:
+    """Validate and encode one bounded failure receipt for a Store write."""
+
+    projected = project_preflight_failure_receipt(
+        default_preflight_failure_receipt() if value is None else value
+    )
+    if projected is None:
+        raise ValueError("preflight failure receipt is malformed or unbounded")
+    encoded_attempts = json.dumps(
+        projected["provider_attempts"],
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+    if len(encoded_attempts.encode("utf-8")) > MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES:
+        raise ValueError("preflight failure provider attempts exceed their durable bound")
+    return projected, encoded_attempts
+
+
+def _decode_preflight_failure_receipt(row: Mapping[str, Any]) -> dict[str, Any]:
+    """Decode one stored receipt without accepting unbounded JSON."""
+
+    try:
+        provider_attempts = safe_load_bounded_json(
+            str(row["provider_attempts"]),
+            maximum_bytes=MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
+            maximum_depth=4,
+            maximum_nodes=512,
+        )
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("preflight failure receipt failed integrity validation") from exc
+    projected = project_preflight_failure_receipt(
+        {
+            "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
+            "stage": row["stage"],
+            "reason_code": row["reason_code"],
+            "exception_category": row["exception_category"],
+            "provider_attempts": provider_attempts,
+        }
+    )
+    if projected is None:
+        raise RuntimeError("preflight failure receipt failed integrity validation")
+    return projected
 
 
 def _project_turn_classification(value: object) -> dict[str, Any] | None:
@@ -1728,6 +1782,29 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         finally:
             conn.close()
 
+    def get_preflight_failure_receipt(
+        self,
+        session_id: str,
+        trace_id: str,
+    ) -> dict[str, Any] | None:
+        """Read the immutable content-free failure receipt for one exact turn."""
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT id, session_id, trace_id, host, stage, reason_code, "
+                "exception_category, provider_attempts, recorded_at "
+                "FROM preflight_failure_receipts WHERE session_id = ? AND trace_id = ?",
+                (normalized_session, normalized_trace),
+            ).fetchone()
+            if row is None:
+                return None
+            return {**dict(row), **_decode_preflight_failure_receipt(row)}
+        finally:
+            conn.close()
+
     def fail_preflight_attempt(
         self,
         *,
@@ -1735,12 +1812,18 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         trace_id: str,
         attempt_token: str,
         status: str = "preflight_failed",
+        failure_receipt: Mapping[str, Any] | None = None,
     ) -> bool:
         session_id = validate_correlation_id(session_id, field="session_id")
         trace_id = validate_correlation_id(trace_id, field="trace_id")
         normalized_status = str(status or "").strip()
         if normalized_status in {"", "active", "evidence_only"}:
             raise ValueError("preflight failure requires a terminal status")
+        projected_failure: tuple[dict[str, Any], str] | None = None
+        if normalized_status == "preflight_failed":
+            projected_failure = _prepare_preflight_failure_receipt(failure_receipt)
+        elif failure_receipt is not None:
+            raise ValueError("failure_receipt requires preflight_failed status")
         conn = self._connect()
         try:
             conn.execute("BEGIN IMMEDIATE")
@@ -1767,6 +1850,27 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                 ),
             )
             if closed.rowcount:
+                if projected_failure is not None:
+                    receipt, encoded_attempts = projected_failure
+                    inserted = conn.execute(
+                        "INSERT INTO preflight_failure_receipts "
+                        "(id, session_id, trace_id, host, stage, reason_code, "
+                        "exception_category, provider_attempts, recorded_at) "
+                        "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, "
+                        f"{STORE_CLOCK_SQL} FROM runs "  # nosec B608
+                        "WHERE session_id = ? AND trace_id = ? AND status = 'preflight_failed'",
+                        (
+                            self._uuid(),
+                            receipt["stage"],
+                            receipt["reason_code"],
+                            receipt["exception_category"],
+                            encoded_attempts,
+                            session_id,
+                            trace_id,
+                        ),
+                    )
+                    if inserted.rowcount != 1:
+                        raise RuntimeError("preflight failure receipt lost turn correlation")
                 conn.execute(
                     "UPDATE specialists_loaded SET expired_at = ? "
                     "WHERE session_id = ? AND trace_id = ? AND expired_at IS NULL",
@@ -1787,12 +1891,18 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         trace_id: str,
         reservation_token: str,
         status: str = "preflight_skipped",
+        failure_receipt: Mapping[str, Any] | None = None,
     ) -> bool:
         session_id = validate_correlation_id(session_id, field="session_id")
         trace_id = validate_correlation_id(trace_id, field="trace_id")
         normalized_status = str(status or "").strip()
         if normalized_status not in {"preflight_skipped", "preflight_failed"}:
             raise ValueError("reservation abandonment requires a preflight terminal status")
+        projected_failure: tuple[dict[str, Any], str] | None = None
+        if normalized_status == "preflight_failed":
+            projected_failure = _prepare_preflight_failure_receipt(failure_receipt)
+        elif failure_receipt is not None:
+            raise ValueError("failure_receipt requires preflight_failed status")
         conn = self._connect()
         try:
             conn.execute("BEGIN IMMEDIATE")
@@ -1816,6 +1926,27 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                     reservation_token,
                 ),
             )
+            if closed.rowcount and projected_failure is not None:
+                receipt, encoded_attempts = projected_failure
+                inserted = conn.execute(
+                    "INSERT INTO preflight_failure_receipts "
+                    "(id, session_id, trace_id, host, stage, reason_code, "
+                    "exception_category, provider_attempts, recorded_at) "
+                    "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, "
+                    f"{STORE_CLOCK_SQL} FROM runs "  # nosec B608
+                    "WHERE session_id = ? AND trace_id = ? AND status = 'preflight_failed'",
+                    (
+                        self._uuid(),
+                        receipt["stage"],
+                        receipt["reason_code"],
+                        receipt["exception_category"],
+                        encoded_attempts,
+                        session_id,
+                        trace_id,
+                    ),
+                )
+                if inserted.rowcount != 1:
+                    raise RuntimeError("preflight failure receipt lost turn correlation")
             conn.commit()
             return closed.rowcount == 1
         except Exception:

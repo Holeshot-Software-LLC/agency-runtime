@@ -36,6 +36,11 @@ from agency_runtime.core.store.trace_identity import correlation_pair_digests
 _DASHBOARD_ACTIVITY_PAGE_SPECS: Mapping[str, tuple[str, str, str]] = {
     "runs": ("runs", "runs.started_at", "runs.id"),
     "receipts": ("model_receipts", "model_receipts.recorded_at", "model_receipts.id"),
+    "preflight_failures": (
+        "preflight_failure_receipts",
+        "preflight_failure_receipts.recorded_at",
+        "preflight_failure_receipts.id",
+    ),
     "delegations": (
         "delegation_events",
         "COALESCE(delegation_events.completed_at, delegation_events.started_at)",
@@ -59,6 +64,7 @@ def _activity_cursor_time(name: str, row: Mapping[str, Any]) -> str:
             {
                 "runs": "started_at",
                 "receipts": "recorded_at",
+                "preflight_failures": "recorded_at",
                 "finalizations": "created_at",
                 "specialists": "loaded_at",
                 "routing": "created_at",

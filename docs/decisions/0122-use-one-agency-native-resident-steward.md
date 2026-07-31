@@ -8,6 +8,7 @@ tags: [orchestration, managers, inference, roster, activation]
 related:
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/decisions/0065-keep-compact-resident-manager-kernel.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - README.md
