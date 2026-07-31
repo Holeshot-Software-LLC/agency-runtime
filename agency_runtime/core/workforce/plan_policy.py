@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from agency_runtime.core.workforce.planning_contracts import WorkUnit, WorkUnitPlan
@@ -72,7 +73,30 @@ _SECURITY = frozenset(
         "vulnerabilities",
     }
 )
-_RELEASE = frozenset({"deploy", "deployment", "install", "installer", "release", "ship"})
+_RELEASE = frozenset(
+    {
+        "deploy",
+        "deployed",
+        "deploying",
+        "deployment",
+        "deployments",
+        "install",
+        "installation",
+        "installations",
+        "installed",
+        "installer",
+        "installers",
+        "installing",
+        "release",
+        "released",
+        "releases",
+        "releasing",
+        "ship",
+        "shipped",
+        "shipping",
+        "ships",
+    }
+)
 _ASSURANCE_TERMS = frozenset(
     {
         "assurance",
@@ -119,6 +143,115 @@ _NAMED_STANDARD = re.compile(
     r"|\b(?P<arp_prefix>arp)\s*-?\s*(?P<arp_identifier>\d{3,6}[a-z]?)\b",
     re.IGNORECASE,
 )
+
+_PLAN_REPAIR_REQUIREMENTS = {
+    "plan_missing_implementation": (
+        "Add at least one implementation-change unit for the requested code mutation."
+    ),
+    "plan_missing_test_implementation": (
+        "Add a distinct test-code unit that authors or changes the tests."
+    ),
+    "plan_missing_independent_review": (
+        "Add a distinct review-report unit for independent artifact correctness review."
+    ),
+    "plan_missing_test_evidence_review": (
+        "Add a distinct test-evidence unit that independently runs or interprets test results."
+    ),
+    "plan_tests_not_ordered_after_implementation": (
+        "Place each test-code unit after its implementation-change dependency and reference that "
+        "earlier unit through depends_on."
+    ),
+    "plan_review_not_ordered_after_artifact": (
+        "Place an independent review-report after the implementation or test artifact it reviews "
+        "and reference that earlier unit through depends_on."
+    ),
+    "plan_test_evidence_not_ordered_after_tests": (
+        "Place the test-evidence unit after test-code and reference the earlier test-code unit "
+        "through depends_on."
+    ),
+    "plan_missing_security_review": (
+        "Add a separate security-domain review-report for the security-sensitive code."
+    ),
+    "plan_missing_code_correctness_review": (
+        "Add a non-security software-engineering review-report for code correctness; keep it "
+        "distinct from the security review."
+    ),
+    "plan_missing_release_verification": (
+        "Add downstream test-evidence whose outcome explicitly verifies the requested install, "
+        "deployment, or release."
+    ),
+    "plan_missing_documentation_change": (
+        "Add a documentation unit for the requested prose or documentation mutation."
+    ),
+    "plan_missing_documentation_review": (
+        "Add a downstream review-report for the requested documentation change."
+    ),
+    "plan_missing_codebase_discovery": (
+        "Add an earlier software-engineering analysis unit whose outcome maps the relevant "
+        "repository code paths."
+    ),
+    "plan_missing_regulated_assurance_review": (
+        "Add an independent review-report for the named regulated assurance work."
+    ),
+    "plan_missing_regulated_assurance_requirement": (
+        "Include every named regulated-assurance capability in an independent review-report."
+    ),
+    "plan_external_write_requires_separate_authorization": (
+        "Remove external-write authority from this plan; it requires a separate authorized turn."
+    ),
+}
+
+
+def planner_acceptance_contract() -> dict[str, object]:
+    """Describe deterministic plan vetoes without creating a plan for inference."""
+
+    return {
+        "code_mutation": {
+            "required_artifact_kinds": [
+                "implementation-change",
+                "test-code",
+                "review-report",
+                "test-evidence",
+            ],
+            "required_dependency_paths": [
+                "implementation-change -> test-code",
+                "implementation-change or test-code -> review-report",
+                "test-code -> test-evidence",
+            ],
+            "test_code_and_test_evidence_are_distinct": True,
+        },
+        "security_sensitive_code": {
+            "required_distinct_reviews": [
+                "software-engineering correctness review-report without security domain",
+                "security-domain exploitability review-report",
+            ]
+        },
+        "repository_security_or_code_path_mapping": {
+            "required_predecessor": "software-engineering analysis that maps repository code paths"
+        },
+        "documentation_mutation": {"required_artifact_kinds": ["documentation", "review-report"]},
+        "install_deploy_or_release": {
+            "required_downstream_artifact": (
+                "test-evidence whose outcome explicitly verifies install, deployment, or release"
+            )
+        },
+        "ordering": "Every depends_on ID must name an earlier unit in the same response.",
+    }
+
+
+def plan_policy_repair_guidance(violations: Sequence[str]) -> tuple[dict[str, str], ...]:
+    """Return bounded, allowlisted corrections for deterministic policy violations."""
+
+    return tuple(
+        {
+            "code": code,
+            "required_correction": _PLAN_REPAIR_REQUIREMENTS.get(
+                code,
+                "Rewrite the complete plan so it satisfies this deterministic safety invariant.",
+            ),
+        }
+        for code in dict.fromkeys(violations)
+    )
 
 
 def regulated_assurance_requirements(request: str) -> tuple[str, ...]:
@@ -266,9 +399,9 @@ def _code_mutation_violations(
     if tokens & _SECURITY and not any("security" in item.domains for item in inventory.reviews):
         codes.append("plan_missing_security_review")
     if tokens & _RELEASE and not any(
-        item.lifecycle_phase == "release"
-        and item.artifact_kind == "test-evidence"
+        item.artifact_kind == "test-evidence"
         and item.authority == "review"
+        and bool(_unit_tokens(item) & _RELEASE)
         for item in plan.units
     ):
         codes.append("plan_missing_release_verification")
@@ -352,4 +485,9 @@ def plan_policy_violations(request: str, plan: WorkUnitPlan) -> tuple[str, ...]:
     return tuple(dict.fromkeys(codes))
 
 
-__all__ = ["plan_policy_violations", "regulated_assurance_requirements"]
+__all__ = [
+    "plan_policy_repair_guidance",
+    "plan_policy_violations",
+    "planner_acceptance_contract",
+    "regulated_assurance_requirements",
+]

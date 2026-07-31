@@ -124,6 +124,20 @@ def _typed_shortlists(""",
         ),
     ),
     DecisionMutation(
+        mutation_id="planner-drops-deterministic-acceptance-contract",
+        invariant=(
+            "Inference receives the exact deterministic plan acceptance contract before it "
+            "authors a plan."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before='                "plan_acceptance_contract": planner_acceptance_contract(),',
+        after='                "plan_acceptance_contract": {},',
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_planner_repair_receives_exact_assurance_graph_and_remains_inference_owned"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="unit-assignment-reinterprets-unavailable-inference",
         invariant="An unavailable inference route cannot become an exact unit recommendation.",
         source_path="agency_runtime/core/unit_assignment.py",
@@ -232,6 +246,20 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_workforce_inference.py::"
             "test_balanced_recruiter_repairs_only_missing_work_unit_rows"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="recruiter-drops-typed-recall-evidence",
+        invariant=(
+            "Recruiter inference receives exact non-ranked typed coverage and uncovered-gap "
+            "evidence for every planned unit."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before='            "typed_recall": typed_recall,',
+        after='            "typed_recall": [],',
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requirements"
         ),
     ),
     DecisionMutation(

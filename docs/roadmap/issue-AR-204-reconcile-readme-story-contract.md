@@ -230,6 +230,26 @@ intentional skips. Documentation, Ruff, formatting, dashboard UI, routing, and
 diff-integrity gates are also green. Exact merged installation and the live
 Codex product trial remain.
 
+PR 191 merged that source package as exact revision
+`cc322381ec932452f0575445dc174510e4caad6f`, and exact build
+`0.1.0+gcc322381ec93` was installed. Its activation proof completed one real
+specialist child lifecycle with zero corrections, but its sole product trial
+failed before generation. The first causal boundary was not host trust: planner
+inference was asked for a looser plan than deterministic safety policy would
+accept, then recruiter inference lacked exact typed evidence for uncovered
+requirements.
+
+The current bounded source repair exposes those deterministic vetoes as an
+acceptance contract and structured repair guidance while leaving the complete
+plan model-authored. It also exposes non-ranked typed roster coverage to the
+recruiter while leaving ranking, selection, and gap declaration model-owned. A
+real provider replay accepted a nine-unit plan and nine specialist assignments.
+Focused tests pass; the named fast spine passes 636 tests with 6 intentional
+skips; dashboard UI passes 110 tests; routing evaluation 1.4.0 passes every
+gate; and decision conformance kills all 44 curated mutations, including
+removal of either new inference input. Merge/install and one fresh exact-build
+product trial remain.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired

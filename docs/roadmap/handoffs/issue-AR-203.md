@@ -3,13 +3,12 @@ title: "AR-203 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-07-31
 tags: [handoff, evaluation, codex, activation, workspace, evidence]
 related:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
-  - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
-  - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
-  - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
+  - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
@@ -18,9 +17,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-203
-branch: codex/ar-203-readme-story-final-proof
-evidence_commit: 5e3fab622b75f257e0ab4b74f1cc2c6d43b1d748
-minimum_ledger_commit: 650f6d625f1d1467af26661abba217d0f671c68e
+branch: codex/ar-203-product-planner-repair
+evidence_commit: cc322381ec932452f0575445dc174510e4caad6f
+minimum_ledger_commit: e7e8cc6a09fab27025e5fc5fc31e5e8e3cc023f6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -29,124 +28,68 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## checkpoint
 
-- PR 186 merged the reviewed launch repair as exact main revision
-  `830b878859318bc1288858ba65ba580bd98bf53e`.
-- Exact build `0.1.0+g830b87885931` is installed for Codex and ZCode only; the
-  dashboard remained opted out. The owner trusted the refreshed Codex hooks and
-  restarted before the trial.
-- Trial `ar203-830b878-ordinary-02` is terminal `NO-GO`. It proves activation
-  and nine-unit planning, then fails at recruiter response acceptance/recovery.
-- The source repair gives bounded retry a distinct partial-row system contract
-  and adds safe durable unit/invariant failure evidence. No deterministic
-  specialist selection was added.
-- Two review passes are complete. The changed boundary passes 107 tests with
-  1 skipped, and decision conformance kills 21/21 mutations with zero survivors
-  or invalid results and unchanged source.
-- Named fast Python passes 675 tests with 6 skipped; dashboard UI passes 109;
-  routing evaluation 1.3.0 passes every gate; documentation validates 551
-  files; and Ruff checks and formats all 603 Python inputs.
-- PR 187 merged as exact main revision
-  `26a3911e371e42bc004faabaa2fd0b802bf50fdd`; exact build
-  `0.1.0+g26a3911e371e` is installed. Codex and ZCode were refreshed.
-- The owner expanded scope to the README dashboard. Its service is installed,
-  owned, enabled, active, manifest-current, reachable, and free of definition
-  drift. That old build still blocked authenticated open at the now-retired
-  presence verifier; AR-204 removes that gate for the replacement build.
-- Codex verification observed all eight enabled hook hashes as `modified`, zero
-  trusted, and attempted no model call. Do not trust this build: two valid
-  post-merge P1 findings invalidate it before the replacement trial.
-- The current source enforces the exact ordered repair tuple before mutation
-  and hashes sensitive planner-derived unit IDs in durable receipts. Focused
-  boundary: 108 passed, 1 skipped. Decision conformance: 23/23 killed, zero
-  survivors or invalid results, source unchanged.
-- The post-review named fast gate passes: Python 675 passed and 6 skipped;
-  dashboard UI 109 passed; routing evaluation 1.3.0 passed every gate;
-  documentation validated 552 files; Ruff checked and format-validated all 603
-  Python inputs.
-- PR 188 merged with commit-preserving ancestry as exact main revision
-  `5e3fab622b75f257e0ab4b74f1cc2c6d43b1d748`. Its only Codex P1 named a
-  synthetic commit absent from GitHub; the actual remote graph preserves both
-  ledgered commits. Hosted jobs again received no usable runner because of the
-  account payment/spending limit.
-- Exact build `0.1.0+g5e3fab622b75` is installed. Codex refresh install ID is
-  `a352175a-b4e9-456e-973c-90e76ddb77da`; ZCode is registered.
-- The dashboard is owned, enabled, active, current, drift-free, and reachable.
-  The exact installed build predates AR-204 owner-authority repair; authenticated
-  render and reversible owner configuration proof remain pending.
-- Codex preflight found all eight expected events enabled and all eight hashes
-  modified, with zero trusted and zero managed. It attempted no model call and
-  persisted no attestation.
-- The README-story goal is bounded to one ordinary Codex proof on this machine:
-  first terminal failure or 45 minutes ends a package, one live trial is
-  allowed per exact build, and a second failure at the same causal boundary
-  stops for owner direction.
-- Owner-untracked analysis and lock files remain untouched.
+- The active goal remains `README's main story works in reality.`
+- PR 191 merged exact revision `cc322381ec932452f0575445dc174510e4caad6f`;
+  build `0.1.0+gcc322381ec93` is installed for the scoped local suite.
+- Activation trace `019fb676-df24-72c1-bf3e-af3a23222ff8` proves real
+  inference-selected `code-reviewer` injection and a complete native child
+  lifecycle with zero corrections.
+- Product trial `ar205-cc32238-readme-01` is terminal `NO-GO`: 49.327 seconds,
+  CLI exit one, no workspace files, and a matching `preflight_failed` session.
+  Its one-trial allowance is consumed.
+- The current branch fixes the first causal preflight boundary. A live provider
+  replay now accepts a complete inferred specialist team; end-to-end product
+  execution is deliberately not claimed.
+- The two owner-untracked files remain untouched.
 
 ## completed-evidence
 
-- Codex exited zero after 182.422 seconds; the product wrapper exited one after
-  183.335 seconds with empty stderr. The trial workspace remained empty.
-- Exact trace `019fb417-f166-7461-a1db-e53ee0007045` contains one route, one
-  run, three correlated model receipts, two finalizations, and nine typed work
-  units sourced from `verified-workforce-plan`.
-- Inference attempt one applied the planner response. Attempt two rejected the
-  recruiter response as `provider_response_contract_invalid`. Attempt three,
-  the bounded repair, failed as `provider_no_valid_response`.
-- The route ended `abstained`, the run ended `retry_exhausted`, and staffing
-  recorded `workforce_inference_failed`. Of 272 candidates, 53 were eligible
-  and 219 were rejected before inference-owned selection.
-- No specialist was selected. Hiring recorded `no_attempt`; loads,
-  delegations, worker runs, native spawns, and native waits were all zero.
-- The final response contained all seven header fields but required one Stop
-  correction. `correction_count: 1` independently fails the canary.
-- Isolated workspace trust was proven and the persistent profile was unchanged.
-  The proof file was missing, so effective workspace-write was not proven and
-  product validation correctly skipped.
-- Product prompt hash is
-  `sha256:092f36f658e877437f1434326bd39a57a8995bcf64860cdc60560e6ea915f852`;
-  executed wrapper hash is
-  `sha256:4e6ee868cf1d528016e3625d9bd8069bd2f71c8d7ebef020b26efb5a88b964f7`.
-- Workspace hash is
-  `sha256:e49c785ca29e47c943071c9b38914c19c0ac7095cad9d65569d25c9bb8542fe3`;
-  session ID is `019fb417-f0e7-7702-ac1b-5bf74e07c1dd`.
-- The merged source repair remains green: changed-component suite 200 passed;
-  named fast Python spine 675 passed and 6 skipped; dashboard UI 109 passed;
-  routing evaluation 1.3.0 passed every gate; decision conformance killed 19/19
-  mutations; documentation and Ruff checks passed.
-- The newly diagnosed contradiction was between the repair user prompt, which
-  allowed only failed rows, and the ordinary recruiter system prompt, which
-  required every planned row and prohibited omission.
-- The strengthened regression exercises the real system prompts, and durable
-  receipt coverage proves unknown codes and provider-authored content fail
-  closed.
+- The exact failed product session proves UserPromptSubmit ran, classified the
+  prompt substantive, and failed during workforce planning before route commit.
+- A bounded direct replay reproduced contradictory planner/validator assurance
+  rules and missing recruiter coverage evidence without creating product files
+  or committing a contractor.
+- The repaired planner receives a deterministic acceptance contract and exact
+  structured veto guidance, then authors its own complete replacement plan.
+- The repaired recruiter receives deterministic, non-ranked typed coverage and
+  uncovered requirements, then owns candidate ranking, staffing, and gap
+  declaration.
+- A fresh replay accepted nine units and nine specialist assignments with no
+  staffing reasons. Focused tests pass 84 cases; decision conformance kills
+  44/44 mutations with zero survivors or invalid results.
+- The named fast Python spine passes 636 tests with 6 intentional skips;
+  dashboard UI passes 110; routing evaluation 1.4.0 passes every gate;
+  documentation validates 571 files; and Ruff checks all 602 Python inputs.
 
 ## exact-blocker
 
-The final build is installed and locally verified. Opening the authenticated
-dashboard and settling Codex hook trust are the first remaining attended
-boundaries. Selection, hiring, delegation, and workspace-write remain unproven.
+The causal source boundary is repaired and fully verified locally, but the
+changed tree is not yet merged or installed. One fresh exact-build product trial must still
+prove route, delegation, workspace write, artifacts, and correction count zero
+together. The older report's `route_not_found` projection also understates its
+matching `preflight_failed` session and remains a traceability follow-up unless
+it blocks the final report.
 
 ## same-task-continuity
 
-Keep inference authoritative for online selection. Do not add deterministic
-role anchors, weaken fail-closed schemas, add a general sandbox bypass, mutate
-persistent trust, or reinterpret one corrected header as a first-pass success.
+Keep inference authoritative. Do not add deterministic selection, weaken
+fail-closed validation, mutate private trust state, or rerun a product trial on
+`cc322381`.
 
 ## next-bounded-work-package
 
-1. Ask the owner once to open the authenticated dashboard and trust the final
-   eight Codex hook hashes.
-2. Verify exact activation without reinstalling.
-3. Run one replacement trial for that exact build. Require correction count
-   zero plus a real accepted team, or a defensible gap with hiring evidence.
-4. A second failure at this same recruiter boundary stops for owner direction;
-   otherwise checkpoint the next proven boundary and refresh the local report.
+1. Create the durable substantive and immediate worklog-ledger checkpoint.
+2. Push, review, merge, and exact-install the new build for Codex, ZCode, and
+   dashboard.
+3. Run one supported bypassed product trial for that exact merge.
+4. If it passes, produce the local evidence page and OpenClaw handoff; if it
+   fails, stop at the first newly proven causal boundary.
 
 ## verification
 
 ~~~text
-python -m pytest tests/test_workforce_inference.py tests/test_routing_receipt_header.py tests/test_routing_correctness.py tests/test_workforce_selection_safety.py tests/test_decision_conformance.py -q -W error
-agency eval decision-conformance --repository . --json
+python -m pytest tests/test_workforce_intent.py tests/test_workforce_inference.py tests/test_decision_conformance.py -q -W error
+python -c "from agency_runtime.cli.entrypoint import main; raise SystemExit(main())" eval decision-conformance --repository . --json
 python scripts/context_handoff_status.py --json --threshold 50
 python scripts/docs_metadata.py --check
 python scripts/update_policy_availability.py --check
@@ -154,16 +97,15 @@ python scripts/update_worklog.py --check
 python scripts/verify_docs.py
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
+node --test tests/dashboard_ui.test.mjs
+agency eval routing --json --no-details
 git diff --check
 ~~~
 
 ## constraints
 
-- Persistent Codex trust configuration remains outside the mutation boundary.
-- The product host retains sandboxing and receives no extra write root.
-- The sentinel proves one exact in-workspace write, not exhaustive host
-  sandbox correctness.
-- Touch only Codex, ZCode, and the owner-requested dashboard on this machine.
-- Correction count greater than zero or absent is a final canary failure.
-- Do not launch more than one live trial for one exact installed build.
-- End a bounded package at its first terminal failure or 45 minutes.
+- Product host remains sandboxed and receives no extra write root.
+- Touch only Codex, ZCode, and dashboard on this machine.
+- Supported bypass evidence is `bypassed`, never `trusted`.
+- One live product trial per exact installed build; any correction is failure.
+- Hosted Actions remain out of scope while GitHub spending is unavailable.

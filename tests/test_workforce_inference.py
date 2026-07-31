@@ -833,6 +833,218 @@ def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() 
     assert "work-unit plan contains duplicate unit ids" in prompts[1]
 
 
+def test_planner_repair_receives_exact_assurance_graph_and_remains_inference_owned() -> None:
+    request = (
+        "Build a Python API and TypeScript dashboard, validate state-changing operations for "
+        "security, and add tests."
+    )
+
+    def unit(
+        unit_id: str,
+        artifact_kind: str,
+        domain: str,
+        capability: str,
+        depends_on: list[str],
+    ) -> dict[str, Any]:
+        return {
+            "unit_id": unit_id,
+            "outcome": unit_id.replace("unit-", "").replace("-", " "),
+            "artifact_kind": artifact_kind,
+            "domains": [domain],
+            "stacks": [],
+            "capability_ids": [capability],
+            "novel_capability": "",
+            "depends_on": depends_on,
+        }
+
+    implementation = unit(
+        "unit-implementation",
+        "implementation-change",
+        "software-engineering",
+        "implementation",
+        [],
+    )
+    tests = unit(
+        "unit-tests",
+        "test-code",
+        "quality-assurance",
+        "testing",
+        [],
+    )
+    code_review = unit(
+        "unit-code-review",
+        "review-report",
+        "software-engineering",
+        "review",
+        ["unit-implementation"],
+    )
+    incomplete = {
+        "request_summary": request,
+        "units": [implementation, tests, code_review],
+    }
+    repaired = {
+        "request_summary": request,
+        "units": [
+            implementation,
+            {**tests, "depends_on": ["unit-implementation"]},
+            {**code_review, "depends_on": ["unit-tests"]},
+            unit(
+                "unit-test-evidence",
+                "test-evidence",
+                "quality-assurance",
+                "testing",
+                ["unit-tests"],
+            ),
+            unit(
+                "unit-security-review",
+                "review-report",
+                "security",
+                "review",
+                ["unit-tests"],
+            ),
+        ],
+    }
+
+    def specialist(
+        agent_id: str,
+        *,
+        artifact: str,
+        lifecycle: str,
+        domain: str,
+        capability: str,
+        authority: str,
+        tools: tuple[str, ...],
+    ) -> WorkforceContract:
+        return replace(
+            _contract(agent_id),
+            outcomes=(f"Own {artifact} work",),
+            capability_ids=(capability,),
+            artifact_kinds=(artifact,),
+            lifecycle_phases=(lifecycle,),
+            domains=(domain,),
+            authority=authority,
+            tool_classes=tools,
+        )
+
+    selected = {
+        "unit-implementation": "api-implementer",
+        "unit-tests": "test-author",
+        "unit-code-review": "code-reviewer",
+        "unit-test-evidence": "test-results-analyzer",
+        "unit-security-review": "application-security-reviewer",
+    }
+    snapshot = _snapshot(
+        specialist(
+            "api-implementer",
+            artifact="implementation-change",
+            lifecycle="implementation",
+            domain="software-engineering",
+            capability="implementation",
+            authority="modify",
+            tools=("repository-read", "repository-write", "code-execution"),
+        ),
+        specialist(
+            "test-author",
+            artifact="test-code",
+            lifecycle="testing",
+            domain="quality-assurance",
+            capability="testing",
+            authority="modify",
+            tools=(
+                "repository-read",
+                "repository-write",
+                "code-execution",
+                "test-execution",
+            ),
+        ),
+        specialist(
+            "code-reviewer",
+            artifact="review-report",
+            lifecycle="review",
+            domain="software-engineering",
+            capability="review",
+            authority="review",
+            tools=("repository-read",),
+        ),
+        specialist(
+            "test-results-analyzer",
+            artifact="test-evidence",
+            lifecycle="testing",
+            domain="quality-assurance",
+            capability="testing",
+            authority="review",
+            tools=("repository-read", "test-execution"),
+        ),
+        specialist(
+            "application-security-reviewer",
+            artifact="review-report",
+            lifecycle="review",
+            domain="security",
+            capability="review",
+            authority="review",
+            tools=("repository-read",),
+        ),
+    )
+    prompts: list[str] = []
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        prompts.append(prompt)
+        if len(prompts) == 1:
+            initial = json.loads(prompt)
+            contract = initial["constraints"]["plan_acceptance_contract"]
+            assert contract["code_mutation"]["required_artifact_kinds"] == [
+                "implementation-change",
+                "test-code",
+                "review-report",
+                "test-evidence",
+            ]
+            return _result(incomplete)
+        if len(prompts) == 2:
+            feedback = json.loads(prompt.partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
+            codes = [item["code"] for item in feedback["violations"]]
+            assert codes == [
+                "plan_missing_test_evidence_review",
+                "plan_tests_not_ordered_after_implementation",
+                "plan_missing_security_review",
+            ]
+            assert all(item["required_correction"] for item in feedback["violations"])
+            return _result(repaired)
+        nominations = {
+            "units": [
+                {
+                    "unit_id": item["unit_id"],
+                    "decision": "staff",
+                    "ranked_semantic": [_nominee(selected[item["unit_id"]], 0.98)],
+                }
+                for item in repaired["units"]
+            ]
+        }
+        return _result(nominations)
+
+    outcome = plan_and_staff_workforce(
+        request,
+        snapshot,
+        config=_config(mode="fast"),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 3
+    assert [attempt.status for attempt in outcome.attempts] == [
+        "rejected",
+        "applied",
+        "applied",
+    ]
+    assert outcome.plan is not None
+    assert [item.unit_id for item in outcome.plan.units] == [
+        item["unit_id"] for item in repaired["units"]
+    ]
+    assert {item for row in outcome.staffing.units for item in row.selected} == set(
+        selected.values()
+    )
+
+
 def test_default_fast_mode_funds_recruiter_contract_repair_after_planning() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     invalid = _nomination_document()
@@ -949,6 +1161,119 @@ def test_staff_decision_without_safe_team_gets_one_bounded_inference_repair() ->
         "workforce nomination failures: unit-analyze=staff_without_safe_team"
     )
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
+
+
+def test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requirements() -> None:
+    architect = replace(
+        _contract("software-architect"),
+        outcomes=("Design software architecture",),
+        capability_ids=("architecture", "design"),
+        artifact_kinds=("architecture-record",),
+        lifecycle_phases=("design",),
+        stacks=(),
+        authority="plan",
+    )
+    snapshot = _snapshot(architect)
+    plan = {
+        "request_summary": "Design a Python and TypeScript application architecture.",
+        "units": [
+            {
+                "unit_id": "unit-architecture",
+                "outcome": "Design the Python and TypeScript application architecture",
+                "artifact_kind": "architecture-record",
+                "domains": ["software-engineering"],
+                "stacks": ["python", "typescript"],
+                "capability_ids": ["architecture", "design"],
+                "novel_capability": "",
+                "depends_on": [],
+            }
+        ],
+    }
+    unsafe = {
+        "units": [
+            {
+                "unit_id": "unit-architecture",
+                "decision": "staff",
+                "ranked_semantic": [_nominee("software-architect", 0.98)],
+            }
+        ]
+    }
+    gap = {
+        "units": [
+            {
+                "unit_id": "unit-architecture",
+                "decision": "gap",
+                "ranked_semantic": [],
+            }
+        ]
+    }
+    prompts: list[str] = []
+    systems: list[str] = []
+
+    def invoke(_provider, prompt, _schema, **kwargs):
+        prompts.append(prompt)
+        systems.append(kwargs["system_prompt"])
+        if len(prompts) == 1:
+            return _result(plan)
+        if len(prompts) == 2:
+            recruiter = json.loads(prompt)
+            recall = recruiter["typed_recall"][0]
+            assert recall["uncovered_requirements"] == [
+                "stack:python",
+                "stack:typescript",
+            ]
+            assert recall["candidates"] == [
+                {
+                    "agent_id": "software-architect",
+                    "covers": [
+                        "artifact:architecture-record",
+                        "authority:plan",
+                        "capability:architecture",
+                        "capability:design",
+                        "domain:software-engineering",
+                        "lifecycle:design",
+                    ],
+                    "execution_eligible": True,
+                    "ineligibility_reasons": [],
+                }
+            ]
+            return _result(unsafe)
+        feedback = json.loads(prompt.partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
+        assert feedback["failed_units"] == [
+            {
+                "unit_id": "unit-architecture",
+                "code": "staff_without_safe_team",
+                "required_correction": (
+                    "Consult typed_recall for this unit. If uncovered_requirements is nonempty, "
+                    "declare gap. Otherwise rank every semantically faithful coverage complement "
+                    "needed to cover all requirements within maximum_selected_per_unit."
+                ),
+            }
+        ]
+        return _result(gap)
+
+    outcome = plan_and_staff_workforce(
+        "Design a Python and TypeScript application architecture.",
+        snapshot,
+        config=_config(mode="fast"),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert not outcome.accepted
+    assert outcome.status == "abstained"
+    assert outcome.inference_mode == "inferred"
+    assert outcome.decision_source == "inferred"
+    assert outcome.calls_used == 3
+    assert [attempt.status for attempt in outcome.attempts] == [
+        "applied",
+        "rejected",
+        "applied",
+    ]
+    assert systems[-1] == _RECRUITER_REPAIR_SYSTEM
+    assert outcome.proposal is not None
+    assert outcome.proposal.units[0].selected == ()
+    assert outcome.proposal.units[0].abstention_reasons == ("inference-declared-gap",)
 
 
 def test_recruiter_failure_detail_never_persists_unknown_candidate_content() -> None:

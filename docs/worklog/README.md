@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-30
+updated: 2026-07-31
 tags: []
 related: []
 supersedes: []
@@ -398,6 +398,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `38d3e0a` | 2026-07-31 | docs(evidence): checkpoint AR-205 specialist boundary | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 | `35e1db5` | 2026-07-31 | test(preflight): preserve fingerprint retry under specialist gate | [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 | `1591cb8` | 2026-07-31 | docs(evidence): admit AR-205 local verification | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
+| `cc32238` | 2026-07-31 | Merge pull request #191 from Holeshot-Software-LLC/codex/ar-203-readme-story-final-proof | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

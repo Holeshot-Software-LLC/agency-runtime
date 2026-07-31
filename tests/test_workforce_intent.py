@@ -75,6 +75,7 @@ def _compile(
             "analysis",
             "architecture",
             "automation",
+            "communication",
             "data-analysis",
             "design",
             "documentation",
@@ -95,6 +96,7 @@ def test_compact_schema_requires_controlled_capabilities_and_explicit_gap() -> N
     fields = COMPACT_INTENT_RESPONSE_SCHEMA["properties"]["units"]["items"]
 
     assert fields["additionalProperties"] is False
+    assert COMPACT_INTENT_RESPONSE_SCHEMA["properties"]["units"]["maxItems"] == 16
     assert "capability_ids" in fields["required"]
     assert "novel_capability" in fields["required"]
     assert fields["properties"]["capability_ids"]["maxItems"] == 3
@@ -112,6 +114,9 @@ def test_compact_schema_requires_controlled_capabilities_and_explicit_gap() -> N
 def test_compact_system_preserves_evidence_before_operational_planning() -> None:
     assert "analysis/discovery unit distinct from the dependent plan" in COMPACT_INTENT_SYSTEM
     assert "both planning and operations" in COMPACT_INTENT_SYSTEM
+    assert "Every code mutation needs an implementation-change unit" in COMPACT_INTENT_SYSTEM
+    assert "Test-code authors the tests; test-evidence independently" in COMPACT_INTENT_SYSTEM
+    assert "even when the user did not separately request" in COMPACT_INTENT_SYSTEM
     assert (
         "add risk-analysis when rollback or decision criteria are requested"
         in COMPACT_INTENT_SYSTEM
@@ -327,6 +332,22 @@ def test_compiler_drops_redundant_data_analysis_from_analysis_artifact() -> None
     unit = _compile(value, request="Analyze supplied accounts-payable exceptions.").units[0]
 
     assert unit.required_capabilities == ("analysis",)
+
+
+def test_compiler_drops_redundant_communication_from_documentation_artifact() -> None:
+    value = _intent(
+        artifact="documentation",
+        domains=["software-engineering"],
+        stacks=[],
+        capabilities=["documentation", "communication"],
+    )
+
+    unit = _compile(
+        value,
+        request="Write the application setup and usage documentation.",
+    ).units[0]
+
+    assert unit.required_capabilities == ("documentation",)
 
 
 def test_compiler_keeps_test_artifacts_in_the_quality_assurance_domain() -> None:
@@ -566,6 +587,12 @@ def test_enrichment_keeps_integration_and_release_evidence_semantically_distinct
         known_stacks=("python",),
         known_capability_ids=("implementation", "testing", "verification"),
     )
+    release_evidence = next(
+        unit for unit in primary.units if unit.unit_id == "unit-installed-evidence"
+    )
+
+    assert release_evidence.lifecycle_phase == "testing"
+    assert "plan_missing_release_verification" not in plan_policy_violations(request, primary)
 
     plan = enrich_intent_plan(primary, request=request, context=_context())
     evidence_owners = {
