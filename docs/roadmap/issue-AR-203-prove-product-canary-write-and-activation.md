@@ -294,10 +294,19 @@ compact exact plan needs 8,120 characters at nine realistic units, 8,326 at
 ten, and 9,534 at the configured maximum sixteen.
 
 The owner approved ADR-0123: persistent native parents now use the existing
-32,000-character preflight ceiling under the unchanged 48,000-character hook
-cap. A realistic sixteen-unit regression proves the complete context exceeds
-8,192 and fits the new ceiling. The curated mutation restoring 8,192 is killed,
-and the 115-test focused preflight/delegation/evidence boundary passes.
+32,000-character preflight ceiling. A realistic sixteen-unit regression proves
+the complete context exceeds 8,192 and fits the new ceiling. The curated
+mutation restoring 8,192 is killed, and the 115-test focused
+preflight/delegation/evidence boundary passes.
+
+PR 195 review then found two valid compatibility boundaries. A multibyte
+context could fit the character limit but overflow the 65,536-byte hook output,
+and a stored version-11 recipe could be reconstructed with version-12
+shared-prefix rendering. Version 13 now rejects an exact context envelope above
+48,000 encoded bytes before ready commit and renders version-11 goals in their
+original full-row form. Four direct regressions pass, the wider affected
+boundary passes 113 tests with one skip, exact replay nodes pass 5 with one
+skip, and both new decision mutations are killed.
 
 ## Approach
 
@@ -336,6 +345,8 @@ and the 115-test focused preflight/delegation/evidence boundary passes.
 14. Use the owner-approved 32,000-character persistent-host ceiling while
     preserving exact child goals and complete inference-authored teams; never
     truncate or deterministically remove units to fit the legacy limit.
+15. Bound the exact encoded hook envelope before ready commit and reconstruct
+    stored recipes with the renderer owned by their recorded policy version.
 
 ## Dependencies
 
@@ -384,6 +395,10 @@ demonstrates both mismatches.
   inferred staffing plan for the fixed README-story prompt.
 - [x] Persistent native parents accept a complete sixteen-unit context above
   the legacy 8,192-character ceiling while remaining bounded to 32,000.
+- [x] Multibyte persistent context fails before ready when its exact context
+  envelope exceeds 48,000 encoded bytes under the 65,536-byte hook cap.
+- [x] Version-11 ready recipes retain their original full-goal rendering after
+  upgrade; current shared-prefix rendering is policy-versioned.
 - [ ] The replacement trial selects and launches at least one specialist/team,
   or records a defensible gap plus an actual hiring decision.
 - [ ] The next ordinary canary reports exact activation evidence and can create

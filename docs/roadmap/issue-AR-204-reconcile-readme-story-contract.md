@@ -300,10 +300,17 @@ characters and the configured sixteen-unit maximum is about 9,534 with
 realistic identities.
 
 The owner approved ADR-0123 and the source now gives persistent native parents
-the existing 32,000-character preflight ceiling while retaining the unchanged
-48,000-character hook cap and whole-context failure. A realistic sixteen-unit
-regression crosses 8,192, the mutation restoring the legacy cap is killed, and
-the 115-test focused boundary passes.
+the existing 32,000-character preflight ceiling with whole-context failure. A
+realistic sixteen-unit regression crosses 8,192, the mutation restoring the
+legacy cap is killed, and the 115-test focused boundary passes.
+
+PR 195 review found two valid gaps in that candidate. Version 13 now rejects a
+context-only UserPromptSubmit envelope above 48,000 encoded bytes before ready
+commit, leaving bounded headroom under the host's 65,536-byte hard output cap.
+Recipe reconstruction also gates shared-prefix rendering by the stored policy
+version, so version-11 recipes keep their original full-goal rows. The four
+direct regressions, 113-test affected boundary with one skip, six exact replay
+nodes with one skip, and both new decision mutations pass.
 
 The same long-lived Codex task then exposed AR-206: its immutable old Stop hook
 rejected an intact 558-node ready routing decision because the correlation

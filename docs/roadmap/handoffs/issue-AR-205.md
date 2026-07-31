@@ -111,13 +111,17 @@ acceptance; this capsule records only current proof and the next package.
   6 skipped), dashboard UI (110 passed), every routing evaluation gate, Ruff
   across 602 files, all 50 decision mutations with source unchanged, and
   documentation validation for 577 files.
+- PR 195 review found two valid context-delivery gaps. Version 13 now
+  byte-bounds the exact context envelope before ready and preserves version-11
+  full-goal rendering. Four direct tests, 113 affected tests with one skip, six
+  exact replay nodes with one skip, and both new mutations pass.
 
 ## exact-blocker
 
 No current build proves a specialist team, native delegation, workspace write,
 product artifacts, and zero corrections in one end-to-end run. Product routing
-and the approved context policy are locally fast-green; merge, exact install,
-and the new-build trial remain.
+and the repaired context policy are locally focused-green; the invalidated fast
+gate, repaired-head re-review, merge, exact install, and new-build trial remain.
 
 ## same-task-continuity
 
@@ -127,9 +131,11 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Merge and exact-install the context policy plus AR-206, then prove native
+1. Run the named fast gate and all 52 decision mutations, push, and complete one
+   focused re-review.
+2. Merge and exact-install the context policy plus AR-206, then prove native
    activation and run one supported-bypassed product trial for the new build.
-2. Require zero corrections, a real specialist or hired-contractor chain,
+3. Require zero corrections, a real specialist or hired-contractor chain,
    workspace-write proof, and product artifacts; then generate the local report
    and OpenClaw handoff.
 

@@ -115,13 +115,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   across 602 files, and all 50 decision mutations with source unchanged.
   Documentation validation passes for 577 files and the tree is whitespace
   clean.
+- PR 195 review found two valid boundaries. The source candidate now rejects a
+  multibyte context above the 48,000-byte exact envelope reserve before ready,
+  keeps the 65,536-byte hook output hard cap, and renders version-11 recipes
+  with full goals instead of version-12+ prefix compaction. Four direct tests,
+  113 affected tests with one skip, six exact replay nodes with one skip, and
+  both new mutations pass.
 
 ## exact-blocker
 
 Installation and activation pass, gap hiring is separated correctly, inference
 reaches accepted product teams, and the approved context policy is fast-green.
-The remaining blocker is merge and exact installation before one new-build
-product trial.
+The remaining blocker is rerunning the invalidated fast gates, pushing the PR
+195 review repairs, merge, and exact installation before one new-build trial.
 
 ## same-task-continuity
 
@@ -131,8 +137,10 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-1. Merge, exact-install, and re-prove activation with the AR-206 verifier fix.
-2. Spend one product trial only on that new exact build. Require a real inferred
+1. Run the named fast gate and all 52 decision mutations, then push and obtain
+   one focused re-review of the repaired PR head.
+2. Merge, exact-install, and re-prove activation with the AR-206 verifier fix.
+3. Spend one product trial only on that new exact build. Require a real inferred
    team or hired contractor, planned delegation, workspace artifacts, and zero
    corrections before producing the evidence page and OpenClaw handoff.
 

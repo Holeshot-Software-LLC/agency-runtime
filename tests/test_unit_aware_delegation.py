@@ -1093,6 +1093,61 @@ def test_isolated_multi_unit_context_encodes_one_shared_request_prefix(
     assert len(combined) <= preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS
 
 
+def test_v11_isolated_context_preserves_full_goal_rows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import unit_assignment
+
+    prefix = (
+        "Request: preserve this exact legacy context while validating every bounded "
+        "specialist assignment without changing any character in the shared request. "
+        "Work unit "
+    )
+    hydrated = [
+        {
+            "work_unit_id": "unit-0000000001",
+            "recommended_agent": "code-reviewer",
+            "delegation_strength": "strongly_preferred",
+            "dependencies": [],
+            "goal": f"{prefix}1: review the change.",
+        },
+        {
+            "work_unit_id": "unit-0000000002",
+            "recommended_agent": "technical-writer",
+            "delegation_strength": "strongly_preferred",
+            "dependencies": ["unit-0000000001"],
+            "goal": f"{prefix}2: document the change.",
+        },
+    ]
+    plan = [{"assignment_version": str(UNIT_AGENT_ASSIGNMENT_VERSION)} for _ in hydrated]
+    monkeypatch.setattr(
+        unit_assignment,
+        "hydrate_unit_agent_plan",
+        lambda *_args, **_kwargs: hydrated,
+    )
+
+    legacy = preflight_recipe._isolated_delegation_context(
+        {},
+        host="codex",
+        unit_plan=plan,
+        context_policy_version=11,
+    )
+    current = preflight_recipe._isolated_delegation_context(
+        {},
+        host="codex",
+        unit_plan=plan,
+        context_policy_version=preflight_recipe.PREFLIGHT_CONTEXT_POLICY_VERSION,
+    )
+
+    assert "shared_goal_prefix=" not in legacy
+    assert "goal_suffix=" not in legacy
+    assert all(
+        f"goal={json.dumps(item['goal'], ensure_ascii=False)}" in legacy for item in hydrated
+    )
+    assert "shared_goal_prefix=" in current
+    assert "goal_suffix=" in current
+
+
 @pytest.mark.parametrize(
     ("host", "tool_name", "native_label", "backend"),
     [

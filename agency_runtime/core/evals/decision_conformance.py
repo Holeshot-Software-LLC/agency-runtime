@@ -435,6 +435,45 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="persistent-host-drops-encoded-output-bound",
+        invariant=(
+            "Persistent native-parent context is rejected before ready commit when its exact "
+            "UTF-8 hook envelope exceeds the reserved output budget."
+        ),
+        source_path="agency_runtime/core/preflight_recipe.py",
+        before=(
+            "    if _persistent_host_context_output_bytes(context) "
+            "> PERSISTENT_HOST_CONTEXT_OUTPUT_BYTES:"
+        ),
+        after=(
+            "    if False and _persistent_host_context_output_bytes(context) "
+            "> PERSISTENT_HOST_CONTEXT_OUTPUT_BYTES:"
+        ),
+        test_node=(
+            "tests/test_preflight_bounds.py::"
+            "test_multibyte_complete_context_fails_before_ready_is_persisted"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="legacy-preflight-replay-uses-current-goal-renderer",
+        invariant=(
+            "A stored legacy recipe reconstructs the exact full-goal rendering governed by "
+            "its recorded context-policy version."
+        ),
+        source_path="agency_runtime/core/preflight_recipe.py",
+        before=(
+            "    shared_goal_prefix = (\n"
+            "        _shared_delegation_goal_prefix(goals) "
+            'if int(context_policy_version) >= 12 else ""\n'
+            "    )"
+        ),
+        after="    shared_goal_prefix = _shared_delegation_goal_prefix(goals)",
+        test_node=(
+            "tests/test_unit_aware_delegation.py::"
+            "test_v11_isolated_context_preserves_full_goal_rows"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="ready-routing-receipt-restores-legacy-node-cap",
         invariant=(
             "Ready routing receipts accept every structurally bounded decision admitted by "

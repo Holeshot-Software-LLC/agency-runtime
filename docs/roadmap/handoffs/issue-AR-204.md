@@ -109,13 +109,17 @@ Bounded projection for making the README product story executable.
   6 skipped), dashboard UI (110 passed), every routing evaluation gate, Ruff
   across 602 files, all 50 decision mutations with source unchanged, and
   documentation validation for 577 files.
+- PR 195 review found and prompted two bounded repairs: exact encoded context
+  output is checked before ready commit, and stored version-11 recipes retain
+  their full-goal renderer. Four direct tests, 113 affected tests with one skip,
+  six exact replay nodes with one skip, and both new mutations pass.
 
 ## exact-blocker
 
 The source candidate passes activation prerequisites, complete-team routing,
 the AR-206 evidence verifier, and the approved 32k fast boundary. README
-acceptance now waits for merge, exact install, fresh-task activation, and one
-new-build product trial.
+acceptance now waits for the invalidated fast-gate rerun, repaired-head
+re-review, merge, exact install, fresh-task activation, and one product trial.
 
 ## same-task-continuity
 
@@ -125,9 +129,11 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Merge, exact-install, re-prove activation with AR-206, and run one product
+1. Run the named fast gate and all 52 decision mutations, push, and complete one
+   focused re-review.
+2. Merge, exact-install, re-prove activation with AR-206, and run one product
    trial for only that new exact build.
-2. Generate the local evidence page and OpenClaw handoff only after the product
+3. Generate the local evidence page and OpenClaw handoff only after the product
    gate proves real execution and zero corrections.
 
 ## verification

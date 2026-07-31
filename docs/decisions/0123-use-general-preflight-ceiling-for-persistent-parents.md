@@ -34,10 +34,11 @@ configured sixteen-unit maximum measured about 9,534. The runtime therefore
 rejected complete, safe inferred teams solely because the legacy parent ceiling
 was smaller than the already-supported bounded plan.
 
-The general preflight ceiling is 32,000 characters and the native hook delivery
-ceiling is independently 48,000 characters. Exact recipe validation already
-rejects limits above 32,000, and the context-policy fingerprint binds the
-effective host limit.
+The general preflight ceiling is 32,000 characters. Native hook output has an
+independent 65,536-byte hard limit, so a context that fits by character count
+can still overflow after UTF-8 and JSON encoding. Exact recipe validation
+already rejects limits above 32,000, and the context-policy fingerprint binds
+the effective host limits.
 
 ## Decision
 
@@ -47,9 +48,16 @@ not receive full specialist prompt bodies, and native children still run their
 own task-specific Agency activation.
 
 Continue to fail before the ready state when the complete resident, specialist,
-and delegation context exceeds 32,000 characters. Keep the independent 48,000-
-character hook boundary unchanged. Preserve host-specific direct limits such
-as LiteLLM's 16,384-character ceiling.
+and delegation context exceeds 32,000 characters. Also fail before ready when
+the exact context-only UserPromptSubmit envelope exceeds 48,000 encoded bytes;
+this reserves 17,536 bytes under the native hook's 65,536-byte hard output
+limit for the bounded evidence-header addition. Preserve host-specific direct
+limits such as LiteLLM's 16,384-character ceiling.
+
+Version context rendering as well as size policy. Version-11 recipes retain
+their original full-goal rows; version 12 and later may use the shared-prefix
+encoding. Fresh routes use version 13, whose fingerprint includes the encoded
+output limit.
 
 Do not truncate, silently omit, or deterministically shrink an inference-owned
 team to meet a smaller legacy limit. The exact accepted plan either fits the
@@ -59,13 +67,14 @@ bounded parent context or fails loudly.
 
 - Complete inferred teams up to the configured sixteen-unit maximum can reach
   persistent native parents without losing assignments or exact goals.
-- The parent context remains bounded below the native hook ceiling.
+- The parent context is dual-bounded by characters and its exact UTF-8/JSON
+  envelope before ready evidence is committed.
 - Changing the effective limit changes the context-policy fingerprint, so an
   incompatible durable continuation cannot be silently reused.
 - Larger valid teams may add prompt latency and tokens compared with the legacy
   ceiling; product telemetry must report that cost rather than hiding it.
-- Existing stored recipes retain their exact recorded limit and validation
-  contract; fresh routes use the new ceiling.
+- Existing stored recipes retain their recorded renderer and validation
+  contract; fresh routes use the new character and encoded-byte ceilings.
 
 ## Alternatives
 
@@ -75,5 +84,6 @@ bounded parent context or fails loudly.
 - **Cap inference at a smaller fixed team.** Rejected because task complexity,
   not a deterministic host quota, owns the ideal specialist plan within the
   configured sixteen-unit safety bound.
-- **Raise the native hook ceiling too.** Rejected because 32,000 already fits
-  the measured maximum and remains below the independent 48,000 boundary.
+- **Raise the native hook ceiling too.** Rejected because the measured maximum
+  fits under the dual preflight limits and does not require weakening the
+  65,536-byte protocol boundary.

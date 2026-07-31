@@ -167,6 +167,12 @@ the exact installed product proof and final README-story acceptance.
   used a stale 256-node cap. The Store is healthy, exact projection matches,
   and the bounded verifier regression is green. Fresh-task proof follows the
   next exact install; no staffing evidence is being inferred from the header.
+- PR 195 review found two valid delivery-policy gaps after the 32k approval:
+  multibyte context could overflow the encoded hook output, and version-11
+  recipes could receive the newer compressed renderer. Version 13 rejects the
+  exact context envelope above 48,000 encoded bytes before ready and preserves
+  version-11 full-goal rows. Both new regressions and mutations pass without
+  adding a deterministic worker or selector.
 
 ## Acceptance
 
