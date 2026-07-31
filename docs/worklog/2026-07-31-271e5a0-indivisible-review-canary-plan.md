@@ -18,7 +18,7 @@ type: worklog
 commit: 271e5a0
 short: 271e5a0
 date: 2026-07-31
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/193
 related_issues:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
