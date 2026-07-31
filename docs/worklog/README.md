@@ -401,6 +401,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cc32238` | 2026-07-31 | Merge pull request #191 from Holeshot-Software-LLC/codex/ar-203-readme-story-final-proof | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 | `38e7e1c` | 2026-07-31 | fix(workforce): align inferred plans with safety policy | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | [detail](2026-07-31-38e7e1c-inferred-plan-safety-convergence.md) |
 | `a5b0c33` | 2026-07-31 | docs(evidence): record inferred staffing conformance | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
+| `0ecf1d9` | 2026-07-31 | fix(workforce): close inferred plan review gaps | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | [detail](2026-07-31-0ecf1d9-inferred-plan-review-gaps.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
