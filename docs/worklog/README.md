@@ -396,6 +396,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0b37270` | 2026-07-30 | docs(evidence): record AR-204 38-mutation gate | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 | `57f82c7` | 2026-07-31 | feat(workforce): require an exact specialist for every task | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | [detail](2026-07-31-57f82c7-exact-specialist-every-task.md) |
 | `38d3e0a` | 2026-07-31 | docs(evidence): checkpoint AR-205 specialist boundary | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
+| `35e1db5` | 2026-07-31 | test(preflight): preserve fingerprint retry under specialist gate | [AR-205](../roadmap/issue-AR-205-make-default-manager-inference-safe.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
