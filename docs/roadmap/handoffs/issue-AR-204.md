@@ -22,7 +22,7 @@ type: handoff
 issue_id: AR-204
 branch: codex/ar-203-activation-planning-contract
 evidence_commit: 271e5a01d08b74dbe755662de997a32d04e5e735
-minimum_ledger_commit: 3010813eaac39c0d799817cca19e0419acfbde59
+minimum_ledger_commit: 37f6f9532fdc66c48a68f3b447fc0c3ffe482fbb
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 ---
@@ -37,16 +37,18 @@ Bounded projection for making the README product story executable.
   mirrored owner CLI/dashboard controls; inference-only specialist staffing;
   one parent-only steward; explicit attended or supported bypass activation;
   first-pass evidence headers; and behavioral product proof.
-- PR 191 merged the source story as `cc322381ec932452f0575445dc174510e4caad6f`
-  and exact build `0.1.0+gcc322381ec93` is installed.
-- Exact activation proves one real inferred specialist delegation with zero
-  corrections. The only product trial for that build failed at workforce
-  preflight and produced no artifact, so the README story remains `NO-GO`.
-- Current source repairs that exact causal boundary and has accepted a real
-  nine-specialist team for the README-shaped prompt.
-- PR 192 merged and its exact build installed the README-default Codex, ZCode,
-  and dashboard surfaces. Activation reached inference but rejected an
-  over-decomposed canary before route commit; no product trial was consumed.
+- PR 193 merged exact revision `f0fde9ee929e13587f62dd85147cf63b18b5d37e`;
+  exact build `0.1.0+gf0fde9ee929e` installed the README-default Codex, ZCode,
+  and dashboard surfaces.
+- Its supported-bypass activation is correction-free and proves inferred
+  `code-reviewer`, specialist load, native spawn/wait, completed delegation,
+  worker run, and finalization on one exact trace.
+- Its sole product trial, `ar205-f0fde9e-readme-01`, is terminal `NO-GO` after
+  101.1 seconds: the hook reached `preflight_failed`, no route or response was
+  published, and the workspace remained empty. Do not rerun that build.
+- An exact-prompt private Store replay proves planning and recruiting applied,
+  10 of 11 units were staffed, and one documentation gap was declared, but the
+  product's restricted canary environment suppressed gap hiring entirely.
 
 ## completed-evidence
 
@@ -83,13 +85,18 @@ Bounded projection for making the README product story executable.
   Store hook replay accepted inference-selected `code-reviewer`, one binding,
   and one immediate delegation assignment. Focused verification passes 72
   warning-strict tests; native installed proof remains.
+- PR 193 merged that repair; exact installation and native activation now pass.
+  The product replay also proves Codex advertised repository-write,
+  test-execution, and native-delegation capabilities, excluding host eligibility
+  as the current blocker.
 
 ## exact-blocker
 
-The activation repair is committed and replay-proven but still needs its local
-fast gate, merge, exact install, and native activation proof. README acceptance
-then requires one fresh product trial to prove a real team, planned native
-delegation, workspace artifacts, and zero corrections in the same run.
+The exact installed build now passes activation. README acceptance remains
+blocked because the ordinary product harness shares the existing-Store canary
+environment with the read-only activation check, and the current gap-hiring
+guard cannot distinguish them. One narrow separation repair and one new exact-
+build product trial remain.
 
 ## same-task-continuity
 
@@ -99,11 +106,12 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Verify, merge, and exact-install the activation planning repair.
-2. Prove native supported-bypass activation, then run the build's one product
-   trial.
-3. Generate the local evidence page and OpenClaw handoff only from recorded
-   evidence.
+1. Repair and test the activation-canary/product-hiring separation without
+   weakening the activation canary or adding deterministic staffing.
+2. Merge, exact-install, re-prove activation, and run one product trial for only
+   that new exact build.
+3. Generate the local evidence page and OpenClaw handoff only after the product
+   gate proves real execution and zero corrections.
 
 ## verification
 

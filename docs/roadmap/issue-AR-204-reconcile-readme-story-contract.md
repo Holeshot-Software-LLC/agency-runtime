@@ -272,6 +272,23 @@ cloned-Store hook replay accepted inference-selected `code-reviewer` with one
 unit, binding, and assignment. The repair still needs exact merge/install and
 native activation before the one fresh product trial.
 
+PR 193 merged the activation repair as exact revision
+`f0fde9ee929e13587f62dd85147cf63b18b5d37e`; build
+`0.1.0+gf0fde9ee929e` is installed. Supported-bypass activation now passes with
+zero corrections and complete route, specialist-load, native delegation,
+worker-run, and finalization evidence. The build's sole product trial,
+`ar205-f0fde9e-readme-01`, nevertheless failed during preflight and left the
+workspace empty.
+
+Exact-prompt replay against a private Store copy proves the product path had a
+valid Codex capability receipt and applied both inference stages. Inference
+planned 11 units, staffed 10, and declared one documentation gap. The runtime
+did not attempt hiring because the product harness's existing-Store canary
+environment is currently treated as synonymous with the read-only activation
+canary. This is the next bounded product contradiction: activation must remain
+non-hiring, while an ordinary product request must be allowed to hire the
+narrow specialist inference says is missing.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired
@@ -288,7 +305,7 @@ native activation before the one fresh product trial.
   specialist decider.
 - [x] Attended and explicit autonomous native-install modes are both covered by
   the shared adapter contract; trust status is never reported as activation.
-- [ ] Current Codex carries the exact activation contract into hook processes
+- [x] Current Codex carries the exact activation contract into hook processes
   and proves hook start, route, exact specialist injection, and native child
   lifecycle separately.
 - [x] Missing, malformed, corrected, or evidence-mismatched headers cannot be

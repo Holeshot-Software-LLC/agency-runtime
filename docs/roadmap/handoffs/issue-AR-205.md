@@ -19,7 +19,7 @@ type: handoff
 issue_id: AR-205
 branch: codex/ar-203-activation-planning-contract
 evidence_commit: 271e5a01d08b74dbe755662de997a32d04e5e735
-minimum_ledger_commit: 3010813eaac39c0d799817cca19e0419acfbde59
+minimum_ledger_commit: 37f6f9532fdc66c48a68f3b447fc0c3ffe482fbb
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/190
 ---
@@ -33,23 +33,18 @@ acceptance; this capsule records only current proof and the next package.
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 191 merged the frozen README-story source as exact revision
-  `cc322381ec932452f0575445dc174510e4caad6f`; exact build
-  `0.1.0+gcc322381ec93` is installed.
-- Current-profile activation selected `code-reviewer` through real workforce
-  inference and completed one grant, load, native spawn/wait, delegation,
+- PR 193 merged exact revision `f0fde9ee929e13587f62dd85147cf63b18b5d37e`;
+  exact build `0.1.0+gf0fde9ee929e` is installed.
+- Current-profile supported-bypass activation selected `code-reviewer` through
+  real inference and completed grant, load, native spawn/wait, delegation,
   worker run, and accepted finalization with zero corrections.
-- The only product trial for that exact build,
-  `ar205-cc32238-readme-01`, is terminal `NO-GO`; it stopped at preflight and
-  left the workspace empty. Do not rerun that build.
-- The current branch repairs the first causal boundary without deterministic
-  staffing: inference receives exact plan vetoes and non-ranked typed coverage,
-  while inference still authors the plan, ranks specialists, selects a team,
-  and declares any gap.
-- PR 192 merged and its exact build reached activation inference, but the
-  canary's valid specialist selection was rejected because the inferred plan
-  did not preserve its explicit indivisible review shape. No product trial was
-  consumed on that build.
+- The only product trial for that build, `ar205-f0fde9e-readme-01`, is terminal
+  `NO-GO`; it reached `preflight_failed` after 101.1 seconds and left the
+  workspace empty. Do not rerun that build.
+- Exact-prompt private replay proves inference authored 11 specialized units
+  and staffed 10. It explicitly declared the documentation unit uncovered, but
+  gap hiring was never entered because the product harness was mistaken for
+  the read-only activation canary.
 - Owner-untracked `docs/analysis/2026-07-25-deep-audit-findings.md` and `uv.lock`
   remain untouched.
 
@@ -90,13 +85,18 @@ acceptance; this capsule records only current proof and the next package.
   Store hook replay produced one accepted binding and assignment with immediate
   delegation. Focused tests pass 72 cases and two new decision mutations cover
   removal of either request-bound constraint.
+- PR 193 merged that repair and native exact-installed activation is now green.
+  Product preflight advertises repository-write, test-execution, and native-
+  delegation capabilities; the remaining defect is the environment-wide
+  early return that suppresses inference-declared contractor hiring.
 
 ## exact-blocker
 
-The activation repair is committed and replay-proven but still needs the local
-fast gate, merge, exact install, and native activation proof. No current build
-yet proves a specialist team, native delegation, workspace write, product
-artifacts, and zero corrections in one end-to-end run.
+No current build proves a specialist team, native delegation, workspace write,
+product artifacts, and zero corrections in one end-to-end run. The immediate
+blocker is now exact: preserve no-hiring behavior for the closed-world
+activation task, but permit ordinary product preflight to hire the narrow
+contractor that inference declared missing.
 
 ## same-task-continuity
 
@@ -106,10 +106,10 @@ passing direct routing replay as product success.
 
 ## next-bounded-work-package
 
-1. Verify, merge, and exact-install the activation planning repair.
-2. Prove native activation, then run one supported-bypassed product trial for
-   that exact build.
-3. Require zero corrections, a real specialist route/delegation chain,
+1. Repair and verify activation-task-specific hiring suppression.
+2. Merge, exact-install, prove native activation, then run one supported-
+   bypassed product trial for only the new exact build.
+3. Require zero corrections, a real specialist or hired-contractor chain,
    workspace-write proof, and product artifacts; then generate the local report
    and OpenClaw handoff.
 

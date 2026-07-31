@@ -250,6 +250,34 @@ Store replay then accepted inference-selected `code-reviewer` with one binding,
 one assignment, immediate delegation, and no error. Exact merge/install and
 native activation of this repair remain before the one fresh product trial.
 
+[PR 193](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/193)
+merged that repair as exact revision
+`f0fde9ee929e13587f62dd85147cf63b18b5d37e`. Exact build
+`0.1.0+gf0fde9ee929e` is installed, and supported-bypass activation passed with
+zero corrections. The activation trace proves inference-selected
+`code-reviewer`, grant issuance and consumption, specialist load, native
+spawn/wait, completed delegation, worker run, and accepted finalization.
+
+The build's one product trial, `ar205-f0fde9e-readme-01`, is terminal
+`NO-GO`. It ended after 101.1 seconds with host exit zero and product-command
+exit one. The workspace remained empty, workspace-write was unproven, and no
+response or header was published. Store run
+`3833f8ae-34c2-4ebc-8f1c-9b481bd720e0` correlates the exact executed prompt to
+`preflight_failed`, excluding trust, registration, and host startup as the
+failure boundary.
+
+A private cloned-Store replay verified both prompt hashes and reproduced the
+failure without consuming another product trial. Planner and recruiter
+responses were applied. Inference authored 11 specialist units and staffed 10,
+then explicitly declared the documentation unit uncovered. Codex supplied
+repository-write, test-execution, and native-delegation capabilities, but no
+hiring event ran. The causal defect is the environment-wide early return in
+`_run_gap_hiring`: the product harness uses the exact-existing-Store canary
+environment for isolated evidence, and that guard mistakes it for the
+closed-world read-only activation canary. The next repair must keep activation
+read-only while allowing ordinary product preflight to act on an inference-
+declared contractor gap.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host
@@ -281,6 +309,9 @@ native activation of this repair remain before the one fresh product trial.
 12. Resolve valid merged-PR review findings before retrust: enforce exact repair
     IDs before mutation and sanitize sensitive planned-unit identities in
     durable evidence.
+13. Scope no-hiring behavior to the exact closed-world activation task rather
+    than every existing-Store canary process; ordinary product evaluation must
+    execute verified inference-declared gap hiring.
 
 ## Dependencies
 

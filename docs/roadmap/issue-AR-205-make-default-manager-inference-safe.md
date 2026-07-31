@@ -141,6 +141,15 @@ the exact installed product proof and final README-story acceptance.
   into inference without supplying a worker identity. A fresh cloned-Store hook
   replay accepted inference-selected `code-reviewer`, one verified binding, and
   one immediate delegation assignment. Native exact-installed proof remains.
+- PR 193 merged exact revision
+  `f0fde9ee929e13587f62dd85147cf63b18b5d37e`; its installed activation proof is
+  correction-free and includes the complete inferred specialist lifecycle.
+  Product trial `ar205-f0fde9e-readme-01` then failed in preflight. A private
+  exact-prompt replay showed inference planned 11 units, staffed 10, and
+  declared the documentation unit an explicit gap. No contractor was hired
+  because the ordinary product process inherits an environment-wide read-only
+  activation guard. The next repair is task-specific separation, not a new
+  deterministic worker or a weaker staffing verifier.
 
 ## Acceptance
 

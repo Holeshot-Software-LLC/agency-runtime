@@ -19,7 +19,7 @@ type: handoff
 issue_id: AR-203
 branch: codex/ar-203-activation-planning-contract
 evidence_commit: 271e5a01d08b74dbe755662de997a32d04e5e735
-minimum_ledger_commit: 3010813eaac39c0d799817cca19e0419acfbde59
+minimum_ledger_commit: 37f6f9532fdc66c48a68f3b447fc0c3ffe482fbb
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -29,19 +29,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 192 merged exact revision `9461099479f851b9440d825f889aa079950a298c`;
-  build `0.1.0+g9461099479f8` is installed for Codex, ZCode, and dashboard.
-- Activation trace `019fb676-df24-72c1-bf3e-af3a23222ff8` proves real
-  inference-selected `code-reviewer` injection and a complete native child
-  lifecycle with zero corrections.
-- Product trial `ar205-cc32238-readme-01` is terminal `NO-GO`: 49.327 seconds,
-  CLI exit one, no workspace files, and a matching `preflight_failed` session.
-  Its one-trial allowance is consumed.
-- Supported-bypass activation reached inference with zero response corrections
-  but failed before route commit: the exact canary was split into two bindings.
-- Commit `271e5a0` carries the explicit one-unit `review-report` contract through
-  inference; its fresh cloned-Store hook replay accepted `code-reviewer` with
-  one binding and assignment. Native installed proof is not yet claimed.
+- PR 193 merged exact revision `f0fde9ee929e13587f62dd85147cf63b18b5d37e`;
+  build `0.1.0+gf0fde9ee929e` is installed for Codex, ZCode, and dashboard.
+- Supported-bypass activation passed on that exact build with zero corrections.
+  Session `019fb729-5164-70f3-8b9e-e55902eb33c7`, trace
+  `019fb729-5d2e-73a3-8a3b-03a4a02f57b7`, and route
+  `c8950037-541e-4eb8-984a-a68f4db156f2` prove inferred `code-reviewer`, one
+  grant and consumption, specialist load, native spawn/wait, completed
+  delegation, worker run, and accepted finalization.
+- Product trial `ar205-f0fde9e-readme-01` is terminal `NO-GO`: 101.1 seconds,
+  host exit zero, CLI exit one, zero corrections, no response/header/route,
+  no workspace-write proof, and an empty workspace. Its allowance is consumed.
+- Production Store run `3833f8ae-34c2-4ebc-8f1c-9b481bd720e0`, session
+  `019fb72b-d385-72c1-92c5-baf6cec8cf5a`, trace
+  `019fb72b-d3f3-76c2-ba3f-1b7d5eb2519b` proves the hook reached
+  `preflight_failed`; this was not a trust, registration, or Codex-startup
+  failure.
 - The two owner-untracked files remain untouched.
 
 ## completed-evidence
@@ -80,28 +83,39 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   preserves ordinary open-ended planning, and adds two decision mutations.
   Its focused boundary passes 72 warning-strict tests; a fresh real-provider
   cloned-Store replay accepted one inferred review unit and `code-reviewer`.
+- Exact prompt reconstruction verified product hash
+  `788dee12f4652c37f81b3b97191c1770d515ee054abf9001f6f613db48d03144`
+  and executed hash
+  `1b745998a521010b9ceb8deeb6351d1ca9dd98bf6c4d4da80239f88aeff14e7b`.
+  A private cloned-Store replay reproduced the failure: planner and recruiter
+  responses were applied; inference authored 11 units and staffed 10; the
+  documentation unit was an explicit `inference-declared-gap`; repository
+  write and test capabilities were proven; and no hiring event ran.
 
 ## exact-blocker
 
-The activation planning repair is committed and replay-proven but not yet
-merged or installed. After its local fast gate, it needs a small PR, exact
-install, and native activation proof. Only then may one fresh exact-build
-product trial attempt route, delegation, workspace write, artifacts, and zero
-corrections together.
+The exact build passes installation and activation. The remaining first defect
+is a boundary conflation: the product harness sets the existing-Store canary
+environment needed for safe isolated evidence, while `_run_gap_hiring` treats
+that entire environment as the read-only activation canary and returns before
+ordinary product gap hiring. The repair must preserve the exact activation
+canary's no-hiring contract while allowing the ordinary product route to hire
+its inference-declared specialist gap.
 
 ## same-task-continuity
 
 Keep inference authoritative. Do not add deterministic selection, weaken
 fail-closed validation, mutate private trust state, or rerun a product trial on
-`cc322381`.
+`cc322381` or `f0fde9ee`.
 
 ## next-bounded-work-package
 
-1. Run the local fast gate, merge the activation repair, and exact-install it.
-2. Prove native supported-bypass activation on that exact installed build.
-3. Run its one supported-bypassed product trial. If it passes, produce the
-   local evidence page and OpenClaw handoff; if it
-   fails, stop at the first newly proven causal boundary.
+1. Separate exact activation-canary read-only behavior from ordinary product
+   gap hiring and add focused regressions plus decision-conformance coverage.
+2. Run the bounded local gates, merge, exact-install, and re-prove activation.
+3. Spend one product trial only on the new exact build. Require a real inferred
+   team or hired contractor, planned delegation, workspace artifacts, and zero
+   corrections before producing the evidence page and OpenClaw handoff.
 
 ## verification
 
