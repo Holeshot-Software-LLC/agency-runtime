@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from typing import Any
 
-PREFLIGHT_FAILURE_RECEIPT_SCHEMA = "agency.preflight.failure.v1"
+PREFLIGHT_FAILURE_RECEIPT_SCHEMA = "agency.preflight.failure.v2"
 MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES = 32 * 1024
+MAX_PREFLIGHT_FAILURE_REASON_CODES = 32
+MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES = 4 * 1024
+_REASON_CODE = re.compile(r"^[a-z][a-z0-9_]{1,95}$")
 
 PREFLIGHT_FAILURE_STAGES = frozenset(
     {
@@ -155,6 +159,53 @@ def project_preflight_provider_attempts(value: object) -> list[dict[str, Any]] |
     return result
 
 
+def project_preflight_reason_codes(value: object) -> list[str] | None:
+    """Validate one bounded content-free reason-code list."""
+
+    if not isinstance(value, (list, tuple)) or len(value) > MAX_PREFLIGHT_FAILURE_REASON_CODES:
+        return None
+    result: list[str] = []
+    for item in value:
+        if isinstance(item, (Mapping, list, tuple, set)):
+            return None
+        code = str(item or "").strip().casefold()
+        if _REASON_CODE.fullmatch(code) is None:
+            return None
+        if code not in result:
+            result.append(code)
+    return result
+
+
+def preflight_staffing_reason_codes(routing: Mapping[str, Any]) -> list[str]:
+    """Project verifier codes from a routing result without retaining detail."""
+
+    staffing = routing.get("workforce_staffing")
+    raw_reasons = staffing.get("abstention_reasons") if isinstance(staffing, Mapping) else None
+    reasons = raw_reasons if isinstance(raw_reasons, (list, tuple)) else ()
+    codes = [item.get("code") for item in reasons if isinstance(item, Mapping)]
+    projected = project_preflight_reason_codes(codes[:MAX_PREFLIGHT_FAILURE_REASON_CODES])
+    return [] if projected is None else projected
+
+
+def preflight_hiring_reason_codes(routing: Mapping[str, Any]) -> list[str]:
+    """Project contractor-hiring codes from a routing result without content."""
+
+    raw_events = routing.get("hiring_events")
+    events = raw_events if isinstance(raw_events, (list, tuple)) else ()
+    codes: list[object] = []
+    for event in events:
+        if not isinstance(event, Mapping):
+            continue
+        raw_codes = event.get("reason_codes")
+        if not isinstance(raw_codes, (list, tuple)):
+            continue
+        codes.extend(raw_codes)
+        if len(codes) >= MAX_PREFLIGHT_FAILURE_REASON_CODES:
+            break
+    projected = project_preflight_reason_codes(codes[:MAX_PREFLIGHT_FAILURE_REASON_CODES])
+    return [] if projected is None else projected
+
+
 def project_preflight_failure_receipt(value: object) -> dict[str, Any] | None:
     """Validate the complete durable failure receipt contract."""
 
@@ -166,6 +217,8 @@ def project_preflight_failure_receipt(value: object) -> dict[str, Any] | None:
         "reason_code",
         "exception_category",
         "provider_attempts",
+        "staffing_reason_codes",
+        "hiring_reason_codes",
     }:
         return None
     if value.get("schema_version") != PREFLIGHT_FAILURE_RECEIPT_SCHEMA:
@@ -180,7 +233,9 @@ def project_preflight_failure_receipt(value: object) -> dict[str, Any] | None:
     ):
         return None
     provider_attempts = project_preflight_provider_attempts(value.get("provider_attempts"))
-    if provider_attempts is None:
+    staffing_reason_codes = project_preflight_reason_codes(value.get("staffing_reason_codes"))
+    hiring_reason_codes = project_preflight_reason_codes(value.get("hiring_reason_codes"))
+    if provider_attempts is None or staffing_reason_codes is None or hiring_reason_codes is None:
         return None
     return {
         "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
@@ -188,6 +243,8 @@ def project_preflight_failure_receipt(value: object) -> dict[str, Any] | None:
         "reason_code": reason_code,
         "exception_category": exception_category,
         "provider_attempts": provider_attempts,
+        "staffing_reason_codes": staffing_reason_codes,
+        "hiring_reason_codes": hiring_reason_codes,
     }
 
 
@@ -200,11 +257,15 @@ def default_preflight_failure_receipt() -> dict[str, Any]:
         "reason_code": "preflight_lifecycle_failed",
         "exception_category": "unavailable",
         "provider_attempts": [],
+        "staffing_reason_codes": [],
+        "hiring_reason_codes": [],
     }
 
 
 __all__ = [
     "MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES",
+    "MAX_PREFLIGHT_FAILURE_REASON_CODES",
+    "MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES",
     "PREFLIGHT_FAILURE_EXCEPTION_CATEGORIES",
     "PREFLIGHT_FAILURE_REASONS",
     "PREFLIGHT_FAILURE_RECEIPT_SCHEMA",
@@ -212,7 +273,10 @@ __all__ = [
     "default_preflight_failure_reason",
     "default_preflight_failure_receipt",
     "preflight_exception_category",
+    "preflight_hiring_reason_codes",
     "preflight_routing_failure_reason",
+    "preflight_staffing_reason_codes",
     "project_preflight_failure_receipt",
     "project_preflight_provider_attempts",
+    "project_preflight_reason_codes",
 ]

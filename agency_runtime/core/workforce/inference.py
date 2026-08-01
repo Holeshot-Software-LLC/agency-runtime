@@ -562,6 +562,38 @@ class _PlanPolicyValidationError(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
+class _StaffingFailure:
+    unit_id: str
+    code: str
+
+
+class _StaffingVerificationError(ValueError):
+    """Bounded whole-team verifier failures without model or request content."""
+
+    def __init__(self, staffing: StaffingDecision) -> None:
+        failures = tuple(
+            dict.fromkeys(
+                _StaffingFailure(str(reason.unit_id or ""), str(reason.code or ""))
+                for reason in staffing.abstention_reasons
+            )
+        )
+        if not failures or len(failures) > 32:
+            raise ValueError("staffing verification error requires bounded failures")
+        if any(
+            re.fullmatch(r"[a-z][a-z0-9_]{1,95}", failure.code) is None
+            or (
+                failure.unit_id
+                and re.fullmatch(r"unit-[a-z0-9][a-z0-9-]{0,62}", failure.unit_id) is None
+            )
+            for failure in failures
+        ):
+            raise ValueError("staffing verification failure is not allowlisted")
+        self.failures = failures
+        detail = ",".join(f"{failure.unit_id or 'global'}={failure.code}" for failure in failures)
+        super().__init__(f"workforce staffing verification failures: {detail}")
+
+
+@dataclass(frozen=True, slots=True)
 class WorkforceRoutingOutcome:
     status: str
     mode: str
@@ -812,7 +844,10 @@ def _validation_detail(error: BaseException) -> str:
     detail = " ".join(str(error).split())
     if not detail or any(ord(character) < 32 for character in detail):
         return "structured response failed deterministic semantic validation"
-    if isinstance(error, (_NominationValidationError, _PlanPolicyValidationError)):
+    if isinstance(
+        error,
+        (_NominationValidationError, _PlanPolicyValidationError, _StaffingVerificationError),
+    ):
         return detail
     return detail[:256]
 
@@ -895,6 +930,29 @@ def _invoke_stage(
                                         "Omit unlisted units because the runtime retains their "
                                         "validated rows. Do not add or reorder units."
                                     ),
+                                }
+                            )
+                        )
+                    elif isinstance(exc, _StaffingVerificationError):
+                        current_system_prompt = system_prompt
+                        current_prompt = (
+                            f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
+                            + _json_prompt(
+                                {
+                                    "prior_response_status": "rejected",
+                                    "required_action": (
+                                        "Return one complete replacement recruiter response for "
+                                        "every planned unit. Preserve inference ownership while "
+                                        "satisfying the complete staffing budget, composition, "
+                                        "assurance, coverage, and execution contract."
+                                    ),
+                                    "staffing_violations": [
+                                        {
+                                            "unit_id": failure.unit_id,
+                                            "code": failure.code,
+                                        }
+                                        for failure in exc.failures
+                                    ],
                                 }
                             )
                         )
@@ -1536,6 +1594,62 @@ def _mode_budget(config: AgencyConfig) -> int:
     }[config.workforce.mode]
 
 
+_INFERRED_GAP_VERIFIER_CODES = frozenset(
+    {
+        "coverage_evidence_mismatch",
+        "independent_assurance_missing",
+        "no_safe_sufficient_team",
+        "required_agents_missing",
+        "recruiter_abstained",
+    }
+)
+
+
+def _valid_inferred_gap_proposal(
+    proposal: RecruiterProposal,
+    staffing: StaffingDecision,
+) -> bool:
+    """Accept only verifier-clean explicit gaps for the governed hiring path."""
+
+    declared = {
+        row.unit_id for row in proposal.units if "inference-declared-gap" in row.abstention_reasons
+    }
+    if not declared or staffing.accepted:
+        return False
+    by_unit: dict[str, set[str]] = {unit_id: set() for unit_id in declared}
+    for reason in staffing.abstention_reasons:
+        if reason.code not in _INFERRED_GAP_VERIFIER_CODES:
+            return False
+        if reason.unit_id:
+            if reason.unit_id not in declared:
+                return False
+            by_unit[reason.unit_id].add(reason.code)
+    return all(
+        {"no_safe_sufficient_team", "recruiter_abstained"} <= by_unit[unit_id]
+        for unit_id in declared
+    )
+
+
+def _verified_recruiter_proposal(
+    plan: WorkUnitPlan,
+    proposal: RecruiterProposal,
+    snapshot: WorkforceIndexSnapshot,
+    *,
+    config: AgencyConfig,
+    context: StaffingContext,
+) -> StaffingDecision:
+    staffing = verify_staffing(
+        plan,
+        proposal,
+        snapshot.contracts,
+        context=context,
+        budget=staffing_budget_for_config(config),
+    )
+    if staffing.accepted or _valid_inferred_gap_proposal(proposal, staffing):
+        return staffing
+    raise _StaffingVerificationError(staffing)
+
+
 def _recruit_ambiguous_plan(
     *,
     request: str,
@@ -1632,7 +1746,18 @@ def _recruit_ambiguous_plan(
     )
     cached = workforce_cache_get(cache_identity)
     if isinstance(cached, RecruiterProposal):
-        return cached, [], "", True
+        try:
+            _verified_recruiter_proposal(
+                plan,
+                cached,
+                snapshot,
+                config=config,
+                context=context,
+            )
+        except _StaffingVerificationError:
+            pass
+        else:
+            return cached, [], "", True
     nomination_parser = _NominationAccumulator(
         plan,
         snapshot,
@@ -1640,6 +1765,24 @@ def _recruit_ambiguous_plan(
         context=context,
         allowed_candidate_ids=allowed_candidate_ids,
     )
+
+    def parse_verified_proposal(value: Mapping[str, Any]) -> RecruiterProposal:
+        proposal = nomination_parser.parse(value)
+        try:
+            _verified_recruiter_proposal(
+                plan,
+                proposal,
+                snapshot,
+                config=config,
+                context=context,
+            )
+        except _StaffingVerificationError:
+            # A whole-team rejection requires a complete replacement. Do not
+            # merge repaired rows with the verifier-rejected proposal.
+            nomination_parser.reset()
+            raise
+        return proposal
+
     proposal, attempts, failure = _invoke_stage(
         stage="recruiter",
         providers=providers,
@@ -1648,7 +1791,7 @@ def _recruit_ambiguous_plan(
         system_prompt=_RECRUITER_SYSTEM,
         budget=budget,
         invoker=invoker,
-        parser=nomination_parser.parse,
+        parser=parse_verified_proposal,
         before_provider=nomination_parser.reset,
         repair_system_prompt=_RECRUITER_REPAIR_SYSTEM,
     )

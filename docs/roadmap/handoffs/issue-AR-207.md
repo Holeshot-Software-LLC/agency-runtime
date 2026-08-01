@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/roadmap/issue-AR-211-bound-immutable-commit-resolution.md
   - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
+  - docs/roadmap/issue-AR-213-reject-stale-preflight-tokens-before-plan-validation.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
@@ -46,6 +47,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   ZCode completed, the dashboard is active and reachable, and Codex registered.
 - Supported autonomous activation passed. Product trial
   `ar207-e62d0adc-readme-01` is consumed and terminal `NO-GO`.
+- AR-212 is implemented locally: verifier rejection now participates in the
+  existing one recruiter repair, unsafe results are not cached, explicit gaps
+  remain hireable, and preflight failure schema v2 retains bounded staffing
+  and hiring reason codes.
 
 ## completed-evidence
 
@@ -81,16 +86,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - AR-212 tracker is https://github.com/Holeshot-Software-LLC/agency-runtime/issues/208.
   ADR-0129 freezes one verifier-driven repair attempt with no deterministic
   selector and bounded reason projection.
+- The exact AR-212 acceptance slice passes 8/8. Canary/CLI compatibility passes
+  24/24 and dashboard UI passes 110/110. Lint and formatting checks pass for
+  every changed Python file.
+- A broader preflight module run reached 98 passes and exposed an unrelated
+  stale-token/native-plan-scope failure. It is recorded as AR-213 / tracker
+  https://github.com/Holeshot-Software-LLC/agency-runtime/issues/209 and is not
+  part of this bounded repair.
 - Builds and trials `cc322381`, `f0fde9ee`, `6b49f17d`, `5ad4aef`,
   `dd85e7d`, `584b949`, and `e62d0adc` remain consumed.
 
 ## exact-blocker
 
-The roster, provider, Codex bypass, native delegation, and fixed activation
-canary work. The arbitrary substantive path can accept and cache a structurally
-valid recruiter proposal before whole-team verification. If that later
-verification fails, Agency neither uses its already-budgeted repair call nor
-retains the reason codes, and the parent correctly blocks with no specialist.
+The proven recruiter acceptance defect is repaired locally. The remaining gate
+is procedural and live: pass the named fast spine, review and merge the exact
+branch, install that merge, then run one new activation and at most one governed
+product trial with workspace-write and zero-correction evidence.
 
 ## same-task-continuity
 
@@ -101,12 +112,10 @@ dispatch hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Move whole-team verification into recruiter-stage semantic acceptance, cache
-   only verified proposals, and retain explicit inferred gaps for hiring.
-2. Project bounded verifier and hiring reasons on terminal preflight failure.
-3. Run focused tests and the named local gate, then review and merge one PR.
-4. Exact-install the new merge and run at most one activation and one product
-   trial before producing the local evidence page and OpenClaw handoff.
+1. Run the named local gate and stop on its first AR-212-relevant failure.
+2. Review and merge one PR; keep hosted billing failures non-authoritative.
+3. Exact-install the merge and run at most one activation and one product trial.
+4. Produce the local evidence page and OpenClaw handoff.
 
 ## verification
 

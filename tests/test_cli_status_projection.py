@@ -90,11 +90,13 @@ def test_cli_dashboard_projection_includes_content_free_preflight_failure() -> N
     activity = {
         "preflight_failures": [
             {
-                "schema_version": "agency.preflight.failure.v1",
+                "schema_version": "agency.preflight.failure.v2",
                 "stage": "routing",
                 "reason_code": "workforce_inference_failed",
                 "exception_category": "timeout",
                 "provider_attempts": [],
+                "staffing_reason_codes": ["selected_agent_budget_exceeded"],
+                "hiring_reason_codes": ["gap_evidence_not_hireable"],
                 "recorded_at": "2026-07-31T13:00:00Z",
                 "trace_id": "failed-trace",
                 "host": "codex",
@@ -112,11 +114,13 @@ def test_cli_dashboard_projection_includes_content_free_preflight_failure() -> N
         {
             "kind": "preflight_failure",
             "status": "preflight_failed",
-            "schema_version": "agency.preflight.failure.v1",
+            "schema_version": "agency.preflight.failure.v2",
             "stage": "routing",
             "reason_code": "workforce_inference_failed",
             "exception_category": "timeout",
             "provider_attempts": [],
+            "staffing_reason_codes": ["selected_agent_budget_exceeded"],
+            "hiring_reason_codes": ["gap_evidence_not_hireable"],
             "recorded_at": "2026-07-31T13:00:00Z",
             "trace_id": "failed-trace",
             "host": "codex",

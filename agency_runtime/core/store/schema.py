@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 40
+SCHEMA_VERSION = 41
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
@@ -811,6 +811,18 @@ CREATE TABLE IF NOT EXISTS preflight_failure_receipts (
                AND json_valid(provider_attempts)
                AND json_type(provider_attempts) = 'array'
                AND json_array_length(provider_attempts) <= 16),
+    staffing_reason_codes TEXT NOT NULL DEFAULT '[]'
+        CHECK (typeof(staffing_reason_codes) = 'text'
+               AND length(CAST(staffing_reason_codes AS BLOB)) BETWEEN 2 AND 4096
+               AND json_valid(staffing_reason_codes)
+               AND json_type(staffing_reason_codes) = 'array'
+               AND json_array_length(staffing_reason_codes) <= 32),
+    hiring_reason_codes TEXT NOT NULL DEFAULT '[]'
+        CHECK (typeof(hiring_reason_codes) = 'text'
+               AND length(CAST(hiring_reason_codes AS BLOB)) BETWEEN 2 AND 4096
+               AND json_valid(hiring_reason_codes)
+               AND json_type(hiring_reason_codes) = 'array'
+               AND json_array_length(hiring_reason_codes) <= 32),
     recorded_at TEXT NOT NULL,
     FOREIGN KEY (trace_id) REFERENCES runs(trace_id) ON DELETE CASCADE
 );
@@ -5053,6 +5065,26 @@ def migrate_schema(
         "TEXT NOT NULL DEFAULT ''",
     )
     ensure_column(conn, "runs", "preflight_result", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(
+        conn,
+        "preflight_failure_receipts",
+        "staffing_reason_codes",
+        "TEXT NOT NULL DEFAULT '[]' CHECK (typeof(staffing_reason_codes) = 'text' "
+        "AND length(CAST(staffing_reason_codes AS BLOB)) BETWEEN 2 AND 4096 "
+        "AND json_valid(staffing_reason_codes) "
+        "AND json_type(staffing_reason_codes) = 'array' "
+        "AND json_array_length(staffing_reason_codes) <= 32)",
+    )
+    ensure_column(
+        conn,
+        "preflight_failure_receipts",
+        "hiring_reason_codes",
+        "TEXT NOT NULL DEFAULT '[]' CHECK (typeof(hiring_reason_codes) = 'text' "
+        "AND length(CAST(hiring_reason_codes AS BLOB)) BETWEEN 2 AND 4096 "
+        "AND json_valid(hiring_reason_codes) "
+        "AND json_type(hiring_reason_codes) = 'array' "
+        "AND json_array_length(hiring_reason_codes) <= 32)",
+    )
     conn.execute(
         "INSERT OR IGNORE INTO preflight_failure_receipts "
         "(id, session_id, trace_id, host, stage, reason_code, exception_category, "

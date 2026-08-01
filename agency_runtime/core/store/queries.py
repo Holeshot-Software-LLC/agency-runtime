@@ -24,7 +24,8 @@ RECENT_ACTIVITY_QUERIES: Mapping[str, str] = {
     ),
     "preflight_failures": (
         "SELECT id, session_id, trace_id, host, stage, reason_code, "
-        "exception_category, provider_attempts, recorded_at "
+        "exception_category, provider_attempts, staffing_reason_codes, "
+        "hiring_reason_codes, recorded_at "
         "FROM preflight_failure_receipts "
         "ORDER BY recorded_at DESC, id DESC LIMIT ?"
     ),
@@ -396,6 +397,7 @@ def normalize_activity_rows(
     elif name == "preflight_failures":
         from agency_runtime.core.preflight_failure import (
             MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
+            MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES,
             PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
             project_preflight_failure_receipt,
         )
@@ -408,6 +410,18 @@ def normalize_activity_rows(
                     maximum_depth=4,
                     maximum_nodes=512,
                 )
+                staffing_reason_codes = safe_load_bounded_json(
+                    str(row.get("staffing_reason_codes") or ""),
+                    maximum_bytes=MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES,
+                    maximum_depth=2,
+                    maximum_nodes=64,
+                )
+                hiring_reason_codes = safe_load_bounded_json(
+                    str(row.get("hiring_reason_codes") or ""),
+                    maximum_bytes=MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES,
+                    maximum_depth=2,
+                    maximum_nodes=64,
+                )
             except (TypeError, ValueError) as exc:
                 raise RuntimeError(
                     "preflight failure activity failed integrity validation"
@@ -419,6 +433,8 @@ def normalize_activity_rows(
                     "reason_code": row.get("reason_code"),
                     "exception_category": row.get("exception_category"),
                     "provider_attempts": attempts,
+                    "staffing_reason_codes": staffing_reason_codes,
+                    "hiring_reason_codes": hiring_reason_codes,
                 }
             )
             if projected is None:

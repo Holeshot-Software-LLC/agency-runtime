@@ -26,6 +26,7 @@ from agency_runtime.core.installer_contracts import (
 from agency_runtime.core.native_child_activation import build_native_child_evidence_contract
 from agency_runtime.core.preflight_failure import (
     MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
+    MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES,
     PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
     default_preflight_failure_receipt,
     project_preflight_failure_receipt,
@@ -211,7 +212,7 @@ def _request_kind(value: object) -> str:
 
 def _prepare_preflight_failure_receipt(
     value: Mapping[str, Any] | None,
-) -> tuple[dict[str, Any], str]:
+) -> tuple[dict[str, Any], str, str, str]:
     """Validate and encode one bounded failure receipt for a Store write."""
 
     projected = project_preflight_failure_receipt(
@@ -228,7 +229,24 @@ def _prepare_preflight_failure_receipt(
     )
     if len(encoded_attempts.encode("utf-8")) > MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES:
         raise ValueError("preflight failure provider attempts exceed their durable bound")
-    return projected, encoded_attempts
+    encoded_staffing = json.dumps(
+        projected["staffing_reason_codes"],
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    encoded_hiring = json.dumps(
+        projected["hiring_reason_codes"],
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    if any(
+        len(encoded.encode("utf-8")) > MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES
+        for encoded in (encoded_staffing, encoded_hiring)
+    ):
+        raise ValueError("preflight failure reason codes exceed their durable bound")
+    return projected, encoded_attempts, encoded_staffing, encoded_hiring
 
 
 def _decode_preflight_failure_receipt(row: Mapping[str, Any]) -> dict[str, Any]:
@@ -241,6 +259,18 @@ def _decode_preflight_failure_receipt(row: Mapping[str, Any]) -> dict[str, Any]:
             maximum_depth=4,
             maximum_nodes=512,
         )
+        staffing_reason_codes = safe_load_bounded_json(
+            str(row["staffing_reason_codes"]),
+            maximum_bytes=MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES,
+            maximum_depth=2,
+            maximum_nodes=64,
+        )
+        hiring_reason_codes = safe_load_bounded_json(
+            str(row["hiring_reason_codes"]),
+            maximum_bytes=MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES,
+            maximum_depth=2,
+            maximum_nodes=64,
+        )
     except (TypeError, ValueError) as exc:
         raise RuntimeError("preflight failure receipt failed integrity validation") from exc
     projected = project_preflight_failure_receipt(
@@ -250,6 +280,8 @@ def _decode_preflight_failure_receipt(row: Mapping[str, Any]) -> dict[str, Any]:
             "reason_code": row["reason_code"],
             "exception_category": row["exception_category"],
             "provider_attempts": provider_attempts,
+            "staffing_reason_codes": staffing_reason_codes,
+            "hiring_reason_codes": hiring_reason_codes,
         }
     )
     if projected is None:
@@ -1901,7 +1933,8 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         try:
             row = conn.execute(
                 "SELECT id, session_id, trace_id, host, stage, reason_code, "
-                "exception_category, provider_attempts, recorded_at "
+                "exception_category, provider_attempts, staffing_reason_codes, "
+                "hiring_reason_codes, recorded_at "
                 "FROM preflight_failure_receipts WHERE session_id = ? AND trace_id = ?",
                 (normalized_session, normalized_trace),
             ).fetchone()
@@ -1925,7 +1958,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         normalized_status = str(status or "").strip()
         if normalized_status in {"", "active", "evidence_only"}:
             raise ValueError("preflight failure requires a terminal status")
-        projected_failure: tuple[dict[str, Any], str] | None = None
+        projected_failure: tuple[dict[str, Any], str, str, str] | None = None
         if normalized_status == "preflight_failed":
             projected_failure = _prepare_preflight_failure_receipt(failure_receipt)
         elif failure_receipt is not None:
@@ -1957,12 +1990,13 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
             )
             if closed.rowcount:
                 if projected_failure is not None:
-                    receipt, encoded_attempts = projected_failure
+                    receipt, encoded_attempts, encoded_staffing, encoded_hiring = projected_failure
                     inserted = conn.execute(
                         "INSERT INTO preflight_failure_receipts "
                         "(id, session_id, trace_id, host, stage, reason_code, "
-                        "exception_category, provider_attempts, recorded_at) "
-                        "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, "
+                        "exception_category, provider_attempts, staffing_reason_codes, "
+                        "hiring_reason_codes, recorded_at) "
+                        "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, ?, ?, "
                         f"{STORE_CLOCK_SQL} FROM runs "  # nosec B608
                         "WHERE session_id = ? AND trace_id = ? AND status = 'preflight_failed'",
                         (
@@ -1971,6 +2005,8 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                             receipt["reason_code"],
                             receipt["exception_category"],
                             encoded_attempts,
+                            encoded_staffing,
+                            encoded_hiring,
                             session_id,
                             trace_id,
                         ),
@@ -2004,7 +2040,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         normalized_status = str(status or "").strip()
         if normalized_status not in {"preflight_skipped", "preflight_failed"}:
             raise ValueError("reservation abandonment requires a preflight terminal status")
-        projected_failure: tuple[dict[str, Any], str] | None = None
+        projected_failure: tuple[dict[str, Any], str, str, str] | None = None
         if normalized_status == "preflight_failed":
             projected_failure = _prepare_preflight_failure_receipt(failure_receipt)
         elif failure_receipt is not None:
@@ -2033,12 +2069,13 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                 ),
             )
             if closed.rowcount and projected_failure is not None:
-                receipt, encoded_attempts = projected_failure
+                receipt, encoded_attempts, encoded_staffing, encoded_hiring = projected_failure
                 inserted = conn.execute(
                     "INSERT INTO preflight_failure_receipts "
                     "(id, session_id, trace_id, host, stage, reason_code, "
-                    "exception_category, provider_attempts, recorded_at) "
-                    "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, "
+                    "exception_category, provider_attempts, staffing_reason_codes, "
+                    "hiring_reason_codes, recorded_at) "
+                    "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, ?, ?, "
                     f"{STORE_CLOCK_SQL} FROM runs "  # nosec B608
                     "WHERE session_id = ? AND trace_id = ? AND status = 'preflight_failed'",
                     (
@@ -2047,6 +2084,8 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                         receipt["reason_code"],
                         receipt["exception_category"],
                         encoded_attempts,
+                        encoded_staffing,
+                        encoded_hiring,
                         session_id,
                         trace_id,
                     ),

@@ -60,6 +60,19 @@ It immediately produced an accepted eight-unit team from the same installed
 roster. The roster and host are therefore sufficient; the product failure is
 an accepted-but-unusable inference sample with no verifier-driven repair.
 
+The local AR-212 implementation now runs complete staffing verification inside
+recruiter semantic acceptance, resets rejected proposal state before the one
+full replacement response, and caches only accepted or verifier-clean explicit
+gap proposals. Preflight failure schema v2 persists bounded staffing and hiring
+reason-code arrays. The exact eight-test acceptance slice passes, as do 24
+canary/CLI compatibility tests and all 110 dashboard UI tests. The named fast
+production spine, review, merge, exact reinstall, and fresh live proof remain.
+
+One broader compatibility run exposed an unrelated stale preflight-token
+failure in untouched native plan-scope code. It is isolated as
+[AR-213](issue-AR-213-reject-stale-preflight-tokens-before-plan-validation.md)
+and does not expand this package.
+
 ## Approach
 
 1. Make whole-team staffing verification part of recruiter-stage acceptance.
@@ -86,13 +99,13 @@ acceptance.
 
 ## Acceptance
 
-- [ ] Full verifier rejection participates in exactly one bounded recruiter
+- [x] Full verifier rejection participates in exactly one bounded recruiter
   semantic-repair attempt without deterministic selection.
-- [ ] Explicit inferred gaps continue to governed contractor hiring; an
+- [x] Explicit inferred gaps continue to governed contractor hiring; an
   unrepaired result still blocks the substantive parent.
-- [ ] Terminal preflight evidence preserves bounded verifier and hiring reason
+- [x] Terminal preflight evidence preserves bounded verifier and hiring reason
   codes without prompt or provider-response content.
-- [ ] Focused regression tests reproduce the accepted-but-unusable proposal
+- [x] Focused regression tests reproduce the accepted-but-unusable proposal
   and prove repair, exhaustion, caching, and evidence behavior.
 - [ ] The named local gate passes before review and merge.
 - [ ] One new exact build passes supported-bypass activation and at most one

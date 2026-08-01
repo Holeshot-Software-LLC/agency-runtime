@@ -361,10 +361,18 @@ export function createRenderer(core, config, callbacks) {
 						small( "", `Actual: ${failure.actual_provider || "unavailable"} / ${failure.actual_model || "unavailable"}`),
 					);
 				} else if (failure.kind === "preflight_failure") {
+					const staffingCodes = Array.isArray(failure.staffing_reason_codes)
+						? failure.staffing_reason_codes.join(", ")
+						: "";
+					const hiringCodes = Array.isArray(failure.hiring_reason_codes)
+						? failure.hiring_reason_codes.join(", ")
+						: "";
 					copy.append(
 						small( "", `Host: ${failure.host || "unknown"} · ${failure.exception_category || "unavailable"}`),
 						small( "", `Trace: ${failure.trace_id || "unavailable"} · ${(failure.provider_attempts || []).length} provider attempt(s)`),
 					);
+					if (staffingCodes) copy.append(small( "", `Staffing: ${staffingCodes}`));
+					if (hiringCodes) copy.append(small( "", `Hiring: ${hiringCodes}`));
 				} else copy.append(small( "", `Trace: ${failure.trace_id || "unavailable"}`));
 				row.append(copy, el("time", "", formatTime(failure.recorded_at || failure.created_at)));
 				failureStack.append(row);

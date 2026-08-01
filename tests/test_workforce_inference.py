@@ -1303,6 +1303,157 @@ def test_staff_decision_without_safe_team_gets_one_bounded_inference_repair() ->
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
 
 
+def test_whole_team_verifier_rejection_gets_one_bounded_recruiter_repair() -> None:
+    snapshot = _snapshot(
+        _contract("technical-analyst"),
+        _contract("analysis-alternative"),
+    )
+    over_budget = {
+        "units": [
+            {
+                "unit_id": "unit-analyze",
+                "decision": "staff",
+                "ranked_semantic": [
+                    _nominee("technical-analyst", 0.99, "required"),
+                    _nominee("analysis-alternative", 0.98, "required"),
+                ],
+            }
+        ]
+    }
+    repaired = {
+        "units": [
+            {
+                "unit_id": "unit-analyze",
+                "decision": "staff",
+                "ranked_semantic": [
+                    _nominee("technical-analyst", 0.99, "required"),
+                    _nominee("analysis-alternative", 0.98, "acceptable"),
+                ],
+            }
+        ]
+    }
+    prompts: list[str] = []
+    responses = iter(
+        (
+            _result(_compact_plan_document()),
+            _result(over_budget),
+            _result(repaired),
+        )
+    )
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        prompts.append(prompt)
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(mode="fast", max_selected_total=1),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 3
+    assert [attempt.status for attempt in outcome.attempts] == [
+        "applied",
+        "rejected",
+        "applied",
+    ]
+    assert outcome.attempts[1].validation_detail == (
+        "workforce staffing verification failures: "
+        "global=selected_agent_budget_exceeded,"
+        "global=delegated_agent_budget_exceeded"
+    )
+    feedback = json.loads(prompts[2].partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
+    assert feedback["staffing_violations"] == [
+        {"unit_id": "", "code": "selected_agent_budget_exceeded"},
+        {"unit_id": "", "code": "delegated_agent_budget_exceeded"},
+    ]
+    assert outcome.staffing.units[0].selected == ("technical-analyst",)
+
+
+def test_verifier_repair_exhaustion_is_terminal_and_not_cached() -> None:
+    snapshot = _snapshot(
+        _contract("technical-analyst"),
+        _contract("analysis-alternative"),
+    )
+    over_budget = {
+        "units": [
+            {
+                "unit_id": "unit-analyze",
+                "decision": "staff",
+                "ranked_semantic": [
+                    _nominee("technical-analyst", 0.99, "required"),
+                    _nominee("analysis-alternative", 0.98, "required"),
+                ],
+            }
+        ]
+    }
+    repaired = {
+        "units": [
+            {
+                "unit_id": "unit-analyze",
+                "decision": "staff",
+                "ranked_semantic": [
+                    _nominee("technical-analyst", 0.99, "required"),
+                    _nominee("analysis-alternative", 0.98, "acceptable"),
+                ],
+            }
+        ]
+    }
+    responses = iter(
+        (
+            _result(_compact_plan_document()),
+            _result(over_budget),
+            _result(over_budget),
+        )
+    )
+    config = _config(mode="fast", max_selected_total=1)
+    repair_phase = False
+    second_calls = 0
+
+    def invoke(*_args, **_kwargs):
+        nonlocal second_calls
+        if repair_phase:
+            second_calls += 1
+            return _result(repaired)
+        return next(responses)
+
+    first = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=config,
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert not first.accepted
+    assert first.status == "inference_invalid"
+    assert first.proposal is None
+    assert first.calls_used == 3
+    assert [attempt.status for attempt in first.attempts] == [
+        "applied",
+        "rejected",
+        "rejected",
+    ]
+
+    repair_phase = True
+
+    second = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=config,
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert second.accepted
+    assert second_calls == 1
+    assert second.cache_hits == ("plan",)
+    assert [attempt.status for attempt in second.attempts] == ["applied"]
+
+
 def test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requirements() -> None:
     architect = replace(
         _contract("software-architect"),

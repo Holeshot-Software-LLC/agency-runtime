@@ -175,11 +175,13 @@ def test_preflight_persists_request_kind_and_terminalizes_downstream_failure(
     assert store.get_run("failed-turn")["status"] == "preflight_failed"
     receipt = store.get_preflight_failure_receipt("session", "failed-turn")
     assert receipt is not None
-    assert receipt["schema_version"] == "agency.preflight.failure.v1"
+    assert receipt["schema_version"] == "agency.preflight.failure.v2"
     assert receipt["stage"] == "routing"
     assert receipt["reason_code"] == "routing_failed"
     assert receipt["exception_category"] == "runtime_error"
     assert receipt["provider_attempts"] == []
+    assert receipt["staffing_reason_codes"] == []
+    assert receipt["hiring_reason_codes"] == []
     assert (
         store.get_completion_evidence_snapshot("session", "failed-turn")["preflight_failure"]
         == receipt
@@ -217,6 +219,21 @@ def test_preflight_failure_receipt_projects_provider_attempts_without_content(
                     "stderr": r"C:\private\provider.stderr",
                 }
             ],
+            "workforce_staffing": {
+                "status": "abstained",
+                "abstention_reasons": [
+                    {
+                        "code": "selected_agent_budget_exceeded",
+                        "detail": response,
+                    }
+                ],
+            },
+            "hiring_events": [
+                {
+                    "reason_codes": ["gap_evidence_not_hireable"],
+                    "notification": secret,
+                }
+            ],
         }
 
     monkeypatch.setattr(pipeline, "route", failed_inference)
@@ -249,21 +266,34 @@ def test_preflight_failure_receipt_projects_provider_attempts_without_content(
         }
     ]
     assert receipt["provider_attempts"][0]["provider_name"].startswith("sha256:")
+    assert receipt["staffing_reason_codes"] == ["selected_agent_budget_exceeded"]
+    assert receipt["hiring_reason_codes"] == ["gap_evidence_not_hireable"]
     connection = store._connect()
     try:
         durable = connection.execute(
-            "SELECT provider_attempts FROM preflight_failure_receipts "
+            "SELECT provider_attempts, staffing_reason_codes, hiring_reason_codes "
+            "FROM preflight_failure_receipts "
             "WHERE trace_id = 'inference-failed'"
-        ).fetchone()["provider_attempts"]
+        ).fetchone()
     finally:
         connection.close()
+    durable_text = " ".join(
+        str(durable[field])
+        for field in (
+            "provider_attempts",
+            "staffing_reason_codes",
+            "hiring_reason_codes",
+        )
+    )
     for forbidden in (secret, response, prompt, "provider.stderr"):
-        assert forbidden not in durable
+        assert forbidden not in durable_text
     [activity] = store.recent_dashboard_activity(limit=10)["preflight_failures"]
     assert activity["trace_id"] == "inference-failed"
     assert activity["stage"] == "routing"
     assert activity["reason_code"] == "workforce_inference_failed"
     assert activity["provider_attempts"] == receipt["provider_attempts"]
+    assert activity["staffing_reason_codes"] == receipt["staffing_reason_codes"]
+    assert activity["hiring_reason_codes"] == receipt["hiring_reason_codes"]
 
 
 def test_schema_v39_backfills_and_immutably_scopes_legacy_preflight_failure(

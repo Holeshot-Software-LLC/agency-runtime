@@ -95,6 +95,8 @@ def _failure(raw: object) -> dict[str, Any]:
                 "reason_code": raw.get("reason_code"),
                 "exception_category": raw.get("exception_category"),
                 "provider_attempts": raw.get("provider_attempts"),
+                "staffing_reason_codes": raw.get("staffing_reason_codes"),
+                "hiring_reason_codes": raw.get("hiring_reason_codes"),
             }
         )
         if projected is None or raw.get("status") != "preflight_failed":

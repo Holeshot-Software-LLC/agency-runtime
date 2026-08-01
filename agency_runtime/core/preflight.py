@@ -27,7 +27,9 @@ from agency_runtime.core.preflight_failure import (
     PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
     default_preflight_failure_reason,
     preflight_exception_category,
+    preflight_hiring_reason_codes,
     preflight_routing_failure_reason,
+    preflight_staffing_reason_codes,
     project_preflight_provider_attempts,
 )
 from agency_runtime.core.preflight_recipe import (
@@ -88,12 +90,20 @@ _DIRECT_NATIVE_CHILD_HOSTS = frozenset({"hermes", "openclaw"})
 class _PreflightFailureDiagnostics:
     """Track only allowlisted state needed if this attempt becomes terminal."""
 
-    __slots__ = ("provider_attempts", "reason_code", "stage")
+    __slots__ = (
+        "hiring_reason_codes",
+        "provider_attempts",
+        "reason_code",
+        "staffing_reason_codes",
+        "stage",
+    )
 
     def __init__(self) -> None:
         self.stage = "lifecycle"
         self.reason_code = default_preflight_failure_reason(self.stage)
         self.provider_attempts: list[dict[str, Any]] = []
+        self.staffing_reason_codes: list[str] = []
+        self.hiring_reason_codes: list[str] = []
 
     def enter(self, stage: str) -> None:
         self.stage = stage
@@ -102,6 +112,8 @@ class _PreflightFailureDiagnostics:
     def observe_routing(self, routing: Mapping[str, Any]) -> None:
         attempts = project_preflight_provider_attempts(routing.get("provider_attempts"))
         self.provider_attempts = [] if attempts is None else attempts
+        self.staffing_reason_codes = preflight_staffing_reason_codes(routing)
+        self.hiring_reason_codes = preflight_hiring_reason_codes(routing)
         self.reason_code = preflight_routing_failure_reason(routing)
 
     def mark_substantive_specialist_unavailable(self, routing: Mapping[str, Any]) -> None:
@@ -124,6 +136,8 @@ class _PreflightFailureDiagnostics:
             "reason_code": self.reason_code,
             "exception_category": preflight_exception_category(error),
             "provider_attempts": self.provider_attempts,
+            "staffing_reason_codes": self.staffing_reason_codes,
+            "hiring_reason_codes": self.hiring_reason_codes,
         }
 
 
