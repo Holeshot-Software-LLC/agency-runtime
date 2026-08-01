@@ -25,6 +25,7 @@ related:
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/decisions/0133-treat-product-specialist-loads-as-turn-scoped.md
+  - docs/decisions/0134-bind-contractor-risk-to-validated-authority.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -148,8 +149,14 @@ document, so the exact triggering risk class is not recoverable from the Store.
 Code inspection identifies two authority bugs that can independently produce
 this receipt: the model supplies `external_mutation` instead of the validated
 work unit, and substring classification can treat negated requirements such as
-`no credential access` as positive credential authority. The next package is
-limited to those two fail-closed invariants and content-free risk diagnostics.
+`no credential access` as positive credential authority. The bounded repair now
+binds mutation scope to the verified unit, recognizes only anchored explicit
+prohibitions, retains approval for genuine positive risk, and records each
+derived risk class without text. Both reviews are complete; 81 focused tests
+pass. The exact branch passes the named 654-test Python spine with six skips,
+all 110 dashboard tests, all 39 routing gates, 617-document validation,
+repository-wide Ruff lint and format, and all 78 decision mutations with zero
+survivors or invalid cases and `source_unchanged=true`.
 
 ## Approach
 
@@ -192,11 +199,11 @@ workspace sentinel before artifact validation.
   workspace and the model-authored sentinel is independently verified.
 - [x] The first response header is built from accepted Store evidence and any
   correction remains terminal failure.
-- [ ] A workspace-local contractor remains standard-risk when it only carries
+- [x] A workspace-local contractor remains standard-risk when it only carries
   negated credential/external safety constraints, while genuine external,
   credential, destructive, medical, legal, and financial authority remains
   approval-gated.
-- [ ] Focused checks, at most two review passes, and the named local fast gate
+- [x] Focused checks, at most two review passes, and the named local fast gate
   pass on one exact head.
 - [ ] One next exact build passes autonomous activation and at most one fresh
   README product trial with real artifacts, independent checks, a valid first

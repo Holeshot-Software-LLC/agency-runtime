@@ -33,6 +33,7 @@ related:
   - docs/decisions/0131-bind-verifier-evidence-into-contractor-critiques.md
   - docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
   - docs/decisions/0133-treat-product-specialist-loads-as-turn-scoped.md
+  - docs/decisions/0134-bind-contractor-risk-to-validated-authority.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -61,9 +62,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   recruiter applied, then dynamic hiring required high-risk human approval and
   atomic preflight published no route, specialist, delegation, header, or
   workspace write. Correction count is zero and the workspace is empty.
-- The exact next boundary is contractor risk authority, not topology: the work
-  unit must own mutation scope and negated safety constraints must not become
-  positive high-risk authority. Genuine high-risk authority stays gated.
+- The contractor-risk repair is locally implemented: the work unit owns
+  mutation scope, explicit prohibitions do not grant authority, genuine risk
+  stays approval-gated, and both reviews pass. The exact branch passes 81
+  focused tests, Python 654/6, dashboard 110/110, routing 39/39, 617-document
+  validation, Ruff/diff checks, and 78/78 mutations with unchanged source.
 
 ## completed-evidence
 
@@ -119,13 +122,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `019fbd7a-0cb8-7dc0-ba1b-415d3d834a3e`, and run
   `6e03910a-ec8b-4c4a-8d15-f2700b7cd219` fail atomically at high-risk hiring;
   zero execution rows commit and exact isolated trust remains proven.
+- The contractor-risk repair passes both bounded review passes and its exact
+  local fast gate: Python 654/6, dashboard 110/110, routing 39/39, 617-document
+  validation, Ruff/diff checks, and 78/78 mutations with zero survivors or
+  invalid cases and `source_unchanged=true`.
 
 ## exact-blocker
 
 The README main story remains NO-GO. Exact `386afca` proves install and
 activation, but its single product trial fails before routing because an
-isolated-workspace contractor is treated as high risk. One bounded risk-
-authority repair and one new immutable-build proof remain.
+isolated-workspace contractor is treated as high risk. The bounded risk-
+authority repair is local-green; one new immutable-build proof remains.
 
 ## same-task-continuity
 
@@ -138,11 +145,9 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Bind contractor mutation authority to the validated work unit and make risk
-   classification distinguish explicit prohibitions from granted authority.
-2. Run focused tests, two reviews, and the named fast gate; merge and install
-   one immutable repair without relying on hosted Actions.
-3. Spend one activation and at most one product trial on that new build, then
+1. Commit, review, merge, and install one immutable repair without relying on
+   hosted Actions.
+2. Spend one activation and at most one product trial on that new build, then
    update the local evidence page and OpenClaw handoff from the exact result.
 
 ## verification

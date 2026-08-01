@@ -403,6 +403,29 @@ def test_inferred_gap_hires_registers_and_immediately_enables_contractor(tmp_pat
     assert [item.stage for item in outcome.attempts] == ["hiring", "hiring-critic"]
 
 
+def test_hiring_prompts_preserve_instruction_and_mutation_boundaries(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    calls: list[dict[str, str]] = []
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_recording_invoker(
+            _hiring_response(),
+            {"approved": True, "reason_codes": []},
+            calls=calls,
+        ),
+    )
+
+    assert outcome.hired is True
+    assert "Never write executable instructions" in calls[0]["system_prompt"]
+    assert "external_mutation is true only for external_write" in calls[0]["system_prompt"]
+    assert "explicit prohibitions are not granted authority" in calls[1]["system_prompt"]
+
+
 def test_critic_can_independently_validate_runtime_gap_evidence(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     calls = 0
@@ -973,9 +996,15 @@ def test_codex_preflight_hydrates_and_commits_a_deferred_contractor(
         defer_commit=True,
         session_id=session_id,
         trace_id=trace_id,
-        invoker=_invoker(_hiring_response(), {"approved": True, "reason_codes": []}),
+        invoker=_invoker(
+            _hiring_response(external_mutation=True),
+            {"approved": True, "reason_codes": []},
+        ),
     )
     assert pending.pending_commit is not None
+    assert pending.status == "hired"
+    assert pending.contract is not None
+    assert pending.contract.external_mutation is False
     agent = pending.pending_commit.agent
     from agency_runtime.core.workforce.routing_projection import (
         workforce_work_units_from_descriptors,
@@ -1284,6 +1313,8 @@ def test_high_risk_amendment_is_revision_bound_and_applies_only_after_approval(
 ) -> None:
     store = Store(tmp_path / "agency.db")
     existing = _install_existing(store)
+    response = _amendment_response()
+    response["contract"]["requirements"] = ["Approval authority for release publication."]
     outcome = hire_contractor_for_gap(
         "Review and publish the missing quantum compiler build integration.",
         _amendment_unit(),
@@ -1292,7 +1323,7 @@ def test_high_risk_amendment_is_revision_bound_and_applies_only_after_approval(
         config=_config(),
         allow_existing_worker_amendment=True,
         invoker=_invoker(
-            _amendment_response(external_mutation=True),
+            response,
             {"approved": True, "reason_codes": []},
         ),
     )
@@ -1313,19 +1344,24 @@ def test_high_risk_amendment_is_revision_bound_and_applies_only_after_approval(
 
 def test_high_risk_hire_requires_approval_and_cli_receipt_remains_truthful(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
+    external_unit = replace(_unit(), mutation_scope="external_write")
     outcome = hire_contractor_for_gap(
         "Implement the externally mutating quantum compiler build integration.",
-        _unit(),
+        external_unit,
         (_existing(),),
         store=store,
         config=_config(provider_type="cli"),
         invoker=_invoker(
-            _hiring_response(external_mutation=True),
+            _hiring_response(external_mutation=False),
             {"approved": True, "reason_codes": []},
         ),
     )
 
     assert outcome.status == "approval_required"
+    assert outcome.reason_codes == (
+        "high_risk_human_approval_required",
+        "high_risk_class_external_mutation",
+    )
     assert outcome.worker is None
     assert outcome.hiring_case["status"] == "proposed"
     receipts = outcome.hiring_case["model_evidence"]["receipts"]
@@ -1347,6 +1383,58 @@ def test_high_risk_hire_requires_approval_and_cli_receipt_remains_truthful(tmp_p
     assert apply_approved_hiring_case(store, approved["id"])["worker_id"] == worker["worker_id"]
     replay = store.approve_hiring_case(approved["id"], approved_by="security-reviewer")
     assert replay["status"] == "applied"
+
+
+def test_deferred_external_hire_reports_class_without_committing(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+
+    outcome = hire_contractor_for_gap(
+        "Implement the externally mutating quantum compiler build integration.",
+        replace(_unit(), mutation_scope="external_write"),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        defer_commit=True,
+        invoker=_invoker(
+            _hiring_response(external_mutation=False),
+            {"approved": True, "reason_codes": []},
+        ),
+    )
+
+    assert outcome.status == "approval_required"
+    assert outcome.reason_codes == (
+        "high_risk_human_approval_required",
+        "high_risk_class_external_mutation",
+    )
+    assert outcome.pending_commit is not None
+    assert outcome.worker is None
+    assert store.list_hiring_cases(limit=10) == []
+
+
+def test_workspace_unit_overrides_model_external_mutation_claim(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    response = _hiring_response(external_mutation=True)
+    response["contract"]["requirements"] = [
+        "No network or credential access, external services, or global installs."
+    ]
+
+    outcome = hire_contractor_for_gap(
+        "Implement the isolated quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_invoker(
+            response,
+            {"approved": True, "reason_codes": []},
+        ),
+    )
+
+    assert outcome.status == "hired"
+    assert outcome.reason_codes == ()
+    assert outcome.contract is not None
+    assert outcome.contract.external_mutation is False
+    assert outcome.hiring_case["human_approval_required"] is False
 
 
 def test_hired_contractor_is_restaffed_without_repeating_inference(tmp_path: Path) -> None:
@@ -1612,7 +1700,10 @@ def test_route_hires_and_assigns_real_gap_in_same_preflight(tmp_path: Path, monk
         return real_hire(
             *args,
             **kwargs,
-            invoker=_invoker(_hiring_response(), {"approved": True, "reason_codes": []}),
+            invoker=_invoker(
+                _hiring_response(external_mutation=True),
+                {"approved": True, "reason_codes": []},
+            ),
         )
 
     monkeypatch.setattr(inference_module, "plan_and_staff_workforce", lambda *_a, **_k: inferred)

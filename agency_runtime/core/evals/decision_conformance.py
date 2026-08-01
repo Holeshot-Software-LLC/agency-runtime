@@ -1126,6 +1126,77 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="workspace-hire-trusts-model-external-mutation",
+        invariant=(
+            "A workspace-local contractor receives the validated unit authority rather than "
+            "a model-authored external-mutation claim."
+        ),
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before='        external_mutation=unit.mutation_scope == "external_write",',
+        after="        external_mutation=contract.external_mutation,",
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_workspace_unit_overrides_model_external_mutation_claim"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="external-write-hire-drops-approval-authority",
+        invariant=(
+            "An external-write work unit remains approval-gated even when the model "
+            "understates mutation authority."
+        ),
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before='        external_mutation=unit.mutation_scope == "external_write",',
+        after="        external_mutation=False,",
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_deferred_external_hire_reports_class_without_committing"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="explicit-risk-prohibition-becomes-granted-authority",
+        invariant="An explicit high-risk prohibition does not grant the authority it denies.",
+        source_path="agency_runtime/core/workforce/hiring_contract.py",
+        before=(
+            "        if _RISK_DENIAL_CLAUSE.match(clause) is None or "
+            "_RISK_DENIAL_REVERSAL.match(clause):"
+        ),
+        after="        if marker in clause:",
+        test_node=(
+            "tests/test_workforce_hiring_contract.py::"
+            "test_explicit_high_risk_prohibitions_do_not_grant_authority"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="positive-risk-after-prohibition-is-hidden",
+        invariant=(
+            "A later positive high-risk assertion cannot hide behind an earlier prohibition."
+        ),
+        source_path="agency_runtime/core/workforce/hiring_contract.py",
+        before='_RISK_CLAUSE_SEPARATOR = re.compile(r"[.;!?]+|\\b(?:but|however)\\b")',
+        after='_RISK_CLAUSE_SEPARATOR = re.compile(r"$^")',
+        test_node=(
+            "tests/test_workforce_hiring_contract.py::"
+            "test_positive_risk_after_a_prohibition_still_requires_approval"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="high-risk-hiring-erases-derived-class",
+        invariant=("A high-risk hiring failure identifies each derived content-free risk class."),
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before=(
+            "    return (\n"
+            '        "high_risk_human_approval_required",\n'
+            '        *(f"high_risk_class_{item}" for item in risk_classes),\n'
+            "    )"
+        ),
+        after='    return ("high_risk_human_approval_required",)',
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_high_risk_hire_requires_approval_and_cli_receipt_remains_truthful"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="contractor-outcomes-overflow-workforce-schema",
         invariant="Employment outcomes are capped to the smaller workforce projection.",
         source_path="agency_runtime/core/workforce/hiring.py",

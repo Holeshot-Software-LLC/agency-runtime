@@ -134,6 +134,7 @@ Status meanings:
 | [ADR-0063](0063-import-external-rosters-through-declared-manifests.md) | Import external rosters through declared manifests into quarantine | Superseded |
 | [ADR-0066](0066-package-audited-roster-and-sync-quarantined-deltas.md) | Package the audited upstream roster and synchronize quarantined deltas | Accepted |
 | [ADR-0081](0081-compile-contractors-from-governed-structured-contracts.md) | Compile contractors from governed structured contracts | Accepted |
+| [ADR-0134](0134-bind-contractor-risk-to-validated-authority.md) | Bind contractor risk to validated authority | Accepted |
 
 ## Operations and engineering
 

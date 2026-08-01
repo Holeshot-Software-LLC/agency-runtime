@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
+  - docs/decisions/0134-bind-contractor-risk-to-validated-authority.md
 supersedes: []
 superseded_by: null
 id: ADR-0081

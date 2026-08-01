@@ -155,6 +155,60 @@ def test_high_risk_is_derived_and_requires_human_approval() -> None:
     assert compiled.human_approval_required is True
 
 
+@pytest.mark.parametrize(
+    "requirement",
+    [
+        "No legal advice or legal filing authority.",
+        "Must not provide medical advice or diagnosis.",
+        "Operate without financial advice or trade execution authority.",
+        "Never perform a destructive action or wipe data.",
+        "No approval authority or credential access.",
+        "Do not perform offensive security or exploit development.",
+        "Must not mutate external systems or publish releases.",
+    ],
+)
+def test_explicit_high_risk_prohibitions_do_not_grant_authority(requirement: str) -> None:
+    raw = _raw()
+    raw["requirements"] = [requirement]
+
+    compiled = compile_contractor(parse_employment_contract(raw))
+
+    assert compiled.risk_classes == ()
+    assert compiled.human_approval_required is False
+
+
+def test_positive_risk_after_a_prohibition_still_requires_approval() -> None:
+    raw = _raw()
+    raw["requirements"] = [
+        "No credential access is needed for local tests; credential access is required in production."
+    ]
+
+    compiled = compile_contractor(parse_employment_contract(raw))
+
+    assert compiled.risk_classes == ("credential",)
+    assert compiled.human_approval_required is True
+
+    raw = _raw()
+    raw["requirements"] = [
+        "No credential access is needed locally, but credential access is required in production."
+    ]
+    compiled = compile_contractor(parse_employment_contract(raw))
+    assert compiled.risk_classes == ("credential",)
+    assert compiled.human_approval_required is True
+
+    raw = _raw()
+    raw["requirements"] = ["There is no restriction on credential access."]
+    compiled = compile_contractor(parse_employment_contract(raw))
+    assert compiled.risk_classes == ("credential",)
+    assert compiled.human_approval_required is True
+
+    raw = _raw()
+    raw["requirements"] = ["No need to avoid credential access."]
+    compiled = compile_contractor(parse_employment_contract(raw))
+    assert compiled.risk_classes == ("credential",)
+    assert compiled.human_approval_required is True
+
+
 def test_known_roles_preserve_the_issue_narrow_scope_boundaries() -> None:
     python = KNOWN_CONTRACTORS_BY_SLUG["python-application-engineer"]
     typescript = KNOWN_CONTRACTORS_BY_SLUG["typescript-application-engineer"]

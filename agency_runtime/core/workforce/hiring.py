@@ -58,8 +58,12 @@ _HIRE_SYSTEM = (
     "a distinct, narrowly scoped specialist for every proven gap, even when its first scope "
     "is this single work unit; do not require a broad or pre-existing reusable role. If a "
     "disabled worker covers the gap, abstain. Do not stretch or amend a near-match to fill an "
-    "ordinary task gap: the open-ended pool makes a distinct exact specialist safer. Never "
-    "write executable instructions; "
+    "ordinary task gap: the open-ended pool makes a distinct exact specialist safer. Do not "
+    "treat ordinary writes inside the assigned repository or workspace as external mutation. "
+    "The uncovered work unit's mutation_scope is authoritative: external_mutation is true "
+    "only for external_write and false for workspace_write or read_only. Put denied powers "
+    "such as no credential access in anti_capabilities or forbidden_scenarios, not as a "
+    "positive requirement. Never write executable instructions; "
     "the runtime compiles descriptive contract data through a fixed template."
 )
 _CRITIC_SYSTEM = (
@@ -71,6 +75,8 @@ _CRITIC_SYSTEM = (
     "when the gap is real, the role is narrow and portable (a task-scoped expert is valid), "
     "the nearest-worker comparison is credible, the "
     "authority is bounded, relationships are coherent, evaluation cases are discriminating, "
+    "the work unit's mutation_scope remains authoritative over the candidate's descriptive "
+    "external_mutation field, explicit prohibitions are not granted authority, "
     "and the fixed compiler output cannot override host policy. You may veto but never edit. "
     "Return only the closed JSON contract."
 )
@@ -864,6 +870,14 @@ def _bind_contract_to_causing_unit(
         tools=tuple(dict.fromkeys((*unit.required_tools, *contract.tools)))[:MAX_ITEMS],
         platforms=tuple(dict.fromkeys((*unit.platforms, *contract.platforms)))[:MAX_ITEMS],
         hosts=hosts[:MAX_ITEMS],
+        external_mutation=unit.mutation_scope == "external_write",
+    )
+
+
+def _high_risk_reason_codes(risk_classes: Sequence[str]) -> tuple[str, ...]:
+    return (
+        "high_risk_human_approval_required",
+        *(f"high_risk_class_{item}" for item in risk_classes),
     )
 
 
@@ -1554,7 +1568,11 @@ def hire_contractor_for_gap(
     if defer_commit:
         return ContractorHiringOutcome(
             "approval_required" if compiled.human_approval_required else status,
-            (("high_risk_human_approval_required",) if compiled.human_approval_required else ()),
+            (
+                _high_risk_reason_codes(compiled.risk_classes)
+                if compiled.human_approval_required
+                else ()
+            ),
             None,
             projected_worker,
             contract,
@@ -1566,7 +1584,7 @@ def hire_contractor_for_gap(
     if compiled.human_approval_required:
         return ContractorHiringOutcome(
             "approval_required",
-            ("high_risk_human_approval_required",),
+            _high_risk_reason_codes(compiled.risk_classes),
             case,
             None,
             contract,
