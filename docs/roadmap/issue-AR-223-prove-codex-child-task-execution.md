@@ -170,8 +170,13 @@ killed. The named Python spine passes 656 tests with 6 skipped, dashboard UI
 passes 110, 627 Markdown files validate, repo-wide Ruff lint and format pass,
 routing passes every threshold, and decision conformance kills 86 of 86
 mutations with zero survivors or invalid results and unchanged source after a
-163.196-second baseline and 759.4 seconds total. Fresh immutable-build proof
-remains pending.
+163.196-second baseline and 759.4 seconds total. PR 231 merges exact
+`5ff4a08e587ce47d46c96b878ed0191712906059`; the global uv tool's
+`direct_url.json` independently reports that exact requested revision and
+commit ID. Bare `agency install` auto-detects Codex and ZCode, refreshes both,
+and installs and restarts a reachable dashboard. Codex is registered with the
+exact byte-current bundle and remains `activation_required`; ZCode is
+registered and enabled. Installed live proof remains pending.
 
 ## Approach
 

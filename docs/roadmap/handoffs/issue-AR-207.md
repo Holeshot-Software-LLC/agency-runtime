@@ -89,7 +89,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   the causal second turn without retaining it. The consumed live rollout
   projects successfully under that code. Two bounded reviews have no unresolved
   High or Critical finding. The final focused set passes 72 tests, both new
-  decision mutations are killed, and the complete named local gate passes.
+  decision mutations are killed, and the complete named local gate passes. PR
+  231 merges exact `5ff4a08`; the global uv tool proves that exact VCS revision.
+  Bare install auto-detects and refreshes Codex and ZCode and leaves the
+  dashboard active and reachable. Codex now awaits its one live activation.
 
 ## completed-evidence
 
@@ -122,11 +125,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO pending a fresh immutable live build. Exact
-`a2d1a7c` proves that the opaque parent follow-up launches the second execution
-turn. The repaired local boundary matches the parent and child ciphertext,
-Store tool-use ID, lineage, task path, and causal completion, and the consumed
-live rollout now projects the exact work-unit and goal hash successfully.
+The README main story remains NO-GO pending live proof on installed exact
+`5ff4a08`. Its repaired boundary matches the parent and child ciphertext, Store
+tool-use ID, lineage, task path, and causal completion. The consumed prior
+rollout now projects the exact work-unit and goal hash successfully.
 
 ## same-task-continuity
 
@@ -138,8 +140,7 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Merge and install one fresh immutable build.
-2. Spend one activation; only after it passes, spend one product trial.
+1. Spend one activation; only after it passes, spend one product trial.
 
 ## verification
 

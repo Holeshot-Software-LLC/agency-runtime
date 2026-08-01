@@ -70,6 +70,15 @@ For every governed Codex work unit:
    link-unsafe, wrong-turn, or unbounded evidence fails closed. Activation and
    product proofs both use this same boundary.
 
+## Implementation evidence
+
+Commit `65ee298` implements the ciphertext-identity boundary and merge commit
+`5ff4a08` publishes it through [PR 231](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/231).
+The committed tree passes 72 focused tests, the named Python spine with 656
+passes and 6 skips, 110 dashboard tests, 627-document validation, repo-wide
+Ruff lint and format, every routing threshold, and all 86 decision mutations
+with zero survivors or invalid results and unchanged source.
+
 ## Consequences
 
 - Agency can prove that the exact host message authorized by the parent hook is

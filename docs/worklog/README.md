@@ -509,6 +509,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e267a18` | 2026-08-01 | docs(ar-223): checkpoint installed opaque followup merge | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `e2cb340` | 2026-08-01 | docs(ar-223): checkpoint encrypted child evidence boundary | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md), [AR-224](../roadmap/issue-AR-224-simplify-agency-evidence-header.md) | null |
 | `65ee298` | 2026-08-01 | fix(ar-223): bind encrypted Codex child execution | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `5ff4a08` | 2026-08-01 | Merge pull request #231 from Holeshot-Software-LLC/codex/ar-223-post-merge-live-proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
