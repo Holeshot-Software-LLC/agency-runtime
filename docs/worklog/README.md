@@ -470,6 +470,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0d27cd6` | 2026-07-31 | Merge pull request #212 from Holeshot-Software-LLC/codex/ar-212-live-product-proof | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-214](../roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md) | null |
 | `e1f543e` | 2026-07-31 | fix(codex): preserve product plan authority | [AR-214](../roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md) | [detail](2026-07-31-e1f543e-product-plan-authority.md) |
 | `23f0b1f` | 2026-08-01 | test(ar-214): format schema migration fixture | [AR-214](../roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md) | null |
+| `d6ba36a` | 2026-08-01 | Merge pull request #213 from Holeshot-Software-LLC/codex/ar-214-context-delivery-authority | [AR-214](../roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md) | null |
+| `4fe19c0` | 2026-08-01 | fix(workforce): repair critic-rejected contractor proposals | [AR-215](../roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md) | [detail](2026-08-01-4fe19c0-critic-rejected-contractor-repair.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
