@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from agency_runtime.core.config import AgencyConfig, ProviderEntry, WorkforceConfig
+from agency_runtime.core.preflight_failure import preflight_staffing_reason_codes
 from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 from agency_runtime.core.selector.pipeline import _record_workforce_model_receipts
 from agency_runtime.core.structured_provider import StructuredProviderResult
@@ -1436,6 +1437,21 @@ def test_verifier_repair_exhaustion_is_terminal_and_not_cached() -> None:
         "applied",
         "rejected",
         "rejected",
+    ]
+    assert tuple(reason.code for reason in first.staffing.abstention_reasons) == (
+        "selected_agent_budget_exceeded",
+        "delegated_agent_budget_exceeded",
+    )
+    failed_routing = project_workforce_routing(
+        first,
+        (),
+        request="Analyze this implementation safely.",
+        roster_count=snapshot.worker_count,
+        contract_fingerprint=snapshot.contract_fingerprint,
+    )
+    assert preflight_staffing_reason_codes(failed_routing) == [
+        "selected_agent_budget_exceeded",
+        "delegated_agent_budget_exceeded",
     ]
 
     repair_phase = True

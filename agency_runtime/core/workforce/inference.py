@@ -589,6 +589,7 @@ class _StaffingVerificationError(ValueError):
         ):
             raise ValueError("staffing verification failure is not allowlisted")
         self.failures = failures
+        self.staffing = staffing
         detail = ",".join(f"{failure.unit_id or 'global'}={failure.code}" for failure in failures)
         super().__init__(f"workforce staffing verification failures: {detail}")
 
@@ -1665,6 +1666,7 @@ def _recruit_ambiguous_plan(
     list[WorkforceInferenceAttempt],
     str,
     bool,
+    StaffingDecision | None,
 ]:
     """Ask inference to resolve one bounded shortlist, never to search the roster."""
 
@@ -1757,7 +1759,7 @@ def _recruit_ambiguous_plan(
         except _StaffingVerificationError:
             pass
         else:
-            return cached, [], "", True
+            return cached, [], "", True, None
     nomination_parser = _NominationAccumulator(
         plan,
         snapshot,
@@ -1766,7 +1768,11 @@ def _recruit_ambiguous_plan(
         allowed_candidate_ids=allowed_candidate_ids,
     )
 
+    rejected_staffing: StaffingDecision | None = None
+
     def parse_verified_proposal(value: Mapping[str, Any]) -> RecruiterProposal:
+        nonlocal rejected_staffing
+        rejected_staffing = None
         proposal = nomination_parser.parse(value)
         try:
             _verified_recruiter_proposal(
@@ -1776,9 +1782,10 @@ def _recruit_ambiguous_plan(
                 config=config,
                 context=context,
             )
-        except _StaffingVerificationError:
+        except _StaffingVerificationError as exc:
             # A whole-team rejection requires a complete replacement. Do not
             # merge repaired rows with the verifier-rejected proposal.
+            rejected_staffing = exc.staffing
             nomination_parser.reset()
             raise
         return proposal
@@ -1797,7 +1804,12 @@ def _recruit_ambiguous_plan(
     )
     if isinstance(proposal, RecruiterProposal):
         workforce_cache_put(cache_identity, proposal)
-    return proposal, attempts, failure, False
+    terminal_rejected_staffing = (
+        rejected_staffing
+        if proposal is None and attempts and attempts[-1].status == "rejected"
+        else None
+    )
+    return proposal, attempts, failure, False, terminal_rejected_staffing
 
 
 def _inference_declared(config: AgencyConfig) -> bool:
@@ -2023,7 +2035,13 @@ def plan_and_staff_workforce(
     # selection decider. Local typed logic supplies broad recall and may veto an
     # unsafe nomination, but it never preselects a team and never suppresses the
     # recruiter. There is no deterministic staffing branch.
-    parsed_proposal, stage_attempts, failure, recruiter_cache_hit = _recruit_ambiguous_plan(
+    (
+        parsed_proposal,
+        stage_attempts,
+        failure,
+        recruiter_cache_hit,
+        rejected_staffing,
+    ) = _recruit_ambiguous_plan(
         request=ask,
         plan=plan,
         snapshot=snapshot,
@@ -2045,6 +2063,7 @@ def plan_and_staff_workforce(
             attempts=attempts,
             detail_codes=(failure,),
             calls_used=budget.used,
+            staffing=rejected_staffing,
             cache_hits=cache_hits,
         )
     proposal = parsed_proposal

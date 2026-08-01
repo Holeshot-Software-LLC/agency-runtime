@@ -51,6 +51,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   existing one recruiter repair, unsafe results are not cached, explicit gaps
   remain hireable, and preflight failure schema v2 retains bounded staffing
   and hiring reason codes.
+- Focused PR review found and repaired one terminal-projection omission: a
+  second verifier rejection now carries its exact bounded staffing decision
+  into failure evidence, while any later non-verifier failure clears it.
 
 ## completed-evidence
 
@@ -93,6 +96,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   evaluation passes every correctness, policy, delegation, performance, scale,
   and CLI-startup gate. Decision-conformance passes after 840.2 seconds with a
   green baseline, every curated mutation killed, and source unchanged.
+- The post-review correction passes four focused tests, including projection
+  of exact verifier codes from a real `WorkforceRoutingOutcome`; focused Ruff
+  lint, format, and `git diff --check` also pass.
 - A broader preflight module run reached 98 passes and exposed an unrelated
   stale-token/native-plan-scope failure. It is recorded as AR-213 / tracker
   https://github.com/Holeshot-Software-LLC/agency-runtime/issues/209 and is not

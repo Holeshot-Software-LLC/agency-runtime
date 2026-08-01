@@ -71,6 +71,14 @@ routing-evaluation threshold passed, and decision-conformance passed with a
 green baseline, every curated mutation killed, and the source unchanged.
 Review, merge, exact reinstall, and fresh live proof remain.
 
+Focused review of PR 210 found that a second verifier rejection still reached
+the terminal outcome through generic empty staffing, so the new preflight
+schema could not project the verifier's exact reason codes. The correction now
+carries only the last verifier-rejected `StaffingDecision` through recruiter
+failure; a later provider or parser failure clears that evidence rather than
+inheriting stale codes. Four focused tests prove repair success, repair
+exhaustion, explicit-gap behavior, and projection from a real routing outcome.
+
 One broader compatibility run exposed an unrelated stale preflight-token
 failure in untouched native plan-scope code. It is isolated as
 [AR-213](issue-AR-213-reject-stale-preflight-tokens-before-plan-validation.md)
@@ -110,6 +118,8 @@ acceptance.
   codes without prompt or provider-response content.
 - [x] Focused regression tests reproduce the accepted-but-unusable proposal
   and prove repair, exhaustion, caching, and evidence behavior.
+- [x] Repair exhaustion preserves the terminal verifier's exact bounded
+  staffing codes without leaking them into a later non-verifier failure.
 - [x] The named local gate passes before review and merge.
 - [ ] One new exact build passes supported-bypass activation and at most one
   governed product trial with zero corrections and proven workspace write.
