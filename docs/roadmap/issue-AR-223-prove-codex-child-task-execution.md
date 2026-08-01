@@ -96,7 +96,39 @@ Python production spine passes 656 tests with 6 skipped, dashboard UI passes
 110 tests, documentation and Ruff gates pass, routing passes every threshold,
 and decision conformance kills 84 of 84 mutations with zero survivors or
 invalid results and unchanged source. Immutable-build live proof remains
-pending.
+pending. PR 229 merged exact
+`ba76ce798b19b2e5306ef2d3ee09424c4246d07e`; the immutable upgrade planner
+installed that exact VCS revision. Bare full-suite installation then refreshed
+Codex and ZCode and restarted the dashboard: the dashboard is active and
+reachable, ZCode is registered and enabled, and Codex is registered with the
+expected `activation_required` state.
+
+Its one autonomous activation canary is consumed and terminal `NO-GO`.
+Session `019fbf1b-e062-7533-aaaa-bdde81cc2bae`, trace
+`019fbf1b-f4a4-7d03-882e-25c90df4dadd`, run
+`a94a6f82-561b-4784-8775-0a7e889ce2dd`, route
+`94072e54-72b4-41de-b453-34b7d6141012`, and finalization
+`37773104-d977-45da-af20-65db1d8c65ef` retain the exact boundary. Inference
+selects `code-reviewer`, and the parent records one spawn, one completed
+activation wait, and one `followup_task`. Agency's own `PreToolUse` hook rejects
+that generated follow-up before the Store execution claim; therefore no second
+wait or execution turn exists, the header is absent, and collaboration reports
+`parent_wait_ambiguous`. Correction count is zero and persistent trust remains
+unchanged. No product trial was launched.
+
+The exact failure is now reproduced locally. Current Codex exposes the
+`followup_task` message to `PreToolUse` and the parent rollout as a 760-character
+`gAAAA...` ciphertext, while the receiving child alone sees the decrypted
+canonical envelope. The repaired hook binds that opaque call to the unique
+activated canonical child path and one-use Store claim. Activation and product
+projectors likewise treat parent ciphertext as lifecycle evidence and still
+require the exact decrypted envelope in the child's causal second turn before
+accepting work. Exact local head `4daf82a` passes 143 focused hook, Store,
+activation, and product tests; the named Python spine passes 656 with 6 skipped;
+dashboard UI passes 110; documentation validates 625 files; Ruff, format, diff,
+and every routing threshold pass. Decision conformance passes its 209.170-second
+baseline and kills 84 of 84 mutations with zero invalid results and unchanged
+source in 857.9 seconds. Fresh immutable-build proof remains pending.
 
 ## Approach
 

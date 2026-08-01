@@ -71,8 +71,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   turn before a worker passes. Focused warning-strict slices pass 106, 176, and
   36 tests (318 total); the invalid 304-second aggregate timeout is not counted.
   The complete named local fast gate passes, including Python 656/6, dashboard
-  110/110, and decision conformance 84/84 with zero invalid results. Tracker
-  issue 228 records the package; no new live evidence has been spent.
+  110/110, and decision conformance 84/84 with zero invalid results. Issue 228
+  and PR 229 record merged exact `ba76ce7`; that revision is installed. Bare
+  installation passes dashboard and ZCode. Its consumed Codex canary selects
+  `code-reviewer`, then records spawn, activation wait, and follow-up before
+  Agency rejects its generated execution envelope. No second wait or header
+  exists; corrections are zero and no product trial ran.
 
 ## completed-evidence
 
@@ -122,14 +126,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `43870c8` proves default installation,
-activation, inference-authored eight-unit selection, a real contractor hire,
-exact child scope delivery, current waits, a valid first header, and zero
-corrections. It does not prove child task execution: Codex terminal child turns
-leave the isolated workspace empty. AR-223's local two-turn repair now owns that
-boundary; its focused review and named local fast gate pass. The remaining gates
-are PR merge, immutable install, and one fresh activation plus at most one
-product trial.
+The README main story remains NO-GO. Exact `ba76ce7` passes installation and
+inference-owned selection, but its consumed canary exposed that Codex encrypts
+the follow-up before `PreToolUse` observes it. The locally repaired AR-223
+boundary binds that ciphertext to the exact activated child and requires the
+decrypted envelope in the later child rollout. Exact local head `4daf82a`
+passes the complete named local gate: 143 focused tests, 656 Python spine tests
+with 6 skipped, 110 dashboard tests, 625-file documentation validation, every
+routing threshold, and 84 of 84 decision mutations with zero invalid results.
+Fresh immutable-build proof remains pending.
 
 ## same-task-continuity
 
@@ -141,11 +146,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Merge and install the exact reviewed AR-223 revision without broadening the
-   two-turn Codex execution protocol.
-2. Spend one activation plus at most one product trial on that immutable build.
-3. Update the local evidence page and OpenClaw handoff only from accepted real
-   evidence.
+1. Open, review, and merge the exact green AR-223 branch.
+2. Install the fresh immutable merge, then spend one activation.
+3. Only after it passes, spend one product trial and update final evidence.
 
 ## verification
 

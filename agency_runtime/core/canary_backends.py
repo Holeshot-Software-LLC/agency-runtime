@@ -799,7 +799,7 @@ def _codex_exact_rollout_calls(
     dict[str, Any],
     str,
     str,
-    dict[str, str],
+    dict[str, str] | None,
 ]:
     """Validate one spawn, activation wait, execution trigger, and execution wait."""
 
@@ -865,11 +865,14 @@ def _codex_exact_rollout_calls(
     receiver_id = _codex_thread_id(activity.get("agent_thread_id"))
     native_task_name = str(spawn_args["task_name"]).strip()
     from agency_runtime.core.native_child_prompt_delivery import (
+        is_codex_opaque_collaboration_message,
         parse_codex_native_child_execution_message,
         render_codex_native_child_execution_message,
     )
 
-    execution = parse_codex_native_child_execution_message(followup_args.get("message"))
+    followup_message = followup_args.get("message")
+    execution = parse_codex_native_child_execution_message(followup_message)
+    opaque_followup = is_codex_opaque_collaboration_message(followup_message)
     if (
         not native_task_name
         or len(native_task_name) > 128
@@ -877,12 +880,17 @@ def _codex_exact_rollout_calls(
         or not str(spawn_output["task_name"]).endswith(f"/{native_task_name}")
         or set(followup_args) != {"message", "target"}
         or followup_args.get("target") != spawn_output["task_name"]
-        or execution is None
-        or execution.native_task_name != native_task_name
-        or followup_args.get("message")
-        != render_codex_native_child_execution_message(
-            work_unit_id=execution.work_unit_id,
-            goal_hash=execution.goal_hash,
+        or (execution is None and not opaque_followup)
+        or (
+            execution is not None
+            and (
+                execution.native_task_name != native_task_name
+                or followup_message
+                != render_codex_native_child_execution_message(
+                    work_unit_id=execution.work_unit_id,
+                    goal_hash=execution.goal_hash,
+                )
+            )
         )
         or followup_activity.get("agent_thread_id") != receiver_id
         or followup_activity.get("agent_path") != spawn_output["task_name"]
@@ -894,11 +902,15 @@ def _codex_exact_rollout_calls(
         followup,
         receiver_id,
         native_task_name,
-        {
-            "work_unit_id": execution.work_unit_id,
-            "native_task_name": execution.native_task_name,
-            "goal_hash": execution.goal_hash,
-        },
+        (
+            {
+                "work_unit_id": execution.work_unit_id,
+                "native_task_name": execution.native_task_name,
+                "goal_hash": execution.goal_hash,
+            }
+            if execution is not None
+            else None
+        ),
     )
 
 
@@ -923,7 +935,7 @@ def _codex_rollout_collaboration_evidence(
         not_after=not_after,
     )
     calls, outputs, activities, unexpected = _codex_rollout_call_data(events)
-    spawn, waits, followup, receiver_id, native_task_name, execution_delivery = (
+    spawn, waits, followup, receiver_id, native_task_name, declared_execution = (
         _codex_exact_rollout_calls(
             calls,
             outputs,
@@ -939,8 +951,8 @@ def _codex_rollout_collaboration_evidence(
         not_after=not_after,
     )
     _assert_codex_child_rollout_is_tool_free(child_events)
-    observed_execution = _codex_child_execution_projection(child_events)
-    if observed_execution != execution_delivery:
+    execution_delivery = _codex_child_execution_projection(child_events)
+    if declared_execution is not None and execution_delivery != declared_execution:
         raise ValueError("Codex child rollout execution did not match its followup")
     prompt_delivery = _codex_child_prompt_delivery(
         child_events,
@@ -1160,13 +1172,16 @@ def _codex_product_spawn_projection(
         raise ValueError("Codex product child path did not match its native task")
     followup_arguments = followup["arguments"]
     from agency_runtime.core.native_child_prompt_delivery import (
+        is_codex_opaque_collaboration_message,
         parse_codex_native_child_execution_message,
         render_codex_native_child_execution_message,
     )
 
-    execution = parse_codex_native_child_execution_message(
+    followup_message = (
         followup_arguments.get("message") if isinstance(followup_arguments, dict) else None
     )
+    execution = parse_codex_native_child_execution_message(followup_message)
+    opaque_followup = is_codex_opaque_collaboration_message(followup_message)
     followup_activities = [
         candidate
         for candidate in activities
@@ -1177,12 +1192,17 @@ def _codex_product_spawn_projection(
         set(followup_arguments) != {"message", "target"}
         or followup_arguments.get("target") != expected_path
         or outputs.get(followup["call_id"], "not-empty") is not None
-        or execution is None
-        or execution.native_task_name != native_task_name
-        or followup_arguments.get("message")
-        != render_codex_native_child_execution_message(
-            work_unit_id=execution.work_unit_id,
-            goal_hash=execution.goal_hash,
+        or (execution is None and not opaque_followup)
+        or (
+            execution is not None
+            and (
+                execution.native_task_name != native_task_name
+                or followup_message
+                != render_codex_native_child_execution_message(
+                    work_unit_id=execution.work_unit_id,
+                    goal_hash=execution.goal_hash,
+                )
+            )
         )
         or len(followup_activities) != 1
         or followup_activities[0].get("agent_thread_id") != receiver_id
@@ -1199,12 +1219,16 @@ def _codex_product_spawn_projection(
     )
     _assert_codex_child_activation_is_tool_free(child_events)
     execution_delivery = _codex_child_execution_projection(child_events)
-    expected_execution = {
-        "work_unit_id": execution.work_unit_id,
-        "native_task_name": execution.native_task_name,
-        "goal_hash": execution.goal_hash,
-    }
-    if execution_delivery != expected_execution:
+    declared_execution = (
+        {
+            "work_unit_id": execution.work_unit_id,
+            "native_task_name": execution.native_task_name,
+            "goal_hash": execution.goal_hash,
+        }
+        if execution is not None
+        else None
+    )
+    if declared_execution is not None and execution_delivery != declared_execution:
         raise ValueError("Codex product child execution did not match its followup")
     prompt_delivery = _codex_child_prompt_delivery(
         child_events,

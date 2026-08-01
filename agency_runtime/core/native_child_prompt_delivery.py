@@ -66,6 +66,7 @@ _CODEX_EXECUTION_MARKER_PREFIX = "<!-- agency-native-child-execution:v1:"
 _CODEX_EXECUTION_MARKER_PATTERN = re.compile(
     re.escape(_CODEX_EXECUTION_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
 )
+_CODEX_OPAQUE_COLLABORATION_MESSAGE_PATTERN = re.compile(r"gAAAAA[A-Za-z0-9_-]{24,}={0,2}")
 _V1_FIELDS = frozenset(
     {
         "version",
@@ -299,6 +300,15 @@ def render_codex_native_child_execution_message(
     return f"{_CODEX_EXECUTION_SECTION}{marker}\n{_CODEX_EXECUTION_INSTRUCTION}"
 
 
+def is_codex_opaque_collaboration_message(value: object) -> bool:
+    """Return whether Codex exposed only its bounded encrypted message shape."""
+
+    return (
+        isinstance(value, str)
+        and _CODEX_OPAQUE_COLLABORATION_MESSAGE_PATTERN.fullmatch(value) is not None
+    )
+
+
 def parse_codex_native_child_execution_message(
     value: object,
 ) -> CodexNativeChildExecutionDelivery | None:
@@ -509,6 +519,7 @@ __all__ = [
     "NATIVE_CHILD_PROMPT_DELIVERY_VERSION",
     "CodexNativeChildExecutionDelivery",
     "NativeChildPromptDelivery",
+    "is_codex_opaque_collaboration_message",
     "parse_codex_native_child_execution_message",
     "parse_native_child_prompt_delivery",
     "render_codex_native_child_execution_message",

@@ -66,7 +66,9 @@ changes rather than duplicating every commit.
   accepted work unit, the Store claims the execution dispatch once, and worker
   success requires content-free proof that the goal-hash-bound execution
   envelope occurred inside the later child turn. A terminal readiness turn can
-  no longer masquerade as specialist task execution.
+  no longer masquerade as specialist task execution. Current Codex-encrypted
+  parent follow-ups bind through the exact activated child path and one-use
+  claim; only the decrypted child-turn envelope can prove execution.
 - Codex product evidence now accepts the current bounded native `wait_agent`
   timeout while leaving the activation canary's exact 60-second contract
   unchanged. Current inferred work-unit goals carry their verified mutation
