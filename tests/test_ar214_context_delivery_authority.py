@@ -294,9 +294,7 @@ def test_schema_v42_adds_empty_invariant_to_existing_failure_receipts(tmp_path: 
     )
     connection = store._connect()
     try:
-        connection.execute(
-            "ALTER TABLE preflight_failure_receipts DROP COLUMN invariant_code"
-        )
+        connection.execute("ALTER TABLE preflight_failure_receipts DROP COLUMN invariant_code")
         connection.execute("DELETE FROM schema_version")
         connection.execute("INSERT INTO schema_version (version) VALUES (41)")
         connection.commit()
