@@ -474,7 +474,7 @@ def _validate_release_url(value: object, tag: str) -> str:
 
 def _fetch_commit(ref: str, timeout: float, fetch_json: JsonFetcher) -> tuple[str, str]:
     encoded = quote(_normalize_ref(ref), safe="")
-    return _validate_commit(fetch_json(f"repos/{REPOSITORY}/commits/{encoded}", timeout))
+    return _validate_commit(fetch_json(f"repos/{REPOSITORY}/commits/{encoded}?per_page=1", timeout))
 
 
 def _fetch_target(

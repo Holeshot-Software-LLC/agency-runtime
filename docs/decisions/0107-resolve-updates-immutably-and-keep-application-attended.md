@@ -8,6 +8,7 @@ tags: [release, security, cli, dashboard, operations]
 related:
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
+  - docs/roadmap/issue-AR-211-bound-immutable-commit-resolution.md
   - docs/worklog/README.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/decisions/0091-least-privilege-subprocess-environments.md

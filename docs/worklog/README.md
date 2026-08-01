@@ -454,6 +454,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `361d1e1` | 2026-07-31 | docs(roadmap): checkpoint per-test conformance repair | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-210](../roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md) | null |
 | `169a826` | 2026-07-31 | docs(roadmap): record 73-mutation conformance proof | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md), [AR-210](../roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md) | null |
 | `156eb5b` | 2026-07-31 | docs(roadmap): record exact local merge gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md), [AR-210](../roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md) | null |
+| `207b150` | 2026-07-31 | Merge pull request #204 from Holeshot-Software-LLC/codex/ar-207-exact-product-proof | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-208](../roadmap/issue-AR-208-preserve-codex-host-notices-in-product-evidence.md), [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md), [AR-210](../roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md) | null |
+| `a9a332b` | 2026-07-31 | fix(update): bound immutable commit responses | [AR-211](../roadmap/issue-AR-211-bound-immutable-commit-resolution.md) | null |
+| `8d51553` | 2026-07-31 | docs(roadmap): checkpoint bounded update resolution | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-211](../roadmap/issue-AR-211-bound-immutable-commit-resolution.md) | null |
+| `7bd64fa` | 2026-07-31 | docs(roadmap): record bounded update merge gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-211](../roadmap/issue-AR-211-bound-immutable-commit-resolution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
