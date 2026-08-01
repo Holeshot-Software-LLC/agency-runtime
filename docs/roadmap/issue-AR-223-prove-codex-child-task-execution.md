@@ -101,8 +101,20 @@ pending. PR 229 merged exact
 installed that exact VCS revision. Bare full-suite installation then refreshed
 Codex and ZCode and restarted the dashboard: the dashboard is active and
 reachable, ZCode is registered and enabled, and Codex is registered with the
-expected `activation_required` state. No activation or product evidence has
-been spent on this build yet.
+expected `activation_required` state.
+
+Its one autonomous activation canary is consumed and terminal `NO-GO`.
+Session `019fbf1b-e062-7533-aaaa-bdde81cc2bae`, trace
+`019fbf1b-f4a4-7d03-882e-25c90df4dadd`, run
+`a94a6f82-561b-4784-8775-0a7e889ce2dd`, route
+`94072e54-72b4-41de-b453-34b7d6141012`, and finalization
+`37773104-d977-45da-af20-65db1d8c65ef` retain the exact boundary. Inference
+selects `code-reviewer`, and the parent records one spawn, one completed
+activation wait, and one `followup_task`. Agency's own `PreToolUse` hook rejects
+that generated follow-up before the Store execution claim; therefore no second
+wait or execution turn exists, the header is absent, and collaboration reports
+`parent_wait_ambiguous`. Correction count is zero and persistent trust remains
+unchanged. No product trial was launched.
 
 ## Approach
 

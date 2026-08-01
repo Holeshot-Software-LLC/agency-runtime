@@ -73,8 +73,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   The complete named local fast gate passes, including Python 656/6, dashboard
   110/110, and decision conformance 84/84 with zero invalid results. Issue 228
   and PR 229 record merged exact `ba76ce7`; that revision is installed. Bare
-  installation passes the active dashboard and enabled ZCode; Codex is
-  registered as `activation_required`. No new live evidence has been spent.
+  installation passes dashboard and ZCode. Its consumed Codex canary selects
+  `code-reviewer`, then records spawn, activation wait, and follow-up before
+  Agency rejects its generated execution envelope. No second wait or header
+  exists; corrections are zero and no product trial ran.
 
 ## completed-evidence
 
@@ -121,20 +123,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   items. The header is valid with zero corrections, but the proof file and all
   artifacts are absent, so validation is skipped and the trial fails only
   `workspace_write_not_proven` / `proof_file_missing`.
-- PR 229 hosted CodeQL passes. Dependency review fails at the existing permission
-  probe; CI fails two unchanged Linux process-pair tests and the unchanged
-  dashboard asset ceiling. AR-223 changes none; its local handoff gate passes.
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `43870c8` proves default installation,
-activation, inference-authored eight-unit selection, a real contractor hire,
-exact child scope delivery, current waits, a valid first header, and zero
-corrections. It does not prove child task execution: Codex terminal child turns
-leave the isolated workspace empty. AR-223's local two-turn repair now owns that
-boundary; its focused review and named local fast gate pass. The remaining gates
-are one fresh activation plus at most one product trial on installed exact
-`ba76ce7`.
+The README main story remains NO-GO. Exact `ba76ce7` passes installation and
+inference-owned selection, but Agency rejects its generated execution follow-up
+before the Store claim. The consumed canary has no second wait or valid header,
+and no product trial ran. AR-223 owns that exact hook boundary.
 
 ## same-task-continuity
 
@@ -146,9 +141,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Spend one autonomous activation on installed exact `ba76ce7`.
-2. If it passes, spend at most one product trial on that same build.
-3. Update the evidence page and OpenClaw handoff only from accepted evidence.
+1. Repair only the exact `PreToolUse` follow-up matching failure.
+2. Merge and install one fresh immutable build, then spend one activation.
+3. Only after it passes, spend one product trial and update final evidence.
 
 ## verification
 
