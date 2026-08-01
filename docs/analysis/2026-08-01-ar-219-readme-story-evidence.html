@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Agency Runtime README Reality Check — AR-219</title>
+  <style>
+    :root {
+      --ink: #f5f3ed;
+      --muted: #aab3bc;
+      --panel: #14191e;
+      --line: #303a43;
+      --good: #58d68d;
+      --bad: #ff7373;
+      --warn: #f3c969;
+      --accent: #79c9ff;
+      --violet: #bca8ff;
+      --bg: #0b0f12;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 14% 0%, rgba(121, 201, 255, .14), transparent 34rem),
+        radial-gradient(circle at 92% 10%, rgba(188, 168, 255, .10), transparent 30rem),
+        radial-gradient(circle at 72% 78%, rgba(255, 115, 115, .06), transparent 26rem),
+        var(--bg);
+      font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 56px 0 80px; }
+    header { display: grid; gap: 18px; margin-bottom: 30px; }
+    .eyebrow { color: var(--accent); font-size: .78rem; font-weight: 850; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { max-width: 1000px; margin: 0; font-size: clamp(2.25rem, 6vw, 5.5rem); line-height: .96; letter-spacing: -.055em; }
+    h2 { margin: 0 0 16px; font-size: clamp(1.35rem, 2vw, 1.85rem); letter-spacing: -.025em; }
+    h3 { margin: 0 0 8px; font-size: 1rem; }
+    p { margin: 0; }
+    a { color: var(--accent); }
+    code, pre { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
+    code { overflow-wrap: anywhere; }
+    .lede { max-width: 900px; color: var(--muted); font-size: 1.1rem; }
+    .verdict {
+      display: flex; align-items: center; gap: 12px; width: fit-content;
+      padding: 10px 14px; border: 1px solid rgba(255, 115, 115, .52); border-radius: 999px;
+      background: rgba(255, 115, 115, .09); color: #ffd7d7; font-weight: 850;
+    }
+    .verdict::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--bad); box-shadow: 0 0 22px var(--bad); }
+    .meta { display: flex; flex-wrap: wrap; gap: 10px 18px; color: var(--muted); font-size: .85rem; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .card { grid-column: span 3; min-height: 172px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(145deg, rgba(26, 32, 38, .96), rgba(18, 23, 28, .96)); }
+    .card .state { display: inline-block; margin-bottom: 22px; font-size: .72rem; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+    .state.good { color: var(--good); }
+    .state.bad { color: var(--bad); }
+    .state.warn { color: var(--warn); }
+    .card p { color: var(--muted); font-size: .93rem; }
+    section { margin-top: 48px; }
+    .panel { border: 1px solid var(--line); border-radius: 18px; background: rgba(20, 25, 30, .92); overflow: hidden; }
+    .panel-head { padding: 20px 22px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.018); }
+    .panel-body { padding: 22px; }
+    table { width: 100%; border-collapse: collapse; font-size: .94rem; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { width: 28%; color: var(--muted); font-weight: 650; }
+    tr:last-child th, tr:last-child td { border-bottom: 0; }
+    .team th:nth-child(1) { width: 9%; }
+    .team th:nth-child(2) { width: 28%; }
+    .team th:nth-child(3) { width: 29%; }
+    .team th:nth-child(4) { width: auto; }
+    .badge { display: inline-block; padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .76rem; }
+    .badge.contractor { border-color: rgba(188,168,255,.45); color: #d9ceff; background: rgba(188,168,255,.08); }
+    .numbers { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+    .number { padding: 16px 10px; border: 1px solid var(--line); border-radius: 13px; text-align: center; background: rgba(255,255,255,.018); }
+    .number strong { display: block; font-size: 1.75rem; line-height: 1.1; color: var(--good); }
+    .number span { color: var(--muted); font-size: .76rem; }
+    .timeline { display: grid; gap: 0; }
+    .event { display: grid; grid-template-columns: 140px 28px 1fr; gap: 12px; min-height: 82px; }
+    .event .time { color: var(--muted); font-size: .83rem; padding-top: 2px; }
+    .rail { position: relative; display: flex; justify-content: center; }
+    .rail::after { content: ""; position: absolute; top: 15px; bottom: -4px; width: 1px; background: var(--line); }
+    .event:last-child .rail::after { display: none; }
+    .dot { position: relative; z-index: 1; width: 11px; height: 11px; margin-top: 6px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 5px var(--panel); }
+    .event.fail .dot { background: var(--bad); }
+    .event p { color: var(--muted); }
+    .callout { padding: 20px 22px; border-left: 4px solid var(--warn); border-radius: 12px; background: rgba(243, 201, 105, .075); }
+    .callout strong { color: #ffe8ae; }
+    ol { margin: 0; padding-left: 1.2rem; }
+    li + li { margin-top: 10px; }
+    .steps li::marker { color: var(--accent); font-weight: 850; }
+    .command { margin: 14px 0 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; background: #080b0d; color: #dce8f2; white-space: pre; }
+    footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: .84rem; }
+    @media (max-width: 900px) { .card { grid-column: span 6; } .numbers { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 620px) {
+      main { width: min(100% - 22px, 1180px); padding-top: 32px; }
+      .card { grid-column: 1 / -1; }
+      .numbers { grid-template-columns: repeat(2, 1fr); }
+      .event { grid-template-columns: 1fr; gap: 4px; padding: 0 0 24px 18px; border-left: 1px solid var(--line); }
+      .rail { display: none; }
+      th, td { display: block; width: 100% !important; padding: 9px 12px; }
+      th { padding-bottom: 0; border-bottom: 0; }
+    }
+    @media print {
+      :root { --ink: #101214; --muted: #4f5962; --panel: #fff; --line: #ccd1d5; --bg: #fff; }
+      body { background: #fff; }
+      main { width: 100%; padding: 0; }
+      .card, .panel { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Agency Runtime · README reality check</div>
+    <h1>Agency routed a real team. It still did not build the product.</h1>
+    <p class="lede">Evidence package for exact merge <code>f8e607d309f5dba933bc55f17892209e39e6e014</code>. Installation and activation now match the README. The one product trial reached eight real child workers before failing its exact evidence and workspace-write contract.</p>
+    <div class="verdict">NO-GO · workspace remained empty</div>
+    <div class="meta"><span>Prepared 2026-08-01 EDT</span><span>Host: Codex 0.146.0 on Windows</span><span>PR: <a href="https://github.com/Holeshot-Software-LLC/agency-runtime/pull/220">#220</a></span><span>Next defect: <a href="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/221">AR-219 / #221</a></span><span>Dashboard observed at <a href="http://127.0.0.1:7810/">127.0.0.1:7810</a></span></div>
+  </header>
+
+  <div class="grid" aria-label="Gate summary">
+    <article class="card"><div class="state good">Passed</div><h3>Exact local gate</h3><p>643 Python tests passed with 6 skips, 110 dashboard tests passed, 39/39 routing gates passed, and 73/73 decision mutations were killed.</p></article>
+    <article class="card"><div class="state good">Passed</div><h3>Default full suite</h3><p>Bare install selected Codex, ZCode, and dashboard. The service is owned, current, active, and reachable; no repair is recommended.</p></article>
+    <article class="card"><div class="state good">Passed</div><h3>Autonomous activation</h3><p>Inference selected <code>code-reviewer</code>, the native child completed, and the first header passed with zero corrections and no persistent trust change.</p></article>
+    <article class="card"><div class="state bad">Failed</div><h3>README product trial</h3><p>Eight workers completed, but exact topology projection was rejected and no model-authored workspace write or artifact was produced.</p></article>
+  </div>
+
+  <section>
+    <div class="callout"><strong>Do not start over.</strong> The evidence has moved beyond missing selection, default-only staffing, and absent delegation. The remaining boundary is specific: reconcile a valid multi-unit Codex execution topology with per-unit evidence, then prove the implementation workers actually write the isolated workspace.</div>
+  </section>
+
+  <section>
+    <div class="panel">
+      <div class="panel-head"><h2>Installed system — green</h2><p class="lede">The installed package, selected suite, dashboard, and explicit inference budget are independently observable.</p></div>
+      <div class="panel-body">
+        <table>
+          <tr><th>Package identity</th><td><code>0.1.0+gf8e607d309f5</code><br>VCS source revision <code>f8e607d309f5dba933bc55f17892209e39e6e014</code></td></tr>
+          <tr><th>Applicable suite</th><td>Codex, ZCode, and the optional-by-contract dashboard selected by default</td></tr>
+          <tr><th>Dashboard</th><td>Installed, enabled, active, owned, manifest-current, definition-current, and reachable. Observed loopback endpoint: <code>http://127.0.0.1:7810/</code>.</td></tr>
+          <tr><th>Workforce budget</th><td><code>workforce.fast_call_budget = 4</code></td></tr>
+          <tr><th>Hosted CI</th><td>Not dispatched or retried. The evidence gate was run locally because GitHub-hosted spending was explicitly out of scope.</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel">
+      <div class="panel-head"><h2>Activation proof — green on the first attempt</h2><p class="lede">This proves the Agency runtime can route, inject, delegate, and finalize inside Codex using the supported unattended trust bypass.</p></div>
+      <div class="panel-body">
+        <table>
+          <tr><th>Session / trace / run / route</th><td><code>019fbc48-be72-7442-9fa0-be195fcffffb</code><br><code>019fbc48-cb46-7c73-a835-23477439beb6</code><br><code>b1cfda5a-19c8-4615-8bd5-5c628053229a</code><br><code>9ad116c3-311d-4a6b-ac40-698cce7fd7e1</code></td></tr>
+          <tr><th>Agencies loaded</th><td><code>agency-steward</code>, <code>code-reviewer</code></td></tr>
+          <tr><th>Agencies delegated</th><td><code>code-reviewer</code> via <code>generic-worker / spawn_agent</code></td></tr>
+          <tr><th>Skills loaded</th><td>None</td></tr>
+          <tr><th>Actual model receipt</th><td>Workforce inference: <code>gpt-5.6-luna → codex-subscription/gpt-5.6-luna</code>. The specialist launch model was not evidenced by that receipt.</td></tr>
+          <tr><th>Recruited via</th><td>Inference</td></tr>
+          <tr><th>Why</th><td>The request required substantive work; inference accepted <code>code-reviewer</code> after applying host and tool eligibility exclusions.</td></tr>
+          <tr><th>How it shaped the outcome</th><td>The selected specialist instructions were loaded, one native child actually ran, the delegation completed, and Store evidence accepted the finalization.</td></tr>
+          <tr><th>Header / corrections</th><td>First header valid; <strong>0 corrections</strong></td></tr>
+          <tr><th>Trust</th><td><code>autonomous_bypass</code>; bypass used for this invocation only; persistent profile unchanged</td></tr>
+          <tr><th>Timing</th><td>31.952-second route; 133.3-second end-to-end activation command</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel">
+      <div class="panel-head"><h2>Product team — inference selected specialists, including contractors</h2><p class="lede">The product plan contained eight work units and seven unique specialists. <code>code-reviewer</code> correctly covered two different review units.</p></div>
+      <div class="panel-body">
+        <table class="team">
+          <thead><tr><th>Unit</th><th>Work</th><th>Specialist</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td>01</td><td>Discovery</td><td><code>codebase-onboarding-engineer</code></td><td><span class="badge">governed roster</span></td></tr>
+            <tr><td>02</td><td>Implementation</td><td><code>python-application-engineer</code></td><td><span class="badge contractor">existing contractor</span></td></tr>
+            <tr><td>03</td><td>Test code</td><td><code>software-test-engineer</code></td><td><span class="badge contractor">existing contractor</span></td></tr>
+            <tr><td>04</td><td>Documentation</td><td><code>technical-writer</code></td><td><span class="badge">governed roster</span></td></tr>
+            <tr><td>05</td><td>Correctness review</td><td><code>code-reviewer</code></td><td><span class="badge">governed roster</span></td></tr>
+            <tr><td>06</td><td>Documentation review</td><td><code>code-reviewer</code></td><td><span class="badge">specialist reused</span></td></tr>
+            <tr><td>07</td><td>Test evidence</td><td><code>test-results-analyzer</code></td><td><span class="badge">governed roster</span></td></tr>
+            <tr><td>08</td><td>Acceptance evidence</td><td><code>application-integration-verifier</code></td><td><span class="badge contractor">existing contractor</span></td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:16px;color:var(--muted)">The route was inference-authored. No new contractor was hired during this turn because inference found a complete team in the existing governed pool; three selected specialists were previously hired contractor versions.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel">
+      <div class="panel-head"><h2>Product proof — terminal NO-GO</h2><p class="lede">Exactly one product trial ran on this build. It is consumed and will not be retried.</p></div>
+      <div class="panel-body">
+        <h3>Exact product prompt</h3>
+        <pre class="command">One-shot product evaluation `python-cli-service`, trial `ar218-f8e607d-readme-01`.
+
+Build this complete application in the current empty workspace:
+A production-quality Python task manager CLI with durable JSON storage.
+
+Operating constraints:
+- Work only inside the current workspace.
+- Do not use network access, credentials, external services, or global installs.
+- Use only language standard libraries and runtimes already available.
+- Do not weaken, replace, or inspect the evaluator.
+- Finish implementation, tests, configuration, documentation, and recovery behavior in this single run.
+
+Fixed implementation contract:
+- `app.py` supports `add`, `list`, and `complete` subcommands.
+- Every command accepts `--data PATH`; machine output is JSON.
+- Invalid input exits nonzero with a concise stderr error and never corrupts storage.
+- Writes are atomic and portable across Windows and Linux.
+
+Required files:
+- `app.py`: standard-library CLI implementation
+- `tests/test_app.py`: meaningful unit and failure-path tests
+- `README.md`: accurate setup, usage, storage, and recovery guide
+
+Independent acceptance contract:
+- [python-cli-workflow] Add, list, and complete persist.
+- [python-cli-errors] Malformed input is safe and clear.
+- [python-cli-tests] The supplied test suite passes.
+- [python-cli-docs] README commands match behavior.
+
+Run the project tests before finishing. Report what was built and any genuine limitation; do not claim an acceptance check you did not execute.</pre>
+        <table>
+          <tr><th>Scenario / trial</th><td><code>python-cli-service</code><br><code>ar218-f8e607d-readme-01</code></td></tr>
+          <tr><th>Prompt hashes</th><td>Product <code>sha256:63545d3cf2362af45ebd5fedce89cabf934563dcea1ff839eddbff735fe534c8</code><br>Executed <code>sha256:f0d97f7f93463c238c49860495c0525e27b04e09dd65218a5cfaf0ffb522d8c6</code></td></tr>
+          <tr><th>Session / trace / run / route</th><td><code>019fbc4c-aeae-70c1-b256-f166e92452c5</code><br><code>019fbc4c-af63-76c0-9a40-55a559c4fee4</code><br><code>00c0ebd0-ca95-4da9-be01-e6ae848c82fb</code><br><code>8d7483e8-adca-45da-b4f6-9a2b9b0d0cc3</code></td></tr>
+          <tr><th>Provider receipts</th><td>Three <code>codex-subscription/gpt-5.6-luna</code> receipts: success, rejected, success. The bounded repair converged; the middle response was rejected for <code>gap_with_safe_team</code>.</td></tr>
+          <tr><th>Route</th><td>Accepted; confidence <code>1.0</code>; eight work units; seven unique specialists; 79.015-second routing latency</td></tr>
+          <tr><th>Agencies loaded</th><td>Store evidence: <code>codebase-onboarding-engineer</code>, <code>python-application-engineer</code>, <code>software-test-engineer</code>, <code>technical-writer</code>, <code>code-reviewer</code>, <code>test-results-analyzer</code>, and <code>application-integration-verifier</code></td></tr>
+          <tr><th>Agencies delegated</th><td>Eight unit-bound <code>spawn_agent</code> delegations completed; <code>code-reviewer</code> executed twice for distinct review units.</td></tr>
+          <tr><th>Skills loaded</th><td>No accepted parent header exists, so product-turn skill loading is not proven.</td></tr>
+          <tr><th>Actual model selected</th><td>Workforce inference: <code>gpt-5.6-luna → codex-subscription/gpt-5.6-luna</code>. Parent actual model and specialist launch models are not receipt-backed in the failed product report.</td></tr>
+          <tr><th>Recruited via</th><td>Inference selected the team. No new hiring call was needed; three selected agents were existing contractor versions.</td></tr>
+          <tr><th>Why / outcome effect</th><td>Inference decomposed the build into discovery, implementation, tests, documentation, two reviews, and two verification units. That produced eight real child lifecycles, but no accepted artifact outcome because projection and workspace proof failed.</td></tr>
+          <tr><th>Committed execution</th><td>8 activation grants consumed, 8 completed delegations, 8 native worker runs with exit code 0, 7 unique specialist loads, 1 accepted finalization</td></tr>
+          <tr><th>Store versus product result</th><td>Store run: <code>completed</code>. Product host report: <code>failed</code> because exact collaboration projection was unavailable.</td></tr>
+          <tr><th>Header / corrections</th><td>First header absent; all seven fields missing; <strong>0 corrections</strong>. Zero is necessary but not sufficient.</td></tr>
+          <tr><th>Workspace</th><td><code>C:\Users\lucas\.agency-runtime\product-workspaces\ar218-f8e607d-readme-01</code> contains no files. Sentinel missing; workspace write unproven; artifact validation skipped.</td></tr>
+          <tr><th>Timing</th><td>427.313 seconds end to end</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The topology that was observed</h2>
+    <div class="numbers" aria-label="Content-free collaboration counts">
+      <div class="number"><strong>8</strong><span>spawns</span></div>
+      <div class="number"><strong>8</strong><span>waits</span></div>
+      <div class="number"><strong>16</strong><span>tool outputs</span></div>
+      <div class="number"><strong>8</strong><span>child starts</span></div>
+      <div class="number"><strong>24</strong><span>agent messages</span></div>
+      <div class="number"><strong>0</strong><span>unexpected items</span></div>
+    </div>
+    <div class="callout" style="margin-top:16px"><strong>Why this still failed:</strong> after all baseline counts passed, the exact projector returned <code>native_collaboration_topology_invalid</code> and discarded the specific rejected invariant. Separately, the grader expected eight specialist loads even though one selected specialist served two units. AR-219 must reproduce and repair only those proven contracts, then demonstrate a real write.</div>
+  </section>
+
+  <section>
+    <h2>Observed sequence</h2>
+    <div class="timeline">
+      <div class="event"><div class="time">PR boundary</div><div class="rail"><span class="dot"></span></div><div><h3>Repair reviewed and merged</h3><p>PR 220’s compatibility finding was repaired, its thread resolved, and exact-head Codex rereview found no major issue before normal merge.</p></div></div>
+      <div class="event"><div class="time">Install boundary</div><div class="rail"><span class="dot"></span></div><div><h3>Exact suite installed</h3><p>Immutable build <code>f8e607d</code> installed Codex, ZCode, and the dashboard; the dashboard is current and reachable.</p></div></div>
+      <div class="event"><div class="time">133.3 seconds</div><div class="rail"><span class="dot"></span></div><div><h3>Autonomous activation passed</h3><p>Selection, specialist load, native child execution, accepted finalization, first-pass header, and zero corrections all proved.</p></div></div>
+      <div class="event"><div class="time">79.0 seconds</div><div class="rail"><span class="dot"></span></div><div><h3>Eight-unit product plan accepted</h3><p>Inference chose the seven-specialist team, including three existing contractors, with no generalist fallback.</p></div></div>
+      <div class="event"><div class="time">~5.3 minutes</div><div class="rail"><span class="dot"></span></div><div><h3>Eight native workers completed</h3><p>Every planned unit received a consumed grant, completed delegation, and zero-exit worker lifecycle.</p></div></div>
+      <div class="event fail"><div class="time">427.3 seconds</div><div class="rail"><span class="dot"></span></div><div><h3>Projection and workspace gate failed</h3><p>The product evidence projection was rejected, the first header was unavailable, and the isolated workspace remained empty.</p></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel">
+      <div class="panel-head"><h2>Next bounded package — AR-219</h2><p class="lede">This is the stop/check contract for the next run. It is not an invitation to reopen the whole architecture.</p></div>
+      <div class="panel-body">
+        <ol class="steps">
+          <li>Replay the captured eight-spawn/eight-wait shape locally, including one specialist assigned to two units.</li>
+          <li>Expose the first exact content-free invariant currently collapsed into <code>native_collaboration_topology_invalid</code>.</li>
+          <li>Accept one load per unique specialist while retaining one exact grant, delegation, and worker receipt per unit.</li>
+          <li>Prove implementation units receive their exact goals and write only inside the isolated workspace; verify the model-authored sentinel and scenario artifacts independently.</li>
+          <li>Run focused checks, at most two review passes, and the named fast gate; merge one PR and permit one new-build activation plus at most one product trial.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel">
+      <div class="panel-head"><h2>OpenClaw handoff</h2><p class="lede">The default installer story is now proven on this machine. OpenClaw’s child bridge differs from Codex’s opaque native rollout, so AR-219 does not prove or disprove OpenClaw execution.</p></div>
+      <div class="panel-body">
+        <p>An autonomous host agent can install the exact build, configure inference noninteractively, let bare install discover Codex/OpenClaw plus the dashboard, verify Codex with the supported one-invocation bypass, and inspect OpenClaw before one canary:</p>
+        <pre class="command">uv tool install --force --refresh --no-config \
+  "agency-runtime @ git+https://github.com/Holeshot-Software-LLC/agency-runtime.git@f8e607d309f5dba933bc55f17892209e39e6e014"
+
+agency configure --non-interactive --profile yolo
+# Configure the instructed provider with `agency config provider set ...`
+agency config validate
+
+agency install --dry-run --json
+agency install --json
+agency install --agent codex --autonomous --verify-activation --json
+
+agency status --agent openclaw --json
+agency host-canary openclaw
+
+# Execute once using the exact confirmation phrase printed by the inspection:
+agency host-canary openclaw --execute --mode agency \
+  --profile-scope isolated-profile --confirm "&lt;exact printed phrase&gt;"</pre>
+        <p style="margin-top:14px;color:var(--muted)">Use this build to prove installation and explore OpenClaw, but do not label it product-ready. The README application-build verdict remains NO-GO until AR-219 passes on a new exact revision.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Guardrails retained</h2>
+    <div class="grid">
+      <article class="card"><h3>No generalist substitution</h3><p>The parent did not silently build the application after specialist evidence failed.</p></article>
+      <article class="card"><h3>No deterministic selection</h3><p>The eight-unit team came from configured inference; deterministic code only filtered and verified it.</p></article>
+      <article class="card"><h3>No persistent trust rewrite</h3><p>The activation and product trial used the supported one-invocation bypass and left persistent trust unchanged.</p></article>
+      <article class="card"><h3>No retry laundering</h3><p>Build <code>f8e607d</code> received exactly one activation and one product trial. The failed trial is permanently consumed.</p></article>
+    </div>
+  </section>
+
+  <footer>This report proves one exact Windows/Codex installation, activation, and product trial only. It makes no cross-host, cross-platform, release-readiness, or comparative-superiority claim. Source records: AR-218, AR-219, the AR-207 recovery capsule, PR 220, issue 221, the exact product report, the empty isolated workspace, and Store-backed content-free receipts.</footer>
+</main>
+</body>
+</html>

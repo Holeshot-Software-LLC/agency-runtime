@@ -479,6 +479,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ebeeeab` | 2026-08-01 | docs(ar-218): record exact local verification | [AR-218](../roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md) | null |
 | `4bd350c` | 2026-08-01 | fix(config): preserve legacy balanced budget caps | [AR-218](../roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md) | [detail](2026-08-01-4bd350c-preserve-legacy-balanced-budget-caps.md) |
 | `3a11f29` | 2026-08-01 | docs(ar-218): record reviewed compatibility gate | [AR-218](../roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md) | null |
+| `f8e607d` | 2026-08-01 | Merge pull request #220 from Holeshot-Software-LLC/codex/ar-218-fund-stage-repairs | [AR-218](../roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

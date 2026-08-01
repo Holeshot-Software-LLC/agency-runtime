@@ -20,6 +20,7 @@ related:
   - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
   - docs/roadmap/issue-AR-216-preserve-required-product-scenario-files.md
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
+  - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/roadmap/handoffs/issue-AR-203.md
   - docs/worklog/README.md
 supersedes: []
@@ -29,7 +30,7 @@ epic: testing
 issue_id: AR-203
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
-depends_on: [AR-201, AR-207, AR-209, AR-212, AR-214, AR-215, AR-216, AR-217, AR-218]
+depends_on: [AR-201, AR-207, AR-209, AR-212, AR-214, AR-215, AR-216, AR-217, AR-218, AR-219]
 blocks: [AR-200]
 ---
 
@@ -348,6 +349,13 @@ write proof was absent, no response/header was published, and correction count
 was zero only because nothing reached publication. AR-207 owns the content-free
 failure evidence and first downstream execution repair before a new-build
 trial.
+
+The later exact build `f8e607d` proves autonomous activation and advances the
+product path through accepted eight-unit inference plus eight completed native
+worker receipts. Trial `ar218-f8e607d-readme-01` still leaves the workspace
+empty: exact multi-unit collaboration projection is unavailable, the first
+header is absent, and artifact validation is skipped. AR-219 owns that current
+workspace-write and evidence boundary.
 
 ## Approach
 
