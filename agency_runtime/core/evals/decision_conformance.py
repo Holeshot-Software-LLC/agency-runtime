@@ -1277,6 +1277,56 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="contractor-critic-loses-typed-gap-projection",
+        invariant=(
+            "A contractor critic receives bounded typed requirements and eligible coverage "
+            "from the exact staffing-verifier context."
+        ),
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before="""        "verified_gap": _verified_gap_projection(
+            unit,
+            contracts,
+            reason_codes=verified_gap_reasons,
+            staffing_context=staffing_context,
+        ),""",
+        after="""        "verified_gap": {
+            "inference_declared": "inference_declared_gap" in verified_gap_reasons,
+            "reason_codes": list(verified_gap_reasons),
+        },""",
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_critic_can_independently_validate_runtime_gap_evidence"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="contractor-repair-keeps-incoherent-relationships",
+        invariant=(
+            "A replacement contractor is explicitly told to remove speculative composition "
+            "edges after a relationship-coherence rejection."
+        ),
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before="relationship-coherence codes, remove speculative",
+        after="relationship-coherence codes, retain speculative",
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_product_request_gap_repair_receives_live_reason_family_and_typed_proof"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="contractor-repair-ignores-acceptance-evidence",
+        invariant=(
+            "A replacement contractor binds its evidence and evaluations to every work-unit "
+            "acceptance check after an evidence-sufficiency rejection."
+        ),
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before="codes, bind evidence requirements and evaluations",
+        after="codes, ignore evidence requirements and evaluations",
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_product_request_gap_repair_receives_live_reason_family_and_typed_proof"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="terminal-inference-failure-restores-policy-selection",
         invariant=(
             "A terminal inference failure cannot be repopulated by deterministic policy "

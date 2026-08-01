@@ -40,7 +40,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-219-recruiter-abstention-proof
+branch: codex/ar-220-gap-hiring-convergence
 evidence_commit: 5c45f154e720f1c91d2fa7c297c804cbd9c26d0c
 minimum_ledger_commit: 458b7e5ea252a56fe97f1e6184f24d197af5dea6
 hard_checkpoint_percent: 50
@@ -63,8 +63,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `2d0e25bb-6103-4ee7-bdcf-3228da2818aa` pass with one inferred
   `code-reviewer`, real child, valid first header, and zero corrections.
 - Trial `ar219-5c45f15-readme-01` is consumed and terminal `NO-GO`: planner and
-  recruiter responses applied, then recruiter semantic acceptance abstained;
-  atomic preflight published no route, specialist, header, write, or artifact.
+  recruiter responses applied and a verified gap reached dynamic hiring, then
+  its critic rejected the contractor path; atomic preflight published no route,
+  specialist, header, write, or artifact.
+- AR-220 now reproduces the exact product request and three live critic reason
+  classes against a representative typed gap. The repair projects bounded
+  verifier coverage into both critics and gives one inference-authored
+  replacement explicit relationship, acceptance, and independent-gap guidance.
 
 ## completed-evidence
 
@@ -78,18 +83,21 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `019fbdbd-9553-7fb3-8fbd-0b7d9755443f`, run
   `03ac1e0c-39b4-4212-ada3-a17bfa911070`, and failure
   `82513b21-6dd5-4b64-9adb-27aebede349d` retain the terminal boundary.
-- Hiring reasons are `relationships_not_coherent`,
+- Terminal hiring-critic reasons are `relationships_not_coherent`,
   `acceptance_evidence_insufficient`, and `gap_not_independently_proven`;
   staffing is `no_safe_sufficient_team` plus `recruiter_abstained`.
 - Product cardinalities are one trace/run/failure and zero execution rows. All
   header fields are absent, correction count is zero, trust/bypass pass without
   persistent changes, validation is skipped, and the exact workspace is empty.
+- The hiring file passes 37/37 checks; all three new decision mutations are
+  killed with unchanged source. An optional broader slice reconfirmed the known
+  independent AR-213 stale-token defect after 164 passes and one skip.
 
 ## exact-blocker
 
 The README main story remains NO-GO. Exact `5c45f154` proves installation and
-activation and removes the false risk gate, but its product recruiter cannot
-publish a coherent evidence-backed team. AR-220 owns this first boundary.
+activation and removes the false risk gate, but gap hiring cannot pass its
+independent critic. AR-220 owns this first boundary.
 
 ## same-task-continuity
 
@@ -102,11 +110,10 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Reproduce the three live recruiter reasons in one exact-scenario fixture.
-2. Identify and repair only the missing inference evidence or projection; no
-   deterministic team design or generalist substitution.
-3. Kill one decision mutation per rejection class, run two reviews and the
-   named local gate, then spend one activation and at most one product trial.
+1. Finish the second bounded review and named local fast gate on one exact head.
+2. Checkpoint and merge the repair without expanding into AR-213 or hosted CI.
+3. Install the exact merge, spend one activation and at most one product trial,
+   then update the local evidence page and OpenClaw handoff from real results.
 
 ## verification
 

@@ -66,10 +66,10 @@ as high risk and therefore cannot commit without human approval. No route or
 specialist execution is published from that failed preflight.
 
 The next exact repair removes that false high-risk boundary, passes activation,
-and reaches recruiter semantic acceptance. Planner and recruiter inference are
-both applied, but the recruiter abstains because relationship coherence,
-acceptance evidence, and independent gap proof remain insufficient. Atomic
-preflight again publishes no executable team.
+and admits an inference-declared gap to dynamic hiring. The governed contractor
+path then terminates rejected because its hiring critic reports incoherent
+relationships, insufficient acceptance evidence, and independently unproven
+gap evidence. Atomic preflight again publishes no executable team.
 
 ## Current state
 
@@ -180,10 +180,11 @@ Trial `ar219-5c45f15-readme-01` is consumed and terminal `NO-GO` after 167.8
 seconds. Session `019fbdbd-94a8-7812-a0df-37a28369eeeb`, trace
 `019fbdbd-9553-7fb3-8fbd-0b7d9755443f`, run
 `03ac1e0c-39b4-4212-ada3-a17bfa911070`, and preflight failure
-`82513b21-6dd5-4b64-9adb-27aebede349d` prove both inference stages applied,
-then staffing ended with `no_safe_sufficient_team` and
-`recruiter_abstained`. Hiring reasons are `relationships_not_coherent`,
+`82513b21-6dd5-4b64-9adb-27aebede349d` prove both inference stages applied and
+a verified gap reached dynamic hiring. The terminal hiring-critic reasons are
+`relationships_not_coherent`,
 `acceptance_evidence_insufficient`, and `gap_not_independently_proven`.
+Staffing remains `no_safe_sufficient_team` plus `recruiter_abstained`.
 Cardinalities are zero for every route and execution row; all seven header
 fields are absent; correction count is zero; the exact isolated workspace is
 empty; and artifact validation is skipped. AR-220 owns this first boundary.

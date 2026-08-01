@@ -37,6 +37,11 @@ does not change this store boundary, and its required focused tests remain
 green, so this defect is recorded separately rather than expanding that
 delivery package.
 
+The same node failed twice on the `824bb8b` base during AR-220's optional
+broader diagnostic slice, after 164 other routing, hiring, selection, and
+preflight checks passed with one skip. It remains a known independent fencing
+defect and is not part of the AR-220 gap-hiring package or named fast spine.
+
 ## Approach
 
 Resolve and fence the exact current attempt owner before recipe-specific native

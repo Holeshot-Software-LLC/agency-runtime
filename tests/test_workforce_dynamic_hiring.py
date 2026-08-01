@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 
 from agency_runtime.core.config import AgencyConfig, ProviderEntry, WorkforceConfig
+from agency_runtime.core.evals.product_scenarios import product_scenario
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
@@ -438,16 +439,31 @@ def test_critic_can_independently_validate_runtime_gap_evidence(tmp_path: Path) 
         document = json.loads(prompt)
         evidence = document.get("runtime_gap_evidence", {})
         workforce = evidence.get("complete_workforce", [])
+        verified = evidence.get("verified_gap", {})
         approved = bool(
-            evidence.get("verified_gap")
-            == {
-                "inference_declared": True,
-                "reason_codes": [
-                    "inference_declared_gap",
-                    "no_safe_sufficient_team",
-                    "recruiter_abstained",
-                ],
-            }
+            verified.get("inference_declared") is True
+            and verified.get("hiring_admitted") is True
+            and verified.get("reason_codes")
+            == [
+                "inference_declared_gap",
+                "no_safe_sufficient_team",
+                "recruiter_abstained",
+            ]
+            and verified.get("typed_requirements")
+            == [
+                "artifact:implementation-change",
+                "lifecycle:implementation",
+                "domain:quantum-build-systems",
+                "stack:typescript",
+                "capability:implementation",
+                "authority:modify",
+            ]
+            and verified.get("eligible_coverage") == []
+            and set(verified.get("uncovered_requirements", ()))
+            == set(verified.get("typed_requirements", ()))
+            and verified.get("coverage_rows") == []
+            and verified.get("coverage_row_count") == 0
+            and verified.get("coverage_rows_complete") is True
             and evidence.get("workforce_count") == 1
             and len(workforce) == 1
             and workforce[0].get("agent_id") == "general-build-reviewer"
@@ -476,6 +492,68 @@ def test_critic_can_independently_validate_runtime_gap_evidence(tmp_path: Path) 
 
     assert outcome.hired is True
     assert calls == 2
+
+
+def test_verified_gap_projection_excludes_ineligible_partial_coverage(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    partial = replace(_existing(), artifact_kinds=("implementation-change",))
+    calls: list[dict[str, str]] = []
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (partial,),
+        store=store,
+        config=_config(),
+        staffing_context=StaffingContext(
+            "codex",
+            "windows",
+            frozenset({"repository-read"}),
+            1,
+        ),
+        gap_reason_codes=(
+            "inference_declared_gap",
+            "no_safe_sufficient_team",
+            "recruiter_abstained",
+        ),
+        invoker=_recording_invoker(
+            _hiring_response(),
+            {"approved": True, "reason_codes": []},
+            calls=calls,
+        ),
+    )
+
+    assert outcome.hired is True
+    verified = json.loads(calls[1]["prompt"])["runtime_gap_evidence"]["verified_gap"]
+    assert verified["eligibility_context_available"] is True
+    assert verified["eligible_coverage"] == []
+    assert set(verified["uncovered_requirements"]) == set(verified["typed_requirements"])
+    assert verified["coverage_row_count"] == 1
+    assert verified["coverage_rows_complete"] is True
+    assert verified["coverage_rows"] == [
+        {
+            "agent_id": "general-build-reviewer",
+            "covers": ["artifact:implementation-change"],
+            "execution_eligible": False,
+            "ineligibility_reasons": [
+                "agent_authority_mismatch",
+                "agent_domain_mismatch",
+                "agent_capability_mismatch",
+                "agent_explicitly_out_of_scope",
+            ],
+        }
+    ]
+    unobserved = hiring_module._verified_gap_projection(
+        _unit(),
+        (partial,),
+        reason_codes=("inference_declared_gap",),
+        staffing_context=None,
+    )
+    assert unobserved["eligibility_context_available"] is False
+    assert unobserved["eligible_coverage"] == []
+    assert unobserved["coverage_rows"][0]["execution_eligible"] is None
 
 
 def test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval(
@@ -537,14 +615,20 @@ def test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval(
     assert "only replacement attempt" in calls[2]["system_prompt"]
     for critic_call in (calls[1], calls[3]):
         critic_prompt = json.loads(critic_call["prompt"])
-        assert critic_prompt["runtime_gap_evidence"]["verified_gap"] == {
-            "inference_declared": True,
-            "reason_codes": [
-                "inference_declared_gap",
-                "no_safe_sufficient_team",
-                "recruiter_abstained",
-            ],
-        }
+        verified_gap = critic_prompt["runtime_gap_evidence"]["verified_gap"]
+        assert verified_gap["inference_declared"] is True
+        assert verified_gap["hiring_admitted"] is True
+        assert verified_gap["reason_codes"] == [
+            "inference_declared_gap",
+            "no_safe_sufficient_team",
+            "recruiter_abstained",
+        ]
+        assert set(verified_gap["uncovered_requirements"]) == set(
+            verified_gap["typed_requirements"]
+        )
+        assert verified_gap["coverage_rows"] == []
+        assert verified_gap["coverage_row_count"] == 0
+        assert verified_gap["coverage_rows_complete"] is True
         assert critic_prompt["runtime_gap_evidence"]["workforce_count"] == 1
         assert [
             item["agent_id"] for item in critic_prompt["runtime_gap_evidence"]["complete_workforce"]
@@ -557,6 +641,67 @@ def test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval(
         "hiring-repair",
         "hiring-repair-critic",
     ]
+
+
+def test_product_request_gap_repair_receives_live_reason_family_and_typed_proof(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    request = product_scenario("python-cli-service").prompt(trial_id="ar219-5c45f15-readme-01")
+    rejected = _hiring_response()
+    replacement = deepcopy(_hiring_response())
+    replacement["contract"]["relationships"] = []
+    replacement["contract"]["evidence_requirements"] = [
+        "Windows and Linux build evidence.",
+        "The assigned acceptance check passes in the isolated workspace.",
+    ]
+    calls: list[dict[str, str]] = []
+    live_reasons = [
+        "relationships_not_coherent",
+        "acceptance_evidence_insufficient",
+        "gap_not_independently_proven",
+    ]
+
+    outcome = hire_contractor_for_gap(
+        request,
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        gap_reason_codes=(
+            "inference_declared_gap",
+            "no_safe_sufficient_team",
+            "recruiter_abstained",
+        ),
+        invoker=_recording_invoker(
+            rejected,
+            {"approved": False, "reason_codes": live_reasons},
+            replacement,
+            {"approved": True, "reason_codes": []},
+            calls=calls,
+        ),
+    )
+
+    assert outcome.hired is True
+    repair_prompt = json.loads(calls[2]["prompt"])
+    assert repair_prompt["critic_feedback"]["reason_codes"] == live_reasons
+    original_input = repair_prompt["original_hiring_input"]
+    assert original_input["request"] == request
+    verified = original_input["verified_gap"]
+    assert verified["hiring_admitted"] is True
+    assert set(verified["uncovered_requirements"]) == set(verified["typed_requirements"])
+    assert verified["coverage_row_count"] == 0
+    assert verified["coverage_rows_complete"] is True
+    assert "relationships must be empty unless" in calls[2]["system_prompt"]
+    assert "every work-unit acceptance check" in calls[2]["system_prompt"]
+    assert "For relationship-coherence codes, remove speculative" in calls[2]["system_prompt"]
+    assert "For acceptance-evidence codes, bind evidence requirements" in calls[2]["system_prompt"]
+    assert (
+        "For independent-gap codes, use original_hiring_input.verified_gap"
+        in calls[2]["system_prompt"]
+    )
+    assert "original_hiring_input.verified_gap" in calls[2]["system_prompt"]
+    assert "raw recruiter content is neither available nor required" in calls[3]["system_prompt"]
 
 
 def test_two_call_budget_never_starts_an_uncriticizable_replacement(tmp_path: Path) -> None:

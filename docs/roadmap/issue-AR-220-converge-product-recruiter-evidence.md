@@ -1,5 +1,5 @@
 ---
-title: "AR-220: Make product recruiter evidence converge"
+title: "AR-220: Make product gap hiring evidence converge"
 status: in_progress
 category: roadmap
 created: 2026-08-01
@@ -11,6 +11,7 @@ related:
   - agency_runtime/core/workforce/hiring.py
   - agency_runtime/core/workforce/staffing_verifier.py
   - agency_runtime/core/evals/decision_conformance.py
+  - docs/decisions/0131-bind-verifier-evidence-into-contractor-critiques.md
   - tests/test_workforce_inference.py
   - tests/test_workforce_dynamic_hiring.py
   - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
@@ -28,7 +29,7 @@ depends_on: [AR-218]
 blocks: [AR-203, AR-204, AR-219]
 ---
 
-# AR-220: Make product recruiter evidence converge
+# AR-220: Make product gap hiring evidence converge
 
 ## Problem
 
@@ -37,12 +38,14 @@ default installation and autonomous Codex activation. Its one governed
 `python-cli-service` product trial applies both planner and recruiter inference
 responses, then fails atomic preflight without publishing a route.
 
-The recruiter abstains with content-free reasons
+The recruiter validly declares an uncovered unit and the staffing verifier
+admits that gap to the governed hiring path. Dynamic contractor hiring then
+terminates rejected with content-free hiring-critic reasons
 `relationships_not_coherent`, `acceptance_evidence_insufficient`, and
-`gap_not_independently_proven`. Staffing reports `no_safe_sufficient_team` and
+`gap_not_independently_proven`. Staffing remains `no_safe_sufficient_team` plus
 `recruiter_abstained`. No specialist, contractor, delegation, header, write, or
 artifact is published even though this ordinary application should be
-staffable from the governed roster plus the inference-designed contractor pool.
+staffable from the inference-designed contractor pool.
 
 ## Current state
 
@@ -52,7 +55,9 @@ seconds. Session `019fbdbd-94a8-7812-a0df-37a28369eeeb`, trace
 `03ac1e0c-39b4-4212-ada3-a17bfa911070`, and failure
 `82513b21-6dd5-4b64-9adb-27aebede349d` retain the exact content-free boundary.
 Planner and recruiter provider attempts were both applied through
-`codex-subscription/gpt-5.6-luna`.
+`codex-subscription/gpt-5.6-luna`. Atomic preflight retains the terminal hiring
+reason codes but intentionally does not publish rejected contractor documents
+or claim uncommitted hiring-model receipts.
 
 Cardinalities are one trace, one run, and one preflight failure with zero
 routes, plans, loads, grants, consumptions, delegations, workers, or
@@ -60,14 +65,23 @@ finalizations. The first header is absent, correction count is zero, isolated
 workspace trust and autonomous bypass are proven without persistent changes,
 and the exact workspace is empty.
 
+The focused repair uses the exact product prompt and exact three terminal
+reason classes against a representative typed gap. Atomic failure evidence did
+not retain the rejected candidate or its private inferred work unit, so the
+fixture does not claim to reconstruct either. It proves that a replacement
+receives bounded typed requirements, live eligibility exclusions, uncovered
+coverage, and reason-family guidance while inference still authors the entire
+specialist contract. The hiring file is 37/37 green and three new curated
+mutations are independently killed with unchanged source.
+
 ## Approach
 
-1. Reproduce the exact three-class recruiter abstention in one focused fixture
-   built from the product scenario's inferred unit and roster-gap evidence.
-2. Trace which planner graph, recruiter context, critic result, or projection
-   withholds the relationship, acceptance, or independent-gap evidence needed
-   for a safe team.
-3. Repair only that inference boundary. Inference remains responsible for
+1. Reproduce the exact product request and three-class hiring-critic rejection
+   in one focused fixture with a representative typed gap; do not claim
+   unrecoverable rejected content is exact.
+2. Trace which governed gap projection or replacement-hire instruction
+   withholds relationship, acceptance, or independent-gap evidence.
+3. Repair only that gap-hiring boundary. Inference remains responsible for
    designing every specialist and relationship; deterministic code may verify
    or veto but must not invent a team.
 4. Preserve abstention for genuinely incoherent, unsafe, or unevidenced teams,
@@ -86,13 +100,13 @@ authorization.
 
 ## Acceptance
 
-- [ ] A focused exact-scenario fixture reproduces all three content-free
-  recruiter abstention reasons without storing provider content.
-- [ ] A safe sufficient team or inference-designed contractor repair converges
+- [x] A focused product-request fixture reproduces all three content-free
+  hiring-critic reasons without storing or inventing provider content.
+- [x] A safe inference-designed contractor repair converges locally
   without deterministic specialist selection or parent/generalist fallback.
-- [ ] Incoherent relationships, insufficient acceptance evidence, unproven
+- [x] Incoherent relationships, insufficient acceptance evidence, unproven
   gaps, unsafe authority, and impossible teams still abstain atomically.
-- [ ] Curated mutations independently reintroduce each live defect and every
+- [x] Curated mutations independently reintroduce each live defect and every
   mutation is killed with unchanged source.
 - [ ] Two bounded review passes, focused tests, and the named local fast gate
   pass on one exact head.
