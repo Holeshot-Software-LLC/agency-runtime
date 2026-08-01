@@ -1812,7 +1812,8 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 for item in conn.execute(
                     "SELECT id, delegation_event_id, backend, session_id, trace_id, "
                     "work_unit_id, host, worker_id, native_run_id, exit_code, "
-                    "started_at, ended_at FROM worker_runs WHERE trace_id = ? "
+                    "started_at, execution_tool_use_id, execution_dispatched_at, ended_at "
+                    "FROM worker_runs WHERE trace_id = ? "
                     "ORDER BY started_at, rowid",
                     (normalized_trace,),
                 ).fetchall()

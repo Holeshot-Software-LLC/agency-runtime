@@ -37,6 +37,7 @@ related:
   - docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
   - docs/decisions/0133-treat-product-specialist-loads-as-turn-scoped.md
   - docs/decisions/0134-bind-contractor-risk-to-validated-authority.md
+  - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -65,6 +66,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   workspace-write child's goal. The workspace still remains empty because a
   Codex V2 spawn turn can complete after acknowledgement without executing its
   initial task. AR-223 freezes the next package around only that boundary.
+- AR-223's reviewed local repair makes the first turn activation-only, claims
+  one exact `followup_task` execution envelope, and requires its later child
+  turn before a worker passes. Focused warning-strict slices pass 106, 176, and
+  36 tests (318 total); the invalid 304-second aggregate timeout is not counted.
+  Telemetry reached 14.9 percent; no new live evidence has been spent.
 
 ## completed-evidence
 
@@ -118,8 +124,9 @@ The README main story remains NO-GO. Exact `43870c8` proves default installation
 activation, inference-authored eight-unit selection, a real contractor hire,
 exact child scope delivery, current waits, a valid first header, and zero
 corrections. It does not prove child task execution: Codex terminal child turns
-leave the isolated workspace empty. AR-223 owns this one remaining execution
-boundary.
+leave the isolated workspace empty. AR-223's local two-turn repair now owns that
+boundary; the remaining gates are focused review, the named local fast gate,
+immutable install, and one fresh activation plus at most one product trial.
 
 ## same-task-continuity
 
@@ -131,10 +138,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Bind one actionable Codex V2 task delivery to each exact spawned child and
-   require its causal completion without retries or duplicate execution.
-2. Pass focused review and the named local fast gate, merge and install one
-   immutable revision, then spend one activation plus at most one product trial.
+1. Finish focused verification and at most two reviews of the exact two-turn
+   Codex execution protocol; repair only findings that invalidate AR-223.
+2. Pass the named local fast gate, merge and install one immutable revision,
+   then spend one activation plus at most one product trial.
 3. Update the local evidence page and OpenClaw handoff only from accepted real
    evidence.
 

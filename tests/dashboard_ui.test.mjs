@@ -1685,7 +1685,7 @@ test("host cards render activation proof truthfully without adding canary contro
   const attestation = {
     passed_at: "2026-07-27T12:34:56Z",
     profile_scope: "current-profile",
-    proof_contract: "agency.codex-activation-canary.v1",
+    proof_contract: "agency.codex-activation-canary.v2",
     proof_digest: digest,
     trace_id: "trace-safe",
   };
@@ -1701,7 +1701,7 @@ test("host cards render activation proof truthfully without adding canary contro
   let labels = descendants(harness.node("host-grid")).map((node) => node.textContent);
   assert.ok(labels.includes("Last successful activation proof"));
   assert.ok(labels.includes(`Proof fingerprint · ${digest}`));
-  assert.ok(labels.includes("Contract · agency.codex-activation-canary.v1"));
+  assert.ok(labels.includes("Contract · agency.codex-activation-canary.v2"));
   assert.ok(labels.includes("Profile · current-profile"));
   assert.ok(labels.includes("Trace · trace-safe"));
   assert.deepEqual(

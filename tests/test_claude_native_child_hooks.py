@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
 from threading import Lock
@@ -14,6 +15,7 @@ from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
 from agency_runtime.core.native_child_prompt_delivery import (
     parse_native_child_prompt_delivery,
+    render_codex_native_child_execution_message,
     render_native_child_prompt_delivery,
 )
 from agency_runtime.core.specialist_context import (
@@ -42,6 +44,7 @@ class _PlanStore:
         self.consumed: list[dict[str, Any]] = []
         self.parent_scopes: list[dict[str, Any]] = []
         self._lineage: dict[tuple[str, str], dict[str, str]] = {}
+        self.execution_claims: dict[tuple[str, str], str] = {}
         self._lock = Lock()
 
     def get_open_traces_for_session(self, _session_id: str) -> list[str]:
@@ -53,6 +56,29 @@ class _PlanStore:
         trace_id: str,
     ) -> dict[str, Any]:
         self.snapshot_reads.append((session_id, trace_id))
+        worker_runs = []
+        for (work_unit_id, _slug), lineage in self._lineage.items():
+            worker_id = str(lineage["worker_id"])
+            execution_tool_use_id = self.execution_claims.get(
+                (work_unit_id, worker_id),
+                "",
+            )
+            worker_runs.append(
+                {
+                    "backend": "spawn_agent",
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "work_unit_id": work_unit_id,
+                    "host": "codex",
+                    "worker_id": worker_id,
+                    "native_run_id": str(lineage["native_run_id"]),
+                    "execution_tool_use_id": execution_tool_use_id,
+                    "execution_dispatched_at": (
+                        "2026-08-01T12:00:00Z" if execution_tool_use_id else None
+                    ),
+                    "ended_at": None,
+                }
+            )
         return {
             "session_id": session_id,
             "trace_id": trace_id,
@@ -88,6 +114,7 @@ class _PlanStore:
                     "required_evidence": [],
                 },
             ],
+            "worker_runs": worker_runs,
         }
 
     def get_versioned_specialist_prompt(
@@ -206,6 +233,56 @@ class _PlanStore:
 
     def get_consumed_delegation_lineage(self, **kwargs: Any) -> dict[str, str] | None:
         return self._lineage.get((str(kwargs["work_unit_id"]), str(kwargs["specialist_slug"])))
+
+    def get_pending_native_hook_delivery(self, **_kwargs: Any) -> dict[str, str] | None:
+        if not self.prepared:
+            return None
+        prepared = self.prepared[0]
+        slug = str(prepared["specialist_slug"])
+        return {
+            "session_id": str(prepared["session_id"]),
+            "trace_id": str(prepared["trace_id"]),
+            "tool_use_id": str(prepared["tool_use_id"]),
+            "work_unit_id": str(prepared["work_unit_id"]),
+            "slug": slug,
+            "version": "v1",
+            "prompt_hash": self.hashes[slug],
+            "prompt_body": self.prompts[slug],
+        }
+
+    def claim_codex_native_child_execution(self, **kwargs: Any) -> bool:
+        key = (str(kwargs["work_unit_id"]), str(kwargs["worker_id"]))
+        tool_use_id = str(kwargs["tool_use_id"])
+        prior = self.execution_claims.get(key)
+        if prior is not None:
+            return prior == tool_use_id
+        self.execution_claims[key] = tool_use_id
+        return True
+
+    def get_native_child_run(self, **kwargs: Any) -> dict[str, Any] | None:
+        unit = str(kwargs["work_unit_id"])
+        worker_id = str(kwargs["worker_id"])
+        for (work_unit_id, _slug), lineage in self._lineage.items():
+            if (
+                work_unit_id != unit
+                or lineage["worker_id"] != worker_id
+                or lineage["native_run_id"] != kwargs["native_run_id"]
+            ):
+                continue
+            tool_use_id = self.execution_claims.get((unit, worker_id), "")
+            return {
+                "backend": "spawn_agent",
+                "session_id": str(kwargs["session_id"]),
+                "trace_id": str(kwargs["trace_id"]),
+                "work_unit_id": unit,
+                "host": "codex",
+                "worker_id": worker_id,
+                "native_run_id": str(kwargs["native_run_id"]),
+                "execution_tool_use_id": tool_use_id,
+                "execution_dispatched_at": ("2026-08-01T12:00:00Z" if tool_use_id else None),
+                "ended_at": None,
+            }
+        return None
 
     def create_native_child_parent_scope(self, **kwargs: Any) -> dict[str, Any]:
         receipt = {
@@ -864,6 +941,183 @@ def test_codex_opaque_product_delivery_is_goal_hash_bound_child_context() -> Non
     assert delivery.specialist_slug == "code-reviewer"
     assert "[AGENCY EXACT SPECIALIST ACTIVATION v2]" in context
     assert context.endswith(store.prompts["code-reviewer"])
+
+
+def _activate_codex_plan_child(
+    bridge: HookBridge,
+    *,
+    worker_id: str = "019fa6a6-a197-7a83-b3fb-d2c20411f608",
+) -> tuple[str, str]:
+    task_name = codex_task_name_for_work_unit("unit-code")
+    bridge.handle(
+        {
+            "hook_event_name": "PreToolUse",
+            "session_id": "codex-session",
+            "turn_id": "trace",
+            "tool_name": "collaborationspawn_agent",
+            "tool_use_id": "call-product",
+            "tool_input": {
+                "fork_turns": "none",
+                "task_name": task_name,
+                "message": "gAAAAA" + "opaque-product-ciphertext" * 2,
+            },
+        }
+    )
+    bridge.handle(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": "codex-session",
+            "agent_id": worker_id,
+            "agent_type": "worker",
+        }
+    )
+    message = render_codex_native_child_execution_message(
+        work_unit_id="unit-code",
+        goal_hash=work_unit_goal_hash("Review the implementation."),
+    )
+    return task_name, message
+
+
+def test_codex_followup_accepts_only_exact_activated_execution_envelope() -> None:
+    store = _PlanStore()
+    bridge = HookBridge("codex", store=store)  # type: ignore[arg-type]
+    task_name, message = _activate_codex_plan_child(bridge)
+    payload = {
+        "hook_event_name": "PreToolUse",
+        "session_id": "codex-session",
+        "turn_id": "trace",
+        "tool_name": "collaborationfollowup_task",
+        "tool_use_id": "call-followup",
+        "tool_input": {
+            "target": f"/root/{task_name}",
+            "message": message,
+        },
+    }
+
+    assert bridge.handle(payload) == {}
+    assert bridge.handle(payload) == {}
+    replay = bridge.handle({**payload, "tool_use_id": "call-followup-replay"})
+    assert replay["hookSpecificOutput"]["permissionDecision"] == "deny"
+    for replacement in (
+        {"target": "/root/wrong", "message": message},
+        {"target": f"/root/other/{task_name}", "message": message},
+        {"target": f"/root/{task_name}", "message": message + "\nrepeat"},
+        {"target": f"/root/{task_name}", "message": "Perform unrelated work."},
+    ):
+        denied = bridge.handle({**payload, "tool_input": replacement})
+        assert denied["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+
+def test_codex_followup_post_tool_does_not_record_a_second_delegation() -> None:
+    store = _PlanStore()
+    adapter = _RecordingAdapter()
+    bridge = HookBridge("codex", store=store, adapter=adapter)  # type: ignore[arg-type]
+    task_name, message = _activate_codex_plan_child(bridge)
+
+    bridge.handle(
+        {
+            "hook_event_name": "PostToolUse",
+            "session_id": "codex-session",
+            "turn_id": "trace",
+            "tool_name": "collaborationfollowup_task",
+            "tool_use_id": "call-followup",
+            "tool_input": {"target": f"/root/{task_name}", "message": message},
+            "tool_response": "",
+        }
+    )
+
+    assert adapter.calls == []
+
+
+def test_codex_planned_child_closes_only_on_exact_execution_turn(tmp_path: Any) -> None:
+    class LifecycleStore(_PlanStore):
+        def __init__(self) -> None:
+            super().__init__()
+            self.started: list[dict[str, str]] = []
+            self.stopped: list[dict[str, str]] = []
+            self.ended: list[dict[str, str]] = []
+
+        def get_run(self, _trace_id: str) -> None:
+            return None
+
+        def record_native_child_started(self, **kwargs: str) -> None:
+            self.started.append(kwargs)
+
+        def record_native_child_stopped(self, **kwargs: str) -> None:
+            self.stopped.append(kwargs)
+
+        def record_native_child_ended(self, **kwargs: str) -> None:
+            self.ended.append(kwargs)
+
+    worker_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    execution_turn = "019fa6a6-b197-7a83-b3fb-d2c20411f608"
+    store = LifecycleStore()
+    bridge = HookBridge("codex", store=store)  # type: ignore[arg-type]
+    task_name, message = _activate_codex_plan_child(bridge, worker_id=worker_id)
+    transcript = tmp_path / f"rollout-test-{worker_id}.jsonl"
+    events = [
+        {"type": "session_meta", "payload": {"id": worker_id}},
+        {
+            "type": "event_msg",
+            "payload": {"type": "task_started", "turn_id": "activation-turn"},
+        },
+        {"type": "response_item", "payload": {"content": "ready"}},
+        {
+            "type": "event_msg",
+            "payload": {"type": "task_complete", "turn_id": "activation-turn"},
+        },
+        {
+            "type": "response_item",
+            "payload": {"content": json.dumps({"content": message})},
+        },
+        {
+            "type": "event_msg",
+            "payload": {"type": "task_started", "turn_id": execution_turn},
+        },
+        {
+            "type": "event_msg",
+            "payload": {"type": "task_complete", "turn_id": execution_turn},
+        },
+    ]
+    transcript.write_text(
+        "\n".join(json.dumps(event) for event in events) + "\n",
+        encoding="utf-8",
+    )
+    base = {
+        "hook_event_name": "SubagentStop",
+        "session_id": "codex-session",
+        "agent_id": worker_id,
+        "agent_type": "worker",
+        "agent_transcript_path": str(transcript),
+        "last_assistant_message": "completed",
+    }
+
+    assert bridge.handle({**base, "turn_id": "activation-turn"}) == {}
+    assert store.stopped == []
+    assert store.ended == []
+    assert bridge.handle({**base, "turn_id": execution_turn}) == {}
+    assert store.stopped == []
+    assert store.ended == []
+    assert (
+        bridge.handle(
+            {
+                "hook_event_name": "PreToolUse",
+                "session_id": "codex-session",
+                "turn_id": "trace",
+                "tool_name": "collaborationfollowup_task",
+                "tool_use_id": "call-followup",
+                "tool_input": {
+                    "target": f"/root/{task_name}",
+                    "message": message,
+                },
+            }
+        )
+        == {}
+    )
+    assert bridge.handle({**base, "turn_id": execution_turn}) == {}
+    assert len(store.stopped) == 1
+    assert store.stopped[0]["work_unit_id"] == "unit-code"
+    assert len(store.ended) == 1
 
 
 @pytest.mark.parametrize(

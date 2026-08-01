@@ -9,7 +9,9 @@ import pytest
 
 from agency_runtime.adapters.hermes.bridge import handle as handle_hermes_bridge
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
+from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core.delegation.events import work_unit_id_from_text
+from agency_runtime.core.native_child_activation import build_native_child_run_identity
 from agency_runtime.core.roster.bundled import BundledRoster
 from agency_runtime.core.store.schema import SCHEMA_VERSION
 from agency_runtime.core.store.sqlite import Store
@@ -73,6 +75,87 @@ def test_native_child_start_and_end_update_reciprocal_delegation(tmp_path: Path)
     assert ended["exit_code"] == 0
     assert ended["ended_at"]
     assert store.get_delegations("parent-run")[0]["status"] == "completed"
+
+
+def test_codex_child_execution_dispatch_is_one_use_and_tool_idempotent(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    worker_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    native_run_id = f"codex-agent:{worker_id}"
+    _delegation(
+        store,
+        host="codex",
+        backend="spawn_agent",
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    store.record_native_child_started(
+        host="codex",
+        backend="spawn_agent",
+        **_PARENT_SCOPE,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    claim = {
+        **_PARENT_SCOPE,
+        "worker_id": worker_id,
+        "native_run_id": native_run_id,
+    }
+
+    assert store.claim_codex_native_child_execution(**claim, tool_use_id="followup-1")
+    assert store.claim_codex_native_child_execution(**claim, tool_use_id="followup-1")
+    assert not store.claim_codex_native_child_execution(**claim, tool_use_id="followup-2")
+    assert HookBridge("codex", store=store)._codex_execution_claim_observed(
+        session_id="parent-session",
+        trace_id="parent-run",
+        work_unit_id="unit-1",
+        identity=build_native_child_run_identity(
+            worker_kind="generic-worker",
+            worker_id=worker_id,
+            native_run_id=native_run_id,
+        ),
+    )
+    store.record_native_child_ended(
+        host="codex",
+        backend="spawn_agent",
+        **_PARENT_SCOPE,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+        outcome="ok",
+    )
+    assert not store.claim_codex_native_child_execution(
+        **claim,
+        tool_use_id="followup-1",
+    )
+
+    second_worker_id = "019fa6a6-b197-7a83-b3fb-d2c20411f608"
+    second_native_run_id = f"codex-agent:{second_worker_id}"
+    _delegation(
+        store,
+        host="codex",
+        backend="spawn_agent",
+        worker_id=second_worker_id,
+        native_run_id=second_native_run_id,
+        work_unit_id="unit-2",
+    )
+    store.record_native_child_started(
+        host="codex",
+        backend="spawn_agent",
+        session_id="parent-session",
+        trace_id="parent-run",
+        work_unit_id="unit-2",
+        worker_id=second_worker_id,
+        native_run_id=second_native_run_id,
+    )
+    assert not store.claim_codex_native_child_execution(
+        session_id="parent-session",
+        trace_id="parent-run",
+        work_unit_id="unit-2",
+        worker_id=second_worker_id,
+        native_run_id=second_native_run_id,
+        tool_use_id="followup-1",
+    )
 
 
 def test_native_child_completion_atomically_records_workforce_assignment(

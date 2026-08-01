@@ -1372,7 +1372,7 @@ def test_inspection_uses_only_current_matching_canary_attestation(
     ) -> None:
         store.record_host_canary_attestation(
             host="codex",
-            proof_contract="agency.codex-activation-canary.v1",
+            proof_contract="agency.codex-activation-canary.v2",
             proof_digest="a" * 64,
             profile_scope=profile_scope,
             platform_system=platform.system(),

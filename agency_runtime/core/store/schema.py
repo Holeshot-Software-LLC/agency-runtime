@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 42
+SCHEMA_VERSION = 43
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
@@ -49,6 +49,12 @@ NATIVE_WORKER_SCOPE_INDEX_SQL = (
     "ON worker_runs(host, session_id, trace_id, worker_id, native_run_id) "
     "WHERE session_id <> '' AND trace_id <> '' "
     "AND worker_id <> '' AND native_run_id <> ''"
+)
+CODEX_EXECUTION_TOOL_USE_INDEX_SQL = (
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_worker_runs_codex_execution_tool_use "
+    "ON worker_runs(session_id, trace_id, execution_tool_use_id) "
+    "WHERE host = 'codex' AND session_id <> '' AND trace_id <> '' "
+    "AND execution_tool_use_id <> ''"
 )
 _MAX_REMEDIATION_AUTHORITY_ID_BYTES = 512
 _MAX_REMEDIATION_AUTHORITY_DETAIL_BYTES = 256 * 1024
@@ -1060,6 +1066,8 @@ CREATE TABLE IF NOT EXISTS worker_runs (
     stdout TEXT,
     stderr TEXT,
     started_at TEXT NOT NULL,
+    execution_tool_use_id TEXT NOT NULL DEFAULT '',
+    execution_dispatched_at TEXT,
     ended_at TEXT,
     FOREIGN KEY (delegation_event_id) REFERENCES delegation_events(id)
 );
@@ -4989,10 +4997,18 @@ def migrate_schema(
     ensure_column(conn, "worker_runs", "host", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "worker_runs", "worker_id", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "worker_runs", "native_run_id", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(
+        conn,
+        "worker_runs",
+        "execution_tool_use_id",
+        "TEXT NOT NULL DEFAULT ''",
+    )
+    ensure_column(conn, "worker_runs", "execution_dispatched_at", "TEXT")
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_worker_runs_trace ON worker_runs(session_id, trace_id)"
     )
     conn.execute(NATIVE_WORKER_SCOPE_INDEX_SQL)
+    conn.execute(CODEX_EXECUTION_TOOL_USE_INDEX_SQL)
     ensure_column(
         conn,
         "delegation_activation_receipts",

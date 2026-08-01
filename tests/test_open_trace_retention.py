@@ -465,7 +465,7 @@ def test_retired_trace_key_corruption_fails_closed_on_reopen(
     )
     store.record_host_canary_attestation(
         host="codex",
-        proof_contract="agency.codex-activation-canary.v1",
+        proof_contract="agency.codex-activation-canary.v2",
         proof_digest="a" * 64,
         profile_scope="current-profile",
         platform_system="Windows",

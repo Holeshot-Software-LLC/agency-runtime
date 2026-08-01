@@ -411,7 +411,7 @@ def _single_mapping(evidence: Mapping[str, Any], field: str) -> Mapping[str, Any
 def _codex_collaboration_chain(
     result: Mapping[str, Any],
 ) -> tuple[Mapping[str, Any] | None, str, tuple[str, ...]]:
-    """Resolve one completed spawn/wait pair and its authoritative receiver UUID."""
+    """Resolve one completed activation/execution protocol and receiver UUID."""
 
     collaboration = result.get("collaboration")
     calls = collaboration.get("calls") if isinstance(collaboration, Mapping) else None
@@ -420,45 +420,66 @@ def _codex_collaboration_chain(
         or collaboration.get("unexpected_item_types", []) not in ([], ())
     ):
         return None, "", ("Codex used a non-allowlisted tool during the activation canary",)
-    if not isinstance(calls, list) or len(calls) != 2:
-        return None, "", ("Codex did not prove exactly one completed spawn and one completed wait",)
+    if not isinstance(calls, list) or len(calls) != 4:
+        return None, "", ("Codex did not prove one spawn, one followup, and two completed waits",)
     spawn_rows = [
         row for row in calls if isinstance(row, Mapping) and row.get("tool") == "spawn_agent"
     ]
     wait_rows = [row for row in calls if isinstance(row, Mapping) and row.get("tool") == "wait"]
+    followup_rows = [
+        row for row in calls if isinstance(row, Mapping) and row.get("tool") == "followup_task"
+    ]
     if (
         len(spawn_rows) != 1
-        or len(wait_rows) != 1
+        or len(wait_rows) != 2
+        or len(followup_rows) != 1
+        or [row.get("tool") if isinstance(row, Mapping) else None for row in calls]
+        != ["spawn_agent", "wait", "followup_task", "wait"]
         or spawn_rows[0].get("status") != "completed"
-        or wait_rows[0].get("status") != "completed"
+        or any(row.get("status") != "completed" for row in wait_rows)
+        or followup_rows[0].get("status") != "completed"
         or spawn_rows[0].get("event_type") not in {"item.completed", "rollout_call_completed"}
-        or wait_rows[0].get("event_type") not in {"item.completed", "rollout_call_completed"}
-        or spawn_rows[0].get("event_type") != wait_rows[0].get("event_type")
+        or any(
+            row.get("event_type") != spawn_rows[0].get("event_type")
+            for row in (*wait_rows, followup_rows[0])
+        )
     ):
-        return None, "", ("Codex did not prove exactly one completed spawn and one completed wait",)
+        return None, "", ("Codex did not prove one spawn, one followup, and two completed waits",)
     spawn = spawn_rows[0]
-    wait = wait_rows[0]
+    followup = followup_rows[0]
     sender_id = str(spawn.get("sender_thread_id") or "")
-    if not sender_id or wait.get("sender_thread_id") != sender_id:
-        return None, "", ("Codex spawn and wait did not share one parent thread",)
+    if not sender_id or any(
+        row.get("sender_thread_id") != sender_id for row in (*wait_rows, followup)
+    ):
+        return None, "", ("Codex collaboration calls did not share one parent thread",)
     receivers = spawn.get("receiver_thread_ids")
     if (
         not isinstance(receivers, list)
         or len(receivers) != 1
-        or wait.get("receiver_thread_ids") != receivers
+        or any(row.get("receiver_thread_ids") != receivers for row in (*wait_rows, followup))
     ):
-        return None, "", ("Codex spawn and wait did not identify the same sole child",)
+        return None, "", ("Codex collaboration calls did not identify the same sole child",)
     receiver_id = str(receivers[0])
-    wait_states = wait.get("agents_states")
     spawn_states = spawn.get("agents_states")
     if (
         not isinstance(spawn_states, Mapping)
         or set(spawn_states) != {receiver_id}
-        or not isinstance(wait_states, Mapping)
-        or set(wait_states) != {receiver_id}
-        or wait_states.get(receiver_id) != "completed"
+        or any(
+            not isinstance(row.get("agents_states"), Mapping)
+            or set(row["agents_states"]) != {receiver_id}
+            or row["agents_states"].get(receiver_id) != "completed"
+            for row in wait_rows
+        )
     ):
         return spawn, receiver_id, ("the sole Codex child did not reach the completed state",)
+    if not isinstance(spawn.get("execution_delivery"), Mapping) or spawn.get(
+        "execution_delivery"
+    ) != followup.get("execution_delivery"):
+        return (
+            spawn,
+            receiver_id,
+            ("the sole Codex child did not receive its exact execution turn",),
+        )
     return spawn, receiver_id, ()
 
 
@@ -685,6 +706,20 @@ def codex_activation_failures(
         expected_task_name = codex_task_name_for_work_unit(work_unit_id)
     if spawn.get("native_task_name") not in {None, expected_task_name}:
         failures.append("Codex spawned a different native task than the exact planned unit")
+    execution_delivery = spawn.get("execution_delivery")
+    if not isinstance(execution_delivery, Mapping) or any(
+        execution_delivery.get(field) != expected
+        for field, expected in {
+            "work_unit_id": work_unit_id,
+            "native_task_name": expected_task_name,
+            "goal_hash": goal_hash,
+        }.items()
+    ):
+        failures.append("Codex did not execute the exact activated canary work unit")
+    if not worker.get("execution_dispatched_at") or worker.get(
+        "execution_tool_use_id"
+    ) != spawn.get("followup_tool_use_id"):
+        failures.append("Codex execution turn lacked its one-use Store dispatch receipt")
     synthetic_identity = (
         f"task:{expected_task_name}",
         f"codex-task:{expected_task_name}",
@@ -733,6 +768,7 @@ def _codex_product_collaboration_spawns(
         name: collaboration.get(name)
         for name in (
             "spawn_count",
+            "followup_count",
             "wait_count",
             "completed_wait_count",
             "timed_out_wait_count",
@@ -753,9 +789,10 @@ def _codex_product_collaboration_spawns(
         return {}, ("Codex product parent performed a non-collaboration tool call",)
     if (
         not 1 <= spawn_count <= 16
-        or not 1 <= counts["wait_count"] <= 64
-        or counts["completed_wait_count"] < 1
-        or counts["completed_wait_count"] + counts["timed_out_wait_count"] != counts["wait_count"]
+        or counts["followup_count"] != spawn_count
+        or counts["wait_count"] != spawn_count * 2
+        or counts["completed_wait_count"] != counts["wait_count"]
+        or counts["timed_out_wait_count"] != 0
         or counts["completed_child_count"] != spawn_count
         or counts["failed_child_count"] != 0
     ):
@@ -773,6 +810,8 @@ def _codex_product_collaboration_spawns(
             or row.get("tool") != "spawn_agent"
             or row.get("status") != "completed"
             or row.get("child_status") != "completed"
+            or row.get("activation_completion_count") != 1
+            or row.get("execution_completion_count") != 1
             or row.get("evidence_source") != "persisted_rollout"
         ):
             return {}, ("Codex product spawn evidence was malformed",)
@@ -818,6 +857,7 @@ def _codex_product_collaboration_projection(
 
     aggregate_fields = (
         "spawn_count",
+        "followup_count",
         "wait_count",
         "completed_wait_count",
         "timed_out_wait_count",
@@ -869,8 +909,16 @@ def _codex_product_collaboration_projection(
                     "goal_hash",
                 )
             },
+            "execution_delivery": {
+                field: execution.get(field)
+                for field in ("work_unit_id", "native_task_name", "goal_hash")
+            },
+            "followup_id": row.get("followup_id"),
+            "followup_tool_use_id": row.get("followup_tool_use_id"),
             "native_task_name": row.get("native_task_name"),
             "child_status": row.get("child_status"),
+            "activation_completion_count": row.get("activation_completion_count"),
+            "execution_completion_count": row.get("execution_completion_count"),
             "evidence_source": row.get("evidence_source"),
         }
         for row, _receiver in sorted(
@@ -879,6 +927,11 @@ def _codex_product_collaboration_projection(
         )
         for delivery in (
             row.get("prompt_delivery") if isinstance(row.get("prompt_delivery"), Mapping) else {},
+        )
+        for execution in (
+            row.get("execution_delivery")
+            if isinstance(row.get("execution_delivery"), Mapping)
+            else {},
         )
     ]
     return {
@@ -1011,6 +1064,22 @@ def _codex_product_unit_failures(
     expected_task_name = codex_task_name_for_work_unit(work_unit_id)
     if spawn.get("native_task_name") != expected_task_name:
         failures.append(f"Codex product unit {work_unit_id} used a different native task")
+    execution_delivery = spawn.get("execution_delivery")
+    if not isinstance(execution_delivery, Mapping) or any(
+        execution_delivery.get(field) != expected
+        for field, expected in {
+            "work_unit_id": work_unit_id,
+            "native_task_name": expected_task_name,
+            "goal_hash": str(plan.get("goal_hash") or ""),
+        }.items()
+    ):
+        failures.append(f"Codex product unit {work_unit_id} lacked its exact execution turn")
+    if not worker.get("execution_dispatched_at") or worker.get(
+        "execution_tool_use_id"
+    ) != spawn.get("followup_tool_use_id"):
+        failures.append(
+            f"Codex product unit {work_unit_id} lacked its one-use execution dispatch receipt"
+        )
     if grant.get("grant_origin") != "native_hook" or grant.get("tool_use_id") != delivery.get(
         "tool_use_id"
     ):

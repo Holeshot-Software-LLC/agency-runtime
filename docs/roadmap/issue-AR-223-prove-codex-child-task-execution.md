@@ -21,6 +21,7 @@ related:
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
+  - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -81,6 +82,18 @@ worker outcome. Codex CLI 0.146.0 source defines `followup_task` as an explicit
 turn-triggering message to an existing child, while the initial V2 spawn path
 delivers an inter-agent communication that can be acknowledged without work.
 
+The bounded local repair now separates those two lifecycle facts. Every
+accepted Codex row stages an exact goal-hash-bound execution envelope, uses the
+canonical `spawn_agent` → `wait_agent` → `followup_task` → `wait_agent`
+sequence, claims the follow-up once in schema v43, and accepts a worker only
+when its own bounded child rollout proves that exact envelope inside the second
+terminal turn. The first readiness completion remains non-terminal for worker
+evidence. Two bounded review passes have no unresolved High or Critical
+finding. Three terminal focused slices pass 106, 176, and 36 tests respectively
+(318 total) with warning-strict execution; the earlier combined invocation hit
+its 304-second command timeout and is deliberately not counted. The named fast
+gate and immutable-build live proof remain pending.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -107,11 +120,11 @@ accepted plan authority.
 
 ## Acceptance
 
-- [ ] A terminal spawn turn is lifecycle evidence only and cannot by itself
+- [x] A terminal spawn turn is lifecycle evidence only and cannot by itself
   produce a passed worker outcome.
-- [ ] Every accepted plan row receives exactly one actionable native task on
+- [x] Every accepted plan row receives exactly one actionable native task on
   its exact spawned child, with no retry or duplicate execution path.
-- [ ] The actionable delivery and its later completion are proven causally and
+- [x] The actionable delivery and its later completion are proven causally and
   content-free against the exact unit ID, task name, child identity, and goal
   hash; all malformed variants fail closed.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first

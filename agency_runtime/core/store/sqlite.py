@@ -52,6 +52,7 @@ from agency_runtime.core.store.schema import (
     ALL_TABLES,
     BOOLEAN_DOMAIN_TRIGGER_NAMES,
     BOOLEAN_DOMAIN_TRIGGER_SQL,
+    CODEX_EXECUTION_TOOL_USE_INDEX_SQL,
     CODEX_NATIVE_PLAN_SCOPE_TABLE_SQL,
     CODEX_NATIVE_PLAN_SCOPE_TRIGGER_SQL,
     DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL,
@@ -214,6 +215,25 @@ def _native_worker_scope_index_is_current(conn: sqlite3.Connection) -> bool:
     ) == expected.replace("ifnotexists", "")
 
 
+def _codex_execution_tool_use_index_is_current(conn: sqlite3.Connection) -> bool:
+    """Verify one follow-up tool call cannot authorize two Codex workers."""
+
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'index' "
+        "AND name = 'idx_worker_runs_codex_execution_tool_use' "
+        "AND tbl_name = 'worker_runs'"
+    ).fetchone()
+    indexes = {
+        str(index["name"]): int(index["unique"] or 0)
+        for index in conn.execute("PRAGMA index_list(worker_runs)")
+    }
+    sql = _normalized_schema_sql(row["sql"] if row is not None else "")
+    expected = _normalized_schema_sql(CODEX_EXECUTION_TOOL_USE_INDEX_SQL)
+    return indexes.get("idx_worker_runs_codex_execution_tool_use") == 1 and sql.replace(
+        "ifnotexists", ""
+    ) == expected.replace("ifnotexists", "")
+
+
 def _normalized_schema_sql(value: object) -> str:
     return _canonical_schema_sql(value)
 
@@ -363,6 +383,10 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
             "consumed_at",
             "consumed_unix",
         },
+        "worker_runs": {
+            "execution_tool_use_id",
+            "execution_dispatched_at",
+        },
     }
     for table, expected in required_columns.items():
         table_row = conn.execute(
@@ -408,6 +432,10 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
         "idx_worker_runs_native_scope": (
             "worker_runs",
             ("host", "session_id", "trace_id", "worker_id", "native_run_id"),
+        ),
+        "idx_worker_runs_codex_execution_tool_use": (
+            "worker_runs",
+            ("session_id", "trace_id", "execution_tool_use_id"),
         ),
         "idx_native_child_parent_scopes_expiry": (
             "native_child_parent_scopes",
@@ -500,6 +528,7 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
     return bool(
         _v36_authority_schema_is_current(conn, triggers)
         and _codex_native_plan_scope_schema_is_current(conn)
+        and _codex_execution_tool_use_index_is_current(conn)
     )
 
 

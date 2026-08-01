@@ -207,6 +207,8 @@ def _two_unit_product_evidence(
                 "worker_id": receiver_id,
                 "native_run_id": f"codex-agent:{receiver_id}",
                 "started_at": "2026-07-31T14:00:01Z",
+                "execution_tool_use_id": f"followup-tool-{index}",
+                "execution_dispatched_at": "2026-07-31T14:00:30Z",
                 "ended_at": "2026-07-31T14:01:00Z",
             }
         )
@@ -236,8 +238,17 @@ def _two_unit_product_evidence(
                     "specialist_prompt_hash": prompt_hash,
                     "goal_hash": goal_hash,
                 },
+                "execution_delivery": {
+                    "work_unit_id": unit,
+                    "native_task_name": task_name,
+                    "goal_hash": goal_hash,
+                },
+                "followup_id": f"followup-item-{index}",
+                "followup_tool_use_id": f"followup-tool-{index}",
                 "native_task_name": task_name,
                 "child_status": "completed",
+                "activation_completion_count": 1,
+                "execution_completion_count": 1,
                 "evidence_source": "persisted_rollout",
             }
         )
@@ -291,8 +302,9 @@ def _two_unit_product_evidence(
             "schema": "agency.codex-product-collaboration.v1",
             "calls": calls,
             "spawn_count": len(specs),
-            "wait_count": len(specs),
-            "completed_wait_count": len(specs),
+            "followup_count": len(specs),
+            "wait_count": len(specs) * 2,
+            "completed_wait_count": len(specs) * 2,
             "timed_out_wait_count": 0,
             "completed_child_count": len(specs),
             "failed_child_count": 0,
@@ -1093,8 +1105,10 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
     assert instructions == product_host.CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS
     for required_contract in (
         "[AGENCY EXACT SPECIALIST ACTIVATION v1]",
+        "[AGENCY EXACT TASK EXECUTION v1]",
         "[AGENCY DELEGATION PLAN]",
         "spawn_agent",
+        "followup_task",
         "wait_agent",
         "fork_turns",
         "native_task_name",
@@ -1102,7 +1116,8 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
         "one child at a time",
         "Use no non-collaboration tools",
         "do not delegate further",
-        "decrypted native child message is your exact work-unit goal",
+        "immediately preceding activation turn",
+        "JSON-decoded exact execution_message",
         "permitted workspace tools for every required implementation",
     ):
         assert required_contract in instructions

@@ -354,6 +354,147 @@ class NativeChildStoreMixin:
         finally:
             conn.close()
 
+    def claim_codex_native_child_execution(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        work_unit_id: str,
+        worker_id: str,
+        native_run_id: str,
+        tool_use_id: str,
+    ) -> bool:
+        """Atomically authorize one exact Codex follow-up, idempotent by tool call."""
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        normalized_unit = _identity(
+            work_unit_id,
+            maximum=MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+            field="work_unit_id",
+        )
+        normalized_worker = _identity(
+            worker_id,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
+            field="worker_id",
+        )
+        normalized_run = _identity(
+            native_run_id,
+            maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+            field="native_run_id",
+        )
+        normalized_tool_use = validate_correlation_id(tool_use_id, field="tool_use_id")
+        row_id = _worker_run_id(
+            "codex",
+            normalized_session,
+            normalized_trace,
+            normalized_worker,
+            normalized_run,
+        )
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT delegation_event_id, work_unit_id, execution_tool_use_id, "
+                "execution_dispatched_at, ended_at FROM worker_runs WHERE id = ? "
+                "AND host = 'codex' "
+                "AND session_id = ? AND trace_id = ? AND worker_id = ? "
+                "AND native_run_id = ?",
+                (
+                    row_id,
+                    normalized_session,
+                    normalized_trace,
+                    normalized_worker,
+                    normalized_run,
+                ),
+            ).fetchone()
+            if row is None:
+                conn.rollback()
+                return False
+            stored_unit = str(row["work_unit_id"] or "")
+            if stored_unit and stored_unit != normalized_unit:
+                conn.rollback()
+                return False
+            if not stored_unit:
+                delegation = self._native_child_delegation(
+                    conn,
+                    host="codex",
+                    backend="spawn_agent",
+                    session_id=normalized_session,
+                    trace_id=normalized_trace,
+                    work_unit_id=normalized_unit,
+                    worker_id=normalized_worker,
+                    native_run_id=normalized_run,
+                )
+                if delegation is None:
+                    conn.rollback()
+                    return False
+                updated_binding = conn.execute(
+                    "UPDATE worker_runs SET delegation_event_id = ?, work_unit_id = ? "
+                    "WHERE id = ? AND work_unit_id = '' AND "
+                    "(delegation_event_id IS NULL OR delegation_event_id = ?)",
+                    (
+                        str(delegation["id"]),
+                        normalized_unit,
+                        row_id,
+                        str(delegation["id"]),
+                    ),
+                ).rowcount
+                if updated_binding != 1:
+                    conn.rollback()
+                    return False
+            existing_tool_use = str(row["execution_tool_use_id"] or "")
+            if row["ended_at"] is not None:
+                conn.rollback()
+                return False
+            if row["execution_dispatched_at"] is not None:
+                conn.rollback()
+                return existing_tool_use == normalized_tool_use
+            if existing_tool_use:
+                conn.rollback()
+                return False
+            conflicting_dispatch = conn.execute(
+                "SELECT 1 FROM worker_runs WHERE session_id = ? AND trace_id = ? "
+                "AND execution_tool_use_id = ? AND id <> ? LIMIT 1",
+                (
+                    normalized_session,
+                    normalized_trace,
+                    normalized_tool_use,
+                    row_id,
+                ),
+            ).fetchone()
+            if conflicting_dispatch is not None:
+                conn.rollback()
+                return False
+            updated = conn.execute(
+                f"UPDATE worker_runs SET execution_tool_use_id = ?, "  # nosec B608
+                f"execution_dispatched_at = {STORE_CLOCK_SQL} WHERE id = ? "  # nosec B608
+                "AND execution_dispatched_at IS NULL AND execution_tool_use_id = '' "
+                "AND ended_at IS NULL",
+                (normalized_tool_use, row_id),
+            ).rowcount
+            if updated != 1:
+                conn.rollback()
+                return False
+            stored = conn.execute(
+                "SELECT execution_tool_use_id, execution_dispatched_at FROM worker_runs "
+                "WHERE id = ?",
+                (row_id,),
+            ).fetchone()
+            if (
+                stored is None
+                or stored["execution_tool_use_id"] != normalized_tool_use
+                or stored["execution_dispatched_at"] is None
+            ):
+                raise RuntimeError("Codex child execution claim postcondition failed")
+            conn.commit()
+            return True
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def record_native_child_ended(
         self,
         *,
@@ -572,7 +713,8 @@ class NativeChildStoreMixin:
         try:
             row = conn.execute(
                 "SELECT id, delegation_event_id, backend, session_id, trace_id, "
-                "work_unit_id, host, worker_id, native_run_id, exit_code, started_at, ended_at "
+                "work_unit_id, host, worker_id, native_run_id, exit_code, started_at, "
+                "execution_tool_use_id, execution_dispatched_at, ended_at "
                 "FROM worker_runs WHERE id = ? AND (? = '' OR work_unit_id = ?)",
                 (row_id, normalized_unit, normalized_unit),
             ).fetchone()
