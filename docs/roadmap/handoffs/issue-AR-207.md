@@ -33,14 +33,15 @@ related:
   - docs/decisions/0131-bind-verifier-evidence-into-contractor-critiques.md
   - docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
   - docs/decisions/0133-treat-product-specialist-loads-as-turn-scoped.md
+  - docs/decisions/0134-bind-contractor-risk-to-validated-authority.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-219-preserve-product-execution
-evidence_commit: f8e607d309f5dba933bc55f17892209e39e6e014
-minimum_ledger_commit: 4264834b6f8db2ba94789193acd4f1818b5facef
+branch: codex/ar-219-live-product-proof
+evidence_commit: 386afca23bdc16e6c49c6dab55967b26a902a5b2
+minimum_ledger_commit: 8646a61a8a3dd1bb6cb5ce5cc8e573a4efa81fcd
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -50,21 +51,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 220 merged AR-218 as exact commit `f8e607d`; package
-  `0.1.0+gf8e607d309f5` is installed from that immutable revision.
+- PR 223 merged AR-219 as exact commit `386afca`; package
+  `0.1.0+g386afca23bdc` is installed from that immutable revision.
 - Bare install selected exactly Codex, ZCode, and dashboard. ZCode is current,
   Codex is registered, and the dashboard is active and reachable.
-- Supported autonomous activation for `f8e607d` passes with an inferred
+- Supported autonomous activation for `386afca` passes with an inferred
   `code-reviewer`, one completed delegation, a valid first header, zero
   corrections, autonomous hook bypass, and no persistent profile change.
-- Trial `ar218-f8e607d-readme-01` is consumed and terminal `NO-GO` after an
-  accepted eight-unit route and eight completed native workers. Exact product
-  collaboration projection fails, no first header is accepted, and the
-  isolated workspace remains empty. AR-219 owns this first remaining boundary.
-- The reviewed AR-219 repair accepts one turn-scoped load per specialist slug
-  only for an exact immutable identity, preserves typed topology failures, and
-  assigns the prompt-bound sentinel to the first delegated write-capable unit.
-- No new live evidence is consumed; merge, installation, and proof remain.
+- Trial `ar219-386afca-readme-01` is consumed and terminal `NO-GO`: planner and
+  recruiter applied, then dynamic hiring required high-risk human approval and
+  atomic preflight published no route, specialist, delegation, header, or
+  workspace write. Correction count is zero and the workspace is empty.
+- The contractor-risk repair is locally implemented: the work unit owns
+  mutation scope, explicit prohibitions do not grant authority, genuine risk
+  stays approval-gated, and both reviews pass. The exact branch passes 81
+  focused tests, Python 654/6, dashboard 110/110, routing 39/39, 617-document
+  validation, Ruff/diff checks, and 78/78 mutations with unchanged source.
 
 ## completed-evidence
 
@@ -73,19 +75,6 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   passed, and decision conformance killed all 73 mutations with zero invalid or
   surviving cases and `source_unchanged=true`. Exact-head Codex review found no
   major issues.
-- Exact `8cfd975` activation session
-  `019fbc03-2036-7070-9ca0-85f59db1e17a`, trace
-  `019fbc03-2801-72c3-a362-0aa9f940143e`, run
-  `d566091b-d87c-44b5-a280-d877511bae6b`, and route
-  `a783aec5-edc1-45eb-868c-73c327fe898b` passed in 116.9 seconds. It retained
-  one `code-reviewer` load, grant, consumption, native worker, completed
-  delegation, accepted finalization, valid first header, and zero corrections.
-- Product trial `ar217-8cfd975-readme-01` is terminal `NO-GO` after 101.1
-  seconds. Session `019fbc05-3cf8-7b83-b6ca-1e280067f0a6`, trace
-  `019fbc05-3d81-74a3-a532-ba613b2a7846`, and run
-  `682ee08f-9663-466a-8d86-16fd01ea3492` retain planner rejection, planner
-  repair, recruiter rejection, `workforce_inference_failed`, and
-  `staffing=inference_invalid` through `codex-subscription/gpt-5.6-luna`.
 - Trial atomicity preserves zero route, specialist, grant, delegation, worker,
   finalization, header, or workspace-write evidence. Correction count zero is
   not success because parent generation never began.
@@ -123,14 +112,27 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   shell deadline, but that shell did not retain the terminal JSON or exit code,
   so it is not claimed as fresh. Every changed production source passes a
   captured 22/22 slice with zero survivors/invalid and unchanged source.
+- PR 223 merged the reviewed head as `386afca`; GitHub-hosted checks were not
+  relied on or retried, and no GitHub Codex review arrived before merge.
+- Exact activation session `019fbd75-2ea2-7f80-b6f7-eb2bb0724f2a`, trace
+  `019fbd75-3d0b-7b10-a463-2b95ee1fe2ab`, and run
+  `36b9b721-7efa-400d-9e07-ba1b860a1772` pass with one real specialist child,
+  valid first header, zero corrections, and autonomous bypass.
+- Product session `019fbd7a-0c24-7581-a49d-91bbe870f7ea`, trace
+  `019fbd7a-0cb8-7dc0-ba1b-415d3d834a3e`, and run
+  `6e03910a-ec8b-4c4a-8d15-f2700b7cd219` fail atomically at high-risk hiring;
+  zero execution rows commit and exact isolated trust remains proven.
+- The contractor-risk repair passes both bounded review passes and its exact
+  local fast gate: Python 654/6, dashboard 110/110, routing 39/39, 617-document
+  validation, Ruff/diff checks, and 78/78 mutations with zero survivors or
+  invalid cases and `source_unchanged=true`.
 
 ## exact-blocker
 
-The README main story remains NO-GO until one immutable merged AR-219 build
-passes autonomous activation and one fresh product trial proves the complete
-inferred team, first-pass header, real delegated workspace writes, independent
-artifact checks, and zero corrections. The repair is locally implemented; live
-evidence is intentionally not inferred from tests.
+The README main story remains NO-GO. Exact `386afca` proves install and
+activation, but its single product trial fails before routing because an
+isolated-workspace contractor is treated as high risk. The bounded risk-
+authority repair is local-green; one new immutable-build proof remains.
 
 ## same-task-continuity
 
@@ -143,11 +145,10 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Commit the reviewed repair and its ledger, push the exact branch, perform
-   exact-head review, and merge without relying on hosted Actions.
-2. Install only the immutable merge and run one autonomous activation canary.
-3. If activation passes, run at most one fresh README product trial and update
-   the local evidence page and OpenClaw handoff from its exact result.
+1. Commit, review, merge, and install one immutable repair without relying on
+   hosted Actions.
+2. Spend one activation and at most one product trial on that new build, then
+   update the local evidence page and OpenClaw handoff from the exact result.
 
 ## verification
 
@@ -172,7 +173,7 @@ git diff --check
 - Product host remains sandboxed to the exact trial workspace.
 - Only Codex, ZCode, and dashboard are in machine scope.
 - One live product trial per exact installed build; any correction is failure.
-- Exact builds `e62d0adc`, `1694d6e`, `d6ba36a`, `9c2e9f8`, `8cfd975`, and `f8e607d` have consumed
-  their governed live evidence; none may be rerun.
+- Exact builds `e62d0adc`, `1694d6e`, `d6ba36a`, `9c2e9f8`, `8cfd975`,
+  `f8e607d`, and `386afca` consumed governed live evidence; none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

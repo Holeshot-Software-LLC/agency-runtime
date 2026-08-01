@@ -78,6 +78,25 @@ _HIGH_RISK_MARKERS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ("mutate external", "change external system", "send external message", "publish release"),
     ),
 )
+_RISK_CLAUSE_SEPARATOR = re.compile(r"[.;!?]+|\b(?:but|however)\b")
+_RISK_DENIAL_CLAUSE = re.compile(
+    r"^\s*(?:"
+    r"no\b"
+    r"|(?:operate|work|proceed)\s+without\b"
+    r"|without\b"
+    r"|never\b"
+    r"|(?:do|does|did|must|should|may|can|could|will|would)\s+not\b"
+    r"|(?:forbidden|prohibited)\s+to\b"
+    r")"
+)
+_RISK_DENIAL_REVERSAL = re.compile(
+    r"^\s*(?:"
+    r"no\s+(?:restriction|restrictions|limit|limits|ban|prohibition)\b"
+    r"|(?:(?:operate|work|proceed)\s+)?without\s+"
+    r"(?:restriction|restrictions|limit|limits|ban|prohibition)\b"
+    r"|no\s+(?:need|requirement)\s+to\s+(?:avoid|forbid|prohibit)\b"
+    r")"
+)
 
 _TEMPLATE = """You are an Agency-owned specialist operating under a bounded employment contract.
 
@@ -366,20 +385,34 @@ def _sequence(
 def classify_contractor_risk(contract: EmploymentContract) -> tuple[str, ...]:
     """Derive approval-sensitive risk classes without trusting model labels."""
 
-    risk_scope = {
-        "role": contract.role,
-        "narrow_scope": contract.narrow_scope,
-        "outcomes_owned": contract.outcomes_owned,
-        "artifacts_produced": contract.artifacts_produced,
-        "capabilities": contract.capabilities,
-        "preferred_scenarios": contract.preferred_scenarios,
-        "requirements": contract.requirements,
-    }
-    rendered = json.dumps(risk_scope, ensure_ascii=False, sort_keys=True).casefold()
-    classes = [name for name, markers in _HIGH_RISK_MARKERS if any(x in rendered for x in markers)]
+    risk_scope = (
+        contract.role,
+        contract.narrow_scope,
+        *contract.outcomes_owned,
+        *contract.artifacts_produced,
+        *contract.capabilities,
+        *contract.preferred_scenarios,
+        *contract.requirements,
+    )
+    classes = [
+        name
+        for name, markers in _HIGH_RISK_MARKERS
+        if any(_risk_marker_is_asserted(text, marker) for text in risk_scope for marker in markers)
+    ]
     if contract.external_mutation:
         classes.append("external_mutation")
     return tuple(dict.fromkeys(classes))
+
+
+def _risk_marker_is_asserted(value: str, marker: str) -> bool:
+    """Return true when a marker grants authority rather than explicitly denying it."""
+
+    for clause in _RISK_CLAUSE_SEPARATOR.split(value.casefold()):
+        if marker not in clause:
+            continue
+        if _RISK_DENIAL_CLAUSE.match(clause) is None or _RISK_DENIAL_REVERSAL.match(clause):
+            return True
+    return False
 
 
 def compile_contractor(contract: EmploymentContract) -> CompiledContractor:

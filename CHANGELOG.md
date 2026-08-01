@@ -61,6 +61,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Dynamic contractors now bind external-mutation risk to the validated work
+  unit instead of a model-authored Boolean. Ordinary repository and isolated-
+  workspace writes remain autonomous, explicit safety prohibitions no longer
+  become the high-risk authority they deny, genuine positive or external
+  authority remains approval-gated, and failure receipts identify each
+  derived risk class without retaining candidate text.
 - Fresh fast-mode workforce configuration now funds one bounded correction in
   both the planner and recruiter stages. A malformed response in each stage can
   converge in four calls without deterministic staffing fallback; explicit
