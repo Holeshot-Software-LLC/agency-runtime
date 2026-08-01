@@ -1,6 +1,6 @@
 ---
 title: "AR-214: Preserve Codex product plan authority through context delivery"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-07-31
 updated: 2026-07-31
@@ -49,7 +49,7 @@ workspace-write authority projection without retaining sensitive content.
 
 ## Current state
 
-Trial `ar212-1694d6e-readme-01` is consumed and terminal `NO-GO`. Session
+Trial `ar212-1694d6e-readme-01` remains consumed and terminal `NO-GO`. Session
 `019fbb37-41ed-70e3-b211-5affbafb53c6`, trace
 `019fbb37-426b-7581-97e5-38f727e79327`, and run
 `6a4eaea4-e69c-4c4c-964c-0dedd23f390a` retain one rejected and one applied
@@ -60,11 +60,26 @@ unit plans, specialist loads, grants, delegations, worker runs, finalizations,
 or workspace writes. Correction count is zero because parent generation never
 began.
 
-Read-only source inspection narrows the failure to the bounded phase that
-projects the durable routing recipe, rebuilds its exact context, and derives
-Codex native plan scopes. The content-free failure receipt does not identify
-which allowlisted invariant rejected the accepted multi-unit plan, so no root
-cause beyond that boundary is claimed.
+A provider-free accepted-staffing fixture now reproduces that exact boundary.
+The product prompt's standalone prose `/` was parsed as an absolute filesystem
+resource, while Markdown-wrapped requested artifacts and the proof dotfile were
+not normalized. Exact Codex scope validation therefore rejected the inferred
+workspace-write plan before the atomic ready commit.
+
+The local repair replaces the ambiguous product-prompt separator, recognizes
+paired Markdown backticks and safe relative dotfiles, and preserves `/` as an
+invalid explicit authority rather than silently broadening it to the repository.
+Failure receipt schema v3 records the content-free
+`native_plan_scope_invalid` invariant. A real schema-v41 migration fixture
+proves existing rows acquire an empty invariant without losing evidence.
+
+Local review and verification are green: the legacy fixture fails atomically
+with zero route, scope, specialist, or delegation rows; the repaired fixture
+commits all five inference-authored units and five exact scopes. The named
+production spine passes 641 tests with 6 skips, product contracts pass 33/33,
+dashboard tests pass 110/110, every routing gate passes, and decision
+conformance kills every curated mutation with `source_unchanged=true`. A new
+exact installed-build activation and product trial remain required.
 
 ## Approach
 
@@ -85,14 +100,14 @@ and opaque Codex child plan binding.
 
 ## Acceptance
 
-- [ ] A focused fixture reproduces the exact accepted-staffing to
+- [x] A focused fixture reproduces the exact accepted-staffing to
   context-delivery validation failure without provider or live-host calls.
-- [ ] Terminal evidence identifies one bounded context-delivery invariant and
+- [x] Terminal evidence identifies one bounded context-delivery invariant and
   retains no prompt, provider response, path, exception, or credential content.
-- [ ] The repaired recipe preserves every inference-authored unit and derives
+- [x] The repaired recipe preserves every inference-authored unit and derives
   exact least-authority Codex workspace-write scopes without broadening to `.`.
-- [ ] Atomic failure still persists no route, unit plan, grant, or delegation.
-- [ ] The named local gate and focused review pass on one exact head.
+- [x] Atomic failure still persists no route, unit plan, grant, or delegation.
+- [x] The named local gate and focused review pass on one exact head.
 - [ ] One new exact build passes default install, supported activation, and one
   governed product trial with specialist delegation, workspace write, a
   first-pass valid header, zero corrections, and independent artifact checks.

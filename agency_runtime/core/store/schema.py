@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 41
+SCHEMA_VERSION = 42
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
@@ -801,6 +801,8 @@ CREATE TABLE IF NOT EXISTS preflight_failure_receipts (
         'context_delivery_failed', 'ready_commit_failed', 'ready_read_failed',
         'direct_activation_failed'
     )),
+    invariant_code TEXT NOT NULL DEFAULT ''
+        CHECK (invariant_code IN ('', 'native_plan_scope_invalid')),
     exception_category TEXT NOT NULL CHECK (exception_category IN (
         'timeout', 'validation_error', 'permission_error', 'host_error',
         'runtime_error', 'internal_error', 'unavailable'
@@ -5065,6 +5067,12 @@ def migrate_schema(
         "TEXT NOT NULL DEFAULT ''",
     )
     ensure_column(conn, "runs", "preflight_result", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(
+        conn,
+        "preflight_failure_receipts",
+        "invariant_code",
+        "TEXT NOT NULL DEFAULT '' CHECK (invariant_code IN ('', 'native_plan_scope_invalid'))",
+    )
     ensure_column(
         conn,
         "preflight_failure_receipts",

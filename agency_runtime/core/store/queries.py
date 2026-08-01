@@ -23,7 +23,7 @@ RECENT_ACTIVITY_QUERIES: Mapping[str, str] = {
         "ORDER BY recorded_at DESC, id DESC LIMIT ?"
     ),
     "preflight_failures": (
-        "SELECT id, session_id, trace_id, host, stage, reason_code, "
+        "SELECT id, session_id, trace_id, host, stage, reason_code, invariant_code, "
         "exception_category, provider_attempts, staffing_reason_codes, "
         "hiring_reason_codes, recorded_at "
         "FROM preflight_failure_receipts "
@@ -431,6 +431,7 @@ def normalize_activity_rows(
                     "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
                     "stage": row.get("stage"),
                     "reason_code": row.get("reason_code"),
+                    "invariant_code": row.get("invariant_code"),
                     "exception_category": row.get("exception_category"),
                     "provider_attempts": attempts,
                     "staffing_reason_codes": staffing_reason_codes,

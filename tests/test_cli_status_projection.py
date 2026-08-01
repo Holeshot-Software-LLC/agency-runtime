@@ -90,9 +90,10 @@ def test_cli_dashboard_projection_includes_content_free_preflight_failure() -> N
     activity = {
         "preflight_failures": [
             {
-                "schema_version": "agency.preflight.failure.v2",
+                "schema_version": "agency.preflight.failure.v3",
                 "stage": "routing",
                 "reason_code": "workforce_inference_failed",
+                "invariant_code": "",
                 "exception_category": "timeout",
                 "provider_attempts": [],
                 "staffing_reason_codes": ["selected_agent_budget_exceeded"],
@@ -114,9 +115,10 @@ def test_cli_dashboard_projection_includes_content_free_preflight_failure() -> N
         {
             "kind": "preflight_failure",
             "status": "preflight_failed",
-            "schema_version": "agency.preflight.failure.v2",
+            "schema_version": "agency.preflight.failure.v3",
             "stage": "routing",
             "reason_code": "workforce_inference_failed",
+            "invariant_code": "",
             "exception_category": "timeout",
             "provider_attempts": [],
             "staffing_reason_codes": ["selected_agent_budget_exceeded"],

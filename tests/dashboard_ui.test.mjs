@@ -5199,6 +5199,7 @@ test("operational dashboard renders governed roster, quarantine, and inference e
           status: "preflight_failed",
           stage: "routing",
           reason_code: "workforce_inference_failed",
+          invariant_code: "native_plan_scope_invalid",
           exception_category: "timeout",
           provider_attempts: [{ status: "failed" }],
           staffing_reason_codes: ["selected_agent_budget_exceeded"],

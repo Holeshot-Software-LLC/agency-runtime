@@ -6,11 +6,25 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-PREFLIGHT_FAILURE_RECEIPT_SCHEMA = "agency.preflight.failure.v2"
+PREFLIGHT_FAILURE_RECEIPT_SCHEMA = "agency.preflight.failure.v3"
 MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES = 32 * 1024
 MAX_PREFLIGHT_FAILURE_REASON_CODES = 32
 MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES = 4 * 1024
 _REASON_CODE = re.compile(r"^[a-z][a-z0-9_]{1,95}$")
+
+PREFLIGHT_FAILURE_INVARIANTS = frozenset({"", "native_plan_scope_invalid"})
+
+
+class PreflightInvariantError(ValueError):
+    """Carry one fixed invariant identity without retaining rejected content."""
+
+    def __init__(self, invariant_code: str) -> None:
+        normalized = str(invariant_code or "").strip().casefold()
+        if not normalized or normalized not in PREFLIGHT_FAILURE_INVARIANTS:
+            raise ValueError("preflight invariant code is not allowlisted")
+        self.invariant_code = normalized
+        super().__init__("preflight invariant failed")
+
 
 PREFLIGHT_FAILURE_STAGES = frozenset(
     {
@@ -110,6 +124,14 @@ def preflight_exception_category(error: BaseException) -> str:
     if isinstance(error, RuntimeError):
         return "runtime_error"
     return "internal_error"
+
+
+def preflight_invariant_code(error: BaseException) -> str:
+    """Project a fixed invariant identity without inspecting exception text."""
+
+    code = getattr(error, "invariant_code", "")
+    normalized = str(code or "").strip().casefold()
+    return normalized if normalized in PREFLIGHT_FAILURE_INVARIANTS else ""
 
 
 def preflight_routing_failure_reason(routing: Mapping[str, Any]) -> str:
@@ -215,6 +237,7 @@ def project_preflight_failure_receipt(value: object) -> dict[str, Any] | None:
         "schema_version",
         "stage",
         "reason_code",
+        "invariant_code",
         "exception_category",
         "provider_attempts",
         "staffing_reason_codes",
@@ -225,10 +248,12 @@ def project_preflight_failure_receipt(value: object) -> dict[str, Any] | None:
         return None
     stage = str(value.get("stage") or "").strip().casefold()
     reason_code = str(value.get("reason_code") or "").strip().casefold()
+    invariant_code = str(value.get("invariant_code") or "").strip().casefold()
     exception_category = str(value.get("exception_category") or "").strip().casefold()
     if (
         stage not in PREFLIGHT_FAILURE_STAGES
         or reason_code not in PREFLIGHT_FAILURE_REASONS
+        or invariant_code not in PREFLIGHT_FAILURE_INVARIANTS
         or exception_category not in PREFLIGHT_FAILURE_EXCEPTION_CATEGORIES
     ):
         return None
@@ -241,6 +266,7 @@ def project_preflight_failure_receipt(value: object) -> dict[str, Any] | None:
         "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
         "stage": stage,
         "reason_code": reason_code,
+        "invariant_code": invariant_code,
         "exception_category": exception_category,
         "provider_attempts": provider_attempts,
         "staffing_reason_codes": staffing_reason_codes,
@@ -255,6 +281,7 @@ def default_preflight_failure_receipt() -> dict[str, Any]:
         "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
         "stage": "lifecycle",
         "reason_code": "preflight_lifecycle_failed",
+        "invariant_code": "",
         "exception_category": "unavailable",
         "provider_attempts": [],
         "staffing_reason_codes": [],
@@ -267,13 +294,16 @@ __all__ = [
     "MAX_PREFLIGHT_FAILURE_REASON_CODES",
     "MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES",
     "PREFLIGHT_FAILURE_EXCEPTION_CATEGORIES",
+    "PREFLIGHT_FAILURE_INVARIANTS",
     "PREFLIGHT_FAILURE_REASONS",
     "PREFLIGHT_FAILURE_RECEIPT_SCHEMA",
     "PREFLIGHT_FAILURE_STAGES",
+    "PreflightInvariantError",
     "default_preflight_failure_reason",
     "default_preflight_failure_receipt",
     "preflight_exception_category",
     "preflight_hiring_reason_codes",
+    "preflight_invariant_code",
     "preflight_routing_failure_reason",
     "preflight_staffing_reason_codes",
     "project_preflight_failure_receipt",

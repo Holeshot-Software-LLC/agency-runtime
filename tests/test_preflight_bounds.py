@@ -175,9 +175,10 @@ def test_preflight_persists_request_kind_and_terminalizes_downstream_failure(
     assert store.get_run("failed-turn")["status"] == "preflight_failed"
     receipt = store.get_preflight_failure_receipt("session", "failed-turn")
     assert receipt is not None
-    assert receipt["schema_version"] == "agency.preflight.failure.v2"
+    assert receipt["schema_version"] == "agency.preflight.failure.v3"
     assert receipt["stage"] == "routing"
     assert receipt["reason_code"] == "routing_failed"
+    assert receipt["invariant_code"] == ""
     assert receipt["exception_category"] == "runtime_error"
     assert receipt["provider_attempts"] == []
     assert receipt["staffing_reason_codes"] == []
@@ -251,6 +252,7 @@ def test_preflight_failure_receipt_projects_provider_attempts_without_content(
     assert receipt is not None
     assert receipt["stage"] == "routing"
     assert receipt["reason_code"] == "workforce_inference_failed"
+    assert receipt["invariant_code"] == ""
     assert receipt["exception_category"] == "runtime_error"
     assert receipt["provider_attempts"] == [
         {
