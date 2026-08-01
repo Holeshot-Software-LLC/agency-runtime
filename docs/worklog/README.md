@@ -477,6 +477,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8cfd975` | 2026-08-01 | Merge pull request #218 from Holeshot-Software-LLC/codex/ar-217-bind-gap-evidence-to-hiring-critic | [AR-217](../roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md) | null |
 | `583ebc8` | 2026-08-01 | fix(workforce): fund one repair per inference stage | [AR-218](../roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md) | [detail](2026-08-01-583ebc8-fund-one-repair-per-inference-stage.md) |
 | `ebeeeab` | 2026-08-01 | docs(ar-218): record exact local verification | [AR-218](../roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md) | null |
+| `4bd350c` | 2026-08-01 | fix(config): preserve legacy balanced budget caps | [AR-218](../roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md) | [detail](2026-08-01-4bd350c-preserve-legacy-balanced-budget-caps.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
