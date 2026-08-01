@@ -21,6 +21,7 @@ related:
   - docs/roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
   - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
+  - docs/roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
@@ -36,7 +37,7 @@ issue_id: AR-219
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/221
 depends_on: [AR-218, AR-220]
-blocks: [AR-203, AR-204]
+blocks: [AR-203, AR-204, AR-221]
 ---
 
 # AR-219: Preserve exact multi-unit Codex product execution evidence
@@ -188,6 +189,14 @@ Staffing remains `no_safe_sufficient_team` plus `recruiter_abstained`.
 Cardinalities are zero for every route and execution row; all seven header
 fields are absent; correction count is zero; the exact isolated workspace is
 empty; and artifact validation is skipped. AR-220 owns this first boundary.
+
+PR 226 merged AR-220 as exact `ff39761c48564f1ace92d346cbe45df64fb86114`.
+Default installation and autonomous activation pass. The consumed product trial
+`ar220-ff39761-readme-01` accepts seven inference-authored units and completes
+all seven native children, but the product projector rejects a host-valid wait
+as `product_wait_arguments_invalid` and the isolated workspace remains empty.
+The first header is therefore absent despite zero corrections. AR-221 owns this
+later product execution boundary.
 
 ## Approach
 
