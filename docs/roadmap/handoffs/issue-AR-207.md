@@ -65,6 +65,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - AR-221 now repairs both boundaries locally: current waits project, exact
   child goals carry verified scope, and the sentinel obligation is
   self-assigning without granting the parent write authority.
+- The exact AR-221 recovery head passes its complete named local gate and is
+  ready for the authorized PR, merge, and one fresh immutable-build proof.
 
 ## completed-evidence
 
@@ -90,14 +92,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   AR-220's repaired four-call hiring path remains live-unproven.
 - Two AR-221 reviews and 127 focused tests pass. Three new decision mutations
   are killed with zero survivors or invalid results and unchanged source.
+- The named Python production spine passes 656 tests with 6 skipped. Dashboard
+  UI passes 110 tests; 623 Markdown documents pass; repo-wide Ruff lint and
+  format pass; routing passes every threshold; and decision conformance kills
+  84 of 84 mutations with zero survivors or invalid results and unchanged
+  source.
 
 ## exact-blocker
 
 The README main story remains NO-GO. Exact `ff39761` proves installation,
 activation, inference-authored seven-unit selection, and real child execution.
 AR-221 has repaired the stale product wait ceiling and missing child-visible
-mutation scope locally. The named fast gate and one fresh immutable-build live
-proof remain before the README story can be accepted.
+mutation scope, and its complete named local gate is green. Only the authorized
+merge, exact reinstall, and one fresh immutable-build live proof remain before
+the README story can be accepted.
 
 ## same-task-continuity
 
@@ -108,8 +116,8 @@ dispatch hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run the named local gate on one exact head and checkpoint the result.
-2. Merge and install that immutable revision without using hosted Actions.
+1. Open and merge the exact green head without using hosted Actions.
+2. Install that immutable revision for Codex, ZCode, and dashboard.
 3. Spend one activation plus at most one fresh product trial, then update the
    local evidence page and OpenClaw handoff from accepted real evidence.
 

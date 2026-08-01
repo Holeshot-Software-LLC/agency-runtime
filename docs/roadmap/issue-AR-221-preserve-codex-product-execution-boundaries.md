@@ -89,6 +89,13 @@ slice passes 127 tests, and three independent curated mutations are killed with
 zero survivors or invalid cases and unchanged source. AR-222 records seven
 unrelated legacy integrity-test failures that are unchanged from `origin/main`.
 
+The exact recovery head also passes the named local gate: the Python production
+spine reports 656 passed and 6 skipped; dashboard UI reports 110 passed; all 623
+maintained Markdown documents pass metadata and integrity checks; repo-wide Ruff
+lint and format checks pass; the routing evaluation passes every quality,
+performance, and scale threshold; and decision conformance kills all 84
+mutations with zero survivors, zero invalid results, and unchanged source.
+
 ## Approach
 
 1. Bind the product-only wait validator to the current native host ceiling while
@@ -124,7 +131,7 @@ ADR-0128 binds every opaque Codex launch to exact plan authority.
   later writers, read-only children, and the parent cannot overwrite it.
 - [x] Missing, malformed, preexisting, out-of-scope, or parent-authored write
   proof remains terminal failure.
-- [ ] Focused checks, at most two review passes, and the named local fast gate
+- [x] Focused checks, at most two review passes, and the named local fast gate
   pass on one exact head.
 - [ ] One new exact build passes autonomous activation and one fresh product
   trial with real artifacts, independent checks, a valid first header, and zero

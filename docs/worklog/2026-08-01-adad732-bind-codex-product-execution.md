@@ -73,13 +73,16 @@ all current inferred descriptors carry the fifth verified scope field.
 - Three new decision mutations: 3 killed, zero survived or invalid, source
   unchanged.
 - Two bounded review passes completed.
-- Documentation validation, focused Ruff lint/format, and `git diff --check`
-  passed.
-- The named fast production spine remains the next exact-head checkpoint.
+- Named Python production spine: 656 passed, 6 skipped.
+- Dashboard UI: 110 passed.
+- Documentation metadata and integrity: 623 maintained Markdown files passed.
+- Repo-wide Ruff lint and format checks passed; `git diff --check` passed.
+- Routing evaluation passed every quality, performance, and scale threshold.
+- Decision conformance: 84 killed, zero survived, zero invalid, source
+  unchanged.
 
 ## Follow-ups
 
-Run the named local fast gate on the immutable recovery head. If green, merge
-without relying on hosted Actions, install the exact merge, spend one autonomous
-activation and at most one fresh product trial, then update the local evidence
-page and OpenClaw handoff from accepted runtime evidence.
+Merge without relying on hosted Actions, install the exact merge, spend one
+autonomous activation and at most one fresh product trial, then update the local
+evidence page and OpenClaw handoff from accepted runtime evidence.
