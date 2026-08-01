@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-31
+updated: 2026-08-01
 tags: []
 related: []
 supersedes: []
@@ -467,6 +467,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1694d6e` | 2026-07-31 | Merge pull request #210 from Holeshot-Software-LLC/codex/ar-212-repair-recruiter-verification | [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
 | `c5c8d2e` | 2026-07-31 | docs(roadmap): checkpoint merged activation proof | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
 | `b3513f3` | 2026-07-31 | docs(roadmap): record context-delivery product failure | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md), [AR-214](../roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md) | null |
+| `0d27cd6` | 2026-07-31 | Merge pull request #212 from Holeshot-Software-LLC/codex/ar-212-live-product-proof | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-214](../roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md) | null |
+| `e1f543e` | 2026-07-31 | fix(codex): preserve product plan authority | [AR-214](../roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md) | [detail](2026-07-31-e1f543e-product-plan-authority.md) |
+| `23f0b1f` | 2026-08-01 | test(ar-214): format schema migration fixture | [AR-214](../roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -58,6 +58,7 @@ _BARE_FILE_RESOURCE_RE = re.compile(
     r"[A-Za-z0-9_.@-]+\.[A-Za-z0-9_-]{1,16})$",
     re.IGNORECASE,
 )
+_DOTFILE_RESOURCE_RE = re.compile(r"^\.[A-Za-z0-9][A-Za-z0-9_.@-]{0,127}$")
 _ACTION_PREFIX = (
     r"(?:^\s*(?:(?:please|kindly)\s+|"
     r"(?:can|could|would|will)\s+you\s+|"
@@ -812,8 +813,8 @@ def _mutation_scope(unit: str) -> str:
 
 
 def _resource_token_value(raw: str) -> str:
-    value = raw.strip()
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+    value = raw.strip().lstrip("([{<").rstrip(".,:;!?)]}>")
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'", "`"}:
         value = value[1:-1]
     return value.lstrip("([{<").rstrip(".,:;!?)]}>")
 
@@ -828,7 +829,10 @@ def _looks_like_resource(value: str) -> bool:
         return True
     if "/" in slash_value:
         return all(part not in {"", "."} for part in slash_value.split("/"))
-    return _BARE_FILE_RESOURCE_RE.fullmatch(value) is not None
+    return (
+        _BARE_FILE_RESOURCE_RE.fullmatch(value) is not None
+        or _DOTFILE_RESOURCE_RE.fullmatch(value) is not None
+    )
 
 
 def _normalized_resource(value: str) -> str:

@@ -25,9 +25,11 @@ from agency_runtime.core.host_capabilities import (
 )
 from agency_runtime.core.preflight_failure import (
     PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
+    PreflightInvariantError,
     default_preflight_failure_reason,
     preflight_exception_category,
     preflight_hiring_reason_codes,
+    preflight_invariant_code,
     preflight_routing_failure_reason,
     preflight_staffing_reason_codes,
     project_preflight_provider_attempts,
@@ -134,6 +136,7 @@ class _PreflightFailureDiagnostics:
             "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
             "stage": self.stage,
             "reason_code": self.reason_code,
+            "invariant_code": preflight_invariant_code(error),
             "exception_category": preflight_exception_category(error),
             "provider_attempts": self.provider_attempts,
             "staffing_reason_codes": self.staffing_reason_codes,
@@ -1332,24 +1335,27 @@ def _codex_native_plan_scopes_for_result(
         reference = references.get(slug)
         if not goal or reference is None:
             raise RuntimeError("Codex native plan scope lost its exact preflight authority")
-        contract = native_child_activation_contract(
-            goal,
-            mutation_scope=row.get("mutation_scope"),
-            resource_hashes=row.get("resource_hashes"),
-            required_evidence=row.get("required_evidence"),
-        )
-        scope = build_codex_native_plan_scope(
-            work_unit_id=row.get("work_unit_id"),
-            specialist_slug=slug,
-            specialist_version=reference.get("version"),
-            specialist_prompt_hash=reference.get("hash"),
-            goal_hash=row.get("goal_hash"),
-            resource_hashes=row.get("resource_hashes"),
-            mutation_mode=contract["mutation_mode"],
-            mutation_path_prefixes=contract["mutation_path_prefixes"],
-            evidence_contract_id=contract["evidence_contract_id"],
-            evidence_requirements=contract["evidence_requirements"],
-        )
+        try:
+            contract = native_child_activation_contract(
+                goal,
+                mutation_scope=row.get("mutation_scope"),
+                resource_hashes=row.get("resource_hashes"),
+                required_evidence=row.get("required_evidence"),
+            )
+            scope = build_codex_native_plan_scope(
+                work_unit_id=row.get("work_unit_id"),
+                specialist_slug=slug,
+                specialist_version=reference.get("version"),
+                specialist_prompt_hash=reference.get("hash"),
+                goal_hash=row.get("goal_hash"),
+                resource_hashes=row.get("resource_hashes"),
+                mutation_mode=contract["mutation_mode"],
+                mutation_path_prefixes=contract["mutation_path_prefixes"],
+                evidence_contract_id=contract["evidence_contract_id"],
+                evidence_requirements=contract["evidence_requirements"],
+            )
+        except (TypeError, ValueError) as exc:
+            raise PreflightInvariantError("native_plan_scope_invalid") from exc
         scopes.append(scope.as_dict())
     return scopes
 

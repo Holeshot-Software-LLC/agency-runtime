@@ -40,7 +40,7 @@ class ProductScenario:
             f"- [{item.check_id}] {item.requirement}" for item in self.acceptance
         )
         return (
-            f"One-shot product evaluation `{self.scenario_id}` / trial `{trial_id}`.\n\n"
+            f"One-shot product evaluation `{self.scenario_id}`, trial `{trial_id}`.\n\n"
             f"Build this complete application in the current empty workspace:\n{self.outcome}\n\n"
             "Operating constraints:\n"
             "- Work only inside the current workspace.\n"

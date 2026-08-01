@@ -18,6 +18,7 @@ from typing import Any
 from agency_runtime.core.agent_activation import normalize_agent_slug
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.config import AgencyConfig, ProviderEntry, _is_loopback_http_url
+from agency_runtime.core.preflight_failure import PREFLIGHT_FAILURE_RECEIPT_SCHEMA
 from agency_runtime.core.roster.bundled import bundled_manifest
 from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 from agency_runtime.core.roster.review import latest_candidate_audit_from_connection
@@ -772,9 +773,10 @@ def inference_operational_snapshot(
         {
             "kind": "preflight_failure",
             "status": "preflight_failed",
-            "schema_version": "agency.preflight.failure.v2",
+            "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
             "stage": str(receipt.get("stage") or "")[:32],
             "reason_code": str(receipt.get("reason_code") or "")[:96],
+            "invariant_code": str(receipt.get("invariant_code") or "")[:96],
             "exception_category": str(receipt.get("exception_category") or "")[:32],
             "provider_attempts": list(receipt.get("provider_attempts") or ()),
             "staffing_reason_codes": list(receipt.get("staffing_reason_codes") or ()),

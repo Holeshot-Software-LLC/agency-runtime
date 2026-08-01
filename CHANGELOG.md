@@ -61,6 +61,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex product preflight no longer mistakes the harness prompt's prose
+  separator for absolute filesystem authority. Markdown-wrapped artifact paths
+  and the relative workspace-proof dotfile now survive exact scope projection,
+  while invalid native plan scope still fails atomically and records only the
+  allowlisted `native_plan_scope_invalid` invariant.
 - Recruiter proposals are now marked applied and cached only after complete
   staffing verification. A structurally valid but globally unsafe proposal can
   spend exactly the existing one semantic-repair attempt; exhaustion still

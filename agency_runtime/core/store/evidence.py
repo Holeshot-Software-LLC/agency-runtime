@@ -218,6 +218,7 @@ def _failed_preflight_canary_snapshot(
         "run.preflight_request_fingerprint, run.preflight_request_kind, "
         "failure.id AS failure_id, failure.stage AS failure_stage, "
         "failure.reason_code AS failure_reason_code, "
+        "failure.invariant_code AS failure_invariant_code, "
         "failure.exception_category AS failure_exception_category, "
         "failure.provider_attempts AS failure_provider_attempts, "
         "failure.staffing_reason_codes AS failure_staffing_reason_codes, "
@@ -241,6 +242,7 @@ def _failed_preflight_canary_snapshot(
         "host": str(row["host"] or ""),
         "stage": row["failure_stage"],
         "reason_code": row["failure_reason_code"],
+        "invariant_code": row["failure_invariant_code"],
         "exception_category": row["failure_exception_category"],
         "provider_attempts": row["failure_provider_attempts"],
         "staffing_reason_codes": row["failure_staffing_reason_codes"],

@@ -24,7 +24,7 @@ const EVIDENCE_COLUMNS = {
 	routing: [["trace_id", "Trace"], ["id", "Decision"], ["status", "Outcome"], ["semantic_status", "Semantic result"], ["source", "Source"], ["selected_ids", "Selected"], ["fallback_applied", "Fallback applied"], ["fallback_companion_ids", "Fallback policy IDs"], ["created_at", "Created"]],
 	receipts: [["requested_model", "Requested"], ["model_group", "LiteLLM router / model group"], ["resolved_provider", "Actual provider"], ["resolved_model", "Actual model"], ["host", "Host"], ["status", "Status"], ["source", "Source"], ["ended_at", "Ended"]],
 	runs: [["trace_id", "Trace"], ["session_id", "Session"], ["host", "Host"], ["status", "Status"], ["started_at", "Started"], ["ended_at", "Ended"]],
-	preflight_failures: [["trace_id", "Trace"], ["host", "Host"], ["stage", "Failed stage"], ["reason_code", "Reason"], ["exception_category", "Category"], ["recorded_at", "Recorded"]],
+	preflight_failures: [["trace_id", "Trace"], ["host", "Host"], ["stage", "Failed stage"], ["reason_code", "Reason"], ["invariant_code", "Invariant"], ["exception_category", "Category"], ["recorded_at", "Recorded"]],
 	finalizations: [["trace_id", "Trace"], ["host", "Host"], ["action", "Action"], ["missing", "Missing"], ["created_at", "Created"]],
 };
 
@@ -361,6 +361,9 @@ export function createRenderer(core, config, callbacks) {
 						small( "", `Actual: ${failure.actual_provider || "unavailable"} / ${failure.actual_model || "unavailable"}`),
 					);
 				} else if (failure.kind === "preflight_failure") {
+					const invariant = failure.invariant_code
+						? `Invariant: ${failure.invariant_code}`
+						: "Invariant: none recorded";
 					const staffingCodes = Array.isArray(failure.staffing_reason_codes)
 						? failure.staffing_reason_codes.join(", ")
 						: "";
@@ -369,6 +372,7 @@ export function createRenderer(core, config, callbacks) {
 						: "";
 					copy.append(
 						small( "", `Host: ${failure.host || "unknown"} · ${failure.exception_category || "unavailable"}`),
+						small( "", invariant),
 						small( "", `Trace: ${failure.trace_id || "unavailable"} · ${(failure.provider_attempts || []).length} provider attempt(s)`),
 					);
 					if (staffingCodes) copy.append(small( "", `Staffing: ${staffingCodes}`));

@@ -93,6 +93,7 @@ def _failure(raw: object) -> dict[str, Any]:
                 "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
                 "stage": raw.get("stage"),
                 "reason_code": raw.get("reason_code"),
+                "invariant_code": raw.get("invariant_code"),
                 "exception_category": raw.get("exception_category"),
                 "provider_attempts": raw.get("provider_attempts"),
                 "staffing_reason_codes": raw.get("staffing_reason_codes"),

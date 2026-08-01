@@ -51,3 +51,10 @@ def test_product_scenario_lookup_is_normalized_and_closed() -> None:
     assert product_scenario("  PYTHON-CLI-SERVICE ") is PRODUCT_SCENARIOS[0]
     with pytest.raises(ValueError, match="unknown product evaluation scenario"):
         product_scenario("invented")
+
+
+def test_product_prompt_separator_is_not_an_absolute_resource_token() -> None:
+    prompt = product_scenario("python-cli-service").prompt(trial_id="trial-1")
+
+    assert "`python-cli-service`, trial `trial-1`" in prompt
+    assert "`python-cli-service` / trial" not in prompt

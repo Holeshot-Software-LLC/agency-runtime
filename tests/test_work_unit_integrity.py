@@ -122,6 +122,15 @@ def test_resource_parser_stops_at_prose_and_normalizes_equivalent_paths() -> Non
     assert not _looks_like_resource("")
     assert not _looks_like_resource("https://example.test/source.py")
     assert _likely_resources("Update src/a.py and src\\a.py") == ["src/a.py"]
+    assert _likely_resources(
+        "Create `.agency-runtime-workspace-write-proof`, then update `app.py`, "
+        "`tests/test_app.py`, and `README.md`."
+    ) == [
+        ".agency-runtime-workspace-write-proof",
+        "app.py",
+        "tests/test_app.py",
+        "README.md",
+    ]
     many = " ".join(f"src/component-{index}.py" for index in range(12))
     assert len(_likely_resources(many)) == 8
 

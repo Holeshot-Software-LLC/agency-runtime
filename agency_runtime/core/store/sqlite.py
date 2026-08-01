@@ -1746,7 +1746,7 @@ class Store(
                 raise RuntimeError("open Agency turn has inconsistent terminal state")
             failure_row = conn.execute(
                 "SELECT id, session_id, trace_id, host, stage, reason_code, "
-                "exception_category, provider_attempts, staffing_reason_codes, "
+                "invariant_code, exception_category, provider_attempts, staffing_reason_codes, "
                 "hiring_reason_codes, recorded_at "
                 "FROM preflight_failure_receipts WHERE session_id = ? AND trace_id = ?",
                 (normalized_session, normalized_trace),

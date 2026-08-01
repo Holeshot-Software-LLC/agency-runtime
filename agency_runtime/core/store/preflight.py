@@ -278,6 +278,7 @@ def _decode_preflight_failure_receipt(row: Mapping[str, Any]) -> dict[str, Any]:
             "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
             "stage": row["stage"],
             "reason_code": row["reason_code"],
+            "invariant_code": row["invariant_code"],
             "exception_category": row["exception_category"],
             "provider_attempts": provider_attempts,
             "staffing_reason_codes": staffing_reason_codes,
@@ -1933,7 +1934,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         try:
             row = conn.execute(
                 "SELECT id, session_id, trace_id, host, stage, reason_code, "
-                "exception_category, provider_attempts, staffing_reason_codes, "
+                "invariant_code, exception_category, provider_attempts, staffing_reason_codes, "
                 "hiring_reason_codes, recorded_at "
                 "FROM preflight_failure_receipts WHERE session_id = ? AND trace_id = ?",
                 (normalized_session, normalized_trace),
@@ -1993,16 +1994,17 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                     receipt, encoded_attempts, encoded_staffing, encoded_hiring = projected_failure
                     inserted = conn.execute(
                         "INSERT INTO preflight_failure_receipts "
-                        "(id, session_id, trace_id, host, stage, reason_code, "
+                        "(id, session_id, trace_id, host, stage, reason_code, invariant_code, "
                         "exception_category, provider_attempts, staffing_reason_codes, "
                         "hiring_reason_codes, recorded_at) "
-                        "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, ?, ?, "
+                        "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, ?, ?, ?, "
                         f"{STORE_CLOCK_SQL} FROM runs "  # nosec B608
                         "WHERE session_id = ? AND trace_id = ? AND status = 'preflight_failed'",
                         (
                             self._uuid(),
                             receipt["stage"],
                             receipt["reason_code"],
+                            receipt["invariant_code"],
                             receipt["exception_category"],
                             encoded_attempts,
                             encoded_staffing,
@@ -2072,16 +2074,17 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                 receipt, encoded_attempts, encoded_staffing, encoded_hiring = projected_failure
                 inserted = conn.execute(
                     "INSERT INTO preflight_failure_receipts "
-                    "(id, session_id, trace_id, host, stage, reason_code, "
+                    "(id, session_id, trace_id, host, stage, reason_code, invariant_code, "
                     "exception_category, provider_attempts, staffing_reason_codes, "
                     "hiring_reason_codes, recorded_at) "
-                    "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, ?, ?, "
+                    "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, ?, ?, ?, "
                     f"{STORE_CLOCK_SQL} FROM runs "  # nosec B608
                     "WHERE session_id = ? AND trace_id = ? AND status = 'preflight_failed'",
                     (
                         self._uuid(),
                         receipt["stage"],
                         receipt["reason_code"],
+                        receipt["invariant_code"],
                         receipt["exception_category"],
                         encoded_attempts,
                         encoded_staffing,

@@ -28,7 +28,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-212-live-product-proof
+branch: codex/ar-214-context-delivery-authority
 evidence_commit: 1694d6e07e04fb1c1f19f65bf2af381542b8079f
 minimum_ledger_commit: 05bc8665f1c4024f9a3cdf16113020908e5141b0
 hard_checkpoint_percent: 50
@@ -40,23 +40,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 204 merged the exact Codex delegation repairs as `207b150`.
-- PR 210 merged the reviewed AR-212 repair as
-  `1694d6e07e04fb1c1f19f65bf2af381542b8079f`; its one Codex P1 was repaired,
-  evidence-addressed, and resolved before merge.
+- PR 210 merged the reviewed AR-212 repair as `1694d6e`; installation and
+  autonomous activation pass, while its one product trial is consumed at
+  context delivery.
 - Exact official build `0.1.0+g1694d6e07e04` is installed.
 - Bare install discovered only Codex and ZCode and selected the dashboard.
   ZCode completed, the dashboard is active and reachable, and Codex registered.
-- Supported autonomous activation passed on `1694d6e`; its one governed product
-  trial is consumed and fails atomically at context delivery. AR-214 owns the
-  next bounded repair.
-- AR-212 is merged: verifier rejection now participates in the
-  existing one recruiter repair, unsafe results are not cached, explicit gaps
-  remain hireable, and preflight failure schema v2 retains bounded staffing
-  and hiring reason codes.
-- Focused PR review found and repaired one terminal-projection omission: a
-  second verifier rejection now carries its exact bounded staffing decision
-  into failure evidence, while any later non-verifier failure clears it.
+- AR-214 is locally repaired and demo-ready. The legacy accepted-staffing
+  fixture reproduces `native_plan_scope_invalid` atomically; the repaired
+  product prompt commits all five inference-authored units and exact Codex
+  scopes. One reviewed exact-build activation and product trial remain.
 
 ## completed-evidence
 
@@ -71,42 +64,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   consumption, specialist load, native child, worker run, completed delegation,
   and accepted finalization. The first header was valid and corrections were
   zero. Trust was `autonomous_bypass`; persistent trust did not change.
-- Product session `019fbad4-6358-70e1-856f-ec89d5c7ecd2`, trace
-  `019fbad4-63d2-7e23-a688-ba3a21353de3`, and run
-  `65525f38-914f-450d-ac4e-8145e4a5eca6` failed after 111.1 seconds.
-- Planner and recruiter both recorded `structured_response_applied` on
-  `gpt-5.6-luna`, but zero route, plan binding, specialist, delegation,
-  finalization, header, or workspace write followed. Preflight reason was
-  `substantive_specialist_unavailable`; correction count was zero.
-- The exact 1,962-character executed prompt hash is
-  `7ae24437002a7ea68da7f05e236ac8a88d214bf2ad79d8fd349c1a9b041660da`.
-  One read-only route diagnostic immediately accepted an eight-unit team:
-  `codebase-onboarding-engineer`, `python-application-engineer`,
-  `software-test-engineer`, `code-reviewer`,
-  `application-security-engineer`, `application-integration-verifier`,
-  `technical-writer`, and `code-reviewer`.
-- Source inspection proves full staffing verification occurs only after the
-  recruiter response is marked applied and cached. Verifier rejection therefore
-  cannot spend the existing second semantic attempt. The failure receipt also
-  omits safe staffing and hiring reason codes.
-- AR-212 tracker is https://github.com/Holeshot-Software-LLC/agency-runtime/issues/208.
-  ADR-0129 freezes one verifier-driven repair attempt with no deterministic
-  selector and bounded reason projection.
-- The exact AR-212 acceptance slice passes 8/8. Canary/CLI compatibility passes
-  24/24 and dashboard UI passes 110/110. Lint and formatting checks pass for
-  every changed Python file.
-- The named fast production spine passes 639 tests with 6 skips. The routing
-  evaluation passes every correctness, policy, delegation, performance, scale,
-  and CLI-startup gate. Decision-conformance passes after 840.2 seconds with a
-  green baseline, every curated mutation killed, and source unchanged.
-- The post-review correction passes four focused tests, including projection
-  of exact verifier codes from a real `WorkforceRoutingOutcome`. Its exact head
-  passes the complete named local gate: 639 Python tests passed with 6 skips,
-  all 110 dashboard tests and every routing threshold passed, and the 760.6
-  second decision-conformance run killed all 73 mutations with zero invalid or
-  surviving cases and left the source unchanged.
-- PR 210 merged as `1694d6e07e04fb1c1f19f65bf2af381542b8079f` after the
-  Codex P1 was fixed in `b2ea634`, replied to with exact evidence, and resolved.
+- AR-214 root cause is the harness prompt's standalone prose `/`, parsed as an
+  absolute resource while Markdown artifact paths and the proof dotfile were
+  missed. The repair changes only prompt punctuation and resource normalization;
+  explicit `/` remains invalid and never broadens to `.`.
+- Failure schema v3 stores one allowlisted invariant. Direct SQLite inspection
+  proves the row retains no prompt, path, or exception text; a true v41 fixture
+  proves migration adds an empty invariant to existing rows.
+- Focused AR-214 tests pass 3/3; canary/status projections pass 24/24; product
+  contracts pass 33/33; dashboard UI passes 110/110. Repository-wide lint and
+  formatting pass.
+- The named production spine passes 641 tests with 6 skips. Every routing,
+  policy, delegation, performance, scale, and CLI-startup gate passes.
+  Decision conformance completes in 700.5 seconds, kills every curated mutation,
+  and reports `source_unchanged=true`.
 - Exact package installation reports `0.1.0+g1694d6e07e04`. The write-free bare
   plan selected exactly Codex, ZCode, and dashboard; application made ZCode
   current, left the Codex payload current, and made the per-user dashboard
@@ -135,10 +106,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-Build `1694d6e` proves installation, activation, and recruiter convergence, but
-its consumed product trial fails at exact context delivery before ready commit.
-AR-214 must reproduce and repair that validation boundary without another live
-trial on this build.
+The local AR-214 repair is green but is not live proof. It must be reviewed,
+merged, installed as one new exact build, and receive exactly one activation
+and one governed product trial.
 
 ## same-task-continuity
 
@@ -149,8 +119,9 @@ dispatch hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Publish the local evidence page and OpenClaw handoff from recorded evidence.
-2. Reproduce AR-214 locally; no new live trial before a reviewed exact build.
+1. Commit, review, and merge the exact AR-214 head.
+2. Install that build; run one activation and one product trial, then publish
+   the local evidence page and OpenClaw handoff.
 
 ## verification
 
@@ -162,7 +133,7 @@ python scripts/update_worklog.py --check
 python scripts/verify_docs.py
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
-python -m pytest <focused AR-212 boundary> -q -W error
+python -m pytest tests/test_ar214_context_delivery_authority.py -q -W error
 python -m pytest <named fast spine from AGENTS.md> -q -W error
 node --test tests/dashboard_ui.test.mjs
 .venv\Scripts\agency.exe eval routing --json --no-details
