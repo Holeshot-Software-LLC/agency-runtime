@@ -128,7 +128,14 @@ activation, and product tests; the named Python spine passes 656 with 6 skipped;
 dashboard UI passes 110; documentation validates 625 files; Ruff, format, diff,
 and every routing threshold pass. Decision conformance passes its 209.170-second
 baseline and kills 84 of 84 mutations with zero invalid results and unchanged
-source in 857.9 seconds. Fresh immutable-build proof remains pending.
+source in 857.9 seconds. PR 230 merged that repair as exact
+`a2d1a7c88f04956be0915c4b9acc4a21c5baf28c`. The immutable upgrade installed
+that exact VCS commit, and `direct_url.json` independently reports the same
+requested revision and commit ID. A subsequent full-suite refresh reports the
+dashboard installed, active, and reachable; ZCode registered, enabled, and
+complete; and the Codex bundle registered and byte-current. The install exits
+partial only because Codex correctly remains `activation_required` until its
+live canary runs. Fresh immutable-build activation remains pending.
 
 ## Approach
 

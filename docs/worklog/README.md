@@ -505,6 +505,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `fd8f3a4` | 2026-08-01 | docs(ar-223): record rejected execution followup | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `6be9f0f` | 2026-08-01 | fix(ar-223): bind opaque Codex execution followups | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `00cd2b2` | 2026-08-01 | docs(ar-223): record green opaque followup gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `a2d1a7c` | 2026-08-01 | Merge pull request #230 from Holeshot-Software-LLC/codex/ar-223-live-proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

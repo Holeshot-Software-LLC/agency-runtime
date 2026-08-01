@@ -43,9 +43,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-223-codex-child-task-activation
-evidence_commit: 43870c8b3052c1b274de396576a399b2cb542e61
-minimum_ledger_commit: 7046ee31b4c53b2a7005ceed44692fa738717adc
+branch: codex/ar-223-post-merge-live-proof
+evidence_commit: a2d1a7c88f04956be0915c4b9acc4a21c5baf28c
+minimum_ledger_commit: 8dfa9ec49db81f79bfef314db61e827f9eb76058
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -76,30 +76,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   installation passes dashboard and ZCode. Its consumed Codex canary selects
   `code-reviewer`, then records spawn, activation wait, and follow-up before
   Agency rejects its generated execution envelope. No second wait or header
-  exists; corrections are zero and no product trial ran.
+  exists; corrections are zero and no product trial ran. PR 230 merges the
+  opaque-boundary repair as exact `a2d1a7c`; that exact VCS revision is now
+  installed. Its full-suite refresh proves the dashboard reachable, ZCode
+  complete, and the current Codex bundle registered. Codex remains
+  `activation_required`, which is the expected boundary before the one fresh
+  autonomous canary.
 
 ## completed-evidence
 
-- AR-220 passes two reviews, focused 37, Python 656/6, dashboard 110/110,
-  routing 39/39, and decision conformance 81/81 with unchanged source.
-- Activation session `019fbe07-84b8-7bd3-b5d9-a6fe2ff7b713`, trace
-  `019fbe07-8d3a-7870-ab40-f7e257ac5a67`, run
-  `eb8c605e-11ad-4dfb-aa9b-fa9222f5ab09`, and route
-  `6b4506f8-7715-47f6-80fe-8a9b75b7488d` pass under autonomous bypass without
-  persistent trust changes.
-- Product session `019fbe0a-4e75-7bb0-a1e2-1a2a54e2415a`, trace
-  `019fbe0a-4f10-76d1-ba75-9e8615706dd0`, run
-  `28c98413-c312-41fa-be2d-33479b226090`, route
-  `6e4e32fe-92a2-41f5-b0d3-499d4e9b64a9`, and finalization
-  `8ecffcc4-7d17-40e9-a43b-1cf5ca039d2d` retain the seven-unit boundary.
-- The exact diagnostic is `product_wait_arguments_invalid`: seven spawns,
-  seven waits, fourteen outputs, seven child starts, twenty-three messages, and
-  zero unexpected items. Correction count is zero, but no first header, write,
-  artifact, or validation is accepted.
-- Unit `unit-34912a488e` is persisted as `workspace_write`; its exact reconstructed
-  goal hash matches Store evidence, but its child-visible goal omits that scope.
-- No hiring case exists for this trace. Existing contractor versions executed;
-  AR-220's repaired four-call hiring path remains live-unproven.
 - Two AR-221 reviews and 127 focused tests pass. Three new decision mutations
   are killed with zero survivors or invalid results and unchanged source.
 - The named Python production spine passes 656 tests with 6 skipped. Dashboard
@@ -126,15 +111,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `ba76ce7` passes installation and
-inference-owned selection, but its consumed canary exposed that Codex encrypts
-the follow-up before `PreToolUse` observes it. The locally repaired AR-223
-boundary binds that ciphertext to the exact activated child and requires the
-decrypted envelope in the later child rollout. Exact local head `4daf82a`
-passes the complete named local gate: 143 focused tests, 656 Python spine tests
-with 6 skipped, 110 dashboard tests, 625-file documentation validation, every
-routing threshold, and 84 of 84 decision mutations with zero invalid results.
-Fresh immutable-build proof remains pending.
+The README main story remains NO-GO until live proof. Exact `ba76ce7` passes
+installation and inference-owned selection, but its consumed canary exposed
+that Codex encrypts the follow-up before `PreToolUse` observes it. AR-223 now
+binds that ciphertext to the exact activated child and requires the decrypted
+envelope in the later child rollout. The complete named local gate passes: 143
+focused tests, 656 Python spine tests with 6 skipped, 110 dashboard tests,
+625-file documentation validation, every routing threshold, and 84 of 84
+decision mutations with zero invalid results. Exact merged build `a2d1a7c` is
+installed and host-current; its one autonomous activation has not yet run.
 
 ## same-task-continuity
 
@@ -146,9 +131,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Open, review, and merge the exact green AR-223 branch.
-2. Install the fresh immutable merge, then spend one activation.
-3. Only after it passes, spend one product trial and update final evidence.
+1. Spend one autonomous activation on exact installed build `a2d1a7c`.
+2. Only after activation passes, spend one product trial on that same build.
+3. Checkpoint the terminal evidence without rerunning either governed trial.
 
 ## verification
 
@@ -175,6 +160,7 @@ git diff --check
 - One live product trial per exact installed build; any correction is failure.
 - Exact builds `e62d0adc`, `1694d6e`, `d6ba36a`, `9c2e9f8`, `8cfd975`,
   `f8e607d`, `386afca`, `5c45f154`, `ff39761`, and `43870c8` consumed governed
-  live evidence; none may be rerun.
+  live evidence; exact `ba76ce7` also consumed its activation; none may be
+  rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
