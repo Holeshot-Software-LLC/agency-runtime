@@ -257,7 +257,10 @@ A declared gap is a contractor specification. Agency:
 
 - **Compiles** a structured contract through a fixed, security-reviewed prompt
   template (never an unrestricted model-written system prompt).
-- **Criticizes** it with an independent hiring-critic inference pass.
+- **Criticizes** it with an independent hiring-critic inference pass. If that
+  critic rejects a deterministically valid proposal, the default four-call
+  budget permits one complete inference-authored replacement and one fresh
+  independent critique; a second rejection remains terminal.
 - **Risk-tiers** it and runs deterministic Unicode / injection / exfiltration /
   authority / tool / conflict / duplicate checks.
 - **Admits** the worker as a least-privilege, visibly-marked probationary

@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-31
+updated: 2026-08-01
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -61,6 +61,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- A deterministically valid contractor proposal rejected by the independent
+  hiring critic can now receive exactly one inference-authored replacement and
+  one fresh critique. The four-call default reserves the final critique,
+  retains content-free reason codes, and leaves exhaustion mutation-free.
 - Codex product preflight no longer mistakes the harness prompt's prose
   separator for absolute filesystem authority. Markdown-wrapped artifact paths
   and the relative workspace-proof dotfile now survive exact scope projection,

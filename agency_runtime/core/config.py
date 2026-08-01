@@ -243,7 +243,7 @@ class WorkforceConfig:
     fast_call_budget: int = 3
     balanced_call_budget: int = 4
     strict_call_budget: int = 5
-    hiring_call_budget: int = 2
+    hiring_call_budget: int = 4
     max_work_units: int = 16
     max_selected_per_unit: int = 4
     max_selected_total: int = 16
@@ -509,7 +509,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             fast_call_budget=int(workforce_raw.get("fast_call_budget", 3)),
             balanced_call_budget=int(workforce_raw.get("balanced_call_budget", 4)),
             strict_call_budget=int(workforce_raw.get("strict_call_budget", 5)),
-            hiring_call_budget=int(workforce_raw.get("hiring_call_budget", 2)),
+            hiring_call_budget=int(workforce_raw.get("hiring_call_budget", 4)),
             max_work_units=int(workforce_raw.get("max_work_units", 16)),
             max_selected_per_unit=int(workforce_raw.get("max_selected_per_unit", 4)),
             max_selected_total=int(workforce_raw.get("max_selected_total", 16)),

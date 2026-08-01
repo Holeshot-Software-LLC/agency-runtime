@@ -3,7 +3,7 @@ title: "AR-203: Prove product-canary workspace writes and exact activation"
 status: in_progress
 category: roadmap
 created: 2026-07-30
-updated: 2026-07-31
+updated: 2026-08-01
 tags: [evaluation, codex, activation, sandbox, evidence, regression]
 related:
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
@@ -17,6 +17,7 @@ related:
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
   - docs/roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md
+  - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
   - docs/roadmap/handoffs/issue-AR-203.md
   - docs/worklog/README.md
 supersedes: []
@@ -26,7 +27,7 @@ epic: testing
 issue_id: AR-203
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
-depends_on: [AR-201, AR-207, AR-209, AR-212, AR-214]
+depends_on: [AR-201, AR-207, AR-209, AR-212, AR-214, AR-215]
 blocks: [AR-200]
 ---
 

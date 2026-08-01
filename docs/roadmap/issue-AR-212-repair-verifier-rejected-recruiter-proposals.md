@@ -3,13 +3,14 @@ title: "AR-212: Repair verifier-rejected recruiter proposals once"
 status: in_progress
 category: roadmap
 created: 2026-07-31
-updated: 2026-07-31
+updated: 2026-08-01
 tags: [product, inference, recruitment, reliability, diagnostics]
 related:
   - README.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md
+  - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -24,7 +25,7 @@ issue_id: AR-212
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/208
 depends_on: [AR-207]
-blocks: [AR-203, AR-204, AR-214]
+blocks: [AR-203, AR-204, AR-214, AR-215]
 ---
 
 # AR-212: Repair verifier-rejected recruiter proposals once

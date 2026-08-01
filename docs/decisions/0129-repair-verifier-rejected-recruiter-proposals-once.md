@@ -8,6 +8,7 @@ tags: [inference, recruitment, staffing, reliability, diagnostics]
 related:
   - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
+  - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/worklog/README.md

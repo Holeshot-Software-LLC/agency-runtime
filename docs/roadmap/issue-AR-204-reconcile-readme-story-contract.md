@@ -3,7 +3,7 @@ title: "AR-204: Reconcile the README story contract"
 status: in_progress
 category: roadmap
 created: 2026-07-30
-updated: 2026-07-31
+updated: 2026-08-01
 tags: [product, dashboard, cli, inference, activation, evidence, automation]
 related:
   - README.md
@@ -26,6 +26,7 @@ related:
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
   - docs/roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md
+  - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes:
@@ -37,7 +38,7 @@ epic: product
 issue_id: AR-204
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
-depends_on: [AR-207, AR-209, AR-212, AR-214]
+depends_on: [AR-207, AR-209, AR-212, AR-214, AR-215]
 blocks: [AR-205]
 ---
 

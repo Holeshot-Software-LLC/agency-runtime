@@ -71,6 +71,12 @@ _CRITIC_SYSTEM = (
     "and the fixed compiler output cannot override host policy. You may veto but never edit. "
     "Return only the closed JSON contract."
 )
+_HIRE_REPAIR_SYSTEM = (
+    f"{_HIRE_SYSTEM} The independent critic rejected one prior candidate. "
+    "Use only the supplied bounded critic reason codes as repair constraints. Return one "
+    "complete replacement candidate from the open-ended specialist pool; do not edit, quote, "
+    "or depend on the rejected candidate. This is the only replacement attempt."
+)
 
 _TEXT = {"type": "string", "minLength": 1, "maxLength": 512}
 _ITEM_TEXT = {"type": "string", "minLength": 1, "maxLength": 160}
@@ -452,6 +458,10 @@ class _CallBudget:
         self.used += 1
         return True
 
+    @property
+    def remaining(self) -> int:
+        return max(0, self.maximum - self.used)
+
 
 def _json(value: object) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
@@ -533,8 +543,11 @@ def _invoke(
     stage: str,
     invoker: StructuredInvoker,
     budget: _CallBudget,
+    reserve: int = 0,
 ) -> tuple[StructuredProviderResult | None, HiringInferenceAttempt | None]:
     for provider in providers:
+        if budget.remaining <= reserve:
+            break
         if not budget.consume():
             break
         result = invoker(
@@ -547,6 +560,138 @@ def _invoke(
         if result is not None:
             return result, _attempt(stage, provider, result)
     return None, None
+
+
+def _bounded_reason_codes(value: object) -> tuple[str, ...]:
+    """Project untrusted critic output into the durable routing-code vocabulary."""
+
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        return ()
+    return tuple(
+        dict.fromkeys(
+            normalized
+            for item in value
+            if (normalized := str(item or "").strip().casefold())
+            and _ROUTING_IDENTIFIER.fullmatch(normalized) is not None
+        )
+    )[:MAX_ITEMS]
+
+
+def _critic_prompt(request: str, unit: WorkUnit, candidate: _ValidatedCandidate) -> str:
+    return _json(
+        {
+            "request_hash": _digest(request),
+            "proposed_action": candidate.action,
+            "work_unit": asdict(unit),
+            "gap_evidence": candidate.gap,
+            "duplicate_evidence": candidate.duplicate,
+            "contract": candidate.contract.to_dict(),
+            "compiled_prompt_hash": candidate.agent["hash"],
+            "compiler_template_hash": CONTRACTOR_PROMPT_TEMPLATE_HASH,
+        }
+    )
+
+
+def _repair_rejected_candidate(
+    *,
+    request: str,
+    unit: WorkUnit,
+    contracts: Sequence[WorkforceContract],
+    store: Any,
+    config: AgencyConfig,
+    providers: Sequence[ProviderEntry],
+    critic_providers: Sequence[ProviderEntry],
+    hiring_input: Mapping[str, Any],
+    candidate: _ValidatedCandidate,
+    reason_codes: object,
+    attempts: tuple[HiringInferenceAttempt, ...],
+    budget: _CallBudget,
+    staffing_context: StaffingContext | None,
+    allow_existing_worker_amendment: bool,
+    invoker: StructuredInvoker,
+) -> (
+    tuple[_ValidatedCandidate, Mapping[str, Any], tuple[HiringInferenceAttempt, ...]]
+    | ContractorHiringOutcome
+):
+    """Run the only inference-authored replacement and its reserved critique."""
+
+    reasons = _bounded_reason_codes(reason_codes) or ("hiring_critic_rejected",)
+    if budget.remaining < 2:
+        return ContractorHiringOutcome(
+            "rejected", reasons, contract=candidate.contract, attempts=attempts
+        )
+    repair_result, repair_attempt = _invoke(
+        providers,
+        prompt=_json(
+            {
+                "original_hiring_input": hiring_input,
+                "critic_feedback": {"reason_codes": list(reasons)},
+                "replacement_required": True,
+            }
+        ),
+        schema=HIRING_RESPONSE_SCHEMA,
+        system=_HIRE_REPAIR_SYSTEM,
+        stage="hiring-repair",
+        invoker=invoker,
+        budget=budget,
+        reserve=1,
+    )
+    if repair_result is None or repair_attempt is None:
+        return ContractorHiringOutcome(
+            "abstained",
+            ("hiring_repair_inference_failed", *reasons)[:MAX_ITEMS],
+            contract=candidate.contract,
+            attempts=attempts,
+        )
+    repaired = _validated_candidate(
+        repair_result.value,
+        unit,
+        contracts,
+        repair_attempt,
+        store=store,
+        staffing_context=staffing_context,
+        allow_existing_worker_amendment=allow_existing_worker_amendment,
+    )
+    repair_attempts = (*attempts, repair_attempt)
+    if isinstance(repaired, ContractorHiringOutcome):
+        return replace(
+            repaired,
+            reason_codes=("hiring_repair_invalid", *repaired.reason_codes)[:MAX_ITEMS],
+            attempts=repair_attempts,
+        )
+    if repaired.action == "hire" and _today_hires(store) >= config.workforce.max_hires_per_day:
+        return ContractorHiringOutcome(
+            "abstained",
+            ("daily_hiring_limit_reached",),
+            contract=repaired.contract,
+            attempts=repair_attempts,
+        )
+    critic_result, critic_attempt = _invoke(
+        critic_providers,
+        prompt=_critic_prompt(request, unit, repaired),
+        schema=HIRING_CRITIC_SCHEMA,
+        system=_CRITIC_SYSTEM,
+        stage="hiring-repair-critic",
+        invoker=invoker,
+        budget=budget,
+    )
+    all_attempts = repair_attempts if critic_attempt is None else (*repair_attempts, critic_attempt)
+    if critic_result is None or critic_attempt is None:
+        return ContractorHiringOutcome(
+            "abstained",
+            ("hiring_repair_critic_unavailable",),
+            contract=repaired.contract,
+            attempts=all_attempts,
+        )
+    critic = critic_result.value
+    if critic.get("approved") is not True:
+        reasons = _bounded_reason_codes(critic.get("reason_codes")) or (
+            "hiring_repair_critic_rejected",
+        )
+        return ContractorHiringOutcome(
+            "rejected", reasons, contract=repaired.contract, attempts=all_attempts
+        )
+    return repaired, critic, all_attempts
 
 
 def _agent_document(
@@ -1216,18 +1361,17 @@ def hire_contractor_for_gap(
         )
     )
     budget = _CallBudget(config.workforce.hiring_call_budget)
-    prompt = _json(
-        {
-            "request": request,
-            "uncovered_work_unit": asdict(unit),
-            "verified_gap": {
-                "inference_declared": "inference_declared_gap" in verified_gap_reasons,
-                "reason_codes": list(verified_gap_reasons),
-            },
-            "workforce_count": len(workforce),
-            "complete_workforce": workforce,
-        }
-    )
+    hiring_input = {
+        "request": request,
+        "uncovered_work_unit": asdict(unit),
+        "verified_gap": {
+            "inference_declared": "inference_declared_gap" in verified_gap_reasons,
+            "reason_codes": list(verified_gap_reasons),
+        },
+        "workforce_count": len(workforce),
+        "complete_workforce": workforce,
+    }
+    prompt = _json(hiring_input)
     result, hire_attempt = _invoke(
         providers,
         prompt=prompt,
@@ -1257,25 +1401,10 @@ def hire_contractor_for_gap(
             contract=candidate.contract,
             attempts=(hire_attempt,),
         )
-    gap = candidate.gap
-    duplicate = candidate.duplicate
-    contract = candidate.contract
-    agent = candidate.agent
-    workforce_contract = candidate.workforce_contract
+    critic_providers = configured_workforce_providers(config, stage="critic")
     critic_result, critic_attempt = _invoke(
-        configured_workforce_providers(config, stage="critic"),
-        prompt=_json(
-            {
-                "request_hash": _digest(request),
-                "proposed_action": candidate.action,
-                "work_unit": asdict(unit),
-                "gap_evidence": gap,
-                "duplicate_evidence": duplicate,
-                "contract": contract.to_dict(),
-                "compiled_prompt_hash": agent["hash"],
-                "compiler_template_hash": CONTRACTOR_PROMPT_TEMPLATE_HASH,
-            }
-        ),
+        critic_providers,
+        prompt=_critic_prompt(request, unit, candidate),
         schema=HIRING_CRITIC_SCHEMA,
         system=_CRITIC_SYSTEM,
         stage="hiring-critic",
@@ -1285,14 +1414,39 @@ def hire_contractor_for_gap(
     attempts = (hire_attempt,) if critic_attempt is None else (hire_attempt, critic_attempt)
     if critic_result is None or critic_attempt is None:
         return ContractorHiringOutcome(
-            "abstained", ("hiring_critic_unavailable",), contract=contract, attempts=attempts
+            "abstained",
+            ("hiring_critic_unavailable",),
+            contract=candidate.contract,
+            attempts=attempts,
         )
     critic = critic_result.value
     if critic.get("approved") is not True:
-        reasons = tuple(str(item) for item in critic.get("reason_codes", []) if str(item))
-        return ContractorHiringOutcome(
-            "rejected", reasons or ("hiring_critic_rejected",), contract=contract, attempts=attempts
+        repair = _repair_rejected_candidate(
+            request=request,
+            unit=unit,
+            contracts=contracts,
+            store=store,
+            config=config,
+            providers=providers,
+            critic_providers=critic_providers,
+            hiring_input=hiring_input,
+            candidate=candidate,
+            reason_codes=critic.get("reason_codes"),
+            attempts=attempts,
+            budget=budget,
+            staffing_context=staffing_context,
+            allow_existing_worker_amendment=allow_existing_worker_amendment,
+            invoker=invoker,
         )
+        if isinstance(repair, ContractorHiringOutcome):
+            return repair
+        candidate, critic, attempts = repair
+    gap = candidate.gap
+    duplicate = candidate.duplicate
+    contract = candidate.contract
+    agent = candidate.agent
+    workforce_contract = candidate.workforce_contract
+    critic_reasons = _bounded_reason_codes(critic.get("reason_codes"))
     compiled = compile_contractor(contract)
     receipts = [
         {
@@ -1316,7 +1470,7 @@ def hire_contractor_for_gap(
         "contract_evidence": contract_document,
         "critic_evidence": {
             "approved": True,
-            "reason_codes": critic.get("reason_codes", []),
+            "reason_codes": list(critic_reasons),
             "receipt": receipts[-1],
             "employment_contract": contract.to_dict(),
             "target_revision": (
