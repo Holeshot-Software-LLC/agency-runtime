@@ -460,6 +460,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7bd64fa` | 2026-07-31 | docs(roadmap): record bounded update merge gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-211](../roadmap/issue-AR-211-bound-immutable-commit-resolution.md) | null |
 | `e62d0ad` | 2026-07-31 | Merge pull request #207 from Holeshot-Software-LLC/codex/ar-211-bounded-commit-resolution | [AR-211](../roadmap/issue-AR-211-bound-immutable-commit-resolution.md) | null |
 | `df1579b` | 2026-07-31 | docs(roadmap): checkpoint verifier repair boundary | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-211](../roadmap/issue-AR-211-bound-immutable-commit-resolution.md), [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
+| `c31e715` | 2026-07-31 | fix(workforce): repair verifier-rejected recruiter proposals | [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md), [AR-213](../roadmap/issue-AR-213-reject-stale-preflight-tokens-before-plan-validation.md) | [detail](2026-07-31-c31e715-verifier-recruiter-repair.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
