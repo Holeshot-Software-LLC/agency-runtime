@@ -492,6 +492,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4db9c00` | 2026-08-01 | fix(hiring): converge verified contractor gaps | [AR-219](../roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md), [AR-220](../roadmap/issue-AR-220-converge-product-recruiter-evidence.md) | [detail](2026-08-01-4db9c00-converge-verified-contractor-gaps.md) |
 | `ff39761` | 2026-08-01 | Merge pull request #226 from Holeshot-Software-LLC/codex/ar-220-gap-hiring-convergence | [AR-219](../roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md), [AR-220](../roadmap/issue-AR-220-converge-product-recruiter-evidence.md), [AR-221](../roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md) | null |
 | `58cad67` | 2026-08-01 | docs(ar-221): record product execution boundary | [AR-219](../roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md), [AR-220](../roadmap/issue-AR-220-converge-product-recruiter-evidence.md), [AR-221](../roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md) | null |
+| `1771b45` | 2026-08-01 | docs(ar-222): record legacy work-unit test drift | [AR-222](../roadmap/issue-AR-222-reconcile-legacy-work-unit-integrity-tests.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
