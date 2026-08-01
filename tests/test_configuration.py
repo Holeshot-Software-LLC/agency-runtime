@@ -101,11 +101,11 @@ def test_state_accepts_only_empty_or_whitespace_yaml_document(
     assert path.read_bytes() == content
 
 
-def test_default_workforce_mode_funds_planner_recruiter_and_one_repair(tmp_path: Path) -> None:
+def test_default_workforce_mode_funds_one_repair_per_inference_stage(tmp_path: Path) -> None:
     workforce = load_config(tmp_path / "missing.yaml", reload=True).workforce
 
     assert workforce.mode == "fast"
-    assert workforce.fast_call_budget == 3
+    assert workforce.fast_call_budget == 4
 
 
 def test_explicit_fast_call_budget_remains_operator_owned(tmp_path: Path) -> None:
@@ -113,6 +113,19 @@ def test_explicit_fast_call_budget_remains_operator_owned(tmp_path: Path) -> Non
     _write(path, {"workforce": {"fast_call_budget": 2}})
 
     assert load_config(path, reload=True).workforce.fast_call_budget == 2
+
+
+def test_legacy_partial_balanced_budget_caps_omitted_fast_default(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    document = {"workforce": {"mode": "balanced", "balanced_call_budget": 3}}
+    _write(path, document)
+
+    loaded = load_config(path, reload=True).workforce
+
+    assert loaded.mode == "balanced"
+    assert loaded.fast_call_budget == 3
+    assert loaded.balanced_call_budget == 3
+    assert configuration.validate_config_document(document) == document
 
 
 def test_state_separates_redacted_persisted_and_effective_values(

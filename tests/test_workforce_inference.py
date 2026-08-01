@@ -1216,6 +1216,41 @@ def test_default_fast_mode_funds_recruiter_contract_repair_after_planning() -> N
     assert outcome.attempts[1].reason_code == "provider_response_contract_invalid"
 
 
+def test_default_fast_mode_funds_one_repair_for_each_inference_stage() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    invalid_plan = _compact_plan_document()
+    invalid_plan["units"].append(dict(invalid_plan["units"][0]))
+    invalid_nomination = _nomination_document()
+    del invalid_nomination["units"][0]["decision"]
+    responses = iter(
+        (
+            _result(invalid_plan),
+            _result(_compact_plan_document()),
+            _result(invalid_nomination),
+            _result(_nomination_document()),
+        )
+    )
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(mode="fast"),
+        context=_context(),
+        invoker=lambda *_args, **_kwargs: next(responses),
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 4
+    assert [(attempt.stage, attempt.status) for attempt in outcome.attempts] == [
+        ("planner", "rejected"),
+        ("planner", "applied"),
+        ("recruiter", "rejected"),
+        ("recruiter", "applied"),
+    ]
+    assert outcome.attempts[0].reason_code == "provider_response_contract_invalid"
+    assert outcome.attempts[2].reason_code == "provider_response_contract_invalid"
+
+
 def test_configured_inference_failure_is_loud_without_keyword_selection() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     outcome = plan_and_staff_workforce(

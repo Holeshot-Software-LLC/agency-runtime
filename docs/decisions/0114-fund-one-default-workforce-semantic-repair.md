@@ -1,16 +1,18 @@
 ---
 title: "Fund one default workforce semantic repair"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 tags: [routing, workforce, inference, configuration, budgets]
 related:
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
+  - docs/roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md
+  - docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
 id: ADR-0114
 type: decision
 deciders: [maintainers]

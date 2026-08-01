@@ -576,7 +576,7 @@ def test_generated_hook_timeout_covers_balanced_workforce_call_budget() -> None:
     assert handler["timeout"] == 125
 
 
-def test_generated_hook_timeout_covers_default_fast_repair_budget() -> None:
+def test_generated_hook_timeout_covers_default_fast_stage_repair_budget() -> None:
     cfg = AgencyConfig(
         providers=(
             ProviderEntry(
@@ -589,11 +589,11 @@ def test_generated_hook_timeout_covers_default_fast_repair_budget() -> None:
         ),
     )
 
-    assert _effective_judge_budget_seconds(cfg) == 90
+    assert _effective_judge_budget_seconds(cfg) == 120
     codex_files, _ = _bundle_files("codex", cfg)
     codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
     handler = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
-    assert handler["timeout"] == 95
+    assert handler["timeout"] == 125
 
 
 def test_codex_windows_hook_command_is_inert_powershell_argv(

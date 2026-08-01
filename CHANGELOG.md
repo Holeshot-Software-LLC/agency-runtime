@@ -61,6 +61,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Fresh fast-mode workforce configuration now funds one bounded correction in
+  both the planner and recruiter stages. A malformed response in each stage can
+  converge in four calls without deterministic staffing fallback; explicit
+  lower operator budgets remain unchanged, balanced-only legacy partial files
+  remain loadable, and generated hook timeouts follow the effective budget.
 - Contractor safety critics now receive the runtime-projected verified-gap
   codes and complete workforce snapshot used by hiring. Both the original and
   replacement critic can independently verify the gap while candidate claims

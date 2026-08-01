@@ -240,7 +240,7 @@ class WorkforceConfig:
     recruiter_model: str = ""
     hiring_model: str = ""
     critic_model: str = ""
-    fast_call_budget: int = 3
+    fast_call_budget: int = 4
     balanced_call_budget: int = 4
     strict_call_budget: int = 5
     hiring_call_budget: int = 4
@@ -506,7 +506,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             recruiter_model=str(workforce_raw.get("recruiter_model", "")).strip(),
             hiring_model=str(workforce_raw.get("hiring_model", "")).strip(),
             critic_model=str(workforce_raw.get("critic_model", "")).strip(),
-            fast_call_budget=int(workforce_raw.get("fast_call_budget", 3)),
+            fast_call_budget=int(workforce_raw.get("fast_call_budget", 4)),
             balanced_call_budget=int(workforce_raw.get("balanced_call_budget", 4)),
             strict_call_budget=int(workforce_raw.get("strict_call_budget", 5)),
             hiring_call_budget=int(workforce_raw.get("hiring_call_budget", 4)),
@@ -945,6 +945,19 @@ def _load_config_uncached(
                 if not isinstance(override, dict):
                     raise ValueError(f"{key} must be a mapping")
                 merged[key] = {**defaults_raw[key], **override}
+        workforce_override = file_raw.get("workforce")
+        if (
+            isinstance(workforce_override, dict)
+            and "fast_call_budget" not in workforce_override
+            and "balanced_call_budget" in workforce_override
+        ):
+            # Preserve a legacy partial balanced cap without rewriting the
+            # operator's persisted document. The fresh default applies only up
+            # to that explicit next-tier ceiling.
+            merged["workforce"]["fast_call_budget"] = min(
+                defaults_raw["workforce"]["fast_call_budget"],
+                workforce_override["balanced_call_budget"],
+            )
         cfg = _dict_to_config(merged, config_path=str(config_path))
 
     cfg = _apply_env_overrides(cfg, environ=environment)
