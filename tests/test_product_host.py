@@ -44,7 +44,9 @@ def _workspace_trust(workdir: str) -> dict[str, object]:
 def test_workspace_write_proof_is_owned_by_a_delegated_workspace_write_unit() -> None:
     wrapped, token = product_host._prompt_with_workspace_write_proof("Build the product.", "a" * 64)
 
-    assert "first delegated work unit with `mutation_scope=workspace_write`" in wrapped
+    assert "terminal `mutation_scope` field" in wrapped
+    assert "with `mutation_scope=workspace_write`" in wrapped
+    assert "If it is absent, create it" in wrapped
     assert "Read-only children and the non-working parent must not create it" in wrapped
     assert token in wrapped
 
@@ -56,18 +58,38 @@ def test_workspace_write_proof_is_owned_by_a_delegated_workspace_write_unit() ->
                 "artifact_kind": "analysis",
                 "lifecycle_phase": "discovery",
                 "authority": "review",
+                "mutation_scope": "read_only",
             },
             {
                 "ordinal": 2,
                 "artifact_kind": "implementation-change",
                 "lifecycle_phase": "implementation",
                 "authority": "modify",
+                "mutation_scope": "workspace_write",
             },
         ),
     )
     assert len(goals) == 2
     assert all(token in goal for goal in goals)
     assert all(".agency-runtime-workspace-write-proof" in goal for goal in goals)
+    assert goals[0].endswith("review authority and mutation_scope=read_only.")
+    assert goals[1].endswith("modify authority and mutation_scope=workspace_write.")
+
+    long_goals = workforce_work_units_from_descriptors(
+        wrapped + " bounded filler" * 1_000,
+        (
+            {
+                "ordinal": 1,
+                "artifact_kind": "implementation-change",
+                "lifecycle_phase": "implementation",
+                "authority": "modify",
+                "mutation_scope": "workspace_write",
+            },
+        ),
+    )
+    assert len(long_goals[0]) == 4_096
+    assert token in long_goals[0]
+    assert long_goals[0].endswith("modify authority and mutation_scope=workspace_write.")
 
 
 def _product_response() -> str:

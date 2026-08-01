@@ -1038,6 +1038,52 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="product-rollout-restores-stale-wait-ceiling",
+        invariant=(
+            "Product rollout evidence accepts the current bounded Codex wait contract without "
+            "weakening the activation canary."
+        ),
+        source_path="agency_runtime/core/canary_backends.py",
+        before="_CODEX_PRODUCT_MAX_WAIT_TIMEOUT_MS = 3_600_000",
+        after="_CODEX_PRODUCT_MAX_WAIT_TIMEOUT_MS = 600_000",
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_product_rollout_projects_exact_eight_unit_reuse_topology"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="workforce-goal-drops-verified-mutation-scope",
+        invariant=("The exact decoded child goal carries the verifier-accepted mutation scope."),
+        source_path="agency_runtime/core/workforce/routing_projection.py",
+        before="""                "authority": unit.authority,
+                "mutation_scope": unit.mutation_scope,
+            }
+            descriptors.append(descriptor)""",
+        after="""                "authority": unit.authority,
+                "mutation_scope": "read_only",
+            }
+            descriptors.append(descriptor)""",
+        test_node=(
+            "tests/test_ar214_context_delivery_authority.py::"
+            "test_product_prompt_preserves_exact_paths_through_ready_commit"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-write-proof-assigns-read-only-child",
+        invariant=("Only a delegated workspace-write child may create the product sentinel."),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before=(
+            '        "child with `mutation_scope=workspace_write` must check the relative file below "'
+        ),
+        after=(
+            '        "child with `mutation_scope=read_only` must check the relative file below "'
+        ),
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_workspace_write_proof_is_owned_by_a_delegated_workspace_write_unit"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-host-mislabels-hook-bypass-as-attended",
         invariant=(
             "Codex product trials record the supported one-invocation bypass without claiming "

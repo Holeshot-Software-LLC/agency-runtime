@@ -61,6 +61,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex product evidence now accepts the current bounded native `wait_agent`
+  timeout while leaving the activation canary's exact 60-second contract
+  unchanged. Current inferred work-unit goals carry their verified mutation
+  scope, reserve that suffix under bounded truncation, and make the delegated
+  workspace-write sentinel obligation explicit without giving the parent write
+  authority.
 - Dynamic contractors now bind external-mutation risk to the validated work
   unit instead of a model-authored Boolean. Ordinary repository and isolated-
   workspace writes remain autonomous, explicit safety prohibitions no longer

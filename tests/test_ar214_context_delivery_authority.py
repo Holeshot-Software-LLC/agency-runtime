@@ -20,6 +20,10 @@ from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.preflight_failure import PreflightInvariantError
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.structured_provider import StructuredProviderResult
+from agency_runtime.core.unit_assignment import work_unit_goal_hash, work_unit_id_from_text
+from agency_runtime.core.workforce.routing_projection import (
+    workforce_work_units_from_descriptors,
+)
 from tests.runtime_support import write_provider_config
 
 _OUTCOMES = (
@@ -236,11 +240,12 @@ def test_product_prompt_preserves_exact_paths_through_ready_commit(
     )
     session_id = "ar214-repaired-session"
     trace_id = "ar214-repaired-trace"
+    executed_prompt = _executed_product_prompt("ar214-repaired-fixture")
     result = run_preflight(
         configured_store,
         session_id=session_id,
         trace_id=trace_id,
-        user_message=_executed_product_prompt("ar214-repaired-fixture"),
+        user_message=executed_prompt,
         host="codex",
         capability_receipt=_capabilities(session_id, trace_id),
     )
@@ -262,6 +267,16 @@ def test_product_prompt_preserves_exact_paths_through_ready_commit(
         connection.close()
     scope = deserialize_codex_native_plan_scope(row["scope_payload"])
     assert scope.mutation_scope.mode == "workspace_write"
+    goals = workforce_work_units_from_descriptors(
+        executed_prompt,
+        result.routing["workforce_unit_descriptors"],
+    )
+    implementation_goal = next(
+        goal for goal in goals if work_unit_id_from_text(goal) == implementation["work_unit_id"]
+    )
+    assert implementation_goal.endswith("modify authority and mutation_scope=workspace_write.")
+    assert work_unit_goal_hash(implementation_goal) == scope.goal_hash
+    assert ".agency-runtime-workspace-write-proof" in implementation_goal
     assert scope.mutation_scope.path_prefixes == (
         ".agency-runtime-workspace-write-proof",
         "README",

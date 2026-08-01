@@ -44,6 +44,8 @@ _CODEX_ROLLOUT_CONTRACTS = frozenset({"canary", "product"})
 _CODEX_PRODUCT_COLLABORATION_SCHEMA = "agency.codex-product-collaboration.v1"
 _CODEX_PRODUCT_MAX_SPAWNS = 16
 _CODEX_PRODUCT_MAX_WAITS = 64
+# Current Codex wait_agent schema ceiling; the activation canary separately requires 60 seconds.
+_CODEX_PRODUCT_MAX_WAIT_TIMEOUT_MS = 3_600_000
 CODEX_COLLABORATION_DIAGNOSTIC_SCHEMA = "agency.codex-collaboration-diagnostic.v1"
 CODEX_COLLABORATION_DIAGNOSTIC_REASONS = frozenset(
     {
@@ -1003,7 +1005,7 @@ def _codex_product_wait_counts(
             and (
                 not isinstance(timeout_ms, int)
                 or isinstance(timeout_ms, bool)
-                or not 1 <= timeout_ms <= 600_000
+                or not 1 <= timeout_ms <= _CODEX_PRODUCT_MAX_WAIT_TIMEOUT_MS
             )
         ):
             raise ValueError("Codex product wait arguments exceeded the bounded contract")

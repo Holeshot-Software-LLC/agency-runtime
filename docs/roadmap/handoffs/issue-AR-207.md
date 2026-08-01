@@ -18,6 +18,7 @@ related:
   - docs/roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md
   - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
+  - docs/roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md
   - docs/analysis/2026-07-31-ar-212-readme-story-evidence.html
   - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
@@ -40,9 +41,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-220-gap-hiring-convergence
-evidence_commit: 5c45f154e720f1c91d2fa7c297c804cbd9c26d0c
-minimum_ledger_commit: 458b7e5ea252a56fe97f1e6184f24d197af5dea6
+branch: codex/ar-221-product-execution-boundary
+evidence_commit: adad73292ca2d741bf242f4da629bf9057352376
+minimum_ledger_commit: e04954a6c0d0e451a23d980c872165d9dca84b6b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -52,68 +53,73 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 224 merged the contractor-risk repair as exact `5c45f154`; installed
-  package `0.1.0+g5c45f154e720` reports that full immutable source revision.
-- Default install selected exactly Codex, ZCode, and dashboard; all completed
-  and the dashboard is active and reachable.
-- The merged gate passed two reviews, focused 81, Python 654/6, dashboard
-  110/110, routing 39/39, 78/78 mutations, documentation, Ruff, and diff checks.
-- Activation session `019fbdbb-2609-7090-911c-9e8497f91009`, trace
-  `019fbdbb-2f98-7a10-9221-0872293ebc4e`, and run
-  `2d0e25bb-6103-4ee7-bdcf-3228da2818aa` pass with one inferred
-  `code-reviewer`, real child, valid first header, and zero corrections.
-- Trial `ar219-5c45f15-readme-01` is consumed and terminal `NO-GO`: planner and
-  recruiter responses applied and a verified gap reached dynamic hiring, then
-  its critic rejected the contractor path; atomic preflight published no route,
-  specialist, header, write, or artifact.
-- AR-220 now reproduces the exact product request and three live critic reason
-  classes against a representative typed gap. The repair projects bounded
-  verifier coverage into both critics and gives one inference-authored
-  replacement explicit relationship, acceptance, and independent-gap guidance.
+- PR 226 merged exact `ff39761`; package `0.1.0+gff39761c4856` is installed.
+- Default Codex, ZCode, and dashboard installation passes; the dashboard is
+  active and reachable. Autonomous activation passes with one inferred
+  `code-reviewer`, one real child, a valid first header, and zero corrections.
+- Trial `ar220-ff39761-readme-01` accepts seven inference-authored units and
+  completes all seven native children, grants, delegations, and worker runs.
+- The product host rejects the current Codex wait arguments and the isolated
+  workspace stays empty. AR-221 freezes the next package around only those two
+  boundaries.
+- AR-221 now repairs both boundaries locally: current waits project, exact
+  child goals carry verified scope, and the sentinel obligation is
+  self-assigning without granting the parent write authority.
+- The exact AR-221 recovery head passes its complete named local gate and is
+  ready for the authorized PR, merge, and one fresh immutable-build proof.
 
 ## completed-evidence
 
-- Earlier exact builds `f8e607d` and `386afca` preserve the multi-unit topology
-  and false high-risk hiring boundaries; neither may be rerun.
-- PR 224 was mergeable with zero review threads. No Codex review arrived in the
-  bounded window; hosted checks were neither relied on nor retried.
-- Activation used `autonomous_bypass`, changed no persistent trust, completed
-  one grant/load/delegation/worker/finalization chain, and accepted its header.
-- Product session `019fbdbd-94a8-7812-a0df-37a28369eeeb`, trace
-  `019fbdbd-9553-7fb3-8fbd-0b7d9755443f`, run
-  `03ac1e0c-39b4-4212-ada3-a17bfa911070`, and failure
-  `82513b21-6dd5-4b64-9adb-27aebede349d` retain the terminal boundary.
-- Terminal hiring-critic reasons are `relationships_not_coherent`,
-  `acceptance_evidence_insufficient`, and `gap_not_independently_proven`;
-  staffing is `no_safe_sufficient_team` plus `recruiter_abstained`.
-- Product cardinalities are one trace/run/failure and zero execution rows. All
-  header fields are absent, correction count is zero, trust/bypass pass without
-  persistent changes, validation is skipped, and the exact workspace is empty.
-- The hiring file passes 37/37 checks; all three new decision mutations are
-  killed with unchanged source. An optional broader slice reconfirmed the known
-  independent AR-213 stale-token defect after 164 passes and one skip.
+- AR-220 passes two reviews, focused 37, Python 656/6, dashboard 110/110,
+  routing 39/39, and decision conformance 81/81 with unchanged source.
+- Activation session `019fbe07-84b8-7bd3-b5d9-a6fe2ff7b713`, trace
+  `019fbe07-8d3a-7870-ab40-f7e257ac5a67`, run
+  `eb8c605e-11ad-4dfb-aa9b-fa9222f5ab09`, and route
+  `6b4506f8-7715-47f6-80fe-8a9b75b7488d` pass under autonomous bypass without
+  persistent trust changes.
+- Product session `019fbe0a-4e75-7bb0-a1e2-1a2a54e2415a`, trace
+  `019fbe0a-4f10-76d1-ba75-9e8615706dd0`, run
+  `28c98413-c312-41fa-be2d-33479b226090`, route
+  `6e4e32fe-92a2-41f5-b0d3-499d4e9b64a9`, and finalization
+  `8ecffcc4-7d17-40e9-a43b-1cf5ca039d2d` retain the seven-unit boundary.
+- The exact diagnostic is `product_wait_arguments_invalid`: seven spawns,
+  seven waits, fourteen outputs, seven child starts, twenty-three messages, and
+  zero unexpected items. Correction count is zero, but no first header, write,
+  artifact, or validation is accepted.
+- Unit `unit-34912a488e` is persisted as `workspace_write`; its exact reconstructed
+  goal hash matches Store evidence, but its child-visible goal omits that scope.
+- No hiring case exists for this trace. Existing contractor versions executed;
+  AR-220's repaired four-call hiring path remains live-unproven.
+- Two AR-221 reviews and 127 focused tests pass. Three new decision mutations
+  are killed with zero survivors or invalid results and unchanged source.
+- The named Python production spine passes 656 tests with 6 skipped. Dashboard
+  UI passes 110 tests; 623 Markdown documents pass; repo-wide Ruff lint and
+  format pass; routing passes every threshold; and decision conformance kills
+  84 of 84 mutations with zero survivors or invalid results and unchanged
+  source.
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `5c45f154` proves installation and
-activation and removes the false risk gate, but gap hiring cannot pass its
-independent critic. AR-220 owns this first boundary.
+The README main story remains NO-GO. Exact `ff39761` proves installation,
+activation, inference-authored seven-unit selection, and real child execution.
+AR-221 has repaired the stale product wait ceiling and missing child-visible
+mutation scope, and its complete named local gate is green. Only the authorized
+merge, exact reinstall, and one fresh immutable-build live proof remain before
+the README story can be accepted.
 
 ## same-task-continuity
 
-Keep inference authoritative and the parent non-generalist. Both planner and
-recruiter retain exactly one inference-authored repair; local code may reject
-but may not fill either response. Do not rerun consumed activation or trial
-evidence, run more provider comparisons before the local gate, mutate private
-trust state, label bypass as trust, dispatch hosted Actions, or touch the
-owner's two untracked files.
+Keep inference authoritative and the parent non-working. Deterministic code may
+carry verified scope and validate host evidence but may not select specialists.
+Do not rerun consumed evidence, broaden into AR-213, mutate persistent trust,
+dispatch hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Finish the second bounded review and named local fast gate on one exact head.
-2. Checkpoint and merge the repair without expanding into AR-213 or hosted CI.
-3. Install the exact merge, spend one activation and at most one product trial,
-   then update the local evidence page and OpenClaw handoff from real results.
+1. Open and merge the exact green head without using hosted Actions.
+2. Install that immutable revision for Codex, ZCode, and dashboard.
+3. Spend one activation plus at most one fresh product trial, then update the
+   local evidence page and OpenClaw handoff from accepted real evidence.
 
 ## verification
 
@@ -139,7 +145,7 @@ git diff --check
 - Only Codex, ZCode, and dashboard are in machine scope.
 - One live product trial per exact installed build; any correction is failure.
 - Exact builds `e62d0adc`, `1694d6e`, `d6ba36a`, `9c2e9f8`, `8cfd975`,
-  `f8e607d`, `386afca`, and `5c45f154` consumed governed live evidence; none
-  may be rerun.
+  `f8e607d`, `386afca`, `5c45f154`, and `ff39761` consumed governed live
+  evidence; none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

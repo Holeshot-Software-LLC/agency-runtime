@@ -123,41 +123,55 @@ def project_workforce_unit_descriptors(value: Any) -> list[dict[str, Any]] | Non
         return None
     result: list[dict[str, Any]] = []
     for ordinal, item in enumerate(value, start=1):
-        if not isinstance(item, Mapping) or set(item) != {
+        legacy_fields = {
             "ordinal",
             "artifact_kind",
             "lifecycle_phase",
             "authority",
-        }:
+        }
+        if not isinstance(item, Mapping) or set(item) not in (
+            legacy_fields,
+            {*legacy_fields, "mutation_scope"},
+        ):
             return None
         artifact = str(item["artifact_kind"]).strip().casefold()
         lifecycle = str(item["lifecycle_phase"]).strip().casefold()
         authority = str(item["authority"]).strip().casefold()
+        mutation_scope = (
+            str(item["mutation_scope"]).strip().casefold() if "mutation_scope" in item else None
+        )
         if (
             item["ordinal"] != ordinal
             or artifact not in _ARTIFACTS
             or lifecycle not in _LIFECYCLES
             or authority not in _AUTHORITIES
+            or (mutation_scope is not None and mutation_scope not in MUTATION_SCOPES)
         ):
             return None
-        result.append(
-            {
-                "ordinal": ordinal,
-                "artifact_kind": artifact,
-                "lifecycle_phase": lifecycle,
-                "authority": authority,
-            }
-        )
+        descriptor = {
+            "ordinal": ordinal,
+            "artifact_kind": artifact,
+            "lifecycle_phase": lifecycle,
+            "authority": authority,
+        }
+        if mutation_scope is not None:
+            descriptor["mutation_scope"] = mutation_scope
+        result.append(descriptor)
     return result
 
 
 def _goal(request: str, descriptor: Mapping[str, Any]) -> str:
-    text = (
-        f"Request: {' '.join(request.split())}. "
-        f"Work unit {descriptor['ordinal']}: produce {descriptor['artifact_kind']} "
-        f"during {descriptor['lifecycle_phase']} with {descriptor['authority']} authority."
+    mutation_scope = str(descriptor.get("mutation_scope") or "").strip().casefold()
+    scope_clause = f" and mutation_scope={mutation_scope}" if mutation_scope else ""
+    suffix = (
+        f". Work unit {descriptor['ordinal']}: produce {descriptor['artifact_kind']} "
+        f"during {descriptor['lifecycle_phase']} with {descriptor['authority']} authority"
+        f"{scope_clause}."
     )
-    return " ".join(text.split())[:MAX_WORK_UNIT_CHARS]
+    prefix = "Request: "
+    request_budget = max(0, MAX_WORK_UNIT_CHARS - len(prefix) - len(suffix))
+    bounded_request = " ".join(request.split())[:request_budget].rstrip()
+    return f"{prefix}{bounded_request}{suffix}"
 
 
 def workforce_work_units_from_descriptors(
@@ -265,6 +279,7 @@ def project_workforce_routing(
                 "artifact_kind": unit.artifact_kind,
                 "lifecycle_phase": unit.lifecycle_phase,
                 "authority": unit.authority,
+                "mutation_scope": unit.mutation_scope,
             }
             descriptors.append(descriptor)
             goal = _goal(request, descriptor)

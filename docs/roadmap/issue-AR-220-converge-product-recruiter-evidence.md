@@ -16,6 +16,7 @@ related:
   - tests/test_workforce_dynamic_hiring.py
   - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
   - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
+  - docs/roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/worklog/README.md
 supersedes: []
@@ -26,7 +27,7 @@ issue_id: AR-220
 priority: p0
 tracker_url: pending authorization
 depends_on: [AR-218]
-blocks: [AR-203, AR-204, AR-219]
+blocks: [AR-203, AR-204, AR-219, AR-221]
 ---
 
 # AR-220: Make product gap hiring evidence converge
@@ -74,6 +75,17 @@ coverage, and reason-family guidance while inference still authors the entire
 specialist contract. The hiring file is 37/37 green and three new curated
 mutations are independently killed with unchanged source.
 
+PR 226 merged the repair as exact
+`ff39761c48564f1ace92d346cbe45df64fb86114`. Two bounded reviews, 37 focused
+tests, the 656-test named Python spine with six skips, all 110 dashboard tests,
+all 39 routing gates, and all 81 decision mutations pass with zero survivors or
+invalid cases and unchanged source. Default installation and autonomous
+activation pass. Trial `ar220-ff39761-readme-01` accepts and executes seven
+units, but no `agent_hiring_cases` row exists: it selected two existing
+contractor versions and did not exercise the repaired four-call path. AR-220 is
+locally proven but remains live-unproven; AR-221 owns the later wait and empty
+workspace failures.
+
 ## Approach
 
 1. Reproduce the exact product request and three-class hiring-critic rejection
@@ -108,7 +120,7 @@ authorization.
   gaps, unsafe authority, and impossible teams still abstain atomically.
 - [x] Curated mutations independently reintroduce each live defect and every
   mutation is killed with unchanged source.
-- [ ] Two bounded review passes, focused tests, and the named local fast gate
+- [x] Two bounded review passes, focused tests, and the named local fast gate
   pass on one exact head.
 - [ ] One new exact installed build passes activation and at most one fresh
   product trial with a valid first header, zero corrections, real specialist
