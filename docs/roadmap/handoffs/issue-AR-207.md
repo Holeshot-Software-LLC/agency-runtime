@@ -42,8 +42,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-221-product-execution-boundary
-evidence_commit: ff39761c48564f1ace92d346cbe45df64fb86114
-minimum_ledger_commit: ab03ce8f74f21224b03f0bb2448a484607928ae7
+evidence_commit: adad73292ca2d741bf242f4da629bf9057352376
+minimum_ledger_commit: e04954a6c0d0e451a23d980c872165d9dca84b6b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---

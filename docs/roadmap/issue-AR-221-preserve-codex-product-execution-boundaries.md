@@ -78,8 +78,9 @@ all product artifacts are absent, so validation is correctly skipped. No hiring
 case exists for this trace: the two contractor identities were existing roster
 versions, not new hires, and AR-220's four-call repair remains live-unproven.
 
-The bounded repair accepts product waits through 3,600,000 milliseconds while
-leaving the activation canary unchanged. Current descriptors and exact goals
+Exact local commit `adad73292ca2d741bf242f4da629bf9057352376` accepts product
+waits through 3,600,000 milliseconds while leaving the activation canary
+unchanged. Current descriptors and exact goals
 now carry the verifier-accepted mutation scope. Goal construction reserves the
 scope suffix under the 4,096-character ceiling, and every workspace-write child
 checks the prompt-bound sentinel before its first mutation while other actors
