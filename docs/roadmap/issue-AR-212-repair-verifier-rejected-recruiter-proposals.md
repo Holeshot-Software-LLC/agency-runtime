@@ -9,6 +9,7 @@ related:
   - README.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -23,7 +24,7 @@ issue_id: AR-212
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/208
 depends_on: [AR-207]
-blocks: [AR-203, AR-204]
+blocks: [AR-203, AR-204, AR-214]
 ---
 
 # AR-212: Repair verifier-rejected recruiter proposals once
@@ -84,6 +85,21 @@ passed, and decision-conformance passed in 760.6 seconds with a green baseline,
 all 73 curated mutations killed, zero invalid or surviving mutations, and the
 source unchanged.
 
+PR 210 merged the reviewed repair as exact revision
+`1694d6e07e04fb1c1f19f65bf2af381542b8079f`. The official VCS package is
+installed as `0.1.0+g1694d6e07e04`; the bare install selected only Codex and
+ZCode plus the default dashboard. ZCode is current, the dashboard is active and
+reachable, and Codex activation passed through the supported autonomous bypass
+without changing persistent trust. Activation session
+`019fbb30-eb27-7320-888c-9f86014be9ba`, trace
+`019fbb30-f3db-7193-b90f-31bef41efd1c`, and run
+`a3bb4d57-7b18-4827-afae-48fb6be298f8` prove an inference-selected
+`code-reviewer`, one native delegation, accepted finalization, a first-pass
+valid header, and zero corrections. The one governed product trial is now
+consumed and terminal `NO-GO`: recruiter verification converged, but exact Codex
+context delivery failed before the route could commit. AR-214 owns that new,
+narrower boundary.
+
 One broader compatibility run exposed an unrelated stale preflight-token
 failure in untouched native plan-scope code. It is isolated as
 [AR-213](issue-AR-213-reject-stale-preflight-tokens-before-plan-validation.md)
@@ -126,5 +142,7 @@ acceptance.
 - [x] Repair exhaustion preserves the terminal verifier's exact bounded
   staffing codes without leaking them into a later non-verifier failure.
 - [x] The named local gate passes before review and merge.
-- [ ] One new exact build passes supported-bypass activation and at most one
-  governed product trial with zero corrections and proven workspace write.
+- [x] One new exact build passes supported-bypass activation and consumes at
+  most one governed product trial without correction or rerun.
+- [ ] AR-214 proves exact Codex context delivery, specialist delegation, and
+  workspace write on a fresh build.

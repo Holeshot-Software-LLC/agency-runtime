@@ -25,6 +25,7 @@ related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
+  - docs/roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes:
@@ -36,7 +37,7 @@ epic: product
 issue_id: AR-204
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
-depends_on: [AR-207, AR-209, AR-212]
+depends_on: [AR-207, AR-209, AR-212, AR-214]
 blocks: [AR-205]
 ---
 
