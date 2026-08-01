@@ -46,7 +46,9 @@ candidate resolves `207b150` with `error: null`, `status: different_target`,
 and `mutation_performed: false`; its editable checkout correctly refuses to
 claim an installed-tool mutation command. Focused update and CLI tests pass 66
 cases with one skip; Ruff, formatting, diff checks, and validation of 596
-Markdown documents also pass.
+Markdown documents also pass. The exact local merge spine passes 639
+warning-strict Python tests with six skips, 110 dashboard tests, and every
+isolated routing gate; Ruff remains green across 604 files.
 
 ## Approach
 

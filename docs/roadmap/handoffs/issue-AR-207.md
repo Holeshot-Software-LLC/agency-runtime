@@ -130,7 +130,7 @@ Exact build `584b949` is consumed: activation passed, but its product trial is
 terminal `NO-GO`. PR 204 merged AR-209's exact-local-green repair as `207b150`.
 Its canonical upgrade plan is blocked because the installed updater overreads
 the large private merge response. AR-211's bounded pagination repair is
-focused-green; review, merge, and bootstrap exact install remain before live proof.
+exact-local-green; review, merge, and bootstrap install remain before live proof.
 
 ## same-task-continuity
 
