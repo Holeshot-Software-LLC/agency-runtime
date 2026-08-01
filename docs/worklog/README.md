@@ -466,6 +466,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `81b442a` | 2026-07-31 | docs(roadmap): record reviewed verifier evidence gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
 | `1694d6e` | 2026-07-31 | Merge pull request #210 from Holeshot-Software-LLC/codex/ar-212-repair-recruiter-verification | [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
 | `c5c8d2e` | 2026-07-31 | docs(roadmap): checkpoint merged activation proof | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
+| `b3513f3` | 2026-07-31 | docs(roadmap): record context-delivery product failure | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md), [AR-214](../roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
