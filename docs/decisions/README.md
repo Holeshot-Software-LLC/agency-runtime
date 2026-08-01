@@ -98,6 +98,7 @@ Status meanings:
 | [ADR-0115](0115-aggregate-bounded-recruiter-repair-failures.md) | Aggregate bounded recruiter repair failures | Accepted |
 | [ADR-0118](0118-require-inference-owned-staffing.md) | Require inference-owned specialist staffing | Accepted |
 | [ADR-0121](0121-gate-deterministic-recall-without-selection-authority.md) | Gate deterministic recall without selection authority | Accepted |
+| [ADR-0129](0129-repair-verifier-rejected-recruiter-proposals-once.md) | Repair verifier-rejected recruiter proposals once | Accepted |
 | [ADR-0122](0122-use-one-agency-native-resident-steward.md) | Use one Agency-native resident steward | Accepted |
 | [ADR-0123](0123-use-general-preflight-ceiling-for-persistent-parents.md) | Use the general preflight ceiling for persistent native parents | Accepted |
 
