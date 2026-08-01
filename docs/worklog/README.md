@@ -458,6 +458,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a9a332b` | 2026-07-31 | fix(update): bound immutable commit responses | [AR-211](../roadmap/issue-AR-211-bound-immutable-commit-resolution.md) | null |
 | `8d51553` | 2026-07-31 | docs(roadmap): checkpoint bounded update resolution | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-211](../roadmap/issue-AR-211-bound-immutable-commit-resolution.md) | null |
 | `7bd64fa` | 2026-07-31 | docs(roadmap): record bounded update merge gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-211](../roadmap/issue-AR-211-bound-immutable-commit-resolution.md) | null |
+| `e62d0ad` | 2026-07-31 | Merge pull request #207 from Holeshot-Software-LLC/codex/ar-211-bounded-commit-resolution | [AR-211](../roadmap/issue-AR-211-bound-immutable-commit-resolution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
