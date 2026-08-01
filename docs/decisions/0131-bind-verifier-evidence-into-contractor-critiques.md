@@ -7,6 +7,7 @@ updated: 2026-08-01
 tags: [inference, hiring, contractor, evidence, security]
 related:
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
+  - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
   - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
@@ -33,32 +34,45 @@ contract, and fixed compiler hashes. Its instruction correctly says that this
 material is untrusted, but it has no independent source with which to confirm
 the gap or nearest-worker comparison.
 
-Exact product evidence shows both critics can therefore reject an otherwise
-bounded proposal because its gap proof is self-asserted. Retrying, weakening
-the critic, or declaring candidate evidence authoritative would all hide the
-missing evidence boundary.
+Exact product evidence first showed critics rejecting an otherwise bounded
+proposal because its gap proof was self-asserted. A later product trial proved
+that reason codes plus the complete workforce are still insufficient when the
+critic must reconstruct typed requirements, live eligibility exclusions, and
+uncovered coverage from raw contracts. Retrying, weakening the critic, or
+declaring candidate evidence authoritative would all hide the missing evidence
+boundary.
 
 ## Decision
 
 1. Every contractor critic receives the same runtime-projected verified-gap
    reason codes and complete workforce snapshot supplied to candidate
    generation.
-2. The critic treats those fields as data, not instructions, and independently
-   compares the work unit and proposed nearest-worker evidence against the
-   complete snapshot.
-3. Candidate-authored gap, duplication, and contract claims remain untrusted.
-   Runtime code neither edits the proposal nor tells the critic to approve it.
-4. The raw user request remains absent from the critic prompt; only its digest
-   is retained for correlation.
-5. The initial and replacement critic receive identical evidence authority.
+2. The projection also carries typed work-unit requirements, eligible coverage,
+   uncovered requirements, and bounded per-worker coverage plus live
+   ineligibility reasons from the exact staffing context. Missing context is
+   labeled unknown and never interpreted as eligibility.
+3. This projection is evidence only. Deterministic code may order and bound
+   rows for transport, but it does not rank workers, select a specialist, edit
+   a contract, or tell the critic to approve it.
+4. A single inference-authored replacement receives the original verified-gap
+   projection and bounded critic reason families so it can remove speculative
+   relationships, bind evaluations to acceptance checks, and make the
+   nearest-worker insufficiency concrete.
+5. Candidate-authored gap, duplication, and contract claims remain untrusted.
+   The raw user request remains absent from critic prompts; only its digest is
+   retained for correlation.
+6. The initial and replacement critic receive identical evidence authority.
    The four-call ceiling and second-rejection terminal boundary remain intact.
 
 ## Consequences
 
 - The independent critic can verify a real workforce gap instead of being
   asked to trust the candidate that would benefit from approval.
+- A replacement remains inference-designed but receives enough typed evidence
+  to answer relationship, acceptance, and independent-gap findings once.
 - Critic prompts become larger because they include the complete bounded
-  workforce projection already used by the hiring analyst.
+  workforce projection already used by the hiring analyst plus bounded typed
+  coverage rows.
 - A worker that actually covers the unit remains visible to the critic, while
   disabled-worker and deterministic duplicate checks still fail before commit.
 - Live success still requires a fresh exact build; the consumed failed trial
@@ -74,4 +88,3 @@ missing evidence boundary.
   content is untrusted and the work unit already carries the bounded outcome.
 - **Keep retrying candidates.** Rejected because it is unbounded and does not
   repair the missing evidence source.
-
