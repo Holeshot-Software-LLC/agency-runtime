@@ -337,6 +337,7 @@ def _isolated_delegation_context(
             else ""
         )
         dependencies = ",".join(item.get("dependencies", ())) or "none"
+        mutation_scope = str(item.get("mutation_scope") or "read_only")
         goal = str(item["goal"])
         goal_field = "goal"
         if shared_goal_prefix:
@@ -347,6 +348,7 @@ def _isolated_delegation_context(
         lines.append(
             f"- unit={work_unit_id}; agent={item['recommended_agent']}; "
             f"strength={item['delegation_strength']}; depends_on={dependencies}"
+            f"; mutation_scope={mutation_scope}"
             f"{native_label}; {goal_field}={json.dumps(goal, ensure_ascii=False)}"
         )
     lines.append(native_delegation_instruction(normalized_host))

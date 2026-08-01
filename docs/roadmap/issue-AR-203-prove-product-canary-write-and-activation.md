@@ -10,6 +10,7 @@ related:
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
+  - docs/decisions/0133-treat-product-specialist-loads-as-turn-scoped.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md

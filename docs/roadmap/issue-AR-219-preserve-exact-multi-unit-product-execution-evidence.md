@@ -20,6 +20,7 @@ related:
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
+  - docs/decisions/0133-treat-product-specialist-loads-as-turn-scoped.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -87,6 +88,24 @@ header is absent, correction count is zero, workspace-write proof is missing,
 artifact validation is skipped, and the workspace contains no files. This exact
 build and trial must not be rerun.
 
+The current repair branch now treats a specialist load as turn-scoped by slug
+and rejects reuse unless every correlated unit grant has the same immutable
+version and prompt hash. It preserves the first exact product-projector failure
+as an allowlisted content-free code without masking a more basic missing-spawn
+or missing-wait diagnosis. Parent plan rows include verified mutation scope;
+the first delegated `workspace_write` child owns the prompt-bound sentinel; and
+each opaque child is told explicitly to execute its decrypted native message as
+the exact work-unit goal.
+
+Both bounded review passes are complete. The focused suite passes 102 tests.
+The named Python spine passes 643 tests with six skips, the dashboard passes all
+110 tests, all 39 routing gates pass, documentation and Ruff validation are
+clean, and the exact changed-source decision slice kills 22/22 mutations with
+zero survivors or invalid results and `source_unchanged=true`. The full
+73-mutation process completed after its outer shell deadline, but its terminal
+JSON was not retained; it is not claimed as a fresh exact-head pass. No new live
+activation or product trial has been consumed.
+
 ## Approach
 
 1. Reproduce the captured content-free eight-spawn/eight-wait shape locally,
@@ -114,16 +133,16 @@ workspace sentinel before artifact validation.
 
 ## Acceptance
 
-- [ ] A focused fixture reproduces this exact multi-unit topology and identifies
+- [x] A focused fixture reproduces this exact multi-unit topology and identifies
   the first rejected invariant without retaining prompts or child responses.
-- [ ] Eight distinct units with seven unique specialists can prove eight exact
+- [x] Eight distinct units with seven unique specialists can prove eight exact
   activations, delegations, and workers without requiring eight duplicate
   specialist loads.
-- [ ] Invalid native topology and output shapes remain content-free and
+- [x] Invalid native topology and output shapes remain content-free and
   fail-closed with explicit bounded reason codes.
 - [ ] Workspace-write units perform real writes only in the exact isolated
   workspace and the model-authored sentinel is independently verified.
-- [ ] The first response header is built from accepted Store evidence and any
+- [x] The first response header is built from accepted Store evidence and any
   correction remains terminal failure.
 - [ ] Focused checks, at most two review passes, and the named local fast gate
   pass on one exact head.

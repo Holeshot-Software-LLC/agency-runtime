@@ -55,6 +55,29 @@ CODEX_COLLABORATION_DIAGNOSTIC_REASONS = frozenset(
         "native_tool_output_missing",
         "native_child_start_missing",
         "native_collaboration_topology_invalid",
+        "product_parent_thread_missing",
+        "product_rollout_invalid",
+        "product_call_identity_invalid",
+        "product_tool_output_duplicate",
+        "product_tool_output_invalid",
+        "product_spawn_arguments_invalid",
+        "product_spawn_task_invalid",
+        "product_spawn_output_invalid",
+        "product_child_start_invalid",
+        "product_child_path_invalid",
+        "product_child_completion_missing",
+        "product_child_failed",
+        "product_child_delivery_invalid",
+        "product_child_work_unit_mismatch",
+        "product_wait_arguments_invalid",
+        "product_wait_output_invalid",
+        "product_final_wait_missing",
+        "product_spawn_cardinality_invalid",
+        "product_wait_cardinality_invalid",
+        "product_call_output_mismatch",
+        "product_child_identity_duplicate",
+        "product_stdout_projection_invalid",
+        "product_stdout_child_mismatch",
     }
 )
 _CODEX_COLLABORATION_DIAGNOSTIC_COUNT_MAX = _CODEX_ROLLOUT_MAX_LINES
@@ -64,6 +87,60 @@ _CODEX_COLLABORATION_FAILURE_REASON_BY_DIAGNOSTIC = {
     "native_tool_output_missing": "codex_native_tool_output_missing",
     "native_child_start_missing": "codex_native_child_start_missing",
 }
+
+_CODEX_PRODUCT_TOPOLOGY_REASON_BY_MESSAGE = {
+    "Codex product stdout omitted its parent thread": "product_parent_thread_missing",
+    "invalid Codex product collaboration identity": "product_call_identity_invalid",
+    "duplicate Codex product collaboration output": "product_tool_output_duplicate",
+    "Codex product spawn arguments exceeded the exact contract": (
+        "product_spawn_arguments_invalid"
+    ),
+    "Codex product spawn task name was invalid": "product_spawn_task_invalid",
+    "Codex product spawn output did not match its native task": "product_spawn_output_invalid",
+    "Codex product spawn did not identify one native child start": "product_child_start_invalid",
+    "Codex product child path did not match its native task": "product_child_path_invalid",
+    "Codex product child did not prove one completion": "product_child_completion_missing",
+    "Codex product child did not complete successfully": "product_child_failed",
+    "Codex product child task did not match its delivered work unit": (
+        "product_child_work_unit_mismatch"
+    ),
+    "Codex product wait arguments exceeded the bounded contract": (
+        "product_wait_arguments_invalid"
+    ),
+    "Codex product wait output was invalid": "product_wait_output_invalid",
+    "Codex product parent did not complete a wait after its final spawn": (
+        "product_final_wait_missing"
+    ),
+    "Codex product spawn cardinality was invalid": "product_spawn_cardinality_invalid",
+    "Codex product wait cardinality was invalid": "product_wait_cardinality_invalid",
+    "Codex product collaboration outputs did not match its calls": ("product_call_output_mismatch"),
+    "Codex product children were not distinct": "product_child_identity_duplicate",
+    "Codex product stdout contradicted its persisted rollout": (
+        "product_stdout_projection_invalid"
+    ),
+    "Codex product stdout identified a different child": "product_stdout_child_mismatch",
+}
+
+
+def _codex_product_topology_reason(exc: BaseException) -> str:
+    """Map one private validator exception to an allowlisted content-free invariant."""
+
+    message = str(exc)
+    exact = _CODEX_PRODUCT_TOPOLOGY_REASON_BY_MESSAGE.get(message)
+    if exact is not None:
+        return exact
+    prefix_reasons = (
+        ("Codex product spawn_agent arguments", "product_spawn_arguments_invalid"),
+        ("Codex product wait_agent arguments", "product_wait_arguments_invalid"),
+        ("Codex product collaboration output", "product_tool_output_invalid"),
+        ("Codex child prompt delivery", "product_child_delivery_invalid"),
+        ("Codex child rollout", "product_child_delivery_invalid"),
+        ("Codex rollout", "product_rollout_invalid"),
+    )
+    for prefix, reason in prefix_reasons:
+        if message.startswith(prefix):
+            return reason
+    return "native_collaboration_topology_invalid"
 
 
 def _facade():
@@ -1339,6 +1416,7 @@ def _codex_rollout_collaboration_diagnostic(
     not_before: float | None,
     not_after: float | None,
     rollout_contract: str,
+    reason_override: str | None = None,
 ) -> dict[str, Any]:
     """Explain one failed exact projection using only bounded safe counts."""
 
@@ -1371,13 +1449,19 @@ def _codex_rollout_collaboration_diagnostic(
             **empty_counts,
         }
     counts = _codex_rollout_content_free_counts(events)
+    reason = _codex_collaboration_diagnostic_reason(
+        counts,
+        rollout_contract=rollout_contract,
+    )
+    if (
+        reason == "native_collaboration_topology_invalid"
+        and reason_override in CODEX_COLLABORATION_DIAGNOSTIC_REASONS
+    ):
+        reason = str(reason_override)
     return {
         "schema": CODEX_COLLABORATION_DIAGNOSTIC_SCHEMA,
         "proven": False,
-        "reason": _codex_collaboration_diagnostic_reason(
-            counts,
-            rollout_contract=rollout_contract,
-        ),
+        "reason": reason,
         "parent_rollout_observed": True,
         **counts,
     }
@@ -1516,6 +1600,7 @@ def codex_canary_record(
         record["hook_diagnostic"] = hook_diagnostic
     if hook_events := _codex_hook_events(getattr(result, "stderr", "")):
         record["hook_events"] = hook_events
+    product_topology_reason = None
     if rollout_root is not None and rollout_contract == "product":
         try:
             collaboration = _codex_product_rollout_collaboration_evidence(
@@ -1524,8 +1609,9 @@ def codex_canary_record(
                 not_before=rollout_not_before,
                 not_after=rollout_not_after,
             )
-        except (OSError, TypeError, ValueError):
+        except (OSError, TypeError, ValueError) as exc:
             collaboration = None
+            product_topology_reason = _codex_product_topology_reason(exc)
     else:
         collaboration = codex_collaboration_evidence(
             result.stdout,
@@ -1541,6 +1627,7 @@ def codex_canary_record(
             not_before=rollout_not_before,
             not_after=rollout_not_after,
             rollout_contract=rollout_contract,
+            reason_override=product_topology_reason,
         )
         record["collaboration_diagnostic"] = collaboration_diagnostic
     output = facade._codex_output(result.stdout) if completed else None

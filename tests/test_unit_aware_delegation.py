@@ -992,6 +992,7 @@ def test_isolated_native_hook_receives_exact_unit_agent_plan(
     assert 'goal="Document the public API"' in context
     assert "agent=code-reviewer" in context
     assert "agent=technical-writer" in context
+    assert "mutation_scope=read_only" in context
     for unit in detect_work_units(prompt)["units"]:
         work_unit_id = work_unit_id_from_text(unit)
         assert work_unit_id in context

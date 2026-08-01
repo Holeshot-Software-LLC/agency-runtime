@@ -32,12 +32,13 @@ related:
   - docs/decisions/0130-repair-critic-rejected-contractor-proposals-once.md
   - docs/decisions/0131-bind-verifier-evidence-into-contractor-critiques.md
   - docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
+  - docs/decisions/0133-treat-product-specialist-loads-as-turn-scoped.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-219-record-product-boundary
+branch: codex/ar-219-preserve-product-execution
 evidence_commit: f8e607d309f5dba933bc55f17892209e39e6e014
 minimum_ledger_commit: 4264834b6f8db2ba94789193acd4f1818b5facef
 hard_checkpoint_percent: 50
@@ -60,6 +61,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   accepted eight-unit route and eight completed native workers. Exact product
   collaboration projection fails, no first header is accepted, and the
   isolated workspace remains empty. AR-219 owns this first remaining boundary.
+- The reviewed AR-219 repair accepts one turn-scoped load per specialist slug
+  only for an exact immutable identity, preserves typed topology failures, and
+  assigns the prompt-bound sentinel to the first delegated write-capable unit.
+- No new live evidence is consumed; merge, installation, and proof remain.
 
 ## completed-evidence
 
@@ -110,12 +115,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   accepted finalization. The product projection reports
   `native_collaboration_topology_invalid`; workspace proof and artifacts are
   absent.
+- AR-219's two reviews and 102 focused tests pass exact reuse, conflicting
+  identity rejection, child-goal delivery, sentinel ownership, and diagnostics.
+- The branch passes Python 643/6, dashboard 110/110, routing 39/39,
+  615-document validation, repository-wide Ruff, and diff validation.
+- The full 73-mutation decision-conformance process completed after its outer
+  shell deadline, but that shell did not retain the terminal JSON or exit code,
+  so it is not claimed as fresh. Every changed production source passes a
+  captured 22/22 slice with zero survivors/invalid and unchanged source.
 
 ## exact-blocker
 
-The README main story remains NO-GO at one exact downstream boundary: preserve
-the valid multi-unit Codex topology and prove real workspace writes. AR-219 owns
-the next implementation package; this checkpoint does not begin that repair.
+The README main story remains NO-GO until one immutable merged AR-219 build
+passes autonomous activation and one fresh product trial proves the complete
+inferred team, first-pass header, real delegated workspace writes, independent
+artifact checks, and zero corrections. The repair is locally implemented; live
+evidence is intentionally not inferred from tests.
 
 ## same-task-continuity
 
@@ -128,12 +143,11 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Reproduce the exact eight-unit topology locally and retain one bounded
-   invariant code for the first projection rejection.
-2. Prove one activation/delegation/worker per unit, allow specialist reuse, and
-   prove exact workspace writes without broadening authority.
-3. Run the named local gate, review, merge, install one new exact build, and
-   permit at most one new product trial.
+1. Commit the reviewed repair and its ledger, push the exact branch, perform
+   exact-head review, and merge without relying on hosted Actions.
+2. Install only the immutable merge and run one autonomous activation canary.
+3. If activation passes, run at most one fresh README product trial and update
+   the local evidence page and OpenClaw handoff from its exact result.
 
 ## verification
 
