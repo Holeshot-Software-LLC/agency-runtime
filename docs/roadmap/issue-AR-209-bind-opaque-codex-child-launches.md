@@ -82,7 +82,9 @@ tree unchanged. The follow-up six-node focused boundary and all 28 activation
 tests pass. Its first 73-mutation attempt timed out at the 90-second baseline
 before any mutation ran. AR-210 repaired that aggregate timeout mismatch; the
 default rerun passed its 169.176-second baseline, killed all 73 mutations with
-zero survivors or invalid results, and left source unchanged.
+zero survivors or invalid results, and left source unchanged. The exact local
+merge spine passes 595 docs, 604 Ruff files, 638 warning-strict Python tests
+with six skips, 110 dashboard tests, and every isolated routing gate.
 
 ## Approach
 

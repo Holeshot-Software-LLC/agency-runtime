@@ -42,7 +42,10 @@ and ordinary validation of 595 Markdown documents pass. Tracker issue
 [#205](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/205)
 records the same scope. On exact checkpoint `aa26721`, the default command
 passed its 59-node baseline in 169.176 seconds, killed all 73 mutations with
-zero survivors or invalid results, and left every source input unchanged.
+zero survivors or invalid results, and left every source input unchanged. The
+exact local merge spine also passes 638 warning-strict Python tests with six
+skips, 595-document validation, Ruff checks and formatting across 604 files,
+110 dashboard tests, and every routing gate when measured in isolation.
 
 ## Approach
 
@@ -68,5 +71,5 @@ timeout mismatch.
   any mutation.
 - [x] The default command passes the current baseline and kills all 73 curated
   mutations without changing source inputs.
-- [ ] Focused tests, the named fast spine, documentation validation, formatting,
+- [x] Focused tests, the named fast spine, documentation validation, formatting,
   and diff checks pass on the exact source revision.
