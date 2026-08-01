@@ -501,6 +501,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4235745` | 2026-08-01 | fix(ar-223): require explicit Codex child execution | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `aff807f` | 2026-08-01 | docs(ar-223): record tracker and green local gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `ba76ce7` | 2026-08-01 | Merge pull request #229 from Holeshot-Software-LLC/codex/ar-223-codex-child-task-activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `873552b` | 2026-08-01 | docs(ar-223): checkpoint installed merge | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
