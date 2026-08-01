@@ -135,7 +135,27 @@ requested revision and commit ID. A subsequent full-suite refresh reports the
 dashboard installed, active, and reachable; ZCode registered, enabled, and
 complete; and the Codex bundle registered and byte-current. The install exits
 partial only because Codex correctly remains `activation_required` until its
-live canary runs. Fresh immutable-build activation remains pending.
+live canary runs.
+
+That one activation is now consumed and terminal `NO-GO`. Session
+`019fbf55-a690-7c20-804c-543def40a117`, trace
+`019fbf55-b2dd-7602-90d7-7712854c752f`, run
+`9d482344-0d67-42fc-8e49-52263b648a8b`, route
+`3528a1c0-eaf9-4a4f-aed3-86a8a7eec27b`, finalization
+`632849e2-5c42-4fa9-b58a-8773e75f96c4`, and child
+`019fbf56-82e2-77d1-925a-43c5fcd19cbf` retain the exact boundary. Inference
+selects `code-reviewer`; the parent records one spawn, two completed waits, one
+accepted opaque follow-up, and one Store execution dispatch; the child completes
+its second turn with the expected review response; and Store finalization is
+accepted. Correction count is zero and persistent trust is unchanged.
+
+Current Codex also persists the child's incoming execution message as a
+760-character ciphertext with an empty visible payload. The model executes the
+decrypted task, but the projector cannot reconstruct the exact envelope from
+the persisted child rollout, so it reports `native_collaboration_topology_invalid`
+and withholds the header. No product trial ran. The next proof boundary must
+persist a content-free child-side receipt while the decrypted envelope is
+available and cross-check it against the parent's one-use dispatch.
 
 ## Approach
 

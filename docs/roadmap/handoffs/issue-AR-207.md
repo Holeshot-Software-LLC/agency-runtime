@@ -78,10 +78,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   Agency rejects its generated execution envelope. No second wait or header
   exists; corrections are zero and no product trial ran. PR 230 merges the
   opaque-boundary repair as exact `a2d1a7c`; that exact VCS revision is now
-  installed. Its full-suite refresh proves the dashboard reachable, ZCode
-  complete, and the current Codex bundle registered. Codex remains
-  `activation_required`, which is the expected boundary before the one fresh
-  autonomous canary.
+  installed and host-current. Its consumed activation selects `code-reviewer`
+  and proves one spawn, two waits, accepted opaque follow-up dispatch, a second
+  child turn, accepted Store finalization, and zero corrections. The header is
+  withheld because Codex persists the child input as ciphertext too, leaving
+  the projector unable to reconstruct the exact execution envelope. No product
+  trial ran.
 
 ## completed-evidence
 
@@ -111,15 +113,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO until live proof. Exact `ba76ce7` passes
-installation and inference-owned selection, but its consumed canary exposed
-that Codex encrypts the follow-up before `PreToolUse` observes it. AR-223 now
-binds that ciphertext to the exact activated child and requires the decrypted
-envelope in the later child rollout. The complete named local gate passes: 143
-focused tests, 656 Python spine tests with 6 skipped, 110 dashboard tests,
-625-file documentation validation, every routing threshold, and 84 of 84
-decision mutations with zero invalid results. Exact merged build `a2d1a7c` is
-installed and host-current; its one autonomous activation has not yet run.
+The README main story remains NO-GO. Exact `a2d1a7c` proves that the opaque
+parent follow-up is accepted and launches a second child execution turn, but
+current Codex also persists that child input as ciphertext. The model executes
+the task while the projector cannot recover the exact envelope, reports
+`native_collaboration_topology_invalid`, and withholds the header. A content-free
+child-side execution receipt must bridge that final evidence boundary.
 
 ## same-task-continuity
 
@@ -131,9 +130,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Spend one autonomous activation on exact installed build `a2d1a7c`.
-2. Only after activation passes, spend one product trial on that same build.
-3. Checkpoint the terminal evidence without rerunning either governed trial.
+1. Persist and cross-check one content-free child-side execution receipt.
+2. Pass focused checks and the named local gate, then install one fresh build.
+3. Spend one activation; only after it passes, spend one product trial.
 
 ## verification
 
@@ -160,7 +159,7 @@ git diff --check
 - One live product trial per exact installed build; any correction is failure.
 - Exact builds `e62d0adc`, `1694d6e`, `d6ba36a`, `9c2e9f8`, `8cfd975`,
   `f8e607d`, `386afca`, `5c45f154`, `ff39761`, and `43870c8` consumed governed
-  live evidence; exact `ba76ce7` also consumed its activation; none may be
-  rerun.
+  live evidence; exact `ba76ce7` and `a2d1a7c` also consumed their activations;
+  none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
