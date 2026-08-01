@@ -945,6 +945,19 @@ def _load_config_uncached(
                 if not isinstance(override, dict):
                     raise ValueError(f"{key} must be a mapping")
                 merged[key] = {**defaults_raw[key], **override}
+        workforce_override = file_raw.get("workforce")
+        if (
+            isinstance(workforce_override, dict)
+            and "fast_call_budget" not in workforce_override
+            and "balanced_call_budget" in workforce_override
+        ):
+            # Preserve a legacy partial balanced cap without rewriting the
+            # operator's persisted document. The fresh default applies only up
+            # to that explicit next-tier ceiling.
+            merged["workforce"]["fast_call_budget"] = min(
+                defaults_raw["workforce"]["fast_call_budget"],
+                workforce_override["balanced_call_budget"],
+            )
         cfg = _dict_to_config(merged, config_path=str(config_path))
 
     cfg = _apply_env_overrides(cfg, environ=environment)

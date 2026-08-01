@@ -91,12 +91,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   UI tests, all routing gates, 612-document validation, repository-wide Ruff
   lint/format, and 73/73 killed decision mutations with zero survivors or
   invalid cases and `source_unchanged=true`.
+- Exact-head PR 220 review found that a legacy balanced-only cap of three would
+  be invalidated by the new omitted fast default. The focused-green repair caps
+  the effective omitted fast value to that explicit balanced value while
+  preserving the persisted partial document.
 
 ## exact-blocker
 
-The local four-call repair is green. Exact-head PR review and merge are the only
-boundaries before one new exact build may receive one activation and one product
-trial.
+The local four-call repair is green. The compatibility repair must pass the
+named gate and exact-head rereview before merge; no other implementation scope
+is open.
 
 ## same-task-continuity
 
@@ -109,8 +113,8 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Push the clean checkpoint, open the PR, inspect exact-head review, and merge
-   without hosted Actions.
+1. Checkpoint the compatibility repair, run the named gate once on that new
+   head, resolve the exact review thread, and merge without hosted Actions.
 2. Install the exact merge, deliberately set this machine's explicit fast
    budget to four, and run one activation plus at most one product trial.
 3. Publish the local evidence page and OpenClaw handoff, stopping on any new

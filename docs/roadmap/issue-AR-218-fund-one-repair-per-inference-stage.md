@@ -73,6 +73,14 @@ wide Ruff lint/format. Decision conformance passes its baseline, kills all 73
 curated mutations with zero survivors or invalid cases, and reports
 `source_unchanged=true`.
 
+Exact-head Codex review found one compatibility defect at
+`discussion_r3694929406`: a previously valid partial balanced-only cap of three
+would be compared against the new implicit fast default of four and rejected.
+The repair validates the omitted fast value against the explicit balanced cap
+and applies the same cap during default merging without rewriting the persisted
+document. Its exact regression and adjacent default/update checks pass eight
+tests.
+
 ## Approach
 
 1. Raise only the fresh fast-mode total from three calls to four so planner and
@@ -80,7 +88,8 @@ curated mutations with zero survivors or invalid cases, and reports
 2. Keep balanced at four and strict at five; strict's fifth call remains the
    independent staffing critic.
 3. Preserve every explicit persisted budget, including lower cost or latency
-   opt-outs. Do not migrate operator-owned configuration silently.
+   opt-outs. A legacy balanced-only partial cap bounds an omitted fast default;
+   do not migrate operator-owned configuration silently.
 4. Prove the exact composed sequence and bind generated hook timeouts to the
    effective four-call budget.
 5. Mutate the typed default back to three in decision conformance and require
@@ -97,6 +106,8 @@ repair fast default without weakening either stage's bounded correction rule.
 - [x] Fresh bundled, dataclass, loader, and partial-validation defaults use a
   four-call fast workforce budget.
 - [x] Explicit lower budgets remain operator-owned and unchanged.
+- [x] A legacy partial `balanced_call_budget: 3` document remains valid, loads
+  an effective fast budget of three, and is not rewritten.
 - [x] A composed default-fast regression accepts planner rejection/repair plus
   recruiter rejection/repair and records exactly four attempts.
 - [x] No deterministic staffing fallback or unbounded retry is introduced.

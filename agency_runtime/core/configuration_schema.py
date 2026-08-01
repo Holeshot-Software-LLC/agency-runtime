@@ -477,8 +477,11 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         ),
     }
     result = {name: validators[name](item) for name, item in section.items()}
-    fast = result.get("fast_call_budget", 4)
     balanced = result.get("balanced_call_budget", 4)
+    # A partial persisted document may carry an explicit legacy balanced cap
+    # while omitting fast. Preserve that operator-owned cap instead of making a
+    # fresh default bump invalidate a previously valid document.
+    fast = result.get("fast_call_budget", min(4, balanced))
     strict = result.get("strict_call_budget", 5)
     if fast > balanced:
         raise _error(

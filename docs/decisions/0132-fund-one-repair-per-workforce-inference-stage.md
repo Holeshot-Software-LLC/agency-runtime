@@ -49,6 +49,9 @@ and recruiter repair separately, but never composed the two legal corrections.
    the fresh default.
 5. Persisted explicit values remain authoritative. Agency does not silently
    enlarge an operator's intentional cost or latency cap.
+6. When a legacy partial document omits fast but explicitly caps balanced below
+   the fresh default, the effective omitted fast value is capped to balanced.
+   The persisted document stays unchanged.
 
 ## Consequences
 
@@ -58,6 +61,8 @@ and recruiter repair separately, but never composed the two legal corrections.
   one configured provider timeout.
 - Fast and balanced share the same call ceiling; their other policy differences
   remain unchanged.
+- A previously valid partial balanced-only budget remains loadable across the
+  default bump without being rewritten or silently enlarged.
 - Invalid second responses still fail loudly, and deterministic code still has
   no online staffing authority.
 

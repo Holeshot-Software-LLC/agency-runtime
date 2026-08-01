@@ -115,6 +115,19 @@ def test_explicit_fast_call_budget_remains_operator_owned(tmp_path: Path) -> Non
     assert load_config(path, reload=True).workforce.fast_call_budget == 2
 
 
+def test_legacy_partial_balanced_budget_caps_omitted_fast_default(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    document = {"workforce": {"mode": "balanced", "balanced_call_budget": 3}}
+    _write(path, document)
+
+    loaded = load_config(path, reload=True).workforce
+
+    assert loaded.mode == "balanced"
+    assert loaded.fast_call_budget == 3
+    assert loaded.balanced_call_budget == 3
+    assert configuration.validate_config_document(document) == document
+
+
 def test_state_separates_redacted_persisted_and_effective_values(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
