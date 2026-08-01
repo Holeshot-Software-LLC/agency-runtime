@@ -21,6 +21,7 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
   - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
+  - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
   - docs/decisions/0114-fund-one-default-workforce-semantic-repair.md
@@ -34,7 +35,7 @@ issue_id: AR-218
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/219
 depends_on: [AR-217]
-blocks: [AR-203, AR-204, AR-219]
+blocks: [AR-203, AR-204, AR-219, AR-220]
 ---
 
 # AR-218: Fund one bounded repair per workforce inference stage
