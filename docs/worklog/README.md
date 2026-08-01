@@ -511,6 +511,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `65ee298` | 2026-08-01 | fix(ar-223): bind encrypted Codex child execution | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `5ff4a08` | 2026-08-01 | Merge pull request #231 from Holeshot-Software-LLC/codex/ar-223-post-merge-live-proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `56adc42` | 2026-08-01 | docs(ar-223): checkpoint installed encrypted execution merge | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `5849ff6` | 2026-08-01 | docs(ar-223): record missing second Codex stop | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
