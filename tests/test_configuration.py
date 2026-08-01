@@ -101,11 +101,11 @@ def test_state_accepts_only_empty_or_whitespace_yaml_document(
     assert path.read_bytes() == content
 
 
-def test_default_workforce_mode_funds_planner_recruiter_and_one_repair(tmp_path: Path) -> None:
+def test_default_workforce_mode_funds_one_repair_per_inference_stage(tmp_path: Path) -> None:
     workforce = load_config(tmp_path / "missing.yaml", reload=True).workforce
 
     assert workforce.mode == "fast"
-    assert workforce.fast_call_budget == 3
+    assert workforce.fast_call_budget == 4
 
 
 def test_explicit_fast_call_budget_remains_operator_owned(tmp_path: Path) -> None:

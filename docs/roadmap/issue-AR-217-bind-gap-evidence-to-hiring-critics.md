@@ -26,7 +26,7 @@ issue_id: AR-217
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/217
 depends_on: [AR-215]
-blocks: [AR-203, AR-204]
+blocks: [AR-203, AR-204, AR-218]
 ---
 
 # AR-217: Bind independent gap evidence into contractor critiques
@@ -60,6 +60,16 @@ Planner and recruiter inference both applied through
 specialist load, grant, delegation, finalization, header, or workspace-write
 evidence. Correction count zero is not success because parent generation never
 started. This exact build and trial must not be rerun.
+
+PR 218 subsequently merged the evidence handoff as exact revision
+`8cfd9751aa7290362b6e3fcdec60adc81315617c`. Its supported autonomous
+activation passed on the first attempt with `code-reviewer`, one completed
+delegation, an accepted first-pass header, and zero corrections. The one product
+trial on that build stopped earlier than contractor hiring: the shared
+three-call workforce budget funded planner rejection/repair and recruiter
+rejection but not the recruiter's bounded repair. AR-218 owns that independent
+budget boundary; the consumed trial neither disproves nor live-proves this
+issue's critic handoff.
 
 ## Approach
 

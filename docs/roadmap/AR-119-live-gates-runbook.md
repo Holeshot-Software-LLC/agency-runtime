@@ -57,10 +57,10 @@ Every live gate below requires at least one inference provider. The development
 config at `~/.agency-runtime/agency.yaml` has the codex-subscription provider
 (`gpt-5.6-luna`, low effort, transport codex); load it via `load_config()` (the
 direct `AgencyConfig()` constructor does not read the file). Fresh configurations
-default `workforce.fast_call_budget` to 3 so planning, recruitment, and one
-bounded semantic repair are all reachable. An older explicit value remains an
-operator-owned override and must be raised deliberately when this repair path is
-required.
+default `workforce.fast_call_budget` to 4 so planning, recruitment, and one
+bounded repair in each stage are all reachable in the same route. An older
+explicit value remains an operator-owned override and must be raised
+deliberately when both repair paths are required.
 
 ---
 

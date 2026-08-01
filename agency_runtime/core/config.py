@@ -240,7 +240,7 @@ class WorkforceConfig:
     recruiter_model: str = ""
     hiring_model: str = ""
     critic_model: str = ""
-    fast_call_budget: int = 3
+    fast_call_budget: int = 4
     balanced_call_budget: int = 4
     strict_call_budget: int = 5
     hiring_call_budget: int = 4
@@ -506,7 +506,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             recruiter_model=str(workforce_raw.get("recruiter_model", "")).strip(),
             hiring_model=str(workforce_raw.get("hiring_model", "")).strip(),
             critic_model=str(workforce_raw.get("critic_model", "")).strip(),
-            fast_call_budget=int(workforce_raw.get("fast_call_budget", 3)),
+            fast_call_budget=int(workforce_raw.get("fast_call_budget", 4)),
             balanced_call_budget=int(workforce_raw.get("balanced_call_budget", 4)),
             strict_call_budget=int(workforce_raw.get("strict_call_budget", 5)),
             hiring_call_budget=int(workforce_raw.get("hiring_call_budget", 4)),

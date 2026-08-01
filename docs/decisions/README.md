@@ -94,13 +94,14 @@ Status meanings:
 | [ADR-0083](0083-use-capability-indexed-recall-and-bounded-inference.md) | Use capability-indexed recall and bounded inference | Accepted |
 | [ADR-0094](0094-durable-native-child-correlation.md) | Correlate native children durably and fail Agency-planned work closed | Accepted |
 | [ADR-0112](0112-stage-preflight-workforce-evidence-until-ready.md) | Stage preflight workforce evidence until ready | Accepted |
-| [ADR-0114](0114-fund-one-default-workforce-semantic-repair.md) | Fund one default workforce semantic repair | Accepted |
+| [ADR-0114](0114-fund-one-default-workforce-semantic-repair.md) | Fund one default workforce semantic repair | Superseded |
 | [ADR-0115](0115-aggregate-bounded-recruiter-repair-failures.md) | Aggregate bounded recruiter repair failures | Accepted |
 | [ADR-0118](0118-require-inference-owned-staffing.md) | Require inference-owned specialist staffing | Accepted |
 | [ADR-0121](0121-gate-deterministic-recall-without-selection-authority.md) | Gate deterministic recall without selection authority | Accepted |
 | [ADR-0129](0129-repair-verifier-rejected-recruiter-proposals-once.md) | Repair verifier-rejected recruiter proposals once | Accepted |
 | [ADR-0130](0130-repair-critic-rejected-contractor-proposals-once.md) | Repair critic-rejected contractor proposals once | Accepted |
 | [ADR-0131](0131-bind-verifier-evidence-into-contractor-critiques.md) | Bind verifier evidence into contractor critiques | Accepted |
+| [ADR-0132](0132-fund-one-repair-per-workforce-inference-stage.md) | Fund one repair per workforce inference stage | Accepted |
 | [ADR-0122](0122-use-one-agency-native-resident-steward.md) | Use one Agency-native resident steward | Accepted |
 | [ADR-0123](0123-use-general-preflight-ceiling-for-persistent-parents.md) | Use the general preflight ceiling for persistent native parents | Accepted |
 

@@ -55,8 +55,8 @@ delegation:
 
 # Planning uses configured inference whenever any provider is available. Every
 # mode searches the complete local capability index through an inference planner
-# and recruiter. Fast funds those two stages plus one bounded semantic repair;
-# balanced can repair both stages; strict also funds an independent critic.
+# and recruiter. Fast and balanced fund one bounded repair for each stage;
+# strict also funds an independent critic.
 workforce:
   mode: fast
   provider: ""                  # blank = use the configured provider chain
@@ -64,7 +64,7 @@ workforce:
   recruiter_model: ""
   hiring_model: ""
   critic_model: ""
-  fast_call_budget: 3
+  fast_call_budget: 4
   balanced_call_budget: 4
   strict_call_budget: 5
   hiring_call_budget: 4

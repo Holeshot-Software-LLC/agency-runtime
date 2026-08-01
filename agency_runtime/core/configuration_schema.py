@@ -477,7 +477,7 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         ),
     }
     result = {name: validators[name](item) for name, item in section.items()}
-    fast = result.get("fast_call_budget", 3)
+    fast = result.get("fast_call_budget", 4)
     balanced = result.get("balanced_call_budget", 4)
     strict = result.get("strict_call_budget", 5)
     if fast > balanced:

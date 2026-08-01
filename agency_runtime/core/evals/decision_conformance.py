@@ -1079,16 +1079,16 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="default-fast-budget-removes-recruiter-repair",
+        mutation_id="default-fast-budget-removes-stage-repair",
         invariant=(
-            "The default fast budget funds planning, recruitment, and one bounded semantic repair."
+            "The default fast budget funds one bounded repair for both planner and recruiter."
         ),
         source_path="agency_runtime/core/config.py",
-        before="    fast_call_budget: int = 3",
-        after="    fast_call_budget: int = 2",
+        before="    fast_call_budget: int = 4",
+        after="    fast_call_budget: int = 3",
         test_node=(
             "tests/test_workforce_inference.py::"
-            "test_default_fast_mode_funds_recruiter_contract_repair_after_planning"
+            "test_default_fast_mode_funds_one_repair_for_each_inference_stage"
         ),
     ),
     DecisionMutation(
