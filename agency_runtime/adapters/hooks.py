@@ -1593,12 +1593,12 @@ class HookBridge:
         trace_id: str,
         work_unit_id: str,
         identity: NativeChildRunIdentity,
-    ) -> bool:
-        """Require the one-use Store dispatch before closing a planned worker."""
+    ) -> str | None:
+        """Return the one-use Store dispatch identity for a planned worker."""
 
         reader = getattr(self.store, "get_native_child_run", None)
         if not callable(reader):
-            return False
+            return None
         try:
             row = reader(
                 host="codex",
@@ -1609,9 +1609,9 @@ class HookBridge:
                 native_run_id=identity.native_run_id,
             )
         except (RuntimeError, ValueError):
-            return False
+            return None
         if not isinstance(row, dict):
-            return False
+            return None
         if (
             row.get("host") != "codex"
             or row.get("backend") != "spawn_agent"
@@ -1623,15 +1623,14 @@ class HookBridge:
             or not row.get("execution_dispatched_at")
             or row.get("ended_at") is not None
         ):
-            return False
+            return None
         try:
-            validate_correlation_id(
+            return validate_correlation_id(
                 row.get("execution_tool_use_id"),
                 field="execution_tool_use_id",
             )
         except ValueError:
-            return False
-        return True
+            return None
 
     def _handle_codex_followup_pre_tool_use(
         self,
@@ -1673,7 +1672,7 @@ class HookBridge:
         # Current Codex encrypts collaboration message arguments before its
         # PreToolUse hook observes them.  Bind that opaque call to the only
         # exact activated target and one-use Store claim here; SubagentStop and
-        # the rollout projector still require the decrypted canonical envelope
+        # the rollout projector still require byte-equal parent/child ciphertext
         # inside the child's later execution turn before accepting any work.
         if not opaque_message and message != render_codex_native_child_execution_message(
             work_unit_id=expected.work_unit_id,
@@ -1926,16 +1925,22 @@ class HookBridge:
             if len(candidates) != 1 or not final_message.strip():
                 return {}
             expected, _specialist_slug, _identity = candidates[0]
-            if not codex_current_turn_execution_observed(
-                _optional_string(payload, "agent_transcript_path"),
-                turn_id=_optional_string(payload, "turn_id"),
-                worker_id=identity.worker_id,
-                expected=expected,
-            ) or not self._codex_execution_claim_observed(
+            execution_tool_use_id = self._codex_execution_claim_observed(
                 session_id=session_id,
                 trace_id=trace_id,
                 work_unit_id=expected.work_unit_id,
                 identity=identity,
+            )
+            if (
+                not codex_current_turn_execution_observed(
+                    _optional_string(payload, "agent_transcript_path"),
+                    turn_id=_optional_string(payload, "turn_id"),
+                    worker_id=identity.worker_id,
+                    expected=expected,
+                    parent_session_id=session_id,
+                    execution_tool_use_id=execution_tool_use_id or "",
+                )
+                or execution_tool_use_id is None
             ):
                 # The first Codex spawn turn is activation-only. Its stop edge
                 # deliberately remains non-terminal until followup_task creates

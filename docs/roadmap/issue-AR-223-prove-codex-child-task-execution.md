@@ -22,6 +22,7 @@ related:
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
+  - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -116,14 +117,13 @@ wait or execution turn exists, the header is absent, and collaboration reports
 `parent_wait_ambiguous`. Correction count is zero and persistent trust remains
 unchanged. No product trial was launched.
 
-The exact failure is now reproduced locally. Current Codex exposes the
+The first failure reproduction showed that current Codex exposes the
 `followup_task` message to `PreToolUse` and the parent rollout as a 760-character
-`gAAAA...` ciphertext, while the receiving child alone sees the decrypted
-canonical envelope. The repaired hook binds that opaque call to the unique
-activated canonical child path and one-use Store claim. Activation and product
-projectors likewise treat parent ciphertext as lifecycle evidence and still
-require the exact decrypted envelope in the child's causal second turn before
-accepting work. Exact local head `4daf82a` passes 143 focused hook, Store,
+`gAAAA...` ciphertext while the receiving child model acts on the decrypted
+task. That repair bound the opaque parent call to the unique activated canonical
+child path and one-use Store claim, but its projector fixtures incorrectly
+represented the persisted child input as plaintext. Exact local head `4daf82a`
+passes 143 focused hook, Store,
 activation, and product tests; the named Python spine passes 656 with 6 skipped;
 dashboard UI passes 110; documentation validates 625 files; Ruff, format, diff,
 and every routing threshold pass. Decision conformance passes its 209.170-second
@@ -153,9 +153,25 @@ Current Codex also persists the child's incoming execution message as a
 760-character ciphertext with an empty visible payload. The model executes the
 decrypted task, but the projector cannot reconstruct the exact envelope from
 the persisted child rollout, so it reports `native_collaboration_topology_invalid`
-and withholds the header. No product trial ran. The next proof boundary must
-persist a content-free child-side receipt while the decrypted envelope is
-available and cross-check it against the parent's one-use dispatch.
+and withholds the header. No product trial ran.
+
+The focused repair now uses the host evidence that actually exists: the parent
+follow-up and child second-turn `NEW_TASK` record carry one byte-equal
+ciphertext. It cross-checks that transient value with the Store tool-use claim,
+parent and child session lineage, canonical native task path, and exact causal
+turns, then projects only the already verified activation work-unit and goal
+hash. It never retains the ciphertext. The already-consumed live rollout now
+projects one spawn, one follow-up, two waits, zero unexpected items, and exact
+`unit-05d45f7553` execution identity. Focused warning-strict checks pass 59
+direct projection tests and 220 surrounding hook, lifecycle, product, Claude,
+and activation tests. Two bounded reviews have no unresolved High or Critical
+finding. The final focused set passes 72 tests; both new decision mutations are
+killed. The named Python spine passes 656 tests with 6 skipped, dashboard UI
+passes 110, 627 Markdown files validate, repo-wide Ruff lint and format pass,
+routing passes every threshold, and decision conformance kills 86 of 86
+mutations with zero survivors or invalid results and unchanged source after a
+163.196-second baseline and 759.4 seconds total. Fresh immutable-build proof
+remains pending.
 
 ## Approach
 

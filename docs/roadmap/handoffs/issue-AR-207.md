@@ -38,6 +38,7 @@ related:
   - docs/decisions/0133-treat-product-specialist-loads-as-turn-scoped.md
   - docs/decisions/0134-bind-contractor-risk-to-validated-authority.md
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
+  - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -83,7 +84,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   child turn, accepted Store finalization, and zero corrections. The header is
   withheld because Codex persists the child input as ciphertext too, leaving
   the projector unable to reconstruct the exact execution envelope. No product
-  trial ran.
+  trial ran. The bounded local repair now proves the exact same parent and child
+  ciphertext under Store tool-use identity, canonical task path, lineage, and
+  the causal second turn without retaining it. The consumed live rollout
+  projects successfully under that code. Two bounded reviews have no unresolved
+  High or Critical finding. The final focused set passes 72 tests, both new
+  decision mutations are killed, and the complete named local gate passes.
 
 ## completed-evidence
 
@@ -94,6 +100,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   format pass; routing passes every threshold; and decision conformance kills
   84 of 84 mutations with zero survivors or invalid results and unchanged
   source.
+- The ciphertext repair passes Python 656/6, dashboard 110/110, 627-document
+  validation, repo-wide Ruff lint and format, every routing threshold, and
+  decision conformance 86/86 with unchanged source.
 - Exact `43870c8` activation session
   `019fbe5e-a6da-72f3-ae6d-def468708e95` passes with one inferred
   `code-reviewer`, a valid first header, and zero corrections.
@@ -113,12 +122,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `a2d1a7c` proves that the opaque
-parent follow-up is accepted and launches a second child execution turn, but
-current Codex also persists that child input as ciphertext. The model executes
-the task while the projector cannot recover the exact envelope, reports
-`native_collaboration_topology_invalid`, and withholds the header. A content-free
-child-side execution receipt must bridge that final evidence boundary.
+The README main story remains NO-GO pending a fresh immutable live build. Exact
+`a2d1a7c` proves that the opaque parent follow-up launches the second execution
+turn. The repaired local boundary matches the parent and child ciphertext,
+Store tool-use ID, lineage, task path, and causal completion, and the consumed
+live rollout now projects the exact work-unit and goal hash successfully.
 
 ## same-task-continuity
 
@@ -130,9 +138,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Persist and cross-check one content-free child-side execution receipt.
-2. Pass focused checks and the named local gate, then install one fresh build.
-3. Spend one activation; only after it passes, spend one product trial.
+1. Merge and install one fresh immutable build.
+2. Spend one activation; only after it passes, spend one product trial.
 
 ## verification
 

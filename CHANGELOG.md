@@ -64,11 +64,12 @@ changes rather than duplicating every commit.
 - Codex native children now separate activation from execution. The parent
   performs one exact `spawn_agent`/wait/`followup_task`/wait sequence per
   accepted work unit, the Store claims the execution dispatch once, and worker
-  success requires content-free proof that the goal-hash-bound execution
-  envelope occurred inside the later child turn. A terminal readiness turn can
-  no longer masquerade as specialist task execution. Current Codex-encrypted
-  parent follow-ups bind through the exact activated child path and one-use
-  claim; only the decrypted child-turn envelope can prove execution.
+  success requires content-free proof of the later child turn. A terminal
+  readiness turn can no longer masquerade as specialist task execution.
+  Current Codex-encrypted follow-ups bind through the exact activated child path
+  and one-use claim, then require byte-equal ciphertext in the parent call and
+  child's later `NEW_TASK` record. The comparison is transient; reports retain
+  only the already verified work-unit, task-name, and goal-hash identity.
 - Codex product evidence now accepts the current bounded native `wait_agent`
   timeout while leaving the activation canary's exact 60-second contract
   unchanged. Current inferred work-unit goals carry their verified mutation
