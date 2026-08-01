@@ -496,6 +496,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `adad732` | 2026-08-01 | fix(product): bind Codex wait and workspace authority | [AR-219](../roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md), [AR-221](../roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md) | [detail](2026-08-01-adad732-bind-codex-product-execution.md) |
 | `0f3dfbe` | 2026-08-01 | docs(ar-221): checkpoint product execution repair | [AR-219](../roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md), [AR-221](../roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md) | null |
 | `9c2f421` | 2026-08-01 | docs(ar-221): record green product repair gate | [AR-221](../roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md) | null |
+| `43870c8` | 2026-08-01 | Merge pull request #227 from Holeshot-Software-LLC/codex/ar-221-product-execution-boundary | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -23,6 +23,7 @@ related:
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
   - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
+  - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
   - docs/roadmap/handoffs/issue-AR-203.md
   - docs/worklog/README.md
 supersedes: []
@@ -32,7 +33,7 @@ epic: testing
 issue_id: AR-203
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
-depends_on: [AR-201, AR-207, AR-209, AR-212, AR-214, AR-215, AR-216, AR-217, AR-218, AR-219, AR-220, AR-221]
+depends_on: [AR-201, AR-207, AR-209, AR-212, AR-214, AR-215, AR-216, AR-217, AR-218, AR-219, AR-220, AR-221, AR-223]
 blocks: [AR-200]
 ---
 
