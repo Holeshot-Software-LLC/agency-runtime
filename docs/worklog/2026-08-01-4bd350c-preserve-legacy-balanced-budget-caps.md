@@ -51,8 +51,13 @@ was rejected because explicit incoherent updates must still fail.
 
 - Exact legacy partial-config regression plus adjacent default, explicit
   override, and incoherent-update checks: 8 passed.
-- Changed Python files pass Ruff lint and format.
-- Documentation validation and `git diff --check` pass.
+- Named Python production spine: 643 passed, 6 skipped.
+- Dashboard UI: 110 passed; routing evaluation: 39/39 gates passed.
+- Decision conformance: baseline passed, 73/73 mutations killed, zero survived
+  or invalid, the target budget mutation was killed, and
+  `source_unchanged=true`.
+- Repository-wide Ruff lint/format, documentation validation, and
+  `git diff --check` pass.
 
 ## Follow-ups
 

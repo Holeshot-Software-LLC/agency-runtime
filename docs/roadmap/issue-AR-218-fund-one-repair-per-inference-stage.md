@@ -81,6 +81,12 @@ and applies the same cap during default merging without rewriting the persisted
 document. Its exact regression and adjacent default/update checks pass eight
 tests.
 
+Repaired checkpoint `a347eff` passes the complete named gate: 643 Python tests
+with six skips, 110 dashboard tests, 39/39 routing gates, and 73/73 killed
+decision mutations with zero survivors or invalid cases. The target default-
+budget mutation is killed and the evaluator reports `source_unchanged=true`.
+All documentation, Ruff lint/format, and diff checks pass.
+
 ## Approach
 
 1. Raise only the fresh fast-mode total from three calls to four so planner and

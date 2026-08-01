@@ -36,8 +36,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-218-fund-stage-repairs
-evidence_commit: 095e244a23aa42f6e38f282e3f1d902804e773de
-minimum_ledger_commit: 095e244a23aa42f6e38f282e3f1d902804e773de
+evidence_commit: a347effa148f433b4e3954133c56f10f9f85a029
+minimum_ledger_commit: a347effa148f433b4e3954133c56f10f9f85a029
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -95,12 +95,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   be invalidated by the new omitted fast default. The focused-green repair caps
   the effective omitted fast value to that explicit balanced value while
   preserving the persisted partial document.
+- Repaired checkpoint `a347eff` passes 643 Python tests with six skips, all 110
+  dashboard tests, 39/39 routing gates, and 73/73 killed mutations with zero
+  survivors or invalid cases. The target budget mutation is killed and
+  `source_unchanged=true`.
 
 ## exact-blocker
 
-The local four-call repair is green. The compatibility repair must pass the
-named gate and exact-head rereview before merge; no other implementation scope
-is open.
+The local four-call and compatibility repairs are green. Exact-head rereview and
+merge are the only boundaries before the next installed activation and product
+trial; no other implementation scope is open.
 
 ## same-task-continuity
 
@@ -113,8 +117,8 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Checkpoint the compatibility repair, run the named gate once on that new
-   head, resolve the exact review thread, and merge without hosted Actions.
+1. Push the repaired checkpoint, resolve the exact review thread, obtain
+   exact-head rereview, and merge without hosted Actions.
 2. Install the exact merge, deliberately set this machine's explicit fast
    budget to four, and run one activation plus at most one product trial.
 3. Publish the local evidence page and OpenClaw handoff, stopping on any new
