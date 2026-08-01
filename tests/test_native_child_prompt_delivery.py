@@ -7,6 +7,7 @@ from hashlib import sha256
 import pytest
 
 from agency_runtime.core.native_child_prompt_delivery import (
+    codex_opaque_child_message_ciphertext,
     is_codex_opaque_collaboration_message,
     parse_codex_native_child_execution_message,
     parse_native_child_prompt_delivery,
@@ -104,6 +105,60 @@ def test_codex_execution_message_round_trip_is_exact_and_content_free() -> None:
     assert parsed.goal_hash == goal_hash
     assert "Implement the exact product unit." not in message
     assert parse_codex_native_child_execution_message(f"prefix {message} suffix") == parsed
+
+
+def test_codex_child_ciphertext_projection_requires_exact_current_host_shape() -> None:
+    ciphertext = "gAAAAA" + "opaque-execution-ciphertext" * 2
+    turn_id = "019fa6a6-b197-7a83-b3fb-d2c20411f608"
+    payload = {
+        "type": "agent_message",
+        "id": "amsg-execution",
+        "author": "/root",
+        "recipient": "/root/unit_1234567890",
+        "internal_chat_message_metadata_passthrough": {"turn_id": turn_id},
+        "content": [
+            {
+                "type": "input_text",
+                "text": "Message Type: NEW_TASK\n"
+                "Task name: /root/unit_1234567890\n"
+                "Sender: /root\n"
+                "Payload:\n",
+            },
+            {"type": "encrypted_content", "encrypted_content": ciphertext},
+        ],
+    }
+
+    assert (
+        codex_opaque_child_message_ciphertext(
+            payload,
+            native_task_name="unit_1234567890",
+            turn_id=turn_id,
+        )
+        == ciphertext
+    )
+    for tampered in (
+        {**payload, "author": "/root/other"},
+        {**payload, "recipient": "/root/unit_other"},
+        {
+            **payload,
+            "internal_chat_message_metadata_passthrough": {"turn_id": "other-turn"},
+        },
+        {
+            **payload,
+            "content": [
+                payload["content"][0],
+                {"type": "encrypted_content", "encrypted_content": "plain"},
+            ],
+        },
+    ):
+        assert (
+            codex_opaque_child_message_ciphertext(
+                tampered,
+                native_task_name="unit_1234567890",
+                turn_id=turn_id,
+            )
+            is None
+        )
 
 
 @pytest.mark.parametrize(

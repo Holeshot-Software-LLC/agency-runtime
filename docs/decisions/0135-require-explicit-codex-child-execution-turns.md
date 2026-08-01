@@ -1,6 +1,6 @@
 ---
 title: "Require explicit Codex child execution turns"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-08-01
 updated: 2026-08-01
@@ -17,7 +17,7 @@ related:
   - tests/test_codex_child_execution.py
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
 id: ADR-0135
 type: decision
 deciders: [maintainers]

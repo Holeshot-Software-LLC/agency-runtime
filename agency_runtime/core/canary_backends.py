@@ -764,10 +764,14 @@ def _assert_codex_child_activation_is_tool_free(events: list[dict[str, Any]]) ->
 
 def _codex_child_execution_projection(
     events: list[dict[str, Any]],
+    *,
+    expected: Mapping[str, str],
+    opaque_message: str | None,
 ) -> dict[str, str]:
     """Project one execution envelope between two exact child completions."""
 
     from agency_runtime.core.native_child_prompt_delivery import (
+        codex_opaque_child_message_ciphertext,
         parse_codex_native_child_execution_message,
     )
 
@@ -779,14 +783,41 @@ def _codex_child_execution_projection(
         for delivery in (parse_codex_native_child_execution_message(text),)
         if delivery is not None
     ]
-    if len(deliveries) != 1:
+    projected = [
+        {
+            "work_unit_id": delivery.work_unit_id,
+            "native_task_name": delivery.native_task_name,
+            "goal_hash": delivery.goal_hash,
+        }
+        for delivery in deliveries
+    ]
+    if projected:
+        if projected != [dict(expected)]:
+            raise ValueError("Codex child rollout carried a conflicting execution envelope")
+        return projected[0]
+    turn_ids = [
+        str(event.get("payload", {}).get("turn_id") or "").strip()
+        for event in events[window_start:window_end]
+        if event.get("type") == "event_msg"
+        and isinstance(event.get("payload"), dict)
+        and event["payload"].get("type") == "task_started"
+    ]
+    opaque_deliveries = [
+        ciphertext
+        for event in events[window_start:window_end]
+        if event.get("type") == "response_item" and len(turn_ids) == 1
+        for ciphertext in (
+            codex_opaque_child_message_ciphertext(
+                event.get("payload"),
+                native_task_name=expected.get("native_task_name"),
+                turn_id=turn_ids[0],
+            ),
+        )
+        if ciphertext is not None
+    ]
+    if opaque_message is None or opaque_deliveries != [opaque_message]:
         raise ValueError("Codex child rollout did not carry one exact execution envelope")
-    delivery = deliveries[0]
-    return {
-        "work_unit_id": delivery.work_unit_id,
-        "native_task_name": delivery.native_task_name,
-        "goal_hash": delivery.goal_hash,
-    }
+    return dict(expected)
 
 
 def _codex_exact_rollout_calls(
@@ -951,14 +982,25 @@ def _codex_rollout_collaboration_evidence(
         not_after=not_after,
     )
     _assert_codex_child_rollout_is_tool_free(child_events)
-    execution_delivery = _codex_child_execution_projection(child_events)
-    if declared_execution is not None and execution_delivery != declared_execution:
-        raise ValueError("Codex child rollout execution did not match its followup")
     prompt_delivery = _codex_child_prompt_delivery(
         child_events,
         parent_thread_id=parent_thread_id,
         tool_use_id=spawn["call_id"],
     )
+    expected_execution = {
+        "work_unit_id": str(prompt_delivery["work_unit_id"]),
+        "native_task_name": native_task_name,
+        "goal_hash": str(prompt_delivery["goal_hash"]),
+    }
+    execution_delivery = _codex_child_execution_projection(
+        child_events,
+        expected=expected_execution,
+        opaque_message=(
+            str(followup["arguments"]["message"]) if declared_execution is None else None
+        ),
+    )
+    if declared_execution is not None and execution_delivery != declared_execution:
+        raise ValueError("Codex child rollout execution did not match its followup")
     if any(
         prompt_delivery.get(field) != execution_delivery.get(field)
         for field in ("work_unit_id", "goal_hash")
@@ -1218,7 +1260,6 @@ def _codex_product_spawn_projection(
         not_after=not_after,
     )
     _assert_codex_child_activation_is_tool_free(child_events)
-    execution_delivery = _codex_child_execution_projection(child_events)
     declared_execution = (
         {
             "work_unit_id": execution.work_unit_id,
@@ -1228,8 +1269,6 @@ def _codex_product_spawn_projection(
         if execution is not None
         else None
     )
-    if declared_execution is not None and execution_delivery != declared_execution:
-        raise ValueError("Codex product child execution did not match its followup")
     prompt_delivery = _codex_child_prompt_delivery(
         child_events,
         parent_thread_id=parent_thread_id,
@@ -1241,6 +1280,18 @@ def _codex_product_spawn_projection(
 
     if native_task_name != codex_task_name_for_work_unit(prompt_delivery["work_unit_id"]):
         raise ValueError("Codex product child task did not match its delivered work unit")
+    expected_execution = {
+        "work_unit_id": str(prompt_delivery["work_unit_id"]),
+        "native_task_name": native_task_name,
+        "goal_hash": str(prompt_delivery["goal_hash"]),
+    }
+    execution_delivery = _codex_child_execution_projection(
+        child_events,
+        expected=expected_execution,
+        opaque_message=str(followup_message) if execution is None else None,
+    )
+    if declared_execution is not None and execution_delivery != declared_execution:
+        raise ValueError("Codex product child execution did not match its followup")
     if any(
         prompt_delivery.get(field) != execution_delivery.get(field)
         for field in ("work_unit_id", "goal_hash")

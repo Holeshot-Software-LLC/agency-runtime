@@ -107,8 +107,16 @@ def test_codex_child_projection_rejects_duplicate_execution_delivery() -> None:
     events = _two_turn_child_events(message)
     events.insert(4, deepcopy(events[3]))
 
-    with pytest.raises(ValueError, match="one exact execution envelope"):
-        _codex_child_execution_projection(events)
+    with pytest.raises(ValueError, match="conflicting execution envelope"):
+        _codex_child_execution_projection(
+            events,
+            expected={
+                "work_unit_id": "unit-1234567890",
+                "native_task_name": "unit_1234567890",
+                "goal_hash": work_unit_goal_hash("Perform the exact task."),
+            },
+            opaque_message=None,
+        )
 
 
 def test_codex_product_child_activation_turn_must_be_tool_free() -> None:
@@ -380,6 +388,8 @@ def _finish_v2_chain_through_hooks(
         work_unit_id=unit,
         goal_hash=str(plan["goal_hash"]),
     )
+    encrypted_execution_message = "gAAAAA" + "opaque-codex-execution-message" * 2
+    followup_message = encrypted_execution_message if opaque_canary else execution_message
     followup_payload = {
         "hook_event_name": "PreToolUse",
         "session_id": session_id,
@@ -388,7 +398,7 @@ def _finish_v2_chain_through_hooks(
         "tool_use_id": "followup-tool-use",
         "tool_input": {
             "target": f"/root/{task_name}",
-            "message": execution_message,
+            "message": followup_message,
         },
     }
     assert bridge.handle(followup_payload) == {}
@@ -401,11 +411,69 @@ def _finish_v2_chain_through_hooks(
     )
     execution_turn = "019fa500-2222-7333-8444-555566667777"
     transcript = store.db_path.parent / f"rollout-test-{receiver_id}.jsonl"
+    parent_transcript = store.db_path.parent / f"rollout-test-{session_id}.jsonl"
+    parent_transcript.write_text(
+        "\n".join(
+            json.dumps(event)
+            for event in (
+                {"type": "session_meta", "payload": {"id": session_id}},
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call",
+                        "name": "followup_task",
+                        "namespace": "collaboration",
+                        "call_id": "followup-tool-use",
+                        "arguments": json.dumps(followup_payload["tool_input"]),
+                    },
+                },
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    execution_input = (
+        {
+            "type": "agent_message",
+            "id": "amsg-execution",
+            "author": "/root",
+            "recipient": f"/root/{task_name}",
+            "internal_chat_message_metadata_passthrough": {"turn_id": execution_turn},
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": "Message Type: NEW_TASK\n"
+                    f"Task name: /root/{task_name}\n"
+                    "Sender: /root\n"
+                    "Payload:\n",
+                },
+                {
+                    "type": "encrypted_content",
+                    "encrypted_content": encrypted_execution_message,
+                },
+            ],
+        }
+        if opaque_canary
+        else {"type": "message", "content": execution_message}
+    )
     transcript.write_text(
         "\n".join(
             json.dumps(event)
             for event in (
-                {"type": "session_meta", "payload": {"id": receiver_id}},
+                {
+                    "type": "session_meta",
+                    "payload": {
+                        "id": receiver_id,
+                        "source": {
+                            "subagent": {
+                                "thread_spawn": {
+                                    "parent_thread_id": session_id,
+                                    "agent_path": f"/root/{task_name}",
+                                }
+                            }
+                        },
+                    },
+                },
                 {
                     "type": "event_msg",
                     "payload": {"type": "task_started", "turn_id": "activation-turn"},
@@ -421,7 +489,7 @@ def _finish_v2_chain_through_hooks(
                 },
                 {
                     "type": "response_item",
-                    "payload": {"type": "message", "content": execution_message},
+                    "payload": execution_input,
                 },
                 {
                     "type": "event_msg",
@@ -459,6 +527,8 @@ def _finish_v2_chain_through_hooks(
         turn_id=execution_turn,
         worker_id=receiver_id,
         expected=expected_execution,
+        parent_session_id=session_id,
+        execution_tool_use_id="followup-tool-use",
     )
     assert (
         bridge.handle(
@@ -1551,10 +1621,6 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
         specialist_prompt_hash=response_hash(prompt_body),
         activation_token=activation_token,
     )
-    execution_message = render_codex_native_child_execution_message(
-        work_unit_id="unit-code",
-        goal_hash=work_unit_goal_hash(original_task),
-    )
     rollout_root = tmp_path / "sessions"
     _write_codex_rollout(
         rollout_root,
@@ -1711,12 +1777,31 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
                 },
             },
             {
-                "type": "response_item",
-                "payload": {"type": "message", "content": execution_message},
-            },
-            {
                 "type": "event_msg",
                 "payload": {"type": "task_started", "turn_id": "execution-turn"},
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "agent_message",
+                    "id": "amsg-execution",
+                    "author": "/root",
+                    "recipient": f"/root/{task_name}",
+                    "internal_chat_message_metadata_passthrough": {"turn_id": "execution-turn"},
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": "Message Type: NEW_TASK\n"
+                            f"Task name: /root/{task_name}\n"
+                            "Sender: /root\n"
+                            "Payload:\n",
+                        },
+                        {
+                            "type": "encrypted_content",
+                            "encrypted_content": encrypted_followup_message,
+                        },
+                    ],
+                },
             },
             {
                 "type": "event_msg",
@@ -1984,10 +2069,6 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
             specialist_prompt_hash=response_hash(specialist_prompt),
             goal_hash=work_unit_goal_hash(original_task),
         )
-        execution_message = render_codex_native_child_execution_message(
-            work_unit_id=unit,
-            goal_hash=work_unit_goal_hash(original_task),
-        )
         encrypted_followup_message = "gAAAAA" + f"opaque-product-followup-{index}-ciphertext" * 2
         parent_events.extend(
             (
@@ -2204,14 +2285,35 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
                     },
                 },
                 {
-                    "type": "response_item",
-                    "payload": {"type": "message", "content": execution_message},
-                },
-                {
                     "type": "event_msg",
                     "payload": {
                         "type": "task_started",
                         "turn_id": f"execution-turn-{index}",
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "agent_message",
+                        "id": f"amsg-execution-{index}",
+                        "author": "/root",
+                        "recipient": f"/root/{task_name}",
+                        "internal_chat_message_metadata_passthrough": {
+                            "turn_id": f"execution-turn-{index}"
+                        },
+                        "content": [
+                            {
+                                "type": "input_text",
+                                "text": "Message Type: NEW_TASK\n"
+                                f"Task name: /root/{task_name}\n"
+                                "Sender: /root\n"
+                                "Payload:\n",
+                            },
+                            {
+                                "type": "encrypted_content",
+                                "encrypted_content": encrypted_followup_message,
+                            },
+                        ],
                     },
                 },
                 {

@@ -11,6 +11,7 @@ from __future__ import annotations
 import base64
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Final
 
@@ -309,6 +310,61 @@ def is_codex_opaque_collaboration_message(value: object) -> bool:
     )
 
 
+def codex_opaque_child_message_ciphertext(
+    value: object,
+    *,
+    native_task_name: object,
+    turn_id: object,
+) -> str | None:
+    """Return one exact root-to-child ciphertext from current Codex evidence."""
+
+    task_name = str(native_task_name or "").strip()
+    normalized_turn = str(turn_id or "").strip()
+    if not task_name or len(task_name) > 128 or not normalized_turn:
+        return None
+    if not isinstance(value, Mapping) or set(value) != {
+        "type",
+        "id",
+        "author",
+        "recipient",
+        "internal_chat_message_metadata_passthrough",
+        "content",
+    }:
+        return None
+    item_id = value.get("id")
+    metadata = value.get("internal_chat_message_metadata_passthrough")
+    content = value.get("content")
+    expected_path = f"/root/{task_name}"
+    expected_text = f"Message Type: NEW_TASK\nTask name: {expected_path}\nSender: /root\nPayload:\n"
+    if (
+        value.get("type") != "agent_message"
+        or not isinstance(item_id, str)
+        or not item_id
+        or len(item_id) > 256
+        or value.get("author") != "/root"
+        or value.get("recipient") != expected_path
+        or not isinstance(metadata, Mapping)
+        or set(metadata) != {"turn_id"}
+        or metadata.get("turn_id") != normalized_turn
+        or not isinstance(content, list)
+        or len(content) != 2
+    ):
+        return None
+    visible, encrypted = content
+    if (
+        not isinstance(visible, Mapping)
+        or set(visible) != {"type", "text"}
+        or visible.get("type") != "input_text"
+        or visible.get("text") != expected_text
+        or not isinstance(encrypted, Mapping)
+        or set(encrypted) != {"type", "encrypted_content"}
+        or encrypted.get("type") != "encrypted_content"
+    ):
+        return None
+    ciphertext = encrypted.get("encrypted_content")
+    return str(ciphertext) if is_codex_opaque_collaboration_message(ciphertext) else None
+
+
 def parse_codex_native_child_execution_message(
     value: object,
 ) -> CodexNativeChildExecutionDelivery | None:
@@ -519,6 +575,7 @@ __all__ = [
     "NATIVE_CHILD_PROMPT_DELIVERY_VERSION",
     "CodexNativeChildExecutionDelivery",
     "NativeChildPromptDelivery",
+    "codex_opaque_child_message_ciphertext",
     "is_codex_opaque_collaboration_message",
     "parse_codex_native_child_execution_message",
     "parse_native_child_prompt_delivery",

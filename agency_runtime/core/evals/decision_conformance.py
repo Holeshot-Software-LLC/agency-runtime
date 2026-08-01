@@ -963,6 +963,34 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-opaque-execution-drops-parent-session-identity",
+        invariant=(
+            "Opaque Codex execution evidence requires the parent rollout to prove its "
+            "own exact session identity."
+        ),
+        source_path="agency_runtime/core/codex_child_execution.py",
+        before="    if len(parent_sessions) != 1:\n        return None\n",
+        after="    if False and len(parent_sessions) != 1:\n        return None\n",
+        test_node=(
+            "tests/test_codex_child_execution.py::"
+            "test_current_turn_matches_exact_parent_and_child_ciphertext"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-opaque-execution-drops-ciphertext-identity",
+        invariant=(
+            "Opaque Codex execution evidence requires one child ciphertext that is "
+            "byte-identical to the exact parent follow-up ciphertext."
+        ),
+        source_path="agency_runtime/core/codex_child_execution.py",
+        before="    return child_ciphertexts == [parent_ciphertext]\n",
+        after="    return len(child_ciphertexts) == 1\n",
+        test_node=(
+            "tests/test_codex_child_execution.py::"
+            "test_current_turn_matches_exact_parent_and_child_ciphertext"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="preflight-failure-drops-terminal-receipt",
         invariant=(
             "Every owned terminal preflight failure persists one exact content-free receipt."

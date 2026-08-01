@@ -15,7 +15,7 @@ related:
   - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
-  - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
+  - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
@@ -197,11 +197,14 @@ spawn acknowledgement does not prove the child executed its task. After that
 turn completes, the parent sends the plan row's exact goal-hash-bound
 `[AGENCY EXACT TASK EXECUTION v1]` envelope through `followup_task` once and
 waits again. The parent hook binds the opaque follow-up to that exact activated
-child and atomically claims it once; the child's bounded rollout must then prove
-the decrypted canonical envelope inside its later terminal turn before Agency
-accepts a worker outcome. `send_message`, retries, child reuse, missing or
-duplicate envelopes, and cross-child evidence fail closed. Payloads are
-byte-budgeted (64 KiB) and never silently truncated.
+child and atomically claims it once. Current Codex persists the same ciphertext
+in the parent call and the child's later `NEW_TASK` record, so Agency requires
+those values to match exactly together with the Store tool-use ID, child
+lineage, canonical task path, and second terminal turn. The content-free
+work-unit and goal identity comes from the already verified activation context;
+ciphertext is compared transiently and never retained in evidence. `send_message`,
+retries, child reuse, missing or duplicate triggers, and cross-child evidence
+fail closed. Payloads are byte-budgeted (64 KiB) and never silently truncated.
 
 ```mermaid
 sequenceDiagram
@@ -221,23 +224,23 @@ sequenceDiagram
         Hook->>Store: consume the only unconsumed grant
         Hook-->>Child: token-free v2 specialist context + goal hash
         Child-->>Host: activation readiness only
-        Host->>Hook: followup_task (exact execution envelope)
+        Host->>Hook: followup_task (host-encrypted execution trigger)
         Hook->>Store: claim one-use execution dispatch
         Hook-->>Host: allow exact follow-up once
     end
     Host->>Child: execute the authorized specialist turn
     Child-->>Host: result
-    Host->>Hook: SubagentStop (causal completion evidence)
+    Host->>Hook: SubagentStop (matching parent/child ciphertext + causal turn)
 ```
 
 Codex does not currently expose the decrypted spawn assignment or an
-authenticated digest to either relevant hook. The exact plan label, preserved
-host ciphertext, isolated workspace, goal-hash-bound v2 context, one-use
-execution envelope, and two causal child turns are the strongest observable
-binding; Agency rejects missing or ambiguous rows rather than falling back to
-an untyped worker. Current Codex opaque children are scheduled one at a time
-because the host does not expose enough authenticated task identity to
-correlate multiple grants awaiting `SubagentStart`.
+authenticated digest to either relevant hook. The exact plan label, byte-equal
+parent and child ciphertext, isolated workspace, goal-hash-bound v2 context,
+one-use Store dispatch, and two causal child turns form the observable binding;
+Agency rejects missing or ambiguous rows rather than falling back to an untyped
+worker. Current Codex opaque children are scheduled one at a time because the
+host does not expose enough authenticated task identity to correlate multiple
+grants awaiting `SubagentStart`.
 
 ### MCP-plugin hosts (Hermes, OpenClaw)
 
