@@ -485,6 +485,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e04397b` | 2026-08-01 | fix(product): preserve turn-scoped specialist execution | [AR-219](../roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md) | [detail](2026-08-01-e04397b-turn-scoped-product-execution.md) |
 | `386afca` | 2026-08-01 | Merge pull request #223 from Holeshot-Software-LLC/codex/ar-219-preserve-product-execution | [AR-219](../roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md) | null |
 | `232a0ea` | 2026-08-01 | docs(ar-219): checkpoint contractor approval boundary | [AR-219](../roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md) | null |
+| `b258cfb` | 2026-08-01 | fix(hiring): bind contractor risk to verified authority | [AR-219](../roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md) | [detail](2026-08-01-b258cfb-verified-contractor-risk-authority.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
