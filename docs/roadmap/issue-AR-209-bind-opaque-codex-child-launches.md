@@ -80,7 +80,9 @@ tests, and every routing gate. Decision conformance passed its baseline, killed
 all 71 mutations with zero survivors or invalid results, and proved the source
 tree unchanged. The follow-up six-node focused boundary and all 28 activation
 tests pass. Its first 73-mutation attempt timed out at the 90-second baseline
-before any mutation ran; source remained unchanged and the default rerun remains.
+before any mutation ran. AR-210 repaired that aggregate timeout mismatch; the
+default rerun passed its 169.176-second baseline, killed all 73 mutations with
+zero survivors or invalid results, and left source unchanged.
 
 ## Approach
 
