@@ -464,6 +464,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `53d4ebd` | 2026-07-31 | docs(roadmap): record verifier repair fast gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
 | `b2ea634` | 2026-07-31 | fix(workforce): preserve verifier rejection evidence | [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
 | `81b442a` | 2026-07-31 | docs(roadmap): record reviewed verifier evidence gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
+| `1694d6e` | 2026-07-31 | Merge pull request #210 from Holeshot-Software-LLC/codex/ar-212-repair-recruiter-verification | [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

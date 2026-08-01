@@ -84,6 +84,18 @@ passed, and decision-conformance passed in 760.6 seconds with a green baseline,
 all 73 curated mutations killed, zero invalid or surviving mutations, and the
 source unchanged.
 
+PR 210 merged the reviewed repair as exact revision
+`1694d6e07e04fb1c1f19f65bf2af381542b8079f`. The official VCS package is
+installed as `0.1.0+g1694d6e07e04`; the bare install selected only Codex and
+ZCode plus the default dashboard. ZCode is current, the dashboard is active and
+reachable, and Codex activation passed through the supported autonomous bypass
+without changing persistent trust. Activation session
+`019fbb30-eb27-7320-888c-9f86014be9ba`, trace
+`019fbb30-f3db-7193-b90f-31bef41efd1c`, and run
+`a3bb4d57-7b18-4827-afae-48fb6be298f8` prove an inference-selected
+`code-reviewer`, one native delegation, accepted finalization, a first-pass
+valid header, and zero corrections. One governed product trial remains.
+
 One broader compatibility run exposed an unrelated stale preflight-token
 failure in untouched native plan-scope code. It is isolated as
 [AR-213](issue-AR-213-reject-stale-preflight-tokens-before-plan-validation.md)

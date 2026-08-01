@@ -26,8 +26,8 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-212-repair-recruiter-verification
-evidence_commit: e62d0adc6daaf91f99bdc125217a523665d1dad4
+branch: codex/ar-212-live-product-proof
+evidence_commit: 1694d6e07e04fb1c1f19f65bf2af381542b8079f
 minimum_ledger_commit: 05bc8665f1c4024f9a3cdf16113020908e5141b0
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
@@ -39,15 +39,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 - The active goal remains `README's main story works in reality.`
 - PR 204 merged the exact Codex delegation repairs as `207b150`.
-- PR 207 merged AR-211 as `e62d0adc6daaf91f99bdc125217a523665d1dad4`
-  after both Codex review threads were addressed and resolved.
-- Exact official build `0.1.0+ge62d0adc6daa` is installed. Its planner resolves
-  the formerly rejected `207b150` target and reports `e62d0adc` as current.
+- PR 210 merged the reviewed AR-212 repair as
+  `1694d6e07e04fb1c1f19f65bf2af381542b8079f`; its one Codex P1 was repaired,
+  evidence-addressed, and resolved before merge.
+- Exact official build `0.1.0+g1694d6e07e04` is installed.
 - Bare install discovered only Codex and ZCode and selected the dashboard.
   ZCode completed, the dashboard is active and reachable, and Codex registered.
-- Supported autonomous activation passed. Product trial
-  `ar207-e62d0adc-readme-01` is consumed and terminal `NO-GO`.
-- AR-212 is implemented locally: verifier rejection now participates in the
+- Supported autonomous activation passed on `1694d6e`; one governed product
+  trial remains unused for this exact build.
+- AR-212 is merged: verifier rejection now participates in the
   existing one recruiter repair, unsafe results are not cached, explicit gaps
   remain hireable, and preflight failure schema v2 retains bounded staffing
   and hiring reason codes.
@@ -102,6 +102,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   all 110 dashboard tests and every routing threshold passed, and the 760.6
   second decision-conformance run killed all 73 mutations with zero invalid or
   surviving cases and left the source unchanged.
+- PR 210 merged as `1694d6e07e04fb1c1f19f65bf2af381542b8079f` after the
+  Codex P1 was fixed in `b2ea634`, replied to with exact evidence, and resolved.
+- Exact package installation reports `0.1.0+g1694d6e07e04`. The write-free bare
+  plan selected exactly Codex, ZCode, and dashboard; application made ZCode
+  current, left the Codex payload current, and made the per-user dashboard
+  active and reachable.
+- Autonomous activation session `019fbb30-eb27-7320-888c-9f86014be9ba`, trace
+  `019fbb30-f3db-7193-b90f-31bef41efd1c`, and run
+  `a3bb4d57-7b18-4827-afae-48fb6be298f8` passed in 123.2 seconds. Inference
+  selected `code-reviewer`; one specialist load, native grant, consumption,
+  worker run, and completed delegation were retained. Finalization accepted,
+  the first header was valid, correction count was zero, trust mode was
+  `autonomous_bypass`, and persistent trust did not change.
 - A broader preflight module run reached 98 passes and exposed an unrelated
   stale-token/native-plan-scope failure. It is recorded as AR-213 / tracker
   https://github.com/Holeshot-Software-LLC/agency-runtime/issues/209 and is not
@@ -111,11 +124,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The proven recruiter acceptance defect, its focused review correction, and the
-complete exact-head local gate are green. The remaining boundary is procedural
-and live: push and merge the exact branch, install that merge, then run one new
-activation and at most one governed product trial with workspace-write and
-zero-correction evidence.
+The reviewed repair, merge, exact package and suite installation, and one
+supported-bypass activation are green. The only remaining product boundary is
+one governed `python-cli-service` Codex trial on build `1694d6e`; it must prove
+specialist selection and delegation, workspace write, a first-pass valid header,
+zero corrections, and independent artifact validation.
 
 ## same-task-continuity
 
@@ -126,9 +139,9 @@ dispatch hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Review and merge one PR; keep hosted billing failures non-authoritative.
-2. Exact-install the merge and run at most one activation and one product trial.
-3. Produce the local evidence page and OpenClaw handoff.
+1. Run exactly one `python-cli-service` Codex product trial on build `1694d6e`.
+2. Stop on its terminal result; do not repair or rerun this build in place.
+3. Produce the local evidence page and OpenClaw handoff from recorded evidence.
 
 ## verification
 
@@ -154,5 +167,6 @@ git diff --check
 - Only Codex, ZCode, and dashboard are in machine scope.
 - One live product trial per exact installed build; any correction is failure.
 - Exact build `e62d0adc` activation and product trial are consumed.
+- Exact build `1694d6e` activation is consumed; its one product trial remains.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
