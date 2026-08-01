@@ -17,6 +17,7 @@ related:
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
   - docs/roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md
   - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
+  - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
   - docs/analysis/2026-07-31-ar-212-readme-story-evidence.html
   - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
@@ -39,9 +40,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-219-live-product-proof
-evidence_commit: 386afca23bdc16e6c49c6dab55967b26a902a5b2
-minimum_ledger_commit: 8646a61a8a3dd1bb6cb5ce5cc8e573a4efa81fcd
+branch: codex/ar-219-recruiter-abstention-proof
+evidence_commit: 5c45f154e720f1c91d2fa7c297c804cbd9c26d0c
+minimum_ledger_commit: 458b7e5ea252a56fe97f1e6184f24d197af5dea6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -51,88 +52,44 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 223 merged AR-219 as exact commit `386afca`; package
-  `0.1.0+g386afca23bdc` is installed from that immutable revision.
-- Bare install selected exactly Codex, ZCode, and dashboard. ZCode is current,
-  Codex is registered, and the dashboard is active and reachable.
-- Supported autonomous activation for `386afca` passes with an inferred
-  `code-reviewer`, one completed delegation, a valid first header, zero
-  corrections, autonomous hook bypass, and no persistent profile change.
-- Trial `ar219-386afca-readme-01` is consumed and terminal `NO-GO`: planner and
-  recruiter applied, then dynamic hiring required high-risk human approval and
-  atomic preflight published no route, specialist, delegation, header, or
-  workspace write. Correction count is zero and the workspace is empty.
-- The contractor-risk repair is locally implemented: the work unit owns
-  mutation scope, explicit prohibitions do not grant authority, genuine risk
-  stays approval-gated, and both reviews pass. The exact branch passes 81
-  focused tests, Python 654/6, dashboard 110/110, routing 39/39, 617-document
-  validation, Ruff/diff checks, and 78/78 mutations with unchanged source.
+- PR 224 merged the contractor-risk repair as exact `5c45f154`; installed
+  package `0.1.0+g5c45f154e720` reports that full immutable source revision.
+- Default install selected exactly Codex, ZCode, and dashboard; all completed
+  and the dashboard is active and reachable.
+- The merged gate passed two reviews, focused 81, Python 654/6, dashboard
+  110/110, routing 39/39, 78/78 mutations, documentation, Ruff, and diff checks.
+- Activation session `019fbdbb-2609-7090-911c-9e8497f91009`, trace
+  `019fbdbb-2f98-7a10-9221-0872293ebc4e`, and run
+  `2d0e25bb-6103-4ee7-bdcf-3228da2818aa` pass with one inferred
+  `code-reviewer`, real child, valid first header, and zero corrections.
+- Trial `ar219-5c45f15-readme-01` is consumed and terminal `NO-GO`: planner and
+  recruiter responses applied, then recruiter semantic acceptance abstained;
+  atomic preflight published no route, specialist, header, write, or artifact.
 
 ## completed-evidence
 
-- AR-217's exact local gate passed: 643 Python production-spine tests passed
-  with six skips, 110 dashboard UI tests passed, every routing-eval gate
-  passed, and decision conformance killed all 73 mutations with zero invalid or
-  surviving cases and `source_unchanged=true`. Exact-head Codex review found no
-  major issues.
-- Trial atomicity preserves zero route, specialist, grant, delegation, worker,
-  finalization, header, or workspace-write evidence. Correction count zero is
-  not success because parent generation never began.
-- The composed AR-218 regression now passes planner rejection/repair followed
-  by recruiter rejection/repair in exactly four calls. Existing explicit lower
-  budgets remain authoritative and no deterministic selection path was added.
-- AR-218's named fast gate passes 643 Python tests with six skips, 110 dashboard
-  UI tests, all routing gates, 612-document validation, repository-wide Ruff
-  lint/format, and 73/73 killed decision mutations with zero survivors or
-  invalid cases and `source_unchanged=true`.
-- Exact-head PR 220 review found that a legacy balanced-only cap of three would
-  be invalidated by the new omitted fast default. The focused-green repair caps
-  the effective omitted fast value to that explicit balanced value while
-  preserving the persisted partial document.
-- Repaired checkpoint `a347eff` passes 643 Python tests with six skips, all 110
-  dashboard tests, 39/39 routing gates, and 73/73 killed mutations with zero
-  survivors or invalid cases. The target budget mutation is killed and
-  `source_unchanged=true`.
-- PR 220 passed exact-head Codex review and merged normally as `f8e607d`.
-- Exact activation session `019fbc48-be72-7442-9fa0-be195fcffffb`, trace
-  `019fbc48-cb46-7c73-a835-23477439beb6`, and run
-  `b1cfda5a-19c8-4615-8bd5-5c628053229a` prove one inferred and completed
-  `code-reviewer` delegation, a valid first header, and zero corrections.
-- Product session `019fbc4c-aeae-70c1-b256-f166e92452c5`, trace
-  `019fbc4c-af63-76c0-9a40-55a559c4fee4`, and run
-  `00c0ebd0-ca95-4da9-be01-e6ae848c82fb` retain eight completed workers and an
-  accepted finalization. The product projection reports
-  `native_collaboration_topology_invalid`; workspace proof and artifacts are
-  absent.
-- AR-219's two reviews and 102 focused tests pass exact reuse, conflicting
-  identity rejection, child-goal delivery, sentinel ownership, and diagnostics.
-- The branch passes Python 643/6, dashboard 110/110, routing 39/39,
-  615-document validation, repository-wide Ruff, and diff validation.
-- The full 73-mutation decision-conformance process completed after its outer
-  shell deadline, but that shell did not retain the terminal JSON or exit code,
-  so it is not claimed as fresh. Every changed production source passes a
-  captured 22/22 slice with zero survivors/invalid and unchanged source.
-- PR 223 merged the reviewed head as `386afca`; GitHub-hosted checks were not
-  relied on or retried, and no GitHub Codex review arrived before merge.
-- Exact activation session `019fbd75-2ea2-7f80-b6f7-eb2bb0724f2a`, trace
-  `019fbd75-3d0b-7b10-a463-2b95ee1fe2ab`, and run
-  `36b9b721-7efa-400d-9e07-ba1b860a1772` pass with one real specialist child,
-  valid first header, zero corrections, and autonomous bypass.
-- Product session `019fbd7a-0c24-7581-a49d-91bbe870f7ea`, trace
-  `019fbd7a-0cb8-7dc0-ba1b-415d3d834a3e`, and run
-  `6e03910a-ec8b-4c4a-8d15-f2700b7cd219` fail atomically at high-risk hiring;
-  zero execution rows commit and exact isolated trust remains proven.
-- The contractor-risk repair passes both bounded review passes and its exact
-  local fast gate: Python 654/6, dashboard 110/110, routing 39/39, 617-document
-  validation, Ruff/diff checks, and 78/78 mutations with zero survivors or
-  invalid cases and `source_unchanged=true`.
+- Earlier exact builds `f8e607d` and `386afca` preserve the multi-unit topology
+  and false high-risk hiring boundaries; neither may be rerun.
+- PR 224 was mergeable with zero review threads. No Codex review arrived in the
+  bounded window; hosted checks were neither relied on nor retried.
+- Activation used `autonomous_bypass`, changed no persistent trust, completed
+  one grant/load/delegation/worker/finalization chain, and accepted its header.
+- Product session `019fbdbd-94a8-7812-a0df-37a28369eeeb`, trace
+  `019fbdbd-9553-7fb3-8fbd-0b7d9755443f`, run
+  `03ac1e0c-39b4-4212-ada3-a17bfa911070`, and failure
+  `82513b21-6dd5-4b64-9adb-27aebede349d` retain the terminal boundary.
+- Hiring reasons are `relationships_not_coherent`,
+  `acceptance_evidence_insufficient`, and `gap_not_independently_proven`;
+  staffing is `no_safe_sufficient_team` plus `recruiter_abstained`.
+- Product cardinalities are one trace/run/failure and zero execution rows. All
+  header fields are absent, correction count is zero, trust/bypass pass without
+  persistent changes, validation is skipped, and the exact workspace is empty.
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `386afca` proves install and
-activation, but its single product trial fails before routing because an
-isolated-workspace contractor is treated as high risk. The bounded risk-
-authority repair is local-green; one new immutable-build proof remains.
+The README main story remains NO-GO. Exact `5c45f154` proves installation and
+activation and removes the false risk gate, but its product recruiter cannot
+publish a coherent evidence-backed team. AR-220 owns this first boundary.
 
 ## same-task-continuity
 
@@ -145,10 +102,11 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Commit, review, merge, and install one immutable repair without relying on
-   hosted Actions.
-2. Spend one activation and at most one product trial on that new build, then
-   update the local evidence page and OpenClaw handoff from the exact result.
+1. Reproduce the three live recruiter reasons in one exact-scenario fixture.
+2. Identify and repair only the missing inference evidence or projection; no
+   deterministic team design or generalist substitution.
+3. Kill one decision mutation per rejection class, run two reviews and the
+   named local gate, then spend one activation and at most one product trial.
 
 ## verification
 
@@ -160,7 +118,7 @@ python scripts/update_worklog.py --check
 python scripts/verify_docs.py
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
-python -m pytest tests/test_ar214_context_delivery_authority.py -q -W error
+python -m pytest tests/test_workforce_inference.py tests/test_workforce_dynamic_hiring.py -q -W error
 python -m pytest <named fast spine from AGENTS.md> -q -W error
 node --test tests/dashboard_ui.test.mjs
 .venv\Scripts\agency.exe eval routing --json --no-details
@@ -174,6 +132,7 @@ git diff --check
 - Only Codex, ZCode, and dashboard are in machine scope.
 - One live product trial per exact installed build; any correction is failure.
 - Exact builds `e62d0adc`, `1694d6e`, `d6ba36a`, `9c2e9f8`, `8cfd975`,
-  `f8e607d`, and `386afca` consumed governed live evidence; none may be rerun.
+  `f8e607d`, `386afca`, and `5c45f154` consumed governed live evidence; none
+  may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

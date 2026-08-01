@@ -20,6 +20,7 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
+  - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
@@ -34,7 +35,7 @@ epic: product
 issue_id: AR-219
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/221
-depends_on: [AR-218]
+depends_on: [AR-218, AR-220]
 blocks: [AR-203, AR-204]
 ---
 
@@ -63,6 +64,12 @@ green, but its one product trial fails atomically while filling an
 inference-declared workforce gap: a governed contractor proposal is classified
 as high risk and therefore cannot commit without human approval. No route or
 specialist execution is published from that failed preflight.
+
+The next exact repair removes that false high-risk boundary, passes activation,
+and reaches recruiter semantic acceptance. Planner and recruiter inference are
+both applied, but the recruiter abstains because relationship coherence,
+acceptance evidence, and independent gap proof remain insufficient. Atomic
+preflight again publishes no executable team.
 
 ## Current state
 
@@ -157,6 +164,29 @@ pass. The exact branch passes the named 654-test Python spine with six skips,
 all 110 dashboard tests, all 39 routing gates, 617-document validation,
 repository-wide Ruff lint and format, and all 78 decision mutations with zero
 survivors or invalid cases and `source_unchanged=true`.
+
+PR 224 merged that repair as exact commit
+`5c45f154e720f1c91d2fa7c297c804cbd9c26d0c`; installed package
+`0.1.0+g5c45f154e720` reports the same full source revision. Default install
+again selected Codex, ZCode, and dashboard. Activation session
+`019fbdbb-2609-7090-911c-9e8497f91009`, trace
+`019fbdbb-2f98-7a10-9221-0872293ebc4e`, run
+`2d0e25bb-6103-4ee7-bdcf-3228da2818aa`, and route
+`66583f48-6f74-40a3-b290-4343542a4660` pass with one inferred
+`code-reviewer`, one real child, one accepted finalization, a valid first
+header, zero corrections, autonomous bypass, and no persistent trust change.
+
+Trial `ar219-5c45f15-readme-01` is consumed and terminal `NO-GO` after 167.8
+seconds. Session `019fbdbd-94a8-7812-a0df-37a28369eeeb`, trace
+`019fbdbd-9553-7fb3-8fbd-0b7d9755443f`, run
+`03ac1e0c-39b4-4212-ada3-a17bfa911070`, and preflight failure
+`82513b21-6dd5-4b64-9adb-27aebede349d` prove both inference stages applied,
+then staffing ended with `no_safe_sufficient_team` and
+`recruiter_abstained`. Hiring reasons are `relationships_not_coherent`,
+`acceptance_evidence_insufficient`, and `gap_not_independently_proven`.
+Cardinalities are zero for every route and execution row; all seven header
+fields are absent; correction count is zero; the exact isolated workspace is
+empty; and artifact validation is skipped. AR-220 owns this first boundary.
 
 ## Approach
 
