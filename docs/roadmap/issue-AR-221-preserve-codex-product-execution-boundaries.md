@@ -12,6 +12,7 @@ related:
   - agency_runtime/core/workforce/routing_projection.py
   - tests/test_codex_activation_canary.py
   - tests/test_product_host.py
+  - tests/test_ar214_context_delivery_authority.py
   - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
   - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
@@ -77,6 +78,16 @@ all product artifacts are absent, so validation is correctly skipped. No hiring
 case exists for this trace: the two contractor identities were existing roster
 versions, not new hires, and AR-220's four-call repair remains live-unproven.
 
+The bounded repair accepts product waits through 3,600,000 milliseconds while
+leaving the activation canary unchanged. Current descriptors and exact goals
+now carry the verifier-accepted mutation scope. Goal construction reserves the
+scope suffix under the 4,096-character ceiling, and every workspace-write child
+checks the prompt-bound sentinel before its first mutation while other actors
+remain prohibited. Two review passes are complete. The consolidated focused
+slice passes 127 tests, and three independent curated mutations are killed with
+zero survivors or invalid cases and unchanged source. AR-222 records seven
+unrelated legacy integrity-test failures that are unchanged from `origin/main`.
+
 ## Approach
 
 1. Bind the product-only wait validator to the current native host ceiling while
@@ -103,14 +114,14 @@ ADR-0128 binds every opaque Codex launch to exact plan authority.
 
 ## Acceptance
 
-- [ ] Product waits through the current 3,600,000-millisecond host ceiling are
+- [x] Product waits through the current 3,600,000-millisecond host ceiling are
   accepted; zero, booleans, unknown keys, and values above it fail closed.
-- [ ] The activation canary still requires exactly 60,000 milliseconds.
-- [ ] Every current workforce descriptor and child goal carries its exact
+- [x] The activation canary still requires exactly 60,000 milliseconds.
+- [x] Every current workforce descriptor and child goal carries its exact
   verified mutation scope, and reconstruction preserves the exact goal hash.
-- [ ] The first workspace-write child has an unambiguous sentinel obligation;
+- [x] The first workspace-write child has an unambiguous sentinel obligation;
   later writers, read-only children, and the parent cannot overwrite it.
-- [ ] Missing, malformed, preexisting, out-of-scope, or parent-authored write
+- [x] Missing, malformed, preexisting, out-of-scope, or parent-authored write
   proof remains terminal failure.
 - [ ] Focused checks, at most two review passes, and the named local fast gate
   pass on one exact head.

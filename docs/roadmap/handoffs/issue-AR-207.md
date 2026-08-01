@@ -62,6 +62,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - The product host rejects the current Codex wait arguments and the isolated
   workspace stays empty. AR-221 freezes the next package around only those two
   boundaries.
+- AR-221 now repairs both boundaries locally: current waits project, exact
+  child goals carry verified scope, and the sentinel obligation is
+  self-assigning without granting the parent write authority.
 
 ## completed-evidence
 
@@ -85,13 +88,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   goal hash matches Store evidence, but its child-visible goal omits that scope.
 - No hiring case exists for this trace. Existing contractor versions executed;
   AR-220's repaired four-call hiring path remains live-unproven.
+- Two AR-221 reviews and 127 focused tests pass. Three new decision mutations
+  are killed with zero survivors or invalid results and unchanged source.
 
 ## exact-blocker
 
 The README main story remains NO-GO. Exact `ff39761` proves installation,
 activation, inference-authored seven-unit selection, and real child execution.
-AR-221 owns the stale product wait ceiling and missing child-visible mutation
-scope that leave collaboration evidence rejected and the workspace empty.
+AR-221 has repaired the stale product wait ceiling and missing child-visible
+mutation scope locally. The named fast gate and one fresh immutable-build live
+proof remain before the README story can be accepted.
 
 ## same-task-continuity
 
@@ -102,12 +108,10 @@ dispatch hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Accept the current product-only Codex wait ceiling while retaining the exact
-   activation-canary contract.
-2. Carry verified mutation scope into the decoded child goal and make sentinel
-   ownership self-assigning, then run focused tests and two reviews.
-3. Run the named local gate, merge, install one exact build, and spend one
-   activation plus at most one fresh product trial before final evidence.
+1. Run the named local gate on one exact head and checkpoint the result.
+2. Merge and install that immutable revision without using hosted Actions.
+3. Spend one activation plus at most one fresh product trial, then update the
+   local evidence page and OpenClaw handoff from accepted real evidence.
 
 ## verification
 

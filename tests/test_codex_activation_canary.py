@@ -16,6 +16,7 @@ from agency_runtime.core import canary
 from agency_runtime.core.activation_canary_contract import CODEX_ACTIVATION_CANARY_WORK_UNIT
 from agency_runtime.core.agent_activation import PROTECTED_AGENT_SLUGS
 from agency_runtime.core.canary_backends import (
+    _codex_product_wait_counts,
     codex_canary_record,
     codex_collaboration_evidence,
 )
@@ -1737,7 +1738,11 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
                         "name": "wait_agent",
                         "namespace": "collaboration",
                         "call_id": f"call-product-wait-{index}",
-                        "arguments": json.dumps({} if index == 8 else {"timeout_ms": 60_000}),
+                        "arguments": json.dumps(
+                            {}
+                            if index == 8
+                            else {"timeout_ms": 3_600_000 if index == 1 else 60_000}
+                        ),
                     },
                 },
                 {
@@ -1915,6 +1920,47 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
     )
     encoded = json.dumps(record)
     assert all(secret not in encoded for secret in secrets)
+
+
+@pytest.mark.parametrize("timeout_ms", [0, True, 3_600_001])
+def test_codex_product_wait_timeout_stays_bounded(timeout_ms: object) -> None:
+    with pytest.raises(ValueError, match="wait arguments exceeded the bounded contract"):
+        _codex_product_wait_counts(
+            [
+                {
+                    "arguments": {"timeout_ms": timeout_ms},
+                    "call_id": "product-wait",
+                    "index": 2,
+                }
+            ],
+            outputs={
+                "product-wait": {
+                    "message": "Wait completed.",
+                    "timed_out": False,
+                }
+            },
+            last_spawn_index=1,
+        )
+
+
+def test_codex_product_wait_rejects_unknown_arguments() -> None:
+    with pytest.raises(ValueError, match="wait arguments exceeded the bounded contract"):
+        _codex_product_wait_counts(
+            [
+                {
+                    "arguments": {"timeout_ms": 60_000, "targets": []},
+                    "call_id": "product-wait",
+                    "index": 2,
+                }
+            ],
+            outputs={
+                "product-wait": {
+                    "message": "Wait completed.",
+                    "timed_out": False,
+                }
+            },
+            last_spawn_index=1,
+        )
 
 
 def test_codex_product_rollout_preserves_first_content_free_topology_reason(
