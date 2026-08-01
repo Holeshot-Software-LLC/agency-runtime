@@ -481,6 +481,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3a11f29` | 2026-08-01 | docs(ar-218): record reviewed compatibility gate | [AR-218](../roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md) | null |
 | `f8e607d` | 2026-08-01 | Merge pull request #220 from Holeshot-Software-LLC/codex/ar-218-fund-stage-repairs | [AR-218](../roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md) | null |
 | `c28223e` | 2026-08-01 | docs(ar-219): record multi-unit product boundary | [AR-203](../roadmap/issue-AR-203-prove-product-canary-write-and-activation.md), [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md), [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-218](../roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md), [AR-219](../roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md) | null |
+| `cf03396` | 2026-08-01 | Merge pull request #222 from Holeshot-Software-LLC/codex/ar-219-record-product-boundary | [AR-219](../roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
