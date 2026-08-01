@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
+  - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -70,6 +71,13 @@ three-call workforce budget funded planner rejection/repair and recruiter
 rejection but not the recruiter's bounded repair. AR-218 owns that independent
 budget boundary; the consumed trial neither disproves nor live-proves this
 issue's critic handoff.
+
+The later exact `f8e607d` product trial selected three already-governed
+contractor versions in an accepted eight-unit team, but inference reported no
+gap and performed no new hiring call. That trial therefore still does not
+live-prove this issue's critic handoff. It advanced through eight completed
+workers before AR-219's separate topology-projection and workspace-write
+failure.
 
 ## Approach
 

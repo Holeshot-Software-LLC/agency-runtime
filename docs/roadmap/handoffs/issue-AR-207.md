@@ -16,7 +16,9 @@ related:
   - docs/roadmap/issue-AR-216-preserve-required-product-scenario-files.md
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
   - docs/roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md
+  - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/analysis/2026-07-31-ar-212-readme-story-evidence.html
+  - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
@@ -35,9 +37,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-218-fund-stage-repairs
-evidence_commit: a347effa148f433b4e3954133c56f10f9f85a029
-minimum_ledger_commit: a347effa148f433b4e3954133c56f10f9f85a029
+branch: codex/ar-219-record-product-boundary
+evidence_commit: f8e607d309f5dba933bc55f17892209e39e6e014
+minimum_ledger_commit: 4264834b6f8db2ba94789193acd4f1818b5facef
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -47,19 +49,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 218 merged AR-217 as exact commit `8cfd975`; package
-  `0.1.0+g8cfd9751aa72` is installed from that immutable revision.
+- PR 220 merged AR-218 as exact commit `f8e607d`; package
+  `0.1.0+gf8e607d309f5` is installed from that immutable revision.
 - Bare install selected exactly Codex, ZCode, and dashboard. ZCode is current,
   Codex is registered, and the dashboard is active and reachable.
-- Supported autonomous activation for `8cfd975` passes with an inferred
+- Supported autonomous activation for `f8e607d` passes with an inferred
   `code-reviewer`, one completed delegation, a valid first header, zero
   corrections, autonomous hook bypass, and no persistent profile change.
-- Trial `ar217-8cfd975-readme-01` is consumed and terminal `NO-GO` during
-  workforce inference. Planner rejection/repair and recruiter rejection spend
-  the entire three-call fast budget, so the bounded recruiter repair cannot run.
-- AR-216 records the separate PR 213 all-scenario path-extraction finding.
-  AR-218 owns only the composed planner/recruiter repair budget and is focused-
-  green on its four-call implementation slice.
+- Trial `ar218-f8e607d-readme-01` is consumed and terminal `NO-GO` after an
+  accepted eight-unit route and eight completed native workers. Exact product
+  collaboration projection fails, no first header is accepted, and the
+  isolated workspace remains empty. AR-219 owns this first remaining boundary.
 
 ## completed-evidence
 
@@ -99,12 +99,23 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   dashboard tests, 39/39 routing gates, and 73/73 killed mutations with zero
   survivors or invalid cases. The target budget mutation is killed and
   `source_unchanged=true`.
+- PR 220 passed exact-head Codex review and merged normally as `f8e607d`.
+- Exact activation session `019fbc48-be72-7442-9fa0-be195fcffffb`, trace
+  `019fbc48-cb46-7c73-a835-23477439beb6`, and run
+  `b1cfda5a-19c8-4615-8bd5-5c628053229a` prove one inferred and completed
+  `code-reviewer` delegation, a valid first header, and zero corrections.
+- Product session `019fbc4c-aeae-70c1-b256-f166e92452c5`, trace
+  `019fbc4c-af63-76c0-9a40-55a559c4fee4`, and run
+  `00c0ebd0-ca95-4da9-be01-e6ae848c82fb` retain eight completed workers and an
+  accepted finalization. The product projection reports
+  `native_collaboration_topology_invalid`; workspace proof and artifacts are
+  absent.
 
 ## exact-blocker
 
-The local four-call and compatibility repairs are green. Exact-head rereview and
-merge are the only boundaries before the next installed activation and product
-trial; no other implementation scope is open.
+The README main story remains NO-GO at one exact downstream boundary: preserve
+the valid multi-unit Codex topology and prove real workspace writes. AR-219 owns
+the next implementation package; this checkpoint does not begin that repair.
 
 ## same-task-continuity
 
@@ -117,12 +128,12 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Push the repaired checkpoint, resolve the exact review thread, obtain
-   exact-head rereview, and merge without hosted Actions.
-2. Install the exact merge, deliberately set this machine's explicit fast
-   budget to four, and run one activation plus at most one product trial.
-3. Publish the local evidence page and OpenClaw handoff, stopping on any new
-   first boundary rather than widening the package.
+1. Reproduce the exact eight-unit topology locally and retain one bounded
+   invariant code for the first projection rejection.
+2. Prove one activation/delegation/worker per unit, allow specialist reuse, and
+   prove exact workspace writes without broadening authority.
+3. Run the named local gate, review, merge, install one new exact build, and
+   permit at most one new product trial.
 
 ## verification
 
@@ -147,7 +158,7 @@ git diff --check
 - Product host remains sandboxed to the exact trial workspace.
 - Only Codex, ZCode, and dashboard are in machine scope.
 - One live product trial per exact installed build; any correction is failure.
-- Exact builds `e62d0adc`, `1694d6e`, `d6ba36a`, `9c2e9f8`, and `8cfd975` have consumed
+- Exact builds `e62d0adc`, `1694d6e`, `d6ba36a`, `9c2e9f8`, `8cfd975`, and `f8e607d` have consumed
   their governed live evidence; none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

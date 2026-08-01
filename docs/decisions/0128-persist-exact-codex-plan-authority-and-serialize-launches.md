@@ -3,10 +3,11 @@ title: "Persist exact Codex plan authority and serialize opaque launches"
 status: accepted
 category: decisions
 created: 2026-07-31
-updated: 2026-07-31
+updated: 2026-08-01
 tags: [codex, delegation, activation, security, privacy, evidence]
 related:
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
+  - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md

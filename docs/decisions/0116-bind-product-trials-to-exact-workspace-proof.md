@@ -3,10 +3,11 @@ title: "Bind product trials to exact isolated workspace proof"
 status: accepted
 category: decisions
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 tags: [evaluation, codex, activation, sandbox, trust, evidence]
 related:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
+  - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md

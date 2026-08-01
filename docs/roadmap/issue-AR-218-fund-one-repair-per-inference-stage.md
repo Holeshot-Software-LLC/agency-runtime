@@ -20,7 +20,9 @@ related:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
+  - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/roadmap/handoffs/issue-AR-207.md
+  - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
   - docs/decisions/0114-fund-one-default-workforce-semantic-repair.md
   - docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
   - docs/worklog/README.md
@@ -32,7 +34,7 @@ issue_id: AR-218
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/219
 depends_on: [AR-217]
-blocks: [AR-203, AR-204]
+blocks: [AR-203, AR-204, AR-219]
 ---
 
 # AR-218: Fund one bounded repair per workforce inference stage
@@ -86,6 +88,21 @@ with six skips, 110 dashboard tests, 39/39 routing gates, and 73/73 killed
 decision mutations with zero survivors or invalid cases. The target default-
 budget mutation is killed and the evaluator reports `source_unchanged=true`.
 All documentation, Ruff lint/format, and diff checks pass.
+
+PR 220 passed exact-head Codex review and merged normally as
+`f8e607d309f5dba933bc55f17892209e39e6e014`. That immutable revision is
+installed as `0.1.0+gf8e607d309f5`, and this machine's explicit fast budget is
+four. Bare installation selected only Codex, ZCode, and dashboard. The
+dashboard service is current, active, and reachable.
+
+The exact build's one autonomous activation passed on its first attempt with an
+inferred `code-reviewer`, one completed native delegation, a valid first
+header, zero corrections, `autonomous_bypass`, and no persistent trust change.
+Its one product trial, `ar218-f8e607d-readme-01`, then accepted an eight-unit
+plan and recorded eight completed child workers. The product projector rejected
+that topology, the first header was absent, and the isolated workspace remained
+empty. AR-219 owns that later independent boundary; this build and trial are
+consumed and must not be rerun.
 
 ## Approach
 

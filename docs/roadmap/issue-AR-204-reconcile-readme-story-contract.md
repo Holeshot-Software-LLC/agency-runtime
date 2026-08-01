@@ -29,6 +29,7 @@ related:
   - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
   - docs/roadmap/issue-AR-216-preserve-required-product-scenario-files.md
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
+  - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes:
@@ -40,7 +41,7 @@ epic: product
 issue_id: AR-204
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
-depends_on: [AR-207, AR-209, AR-212, AR-214, AR-215, AR-216, AR-217, AR-218]
+depends_on: [AR-207, AR-209, AR-212, AR-214, AR-215, AR-216, AR-217, AR-218, AR-219]
 blocks: [AR-205]
 ---
 
@@ -358,6 +359,14 @@ because cleanup discards the caught failure. AR-207 tracker issue #196 now owns
 that bounded observability/execution boundary. The goal remains open until a
 new exact build proves native delegation, workspace artifacts, and zero
 corrections in the same product turn.
+
+Exact build `f8e607d` now proves the reconciled default install, reachable
+dashboard, explicit autonomous trust bypass, inference selection, specialist
+injection, native delegation, and a zero-correction first header in activation.
+Its single README product trial also proves an inference-authored eight-unit
+team and eight completed native workers, but the multi-unit collaboration
+projector rejects the topology and the workspace remains empty. AR-219 is the
+one remaining bounded product boundary; the README main story is still NO-GO.
 
 ## Acceptance
 
