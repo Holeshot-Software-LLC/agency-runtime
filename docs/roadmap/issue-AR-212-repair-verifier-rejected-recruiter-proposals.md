@@ -66,7 +66,10 @@ full replacement response, and caches only accepted or verifier-clean explicit
 gap proposals. Preflight failure schema v2 persists bounded staffing and hiring
 reason-code arrays. The exact eight-test acceptance slice passes, as do 24
 canary/CLI compatibility tests and all 110 dashboard UI tests. The named fast
-production spine, review, merge, exact reinstall, and fresh live proof remain.
+production spine now also passes: 639 Python tests passed with 6 skips, every
+routing-evaluation threshold passed, and decision-conformance passed with a
+green baseline, every curated mutation killed, and the source unchanged.
+Review, merge, exact reinstall, and fresh live proof remain.
 
 One broader compatibility run exposed an unrelated stale preflight-token
 failure in untouched native plan-scope code. It is isolated as
@@ -107,6 +110,6 @@ acceptance.
   codes without prompt or provider-response content.
 - [x] Focused regression tests reproduce the accepted-but-unusable proposal
   and prove repair, exhaustion, caching, and evidence behavior.
-- [ ] The named local gate passes before review and merge.
+- [x] The named local gate passes before review and merge.
 - [ ] One new exact build passes supported-bypass activation and at most one
   governed product trial with zero corrections and proven workspace write.

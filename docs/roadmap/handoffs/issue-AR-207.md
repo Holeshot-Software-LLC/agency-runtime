@@ -89,6 +89,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - The exact AR-212 acceptance slice passes 8/8. Canary/CLI compatibility passes
   24/24 and dashboard UI passes 110/110. Lint and formatting checks pass for
   every changed Python file.
+- The named fast production spine passes 639 tests with 6 skips. The routing
+  evaluation passes every correctness, policy, delegation, performance, scale,
+  and CLI-startup gate. Decision-conformance passes after 840.2 seconds with a
+  green baseline, every curated mutation killed, and source unchanged.
 - A broader preflight module run reached 98 passes and exposed an unrelated
   stale-token/native-plan-scope failure. It is recorded as AR-213 / tracker
   https://github.com/Holeshot-Software-LLC/agency-runtime/issues/209 and is not
@@ -98,10 +102,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The proven recruiter acceptance defect is repaired locally. The remaining gate
-is procedural and live: pass the named fast spine, review and merge the exact
-branch, install that merge, then run one new activation and at most one governed
-product trial with workspace-write and zero-correction evidence.
+The proven recruiter acceptance defect and its named local gate are green. The
+remaining boundary is procedural and live: review and merge the exact branch,
+install that merge, then run one new activation and at most one governed product
+trial with workspace-write and zero-correction evidence.
 
 ## same-task-continuity
 
@@ -112,10 +116,9 @@ dispatch hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run the named local gate and stop on its first AR-212-relevant failure.
-2. Review and merge one PR; keep hosted billing failures non-authoritative.
-3. Exact-install the merge and run at most one activation and one product trial.
-4. Produce the local evidence page and OpenClaw handoff.
+1. Review and merge one PR; keep hosted billing failures non-authoritative.
+2. Exact-install the merge and run at most one activation and one product trial.
+3. Produce the local evidence page and OpenClaw handoff.
 
 ## verification
 
