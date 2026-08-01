@@ -463,6 +463,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c31e715` | 2026-07-31 | fix(workforce): repair verifier-rejected recruiter proposals | [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md), [AR-213](../roadmap/issue-AR-213-reject-stale-preflight-tokens-before-plan-validation.md) | [detail](2026-07-31-c31e715-verifier-recruiter-repair.md) |
 | `53d4ebd` | 2026-07-31 | docs(roadmap): record verifier repair fast gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
 | `b2ea634` | 2026-07-31 | fix(workforce): preserve verifier rejection evidence | [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
+| `81b442a` | 2026-07-31 | docs(roadmap): record reviewed verifier evidence gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-212](../roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
