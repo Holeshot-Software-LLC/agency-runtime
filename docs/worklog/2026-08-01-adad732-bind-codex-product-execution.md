@@ -17,7 +17,7 @@ type: worklog
 commit: adad73292ca2d741bf242f4da629bf9057352376
 short: adad732
 date: 2026-08-01
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/227
 related_issues:
   - docs/roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md
   - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
