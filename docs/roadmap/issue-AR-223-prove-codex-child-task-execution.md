@@ -123,9 +123,12 @@ canonical envelope. The repaired hook binds that opaque call to the unique
 activated canonical child path and one-use Store claim. Activation and product
 projectors likewise treat parent ciphertext as lifecycle evidence and still
 require the exact decrypted envelope in the child's causal second turn before
-accepting work. Focused hook, Store, activation, and product suites pass 143
-tests warning-strict; Ruff and diff checks pass. Fresh immutable-build proof
-remains pending.
+accepting work. Exact local head `4daf82a` passes 143 focused hook, Store,
+activation, and product tests; the named Python spine passes 656 with 6 skipped;
+dashboard UI passes 110; documentation validates 625 files; Ruff, format, diff,
+and every routing threshold pass. Decision conformance passes its 209.170-second
+baseline and kills 84 of 84 mutations with zero invalid results and unchanged
+source in 857.9 seconds. Fresh immutable-build proof remains pending.
 
 ## Approach
 
