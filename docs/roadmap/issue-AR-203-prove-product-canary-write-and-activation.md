@@ -15,6 +15,7 @@ related:
   - docs/roadmap/issue-AR-202-make-recruiter-repair-converge.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
+  - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
   - docs/roadmap/handoffs/issue-AR-203.md
   - docs/worklog/README.md
 supersedes: []
@@ -24,7 +25,7 @@ epic: testing
 issue_id: AR-203
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
-depends_on: [AR-201, AR-207, AR-209]
+depends_on: [AR-201, AR-207, AR-209, AR-212]
 blocks: [AR-200]
 ---
 

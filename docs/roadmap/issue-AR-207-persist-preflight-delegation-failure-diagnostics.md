@@ -9,6 +9,7 @@ related:
   - README.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
+  - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
@@ -22,6 +23,7 @@ related:
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0125-admit-only-exact-content-free-codex-host-notices.md
   - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
+  - docs/decisions/0129-repair-verifier-rejected-recruiter-proposals-once.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -31,7 +33,7 @@ issue_id: AR-207
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 depends_on: [AR-206, AR-208, AR-209]
-blocks: [AR-203, AR-204, AR-205]
+blocks: [AR-203, AR-204, AR-205, AR-212]
 ---
 
 # AR-207: Persist preflight and delegation failure diagnostics
@@ -255,6 +257,23 @@ the parent emitted no delegation tool call or response.
   tests, all routing gates, and all 69 decision mutations with zero survivors
   or invalid results. Review, merge, exact install, and one fresh product trial
   remain.
+- PR 207 merged the bounded updater repair as exact revision `e62d0adc`. The
+  exact installed planner now resolves both the prior merge and itself. Default
+  install discovered only Codex and ZCode, reached the dashboard, and the
+  supported-bypass activation passed with one inferred and executed
+  `code-reviewer`, accepted finalization, and zero corrections.
+- Product trial `ar207-e62d0adc-readme-01` is consumed and terminal `NO-GO`.
+  Session `019fbad4-6358-70e1-856f-ec89d5c7ecd2`, trace
+  `019fbad4-63d2-7e23-a688-ba3a21353de3`, and run
+  `65525f38-914f-450d-ac4e-8145e4a5eca6` prove planner and recruiter responses
+  were structurally applied, then preflight failed with
+  `substantive_specialist_unavailable`. No route, delegation, finalization,
+  header, or workspace write followed; correction count was zero.
+- One read-only diagnostic matched the exact 1,962-character executed prompt
+  hash and immediately accepted an eight-unit specialist team. AR-212 therefore
+  owns the remaining boundary: whole-team verification must participate in the
+  existing one bounded recruiter repair attempt, and terminal evidence must
+  retain safe verifier and hiring reasons.
 
 ## Approach
 

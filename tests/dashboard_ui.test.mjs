@@ -5201,6 +5201,8 @@ test("operational dashboard renders governed roster, quarantine, and inference e
           reason_code: "workforce_inference_failed",
           exception_category: "timeout",
           provider_attempts: [{ status: "failed" }],
+          staffing_reason_codes: ["selected_agent_budget_exceeded"],
+          hiring_reason_codes: ["gap_evidence_not_hireable"],
           host: "codex",
           trace_id: "trace-preflight",
           recorded_at: isoBefore(3_000),
@@ -5232,6 +5234,8 @@ test("operational dashboard renders governed roster, quarantine, and inference e
   assert.match(failureText, /routing · workforce_inference_failed/);
   assert.match(failureText, /Host: codex · timeout/);
   assert.match(failureText, /Trace: trace-preflight · 1 provider attempt/);
+  assert.match(failureText, /Staffing: selected_agent_budget_exceeded/);
+  assert.match(failureText, /Hiring: gap_evidence_not_hireable/);
   assert.match(failureText, /unidentified model · failed/);
   assert.match(failureText, /routing inference · degraded/);
 

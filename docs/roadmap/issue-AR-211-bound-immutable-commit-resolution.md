@@ -1,6 +1,6 @@
 ---
 title: "AR-211: Bound immutable commit resolution responses"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-31
 updated: 2026-07-31
@@ -48,7 +48,14 @@ claim an installed-tool mutation command. Focused update and CLI tests pass 66
 cases with one skip; Ruff, formatting, diff checks, and validation of 596
 Markdown documents also pass. The exact local merge spine passes 639
 warning-strict Python tests with six skips, 110 dashboard tests, and every
-isolated routing gate; Ruff remains green across 604 files.
+  isolated routing gate; Ruff remains green across 604 files.
+
+PR 207 merged as `e62d0adc6daaf91f99bdc125217a523665d1dad4` after both
+Codex review threads were evidence-addressed and resolved. That exact official
+VCS build is installed as `0.1.0+ge62d0adc6daa`. Its installed planner resolves
+the formerly rejected `207b150` merge with `error: null`, emits an attended
+external plan without mutation, and reports `e62d0adc` as `current` with no
+commands. The issue is complete.
 
 ## Approach
 
@@ -76,5 +83,5 @@ the integrated README story whose exact-install checkpoint exposed this defect.
 - [x] The candidate resolves merge commit `207b150` with
   `mutation_performed=false`; an editable checkout remains unable to claim an
   installed-tool mutation command.
-- [ ] The repair is independently reviewed, merged, exact-installed, and the
+- [x] The repair is independently reviewed, merged, exact-installed, and the
   repaired installed planner resolves its own immutable merge commit.

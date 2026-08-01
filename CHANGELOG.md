@@ -61,6 +61,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Recruiter proposals are now marked applied and cached only after complete
+  staffing verification. A structurally valid but globally unsafe proposal can
+  spend exactly the existing one semantic-repair attempt; exhaustion still
+  fails closed, explicit inferred gaps remain eligible for governed hiring,
+  and terminal preflight evidence retains only bounded staffing and hiring
+  reason codes.
 - Immutable update checks now limit GitHub commit-file pagination to one unused
   row before validating the exact commit identity. Large private merge commits
   therefore stay inside the existing 256 KiB transport bound instead of
