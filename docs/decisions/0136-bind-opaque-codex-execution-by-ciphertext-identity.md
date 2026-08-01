@@ -11,6 +11,7 @@ related:
   - docs/decisions/0094-durable-native-child-correlation.md
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
+  - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - agency_runtime/core/codex_child_execution.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/native_child_prompt_delivery.py
@@ -85,7 +86,9 @@ with zero survivors or invalid results and unchanged source.
   the exact message that caused the activated child's second turn without
   claiming access to plaintext the host does not retain.
 - The first readiness turn still cannot pass a worker, and Store's one-use
-  dispatch claim remains mandatory before `SubagentStop` closes it.
+  dispatch claim remains mandatory before any lifecycle boundary closes it.
+  ADR-0137 defines exact parent-`Stop` reconciliation for current Codex, which
+  does not emit a second `SubagentStop` after `followup_task`.
 - No new database column or sensitive message digest is required. Exact
   ciphertext exists only during bounded local comparison.
 - Cross-midnight child launches remain supported through the immediately prior

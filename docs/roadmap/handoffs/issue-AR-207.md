@@ -39,6 +39,7 @@ related:
   - docs/decisions/0134-bind-contractor-risk-to-validated-authority.md
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
+  - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -74,6 +75,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Activation still fails because `worker_runs.ended_at` is null. Current Codex
   fires `SubagentStop` after the activation turn but not after `followup_task`.
   Tests fabricated that second callback. No product trial ran.
+- The bounded repair now reconciles the exact completed child at parent `Stop`
+  from the documented parent transcript path. The activation stop stays open;
+  execution must precede one nonempty turn-bound final response and matching
+  completion. Forty-four focused tests pass without a synthetic second stop.
+- Read-only reprojection over the consumed `5ff4a08` parent and child rollouts
+  returns `completion_observed=True`. Two reviews are complete; they require
+  exact lineage and place execution inside the second turn before its response.
 
 ## completed-evidence
 
@@ -106,9 +114,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `5ff4a08` proves the full execution
-turn and ciphertext identity, but the Store cannot close the worker from a
-second `SubagentStop` event that current Codex never emits.
+The README main story remains NO-GO pending the named fast gate and one new
+immutable-build activation. The local repair now closes only an exactly proven
+follow-up worker at parent `Stop`; no live evidence has consumed it yet.
 
 ## same-task-continuity
 
@@ -120,9 +128,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Replace the nonexistent second-`SubagentStop` assumption with exact
-   parent-stop reconciliation against the completed child rollout.
-2. Run the bounded local gate, merge/install one new build, and spend one
+1. Finish the bounded review and named local gate for exact parent-stop
+   reconciliation.
+2. Merge/install one new build and spend one
    activation; only after it passes, spend one product trial.
 
 ## verification

@@ -969,8 +969,13 @@ class _NominationSemantics:""",
             "own exact session identity."
         ),
         source_path="agency_runtime/core/codex_child_execution.py",
-        before="    if len(parent_sessions) != 1:\n        return None\n",
-        after="    if False and len(parent_sessions) != 1:\n        return None\n",
+        before=(
+            "    if not _parent_session_matches(events, parent_session_id):\n        return None\n"
+        ),
+        after=(
+            "    if False and not _parent_session_matches(events, parent_session_id):\n"
+            "        return None\n"
+        ),
         test_node=(
             "tests/test_codex_child_execution.py::"
             "test_current_turn_matches_exact_parent_and_child_ciphertext"
@@ -988,6 +993,73 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_codex_child_execution.py::"
             "test_current_turn_matches_exact_parent_and_child_ciphertext"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-parent-stop-skips-child-completion-reconciliation",
+        invariant=(
+            "Codex parent Stop reconciles exact completed follow-up evidence because the "
+            "host emits no second SubagentStop."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before=(
+            "            self._reconcile_codex_child_completions(\n"
+            "                session_id=correlation.session_id,\n"
+            "                trace_id=trace_id,\n"
+            '                parent_transcript_path=payload.get("transcript_path"),\n'
+            "            )\n"
+        ),
+        after=(
+            "            if False:\n"
+            "                self._reconcile_codex_child_completions(\n"
+            "                    session_id=correlation.session_id,\n"
+            "                    trace_id=trace_id,\n"
+            '                    parent_transcript_path=payload.get("transcript_path"),\n'
+            "                )\n"
+        ),
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_canary_requires_and_attests_one_complete_v2_activation_chain"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-parent-stop-accepts-missing-child-final-response",
+        invariant=(
+            "A Codex worker closes only after its second turn contains one exact nonempty "
+            "assistant final response."
+        ),
+        source_path="agency_runtime/core/codex_child_execution.py",
+        before="    if response_index is None:\n        return False\n",
+        after="    if False and response_index is None:\n        return False\n",
+        test_node=(
+            "tests/test_codex_child_execution.py::"
+            "test_parent_stop_projection_requires_exact_completed_child_response"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-parent-stop-accepts-execution-after-child-response",
+        invariant=(
+            "The exact Codex execution delivery causally precedes the child final response."
+        ),
+        source_path="agency_runtime/core/codex_child_execution.py",
+        before="        execution_event_limit=response_index,\n",
+        after="        execution_event_limit=None,\n",
+        test_node=(
+            "tests/test_codex_child_execution.py::"
+            "test_parent_stop_projection_rejects_tampered_or_ambiguous_completion"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-parent-stop-accepts-execution-before-second-turn",
+        invariant=(
+            "The exact Codex execution delivery occurs inside, not before, the second child turn."
+        ),
+        source_path="agency_runtime/core/codex_child_execution.py",
+        before="        execution_event_start=boundaries[2] + 1,\n",
+        after="        execution_event_start=None,\n",
+        test_node=(
+            "tests/test_codex_child_execution.py::"
+            "test_parent_stop_projection_rejects_tampered_or_ambiguous_completion"
         ),
     ),
     DecisionMutation(

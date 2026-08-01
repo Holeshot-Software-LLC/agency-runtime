@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from agency_runtime.core.codex_child_execution import (
+    codex_child_execution_completion_observed,
     codex_current_turn_execution_observed,
 )
 from agency_runtime.core.native_child_prompt_delivery import (
@@ -139,6 +140,31 @@ def _opaque_rollouts(
     )
     child_path.write_text(
         "\n".join(json.dumps(event) for event in child_events) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _complete_child_rollout(child_path: Path, *, turn: str, text: str = "reviewed") -> None:
+    events = [json.loads(line) for line in child_path.read_text(encoding="utf-8").splitlines()]
+    completion = events[-1]["payload"]
+    assert completion == {"type": "task_complete", "turn_id": turn}
+    completion["last_agent_message"] = text
+    events.insert(
+        -1,
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "message",
+                "id": "assistant-final",
+                "role": "assistant",
+                "content": [{"type": "output_text", "text": text}],
+                "phase": "final_answer",
+                "internal_chat_message_metadata_passthrough": {"turn_id": turn},
+            },
+        },
+    )
+    child_path.write_text(
+        "\n".join(json.dumps(event) for event in events) + "\n",
         encoding="utf-8",
     )
 
@@ -364,6 +390,164 @@ def test_parent_ciphertext_resolves_across_midnight_rollover(tmp_path: Path) -> 
     assert codex_current_turn_execution_observed(
         child_path,
         turn_id=turn,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id=tool_use_id,
+    )
+
+
+def test_parent_stop_projection_requires_exact_completed_child_response(tmp_path: Path) -> None:
+    worker = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    parent = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    turn = "019fa6a6-b197-7a83-b3fb-d2c20411f608"
+    tool_use_id = "call-native-followup"
+    ciphertext = "gAAAAA" + "opaque-followup-ciphertext" * 2
+    message = render_codex_native_child_execution_message(
+        work_unit_id="unit-1234567890",
+        goal_hash=work_unit_goal_hash("Implement the unit."),
+    )
+    expected = parse_codex_native_child_execution_message(message)
+    assert expected is not None
+    parent_path = tmp_path / f"rollout-test-{parent}.jsonl"
+    child_path = tmp_path / f"rollout-test-{worker}.jsonl"
+    _opaque_rollouts(
+        child_path,
+        parent_path,
+        worker=worker,
+        parent=parent,
+        turn=turn,
+        tool_use_id=tool_use_id,
+        ciphertext=ciphertext,
+    )
+
+    assert not codex_child_execution_completion_observed(
+        parent_path,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id=tool_use_id,
+    )
+
+    _complete_child_rollout(child_path, turn=turn)
+    assert codex_child_execution_completion_observed(
+        parent_path,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id=tool_use_id,
+    )
+
+
+def test_parent_stop_projection_rejects_tampered_or_ambiguous_completion(
+    tmp_path: Path,
+) -> None:
+    worker = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    parent = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    turn = "019fa6a6-b197-7a83-b3fb-d2c20411f608"
+    tool_use_id = "call-native-followup"
+    ciphertext = "gAAAAA" + "opaque-followup-ciphertext" * 2
+    message = render_codex_native_child_execution_message(
+        work_unit_id="unit-1234567890",
+        goal_hash=work_unit_goal_hash("Implement the unit."),
+    )
+    expected = parse_codex_native_child_execution_message(message)
+    assert expected is not None
+    parent_path = tmp_path / f"rollout-test-{parent}.jsonl"
+    child_path = tmp_path / f"rollout-test-{worker}.jsonl"
+    _opaque_rollouts(
+        child_path,
+        parent_path,
+        worker=worker,
+        parent=parent,
+        turn=turn,
+        tool_use_id=tool_use_id,
+        ciphertext=ciphertext,
+    )
+    _complete_child_rollout(child_path, turn=turn)
+    original = child_path.read_text(encoding="utf-8")
+
+    mutations = (
+        lambda events: events[-2]["payload"].update(
+            internal_chat_message_metadata_passthrough={"turn_id": "wrong-turn"}
+        ),
+        lambda events: events[-2]["payload"]["content"][0].update(text=" "),
+        lambda events: events[-1]["payload"].update(last_agent_message="different"),
+        lambda events: events.insert(-1, events[-2]),
+        lambda events: events.insert(-1, events.pop(-3)),
+        lambda events: events.insert(3, events.pop(4)),
+        lambda events: events[0]["payload"]["source"]["subagent"]["thread_spawn"].update(
+            parent_thread_id="different-parent"
+        ),
+    )
+    for mutate in mutations:
+        events = [json.loads(line) for line in original.splitlines()]
+        mutate(events)
+        child_path.write_text(
+            "\n".join(json.dumps(event) for event in events) + "\n",
+            encoding="utf-8",
+        )
+        assert not codex_child_execution_completion_observed(
+            parent_path,
+            worker_id=worker,
+            expected=expected,
+            parent_session_id=parent,
+            execution_tool_use_id=tool_use_id,
+        )
+
+    child_path.write_text(original, encoding="utf-8")
+    wrong_parent = tmp_path / "rollout-test-different-parent.jsonl"
+    wrong_parent.write_text(parent_path.read_text(encoding="utf-8"), encoding="utf-8")
+    assert not codex_child_execution_completion_observed(
+        wrong_parent,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id=tool_use_id,
+    )
+
+
+def test_parent_stop_projection_resolves_child_across_midnight(tmp_path: Path) -> None:
+    worker = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    parent = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    turn = "019fa6a6-b197-7a83-b3fb-d2c20411f608"
+    tool_use_id = "call-native-followup"
+    ciphertext = "gAAAAA" + "opaque-followup-ciphertext" * 2
+    message = render_codex_native_child_execution_message(
+        work_unit_id="unit-1234567890",
+        goal_hash=work_unit_goal_hash("Implement the unit."),
+    )
+    expected = parse_codex_native_child_execution_message(message)
+    assert expected is not None
+    parent_directory = tmp_path / "sessions" / "2026" / "08" / "01"
+    child_directory = tmp_path / "sessions" / "2026" / "08" / "02"
+    parent_directory.mkdir(parents=True)
+    child_directory.mkdir(parents=True)
+    parent_path = parent_directory / f"rollout-test-{parent}.jsonl"
+    child_path = child_directory / f"rollout-test-{worker}.jsonl"
+    _opaque_rollouts(
+        child_path,
+        parent_path,
+        worker=worker,
+        parent=parent,
+        turn=turn,
+        tool_use_id=tool_use_id,
+        ciphertext=ciphertext,
+    )
+    _complete_child_rollout(child_path, turn=turn)
+
+    assert codex_child_execution_completion_observed(
+        parent_path,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id=tool_use_id,
+    )
+
+    duplicate = parent_directory / f"rollout-duplicate-{worker}.jsonl"
+    duplicate.write_text(child_path.read_text(encoding="utf-8"), encoding="utf-8")
+    assert not codex_child_execution_completion_observed(
+        parent_path,
         worker_id=worker,
         expected=expected,
         parent_session_id=parent,

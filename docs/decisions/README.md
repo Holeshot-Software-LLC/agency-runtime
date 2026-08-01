@@ -205,6 +205,7 @@ Status meanings:
 | [ADR-0133](0133-treat-product-specialist-loads-as-turn-scoped.md) | Treat product specialist loads as turn-scoped | Accepted |
 | [ADR-0135](0135-require-explicit-codex-child-execution-turns.md) | Require explicit Codex child execution turns | Superseded |
 | [ADR-0136](0136-bind-opaque-codex-execution-by-ciphertext-identity.md) | Bind opaque Codex execution by ciphertext identity | Accepted |
+| [ADR-0137](0137-reconcile-codex-followup-completion-at-parent-stop.md) | Reconcile Codex follow-up completion at parent Stop | Accepted |
 
 ## Documentation governance
 

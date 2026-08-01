@@ -23,6 +23,7 @@ related:
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
+  - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -195,6 +196,26 @@ The sole failure is `worker_runs.ended_at = null`. Current Codex emits
 `followup_task` turn. Both this run and the prior `a2d1a7c` run retain that same
 open-worker state; the tests incorrectly invoked a synthetic second
 `SubagentStop`. No product trial ran.
+
+The bounded lifecycle repair now reconciles at the parent `Stop`, whose common
+hook payload carries the exact parent transcript path. It accepts only the
+claimed worker whose bounded child rollout resolves back to that parent and
+proves two turns, the exact execution delivery before one nonempty turn-bound
+assistant final response, and a matching terminal completion. The activation
+stop remains non-terminal, no second stop is fabricated, and the atomic Store
+end transition records success only after all causal evidence passes. Focused
+projection and activation checks pass 44 cases; the named fast gate and one new
+immutable-build live trial remain pending.
+
+The exact local projector also replays the consumed `5ff4a08` parent rollout
+`019fbf98-e5d8-77e3-9faf-0b9d36eeffb5` and child
+`019fbf99-d680-7541-b951-00b6bd432b38` as
+`completion_observed=True`. That read-only reprojection proves the repair
+matches the real host shape without mutating or reinterpreting the terminal
+failed trial. Two bounded review passes are complete. They tightened causal
+ordering so the exact execution input must occur inside the second turn and
+before its final response, and they require child lineage even for any future
+plaintext-capable projection.
 
 ## Approach
 

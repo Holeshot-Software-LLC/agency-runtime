@@ -384,6 +384,28 @@ def _finish_v2_chain_through_hooks(
     observed_context = observed["hookSpecificOutput"]["additionalContext"]
     assert observed_context.startswith("[AGENCY UPDATED HEADER SNAPSHOT v1]\n")
     assert observed_context.count("Agency/Agencies loaded:") == 1
+    assert (
+        bridge.handle(
+            {
+                "hook_event_name": "SubagentStop",
+                "session_id": session_id,
+                "turn_id": "codex-child-turn",
+                "agent_id": receiver_id,
+                "agent_type": "worker",
+                "last_assistant_message": "ready",
+            }
+        )
+        == {}
+    )
+    activation_only_worker = store.get_native_child_run(
+        host="codex",
+        session_id=session_id,
+        trace_id=trace_id,
+        worker_id=receiver_id,
+        native_run_id=f"codex-agent:{receiver_id}",
+    )
+    assert activation_only_worker is not None
+    assert not activation_only_worker["ended_at"]
     execution_message = render_codex_native_child_execution_message(
         work_unit_id=unit,
         goal_hash=str(plan["goal_hash"]),
@@ -488,12 +510,23 @@ def _finish_v2_chain_through_hooks(
                     },
                 },
                 {
+                    "type": "event_msg",
+                    "payload": {"type": "task_started", "turn_id": execution_turn},
+                },
+                {
                     "type": "response_item",
                     "payload": execution_input,
                 },
                 {
-                    "type": "event_msg",
-                    "payload": {"type": "task_started", "turn_id": execution_turn},
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "id": "assistant-final",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": "reviewed"}],
+                        "phase": "final_answer",
+                        "internal_chat_message_metadata_passthrough": {"turn_id": execution_turn},
+                    },
                 },
                 {
                     "type": "event_msg",
@@ -530,20 +563,6 @@ def _finish_v2_chain_through_hooks(
         parent_session_id=session_id,
         execution_tool_use_id="followup-tool-use",
     )
-    assert (
-        bridge.handle(
-            {
-                "hook_event_name": "SubagentStop",
-                "session_id": session_id,
-                "turn_id": execution_turn,
-                "agent_id": receiver_id,
-                "agent_type": "worker",
-                "agent_transcript_path": str(transcript),
-                "last_assistant_message": "reviewed",
-            }
-        )
-        == {}
-    )
     store.record_model_receipt(
         trace_id=trace_id,
         session_id=session_id,
@@ -565,6 +584,7 @@ def _finish_v2_chain_through_hooks(
                 "hook_event_name": "Stop",
                 "session_id": session_id,
                 "turn_id": trace_id,
+                "transcript_path": str(parent_transcript),
                 "stop_hook_active": True,
                 "last_assistant_message": response,
             }
