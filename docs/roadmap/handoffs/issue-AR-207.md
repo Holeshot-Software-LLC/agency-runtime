@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-207-exact-product-proof
-evidence_commit: bc6d15bb1789ef6298c64fa4904ab9941e01c882
-minimum_ledger_commit: 5297d2d7ea6a0665532bde14961c26177e6c9e67
+evidence_commit: a9a332b6aa7d94a7ec72595c3b4045126dd1ffba
+minimum_ledger_commit: a990de96ba35579d2d7fb7d086f16e36270a7cdf
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
