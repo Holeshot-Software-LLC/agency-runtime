@@ -3,7 +3,7 @@ title: "AR-214: Preserve Codex product plan authority through context delivery"
 status: in_progress
 category: roadmap
 created: 2026-07-31
-updated: 2026-07-31
+updated: 2026-08-01
 tags: [bug, product, codex, preflight, delegation]
 related:
   - agency_runtime/core/preflight.py
@@ -14,6 +14,7 @@ related:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
+  - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/analysis/2026-07-31-ar-212-readme-story-evidence.html
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
@@ -28,7 +29,7 @@ issue_id: AR-214
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/211
 depends_on: [AR-212]
-blocks: [AR-203, AR-204]
+blocks: [AR-203, AR-204, AR-215]
 ---
 
 # AR-214: Preserve Codex product plan authority through context delivery
@@ -78,8 +79,10 @@ with zero route, scope, specialist, or delegation rows; the repaired fixture
 commits all five inference-authored units and five exact scopes. The named
 production spine passes 641 tests with 6 skips, product contracts pass 33/33,
 dashboard tests pass 110/110, every routing gate passes, and decision
-conformance kills every curated mutation with `source_unchanged=true`. A new
-exact installed-build activation and product trial remain required.
+conformance kills every curated mutation with `source_unchanged=true`. Exact
+build `d6ba36a` is installed and its activation passes, but its product trial
+stops earlier in workforce routing. AR-215 owns that blocker, so the product
+trial does not yet exercise this repaired context-delivery boundary.
 
 ## Approach
 

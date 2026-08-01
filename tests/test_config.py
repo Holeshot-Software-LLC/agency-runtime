@@ -1017,6 +1017,15 @@ def test_observability_defaults_are_privacy_preserving():
     }
 
 
+def test_workforce_default_hiring_budget_reserves_one_replacement_and_critique(
+    tmp_path: Path,
+) -> None:
+    cfg = load_config(path=tmp_path / "missing.yaml", reload=True)
+
+    assert cfg.workforce.hiring_call_budget == 4
+    assert yaml.safe_load(config_to_yaml(cfg))["workforce"]["hiring_call_budget"] == 4
+
+
 def test_observability_config_parses_false_and_retention(tmp_path):
     path = tmp_path / "agency.yaml"
     path.write_text(

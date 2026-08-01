@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from copy import deepcopy
 from dataclasses import asdict, replace
 from pathlib import Path
@@ -364,6 +365,24 @@ def _invoker(hiring: dict[str, Any], critic: dict[str, Any]):
     return invoke
 
 
+def _recording_invoker(
+    *responses: dict[str, Any],
+    calls: list[dict[str, str]],
+):
+    pending = iter(responses)
+
+    def invoke(provider, prompt, _schema, **kwargs):
+        calls.append(
+            {
+                "prompt": prompt,
+                "system_prompt": str(kwargs.get("system_prompt") or ""),
+            }
+        )
+        return _result(next(pending), provider)
+
+    return invoke
+
+
 def test_inferred_gap_hires_registers_and_immediately_enables_contractor(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     outcome = hire_contractor_for_gap(
@@ -382,6 +401,139 @@ def test_inferred_gap_hires_registers_and_immediately_enables_contractor(tmp_pat
     assert store.get_roster_entry("quantum-build-engineer") is not None
     assert "Hired Contractor · Quantum Build Engineer" in outcome.notification
     assert [item.stage for item in outcome.attempts] == ["hiring", "hiring-critic"]
+
+
+def test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    rejected = _hiring_response()
+    rejected["contract"]["narrow_scope"] = "Rejected candidate private marker."
+    replacement = deepcopy(_hiring_response())
+    replacement["contract"].update(
+        slug="quantum-build-integration-specialist",
+        role="Quantum Build Integration Specialist",
+        narrow_scope="Portable quantum compiler build integration for the assigned plugin.",
+    )
+    calls: list[dict[str, str]] = []
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_recording_invoker(
+            rejected,
+            {
+                "approved": False,
+                "reason_codes": [
+                    "authority_scope_is_incoherent_or_overbroad",
+                    "relationship_dependencies_are_underspecified",
+                ],
+            },
+            replacement,
+            {"approved": True, "reason_codes": []},
+            calls=calls,
+        ),
+    )
+
+    assert outcome.hired is True
+    assert outcome.worker["agent_slug"] == "quantum-build-integration-specialist"
+    assert [item.stage for item in outcome.attempts] == [
+        "hiring",
+        "hiring-critic",
+        "hiring-repair",
+        "hiring-repair-critic",
+    ]
+    repair_prompt = json.loads(calls[2]["prompt"])
+    assert repair_prompt["critic_feedback"]["reason_codes"] == [
+        "authority_scope_is_incoherent_or_overbroad",
+        "relationship_dependencies_are_underspecified",
+    ]
+    assert repair_prompt["replacement_required"] is True
+    assert "Rejected candidate private marker" not in calls[2]["prompt"]
+    assert "only replacement attempt" in calls[2]["system_prompt"]
+    assert [item["stage"] for item in outcome.hiring_case["model_evidence"]["receipts"]] == [
+        "hiring",
+        "hiring-critic",
+        "hiring-repair",
+        "hiring-repair-critic",
+    ]
+
+
+def test_two_call_budget_never_starts_an_uncriticizable_replacement(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    config = _config()
+    config = replace(
+        config,
+        workforce=replace(config.workforce, hiring_call_budget=2),
+    )
+    calls: list[dict[str, str]] = []
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=config,
+        invoker=_recording_invoker(
+            _hiring_response(),
+            {"approved": False, "reason_codes": ["authority_scope_is_overbroad"]},
+            _hiring_response(),
+            {"approved": True, "reason_codes": []},
+            calls=calls,
+        ),
+    )
+
+    assert outcome.status == "rejected"
+    assert outcome.reason_codes == ("authority_scope_is_overbroad",)
+    assert [item.stage for item in outcome.attempts] == ["hiring", "hiring-critic"]
+    assert len(calls) == 2
+    assert store.list_hiring_cases(limit=10) == []
+    assert store.list_workforce_workers(limit=10) == []
+
+
+def test_second_critic_rejection_is_terminal_content_free_and_mutation_free(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    replacement = deepcopy(_hiring_response())
+    replacement["contract"].update(
+        slug="quantum-build-integration-specialist",
+        role="Quantum Build Integration Specialist",
+    )
+    calls: list[dict[str, str]] = []
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_recording_invoker(
+            _hiring_response(),
+            {"approved": False, "reason_codes": ["authority_scope_is_overbroad"]},
+            replacement,
+            {
+                "approved": False,
+                "reason_codes": ["REMAINING_SCOPE_GAP", "private critic prose"],
+            },
+            calls=calls,
+        ),
+    )
+
+    assert outcome.status == "rejected"
+    assert outcome.reason_codes == ("remaining_scope_gap",)
+    assert [item.stage for item in outcome.attempts] == [
+        "hiring",
+        "hiring-critic",
+        "hiring-repair",
+        "hiring-repair-critic",
+    ]
+    assert len(calls) == 4
+    assert store.list_hiring_cases(limit=10) == []
+    assert store.list_workforce_workers(limit=10) == []
 
 
 def test_hire_binds_natural_language_contract_to_exact_causing_unit(tmp_path: Path) -> None:
@@ -1202,28 +1354,45 @@ def test_hired_contractor_is_restaffed_without_repeating_inference(tmp_path: Pat
         abstention_codes=tuple(item.code for item in initial_staffing.abstention_reasons),
         calls_used=1,
     )
+    replacement = deepcopy(_hiring_response())
+    replacement["contract"].update(
+        slug="quantum-build-integration-specialist",
+        role="Quantum Build Integration Specialist",
+    )
     hired = hire_contractor_for_gap(
         "Implement and independently review a quantum build plugin.",
         implementation,
         (existing,),
         store=store,
         config=_config(),
-        invoker=_invoker(_hiring_response(), {"approved": True, "reason_codes": []}),
+        invoker=_recording_invoker(
+            _hiring_response(),
+            {"approved": False, "reason_codes": ["authority_scope_is_overbroad"]},
+            replacement,
+            {"approved": True, "reason_codes": []},
+            calls=[],
+        ),
     )
     snapshot = workforce_index_snapshot(store, disabled_agents=())
     result = restaff_after_hire(
         initial,
         (*snapshot.contracts, existing),
-        hired_agent_id="quantum-build-engineer",
+        hired_agent_id="quantum-build-integration-specialist",
         causing_unit_id=implementation.unit_id,
         context=replace(initial_context, roster_generation=snapshot.generation),
         config=_config(),
     )
 
     assert hired.hired is True
+    assert [item.stage for item in hired.attempts] == [
+        "hiring",
+        "hiring-critic",
+        "hiring-repair",
+        "hiring-repair-critic",
+    ]
     assert result.accepted is True
     assert result.calls_used == 1
-    assert result.staffing.units[0].selected == ("quantum-build-engineer",)
+    assert result.staffing.units[0].selected == ("quantum-build-integration-specialist",)
     assert result.staffing.units[1].selected == ("general-build-reviewer",)
 
 
