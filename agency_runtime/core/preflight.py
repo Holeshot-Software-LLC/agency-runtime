@@ -16,6 +16,7 @@ from threading import Event, Thread, current_thread
 from typing import Any
 
 from agency_runtime.core.agent_identity import agent_identity
+from agency_runtime.core.codex_native_plan_scope import build_codex_native_plan_scope
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.host_capabilities import (
@@ -1249,6 +1250,7 @@ def _mark_ready_with_binding_replan(
     routing_recipe: dict[str, Any],
     suggestions: list[dict[str, Any]],
     specialist_refs: list[dict[str, Any]],
+    codex_native_plan_scopes: list[dict[str, Any]],
     user_message: str,
     config: AgencyConfig,
     pipeline: Any,
@@ -1264,6 +1266,7 @@ def _mark_ready_with_binding_replan(
         "routing_evidence": routing_recipe,
         "suggestions": suggestions,
         "specialist_refs": specialist_refs,
+        "codex_native_plan_scopes": codex_native_plan_scopes,
     }
     ready = store.mark_preflight_ready(**arguments)
     if not isinstance(ready, dict) or ready.get("outcome") != "binding_conflict":
@@ -1286,6 +1289,55 @@ def _mark_ready_with_binding_replan(
         pipeline=pipeline,
     )
     return store.mark_preflight_ready(**arguments)
+
+
+def _codex_native_plan_scopes_for_result(
+    result: PreflightResult,
+    *,
+    host: str,
+    delivery_mode: str,
+    specialist_refs: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Project exact private path authority while plaintext goals are available."""
+
+    if host != "codex" or delivery_mode != "isolated":
+        return []
+    if result.routing.get("continuation_reused") is True:
+        # A continuation replays public context but does not authorize a second
+        # execution of the source turn's already-issued native plan.
+        return []
+    references = {
+        str(item.get("slug") or "").strip(): item
+        for item in specialist_refs
+        if isinstance(item, dict) and str(item.get("slug") or "").strip()
+    }
+    scopes: list[dict[str, Any]] = []
+    for row in result.delegation_plan:
+        goal = str(row.get("goal") or "").strip()
+        slug = str(row.get("recommended_agent") or "").strip()
+        reference = references.get(slug)
+        if not goal or reference is None:
+            raise RuntimeError("Codex native plan scope lost its exact preflight authority")
+        contract = native_child_activation_contract(
+            goal,
+            mutation_scope=row.get("mutation_scope"),
+            resource_hashes=row.get("resource_hashes"),
+            required_evidence=row.get("required_evidence"),
+        )
+        scope = build_codex_native_plan_scope(
+            work_unit_id=row.get("work_unit_id"),
+            specialist_slug=slug,
+            specialist_version=reference.get("version"),
+            specialist_prompt_hash=reference.get("hash"),
+            goal_hash=row.get("goal_hash"),
+            resource_hashes=row.get("resource_hashes"),
+            mutation_mode=contract["mutation_mode"],
+            mutation_path_prefixes=contract["mutation_path_prefixes"],
+            evidence_contract_id=contract["evidence_contract_id"],
+            evidence_requirements=contract["evidence_requirements"],
+        )
+        scopes.append(scope.as_dict())
+    return scopes
 
 
 def _prepare_preflight_evidence(
@@ -1319,6 +1371,7 @@ def _prepare_preflight_evidence(
     list[dict[str, Any]],
     list[dict[str, Any]],
     TurnClassification,
+    list[dict[str, Any]],
 ]:
     """Build one replay-safe recipe without committing its lifecycle state."""
 
@@ -1465,7 +1518,7 @@ def _prepare_preflight_evidence(
         }
         if continuation_snapshot is not None:
             recipe["continuation_guard"] = continuation_snapshot["guard"]
-        _result_from_recipe(
+        validated_result = _result_from_recipe(
             hydration_store,
             recipe,
             session_id=session_id,
@@ -1473,6 +1526,12 @@ def _prepare_preflight_evidence(
             user_message=user_message,
             config=config,
             pipeline=pipeline,
+        )
+        codex_native_plan_scopes = _codex_native_plan_scopes_for_result(
+            validated_result,
+            host=host,
+            delivery_mode=delivery_mode,
+            specialist_refs=specialist_refs,
         )
         if isinstance(cache_owner, Mapping):
             _publish_child_routing_bundle(
@@ -1484,7 +1543,14 @@ def _prepare_preflight_evidence(
                 ttl_seconds=config.delegation.child_cache_ttl_seconds,
             )
         child_route_guard.pop_all()
-        return recipe, routing_recipe, suggestions, specialist_refs, classification
+        return (
+            recipe,
+            routing_recipe,
+            suggestions,
+            specialist_refs,
+            classification,
+            codex_native_plan_scopes,
+        )
 
 
 def _require_substantive_specialist(
@@ -1532,6 +1598,7 @@ def _prepare_with_bounded_continuation_reroute(
     list[dict[str, Any]],
     list[dict[str, Any]],
     TurnClassification,
+    list[dict[str, Any]],
 ]:
     """Retry one invalid durable continuation as a current fresh route."""
 
@@ -1788,12 +1855,17 @@ def run_preflight(
             "parent_trace_id": normalized_parent_trace,
             "diagnostics": diagnostics,
         }
-        recipe, routing_recipe, suggestions, specialist_refs, classification = (
-            _prepare_with_bounded_continuation_reroute(
-                store,
-                classification=classification,
-                prepare_arguments=prepare_arguments,
-            )
+        (
+            recipe,
+            routing_recipe,
+            suggestions,
+            specialist_refs,
+            classification,
+            codex_native_plan_scopes,
+        ) = _prepare_with_bounded_continuation_reroute(
+            store,
+            classification=classification,
+            prepare_arguments=prepare_arguments,
         )
         diagnostics.enter("ready_commit")
         ready = _mark_ready_with_binding_replan(
@@ -1806,6 +1878,7 @@ def run_preflight(
             routing_recipe=routing_recipe,
             suggestions=suggestions,
             specialist_refs=specialist_refs,
+            codex_native_plan_scopes=codex_native_plan_scopes,
             user_message=user_message,
             config=cfg,
             pipeline=pipeline,
@@ -1815,31 +1888,36 @@ def run_preflight(
                 classification,
                 "continuation_guard_changed_before_commit",
             )
-            recipe, routing_recipe, suggestions, specialist_refs, classification = (
-                _prepare_preflight_evidence(
-                    store,
-                    session_id=normalized_session,
-                    trace_id=turn_trace_id,
-                    user_message=user_message,
-                    host=normalized_host,
-                    platform=runtime_platform,
-                    runtime_capabilities=runtime_capabilities,
-                    catalog=catalog,
-                    config=cfg,
-                    classification=classification,
-                    routing_fingerprint=routing_fingerprint,
-                    policy_fingerprint=policy_fingerprint,
-                    roster_generation=routing_snapshot.roster_generation,
-                    workforce_snapshot=workforce_snapshot,
-                    delivery_mode=delivery_mode,
-                    context_limit=context_limit,
-                    resident_binding=resident_binding,
-                    resident_context=resident_context,
-                    pipeline=pipeline,
-                    parent_session_id=normalized_parent_session,
-                    parent_trace_id=normalized_parent_trace,
-                    diagnostics=diagnostics,
-                )
+            (
+                recipe,
+                routing_recipe,
+                suggestions,
+                specialist_refs,
+                classification,
+                codex_native_plan_scopes,
+            ) = _prepare_preflight_evidence(
+                store,
+                session_id=normalized_session,
+                trace_id=turn_trace_id,
+                user_message=user_message,
+                host=normalized_host,
+                platform=runtime_platform,
+                runtime_capabilities=runtime_capabilities,
+                catalog=catalog,
+                config=cfg,
+                classification=classification,
+                routing_fingerprint=routing_fingerprint,
+                policy_fingerprint=policy_fingerprint,
+                roster_generation=routing_snapshot.roster_generation,
+                workforce_snapshot=workforce_snapshot,
+                delivery_mode=delivery_mode,
+                context_limit=context_limit,
+                resident_binding=resident_binding,
+                resident_context=resident_context,
+                pipeline=pipeline,
+                parent_session_id=normalized_parent_session,
+                parent_trace_id=normalized_parent_trace,
+                diagnostics=diagnostics,
             )
             diagnostics.enter("ready_commit")
             ready = _mark_ready_with_binding_replan(
@@ -1852,6 +1930,7 @@ def run_preflight(
                 routing_recipe=routing_recipe,
                 suggestions=suggestions,
                 specialist_refs=specialist_refs,
+                codex_native_plan_scopes=codex_native_plan_scopes,
                 user_message=user_message,
                 config=cfg,
                 pipeline=pipeline,

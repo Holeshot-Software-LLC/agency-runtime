@@ -47,8 +47,9 @@ CANARY_PROMPT = CODEX_ACTIVATION_CANARY_PROMPT
 CANARY_EXPECTED_SPECIALIST = "code-reviewer"
 CODEX_CANARY_DEVELOPER_INSTRUCTIONS = (
     "This is a bounded Agency Runtime activation canary. If the current task contains "
-    "[AGENCY EXACT SPECIALIST ACTIVATION v1], you are the sole delegated child: perform "
-    "the requested review directly, use no tools, and return one concise sentence. "
+    "[AGENCY EXACT SPECIALIST ACTIVATION v1] or "
+    "[AGENCY EXACT SPECIALIST ACTIVATION v2], you are the sole delegated child: "
+    "perform the requested review directly, use no tools, and return one concise sentence. "
     "Otherwise you are the parent, and the user explicitly requested exactly one sub-agent "
     "for the whole unit: follow the injected [AGENCY DELEGATION PLAN], require exactly one "
     "row, call spawn_agent exactly once with fork_turns set to none, that row's exact "

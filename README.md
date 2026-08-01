@@ -177,11 +177,18 @@ audited specialist into the child for that one task. There are two mechanisms:
 
 When the host invokes its native delegation tool (`spawn_agent` / `Agent`), a
 `PreToolUse` hook resolves the one persisted assignment for that child, verifies
-the goal matches the plan, and injects the specialist's exact versioned prompt as
-an `[AGENCY EXACT SPECIALIST ACTIVATION v1]` envelope into the child's task
-input. After the host proves it executed the launch, a `PostToolUse` hook
-**consumes the one-use activation receipt** — it can't be replayed. Payloads are
-byte-budgeted (64 KiB) and never silently truncated.
+the host-visible assignment matches the plan, and binds the specialist's exact
+versioned prompt. Claude Code and ZCode receive a v1 envelope in the rewritten
+task. Codex keeps collaboration messages encrypted at this boundary, so Agency
+preserves that ciphertext and requires its unencrypted native task label to
+resolve exactly one persisted row. Preflight privately stages that row's exact
+canonical write paths while plaintext is still available; only a genuinely
+repository-wide row receives `.`. `SubagentStart` then injects a token-free v2
+context carrying that row's immutable specialist prompt and content-free goal
+hash. It consumes the one-use receipt against the observed child identity
+before another opaque child may launch. Exact retries are idempotent, while a
+different concurrent launch fails closed. Payloads are byte-budgeted (64 KiB)
+and never silently truncated.
 
 ```mermaid
 sequenceDiagram
@@ -190,14 +197,29 @@ sequenceDiagram
     participant Store as Evidence store
     participant Child as Native child
     Host->>Hook: invoke spawn_agent / Agent (goal)
-    Hook->>Store: resolve one persisted assignment
-    Store-->>Hook: exact specialist + version
-    Hook-->>Host: allow + rewritten input (specialist envelope)
+    Hook->>Store: resolve assignment + exact private path scope
+    Store-->>Hook: exact specialist + version + one-use grant
+    alt plaintext Agent task
+        Hook-->>Host: allow + rewritten v1 specialist envelope
+    else opaque Codex message
+        Hook-->>Host: allow unchanged ciphertext after exact label binding
+        Host->>Hook: PostToolUse (spawn acknowledged)
+        Host->>Hook: SubagentStart (observed child identity)
+        Hook->>Store: consume the only unconsumed grant
+        Hook-->>Child: token-free v2 specialist context + goal hash
+    end
     Host->>Child: launch with specialist prompt bound
     Child-->>Host: result
-    Host->>Hook: PostToolUse (launch evidence)
-    Hook->>Store: consume one-use receipt
+    Host->>Hook: SubagentStop (completion evidence)
 ```
+
+Codex does not currently expose the decrypted assignment or an authenticated
+digest to either relevant hook. The exact plan label, preserved host ciphertext,
+isolated workspace, goal-hash-bound v2 context, and one-use child receipt are the
+strongest observable binding; Agency rejects missing or ambiguous rows rather
+than falling back to an untyped worker. Current Codex opaque children are
+scheduled one at a time because the host does not expose enough authenticated
+task identity to correlate multiple grants awaiting `SubagentStart`.
 
 ### MCP-plugin hosts (Hermes, OpenClaw)
 

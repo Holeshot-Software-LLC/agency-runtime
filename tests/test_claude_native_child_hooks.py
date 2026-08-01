@@ -121,6 +121,24 @@ class _PlanStore:
             "prompt_hash": self.hashes[slug],
         }
 
+    def prepare_codex_opaque_native_child_activation(
+        self,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        return self.prepare_delegation_activation(
+            session_id=kwargs["session_id"],
+            trace_id=kwargs["trace_id"],
+            specialist_slug=kwargs["specialist_slug"],
+            work_unit_id=kwargs["work_unit_id"],
+            worker_kind="generic-worker",
+            grant_origin="native_hook",
+            tool_use_id=kwargs["tool_use_id"],
+            mutation_mode="read_only",
+            mutation_path_prefixes=[],
+            evidence_contract_id="agency-native-child-plan-v1",
+            evidence_requirements=["delegation-execution", "specialist-load"],
+        )
+
     def verify_pending_delegation_activation(self, **kwargs: Any) -> bool:
         with self._lock:
             matches = [
@@ -796,16 +814,8 @@ def test_codex_subagent_lifecycle_injects_exact_identity_and_child_owned_fallbac
     assert store.stopped == store.started
 
 
-def test_codex_opaque_canary_delivery_is_terminal_parseable_child_context() -> None:
-    from agency_runtime.core.activation_canary_contract import (
-        CODEX_ACTIVATION_CANARY_WORK_UNIT,
-    )
-
-    class OpaqueCanaryStore(_PlanStore):
-        def __init__(self) -> None:
-            super().__init__()
-            self.goals["unit-code"] = CODEX_ACTIVATION_CANARY_WORK_UNIT
-
+def test_codex_opaque_product_delivery_is_goal_hash_bound_child_context() -> None:
+    class OpaqueProductStore(_PlanStore):
         def get_pending_native_hook_delivery(self, **_kwargs: Any) -> dict[str, str]:
             prepared = self.prepared[0]
             return {
@@ -819,7 +829,7 @@ def test_codex_opaque_canary_delivery_is_terminal_parseable_child_context() -> N
                 "prompt_body": self.prompts["code-reviewer"],
             }
 
-    store = OpaqueCanaryStore()
+    store = OpaqueProductStore()
     bridge = HookBridge("codex", store=store)  # type: ignore[arg-type]
     pre = bridge.handle(
         {
@@ -827,11 +837,11 @@ def test_codex_opaque_canary_delivery_is_terminal_parseable_child_context() -> N
             "session_id": "codex-session",
             "turn_id": "trace",
             "tool_name": "collaborationspawn_agent",
-            "tool_use_id": "call-canary",
+            "tool_use_id": "call-product",
             "tool_input": {
                 "fork_turns": "none",
                 "task_name": codex_task_name_for_work_unit("unit-code"),
-                "message": "gAAAAA" + "opaque-canary-ciphertext" * 2,
+                "message": "gAAAAA" + "opaque-product-ciphertext" * 2,
             },
         }
     )
@@ -841,7 +851,7 @@ def test_codex_opaque_canary_delivery_is_terminal_parseable_child_context() -> N
         {
             "hook_event_name": "SubagentStart",
             "session_id": "codex-session",
-            "agent_id": "agent-canary",
+            "agent_id": "agent-product",
             "agent_type": "worker",
         }
     )
@@ -849,9 +859,67 @@ def test_codex_opaque_canary_delivery_is_terminal_parseable_child_context() -> N
     delivery = parse_native_child_prompt_delivery(context)
 
     assert delivery is not None
-    assert delivery.original_task == CODEX_ACTIVATION_CANARY_WORK_UNIT
+    assert delivery.original_task == ""
+    assert delivery.goal_hash == work_unit_goal_hash(store.goals["unit-code"])
     assert delivery.specialist_slug == "code-reviewer"
+    assert "[AGENCY EXACT SPECIALIST ACTIVATION v2]" in context
     assert context.endswith(store.prompts["code-reviewer"])
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "gAAAAAtoo-short",
+        "Perform unrelated plaintext work.",
+    ],
+)
+def test_codex_planned_child_rejects_malformed_opaque_or_wrong_plaintext(
+    message: str,
+) -> None:
+    store = _PlanStore()
+    result = HookBridge("codex", store=store).handle(  # type: ignore[arg-type]
+        {
+            "hook_event_name": "PreToolUse",
+            "session_id": "codex-session",
+            "turn_id": "trace",
+            "tool_name": "collaborationspawn_agent",
+            "tool_use_id": "call-invalid-product",
+            "tool_input": {
+                "fork_turns": "none",
+                "task_name": codex_task_name_for_work_unit("unit-code"),
+                "message": message,
+            },
+        }
+    )
+
+    assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+    assert "does not exactly match" in result["hookSpecificOutput"]["permissionDecisionReason"]
+    assert store.prepared == []
+
+
+def test_codex_opaque_child_rejects_unpersisted_planned_label() -> None:
+    store = _PlanStore()
+    result = HookBridge("codex", store=store).handle(  # type: ignore[arg-type]
+        {
+            "hook_event_name": "PreToolUse",
+            "session_id": "codex-session",
+            "turn_id": "trace",
+            "tool_name": "collaborationspawn_agent",
+            "tool_use_id": "call-wrong-label",
+            "tool_input": {
+                "fork_turns": "none",
+                "task_name": codex_task_name_for_work_unit("unit-deadbeef00"),
+                "message": "gAAAAA" + "opaque-product-ciphertext" * 2,
+            },
+        }
+    )
+
+    assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+    assert (
+        "could not verify this planned native child"
+        in result["hookSpecificOutput"]["permissionDecisionReason"]
+    )
+    assert store.prepared == []
 
 
 def test_zcode_does_not_invent_undocumented_child_lifecycle_identity() -> None:

@@ -807,6 +807,162 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="product-proof-allows-invalid-host-notice-projection",
+        invariant=(
+            "Malformed or missing Codex host-notice evidence cannot produce a passing "
+            "product proof."
+        ),
+        source_path="agency_runtime/core/canary_proof.py",
+        before="        and collaboration_projection is None\n",
+        after="        and False\n",
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_product_collaboration_projection_rejects_invalid_host_notice_evidence"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-opaque-child-restores-canary-only-delivery",
+        invariant=(
+            "Any exact persisted Codex product row can receive its specialist context; "
+            "opaque delivery is not restricted to the fixed activation canary."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before=(
+            "                    if assignment is None or pending_identity != "
+            "assignment_identity:\n"
+            '                        raise ValueError("pending Codex delivery does not '
+            'match the exact plan")\n'
+            "                    exact_delivery = "
+            "render_codex_opaque_native_child_prompt_delivery("
+        ),
+        after=(
+            "                    if assignment is None or pending_identity != "
+            "assignment_identity:\n"
+            '                        raise ValueError("pending Codex delivery does not '
+            'match the exact plan")\n'
+            "                    from agency_runtime.core.activation_canary_contract import (\n"
+            "                        CODEX_ACTIVATION_CANARY_WORK_UNIT,\n"
+            "                    )\n"
+            "                    if assignment.goal_hash != work_unit_goal_hash(\n"
+            "                        CODEX_ACTIVATION_CANARY_WORK_UNIT\n"
+            "                    ):\n"
+            '                        raise ValueError("pending Codex delivery is not the '
+            'activation canary")\n'
+            "                    exact_delivery = "
+            "render_codex_opaque_native_child_prompt_delivery("
+        ),
+        test_node=(
+            "tests/test_claude_native_child_hooks.py::"
+            "test_codex_opaque_product_delivery_is_goal_hash_bound_child_context"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-opaque-child-drops-goal-hash-binding",
+        invariant=("Opaque Codex child context carries the exact persisted work-unit goal hash."),
+        source_path="agency_runtime/adapters/hooks.py",
+        before=(
+            "                    exact_delivery = "
+            "render_codex_opaque_native_child_prompt_delivery(\n"
+            '                        str(pending.get("prompt_body") or ""),\n'
+            "                        parent_session_id=session_id,\n"
+            "                        parent_trace_id=trace_id,\n"
+            "                        tool_use_id=assignment.tool_use_id,\n"
+            "                        work_unit_id=assignment.work_unit_id,\n"
+            "                        specialist_slug=assignment.specialist_slug,\n"
+            "                        specialist_version=assignment.specialist_version,\n"
+            "                        specialist_prompt_hash=assignment.specialist_prompt_hash,\n"
+            "                        goal_hash=assignment.goal_hash,\n"
+            "                    )"
+        ),
+        after=(
+            "                    exact_delivery = "
+            "render_codex_opaque_native_child_prompt_delivery(\n"
+            '                        str(pending.get("prompt_body") or ""),\n'
+            "                        parent_session_id=session_id,\n"
+            "                        parent_trace_id=trace_id,\n"
+            "                        tool_use_id=assignment.tool_use_id,\n"
+            "                        work_unit_id=assignment.work_unit_id,\n"
+            "                        specialist_slug=assignment.specialist_slug,\n"
+            "                        specialist_version=assignment.specialist_version,\n"
+            "                        specialist_prompt_hash=assignment.specialist_prompt_hash,\n"
+            '                        goal_hash="0" * 64,\n'
+            "                    )"
+        ),
+        test_node=(
+            "tests/test_claude_native_child_hooks.py::"
+            "test_codex_opaque_product_delivery_is_goal_hash_bound_child_context"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-opaque-child-restores-workspace-wide-grant",
+        invariant=(
+            "An ordinary Codex child receives only the path prefixes derived from its "
+            "exact preflight work unit, never an unconditional repository-wide grant."
+        ),
+        source_path="agency_runtime/core/unit_assignment.py",
+        before=(
+            "    path_prefixes = (\n"
+            "        []\n"
+            '        if normalized_scope == "read_only"\n'
+            '        else ["." if resource == "repository-workspace" else resource '
+            "for resource in resources]\n"
+            "    )"
+        ),
+        after=(
+            "    path_prefixes = (\n"
+            "        []\n"
+            '        if normalized_scope == "read_only"\n'
+            '        else ["."]\n'
+            "    )"
+        ),
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_preflight_stages_exact_path_for_ordinary_workspace_write"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-path-authority-restores-case-folding",
+        invariant=(
+            "Canonical mutation paths preserve case; a separate folded key owns only "
+            "conservative contention matching."
+        ),
+        source_path="agency_runtime/core/unit_assignment.py",
+        before="    return normalized[:MAX_RESOURCE_CHARS]\n",
+        after="    return normalized.casefold()[:MAX_RESOURCE_CHARS]\n",
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_preflight_stages_exact_path_for_ordinary_workspace_write"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-opaque-child-restores-concurrent-unconsumed-grants",
+        invariant=(
+            "Codex opaque launches remain serialized until SubagentStart consumes the "
+            "prior native-hook grant."
+        ),
+        source_path="agency_runtime/core/store/delegation_activation.py",
+        before="    if inflight is not None:\n",
+        after="    if False and inflight is not None:\n",
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_opaque_children_serialize_until_subagent_start_consumes_grant"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-plaintext-child-inherits-opaque-serialization",
+        invariant=(
+            "Only token-free opaque Codex grants serialize through child start; "
+            "plaintext token-correlated grants may coexist."
+        ),
+        source_path="agency_runtime/core/store/delegation_activation.py",
+        before="    if planned_scope is None or not opaque_launch:\n",
+        after="    if planned_scope is None:\n",
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_plaintext_grants_skip_the_opaque_serialization_slot"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="preflight-failure-drops-terminal-receipt",
         invariant=(
             "Every owned terminal preflight failure persists one exact content-free receipt."
@@ -1240,6 +1396,37 @@ def _run_pytest(
     )
 
 
+def _run_baseline(
+    checkout: Path,
+    test_nodes: Sequence[str],
+    python_executable: str,
+    timeout_seconds: float,
+    source_root: Path,
+    *,
+    pytest_runner: PytestRunner,
+) -> _PytestRun:
+    """Run each baseline node under the documented per-test deadline."""
+
+    duration_ms = 0
+    for test_node in test_nodes:
+        result = pytest_runner(
+            checkout,
+            (test_node,),
+            python_executable,
+            timeout_seconds,
+            source_root,
+        )
+        duration_ms += result.duration_ms
+        if result.timed_out or result.exit_code != 0:
+            return _PytestRun(
+                exit_code=result.exit_code,
+                failed_nodes=result.failed_nodes,
+                duration_ms=duration_ms,
+                timed_out=result.timed_out,
+            )
+    return _PytestRun(exit_code=0, failed_nodes=(), duration_ms=duration_ms)
+
+
 def _relative_file(root: Path, relative: str) -> Path:
     candidate = Path(relative)
     if not candidate.parts or candidate.is_absolute() or ".." in candidate.parts:
@@ -1460,12 +1647,13 @@ def run_decision_conformance_eval(
     with private_temporary_directory(prefix="decision-conformance") as temporary:
         baseline_copy = temporary / "baseline"
         _copy_inputs(source_root, baseline_copy, mutations)
-        baseline_run = pytest_runner(
+        baseline_run = _run_baseline(
             baseline_copy,
             baseline_nodes,
             interpreter,
             float(timeout_seconds),
             source_root,
+            pytest_runner=pytest_runner,
         )
         baseline_passed = baseline_run.exit_code == 0 and not baseline_run.timed_out
         if baseline_passed:

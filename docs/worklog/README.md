@@ -439,6 +439,21 @@ This registry connects repository history to the roadmap and to optional detail 
 | `82fc1e7` | 2026-07-31 | docs(roadmap): checkpoint accepted-route spawn failure | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
 | `420356a` | 2026-07-31 | fix(product): authorize exact Codex delegation plan | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | [detail](2026-07-31-420356a-codex-product-delegation-authority.md) |
 | `146aa1d` | 2026-07-31 | docs(evidence): admit Codex delegation authority fast gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
+| `584b949` | 2026-07-31 | Merge pull request #202 from Holeshot-Software-LLC/codex/ar-207-live-product-proof | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
+| `5f0523d` | 2026-07-31 | docs(roadmap): checkpoint exact merged authority install | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
+| `b9d75b3` | 2026-07-31 | docs(roadmap): checkpoint exact authority activation | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
+| `9516259` | 2026-07-31 | docs(roadmap): checkpoint first-spawn product failure | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md) | null |
+| `e4ceb89` | 2026-07-31 | fix(product): fail closed on invalid notice proof | [AR-208](../roadmap/issue-AR-208-preserve-codex-host-notices-in-product-evidence.md) | [detail](2026-07-31-e4ceb89-invalid-product-notice-proof.md) |
+| `552eb05` | 2026-07-31 | fix(codex): bind opaque child launches to exact plan rows | [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | [detail](2026-07-31-552eb05-opaque-codex-child-binding.md) |
+| `5bed308` | 2026-07-31 | test(codex): align canary proof with opaque child contract | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-208](../roadmap/issue-AR-208-preserve-codex-host-notices-in-product-evidence.md), [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
+| `ae85052` | 2026-07-31 | fix(codex): scope and serialize opaque child grants | [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
+| `5144cc9` | 2026-07-31 | docs(roadmap): checkpoint exact Codex grant gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
+| `40d1099` | 2026-07-31 | fix(codex): preserve path case and plaintext concurrency | [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
+| `075bc56` | 2026-07-31 | test(codex): keep plaintext slot regression bounded | [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md) | null |
+| `bc6d15b` | 2026-07-31 | fix(eval): honor per-test conformance deadlines | [AR-210](../roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md) | null |
+| `361d1e1` | 2026-07-31 | docs(roadmap): checkpoint per-test conformance repair | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-210](../roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md) | null |
+| `169a826` | 2026-07-31 | docs(roadmap): record 73-mutation conformance proof | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md), [AR-210](../roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md) | null |
+| `156eb5b` | 2026-07-31 | docs(roadmap): record exact local merge gate | [AR-207](../roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md), [AR-209](../roadmap/issue-AR-209-bind-opaque-codex-child-launches.md), [AR-210](../roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

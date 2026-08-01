@@ -7,23 +7,25 @@ updated: 2026-07-31
 tags: [handoff, preflight, delegation, codex, diagnostics, evidence]
 related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
+  - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
+  - docs/roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
-  - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
+  - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-207-live-product-proof
-evidence_commit: dd85e7d981f9214104c61815b49f51e178896295
-minimum_ledger_commit: a3dca3a79d34d44d9bd8a7870e86a3bc2089e73b
+branch: codex/ar-207-exact-product-proof
+evidence_commit: bc6d15bb1789ef6298c64fa4904ab9941e01c882
+minimum_ledger_commit: 5297d2d7ea6a0665532bde14961c26177e6c9e67
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -35,43 +37,48 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - The active goal remains `README's main story works in reality.`
 - Earlier exact-build host-notice diagnostics and the `5ad4aef` product trial
   are consumed. Their bounded evidence remains canonical in AR-207.
-- PR 201 merged the fast-green product projection repair as exact revision
-  `dd85e7d981f9214104c61815b49f51e178896295`. Its official VCS package is
-  installed; bare install discovered and registered only Codex and ZCode, then
-  recreated, started, and reached the dashboard.
-- Supported-bypass activation passed on `dd85e7d` with inferred
-  `code-reviewer`, the complete native lifecycle, valid first-pass header,
-  zero corrections, proven Store evidence, three admitted host notices, and
-  no unexpected item. That activation is consumed and must not be rerun.
-- Product trial `ar207-dd85e7d-readme-01` is consumed and terminal `NO-GO`.
-  Inference accepted eight units and specialists, but Codex returned no parent
-  response or native spawn; all eight delegations remained `suggested`.
-- The missing edge was high-priority host authority: the product backend lacked
-  the developer instruction used by the passing activation canary. ADR-0126's
-  bounded parent/child repair is named-fast-green through all 66 mutations.
-- Product trial `ar207-5ad4aef-readme-01` is consumed and terminal `NO-GO`.
-  Its persisted preflight failed at routing validation with an empty durable
-  attempt list and no route, tool, response, header, or workspace write. That
-  empty list did not prove inference was never entered.
-- An exact-prompt no-call replay reached the provider boundary. A fresh online
-  replay against a private Store backup then reached `ready` after two
-  `gpt-5.6-luna` calls, with eight inferred units and eight fitting specialists.
+- PR 202 merged ADR-0126's authority repair as exact revision
+  `584b949d75d013611c0fe3d26835f3057fc83466`; its official VCS package is
+  exact-installed as `0.1.0+g584b949d75d0`.
+- Default install discovered only Codex and ZCode, registered both, and reached
+  the dashboard. Supported-bypass activation then passed with inferred and
+  executed `code-reviewer`, a valid first-pass header, and zero corrections.
+- Product trial `ar207-584b949-readme-01` is consumed and terminal `NO-GO`.
+  Inference accepted eight units; Codex attempted the first native spawn, but
+  no child started and no wait followed. All delegations remained `suggested`.
 
 ## completed-evidence
 
-- Exact-installed activation session `019fb978-1242-7c30-9c93-38751f4f26ff`,
-  trace `019fb978-1ec4-7f91-a9b2-9ab47abb15d8`, and run
-  `810eab84-69f2-4bdd-a711-1eb8a59bcc89` passed on `dd85e7d`. Inference
-  selected `code-reviewer` and persisted one route, unit, grant, consumption,
-  load, worker, native child, completed delegation, and accepted finalization.
+- Exact-installed activation session `019fb9ba-b711-71f1-b7a8-746ae7e4b42f`,
+  trace `019fb9ba-c746-7341-8cd5-1e5b23b0f7dc`, and run
+  `5df7f288-bc5e-4fbb-94fe-602c56b7d21f` passed on `584b949`. Inference
+  selected `code-reviewer`; one route, grant, consumption, load, worker,
+  native child, completed delegation, and accepted finalization persisted.
   Header validity and Store evidence were proven with correction count zero.
-- Product session `019fb982-a686-79d1-bc6c-f605e64895fc`, trace
-  `019fb982-a702-7c11-b527-a4b5fa603250`, and run
-  `ec15beed-4ed4-4bc8-bdf6-1a19e4b4d926` reached ready with an accepted
-  eight-unit route. It retained eight suggested delegations but zero grants,
-  consumptions, loads, worker runs, native children, or completed delegations.
-  Codex exited zero with an empty response and no header; workspace trust and
-  hook bypass were proven, workspace write was not, and corrections were zero.
+- Product session `019fb9bf-8db3-7022-8acd-da0a80f8834b`, trace
+  `019fb9bf-8e2d-7691-b469-684c6e109872`, and run
+  `8be205d8-dba0-4058-84b6-384cf774531c` reached an accepted eight-unit route.
+  Parent rollout evidence contains one spawn call and its output, but zero
+  child starts or waits. Finalization was `delegation_declined`; workspace
+  trust and bypass were proven, workspace write was not, and corrections were zero.
+- Two retained real-host spawns prove Codex encrypts arbitrary child messages
+  before Agency's `PreToolUse` equality check. The old path recovered only the
+  fixed canary goal, explaining why activation passed while product delegation
+  could not start.
+- AR-209's repaired candidate binds each opaque native task label to one exact
+  private preflight path scope, preserves ciphertext, and injects the token-free
+  v2 specialist context at `SubagentStart`. Only a genuinely repository-wide
+  row receives `.`; ordinary file rows retain their exact paths.
+- Opaque launches are serialized until child start consumes the prior grant;
+  same-tool replay is idempotent. The repaired surface passes 202 warning-strict
+  tests, all 28 activation tests, and both new mutations with unchanged source.
+- The repaired spine is green through 595 docs, 604 Ruff files, 638
+  warning-strict Python tests with six skips, 110 dashboard tests, and every
+  routing gate. Conformance killed all 71 mutations with zero survivors or
+  invalid results, and the source tree remained unchanged.
+- Exact-head review on `aa68555` found case-folded authority and plaintext
+  over-serialization. After one aggregate timeout, AR-210 killed all 73
+  mutations cleanly and passed its named local merge spine.
 - Product session `019fb92d-694c-7e42-b553-ee53802bac99`, trace
   `019fb92d-69c3-7541-bc96-ae0c72126a25`, and run
   `56389325-9128-470b-945c-b3951bc37248` ended `preflight_failed` with stage
@@ -119,9 +126,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The exact `dd85e7d` product trial is terminal `NO-GO` and cannot be rerun. The
-accepted-plan authority repair is named-fast-green but still requires review,
-merge, exact install, and one trial on a new exact revision.
+Exact build `584b949` is consumed: activation passed, but its product trial is
+terminal `NO-GO`. AR-209's first repair was local-fast-green, but exact-head
+review found two valid defects. Their bounded follow-up is focused-green but not
+yet full-gate-green, rereviewed, merged, or exact-installed. No new live run is
+allowed before those boundaries pass.
 
 ## same-task-continuity
 
@@ -132,11 +141,10 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Push and review the named-fast-green accepted-plan authority repair.
-2. Merge and exact-install a new build.
-3. Run one fresh activation and one fresh product trial on that new build.
-4. Prove a fresh-task `agency-steward` plus specialist header, then produce the
-   local shareable evidence page and OpenClaw handoff.
+1. Pass the revised full gate, push, resolve the new P1/P2 threads, obtain a
+   clean exact-head review, merge, and exact-install AR-209.
+2. Repeat one activation and at most one product trial on the new exact build,
+   then produce the local shareable evidence page and OpenClaw handoff.
 
 ## verification
 
@@ -167,5 +175,6 @@ git diff --check
 - Do not rerun activation or the product trial on exact build `5ad4aef`; both
   terminal results are recorded.
 - Do not rerun the passed activation or failed product trial on `dd85e7d`.
+- Do not rerun the activation or product trial on `584b949`.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

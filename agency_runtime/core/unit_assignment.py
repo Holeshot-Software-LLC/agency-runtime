@@ -714,6 +714,24 @@ def work_unit_goal_hash(value: Any) -> str:
     return _plan_hash(_normalized_goal(value))
 
 
+def native_child_evidence_requirements(required_evidence: Any) -> list[str]:
+    if not isinstance(required_evidence, (list, tuple)):
+        raise ValueError("native child activation evidence requirements are malformed")
+    evidence = ["delegation-execution", "specialist-load"]
+    for item in required_evidence:
+        normalized = str(item or "").strip().casefold()
+        if normalized and _EVIDENCE_TOKEN_RE.fullmatch(normalized) is None:
+            normalized = (
+                "evidence-"
+                + hashlib.sha256(normalized.encode("utf-8", errors="surrogatepass")).hexdigest()[
+                    :32
+                ]
+            )
+        if normalized and normalized not in evidence:
+            evidence.append(normalized)
+    return evidence
+
+
 def native_child_activation_contract(
     goal: Any,
     *,
@@ -740,25 +758,11 @@ def native_child_activation_contract(
         if normalized_scope == "read_only"
         else ["." if resource == "repository-workspace" else resource for resource in resources]
     )
-    if not isinstance(required_evidence, (list, tuple)):
-        raise ValueError("native child activation evidence requirements are malformed")
-    evidence = ["delegation-execution", "specialist-load"]
-    for item in required_evidence:
-        normalized = str(item or "").strip().casefold()
-        if normalized and _EVIDENCE_TOKEN_RE.fullmatch(normalized) is None:
-            normalized = (
-                "evidence-"
-                + hashlib.sha256(normalized.encode("utf-8", errors="surrogatepass")).hexdigest()[
-                    :32
-                ]
-            )
-        if normalized and normalized not in evidence:
-            evidence.append(normalized)
     return {
         "mutation_mode": normalized_scope,
         "mutation_path_prefixes": path_prefixes,
         "evidence_contract_id": "agency-native-child-plan-v1",
-        "evidence_requirements": evidence,
+        "evidence_requirements": native_child_evidence_requirements(required_evidence),
     }
 
 
@@ -829,7 +833,13 @@ def _looks_like_resource(value: str) -> bool:
 
 def _normalized_resource(value: str) -> str:
     normalized = posixpath.normpath(value.replace("\\", "/"))
-    return normalized.casefold()[:MAX_RESOURCE_CHARS]
+    return normalized[:MAX_RESOURCE_CHARS]
+
+
+def _resource_contention_key(value: object) -> str:
+    """Return a conservative identity without changing persisted path authority."""
+
+    return str(value or "").casefold()
 
 
 def _likely_resources(unit: str) -> list[str]:
@@ -861,11 +871,11 @@ def _resource_contention_plan(
     )
     for index, current in enumerate(candidates):
         current_id = str(current["work_unit_id"])
-        current_resources = set(current["resources"])
+        current_resources = {_resource_contention_key(item) for item in current["resources"]}
         if current_resources == {"repository-workspace"}:
             continue
         for previous in candidates[:index]:
-            previous_resources = set(previous["resources"])
+            previous_resources = {_resource_contention_key(item) for item in previous["resources"]}
             if previous_resources == {"repository-workspace"}:
                 continue
             if current_resources.isdisjoint(previous_resources):
@@ -1337,6 +1347,7 @@ __all__ = [
     "build_unit_agent_plan",
     "hydrate_unit_agent_plan",
     "native_child_activation_contract",
+    "native_child_evidence_requirements",
     "project_unit_agent_plan",
     "project_unit_assignment_agents",
     "work_unit_goal_hash",

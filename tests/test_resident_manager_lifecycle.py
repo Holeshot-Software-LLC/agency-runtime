@@ -780,6 +780,7 @@ def test_binding_conflict_replans_exactly_once(
         routing_recipe={},
         suggestions=[],
         specialist_refs=[],
+        codex_native_plan_scopes=[],
         user_message="ping",
         config=AgencyConfig(),
         pipeline=object(),

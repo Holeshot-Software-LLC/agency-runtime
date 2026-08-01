@@ -7,6 +7,7 @@ updated: 2026-07-31
 tags: [evaluation, product, delegation, codex, evidence, specialists]
 related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
+  - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
@@ -14,6 +15,7 @@ related:
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
+  - docs/decisions/0127-bind-opaque-codex-children-through-exact-plan-labels.md
   - README.md
   - docs/worklog/README.md
 supersedes: []

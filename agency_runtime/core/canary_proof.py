@@ -1274,6 +1274,12 @@ def evaluate_proof(
             result,
             expected_parent_thread_id=str(evidence.get("session_id") or ""),
         )
+    product_collaboration_proven = not (
+        activation_contract == "product"
+        and mode == "agency"
+        and host == "codex"
+        and collaboration_projection is None
+    )
     invocation = {
         "backend": result.get("backend", host),
         "status": result.get("status"),
@@ -1347,6 +1353,8 @@ def evaluate_proof(
             activation_failures=activation_failures,
         )
     )
+    if not product_collaboration_proven:
+        failures.append("Codex product collaboration projection was missing or invalid")
     if failure_reason == "codex_hook_trust_not_ready":
         failures.insert(
             0,
@@ -1361,6 +1369,7 @@ def evaluate_proof(
             and header_passed
             and evidence_passed
             and profile_proven
+            and product_collaboration_proven
         ),
         failures=tuple(dict.fromkeys(failures)),
     )

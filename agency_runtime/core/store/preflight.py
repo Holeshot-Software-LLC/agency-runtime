@@ -12,11 +12,18 @@ from hashlib import sha256
 from typing import Any
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
+from agency_runtime.core.codex_native_plan_scope import (
+    CodexNativePlanScope,
+    deserialize_codex_native_plan_scope,
+    serialize_codex_native_plan_scope,
+    validate_codex_native_plan_scope,
+)
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.installer_contracts import (
     HOOK_TIMEOUT_BUFFER_SECONDS,
     MAX_HOOK_TIMEOUT_SECONDS,
 )
+from agency_runtime.core.native_child_activation import build_native_child_evidence_contract
 from agency_runtime.core.preflight_failure import (
     MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
     PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
@@ -57,7 +64,10 @@ from agency_runtime.core.store.version_identity import (
     is_valid_version_identity,
 )
 from agency_runtime.core.turn_intent import TURN_CLASSIFIER_VERSION
-from agency_runtime.core.unit_assignment import project_unit_assignment_agents
+from agency_runtime.core.unit_assignment import (
+    native_child_evidence_requirements,
+    project_unit_assignment_agents,
+)
 
 _DIGEST_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _WORK_UNIT_ID_PATTERN = re.compile(r"^unit-[0-9a-f]{10}$")
@@ -867,6 +877,102 @@ def _prepare_ready_evidence(
             else None
         ),
     )
+
+
+def _project_codex_native_plan_scopes(
+    evidence: _ReadyEvidence,
+    value: object,
+) -> list[tuple[CodexNativePlanScope, str]]:
+    """Validate private scopes against the exact content-free ready recipe."""
+
+    if not isinstance(value, list):
+        raise ValueError("Codex native plan scopes must be a list")
+    expected_required = bool(
+        evidence.host == "codex"
+        and evidence.delivery_mode == "isolated"
+        and evidence.suggestions
+        and evidence.recipe["routing"].get("continuation_reused") is not True
+    )
+    if not expected_required:
+        if value:
+            raise ValueError("Codex native plan scopes are not valid for this preflight")
+        return []
+    references = {item["slug"]: item for item in evidence.specialist_refs}
+    suggestions = {item["work_unit_id"]: item for item in evidence.suggestions}
+    if len(suggestions) != len(evidence.suggestions) or len(value) != len(suggestions):
+        raise ValueError("Codex native plan scopes do not cover the exact plan")
+    projected: list[tuple[CodexNativePlanScope, str]] = []
+    seen: set[str] = set()
+    for raw in value:
+        scope = validate_codex_native_plan_scope(raw)
+        suggestion = suggestions.get(scope.work_unit_id)
+        reference = references.get(scope.specialist.slug)
+        if suggestion is None or reference is None or scope.work_unit_id in seen:
+            raise ValueError("Codex native plan scope identity does not match the ready plan")
+        expected_evidence = build_native_child_evidence_contract(
+            contract_id="agency-native-child-plan-v1",
+            requirements=native_child_evidence_requirements(suggestion.get("required_evidence")),
+        )
+        if (
+            suggestion.get("recommended_agent") != scope.specialist.slug
+            or suggestion.get("goal_hash") != scope.goal_hash
+            or tuple(suggestion.get("resource_hashes") or ()) != scope.resource_hashes
+            or suggestion.get("mutation_scope") != scope.mutation_scope.mode
+            or reference.get("version") != scope.specialist.version
+            or reference.get("hash") != scope.specialist.content_hash
+            or expected_evidence != scope.evidence_contract
+        ):
+            raise ValueError("Codex native plan scope does not match the ready plan")
+        seen.add(scope.work_unit_id)
+        projected.append((scope, serialize_codex_native_plan_scope(scope)))
+    if seen != set(suggestions):
+        raise ValueError("Codex native plan scopes do not cover the exact plan")
+    return projected
+
+
+def _commit_codex_native_plan_scopes(
+    store: Any,
+    conn: Any,
+    evidence: _ReadyEvidence,
+    scopes: list[tuple[CodexNativePlanScope, str]],
+) -> None:
+    """Insert or verify the exact private scope set inside the ready CAS."""
+
+    rows = conn.execute(
+        "SELECT session_id, trace_id, work_unit_id, scope_payload "
+        "FROM codex_native_plan_scopes WHERE trace_id = ? ORDER BY work_unit_id",
+        (evidence.trace_id,),
+    ).fetchall()
+    expected = {scope.work_unit_id: payload for scope, payload in scopes}
+    if rows:
+        observed: dict[str, str] = {}
+        for row in rows:
+            if (
+                str(row["session_id"] or "") != evidence.session_id
+                or str(row["trace_id"] or "") != evidence.trace_id
+            ):
+                raise RuntimeError("persisted Codex native plan scope correlation is invalid")
+            payload = str(row["scope_payload"] or "")
+            scope = deserialize_codex_native_plan_scope(payload)
+            if scope.work_unit_id != str(row["work_unit_id"] or ""):
+                raise RuntimeError("persisted Codex native plan scope identity is invalid")
+            observed[scope.work_unit_id] = payload
+        if observed != expected:
+            raise RuntimeError("persisted Codex native plan scopes do not match the ready plan")
+        return
+    for scope, payload in scopes:
+        conn.execute(
+            "INSERT INTO codex_native_plan_scopes "
+            "(id, session_id, trace_id, work_unit_id, scope_payload, created_at) "
+            f"VALUES (?, ?, ?, ?, ?, {STORE_CLOCK_SQL})",  # nosec B608
+            (
+                store._uuid(),
+                evidence.session_id,
+                evidence.trace_id,
+                scope.work_unit_id,
+                payload,
+            ),
+        )
 
 
 def _commit_pending_hiring_evidence(
@@ -1966,6 +2072,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         routing_evidence: Mapping[str, Any],
         suggestions: list[dict[str, Any]],
         specialist_refs: list[dict[str, Any]],
+        codex_native_plan_scopes: list[dict[str, Any]] | None = None,
     ) -> dict[str, str]:
         """Atomically commit content-free child evidence with the ready CAS."""
 
@@ -1982,6 +2089,10 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         normalized_session = evidence.session_id
         normalized_trace = evidence.trace_id
         normalized_attempt = evidence.attempt_token
+        projected_codex_scopes = _project_codex_native_plan_scopes(
+            evidence,
+            [] if codex_native_plan_scopes is None else codex_native_plan_scopes,
+        )
 
         conn = self._connect()
         try:
@@ -2015,6 +2126,12 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                     trace_id=normalized_trace,
                 )
                 if replay is not None:
+                    _commit_codex_native_plan_scopes(
+                        self,
+                        conn,
+                        evidence,
+                        projected_codex_scopes,
+                    )
                     conn.execute(
                         f"UPDATE runs SET last_activity_at = {STORE_CLOCK_SQL} "  # nosec B608
                         "WHERE session_id = ? AND trace_id = ?",
@@ -2067,6 +2184,12 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
             if ready.rowcount != 1:
                 conn.rollback()
                 return {"outcome": "cas_lost"}
+            _commit_codex_native_plan_scopes(
+                self,
+                conn,
+                evidence,
+                projected_codex_scopes,
+            )
             _commit_pending_hiring_evidence(self, conn, evidence)
             safe_decision = projected_routing["decision"]
             work_units = safe_decision.get("work_units") or {}

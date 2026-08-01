@@ -16,6 +16,10 @@ from hashlib import sha256
 from typing import Any
 
 from agency_runtime.core.agent_activation import agent_is_enabled
+from agency_runtime.core.codex_native_plan_scope import (
+    CodexNativePlanScope,
+    deserialize_codex_native_plan_scope,
+)
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation_status import (
     MAX_DELEGATION_AGENT_CHARS,
@@ -47,6 +51,7 @@ from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.store.preflight import _decode_preflight_recipe
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
 from agency_runtime.core.store.version_identity import normalize_version_identity
+from agency_runtime.core.unit_assignment import native_child_evidence_requirements
 
 _MAX_ACTIVATION_TOKEN_CHARS = 256
 _WORK_UNIT_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,159}$")
@@ -55,6 +60,7 @@ _DEFAULT_ACTIVATION_TTL_SECONDS = 10 * 60
 _DEFAULT_EVIDENCE_CONTRACT_ID = "agency-native-child-v1"
 _DEFAULT_EVIDENCE_REQUIREMENTS = ("delegation-execution", "specialist-load")
 _ACTIVATION_GRANT_ORIGINS = frozenset({"manual_api", "native_hook"})
+_DIGEST_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 def _identity(value: object, *, maximum: int, field: str, required: bool = False) -> str:
@@ -113,6 +119,205 @@ def _contract_items(value: object, *, field: str) -> tuple[str, ...]:
     if isinstance(value, str) or not isinstance(value, Sequence):
         raise ValueError(f"{field} must be a list")
     return tuple(value)
+
+
+def _codex_native_scope_from_recipe(
+    conn: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    recipe: dict[str, Any],
+    work_unit_id: str,
+    specialist_slug: str,
+    specialist_version: str,
+    specialist_prompt_hash: str,
+) -> CodexNativePlanScope:
+    """Read and verify one private path capability against its ready recipe."""
+
+    planned = [
+        item
+        for item in recipe.get("unit_agent_plan", [])
+        if isinstance(item, dict)
+        and item.get("work_unit_id") == work_unit_id
+        and item.get("recommended_agent") == specialist_slug
+    ]
+    references = [
+        item
+        for item in recipe.get("specialist_refs", [])
+        if isinstance(item, dict) and item.get("slug") == specialist_slug
+    ]
+    if len(planned) != 1 or len(references) != 1:
+        raise ValueError("Codex native plan scope does not match one ready plan row")
+    plan = planned[0]
+    reference = references[0]
+    row = conn.execute(
+        "SELECT session_id, trace_id, work_unit_id, scope_payload "
+        "FROM codex_native_plan_scopes WHERE session_id = ? AND trace_id = ? "
+        "AND work_unit_id = ? LIMIT 1",
+        (session_id, trace_id, work_unit_id),
+    ).fetchone()
+    if row is None:
+        raise ValueError("Codex native plan scope is unavailable")
+    scope = deserialize_codex_native_plan_scope(str(row["scope_payload"] or ""))
+    expected_evidence = build_native_child_evidence_contract(
+        contract_id="agency-native-child-plan-v1",
+        requirements=native_child_evidence_requirements(plan.get("required_evidence")),
+    )
+    if (
+        str(row["session_id"] or "") != session_id
+        or str(row["trace_id"] or "") != trace_id
+        or str(row["work_unit_id"] or "") != scope.work_unit_id
+        or scope.work_unit_id != work_unit_id
+        or scope.specialist.slug != specialist_slug
+        or scope.specialist.version != specialist_version
+        or scope.specialist.content_hash != specialist_prompt_hash
+        or reference.get("version") != specialist_version
+        or reference.get("hash") != specialist_prompt_hash
+        or plan.get("goal_hash") != scope.goal_hash
+        or tuple(plan.get("resource_hashes") or ()) != scope.resource_hashes
+        or plan.get("mutation_scope") != scope.mutation_scope.mode
+        or expected_evidence != scope.evidence_contract
+    ):
+        raise ValueError("Codex native plan scope failed ready-plan verification")
+    return scope
+
+
+def _verified_codex_native_hook_scope(
+    conn: Any,
+    *,
+    run_host: str,
+    origin: str,
+    allow_opaque_replay: bool,
+    session_id: str,
+    trace_id: str,
+    recipe: dict[str, Any],
+    work_unit_id: str,
+    specialist_slug: str,
+    specialist_version: str,
+    specialist_prompt_hash: str,
+    mutation_scope: Any,
+    evidence_contract: Any,
+) -> CodexNativePlanScope | None:
+    """Require exact staged authority for every Codex native-hook grant."""
+
+    if origin != "native_hook" or run_host != "codex":
+        if allow_opaque_replay:
+            raise ValueError("opaque replay is reserved for exact Codex native-hook grants")
+        return None
+    scope = _codex_native_scope_from_recipe(
+        conn,
+        session_id=session_id,
+        trace_id=trace_id,
+        recipe=recipe,
+        work_unit_id=work_unit_id,
+        specialist_slug=specialist_slug,
+        specialist_version=specialist_version,
+        specialist_prompt_hash=specialist_prompt_hash,
+    )
+    if mutation_scope != scope.mutation_scope or evidence_contract != scope.evidence_contract:
+        raise ValueError("Codex native-hook activation exceeds its exact preflight plan scope")
+    return scope
+
+
+def _existing_activation_outcome(
+    conn: Any,
+    *,
+    prior: Any,
+    allow_opaque_replay: bool,
+    planned_codex_scope: CodexNativePlanScope | None,
+    session_id: str,
+    trace_id: str,
+    work_unit_id: str,
+    specialist_slug: str,
+    specialist_version: str,
+    specialist_prompt_hash: str,
+    worker_kind: str,
+    origin: str,
+    tool_use_id: str,
+) -> dict[str, Any] | None:
+    """Return one exact opaque replay or reject every conflicting prior grant."""
+
+    if prior is None:
+        return None
+    if prior["consumed_at"] is not None:
+        raise ValueError(
+            "selected specialist already has a consumed activation receipt for this work unit"
+        )
+    if not allow_opaque_replay:
+        raise ValueError(
+            "selected specialist already has an unconsumed activation grant "
+            "for this work unit; consume it or start a fresh Agency preflight"
+        )
+    inflight = conn.execute(
+        "SELECT id FROM delegation_activation_receipts "
+        "WHERE session_id = ? AND trace_id = ? AND child_host = 'codex' "
+        "AND grant_origin = 'native_hook' AND consumed_at IS NULL "
+        "ORDER BY created_at, rowid LIMIT 2",
+        (session_id, trace_id),
+    ).fetchall()
+    grant = _stored_public_grant(prior)
+    store_now = int(
+        conn.execute(
+            f"SELECT {_STORE_UNIX_SQL} AS unix_time"  # nosec B608
+        ).fetchone()["unix_time"]
+    )
+    if (
+        len(inflight) != 1
+        or str(inflight[0]["id"] or "") != str(prior["id"] or "")
+        or str(prior["grant_origin"] or "") != "native_hook"
+        or str(prior["tool_use_id"] or "") != tool_use_id
+        or planned_codex_scope is None
+        or grant.mutation_scope != planned_codex_scope.mutation_scope
+        or grant.evidence_contract != planned_codex_scope.evidence_contract
+        or store_now < grant.issued_at
+        or store_now > grant.expires_at
+    ):
+        raise ValueError("opaque Codex activation replay is unavailable or ambiguous")
+    return {
+        "activation_token": "",
+        "receipt_id": str(prior["id"]),
+        "grant_id": grant.grant_id,
+        "activation_grant": grant.as_dict(),
+        "session_id": session_id,
+        "trace_id": trace_id,
+        "work_unit_id": work_unit_id,
+        "slug": specialist_slug,
+        "version": specialist_version,
+        "prompt_hash": specialist_prompt_hash,
+        "worker_kind": worker_kind,
+        "worker_id": str(prior["worker_id"] or ""),
+        "grant_origin": origin,
+        "tool_use_id": tool_use_id,
+        "worker_binding": grant.worker_binding.as_dict()
+        if grant.worker_binding is not None
+        else {},
+        "replayed": True,
+    }
+
+
+def _require_open_codex_native_hook_slot(
+    conn: Any,
+    *,
+    planned_scope: CodexNativePlanScope | None,
+    opaque_launch: bool,
+    session_id: str,
+    trace_id: str,
+) -> None:
+    """Serialize opaque launches through child-start grant consumption."""
+
+    if planned_scope is None or not opaque_launch:
+        return
+    inflight = conn.execute(
+        "SELECT 1 FROM delegation_activation_receipts "
+        "WHERE session_id = ? AND trace_id = ? AND child_host = 'codex' "
+        "AND grant_origin = 'native_hook' AND consumed_at IS NULL LIMIT 1",
+        (session_id, trace_id),
+    ).fetchone()
+    if inflight is not None:
+        raise ValueError(
+            "a prior opaque Codex child must start and consume its grant "
+            "before another planned child can launch"
+        )
 
 
 def _stored_public_grant(row: Any) -> NativeChildActivationGrant:
@@ -636,6 +841,146 @@ class DelegationActivationStoreMixin:
         finally:
             conn.close()
 
+    def get_codex_native_plan_scope(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        work_unit_id: str,
+        specialist_slug: str,
+        specialist_version: str,
+        specialist_prompt_hash: str,
+        goal_hash: str,
+        resource_hashes: Sequence[str],
+        required_evidence: Sequence[str],
+    ) -> dict[str, Any]:
+        """Return one exact preflight-staged Codex mutation/evidence contract."""
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        unit = _work_unit_identity(work_unit_id, required=True)
+        slug = _identity(
+            specialist_slug,
+            maximum=MAX_DELEGATION_AGENT_CHARS,
+            field="specialist_slug",
+            required=True,
+        )
+        version = str(specialist_version or "").strip()
+        prompt_hash = str(specialist_prompt_hash or "").strip().casefold()
+        normalized_goal_hash = str(goal_hash or "").strip().casefold()
+        normalized_resource_hashes = tuple(
+            str(item or "").strip().casefold()
+            for item in _contract_items(
+                resource_hashes,
+                field="resource_hashes",
+            )
+        )
+        normalized_required_evidence = tuple(
+            str(item or "").strip()
+            for item in _contract_items(
+                required_evidence,
+                field="required_evidence",
+            )
+        )
+        if (
+            not version
+            or normalize_version_identity(version) != version
+            or content_digest_identity(prompt_hash) is None
+            or _DIGEST_PATTERN.fullmatch(normalized_goal_hash) is None
+            or not normalized_resource_hashes
+            or any(_DIGEST_PATTERN.fullmatch(item) is None for item in normalized_resource_hashes)
+        ):
+            raise ValueError("Codex native plan scope identity is invalid")
+        conn = self._connect()
+        try:
+            run = conn.execute(
+                "SELECT host, status, preflight_state, preflight_result FROM runs "
+                "WHERE session_id = ? AND trace_id = ?",
+                (normalized_session, normalized_trace),
+            ).fetchone()
+            if (
+                run is None
+                or str(run["host"] or "").strip().casefold() != "codex"
+                or str(run["status"] or "") not in {"active", "evidence_only"}
+                or str(run["preflight_state"] or "") != "ready"
+            ):
+                raise ValueError("Codex native plan scope requires one ready active turn")
+            recipe = _decode_preflight_recipe(
+                run["preflight_result"],
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+            )
+            if recipe is None:
+                raise ValueError("ready specialist recipe could not be verified")
+            scope = _codex_native_scope_from_recipe(
+                conn,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+                recipe=recipe,
+                work_unit_id=unit,
+                specialist_slug=slug,
+                specialist_version=version,
+                specialist_prompt_hash=prompt_hash,
+            )
+            plan = next(
+                item
+                for item in recipe["unit_agent_plan"]
+                if item["work_unit_id"] == unit and item["recommended_agent"] == slug
+            )
+            if (
+                scope.goal_hash != normalized_goal_hash
+                or scope.resource_hashes != normalized_resource_hashes
+                or tuple(plan.get("required_evidence") or ()) != normalized_required_evidence
+            ):
+                raise ValueError("Codex native plan scope does not match the hook assignment")
+            return {
+                "mutation_mode": scope.mutation_scope.mode,
+                "mutation_path_prefixes": list(scope.mutation_scope.path_prefixes),
+                "evidence_contract_id": scope.evidence_contract.contract_id,
+                "evidence_requirements": list(scope.evidence_contract.requirements),
+            }
+        finally:
+            conn.close()
+
+    def prepare_codex_opaque_native_child_activation(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        work_unit_id: str,
+        specialist_slug: str,
+        specialist_version: str,
+        specialist_prompt_hash: str,
+        goal_hash: str,
+        resource_hashes: Sequence[str],
+        required_evidence: Sequence[str],
+        tool_use_id: str,
+    ) -> dict[str, Any]:
+        """Issue or replay one serialized opaque Codex native-hook grant."""
+
+        contract = self.get_codex_native_plan_scope(
+            session_id=session_id,
+            trace_id=trace_id,
+            work_unit_id=work_unit_id,
+            specialist_slug=specialist_slug,
+            specialist_version=specialist_version,
+            specialist_prompt_hash=specialist_prompt_hash,
+            goal_hash=goal_hash,
+            resource_hashes=resource_hashes,
+            required_evidence=required_evidence,
+        )
+        return self.prepare_delegation_activation(
+            session_id=session_id,
+            trace_id=trace_id,
+            specialist_slug=specialist_slug,
+            work_unit_id=work_unit_id,
+            worker_kind="generic-worker",
+            grant_origin="native_hook",
+            tool_use_id=tool_use_id,
+            _allow_codex_opaque_replay=True,
+            **contract,
+        )
+
     def get_pending_native_hook_delivery(
         self,
         *,
@@ -769,8 +1114,12 @@ class DelegationActivationStoreMixin:
         mutation_path_prefixes: Sequence[str] = (),
         evidence_contract_id: str = _DEFAULT_EVIDENCE_CONTRACT_ID,
         evidence_requirements: Sequence[str] = _DEFAULT_EVIDENCE_REQUIREMENTS,
+        _allow_codex_opaque_replay: bool = False,
     ) -> dict[str, Any]:
         """Issue a bearer grant for one selected immutable prompt reference."""
+
+        if type(_allow_codex_opaque_replay) is not bool:
+            raise TypeError("_allow_codex_opaque_replay must be a boolean")
 
         normalized_session = validate_correlation_id(session_id, field="session_id")
         normalized_trace = validate_correlation_id(trace_id, field="trace_id")
@@ -848,6 +1197,22 @@ class DelegationActivationStoreMixin:
                     )
             elif unit != f"specialist:{slug}":
                 raise ValueError("work_unit_id must match the selected specialist binding")
+            run_host = str(run["host"] or "").strip().casefold()
+            planned_codex_scope = _verified_codex_native_hook_scope(
+                conn,
+                run_host=run_host,
+                origin=origin,
+                allow_opaque_replay=_allow_codex_opaque_replay,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+                recipe=recipe,
+                work_unit_id=unit,
+                specialist_slug=slug,
+                specialist_version=str(reference["version"]),
+                specialist_prompt_hash=str(reference["hash"]),
+                mutation_scope=mutation_scope,
+                evidence_contract=evidence_contract,
+            )
             self._reject_disabled_specialist(
                 conn,
                 session_id=normalized_session,
@@ -870,7 +1235,7 @@ class DelegationActivationStoreMixin:
             if not content_identity_matches(prompt["content"], reference["hash"]):
                 raise ValueError("selected specialist prompt version failed integrity verification")
             prior = conn.execute(
-                "SELECT id, consumed_at, grant_expires_unix "
+                "SELECT * "
                 "FROM delegation_activation_receipts "
                 "WHERE trace_id = ? AND work_unit_id = ? AND specialist_slug = ? "
                 "AND specialist_version = ? AND specialist_prompt_hash = ? LIMIT 1",
@@ -882,16 +1247,31 @@ class DelegationActivationStoreMixin:
                     reference["hash"],
                 ),
             ).fetchone()
-            if prior is not None and prior["consumed_at"] is not None:
-                raise ValueError(
-                    "selected specialist already has a consumed activation receipt "
-                    "for this work unit"
-                )
-            if prior is not None:
-                raise ValueError(
-                    "selected specialist already has an unconsumed activation grant "
-                    "for this work unit; consume it or start a fresh Agency preflight"
-                )
+            replay = _existing_activation_outcome(
+                conn,
+                prior=prior,
+                allow_opaque_replay=_allow_codex_opaque_replay,
+                planned_codex_scope=planned_codex_scope,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+                work_unit_id=unit,
+                specialist_slug=slug,
+                specialist_version=str(reference["version"]),
+                specialist_prompt_hash=str(reference["hash"]),
+                worker_kind=kind,
+                origin=origin,
+                tool_use_id=tool_use,
+            )
+            if replay is not None:
+                conn.commit()
+                return replay
+            _require_open_codex_native_hook_slot(
+                conn,
+                planned_scope=planned_codex_scope,
+                opaque_launch=_allow_codex_opaque_replay,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+            )
             clock = conn.execute(
                 f"SELECT {_STORE_UNIX_SQL} AS unix_time"  # nosec B608
             ).fetchone()

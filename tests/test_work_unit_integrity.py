@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import pytest
 
+from agency_runtime.core.codex_native_plan_scope import build_codex_native_plan_scope
 from agency_runtime.core.selector.delegation_detection import (
     _imperative_units,
     detect_work_units,
@@ -17,6 +18,7 @@ from agency_runtime.core.unit_assignment import (
     _likely_resources,
     _looks_like_resource,
     _plan_hash,
+    _resource_contention_plan,
     build_unit_agent_plan,
     hydrate_unit_agent_plan,
     native_child_activation_contract,
@@ -110,7 +112,12 @@ def test_resource_parser_stops_at_prose_and_normalizes_equivalent_paths() -> Non
     assert _likely_resources("Update ./src/auth.py") == ["src/auth.py"]
     assert _likely_resources(r"Write src\auth.py") == ["src/auth.py"]
     assert _likely_resources('Update "C:\\Program Files\\Agency\\config.json"') == [
-        "c:/program files/agency/config.json"
+        "C:/Program Files/Agency/config.json"
+    ]
+    assert _likely_resources("Update Src/Auth.py") == ["Src/Auth.py"]
+    assert _likely_resources("Update Src/Auth.py and src/auth.py") == [
+        "Src/Auth.py",
+        "src/auth.py",
     ]
     assert not _looks_like_resource("")
     assert not _looks_like_resource("https://example.test/source.py")
@@ -120,8 +127,8 @@ def test_resource_parser_stops_at_prose_and_normalizes_equivalent_paths() -> Non
 
 
 def test_native_child_activation_rehydrates_exact_scope_and_content_free_evidence() -> None:
-    goal = "Update src/auth.py and verify the change"
-    resource = "src/auth.py"
+    goal = "Update Src/Auth.py and verify the change"
+    resource = "Src/Auth.py"
     contract = native_child_activation_contract(
         goal,
         mutation_scope="workspace_write",
@@ -153,6 +160,41 @@ def test_native_child_activation_rehydrates_exact_scope_and_content_free_evidenc
         )
 
 
+def test_opaque_codex_scope_preserves_the_exact_planned_path() -> None:
+    scope = build_codex_native_plan_scope(
+        work_unit_id="unit-0123456789",
+        specialist_slug="implementation-engineer",
+        specialist_version="1.0.0",
+        specialist_prompt_hash="f" * 64,
+        goal_hash=_plan_hash("Implement the exact product unit."),
+        mutation_mode="workspace_write",
+        resource_hashes=[_plan_hash("Src/Product.py")],
+        mutation_path_prefixes=["Src/Product.py"],
+        evidence_contract_id="agency-native-child-plan-v1",
+        evidence_requirements=[
+            "delegation-execution",
+            "specialist-load",
+            "targeted-tests",
+        ],
+    )
+
+    assert scope.mutation_scope.mode == "workspace_write"
+    assert scope.mutation_scope.path_prefixes == ("Src/Product.py",)
+    with pytest.raises(ValueError, match="planned resource hashes"):
+        build_codex_native_plan_scope(
+            work_unit_id="unit-0123456789",
+            specialist_slug="implementation-engineer",
+            specialist_version="1.0.0",
+            specialist_prompt_hash="f" * 64,
+            goal_hash=_plan_hash("Implement the exact product unit."),
+            mutation_mode="workspace_write",
+            resource_hashes=[_plan_hash("Src/Product.py")],
+            mutation_path_prefixes=["."],
+            evidence_contract_id="agency-native-child-plan-v1",
+            evidence_requirements=["delegation-execution", "specialist-load"],
+        )
+
+
 def test_same_resource_writes_get_deterministic_dependency_edges() -> None:
     units = (
         "Update ./src/auth.py with the new contract",
@@ -174,6 +216,29 @@ def test_same_resource_writes_get_deterministic_dependency_edges() -> None:
     hydrated = hydrate_unit_agent_plan(routing, first)
     assert hydrated[0]["likely_files_or_resources"] == ["src/auth.py"]
     assert hydrated[1]["likely_files_or_resources"] == ["src/auth.py"]
+
+
+def test_resource_contention_uses_folded_keys_without_rewriting_paths() -> None:
+    candidates = (
+        {
+            "work_unit_id": "unit-upper",
+            "mutation_scope": "workspace_write",
+            "resources": ["Src/Auth.py"],
+        },
+        {
+            "work_unit_id": "unit-lower",
+            "mutation_scope": "workspace_write",
+            "resources": ["src/auth.py"],
+        },
+    )
+
+    dependencies, contended, unknown_mutation = _resource_contention_plan(candidates)
+
+    assert candidates[0]["resources"] == ["Src/Auth.py"]
+    assert candidates[1]["resources"] == ["src/auth.py"]
+    assert dependencies == {"unit-upper": [], "unit-lower": ["unit-upper"]}
+    assert contended == {"unit-upper", "unit-lower"}
+    assert unknown_mutation is False
 
 
 def test_unknown_resources_are_never_advertised_as_parallel() -> None:

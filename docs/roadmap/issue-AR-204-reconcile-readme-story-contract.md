@@ -14,6 +14,7 @@ related:
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
+  - docs/decisions/0127-bind-opaque-codex-children-through-exact-plan-labels.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
@@ -22,6 +23,7 @@ related:
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
+  - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes:
@@ -33,7 +35,7 @@ epic: product
 issue_id: AR-204
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
-depends_on: [AR-207]
+depends_on: [AR-207, AR-209]
 blocks: [AR-205]
 ---
 

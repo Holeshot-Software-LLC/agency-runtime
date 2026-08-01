@@ -575,7 +575,9 @@ def test_activation_canary_preflight_replays_one_exact_selected_only_unit(
     )
     delivery = parse_native_child_prompt_delivery(start["hookSpecificOutput"]["additionalContext"])
     assert delivery is not None
-    assert delivery.original_task == CODEX_ACTIVATION_CANARY_WORK_UNIT
+    assert delivery.original_task == ""
+    assert delivery.goal_hash == plan["goal_hash"]
+    assert delivery.activation_token == ""
     assert hook_payload["tool_input"]["task_name"] == task_name
 
     snapshot = store.get_canary_activation_snapshot(

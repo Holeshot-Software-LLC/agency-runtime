@@ -8,6 +8,7 @@ tags: [product, evidence, preflight, delegation, codex, diagnostics]
 related:
   - README.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
+  - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
@@ -17,6 +18,7 @@ related:
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0127-bind-opaque-codex-children-through-exact-plan-labels.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0125-admit-only-exact-content-free-codex-host-notices.md
   - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
@@ -28,7 +30,7 @@ epic: product
 issue_id: AR-207
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
-depends_on: [AR-206, AR-208]
+depends_on: [AR-206, AR-208, AR-209]
 blocks: [AR-203, AR-204, AR-205]
 ---
 
@@ -211,6 +213,48 @@ the parent emitted no delegation tool call or response.
   304-second outer wrapper expired at mutation 37 without terminating its
   descendants; the exact evaluator tree and 880 MB private-copy directory were
   removed before the one authoritative rerun.
+- PR 202 merged the repair with commit-preserving ancestry as exact revision
+  `584b949d75d013611c0fe3d26835f3057fc83466`. GitHub Codex acknowledged an
+  explicit review request but supplied no verdict or thread in the bounded
+  pre-merge window. Hosted jobs executed zero steps under the known spending
+  outage. The official VCS package is exact-installed as
+  `0.1.0+g584b949d75d0`; default install discovered only Codex and ZCode,
+  registered both, recreated and reached the dashboard, and stopped only at
+  the designed Codex activation continuation.
+- The single supported-bypass activation on `584b949` passed. Session
+  `019fb9ba-b711-71f1-b7a8-746ae7e4b42f`, trace
+  `019fb9ba-c746-7341-8cd5-1e5b23b0f7dc`, and run
+  `5df7f288-bc5e-4fbb-94fe-602c56b7d21f` selected and executed
+  `code-reviewer`. One route, plan row, grant, consumption, specialist load,
+  native child, worker run, completed delegation, and accepted finalization
+  persisted. The header was valid on its first pass, Store proof was true,
+  correction count was zero, and all three host notices were allowlisted. The
+  activation is consumed and must not be rerun.
+- Product trial `ar207-584b949-readme-01` is consumed and terminal `NO-GO`.
+  Session `019fb9bf-8db3-7022-8acd-da0a80f8834b`, trace
+  `019fb9bf-8e2d-7691-b469-684c6e109872`, run
+  `8be205d8-dba0-4058-84b6-384cf774531c`, route
+  `72c71e63-5496-43c3-8c3d-d16eb6f4cc98`, and finalization
+  `a76ee95b-f659-4401-9a26-73a688daa116` prove an accepted eight-unit plan.
+  Codex attempted one native spawn and received one tool output, but no child
+  started and no wait followed. The collaboration diagnostic is
+  `parent_wait_missing`; all eight delegations remained `suggested`, with zero
+  grants, loads, workers, or completed delegations. Workspace trust and hook
+  bypass were proven, workspace write was not, the header was absent, and
+  correction count was zero. The failed edge has advanced from no spawn to
+  first-spawn output without child start. This build must not be rerun.
+- AR-209 now identifies and repairs that exact edge. Codex encrypts arbitrary
+  child messages before `PreToolUse`; the old hook recovered only the fixed
+  canary goal, so activation was a false proxy for product delegation. The
+  `552eb05` source checkpoint binds a strictly shaped opaque message through
+  its exact persisted native label, stages the row's grant, and injects a token-free v2
+  specialist context with the persisted goal hash at `SubagentStart`. A
+  non-canary real-Store lifecycle, 97 focused tests, and both curated
+  opaque-child mutations pass. The named fast spine also passes: 593 docs, 603
+  Ruff files, 636 warning-strict Python tests with six skips, 110 dashboard
+  tests, all routing gates, and all 69 decision mutations with zero survivors
+  or invalid results. Review, merge, exact install, and one fresh product trial
+  remain.
 
 ## Approach
 

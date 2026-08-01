@@ -590,6 +590,25 @@ def test_product_collaboration_projection_rejects_invalid_host_notice_evidence(
         )
         is None
     )
+    proof = canary._evaluate_proof(
+        "codex",
+        result={
+            "backend": "codex",
+            "profile_scope": "current-profile",
+            "status": "completed",
+            "exit_code": 0,
+            "output": response,
+            "collaboration": collaboration,
+        },
+        evidence=evidence,
+        default_profile_scope="current-profile",
+        mode="agency",
+        activation_contract="product",
+    )
+
+    assert proof.invocation["collaboration"] is None
+    assert proof.passed is False
+    assert "Codex product collaboration projection was missing or invalid" in proof.failures
 
 
 def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
@@ -918,7 +937,7 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
         "fork_turns",
         "native_task_name",
         "depends_on",
-        "at most three concurrent children",
+        "one child at a time",
         "Use no non-collaboration tools",
         "do not delegate further",
     ):

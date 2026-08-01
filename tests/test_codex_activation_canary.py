@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import sqlite3
 import subprocess
 import sys
 from copy import deepcopy
@@ -19,6 +20,7 @@ from agency_runtime.core.canary_backends import (
     codex_collaboration_evidence,
 )
 from agency_runtime.core.canary_proof import codex_activation_failures
+from agency_runtime.core.codex_native_plan_scope import deserialize_codex_native_plan_scope
 from agency_runtime.core.config import reset_config_cache
 from agency_runtime.core.delegation.events import mark_delegation_executed
 from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
@@ -26,12 +28,18 @@ from agency_runtime.core.header.contract import finalize_header
 from agency_runtime.core.header.finalize import response_hash
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
+from agency_runtime.core.native_child_activation import (
+    deserialize_native_child_activation_grant,
+)
 from agency_runtime.core.native_child_prompt_delivery import (
     parse_native_child_prompt_delivery,
+    render_codex_opaque_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
 )
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.structured_provider import StructuredProviderResult
+from agency_runtime.core.unit_assignment import work_unit_goal_hash
 from tests.runtime_support import stub_inference_invoker, write_provider_config
 
 
@@ -116,6 +124,41 @@ def configured_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         reset_config_cache()
 
 
+def _prepare_exact_opaque_activation(
+    store: Store,
+    *,
+    session_id: str,
+    trace_id: str,
+    plan: dict[str, object],
+    tool_use_id: str,
+) -> dict[str, object]:
+    """Use the preflight-staged private scope for one synthetic hook grant."""
+
+    work_unit_id = str(plan["work_unit_id"])
+    connection = store._connect()
+    try:
+        row = connection.execute(
+            "SELECT scope_payload FROM codex_native_plan_scopes "
+            "WHERE session_id = ? AND trace_id = ? AND work_unit_id = ?",
+            (session_id, trace_id, work_unit_id),
+        ).fetchone()
+    finally:
+        connection.close()
+    scope = deserialize_codex_native_plan_scope(row["scope_payload"])
+    return store.prepare_codex_opaque_native_child_activation(
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=work_unit_id,
+        specialist_slug=scope.specialist.slug,
+        specialist_version=scope.specialist.version,
+        specialist_prompt_hash=scope.specialist.content_hash,
+        goal_hash=str(plan["goal_hash"]),
+        resource_hashes=list(plan["resource_hashes"]),
+        required_evidence=list(plan["required_evidence"]),
+        tool_use_id=tool_use_id,
+    )
+
+
 def _finish_v2_chain_through_hooks(
     store: Store,
     *,
@@ -172,14 +215,17 @@ def _finish_v2_chain_through_hooks(
     assert delivery.tool_use_id == tool_use_id
     assert delivery.work_unit_id == unit
     assert delivery.specialist_slug == slug
-    assert delivery.original_task == str(plan["goal"])
     if opaque_canary:
-        assert delivery.activation_token == "x" * 43
+        assert delivery.original_task == ""
+        assert delivery.goal_hash == str(plan["goal_hash"])
+        assert delivery.activation_token == ""
         after_start = store.get_completion_evidence_snapshot(session_id, trace_id)
         [started_activation] = after_start["specialist_activations"]
         assert started_activation["specialist_slug"] == slug
         assert started_activation["worker_id"] == receiver_id
         assert started_activation["native_run_id"] == f"codex-agent:{receiver_id}"
+    else:
+        assert delivery.original_task == str(plan["goal"])
     observed = bridge.handle(
         {
             **pre_payload,
@@ -325,19 +371,21 @@ def _record_complete_v2_chain(
             plan=plan,
         )
     tool_use_id = "spawn-tool-use"
-    activation = store.prepare_delegation_activation(
-        session_id=session_id,
-        trace_id=trace_id,
-        specialist_slug=slug,
-        work_unit_id=unit,
-        **(
-            {
-                "grant_origin": "native_hook",
-                "tool_use_id": persisted_tool_use_id or tool_use_id,
-            }
-            if hook_provenance
-            else {}
-        ),
+    activation = (
+        _prepare_exact_opaque_activation(
+            store,
+            session_id=session_id,
+            trace_id=trace_id,
+            plan=plan,
+            tool_use_id=persisted_tool_use_id or tool_use_id,
+        )
+        if hook_provenance
+        else store.prepare_delegation_activation(
+            session_id=session_id,
+            trace_id=trace_id,
+            specialist_slug=slug,
+            work_unit_id=unit,
+        )
     )
     receiver_id = "019fa500-1111-7222-8333-444455556666"
     store.record_native_child_started(
@@ -570,12 +618,11 @@ def test_codex_post_tool_reconciles_subagent_start_consumption_without_callback_
     slug = str(plan["recommended_agent"])
     task_name = codex_task_name_for_work_unit(unit)
     pre_tool_use_id = "call_pre_tool_identity"
-    configured_store.prepare_delegation_activation(
+    _prepare_exact_opaque_activation(
+        configured_store,
         session_id=session_id,
         trace_id=trace_id,
-        specialist_slug=slug,
-        work_unit_id=unit,
-        grant_origin="native_hook",
+        plan=plan,
         tool_use_id=pre_tool_use_id,
     )
     receiver_id = "019fa500-2222-7333-8444-555566667777"
@@ -643,16 +690,15 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
         "invoke_structured_provider_result",
         stub_inference_invoker(("code-reviewer",)),
     )
-    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
-    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
     configured_store.reconcile_bundled_agents(STARTER_ROSTER)
     session_id = "codex-live-order-session"
     trace_id = "codex-live-order-trace"
+    task = "Review the supplied implementation as one exact specialist work unit."
     preflight = run_preflight(
         configured_store,
         session_id=session_id,
         trace_id=trace_id,
-        user_message=(canary.CANARY_PROMPT + "\n\nCanary nonce: 0123456789abcdef0123456789abcdef"),
+        user_message=task,
         host="codex",
         capability_receipt=native_adapter_capability_receipt(
             "codex",
@@ -679,7 +725,7 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
         "tool_input": {
             "fork_turns": "none",
             "task_name": task_name,
-            "message": "gAAAAA" + "opaque-codex-canary-message" * 2,
+            "message": "gAAAAA" + "opaque-codex-product-message" * 2,
         },
     }
     pre_tool = bridge.handle(pre_payload)
@@ -719,6 +765,8 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     delivered = parse_native_child_prompt_delivery(start["hookSpecificOutput"]["additionalContext"])
     assert delivered is not None
     assert delivered.work_unit_id == unit
+    assert delivered.original_task == ""
+    assert delivered.goal_hash == str(plan["goal_hash"])
     [delegation] = configured_store.get_delegations(trace_id)
     assert delegation["activation_receipt_id"]
     assert delegation["retrieved_specialist_slug"] == slug
@@ -754,15 +802,385 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     assert completed["status"] == "completed"
     evidence = configured_store.get_canary_activation_snapshot(
         host="codex",
-        query_hash=response_hash(
-            canary.CANARY_PROMPT + "\n\nCanary nonce: 0123456789abcdef0123456789abcdef"
-        ),
+        query_hash=response_hash(task),
     )
     [worker_run] = evidence["worker_runs"]
     assert worker_run["delegation_event_id"] == delegation["id"]
     assert worker_run["work_unit_id"] == unit
     assert worker_run["exit_code"] == 0
     assert worker_run["ended_at"]
+
+
+def test_codex_opaque_children_serialize_until_subagent_start_consumes_grant(
+    configured_store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A second opaque spawn waits for SubagentStart to consume the first grant."""
+
+    from agency_runtime.core.workforce import inference
+
+    outcomes = (
+        ("unit-first", "Review src/first.py for the bounded regression."),
+        ("unit-second", "Review src/second.py for the bounded regression."),
+    )
+
+    def invoke(_provider, _prompt, schema, **_kwargs):
+        properties = schema.get("properties", {})
+        if "request_summary" in properties:
+            value = {
+                "request_summary": "Two exact implementation units.",
+                "units": [
+                    {
+                        "unit_id": unit_id,
+                        "outcome": outcome,
+                        "artifact_kind": "review-report",
+                        "domains": ["software-engineering"],
+                        "stacks": ["python"],
+                        "capability_ids": ["review"],
+                        "novel_capability": "",
+                        "depends_on": [],
+                    }
+                    for unit_id, outcome in outcomes
+                ],
+            }
+        else:
+            value = {
+                "units": [
+                    {
+                        "unit_id": unit_id,
+                        "decision": "staff",
+                        "ranked_semantic": [
+                            {
+                                "agent_id": "code-reviewer",
+                                "score": 0.99,
+                                "classification": "required",
+                                "positive_evidence": ["scope-match"],
+                                "negative_evidence": [],
+                            }
+                        ],
+                    }
+                    for unit_id, _outcome in outcomes
+                ]
+            }
+        return StructuredProviderResult(
+            value=value,
+            provider_name="task-agency-router",
+            provider_type="litellm",
+            transport="",
+            requested_model="router-alias",
+            model_group="router-alias",
+            actual_model="gpt-5.6-mini",
+            model_receipt_source="response.body.model",
+            latency_ms=17,
+        )
+
+    monkeypatch.setattr(inference, "invoke_structured_provider_result", invoke)
+    session_id = "codex-serialized-scope-session"
+    trace_id = "codex-serialized-scope-trace"
+    preflight = run_preflight(
+        configured_store,
+        session_id=session_id,
+        trace_id=trace_id,
+        user_message="Review the two bounded path-specific changes.",
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=session_id,
+            trace_id=trace_id,
+        ),
+    )
+    assert len(preflight.delegation_plan) == 2
+    connection = configured_store._connect()
+    try:
+        rows = connection.execute(
+            "SELECT scope_payload FROM codex_native_plan_scopes "
+            "WHERE trace_id = ? ORDER BY work_unit_id",
+            (trace_id,),
+        ).fetchall()
+    finally:
+        connection.close()
+    scopes = [deserialize_codex_native_plan_scope(row["scope_payload"]) for row in rows]
+    assert all(scope.mutation_scope.mode == "read_only" for scope in scopes)
+    assert all(scope.mutation_scope.path_prefixes == () for scope in scopes)
+
+    bridge = HookBridge("codex", store=configured_store)
+
+    def spawn_payload(plan: dict[str, object], tool_use_id: str) -> dict[str, object]:
+        return {
+            "hook_event_name": "PreToolUse",
+            "session_id": session_id,
+            "turn_id": trace_id,
+            "tool_name": "collaborationspawn_agent",
+            "tool_use_id": tool_use_id,
+            "tool_input": {
+                "fork_turns": "none",
+                "task_name": codex_task_name_for_work_unit(str(plan["work_unit_id"])),
+                "message": "gAAAAA" + f"opaque-{tool_use_id}-ciphertext" * 2,
+            },
+        }
+
+    first, second = preflight.delegation_plan
+    first_payload = spawn_payload(first, "call-first")
+    first_result = bridge.handle(first_payload)
+    assert first_result["hookSpecificOutput"]["permissionDecision"] == "allow"
+    replay = bridge.handle(first_payload)
+    assert replay["hookSpecificOutput"]["permissionDecision"] == "allow"
+
+    blocked = bridge.handle(spawn_payload(second, "call-second"))
+    assert blocked["hookSpecificOutput"]["permissionDecision"] == "deny"
+    assert "one-use activation" in blocked["hookSpecificOutput"]["permissionDecisionReason"]
+
+    started = bridge.handle(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": session_id,
+            "agent_id": "019fa500-7777-7444-8555-111122223333",
+            "agent_type": "worker",
+        }
+    )
+    delivery = parse_native_child_prompt_delivery(
+        started["hookSpecificOutput"]["additionalContext"]
+    )
+    assert delivery is not None
+    assert delivery.work_unit_id == str(first["work_unit_id"])
+
+    second_result = bridge.handle(spawn_payload(second, "call-second"))
+    assert second_result["hookSpecificOutput"]["permissionDecision"] == "allow"
+
+
+def test_codex_plaintext_grants_skip_the_opaque_serialization_slot() -> None:
+    """Token-correlated plaintext delivery never queries the opaque-only slot."""
+
+    from agency_runtime.core.store.delegation_activation import (
+        _require_open_codex_native_hook_slot,
+    )
+
+    class _UnexpectedQuery:
+        def execute(self, *_args, **_kwargs):
+            raise AssertionError("plaintext grants must not enter opaque serialization")
+
+    _require_open_codex_native_hook_slot(
+        _UnexpectedQuery(),
+        planned_scope=SimpleNamespace(),
+        opaque_launch=False,
+        session_id="codex-plaintext-slot-session",
+        trace_id="codex-plaintext-slot-trace",
+    )
+
+
+def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
+    configured_store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Ordinary current-profile writes retain their plan path instead of global dot."""
+
+    from agency_runtime.core.workforce import inference
+
+    outcomes = (
+        (
+            "unit-discovery",
+            "Map the repository code path around Src/Product.py for the bounded CLI change.",
+            "analysis",
+            "software-engineering",
+            "analysis",
+            (),
+            "codebase-onboarding-engineer",
+        ),
+        (
+            "unit-product",
+            "Implement Src/Product.py with the bounded CLI change.",
+            "implementation-change",
+            "software-engineering",
+            "implementation",
+            ("unit-discovery",),
+            "python-application-engineer",
+        ),
+        (
+            "unit-tests",
+            "Implement tests/test_product.py for the bounded CLI change.",
+            "test-code",
+            "quality-assurance",
+            "testing",
+            ("unit-product",),
+            "test-automation-engineer",
+        ),
+        (
+            "unit-review",
+            "Review Src/Product.py and tests/test_product.py for correctness.",
+            "review-report",
+            "software-engineering",
+            "review",
+            ("unit-tests",),
+            "code-reviewer",
+        ),
+        (
+            "unit-evidence",
+            "Run and verify tests/test_product.py for the bounded CLI change.",
+            "test-evidence",
+            "quality-assurance",
+            "testing",
+            ("unit-tests", "unit-review"),
+            "test-results-analyzer",
+        ),
+    )
+
+    def invoke(_provider, _prompt, schema, **_kwargs):
+        properties = schema.get("properties", {})
+        value = (
+            {
+                "request_summary": "A complete bounded CLI implementation and assurance plan.",
+                "units": [
+                    {
+                        "unit_id": unit_id,
+                        "outcome": outcome,
+                        "artifact_kind": artifact_kind,
+                        "domains": [domain],
+                        "stacks": ["python"] if artifact_kind == "implementation-change" else [],
+                        "capability_ids": [capability],
+                        "novel_capability": "",
+                        "depends_on": list(depends_on),
+                    }
+                    for (
+                        unit_id,
+                        outcome,
+                        artifact_kind,
+                        domain,
+                        capability,
+                        depends_on,
+                        _specialist,
+                    ) in outcomes
+                ],
+            }
+            if "request_summary" in properties
+            else {
+                "units": [
+                    {
+                        "unit_id": unit_id,
+                        "decision": "staff",
+                        "ranked_semantic": [
+                            {
+                                "agent_id": specialist,
+                                "score": 0.99,
+                                "classification": "required",
+                                "positive_evidence": ["scope-match"],
+                                "negative_evidence": [],
+                            }
+                        ],
+                    }
+                    for unit_id, *_rest, specialist in outcomes
+                ]
+            }
+        )
+        return StructuredProviderResult(
+            value=value,
+            provider_name="task-agency-router",
+            provider_type="litellm",
+            transport="",
+            requested_model="router-alias",
+            model_group="router-alias",
+            actual_model="gpt-5.6-mini",
+            model_receipt_source="response.body.model",
+            latency_ms=17,
+        )
+
+    monkeypatch.setattr(inference, "invoke_structured_provider_result", invoke)
+    session_id = "codex-exact-path-session"
+    trace_id = "codex-exact-path-trace"
+    preflight = run_preflight(
+        configured_store,
+        session_id=session_id,
+        trace_id=trace_id,
+        user_message="Implement the bounded CLI change in Src/Product.py.",
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=session_id,
+            trace_id=trace_id,
+        ),
+    )
+    plan = next(
+        row
+        for row in preflight.delegation_plan
+        if row["recommended_agent"] == "python-application-engineer"
+    )
+    work_unit_id = str(plan["work_unit_id"])
+    assert "Src/Product.py" in plan["goal"]
+    connection = configured_store._connect()
+    try:
+        row = connection.execute(
+            "SELECT scope_payload FROM codex_native_plan_scopes "
+            "WHERE trace_id = ? AND work_unit_id = ?",
+            (trace_id, work_unit_id),
+        ).fetchone()
+    finally:
+        connection.close()
+    scope = deserialize_codex_native_plan_scope(row["scope_payload"])
+    assert scope.mutation_scope.mode == "workspace_write"
+    assert scope.mutation_scope.path_prefixes == ("Src/Product.py",)
+
+    result = HookBridge("codex", store=configured_store).handle(
+        {
+            "hook_event_name": "PreToolUse",
+            "session_id": session_id,
+            "turn_id": trace_id,
+            "tool_name": "collaborationspawn_agent",
+            "tool_use_id": "call-exact-path",
+            "tool_input": {
+                "fork_turns": "none",
+                "task_name": codex_task_name_for_work_unit(work_unit_id),
+                "message": "gAAAAA" + "opaque-exact-path-ciphertext" * 2,
+            },
+        }
+    )
+    assert result["hookSpecificOutput"]["permissionDecision"] == "allow"
+    connection = configured_store._connect()
+    try:
+        grant_row = connection.execute(
+            "SELECT grant_payload FROM delegation_activation_receipts "
+            "WHERE trace_id = ? AND work_unit_id = ?",
+            (trace_id, work_unit_id),
+        ).fetchone()
+    finally:
+        connection.close()
+    grant = deserialize_native_child_activation_grant(grant_row["grant_payload"])
+    assert grant.mutation_scope.mode == "workspace_write"
+    assert grant.mutation_scope.path_prefixes == ("Src/Product.py",)
+
+    connection = configured_store._connect()
+    try:
+        run_id = str(
+            connection.execute(
+                "SELECT id FROM runs WHERE session_id = ? AND trace_id = ?",
+                (session_id, trace_id),
+            ).fetchone()["id"]
+        )
+        with pytest.raises(sqlite3.IntegrityError, match="scope is immutable"):
+            connection.execute(
+                "UPDATE codex_native_plan_scopes SET scope_payload = scope_payload "
+                "WHERE trace_id = ? AND work_unit_id = ?",
+                (trace_id, work_unit_id),
+            )
+        with pytest.raises(sqlite3.IntegrityError, match="scope cannot be deleted"):
+            connection.execute(
+                "DELETE FROM codex_native_plan_scopes WHERE trace_id = ? AND work_unit_id = ?",
+                (trace_id, work_unit_id),
+            )
+        connection.rollback()
+    finally:
+        connection.close()
+
+    configured_store.complete_run(run_id)
+    connection = configured_store._connect()
+    try:
+        remaining_scopes = connection.execute(
+            "SELECT COUNT(*) AS count FROM codex_native_plan_scopes WHERE trace_id = ?",
+            (trace_id,),
+        ).fetchone()["count"]
+    finally:
+        connection.close()
+    assert remaining_scopes == 0
 
 
 def test_codex_activation_proof_rejects_parent_only_manual_grant(
@@ -1253,10 +1671,8 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
         original_task = f"private product unit task {index}"
         specialist_prompt = f"private specialist prompt {index}"
         secrets.extend((original_task, specialist_prompt))
-        delivery = render_native_child_prompt_delivery(
-            original_task,
+        delivery = render_codex_opaque_native_child_prompt_delivery(
             specialist_prompt,
-            host="codex",
             parent_session_id=parent_id,
             parent_trace_id="product-trace",
             tool_use_id=tool_use_id,
@@ -1264,7 +1680,7 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
             specialist_slug=f"product-specialist-{index}",
             specialist_version="v1",
             specialist_prompt_hash=response_hash(specialist_prompt),
-            activation_token="x" * 43,
+            goal_hash=work_unit_goal_hash(original_task),
         )
         parent_events.extend(
             (

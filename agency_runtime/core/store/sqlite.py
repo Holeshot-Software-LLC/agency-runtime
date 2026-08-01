@@ -52,6 +52,8 @@ from agency_runtime.core.store.schema import (
     ALL_TABLES,
     BOOLEAN_DOMAIN_TRIGGER_NAMES,
     BOOLEAN_DOMAIN_TRIGGER_SQL,
+    CODEX_NATIVE_PLAN_SCOPE_TABLE_SQL,
+    CODEX_NATIVE_PLAN_SCOPE_TRIGGER_SQL,
     DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL,
     DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES,
     DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL,
@@ -255,6 +257,54 @@ def _v36_authority_schema_is_current(
     return invalid_boolean is None
 
 
+def _codex_native_plan_scope_schema_is_current(conn: sqlite3.Connection) -> bool:
+    """Verify the private exact-path authority table, index, and triggers."""
+
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'codex_native_plan_scopes'"
+    ).fetchone()
+    observed_sql = _normalized_schema_sql(row["sql"] if row is not None else "").replace(
+        "ifnotexists", ""
+    )
+    expected_ddl = "CREATE TABLE" + CODEX_NATIVE_PLAN_SCOPE_TABLE_SQL.split("CREATE TABLE", 1)[1]
+    expected_sql = _normalized_schema_sql(expected_ddl).replace("ifnotexists", "")
+    columns = {
+        str(item["name"]) for item in conn.execute("PRAGMA table_info(codex_native_plan_scopes)")
+    }
+    index_columns = tuple(
+        str(item["name"])
+        for item in conn.execute("PRAGMA index_info(idx_codex_native_plan_scopes_trace)")
+    )
+    foreign_keys = {
+        (str(item["from"]), str(item["table"]), str(item["to"]))
+        for item in conn.execute("PRAGMA foreign_key_list(codex_native_plan_scopes)")
+    }
+    triggers = {
+        str(item["name"]): str(item["sql"] or "")
+        for item in conn.execute(
+            "SELECT name, sql FROM sqlite_master WHERE type = 'trigger' "
+            "AND tbl_name IN ('codex_native_plan_scopes', 'runs')"
+        ).fetchall()
+    }
+    return bool(
+        observed_sql.rstrip(";") == expected_sql.rstrip(";")
+        and {
+            "id",
+            "session_id",
+            "trace_id",
+            "work_unit_id",
+            "scope_payload",
+            "created_at",
+        }.issubset(columns)
+        and index_columns == ("trace_id", "work_unit_id")
+        and ("trace_id", "runs", "trace_id") in foreign_keys
+        and all(
+            _normalized_schema_sql(triggers.get(name)) == _normalized_schema_sql(statement)
+            for name, statement in CODEX_NATIVE_PLAN_SCOPE_TRIGGER_SQL.items()
+        )
+    )
+
+
 def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
     """Verify the current schema contract.
 
@@ -447,7 +497,10 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
         sql = triggers.get(name, "")
         if not sql or "update runs set last_activity_at" not in sql or "new.trace_id" not in sql:
             return False
-    return _v36_authority_schema_is_current(conn, triggers)
+    return bool(
+        _v36_authority_schema_is_current(conn, triggers)
+        and _codex_native_plan_scope_schema_is_current(conn)
+    )
 
 
 def _restrict_windows_acl(path: Path, *, directory: bool) -> bool:
