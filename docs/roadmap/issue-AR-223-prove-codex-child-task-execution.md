@@ -29,7 +29,7 @@ type: issue
 epic: product
 issue_id: AR-223
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/228
 depends_on: [AR-221]
 blocks: [AR-203, AR-204]
 ---
@@ -91,8 +91,12 @@ terminal turn. The first readiness completion remains non-terminal for worker
 evidence. Two bounded review passes have no unresolved High or Critical
 finding. Three terminal focused slices pass 106, 176, and 36 tests respectively
 (318 total) with warning-strict execution; the earlier combined invocation hit
-its 304-second command timeout and is deliberately not counted. The named fast
-gate and immutable-build live proof remain pending.
+its 304-second command timeout and is deliberately not counted. The named
+Python production spine passes 656 tests with 6 skipped, dashboard UI passes
+110 tests, documentation and Ruff gates pass, routing passes every threshold,
+and decision conformance kills 84 of 84 mutations with zero survivors or
+invalid results and unchanged source. Immutable-build live proof remains
+pending.
 
 ## Approach
 
@@ -129,7 +133,7 @@ accepted plan authority.
   hash; all malformed variants fail closed.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
-- [ ] Focused checks, at most two review passes, and the named local fast gate
+- [x] Focused checks, at most two review passes, and the named local fast gate
   pass on one exact head.
 - [ ] One new exact build passes autonomous activation and one fresh product
   trial with real specialist-created artifacts, independent checks, a valid

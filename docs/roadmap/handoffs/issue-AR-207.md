@@ -70,7 +70,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   one exact `followup_task` execution envelope, and requires its later child
   turn before a worker passes. Focused warning-strict slices pass 106, 176, and
   36 tests (318 total); the invalid 304-second aggregate timeout is not counted.
-  Telemetry reached 14.9 percent; no new live evidence has been spent.
+  The complete named local fast gate passes, including Python 656/6, dashboard
+  110/110, and decision conformance 84/84 with zero invalid results. Tracker
+  issue 228 records the package; no new live evidence has been spent.
 
 ## completed-evidence
 
@@ -125,8 +127,9 @@ activation, inference-authored eight-unit selection, a real contractor hire,
 exact child scope delivery, current waits, a valid first header, and zero
 corrections. It does not prove child task execution: Codex terminal child turns
 leave the isolated workspace empty. AR-223's local two-turn repair now owns that
-boundary; the remaining gates are focused review, the named local fast gate,
-immutable install, and one fresh activation plus at most one product trial.
+boundary; its focused review and named local fast gate pass. The remaining gates
+are PR merge, immutable install, and one fresh activation plus at most one
+product trial.
 
 ## same-task-continuity
 
@@ -138,10 +141,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Finish focused verification and at most two reviews of the exact two-turn
-   Codex execution protocol; repair only findings that invalidate AR-223.
-2. Pass the named local fast gate, merge and install one immutable revision,
-   then spend one activation plus at most one product trial.
+1. Merge and install the exact reviewed AR-223 revision without broadening the
+   two-turn Codex execution protocol.
+2. Spend one activation plus at most one product trial on that immutable build.
 3. Update the local evidence page and OpenClaw handoff only from accepted real
    evidence.
 
