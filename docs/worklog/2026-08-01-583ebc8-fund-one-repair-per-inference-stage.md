@@ -59,10 +59,16 @@ inference ownership.
 - Exact composed regression and default/override/timeout checks: 5 passed.
 - Focused inference, configuration, installer, and decision tests: 250 passed,
   1 skipped.
-- Documentation: 611 Markdown files validated.
+- Named Python production spine: 643 passed, 6 skipped.
+- Dashboard UI: 110 passed.
+- Documentation: 612 Markdown files validated.
+- Routing evaluation: every correctness, performance, scale, and startup gate
+  passed.
+- Decision conformance: baseline passed; 73/73 mutations killed, zero survived
+  or invalid, and `source_unchanged=true`.
 - Two bounded review passes found no production defect; one stale metadata date
   was corrected.
-- Changed Python files pass Ruff lint and format; `git diff --check` passes.
+- Repository-wide Ruff lint/format and `git diff --check` passed.
 
 ## Follow-ups
 

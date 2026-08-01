@@ -66,6 +66,13 @@ header, or workspace-write evidence. Correction count zero is not success
 because parent generation never began. This exact build and trial must not be
 rerun.
 
+Implementation commit `583ebc8` and ledger `095e244` are a clean local
+checkpoint. The named fast gate passes 643 Python tests with six skips, all 110
+dashboard UI tests, all routing gates, 612-document validation, and repository-
+wide Ruff lint/format. Decision conformance passes its baseline, kills all 73
+curated mutations with zero survivors or invalid cases, and reports
+`source_unchanged=true`.
+
 ## Approach
 
 1. Raise only the fresh fast-mode total from three calls to four so planner and
@@ -94,7 +101,7 @@ repair fast default without weakening either stage's bounded correction rule.
   recruiter rejection/repair and records exactly four attempts.
 - [x] No deterministic staffing fallback or unbounded retry is introduced.
 - [x] Generated host timeouts derive from the effective four-call budget.
-- [ ] Focused verification, two bounded review passes, and the named local fast
+- [x] Focused verification, two bounded review passes, and the named local fast
   gate pass on one exact head.
 - [ ] One exact merged build passes autonomous activation and at most one fresh
   README product trial with specialist delegation, workspace write, a valid

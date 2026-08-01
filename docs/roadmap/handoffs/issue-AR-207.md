@@ -36,8 +36,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-218-fund-stage-repairs
-evidence_commit: 8cfd9751aa7290362b6e3fcdec60adc81315617c
-minimum_ledger_commit: 230e1c8c56fa030955f6e7a690b980e4a425dc85
+evidence_commit: 095e244a23aa42f6e38f282e3f1d902804e773de
+minimum_ledger_commit: 095e244a23aa42f6e38f282e3f1d902804e773de
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -87,12 +87,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - The composed AR-218 regression now passes planner rejection/repair followed
   by recruiter rejection/repair in exactly four calls. Existing explicit lower
   budgets remain authoritative and no deterministic selection path was added.
+- AR-218's named fast gate passes 643 Python tests with six skips, 110 dashboard
+  UI tests, all routing gates, 612-document validation, repository-wide Ruff
+  lint/format, and 73/73 killed decision mutations with zero survivors or
+  invalid cases and `source_unchanged=true`.
 
 ## exact-blocker
 
-Fast mode has two one-repair inference stages but only one shared repair call.
-AR-218 must pass review and the named local spine before one new exact build may
-receive one activation and one product trial.
+The local four-call repair is green. Exact-head PR review and merge are the only
+boundaries before one new exact build may receive one activation and one product
+trial.
 
 ## same-task-continuity
 
@@ -105,12 +109,11 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Finish at most two AR-218 review passes and the named fast production spine.
-2. Create the substantive and ledger commits; inspect exact-head PR review and
-   merge without hosted Actions.
-3. Install the exact merge, deliberately set this machine's explicit fast
+1. Push the clean checkpoint, open the PR, inspect exact-head review, and merge
+   without hosted Actions.
+2. Install the exact merge, deliberately set this machine's explicit fast
    budget to four, and run one activation plus at most one product trial.
-4. Publish the local evidence page and OpenClaw handoff, stopping on any new
+3. Publish the local evidence page and OpenClaw handoff, stopping on any new
    first boundary rather than widening the package.
 
 ## verification
