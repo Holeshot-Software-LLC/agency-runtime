@@ -96,7 +96,13 @@ Python production spine passes 656 tests with 6 skipped, dashboard UI passes
 110 tests, documentation and Ruff gates pass, routing passes every threshold,
 and decision conformance kills 84 of 84 mutations with zero survivors or
 invalid results and unchanged source. Immutable-build live proof remains
-pending.
+pending. PR 229 merged exact
+`ba76ce798b19b2e5306ef2d3ee09424c4246d07e`; the immutable upgrade planner
+installed that exact VCS revision. Bare full-suite installation then refreshed
+Codex and ZCode and restarted the dashboard: the dashboard is active and
+reachable, ZCode is registered and enabled, and Codex is registered with the
+expected `activation_required` state. No activation or product evidence has
+been spent on this build yet.
 
 ## Approach
 
