@@ -11,6 +11,8 @@ related:
   - docs/roadmap/issue-AR-211-bound-immutable-commit-resolution.md
   - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
   - docs/roadmap/issue-AR-213-reject-stale-preflight-tokens-before-plan-validation.md
+  - docs/roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md
+  - docs/analysis/2026-07-31-ar-212-readme-story-evidence.html
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
@@ -45,8 +47,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Exact official build `0.1.0+g1694d6e07e04` is installed.
 - Bare install discovered only Codex and ZCode and selected the dashboard.
   ZCode completed, the dashboard is active and reachable, and Codex registered.
-- Supported autonomous activation passed on `1694d6e`; one governed product
-  trial remains unused for this exact build.
+- Supported autonomous activation passed on `1694d6e`; its one governed product
+  trial is consumed and fails atomically at context delivery. AR-214 owns the
+  next bounded repair.
 - AR-212 is merged: verifier rejection now participates in the
   existing one recruiter repair, unsafe results are not cached, explicit gaps
   remain hireable, and preflight failure schema v2 retains bounded staffing
@@ -115,6 +118,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   worker run, and completed delegation were retained. Finalization accepted,
   the first header was valid, correction count was zero, trust mode was
   `autonomous_bypass`, and persistent trust did not change.
+- Product trial `ar212-1694d6e-readme-01` is consumed and terminal `NO-GO` after
+  96.2 seconds. Session `019fbb37-41ed-70e3-b211-5affbafb53c6`, trace
+  `019fbb37-426b-7581-97e5-38f727e79327`, and run
+  `6a4eaea4-e69c-4c4c-964c-0dedd23f390a` retain a repaired planner and applied
+  recruiter, then `context_delivery_failed` with `validation_error`. Atomicity
+  preserves zero routes, unit plans, specialist loads, grants, delegations,
+  workers, finalizations, headers, or workspace writes. Correction count is
+  zero because parent generation never began.
 - A broader preflight module run reached 98 passes and exposed an unrelated
   stale-token/native-plan-scope failure. It is recorded as AR-213 / tracker
   https://github.com/Holeshot-Software-LLC/agency-runtime/issues/209 and is not
@@ -124,11 +135,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The reviewed repair, merge, exact package and suite installation, and one
-supported-bypass activation are green. The only remaining product boundary is
-one governed `python-cli-service` Codex trial on build `1694d6e`; it must prove
-specialist selection and delegation, workspace write, a first-pass valid header,
-zero corrections, and independent artifact validation.
+Build `1694d6e` proves installation, activation, and recruiter convergence, but
+its consumed product trial fails at exact context delivery before ready commit.
+AR-214 must reproduce and repair that validation boundary without another live
+trial on this build.
 
 ## same-task-continuity
 
@@ -139,9 +149,8 @@ dispatch hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run exactly one `python-cli-service` Codex product trial on build `1694d6e`.
-2. Stop on its terminal result; do not repair or rerun this build in place.
-3. Produce the local evidence page and OpenClaw handoff from recorded evidence.
+1. Publish the local evidence page and OpenClaw handoff from recorded evidence.
+2. Reproduce AR-214 locally; no new live trial before a reviewed exact build.
 
 ## verification
 
@@ -166,7 +175,6 @@ git diff --check
 - Product host remains sandboxed to the exact trial workspace.
 - Only Codex, ZCode, and dashboard are in machine scope.
 - One live product trial per exact installed build; any correction is failure.
-- Exact build `e62d0adc` activation and product trial are consumed.
-- Exact build `1694d6e` activation is consumed; its one product trial remains.
+- Exact builds `e62d0adc` and `1694d6e` have consumed activation and product trials.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
