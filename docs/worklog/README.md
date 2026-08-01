@@ -504,6 +504,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `873552b` | 2026-08-01 | docs(ar-223): checkpoint installed merge | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `fd8f3a4` | 2026-08-01 | docs(ar-223): record rejected execution followup | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `6be9f0f` | 2026-08-01 | fix(ar-223): bind opaque Codex execution followups | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `00cd2b2` | 2026-08-01 | docs(ar-223): record green opaque followup gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
