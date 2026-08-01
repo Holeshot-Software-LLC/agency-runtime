@@ -176,7 +176,25 @@ mutations with zero survivors or invalid results and unchanged source after a
 commit ID. Bare `agency install` auto-detects Codex and ZCode, refreshes both,
 and installs and restarts a reachable dashboard. Codex is registered with the
 exact byte-current bundle and remains `activation_required`; ZCode is
-registered and enabled. Installed live proof remains pending.
+registered and enabled.
+
+The one `5ff4a08` activation is now consumed and terminal `NO-GO`. Session
+`019fbf98-e5d8-77e3-9faf-0b9d36eeffb5`, trace
+`019fbf98-f1f4-77e3-82c5-8b7a065657cb`, run
+`76cb3c09-e9af-4549-bdef-7ecb43a7a31f`, route
+`0cec20a3-11a0-4a8d-8a5b-d7732649d3ee`, finalization
+`8457f9c2-69dd-4d4b-8254-466f0b49bdda`, and child
+`019fbf99-d680-7541-b951-00b6bd432b38` retain the boundary. Inference selects
+`code-reviewer`; both waits, the exact opaque follow-up, the child's second
+execution turn, accepted finalization, valid first response, and zero
+corrections all pass. Autonomous trust bypass is proven and persistent trust is
+unchanged. The exact child transcript also passes the new ciphertext projector.
+
+The sole failure is `worker_runs.ended_at = null`. Current Codex emits
+`SubagentStop` after the activation-only turn but does not emit it again after a
+`followup_task` turn. Both this run and the prior `a2d1a7c` run retain that same
+open-worker state; the tests incorrectly invoked a synthetic second
+`SubagentStop`. No product trial ran.
 
 ## Approach
 
