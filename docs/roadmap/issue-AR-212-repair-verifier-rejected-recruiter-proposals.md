@@ -78,6 +78,11 @@ carries only the last verifier-rejected `StaffingDecision` through recruiter
 failure; a later provider or parser failure clears that evidence rather than
 inheriting stale codes. Four focused tests prove repair success, repair
 exhaustion, explicit-gap behavior, and projection from a real routing outcome.
+The post-review exact head passes the complete named local gate: 639 Python
+tests passed with 6 skips, all 110 dashboard UI tests passed, every routing gate
+passed, and decision-conformance passed in 760.6 seconds with a green baseline,
+all 73 curated mutations killed, zero invalid or surviving mutations, and the
+source unchanged.
 
 One broader compatibility run exposed an unrelated stale preflight-token
 failure in untouched native plan-scope code. It is isolated as

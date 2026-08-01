@@ -97,8 +97,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   and CLI-startup gate. Decision-conformance passes after 840.2 seconds with a
   green baseline, every curated mutation killed, and source unchanged.
 - The post-review correction passes four focused tests, including projection
-  of exact verifier codes from a real `WorkforceRoutingOutcome`; focused Ruff
-  lint, format, and `git diff --check` also pass.
+  of exact verifier codes from a real `WorkforceRoutingOutcome`. Its exact head
+  passes the complete named local gate: 639 Python tests passed with 6 skips,
+  all 110 dashboard tests and every routing threshold passed, and the 760.6
+  second decision-conformance run killed all 73 mutations with zero invalid or
+  surviving cases and left the source unchanged.
 - A broader preflight module run reached 98 passes and exposed an unrelated
   stale-token/native-plan-scope failure. It is recorded as AR-213 / tracker
   https://github.com/Holeshot-Software-LLC/agency-runtime/issues/209 and is not
@@ -108,10 +111,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The proven recruiter acceptance defect and its named local gate are green. The
-remaining boundary is procedural and live: review and merge the exact branch,
-install that merge, then run one new activation and at most one governed product
-trial with workspace-write and zero-correction evidence.
+The proven recruiter acceptance defect, its focused review correction, and the
+complete exact-head local gate are green. The remaining boundary is procedural
+and live: push and merge the exact branch, install that merge, then run one new
+activation and at most one governed product trial with workspace-write and
+zero-correction evidence.
 
 ## same-task-continuity
 
