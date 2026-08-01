@@ -476,6 +476,7 @@ def _codex_receipt_link_failures(
     receiver_id: str,
     consumed_identity: tuple[str, str],
     response_hash: str,
+    accepted_specialist_load_receipt_ids: frozenset[str] | None = None,
 ) -> tuple[str, ...]:
     """Validate reciprocal Store links after the JSONL receiver alias is known."""
 
@@ -514,9 +515,13 @@ def _codex_receipt_link_failures(
         or consumption.get("legacy_activation_receipt_id") != grant.get("id")
     ):
         failures.append("the one-use activation grant was not consumed exactly once")
-    if specialist_load.get("agent_slug") != specialist_slug or specialist_load.get(
-        "activation_receipt_id"
-    ) != grant.get("id"):
+    load_receipt_id = str(specialist_load.get("activation_receipt_id") or "")
+    load_receipt_matches = (
+        load_receipt_id == str(grant.get("id") or "")
+        if accepted_specialist_load_receipt_ids is None
+        else load_receipt_id in accepted_specialist_load_receipt_ids
+    )
+    if specialist_load.get("agent_slug") != specialist_slug or not load_receipt_matches:
         failures.append("specialist load was not backed by the consumed activation grant")
     if (
         delegation.get("host") != "codex"
@@ -905,22 +910,61 @@ def _product_rows_by_unit(
     return result
 
 
-def _codex_product_loads_by_grant(
+def _codex_product_loads_by_specialist(
     values: object,
-) -> tuple[dict[str, Mapping[str, Any]], tuple[str, ...]]:
+    grants: Mapping[str, Mapping[str, Any]],
+) -> tuple[
+    dict[str, tuple[Mapping[str, Any], frozenset[str]]],
+    tuple[str, ...],
+]:
     if not isinstance(values, list):
         return {}, ("Codex product specialist load evidence was unavailable",)
-    result: dict[str, Mapping[str, Any]] = {}
+    grants_by_receipt: dict[str, Mapping[str, Any]] = {}
+    receipts_by_identity: dict[tuple[str, str, str], set[str]] = {}
     failures: list[str] = []
+    for grant in grants.values():
+        receipt_id = str(grant.get("id") or "")
+        identity = (
+            str(grant.get("specialist_slug") or ""),
+            str(grant.get("specialist_version") or ""),
+            str(grant.get("specialist_prompt_hash") or ""),
+        )
+        if not receipt_id or receipt_id in grants_by_receipt or not all(identity):
+            failures.append("Codex product activation grant identities were missing or duplicated")
+            continue
+        grants_by_receipt[receipt_id] = grant
+        receipts_by_identity.setdefault(identity, set()).add(receipt_id)
+
+    result: dict[str, tuple[Mapping[str, Any], frozenset[str]]] = {}
+    load_receipt_ids: set[str] = set()
     for value in values:
         if not isinstance(value, Mapping):
             failures.append("Codex product specialist load evidence was malformed")
             continue
+        specialist_slug = str(value.get("agent_slug") or "")
         receipt_id = str(value.get("activation_receipt_id") or "")
-        if not receipt_id or receipt_id in result:
+        anchor = grants_by_receipt.get(receipt_id)
+        if (
+            not specialist_slug
+            or specialist_slug in result
+            or not receipt_id
+            or receipt_id in load_receipt_ids
+            or anchor is None
+            or str(anchor.get("specialist_slug") or "") != specialist_slug
+        ):
             failures.append("Codex product specialist loads were missing or duplicated")
             continue
-        result[receipt_id] = value
+        identity = (
+            specialist_slug,
+            str(anchor.get("specialist_version") or ""),
+            str(anchor.get("specialist_prompt_hash") or ""),
+        )
+        eligible_receipts = frozenset(receipts_by_identity.get(identity, set()))
+        if not eligible_receipts:
+            failures.append("Codex product specialist load identity was not selected")
+            continue
+        load_receipt_ids.add(receipt_id)
+        result[specialist_slug] = (value, eligible_receipts)
     return result, tuple(dict.fromkeys(failures))
 
 
@@ -935,6 +979,7 @@ def _codex_product_unit_failures(
     spawn: Mapping[str, Any],
     receiver_id: str,
     specialist_load: Mapping[str, Any] | None,
+    accepted_specialist_load_receipt_ids: frozenset[str],
     run: Mapping[str, Any],
     finalization: Mapping[str, Any],
     response_hash: str,
@@ -997,6 +1042,7 @@ def _codex_product_unit_failures(
             receiver_id=receiver_id,
             consumed_identity=consumed_identity,
             response_hash=response_hash,
+            accepted_specialist_load_receipt_ids=accepted_specialist_load_receipt_ids,
         )
     )
     if delegation.get("status") != "completed" or not delegation.get("completed_at"):
@@ -1031,6 +1077,8 @@ def codex_product_activation_failures(
             return ("Codex product unit-agent plan identities were missing or duplicated",)
         plans[work_unit_id] = raw
     unit_count = len(plans)
+    planned_slugs = {str(plan.get("recommended_agent") or "") for plan in plans.values()}
+    specialist_count = len(planned_slugs)
     cardinalities = evidence.get("cardinalities")
     expected_cardinalities = {
         "routes": 1,
@@ -1041,7 +1089,7 @@ def codex_product_activation_failures(
         "activation_grants": unit_count,
         "activation_consumptions": unit_count,
         "worker_runs": unit_count,
-        "specialist_loads": unit_count,
+        "specialist_loads": specialist_count,
         "finalizations": 1,
         "preflight_failures": 0,
     }
@@ -1066,16 +1114,17 @@ def codex_product_activation_failures(
         expected_parent_thread_id=str(evidence.get("session_id") or ""),
     )
     failures.extend(collaboration_failures)
-    specialist_loads, load_failures = _codex_product_loads_by_grant(
-        evidence.get("specialist_loads")
-    )
-    failures.extend(load_failures)
     if any(
         item is None
         for item in (run, route, finalization, delegations, grants, consumptions, workers)
     ):
         failures.append("Codex product evidence graph was incomplete")
         return tuple(dict.fromkeys(failures))
+    specialist_loads, load_failures = _codex_product_loads_by_specialist(
+        evidence.get("specialist_loads"),
+        grants,
+    )
+    failures.extend(load_failures)
     if len(collaboration) != unit_count:
         failures.append("Codex product native child count did not match its planned units")
     selected = {
@@ -1083,7 +1132,6 @@ def codex_product_activation_failures(
         for field in ("selected_ids", "companion_ids")
         for value in (route.get(field) if isinstance(route.get(field), list) else [])
     }
-    planned_slugs = {str(plan.get("recommended_agent") or "") for plan in plans.values()}
     if (
         route.get("status") != "accepted"
         or route.get("query_hash") != evidence.get("query_hash")
@@ -1102,6 +1150,13 @@ def codex_product_activation_failures(
             failures.append(f"Codex product unit {work_unit_id} lacked exact execution evidence")
             continue
         spawn, receiver_id = spawn_entry
+        specialist_load_entry = specialist_loads.get(str(plan.get("recommended_agent") or ""))
+        specialist_load = specialist_load_entry[0] if specialist_load_entry is not None else None
+        accepted_load_receipts = (
+            specialist_load_entry[1] if specialist_load_entry is not None else frozenset()
+        )
+        if str(grant.get("id") or "") not in accepted_load_receipts:
+            accepted_load_receipts = frozenset()
         failures.extend(
             _codex_product_unit_failures(
                 evidence=evidence,
@@ -1112,14 +1167,15 @@ def codex_product_activation_failures(
                 worker=worker,
                 spawn=spawn,
                 receiver_id=receiver_id,
-                specialist_load=specialist_loads.get(str(grant.get("id") or "")),
+                specialist_load=specialist_load,
+                accepted_specialist_load_receipt_ids=accepted_load_receipts,
                 run=run,
                 finalization=finalization,
                 response_hash=response_hash,
             )
         )
-    if len(specialist_loads) != unit_count:
-        failures.append("Codex product specialist load count did not match its planned units")
+    if len(specialist_loads) != specialist_count:
+        failures.append("Codex product specialist load count did not match its planned specialists")
     return tuple(dict.fromkeys(failures))
 
 

@@ -19,6 +19,9 @@ from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
 from agency_runtime.core.evals import product_host
 from agency_runtime.core.evals.product_host import execute_product_host
+from agency_runtime.core.workforce.routing_projection import (
+    workforce_work_units_from_descriptors,
+)
 
 
 def _hash(prompt: str) -> str:
@@ -38,6 +41,35 @@ def _workspace_trust(workdir: str) -> dict[str, object]:
     }
 
 
+def test_workspace_write_proof_is_owned_by_a_delegated_workspace_write_unit() -> None:
+    wrapped, token = product_host._prompt_with_workspace_write_proof("Build the product.", "a" * 64)
+
+    assert "first delegated work unit with `mutation_scope=workspace_write`" in wrapped
+    assert "Read-only children and the non-working parent must not create it" in wrapped
+    assert token in wrapped
+
+    goals = workforce_work_units_from_descriptors(
+        wrapped,
+        (
+            {
+                "ordinal": 1,
+                "artifact_kind": "analysis",
+                "lifecycle_phase": "discovery",
+                "authority": "review",
+            },
+            {
+                "ordinal": 2,
+                "artifact_kind": "implementation-change",
+                "lifecycle_phase": "implementation",
+                "authority": "modify",
+            },
+        ),
+    )
+    assert len(goals) == 2
+    assert all(token in goal for goal in goals)
+    assert all(".agency-runtime-workspace-write-proof" in goal for goal in goals)
+
+
 def _product_response() -> str:
     return (
         "Agency/Agencies loaded: agency-steward, python-application-engineer, "
@@ -54,11 +86,16 @@ def _product_response() -> str:
     )
 
 
-def _two_unit_product_evidence(query_hash: str, response: str) -> dict[str, object]:
+def _two_unit_product_evidence(
+    query_hash: str,
+    response: str,
+    *,
+    specs: tuple[tuple[str, str, str], ...] | None = None,
+) -> dict[str, object]:
     session_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
     trace_id = "product-trace"
     finalization_id = "product-finalization"
-    specs = (
+    specs = specs or (
         (
             "unit-product-one",
             "python-application-engineer",
@@ -79,7 +116,7 @@ def _two_unit_product_evidence(query_hash: str, response: str) -> dict[str, obje
     calls: list[dict[str, object]] = []
     for index, (unit, specialist, receiver_id) in enumerate(specs, start=1):
         goal_hash = hashlib.sha256(f"goal-{index}".encode()).hexdigest()
-        prompt_hash = hashlib.sha256(f"prompt-{index}".encode()).hexdigest()
+        prompt_hash = hashlib.sha256(f"prompt-{specialist}".encode()).hexdigest()
         grant_id = f"grant-id-{index}"
         grant_receipt_id = f"grant-receipt-{index}"
         delegation_id = f"delegation-{index}"
@@ -151,12 +188,13 @@ def _two_unit_product_evidence(query_hash: str, response: str) -> dict[str, obje
                 "ended_at": "2026-07-31T14:01:00Z",
             }
         )
-        loads.append(
-            {
-                "agent_slug": specialist,
-                "activation_receipt_id": grant_receipt_id,
-            }
-        )
+        if not any(load["agent_slug"] == specialist for load in loads):
+            loads.append(
+                {
+                    "agent_slug": specialist,
+                    "activation_receipt_id": grant_receipt_id,
+                }
+            )
         calls.append(
             {
                 "id": f"spawn-item-{index}",
@@ -193,12 +231,12 @@ def _two_unit_product_evidence(query_hash: str, response: str) -> dict[str, obje
             "routes": 1,
             "runs": 1,
             "traces": 1,
-            "unit_agent_plan": 2,
-            "delegations": 2,
-            "activation_grants": 2,
-            "activation_consumptions": 2,
-            "worker_runs": 2,
-            "specialist_loads": 2,
+            "unit_agent_plan": len(specs),
+            "delegations": len(specs),
+            "activation_grants": len(specs),
+            "activation_consumptions": len(specs),
+            "worker_runs": len(specs),
+            "specialist_loads": len(loads),
             "finalizations": 1,
             "preflight_failures": 0,
         },
@@ -210,7 +248,7 @@ def _two_unit_product_evidence(query_hash: str, response: str) -> dict[str, obje
         "route": {
             "status": "accepted",
             "query_hash": query_hash,
-            "selected_ids": [item[1] for item in specs],
+            "selected_ids": list(dict.fromkeys(item[1] for item in specs)),
             "companion_ids": [],
         },
         "unit_agent_plan": plans,
@@ -230,11 +268,11 @@ def _two_unit_product_evidence(query_hash: str, response: str) -> dict[str, obje
         "collaboration": {
             "schema": "agency.codex-product-collaboration.v1",
             "calls": calls,
-            "spawn_count": 2,
-            "wait_count": 2,
-            "completed_wait_count": 2,
+            "spawn_count": len(specs),
+            "wait_count": len(specs),
+            "completed_wait_count": len(specs),
             "timed_out_wait_count": 0,
-            "completed_child_count": 2,
+            "completed_child_count": len(specs),
             "failed_child_count": 0,
             "child_tool_call_count": 4,
             "parent_agent_message_count": 1,
@@ -265,6 +303,108 @@ def test_product_proof_rejects_a_child_from_a_different_parent_session() -> None
     )
 
     assert "Codex product child did not belong to the exact parent session" in failures
+
+
+def test_product_proof_accepts_eight_units_with_one_turn_scoped_specialist_reuse() -> None:
+    response = _product_response()
+    specialists = (
+        "codebase-onboarding-engineer",
+        "python-application-engineer",
+        "software-test-engineer",
+        "technical-writer",
+        "code-reviewer",
+        "code-reviewer",
+        "test-results-analyzer",
+        "application-integration-verifier",
+    )
+    specs = tuple(
+        (
+            f"unit-product-{index}",
+            specialist,
+            f"019fa6a6-a{index:03x}-7a83-b3fb-d2c20411f6{index:02x}",
+        )
+        for index, specialist in enumerate(specialists, start=1)
+    )
+    evidence = _two_unit_product_evidence("a" * 64, response, specs=specs)
+    reviewer_load = next(
+        load for load in evidence["specialist_loads"] if load["agent_slug"] == "code-reviewer"
+    )
+    reviewer_load["activation_receipt_id"] = evidence["activation_grants"][5]["id"]
+
+    failures = codex_product_activation_failures(
+        result={"collaboration": evidence["collaboration"]},
+        evidence=evidence,
+        response_hash=hashlib.sha256(response.encode()).hexdigest(),
+    )
+
+    assert failures == ()
+    assert evidence["cardinalities"]["unit_agent_plan"] == 8
+    assert evidence["cardinalities"]["specialist_loads"] == 7
+
+
+def test_product_proof_rejects_reused_load_anchored_to_another_specialist() -> None:
+    response = _product_response()
+    specs = (
+        (
+            "unit-review-one",
+            "code-reviewer",
+            "019fa6a6-a001-7a83-b3fb-d2c20411f601",
+        ),
+        (
+            "unit-review-two",
+            "code-reviewer",
+            "019fa6a6-a002-7a83-b3fb-d2c20411f602",
+        ),
+        (
+            "unit-implementation",
+            "python-application-engineer",
+            "019fa6a6-a003-7a83-b3fb-d2c20411f603",
+        ),
+    )
+    evidence = _two_unit_product_evidence("a" * 64, response, specs=specs)
+    evidence["specialist_loads"][0]["activation_receipt_id"] = evidence["activation_grants"][2][
+        "id"
+    ]
+
+    failures = codex_product_activation_failures(
+        result={"collaboration": evidence["collaboration"]},
+        evidence=evidence,
+        response_hash=hashlib.sha256(response.encode()).hexdigest(),
+    )
+
+    assert "Codex product specialist loads were missing or duplicated" in failures
+
+
+def test_product_proof_rejects_reuse_across_conflicting_specialist_prompts() -> None:
+    response = _product_response()
+    specs = (
+        (
+            "unit-review-one",
+            "code-reviewer",
+            "019fa6a6-a001-7a83-b3fb-d2c20411f601",
+        ),
+        (
+            "unit-review-two",
+            "code-reviewer",
+            "019fa6a6-a002-7a83-b3fb-d2c20411f602",
+        ),
+    )
+    evidence = _two_unit_product_evidence("a" * 64, response, specs=specs)
+    conflicting_prompt_hash = hashlib.sha256(b"conflicting-reviewer-prompt").hexdigest()
+    evidence["activation_grants"][1]["specialist_prompt_hash"] = conflicting_prompt_hash
+    evidence["activation_consumptions"][1]["specialist_prompt_hash"] = conflicting_prompt_hash
+    evidence["delegations"][1]["retrieved_specialist_prompt_hash"] = conflicting_prompt_hash
+    evidence["collaboration"]["calls"][1]["prompt_delivery"]["specialist_prompt_hash"] = (
+        conflicting_prompt_hash
+    )
+
+    failures = codex_product_activation_failures(
+        result={"collaboration": evidence["collaboration"]},
+        evidence=evidence,
+        response_hash=hashlib.sha256(response.encode()).hexdigest(),
+    )
+
+    assert "specialist load was not backed by the consumed activation grant" in failures
 
 
 def test_product_proof_rejects_parent_side_product_tool_execution() -> None:
@@ -940,6 +1080,8 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
         "one child at a time",
         "Use no non-collaboration tools",
         "do not delegate further",
+        "decrypted native child message is your exact work-unit goal",
+        "permitted workspace tools for every required implementation",
     ):
         assert required_contract in instructions
 

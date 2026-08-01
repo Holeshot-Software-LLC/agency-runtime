@@ -72,6 +72,9 @@ def test_codex_opaque_delivery_round_trip_preserves_only_goal_hash_and_prompt() 
     assert parsed.goal_hash == goal_hash
     assert parsed.prompt_body == prompt
     assert "Implement the requested product unit." not in rendered
+    assert "decrypted native child message is the exact work-unit goal" in rendered
+    assert "Execute that goal now" in rendered
+    assert "Store-backed mutation authority" in rendered
 
 
 def test_codex_opaque_delivery_rejects_goal_hash_or_prompt_tampering() -> None:

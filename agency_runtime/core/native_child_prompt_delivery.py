@@ -38,10 +38,13 @@ _MARKER_PATTERN = re.compile(
 )
 _CODEX_OPAQUE_SECTION = (
     "[AGENCY EXACT SPECIALIST ACTIVATION v2]\n"
-    "Codex delivered the native assignment separately. The host hook bound the "
-    "exact audited specialist below to that persisted work-unit row. Treat these "
-    "as turn-scoped specialist instructions; do not copy them into the parent, "
-    "another worker, status text, or the final response.\n"
+    "The decrypted native child message is the exact work-unit goal. Execute that "
+    "goal now; do not answer the specialist prompt as a standalone request. The host "
+    "hook bound the exact audited specialist below and Store-backed mutation authority "
+    "to that persisted work-unit row. Use workspace tools when the goal requires them; "
+    "hook policy will enforce the exact scope. Treat the text below as turn-scoped "
+    "specialist instructions; do not copy it into the parent, another worker, status "
+    "text, or the final response.\n"
 )
 _CODEX_OPAQUE_MARKER_PREFIX = "<!-- agency-native-child-delivery:v2:"
 _CODEX_OPAQUE_MARKER_PATTERN = re.compile(

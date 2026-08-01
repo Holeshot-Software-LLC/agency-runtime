@@ -1,6 +1,6 @@
 ---
 title: "Grade product trials against the inferred unit graph"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-31
 updated: 2026-08-01
@@ -18,10 +18,11 @@ related:
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
   - docs/decisions/0127-bind-opaque-codex-children-through-exact-plan-labels.md
+  - docs/decisions/0133-treat-product-specialist-loads-as-turn-scoped.md
   - README.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0133-treat-product-specialist-loads-as-turn-scoped.md
 id: ADR-0124
 type: decision
 deciders: [maintainers]

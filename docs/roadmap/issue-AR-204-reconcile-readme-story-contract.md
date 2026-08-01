@@ -15,6 +15,7 @@ related:
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0123-use-general-preflight-ceiling-for-persistent-parents.md
   - docs/decisions/0127-bind-opaque-codex-children-through-exact-plan-labels.md
+  - docs/decisions/0133-treat-product-specialist-loads-as-turn-scoped.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md

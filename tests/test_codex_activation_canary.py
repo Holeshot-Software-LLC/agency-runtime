@@ -1648,23 +1648,33 @@ def test_codex_v2_rollout_reports_content_free_parent_spawn_failure(
     assert secret not in json.dumps(record)
 
 
-def test_codex_product_rollout_projects_two_exact_tool_using_children(
+def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
     tmp_path: Path,
 ) -> None:
     parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
-    receiver_ids = (
-        "019fa6a6-a197-7a83-b3fb-d2c20411f608",
-        "019fa6a6-b208-7b94-c40c-e3d315220719",
+    receiver_ids = tuple(
+        f"019fa6a6-a{index:03x}-7a83-b3fb-d2c20411f6{index:02x}" for index in range(1, 9)
     )
-    units = ("unit-product-one", "unit-product-two")
+    units = tuple(f"unit-product-{index}" for index in range(1, 9))
+    specialists = (
+        "codebase-onboarding-engineer",
+        "python-application-engineer",
+        "software-test-engineer",
+        "technical-writer",
+        "code-reviewer",
+        "code-reviewer",
+        "test-results-analyzer",
+        "application-integration-verifier",
+    )
     task_names = tuple(codex_task_name_for_work_unit(unit) for unit in units)
     rollout_root = tmp_path / "sessions"
     parent_events: list[dict[str, object]] = [
         {"type": "session_meta", "payload": {"id": parent_id, "source": "exec"}}
     ]
+    stdout_events: list[dict[str, object]] = [{"type": "thread.started", "thread_id": parent_id}]
     secrets: list[str] = []
-    for index, (receiver_id, unit, task_name) in enumerate(
-        zip(receiver_ids, units, task_names, strict=True),
+    for index, (receiver_id, unit, task_name, specialist) in enumerate(
+        zip(receiver_ids, units, task_names, specialists, strict=True),
         start=1,
     ):
         tool_use_id = f"call-product-spawn-{index}"
@@ -1677,7 +1687,7 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
             parent_trace_id="product-trace",
             tool_use_id=tool_use_id,
             work_unit_id=unit,
-            specialist_slug=f"product-specialist-{index}",
+            specialist_slug=specialist,
             specialist_version="v1",
             specialist_prompt_hash=response_hash(specialist_prompt),
             goal_hash=work_unit_goal_hash(original_task),
@@ -1727,7 +1737,7 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
                         "name": "wait_agent",
                         "namespace": "collaboration",
                         "call_id": f"call-product-wait-{index}",
-                        "arguments": json.dumps({} if index == 2 else {"timeout_ms": 60_000}),
+                        "arguments": json.dumps({} if index == 8 else {"timeout_ms": 60_000}),
                     },
                 },
                 {
@@ -1736,6 +1746,62 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
                         "type": "function_call_output",
                         "call_id": f"call-product-wait-{index}",
                         "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
+                    },
+                },
+            )
+        )
+        stdout_events.extend(
+            (
+                {
+                    "type": "item.started",
+                    "item": {
+                        "id": f"stdout-spawn-{index}",
+                        "type": "collab_tool_call",
+                        "tool": "spawn_agent",
+                        "sender_thread_id": parent_id,
+                        "receiver_thread_ids": [],
+                        "prompt": f"encrypted-parent-message-{index}",
+                        "agents_states": {},
+                        "status": "in_progress",
+                    },
+                },
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "id": f"stdout-spawn-{index}",
+                        "type": "collab_tool_call",
+                        "tool": "spawn_agent",
+                        "sender_thread_id": parent_id,
+                        "receiver_thread_ids": [receiver_id],
+                        "prompt": None,
+                        "agents_states": {receiver_id: {"status": "running", "message": None}},
+                        "status": "completed",
+                    },
+                },
+                {
+                    "type": "item.started",
+                    "item": {
+                        "id": f"stdout-wait-{index}",
+                        "type": "collab_tool_call",
+                        "tool": "wait",
+                        "sender_thread_id": parent_id,
+                        "receiver_thread_ids": [],
+                        "prompt": None,
+                        "agents_states": {},
+                        "status": "in_progress",
+                    },
+                },
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "id": f"stdout-wait-{index}",
+                        "type": "collab_tool_call",
+                        "tool": "wait",
+                        "sender_thread_id": parent_id,
+                        "receiver_thread_ids": [],
+                        "prompt": None,
+                        "agents_states": {},
+                        "status": "completed",
                     },
                 },
             )
@@ -1805,22 +1871,122 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
             )
         )
     _write_codex_rollout(rollout_root, parent_id, parent_events)
+    stdout_events.extend(
+        (
+            {
+                "type": "item.completed",
+                "item": {
+                    "id": "skills-notice",
+                    "type": "error",
+                    "message": "Skill descriptions were shortened to fit the 2% skills context "
+                    "budget. Codex can still see every skill, but some descriptions are shorter. "
+                    "Disable unused skills or plugins to leave more room for the rest.",
+                },
+            },
+            {
+                "type": "item.completed",
+                "item": {"type": "agent_message", "text": _valid_header()},
+            },
+            {"type": "turn.completed"},
+        )
+    )
+    stdout = "\n".join(json.dumps(event) for event in stdout_events)
+
+    record = codex_canary_record(
+        _process_result(stdout),
+        profile_scope="current-profile",
+        rollout_root=rollout_root,
+        rollout_contract="product",
+    )
+
+    assert record["status"] == "completed"
+    collaboration = record["collaboration"]
+    assert collaboration["schema"] == "agency.codex-product-collaboration.v1"
+    assert collaboration["spawn_count"] == 8
+    assert collaboration["wait_count"] == 8
+    assert collaboration["completed_wait_count"] == 8
+    assert collaboration["completed_child_count"] == 8
+    assert collaboration["child_tool_call_count"] == 8
+    assert collaboration["host_notice_count"] == 1
+    assert collaboration["host_notice_types"] == ["skill_catalog_descriptions_shortened"]
+    assert [row["prompt_delivery"]["work_unit_id"] for row in collaboration["calls"]] == [*units]
+    assert {row["prompt_delivery"]["specialist_slug"] for row in collaboration["calls"]} == set(
+        specialists
+    )
+    encoded = json.dumps(record)
+    assert all(secret not in encoded for secret in secrets)
+
+
+def test_codex_product_rollout_preserves_first_content_free_topology_reason(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    rollout_root = tmp_path / "sessions"
+    _write_codex_rollout(
+        rollout_root,
+        parent_id,
+        [
+            {"type": "session_meta", "payload": {"id": parent_id, "source": "exec"}},
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "spawn-item",
+                    "name": "spawn_agent",
+                    "namespace": "collaboration",
+                    "call_id": "spawn-call",
+                    "arguments": "{}",
+                },
+            },
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "sub_agent_activity",
+                    "event_id": "spawn-call",
+                    "agent_thread_id": "019fa6a6-a001-7a83-b3fb-d2c20411f601",
+                    "agent_path": "/root/unit_product_1",
+                    "kind": "started",
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": "spawn-call",
+                    "output": "{}",
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "wait-item",
+                    "name": "wait_agent",
+                    "namespace": "collaboration",
+                    "call_id": "wait-call",
+                    "arguments": "{}",
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": "wait-call",
+                    "output": "{}",
+                },
+            },
+        ],
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.canary_backends._codex_product_rollout_collaboration_evidence",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            ValueError("Codex product spawn output did not match its native task")
+        ),
+    )
     stdout = "\n".join(
         (
             json.dumps({"type": "thread.started", "thread_id": parent_id}),
-            json.dumps(
-                {
-                    "type": "item.completed",
-                    "item": {
-                        "id": "skills-notice",
-                        "type": "error",
-                        "message": "Skill descriptions were shortened to fit the 2% skills context "
-                        "budget. Codex can still see every skill, but some descriptions are "
-                        "shorter. Disable unused skills or plugins to leave more room for the "
-                        "rest.",
-                    },
-                }
-            ),
             json.dumps(
                 {
                     "type": "item.completed",
@@ -1838,19 +2004,52 @@ def test_codex_product_rollout_projects_two_exact_tool_using_children(
         rollout_contract="product",
     )
 
-    assert record["status"] == "completed"
-    collaboration = record["collaboration"]
-    assert collaboration["schema"] == "agency.codex-product-collaboration.v1"
-    assert collaboration["spawn_count"] == 2
-    assert collaboration["wait_count"] == 2
-    assert collaboration["completed_wait_count"] == 2
-    assert collaboration["completed_child_count"] == 2
-    assert collaboration["child_tool_call_count"] == 2
-    assert collaboration["host_notice_count"] == 1
-    assert collaboration["host_notice_types"] == ["skill_catalog_descriptions_shortened"]
-    assert [row["prompt_delivery"]["work_unit_id"] for row in collaboration["calls"]] == [*units]
-    encoded = json.dumps(record)
-    assert all(secret not in encoded for secret in secrets)
+    assert record["status"] == "failed"
+    assert record["collaboration_diagnostic"]["reason"] == "product_spawn_output_invalid"
+    assert record["collaboration_diagnostic"]["spawn_count"] == 1
+    assert record["collaboration_diagnostic"]["wait_count"] == 1
+    assert "Codex product spawn output" not in json.dumps(record)
+
+
+def test_codex_product_rollout_does_not_mask_a_baseline_topology_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    rollout_root = tmp_path / "sessions"
+    _write_codex_rollout(
+        rollout_root,
+        parent_id,
+        [{"type": "session_meta", "payload": {"id": parent_id, "source": "exec"}}],
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.canary_backends._codex_product_rollout_collaboration_evidence",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            ValueError("Codex product spawn output did not match its native task")
+        ),
+    )
+    stdout = "\n".join(
+        (
+            json.dumps({"type": "thread.started", "thread_id": parent_id}),
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": _valid_header()},
+                }
+            ),
+            json.dumps({"type": "turn.completed"}),
+        )
+    )
+
+    record = codex_canary_record(
+        _process_result(stdout),
+        profile_scope="current-profile",
+        rollout_root=rollout_root,
+        rollout_contract="product",
+    )
+
+    assert record["status"] == "failed"
+    assert record["collaboration_diagnostic"]["reason"] == "parent_spawn_missing"
 
 
 def test_codex_ephemeral_parent_failure_is_classified_without_raw_stderr() -> None:
