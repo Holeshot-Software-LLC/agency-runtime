@@ -9,8 +9,12 @@ related:
   - README.md
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/evals/product_one_shot.py
+  - agency_runtime/core/workforce/hiring.py
+  - agency_runtime/core/workforce/hiring_contract.py
   - tests/test_codex_activation_canary.py
   - tests/test_product_one_shot.py
+  - tests/test_workforce_dynamic_hiring.py
+  - tests/test_workforce_hiring_contract.py
   - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
@@ -53,6 +57,12 @@ rejects the header, and reports no workspace write. The isolated trial
 workspace is in fact empty, so the README application-build outcome remains
 unproven even though worker lifecycle receipts exist.
 
+The repaired exact build reaches a different first boundary. Its activation is
+green, but its one product trial fails atomically while filling an
+inference-declared workforce gap: a governed contractor proposal is classified
+as high risk and therefore cannot commit without human approval. No route or
+specialist execution is published from that failed preflight.
+
 ## Current state
 
 PR 220 merged the four-call workforce budget and legacy balanced-cap repair as
@@ -88,7 +98,34 @@ header is absent, correction count is zero, workspace-write proof is missing,
 artifact validation is skipped, and the workspace contains no files. This exact
 build and trial must not be rerun.
 
-The current repair branch now treats a specialist load as turn-scoped by slug
+PR 223 merged the repair as exact commit
+`386afca23bdc16e6c49c6dab55967b26a902a5b2`; package
+`0.1.0+g386afca23bdc` is installed from that immutable revision. Bare install
+selected Codex, ZCode, and dashboard. The dashboard is active and reachable,
+ZCode is registered and enabled, and Codex is registered and runtime-verified.
+
+Autonomous activation passed once in session
+`019fbd75-2ea2-7f80-b6f7-eb2bb0724f2a`, trace
+`019fbd75-3d0b-7b10-a463-2b95ee1fe2ab`, run
+`36b9b721-7efa-400d-9e07-ba1b860a1772`, and route
+`337566cc-2adc-435e-960a-ac09e6a45e71`. Inference selected
+`code-reviewer`; one native child completed; the first header was valid; the
+correction count was zero; autonomous hook bypass was proven; and no persistent
+profile change occurred.
+
+Trial `ar219-386afca-readme-01` is consumed and terminal `NO-GO` after 160.9
+seconds. Session `019fbd7a-0c24-7581-a49d-91bbe870f7ea`, trace
+`019fbd7a-0cb8-7dc0-ba1b-415d3d834a3e`, and run
+`6e03910a-ec8b-4c4a-8d15-f2700b7cd219` retain one atomic preflight failure.
+Planner and recruiter structured responses were applied, then dynamic gap
+hiring returned `high_risk_human_approval_required`; staffing ended with
+`no_safe_sufficient_team` and `recruiter_abstained`. Cardinalities prove zero
+routes, loads, grants, delegations, workers, or finalizations. Exact isolated
+workspace trust and autonomous hook bypass passed without persistent changes,
+but the first header was absent, workspace-write proof was missing, validation
+was skipped, correction count was zero, and the workspace remained empty.
+
+The merged topology repair treats a specialist load as turn-scoped by slug
 and rejects reuse unless every correlated unit grant has the same immutable
 version and prompt hash. It preserves the first exact product-projector failure
 as an allowlisted content-free code without masking a more basic missing-spawn
@@ -104,7 +141,15 @@ clean, and the exact changed-source decision slice kills 22/22 mutations with
 zero survivors or invalid results and `source_unchanged=true`. The full
 73-mutation process completed after its outer shell deadline, but its terminal
 JSON was not retained; it is not claimed as a fresh exact-head pass. No new live
-activation or product trial has been consumed.
+attempt is permitted on `386afca`.
+
+Atomic preflight intentionally did not persist the rejected contractor
+document, so the exact triggering risk class is not recoverable from the Store.
+Code inspection identifies two authority bugs that can independently produce
+this receipt: the model supplies `external_mutation` instead of the validated
+work unit, and substring classification can treat negated requirements such as
+`no credential access` as positive credential authority. The next package is
+limited to those two fail-closed invariants and content-free risk diagnostics.
 
 ## Approach
 
@@ -123,6 +168,9 @@ activation or product trial has been consumed.
 5. Keep malformed, conflicting, nested, out-of-scope, missing-child, and
    missing-write evidence fail-closed. Do not weaken the workspace sandbox or
    let the parent/generalist substitute for specialist work.
+6. Make the validated work unit authoritative for contractor mutation scope,
+   reject positive high-risk authority without approval, and prevent explicit
+   negated safety constraints from being classified as granted authority.
 
 ## Dependencies
 
@@ -144,6 +192,10 @@ workspace sentinel before artifact validation.
   workspace and the model-authored sentinel is independently verified.
 - [x] The first response header is built from accepted Store evidence and any
   correction remains terminal failure.
+- [ ] A workspace-local contractor remains standard-risk when it only carries
+  negated credential/external safety constraints, while genuine external,
+  credential, destructive, medical, legal, and financial authority remains
+  approval-gated.
 - [ ] Focused checks, at most two review passes, and the named local fast gate
   pass on one exact head.
 - [ ] One next exact build passes autonomous activation and at most one fresh
