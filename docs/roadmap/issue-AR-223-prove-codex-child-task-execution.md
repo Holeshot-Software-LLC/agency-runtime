@@ -116,6 +116,17 @@ wait or execution turn exists, the header is absent, and collaboration reports
 `parent_wait_ambiguous`. Correction count is zero and persistent trust remains
 unchanged. No product trial was launched.
 
+The exact failure is now reproduced locally. Current Codex exposes the
+`followup_task` message to `PreToolUse` and the parent rollout as a 760-character
+`gAAAA...` ciphertext, while the receiving child alone sees the decrypted
+canonical envelope. The repaired hook binds that opaque call to the unique
+activated canonical child path and one-use Store claim. Activation and product
+projectors likewise treat parent ciphertext as lifecycle evidence and still
+require the exact decrypted envelope in the child's causal second turn before
+accepting work. Focused hook, Store, activation, and product suites pass 143
+tests warning-strict; Ruff and diff checks pass. Fresh immutable-build proof
+remains pending.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

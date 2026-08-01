@@ -44,6 +44,7 @@ from agency_runtime.core.native_child_activation import (
 from agency_runtime.core.native_child_prompt_delivery import (
     CodexNativeChildExecutionDelivery,
     NativeChildPromptDelivery,
+    is_codex_opaque_collaboration_message,
     parse_codex_native_child_execution_message,
     parse_native_child_prompt_delivery,
     render_codex_native_child_execution_message,
@@ -620,14 +621,7 @@ def _native_child_pre_tool_output(
 def _is_codex_opaque_native_task(host: str, task: str) -> bool:
     """Recognize only Codex's bounded encrypted collaboration-message shape."""
 
-    return (
-        host == "codex"
-        and re.fullmatch(
-            r"gAAAAA[A-Za-z0-9_-]{24,}={0,2}",
-            task,
-        )
-        is not None
-    )
+    return host == "codex" and is_codex_opaque_collaboration_message(task)
 
 
 def _native_child_activation_contract_for_assignment(
@@ -1654,7 +1648,10 @@ class HookBridge:
             return _pre_tool_use_denial(denial, host=self.host)
         message = args.get("message")
         delivery = parse_codex_native_child_execution_message(message)
-        if delivery is None:
+        opaque_message = isinstance(message, str) and _is_codex_opaque_native_task(
+            self.host, message
+        )
+        if delivery is None and not opaque_message:
             return _pre_tool_use_denial(denial, host=self.host)
         correlation = self._correlation(payload, args)
         trace_id = correlation.turn_id or self._unambiguous_open_trace(correlation.session_id)
@@ -1664,17 +1661,23 @@ class HookBridge:
                 session_id=correlation.session_id,
                 trace_id=trace_id,
             )
-            if candidate[0] == delivery
+            if self._codex_followup_target_matches(
+                args.get("target"),
+                candidate[0].native_task_name,
+            )
+            and (delivery is None or candidate[0] == delivery)
         ]
         if len(matches) != 1:
             return _pre_tool_use_denial(denial, host=self.host)
         expected, _specialist_slug, identity = matches[0]
-        if message != render_codex_native_child_execution_message(
+        # Current Codex encrypts collaboration message arguments before its
+        # PreToolUse hook observes them.  Bind that opaque call to the only
+        # exact activated target and one-use Store claim here; SubagentStop and
+        # the rollout projector still require the decrypted canonical envelope
+        # inside the child's later execution turn before accepting any work.
+        if not opaque_message and message != render_codex_native_child_execution_message(
             work_unit_id=expected.work_unit_id,
             goal_hash=expected.goal_hash,
-        ) or not self._codex_followup_target_matches(
-            args.get("target"),
-            expected.native_task_name,
         ):
             return _pre_tool_use_denial(denial, host=self.host)
         claimer = getattr(self.store, "claim_codex_native_child_execution", None)

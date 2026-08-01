@@ -39,7 +39,9 @@ Codex exposes `followup_task` as the supported way to send a message to an
 existing child and trigger another turn. The child rollout records exact turn
 boundaries, tool calls, and completion events, so Agency can prove that the
 execution envelope occurred in the later turn without retaining the user's
-task or the child's response.
+task or the child's response. Current Codex encrypts collaboration message
+arguments before both `PreToolUse` and the persisted parent rollout observe
+them; only the receiving child's rollout exposes the decrypted message.
 
 ## Decision
 
@@ -53,10 +55,12 @@ For every governed Codex work unit:
    accepted plan row. A second wait observes the execution turn. The parent
    cannot use `send_message`, reuse a child, retry delivery, or do specialist
    work itself.
-3. The Store atomically claims that execution dispatch once against the exact
-   trace, work-unit ID, native task name, child identity, goal hash, and
-   follow-up tool-use ID. An exact replay of the same tool-use ID is idempotent;
-   a different claim is denied.
+3. Because the parent boundary is opaque, `PreToolUse` binds the encrypted
+   message shape and exact canonical child path to one activated plan row. The
+   Store atomically claims that dispatch once against the exact trace,
+   work-unit ID, native task name, child identity, goal hash, and follow-up
+   tool-use ID. An exact replay of the same tool-use ID is idempotent; a
+   different claim is denied.
 4. A passed worker outcome requires a later child turn whose bounded rollout
    contains exactly that execution envelope between its own `task_started` and
    `task_complete` events. The earlier activation completion cannot pass the
@@ -76,6 +80,8 @@ For every governed Codex work unit:
   remain unchanged.
 - Schema version 43 records the content-free follow-up tool-use ID and dispatch
   timestamp on the worker run. It does not store the task or response text.
+- Parent ciphertext is lifecycle evidence only. The exact decrypted execution
+  envelope remains mandatory in the causally later child turn.
 - Live activation and product evidence must now prove two causal child turns
   per unit. This adds one follow-up and one wait to each Codex child execution.
 

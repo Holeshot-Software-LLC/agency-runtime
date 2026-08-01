@@ -1008,6 +1008,30 @@ def test_codex_followup_accepts_only_exact_activated_execution_envelope() -> Non
         assert denied["hookSpecificOutput"]["permissionDecision"] == "deny"
 
 
+def test_codex_followup_accepts_host_opaque_message_for_exact_activated_child() -> None:
+    """Codex encrypts follow-up message arguments before PreToolUse observes them."""
+
+    store = _PlanStore()
+    bridge = HookBridge("codex", store=store)  # type: ignore[arg-type]
+    task_name, _message = _activate_codex_plan_child(bridge)
+    payload = {
+        "hook_event_name": "PreToolUse",
+        "session_id": "codex-session",
+        "turn_id": "trace",
+        "tool_name": "collaborationfollowup_task",
+        "tool_use_id": "call-followup",
+        "tool_input": {
+            "target": f"/root/{task_name}",
+            "message": "gAAAAA" + "opaque-execution-ciphertext" * 2,
+        },
+    }
+
+    assert bridge.handle(payload) == {}
+    assert store.execution_claims == {
+        ("unit-code", "019fa6a6-a197-7a83-b3fb-d2c20411f608"): "call-followup"
+    }
+
+
 def test_codex_followup_post_tool_does_not_record_a_second_delegation() -> None:
     store = _PlanStore()
     adapter = _RecordingAdapter()

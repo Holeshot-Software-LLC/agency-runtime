@@ -7,6 +7,7 @@ from hashlib import sha256
 import pytest
 
 from agency_runtime.core.native_child_prompt_delivery import (
+    is_codex_opaque_collaboration_message,
     parse_codex_native_child_execution_message,
     parse_native_child_prompt_delivery,
     render_codex_native_child_execution_message,
@@ -30,6 +31,13 @@ def _render(*, task: str = "Review auth", prompt: str = "Exact specialist prompt
         specialist_prompt_hash=sha256(prompt.encode()).hexdigest(),
         activation_token="one-use-token",
     )
+
+
+def test_codex_opaque_collaboration_message_shape_is_exact() -> None:
+    assert is_codex_opaque_collaboration_message("gAAAAA" + "opaque-host-ciphertext" * 2)
+    assert not is_codex_opaque_collaboration_message("gAAAAAtoo-short")
+    assert not is_codex_opaque_collaboration_message("gAAAAA" + "opaque-host-ciphertext" * 2 + "\n")
+    assert not is_codex_opaque_collaboration_message(None)
 
 
 def test_delivery_round_trip_preserves_original_task_and_exact_prompt() -> None:

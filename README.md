@@ -181,22 +181,25 @@ When the host invokes its native delegation tool (`spawn_agent` / `Agent`), a
 `PreToolUse` hook resolves the one persisted assignment for that child, verifies
 the host-visible assignment matches the plan, and binds the specialist's exact
 versioned prompt. Claude Code and ZCode receive a v1 envelope in the rewritten
-task. Codex keeps collaboration messages encrypted at this boundary, so Agency
-preserves that ciphertext and requires its unencrypted native task label to
-resolve exactly one persisted row. Preflight privately stages that row's exact
-canonical write paths while plaintext is still available; only a genuinely
-repository-wide row receives `.`. `SubagentStart` then injects a token-free v2
-context carrying that row's immutable specialist prompt and content-free goal
-hash. It consumes the one-use activation receipt against the observed child
-identity before another opaque child may launch.
+task. Codex keeps collaboration messages encrypted at the parent hook and
+rollout boundary, so Agency never pretends that ciphertext is the plaintext
+assignment. It preserves the ciphertext and requires the unencrypted native
+task label or canonical child path to resolve exactly one persisted row.
+Preflight privately stages that row's exact canonical write paths while
+plaintext is still available; only a genuinely repository-wide row receives
+`.`. `SubagentStart` then injects a token-free v2 context carrying that row's
+immutable specialist prompt and content-free goal hash. It consumes the one-use
+activation receipt against the observed child identity before another opaque
+child may launch.
 
 Codex's first spawned turn is deliberately activation-only because a terminal
 spawn acknowledgement does not prove the child executed its task. After that
 turn completes, the parent sends the plan row's exact goal-hash-bound
 `[AGENCY EXACT TASK EXECUTION v1]` envelope through `followup_task` once and
-waits again. Agency atomically binds that follow-up to the same child and accepts
-a worker outcome only when the child's bounded rollout proves the exact envelope
-inside its later terminal turn. `send_message`, retries, child reuse, missing or
+waits again. The parent hook binds the opaque follow-up to that exact activated
+child and atomically claims it once; the child's bounded rollout must then prove
+the decrypted canonical envelope inside its later terminal turn before Agency
+accepts a worker outcome. `send_message`, retries, child reuse, missing or
 duplicate envelopes, and cross-child evidence fail closed. Payloads are
 byte-budgeted (64 KiB) and never silently truncated.
 

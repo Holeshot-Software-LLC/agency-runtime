@@ -1535,6 +1535,7 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
     task_name = codex_task_name_for_work_unit("unit-code")
     original_task = "Review the implementation."
     encrypted_parent_message = "gAAAAABopaque-parent-tool-ciphertext"
+    encrypted_followup_message = "gAAAAABopaque-followup-tool-ciphertext"
     activation_token = "x" * 43
     prompt_body = "You are the exact reviewer."
     delivery = render_native_child_prompt_delivery(
@@ -1625,7 +1626,7 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
                     "arguments": json.dumps(
                         {
                             "target": f"/root/{task_name}",
-                            "message": execution_message,
+                            "message": encrypted_followup_message,
                         }
                     ),
                 },
@@ -1785,6 +1786,7 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
     assert prompt_body not in encoded
     assert original_task not in encoded
     assert encrypted_parent_message not in encoded
+    assert encrypted_followup_message not in encoded
 
     conflict = [json.loads(line) for line in stdout.splitlines()]
     conflict[1]["item"]["receiver_thread_ids"] = ["019fa6a6-bbbb-7ccc-8ddd-eeffeeffeeff"]
@@ -1986,6 +1988,7 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
             work_unit_id=unit,
             goal_hash=work_unit_goal_hash(original_task),
         )
+        encrypted_followup_message = "gAAAAA" + f"opaque-product-followup-{index}-ciphertext" * 2
         parent_events.extend(
             (
                 {
@@ -2057,7 +2060,7 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
                         "arguments": json.dumps(
                             {
                                 "target": f"/root/{task_name}",
-                                "message": execution_message,
+                                "message": encrypted_followup_message,
                             }
                         ),
                     },
@@ -2244,6 +2247,7 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
         secrets.extend(
             (
                 f"encrypted-parent-message-{index}",
+                encrypted_followup_message,
                 f"private command {index}",
                 f"private output {index}",
                 f"private completed result {index}",

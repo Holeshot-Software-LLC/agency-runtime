@@ -127,9 +127,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 The README main story remains NO-GO. Exact `ba76ce7` passes installation and
-inference-owned selection, but Agency rejects its generated execution follow-up
-before the Store claim. The consumed canary has no second wait or valid header,
-and no product trial ran. AR-223 owns that exact hook boundary.
+inference-owned selection, but its consumed canary exposed that Codex encrypts
+the follow-up before `PreToolUse` observes it. The locally repaired AR-223
+boundary binds that ciphertext to the exact activated child and requires the
+decrypted envelope in the later child rollout. Focused warning-strict suites
+pass 143 tests. Fresh immutable-build proof remains pending.
 
 ## same-task-continuity
 
@@ -141,7 +143,7 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Repair only the exact `PreToolUse` follow-up matching failure.
+1. Complete the named fast gate and checkpoint the reviewed AR-223 repair.
 2. Merge and install one fresh immutable build, then spend one activation.
 3. Only after it passes, spend one product trial and update final evidence.
 
