@@ -89,7 +89,7 @@ def test_main_check_resolves_one_sha_and_reuses_the_validated_cache(
         clock=lambda: 1_001,
     )
 
-    assert calls[0][0] == f"repos/{subject.REPOSITORY}/commits/main"
+    assert calls[0][0] == f"repos/{subject.REPOSITORY}/commits/main?per_page=1"
     assert 0 < calls[0][1] <= 2
     assert first["target"]["commit_sha"] == _MAIN_SHA
     assert first["status"] == "different_target"
@@ -117,8 +117,24 @@ def test_explicit_canonical_prerelease_resolves_its_tag(
         clock=lambda: 1_000,
     )
 
-    assert calls == [f"repos/{subject.REPOSITORY}/commits/v1.2.3rc1"]
+    assert calls == [f"repos/{subject.REPOSITORY}/commits/v1.2.3rc1?per_page=1"]
     assert status["target"]["version"] == "1.2.3rc1"
+
+
+def test_exact_commit_resolution_requests_only_one_unused_file_row() -> None:
+    calls: list[tuple[str, float]] = []
+
+    def fetch(path: str, timeout: float) -> dict[str, str]:
+        calls.append((path, timeout))
+        return _commit(_MAIN_SHA)
+
+    resolved = subject._fetch_commit(_MAIN_SHA, 30, fetch)
+
+    assert calls == [(f"repos/{subject.REPOSITORY}/commits/{_MAIN_SHA}?per_page=1", 30)]
+    assert resolved == (
+        _MAIN_SHA,
+        f"https://github.com/{subject.REPOSITORY}/commit/{_MAIN_SHA}",
+    )
 
 
 def test_release_order_places_prereleases_below_their_final() -> None:
@@ -157,7 +173,7 @@ def test_release_and_main_workers_merge_cache_entries_without_lost_updates(
                 "html_url": f"https://github.com/{subject.REPOSITORY}/releases/tag/v0.2.0",
                 "published_at": "2026-07-28T00:00:00Z",
             }
-        if path.endswith("/commits/main"):
+        if path.endswith("/commits/main?per_page=1"):
             barrier.wait(timeout=5)
             return _commit(_MAIN_SHA)
         return _commit(_RELEASE_SHA)
@@ -246,7 +262,7 @@ def test_invalid_fresh_cache_entry_is_repaired_without_explicit_refresh(
         clock=lambda: 1_001,
     )
 
-    assert calls == [f"repos/{subject.REPOSITORY}/commits/main"]
+    assert calls == [f"repos/{subject.REPOSITORY}/commits/main?per_page=1"]
     assert status["target"]["commit_sha"] == _MAIN_SHA
     assert status["cache_hit"] is False
 

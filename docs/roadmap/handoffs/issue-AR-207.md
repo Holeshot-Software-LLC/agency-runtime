@@ -8,7 +8,7 @@ tags: [handoff, preflight, delegation, codex, diagnostics, evidence]
 related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
-  - docs/roadmap/issue-AR-210-honor-per-test-conformance-deadlines.md
+  - docs/roadmap/issue-AR-211-bound-immutable-commit-resolution.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
@@ -127,10 +127,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 Exact build `584b949` is consumed: activation passed, but its product trial is
-terminal `NO-GO`. AR-209's first repair was local-fast-green, but exact-head
-review found two valid defects. Their bounded follow-up is focused-green but not
-yet full-gate-green, rereviewed, merged, or exact-installed. No new live run is
-allowed before those boundaries pass.
+terminal `NO-GO`. PR 204 merged AR-209's exact-local-green repair as `207b150`.
+Its canonical upgrade plan is blocked because the installed updater overreads
+the large private merge response. AR-211's bounded pagination repair is
+focused-green; review, merge, and bootstrap exact install remain before live proof.
 
 ## same-task-continuity
 
@@ -141,8 +141,8 @@ owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Pass the revised full gate, push, resolve the new P1/P2 threads, obtain a
-   clean exact-head review, merge, and exact-install AR-209.
+1. Review and merge AR-211, bootstrap its exact build, then prove the installed
+   immutable planner resolves a bounded exact target.
 2. Repeat one activation and at most one product trial on the new exact build,
    then produce the local shareable evidence page and OpenClaw handoff.
 

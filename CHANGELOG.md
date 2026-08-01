@@ -61,6 +61,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Immutable update checks now limit GitHub commit-file pagination to one unused
+  row before validating the exact commit identity. Large private merge commits
+  therefore stay inside the existing 256 KiB transport bound instead of
+  falling through to a misleading unpublished-ref result.
 - Arbitrary Codex specialist children are no longer rejected solely because
   Codex encrypts their collaboration message before `PreToolUse`. Agency now
   requires one exact persisted native task label, preserves the ciphertext,
