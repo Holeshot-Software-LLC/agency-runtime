@@ -27,6 +27,8 @@ related:
   - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
   - docs/roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md
   - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
+  - docs/roadmap/issue-AR-216-preserve-required-product-scenario-files.md
+  - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes:
@@ -38,7 +40,7 @@ epic: product
 issue_id: AR-204
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
-depends_on: [AR-207, AR-209, AR-212, AR-214, AR-215]
+depends_on: [AR-207, AR-209, AR-212, AR-214, AR-215, AR-216, AR-217]
 blocks: [AR-205]
 ---
 

@@ -472,6 +472,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `23f0b1f` | 2026-08-01 | test(ar-214): format schema migration fixture | [AR-214](../roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md) | null |
 | `d6ba36a` | 2026-08-01 | Merge pull request #213 from Holeshot-Software-LLC/codex/ar-214-context-delivery-authority | [AR-214](../roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md) | null |
 | `4fe19c0` | 2026-08-01 | fix(workforce): repair critic-rejected contractor proposals | [AR-215](../roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md) | [detail](2026-08-01-4fe19c0-critic-rejected-contractor-repair.md) |
+| `9c2e9f8` | 2026-08-01 | Merge pull request #215 from Holeshot-Software-LLC/codex/ar-215-repair-contractor-critic-rejection | [AR-215](../roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md) | null |
+| `aaf80f7` | 2026-08-01 | fix(workforce): bind gap evidence into contractor critics | [AR-217](../roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md) | [detail](2026-08-01-aaf80f7-bind-gap-evidence-to-contractor-critics.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

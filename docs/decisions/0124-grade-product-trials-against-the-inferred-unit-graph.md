@@ -3,9 +3,10 @@ title: "Grade product trials against the inferred unit graph"
 status: accepted
 category: decisions
 created: 2026-07-31
-updated: 2026-07-31
+updated: 2026-08-01
 tags: [evaluation, product, delegation, codex, evidence, specialists]
 related:
+  - docs/roadmap/issue-AR-216-preserve-required-product-scenario-files.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md

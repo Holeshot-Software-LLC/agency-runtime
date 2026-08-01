@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
   - docs/roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md
+  - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
@@ -27,7 +28,7 @@ issue_id: AR-215
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/214
 depends_on: [AR-212, AR-214]
-blocks: [AR-203, AR-204]
+blocks: [AR-203, AR-204, AR-217]
 ---
 
 # AR-215: Repair critic-rejected contractor proposals once
@@ -67,6 +68,14 @@ reasons. A Sol/xhigh comparison reaches the same eight-unit/gap shape and
 returns `hiring_inference_failed`. Model choice therefore does not explain the
 missing contractor.
 
+The named local production spine passes, PR 215 merged as exact commit
+`9c2e9f8`, and supported autonomous activation selected and delegated
+`code-reviewer` with a valid first header and zero corrections. The one product
+trial for that build reaches the bounded contractor sequence but both critics
+reject candidate-authored gap evidence because their prompts omit the complete
+workforce and upstream verifier projection. AR-217 owns that distinct evidence
+handoff; the consumed trial does not satisfy this item's live-product gate.
+
 ## Approach
 
 1. Keep inference authoritative over the contractor's identity, scope, and
@@ -98,7 +107,7 @@ item begins only after both boundaries and does not reopen either one.
 - [x] Budgets below four calls never launch an uncriticizable replacement.
 - [x] Existing first-pass approved hiring behavior and high-risk approval gates
   remain unchanged.
-- [ ] The named local production spine passes on one exact head.
+- [x] The named local production spine passes on one exact head.
 - [ ] One reviewed exact build passes autonomous activation and at most one
   fresh product trial with specialist delegation, workspace write, a first-pass
   valid header, zero corrections, and independent artifact checks.

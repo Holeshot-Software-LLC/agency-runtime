@@ -100,6 +100,7 @@ Status meanings:
 | [ADR-0121](0121-gate-deterministic-recall-without-selection-authority.md) | Gate deterministic recall without selection authority | Accepted |
 | [ADR-0129](0129-repair-verifier-rejected-recruiter-proposals-once.md) | Repair verifier-rejected recruiter proposals once | Accepted |
 | [ADR-0130](0130-repair-critic-rejected-contractor-proposals-once.md) | Repair critic-rejected contractor proposals once | Accepted |
+| [ADR-0131](0131-bind-verifier-evidence-into-contractor-critiques.md) | Bind verifier evidence into contractor critiques | Accepted |
 | [ADR-0122](0122-use-one-agency-native-resident-steward.md) | Use one Agency-native resident steward | Accepted |
 | [ADR-0123](0123-use-general-preflight-ceiling-for-persistent-parents.md) | Use the general preflight ceiling for persistent native parents | Accepted |
 

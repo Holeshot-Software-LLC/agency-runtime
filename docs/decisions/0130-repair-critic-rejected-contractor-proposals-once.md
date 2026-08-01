@@ -7,12 +7,14 @@ updated: 2026-08-01
 tags: [inference, hiring, contractor, reliability, security]
 related:
   - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
+  - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
   - docs/roadmap/issue-AR-212-repair-verifier-rejected-recruiter-proposals.md
   - docs/roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0129-repair-verifier-rejected-recruiter-proposals-once.md
+  - docs/decisions/0131-bind-verifier-evidence-into-contractor-critiques.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

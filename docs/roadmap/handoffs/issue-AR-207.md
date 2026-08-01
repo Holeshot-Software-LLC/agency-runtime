@@ -13,6 +13,8 @@ related:
   - docs/roadmap/issue-AR-213-reject-stale-preflight-tokens-before-plan-validation.md
   - docs/roadmap/issue-AR-214-preserve-codex-product-plan-authority-through-context-delivery.md
   - docs/roadmap/issue-AR-215-repair-critic-rejected-contractor-proposals.md
+  - docs/roadmap/issue-AR-216-preserve-required-product-scenario-files.md
+  - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
   - docs/analysis/2026-07-31-ar-212-readme-story-evidence.html
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
@@ -25,14 +27,15 @@ related:
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/decisions/0129-repair-verifier-rejected-recruiter-proposals-once.md
   - docs/decisions/0130-repair-critic-rejected-contractor-proposals-once.md
+  - docs/decisions/0131-bind-verifier-evidence-into-contractor-critiques.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
-branch: codex/ar-215-repair-contractor-critic-rejection
-evidence_commit: d6ba36a50a7d0e9186938e3b1a0b4330fd553aa0
-minimum_ledger_commit: 83d1ba9b720ef2edf9abb176721e02d41dc20c84
+branch: codex/ar-217-bind-gap-evidence-to-hiring-critic
+evidence_commit: 9c2e9f8f9a687998c331d6081016a15d1816fc36
+minimum_ledger_commit: ad97037ff36ae712707a2e93a07197d77732108b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -42,73 +45,76 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The active goal remains `README's main story works in reality.`
-- PR 213 merged AR-214 as exact commit `d6ba36a`; package
-  `0.1.0+gd6ba36a50a7d` is installed.
+- PR 215 merged AR-215 as exact commit `9c2e9f8`; package
+  `0.1.0+g9c2e9f8f9a68` is installed from that immutable revision.
 - Bare install selected exactly Codex, ZCode, and dashboard. ZCode is current,
   Codex is registered, and the dashboard is active and reachable.
-- Supported autonomous activation passes with an inferred `code-reviewer`, a
-  completed delegation, a valid first header, zero corrections, and no
-  persistent trust-profile change.
-- The one exact-build product trial is consumed and fails earlier in workforce
-  routing. Both bounded model comparisons reach an explicit gap, but no
-  contractor survives hiring. AR-215 owns that isolated boundary.
-- AR-215 now has a tracker, ADR, focused inference-owned repair, and 103 green
-  hiring/config tests. No additional provider or host trial has been run.
+- Supported autonomous activation for `9c2e9f8` passes with an inferred
+  `code-reviewer`, one completed delegation, a valid first header, zero
+  corrections, autonomous hook bypass, and no persistent profile change.
+- Trial `ar215-9c2e9f8-readme-01` is consumed and terminal `NO-GO` during
+  contractor criticism. Planner and recruiter inference apply, but no route,
+  specialist, delegation, header, or workspace write commits.
+- AR-216 records the separate PR 213 all-scenario path-extraction finding.
+  AR-217 owns only the live hiring-critic evidence handoff and has 32 focused
+  tests green on its uncommitted implementation slice.
 
 ## completed-evidence
 
-- Exact `d6ba36a` activation session
-  `019fbb8a-3ef8-7543-8df1-439007b0844f`, trace
-  `019fbb8a-4c87-7f60-863a-2ab140dbe4e5`, and run
-  `62d2cb5f-ba31-438b-905b-9a81f209bbff` passed in 123 seconds. It retained the
-  route, plan, specialist load, grant, consumption, native child, worker run,
-  completed delegation, and accepted finalization.
-- Product trial `ar214-d6ba36a-readme-01` is consumed and terminal `NO-GO`
-  after 134.7 seconds. Session `019fbb8c-8039-7a10-9b18-52f6a0378dce`, trace
-  `019fbb8c-80ad-7351-a17f-5f4b1c024830`, and run
-  `84ab3f57-8d6b-414b-9da8-59b7c3231681` retain a content-free
-  `stage=routing`, `reason_code=routing_failed`, and
-  `exception_category=validation_error` terminal receipt.
-- Trial atomicity leaves zero route, plan, specialist, grant, delegation,
-  worker, finalization, header, or workspace-write evidence. Codex exits zero,
-  but the Agency preflight is correctly graded failed. Correction count zero
-  is not success because parent generation never starts.
-- A same-request Luna/low diagnostic authors eight units, applies planner and
-  recruiter, declares a documentation-unit gap, and spends the two-call hiring
-  budget on a valid candidate plus a critic rejection. The four retained
-  critic codes are content-free contract-quality findings.
-- A bounded Sol/xhigh comparison also authors eight units and reaches a gap,
-  then returns `hiring_inference_failed`. The model mismatch is real but is not
-  the product root cause. No more model-backed diagnostics are authorized for
-  this package before local repair evidence.
-- The AR-215 implementation reserves a four-call candidate, critic,
-  replacement, critic sequence. The original hiring input plus allowlisted
-  reason codes reaches one complete inference-authored replacement; local code
-  never edits or accepts a rejected contract.
-- Focused hiring/config verification passes 103 tests. Ruff lint, format, and
-  `git diff --check` pass on the implementation slice.
+- AR-215's exact local gate passed: 642 Python production-spine tests passed
+  with six skips, 110 dashboard UI tests passed, every routing-eval gate
+  passed, and decision conformance killed all 73 mutations with zero invalid or
+  surviving cases.
+- Exact `9c2e9f8` activation session
+  `019fbbd1-0427-7433-bf56-dfba9f7df5f0`, trace
+  `019fbbd1-0d2a-7252-9d26-501525732b62`, run
+  `95de670a-5bac-4fbe-94c9-d7b390771dc4`, and route
+  `9bb4313a-1b2e-457f-a33e-bbde840c6947` passed in 133.9 seconds. It retained
+  one `code-reviewer` load, grant, consumption, native worker, completed
+  delegation, accepted finalization, valid first header, and zero corrections.
+- Product trial `ar215-9c2e9f8-readme-01` is terminal `NO-GO` after 166.4
+  seconds. Session `019fbbd5-5898-7a61-a5f9-e43888769741`, trace
+  `019fbbd5-590e-7953-8ccb-be57cd49c39f`, and run
+  `be99a177-3440-4bba-8886-7e0873348aeb` retain
+  `substantive_specialist_unavailable` plus hiring codes
+  `gap_not_independently_verified`, `evidence_is_self_asserted`, and
+  `nearest_worker_comparison_not_credible_without_verification`.
+- Trial atomicity preserves zero route, plan, specialist, grant, delegation,
+  worker, finalization, header, or workspace-write evidence. Planner and
+  recruiter inference both applied through `codex-subscription/gpt-5.6-luna`.
+  Correction count zero is not success because parent generation never began.
+- Code review proves both critic prompts omit the upstream verifier projection
+  and complete workforce that candidate generation receives. The final critic
+  therefore has only candidate-authored gap evidence to distrust.
+- AR-217 adds identical runtime-projected evidence to the original and repair
+  critic prompts without adding the raw request, changing selection authority,
+  or weakening the four-call and second-rejection boundaries. Its exact local
+  gate passes 643 Python tests with six skips, 110 dashboard UI tests, every
+  routing gate, and 73/73 killed mutations with zero survivors or invalid
+  cases and `source_unchanged=true`.
 
 ## exact-blocker
 
-The default two-call hiring budget makes a critic rejection terminal. AR-215's
-four-call bounded repair must pass review and the named local spine before one
-new exact build may receive one activation and one product trial.
+The independent critic cannot verify a gap from candidate-authored evidence
+alone. AR-217's evidence handoff must pass review and the named local spine
+before one new exact build may receive one activation and one product trial.
 
 ## same-task-continuity
 
-Keep inference authoritative and the parent non-generalist. A critic may reject
-and constrain one replacement but local code may not author it. Do not rerun
-any consumed activation or trial, run more provider comparisons before the
-local gate, mutate private trust state, label bypass as trust, dispatch hosted
-Actions, or touch the owner's two untracked files.
+Keep inference authoritative and the parent non-generalist. The critic remains
+independent and veto-only; local code may project evidence but may not author,
+edit, or approve a contractor. Do not rerun consumed activation or trial
+evidence, run more provider comparisons before the local gate, mutate private
+trust state, label bypass as trust, dispatch hosted Actions, or touch the
+owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Finish AR-215 focused review and the named fast production spine.
-2. Create the substantive and ledger commits; inspect PR review evidence and
-   merge the exact head.
-3. Install that build; run one activation and one product trial, then update
-   the local evidence page and OpenClaw handoff.
+1. Finish at most two AR-217 review passes and the named fast production spine.
+2. Create the substantive and ledger commits; inspect exact-head PR review and
+   merge without hosted Actions.
+3. Install the exact merge; run one activation and at most one product trial,
+   then update the local evidence page and OpenClaw handoff.
 
 ## verification
 
@@ -133,7 +139,7 @@ git diff --check
 - Product host remains sandboxed to the exact trial workspace.
 - Only Codex, ZCode, and dashboard are in machine scope.
 - One live product trial per exact installed build; any correction is failure.
-- Exact builds `e62d0adc`, `1694d6e`, and `d6ba36a` have consumed activation and
-  product trials.
+- Exact builds `e62d0adc`, `1694d6e`, `d6ba36a`, and `9c2e9f8` have consumed
+  their governed live evidence; none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
