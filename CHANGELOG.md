@@ -61,6 +61,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Contractor safety critics now receive the runtime-projected verified-gap
+  codes and complete workforce snapshot used by hiring. Both the original and
+  replacement critic can independently verify the gap while candidate claims
+  stay untrusted, the raw request stays out of critic authority, and the
+  four-call/second-rejection boundary remains fail-closed.
 - A deterministically valid contractor proposal rejected by the independent
   hiring critic can now receive exactly one inference-authored replacement and
   one fresh critique. The four-call default reserves the final critique,

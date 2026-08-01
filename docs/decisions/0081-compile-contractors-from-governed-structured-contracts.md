@@ -3,7 +3,7 @@ title: "Compile contractors from governed structured contracts"
 status: accepted
 category: decisions
 created: 2026-07-21
-updated: 2026-07-30
+updated: 2026-08-01
 tags: [contractors, hiring, security, roster]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-123-workforce-cli-and-dashboard.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
+  - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
 supersedes: []
 superseded_by: null
 id: ADR-0081

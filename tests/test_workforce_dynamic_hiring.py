@@ -403,6 +403,58 @@ def test_inferred_gap_hires_registers_and_immediately_enables_contractor(tmp_pat
     assert [item.stage for item in outcome.attempts] == ["hiring", "hiring-critic"]
 
 
+def test_critic_can_independently_validate_runtime_gap_evidence(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    calls = 0
+
+    def invoke(provider, prompt, _schema, **_kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return _result(_hiring_response(), provider)
+        document = json.loads(prompt)
+        evidence = document.get("runtime_gap_evidence", {})
+        workforce = evidence.get("complete_workforce", [])
+        approved = bool(
+            evidence.get("verified_gap")
+            == {
+                "inference_declared": True,
+                "reason_codes": [
+                    "inference_declared_gap",
+                    "no_safe_sufficient_team",
+                    "recruiter_abstained",
+                ],
+            }
+            and evidence.get("workforce_count") == 1
+            and len(workforce) == 1
+            and workforce[0].get("agent_id") == "general-build-reviewer"
+        )
+        return _result(
+            {
+                "approved": approved,
+                "reason_codes": [] if approved else ["gap_not_independently_verified"],
+            },
+            provider,
+        )
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        gap_reason_codes=(
+            "inference_declared_gap",
+            "no_safe_sufficient_team",
+            "recruiter_abstained",
+        ),
+        invoker=invoke,
+    )
+
+    assert outcome.hired is True
+    assert calls == 2
+
+
 def test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval(
     tmp_path: Path,
 ) -> None:
@@ -417,12 +469,18 @@ def test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval(
     )
     calls: list[dict[str, str]] = []
 
+    request = "Implement the missing quantum compiler build integration. RAW-REQUEST-MARKER"
     outcome = hire_contractor_for_gap(
-        "Implement the missing quantum compiler build integration.",
+        request,
         _unit(),
         (_existing(),),
         store=store,
         config=_config(),
+        gap_reason_codes=(
+            "inference_declared_gap",
+            "no_safe_sufficient_team",
+            "recruiter_abstained",
+        ),
         invoker=_recording_invoker(
             rejected,
             {
@@ -454,6 +512,22 @@ def test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval(
     assert repair_prompt["replacement_required"] is True
     assert "Rejected candidate private marker" not in calls[2]["prompt"]
     assert "only replacement attempt" in calls[2]["system_prompt"]
+    for critic_call in (calls[1], calls[3]):
+        critic_prompt = json.loads(critic_call["prompt"])
+        assert critic_prompt["runtime_gap_evidence"]["verified_gap"] == {
+            "inference_declared": True,
+            "reason_codes": [
+                "inference_declared_gap",
+                "no_safe_sufficient_team",
+                "recruiter_abstained",
+            ],
+        }
+        assert critic_prompt["runtime_gap_evidence"]["workforce_count"] == 1
+        assert [
+            item["agent_id"] for item in critic_prompt["runtime_gap_evidence"]["complete_workforce"]
+        ] == ["general-build-reviewer"]
+        assert "RAW-REQUEST-MARKER" not in critic_call["prompt"]
+        assert "runtime_gap_evidence" in critic_call["system_prompt"]
     assert [item["stage"] for item in outcome.hiring_case["model_evidence"]["receipts"]] == [
         "hiring",
         "hiring-critic",
