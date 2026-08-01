@@ -498,6 +498,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9c2f421` | 2026-08-01 | docs(ar-221): record green product repair gate | [AR-221](../roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md) | null |
 | `43870c8` | 2026-08-01 | Merge pull request #227 from Holeshot-Software-LLC/codex/ar-221-product-execution-boundary | null | null |
 | `27195ce` | 2026-08-01 | docs(ar-223): freeze Codex child execution failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `4235745` | 2026-08-01 | fix(ar-223): require explicit Codex child execution | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
