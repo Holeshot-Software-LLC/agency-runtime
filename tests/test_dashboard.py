@@ -3662,7 +3662,7 @@ def test_dashboard_host_api_preserves_content_free_activation_proof(
     store = Store(tmp_path / "dashboard.db")
     token = "token"
     attestation = {
-        "proof_contract": "agency.codex-activation-canary.v1",
+        "proof_contract": "agency.codex-activation-canary.v2",
         "proof_digest": "a" * 64,
         "profile_scope": "current-profile",
         "passed_at": "2026-07-27T12:34:56Z",

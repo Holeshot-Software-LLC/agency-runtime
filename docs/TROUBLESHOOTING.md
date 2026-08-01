@@ -536,6 +536,15 @@ Inspect `host_execution.agency_evidence.workspace_trust`,
 the JSON report. In Agency mode the runtime evidence must also be
 `agency.canary-activation-evidence.v1` for the exact executed prompt hash.
 
+For current Codex evidence, also inspect
+`host_execution.agency_evidence.collaboration`. Each accepted work unit needs
+one spawn, one `followup_task`, and two completed waits. Its projected
+`execution_delivery` must match the activation delivery's work-unit and goal
+hash, and its Store worker run must carry the same content-free follow-up
+tool-use ID. A completed activation-only turn without that later causal
+execution turn is not successful product work and cannot satisfy workspace
+proof.
+
 ## Dashboard does not authenticate
 
 For an installed user service, inspect it and ask the CLI to open the current

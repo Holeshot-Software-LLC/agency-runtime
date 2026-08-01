@@ -203,6 +203,7 @@ Status meanings:
 | [ADR-0127](0127-bind-opaque-codex-children-through-exact-plan-labels.md) | Bind opaque Codex children through exact plan labels | Superseded |
 | [ADR-0128](0128-persist-exact-codex-plan-authority-and-serialize-launches.md) | Persist exact Codex plan authority and serialize opaque launches | Accepted |
 | [ADR-0133](0133-treat-product-specialist-loads-as-turn-scoped.md) | Treat product specialist loads as turn-scoped | Accepted |
+| [ADR-0135](0135-require-explicit-codex-child-execution-turns.md) | Require explicit Codex child execution turns | Accepted |
 
 ## Documentation governance
 

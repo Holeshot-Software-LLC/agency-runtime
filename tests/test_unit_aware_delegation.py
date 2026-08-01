@@ -1001,6 +1001,9 @@ def test_isolated_native_hook_receives_exact_unit_agent_plan(
             assert CODEX_TASK_NAME_PATTERN.fullmatch(native_task_name)
             assert internal_work_unit_from_codex_task_name(native_task_name) == work_unit_id
             assert f"native_task_name={native_task_name}" in context
+            assert "execution_message=" in context
+            assert "[AGENCY EXACT TASK EXECUTION v1]" in context
+            assert "followup_task" in context
             assert "set `fork_turns` to `none`" in context
     assert len(context) <= preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS
 

@@ -37,7 +37,12 @@ def native_delegation_instruction(host: object) -> str:
     elif normalized == "codex":
         dispatch = (
             f"Dispatch with {tool}; use each row's native_task_name as task_name and "
-            "preserve the unchanged work_unit_id in Agency activation calls."
+            "preserve the unchanged work_unit_id in Agency activation calls. For each "
+            "row, spawn once with the exact goal and `fork_turns=none`, wait for its "
+            "activation-only turn, then call Codex `followup_task` exactly once on the "
+            "canonical task path returned by the spawn with that row's JSON-decoded "
+            "execution_message, and wait for that execution turn before starting the next "
+            "row. Never use `send_message`, retry, or reuse an execution_message."
         )
     elif normalized == "claude":
         dispatch = (

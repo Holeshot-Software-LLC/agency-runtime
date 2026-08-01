@@ -7,7 +7,9 @@ from hashlib import sha256
 import pytest
 
 from agency_runtime.core.native_child_prompt_delivery import (
+    parse_codex_native_child_execution_message,
     parse_native_child_prompt_delivery,
+    render_codex_native_child_execution_message,
     render_codex_opaque_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
 )
@@ -73,8 +75,47 @@ def test_codex_opaque_delivery_round_trip_preserves_only_goal_hash_and_prompt() 
     assert parsed.prompt_body == prompt
     assert "Implement the requested product unit." not in rendered
     assert "decrypted native child message is the exact work-unit goal" in rendered
-    assert "Execute that goal now" in rendered
+    assert "this first spawn turn establishes specialist context only" in rendered
+    assert "Do not execute, analyze, or modify" in rendered
+    assert "[AGENCY EXACT TASK EXECUTION v1]" in rendered
     assert "Store-backed mutation authority" in rendered
+
+
+def test_codex_execution_message_round_trip_is_exact_and_content_free() -> None:
+    goal_hash = work_unit_goal_hash("Implement the exact product unit.")
+    message = render_codex_native_child_execution_message(
+        work_unit_id="unit-1234567890",
+        goal_hash=goal_hash,
+    )
+
+    parsed = parse_codex_native_child_execution_message(message)
+
+    assert parsed is not None
+    assert parsed.work_unit_id == "unit-1234567890"
+    assert parsed.native_task_name == "unit_1234567890"
+    assert parsed.goal_hash == goal_hash
+    assert "Implement the exact product unit." not in message
+    assert parse_codex_native_child_execution_message(f"prefix {message} suffix") == parsed
+
+
+@pytest.mark.parametrize(
+    "mutator",
+    [
+        lambda value: value.replace("EXACT TASK EXECUTION v1", "EXACT TASK EXECUTION v2"),
+        lambda value: value.replace(
+            "agency-native-child-execution:v1:",
+            "agency-native-child-execution:v2:",
+        ),
+        lambda value: value.replace("evidence-backed", "unsupported"),
+    ],
+)
+def test_codex_execution_message_rejects_tampering(mutator: object) -> None:
+    message = render_codex_native_child_execution_message(
+        work_unit_id="unit-1234567890",
+        goal_hash=work_unit_goal_hash("Implement the exact product unit."),
+    )
+
+    assert parse_codex_native_child_execution_message(mutator(message)) is None
 
 
 def test_codex_opaque_delivery_rejects_goal_hash_or_prompt_tampering() -> None:

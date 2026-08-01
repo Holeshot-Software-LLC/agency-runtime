@@ -83,7 +83,7 @@ def test_schema_v38_accepts_zcode_and_guards_append_only_consumption(
     finally:
         connection.close()
     assert remaining == 0
-    assert version == SCHEMA_VERSION == 40
+    assert version == SCHEMA_VERSION == 43
 
 
 @pytest.mark.parametrize(
@@ -164,7 +164,7 @@ def test_schema_v38_upgrade_preserves_v35_activation_evidence_and_is_idempotent(
         finally:
             connection.close()
         assert tuple(row) == ("claude", "code-reviewer")
-        assert version == SCHEMA_VERSION == 40
+        assert version == SCHEMA_VERSION == 43
 
 
 def test_schema_v38_upgrade_adds_native_child_scope_authority_idempotently(
@@ -198,7 +198,7 @@ def test_schema_v38_upgrade_adds_native_child_scope_authority_idempotently(
             connection.close()
         assert {"token_hash", "parent_trace_id", "consumed_unix"}.issubset(columns)
         assert trigger is not None
-        assert version == SCHEMA_VERSION == 40
+        assert version == SCHEMA_VERSION == 43
 
 
 def test_schema_v38_upgrades_v37_attestation_and_hook_provenance_columns(
@@ -208,7 +208,7 @@ def test_schema_v38_upgrades_v37_attestation_and_hook_provenance_columns(
     store = Store(path)
     store.record_host_canary_attestation(
         host="codex",
-        proof_contract="agency.codex-activation-canary.v1",
+        proof_contract="agency.codex-activation-canary.v2",
         proof_digest="a" * 64,
         profile_scope="current-profile",
         platform_system=platform.system(),
@@ -256,7 +256,42 @@ def test_schema_v38_upgrades_v37_attestation_and_hook_provenance_columns(
         assert attestation is not None
         assert attestation["proof_contract"] == ""
         assert attestation["proof_digest"] == ""
-        assert version == SCHEMA_VERSION == 40
+        assert version == SCHEMA_VERSION == 43
+
+
+def test_schema_v43_adds_codex_execution_dispatch_receipt_idempotently(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "v42-to-v43.db"
+    store = Store(path)
+    connection = store._connect()
+    try:
+        connection.execute("DROP INDEX idx_worker_runs_codex_execution_tool_use")
+        connection.execute("ALTER TABLE worker_runs DROP COLUMN execution_dispatched_at")
+        connection.execute("ALTER TABLE worker_runs DROP COLUMN execution_tool_use_id")
+        connection.execute("UPDATE schema_version SET version = 42")
+        connection.commit()
+    finally:
+        connection.close()
+
+    for _attempt in range(2):
+        reopened = Store(path)
+        assert reopened._current_schema_state() == (True, True)
+        connection = reopened._connect()
+        try:
+            columns = {
+                str(row["name"]) for row in connection.execute("PRAGMA table_info(worker_runs)")
+            }
+            execution_index = connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type = 'index' "
+                "AND name = 'idx_worker_runs_codex_execution_tool_use'"
+            ).fetchone()
+            version = connection.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
+        finally:
+            connection.close()
+        assert {"execution_tool_use_id", "execution_dispatched_at"}.issubset(columns)
+        assert execution_index is not None
+        assert version == SCHEMA_VERSION == 43
 
 
 @pytest.mark.parametrize(
@@ -267,6 +302,8 @@ def test_schema_v38_upgrades_v37_attestation_and_hook_provenance_columns(
         "DROP TRIGGER agency_agent_sources_boolean_insert_guard",
         "DROP TRIGGER agency_native_child_parent_scope_consume_once",
         "ALTER TABLE host_canary_attestations DROP COLUMN proof_digest",
+        "ALTER TABLE worker_runs DROP COLUMN execution_dispatched_at",
+        "DROP INDEX idx_worker_runs_codex_execution_tool_use",
         "DROP INDEX idx_routing_query_hash",
     ],
     ids=[
@@ -275,6 +312,8 @@ def test_schema_v38_upgrades_v37_attestation_and_hook_provenance_columns(
         "boolean-guard",
         "child-scope-guard",
         "attestation-proof-column",
+        "execution-dispatch-column",
+        "execution-dispatch-index",
         "canary-query-index",
     ],
 )

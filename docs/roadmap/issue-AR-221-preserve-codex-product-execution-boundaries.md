@@ -29,7 +29,7 @@ issue_id: AR-221
 priority: p0
 tracker_url: null
 depends_on: [AR-219, AR-220]
-blocks: [AR-203, AR-204]
+blocks: [AR-203, AR-204, AR-223]
 ---
 
 # AR-221: Preserve Codex product execution boundaries
@@ -96,6 +96,17 @@ lint and format checks pass; the routing evaluation passes every quality,
 performance, and scale threshold; and decision conformance kills all 84
 mutations with zero survivors, zero invalid results, and unchanged source.
 
+PR 227 merged those repairs as exact build
+`43870c8b3052c1b274de396576a399b2cb542e61`. Autonomous activation passes with
+one inferred specialist, one native child, a valid first header, and zero
+corrections. Consumed product trial `ar221-43870c8-readme-01` accepts eight
+inference-authored units, applies a new `python-cli-architecture-specialist`
+hire, launches and waits for every child, and projects every scope correctly.
+The isolated workspace still remains empty because Codex can complete a V2
+spawn turn after acknowledging its initial inter-agent message without
+executing the assigned goal. AR-223 now owns that later actionable-task and
+causal-completion boundary.
+
 ## Approach
 
 1. Bind the product-only wait validator to the current native host ceiling while
@@ -135,4 +146,5 @@ ADR-0128 binds every opaque Codex launch to exact plan authority.
   pass on one exact head.
 - [ ] One new exact build passes autonomous activation and one fresh product
   trial with real artifacts, independent checks, a valid first header, and zero
-  corrections.
+  corrections. Exact `43870c8` activation passes, but its consumed product
+  trial fails `workspace_write_not_proven`; AR-223 owns the next repair.

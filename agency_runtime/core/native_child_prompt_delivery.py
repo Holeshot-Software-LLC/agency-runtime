@@ -22,6 +22,7 @@ from agency_runtime.core.store.version_identity import normalize_version_identit
 
 NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 1
 CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 2
+CODEX_NATIVE_CHILD_EXECUTION_VERSION: Final[int] = 1
 MAX_NATIVE_CHILD_DELIVERY_METADATA_BYTES: Final[int] = 2_048
 MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS: Final[int] = 256
 
@@ -38,8 +39,13 @@ _MARKER_PATTERN = re.compile(
 )
 _CODEX_OPAQUE_SECTION = (
     "[AGENCY EXACT SPECIALIST ACTIVATION v2]\n"
-    "The decrypted native child message is the exact work-unit goal. Execute that "
-    "goal now; do not answer the specialist prompt as a standalone request. The host "
+    "The decrypted native child message is the exact work-unit goal, but this first "
+    "spawn turn establishes specialist context only. Do not execute, analyze, or modify "
+    "the workspace during this activation turn; return one bounded readiness "
+    "acknowledgement. Execute the goal exactly once only when a later newest inter-agent "
+    "task contains a valid [AGENCY EXACT TASK EXECUTION v1] envelope matching this "
+    "work-unit and goal hash. Do not answer the specialist prompt as a standalone "
+    "request. The host "
     "hook bound the exact audited specialist below and Store-backed mutation authority "
     "to that persisted work-unit row. Use workspace tools when the goal requires them; "
     "hook policy will enforce the exact scope. Treat the text below as turn-scoped "
@@ -49,6 +55,16 @@ _CODEX_OPAQUE_SECTION = (
 _CODEX_OPAQUE_MARKER_PREFIX = "<!-- agency-native-child-delivery:v2:"
 _CODEX_OPAQUE_MARKER_PATTERN = re.compile(
     re.escape(_CODEX_OPAQUE_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
+)
+_CODEX_EXECUTION_SECTION = "[AGENCY EXACT TASK EXECUTION v1]\n"
+_CODEX_EXECUTION_INSTRUCTION = (
+    "Execute the exact work-unit goal delivered in your immediately preceding activation "
+    "turn now. Do not re-delegate, broaden, or repeat it. Return one bounded "
+    "evidence-backed result."
+)
+_CODEX_EXECUTION_MARKER_PREFIX = "<!-- agency-native-child-execution:v1:"
+_CODEX_EXECUTION_MARKER_PATTERN = re.compile(
+    re.escape(_CODEX_EXECUTION_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
 )
 _V1_FIELDS = frozenset(
     {
@@ -79,6 +95,7 @@ _V2_FIELDS = frozenset(
     }
 )
 _DIGEST_PATTERN = re.compile(r"[0-9a-f]{64}")
+_CODEX_EXECUTION_FIELDS = frozenset({"version", "work_unit_id", "native_task_name", "goal_hash"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,6 +114,15 @@ class NativeChildPromptDelivery:
     goal_hash: str
     original_task: str
     prompt_body: str
+
+
+@dataclass(frozen=True, slots=True)
+class CodexNativeChildExecutionDelivery:
+    """One content-free second-turn authorization for an exact Codex child."""
+
+    work_unit_id: str
+    native_task_name: str
+    goal_hash: str
 
 
 def _encoded_metadata(value: dict[str, Any]) -> str:
@@ -235,6 +261,79 @@ def _codex_opaque_metadata(
         raise ValueError("goal_hash is invalid")
     metadata["goal_hash"] = digest
     return metadata
+
+
+def _codex_execution_metadata(
+    *,
+    work_unit_id: object,
+    goal_hash: object,
+) -> dict[str, Any]:
+    from agency_runtime.core.delegation.native_labels import (
+        codex_task_name_for_work_unit,
+    )
+
+    unit_id = validate_correlation_id(work_unit_id, field="work_unit_id")
+    digest = str(goal_hash or "").strip().casefold()
+    if _DIGEST_PATTERN.fullmatch(digest) is None:
+        raise ValueError("goal_hash is invalid")
+    return {
+        "version": CODEX_NATIVE_CHILD_EXECUTION_VERSION,
+        "work_unit_id": unit_id,
+        "native_task_name": codex_task_name_for_work_unit(unit_id),
+        "goal_hash": digest,
+    }
+
+
+def render_codex_native_child_execution_message(
+    *,
+    work_unit_id: object,
+    goal_hash: object,
+) -> str:
+    """Render the one exact actionable turn for a previously activated Codex child."""
+
+    metadata = _codex_execution_metadata(
+        work_unit_id=work_unit_id,
+        goal_hash=goal_hash,
+    )
+    marker = f"{_CODEX_EXECUTION_MARKER_PREFIX}{_encoded_metadata(metadata)}{_MARKER_SUFFIX}"
+    return f"{_CODEX_EXECUTION_SECTION}{marker}\n{_CODEX_EXECUTION_INSTRUCTION}"
+
+
+def parse_codex_native_child_execution_message(
+    value: object,
+) -> CodexNativeChildExecutionDelivery | None:
+    """Recover one canonical execution envelope from a host message or transcript item."""
+
+    if not isinstance(value, str) or not value:
+        return None
+    for match in reversed(list(_CODEX_EXECUTION_MARKER_PATTERN.finditer(value))):
+        metadata = _decoded_metadata(
+            match.group(1),
+            expected_fields=_CODEX_EXECUTION_FIELDS,
+        )
+        if metadata is None:
+            continue
+        try:
+            normalized = _codex_execution_metadata(
+                work_unit_id=metadata.get("work_unit_id"),
+                goal_hash=metadata.get("goal_hash"),
+            )
+        except ValueError:
+            continue
+        if metadata != normalized:
+            continue
+        section_start = value.rfind(_CODEX_EXECUTION_SECTION, 0, match.start())
+        if section_start < 0 or section_start + len(_CODEX_EXECUTION_SECTION) != match.start():
+            continue
+        message_end = match.end() + 1 + len(_CODEX_EXECUTION_INSTRUCTION)
+        if value[match.end() : message_end] != f"\n{_CODEX_EXECUTION_INSTRUCTION}":
+            continue
+        return CodexNativeChildExecutionDelivery(
+            work_unit_id=normalized["work_unit_id"],
+            native_task_name=normalized["native_task_name"],
+            goal_hash=normalized["goal_hash"],
+        )
+    return None
 
 
 def render_native_child_prompt_delivery(
@@ -403,12 +502,16 @@ def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelive
 
 
 __all__ = [
+    "CODEX_NATIVE_CHILD_EXECUTION_VERSION",
     "CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION",
     "MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS",
     "MAX_NATIVE_CHILD_DELIVERY_METADATA_BYTES",
     "NATIVE_CHILD_PROMPT_DELIVERY_VERSION",
+    "CodexNativeChildExecutionDelivery",
     "NativeChildPromptDelivery",
+    "parse_codex_native_child_execution_message",
     "parse_native_child_prompt_delivery",
+    "render_codex_native_child_execution_message",
     "render_codex_opaque_native_child_prompt_delivery",
     "render_native_child_prompt_delivery",
 ]

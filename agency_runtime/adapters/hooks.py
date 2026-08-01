@@ -17,6 +17,9 @@ from typing import Any, BinaryIO, TextIO
 from uuid import UUID, uuid4
 
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
+from agency_runtime.core.codex_child_execution import (
+    codex_current_turn_execution_observed,
+)
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation.native_labels import (
     CODEX_TASK_NAME_PATTERN,
@@ -29,6 +32,7 @@ from agency_runtime.core.header.finalize import (
 )
 from agency_runtime.core.installer_contracts import (
     CODEX_HOOK_EVENTS,
+    CODEX_NATIVE_FOLLOWUP_HOOK_TOOL_NAMES,
     CODEX_NATIVE_SPAWN_HOOK_TOOL_NAMES,
     CODEX_NATIVE_WAIT_HOOK_TOOL_NAMES,
 )
@@ -38,8 +42,11 @@ from agency_runtime.core.native_child_activation import (
     build_native_child_run_identity,
 )
 from agency_runtime.core.native_child_prompt_delivery import (
+    CodexNativeChildExecutionDelivery,
     NativeChildPromptDelivery,
+    parse_codex_native_child_execution_message,
     parse_native_child_prompt_delivery,
+    render_codex_native_child_execution_message,
     render_codex_opaque_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
 )
@@ -161,6 +168,7 @@ _DELEGATION_TOOL_NAMES = {
     "functions.collaboration.spawn_agent": "spawn_agent",
     "followup_task": "followup_task",
     "functions.collaboration.followup_task": "followup_task",
+    "collaborationfollowup_task": "followup_task",
     "sessions_spawn": "sessions_spawn",
 }
 _CODEX_SPAWN_TOOL_NAMES = frozenset(
@@ -168,6 +176,12 @@ _CODEX_SPAWN_TOOL_NAMES = frozenset(
         "Agent",
         "functions.collaboration.spawn_agent",
         *CODEX_NATIVE_SPAWN_HOOK_TOOL_NAMES,
+    }
+)
+_CODEX_FOLLOWUP_TOOL_NAMES = frozenset(
+    {
+        "functions.collaboration.followup_task",
+        *CODEX_NATIVE_FOLLOWUP_HOOK_TOOL_NAMES,
     }
 )
 _CLAUDE_AGENT_TOOL_NAME = "Agent"
@@ -1361,6 +1375,8 @@ class HookBridge:
         """Inject one exact prompt while leaving the native scheduler in control."""
 
         tool_name = _required_string(payload, "tool_name")
+        if self.host == "codex" and tool_name in _CODEX_FOLLOWUP_TOOL_NAMES:
+            return self._handle_codex_followup_pre_tool_use(payload)
         if self.host in {"claude", "zcode"} and tool_name != _CLAUDE_AGENT_TOOL_NAME:
             return {}
         if self.host == "codex" and tool_name not in _CODEX_SPAWN_TOOL_NAMES:
@@ -1482,6 +1498,202 @@ class HookBridge:
         # input is preserved byte-for-byte; SubagentStart retrieves the exact
         # label-bound grant and injects its content-free v2 child context.
         return result
+
+    def _codex_execution_candidates(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+    ) -> list[
+        tuple[
+            CodexNativeChildExecutionDelivery,
+            str,
+            NativeChildRunIdentity,
+        ]
+    ]:
+        """Resolve exact activated Codex plan rows without trusting hook arguments."""
+
+        if self.host != "codex" or not session_id or not trace_id:
+            return []
+        snapshot_reader = getattr(self.store, "get_completion_evidence_snapshot", None)
+        lineage_reader = getattr(self.store, "get_consumed_delegation_lineage", None)
+        if not callable(snapshot_reader) or not callable(lineage_reader):
+            return []
+        try:
+            snapshot = snapshot_reader(session_id, trace_id)
+        except (RuntimeError, ValueError):
+            return []
+        if (
+            not isinstance(snapshot, dict)
+            or snapshot.get("session_id") != session_id
+            or snapshot.get("trace_id") != trace_id
+            or snapshot.get("status") not in {"active", "evidence_only"}
+            or snapshot.get("delivery_mode") != "isolated"
+            or not isinstance(snapshot.get("unit_agent_plan"), list)
+        ):
+            return []
+        candidates: list[
+            tuple[
+                CodexNativeChildExecutionDelivery,
+                str,
+                NativeChildRunIdentity,
+            ]
+        ] = []
+        for row in snapshot["unit_agent_plan"]:
+            if not isinstance(row, dict):
+                return []
+            work_unit_id = str(row.get("work_unit_id") or "").strip()
+            specialist_slug = str(row.get("recommended_agent") or "").strip()
+            goal_hash = str(row.get("goal_hash") or "").strip().casefold()
+            if not work_unit_id or not specialist_slug:
+                return []
+            try:
+                expected = parse_codex_native_child_execution_message(
+                    render_codex_native_child_execution_message(
+                        work_unit_id=work_unit_id,
+                        goal_hash=goal_hash,
+                    )
+                )
+                lineage = lineage_reader(
+                    session_id=session_id,
+                    trace_id=trace_id,
+                    specialist_slug=specialist_slug,
+                    work_unit_id=work_unit_id,
+                )
+            except (RuntimeError, TypeError, ValueError):
+                return []
+            if expected is None or lineage is None:
+                continue
+            if not isinstance(lineage, dict) or set(lineage) != {
+                "worker_kind",
+                "worker_id",
+                "native_run_id",
+            }:
+                return []
+            try:
+                identity = build_native_child_run_identity(
+                    worker_kind=lineage["worker_kind"],
+                    worker_id=lineage["worker_id"],
+                    native_run_id=lineage["native_run_id"],
+                )
+            except (KeyError, TypeError, ValueError):
+                return []
+            if (
+                identity.worker_id.startswith("task:")
+                or identity.native_run_id != f"codex-agent:{identity.worker_id}"
+            ):
+                return []
+            candidates.append((expected, specialist_slug, identity))
+        return candidates
+
+    @staticmethod
+    def _codex_followup_target_matches(target: object, native_task_name: str) -> bool:
+        """Accept the exact root-owned Codex task path for one planned label."""
+
+        return isinstance(target, str) and target == f"/root/{native_task_name}"
+
+    def _codex_execution_claim_observed(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        work_unit_id: str,
+        identity: NativeChildRunIdentity,
+    ) -> bool:
+        """Require the one-use Store dispatch before closing a planned worker."""
+
+        reader = getattr(self.store, "get_native_child_run", None)
+        if not callable(reader):
+            return False
+        try:
+            row = reader(
+                host="codex",
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=work_unit_id,
+                worker_id=identity.worker_id,
+                native_run_id=identity.native_run_id,
+            )
+        except (RuntimeError, ValueError):
+            return False
+        if not isinstance(row, dict):
+            return False
+        if (
+            row.get("host") != "codex"
+            or row.get("backend") != "spawn_agent"
+            or row.get("session_id") != session_id
+            or row.get("trace_id") != trace_id
+            or row.get("work_unit_id") != work_unit_id
+            or row.get("worker_id") != identity.worker_id
+            or row.get("native_run_id") != identity.native_run_id
+            or not row.get("execution_dispatched_at")
+            or row.get("ended_at") is not None
+        ):
+            return False
+        try:
+            validate_correlation_id(
+                row.get("execution_tool_use_id"),
+                field="execution_tool_use_id",
+            )
+        except ValueError:
+            return False
+        return True
+
+    def _handle_codex_followup_pre_tool_use(
+        self,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Authorize one exact second-turn execution message for an activated child."""
+
+        args = _dict_or_empty(payload.get("tool_input"))
+        denial = (
+            "Agency refused this Codex child execution because it did not exactly match "
+            "one activated work unit and native child. Use the current delegation recipe."
+        )
+        if set(args) != {"target", "message"}:
+            return _pre_tool_use_denial(denial, host=self.host)
+        message = args.get("message")
+        delivery = parse_codex_native_child_execution_message(message)
+        if delivery is None:
+            return _pre_tool_use_denial(denial, host=self.host)
+        correlation = self._correlation(payload, args)
+        trace_id = correlation.turn_id or self._unambiguous_open_trace(correlation.session_id)
+        matches = [
+            candidate
+            for candidate in self._codex_execution_candidates(
+                session_id=correlation.session_id,
+                trace_id=trace_id,
+            )
+            if candidate[0] == delivery
+        ]
+        if len(matches) != 1:
+            return _pre_tool_use_denial(denial, host=self.host)
+        expected, _specialist_slug, identity = matches[0]
+        if message != render_codex_native_child_execution_message(
+            work_unit_id=expected.work_unit_id,
+            goal_hash=expected.goal_hash,
+        ) or not self._codex_followup_target_matches(
+            args.get("target"),
+            expected.native_task_name,
+        ):
+            return _pre_tool_use_denial(denial, host=self.host)
+        claimer = getattr(self.store, "claim_codex_native_child_execution", None)
+        if not callable(claimer):
+            return _pre_tool_use_denial(denial, host=self.host)
+        try:
+            claimed = claimer(
+                session_id=correlation.session_id,
+                trace_id=trace_id,
+                work_unit_id=expected.work_unit_id,
+                worker_id=identity.worker_id,
+                native_run_id=identity.native_run_id,
+                tool_use_id=correlation.tool_use_id,
+            )
+        except (RuntimeError, ValueError):
+            claimed = False
+        if claimed is not True:
+            return _pre_tool_use_denial(denial, host=self.host)
+        return {}
 
     def _handle_claude_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Give this child its own identity without assigning any specialist."""
@@ -1687,13 +1899,63 @@ class HookBridge:
         }
 
     def _handle_codex_subagent_stop(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Close an exact Codex child only when the host supplies its final message."""
+        """Close a planned Codex child only after its exact execution turn."""
 
-        lifecycle = self._record_native_child_lifecycle(payload, event="stopped")
-        final_message = _optional_string(payload, "last_assistant_message")
-        if lifecycle is None or not final_message.strip():
+        session_id, trace_id, _work_unit_id = self._native_child_parent_scope(payload)
+        _required_string(payload, "agent_type")
+        try:
+            identity = _native_child_identity(
+                self.host,
+                _required_string(payload, "agent_id"),
+            )
+        except ValueError:
             return {}
-        session_id, trace_id, work_unit_id, identity = lifecycle
+        final_message = _optional_string(payload, "last_assistant_message")
+        candidates = [
+            candidate
+            for candidate in self._codex_execution_candidates(
+                session_id=session_id,
+                trace_id=trace_id,
+            )
+            if candidate[2] == identity
+        ]
+        if candidates:
+            if len(candidates) != 1 or not final_message.strip():
+                return {}
+            expected, _specialist_slug, _identity = candidates[0]
+            if not codex_current_turn_execution_observed(
+                _optional_string(payload, "agent_transcript_path"),
+                turn_id=_optional_string(payload, "turn_id"),
+                worker_id=identity.worker_id,
+                expected=expected,
+            ) or not self._codex_execution_claim_observed(
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=expected.work_unit_id,
+                identity=identity,
+            ):
+                # The first Codex spawn turn is activation-only. Its stop edge
+                # deliberately remains non-terminal until followup_task creates
+                # the exact execution-bound turn.
+                return {}
+            work_unit_id = expected.work_unit_id
+        else:
+            # Preserve legacy/unplanned child lifecycle behavior without
+            # manufacturing a planned execution receipt.
+            work_unit_id = _work_unit_id
+        stopped = getattr(self.store, "record_native_child_stopped", None)
+        if callable(stopped) and trace_id:
+            stopped(
+                host=self.host,
+                backend=_native_child_backend(self.host),
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=work_unit_id,
+                worker_id=identity.worker_id,
+                native_run_id=identity.native_run_id,
+            )
+        if not final_message.strip():
+            return {}
         recorder = getattr(self.store, "record_native_child_ended", None)
         if callable(recorder) and trace_id:
             recorder(
@@ -2271,6 +2533,36 @@ class HookBridge:
             model=correlation.model,
         )
 
+    def _handle_codex_followup_post_tool_use(
+        self,
+        event: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Observe a child turn trigger without recording a second delegation."""
+
+        tool_input = payload.get("tool_input")
+        tool_response: Any = payload.get("tool_response")
+        if event == "PostToolUseFailure":
+            tool_response = {
+                "status": "failed",
+                "error": _required_string(payload, "error"),
+                "is_interrupt": _optional_bool(payload, "is_interrupt"),
+            }
+        correlation = self._correlation(payload, tool_input, tool_response)
+        trace_id = (
+            correlation.turn_id
+            or self._unambiguous_open_trace(correlation.session_id)
+            or correlation.tool_use_id
+        )
+        return self._codex_post_tool_header_output(
+            event=event,
+            tool_name=_required_string(payload, "tool_name"),
+            tool_response=tool_response,
+            session_id=correlation.session_id,
+            trace_id=trace_id,
+            model=correlation.model,
+        )
+
     def _codex_post_tool_header_output(
         self,
         *,
@@ -2481,6 +2773,11 @@ class HookBridge:
             )
 
         if event in {"PostToolUse", "PostToolUseFailure"}:
+            if (
+                self.host == "codex"
+                and _required_string(payload, "tool_name") in _CODEX_FOLLOWUP_TOOL_NAMES
+            ):
+                return self._handle_codex_followup_post_tool_use(event, payload)
             return self._handle_post_tool_use(event, payload)
 
         if event == "Stop":

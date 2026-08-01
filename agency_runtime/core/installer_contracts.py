@@ -12,7 +12,7 @@ MARKETPLACE_ID = "agency-runtime"
 INSTALL_MANIFEST = ".agency-runtime-install.json"
 ADAPTER_LAUNCHER_MANIFEST = ".agency-runtime-launcher.json"
 PLUGIN_VERSION = "0.1.0"
-CODEX_ACTIVATION_CANARY_PROOF_CONTRACT = "agency.codex-activation-canary.v1"
+CODEX_ACTIVATION_CANARY_PROOF_CONTRACT = "agency.codex-activation-canary.v2"
 MINIMUM_OPENCLAW_VERSION = "2026.7.1"
 OPENCLAW_REQUIRED_HOOKS = frozenset(
     {
@@ -47,13 +47,21 @@ CODEX_NATIVE_SPAWN_HOOK_TOOL_NAMES = frozenset(
         "collaborationspawn_agent",
     }
 )
+CODEX_NATIVE_FOLLOWUP_HOOK_TOOL_NAMES = frozenset(
+    {
+        "followup_task",
+        "collaborationfollowup_task",
+    }
+)
 CODEX_NATIVE_WAIT_HOOK_TOOL_NAMES = frozenset(
     {
         "wait_agent",
         "collaborationwait_agent",
     }
 )
-CODEX_NATIVE_SPAWN_HOOK_MATCHER = r"^(?:spawn_agent|collaborationspawn_agent)$"
+CODEX_NATIVE_CHILD_HOOK_MATCHER = (
+    r"^(?:spawn_agent|collaborationspawn_agent|followup_task|collaborationfollowup_task)$"
+)
 CODEX_HOOK_TRUST_SURFACE = "codex-terminal-tui"
 CODEX_HOOK_TRUST_COMMAND = "codex"
 _CODEX_HOOK_TRUST_INVENTORY = ", ".join(f"`{event}`" for event in CODEX_HOOK_EVENTS)

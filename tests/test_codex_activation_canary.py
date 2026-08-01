@@ -16,6 +16,8 @@ from agency_runtime.core import canary
 from agency_runtime.core.activation_canary_contract import CODEX_ACTIVATION_CANARY_WORK_UNIT
 from agency_runtime.core.agent_activation import PROTECTED_AGENT_SLUGS
 from agency_runtime.core.canary_backends import (
+    _assert_codex_child_activation_is_tool_free,
+    _codex_child_execution_projection,
     _codex_product_wait_counts,
     codex_canary_record,
     codex_collaboration_evidence,
@@ -34,6 +36,7 @@ from agency_runtime.core.native_child_activation import (
 )
 from agency_runtime.core.native_child_prompt_delivery import (
     parse_native_child_prompt_delivery,
+    render_codex_native_child_execution_message,
     render_codex_opaque_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
 )
@@ -55,6 +58,79 @@ def _valid_header() -> str:
         "How it shaped outcome: identified the bounded regression risk\n\n"
         "Stripping may remove whitespace that callers intentionally preserve."
     )
+
+
+def _two_turn_child_events(execution_message: str) -> list[dict[str, object]]:
+    return [
+        {
+            "type": "event_msg",
+            "payload": {"type": "task_started", "turn_id": "activation-turn"},
+        },
+        {
+            "type": "response_item",
+            "payload": {"type": "agent_message", "content": "ready"},
+        },
+        {
+            "type": "event_msg",
+            "payload": {
+                "type": "task_complete",
+                "turn_id": "activation-turn",
+                "last_agent_message": "ready",
+                "error": None,
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {"type": "message", "content": execution_message},
+        },
+        {
+            "type": "event_msg",
+            "payload": {"type": "task_started", "turn_id": "execution-turn"},
+        },
+        {
+            "type": "event_msg",
+            "payload": {
+                "type": "task_complete",
+                "turn_id": "execution-turn",
+                "last_agent_message": "complete",
+                "error": None,
+            },
+        },
+    ]
+
+
+def test_codex_child_projection_rejects_duplicate_execution_delivery() -> None:
+    message = render_codex_native_child_execution_message(
+        work_unit_id="unit-1234567890",
+        goal_hash=work_unit_goal_hash("Perform the exact task."),
+    )
+    events = _two_turn_child_events(message)
+    events.insert(4, deepcopy(events[3]))
+
+    with pytest.raises(ValueError, match="one exact execution envelope"):
+        _codex_child_execution_projection(events)
+
+
+def test_codex_product_child_activation_turn_must_be_tool_free() -> None:
+    message = render_codex_native_child_execution_message(
+        work_unit_id="unit-1234567890",
+        goal_hash=work_unit_goal_hash("Perform the exact task."),
+    )
+    events = _two_turn_child_events(message)
+    events.insert(
+        2,
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "function_call",
+                "name": "shell_command",
+                "call_id": "activation-tool",
+            },
+        },
+    )
+
+    with pytest.raises(ValueError, match="activation turn"):
+        _assert_codex_child_activation_is_tool_free(events)
 
 
 def test_canary_module_import_does_not_depend_on_store_import_order() -> None:
@@ -160,6 +236,68 @@ def _prepare_exact_opaque_activation(
     )
 
 
+def _two_turn_collaboration(
+    *,
+    receiver_id: str,
+    prompt_delivery: dict[str, object],
+    work_unit_id: str,
+    task_name: str,
+    goal_hash: str,
+) -> dict[str, object]:
+    execution_delivery = {
+        "work_unit_id": work_unit_id,
+        "native_task_name": task_name,
+        "goal_hash": goal_hash,
+    }
+    common = {
+        "event_type": "item.completed",
+        "sender_thread_id": "parent-thread",
+        "receiver_thread_ids": [receiver_id],
+        "status": "completed",
+    }
+    return {
+        "spawn_count": 1,
+        "followup_count": 1,
+        "wait_count": 2,
+        "unexpected_item_count": 0,
+        "unexpected_item_types": [],
+        "calls": [
+            {
+                **common,
+                "id": "spawn-1",
+                "tool": "spawn_agent",
+                "agents_states": {receiver_id: "running"},
+                "prompt_delivery": prompt_delivery,
+                "execution_delivery": execution_delivery,
+                "followup_tool_use_id": "followup-tool-use",
+            },
+            {
+                **common,
+                "id": "wait-activation",
+                "tool": "wait",
+                "agents_states": {receiver_id: "completed"},
+                "prompt_delivery": None,
+            },
+            {
+                **common,
+                "id": "followup-1",
+                "tool": "followup_task",
+                "agents_states": {receiver_id: "running"},
+                "prompt_delivery": None,
+                "execution_delivery": execution_delivery,
+                "followup_tool_use_id": "followup-tool-use",
+            },
+            {
+                **common,
+                "id": "wait-execution",
+                "tool": "wait",
+                "agents_states": {receiver_id: "completed"},
+                "prompt_delivery": None,
+            },
+        ],
+    }
+
+
 def _finish_v2_chain_through_hooks(
     store: Store,
     *,
@@ -238,13 +376,100 @@ def _finish_v2_chain_through_hooks(
     observed_context = observed["hookSpecificOutput"]["additionalContext"]
     assert observed_context.startswith("[AGENCY UPDATED HEADER SNAPSHOT v1]\n")
     assert observed_context.count("Agency/Agencies loaded:") == 1
+    execution_message = render_codex_native_child_execution_message(
+        work_unit_id=unit,
+        goal_hash=str(plan["goal_hash"]),
+    )
+    followup_payload = {
+        "hook_event_name": "PreToolUse",
+        "session_id": session_id,
+        "turn_id": trace_id,
+        "tool_name": "collaborationfollowup_task",
+        "tool_use_id": "followup-tool-use",
+        "tool_input": {
+            "target": f"/root/{task_name}",
+            "message": execution_message,
+        },
+    }
+    assert bridge.handle(followup_payload) == {}
+    bridge.handle(
+        {
+            **followup_payload,
+            "hook_event_name": "PostToolUse",
+            "tool_response": "",
+        }
+    )
+    execution_turn = "019fa500-2222-7333-8444-555566667777"
+    transcript = store.db_path.parent / f"rollout-test-{receiver_id}.jsonl"
+    transcript.write_text(
+        "\n".join(
+            json.dumps(event)
+            for event in (
+                {"type": "session_meta", "payload": {"id": receiver_id}},
+                {
+                    "type": "event_msg",
+                    "payload": {"type": "task_started", "turn_id": "activation-turn"},
+                },
+                {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "task_complete",
+                        "turn_id": "activation-turn",
+                        "last_agent_message": "ready",
+                        "error": None,
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {"type": "message", "content": execution_message},
+                },
+                {
+                    "type": "event_msg",
+                    "payload": {"type": "task_started", "turn_id": execution_turn},
+                },
+                {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "task_complete",
+                        "turn_id": execution_turn,
+                        "last_agent_message": "reviewed",
+                        "error": None,
+                    },
+                },
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    [(expected_execution, _specialist, execution_identity)] = bridge._codex_execution_candidates(
+        session_id=session_id, trace_id=trace_id
+    )
+    assert bridge._codex_execution_claim_observed(
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        identity=execution_identity,
+    )
+    from agency_runtime.core.codex_child_execution import (
+        codex_current_turn_execution_observed,
+    )
+
+    assert codex_current_turn_execution_observed(
+        transcript,
+        turn_id=execution_turn,
+        worker_id=receiver_id,
+        expected=expected_execution,
+    )
     assert (
         bridge.handle(
             {
                 "hook_event_name": "SubagentStop",
                 "session_id": session_id,
+                "turn_id": execution_turn,
                 "agent_id": receiver_id,
                 "agent_type": "worker",
+                "agent_transcript_path": str(transcript),
+                "last_assistant_message": "reviewed",
             }
         )
         == {}
@@ -282,44 +507,23 @@ def _finish_v2_chain_through_hooks(
         "status": "completed",
         "exit_code": 0,
         "output": response,
-        "collaboration": {
-            "spawn_count": 1,
-            "wait_count": 1,
-            "unexpected_item_count": 0,
-            "unexpected_item_types": [],
-            "calls": [
-                {
-                    "id": "spawn-1",
-                    "event_type": "item.completed",
-                    "tool": "spawn_agent",
-                    "sender_thread_id": "parent-thread",
-                    "receiver_thread_ids": [receiver_id],
-                    "agents_states": {receiver_id: "running"},
-                    "status": "completed",
-                    "prompt_delivery": {
-                        "host": delivery.host,
-                        "parent_session_id": delivery.parent_session_id,
-                        "parent_trace_id": delivery.parent_trace_id,
-                        "tool_use_id": delivery.tool_use_id,
-                        "work_unit_id": delivery.work_unit_id,
-                        "specialist_slug": delivery.specialist_slug,
-                        "specialist_version": delivery.specialist_version,
-                        "specialist_prompt_hash": delivery.specialist_prompt_hash,
-                        "goal_hash": str(plan["goal_hash"]),
-                    },
-                },
-                {
-                    "id": "wait-1",
-                    "event_type": "item.completed",
-                    "tool": "wait",
-                    "sender_thread_id": "parent-thread",
-                    "receiver_thread_ids": [receiver_id],
-                    "agents_states": {receiver_id: "completed"},
-                    "status": "completed",
-                    "prompt_delivery": None,
-                },
-            ],
-        },
+        "collaboration": _two_turn_collaboration(
+            receiver_id=receiver_id,
+            work_unit_id=unit,
+            task_name=task_name,
+            goal_hash=str(plan["goal_hash"]),
+            prompt_delivery={
+                "host": delivery.host,
+                "parent_session_id": delivery.parent_session_id,
+                "parent_trace_id": delivery.parent_trace_id,
+                "tool_use_id": delivery.tool_use_id,
+                "work_unit_id": delivery.work_unit_id,
+                "specialist_slug": delivery.specialist_slug,
+                "specialist_version": delivery.specialist_version,
+                "specialist_prompt_hash": delivery.specialist_prompt_hash,
+                "goal_hash": str(plan["goal_hash"]),
+            },
+        ),
     }
 
 
@@ -421,6 +625,23 @@ def _record_complete_v2_chain(
         )
         == 1
     )
+    store.record_native_child_started(
+        host="codex",
+        backend="spawn_agent",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=receiver_id,
+        native_run_id=f"codex-agent:{receiver_id}",
+    )
+    assert store.claim_codex_native_child_execution(
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=receiver_id,
+        native_run_id=f"codex-agent:{receiver_id}",
+        tool_use_id="followup-tool-use",
+    )
     store.record_native_child_stopped(
         host="codex",
         backend="spawn_agent",
@@ -446,42 +667,23 @@ def _record_complete_v2_chain(
         "status": "completed",
         "exit_code": 0,
         "output": _valid_header(),
-        "collaboration": {
-            "spawn_count": 1,
-            "wait_count": 1,
-            "calls": [
-                {
-                    "id": "spawn-1",
-                    "event_type": "item.completed",
-                    "tool": "spawn_agent",
-                    "sender_thread_id": "parent-thread",
-                    "receiver_thread_ids": [receiver_id],
-                    "agents_states": {receiver_id: "running"},
-                    "status": "completed",
-                    "prompt_delivery": {
-                        "host": "codex",
-                        "parent_session_id": session_id,
-                        "parent_trace_id": trace_id,
-                        "tool_use_id": tool_use_id,
-                        "work_unit_id": unit,
-                        "specialist_slug": slug,
-                        "specialist_version": str(consumed["version"]),
-                        "specialist_prompt_hash": str(consumed["prompt_hash"]),
-                        "goal_hash": str(plan["goal_hash"]),
-                    },
-                },
-                {
-                    "id": "wait-1",
-                    "event_type": "item.completed",
-                    "tool": "wait",
-                    "sender_thread_id": "parent-thread",
-                    "receiver_thread_ids": [receiver_id],
-                    "agents_states": {receiver_id: "completed"},
-                    "status": "completed",
-                    "prompt_delivery": None,
-                },
-            ],
-        },
+        "collaboration": _two_turn_collaboration(
+            receiver_id=receiver_id,
+            work_unit_id=unit,
+            task_name=task_name,
+            goal_hash=str(plan["goal_hash"]),
+            prompt_delivery={
+                "host": "codex",
+                "parent_session_id": session_id,
+                "parent_trace_id": trace_id,
+                "tool_use_id": tool_use_id,
+                "work_unit_id": unit,
+                "specialist_slug": slug,
+                "specialist_version": str(consumed["version"]),
+                "specialist_prompt_hash": str(consumed["prompt_hash"]),
+                "goal_hash": str(plan["goal_hash"]),
+            },
+        ),
     }
 
 
@@ -514,7 +716,7 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
         backend_factory=lambda *_args, **_kwargs: Backend(),
     )
 
-    assert report["canary_passed"] is True, report["unmet_prerequisites"]
+    assert report["canary_passed"] is True, json.dumps(report, indent=2)
     assert report["attestation_persisted"] is True
     assert report["evidence"]["proven"] is True
     assert report["invocation"]["correction_count"] == 0
@@ -538,7 +740,7 @@ def test_codex_canary_requires_and_attests_one_complete_v2_activation_chain(
     }
     attestation = configured_store.get_host_canary_attestation("codex")
     assert attestation is not None
-    assert attestation["proof_contract"] == "agency.codex-activation-canary.v1"
+    assert attestation["proof_contract"] == "agency.codex-activation-canary.v2"
     assert len(attestation["proof_digest"]) == 64
 
 
@@ -799,8 +1001,8 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
         )
         == {}
     )
-    [completed] = configured_store.get_delegations(trace_id)
-    assert completed["status"] == "completed"
+    [still_delegated] = configured_store.get_delegations(trace_id)
+    assert still_delegated["status"] == "delegated"
     evidence = configured_store.get_canary_activation_snapshot(
         host="codex",
         query_hash=response_hash(task),
@@ -808,8 +1010,8 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     [worker_run] = evidence["worker_runs"]
     assert worker_run["delegation_event_id"] == delegation["id"]
     assert worker_run["work_unit_id"] == unit
-    assert worker_run["exit_code"] == 0
-    assert worker_run["ended_at"]
+    assert worker_run["exit_code"] is None
+    assert not worker_run["ended_at"]
 
 
 def test_codex_opaque_children_serialize_until_subagent_start_consumes_grant(
@@ -1256,7 +1458,12 @@ def test_codex_activation_proof_rejects_incomplete_or_mismatched_topology(
     candidate = deepcopy(result)
     expected_hash = response_hash(str(result["output"]))
     if failure_kind == "tool_unavailable":
-        candidate["collaboration"] = {"calls": [], "spawn_count": 0, "wait_count": 0}
+        candidate["collaboration"] = {
+            "calls": [],
+            "spawn_count": 0,
+            "followup_count": 0,
+            "wait_count": 0,
+        }
     elif failure_kind == "extra_child":
         extra = deepcopy(candidate["collaboration"]["calls"][0])
         extra["id"] = "spawn-extra"
@@ -1282,7 +1489,7 @@ def test_codex_activation_proof_rejects_incomplete_or_mismatched_topology(
     elif failure_kind == "unexpected_tool":
         assert any("non-allowlisted tool" in item for item in failures)
     else:
-        assert any("exactly one completed spawn" in item for item in failures)
+        assert any("one spawn, one followup" in item for item in failures)
 
 
 def _process_result(
@@ -1325,7 +1532,7 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
     parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
     receiver_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
     tool_use_id = "call-native-spawn"
-    task_name = "unit_code_review"
+    task_name = codex_task_name_for_work_unit("unit-code")
     original_task = "Review the implementation."
     encrypted_parent_message = "gAAAAABopaque-parent-tool-ciphertext"
     activation_token = "x" * 43
@@ -1342,6 +1549,10 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
         specialist_version="v1",
         specialist_prompt_hash=response_hash(prompt_body),
         activation_token=activation_token,
+    )
+    execution_message = render_codex_native_child_execution_message(
+        work_unit_id="unit-code",
+        goal_hash=work_unit_goal_hash(original_task),
     )
     rollout_root = tmp_path / "sessions"
     _write_codex_rollout(
@@ -1403,6 +1614,59 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
                     "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
                 },
             },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "followup-item",
+                    "name": "followup_task",
+                    "namespace": "collaboration",
+                    "call_id": "call-native-followup",
+                    "arguments": json.dumps(
+                        {
+                            "target": f"/root/{task_name}",
+                            "message": execution_message,
+                        }
+                    ),
+                },
+            },
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "sub_agent_activity",
+                    "event_id": "call-native-followup",
+                    "agent_thread_id": receiver_id,
+                    "agent_path": f"/root/{task_name}",
+                    "kind": "interacted",
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": "call-native-followup",
+                    "output": "",
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "wait-execution-item",
+                    "name": "wait_agent",
+                    "namespace": "collaboration",
+                    "call_id": "call-native-execution-wait",
+                    "arguments": json.dumps({"timeout_ms": 60_000}),
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": "call-native-execution-wait",
+                    "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
+                },
+            },
         ],
     )
     child_path = _write_codex_rollout(
@@ -1425,6 +1689,10 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
                 },
             },
             {
+                "type": "event_msg",
+                "payload": {"type": "task_started", "turn_id": "activation-turn"},
+            },
+            {
                 "type": "response_item",
                 "payload": {
                     "type": "agent_message",
@@ -1436,6 +1704,24 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
                 "type": "event_msg",
                 "payload": {
                     "type": "task_complete",
+                    "turn_id": "activation-turn",
+                    "last_agent_message": "ready",
+                    "error": None,
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {"type": "message", "content": execution_message},
+            },
+            {
+                "type": "event_msg",
+                "payload": {"type": "task_started", "turn_id": "execution-turn"},
+            },
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "task_complete",
+                    "turn_id": "execution-turn",
                     "last_agent_message": "done",
                     "error": None,
                 },
@@ -1487,7 +1773,8 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
     collaboration = record["collaboration"]
     assert collaboration["evidence_source"] == "persisted_rollout"
     assert collaboration["spawn_count"] == 1
-    assert collaboration["wait_count"] == 1
+    assert collaboration["followup_count"] == 1
+    assert collaboration["wait_count"] == 2
     assert collaboration["calls"][0]["native_task_name"] == task_name
     assert collaboration["calls"][0]["event_type"] == "rollout_call_completed"
     assert collaboration["calls"][0]["receiver_thread_ids"] == [receiver_id]
@@ -1640,9 +1927,11 @@ def test_codex_v2_rollout_reports_content_free_parent_spawn_failure(
         "reason": "parent_spawn_missing",
         "parent_rollout_observed": True,
         "spawn_count": 0,
+        "followup_count": 0,
         "wait_count": 0,
         "tool_output_count": 0,
         "child_start_count": 0,
+        "child_interaction_count": 0,
         "agent_message_count": 0,
         "unexpected_item_count": 0,
     }
@@ -1691,6 +1980,10 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
             specialist_slug=specialist,
             specialist_version="v1",
             specialist_prompt_hash=response_hash(specialist_prompt),
+            goal_hash=work_unit_goal_hash(original_task),
+        )
+        execution_message = render_codex_native_child_execution_message(
+            work_unit_id=unit,
             goal_hash=work_unit_goal_hash(original_task),
         )
         parent_events.extend(
@@ -1750,6 +2043,59 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
                     "payload": {
                         "type": "function_call_output",
                         "call_id": f"call-product-wait-{index}",
+                        "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call",
+                        "id": f"followup-item-{index}",
+                        "name": "followup_task",
+                        "namespace": "collaboration",
+                        "call_id": f"call-product-followup-{index}",
+                        "arguments": json.dumps(
+                            {
+                                "target": f"/root/{task_name}",
+                                "message": execution_message,
+                            }
+                        ),
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "sub_agent_activity",
+                        "event_id": f"call-product-followup-{index}",
+                        "agent_thread_id": receiver_id,
+                        "agent_path": f"/root/{task_name}",
+                        "kind": "interacted",
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call_output",
+                        "call_id": f"call-product-followup-{index}",
+                        "output": "",
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call",
+                        "id": f"execution-wait-item-{index}",
+                        "name": "wait_agent",
+                        "namespace": "collaboration",
+                        "call_id": f"call-product-execution-wait-{index}",
+                        "arguments": json.dumps({"timeout_ms": 60_000}),
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call_output",
+                        "call_id": f"call-product-execution-wait-{index}",
                         "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
                     },
                 },
@@ -1831,11 +2177,38 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
                     },
                 },
                 {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "task_started",
+                        "turn_id": f"activation-turn-{index}",
+                    },
+                },
+                {
                     "type": "response_item",
                     "payload": {
                         "type": "agent_message",
                         "role": "developer",
                         "content": [{"type": "input_text", "text": delivery}],
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "task_complete",
+                        "turn_id": f"activation-turn-{index}",
+                        "last_agent_message": "ready",
+                        "error": None,
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {"type": "message", "content": execution_message},
+                },
+                {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "task_started",
+                        "turn_id": f"execution-turn-{index}",
                     },
                 },
                 {
@@ -1861,6 +2234,7 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
                     "type": "event_msg",
                     "payload": {
                         "type": "task_complete",
+                        "turn_id": f"execution-turn-{index}",
                         "last_agent_message": f"private completed result {index}",
                         "error": None,
                     },
@@ -1908,8 +2282,9 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
     collaboration = record["collaboration"]
     assert collaboration["schema"] == "agency.codex-product-collaboration.v1"
     assert collaboration["spawn_count"] == 8
-    assert collaboration["wait_count"] == 8
-    assert collaboration["completed_wait_count"] == 8
+    assert collaboration["followup_count"] == 8
+    assert collaboration["wait_count"] == 16
+    assert collaboration["completed_wait_count"] == 16
     assert collaboration["completed_child_count"] == 8
     assert collaboration["child_tool_call_count"] == 8
     assert collaboration["host_notice_count"] == 1
@@ -2409,7 +2784,7 @@ def test_failed_current_profile_reverification_invalidates_prior_attestation(
 ) -> None:
     configured_store.record_host_canary_attestation(
         host="codex",
-        proof_contract="agency.codex-activation-canary.v1",
+        proof_contract="agency.codex-activation-canary.v2",
         proof_digest="a" * 64,
         profile_scope="current-profile",
         platform_system="test",

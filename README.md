@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-07-29
+updated: 2026-08-01
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
@@ -15,6 +15,8 @@ related:
   - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
+  - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
+  - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
 supersedes: []
@@ -150,7 +152,7 @@ flowchart LR
 
 | Host | Integration | Native delegation primitive | Specialist injection | Canary |
 |---|---|---|---|---|
-| **Codex** | Hooks + MCP + controls | `spawn_agent` | Hook envelope (PreToolUse bind → one-use receipt) | ✅ |
+| **Codex** | Hooks + MCP + controls | `spawn_agent` → `followup_task` | Activation context + one-use execution envelope | ✅ |
 | **Claude Code** | Hooks + MCP + controls | `Agent` | Hook envelope (PreToolUse bind → one-use receipt) | ✅ |
 | **ZCode** | Hooks + controls | `Agent` (Claude-like) | Hook envelope (PreToolUse bind → one-use receipt) | planned |
 | **Hermes** | Python plugin + MCP | `delegate_task` | MCP-plugin context framing | ✅ |
@@ -185,10 +187,18 @@ resolve exactly one persisted row. Preflight privately stages that row's exact
 canonical write paths while plaintext is still available; only a genuinely
 repository-wide row receives `.`. `SubagentStart` then injects a token-free v2
 context carrying that row's immutable specialist prompt and content-free goal
-hash. It consumes the one-use receipt against the observed child identity
-before another opaque child may launch. Exact retries are idempotent, while a
-different concurrent launch fails closed. Payloads are byte-budgeted (64 KiB)
-and never silently truncated.
+hash. It consumes the one-use activation receipt against the observed child
+identity before another opaque child may launch.
+
+Codex's first spawned turn is deliberately activation-only because a terminal
+spawn acknowledgement does not prove the child executed its task. After that
+turn completes, the parent sends the plan row's exact goal-hash-bound
+`[AGENCY EXACT TASK EXECUTION v1]` envelope through `followup_task` once and
+waits again. Agency atomically binds that follow-up to the same child and accepts
+a worker outcome only when the child's bounded rollout proves the exact envelope
+inside its later terminal turn. `send_message`, retries, child reuse, missing or
+duplicate envelopes, and cross-child evidence fail closed. Payloads are
+byte-budgeted (64 KiB) and never silently truncated.
 
 ```mermaid
 sequenceDiagram
@@ -207,19 +217,24 @@ sequenceDiagram
         Host->>Hook: SubagentStart (observed child identity)
         Hook->>Store: consume the only unconsumed grant
         Hook-->>Child: token-free v2 specialist context + goal hash
+        Child-->>Host: activation readiness only
+        Host->>Hook: followup_task (exact execution envelope)
+        Hook->>Store: claim one-use execution dispatch
+        Hook-->>Host: allow exact follow-up once
     end
-    Host->>Child: launch with specialist prompt bound
+    Host->>Child: execute the authorized specialist turn
     Child-->>Host: result
-    Host->>Hook: SubagentStop (completion evidence)
+    Host->>Hook: SubagentStop (causal completion evidence)
 ```
 
-Codex does not currently expose the decrypted assignment or an authenticated
-digest to either relevant hook. The exact plan label, preserved host ciphertext,
-isolated workspace, goal-hash-bound v2 context, and one-use child receipt are the
-strongest observable binding; Agency rejects missing or ambiguous rows rather
-than falling back to an untyped worker. Current Codex opaque children are
-scheduled one at a time because the host does not expose enough authenticated
-task identity to correlate multiple grants awaiting `SubagentStart`.
+Codex does not currently expose the decrypted spawn assignment or an
+authenticated digest to either relevant hook. The exact plan label, preserved
+host ciphertext, isolated workspace, goal-hash-bound v2 context, one-use
+execution envelope, and two causal child turns are the strongest observable
+binding; Agency rejects missing or ambiguous rows rather than falling back to
+an untyped worker. Current Codex opaque children are scheduled one at a time
+because the host does not expose enough authenticated task identity to
+correlate multiple grants awaiting `SubagentStart`.
 
 ### MCP-plugin hosts (Hermes, OpenClaw)
 
