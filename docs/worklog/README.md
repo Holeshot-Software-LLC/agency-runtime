@@ -560,6 +560,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `87a9786` | 2026-08-02 | docs(ar-223): record failed child-context writer proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `a854e8e` | 2026-08-02 | fix(ar-223): require workspace write receipts | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `f91c94a` | 2026-08-02 | docs(ar-223): record parent finalization writer failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `3b35ae0` | 2026-08-02 | fix(ar-223): reject incomplete workspace finalization | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
