@@ -784,6 +784,24 @@ baseline and kills all 97 mutations with zero survivors or invalid results,
 unchanged source, and 891.8 seconds total command time. One new immutable build
 may now proceed; no new live evidence was consumed by the gate.
 
+Exact candidate `7f0479fd25010ca5a7a3bd00fb41d8d0e1da78d3` builds
+canonically, passes strict Twine metadata and independent distribution
+verification, and installs from a Windows wheel with SHA-256
+`e42ff9fa2d460cde6d2163f539c5b44c531e82433f08a4fe711e02fd3f9186ef`.
+Its one autonomous activation passes: session
+`019fc253-aedf-7822-9744-7911d5b37901`, trace
+`019fc253-bb0a-7f01-8927-ff2f945c76d2`, route
+`28683bc3-bb63-40f0-ba1f-1d5c06f9777f`, run
+`c73394ca-6e2a-47ef-ab68-6a243b636253`, finalization
+`a6a83fe7-7a52-4cb2-91ea-776f75c19f9e`, delegation
+`0bdb5869-7048-4a94-8069-2919fb3ee42a`, and native worker
+`codex-agent:019fc254-88cb-77a1-b441-8dc88143879a` retain the exact proof.
+Inference selects, loads, and delegates `code-reviewer`; the worker terminates
+successfully, finalization is accepted, the first header is valid, correction
+count is zero, and autonomous trust bypass changes no persistent profile state.
+Codex and ZCode install and the dashboard is active and reachable. The one
+writer sentinel is admitted and unspent.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
