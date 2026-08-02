@@ -50,6 +50,15 @@ delegation. Codex loads global `AGENTS.md` guidance before work without a
 parent-side skill read. That is the supported installed surface that can carry
 the owner's request without changing any repository's governance.
 
+Exact installed merge `8097e77` proves the global block is present and passes
+the one-unit activation canary, but its 11-unit product plan again launches no
+child. Current Codex defaults each command hook's model-visible
+`additionalContext` to approximately 2,500 tokens and spills a larger value to
+disk. Agency permits a bounded persistent-host context of up to 32,000
+characters. The product parent may use only collaboration tools, so it cannot
+recover an exact spilled plan from the emitted file path and correctly declines
+delegation rather than guessing missing rows.
+
 ## Decision
 
 Codex installation manages one bounded, marked Agency block in the active
@@ -78,6 +87,14 @@ the production renderer before Codex starts. It accepts no arbitrary guidance
 text. Product prompts remain ordinary scenario requests, and the evaluator
 does not inject a user-only delegation sentence.
 
+The generated Codex `UserPromptSubmit` command handler sets
+`additionalContextLimit` to `0`, the host-supported value that disables
+spilling for that handler. Agency's existing 32,000-character context and
+48,000-byte encoded-output ceilings remain authoritative, so this does not make
+Agency context unbounded. Every other hook retains Codex's default spill
+behavior. Bundle smoke validation rejects a Codex install that omits this
+complete-plan delivery setting.
+
 ## Consequences
 
 - Ordinary installed Codex turns and governed product trials use the same
@@ -86,6 +103,8 @@ does not inject a user-only delegation sentence.
   to each substantive request.
 - Repository `AGENTS.md` files remain untouched; only the Codex global profile
   receives the marked block.
+- Multi-unit plans remain inline and exact at the parent inference boundary;
+  the parent never needs a file-read tool to recover routing authority.
 - Native-only or failed-inference turns contain no accepted plan, so the block
   cannot manufacture a worker or specialist claim.
 - Installer, uninstall, isolated-profile, and decision-conformance checks fail
@@ -103,5 +122,8 @@ does not inject a user-only delegation sentence.
   because the exact `b2be077` trial proves that current Codex launches no child.
 - **Modify every repository's `AGENTS.md`.** Rejected because installation must
   not rewrite project governance or create clone-specific behavior.
+- **Let the parent read Codex's spilled hook-output file.** Rejected because the
+  parent is intentionally collaboration-only and the spill path is not part of
+  the persisted exact-plan authority.
 - **Let global guidance choose a default worker.** Rejected because inference
   owns every substantive staffing decision.

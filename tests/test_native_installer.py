@@ -520,6 +520,12 @@ def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget()
     hook_timeout = codex_handler["timeout"]
     assert codex_handler["async"] is False
     assert "timeoutSec" not in codex_handler
+    assert codex_handler["additionalContextLimit"] == 0
+    assert all(
+        "additionalContextLimit" not in registrations[0]["hooks"][0]
+        for event, registrations in codex_hooks["hooks"].items()
+        if event != "UserPromptSubmit"
+    )
     assert hook_timeout > judge_budget
     assert tuple(codex_hooks["hooks"]) == CODEX_HOOK_EVENTS
     assert codex_hooks["hooks"]["PreToolUse"][0]["matcher"] == (

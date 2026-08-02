@@ -66,6 +66,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex `UserPromptSubmit` hooks now keep Agency's already bounded multi-unit
+  delegation plan model-visible instead of letting Codex's default hook-output
+  threshold spill it to a file the non-working parent cannot read. Other hook
+  outputs retain Codex's default spill behavior.
 - Codex native children now separate activation from execution. The parent
   performs one exact `spawn_agent`/wait/`followup_task`/wait sequence per
   accepted work unit, the Store claims the execution dispatch once, and worker

@@ -48,7 +48,7 @@ type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
 evidence_commit: 8097e7708a52956862746ea3aa5b2fecbe7031ed
-minimum_ledger_commit: 0362b4161a337b30c40311ece068df2d38cf6939
+minimum_ledger_commit: 5c899b0e5d29163b14eebf212a9f43d540611ac9
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -110,20 +110,25 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   refreshes Codex bundle `a9aa4f7e...`, registers/enables ZCode, and leaves the
   dashboard active and reachable. Codex global guidance is byte-equal to the
   canonical 1,123-byte renderer with one begin and one end marker. Codex is
-  installed build then passes its single autonomous activation with one route,
+  installed; the build then passes its single autonomous activation with one route,
   plan, delegation, load, worker, and finalization; no preflight failures; a
   valid first header; and zero corrections. Its consumed product trial proves
   an accepted 11-unit inferred graph and exact isolated trust, then fails
   `codex_parent_spawn_missing` / `workspace_write_not_proven` before execution.
+- The first missing edge is Codex's default 2,500-token hook-context spill, not
+  selection or guidance loading. The one-row activation fits; the 11-row plan
+  is replaced with a preview and file path that the collaboration-only parent
+  cannot read. The focused repair sets `additionalContextLimit: 0` only for
+  Codex `UserPromptSubmit` while preserving Agency's 32,000-character bound.
+  Installer, adapter-parity, and smoke checks pass 200 tests; Ruff passes.
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `8097e77` installs the managed
-global-guidance repair and passes activation, but the consumed product parent
-still never invokes collaboration. The next boundary is read-only diagnosis of
-the persisted parent rollout and isolated profile: prove whether current Codex
-loaded the canonical global guidance, then repair only that exact authority
-handoff. The exact build and trial must never be rerun.
+The README main story remains NO-GO. Exact `8097e77` must never be rerun. Its
+consumed product trial identifies one bounded host-delivery defect: Codex spills
+the exact multi-unit plan outside the parent's allowed tools. The manifest-only
+repair is focused-green; one review and the named local gate remain before a
+new immutable build may consume live evidence.
 
 ## same-task-continuity
 
@@ -135,10 +140,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Inspect the consumed parent rollout and isolated profile without relaunching
-   either live command; identify the first missing guidance-consumption edge.
-2. Freeze one repair around that edge, run focused checks and the named local
-   gate, then checkpoint before any new immutable-build live evidence.
+1. Perform one focused review of the four-file behavior diff and close only
+   findings that invalidate complete-plan delivery.
+2. Run the named local gate once, then checkpoint before publishing or
+   installing one new immutable build.
 
 ## verification
 

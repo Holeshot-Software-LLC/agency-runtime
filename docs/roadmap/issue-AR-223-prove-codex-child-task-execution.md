@@ -333,6 +333,17 @@ produced. The terminal reasons are `codex_parent_spawn_missing` and
 `workspace_write_not_proven`; correction count is zero. This build and trial
 must not be rerun.
 
+The missing edge is now isolated to current Codex's command-hook spill policy,
+not inference or global-guidance loading. Codex defaults `additionalContext` to
+an approximate 2,500-token model-visible threshold and spills larger output to
+disk. The one-row activation plan fits; the product's 11-row exact plan does
+not. Because the parent is collaboration-only, it cannot read the spill path
+and must not reconstruct missing rows. The bounded repair sets the supported
+`additionalContextLimit: 0` only on Codex `UserPromptSubmit`; Agency's existing
+32,000-character context ceiling remains enforced. Bundle generation and smoke
+validation bind the field. The focused installer, adapter-parity, and smoke set
+passes 200 tests; targeted Ruff lint and format checks pass.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -372,6 +383,9 @@ accepted plan authority.
   workspace-write child creates the exact proof before any other mutation.
 - [x] Focused checks, two review passes, and the named local fast gate pass on
   clean recovery head `9f391b8`.
+- [x] The generated Codex `UserPromptSubmit` handler keeps the complete bounded
+  inferred plan inline instead of spilling it outside the parent's allowed
+  tool boundary.
 - [ ] One new exact build passes autonomous activation and one fresh product
   trial with real specialist-created artifacts, independent checks, a valid
   first header, and zero corrections.
