@@ -546,6 +546,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d866b64` | 2026-08-02 | docs(ar-223): record green exact writer gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `3e2be29` | 2026-08-02 | docs(ar-223): record exact candidate activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `502c44f` | 2026-08-02 | docs(ar-223): record rejected one-unit planner trial | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `73f9989` | 2026-08-02 | fix(ar-223): preserve inferred indivisible plans | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
