@@ -251,16 +251,39 @@ no unexpected items. The Store records the exact execution dispatch and closes
 the worker with `ended_at`, exit code zero, completed delegation, and accepted
 finalization. The first header is valid with zero corrections. Autonomous trust
 bypass is proven, persistent profile state is unchanged, and install reports
-`complete: true`. The one fresh product trial remains unspent.
+`complete: true`.
+
+The one `b2be077` product trial `ar223-b2be077-readme-01` is now consumed and
+fails at the parent launch boundary. Session
+`019fbfdf-0069-7f73-a2fc-9879f8336ab3`, trace
+`019fbfdf-00fa-76c2-983b-24d40ef327a5`, run
+`c77ede95-d8da-446e-8503-f4b19dc8b0d6`, route
+`37d9b5bc-2610-4ebe-b5dd-616c0036bcc0`, and finalization
+`3b0bed95-5875-4437-b350-41aa88436b13` retain the exact failure. Inference
+accepts an eight-unit team of onboarding, Python CLI architecture,
+implementation, testing, documentation, code review, test analysis, and
+application-security specialists. The Codex parent then emits zero spawns,
+follow-ups, waits, specialist loads, or workers; the isolated workspace stays
+empty. The evaluator correctly reports `codex_parent_spawn_missing` and
+`workspace_write_not_proven`, with no final header and zero corrections. The
+trial is terminal and must not be rerun.
+
+ADR-0126 placed exact product-delegation authority in Codex developer
+instructions after an older host rejected hook context alone. Current Codex
+policy additionally requires the user task itself to ask for sub-agent use.
+The product wrapper does not carry that request, so the current host can obey
+its policy while declining every accepted plan row. This is the next bounded
+repair; inference remains the only staffing authority.
 
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
    proof that the assigned work unit executed.
-2. Adapt the product parent protocol to the current Codex V2 actionable-task
-   boundary without permitting retries or duplicate work. Bind the one
-   actionable delivery to the exact spawned child, native task name, work-unit
-   ID, decoded goal hash, and accepted plan row.
+2. Put exact plan-execution authorization at both current Codex boundaries: a
+   user-task request to delegate the accepted inferred plan, plus the existing
+   marker-scoped developer protocol. Neither boundary may name or select a
+   worker before inference. Bind each actionable delivery to the exact spawned
+   child, native task name, work-unit ID, decoded goal hash, and accepted row.
 3. Require a causal terminal child completion after that delivery. Reject
    missing, duplicate, reordered, cross-child, malformed, or unbounded task
    messages without retaining task or response content.

@@ -47,7 +47,7 @@ type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
 evidence_commit: b2be07758737b8e89a98aa0b0e03cecd6eb68c83
-minimum_ledger_commit: 44faf748432b125fb0d652a3ab696f839f1bf5fe
+minimum_ledger_commit: 38c757eedb38713753028127ddc7edfdc96e0b9e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -56,77 +56,39 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
-- The active goal remains `README's main story works in reality.` Prior exact
-  `43870c8` proves activation, inference staffing, one contractor hire, and an
-  eight-unit product topology, but its product workers acknowledged rather than
-  executed and produced no workspace proof.
-- AR-223 separates activation from execution. Exact `a2d1a7c` proves the second
-  child turn but exposes encrypted child evidence. Repair `65ee298`, merged as
-  `5ff4a08`, binds byte-equal parent/child ciphertext without retaining it and
-  passes the complete named local gate. Bare install proves exact package
-  provenance, Codex and ZCode registration, and a reachable dashboard.
-- The one `5ff4a08` activation is consumed. Session
-  `019fbf98-e5d8-77e3-9faf-0b9d36eeffb5`, trace
-  `019fbf98-f1f4-77e3-82c5-8b7a065657cb`, run `76cb3c09`, route `0cec20a3`,
-  finalization `8457f9c2`, and child `019fbf99-d680-7541-b951-00b6bd432b38`
-  prove inferred `code-reviewer`, spawn, both waits, exact follow-up and child
-  execution, accepted finalization, valid first response, and zero corrections.
-  Autonomous trust bypass worked and persistent trust was unchanged.
-- Activation still fails because `worker_runs.ended_at` is null. Current Codex
-  fires `SubagentStop` after the activation turn but not after `followup_task`.
-  Tests fabricated that second callback. No product trial ran.
-- The bounded repair now reconciles the exact completed child at parent `Stop`
-  from the documented parent transcript path. The activation stop stays open;
-  execution must precede one nonempty turn-bound final response and matching
-  completion. Forty-four focused tests pass without a synthetic second stop.
-- Read-only reprojection over the consumed `5ff4a08` parent and child rollouts
-  returns `completion_observed=True`. Two reviews are complete; they require
-  exact lineage and place execution inside the second turn before its response.
-- Exact `62ea12a` passes the named gate: Python 656/6, dashboard 110/110,
-  628-document validation, repo-wide Ruff and routing, plus 90/90 killed
-  decision mutations with zero invalid results and unchanged source.
-- PR 232 merges exact `b2be077`; `direct_url.json` proves that immutable global
-  install. Bare full-suite install refreshes Codex, enables ZCode, and restarts
-  an active reachable dashboard. That pre-canary install required activation.
-- The one `b2be077` activation passes: session `019fbfd8-bb78`, trace
-  `019fbfd8-c7ec`, run `ee965317`, route `fe21a189`, finalization `3fc23768`,
-  delegation `8b17ef05`, and child `019fbfd9-8678` prove inferred and loaded
-  `code-reviewer`, exact follow-up execution, closed exit-zero worker, valid
-  first header, zero corrections, and autonomous trust without profile change.
+- The goal remains `README's main story works in reality.` AR-223's parent
+  `Stop` repair reconciles exact second-turn execution without a synthetic
+  second `SubagentStop`; exact `62ea12a` passes the named local gate and two
+  bounded reviews.
+- PR 232 merges that tree as `b2be077`. Independent install provenance matches
+  the merge; bare install refreshes Codex, enables ZCode, and runs an active
+  reachable dashboard.
+- The consumed `b2be077` activation passes. Session `019fbfd8-bb78`, trace
+  `019fbfd8-c7ec`, run `ee965317`, delegation `8b17ef05`, and child
+  `019fbfd9-8678` prove inferred/loaded `code-reviewer`, exact execution, a
+  closed exit-zero worker, valid first header, zero corrections, and autonomous
+  trust without persistent change.
+- Product trial `ar223-b2be077-readme-01` is consumed and fails. Session
+  `019fbfdf-0069`, trace `019fbfdf-00fa`, run `c77ede95`, route `37d9b5bc`, and
+  finalization `3b0bed95` prove an accepted eight-specialist inferred plan, but
+  zero spawns, follow-ups, waits, loads, or workers. The workspace is empty;
+  failure is `codex_parent_spawn_missing` / `workspace_write_not_proven` with
+  no header and zero corrections.
 
 ## completed-evidence
 
-- Two AR-221 reviews and 127 focused tests pass. Three new decision mutations
-  are killed with zero survivors or invalid results and unchanged source.
-- The named Python production spine passes 656 tests with 6 skipped. Dashboard
-  UI passes 110 tests; 623 Markdown documents pass; repo-wide Ruff lint and
-  format pass; routing passes every threshold; and decision conformance kills
-  84 of 84 mutations with zero survivors or invalid results and unchanged
-  source.
-- The ciphertext repair passes Python 656/6, dashboard 110/110, 627-document
-  validation, repo-wide Ruff lint and format, every routing threshold, and
-  decision conformance 86/86 with unchanged source.
-- Exact `43870c8` activation session
-  `019fbe5e-a6da-72f3-ae6d-def468708e95` passes with one inferred
-  `code-reviewer`, a valid first header, and zero corrections.
-- Product session `019fbe61-6267-7581-ada8-44d157c989e4`, trace
-  `019fbe61-62eb-7193-8ffd-e6f702c5271e`, run
-  `8c16f792-6941-4e54-b41b-ee4594976953`, route
-  `8d0ea8e3-9aef-40dd-9c1c-3a657510393c`, and finalization
-  `469f75a4-c422-4893-8a8d-ae0c604014ca` retain the eight-unit boundary.
-- The applied hiring case is `69bc7370-6763-4f41-966b-0b4af5215b54` for
-  `python-cli-architecture-specialist`. This is the first accepted live proof
-  that the repaired hiring path changes the workforce.
-- Product collaboration reports eight spawns, eight waits, eight completed
-  children, zero timed-out waits, zero failed children, and zero unexpected
-  items. The header is valid with zero corrections, but the proof file and all
-  artifacts are absent, so validation is skipped and the trial fails only
-  `workspace_write_not_proven` / `proof_file_missing`.
+- Exact `62ea12a`: Python 656 passed/6 skipped, dashboard 110/110, 628-document
+  validation, repo-wide Ruff lint and format, all routing thresholds, and
+  decision conformance 90/90 killed with zero invalid results.
+- Earlier exact `43870c8` proves an accepted contractor hire and eight-unit
+  topology but not execution. Exact `b2be077` closes activation execution; its
+  product trial now isolates the remaining parent-authority regression.
 
 ## exact-blocker
 
-The README main story remains NO-GO pending one product trial. Exact installed
-merge `b2be077` passes its autonomous activation and closes the real worker.
+The README main story remains NO-GO. Exact `b2be077` passes activation, but its
+product parent never invokes collaboration. ADR-0126's developer instruction
+no longer satisfies current Codex's additional explicit user-request gate.
 
 ## same-task-continuity
 
@@ -138,10 +100,11 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Spend one `python-cli-service` Agency product trial on exact installed
-   `b2be077` in a new empty isolated workspace.
-2. Stop at its first terminal result and record exact artifact, header, hiring,
-   and correction evidence.
+1. Add a product-host contract test that requires a user-task-level request to
+   delegate every accepted inferred plan row without naming a team.
+2. Repair that authority boundary, update its durable decision, run focused
+   checks and no more than two reviews, then checkpoint before another live
+   build. Never rerun the consumed `b2be077` trial.
 
 ## verification
 
@@ -169,6 +132,7 @@ git diff --check
 - Exact builds `e62d0adc`, `1694d6e`, `d6ba36a`, `9c2e9f8`, `8cfd975`,
   `f8e607d`, `386afca`, `5c45f154`, `ff39761`, and `43870c8` consumed governed
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
-  activations; none may be rerun.
+  activations; exact `b2be077` consumed both activation and product evidence;
+  none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
