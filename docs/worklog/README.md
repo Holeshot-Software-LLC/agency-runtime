@@ -578,6 +578,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8322398` | 2026-08-02 | docs(ar-223): checkpoint temp-rebase writer failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `e90af86` | 2026-08-02 | fix(ar-223): classify Codex wrapper failures | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `b071987` | 2026-08-02 | docs(ar-223): checkpoint wrapper failure diagnostics | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `9f6d52c` | 2026-08-02 | docs(ar-223): checkpoint Store v3 writer failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
