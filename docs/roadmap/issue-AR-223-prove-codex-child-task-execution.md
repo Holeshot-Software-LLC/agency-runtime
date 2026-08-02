@@ -25,6 +25,7 @@ related:
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
   - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
+  - docs/decisions/0139-make-codex-execution-turns-self-contained.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -398,6 +399,22 @@ not be rerun. The remaining defect is now below inference, plan delivery, and
 child lifecycle: Codex writer children did not realize their declared
 workspace-write capability.
 
+The first bounded diagnosis found no Agency denial of child workspace tools.
+Codex child turns inherit the parent sandbox policy; the failed native control
+was not self-contained because its sentinel path and content existed only in
+parent instructions. The product execution follow-up had the same defect: it
+carried a goal hash and told the child to recover the actual goal from its
+activation turn. Hash identity proved the message but did not make the later
+turn independently actionable.
+
+The local repair makes every execution follow-up contain the exact hash-bound
+goal in the current turn. Plan context still compresses repeated request text
+through one shared prefix and per-row suffix, then uses the same reconstructed
+goal for spawn and execution. Fifty-four focused protocol tests and 110 broader
+Codex lifecycle/product-host tests pass; targeted Ruff lint and format pass.
+Live writer-child proof remains pending and no new immutable build has been
+spent.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -407,14 +424,15 @@ workspace-write capability.
    plan, while the existing marker-scoped developer protocol schedules it.
    Neither boundary may name or select a worker before inference. Bind each
    actionable delivery to the exact spawned child, native task name, work-unit
-   ID, decoded goal hash, and accepted row.
+   ID, decoded goal hash, exact self-contained goal, and accepted row.
 3. Require a causal terminal child completion after that delivery. Reject
    missing, duplicate, reordered, cross-child, malformed, or unbounded task
    messages without retaining task or response content.
 4. Preserve one-at-a-time dependency scheduling, the non-working parent,
    turn-scoped specialist authority, and the first workspace-write sentinel.
-5. Run at most two reviews and the named local fast gate, then spend one fresh
-   immutable-build activation and at most one product trial.
+5. Prove one isolated writer-child sentinel before the named local fast gate.
+   Only then spend one fresh immutable-build activation and at most one product
+   trial.
 
 ## Dependencies
 
@@ -430,9 +448,11 @@ accepted plan authority.
   produce a passed worker outcome.
 - [x] Every accepted plan row receives exactly one actionable native task on
   its exact spawned child, with no retry or duplicate execution path.
-- [x] The actionable delivery and its later completion are proven causally and
-  content-free against the exact unit ID, task name, child identity, and goal
-  hash; all malformed variants fail closed.
+- [x] The actionable delivery contains the exact hash-bound goal in its own
+  turn and its later completion is proven causally against the exact unit ID,
+  task name, child identity, and goal hash; all malformed variants fail closed.
+- [ ] One isolated self-contained writer child creates and reads back its exact
+  sentinel before a new immutable build is produced.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
 - [x] Focused checks, bounded review, and the complete named local gate pass on

@@ -12,7 +12,7 @@ import base64
 import json
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Final
 
 from agency_runtime.core.agent_activation import normalize_agent_slug
@@ -44,8 +44,9 @@ _CODEX_OPAQUE_SECTION = (
     "spawn turn establishes specialist context only. Do not execute, analyze, or modify "
     "the workspace during this activation turn; return one bounded readiness "
     "acknowledgement. Execute the goal exactly once only when a later newest inter-agent "
-    "task contains a valid [AGENCY EXACT TASK EXECUTION v1] envelope matching this "
-    "work-unit and goal hash. Do not answer the specialist prompt as a standalone "
+    "task contains a valid [AGENCY EXACT TASK EXECUTION v1] envelope with the exact "
+    "hash-bound goal matching this work-unit. Never recover an actionable goal from prior "
+    "turn memory. Do not answer the specialist prompt as a standalone "
     "request. The host "
     "hook bound the exact audited specialist below and Store-backed mutation authority "
     "to that persisted work-unit row. Use workspace tools when the goal requires them; "
@@ -59,10 +60,10 @@ _CODEX_OPAQUE_MARKER_PATTERN = re.compile(
 )
 _CODEX_EXECUTION_SECTION = "[AGENCY EXACT TASK EXECUTION v1]\n"
 _CODEX_EXECUTION_INSTRUCTION = (
-    "Execute the exact work-unit goal delivered in your immediately preceding activation "
-    "turn now. Do not re-delegate, broaden, or repeat it. Return one bounded "
-    "evidence-backed result."
+    "Execute the exact work-unit goal included in this execution turn now. Do not "
+    "re-delegate, broaden, or repeat it. Return one bounded evidence-backed result."
 )
+_CODEX_EXECUTION_GOAL_SECTION = "\n[AGENCY EXACT WORK-UNIT GOAL]\n"
 _CODEX_EXECUTION_MARKER_PREFIX = "<!-- agency-native-child-execution:v1:"
 _CODEX_EXECUTION_MARKER_PATTERN = re.compile(
     re.escape(_CODEX_EXECUTION_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
@@ -120,11 +121,12 @@ class NativeChildPromptDelivery:
 
 @dataclass(frozen=True, slots=True)
 class CodexNativeChildExecutionDelivery:
-    """One content-free second-turn authorization for an exact Codex child."""
+    """One hash-bound second-turn authorization for an exact Codex child."""
 
     work_unit_id: str
     native_task_name: str
     goal_hash: str
+    goal: str = field(default="", compare=False, repr=False)
 
 
 def _encoded_metadata(value: dict[str, Any]) -> str:
@@ -290,15 +292,41 @@ def render_codex_native_child_execution_message(
     *,
     work_unit_id: object,
     goal_hash: object,
+    goal: object = "",
 ) -> str:
-    """Render the one exact actionable turn for a previously activated Codex child."""
+    """Render one exact execution turn, optionally with its hash-bound goal."""
 
     metadata = _codex_execution_metadata(
         work_unit_id=work_unit_id,
         goal_hash=goal_hash,
     )
     marker = f"{_CODEX_EXECUTION_MARKER_PREFIX}{_encoded_metadata(metadata)}{_MARKER_SUFFIX}"
-    return f"{_CODEX_EXECUTION_SECTION}{marker}\n{_CODEX_EXECUTION_INSTRUCTION}"
+    identity_message = f"{_CODEX_EXECUTION_SECTION}{marker}\n{_CODEX_EXECUTION_INSTRUCTION}"
+    if goal is None or goal == "":
+        return identity_message
+    if not isinstance(goal, str) or not goal:
+        raise ValueError("execution goal must be a non-empty string")
+    from agency_runtime.core.unit_assignment import work_unit_goal_hash
+
+    if work_unit_goal_hash(goal) != metadata["goal_hash"]:
+        raise ValueError("execution goal does not match goal_hash")
+    return f"{identity_message}{_CODEX_EXECUTION_GOAL_SECTION}{goal}"
+
+
+def render_codex_native_child_execution_prefix(
+    *,
+    work_unit_id: object,
+    goal_hash: object,
+) -> str:
+    """Render the bounded prefix that must be concatenated with one exact goal."""
+
+    return (
+        render_codex_native_child_execution_message(
+            work_unit_id=work_unit_id,
+            goal_hash=goal_hash,
+        )
+        + _CODEX_EXECUTION_GOAL_SECTION
+    )
 
 
 def is_codex_opaque_collaboration_message(value: object) -> bool:
@@ -391,13 +419,26 @@ def parse_codex_native_child_execution_message(
         section_start = value.rfind(_CODEX_EXECUTION_SECTION, 0, match.start())
         if section_start < 0 or section_start + len(_CODEX_EXECUTION_SECTION) != match.start():
             continue
-        message_end = match.end() + 1 + len(_CODEX_EXECUTION_INSTRUCTION)
-        if value[match.end() : message_end] != f"\n{_CODEX_EXECUTION_INSTRUCTION}":
+        instruction_end = match.end() + 1 + len(_CODEX_EXECUTION_INSTRUCTION)
+        if value[match.end() : instruction_end] != f"\n{_CODEX_EXECUTION_INSTRUCTION}":
             continue
+        remainder = value[instruction_end:]
+        goal = ""
+        if remainder:
+            if not remainder.startswith(_CODEX_EXECUTION_GOAL_SECTION):
+                continue
+            goal = remainder[len(_CODEX_EXECUTION_GOAL_SECTION) :]
+            if not goal:
+                continue
+            from agency_runtime.core.unit_assignment import work_unit_goal_hash
+
+            if work_unit_goal_hash(goal) != normalized["goal_hash"]:
+                continue
         return CodexNativeChildExecutionDelivery(
             work_unit_id=normalized["work_unit_id"],
             native_task_name=normalized["native_task_name"],
             goal_hash=normalized["goal_hash"],
+            goal=goal,
         )
     return None
 
@@ -580,6 +621,7 @@ __all__ = [
     "parse_codex_native_child_execution_message",
     "parse_native_child_prompt_delivery",
     "render_codex_native_child_execution_message",
+    "render_codex_native_child_execution_prefix",
     "render_codex_opaque_native_child_prompt_delivery",
     "render_native_child_prompt_delivery",
 ]

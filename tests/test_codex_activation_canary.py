@@ -103,6 +103,7 @@ def test_codex_child_projection_rejects_duplicate_execution_delivery() -> None:
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Perform the exact task."),
+        goal="Perform the exact task.",
     )
     events = _two_turn_child_events(message)
     events.insert(4, deepcopy(events[3]))
@@ -123,6 +124,7 @@ def test_codex_product_child_activation_turn_must_be_tool_free() -> None:
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Perform the exact task."),
+        goal="Perform the exact task.",
     )
     events = _two_turn_child_events(message)
     events.insert(
@@ -409,6 +411,7 @@ def _finish_v2_chain_through_hooks(
     execution_message = render_codex_native_child_execution_message(
         work_unit_id=unit,
         goal_hash=str(plan["goal_hash"]),
+        goal=str(plan["goal"]),
     )
     encrypted_execution_message = "gAAAAA" + "opaque-codex-execution-message" * 2
     followup_message = encrypted_execution_message if opaque_canary else execution_message

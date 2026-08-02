@@ -90,7 +90,7 @@ def test_codex_opaque_delivery_round_trip_preserves_only_goal_hash_and_prompt() 
     assert "Store-backed mutation authority" in rendered
 
 
-def test_codex_execution_message_round_trip_is_exact_and_content_free() -> None:
+def test_codex_execution_identity_message_round_trip_is_exact() -> None:
     goal_hash = work_unit_goal_hash("Implement the exact product unit.")
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
@@ -104,7 +104,35 @@ def test_codex_execution_message_round_trip_is_exact_and_content_free() -> None:
     assert parsed.native_task_name == "unit_1234567890"
     assert parsed.goal_hash == goal_hash
     assert "Implement the exact product unit." not in message
-    assert parse_codex_native_child_execution_message(f"prefix {message} suffix") == parsed
+    assert parse_codex_native_child_execution_message(f"prefix {message}") == parsed
+    assert parse_codex_native_child_execution_message(f"prefix {message} suffix") is None
+
+
+def test_codex_execution_message_carries_the_exact_hash_bound_goal() -> None:
+    goal = (
+        "Create `.agency-runtime-writer-sentinel` with exactly one line: "
+        "AR223_WRITER_CHILD_OK. Read it back before returning."
+    )
+    goal_hash = work_unit_goal_hash(goal)
+
+    message = render_codex_native_child_execution_message(
+        work_unit_id="unit-writer-sentinel",
+        goal_hash=goal_hash,
+        goal=goal,
+    )
+    parsed = parse_codex_native_child_execution_message(message)
+
+    assert parsed is not None
+    assert parsed.work_unit_id == "unit-writer-sentinel"
+    assert parsed.goal_hash == goal_hash
+    assert goal in message
+    assert parse_codex_native_child_execution_message(message + " tampered") is None
+    with pytest.raises(ValueError, match="goal"):
+        render_codex_native_child_execution_message(
+            work_unit_id="unit-writer-sentinel",
+            goal_hash=work_unit_goal_hash("different goal"),
+            goal=goal,
+        )
 
 
 def test_codex_child_ciphertext_projection_requires_exact_current_host_shape() -> None:

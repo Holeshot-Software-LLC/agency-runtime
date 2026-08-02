@@ -420,7 +420,7 @@ def _current_turn_execution_observed_from_events(
         for delivery in _execution_deliveries(event.get("payload"))
     ]
     if observed:
-        return observed == [expected]
+        return observed == [expected] and bool(observed[0].goal)
     return _opaque_current_turn_execution_observed(
         path,
         events,

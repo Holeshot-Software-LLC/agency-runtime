@@ -1117,8 +1117,8 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
         "one child at a time",
         "Use no non-collaboration tools",
         "do not delegate further",
-        "immediately preceding activation turn",
-        "JSON-decoded exact execution_message",
+        "included in this current execution turn",
+        "JSON-decoded execution_message_prefix",
         "permitted workspace tools for every required implementation",
     ):
         assert required_contract in instructions

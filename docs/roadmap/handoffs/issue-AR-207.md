@@ -41,6 +41,7 @@ related:
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
   - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
+  - docs/decisions/0139-make-codex-execution-turns-self-contained.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -57,73 +58,35 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
-- The goal remains `README's main story works in reality.` AR-223's parent
-  `Stop` repair reconciles exact second-turn execution without a synthetic
-  second `SubagentStop`; exact `62ea12a` passes the named local gate and two
-  bounded reviews.
-- PR 232 merges that tree as `b2be077`. Independent install provenance matches
-  the merge; bare install refreshes Codex, enables ZCode, and runs an active
-  reachable dashboard.
-- The consumed `b2be077` activation passes. Session `019fbfd8-bb78`, trace
-  `019fbfd8-c7ec`, run `ee965317`, delegation `8b17ef05`, and child
-  `019fbfd9-8678` prove inferred/loaded `code-reviewer`, exact execution, a
-  closed exit-zero worker, valid first header, zero corrections, and autonomous
-  trust without persistent change.
-- Product trial `ar223-b2be077-readme-01` is consumed and fails. Session
-  `019fbfdf-0069`, trace `019fbfdf-00fa`, run `c77ede95`, route `37d9b5bc`, and
-  finalization `3b0bed95` prove an accepted eight-specialist inferred plan, but
-  zero spawns, follow-ups, waits, loads, or workers. The workspace is empty;
-  failure is `codex_parent_spawn_missing` / `workspace_write_not_proven` with
-  no header and zero corrections.
-- Exact `8097e77` consumes one autonomous-bypass activation and passes. Session
-  `019fc036-6716`, trace `019fc036-733e`, native run
-  `codex-agent:019fc037-8811`, and delegation `f4f618db` prove an inferred
-  `code-reviewer`, one exact spawn, one execution follow-up, two waits, a
-  completed exit-zero worker, valid first header, zero corrections, and zero
-  unexpected parent items. Trust bypass changes no persistent profile state.
-- Product trial `ar223-8097e77-readme-01` is consumed and fails after 104.094
-  seconds. Session `019fc03e-1ce0`, trace `019fc03e-1d71`, run `c100183d`,
-  route `52f57ced`, and finalization `bd418651` prove an accepted 11-unit plan
-  across seven specialists. The parent rollout is observed, but it makes zero
-  spawns, follow-ups, or waits; no specialist loads or workers exist; the
-  workspace is empty; the header is absent; and correction count is zero.
+- The goal remains `README's main story works in reality.` Exact installed
+  merge `eb8e077` passes autonomous activation and routes the complete bounded
+  inferred plan inline.
+- Its consumed product trial `ar223-eb8e077-readme-01` accepts nine inferred
+  units, loads seven specialists, completes nine delegations and workers,
+  accepts one finalization, emits a valid first header, and needs zero
+  corrections. It fails only `workspace_write_not_proven`: the exact workspace
+  is empty despite three declared writer units.
+- The first bounded diagnosis found that the execution follow-up carried only
+  identity and told the child to recover its goal from the prior activation
+  turn. The Agency-disabled control repeated that parent-only-context mistake,
+  so it does not prove a sandbox defect.
+- The local protocol repair carries the exact hash-bound goal in the execution
+  turn, preserves shared-prefix compression, and rejects missing or tampered
+  goals. ADR-0139 supersedes ADR-0136's content-free trigger premise.
 
 ## completed-evidence
 
-- Exact `62ea12a`: Python 656 passed/6 skipped, dashboard 110/110, 628-document
-  validation, repo-wide Ruff lint and format, all routing thresholds, and
-  decision conformance 90/90 killed with zero invalid results.
-- Earlier exact `43870c8` proves an accepted contractor hire and eight-unit
-  topology but not execution. Exact `b2be077` closes activation execution; its
-  product trial now isolates the remaining parent-authority regression.
-- The managed global-guidance slice is focused-green: 248 broader installer,
-  uninstall, canary, product-host, adapter, and decision tests pass; the final
-  21-test targeted rerun passes; Ruff passes; documentation validation covers
-  629 files; and the new decision mutation is killed 1/1. Two review passes are
-  closed. No persistent Codex profile or live trial has consumed this build.
-- Clean recovery head `9f391b8` passes the complete named local gate: 629
-  Markdown documents, repo-wide Ruff over 609 files, Python 657 passed with 6
-  skipped, dashboard 110/110, every routing threshold, and decision conformance
-  91/91 killed with zero survived or invalid results and source unchanged.
-- PR 233 merges exact `8097e7708a52956862746ea3aa5b2fecbe7031ed` and the
-  global uv receipt names that exact revision. Default-suite installation
-  refreshes Codex bundle `a9aa4f7e...`, registers/enables ZCode, and leaves the
-  dashboard active and reachable. Codex global guidance is byte-equal to the
-  canonical 1,123-byte renderer with one begin and one end marker. Codex is
-  installed; the build then passes its single autonomous activation with one route,
-  plan, delegation, load, worker, and finalization; no preflight failures; a
-  valid first header; and zero corrections. Its consumed product trial proves
-  an accepted 11-unit inferred graph and exact isolated trust, then fails
-  `codex_parent_spawn_missing` / `workspace_write_not_proven` before execution.
-- The first missing edge is Codex's default 2,500-token hook-context spill, not
-  selection or guidance loading. The one-row activation fits; the 11-row plan
-  spills beyond the collaboration-only parent. The repair sets
-  `additionalContextLimit: 0` only for Codex `UserPromptSubmit` while Agency's
-  32,000-character bound remains; focused checks pass 200 tests and Ruff.
-- Clean recovery head `7327483` passes the complete named local gate for that
-  repair: 629-document validation, Ruff over 609 files, Python 657 passed with
-  6 skipped, dashboard 110/110, every routing threshold, and conformance with
-  every mutation killed, none invalid, and source unchanged.
+- PR 234 merges `eb8e07770bf2b1d29933ff7730f09115928e4b1a`; installed uv
+  provenance and `agency version --json` match it. Bare installation discovers
+  only Codex and ZCode and leaves the dashboard installed, active, current, and
+  reachable.
+- The consumed activation proves inference, one loaded specialist, exact
+  spawn/follow-up/two-wait execution, a closed exit-zero worker, valid first
+  header, zero corrections, and autonomous trust bypass without persistent
+  profile mutation.
+- The self-contained execution slice passes 54 focused delivery/plan tests and
+  110 broader Codex lifecycle/product-host tests. Targeted Ruff lint and format
+  checks pass. No new immutable build or product trial has been spent.
 
 ## exact-blocker
 
@@ -133,7 +96,8 @@ seven loaded specialists, nine completed delegations, nine exit-zero workers,
 one accepted finalization, a valid first header, and zero corrections. Its sole
 failure is `workspace_write_not_proven`: all three declared writer workers have
 empty stdout/stderr and the exact workspace has zero files. The trial must not
-be rerun; stop rather than opening another automatic repair loop.
+be rerun. The checkpointed repair still lacks one real self-contained
+writer-child sentinel.
 
 ## same-task-continuity
 
@@ -145,8 +109,11 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Preserve this consumed failure and do not rerun exact `eb8e077`.
-2. If resumed, prove one writer sentinel before a new build; reuse routing.
+1. Run one fresh Agency-disabled native writer sentinel whose child message
+   itself contains the exact path, content, write, and read-back instructions.
+2. If it passes, run the named local gate, build once, and prove one Agency
+   writer sentinel before any full product trial. If it fails, stop with that
+   exact boundary.
 
 ## verification
 

@@ -1651,7 +1651,9 @@ class HookBridge:
         opaque_message = isinstance(message, str) and _is_codex_opaque_native_task(
             self.host, message
         )
-        if delivery is None and not opaque_message:
+        if (delivery is None and not opaque_message) or (
+            delivery is not None and not delivery.goal
+        ):
             return _pre_tool_use_denial(denial, host=self.host)
         correlation = self._correlation(payload, args)
         trace_id = correlation.turn_id or self._unambiguous_open_trace(correlation.session_id)
@@ -1678,6 +1680,7 @@ class HookBridge:
         if not opaque_message and message != render_codex_native_child_execution_message(
             work_unit_id=expected.work_unit_id,
             goal_hash=expected.goal_hash,
+            goal=delivery.goal if delivery is not None else "",
         ):
             return _pre_tool_use_denial(denial, host=self.host)
         claimer = getattr(self.store, "claim_codex_native_child_execution", None)

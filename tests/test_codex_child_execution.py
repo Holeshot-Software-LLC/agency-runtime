@@ -175,6 +175,7 @@ def test_current_turn_requires_exact_execution_envelope(tmp_path: Path) -> None:
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Implement the unit."),
+        goal="Implement the unit.",
     )
     expected = parse_codex_native_child_execution_message(message)
     assert expected is not None
@@ -201,6 +202,7 @@ def test_execution_projection_rejects_wrong_identity_or_tampering(tmp_path: Path
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Implement the unit."),
+        goal="Implement the unit.",
     )
     expected = parse_codex_native_child_execution_message(message)
     assert expected is not None
@@ -230,6 +232,7 @@ def test_execution_projection_rejects_duplicate_or_single_turn_evidence(
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Implement the unit."),
+        goal="Implement the unit.",
     )
     expected = parse_codex_native_child_execution_message(message)
     assert expected is not None
@@ -276,6 +279,7 @@ def test_current_turn_matches_exact_parent_and_child_ciphertext(tmp_path: Path) 
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Implement the unit."),
+        goal="Implement the unit.",
     )
     expected = parse_codex_native_child_execution_message(message)
     assert expected is not None
@@ -368,6 +372,7 @@ def test_parent_ciphertext_resolves_across_midnight_rollover(tmp_path: Path) -> 
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Implement the unit."),
+        goal="Implement the unit.",
     )
     expected = parse_codex_native_child_execution_message(message)
     assert expected is not None
@@ -406,6 +411,7 @@ def test_parent_stop_projection_requires_exact_completed_child_response(tmp_path
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Implement the unit."),
+        goal="Implement the unit.",
     )
     expected = parse_codex_native_child_execution_message(message)
     assert expected is not None
@@ -450,6 +456,7 @@ def test_parent_stop_projection_rejects_tampered_or_ambiguous_completion(
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Implement the unit."),
+        goal="Implement the unit.",
     )
     expected = parse_codex_native_child_execution_message(message)
     assert expected is not None
@@ -516,6 +523,7 @@ def test_parent_stop_projection_resolves_child_across_midnight(tmp_path: Path) -
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Implement the unit."),
+        goal="Implement the unit.",
     )
     expected = parse_codex_native_child_execution_message(message)
     assert expected is not None

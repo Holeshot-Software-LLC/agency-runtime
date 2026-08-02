@@ -330,7 +330,15 @@ def _isolated_delegation_context(
             codex_task_name_for_work_unit,
         )
         from agency_runtime.core.native_child_prompt_delivery import (
-            render_codex_native_child_execution_message,
+            render_codex_native_child_execution_prefix,
+        )
+
+        lines.append(
+            "For every Codex row, set followup_task.message to the exact concatenation of "
+            "that row's JSON-decoded execution_message_prefix and the same exact goal sent "
+            "to spawn_agent. Add no separator and change no character. The execution turn "
+            "must be self-contained; never ask the child to recover its goal from an "
+            "earlier turn."
         )
 
     for item in hydrated:
@@ -353,8 +361,8 @@ def _isolated_delegation_context(
         if normalized_host == "codex":
             goal_hash = str(item.get("goal_hash") or "").strip().casefold()
             goal_hash = goal_hash or work_unit_goal_hash(str(item["goal"]))
-            execution_field = "; execution_message=" + json.dumps(
-                render_codex_native_child_execution_message(
+            execution_field = "; execution_message_prefix=" + json.dumps(
+                render_codex_native_child_execution_prefix(
                     work_unit_id=work_unit_id,
                     goal_hash=goal_hash,
                 ),

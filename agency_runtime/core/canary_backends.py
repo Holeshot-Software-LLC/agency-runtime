@@ -916,10 +916,12 @@ def _codex_exact_rollout_calls(
             execution is not None
             and (
                 execution.native_task_name != native_task_name
+                or not execution.goal
                 or followup_message
                 != render_codex_native_child_execution_message(
                     work_unit_id=execution.work_unit_id,
                     goal_hash=execution.goal_hash,
+                    goal=execution.goal,
                 )
             )
         )
@@ -1239,10 +1241,12 @@ def _codex_product_spawn_projection(
             execution is not None
             and (
                 execution.native_task_name != native_task_name
+                or not execution.goal
                 or followup_message
                 != render_codex_native_child_execution_message(
                     work_unit_id=execution.work_unit_id,
                     goal_hash=execution.goal_hash,
+                    goal=execution.goal,
                 )
             )
         )

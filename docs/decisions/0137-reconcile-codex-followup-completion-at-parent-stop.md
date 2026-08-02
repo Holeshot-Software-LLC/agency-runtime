@@ -12,6 +12,7 @@ related:
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
+  - docs/decisions/0139-make-codex-execution-turns-self-contained.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/codex_child_execution.py
   - tests/test_codex_activation_canary.py

@@ -974,6 +974,7 @@ def _activate_codex_plan_child(
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-code",
         goal_hash=work_unit_goal_hash("Review the implementation."),
+        goal="Review the implementation.",
     )
     return task_name, message
 
