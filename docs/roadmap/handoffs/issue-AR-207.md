@@ -105,6 +105,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Clean head `e1c2157` passes the complete named gate: 638 docs, 610 formatted
   files, 657 Python passes with 6 skips, 110 dashboard passes, every routing
   threshold, and 102/102 killed decision mutations with unchanged source.
+- Exact candidate `2bbd885` builds, verifies, installs Codex, ZCode, and the
+  reachable dashboard, and passes one autonomous Codex activation. Its sole
+  writer `ar223-agency-writer-2bbd885-01` is consumed `NO-GO`: Store v1 records
+  three completed `functions.exec` wrappers and outputs, but the empty workspace
+  proves no writer artifact. Nested tool classes remain unobservable.
 
 ## completed-evidence
 
@@ -120,9 +125,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-Actual Agency child workspace execution remains unproven. The Store boundary
-and full local gate now pass. Build and install one fresh immutable candidate,
-then let its sole writer sentinel identify the first remaining failed boundary.
+Actual Agency child workspace execution remains unproven. The Store write now
+passes, but current Codex nests tools inside `functions.exec`; v1 cannot say
+whether a patch was attempted. Preserve only nested tool classes and outcomes.
 
 ## same-task-continuity
 
@@ -134,11 +139,11 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Build and exact-install one new immutable candidate.
-2. Pass one autonomous activation, then consume one fresh accepted-plan writer
-   sentinel and read its Store-backed v2 child tool projection.
-3. Repair only the first failed boundary that projection proves. Never retry
-   `c8a0577` or `4c57507`, and do not broaden this package.
+1. Add content-free per-wrapper nested tool-class and outcome evidence without
+   retaining arguments, paths, content, output, or error text.
+2. Pass focused tests and create one clean recovery checkpoint.
+3. Build one new candidate and consume one fresh writer sentinel. Never retry
+   `c8a0577`, `4c57507`, or `2bbd885`; repair only its first proven boundary.
 
 ## verification
 
@@ -168,7 +173,7 @@ git diff --check
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
   activations; exact `b2be077` consumed both activation and product evidence;
   `ae322ec`, `bffd2c8`, `b6bcdfb`, `d4c65a7`, `4d14b99`, `93e465a`,
-  `d610630`, `7f0479f`, `be1ca0e`, `d5a4e31`, `c8a0577`, and `4c57507`
-  consumed governed evidence; none may be rerun.
+  `d610630`, `7f0479f`, `be1ca0e`, `d5a4e31`, `c8a0577`, `4c57507`, and
+  `2bbd885` consumed governed evidence; none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

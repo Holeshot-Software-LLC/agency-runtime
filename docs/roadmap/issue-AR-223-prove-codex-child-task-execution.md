@@ -1062,6 +1062,44 @@ kills all 102 mutations with zero survivors or invalid results, unchanged
 source, and 1,189.1 seconds total command time. No immutable build or live
 trial has been consumed from this checkpoint.
 
+Exact clean candidate `2bbd88518109aeac32d5f9685ce425b4277fc4a1`
+builds canonically and independently verifies. Wheel SHA-256 is
+`a2b788ee1aae8df6bf545ebc03027c0a4894fd5daab37358c0bb289cb3d4d6e5`;
+source SHA-256 is
+`b25f1c6d5404eee7a6ff86c3990c946c49be419058089399f53581a819a77262`.
+Its autonomous full-suite transaction refreshes Codex and ZCode and leaves the
+dashboard installed, active, and reachable. The invocation-only Codex
+activation passes without persistent trust mutation. Session
+`019fc3f1-78b9-73d2-91fa-870def161377`, trace
+`019fc3f1-90a9-7af0-a5bb-b07c797ee82e`, run
+`b347c4f2-85d8-403f-bd84-fe98c5944af9`, delegation
+`9bf014f8-1d43-4263-8f99-ab172b5c24b9`, finalization
+`e0f85ae2-ce1f-47a0-a9eb-2d25399682dd`, and child
+`019fc3f2-9cda-7f71-9a3b-8278aeca2425` prove one inferred and loaded
+`code-reviewer`, one direct spawn, one completed wait, a terminal exit-zero
+worker, an accepted finalization, a valid header, and zero corrections.
+
+Its one writer trial `ar223-agency-writer-2bbd885-01` is consumed and terminal
+`NO-GO`. Session `019fc3fc-e8ca-78a2-b30a-8030008b7573`, trace
+`019fc3fc-e960-7282-b867-61db6bfb9a1a`, run
+`9ad5e0d7-0cb2-4e08-bc79-a7bc14329182`, route
+`3bac5a4d-820e-49c9-8a6d-e646bc70e3d3`, delegation
+`dfa8293d-fb86-4ab0-96d6-2a9dc2f08b94`, finalization
+`a4ddb6e8-0092-48e0-a34f-f0f8e084e99a`, and child
+`019fc3fd-ac85-7f80-9b89-06141dc7d024` retain the exact boundary. Inference
+selects and loads `minimal-change-engineer`; the parent proves one direct
+spawn, one completed wait, a valid first header, and zero corrections. The
+workspace remains empty, the worker remains unended, and finalization correctly
+declines missing `delegation_execution`.
+
+The schema-v44 Store write succeeds before product admission. Its immutable v1
+receipt records three completed custom `exec` calls, three outputs, zero failed
+calls, and zero direct `apply_patch` or `shell_command` calls. Current Codex
+executes nested tools through the `functions.exec` wrapper, however, so those
+aggregate transport counts do not prove which nested tool classes ran. The
+next bounded repair must preserve content-free per-wrapper nested tool classes
+and outcomes; it must not retain arguments, paths, content, output, or errors.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
