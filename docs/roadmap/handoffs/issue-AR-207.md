@@ -46,14 +46,15 @@ related:
   - docs/decisions/0141-admit-writer-proof-only-through-agency-plans.md
   - docs/decisions/0142-require-terminal-product-child-before-next-unit.md
   - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
+  - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: bffd2c8f172ea774353158d10ad615a89c3d0095
-minimum_ledger_commit: bffd2c8f172ea774353158d10ad615a89c3d0095
+evidence_commit: 4d14b99ccbcfd3a78fcb3c867c16654ab85ded1f
+minimum_ledger_commit: b2be9553b977b61e3114fdc31bcea194889cd7f0
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -63,57 +64,27 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The goal remains `README's main story works in reality.` Exact installed
-  `bffd2c8` passes the named gate, build, default suite install, and Codex
-  activation. ZCode is enabled; the dashboard is active and reachable.
-- The older consumed product `ar223-eb8e077-readme-01` proves nine inferred
-  units, seven loaded specialists, nine completed workers, a valid first
-  header, and zero corrections, but no writer artifact.
-- Direct app child `ar223-direct-native-child-01` independently proves exact
-  current-host child workspace-write. Generic Agency-disabled controls remain
-  non-admissible under ADR-0141.
-- Corrected writer sentinel `ar223-agency-writer-bffd2c8-01` is consumed and
-  terminal `NO-GO`. It infers four units, launches and loads
-  `minimal-change-engineer`, reaches terminal activation and execution waits,
-  closes that worker at exit zero, and records zero corrections. It then
-  truthfully finalizes `delegation_declined`; the other three accepted rows
-  remain suggested and the exact workspace is empty.
-- ADR-0143 removes the self-imposed two-turn Codex ceremony. Current direct
-  delivery executes the exact persisted goal in the initial spawn turn, waits
-  for terminal completion, and sends no execution follow-up. Historical V1/V2
-  evidence remains readable only for retained trials.
+  `4d14b99` passes the named gate, canonical build, default Codex/ZCode/dashboard
+  install, and one autonomous Codex activation with a valid first header and
+  zero corrections.
+- Writer sentinel `ar223-agency-writer-4d14b99-01` is consumed and terminal
+  `NO-GO`. Its exact workspace is empty. Do not retry this build.
+- The retained trial proves two defects: the product harness resolves exact
+  activation by host plus prompt hash and collides with an older same-prompt
+  route; inference also expands an explicit one-indivisible-unit request into
+  five units, while the parent executes only onboarding and declines the rest.
+- Direct app child `ar223-direct-native-child-01` independently proves current
+  Codex child workspace-write capability. The remaining failure is Agency's
+  exact evidence and inferred-plan contract, not OS workspace permission.
 
 ## completed-evidence
 
-- Exact `ae322ec` passes 657 Python production tests with 6 skips, 110 dashboard
-  tests, every routing threshold, and 91/91 decision mutations. Its wheel and
-  source archive pass strict metadata and independent exact-commit verification.
-- Default installation discovers Codex and ZCode, installs both plus the
-  dashboard, and records `trust_mode=autonomous_bypass`. Activation proves one
-  inferred/loaded `code-reviewer`, one native worker, one accepted finalization,
-  and zero corrections.
-- The ADR-0142 focused slice passes 42 tests and both new decision mutations;
-  the second and final surrounding lifecycle review passes 164 tests. Targeted
-  Ruff passes. Clean head `a5b9d4b` passes the named gate: 657 Python tests
-  with 6 skips, 110 dashboard tests, every routing threshold, and 93/93
-  decision mutations with zero survivors or invalid results.
-- Exact `bffd2c8` builds and installs with wheel SHA-256
-  `1bf175f209969d773c4725a34ec70c6dace932b28304113a78d31eaf2e227aae`.
-  Its default suite and autonomous activation pass with one inferred/loaded
-  specialist, one completed worker, one accepted finalization, a valid first
-  header, zero corrections, and no persistent trust change.
 - The callback-order repair passes the complete named local gate: 37 activation
   and 52 execution/lifecycle tests; 657 Python tests with 6 skips; 110 dashboard
   tests; every routing threshold; repository-wide Ruff, formatting,
   documentation, metadata, policy, worklog, and diff checks. The full
   decision-conformance baseline passes and kills all 96 current mutations with
   zero survivors or invalid results and leaves source unchanged.
-- Exact `b6bcdfb` proves a real inferred/loaded `code-reviewer` and direct
-  `spawn=1/followup=0/wait=1`, but lacks the dispatch receipt and terminal worker;
-  its retained callback order motivates ADR-0144.
-- Clean `d4c65a7` builds and installs, but session
-  `019fc1a8-1217-70a0-83ca-bae1f67e008e` fails before routing with no valid
-  planner response. A later exact-schema diagnostic sees `gpt-5.6-luna` and
-  parses a complete plan, leaving the consumed failure unclassified.
 - Exact `4d14b99` builds canonically; wheel SHA-256 is
   `ad2bddce9bdd2f253ae3b2b15f44c70d4a481442af994269cf2fc0463334ff69`.
   Codex, ZCode, and the reachable dashboard install. Its autonomous activation,
@@ -125,9 +96,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO only at the product boundary. ADR-0144 now
-has real installed execution proof; the Agency-owned writer sentinel, product
-artifacts, concise header, dashboard parity, and final report remain unproven.
+The README main story remains `NO-GO` at two exact product boundaries. The
+harness does not bind the consumed Codex result to its exact session, and
+inference does not preserve an explicit indivisible-unit topology. The writer
+artifact, full product artifacts, concise header, dashboard parity, and local
+evidence report remain unproven.
 
 ## same-task-continuity
 
@@ -139,9 +112,12 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run one Agency writer sentinel against exact installed `4d14b99`; require the
-   planned writer, dispatch receipt, terminal worker, exact bytes, and zero corrections.
-2. Only a pass admits the complete README/dashboard/header/report trial.
+1. Bind product-host activation reconciliation to the exact Codex session and
+   add a same-prompt historical-route regression.
+2. Make inference preserve an explicit one-indivisible-unit constraint without
+   deterministically selecting a specialist; reject or repair invalid topology.
+3. Run focused checks and one complete named gate. Only then build one new
+   candidate and spend one fresh writer trial.
 
 ## verification
 

@@ -629,6 +629,29 @@ persistent profile state. This admits one Agency-owned writer sentinel against
 the same installed build; it does not yet prove workspace mutation or the full
 README product story.
 
+The one admitted `4d14b99` Agency writer sentinel is now consumed and terminal
+`NO-GO`. Workspace `ar223-agency-writer-4d14b99-01` remains empty and the
+evaluator correctly fails `route_ambiguous`, the missing Codex collaboration
+projection, and `workspace_write_not_proven`, with a valid first header and zero
+corrections. The product run is `89adc572-3fcd-485b-ba32-e67c71feeb27`; its
+current route `d710224d-b064-467b-bade-06a5caf01c4f`, session
+`019fc1c5-9657-7df0-a3f6-26e99c60fdb4`, trace
+`019fc1c5-96ce-70a2-a3cb-cfdec12416c8`, and finalization
+`32fb5ef7-a624-40c7-8328-faf5b328204e` retain the exact boundary.
+
+The failure proves two first-class defects. The product evaluator asks the
+Store for a route using only host and executed-prompt hash. That hash also
+matches historical route `55f9ebef-2ca4-4dba-8d30-911ee97d4742`, so the
+supposedly exact lookup sees two routes and rejects the current one as
+ambiguous instead of binding the Codex result's exact session. Independently,
+inference ignored the explicit one-indivisible-unit constraint and authored
+five units for onboarding, implementation, testing, review, and test evidence.
+Only `codebase-onboarding-engineer` ran and exited zero; the remaining four
+delegations stayed suggested, finalization truthfully recorded
+`delegation_declined`, and no writer artifact was created. The next candidate
+must repair exact session binding and inference-owned indivisible topology
+before any further build or live attempt.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
