@@ -39,14 +39,15 @@ related:
   - docs/decisions/0134-bind-contractor-risk-to-validated-authority.md
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
+  - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: a2d1a7c88f04956be0915c4b9acc4a21c5baf28c
-minimum_ledger_commit: 8dfa9ec49db81f79bfef314db61e827f9eb76058
+evidence_commit: 62ea12a2f8b1e0ed6fef6b869b2ab7134ba9aa3f
+minimum_ledger_commit: 44faf748432b125fb0d652a3ab696f839f1bf5fe
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -55,41 +56,35 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
-- The active goal remains `README's main story works in reality.`
-- PR 227 merged exact `43870c8`; that immutable build is installed.
-- Default Codex, ZCode, and dashboard installation passes; the dashboard is
-  active and reachable. Autonomous activation passes with one inferred
-  `code-reviewer`, one real child, a valid first header, and zero corrections.
-- Trial `ar221-43870c8-readme-01` accepts eight inference-authored units,
-  applies one new contractor hire, and completes all eight native children,
-  grants, delegations, worker runs, and current Codex waits.
-- AR-221's exact scope and proof-token delivery is present in the responsible
-  workspace-write child's goal. The workspace still remains empty because a
-  Codex V2 spawn turn can complete after acknowledgement without executing its
-  initial task. AR-223 freezes the next package around only that boundary.
-- AR-223's reviewed local repair makes the first turn activation-only, claims
-  one exact `followup_task` execution envelope, and requires its later child
-  turn before a worker passes. Focused warning-strict slices pass 106, 176, and
-  36 tests (318 total); the invalid 304-second aggregate timeout is not counted.
-  The complete named local fast gate passes, including Python 656/6, dashboard
-  110/110, and decision conformance 84/84 with zero invalid results. Issue 228
-  and PR 229 record merged exact `ba76ce7`; that revision is installed. Bare
-  installation passes dashboard and ZCode. Its consumed Codex canary selects
-  `code-reviewer`, then records spawn, activation wait, and follow-up before
-  Agency rejects its generated execution envelope. No second wait or header
-  exists; corrections are zero and no product trial ran. PR 230 merges the
-  opaque-boundary repair as exact `a2d1a7c`; that exact VCS revision is now
-  installed and host-current. Its consumed activation selects `code-reviewer`
-  and proves one spawn, two waits, accepted opaque follow-up dispatch, a second
-  child turn, accepted Store finalization, and zero corrections. The header is
-  withheld because Codex persists the child input as ciphertext too, leaving
-  the projector unable to reconstruct the exact execution envelope. No product
-  trial ran. The bounded local repair now proves the exact same parent and child
-  ciphertext under Store tool-use identity, canonical task path, lineage, and
-  the causal second turn without retaining it. The consumed live rollout
-  projects successfully under that code. Two bounded reviews have no unresolved
-  High or Critical finding. The final focused set passes 72 tests, both new
-  decision mutations are killed, and the complete named local gate passes.
+- The active goal remains `README's main story works in reality.` Prior exact
+  `43870c8` proves activation, inference staffing, one contractor hire, and an
+  eight-unit product topology, but its product workers acknowledged rather than
+  executed and produced no workspace proof.
+- AR-223 separates activation from execution. Exact `a2d1a7c` proves the second
+  child turn but exposes encrypted child evidence. Repair `65ee298`, merged as
+  `5ff4a08`, binds byte-equal parent/child ciphertext without retaining it and
+  passes the complete named local gate. Bare install proves exact package
+  provenance, Codex and ZCode registration, and a reachable dashboard.
+- The one `5ff4a08` activation is consumed. Session
+  `019fbf98-e5d8-77e3-9faf-0b9d36eeffb5`, trace
+  `019fbf98-f1f4-77e3-82c5-8b7a065657cb`, run `76cb3c09`, route `0cec20a3`,
+  finalization `8457f9c2`, and child `019fbf99-d680-7541-b951-00b6bd432b38`
+  prove inferred `code-reviewer`, spawn, both waits, exact follow-up and child
+  execution, accepted finalization, valid first response, and zero corrections.
+  Autonomous trust bypass worked and persistent trust was unchanged.
+- Activation still fails because `worker_runs.ended_at` is null. Current Codex
+  fires `SubagentStop` after the activation turn but not after `followup_task`.
+  Tests fabricated that second callback. No product trial ran.
+- The bounded repair now reconciles the exact completed child at parent `Stop`
+  from the documented parent transcript path. The activation stop stays open;
+  execution must precede one nonempty turn-bound final response and matching
+  completion. Forty-four focused tests pass without a synthetic second stop.
+- Read-only reprojection over the consumed `5ff4a08` parent and child rollouts
+  returns `completion_observed=True`. Two reviews are complete; they require
+  exact lineage and place execution inside the second turn before its response.
+- Exact `62ea12a` passes the named gate: Python 656/6, dashboard 110/110,
+  628-document validation, repo-wide Ruff and routing, plus 90/90 killed
+  decision mutations with zero invalid results and unchanged source.
 
 ## completed-evidence
 
@@ -122,11 +117,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO pending a fresh immutable live build. Exact
-`a2d1a7c` proves that the opaque parent follow-up launches the second execution
-turn. The repaired local boundary matches the parent and child ciphertext,
-Store tool-use ID, lineage, task path, and causal completion, and the consumed
-live rollout now projects the exact work-unit and goal hash successfully.
+The README main story remains NO-GO pending PR/merge/install and one new
+immutable-build activation. The locally green repair closes only an exactly
+proven follow-up worker at parent `Stop`; no live evidence has consumed it yet.
 
 ## same-task-continuity
 
@@ -138,7 +131,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Merge and install one fresh immutable build.
+1. Open and merge the locally green parent-stop repair, then install its exact
+   immutable merge.
 2. Spend one activation; only after it passes, spend one product trial.
 
 ## verification
@@ -166,7 +160,7 @@ git diff --check
 - One live product trial per exact installed build; any correction is failure.
 - Exact builds `e62d0adc`, `1694d6e`, `d6ba36a`, `9c2e9f8`, `8cfd975`,
   `f8e607d`, `386afca`, `5c45f154`, `ff39761`, and `43870c8` consumed governed
-  live evidence; exact `ba76ce7` and `a2d1a7c` also consumed their activations;
-  none may be rerun.
+  live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
+  activations; none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

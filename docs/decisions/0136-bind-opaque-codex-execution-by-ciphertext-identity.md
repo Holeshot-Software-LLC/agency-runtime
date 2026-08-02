@@ -11,6 +11,7 @@ related:
   - docs/decisions/0094-durable-native-child-correlation.md
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
+  - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - agency_runtime/core/codex_child_execution.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/native_child_prompt_delivery.py
@@ -70,13 +71,24 @@ For every governed Codex work unit:
    link-unsafe, wrong-turn, or unbounded evidence fails closed. Activation and
    product proofs both use this same boundary.
 
+## Implementation evidence
+
+Commit `65ee298` implements the ciphertext-identity boundary and merge commit
+`5ff4a08` publishes it through [PR 231](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/231).
+The committed tree passes 72 focused tests, the named Python spine with 656
+passes and 6 skips, 110 dashboard tests, 627-document validation, repo-wide
+Ruff lint and format, every routing threshold, and all 86 decision mutations
+with zero survivors or invalid results and unchanged source.
+
 ## Consequences
 
 - Agency can prove that the exact host message authorized by the parent hook is
   the exact message that caused the activated child's second turn without
   claiming access to plaintext the host does not retain.
 - The first readiness turn still cannot pass a worker, and Store's one-use
-  dispatch claim remains mandatory before `SubagentStop` closes it.
+  dispatch claim remains mandatory before any lifecycle boundary closes it.
+  ADR-0137 defines exact parent-`Stop` reconciliation for current Codex, which
+  does not emit a second `SubagentStop` after `followup_task`.
 - No new database column or sensitive message digest is required. Exact
   ciphertext exists only during bounded local comparison.
 - Cross-midnight child launches remain supported through the immediately prior

@@ -70,6 +70,10 @@ changes rather than duplicating every commit.
   and one-use claim, then require byte-equal ciphertext in the parent call and
   child's later `NEW_TASK` record. The comparison is transient; reports retain
   only the already verified work-unit, task-name, and goal-hash identity.
+  Because Codex emits no second `SubagentStop` after `followup_task`, the parent
+  `Stop` now closes a worker only when its exact transcript path proves the
+  claimed child lineage, execution input inside the second turn and before the
+  response, one nonempty turn-bound final answer, and matching completion.
 - Codex product evidence now accepts the current bounded native `wait_agent`
   timeout while leaving the activation canary's exact 60-second contract
   unchanged. Current inferred work-unit goals carry their verified mutation

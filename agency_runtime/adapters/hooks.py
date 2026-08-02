@@ -18,6 +18,7 @@ from uuid import UUID, uuid4
 
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.codex_child_execution import (
+    codex_child_execution_completion_observed,
     codex_current_turn_execution_observed,
 )
 from agency_runtime.core.correlation import validate_correlation_id
@@ -1978,6 +1979,62 @@ class HookBridge:
             )
         return {}
 
+    def _reconcile_codex_child_completions(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        parent_transcript_path: object,
+    ) -> None:
+        """Close only children whose completed follow-up is proven at parent Stop."""
+
+        if self.host != "codex" or not session_id or not trace_id:
+            return
+        recorder = getattr(self.store, "record_native_child_ended", None)
+        candidates = self._codex_execution_candidates(
+            session_id=session_id,
+            trace_id=trace_id,
+        )
+        if candidates and not callable(recorder):
+            raise RuntimeError("evidence store cannot record Codex child completion")
+        for expected, _specialist_slug, identity in candidates:
+            execution_tool_use_id = self._codex_execution_claim_observed(
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=expected.work_unit_id,
+                identity=identity,
+            )
+            if execution_tool_use_id is None or not codex_child_execution_completion_observed(
+                parent_transcript_path,
+                worker_id=identity.worker_id,
+                expected=expected,
+                parent_session_id=session_id,
+                execution_tool_use_id=execution_tool_use_id,
+            ):
+                continue
+            completed = recorder(
+                host=self.host,
+                backend=_native_child_backend(self.host),
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=expected.work_unit_id,
+                worker_id=identity.worker_id,
+                native_run_id=identity.native_run_id,
+                outcome="ok",
+            )
+            if (
+                not isinstance(completed, dict)
+                or completed.get("session_id") != session_id
+                or completed.get("trace_id") != trace_id
+                or completed.get("work_unit_id") != expected.work_unit_id
+                or completed.get("worker_id") != identity.worker_id
+                or completed.get("native_run_id") != identity.native_run_id
+                or completed.get("exit_code") != 0
+                or not completed.get("ended_at")
+                or completed.get("outcome") != "ok"
+            ):
+                raise RuntimeError("Codex child completion postcondition failed")
+
     def _reconcile_consumed_codex_child(
         self,
         *,
@@ -2971,6 +3028,11 @@ class HookBridge:
                         correlation.session_id,
                         final_response,
                     )
+            self._reconcile_codex_child_completions(
+                session_id=correlation.session_id,
+                trace_id=trace_id,
+                parent_transcript_path=payload.get("transcript_path"),
+            )
             self._acknowledge_resident_manager_delivery(
                 session_id=correlation.session_id,
                 trace_id=trace_id,

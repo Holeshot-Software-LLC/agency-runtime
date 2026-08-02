@@ -23,6 +23,7 @@ related:
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
+  - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -170,8 +171,61 @@ killed. The named Python spine passes 656 tests with 6 skipped, dashboard UI
 passes 110, 627 Markdown files validate, repo-wide Ruff lint and format pass,
 routing passes every threshold, and decision conformance kills 86 of 86
 mutations with zero survivors or invalid results and unchanged source after a
-163.196-second baseline and 759.4 seconds total. Fresh immutable-build proof
-remains pending.
+163.196-second baseline and 759.4 seconds total. PR 231 merges exact
+`5ff4a08e587ce47d46c96b878ed0191712906059`; the global uv tool's
+`direct_url.json` independently reports that exact requested revision and
+commit ID. Bare `agency install` auto-detects Codex and ZCode, refreshes both,
+and installs and restarts a reachable dashboard. Codex is registered with the
+exact byte-current bundle and remains `activation_required`; ZCode is
+registered and enabled.
+
+The one `5ff4a08` activation is now consumed and terminal `NO-GO`. Session
+`019fbf98-e5d8-77e3-9faf-0b9d36eeffb5`, trace
+`019fbf98-f1f4-77e3-82c5-8b7a065657cb`, run
+`76cb3c09-e9af-4549-bdef-7ecb43a7a31f`, route
+`0cec20a3-11a0-4a8d-8a5b-d7732649d3ee`, finalization
+`8457f9c2-69dd-4d4b-8254-466f0b49bdda`, and child
+`019fbf99-d680-7541-b951-00b6bd432b38` retain the boundary. Inference selects
+`code-reviewer`; both waits, the exact opaque follow-up, the child's second
+execution turn, accepted finalization, valid first response, and zero
+corrections all pass. Autonomous trust bypass is proven and persistent trust is
+unchanged. The exact child transcript also passes the new ciphertext projector.
+
+The sole failure is `worker_runs.ended_at = null`. Current Codex emits
+`SubagentStop` after the activation-only turn but does not emit it again after a
+`followup_task` turn. Both this run and the prior `a2d1a7c` run retain that same
+open-worker state; the tests incorrectly invoked a synthetic second
+`SubagentStop`. No product trial ran.
+
+The bounded lifecycle repair now reconciles at the parent `Stop`, whose common
+hook payload carries the exact parent transcript path. It accepts only the
+claimed worker whose bounded child rollout resolves back to that parent and
+proves two turns, the exact execution delivery before one nonempty turn-bound
+assistant final response, and a matching terminal completion. The activation
+stop remains non-terminal, no second stop is fabricated, and the atomic Store
+end transition records success only after all causal evidence passes. Focused
+projection and activation checks pass 44 cases; the named fast gate and one new
+immutable-build live trial remain pending.
+
+The exact local projector also replays the consumed `5ff4a08` parent rollout
+`019fbf98-e5d8-77e3-9faf-0b9d36eeffb5` and child
+`019fbf99-d680-7541-b951-00b6bd432b38` as
+`completion_observed=True`. That read-only reprojection proves the repair
+matches the real host shape without mutating or reinterpreting the terminal
+failed trial. Two bounded review passes are complete. They tightened causal
+ordering so the exact execution input must occur inside the second turn and
+before its final response, and they require child lineage even for any future
+plaintext-capable projection.
+
+Exact reviewed commit `62ea12a` now passes the complete named local gate. The
+Python production spine reports 656 passes and 6 skips; dashboard UI reports
+110 passes; documentation validates 628 files; repo-wide Ruff lint and format
+pass; routing passes every threshold. Decision conformance passes its
+248.747-second baseline and kills all 90 mutations with zero survivors or
+invalid results, unchanged source, and 938.2 seconds total command time. Four
+new mutations independently prove the parent-`Stop` call, final-response
+requirement, execution-before-response order, and execution-inside-second-turn
+boundary. PR, merge, immutable install, and the one fresh activation remain.
 
 ## Approach
 
