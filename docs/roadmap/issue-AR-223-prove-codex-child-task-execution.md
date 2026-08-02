@@ -318,6 +318,21 @@ finalization. The first header is valid, correction count and unexpected-item
 count are both zero, trust bypass is used, and the persistent profile is
 unchanged. The fresh product slot remains unconsumed.
 
+Product trial `ar223-8097e77-readme-01` is now consumed and fails after 104.094
+seconds. Session `019fc03e-1ce0-7b01-ad08-3b80c65c2ec2`, trace
+`019fc03e-1d71-7be0-aa0f-918623d2014e`, run
+`c100183d-6b38-45db-adc8-fb4258c432fe`, route
+`52f57ced-a4e2-4b6d-9f5a-9d3be4c9c6d6`, and finalization
+`bd418651-542f-42db-a0a0-7e4c4b35ce82` prove an accepted 11-unit inferred plan
+across `codebase-onboarding-engineer`, `python-cli-architecture-specialist`,
+`python-application-engineer`, `software-test-engineer`, `code-reviewer`,
+`test-results-analyzer`, and `technical-writer`. The parent rollout is observed
+but makes zero spawns, follow-ups, or waits; no specialist loads, activation
+receipts, or workers exist; the workspace remains empty; and no header is
+produced. The terminal reasons are `codex_parent_spawn_missing` and
+`workspace_write_not_proven`; correction count is zero. This build and trial
+must not be rerun.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

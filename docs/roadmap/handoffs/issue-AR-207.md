@@ -48,7 +48,7 @@ type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
 evidence_commit: 8097e7708a52956862746ea3aa5b2fecbe7031ed
-minimum_ledger_commit: e73a641b76506c83ed86ad32f02d4cd8af02855a
+minimum_ledger_commit: 0362b4161a337b30c40311ece068df2d38cf6939
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -81,6 +81,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `code-reviewer`, one exact spawn, one execution follow-up, two waits, a
   completed exit-zero worker, valid first header, zero corrections, and zero
   unexpected parent items. Trust bypass changes no persistent profile state.
+- Product trial `ar223-8097e77-readme-01` is consumed and fails after 104.094
+  seconds. Session `019fc03e-1ce0`, trace `019fc03e-1d71`, run `c100183d`,
+  route `52f57ced`, and finalization `bd418651` prove an accepted 11-unit plan
+  across seven specialists. The parent rollout is observed, but it makes zero
+  spawns, follow-ups, or waits; no specialist loads or workers exist; the
+  workspace is empty; the header is absent; and correction count is zero.
 
 ## completed-evidence
 
@@ -106,15 +112,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   canonical 1,123-byte renderer with one begin and one end marker. Codex is
   installed build then passes its single autonomous activation with one route,
   plan, delegation, load, worker, and finalization; no preflight failures; a
-  valid first header; and zero corrections. No product trial is consumed.
+  valid first header; and zero corrections. Its consumed product trial proves
+  an accepted 11-unit inferred graph and exact isolated trust, then fails
+  `codex_parent_spawn_missing` / `workspace_write_not_proven` before execution.
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `b2be077` passes activation, but its
-product parent never invokes collaboration. Exact `8097e77` installs the
-managed global-guidance repair and passes its one allowed activation. The only
-remaining AR-223 live slot is one fresh product trial proving the parent now
-delegates the inferred graph and its specialists create verified artifacts.
+The README main story remains NO-GO. Exact `8097e77` installs the managed
+global-guidance repair and passes activation, but the consumed product parent
+still never invokes collaboration. The next boundary is read-only diagnosis of
+the persisted parent rollout and isolated profile: prove whether current Codex
+loaded the canonical global guidance, then repair only that exact authority
+handoff. The exact build and trial must never be rerun.
 
 ## same-task-continuity
 
@@ -126,9 +135,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Checkpoint the passed exact-build activation, then run context telemetry.
-2. Spend exactly one fresh product trial for `8097e77`. Never rerun either
-   consumed build or trial; checkpoint the terminal result before further work.
+1. Inspect the consumed parent rollout and isolated profile without relaunching
+   either live command; identify the first missing guidance-consumption edge.
+2. Freeze one repair around that edge, run focused checks and the named local
+   gate, then checkpoint before any new immutable-build live evidence.
 
 ## verification
 
