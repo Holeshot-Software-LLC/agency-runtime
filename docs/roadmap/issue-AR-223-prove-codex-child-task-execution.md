@@ -373,6 +373,31 @@ one consumed grant, one specialist load, and one completed worker. The first
 header is valid, correction count is zero, the bypass changes no persistent
 profile state, and the product slot remains unconsumed.
 
+Product trial `ar223-eb8e077-readme-01` is consumed and fails after 698.421
+seconds. Session `019fc07a-7f12-7423-8098-2f093898b361`, trace
+`019fc07a-7f90-7d41-afb3-663fb9c1a903`, run
+`21c91eda-a403-44a7-ac49-6e1e0d1ebdc0`, route
+`67300d45-cf3c-46d6-8d4e-25afaf60d725`, and finalization
+`76d583c5-fea3-4279-a1d8-63a7e5964811` prove a high-confidence, nine-unit
+inferred plan across `codebase-onboarding-engineer`,
+`python-cli-architecture-specialist`, `python-application-engineer`,
+`software-test-engineer`, `technical-writer`, `code-reviewer`, and
+`test-results-analyzer`. All nine delegations complete, all seven specialists
+load, all nine workers exit zero, the parent completes, and exactly one
+finalization is accepted; the first header is valid and correction count is
+zero. Existing contractors fill architecture, implementation, and test roles;
+no new hire is attempted.
+
+The trial's sole proof failure is `workspace_write_not_proven`. The plan
+correctly marks implementation unit `unit-e3a6637a0c`, test unit
+`unit-8e8634aa31`, and documentation unit `unit-f027038a2b` as
+`workspace_write`, but their worker records contain no stdout or stderr and the
+exact trial workspace remains empty. The expected proof file is missing, so
+artifact and check validation are correctly skipped. This consumed trial must
+not be rerun. The remaining defect is now below inference, plan delivery, and
+child lifecycle: Codex writer children did not realize their declared
+workspace-write capability.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

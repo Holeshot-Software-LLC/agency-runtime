@@ -127,13 +127,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact installed `eb8e077` passes its sole
-autonomous activation: session `019fc073-ad61`, trace `019fc073-b8fd`, run
-`1602cd81`, native run `codex-agent:019fc074-d7b4`, delegation `9351fffd`, and
-finalization `1be22617` prove inferred/loaded `code-reviewer`, one spawn, one
-follow-up, two completed waits, one completed worker, a valid first header, and
-zero corrections. Trust bypass changes no persistent state. Only one fresh
-product trial remains; failure is the stop point, not another repair loop.
+The README main story remains NO-GO. Consumed product trial
+`ar223-eb8e077-readme-01` runs 698.421 seconds and proves a nine-unit plan,
+seven loaded specialists, nine completed delegations, nine exit-zero workers,
+one accepted finalization, a valid first header, and zero corrections. Its sole
+failure is `workspace_write_not_proven`: all three declared writer workers have
+empty stdout/stderr and the exact workspace has zero files. The trial must not
+be rerun; stop rather than opening another automatic repair loop.
 
 ## same-task-continuity
 
@@ -145,8 +145,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run one fresh product trial for exact `eb8e077`.
-2. Stop and report if it fails; do not repair or rerun it.
+1. Preserve this consumed failure and do not rerun exact `eb8e077`.
+2. If resumed, prove one writer sentinel before a new build; reuse routing.
 
 ## verification
 
