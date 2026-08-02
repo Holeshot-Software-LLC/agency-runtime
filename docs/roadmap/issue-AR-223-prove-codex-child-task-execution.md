@@ -673,6 +673,23 @@ and kills all 97 mutations with zero survivors or invalid results, unchanged
 source, and 831.4 seconds total command time. This is local source evidence;
 one immutable build, install, and live writer sentinel remain pending.
 
+Clean checkpoint `93e465a9a42fbf8c73de44b8d56bcbd30c54e455` builds
+canonically from a detached checkout. Strict Twine metadata and independent
+distribution verification pass; the installed Windows wheel has SHA-256
+`6426f2e1e061a5b34f80aece547a0468e75f26a1d4a3667d2529dfa87df70d50`.
+The default autonomous suite installs Codex and ZCode plus an active reachable
+dashboard. Its one permitted activation passes: session
+`019fc1f7-00aa-72b3-9005-2cf180485a8d`, trace
+`019fc1f7-0c2c-7593-a44c-eb2d2394047a`, route
+`0d018c1d-86a9-49f9-a446-944da5ab1775`, run
+`46ef75fb-b233-445e-9d79-0ab2abb6ae67`, finalization
+`3f983200-0b34-484d-93d9-d399ac46812f`, and native worker
+`codex-agent:019fc1f8-0ae2-7263-a6ea-f051c16e0e97` prove one inferred,
+loaded, and delegated `code-reviewer`; one spawn, no follow-up, one wait; an
+exact execution dispatch; terminal exit zero; accepted finalization; a valid
+first header; and zero corrections. Autonomous trust bypass changes no
+persistent profile state. This admits one fresh Agency writer sentinel only.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

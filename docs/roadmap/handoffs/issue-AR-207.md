@@ -83,6 +83,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Clean repair `10c047f` passes the complete named gate: 657 Python passes with
   6 skips, 110 dashboard passes, every routing threshold, and 97/97 killed
   decision mutations with unchanged source. All documentation and Ruff gates pass.
+- Exact `93e465a` builds and independently verifies; wheel SHA-256 is
+  `6426f2e1e061a5b34f80aece547a0468e75f26a1d4a3667d2529dfa87df70d50`.
+  Codex, ZCode, and the reachable dashboard install. Its one activation proves
+  inferred/loaded/delegated `code-reviewer`, direct execution, a terminal
+  exit-zero worker, accepted finalization, valid first header, zero corrections,
+  and autonomous trust bypass without persistent profile change.
 
 ## completed-evidence
 
@@ -103,10 +109,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The two consumed-trial defects and complete named gate pass only in the local
-source candidate. Immutable build/install, writer artifact, full product
-artifacts, concise header, dashboard parity, and local evidence report remain
-unproven. The README main story therefore remains `NO-GO`.
+The two consumed-trial defects, complete named gate, exact build/install, and
+activation now pass. The writer artifact, full product artifacts, concise
+header, dashboard parity, and local evidence report remain unproven. The README
+main story therefore remains `NO-GO`.
 
 ## same-task-continuity
 
@@ -118,9 +124,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Record the green named gate and its ledger, then create and independently
-   verify one canonical detached-checkout build.
-2. Install that exact candidate and consume one fresh writer sentinel only.
+1. Consume one fresh writer sentinel against exact installed `93e465a`; require
+   one inference-authored unit, selected writer, exact session evidence,
+   terminal execution, exact bytes, and zero corrections.
+2. Only a pass admits the complete README/dashboard/header/report trial.
 
 ## verification
 
@@ -149,7 +156,8 @@ git diff --check
   `f8e607d`, `386afca`, `5c45f154`, `ff39761`, and `43870c8` consumed governed
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
   activations; exact `b2be077` consumed both activation and product evidence;
-  `ae322ec`, `bffd2c8`, `b6bcdfb`, `d4c65a7`, and `4d14b99` consumed governed evidence;
+  `ae322ec`, `bffd2c8`, `b6bcdfb`, `d4c65a7`, `4d14b99`, and `93e465a`
+  consumed governed evidence;
   none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
