@@ -536,6 +536,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1743a22` | 2026-08-02 | docs(ar-223): record green terminal child gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `55c52b9` | 2026-08-02 | docs(ar-223): record failed terminal writer | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `8c67cc2` | 2026-08-02 | fix(ar-223): execute Codex specialists on initial spawn | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `aef9399` | 2026-08-02 | docs(ar-223): record failed direct activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
