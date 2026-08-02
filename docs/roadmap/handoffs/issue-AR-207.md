@@ -61,67 +61,48 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The goal remains `README's main story works in reality.` Exact installed
-  merge `eb8e077` passes autonomous activation and routes the complete bounded
-  inferred plan inline.
-- Its consumed product trial `ar223-eb8e077-readme-01` accepts nine inferred
-  units, loads seven specialists, completes nine delegations and workers,
-  accepts one finalization, emits a valid first header, and needs zero
-  corrections. It fails only `workspace_write_not_proven`: the exact workspace
-  is empty despite three declared writer units.
-- The first bounded diagnosis found that the execution follow-up carried only
-  identity and told the child to recover its goal from the prior activation
-  turn. The Agency-disabled control repeated that parent-only-context mistake,
-  so it does not prove a sandbox defect.
-- The local protocol repair carries the exact hash-bound goal in the execution
-  turn, preserves shared-prefix compression, and rejects missing or tampered
-  goals. ADR-0139 supersedes ADR-0136's content-free trigger premise.
-- Fresh native control `ar223-native-writer-self-contained-01` is consumed. It
-  completes in 42.4 seconds with exit zero under autonomous bypass but records
-  zero spawns, zero follow-ups, one wait, and zero unexpected items. Its exact
-  workspace is empty, so the self-contained child block never reached a child.
-- Direct app child `ar223-direct-native-child-01` creates and reads back exact
-  29-byte sentinel content under the fresh workspace. This proves current-host
-  child workspace-write and narrows the defect to the harness parent launch.
-- Codex 0.146.0 exposes stable `multi_agent` as enabled and internal
-  `multi_agent_v2` as disabled by default. ADR-0140 switches both Agency Codex
-  backends to the stable feature; 38 focused tests and targeted Ruff pass.
-- Retained stable-feature control
-  `ar223-native-writer-stable-multi-agent-01` fails identically: zero spawns,
-  zero follow-ups, one completed wait with zero receivers, and an empty
-  workspace. Its parent fabricates a read-only child failure despite no child.
-- ADR-0141 supersedes that detour and restores V2 before any build. Generic
-  Agency-disabled controls omit the accepted plan and global guidance; the real
-  product already proves nine parent spawns, so the next admissible proof is
-  one accepted Agency writer row using the self-contained follow-up.
+  `ae322ec` passes the named gate and default suite install. Codex autonomous
+  activation is runtime-verified; ZCode is enabled; the dashboard is active
+  and reachable.
+- The older consumed product `ar223-eb8e077-readme-01` proves nine inferred
+  units, seven loaded specialists, nine completed workers, a valid first
+  header, and zero corrections, but no writer artifact.
+- Direct app child `ar223-direct-native-child-01` independently proves exact
+  current-host child workspace-write. Generic Agency-disabled controls remain
+  non-admissible under ADR-0141.
+- Writer sentinel `ar223-agency-writer-ae322ec-01` is invalid because its
+  harness prompt states the wrong SHA-256. Its correct 23-byte hash is
+  `767303371a040770ecccc894befc37191c57af167b1dce19ed569b5d20c3e5eb`;
+  the same build must not be retried.
+- That retained run independently proves a scheduler defect: an accepted
+  five-row plan dispatches four children and advances while every prior worker
+  remains nonterminal. Unit five is never launched before the 300-second host
+  timeout and the writer proof is absent.
+- ADR-0142 requires one terminal activation wait and one through three bounded
+  execution waits. A commentary wake is not completion, and no later row may
+  launch before the exact prior child is terminal.
 
 ## completed-evidence
 
-- PR 234 merges `eb8e07770bf2b1d29933ff7730f09115928e4b1a`; installed uv
-  provenance and `agency version --json` match it. Bare installation discovers
-  only Codex and ZCode and leaves the dashboard installed, active, current, and
-  reachable.
-- The consumed activation proves inference, one loaded specialist, exact
-  spawn/follow-up/two-wait execution, a closed exit-zero worker, valid first
-  header, zero corrections, and autonomous trust bypass without persistent
-  profile mutation.
-- The self-contained execution slice passes 54 focused delivery/plan tests and
-  110 broader Codex lifecycle/product-host tests. Targeted Ruff lint and format
-  checks pass. No new immutable build or product trial has been spent.
+- Exact `ae322ec` passes 657 Python production tests with 6 skips, 110 dashboard
+  tests, every routing threshold, and 91/91 decision mutations. Its wheel and
+  source archive pass strict metadata and independent exact-commit verification.
+- Default installation discovers Codex and ZCode, installs both plus the
+  dashboard, and records `trust_mode=autonomous_bypass`. Activation proves one
+  inferred/loaded `code-reviewer`, one native worker, one accepted finalization,
+  and zero corrections.
+- The ADR-0142 focused slice passes 42 tests and both new decision mutations;
+  the second and final surrounding lifecycle review passes 164 tests. Targeted
+  Ruff passes; the named gate and new immutable live proof remain pending.
 
 ## exact-blocker
 
-The README main story remains NO-GO. Consumed product trial
-`ar223-eb8e077-readme-01` runs 698.421 seconds and proves a nine-unit plan,
-seven loaded specialists, nine completed delegations, nine exit-zero workers,
-one accepted finalization, a valid first header, and zero corrections. Its sole
-failure is `workspace_write_not_proven`: all three declared writer workers have
-empty stdout/stderr and the exact workspace has zero files. The trial must not
-be rerun. The new native sentinel also remains NO-GO, but at an earlier exact
-boundary: `codex_parent_spawn_missing`. It neither proves nor disproves child
-workspace-write because no child was launched. The direct app child now proves
-workspace-write independently. Generic parent launch is non-admissible for the
-README gate; the unproven boundary is task realization by one accepted Agency
-writer row.
+The README main story remains NO-GO. The new installed build proves activation,
+but its writer sentinel is invalid due to the harness-authored hash mismatch.
+The exact product defect now under repair is terminal ordering: the parent must
+not advance after a commentary wake while the current writer is still active.
+No corrected Agency writer artifact, full product, concise header, dashboard
+configuration parity, or shareable final report is proven yet.
 
 ## same-task-continuity
 
@@ -133,11 +114,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Preserve both consumed controls; do not rerun either exact workspace.
-2. Restore V2 locally, run focused checks, and checkpoint the rejected stable
-   hypothesis without producing a build.
-3. Run the named local gate, build once, and prove one accepted-plan Agency
-   writer sentinel before any full product trial.
+1. Run the named local gate for the reviewed ADR-0142 repair.
+2. Build and install one new exact commit; do not reuse `ae322ec` evidence.
+3. Run one corrected accepted-plan Agency writer sentinel. Stop before a full
+   product trial unless exact file proof and zero corrections pass.
 
 ## verification
 

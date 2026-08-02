@@ -3,7 +3,7 @@ title: "AR-223: Prove Codex child task execution"
 status: in_progress
 category: roadmap
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-02
 tags: [bug, product, codex, delegation, execution, evidence]
 related:
   - README.md
@@ -28,6 +28,7 @@ related:
   - docs/decisions/0139-make-codex-execution-turns-self-contained.md
   - docs/decisions/0140-use-codex-stable-multi-agent-feature.md
   - docs/decisions/0141-admit-writer-proof-only-through-agency-plans.md
+  - docs/decisions/0142-require-terminal-product-child-before-next-unit.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -458,6 +459,35 @@ The consumed real product trial already proves nine Agency parent spawns; the
 direct app child proves exact workspace-write. The next admissible proof is one
 accepted Agency writer row using the new self-contained follow-up.
 
+Exact candidate `ae322ec` passes the named local gate: 657 Python production
+tests with 6 skips, 110 dashboard tests, every routing threshold, and all 91
+decision mutations with zero survivors or invalid results. Its independently
+verified wheel installs the default discovered suite. Codex autonomous
+activation passes with one inferred and loaded `code-reviewer`, one native
+worker, one accepted finalization, zero corrections, and no persistent trust
+change. ZCode is registered and enabled; the dashboard is active and reachable.
+
+Writer sentinel `ar223-agency-writer-ae322ec-01` is retained but invalid as a
+product verdict: the harness stated the correct 23-byte length but the wrong
+SHA-256. The correct hash for `AR223_AGENCY_WRITER_OK` plus LF is
+`767303371a040770ecccc894befc37191c57af167b1dce19ed569b5d20c3e5eb`.
+No retry is allowed on that build.
+
+The invalid run still exposes an independent terminal-order defect. Its
+accepted five-row plan dispatches four specialist children, including
+`minimal-change-engineer` with `mutation_scope=workspace_write`, but advances
+while every prior worker has `ended_at = null`; unit five remains suggested at
+the 300-second deadline and the proof file is absent. ADR-0142 now requires the
+parent to distinguish commentary wakes from terminal completion, permits up to
+three bounded execution waits, and forbids launching the next row before the
+exact prior child is terminal.
+
+The focused implementation and mutation slice passes 42 tests and kills both
+new decision mutations with zero survivors or invalid results. The second and
+final review pass covers 164 surrounding Codex activation, product-host,
+child-execution, and hook tests with warning-strict execution. Targeted Ruff,
+format, documentation, and diff checks pass. The new named gate remains.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -500,6 +530,8 @@ accepted plan authority.
   independently proving inherited workspace-write capability.
 - [ ] One accepted Agency plan row launches its selected writer, delivers the
   self-contained execution turn, and creates exact retained file proof.
+- [x] Product scheduling cannot advance from a nonterminal commentary wake;
+  bounded repeated waits remain causally and content-freely verifiable.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
 - [x] Focused checks, bounded review, and the complete named local gate pass on

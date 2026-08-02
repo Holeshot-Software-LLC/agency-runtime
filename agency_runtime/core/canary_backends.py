@@ -1329,6 +1329,41 @@ def _codex_product_spawn_projection(
     )
 
 
+def _codex_product_call_groups(
+    ordered: list[dict[str, Any]],
+    *,
+    spawn_count: int,
+) -> tuple[tuple[dict[str, Any], dict[str, Any], tuple[dict[str, Any], ...]], ...]:
+    groups: list[tuple[dict[str, Any], dict[str, Any], tuple[dict[str, Any], ...]]] = []
+    cursor = 0
+    for _index in range(spawn_count):
+        if cursor + 3 >= len(ordered):
+            raise ValueError("Codex product collaboration calls were not causally ordered")
+        spawn = ordered[cursor]
+        activation_wait = ordered[cursor + 1]
+        followup = ordered[cursor + 2]
+        cursor += 3
+        execution_waits: list[dict[str, Any]] = []
+        while (
+            cursor < len(ordered)
+            and ordered[cursor]["name"] == "wait_agent"
+            and len(execution_waits) < 3
+        ):
+            execution_waits.append(ordered[cursor])
+            cursor += 1
+        if (
+            spawn["name"] != "spawn_agent"
+            or activation_wait["name"] != "wait_agent"
+            or followup["name"] != "followup_task"
+            or not execution_waits
+        ):
+            raise ValueError("Codex product collaboration calls were not causally ordered")
+        groups.append((spawn, followup, tuple(execution_waits)))
+    if cursor != len(ordered):
+        raise ValueError("Codex product collaboration calls were not causally ordered")
+    return tuple(groups)
+
+
 def _codex_product_wait_counts(
     waits: list[dict[str, Any]],
     *,
@@ -1401,22 +1436,17 @@ def _codex_product_rollout_collaboration_evidence(
         raise ValueError("Codex product spawn cardinality was invalid")
     if len(followups) != len(spawns):
         raise ValueError("Codex product followup cardinality was invalid")
-    if len(waits) != len(spawns) * 2 or len(waits) > _CODEX_PRODUCT_MAX_WAITS:
+    if not len(spawns) * 2 <= len(waits) <= len(spawns) * 4 or (
+        len(waits) > _CODEX_PRODUCT_MAX_WAITS
+    ):
         raise ValueError("Codex product wait cardinality was invalid")
     if set(outputs) != {call["call_id"] for call in calls}:
         raise ValueError("Codex product collaboration outputs did not match its calls")
     ordered = sorted(calls, key=lambda call: call["index"])
-    expected_names = [
-        name
-        for _spawn in spawns
-        for name in ("spawn_agent", "wait_agent", "followup_task", "wait_agent")
-    ]
-    if [call["name"] for call in ordered] != expected_names:
-        raise ValueError("Codex product collaboration calls were not causally ordered")
+    call_groups = _codex_product_call_groups(ordered, spawn_count=len(spawns))
     projected_spawns: list[dict[str, Any]] = []
     child_tool_call_count = 0
-    for index in range(len(spawns)):
-        spawn, _activation_wait, followup, _execution_wait = ordered[index * 4 : index * 4 + 4]
+    for spawn, followup, _execution_waits in call_groups:
         projected, tool_count = _codex_product_spawn_projection(
             spawn,
             followup,

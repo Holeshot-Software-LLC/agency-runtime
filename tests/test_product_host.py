@@ -1120,6 +1120,10 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
         "included in this current execution turn",
         "JSON-decoded execution_message_prefix",
         "permitted workspace tools for every required implementation",
+        "timeout_ms=60000",
+        "timeout_ms=120000",
+        "repeat that same wait up to two additional times",
+        "Never spawn the next row until",
     ):
         assert required_contract in instructions
 

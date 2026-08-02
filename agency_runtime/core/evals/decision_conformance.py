@@ -661,6 +661,32 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="product-host-advances-after-commentary-wake",
+        invariant=("A product parent never advances after a nonterminal child commentary wake."),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before=(
+            '    "completion: repeat that same wait up to two additional times until the exact child "'
+        ),
+        after=('    "completion: advance after that first nonterminal commentary update. "'),
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_backend_supplies_bounded_parent_and_child_delegation_authority"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-rollout-rejects-commentary-waits",
+        invariant=(
+            "Product rollout evidence admits bounded repeated execution waits before terminal child completion."
+        ),
+        source_path="agency_runtime/core/canary_backends.py",
+        before="    if not len(spawns) * 2 <= len(waits) <= len(spawns) * 4 or (",
+        after="    if len(waits) != len(spawns) * 2 or (",
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_product_rollout_projects_exact_eight_unit_reuse_topology"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="codex-global-guidance-drops-native-delegation-request",
         invariant=(
             "A Codex installation explicitly requests native delegation only for an "

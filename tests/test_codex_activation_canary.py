@@ -2208,6 +2208,32 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
                 },
             )
         )
+        if index == 1:
+            parent_events.extend(
+                (
+                    {
+                        "type": "response_item",
+                        "payload": {
+                            "type": "function_call",
+                            "id": f"execution-commentary-wait-item-{index}",
+                            "name": "wait_agent",
+                            "namespace": "collaboration",
+                            "call_id": f"call-product-execution-commentary-wait-{index}",
+                            "arguments": json.dumps({"timeout_ms": 120_000}),
+                        },
+                    },
+                    {
+                        "type": "response_item",
+                        "payload": {
+                            "type": "function_call_output",
+                            "call_id": f"call-product-execution-commentary-wait-{index}",
+                            "output": json.dumps(
+                                {"message": "Wait completed.", "timed_out": False}
+                            ),
+                        },
+                    },
+                )
+            )
         stdout_events.extend(
             (
                 {
@@ -2412,8 +2438,8 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
     assert collaboration["schema"] == "agency.codex-product-collaboration.v1"
     assert collaboration["spawn_count"] == 8
     assert collaboration["followup_count"] == 8
-    assert collaboration["wait_count"] == 16
-    assert collaboration["completed_wait_count"] == 16
+    assert collaboration["wait_count"] == 17
+    assert collaboration["completed_wait_count"] == 17
     assert collaboration["completed_child_count"] == 8
     assert collaboration["child_tool_call_count"] == 8
     assert collaboration["host_notice_count"] == 1
