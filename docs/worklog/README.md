@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-01
+updated: 2026-08-02
 tags: []
 related: []
 supersedes: []
@@ -534,6 +534,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0151581` | 2026-08-02 | fix(ar-223): gate writer proof on Agency plans | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `5067b7a` | 2026-08-02 | fix(ar-223): wait for terminal product children | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `1743a22` | 2026-08-02 | docs(ar-223): record green terminal child gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `55c52b9` | 2026-08-02 | docs(ar-223): record failed terminal writer | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
