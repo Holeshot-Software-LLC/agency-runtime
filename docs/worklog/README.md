@@ -555,6 +555,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3f63d55` | 2026-08-02 | fix(ar-223): honor indivisible staffing topology | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `9f66c86` | 2026-08-02 | docs(ar-223): record green staffing topology gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `13991fc` | 2026-08-02 | docs(ar-223): record exact staffing candidate activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `f647eab` | 2026-08-02 | docs(ar-223): record failed exact writer execution | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
