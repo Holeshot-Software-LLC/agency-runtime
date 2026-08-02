@@ -492,6 +492,43 @@ skips, dashboard UI reports 110 passes, every routing threshold passes, and
 decision conformance kills 93 of 93 mutations with zero survivors or invalid
 results and unchanged source.
 
+Exact clean recovery head `bffd2c8f172ea774353158d10ad615a89c3d0095`
+then builds and installs as a wheel with SHA-256
+`1bf175f209969d773c4725a34ec70c6dace932b28304113a78d31eaf2e227aae`.
+Default autonomous installation discovers only Codex and ZCode, installs both
+plus the dashboard, and passes Codex activation. Activation session
+`019fc10f-f69d-7311-900e-12b13afd41b1` and trace
+`019fc110-02e5-7c10-a464-2f1bd571a992` prove one inferred and loaded
+`code-reviewer`, one completed native worker, one accepted finalization, a
+valid first header, zero corrections, and trust bypass without persistent
+profile change. ZCode is registered and enabled; the dashboard is active and
+reachable.
+
+Corrected writer sentinel `ar223-agency-writer-bffd2c8-01` is consumed and
+terminal `NO-GO`. Session `019fc112-9e30-7a10-a0bb-dba51de4b4bb`, trace
+`019fc112-9eca-7bf1-b1cd-889bf37422ad`, route
+`55f9ebef-2ca4-4dba-8d30-911ee97d4742`, run
+`f43fc4d9-9997-4069-9ba3-d771fb0c7afe`, and finalization
+`2a336e1c-3e75-4d12-8edc-7279afdd8eac` retain the exact result. Inference
+expands the explicitly indivisible request into four units and selects
+`minimal-change-engineer`, `software-test-engineer`, `code-reviewer`, and
+`test-results-analyzer`. The parent launches only the first specialist. Its
+activation and execution waits both reach terminal completion, the worker
+exits zero, and the rollout has zero corrections or unexpected items. The
+parent then truthfully finalizes `delegation_declined` because the other three
+accepted rows did not execute. The exact workspace remains empty and both
+`writer-result.txt` and the workspace-write proof are absent.
+
+The retained failure narrows the product defect past scheduler timing. Agency
+itself tells a newly spawned Codex specialist to perform no work in its first
+native turn, then relies on an encrypted `followup_task` turn for execution.
+The direct current-host control already proves a self-contained first-turn
+child can write exact bytes. The two-turn activation ceremony is therefore no
+longer justified by the product outcome and is the next bounded boundary to
+remove; the accepted specialist should execute its exact spawn goal in the
+first turn and the parent should wait for that same terminal child before any
+later row.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

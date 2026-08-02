@@ -3,7 +3,7 @@ title: "AR-207 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-31
-updated: 2026-08-01
+updated: 2026-08-02
 tags: [handoff, preflight, delegation, codex, diagnostics, evidence]
 related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
@@ -50,8 +50,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: eb8e07770bf2b1d29933ff7730f09115928e4b1a
-minimum_ledger_commit: 73274832a0985c7817c991061ac839386deb7cc1
+evidence_commit: bffd2c8f172ea774353158d10ad615a89c3d0095
+minimum_ledger_commit: bffd2c8f172ea774353158d10ad615a89c3d0095
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -61,26 +61,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## checkpoint
 
 - The goal remains `README's main story works in reality.` Exact installed
-  `ae322ec` passes the named gate and default suite install. Codex autonomous
-  activation is runtime-verified; ZCode is enabled; the dashboard is active
-  and reachable.
+  `bffd2c8` passes the named gate, build, default suite install, and Codex
+  activation. ZCode is enabled; the dashboard is active and reachable.
 - The older consumed product `ar223-eb8e077-readme-01` proves nine inferred
   units, seven loaded specialists, nine completed workers, a valid first
   header, and zero corrections, but no writer artifact.
 - Direct app child `ar223-direct-native-child-01` independently proves exact
   current-host child workspace-write. Generic Agency-disabled controls remain
   non-admissible under ADR-0141.
-- Writer sentinel `ar223-agency-writer-ae322ec-01` is invalid because its
-  harness prompt states the wrong SHA-256. Its correct 23-byte hash is
-  `767303371a040770ecccc894befc37191c57af167b1dce19ed569b5d20c3e5eb`;
-  the same build must not be retried.
-- That retained run independently proves a scheduler defect: an accepted
-  five-row plan dispatches four children and advances while every prior worker
-  remains nonterminal. Unit five is never launched before the 300-second host
-  timeout and the writer proof is absent.
-- ADR-0142 requires one terminal activation wait and one through three bounded
-  execution waits. A commentary wake is not completion, and no later row may
-  launch before the exact prior child is terminal.
+- Corrected writer sentinel `ar223-agency-writer-bffd2c8-01` is consumed and
+  terminal `NO-GO`. It infers four units, launches and loads
+  `minimal-change-engineer`, reaches terminal activation and execution waits,
+  closes that worker at exit zero, and records zero corrections. It then
+  truthfully finalizes `delegation_declined`; the other three accepted rows
+  remain suggested and the exact workspace is empty.
+- The remaining boundary is the self-imposed two-turn Codex ceremony. Agency
+  forbids work in the initial spawn turn and depends on an encrypted follow-up
+  turn, while the direct native control already proves a self-contained first
+  turn can write exact bytes.
 
 ## completed-evidence
 
@@ -96,15 +94,21 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   Ruff passes. Clean head `a5b9d4b` passes the named gate: 657 Python tests
   with 6 skips, 110 dashboard tests, every routing threshold, and 93/93
   decision mutations with zero survivors or invalid results.
+- Exact `bffd2c8` builds and installs with wheel SHA-256
+  `1bf175f209969d773c4725a34ec70c6dace932b28304113a78d31eaf2e227aae`.
+  Its default suite and autonomous activation pass with one inferred/loaded
+  specialist, one completed worker, one accepted finalization, a valid first
+  header, zero corrections, and no persistent trust change.
 
 ## exact-blocker
 
-The README main story remains NO-GO. The new installed build proves activation,
-but its writer sentinel is invalid due to the harness-authored hash mismatch.
-The exact product defect now under repair is terminal ordering: the parent must
-not advance after a commentary wake while the current writer is still active.
-No corrected Agency writer artifact, full product, concise header, dashboard
-configuration parity, or shareable final report is proven yet.
+The README main story remains NO-GO. The corrected installed writer sentinel
+proves specialist launch, load, exact terminal waiting, and zero corrections,
+but produces no artifact. The exact next repair removes Agency's two-turn Codex
+activation ceremony so the selected specialist executes the exact spawn goal
+in its first native turn. No Agency writer artifact, full product, concise
+header, dashboard configuration parity, or shareable final report is proven
+yet.
 
 ## same-task-continuity
 
@@ -116,9 +120,13 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Build and install one new exact commit; do not reuse `ae322ec` evidence.
-2. Run one corrected accepted-plan Agency writer sentinel. Stop before a full
-   product trial unless exact file proof and zero corrections pass.
+1. Replace the Codex activation-only spawn plus encrypted follow-up with one
+   self-contained specialist execution spawn and bounded terminal waits.
+2. Run focused lifecycle, hook, product-rollout, and decision-conformance tests;
+   checkpoint before any immutable build.
+3. Build and install one new exact commit, then consume one new Agency writer
+   sentinel. Stop before a full product trial unless exact file proof and zero
+   corrections pass.
 
 ## verification
 
@@ -147,6 +155,6 @@ git diff --check
   `f8e607d`, `386afca`, `5c45f154`, `ff39761`, and `43870c8` consumed governed
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
   activations; exact `b2be077` consumed both activation and product evidence;
-  none may be rerun.
+  `ae322ec`, and `bffd2c8` consumed governed evidence; none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
