@@ -484,6 +484,7 @@ class _Backend:
             )
         return {
             "backend": "codex",
+            "session_id": "019fa6a6-9432-7c70-a594-68ccdf7e4988",
             "profile_scope": "isolated-profile",
             "isolated_plugin": {"registered": True, "enabled": True},
             "status": "completed",
@@ -602,8 +603,8 @@ def test_codex_agency_product_host_consumes_the_exact_activation_snapshot(
         def recent_runtime_activity(self, *, limit: int):
             raise AssertionError(f"legacy activity summary was requested with limit={limit}")
 
-        def get_canary_activation_snapshot(self, *, host: str, query_hash: str):
-            observed["exact_request"] = (host, query_hash)
+        def get_canary_activation_snapshot(self, *, host: str, query_hash: str, session_id: str):
+            observed["exact_request"] = (host, query_hash, session_id)
             return {
                 "schema": "agency.canary-activation-evidence.v1",
                 "proven": True,
@@ -643,7 +644,11 @@ def test_codex_agency_product_host_consumes_the_exact_activation_snapshot(
 
     executed_prompt = str(observed["invocation"]["task"])
     executed_hash = hashlib.sha256(executed_prompt.encode("utf-8")).hexdigest()
-    assert observed["exact_request"] == ("codex", executed_hash)
+    assert observed["exact_request"] == (
+        "codex",
+        executed_hash,
+        "019fa6a6-9432-7c70-a594-68ccdf7e4988",
+    )
     assert result.agency_evidence["runtime"]["schema"] == ("agency.canary-activation-evidence.v1")
     assert result.agency_evidence["workspace_trust"]["proven"] is True
     assert result.agency_evidence["hook_trust"] == {
@@ -655,6 +660,44 @@ def test_codex_agency_product_host_consumes_the_exact_activation_snapshot(
     }
     assert result.workspace_write_proven is True
     assert not (tmp_path / ".agency-runtime-workspace-write-proof").exists()
+
+
+def test_codex_agency_product_host_requires_native_parent_session(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: dict[str, object] = {}
+
+    @dataclass(frozen=True)
+    class MissingSessionBackend(_Backend):
+        def execute(self, *, task: str, workdir: str, check: bool):
+            record = super().execute(task=task, workdir=workdir, check=check)
+            record.pop("session_id")
+            return record
+
+    monkeypatch.setattr(
+        product_host,
+        "_codex_product_backend",
+        lambda **_kwargs: MissingSessionBackend(observed),
+    )
+    prompt = "Build the exact-session product."
+
+    result = execute_product_host(
+        prompt=prompt,
+        prompt_hash=_hash(prompt),
+        host="codex",
+        mode="agency",
+        workspace=tmp_path,
+        timeout=60,
+        db_path=tmp_path / "agency.db",
+        inspector=lambda _host: {"managed_target": str(tmp_path)},
+        resolver=lambda _host: "codex",
+        environ={"HOME": str(tmp_path), "PATH": ""},
+    )
+
+    assert result.status == "failed"
+    assert result.runtime_contract_passed is False
+    assert result.error == "runtime evidence reconciliation failed: ValueError"
 
 
 def test_codex_product_host_uses_unmocked_multi_unit_product_proof(
@@ -671,8 +714,8 @@ def test_codex_product_host_uses_unmocked_multi_unit_product_proof(
         def recent_runtime_activity(self, *, limit: int):
             raise AssertionError(f"legacy activity summary was requested with limit={limit}")
 
-        def get_canary_activation_snapshot(self, *, host: str, query_hash: str):
-            observed["exact_request"] = (host, query_hash)
+        def get_canary_activation_snapshot(self, *, host: str, query_hash: str, session_id: str):
+            observed["exact_request"] = (host, query_hash, session_id)
             evidence = dict(observed["evidence"])
             assert evidence["query_hash"] == query_hash
             evidence.pop("collaboration")
@@ -910,6 +953,7 @@ def test_product_host_reports_missing_workspace_write_proof_separately(
             self.observed["invocation"] = {"task": task, "workdir": workdir, "check": check}
             return {
                 "backend": "codex",
+                "session_id": "019fa6a6-9432-7c70-a594-68ccdf7e4988",
                 "profile_scope": "isolated-profile",
                 "isolated_plugin": {"registered": True, "enabled": True},
                 "status": "completed",

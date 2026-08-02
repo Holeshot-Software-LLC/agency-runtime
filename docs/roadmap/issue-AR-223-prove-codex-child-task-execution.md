@@ -652,6 +652,19 @@ delegations stayed suggested, finalization truthfully recorded
 must repair exact session binding and inference-owned indivisible topology
 before any further build or live attempt.
 
+The bounded repair now binds the native Codex `thread.started` identity into
+the product result, requires that session at the product evaluator, and filters
+both ready-route and failed-preflight Store resolution by session as well as
+host and prompt hash. A regression records two routes for the same prompt and
+proves the historical lookup remains ambiguous while the current-session lookup
+resolves exactly. Separately, the planner recognizes an explicit one
+indivisible work-unit plus no-split constraint, presents inference with an
+exactly-one-unit schema and explicit topology fact, and updates the inference
+system contract to fold requested verification into that unit. It does not name
+or select a worker. The focused planner, Store, product-host, Codex-projection,
+and decision-manifest slice passes 127 warning-strict tests; Ruff passes the
+changed surface. The complete named gate remains pending.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

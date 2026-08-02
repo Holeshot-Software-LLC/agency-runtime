@@ -16,6 +16,7 @@ from typing import Any, Final
 from agency_runtime.core import canary
 from agency_runtime.core.bounded_io import FileSizeLimitError, read_bounded_regular_file
 from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
+from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation.backends import run_bounded_process
 from agency_runtime.core.evals.product_one_shot import ProductHostExecution
 from agency_runtime.core.filesystem_trust import metadata_is_link_or_reparse_point
@@ -139,8 +140,9 @@ def _prompt_with_workspace_write_proof(prompt: str, prompt_hash: str) -> tuple[s
         f"`{_WORKSPACE_WRITE_PROOF_FILE}` containing this single line exactly:\n"
         f"{token}\n"
         "Leave that file in place for the harness. It is evidence only, not a product "
-        "artifact. Continue with the complete product request after the delegated "
-        "workspace-write child creates it.\n"
+        "artifact and does not add a work unit. Preserve any explicit unit-count or "
+        "indivisible-topology constraint in the product request. Continue with the complete "
+        "product request after the delegated workspace-write child creates it.\n"
         "[END AGENCY PRODUCT HARNESS WORKSPACE-WRITE PROOF]\n\n"
         f"{prompt}"
     )
@@ -435,9 +437,14 @@ def execute_product_host(
         )
         hook_trust_evidence = _hook_trust_evidence(result)
         if normalized_host == "codex" and normalized_mode == "agency":
+            session_id = validate_correlation_id(
+                str(result.get("session_id") or ""),
+                field="session_id",
+            )
             evidence = store.get_canary_activation_snapshot(
                 host=normalized_host,
                 query_hash=executed_prompt_hash.removeprefix("sha256:"),
+                session_id=session_id,
             )
         else:
             after = store.recent_runtime_activity(limit=500)

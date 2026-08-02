@@ -32,6 +32,7 @@ from agency_runtime.core.workforce.inference import (
     WorkforceInferenceAttempt,
     WorkforceRoutingOutcome,
     _CallBudget,
+    _explicit_indivisible_unit_request,
     _invoke_stage,
     _NominationAccumulator,
     _NominationValidationError,
@@ -82,6 +83,19 @@ def test_recruiter_schema_requires_explicit_staff_or_gap_decision() -> None:
     assert "decision" in row["required"]
     assert row["properties"]["decision"]["enum"] == ["staff", "gap"]
     assert "minItems" not in row["properties"]["ranked_semantic"]
+
+
+def test_writer_sentinel_declares_one_indivisible_inference_unit() -> None:
+    request = (
+        "Create one workspace-local file named writer-result.txt. This request is one "
+        "indivisible implementation work unit for one filesystem implementation specialist. "
+        "Do not split it into analysis, testing, review, or documentation units."
+    )
+
+    assert _explicit_indivisible_unit_request(request) is True
+    assert (
+        _explicit_indivisible_unit_request("Create and independently review the product.") is False
+    )
 
 
 def _contract(agent_id: str, *, enabled: bool = True) -> WorkforceContract:
@@ -285,7 +299,7 @@ def test_balanced_mode_always_uses_inference_for_planning_and_selection() -> Non
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
 
 
-def test_per_request_unit_limit_bounds_planner_prompt_schema_and_parser() -> None:
+def test_explicit_indivisible_request_bounds_planner_prompt_schema_and_parser() -> None:
     reviewer = replace(
         _contract("code-reviewer"),
         outcomes=("Code review",),
@@ -304,6 +318,7 @@ def test_per_request_unit_limit_bounds_planner_prompt_schema_and_parser() -> Non
             return _result(_nomination_document("code-reviewer"))
         planner_calls += 1
         assert payload["constraints"]["max_primary_units"] == 1
+        assert payload["constraints"]["explicit_indivisible_unit"] is True
         assert payload["constraints"]["required_artifact_kind"] == "review-report"
         assert schema["properties"]["units"]["maxItems"] == 1
         assert schema["properties"]["units"]["items"]["properties"]["artifact_kind"] == {
@@ -335,7 +350,6 @@ def test_per_request_unit_limit_bounds_planner_prompt_schema_and_parser() -> Non
         config=_config(),
         context=_context(),
         invoker=invoke,
-        max_planned_units=1,
         required_planned_artifact_kind="review-report",
     )
 

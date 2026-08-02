@@ -76,6 +76,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Direct app child `ar223-direct-native-child-01` independently proves current
   Codex child workspace-write capability. The remaining failure is Agency's
   exact evidence and inferred-plan contract, not OS workspace permission.
+- Both defects are repaired locally without deterministic worker selection.
+  Session plus prompt hash now resolves exact product evidence, and an explicit
+  one-indivisible-unit request bounds the inference planner to one authored unit.
+  The changed surface passes 127 warning-strict tests and Ruff.
 
 ## completed-evidence
 
@@ -96,11 +100,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains `NO-GO` at two exact product boundaries. The
-harness does not bind the consumed Codex result to its exact session, and
-inference does not preserve an explicit indivisible-unit topology. The writer
-artifact, full product artifacts, concise header, dashboard parity, and local
-evidence report remain unproven.
+The two consumed-trial defects are repaired only in the local source candidate.
+The complete named gate, immutable build/install, writer artifact, full product
+artifacts, concise header, dashboard parity, and local evidence report remain
+unproven. The README main story therefore remains `NO-GO`.
 
 ## same-task-continuity
 
@@ -112,12 +115,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Bind product-host activation reconciliation to the exact Codex session and
-   add a same-prompt historical-route regression.
-2. Make inference preserve an explicit one-indivisible-unit constraint without
-   deterministically selecting a specialist; reject or repair invalid topology.
-3. Run focused checks and one complete named gate. Only then build one new
-   candidate and spend one fresh writer trial.
+1. Commit the focused-green repair and its ledger as the required clean context
+   checkpoint, then run the complete named gate once.
+2. Only a green gate admits one canonical build/install and one fresh writer
+   sentinel for that exact candidate.
 
 ## verification
 

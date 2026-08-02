@@ -2374,6 +2374,18 @@ def _codex_hook_events(stderr: object) -> dict[str, dict[str, int]]:
     return sanitize_codex_hook_event_diagnostics(counts)
 
 
+def _codex_session_projection(stdout: object) -> dict[str, str]:
+    """Project one valid parent session without making malformed stdout authoritative."""
+
+    if not isinstance(stdout, str):
+        return {}
+    try:
+        session_id = _codex_stdout_thread_id(stdout)
+    except (TypeError, ValueError):
+        return {}
+    return {} if session_id is None else {"session_id": session_id}
+
+
 def codex_canary_record(
     result: Any,
     *,
@@ -2395,6 +2407,7 @@ def codex_canary_record(
         "exit_code": 124 if timed_out else result.returncode,
         "stdout_truncated": result.stdout_truncated,
         "stderr_truncated": result.stderr_truncated,
+        **_codex_session_projection(result.stdout),
     }
     if profile_scope == "isolated-profile":
         record["isolated_plugin"] = {

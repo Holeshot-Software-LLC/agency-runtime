@@ -2009,6 +2009,7 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
     )
 
     assert record["status"] == "completed"
+    assert record["session_id"] == parent_id
     collaboration = record["collaboration"]
     assert collaboration["evidence_source"] == "persisted_rollout"
     assert collaboration["spawn_count"] == 1

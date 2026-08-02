@@ -311,16 +311,41 @@ class _NominationSemantics:""",
         mutation_id="product-host-falls-back-to-legacy-activity-summary",
         invariant=(
             "Codex Agency product trials consume the exact activation snapshot for the "
-            "executed prompt hash."
+            "executed prompt hash and native parent session."
         ),
         source_path="agency_runtime/core/evals/product_host.py",
         before="""        if normalized_host == "codex" and normalized_mode == "agency":
+            session_id = validate_correlation_id(
+                str(result.get("session_id") or ""),
+                field="session_id",
+            )
             evidence = store.get_canary_activation_snapshot(
                 host=normalized_host,
                 query_hash=executed_prompt_hash.removeprefix("sha256:"),
+                session_id=session_id,
             )""",
         after="""        if normalized_host == "codex" and normalized_mode == "agency":
             evidence = store.recent_runtime_activity(limit=500)""",
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_agency_product_host_consumes_the_exact_activation_snapshot"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-drops-exact-codex-session-binding",
+        invariant=(
+            "Repeated product prompts resolve only against the exact native Codex parent session."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before="""            evidence = store.get_canary_activation_snapshot(
+                host=normalized_host,
+                query_hash=executed_prompt_hash.removeprefix("sha256:"),
+                session_id=session_id,
+            )""",
+        after="""            evidence = store.get_canary_activation_snapshot(
+                host=normalized_host,
+                query_hash=executed_prompt_hash.removeprefix("sha256:"),
+            )""",
         test_node=(
             "tests/test_product_host.py::"
             "test_codex_agency_product_host_consumes_the_exact_activation_snapshot"
