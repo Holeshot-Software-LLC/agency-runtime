@@ -36,6 +36,11 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- Codex installation now manages one bounded, marked block in the active global
+  `AGENTS.override.md` or `AGENTS.md`. The block is the durable owner request to
+  dispatch only inference-accepted Agency plan rows; isolated product trials
+  consume the same renderer, and uninstall removes only that block while
+  preserving all other owner guidance.
 - `agency eval routing` v1.4 now measures deterministic candidate recall rather
   than presenting an offline no-provider route as specialist selection. The
   report labels shortlist authority explicitly, retains policy, delegation,

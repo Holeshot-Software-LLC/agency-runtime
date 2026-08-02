@@ -40,6 +40,7 @@ related:
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
   - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
+  - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -83,12 +84,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Earlier exact `43870c8` proves an accepted contractor hire and eight-unit
   topology but not execution. Exact `b2be077` closes activation execution; its
   product trial now isolates the remaining parent-authority regression.
+- The managed global-guidance slice is focused-green: 248 broader installer,
+  uninstall, canary, product-host, adapter, and decision tests pass; the final
+  21-test targeted rerun passes; Ruff passes; documentation validation covers
+  629 files; and the new decision mutation is killed 1/1. Two review passes are
+  closed. No persistent Codex profile or live trial has consumed this build.
 
 ## exact-blocker
 
 The README main story remains NO-GO. Exact `b2be077` passes activation, but its
 product parent never invokes collaboration. ADR-0126's developer instruction
-no longer satisfies current Codex's additional explicit user-request gate.
+does not satisfy current Codex's user-or-applicable-instruction delegation gate.
+A broad-skill probe adds a forbidden parent shell read and remains untraceable.
+The managed global-guidance path now installs, plans, projects, uninstalls, and
+rolls back under focused tests, but the named gate and live proof remain pending.
 
 ## same-task-continuity
 
@@ -100,11 +109,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Add a product-host contract test that requires a user-task-level request to
-   delegate every accepted inferred plan row without naming a team.
-2. Repair that authority boundary, update its durable decision, run focused
-   checks and no more than two reviews, then checkpoint before another live
-   build. Never rerun the consumed `b2be077` trial.
+1. Run the named local gate on the clean recovery head and repair only a
+   terminal failure in this bounded authority slice.
+2. Merge and install one exact green build, then spend one fresh activation and
+   at most one product trial. Never rerun the consumed `b2be077` evidence.
 
 ## verification
 

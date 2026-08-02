@@ -24,6 +24,7 @@ related:
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
   - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
+  - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -270,20 +271,35 @@ trial is terminal and must not be rerun.
 
 ADR-0126 placed exact product-delegation authority in Codex developer
 instructions after an older host rejected hook context alone. Current Codex
-policy additionally requires the user task itself to ask for sub-agent use.
-The product wrapper does not carry that request, so the current host can obey
-its policy while declining every accepted plan row. This is the next bounded
-repair; inference remains the only staffing authority.
+delegates when the user asks or applicable `AGENTS.md` or skill instructions
+request it. Hook output is extra developer context. A real broad-skill probe
+adds a parent shell read and still reports `Skills loaded: none`, so that path
+would be both invalid in the product harness and untraceable. The bounded repair
+instead installs a marked global `AGENTS.md` or active override block that
+requests exact inference-owned delegation; the product wrapper remains an
+ordinary user request and projects the same canonical block.
+
+The bounded implementation now installs one marked block in the active Codex
+global guidance file, creates a missing fresh-container profile safely, exposes
+the write in dry-run output, projects the exact renderer into the isolated
+product profile, restores it on rollback, and removes only its own markers on
+uninstall. It preserves owner content and rejects malformed, linked, non-UTF-8,
+or oversized guidance. The broader focused run passes 248 tests; the final
+targeted rerun passes 21; repository Ruff checks pass; documentation validation
+covers 629 files; and the new decision mutation is killed 1/1. Two review passes
+are closed. This is implementation evidence only: the named gate and a newly
+installed live build remain pending.
 
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
    proof that the assigned work unit executed.
-2. Put exact plan-execution authorization at both current Codex boundaries: a
-   user-task request to delegate the accepted inferred plan, plus the existing
-   marker-scoped developer protocol. Neither boundary may name or select a
-   worker before inference. Bind each actionable delivery to the exact spawned
-   child, native task name, work-unit ID, decoded goal hash, and accepted row.
+2. Put exact plan-execution authorization at both current Codex boundaries: the
+   installed global guidance requests delegation only for an accepted inferred
+   plan, while the existing marker-scoped developer protocol schedules it.
+   Neither boundary may name or select a worker before inference. Bind each
+   actionable delivery to the exact spawned child, native task name, work-unit
+   ID, decoded goal hash, and accepted row.
 3. Require a causal terminal child completion after that delivery. Reject
    missing, duplicate, reordered, cross-child, malformed, or unbounded task
    messages without retaining task or response content.
@@ -311,8 +327,8 @@ accepted plan authority.
   hash; all malformed variants fail closed.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
-- [x] Focused checks, at most two review passes, and the named local fast gate
-  pass on one exact head.
+- [ ] Focused checks and two review passes pass; the named local fast gate must
+  still pass on the new managed-guidance head.
 - [ ] One new exact build passes autonomous activation and one fresh product
   trial with real specialist-created artifacts, independent checks, a valid
   first header, and zero corrections.
