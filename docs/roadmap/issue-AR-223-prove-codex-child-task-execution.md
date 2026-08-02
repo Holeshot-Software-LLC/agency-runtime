@@ -690,6 +690,19 @@ exact execution dispatch; terminal exit zero; accepted finalization; a valid
 first header; and zero corrections. Autonomous trust bypass changes no
 persistent profile state. This admits one fresh Agency writer sentinel only.
 
+That one `93e465a` writer sentinel is now consumed and terminal `NO-GO`.
+Session `019fc1fb-9f81-7cd2-9de2-927b68fe12f1`, trace
+`019fc1fb-a004-7b42-a36e-8ba4beec5667`, run
+`de09a39d-8d10-42d8-a442-77db2f244840`, and preflight failure
+`e72322b5-96b7-4e26-a093-fd685856357a` retain the exact result. Both planner
+attempts used `codex-subscription/gpt-5.6-luna` and were rejected as
+`provider_response_contract_invalid`; no route, unit, specialist, delegation,
+or worker exists. The header is absent, correction count is zero, and the exact
+workspace is empty. Exact session reconciliation now works: the evaluator
+resolves this run's `preflight_failed` snapshot instead of the older same-prompt
+routes. The remaining defect is planner acceptance of the explicit one-unit
+contract, not product evidence correlation. This build must not be retried.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

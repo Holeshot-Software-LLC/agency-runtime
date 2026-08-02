@@ -89,6 +89,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   inferred/loaded/delegated `code-reviewer`, direct execution, a terminal
   exit-zero worker, accepted finalization, valid first header, zero corrections,
   and autonomous trust bypass without persistent profile change.
+- Its one writer sentinel is consumed and `NO-GO`. Exact session resolution
+  succeeds, but both Luna planner responses fail the one-unit response contract
+  before routing. No specialist launches, correction count is zero, and the
+  workspace is empty. Do not retry `93e465a`.
 
 ## completed-evidence
 
@@ -109,10 +113,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The two consumed-trial defects, complete named gate, exact build/install, and
-activation now pass. The writer artifact, full product artifacts, concise
-header, dashboard parity, and local evidence report remain unproven. The README
-main story therefore remains `NO-GO`.
+Exact session binding, the named gate, build/install, and activation pass. The
+remaining writer blocker is planner acceptance of the explicit one-unit
+contract. Writer and product artifacts, concise header, dashboard parity, and
+the local report remain unproven. The README story remains `NO-GO`.
 
 ## same-task-continuity
 
@@ -124,10 +128,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Consume one fresh writer sentinel against exact installed `93e465a`; require
-   one inference-authored unit, selected writer, exact session evidence,
-   terminal execution, exact bytes, and zero corrections.
-2. Only a pass admits the complete README/dashboard/header/report trial.
+1. Inspect the bounded validation reason for the two rejected planner responses
+   without retrying the product trial; repair only that inference contract.
+2. Run focused checks and one named gate before producing a new candidate.
 
 ## verification
 
