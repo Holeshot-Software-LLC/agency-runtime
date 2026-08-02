@@ -516,6 +516,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `34e36c0` | 2026-08-01 | docs(ar-223): record green parent-stop gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `b2be077` | 2026-08-01 | Merge pull request #232 from Holeshot-Software-LLC/codex/ar-223-post-merge-live-proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `614a1a7` | 2026-08-01 | docs(ar-223): checkpoint installed parent-stop merge | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `48aa370` | 2026-08-01 | docs(ar-223): record green parent-stop activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
