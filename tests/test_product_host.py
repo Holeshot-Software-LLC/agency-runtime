@@ -1164,6 +1164,8 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
         "do not delegate further",
         "executes in that initial child turn",
         "Do not call followup_task",
+        "accepted plan and native activation already prove the required host tools",
+        "current working directory is the exact isolated product workspace",
         "permitted workspace tools for every required implementation",
         "timeout_ms=120000",
         "repeat that same wait up to two additional times",

@@ -105,11 +105,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - `d610630` writer is consumed `NO-GO` at the separate-assurance contradiction;
   do not retry. Repair preserves one-unit staffing and clean head `62b7f3e`
   passes the complete named gate, including 97/97 killed mutations.
-- Exact `7f0479f` builds, verifies, and passes autonomous activation: session
-  `019fc253-aedf-7822-9744-7911d5b37901`, inferred/loaded/delegated
-  `code-reviewer`, terminal worker, valid first header, zero corrections. Its
-  writer is consumed `NO-GO`: exact `minimal-change-engineer` child exits zero
-  and the header passes, but the workspace remains empty. Do not retry.
+- Exact `7f0479f` activation passes, but its writer is consumed `NO-GO`: the
+  `minimal-change-engineer` child exits zero and leaves the workspace empty.
+- A direct native writer creates exact bytes, proving host write capability.
+  The focused repair makes accepted activation explicit tool and workspace
+  proof for the specialist child; 84 warning-strict tests and Ruff pass.
 
 ## completed-evidence
 
@@ -131,8 +131,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 Build, install, activation, routing, delegation, first header, and zero
-corrections pass. Exact child execution still creates no artifact; dashboard
-parity, concise header, and the local report remain deferred. README is `NO-GO`.
+corrections pass. The child-context repair is locally green but unproven in a
+fresh build; dashboard/header/report work remains deferred. README is `NO-GO`.
 
 ## same-task-continuity
 
@@ -144,7 +144,7 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Stop. Next owner-approved package diagnoses the exact completed child with no artifact; do not retry `7f0479f`.
+1. Commit this focused repair, run the named gate, then consume one new immutable writer trial and stop at its first failure; never retry `7f0479f`.
 
 ## verification
 

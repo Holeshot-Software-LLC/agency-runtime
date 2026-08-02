@@ -115,6 +115,9 @@ def test_codex_direct_delivery_executes_the_exact_initial_spawn_goal() -> None:
     assert "[AGENCY EXACT SPECIALIST EXECUTION v3]" in rendered
     assert "Execute that goal exactly once now" in rendered
     assert "readiness ceremony" in rendered
+    assert "current native activation have already verified the required host tools" in rendered
+    assert "current working directory is the exact isolated workspace" in rendered
+    assert "this activation is that proof" in rendered
     assert "activation-only" not in rendered
     assert "followup" not in rendered.casefold()
 

@@ -7,8 +7,10 @@ updated: 2026-08-02
 tags: [bug, product, codex, delegation, execution, evidence]
 related:
   - README.md
+  - agency_runtime/core/native_child_prompt_delivery.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/evals/product_host.py
+  - tests/test_native_child_prompt_delivery.py
   - tests/test_product_host.py
   - tests/test_codex_activation_canary.py
   - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
@@ -817,6 +819,20 @@ is valid and correction count is zero. The workspace nevertheless remains
 empty, so `workspace_write_not_proven` is the sole product failure. This build
 must not be retried. Per the bounded delivery contract, no further repair loop
 starts without a new owner go-ahead.
+
+The bounded post-failure diagnosis separates current product projection from
+the activation-canary verifier: the product projector already permits and
+counts child tools, so its tool-free activation helper is not the writer cause.
+The exact specialist contract instead requires tool availability to be proven
+before use, while the direct child delivery did not state that the accepted
+plan and current native activation were that proof or that relative paths
+resolve against the exact isolated workspace. The focused repair carries those
+two already-verified facts into both direct specialist context and the product
+developer contract, keeps inference authoritative and the parent non-working,
+and tells the child to report a prerequisite only after an actual tool denial.
+The focused native-delivery, product-host, and Codex activation slice passes 84
+warning-strict tests; scoped Ruff lint, formatting, and diff checks pass. No new
+immutable build or live product evidence has been consumed.
 
 ## Approach
 
