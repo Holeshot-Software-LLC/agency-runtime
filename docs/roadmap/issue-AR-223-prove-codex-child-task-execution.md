@@ -663,7 +663,15 @@ exactly-one-unit schema and explicit topology fact, and updates the inference
 system contract to fold requested verification into that unit. It does not name
 or select a worker. The focused planner, Store, product-host, Codex-projection,
 and decision-manifest slice passes 127 warning-strict tests; Ruff passes the
-changed surface. The complete named gate remains pending.
+changed surface. Clean repair commit
+`10c047f2b18caf8b95fc74de5dd40a15a469d211` then passes the complete named
+local gate. The Python production spine reports 657 passes and 6 platform
+skips; dashboard UI reports 110/110; all routing thresholds pass; metadata,
+policy, worklog, 635-document validation, repository-wide Ruff and formatting,
+and diff checks pass. Decision conformance passes its 173.661-second baseline
+and kills all 97 mutations with zero survivors or invalid results, unchanged
+source, and 831.4 seconds total command time. This is local source evidence;
+one immutable build, install, and live writer sentinel remain pending.
 
 ## Approach
 

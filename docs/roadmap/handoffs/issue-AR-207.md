@@ -53,8 +53,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 4d14b99ccbcfd3a78fcb3c867c16654ab85ded1f
-minimum_ledger_commit: b2be9553b977b61e3114fdc31bcea194889cd7f0
+evidence_commit: 10c047f2b18caf8b95fc74de5dd40a15a469d211
+minimum_ledger_commit: b49f67e596f72e0ed4cbad46625bcfc25f54a217
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -80,6 +80,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   Session plus prompt hash now resolves exact product evidence, and an explicit
   one-indivisible-unit request bounds the inference planner to one authored unit.
   The changed surface passes 127 warning-strict tests and Ruff.
+- Clean repair `10c047f` passes the complete named gate: 657 Python passes with
+  6 skips, 110 dashboard passes, every routing threshold, and 97/97 killed
+  decision mutations with unchanged source. All documentation and Ruff gates pass.
 
 ## completed-evidence
 
@@ -100,8 +103,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The two consumed-trial defects are repaired only in the local source candidate.
-The complete named gate, immutable build/install, writer artifact, full product
+The two consumed-trial defects and complete named gate pass only in the local
+source candidate. Immutable build/install, writer artifact, full product
 artifacts, concise header, dashboard parity, and local evidence report remain
 unproven. The README main story therefore remains `NO-GO`.
 
@@ -115,10 +118,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Commit the focused-green repair and its ledger as the required clean context
-   checkpoint, then run the complete named gate once.
-2. Only a green gate admits one canonical build/install and one fresh writer
-   sentinel for that exact candidate.
+1. Record the green named gate and its ledger, then create and independently
+   verify one canonical detached-checkout build.
+2. Install that exact candidate and consume one fresh writer sentinel only.
 
 ## verification
 
