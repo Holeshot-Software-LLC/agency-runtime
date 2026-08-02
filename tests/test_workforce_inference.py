@@ -345,7 +345,7 @@ def test_explicit_indivisible_request_bounds_planner_prompt_schema_and_parser() 
         return _result(document)
 
     outcome = plan_and_staff_workforce(
-        "Treat this as exactly one indivisible analysis work unit.",
+        "Treat this runtime repair as exactly one indivisible review work unit. Do not split it.",
         snapshot,
         config=_config(),
         context=_context(),

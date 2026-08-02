@@ -1121,6 +1121,7 @@ def _parse_compact_plan(
     context: StaffingContext,
     max_work_units: int,
     required_artifact_kind: str | None = None,
+    explicit_indivisible_unit: bool = False,
 ) -> WorkUnitPlan:
     domains, stacks, capabilities = _known_intent_vocabulary(snapshot)
     primary = compile_intent_plan(
@@ -1136,7 +1137,11 @@ def _parse_compact_plan(
         unit.artifact_kind != required_artifact_kind for unit in primary.units
     ):
         raise ValueError(f"compact intent units must use artifact kind {required_artifact_kind}")
-    violations = plan_policy_violations(request, primary)
+    violations = plan_policy_violations(
+        request,
+        primary,
+        explicit_indivisible_unit=explicit_indivisible_unit,
+    )
     if violations:
         raise _PlanPolicyValidationError(violations)
     return primary
@@ -2051,6 +2056,7 @@ def plan_and_staff_workforce(
                 context=context,
                 max_work_units=planning_unit_limit,
                 required_artifact_kind=required_planned_artifact_kind,
+                explicit_indivisible_unit=explicit_indivisible_unit,
             ),
         )
         if isinstance(parsed_plan, WorkUnitPlan):
@@ -2113,7 +2119,11 @@ def plan_and_staff_workforce(
         budget=staffing_budget_for_config(config),
     )
 
-    policy_violations = plan_policy_violations(ask, plan)
+    policy_violations = plan_policy_violations(
+        ask,
+        plan,
+        explicit_indivisible_unit=explicit_indivisible_unit,
+    )
     if policy_violations:
         return _inference_failure(
             mode=mode,

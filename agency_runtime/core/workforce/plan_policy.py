@@ -534,8 +534,13 @@ def _has_codebase_discovery(inventory: _PlanInventory) -> bool:
     )
 
 
-def plan_policy_violations(request: str, plan: WorkUnitPlan) -> tuple[str, ...]:
-    """Reject plans that omit assurance entailed by the requested outcome."""
+def plan_policy_violations(
+    request: str,
+    plan: WorkUnitPlan,
+    *,
+    explicit_indivisible_unit: bool = False,
+) -> tuple[str, ...]:
+    """Reject incomplete plans while preserving an explicit one-unit topology."""
 
     actionable_request = _NEGATED_SCOPE.sub(" ", request)
     tokens = frozenset(_TOKENS.findall(actionable_request.casefold()))
@@ -556,33 +561,34 @@ def plan_policy_violations(request: str, plan: WorkUnitPlan) -> tuple[str, ...]:
     code_path_map_requested = bool(
         "map" in tokens and tokens & {"codebase", "path", "paths", "repo", "repository"}
     )
-    if code_mutation:
-        codes.extend(_code_mutation_violations(tokens, plan, inventory))
-    if docs_mutation:
-        if not inventory.documentation:
-            codes.append("plan_missing_documentation_change")
-        if not inventory.reviews:
-            codes.append("plan_missing_documentation_review")
-    if security_code_review:
-        codes.extend(_security_review_violations(inventory))
-    if (repository_security_review or code_path_map_requested) and not _has_codebase_discovery(
-        inventory
-    ):
-        codes.append("plan_missing_codebase_discovery")
-    assurance_requirements = regulated_assurance_requirements(request)
-    if assurance_requirements:
-        if not inventory.reviews:
-            codes.append("plan_missing_regulated_assurance_review")
-        else:
-            review_capabilities = {
-                capability
-                for unit in inventory.reviews
-                for capability in unit.required_capabilities
-            }
-            if any(
-                requirement not in review_capabilities for requirement in assurance_requirements
-            ):
-                codes.append("plan_missing_regulated_assurance_requirement")
+    if not explicit_indivisible_unit:
+        if code_mutation:
+            codes.extend(_code_mutation_violations(tokens, plan, inventory))
+        if docs_mutation:
+            if not inventory.documentation:
+                codes.append("plan_missing_documentation_change")
+            if not inventory.reviews:
+                codes.append("plan_missing_documentation_review")
+        if security_code_review:
+            codes.extend(_security_review_violations(inventory))
+        if (repository_security_review or code_path_map_requested) and not _has_codebase_discovery(
+            inventory
+        ):
+            codes.append("plan_missing_codebase_discovery")
+        assurance_requirements = regulated_assurance_requirements(request)
+        if assurance_requirements:
+            if not inventory.reviews:
+                codes.append("plan_missing_regulated_assurance_review")
+            else:
+                review_capabilities = {
+                    capability
+                    for unit in inventory.reviews
+                    for capability in unit.required_capabilities
+                }
+                if any(
+                    requirement not in review_capabilities for requirement in assurance_requirements
+                ):
+                    codes.append("plan_missing_regulated_assurance_requirement")
     if any(item.mutation_scope == "external_write" for item in plan.units):
         codes.append("plan_external_write_requires_separate_authorization")
     return tuple(dict.fromkeys(codes))
