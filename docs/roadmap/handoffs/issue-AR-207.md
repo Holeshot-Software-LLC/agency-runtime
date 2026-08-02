@@ -107,8 +107,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   Its writer is consumed `NO-GO`: session `019fc230-7a55-7263-b135-0051a291ea8b`,
   trace `019fc230-7ac7-7732-a4b7-037faea8d61b`. One inferred unit reaches the
   recruiter, but separate assurance rejects it twice; no route or file exists.
-  Local repair preserves one-unit staffing while retaining every other check;
-  189 focused tests pass. Do not retry this build; named gate remains.
+  Repair preserves one-unit staffing while retaining every other check. Clean
+  head `62b7f3e` passes 657 Python tests with 6 skips, 110 dashboard tests, every
+  routing threshold, and 97/97 killed mutations with unchanged source.
 
 ## completed-evidence
 
@@ -129,8 +130,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The staffing contradiction is repaired and focused checks pass. The named gate
-and one fresh immutable writer remain before dashboard/header proof. Writer
+The staffing contradiction and complete named gate pass; one fresh immutable writer remains before dashboard/header proof. Writer
 artifacts, concise header, dashboard parity, and the local report remain
 unproven. The README story remains `NO-GO`.
 
@@ -144,7 +144,7 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run one named gate, then build and spend one new exact writer candidate.
+1. Build, install, activate, and spend one new exact writer candidate.
 
 ## verification
 

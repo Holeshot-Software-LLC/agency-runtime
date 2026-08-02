@@ -775,6 +775,15 @@ repair call. The focused workforce, routing, hiring, staffing, and product-host
 slice passes 189 tests with one platform skip; changed-file Ruff lint and
 formatting pass. The one named gate remains before a new immutable build.
 
+Clean executable and test head `62b7f3e` passes the complete named gate.
+Metadata, policy, worklog, and 635-document validation pass; repository-wide
+Ruff lint and formatting cover 609 files; the Python production spine reports
+657 passes and 6 expected platform skips; dashboard UI reports 110/110; and
+every routing threshold passes. Decision conformance passes its 182.490-second
+baseline and kills all 97 mutations with zero survivors or invalid results,
+unchanged source, and 891.8 seconds total command time. One new immutable build
+may now proceed; no new live evidence was consumed by the gate.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
