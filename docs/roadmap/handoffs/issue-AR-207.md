@@ -53,8 +53,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 10c047f2b18caf8b95fc74de5dd40a15a469d211
-minimum_ledger_commit: b49f67e596f72e0ed4cbad46625bcfc25f54a217
+evidence_commit: 73f99896cc8fb1cccf625afd189cc34b1350089b
+minimum_ledger_commit: 036c1d4ac375be36e75751cab06cfe0a9828bd98
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -90,9 +90,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   exit-zero worker, accepted finalization, valid first header, zero corrections,
   and autonomous trust bypass without persistent profile change.
 - Its one writer sentinel is consumed and `NO-GO`. Exact session resolution
-  succeeds, but both Luna planner responses fail the one-unit response contract
-  before routing. No specialist launches, correction count is zero, and the
-  workspace is empty. Do not retry `93e465a`.
+  succeeds, but both Luna planner responses fail before routing. A single
+  bounded direct-planner diagnostic reproduces the cause: Luna returns one
+  schema-valid implementation unit, then deterministic completeness policy
+  rejects it for three separate assurance units forbidden by the one-unit
+  schema. Do not retry `93e465a`.
+- Repair `73f9989` preserves the inference-owned one-unit plan through both
+  policy checks while retaining external-write authorization. The focused
+  workforce, intent, routing, and product-host slice passes 141 warning-strict
+  tests; Ruff passes. The named gate is next.
 
 ## completed-evidence
 
@@ -113,10 +119,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-Exact session binding, the named gate, build/install, and activation pass. The
-remaining writer blocker is planner acceptance of the explicit one-unit
-contract. Writer and product artifacts, concise header, dashboard parity, and
-the local report remain unproven. The README story remains `NO-GO`.
+Exact session binding and the prior build/install/activation pass. The planner
+contradiction is repaired locally, but the new commit has not passed the named
+gate or produced an immutable candidate. Writer and product artifacts, concise
+header, dashboard parity, and the local report remain unproven. The README story
+remains `NO-GO`.
 
 ## same-task-continuity
 
@@ -128,9 +135,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Inspect the bounded validation reason for the two rejected planner responses
-   without retrying the product trial; repair only that inference contract.
-2. Run focused checks and one named gate before producing a new candidate.
+1. Run the complete named local gate once for repair `73f9989`.
+2. If green, build and independently verify one fresh immutable candidate before
+   any further live evidence.
 
 ## verification
 

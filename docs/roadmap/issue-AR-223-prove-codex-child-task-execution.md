@@ -703,6 +703,24 @@ resolves this run's `preflight_failed` snapshot instead of the older same-prompt
 routes. The remaining defect is planner acceptance of the explicit one-unit
 contract, not product evidence correlation. This build must not be retried.
 
+A single bounded direct-planner diagnostic against that exact installed wheel
+and those exact product and executed prompt hashes reproduces the rejection
+without retrying the product. Luna returns one transport-schema-valid
+`implementation-change` unit under `maxItems: 1`; the semantic policy rejects
+it only for missing separate test implementation, independent review, and test
+evidence units. The runtime had therefore made its own repair impossible: the
+inference contract required one indivisible unit while the deterministic
+completeness policy required at least four.
+
+Commit `73f9989` carries the explicit indivisible fact through both semantic
+policy checks, so user-owned one-unit topology suppresses only decomposition
+requirements. External-write authorization remains enforced. A full-path
+regression deliberately includes code-mutation tokens and proves the accepted
+one-unit plan still comes from inference. The focused workforce, intent,
+routing, and product-host slice passes 141 warning-strict tests; changed-file
+Ruff lint and formatting pass. The complete named gate remains pending before
+one fresh candidate may be built.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
