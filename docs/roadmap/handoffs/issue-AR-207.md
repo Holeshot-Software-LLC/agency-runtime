@@ -98,7 +98,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Repair `73f9989` preserves the inference-owned one-unit plan through both
   policy checks while retaining external-write authorization. The focused
   workforce, intent, routing, and product-host slice passes 141 warning-strict
-  tests; Ruff passes. The named gate is next.
+  tests; Ruff passes. Clean head `0f40e8e` passes the complete named gate: 657
+  Python passes with 6 skips, 110 dashboard passes, every routing threshold, and
+  97/97 killed decision mutations with unchanged source. No new live evidence
+  has been consumed.
 
 ## completed-evidence
 
@@ -120,10 +123,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 Exact session binding and the prior build/install/activation pass. The planner
-contradiction is repaired locally, but the new commit has not passed the named
-gate or produced an immutable candidate. Writer and product artifacts, concise
-header, dashboard parity, and the local report remain unproven. The README story
-remains `NO-GO`.
+contradiction and fresh named gate pass locally, but the green head has not
+produced an immutable candidate. Writer and product artifacts, concise header,
+dashboard parity, and the local report remain unproven. The README story remains
+`NO-GO`.
 
 ## same-task-continuity
 
@@ -135,9 +138,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run the complete named local gate once for repair `73f9989`.
-2. If green, build and independently verify one fresh immutable candidate before
-   any further live evidence.
+1. Build and independently verify clean head `0f40e8e` as one fresh immutable
+   candidate.
+2. Install the exact wheel and spend only its activation and writer gates in
+   order.
 
 ## verification
 

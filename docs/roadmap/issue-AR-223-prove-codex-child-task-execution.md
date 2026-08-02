@@ -718,8 +718,14 @@ requirements. External-write authorization remains enforced. A full-path
 regression deliberately includes code-mutation tokens and proves the accepted
 one-unit plan still comes from inference. The focused workforce, intent,
 routing, and product-host slice passes 141 warning-strict tests; changed-file
-Ruff lint and formatting pass. The complete named gate remains pending before
-one fresh candidate may be built.
+Ruff lint and formatting pass. Clean head
+`0f40e8e8b0fe5894845bf2293d791bcab55a5908` passes the complete named gate:
+657 Python tests pass with 6 platform skips, dashboard UI passes 110/110, every
+routing threshold passes, metadata, policy, worklog, 635-document validation,
+repository-wide Ruff and formatting, and diff checks pass. Decision conformance
+passes its 173.614-second baseline and kills all 97 mutations with zero invalid
+results, unchanged source, and 859.9 seconds total command time. One fresh
+immutable build may now proceed; no new live evidence has been consumed.
 
 ## Approach
 
