@@ -1201,6 +1201,37 @@ was consumed. The next bounded package is now one exact build, autonomous
 install and activation, and one new writer sentinel whose Store v3 receipt
 either proves the cause or admits the workspace write.
 
+Exact ledger checkpoint `6e0d3c6880fe8094a41d15f5f4f6547bad2e7004`
+builds canonically and independently verifies. Wheel SHA-256 is
+`a5f69ae7d169e52ea051c45609922379d14e2ec8a86f9c0e3faa8b763bfa5c6d`;
+source SHA-256 is
+`e2bab035649401f3998b3472e7ffcd235aad4319ff0ae502b92e5d3c62f0a66c`.
+The autonomous full-suite install detects only Codex and ZCode, leaves the
+dashboard active and reachable, and passes activation with inferred/executed
+`code-reviewer`, accepted finalization, a valid first header, zero corrections,
+hook bypass, and no persistent profile change.
+
+Its sole writer `ar223-agency-writer-6e0d3c6-01` is consumed and terminal
+`NO-GO`. Session `019fc4df-14bf-7a83-847a-fc5fac1b6574`, trace
+`019fc4df-155f-74a3-8cc3-6e9b40eb3522`, run
+`7944b892-83f9-41c8-a7ac-602212df727c`, route
+`7612d7b3-357f-4966-8a0c-4355452651d2`, delegation
+`75fc483d-93b9-4f98-b076-e7357882a3fc`, finalization
+`2d66c969-817d-4e46-bf64-d5eac5f6a153`, and child
+`019fc4df-e192-7332-a621-ef6466270984` retain the result. Inference selected
+and loaded `minimal-change-engineer`; exact-workspace trust, autonomous bypass,
+a valid first header, and zero corrections passed. The workspace is empty and
+finalization declined missing `delegation_execution`.
+
+Store v3 was written canonically on the exact worker receipt. It records three
+classified exec wrappers: one nested `apply_patch`, two nested shell calls, one
+completed wrapper, and two failed wrappers. Both failures are
+`process_failed_other`; every specific sandbox, split-root, approval,
+permission, and unknown count is zero. This eliminates those suspected causes
+but exposes one remaining diagnostic defect: aggregate counts do not correlate
+each wrapper outcome to its sole nested tool kind. The next bounded slice adds
+only that fixed content-free tool/outcome matrix; no writer is retried.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

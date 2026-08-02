@@ -58,7 +58,7 @@ type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
 evidence_commit: e90af864df3af34b363dd28cec3bfe8cb74939ba
-minimum_ledger_commit: e90af864df3af34b363dd28cec3bfe8cb74939ba
+minimum_ledger_commit: 6e0d3c6880fe8094a41d15f5f4f6547bad2e7004
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -67,48 +67,35 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
-- The goal remains `README's main story works in reality.` Exact Store v3
-  repair checkpoint `e90af86` classifies fixed wrapper failure causes without
-  retaining output content. The preceding `e091252`/`5a97976` checkpoint rebases
-  product execution temp variables into
-  the exact trusted workspace without disabling sandboxing.
-- Focused product-host/Store checks pass 43 tests. The named spine passes 657
-  with six skips; 110 dashboard tests, Ruff/docs, and routing thresholds pass.
-  The unchanged-source decision-conformance CLI returned no verdict before its
-  304- and 904-second deadlines and was not retried again.
-- Exact `5a97976ba6e1c37333577448f835bb15c3eceedf` builds canonically and
-  independently verifies. Wheel SHA-256 is `a7542966b2a1f243f3c91c2573c0880ca01a37a88a0efb5e0037734f33d2ef7d`;
-  source SHA-256 is `10f25d3e3c096966fae31fd1c5e1b2decce6e9e4eaa37d5ecda8d31c4f167962`.
-- Its full-suite autonomous install refreshes Codex and ZCode, leaves the
-  dashboard active/reachable, and passes activation with inferred/executed
-  `code-reviewer`, accepted finalization, valid first header, zero corrections,
-  trust bypass, and no persistent profile change.
-- Sole writer `ar223-agency-writer-5a97976-01` is consumed `NO-GO`. Inference
-  selects/loads `minimal-change-engineer`; exact-workspace trust, hook bypass,
-  valid first header, and zero corrections pass. The workspace remains empty
-  and finalization declines missing `delegation_execution`.
-- Store v2 records one classified nested `apply_patch`, one fixed failed wrapper,
-  zero unclassified inputs, and zero missing outputs. The temp rebase was
-  insufficient and does not prove the wrapper cause.
+- Exact Store v3 repair/ledger checkpoint `e90af86`/`6e0d3c6` is locally green,
+  builds canonically, and independently verifies. Wheel SHA-256 is
+  `a5f69ae7d169e52ea051c45609922379d14e2ec8a86f9c0e3faa8b763bfa5c6d`;
+  source SHA-256 is
+  `e2bab035649401f3998b3472e7ffcd235aad4319ff0ae502b92e5d3c62f0a66c`.
+- Autonomous install detects only Codex/ZCode, leaves the dashboard reachable,
+  and passes activation with `code-reviewer`, accepted finalization, a valid
+  first header, zero corrections, bypass, and no persistent trust change.
+- Sole writer `ar223-agency-writer-6e0d3c6-01` is consumed `NO-GO`. Inference
+  selects `minimal-change-engineer`; trust/header/correction gates pass, but the
+  workspace is empty and finalization lacks `delegation_execution`.
+- Store v3 records one patch and two shell wrappers: one completed and two
+  `process_failed_other`. All five specific/unknown failure categories are zero.
 
 ## completed-evidence
 
-- Activation session `019fc484-4337-77d0-909b-d6976897feb4`, trace
-  `019fc484-4b88-75a1-9eb8-b9785d4f0f6d`, and worker
-  `codex-agent:019fc484-f8bc-7690-88e5-c34425513249` retain the pass.
-- Writer session `019fc487-b580-7083-ab02-6278567f7ff7`, trace
-  `019fc487-b5f5-7c13-959b-897fb1f9ff6e`, run
-  `23a10be7-1469-4009-8d0f-9180c2e05e6f`, delegation
-  `366c7249-4cf0-43a2-8190-fdc9d00caf91`, and worker
-  `codex-agent:019fc488-5f7f-7b81-8686-d55471e433dc` retain the `NO-GO`.
+- Activation session `019fc4db-f463-73b0-9d09-bc6f73c66b0d`, trace
+  `019fc4dc-01c7-7140-b85c-c0a46fd25a23` retains the pass.
+- Writer session `019fc4df-14bf-7a83-847a-fc5fac1b6574`, trace
+  `019fc4df-155f-74a3-8cc3-6e9b40eb3522`, run
+  `7944b892-83f9-41c8-a7ac-602212df727c`, delegation
+  `75fc483d-93b9-4f98-b076-e7357882a3fc`, and worker
+  `codex-agent:019fc4df-e192-7332-a621-ef6466270984` retain the `NO-GO`.
 
 ## exact-blocker
 
-Actual Agency child workspace execution remains unproven. The temp-root repair
-did not clear the nested wrapper failure. Store v2 proves where it failed but
-does not distinguish a small fixed cause; the consumed trial is not retried.
-Store v3 classification is locally green but has not yet been built or used by
-a new immutable writer.
+Actual Agency child workspace execution remains unproven. Store v3 rules out
+the suspected named causes but loses which residual failure belongs to the
+patch versus shell wrapper. The consumed trial is not retried.
 
 ## same-task-continuity
 
@@ -120,11 +107,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Produce one exact canonical build from the Store v3 checkpoint, install the
-   full suite autonomously, and require activation to pass first.
-2. Run one new writer sentinel only. Use its v3 receipt to fix the named cause
-   or admit the workspace write. Never retry `c8a0577`, `4c57507`, `2bbd885`,
-   `b967ad2`, or `5a97976`.
+1. Add only a fixed content-free per-wrapper nested-tool/outcome matrix and kill
+   its removal in focused parser, Store, and product-host tests.
+2. Do not build or run another writer until it is green. Never retry
+   `c8a0577`, `4c57507`, `2bbd885`, `b967ad2`, `5a97976`, or `6e0d3c6`.
 
 ## verification
 
