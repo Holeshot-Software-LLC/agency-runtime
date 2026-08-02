@@ -518,6 +518,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `614a1a7` | 2026-08-01 | docs(ar-223): checkpoint installed parent-stop merge | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `48aa370` | 2026-08-01 | docs(ar-223): record green parent-stop activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `c109b92` | 2026-08-01 | docs(ar-223): checkpoint product parent authority failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `730bd03` | 2026-08-01 | fix(ar-223): install Codex delegation guidance | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
