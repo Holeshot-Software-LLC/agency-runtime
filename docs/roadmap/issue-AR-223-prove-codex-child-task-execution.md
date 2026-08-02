@@ -26,6 +26,7 @@ related:
   - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
   - docs/decisions/0139-make-codex-execution-turns-self-contained.md
+  - docs/decisions/0140-use-codex-stable-multi-agent-feature.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -425,6 +426,22 @@ run neither proves nor disproves child workspace-write. Do not rerun it. The
 next boundary is the missing parent spawn, not another execution-envelope or
 artifact repair.
 
+Direct Codex app child control `ar223-direct-native-child-01` then succeeds in
+a fresh workspace. The child creates and reads back exact 29-byte sentinel
+`.ar223-direct-native-child`; its content is `AR223_DIRECT_NATIVE_CHILD_OK`
+plus one LF and its SHA-256 is
+`15afa0a7dfc371b1982dae6c0dcb50d5f9146c8ef296a9dd0e68bf1770a0148c`.
+This proves the current host can give a native child workspace-write authority
+and that the child can use it. The remaining failure is parent launch policy.
+
+Installed Codex 0.146.0 exposes `multi_agent` as stable and enabled while the
+failed harness forces disabled-by-default `multi_agent_v2`. The public manual
+documents the stable feature and direct-request behavior, not V2. ADR-0140
+switches activation and product backends to explicit stable `multi_agent`,
+retains `agents.enabled=true`, and forbids V2 in focused tests. Thirty-eight
+focused host/product/decision tests and targeted Ruff checks pass. No stable-
+surface harness sentinel, build, or product trial has yet been spent.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -440,9 +457,9 @@ artifact repair.
    messages without retaining task or response content.
 4. Preserve one-at-a-time dependency scheduling, the non-working parent,
    turn-scoped specialist authority, and the first workspace-write sentinel.
-5. Prove one isolated writer-child sentinel before the named local fast gate.
-   Only then spend one fresh immutable-build activation and at most one product
-   trial.
+5. Prove one retained stable-`multi_agent` harness writer sentinel before the
+   named local fast gate. Only then spend one fresh immutable-build activation
+   and at most one product trial.
 
 ## Dependencies
 
@@ -463,6 +480,10 @@ accepted plan authority.
   task name, child identity, and goal hash; all malformed variants fail closed.
 - [ ] One isolated self-contained writer child creates and reads back its exact
   sentinel before a new immutable build is produced.
+- [x] One direct current-host native child creates and reads back exact bytes,
+  independently proving inherited workspace-write capability.
+- [ ] The Codex harness uses stable `multi_agent` and launches that same class
+  of self-contained writer child with retained collaboration evidence.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
 - [x] Focused checks, bounded review, and the complete named local gate pass on

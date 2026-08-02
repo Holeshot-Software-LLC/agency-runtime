@@ -623,11 +623,11 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="product-host-disables-multi-agent-v2",
-        invariant="Ordinary Codex product trials explicitly enable native multi-agent V2.",
+        mutation_id="product-host-replaces-stable-multi-agent",
+        invariant="Ordinary Codex product trials explicitly enable stable native multi-agent.",
         source_path="agency_runtime/core/evals/product_host.py",
-        before='    "multi_agent_v2",',
-        after='    "multi_agent_v1",',
+        before='    "multi_agent",',
+        after='    "multi_agent_v2",',
         test_node=(
             "tests/test_product_host.py::"
             "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"

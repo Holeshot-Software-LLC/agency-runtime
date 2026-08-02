@@ -42,6 +42,7 @@ related:
   - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
   - docs/decisions/0139-make-codex-execution-turns-self-contained.md
+  - docs/decisions/0140-use-codex-stable-multi-agent-feature.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -77,6 +78,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   completes in 42.4 seconds with exit zero under autonomous bypass but records
   zero spawns, zero follow-ups, one wait, and zero unexpected items. Its exact
   workspace is empty, so the self-contained child block never reached a child.
+- Direct app child `ar223-direct-native-child-01` creates and reads back exact
+  29-byte sentinel content under the fresh workspace. This proves current-host
+  child workspace-write and narrows the defect to the harness parent launch.
+- Codex 0.146.0 exposes stable `multi_agent` as enabled and internal
+  `multi_agent_v2` as disabled by default. ADR-0140 switches both Agency Codex
+  backends to the stable feature; 38 focused tests and targeted Ruff pass.
 
 ## completed-evidence
 
@@ -102,7 +109,9 @@ failure is `workspace_write_not_proven`: all three declared writer workers have
 empty stdout/stderr and the exact workspace has zero files. The trial must not
 be rerun. The new native sentinel also remains NO-GO, but at an earlier exact
 boundary: `codex_parent_spawn_missing`. It neither proves nor disproves child
-workspace-write because no child was launched.
+workspace-write because no child was launched. The direct app child now proves
+workspace-write independently; the unproven boundary is stable-feature harness
+launch and evidence retention.
 
 ## same-task-continuity
 
@@ -115,8 +124,8 @@ hosted Actions, or touch the owner's two untracked files.
 ## next-bounded-work-package
 
 1. Preserve both consumed controls; do not rerun either exact workspace.
-2. Repair or directly explain why the bounded native parent emitted one wait
-   but no spawn despite the explicit self-contained delegation request.
+2. Run one retained harness sentinel using stable `multi_agent`; require one
+   exact spawn, completed child, exact file bytes, and zero unexpected items.
 3. Only after that focused boundary passes, run the named local gate, build
    once, and prove one Agency writer sentinel before any full product trial.
 

@@ -63,7 +63,7 @@ _CODEX_PRODUCT_EXEC_PREFIX: Final[tuple[str, ...]] = (
     "--ignore-rules",
     "--strict-config",
     "--enable",
-    "multi_agent_v2",
+    "multi_agent",
     "--sandbox",
     "workspace-write",
     "-c",
