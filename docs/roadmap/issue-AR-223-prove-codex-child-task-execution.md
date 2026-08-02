@@ -36,6 +36,7 @@ related:
   - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md
   - docs/decisions/0146-preserve-content-free-codex-child-tool-outcomes.md
   - docs/decisions/0147-persist-codex-child-tool-evidence-on-worker-receipts.md
+  - docs/decisions/0148-classify-nested-codex-exec-tools-without-content.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -1099,6 +1100,19 @@ executes nested tools through the `functions.exec` wrapper, however, so those
 aggregate transport counts do not prove which nested tool classes ran. The
 next bounded repair must preserve content-free per-wrapper nested tool classes
 and outcomes; it must not retain arguments, paths, content, output, or errors.
+
+ADR-0148's bounded local implementation upgrades new worker receipts to v2.
+It lexically classifies only direct nested tool calls outside strings and
+comments, fails ambiguous input to an explicit unclassified count, and reads
+only the fixed first wrapper-output line. Canonical v1 Store rows remain
+readable; product admission requires v2. The surrounding activation, product,
+lifecycle, and schema suite passes 118 warning-strict tests. A retained sample
+of the current Codex format classifies all 36 recent exec inputs as 7 nested
+patch, 29 shell, and 1 other call, with only fixed wrapper outcomes retained.
+The new isolated decision mutation passes its baseline, is killed once, and
+leaves source unchanged. Two representative failures from an optional broader
+diagnostic suite reproduce unchanged at exact clean `2bbd885`; they are
+pre-existing outside this package and the named production spine.
 
 ## Approach
 

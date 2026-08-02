@@ -49,6 +49,7 @@ related:
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md
   - docs/decisions/0146-preserve-content-free-codex-child-tool-outcomes.md
+  - docs/decisions/0148-classify-nested-codex-exec-tools-without-content.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -125,9 +126,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-Actual Agency child workspace execution remains unproven. The Store write now
-passes, but current Codex nests tools inside `functions.exec`; v1 cannot say
-whether a patch was attempted. Preserve only nested tool classes and outcomes.
+Actual Agency child workspace execution remains unproven. Local ADR-0148 v2
+now preserves nested tool classes and fixed wrapper outcomes without content;
+focused tests pass. The named gate and one new immutable writer remain.
 
 ## same-task-continuity
 
@@ -139,10 +140,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Add content-free per-wrapper nested tool-class and outcome evidence without
-   retaining arguments, paths, content, output, or error text.
-2. Pass focused tests and create one clean recovery checkpoint.
-3. Build one new candidate and consume one fresh writer sentinel. Never retry
+1. Complete bounded review, named verification, and one clean checkpoint.
+2. Build one new candidate and consume one fresh writer sentinel. Never retry
    `c8a0577`, `4c57507`, or `2bbd885`; repair only its first proven boundary.
 
 ## verification

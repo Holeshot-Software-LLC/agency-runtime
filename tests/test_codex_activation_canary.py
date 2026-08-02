@@ -26,6 +26,11 @@ from agency_runtime.core.canary_backends import (
 from agency_runtime.core.canary_proof import codex_activation_failures
 from agency_runtime.core.codex_child_tool_evidence import (
     CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_SCHEMA,
+    decode_stored_codex_child_tool_evidence,
 )
 from agency_runtime.core.codex_native_plan_scope import deserialize_codex_native_plan_scope
 from agency_runtime.core.config import reset_config_cache
@@ -113,7 +118,12 @@ def test_product_child_tool_evidence_is_fixed_and_content_free() -> None:
                 "type": "custom_tool_call",
                 "name": "exec",
                 "status": "completed",
-                "input": "private exec input",
+                "call_id": "exec-call",
+                "input": (
+                    'const one=await tools.shell_command({command:"private exec input"});'
+                    'const two=await tools.apply_patch("private patch input");'
+                    "await tools.private_tool();"
+                ),
             },
         },
         {
@@ -137,7 +147,8 @@ def test_product_child_tool_evidence_is_fixed_and_content_free() -> None:
             "type": "response_item",
             "payload": {
                 "type": "custom_tool_call_output",
-                "output": "private tool output",
+                "call_id": "exec-call",
+                "output": [{"type": "input_text", "text": "Script failed\nprivate tool output"}],
             },
         },
         {
@@ -179,12 +190,23 @@ def test_product_child_tool_evidence_is_fixed_and_content_free() -> None:
         "child_patch_apply_success_count": 1,
         "child_patch_apply_failure_count": 1,
         "child_patch_apply_unknown_count": 1,
+        "child_exec_input_classified_count": 1,
+        "child_exec_input_unclassified_count": 0,
+        "child_exec_nested_tool_call_count": 3,
+        "child_exec_nested_apply_patch_tool_call_count": 1,
+        "child_exec_nested_shell_command_tool_call_count": 1,
+        "child_exec_nested_other_tool_call_count": 1,
+        "child_exec_wrapper_completed_count": 0,
+        "child_exec_wrapper_failed_count": 1,
+        "child_exec_wrapper_yielded_count": 0,
+        "child_exec_wrapper_unknown_count": 0,
     }
     encoded = json.dumps(evidence)
     assert all(
         private not in encoded
         for private in (
             "private exec input",
+            "private patch input",
             "private shell arguments",
             "private-tool",
             "private tool output",
@@ -192,6 +214,81 @@ def test_product_child_tool_evidence_is_fixed_and_content_free() -> None:
             "private bytes",
             "private failure",
         )
+    )
+
+
+def test_product_child_tool_evidence_ignores_quoted_names_and_fails_closed() -> None:
+    events = [
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call",
+                "name": "exec",
+                "status": "completed",
+                "call_id": "classified",
+                "input": (
+                    "const quoted='tools.apply_patch('; // tools.private_tool()\n"
+                    "await tools.shell_command({});"
+                ),
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call",
+                "name": "exec",
+                "status": "completed",
+                "call_id": "unclassified",
+                "input": "const dynamic=`${tools.apply_patch(value)}`;",
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call_output",
+                "call_id": "classified",
+                "output": [{"type": "input_text", "text": "Script completed\nprivate"}],
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call_output",
+                "call_id": "unclassified",
+                "output": [
+                    {
+                        "type": "input_text",
+                        "text": "Script running with cell ID private\n",
+                    }
+                ],
+            },
+        },
+    ]
+
+    evidence = _codex_product_child_tool_evidence(events)
+
+    assert evidence["child_exec_input_classified_count"] == 1
+    assert evidence["child_exec_input_unclassified_count"] == 1
+    assert evidence["child_exec_nested_tool_call_count"] == 1
+    assert evidence["child_exec_nested_apply_patch_tool_call_count"] == 0
+    assert evidence["child_exec_nested_shell_command_tool_call_count"] == 1
+    assert evidence["child_exec_wrapper_completed_count"] == 1
+    assert evidence["child_exec_wrapper_yielded_count"] == 1
+    assert "private" not in json.dumps(evidence)
+
+
+def test_product_child_tool_evidence_keeps_canonical_v1_store_rows_readable() -> None:
+    legacy = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_FIELDS, 0)
+    payload = json.dumps(legacy, sort_keys=True, separators=(",", ":"))
+
+    assert (
+        decode_stored_codex_child_tool_evidence(
+            schema=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_SCHEMA,
+            source=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+            recorded_at="2026-08-02T19:40:48Z",
+            payload=payload,
+        )
+        == legacy
     )
 
 
@@ -1257,7 +1354,7 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     )
     [durable_worker] = durable_evidence["worker_runs"]
     assert durable_worker["tool_evidence"] == empty_tool_evidence
-    assert durable_worker["tool_evidence_schema"] == ("agency.codex-product-child-tool-evidence.v1")
+    assert durable_worker["tool_evidence_schema"] == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA
     assert durable_worker["tool_evidence_source"] == "persisted_rollout"
     assert durable_worker["tool_evidence_recorded_at"]
     assert durable_worker["tool_evidence_status"] == "recorded"

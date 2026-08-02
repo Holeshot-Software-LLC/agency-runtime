@@ -15,6 +15,8 @@ from typing import Any
 from agency_runtime.core.bounded_io import FileSizeLimitError
 from agency_runtime.core.codex_child_tool_evidence import (
     CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+    classify_codex_exec_nested_tools,
+    classify_codex_exec_wrapper_output,
 )
 from agency_runtime.core.private_paths import private_temporary_directory
 
@@ -1370,11 +1372,50 @@ def _codex_product_rollout_output(call: Mapping[str, Any], output: object) -> An
     )
 
 
+def _record_codex_exec_input_evidence(
+    evidence: dict[str, int],
+    payload: Mapping[str, Any],
+    *,
+    call_ids: set[str],
+    duplicate_call_ids: set[str],
+) -> None:
+    """Project one exec wrapper input into fixed nested-call counts."""
+
+    nested = classify_codex_exec_nested_tools(payload.get("input"))
+    if nested is None:
+        evidence["child_exec_input_unclassified_count"] += 1
+    else:
+        evidence["child_exec_input_classified_count"] += 1
+        for field, count in nested.items():
+            evidence[field] += count
+    call_id = str(payload.get("call_id") or "").strip()
+    if not call_id or call_id in call_ids:
+        duplicate_call_ids.add(call_id)
+    else:
+        call_ids.add(call_id)
+
+
+def _record_codex_exec_output(
+    payload: Mapping[str, Any],
+    *,
+    call_ids: set[str],
+    outputs: dict[str, object],
+) -> None:
+    """Retain only the transient output needed for fixed wrapper classification."""
+
+    call_id = str(payload.get("call_id") or "").strip()
+    if call_id in call_ids and call_id not in outputs:
+        outputs[call_id] = payload.get("output")
+
+
 def _codex_product_child_tool_evidence(events: list[dict[str, Any]]) -> dict[str, int]:
     """Project fixed aggregate child-tool lifecycle counts without retaining content."""
 
     evidence = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS, 0)
     failed_statuses = {"failed", "errored", "cancelled", "canceled"}
+    exec_call_ids: set[str] = set()
+    duplicate_exec_call_ids: set[str] = set()
+    exec_outputs: dict[str, object] = {}
     for event in events:
         payload = event.get("payload")
         if not isinstance(payload, dict):
@@ -1398,6 +1439,13 @@ def _codex_product_child_tool_evidence(events: list[dict[str, Any]]) -> dict[str
                 "shell_command": "child_shell_command_tool_call_count",
             }.get(str(payload.get("name") or "").strip(), "child_other_tool_call_count")
             evidence[name_field] += 1
+            if name_field == "child_exec_tool_call_count":
+                _record_codex_exec_input_evidence(
+                    evidence,
+                    payload,
+                    call_ids=exec_call_ids,
+                    duplicate_call_ids=duplicate_exec_call_ids,
+                )
             status = str(payload.get("status") or "").strip().casefold()
             if status == "completed":
                 evidence["child_completed_tool_call_count"] += 1
@@ -1411,6 +1459,11 @@ def _codex_product_child_tool_evidence(events: list[dict[str, Any]]) -> dict[str
             "custom_tool_call_output",
         }:
             evidence["child_tool_output_count"] += 1
+            _record_codex_exec_output(
+                payload,
+                call_ids=exec_call_ids,
+                outputs=exec_outputs,
+            )
             continue
         if event_type != "event_msg" or item_type != "patch_apply_end":
             continue
@@ -1421,6 +1474,15 @@ def _codex_product_child_tool_evidence(events: list[dict[str, Any]]) -> dict[str
             evidence["child_patch_apply_failure_count"] += 1
         else:
             evidence["child_patch_apply_unknown_count"] += 1
+    classified_exec_outputs = 0
+    for call_id in exec_call_ids - duplicate_exec_call_ids:
+        outcome = classify_codex_exec_wrapper_output(exec_outputs.get(call_id))
+        evidence[f"child_exec_wrapper_{outcome}_count"] += 1
+        classified_exec_outputs += 1
+    evidence["child_exec_wrapper_unknown_count"] += max(
+        evidence["child_exec_tool_call_count"] - classified_exec_outputs,
+        0,
+    )
     evidence["child_tool_output_missing_count"] = max(
         evidence["child_tool_call_count"] - evidence["child_tool_output_count"],
         0,

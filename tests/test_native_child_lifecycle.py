@@ -10,6 +10,10 @@ import pytest
 from agency_runtime.adapters.hermes.bridge import handle as handle_hermes_bridge
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
 from agency_runtime.adapters.hooks import HookBridge
+from agency_runtime.core.codex_child_tool_evidence import (
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
+)
 from agency_runtime.core.delegation.events import work_unit_id_from_text
 from agency_runtime.core.native_child_activation import build_native_child_run_identity
 from agency_runtime.core.roster.bundled import BundledRoster
@@ -21,23 +25,17 @@ _PARENT_SCOPE = {
     "trace_id": "parent-run",
     "work_unit_id": "unit-1",
 }
-_TOOL_EVIDENCE = {
-    "child_tool_call_count": 1,
-    "child_function_tool_call_count": 1,
-    "child_custom_tool_call_count": 0,
-    "child_exec_tool_call_count": 0,
-    "child_apply_patch_tool_call_count": 1,
-    "child_shell_command_tool_call_count": 0,
-    "child_other_tool_call_count": 0,
-    "child_completed_tool_call_count": 1,
-    "child_failed_tool_call_count": 0,
-    "child_unknown_tool_call_count": 0,
-    "child_tool_output_count": 1,
-    "child_tool_output_missing_count": 0,
-    "child_patch_apply_success_count": 1,
-    "child_patch_apply_failure_count": 0,
-    "child_patch_apply_unknown_count": 0,
-}
+_TOOL_EVIDENCE = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS, 0)
+_TOOL_EVIDENCE.update(
+    {
+        "child_tool_call_count": 1,
+        "child_function_tool_call_count": 1,
+        "child_apply_patch_tool_call_count": 1,
+        "child_completed_tool_call_count": 1,
+        "child_tool_output_count": 1,
+        "child_patch_apply_success_count": 1,
+    }
+)
 
 
 def _delegation(
@@ -223,7 +221,7 @@ def test_codex_child_tool_evidence_is_content_free_immutable_and_readable(
     )
 
     assert recorded == replay
-    assert recorded["schema"] == "agency.codex-product-child-tool-evidence.v1"
+    assert recorded["schema"] == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA
     assert recorded["source"] == "persisted_rollout"
     assert recorded["recorded_at"]
     assert recorded["tool_evidence"] == _TOOL_EVIDENCE

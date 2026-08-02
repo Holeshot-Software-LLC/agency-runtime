@@ -15,6 +15,10 @@ from agency_runtime.core.canary_proof import (
     _codex_product_collaboration_projection,
     codex_product_activation_failures,
 )
+from agency_runtime.core.codex_child_tool_evidence import (
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
+)
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
 from agency_runtime.core.evals import product_host
@@ -145,23 +149,16 @@ def _two_unit_product_evidence(
         delegation_id = f"delegation-{index}"
         tool_use_id = f"spawn-call-{index}"
         task_name = codex_task_name_for_work_unit(unit)
-        tool_evidence = {
-            "child_tool_call_count": 1,
-            "child_function_tool_call_count": 1,
-            "child_custom_tool_call_count": 0,
-            "child_exec_tool_call_count": 0,
-            "child_apply_patch_tool_call_count": 0,
-            "child_shell_command_tool_call_count": 1,
-            "child_other_tool_call_count": 0,
-            "child_completed_tool_call_count": 1,
-            "child_failed_tool_call_count": 0,
-            "child_unknown_tool_call_count": 0,
-            "child_tool_output_count": 1,
-            "child_tool_output_missing_count": 0,
-            "child_patch_apply_success_count": 0,
-            "child_patch_apply_failure_count": 0,
-            "child_patch_apply_unknown_count": 0,
-        }
+        tool_evidence = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS, 0)
+        tool_evidence.update(
+            {
+                "child_tool_call_count": 1,
+                "child_function_tool_call_count": 1,
+                "child_shell_command_tool_call_count": 1,
+                "child_completed_tool_call_count": 1,
+                "child_tool_output_count": 1,
+            }
+        )
         plans.append(
             {
                 "work_unit_id": unit,
@@ -227,7 +224,7 @@ def _two_unit_product_evidence(
                 "started_at": "2026-07-31T14:00:01Z",
                 "execution_tool_use_id": f"followup-tool-{index}",
                 "execution_dispatched_at": "2026-07-31T14:00:30Z",
-                "tool_evidence_schema": "agency.codex-product-child-tool-evidence.v1",
+                "tool_evidence_schema": CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
                 "tool_evidence": dict(tool_evidence),
                 "tool_evidence_source": "persisted_rollout",
                 "tool_evidence_recorded_at": "2026-07-31T14:01:01Z",
@@ -332,21 +329,10 @@ def _two_unit_product_evidence(
             "timed_out_wait_count": 0,
             "completed_child_count": len(specs),
             "failed_child_count": 0,
-            "child_tool_call_count": len(specs),
-            "child_function_tool_call_count": len(specs),
-            "child_custom_tool_call_count": 0,
-            "child_exec_tool_call_count": 0,
-            "child_apply_patch_tool_call_count": 0,
-            "child_shell_command_tool_call_count": len(specs),
-            "child_other_tool_call_count": 0,
-            "child_completed_tool_call_count": len(specs),
-            "child_failed_tool_call_count": 0,
-            "child_unknown_tool_call_count": 0,
-            "child_tool_output_count": len(specs),
-            "child_tool_output_missing_count": 0,
-            "child_patch_apply_success_count": 0,
-            "child_patch_apply_failure_count": 0,
-            "child_patch_apply_unknown_count": 0,
+            **{
+                field: tool_evidence[field] * len(specs)
+                for field in CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS
+            },
             "parent_agent_message_count": 1,
             "unexpected_item_count": 0,
             "host_notice_types": [

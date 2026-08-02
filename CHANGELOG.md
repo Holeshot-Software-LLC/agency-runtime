@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-01
+updated: 2026-08-02
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -66,6 +66,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex product child diagnostics now classify nested `apply_patch`,
+  `shell_command`, and other calls inside current `functions.exec` wrappers,
+  plus fixed wrapper outcomes. The Store persists only bounded counts, keeps
+  canonical v1 rows readable, and never retains wrapper input or output.
 - Codex product child tool evidence is now durably attached to each exact
   worker receipt before product admission. Store snapshots distinguish
   recorded, missing, and invalid projections, and product proof reconciles the

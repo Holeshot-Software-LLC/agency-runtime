@@ -903,6 +903,21 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-product-skips-nested-exec-tool-classification",
+        invariant=(
+            "Codex product evidence classifies allowlisted nested tools and the fixed "
+            "wrapper outcome inside current functions.exec transport without retaining "
+            "tool content."
+        ),
+        source_path="agency_runtime/core/canary_backends.py",
+        before=('    nested = classify_codex_exec_nested_tools(payload.get("input"))\n'),
+        after="    nested = None\n",
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_product_child_tool_evidence_is_fixed_and_content_free"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-host-skips-child-tool-evidence-store-write",
         invariant=(
             "Codex product admission writes each validated child tool summary into its "
