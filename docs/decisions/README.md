@@ -214,6 +214,7 @@ Status meanings:
 | [ADR-0143](0143-execute-codex-specialists-in-the-initial-spawn-turn.md) | Execute Codex specialists in the initial spawn turn | Superseded |
 | [ADR-0144](0144-claim-codex-spawn-execution-at-the-first-complete-callback.md) | Claim Codex spawn execution at the first complete callback | Accepted |
 | [ADR-0145](0145-place-exact-codex-execution-after-specialist-expertise.md) | Place exact Codex execution after specialist expertise | Accepted |
+| [ADR-0146](0146-preserve-content-free-codex-child-tool-outcomes.md) | Preserve content-free Codex child tool outcomes | Accepted |
 
 ## Documentation governance
 

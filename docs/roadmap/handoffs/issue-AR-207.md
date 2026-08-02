@@ -48,14 +48,15 @@ related:
   - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md
+  - docs/decisions/0146-preserve-content-free-codex-child-tool-outcomes.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: c6c02d032111328a743715ab9e4541db457ed9c9
-minimum_ledger_commit: cd142c4b792b7cbf8216499d48875059a7e376c0
+evidence_commit: 3cc852f0b418a17252256532ec1c57946034b7ad
+minimum_ledger_commit: c09e0c1b58c6d6c65642b8ee78a053ec2865bc2f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -95,6 +96,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   dashboard, and passes autonomous Codex activation. Its one writer trial is
   consumed `NO-GO`: the child advances from zero to one tool call but creates
   no patch receipt or file. Do not retry `4c57507`.
+- The retained-evidence audit cannot classify that historical call: the Store
+  has launch and dispatch but no worker end or tool receipt, no surviving parent
+  rollout contains the child ID, and the isolated child profile is gone.
+  ADR-0146 implementation `3cc852f` adds content-free per-child and aggregate
+  tool lifecycle counts for the next immutable run. Sixty-five focused tests
+  pass; its single decision mutation is killed. No product trial ran in this
+  slice.
 
 ## completed-evidence
 
@@ -112,10 +120,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 The requested parent-finalization bug is fixed and proven on the installed
 candidate. Actual Agency child workspace execution remains unproven. V4 changes
-the child from zero tool calls to one, but that call does not yield a successful
-workspace-local patch receipt. The exact next causal boundary is the retained
-child tool outcome versus hook/tool projection, not routing, trust, workspace
-authority, header repair, or parent finalization.
+the child from zero tool calls to one, but the consumed evidence cannot classify
+that call. The next fresh candidate will expose call type, wrapper outcome,
+output receipt, and patch outcome without content; do not repair execution again
+until that evidence identifies the first failed boundary.
 
 ## same-task-continuity
 
@@ -127,11 +135,11 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Inspect the retained one-tool child projection and hook outcome without a new
-   product run; determine why no successful `patch_apply_end` was recorded.
-2. Repair only that first causal boundary, then repeat the governed gate/build
-   contract with one new immutable candidate.
-3. Never retry `c8a0577` or `4c57507`, and do not broaden this package.
+1. Run the governed named gate against the content-free telemetry checkpoint.
+2. Build and exact-install one new immutable candidate, then consume one fresh
+   accepted-plan writer sentinel and read its v2 child tool projection.
+3. Repair only the first failed boundary that projection proves. Never retry
+   `c8a0577` or `4c57507`, and do not broaden this package.
 
 ## verification
 

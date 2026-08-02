@@ -66,6 +66,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex product collaboration reports now preserve fixed content-free child
+  tool lifecycle counts per child and in aggregate. Schema v2 distinguishes
+  safe tool classes, call status, output receipt, and patch outcome without
+  retaining arguments, paths, file content, output, errors, or task text.
 - Codex Agency children now receive the exact accepted work-unit execution
   contract after their independently hash-verified specialist expertise, and
   a missing or modified execution suffix invalidates delivery. This repairs the

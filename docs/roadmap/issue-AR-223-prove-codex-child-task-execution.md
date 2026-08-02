@@ -34,6 +34,7 @@ related:
   - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md
+  - docs/decisions/0146-preserve-content-free-codex-child-tool-outcomes.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -1020,6 +1021,22 @@ corrections, improving the preceding zero-tool behavior. It still produced no
 successful patch receipt or file. Delegation remained incomplete, the worker
 remained unended, and finalization truthfully recorded `delegation_declined`
 with missing `delegation_execution`. Do not retry `4c57507`.
+
+The bounded retained-evidence audit found no authoritative record of that one
+tool's type or outcome. The Store preserves launch, activation consumption, and
+execution dispatch but no worker end, exit code, stdout, stderr, or tool
+receipt; the surviving parent rollouts do not contain the child identity, and
+the isolated child profile no longer exists. Historical reconstruction is
+therefore unavailable rather than inferred.
+
+ADR-0146 implementation `3cc852f` upgrades the product collaboration projection
+to v2. Each exact child and the aggregate now retain only fixed counts for call
+kind, the safe `exec` / `apply_patch` / `shell_command` / `other` classes, call
+status, output receipt, and patch success/failure/unknown. No argument, path,
+file content, output, error, task, or response content is retained. Sixty-five
+focused tests pass, and the new isolated decision mutation passes its baseline,
+is killed once, and leaves source unchanged. No product trial was run in this
+diagnostic slice.
 
 ## Approach
 
