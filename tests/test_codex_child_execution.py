@@ -8,6 +8,7 @@ from pathlib import Path
 from agency_runtime.core.codex_child_execution import (
     codex_child_execution_completion_observed,
     codex_current_turn_execution_observed,
+    codex_current_turn_workspace_write_observed,
     codex_initial_turn_execution_completion_observed,
     codex_initial_turn_execution_observed,
 )
@@ -329,6 +330,89 @@ def test_direct_initial_turn_requires_exact_spawn_ciphertext_and_completion(
         parent_session_id=parent,
         execution_tool_use_id=tool_use_id,
     )
+
+
+def test_workspace_write_receipt_requires_successful_workspace_local_patch(
+    tmp_path: Path,
+) -> None:
+    worker = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    parent = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    turn = "019fa6a6-b197-7a83-b3fb-d2c20411f608"
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    parent_path = tmp_path / f"rollout-test-{parent}.jsonl"
+    child_path = tmp_path / f"rollout-test-{worker}.jsonl"
+    _direct_rollouts(
+        child_path,
+        parent_path,
+        worker=worker,
+        parent=parent,
+        turn=turn,
+        tool_use_id="call-native-spawn",
+        ciphertext="gAAAAA" + "opaque-spawn-ciphertext" * 2,
+    )
+    expected = parse_codex_native_child_execution_message(
+        render_codex_native_child_execution_message(
+            work_unit_id="unit-1234567890",
+            goal_hash=work_unit_goal_hash("Create writer-result.txt."),
+        )
+    )
+    assert expected is not None
+
+    def observed() -> bool:
+        return codex_current_turn_workspace_write_observed(
+            child_path,
+            turn_id=turn,
+            worker_id=worker,
+            workspace_root=workspace,
+        )
+
+    assert not observed()
+    assert not codex_initial_turn_execution_completion_observed(
+        parent_path,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id="call-native-spawn",
+        require_workspace_write=True,
+        workspace_root=workspace,
+    )
+    events = [json.loads(line) for line in child_path.read_text(encoding="utf-8").splitlines()]
+    events.insert(
+        -2,
+        {
+            "type": "event_msg",
+            "payload": {
+                "type": "patch_apply_end",
+                "call_id": "call-patch",
+                "turn_id": turn,
+                "success": True,
+                "status": "completed",
+                "changes": {str(workspace / "writer-result.txt"): {"type": "add"}},
+            },
+        },
+    )
+    child_path.write_text(
+        "\n".join(json.dumps(event) for event in events) + "\n",
+        encoding="utf-8",
+    )
+    assert observed()
+    assert codex_initial_turn_execution_completion_observed(
+        parent_path,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id="call-native-spawn",
+        require_workspace_write=True,
+        workspace_root=workspace,
+    )
+
+    events[-3]["payload"]["changes"] = {str(tmp_path / "outside.txt"): {"type": "add"}}
+    child_path.write_text(
+        "\n".join(json.dumps(event) for event in events) + "\n",
+        encoding="utf-8",
+    )
+    assert not observed()
 
 
 def test_direct_completion_requires_exact_parent_and_causal_delivery(tmp_path: Path) -> None:

@@ -47,6 +47,7 @@ def test_workspace_write_proof_is_owned_by_a_delegated_workspace_write_unit() ->
     assert "terminal `mutation_scope` field" in wrapped
     assert "with `mutation_scope=workspace_write`" in wrapped
     assert "If it is absent, create it" in wrapped
+    assert "first mutation with `apply_patch`" in wrapped
     assert "Read-only children and the non-working parent must not create it" in wrapped
     assert token in wrapped
 
@@ -1167,6 +1168,8 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
         "accepted plan and native activation already prove the required host tools",
         "current working directory is the exact isolated product workspace",
         "permitted workspace tools for every required implementation",
+        "successful workspace-local patch receipt before any final response",
+        "proof-only named-file change is a legitimate implementation unit",
         "timeout_ms=120000",
         "repeat that same wait up to two additional times",
         "Never spawn the next row until",

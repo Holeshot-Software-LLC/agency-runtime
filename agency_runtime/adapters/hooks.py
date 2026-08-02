@@ -20,6 +20,7 @@ from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded
 from agency_runtime.core.codex_child_execution import (
     codex_child_execution_completion_observed,
     codex_current_turn_execution_observed,
+    codex_current_turn_workspace_write_observed,
     codex_initial_turn_execution_completion_observed,
     codex_initial_turn_execution_observed,
 )
@@ -1506,6 +1507,7 @@ class HookBridge:
             CodexNativeChildExecutionDelivery,
             str,
             NativeChildRunIdentity,
+            str,
         ]
     ]:
         """Resolve exact activated Codex plan rows without trusting hook arguments."""
@@ -1534,6 +1536,7 @@ class HookBridge:
                 CodexNativeChildExecutionDelivery,
                 str,
                 NativeChildRunIdentity,
+                str,
             ]
         ] = []
         for row in snapshot["unit_agent_plan"]:
@@ -1542,7 +1545,12 @@ class HookBridge:
             work_unit_id = str(row.get("work_unit_id") or "").strip()
             specialist_slug = str(row.get("recommended_agent") or "").strip()
             goal_hash = str(row.get("goal_hash") or "").strip().casefold()
-            if not work_unit_id or not specialist_slug:
+            mutation_scope = str(row.get("mutation_scope") or "").strip().casefold()
+            if (
+                not work_unit_id
+                or not specialist_slug
+                or mutation_scope not in {"read_only", "workspace_write", "external_write"}
+            ):
                 return []
             try:
                 expected = parse_codex_native_child_execution_message(
@@ -1580,7 +1588,7 @@ class HookBridge:
                 or identity.native_run_id != f"codex-agent:{identity.worker_id}"
             ):
                 return []
-            candidates.append((expected, specialist_slug, identity))
+            candidates.append((expected, specialist_slug, identity, mutation_scope))
         return candidates
 
     @staticmethod
@@ -1673,7 +1681,7 @@ class HookBridge:
         ]
         if len(matches) != 1:
             return _pre_tool_use_denial(denial, host=self.host)
-        expected, _specialist_slug, identity = matches[0]
+        expected, _specialist_slug, identity, _mutation_scope = matches[0]
         # Current Codex encrypts collaboration message arguments before its
         # PreToolUse hook observes them.  Bind that opaque call to the only
         # exact activated target and one-use Store claim here; SubagentStop and
@@ -1966,7 +1974,7 @@ class HookBridge:
         if candidates:
             if len(candidates) != 1 or not final_message.strip():
                 return {}
-            expected, _specialist_slug, _identity = candidates[0]
+            expected, _specialist_slug, _identity, mutation_scope = candidates[0]
             execution_tool_use_id = self._codex_execution_claim_observed(
                 session_id=session_id,
                 trace_id=trace_id,
@@ -1991,6 +1999,25 @@ class HookBridge:
             )
             if not (direct_execution or legacy_execution) or execution_tool_use_id is None:
                 return {}
+            if mutation_scope == "workspace_write" and not (
+                codex_current_turn_workspace_write_observed(
+                    _optional_string(payload, "agent_transcript_path"),
+                    turn_id=_optional_string(payload, "turn_id"),
+                    worker_id=identity.worker_id,
+                    workspace_root=_optional_string(payload, "cwd"),
+                )
+            ):
+                reason = (
+                    "Agency cannot accept this workspace_write specialist result because "
+                    "the current child turn has no successful workspace-local apply_patch "
+                    "receipt. Use apply_patch now to perform the exact assigned workspace "
+                    "mutation, verify the requested evidence, and then return the bounded "
+                    "result. Do not re-delegate or only describe the change."
+                )
+                return _completion_rejection(
+                    reason,
+                    retry=_optional_bool(payload, "stop_hook_active"),
+                )
             work_unit_id = expected.work_unit_id
         else:
             # Preserve legacy/unplanned child lifecycle behavior without
@@ -2029,6 +2056,7 @@ class HookBridge:
         session_id: str,
         trace_id: str,
         parent_transcript_path: object,
+        workspace_root: object,
     ) -> None:
         """Close only children whose exact completed execution is proven at parent Stop."""
 
@@ -2041,7 +2069,7 @@ class HookBridge:
         )
         if candidates and not callable(recorder):
             raise RuntimeError("evidence store cannot record Codex child completion")
-        for expected, _specialist_slug, identity in candidates:
+        for expected, _specialist_slug, identity, mutation_scope in candidates:
             execution_tool_use_id = self._codex_execution_claim_observed(
                 session_id=session_id,
                 trace_id=trace_id,
@@ -2056,6 +2084,8 @@ class HookBridge:
                 expected=expected,
                 parent_session_id=session_id,
                 execution_tool_use_id=execution_tool_use_id,
+                require_workspace_write=mutation_scope == "workspace_write",
+                workspace_root=workspace_root,
             )
             legacy_completion = codex_child_execution_completion_observed(
                 parent_transcript_path,
@@ -2063,6 +2093,8 @@ class HookBridge:
                 expected=expected,
                 parent_session_id=session_id,
                 execution_tool_use_id=execution_tool_use_id,
+                require_workspace_write=mutation_scope == "workspace_write",
+                workspace_root=workspace_root,
             )
             if not (direct_completion or legacy_completion):
                 continue
@@ -3153,6 +3185,7 @@ class HookBridge:
                 session_id=correlation.session_id,
                 trace_id=trace_id,
                 parent_transcript_path=payload.get("transcript_path"),
+                workspace_root=payload.get("cwd"),
             )
             self._acknowledge_resident_manager_delivery(
                 session_id=correlation.session_id,

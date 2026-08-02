@@ -503,6 +503,132 @@ def _one_turn_boundaries(
     return starts[0][0], completions[0][0], starts[0][1]
 
 
+def _resolved_workspace_root(workspace_root: object) -> Path | None:
+    raw_root = str(workspace_root or "").strip()
+    if not raw_root:
+        return None
+    try:
+        root = Path(raw_root).resolve(strict=True)
+    except (OSError, RuntimeError, ValueError):
+        return None
+    return root if root.is_dir() else None
+
+
+def _exact_turn_span(events: list[dict[str, Any]], turn_id: str) -> tuple[int, int] | None:
+    """Return one exact started/completed span from a possibly multi-turn rollout."""
+
+    starts: list[int] = []
+    completions: list[int] = []
+    for index, event in enumerate(events):
+        payload = event.get("payload")
+        if event.get("type") != "event_msg" or not isinstance(payload, Mapping):
+            continue
+        if payload.get("turn_id") != turn_id:
+            continue
+        if payload.get("type") == "task_started":
+            starts.append(index)
+        elif payload.get("type") == "task_complete":
+            completions.append(index)
+    if len(starts) != 1 or len(completions) != 1 or starts[0] >= completions[0]:
+        return None
+    return starts[0], completions[0]
+
+
+def _patch_changes_are_workspace_local(changes: object, root: Path) -> bool:
+    if not isinstance(changes, Mapping) or not changes:
+        return False
+    changed_paths: list[Path] = []
+    try:
+        for raw_path in changes:
+            if not isinstance(raw_path, str) or not raw_path.strip():
+                return False
+            candidate = Path(raw_path)
+            if not candidate.is_absolute():
+                candidate = root / candidate
+            changed_paths.append(candidate.resolve(strict=False))
+        return bool(
+            changed_paths
+            and all(path != root and path.is_relative_to(root) for path in changed_paths)
+        )
+    except (OSError, RuntimeError, ValueError):
+        return False
+
+
+def _workspace_write_observed_from_events(
+    events: list[dict[str, Any]],
+    *,
+    turn_id: str,
+    workspace_root: object,
+) -> bool:
+    """Require one successful Codex patch whose every changed path stays in the workspace."""
+
+    root = _resolved_workspace_root(workspace_root)
+    span = _exact_turn_span(events, turn_id)
+    if root is None or span is None:
+        return False
+
+    for event in events[span[0] + 1 : span[1]]:
+        payload = event.get("payload")
+        if (
+            event.get("type") != "event_msg"
+            or not isinstance(payload, Mapping)
+            or payload.get("type") != "patch_apply_end"
+            or payload.get("turn_id") != turn_id
+            or payload.get("success") is not True
+            or payload.get("status") != "completed"
+            or not isinstance(payload.get("call_id"), str)
+            or not str(payload["call_id"]).strip()
+        ):
+            continue
+        if _patch_changes_are_workspace_local(payload.get("changes"), root):
+            return True
+    return False
+
+
+def codex_current_turn_workspace_write_observed(
+    transcript_path: object,
+    *,
+    turn_id: object,
+    worker_id: object,
+    workspace_root: object,
+) -> bool:
+    """Prove a successful workspace-local patch in one exact Codex child turn."""
+
+    try:
+        normalized_turn = validate_correlation_id(turn_id, field="turn_id")
+        normalized_worker = validate_correlation_id(worker_id, field="worker_id")
+    except ValueError:
+        return False
+    raw_path = str(transcript_path or "").strip()
+    if not raw_path:
+        return False
+    path = Path(raw_path)
+    if (
+        not path.is_absolute()
+        or path.suffix.casefold() != ".jsonl"
+        or not path.name.endswith(f"-{normalized_worker}.jsonl")
+    ):
+        return False
+    events = _rollout_events(path)
+    if events is None:
+        return False
+    session_matches = sum(
+        1
+        for event in events
+        if event.get("type") == "session_meta"
+        and isinstance(event.get("payload"), Mapping)
+        and event["payload"].get("id") == normalized_worker
+    )
+    return bool(
+        session_matches == 1
+        and _workspace_write_observed_from_events(
+            events,
+            turn_id=normalized_turn,
+            workspace_root=workspace_root,
+        )
+    )
+
+
 def _initial_turn_execution_observed_from_events(
     path: Path,
     events: list[dict[str, Any]],
@@ -770,6 +896,8 @@ def codex_initial_turn_execution_completion_observed(
     expected: CodexNativeChildExecutionDelivery,
     parent_session_id: object,
     execution_tool_use_id: object,
+    require_workspace_write: bool = False,
+    workspace_root: object = "",
 ) -> bool:
     """Prove one completed Codex initial execution turn from its parent transcript."""
 
@@ -832,6 +960,14 @@ def codex_initial_turn_execution_completion_observed(
             execution_tool_use_id=normalized_tool_use,
             parent_events=parent_events,
             execution_event_limit=response_index,
+        )
+        and (
+            not require_workspace_write
+            or _workspace_write_observed_from_events(
+                child_events,
+                turn_id=boundaries[2],
+                workspace_root=workspace_root,
+            )
         )
     )
 
@@ -897,6 +1033,8 @@ def codex_child_execution_completion_observed(
     expected: CodexNativeChildExecutionDelivery,
     parent_session_id: object,
     execution_tool_use_id: object,
+    require_workspace_write: bool = False,
+    workspace_root: object = "",
 ) -> bool:
     """Prove one completed Codex follow-up turn from the exact parent transcript."""
 
@@ -971,12 +1109,20 @@ def codex_child_execution_completion_observed(
         parent_events=parent_events,
         execution_event_start=boundaries[2] + 1,
         execution_event_limit=response_index,
+    ) and (
+        not require_workspace_write
+        or _workspace_write_observed_from_events(
+            child_events,
+            turn_id=boundaries[4],
+            workspace_root=workspace_root,
+        )
     )
 
 
 __all__ = [
     "codex_child_execution_completion_observed",
     "codex_current_turn_execution_observed",
+    "codex_current_turn_workspace_write_observed",
     "codex_initial_turn_execution_completion_observed",
     "codex_initial_turn_execution_observed",
 ]

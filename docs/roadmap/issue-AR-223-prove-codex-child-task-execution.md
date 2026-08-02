@@ -875,6 +875,28 @@ failure. The explicit tool/workspace-proof hypothesis is therefore falsified.
 This build must not be retried, and header/dashboard/report work remains
 deferred behind actual delegated workspace execution.
 
+The retained direct control and the failed Agency trial use the same
+`fork_turns=none` launch. The direct child immediately invokes `apply_patch`,
+records a successful workspace-local `patch_apply_end`, verifies the bytes, and
+finishes; the Agency child records zero tool calls. Current Codex 0.146.0 source
+also confirms that a `SubagentStop` `decision:block` result supplies a native
+continuation prompt. The first exact defect is therefore Agency's completion
+boundary: it accepted lifecycle, delivery, and a nonblank final response as
+`ok` without requiring any mutation receipt for a `workspace_write` row.
+
+The bounded repair makes the exact write contract actionable and fail-closed.
+The Codex v3 child context and product prompt require `apply_patch` for the
+first product proof mutation and explicitly admit a proof-only named-file unit
+without generic root-cause, test, or refactor expansion. `SubagentStop` now
+requires one successful `patch_apply_end` whose every changed path resolves
+inside the exact child workspace before recording a write child as `ok`. A
+first missing receipt produces one native execution continuation; a repeated
+miss terminates instead of looping. Parent-`Stop` reconciliation applies the
+same receipt requirement and cannot backfill a false success. Ninety-seven
+focused child-delivery, product-host, activation, and execution tests pass with
+warning-strict Pytest; targeted Ruff lint/format and `git diff --check` pass.
+No new build or live trial has been consumed for this repair.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -918,6 +940,9 @@ accepted plan authority.
   independently proving inherited workspace-write capability.
 - [ ] One accepted Agency plan row launches its selected writer, delivers the
   self-contained execution turn, and creates exact retained file proof.
+- [x] A Codex `workspace_write` row cannot record success without a successful
+  workspace-local patch receipt; one bounded native correction is permitted
+  and a repeated missing receipt terminates without a loop.
 - [x] Product scheduling cannot advance from a nonterminal commentary wake;
   bounded repeated waits remain causally and content-freely verifiable.
 - [x] Current Codex execution uses one initial specialist turn and no execution

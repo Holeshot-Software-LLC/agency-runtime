@@ -118,6 +118,9 @@ def test_codex_direct_delivery_executes_the_exact_initial_spawn_goal() -> None:
     assert "current native activation have already verified the required host tools" in rendered
     assert "current working directory is the exact isolated workspace" in rendered
     assert "this activation is that proof" in rendered
+    assert "mutation_scope=workspace_write` is an action contract" in rendered
+    assert "use `apply_patch` for the first required workspace mutation" in rendered
+    assert "proof-only named-file change is a legitimate implementation unit" in rendered
     assert "activation-only" not in rendered
     assert "followup" not in rendered.casefold()
 

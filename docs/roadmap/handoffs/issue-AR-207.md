@@ -87,6 +87,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   workspace-write capability. The explicit tool/workspace-proof hypothesis is
   falsified; the remaining defect is inside Agency's delivered specialist turn
   or its native execution boundary, not OS permission.
+- Retained comparison proves both launches use `fork_turns=none`: the direct
+  child records a successful workspace-local patch and byte verification while
+  the Agency child records zero tool calls. Agency was accepting lifecycle and
+  a nonblank final answer without a write receipt.
+- The bounded local repair now requires a successful child-turn
+  `patch_apply_end` entirely inside the exact workspace before a
+  `workspace_write` row can record `ok`. One native `SubagentStop` continuation
+  tells the child to execute; a repeated miss terminates, and parent-`Stop`
+  applies the same receipt gate. Product/v3 instructions require the exact
+  proof mutation without generic specialist expansion. Ninety-seven focused
+  tests plus targeted Ruff/format/diff checks pass. No build has been consumed.
 
 ## completed-evidence
 
@@ -101,9 +112,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 Build, install, activation, routing, delegation, first header, and zero
-corrections pass. Actual delegated workspace execution still fails despite a
-terminal accepted child, so header/dashboard/report work remains deferred.
-README is `NO-GO`.
+corrections pass on consumed `be1ca0e`. Its delegated workspace execution
+failed because Agency accepted a zero-tool child. The scoped receipt repair is
+focused-green but unbuilt and not live-proven, so README remains `NO-GO` and
+header/dashboard/report work remains deferred.
 
 ## same-task-continuity
 
@@ -115,9 +127,11 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Read the retained `be1ca0e` child terminal response and tool transcript,
-   compare them with the exact delivered specialist turn and successful direct
-   child control, then freeze one cause and one repair before any new build.
+1. Commit this focused-green receipt repair and its ledger checkpoint.
+2. Run the complete named local gate once.
+3. If green, build/install one new immutable candidate, run one autonomous
+   activation, and spend one fresh Agency writer proof. Stop at its first
+   failure; do not broaden or retry the build.
 
 ## verification
 

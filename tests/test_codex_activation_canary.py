@@ -32,6 +32,7 @@ from agency_runtime.core.header.finalize import response_hash
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
 from agency_runtime.core.native_child_activation import (
+    build_native_child_run_identity,
     deserialize_native_child_activation_grant,
 )
 from agency_runtime.core.native_child_prompt_delivery import (
@@ -456,8 +457,8 @@ def _finish_v2_chain_through_hooks(
         + "\n",
         encoding="utf-8",
     )
-    [(expected_execution, _specialist, execution_identity)] = bridge._codex_execution_candidates(
-        session_id=session_id, trace_id=trace_id
+    [(expected_execution, _specialist, execution_identity, _mutation_scope)] = (
+        bridge._codex_execution_candidates(session_id=session_id, trace_id=trace_id)
     )
     assert (
         bridge._codex_execution_claim_observed(
@@ -557,6 +558,89 @@ def _finish_v2_chain_through_hooks(
             },
         ),
     }
+
+
+def test_codex_workspace_write_child_requires_patch_receipt_before_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters import hooks as hooks_module
+    from agency_runtime.core.native_child_prompt_delivery import (
+        parse_codex_native_child_execution_message,
+    )
+
+    expected = parse_codex_native_child_execution_message(
+        render_codex_native_child_execution_message(
+            work_unit_id="unit-workspace-write",
+            goal_hash=work_unit_goal_hash("Create writer-result.txt."),
+        )
+    )
+    assert expected is not None
+    identity = build_native_child_run_identity(
+        worker_kind="generic-worker",
+        worker_id="019fa500-4444-7555-8666-777788889999",
+        native_run_id="codex-agent:019fa500-4444-7555-8666-777788889999",
+    )
+    lifecycle: list[tuple[str, dict[str, object]]] = []
+
+    class RecordingStore:
+        def record_native_child_stopped(self, **kwargs: object) -> None:
+            lifecycle.append(("stopped", kwargs))
+
+        def record_native_child_ended(self, **kwargs: object) -> None:
+            lifecycle.append(("ended", kwargs))
+
+    bridge = HookBridge("codex", store=RecordingStore())  # type: ignore[arg-type]
+    monkeypatch.setattr(
+        bridge,
+        "_native_child_parent_scope",
+        lambda _payload: ("parent-session", "parent-trace", "unit-workspace-write"),
+    )
+    monkeypatch.setattr(
+        bridge,
+        "_codex_execution_candidates",
+        lambda **_kwargs: [(expected, "minimal-change-engineer", identity, "workspace_write")],
+    )
+    monkeypatch.setattr(
+        bridge,
+        "_codex_execution_claim_observed",
+        lambda **_kwargs: "call-native-spawn",
+    )
+    monkeypatch.setattr(
+        hooks_module, "codex_initial_turn_execution_observed", lambda *_a, **_k: True
+    )
+    monkeypatch.setattr(
+        hooks_module, "codex_current_turn_execution_observed", lambda *_a, **_k: False
+    )
+    write_observed = False
+    monkeypatch.setattr(
+        hooks_module,
+        "codex_current_turn_workspace_write_observed",
+        lambda *_a, **_k: write_observed,
+    )
+    payload = {
+        "session_id": "parent-session",
+        "turn_id": "child-turn",
+        "agent_id": identity.worker_id,
+        "agent_type": "worker",
+        "agent_transcript_path": "C:\\workspace\\child.jsonl",
+        "cwd": "C:\\workspace",
+        "last_assistant_message": "Done.",
+    }
+
+    first = bridge._handle_codex_subagent_stop(payload)
+    assert first["decision"] == "block"
+    assert "no successful workspace-local apply_patch receipt" in first["reason"]
+    assert lifecycle == []
+
+    terminal = bridge._handle_codex_subagent_stop({**payload, "stop_hook_active": True})
+    assert terminal["continue"] is False
+    assert "no successful workspace-local apply_patch receipt" in terminal["stopReason"]
+    assert lifecycle == []
+
+    write_observed = True
+    assert bridge._handle_codex_subagent_stop(payload) == {}
+    assert [event for event, _kwargs in lifecycle] == ["stopped", "ended"]
+    assert lifecycle[-1][1]["outcome"] == "ok"
 
 
 def _record_complete_v2_chain(

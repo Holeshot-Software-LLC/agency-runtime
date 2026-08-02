@@ -1298,6 +1298,20 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-write-child-accepts-no-patch-receipt",
+        invariant=(
+            "A Codex workspace-write child cannot complete without a successful "
+            "workspace-local patch receipt."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before='            if mutation_scope == "workspace_write" and not (',
+        after='            if mutation_scope == "read_only" and not (',
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_workspace_write_child_requires_patch_receipt_before_success"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-host-mislabels-hook-bypass-as-attended",
         invariant=(
             "Codex product trials record the supported one-invocation bypass without claiming "
