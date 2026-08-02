@@ -574,6 +574,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `95aec42` | 2026-08-02 | fix(ar-223): classify nested exec tool evidence | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `1815a98` | 2026-08-02 | docs(ar-223): checkpoint nested exec diagnostics | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `1d050e0` | 2026-08-02 | docs(ar-223): checkpoint nested wrapper failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `e091252` | 2026-08-02 | fix(ar-223): isolate Codex product temp writes | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
