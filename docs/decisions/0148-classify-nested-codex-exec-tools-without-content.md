@@ -69,6 +69,8 @@ content, errors, prompts, and task text.
   all 36 recent exec inputs classify, with 7 nested patch, 29 shell, and 1
   other call; wrapper outcomes remain fixed counts only.
 
+Implementation `95aec42` carries this decision.
+
 ## Alternatives
 
 - **Persist raw wrapper input and output.** Rejected because it would retain

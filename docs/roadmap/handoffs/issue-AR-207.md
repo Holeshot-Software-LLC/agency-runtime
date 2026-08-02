@@ -56,7 +56,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: e1c215719d8953efbbcf4ce176b593470dd0e1f8
+evidence_commit: 95aec42db22b3b45ecb706c7fb2ada9f0ae3d181
 minimum_ledger_commit: e1c215719d8953efbbcf4ce176b593470dd0e1f8
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
@@ -126,7 +126,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-Actual Agency child workspace execution remains unproven. Local ADR-0148 v2
+Actual Agency child workspace execution remains unproven. ADR-0148 `95aec42` v2
 now preserves nested tool classes and fixed wrapper outcomes without content;
 focused tests pass. The named gate and one new immutable writer remain.
 

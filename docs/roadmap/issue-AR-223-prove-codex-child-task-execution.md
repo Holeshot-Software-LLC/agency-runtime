@@ -1101,7 +1101,7 @@ aggregate transport counts do not prove which nested tool classes ran. The
 next bounded repair must preserve content-free per-wrapper nested tool classes
 and outcomes; it must not retain arguments, paths, content, output, or errors.
 
-ADR-0148's bounded local implementation upgrades new worker receipts to v2.
+ADR-0148 implementation `95aec42` upgrades new worker receipts to v2.
 It lexically classifies only direct nested tool calls outside strings and
 comments, fails ambiguous input to an explicit unclassified count, and reads
 only the fixed first wrapper-output line. Canonical v1 Store rows remain
