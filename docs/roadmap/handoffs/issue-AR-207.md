@@ -50,14 +50,15 @@ related:
   - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md
   - docs/decisions/0146-preserve-content-free-codex-child-tool-outcomes.md
   - docs/decisions/0148-classify-nested-codex-exec-tools-without-content.md
+  - docs/decisions/0149-classify-codex-wrapper-failures-without-content.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: e0912521d036646e0a439dd2cdfb8380828ff480
-minimum_ledger_commit: 5a97976ba6e1c37333577448f835bb15c3eceedf
+evidence_commit: e90af864df3af34b363dd28cec3bfe8cb74939ba
+minimum_ledger_commit: e90af864df3af34b363dd28cec3bfe8cb74939ba
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -66,8 +67,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
-- The goal remains `README's main story works in reality.` Exact repair/ledger
-  checkpoint `e091252`/`5a97976` rebases product execution temp variables into
+- The goal remains `README's main story works in reality.` Exact Store v3
+  repair checkpoint `e90af86` classifies fixed wrapper failure causes without
+  retaining output content. The preceding `e091252`/`5a97976` checkpoint rebases
+  product execution temp variables into
   the exact trusted workspace without disabling sandboxing.
 - Focused product-host/Store checks pass 43 tests. The named spine passes 657
   with six skips; 110 dashboard tests, Ruff/docs, and routing thresholds pass.

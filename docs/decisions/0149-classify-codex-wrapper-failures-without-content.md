@@ -62,6 +62,8 @@ useful live sample and leaves the next repair speculative.
 - New host wording fails closed to `process_failed_other` only when it retains
   a valid failed envelope; unsafe output structure becomes `failure_unknown`.
 
+Implementation `e90af86` carries this decision.
+
 ## Alternatives
 
 - **Persist the raw error.** Rejected because it can contain private paths,

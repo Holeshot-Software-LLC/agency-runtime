@@ -1190,7 +1190,7 @@ rebasing the three temp variables was insufficient; it did not prove or repair
 the actual nested wrapper failure. The next slice must classify a small fixed
 allowlist of wrapper failure causes content-freely before another live candidate.
 
-ADR-0149 implements Store v3 at that exact boundary. New evidence retains all
+ADR-0149 implementation `e90af86` provides Store v3 at that exact boundary. New evidence retains all
 v1/v2 counts and adds only six bounded failure-category counts whose sum must
 equal the failed-wrapper count. Canonical v1 and v2 rows remain readable; raw
 output is never persisted. The focused Codex product, Store, and product-host
