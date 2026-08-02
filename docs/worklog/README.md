@@ -528,6 +528,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ba82b92` | 2026-08-01 | docs(ar-223): checkpoint installed inline-plan merge | null | null |
 | `75d2d71` | 2026-08-01 | docs(ar-223): record green inline-plan activation | null | null |
 | `c5563b1` | 2026-08-01 | docs(ar-223): checkpoint writer-child product failure | null | null |
+| `f39dd0a` | 2026-08-02 | fix(ar-223): make Codex execution turns self-contained | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
