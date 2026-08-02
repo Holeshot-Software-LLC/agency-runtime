@@ -30,6 +30,7 @@ related:
   - docs/decisions/0141-admit-writer-proof-only-through-agency-plans.md
   - docs/decisions/0142-require-terminal-product-child-before-next-unit.md
   - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
+  - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -569,8 +570,17 @@ proves inferred and loaded `code-reviewer`, one direct spawn, zero follow-ups,
 one completed wait, a valid first header, zero corrections, and an accepted
 finalization. Verification nevertheless fails because the exact spawn's
 one-use Store execution dispatch receipt is absent, leaving the delegation and
-worker lifecycle open. The next repair is limited to the real PostToolUse
-work-unit fallback used when Codex omits callback correlation fields.
+worker lifecycle open. Store timestamps and the retained rollout prove that
+current Codex emitted the parent spawn result before the real child start and
+activation consumption. ADR-0144 therefore claims the exact dispatch at
+whichever callback is second and has both the recorded delegation and real
+activated identity. The live-order regression, reverse-order compatibility,
+37-test activation file, and 52 execution/lifecycle tests pass.
+The complete named local gate passes: repository Ruff and formatting, 657
+Python tests with 6 platform skips, 110 dashboard tests, every routing
+threshold, documentation and diff checks, and a full decision-conformance
+baseline that kills all 96 mutations with zero survivors or invalid results
+and leaves source unchanged.
 
 ## Approach
 
@@ -623,7 +633,7 @@ accepted plan authority.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
 - [x] Focused checks, bounded review, and the complete named local gate pass for
-  the first-turn implementation; an immutable checkpoint commit is pending.
+  the first-turn and callback-order implementation.
 - [x] The generated Codex `UserPromptSubmit` handler keeps the complete bounded
   inferred plan inline instead of spilling it outside the parent's allowed
   tool boundary.

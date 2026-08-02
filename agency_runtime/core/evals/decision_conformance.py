@@ -1138,6 +1138,20 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-direct-dispatch-ignores-live-callback-order",
+        invariant=(
+            "When Codex emits PostToolUse before SubagentStart, the later callback claims "
+            "the exact initial-spawn execution dispatch."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before="                    if delegated_rows:\n",
+        after="                    if False and delegated_rows:\n",
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="preflight-failure-drops-terminal-receipt",
         invariant=(
             "Every owned terminal preflight failure persists one exact content-free receipt."

@@ -1018,6 +1018,17 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     assert delegation["executed_worker_kind"] == "generic-worker"
     assert delegation["executed_worker_id"] == receiver_id
     assert delegation["native_run_id"] == f"codex-agent:{receiver_id}"
+    dispatched = configured_store.get_native_child_run(
+        host="codex",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=receiver_id,
+        native_run_id=f"codex-agent:{receiver_id}",
+    )
+    assert dispatched is not None
+    assert dispatched["execution_tool_use_id"] == tool_use_id
+    assert dispatched["execution_dispatched_at"]
     assert (
         bridge.handle(
             {

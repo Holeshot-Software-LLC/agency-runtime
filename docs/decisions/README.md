@@ -211,7 +211,8 @@ Status meanings:
 | [ADR-0140](0140-use-codex-stable-multi-agent-feature.md) | Use the Codex stable multi-agent feature | Superseded |
 | [ADR-0141](0141-admit-writer-proof-only-through-agency-plans.md) | Admit writer proof only through Agency plans | Accepted |
 | [ADR-0142](0142-require-terminal-product-child-before-next-unit.md) | Require terminal product child before the next unit | Superseded |
-| [ADR-0143](0143-execute-codex-specialists-in-the-initial-spawn-turn.md) | Execute Codex specialists in the initial spawn turn | Accepted |
+| [ADR-0143](0143-execute-codex-specialists-in-the-initial-spawn-turn.md) | Execute Codex specialists in the initial spawn turn | Superseded |
+| [ADR-0144](0144-claim-codex-spawn-execution-at-the-first-complete-callback.md) | Claim Codex spawn execution at the first complete callback | Accepted |
 
 ## Documentation governance
 

@@ -1,6 +1,6 @@
 ---
 title: "Execute Codex specialists in the initial spawn turn"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-08-02
 updated: 2026-08-02
@@ -24,7 +24,7 @@ supersedes:
   - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - docs/decisions/0139-make-codex-execution-turns-self-contained.md
   - docs/decisions/0142-require-terminal-product-child-before-next-unit.md
-superseded_by: null
+superseded_by: docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
 id: ADR-0143
 type: decision
 deciders: [maintainers]

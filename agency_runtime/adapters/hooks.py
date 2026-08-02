@@ -1849,6 +1849,42 @@ class HookBridge:
                         or activation.get("native_run_id") != identity.native_run_id
                     ):
                         raise ValueError("Codex child activation receipt did not match delivery")
+                    delegation_reader = getattr(self.store, "get_delegations", None)
+                    delegated_rows = []
+                    if callable(delegation_reader):
+                        delegated_rows = [
+                            row
+                            for row in delegation_reader(trace_id)
+                            if isinstance(row, dict)
+                            and row.get("session_id") == session_id
+                            and row.get("work_unit_id") == assignment.work_unit_id
+                            and row.get("status") == "delegated"
+                        ]
+                    if delegated_rows:
+                        execution_claimer = getattr(
+                            self.store,
+                            "claim_codex_native_child_execution",
+                            None,
+                        )
+                        if (
+                            len(delegated_rows) != 1
+                            or delegated_rows[0].get("backend") != "spawn_agent"
+                            or delegated_rows[0].get("executed_worker_id") != identity.worker_id
+                            or delegated_rows[0].get("native_run_id") != identity.native_run_id
+                            or not callable(execution_claimer)
+                            or execution_claimer(
+                                session_id=session_id,
+                                trace_id=trace_id,
+                                work_unit_id=assignment.work_unit_id,
+                                worker_id=identity.worker_id,
+                                native_run_id=identity.native_run_id,
+                                tool_use_id=assignment.tool_use_id,
+                            )
+                            is not True
+                        ):
+                            raise RuntimeError(
+                                "Codex initial spawn execution receipt was not recorded"
+                            )
                 except (KeyError, RuntimeError, ValueError):
                     exact_delivery = ""
         if exact_delivery:
