@@ -112,14 +112,23 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   unchanged source. The named spine passes 657 tests with 6 skips, dashboard UI
   passes 110 tests, every routing threshold passes, and repository-wide Ruff,
   formatting, documentation, metadata, policy, worklog, and diff checks pass.
+- Clean `b6bcdfb` builds canonically; verified wheel SHA-256 is
+  `3f9c8c0ddd7fd59daa48b0f6edb7af8824a22133988a87d486aa714f51229f28`.
+  Its default autonomous install refreshes Codex and ZCode plus an active,
+  reachable dashboard. The consumed activation proves one inferred/loaded
+  `code-reviewer`, direct topology `spawn=1/followup=0/wait=1`, valid first
+  header, zero corrections, and accepted finalization, but fails because the
+  one-use Store execution dispatch receipt is absent and the worker remains
+  unclosed. Session `019fc17d-8a96-7171-a384-225f1debf56f`, trace
+  `019fc17d-96fa-7052-afa8-87b92e46e357`.
 
 ## exact-blocker
 
-The README main story remains NO-GO. The first-turn implementation passes the
-complete named local gate but has not been checkpointed into an immutable
-build or consumed a live Agency writer sentinel. No Agency writer artifact,
-full product, concise header, dashboard configuration parity, or shareable
-final report is proven yet.
+The README main story remains NO-GO. Exact `b6bcdfb` is installed, but its
+consumed activation fails because real PostToolUse evidence does not persist
+the direct spawn execution dispatch receipt. No writer sentinel may run on this
+build. No Agency writer artifact, full product, concise header, dashboard
+configuration parity, or shareable final report is proven yet.
 
 ## same-task-continuity
 
@@ -131,9 +140,11 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Create the substantive and ledger checkpoint, build and install that exact
-   commit, and prove default Codex/ZCode/dashboard installation.
-2. Consume one new Agency writer sentinel. Stop before a full product trial
+1. Bind the PostToolUse direct execution claim to the effective recorded
+   work-unit identity when raw Codex callback correlation omits it; add the
+   exact regression and run the focused gate.
+2. Checkpoint, build, install, and consume one new activation on a new exact
+   commit. Only if it passes, consume one new Agency writer sentinel. Stop before a full product trial
    unless exact file proof and zero corrections pass.
 
 ## verification
@@ -163,6 +174,7 @@ git diff --check
   `f8e607d`, `386afca`, `5c45f154`, `ff39761`, and `43870c8` consumed governed
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
   activations; exact `b2be077` consumed both activation and product evidence;
-  `ae322ec`, and `bffd2c8` consumed governed evidence; none may be rerun.
+  `ae322ec`, `bffd2c8`, and `b6bcdfb` consumed governed evidence; none may be
+  rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

@@ -552,6 +552,26 @@ results and unchanged source. The named Python spine passes 657 tests with 6
 skips; all 110 dashboard tests, every routing threshold, repository-wide Ruff,
 formatting, documentation, metadata, policy, worklog, and diff checks pass.
 
+Clean head `b6bcdfb5b7c121863bea8e29f3d60b139a6a24ed` builds canonically
+from a detached checkout. Its independently verified Windows wheel has SHA-256
+`3f9c8c0ddd7fd59daa48b0f6edb7af8824a22133988a87d486aa714f51229f28`.
+The exact wheel installs, and bare autonomous installation refreshes Codex and
+ZCode plus an active reachable dashboard. ZCode is registered and enabled.
+
+The consumed Codex activation is terminal `NO-GO`. Session
+`019fc17d-8a96-7171-a384-225f1debf56f`, trace
+`019fc17d-96fa-7052-afa8-87b92e46e357`, route
+`08860e5b-b0c7-44c5-940b-dc47e4b70959`, run
+`9966776d-9d8c-4f81-a767-e1df6e409da3`, finalization
+`72b11aa9-52e8-4b25-9119-04e2a95ca29e`, and worker
+`019fc17e-a7b5-7f32-9c48-469054dde329` retain the exact boundary. The run
+proves inferred and loaded `code-reviewer`, one direct spawn, zero follow-ups,
+one completed wait, a valid first header, zero corrections, and an accepted
+finalization. Verification nevertheless fails because the exact spawn's
+one-use Store execution dispatch receipt is absent, leaving the delegation and
+worker lifecycle open. The next repair is limited to the real PostToolUse
+work-unit fallback used when Codex omits callback correlation fields.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
