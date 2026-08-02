@@ -415,6 +415,16 @@ Codex lifecycle/product-host tests pass; targeted Ruff lint and format pass.
 Live writer-child proof remains pending and no new immutable build has been
 spent.
 
+Fresh native control `ar223-native-writer-self-contained-01` is consumed and
+fails before child activation. The isolated Codex backend completes in 42.4
+seconds with exit code 0 under `autonomous_bypass`, but its collaboration
+projection records zero spawns, zero follow-ups, one wait, and zero unexpected
+items. The exact workspace is empty and `.ar223-native-child-control` is
+absent. The self-contained child block therefore never reached a child; this
+run neither proves nor disproves child workspace-write. Do not rerun it. The
+next boundary is the missing parent spawn, not another execution-envelope or
+artifact repair.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

@@ -73,6 +73,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - The local protocol repair carries the exact hash-bound goal in the execution
   turn, preserves shared-prefix compression, and rejects missing or tampered
   goals. ADR-0139 supersedes ADR-0136's content-free trigger premise.
+- Fresh native control `ar223-native-writer-self-contained-01` is consumed. It
+  completes in 42.4 seconds with exit zero under autonomous bypass but records
+  zero spawns, zero follow-ups, one wait, and zero unexpected items. Its exact
+  workspace is empty, so the self-contained child block never reached a child.
 
 ## completed-evidence
 
@@ -96,8 +100,9 @@ seven loaded specialists, nine completed delegations, nine exit-zero workers,
 one accepted finalization, a valid first header, and zero corrections. Its sole
 failure is `workspace_write_not_proven`: all three declared writer workers have
 empty stdout/stderr and the exact workspace has zero files. The trial must not
-be rerun. The checkpointed repair still lacks one real self-contained
-writer-child sentinel.
+be rerun. The new native sentinel also remains NO-GO, but at an earlier exact
+boundary: `codex_parent_spawn_missing`. It neither proves nor disproves child
+workspace-write because no child was launched.
 
 ## same-task-continuity
 
@@ -109,11 +114,11 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run one fresh Agency-disabled native writer sentinel whose child message
-   itself contains the exact path, content, write, and read-back instructions.
-2. If it passes, run the named local gate, build once, and prove one Agency
-   writer sentinel before any full product trial. If it fails, stop with that
-   exact boundary.
+1. Preserve both consumed controls; do not rerun either exact workspace.
+2. Repair or directly explain why the bounded native parent emitted one wait
+   but no spawn despite the explicit self-contained delegation request.
+3. Only after that focused boundary passes, run the named local gate, build
+   once, and prove one Agency writer sentinel before any full product trial.
 
 ## verification
 
