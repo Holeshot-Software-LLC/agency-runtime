@@ -568,6 +568,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3cc852f` | 2026-08-02 | fix(ar-223): preserve child tool outcomes | null | null |
 | `a56b6eb` | 2026-08-02 | docs(ar-223): checkpoint child tool outcome evidence | null | null |
 | `2a19c79` | 2026-08-02 | fix(ar-223): persist child tool evidence in Store | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `26cda4b` | 2026-08-02 | docs(ar-223): checkpoint durable Store diagnostics | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
