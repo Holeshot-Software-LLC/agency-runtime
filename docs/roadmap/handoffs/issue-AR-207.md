@@ -53,8 +53,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: d610630d4b3f8d04fc7cb2d0fc08fe6e19e44bbc
-minimum_ledger_commit: d610630d4b3f8d04fc7cb2d0fc08fe6e19e44bbc
+evidence_commit: be1ca0e69652645f4bf5be7a48a81de47a869821
+minimum_ledger_commit: be1ca0e69652645f4bf5be7a48a81de47a869821
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -63,76 +63,47 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
-- The goal remains `README's main story works in reality.` Exact installed
-  `4d14b99` passes the named gate, canonical build, default Codex/ZCode/dashboard
-  install, and one autonomous Codex activation with a valid first header and
-  zero corrections.
-- Writer sentinel `ar223-agency-writer-4d14b99-01` is consumed and terminal
-  `NO-GO`. Its exact workspace is empty. Do not retry this build.
-- The retained trial proves two defects: the product harness resolves exact
-  activation by host plus prompt hash and collides with an older same-prompt
-  route; inference also expands an explicit one-indivisible-unit request into
-  five units, while the parent executes only onboarding and declines the rest.
-- Direct app child `ar223-direct-native-child-01` independently proves current
-  Codex child workspace-write capability. The remaining failure is Agency's
-  exact evidence and inferred-plan contract, not OS workspace permission.
-- Both defects are repaired locally without deterministic worker selection.
-  Session plus prompt hash now resolves exact product evidence, and an explicit
-  one-indivisible-unit request bounds the inference planner to one authored unit.
-  The changed surface passes 127 warning-strict tests and Ruff.
-- Clean repair `10c047f` passes the complete named gate: 657 Python passes with
-  6 skips, 110 dashboard passes, every routing threshold, and 97/97 killed
-  decision mutations with unchanged source. All documentation and Ruff gates pass.
-- Exact `93e465a` builds and independently verifies; wheel SHA-256 is
-  `6426f2e1e061a5b34f80aece547a0468e75f26a1d4a3667d2529dfa87df70d50`.
-  Codex, ZCode, and the reachable dashboard install. Its one activation proves
-  inferred/loaded/delegated `code-reviewer`, direct execution, a terminal
-  exit-zero worker, accepted finalization, valid first header, zero corrections,
-  and autonomous trust bypass without persistent profile change.
-- Its one writer sentinel is consumed and `NO-GO`. Exact session resolution
-  succeeds, but both Luna planner responses fail before routing. A single
-  bounded direct-planner diagnostic reproduces the cause: Luna returns one
-  schema-valid implementation unit, then deterministic completeness policy
-  rejects it for three separate assurance units forbidden by the one-unit
-  schema. Do not retry `93e465a`.
-- Repair `73f9989` preserves the inference-owned one-unit plan through both
-  policy checks while retaining external-write authorization. The focused
-  workforce, intent, routing, and product-host slice passes 141 warning-strict
-  tests; Ruff passes. Clean head `0f40e8e` passes the complete named gate: 657
-  Python passes with 6 skips, 110 dashboard passes, every routing threshold, and
-  97/97 killed decision mutations with unchanged source. No new live evidence
-  has been consumed.
-- `d610630` writer is consumed `NO-GO` at the separate-assurance contradiction;
-  do not retry. Repair preserves one-unit staffing and clean head `62b7f3e`
-  passes the complete named gate, including 97/97 killed mutations.
-- Exact `7f0479f` activation passes, but its writer is consumed `NO-GO`: the
-  `minimal-change-engineer` child exits zero and leaves the workspace empty.
-- A direct native writer creates exact bytes, proving host write capability.
-  The focused repair makes accepted activation explicit tool and workspace
-  proof for the specialist child; 84 warning-strict tests and Ruff pass.
+- The goal remains `README's main story works in reality.` Repair `260865e`
+  makes accepted activation explicit tool and workspace proof for each native
+  child; ledger `be1ca0e` is the clean candidate.
+- The complete named gate passes: 657 Python tests with 6 skips, 110 dashboard
+  tests, every routing threshold, 97/97 killed decision mutations with unchanged
+  source, and every documentation, policy, Ruff, formatting, and diff check.
+- Exact `be1ca0e69652645f4bf5be7a48a81de47a869821` builds canonically and
+  independently verifies. Wheel SHA-256 is
+  `c707342bfb4392d89ae5f07d202cd7a0e73d1a7dfc52304c5d16e2b53ad9f519`;
+  source SHA-256 is
+  `451c8a4286f1167d5f29788c3a415c47f979305b6172f038369b274e46a69dd1`.
+- Codex, ZCode, and the reachable dashboard install. The one activation proves
+  inferred/loaded/delegated `code-reviewer`, a terminal exit-zero worker,
+  accepted finalization, valid first header, zero corrections, and autonomous
+  trust bypass without persistent profile change.
+- Writer `ar223-agency-writer-be1ca0e-01` is consumed `NO-GO` after 78.672s.
+  Inference selects/loads/delegates `minimal-change-engineer`; one spawn and one
+  wait complete exit zero; finalization and the first header pass with zero
+  corrections. Independent inspection finds zero workspace entries, so
+  `workspace_write_not_proven` is the sole failure. Do not retry `be1ca0e`.
+- Direct child `ar223-direct-native-child-01` already proves current Codex child
+  workspace-write capability. The explicit tool/workspace-proof hypothesis is
+  falsified; the remaining defect is inside Agency's delivered specialist turn
+  or its native execution boundary, not OS permission.
 
 ## completed-evidence
 
-- The callback-order repair passes the complete named local gate: 37 activation
-  and 52 execution/lifecycle tests; 657 Python tests with 6 skips; 110 dashboard
-  tests; every routing threshold; repository-wide Ruff, formatting,
-  documentation, metadata, policy, worklog, and diff checks. The full
-  decision-conformance baseline passes and kills all 96 current mutations with
-  zero survivors or invalid results and leaves source unchanged.
-- Exact `4d14b99` builds canonically; wheel SHA-256 is
-  `ad2bddce9bdd2f253ae3b2b15f44c70d4a481442af994269cf2fc0463334ff69`.
-  Codex, ZCode, and the reachable dashboard install. Its autonomous activation,
-  session `019fc1be-ef9a-7392-8eab-ecb196c40eb5`, trace
-  `019fc1be-fbbf-70c3-b299-e47e16b19010`, proves one inferred/loaded/delegated
-  `code-reviewer`, `spawn=1/followup=0/wait=1`, a dispatch receipt, terminal
-  exit-zero worker, accepted finalization, valid first header, zero corrections,
-  and trust bypass without persistent profile change.
+- Activation session `019fc29f-f8da-7360-8a1c-38cbe9a2f9fa`, trace
+  `019fc2a0-0584-7f71-a1eb-a54ed8ebf098`, and worker
+  `codex-agent:019fc2a0-f083-7712-a042-f70fed29bef8` retain the fresh pass.
+- Writer session `019fc2a3-1b73-7162-a10b-ab2b891a7876`, trace
+  `019fc2a3-1be8-7481-b08f-df6801a08964`, run
+  `00ffae19-8b6c-4217-846d-a7dc2fc4dfb1`, and worker
+  `codex-agent:019fc2a3-c2c3-7b32-b16e-f2dbb27d97ed` retain the failure.
 
 ## exact-blocker
 
 Build, install, activation, routing, delegation, first header, and zero
-corrections pass. The child-context repair is locally green but unproven in a
-fresh build; dashboard/header/report work remains deferred. README is `NO-GO`.
+corrections pass. Actual delegated workspace execution still fails despite a
+terminal accepted child, so header/dashboard/report work remains deferred.
+README is `NO-GO`.
 
 ## same-task-continuity
 
@@ -144,7 +115,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Commit this focused repair, run the named gate, then consume one new immutable writer trial and stop at its first failure; never retry `7f0479f`.
+1. Read the retained `be1ca0e` child terminal response and tool transcript,
+   compare them with the exact delivered specialist turn and successful direct
+   child control, then freeze one cause and one repair before any new build.
 
 ## verification
 
@@ -173,8 +146,8 @@ git diff --check
   `f8e607d`, `386afca`, `5c45f154`, `ff39761`, and `43870c8` consumed governed
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
   activations; exact `b2be077` consumed both activation and product evidence;
-  `ae322ec`, `bffd2c8`, `b6bcdfb`, `d4c65a7`, `4d14b99`, and `93e465a`
-  consumed governed evidence;
+  `ae322ec`, `bffd2c8`, `b6bcdfb`, `d4c65a7`, `4d14b99`, `93e465a`,
+  `d610630`, `7f0479f`, and `be1ca0e` consumed governed evidence;
   none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

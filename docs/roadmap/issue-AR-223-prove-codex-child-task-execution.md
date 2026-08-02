@@ -834,6 +834,47 @@ The focused native-delivery, product-host, and Codex activation slice passes 84
 warning-strict tests; scoped Ruff lint, formatting, and diff checks pass. No new
 immutable build or live product evidence has been consumed.
 
+Clean head `be1ca0e69652645f4bf5be7a48a81de47a869821` passes the complete
+named local gate: metadata, policy, worklog, 635-document validation,
+repository-wide Ruff lint and formatting, 657 Python passes with 6 platform
+skips, 110 dashboard passes, every routing threshold, and a 196.478-second
+decision-conformance baseline followed by 97/97 killed mutations with unchanged
+source. The detached canonical build passes strict Twine metadata and independent
+distribution verification. Its Windows wheel SHA-256 is
+`c707342bfb4392d89ae5f07d202cd7a0e73d1a7dfc52304c5d16e2b53ad9f519`;
+the source distribution SHA-256 is
+`451c8a4286f1167d5f29788c3a415c47f979305b6172f038369b274e46a69dd1`.
+
+The exact wheel installs and bare autonomous installation refreshes only Codex,
+ZCode, and the reachable dashboard. Its one activation passes: session
+`019fc29f-f8da-7360-8a1c-38cbe9a2f9fa`, trace
+`019fc2a0-0584-7f71-a1eb-a54ed8ebf098`, delegation
+`e5ab2e88-be0f-44b6-93e5-9f088825dd85`, finalization
+`7a8426af-7ea4-4d4b-b290-9def315ce92c`, and native worker
+`codex-agent:019fc2a0-f083-7712-a042-f70fed29bef8` prove one inferred,
+loaded, and delegated `code-reviewer`, terminal exit-zero execution, accepted
+finalization, a valid first header, zero corrections, autonomous trust bypass,
+and no persistent profile change.
+
+Its one writer sentinel `ar223-agency-writer-be1ca0e-01` is consumed and
+terminal `NO-GO` after 78.672 seconds. Prompt hash
+`sha256:1a02a85f8d35af52f983b4c3886c0aa5470b7613aa2bd2b9045261b719c66729`,
+session `019fc2a3-1b73-7162-a10b-ab2b891a7876`, trace
+`019fc2a3-1be8-7481-b08f-df6801a08964`, route
+`5cec6a14-9cdc-4564-8e60-3a9d5d9f831a`, run
+`00ffae19-8b6c-4217-846d-a7dc2fc4dfb1`, delegation
+`1e26fd70-d29a-448a-baf6-3ebb28723afb`, finalization
+`5699518a-3c18-42bf-8965-f1bcbedd5d97`, and native child
+`codex-agent:019fc2a3-c2c3-7b32-b16e-f2dbb27d97ed` retain the exact failure.
+Inference selects, loads, and delegates `minimal-change-engineer` for one
+`workspace_write` unit; one spawn and one wait complete with exit code zero;
+finalization is accepted; the first header is valid; and correction count is
+zero. Independent inspection proves the isolated workspace has zero entries and
+no `writer-result.txt`, leaving `workspace_write_not_proven` as the sole product
+failure. The explicit tool/workspace-proof hypothesis is therefore falsified.
+This build must not be retried, and header/dashboard/report work remains
+deferred behind actual delegated workspace execution.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
