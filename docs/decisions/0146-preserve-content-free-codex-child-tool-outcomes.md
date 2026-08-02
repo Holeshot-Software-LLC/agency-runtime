@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
+  - docs/decisions/0147-persist-codex-child-tool-evidence-on-worker-receipts.md
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/canary_proof.py
   - agency_runtime/core/evals/decision_conformance.py

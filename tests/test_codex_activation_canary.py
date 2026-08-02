@@ -24,6 +24,9 @@ from agency_runtime.core.canary_backends import (
     codex_collaboration_evidence,
 )
 from agency_runtime.core.canary_proof import codex_activation_failures
+from agency_runtime.core.codex_child_tool_evidence import (
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+)
 from agency_runtime.core.codex_native_plan_scope import deserialize_codex_native_plan_scope
 from agency_runtime.core.config import reset_config_cache
 from agency_runtime.core.delegation.events import mark_delegation_executed
@@ -1240,6 +1243,41 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     assert worker_run["work_unit_id"] == unit
     assert worker_run["exit_code"] is None
     assert not worker_run["ended_at"]
+    empty_tool_evidence = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS, 0)
+    configured_store.record_codex_child_tool_evidence(
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        child_session_id=receiver_id,
+        evidence=empty_tool_evidence,
+    )
+    durable_evidence = configured_store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=response_hash(task),
+    )
+    [durable_worker] = durable_evidence["worker_runs"]
+    assert durable_worker["tool_evidence"] == empty_tool_evidence
+    assert durable_worker["tool_evidence_schema"] == ("agency.codex-product-child-tool-evidence.v1")
+    assert durable_worker["tool_evidence_source"] == "persisted_rollout"
+    assert durable_worker["tool_evidence_recorded_at"]
+    assert durable_worker["tool_evidence_status"] == "recorded"
+    connection = configured_store._connect()
+    try:
+        connection.execute(
+            "UPDATE worker_runs SET tool_evidence = '{\"malformed\":1}' "
+            "WHERE trace_id = ? AND worker_id = ?",
+            (trace_id, receiver_id),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    corrupt_evidence = configured_store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=response_hash(task),
+    )
+    [corrupt_worker] = corrupt_evidence["worker_runs"]
+    assert corrupt_worker["tool_evidence"] is None
+    assert corrupt_worker["tool_evidence_status"] == "invalid"
 
 
 def test_codex_opaque_children_serialize_until_subagent_start_consumes_grant(

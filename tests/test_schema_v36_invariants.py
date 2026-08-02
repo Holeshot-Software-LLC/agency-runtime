@@ -83,7 +83,7 @@ def test_schema_v38_accepts_zcode_and_guards_append_only_consumption(
     finally:
         connection.close()
     assert remaining == 0
-    assert version == SCHEMA_VERSION == 43
+    assert version == SCHEMA_VERSION == 44
 
 
 @pytest.mark.parametrize(
@@ -164,7 +164,7 @@ def test_schema_v38_upgrade_preserves_v35_activation_evidence_and_is_idempotent(
         finally:
             connection.close()
         assert tuple(row) == ("claude", "code-reviewer")
-        assert version == SCHEMA_VERSION == 43
+        assert version == SCHEMA_VERSION == 44
 
 
 def test_schema_v38_upgrade_adds_native_child_scope_authority_idempotently(
@@ -198,7 +198,7 @@ def test_schema_v38_upgrade_adds_native_child_scope_authority_idempotently(
             connection.close()
         assert {"token_hash", "parent_trace_id", "consumed_unix"}.issubset(columns)
         assert trigger is not None
-        assert version == SCHEMA_VERSION == 43
+        assert version == SCHEMA_VERSION == 44
 
 
 def test_schema_v38_upgrades_v37_attestation_and_hook_provenance_columns(
@@ -256,7 +256,7 @@ def test_schema_v38_upgrades_v37_attestation_and_hook_provenance_columns(
         assert attestation is not None
         assert attestation["proof_contract"] == ""
         assert attestation["proof_digest"] == ""
-        assert version == SCHEMA_VERSION == 43
+        assert version == SCHEMA_VERSION == 44
 
 
 def test_schema_v43_adds_codex_execution_dispatch_receipt_idempotently(
@@ -291,7 +291,42 @@ def test_schema_v43_adds_codex_execution_dispatch_receipt_idempotently(
             connection.close()
         assert {"execution_tool_use_id", "execution_dispatched_at"}.issubset(columns)
         assert execution_index is not None
-        assert version == SCHEMA_VERSION == 43
+        assert version == SCHEMA_VERSION == 44
+
+
+def test_schema_v44_adds_codex_child_tool_evidence_idempotently(tmp_path: Path) -> None:
+    path = tmp_path / "v43-to-v44.db"
+    store = Store(path)
+    connection = store._connect()
+    try:
+        connection.execute("ALTER TABLE worker_runs DROP COLUMN tool_evidence_recorded_at")
+        connection.execute("ALTER TABLE worker_runs DROP COLUMN tool_evidence_source")
+        connection.execute("ALTER TABLE worker_runs DROP COLUMN tool_evidence")
+        connection.execute("ALTER TABLE worker_runs DROP COLUMN tool_evidence_schema")
+        connection.execute("UPDATE schema_version SET version = 43")
+        connection.commit()
+    finally:
+        connection.close()
+
+    expected = {
+        "tool_evidence_schema",
+        "tool_evidence",
+        "tool_evidence_source",
+        "tool_evidence_recorded_at",
+    }
+    for _attempt in range(2):
+        reopened = Store(path)
+        assert reopened._current_schema_state() == (True, True)
+        connection = reopened._connect()
+        try:
+            columns = {
+                str(row["name"]) for row in connection.execute("PRAGMA table_info(worker_runs)")
+            }
+            version = connection.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
+        finally:
+            connection.close()
+        assert expected.issubset(columns)
+        assert version == SCHEMA_VERSION == 44
 
 
 @pytest.mark.parametrize(
@@ -303,6 +338,7 @@ def test_schema_v43_adds_codex_execution_dispatch_receipt_idempotently(
         "DROP TRIGGER agency_native_child_parent_scope_consume_once",
         "ALTER TABLE host_canary_attestations DROP COLUMN proof_digest",
         "ALTER TABLE worker_runs DROP COLUMN execution_dispatched_at",
+        "ALTER TABLE worker_runs DROP COLUMN tool_evidence_recorded_at",
         "DROP INDEX idx_worker_runs_codex_execution_tool_use",
         "DROP INDEX idx_routing_query_hash",
     ],
@@ -313,6 +349,7 @@ def test_schema_v43_adds_codex_execution_dispatch_receipt_idempotently(
         "child-scope-guard",
         "attestation-proof-column",
         "execution-dispatch-column",
+        "child-tool-evidence-column",
         "execution-dispatch-index",
         "canary-query-index",
     ],

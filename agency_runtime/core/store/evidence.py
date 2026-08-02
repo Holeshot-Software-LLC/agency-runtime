@@ -7,6 +7,9 @@ from hashlib import sha256
 from typing import Any
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
+from agency_runtime.core.codex_child_tool_evidence import (
+    decode_stored_codex_child_tool_evidence,
+)
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation_status import (
     DELEGATION_STATUS_PRIORITY as _DELEGATION_STATUS_PRIORITY,
@@ -157,6 +160,27 @@ def _project_canary_work_units(value: object) -> dict[str, Any] | None:
         "confidence": confidence,
         "source": source,
     }
+
+
+def _project_canary_worker_run(item: Any) -> dict[str, Any]:
+    """Decode child tool counts while preserving an explicit integrity status."""
+
+    projected = dict(item)
+    try:
+        projected["tool_evidence"] = decode_stored_codex_child_tool_evidence(
+            schema=projected["tool_evidence_schema"],
+            source=projected["tool_evidence_source"],
+            recorded_at=projected["tool_evidence_recorded_at"],
+            payload=projected["tool_evidence"],
+        )
+    except ValueError:
+        projected["tool_evidence"] = None
+        projected["tool_evidence_status"] = "invalid"
+    else:
+        projected["tool_evidence_status"] = (
+            "recorded" if projected["tool_evidence"] is not None else "missing"
+        )
+    return projected
 
 
 def _empty_canary_activation_snapshot(
@@ -1830,13 +1854,14 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 ).fetchall()
             ]
             worker_runs = [
-                dict(item)
+                _project_canary_worker_run(item)
                 for item in conn.execute(
                     "SELECT id, delegation_event_id, backend, session_id, trace_id, "
                     "work_unit_id, host, worker_id, native_run_id, exit_code, "
-                    "started_at, execution_tool_use_id, execution_dispatched_at, ended_at "
-                    "FROM worker_runs WHERE trace_id = ? "
-                    "ORDER BY started_at, rowid",
+                    "started_at, execution_tool_use_id, execution_dispatched_at, "
+                    "tool_evidence_schema, tool_evidence, tool_evidence_source, "
+                    "tool_evidence_recorded_at, ended_at "
+                    "FROM worker_runs WHERE trace_id = ? ORDER BY started_at, rowid",
                     (normalized_trace,),
                 ).fetchall()
             ]

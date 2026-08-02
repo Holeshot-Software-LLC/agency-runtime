@@ -319,12 +319,26 @@ class _NominationSemantics:""",
                 str(result.get("session_id") or ""),
                 field="session_id",
             )
+            tool_evidence_store_failures = _persist_codex_child_tool_evidence(
+                store=store,
+                result=result,
+                parent_session_id=session_id,
+            )
             evidence = store.get_canary_activation_snapshot(
                 host=normalized_host,
                 query_hash=executed_prompt_hash.removeprefix("sha256:"),
                 session_id=session_id,
             )""",
         after="""        if normalized_host == "codex" and normalized_mode == "agency":
+            session_id = validate_correlation_id(
+                str(result.get("session_id") or ""),
+                field="session_id",
+            )
+            tool_evidence_store_failures = _persist_codex_child_tool_evidence(
+                store=store,
+                result=result,
+                parent_session_id=session_id,
+            )
             evidence = store.recent_runtime_activity(limit=500)""",
         test_node=(
             "tests/test_product_host.py::"
@@ -877,7 +891,7 @@ class _NominationSemantics:""",
             "Codex product evidence preserves successful child patch receipts as bounded "
             "counts without retaining tool content."
         ),
-        source_path="agency_runtime/core/canary_backends.py",
+        source_path="agency_runtime/core/codex_child_tool_evidence.py",
         before=('    "child_patch_apply_success_count",\n    "child_patch_apply_failure_count",\n'),
         after=(
             '    "child_patch_apply_success_count_removed",\n'
@@ -886,6 +900,26 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_codex_activation_canary.py::"
             "test_product_child_tool_evidence_is_fixed_and_content_free"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="product-host-skips-child-tool-evidence-store-write",
+        invariant=(
+            "Codex product admission writes each validated child tool summary into its "
+            "exact durable worker receipt before reading the activation snapshot."
+        ),
+        source_path="agency_runtime/core/evals/product_host.py",
+        before=(
+            "            tool_evidence_store_failures = _persist_codex_child_tool_evidence(\n"
+            "                store=store,\n"
+            "                result=result,\n"
+            "                parent_session_id=session_id,\n"
+            "            )\n"
+        ),
+        after="            tool_evidence_store_failures = ()\n",
+        test_node=(
+            "tests/test_product_host.py::"
+            "test_codex_product_host_uses_unmocked_multi_unit_product_proof"
         ),
     ),
     DecisionMutation(

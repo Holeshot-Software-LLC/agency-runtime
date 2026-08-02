@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 43
+SCHEMA_VERSION = 44
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
@@ -1068,6 +1068,10 @@ CREATE TABLE IF NOT EXISTS worker_runs (
     started_at TEXT NOT NULL,
     execution_tool_use_id TEXT NOT NULL DEFAULT '',
     execution_dispatched_at TEXT,
+    tool_evidence_schema TEXT NOT NULL DEFAULT '',
+    tool_evidence TEXT NOT NULL DEFAULT '',
+    tool_evidence_source TEXT NOT NULL DEFAULT '',
+    tool_evidence_recorded_at TEXT,
     ended_at TEXT,
     FOREIGN KEY (delegation_event_id) REFERENCES delegation_events(id)
 );
@@ -5004,6 +5008,25 @@ def migrate_schema(
         "TEXT NOT NULL DEFAULT ''",
     )
     ensure_column(conn, "worker_runs", "execution_dispatched_at", "TEXT")
+    ensure_column(
+        conn,
+        "worker_runs",
+        "tool_evidence_schema",
+        "TEXT NOT NULL DEFAULT ''",
+    )
+    ensure_column(
+        conn,
+        "worker_runs",
+        "tool_evidence",
+        "TEXT NOT NULL DEFAULT ''",
+    )
+    ensure_column(
+        conn,
+        "worker_runs",
+        "tool_evidence_source",
+        "TEXT NOT NULL DEFAULT ''",
+    )
+    ensure_column(conn, "worker_runs", "tool_evidence_recorded_at", "TEXT")
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_worker_runs_trace ON worker_runs(session_id, trace_id)"
     )

@@ -16,6 +16,9 @@ from typing import Any, Final
 from agency_runtime.core import canary
 from agency_runtime.core.bounded_io import FileSizeLimitError, read_bounded_regular_file
 from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
+from agency_runtime.core.codex_child_tool_evidence import (
+    normalize_codex_child_tool_evidence,
+)
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation.backends import run_bounded_process
 from agency_runtime.core.evals.product_one_shot import ProductHostExecution
@@ -355,6 +358,89 @@ def _codex_product_backend(
     )
 
 
+def _persist_codex_child_tool_evidence(
+    *,
+    store: Store,
+    result: Mapping[str, Any],
+    parent_session_id: str,
+) -> tuple[str, ...]:
+    """Persist only validated per-child counts from the product rollout projection."""
+
+    collaboration = result.get("collaboration")
+    if not isinstance(collaboration, Mapping):
+        return ()
+    try:
+        if (
+            collaboration.get("schema") != "agency.codex-product-collaboration.v2"
+            or collaboration.get("evidence_source") != "persisted_rollout"
+        ):
+            raise ValueError("invalid collaboration evidence")
+        calls = collaboration.get("calls")
+        if not isinstance(calls, list) or not 1 <= len(calls) <= 16:
+            raise ValueError("invalid collaboration calls")
+        records: list[tuple[str, str, str, dict[str, int]]] = []
+        identities: set[tuple[str, str]] = set()
+        for row in calls:
+            if (
+                not isinstance(row, Mapping)
+                or row.get("event_type") != "rollout_call_completed"
+                or row.get("tool") != "spawn_agent"
+                or row.get("evidence_source") != "persisted_rollout"
+            ):
+                raise ValueError("invalid child evidence source")
+            delivery = row.get("prompt_delivery")
+            receivers = row.get("receiver_thread_ids")
+            if not isinstance(delivery, Mapping) or not isinstance(receivers, list):
+                raise ValueError("invalid child evidence identity")
+            if (
+                row.get("sender_thread_id") != parent_session_id
+                or delivery.get("parent_session_id") != parent_session_id
+                or len(receivers) != 1
+            ):
+                raise ValueError("invalid child evidence parent")
+            trace_id = validate_correlation_id(
+                delivery.get("parent_trace_id"),
+                field="trace_id",
+            )
+            work_unit_id = validate_correlation_id(
+                delivery.get("work_unit_id"),
+                field="work_unit_id",
+            )
+            child_session_id = validate_correlation_id(
+                receivers[0],
+                field="child_session_id",
+            )
+            identity = (work_unit_id, child_session_id)
+            if identity in identities:
+                raise ValueError("duplicated child evidence identity")
+            identities.add(identity)
+            records.append(
+                (
+                    trace_id,
+                    work_unit_id,
+                    child_session_id,
+                    normalize_codex_child_tool_evidence(row.get("tool_evidence")),
+                )
+            )
+    except (TypeError, ValueError):
+        return ("Codex product child tool evidence was not safe to persist",)
+    failures: list[str] = []
+    for trace_id, work_unit_id, child_session_id, evidence in records:
+        try:
+            store.record_codex_child_tool_evidence(
+                session_id=parent_session_id,
+                trace_id=trace_id,
+                work_unit_id=work_unit_id,
+                child_session_id=child_session_id,
+                evidence=evidence,
+            )
+        except Exception:
+            failures.append(
+                f"Codex product unit {work_unit_id} child tool evidence Store write failed"
+            )
+    return tuple(failures)
+
+
 def execute_product_host(
     *,
     prompt: str,
@@ -445,10 +531,16 @@ def execute_product_host(
             workspace=resolved_workspace,
         )
         hook_trust_evidence = _hook_trust_evidence(result)
+        tool_evidence_store_failures: tuple[str, ...] = ()
         if normalized_host == "codex" and normalized_mode == "agency":
             session_id = validate_correlation_id(
                 str(result.get("session_id") or ""),
                 field="session_id",
+            )
+            tool_evidence_store_failures = _persist_codex_child_tool_evidence(
+                store=store,
+                result=result,
+                parent_session_id=session_id,
             )
             evidence = store.get_canary_activation_snapshot(
                 host=normalized_host,
@@ -484,7 +576,10 @@ def execute_product_host(
     response_summary = (
         f"nonempty response captured ({len(response)} characters)" if response.strip() else ""
     )
-    failures = tuple(str(item) for item in proof.failures)
+    failures = (
+        *(str(item) for item in proof.failures),
+        *tool_evidence_store_failures,
+    )
     if trust_evidence.get("proven") is not True:
         failures = (*failures, "workspace_trust_not_proven")
     if hook_trust_evidence.get("proven") is not True:
@@ -500,6 +595,7 @@ def execute_product_host(
         profile_scope=proof.result_scope,
         runtime_contract_passed=bool(
             proof.passed
+            and not tool_evidence_store_failures
             and trust_evidence.get("proven") is True
             and hook_trust_evidence.get("proven") is True
             and write_evidence.get("proven") is True
@@ -511,6 +607,7 @@ def execute_product_host(
             "workspace_trust": trust_evidence,
             "hook_trust": hook_trust_evidence,
             "workspace_write": write_evidence,
+            "store_failures": list(tool_evidence_store_failures),
             "product_prompt_hash": prompt_hash,
             "executed_prompt_hash": executed_prompt_hash,
             "failures": list(failures),

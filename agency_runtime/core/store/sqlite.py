@@ -386,6 +386,10 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
         "worker_runs": {
             "execution_tool_use_id",
             "execution_dispatched_at",
+            "tool_evidence_schema",
+            "tool_evidence",
+            "tool_evidence_source",
+            "tool_evidence_recorded_at",
         },
     }
     for table, expected in required_columns.items():

@@ -145,6 +145,23 @@ def _two_unit_product_evidence(
         delegation_id = f"delegation-{index}"
         tool_use_id = f"spawn-call-{index}"
         task_name = codex_task_name_for_work_unit(unit)
+        tool_evidence = {
+            "child_tool_call_count": 1,
+            "child_function_tool_call_count": 1,
+            "child_custom_tool_call_count": 0,
+            "child_exec_tool_call_count": 0,
+            "child_apply_patch_tool_call_count": 0,
+            "child_shell_command_tool_call_count": 1,
+            "child_other_tool_call_count": 0,
+            "child_completed_tool_call_count": 1,
+            "child_failed_tool_call_count": 0,
+            "child_unknown_tool_call_count": 0,
+            "child_tool_output_count": 1,
+            "child_tool_output_missing_count": 0,
+            "child_patch_apply_success_count": 0,
+            "child_patch_apply_failure_count": 0,
+            "child_patch_apply_unknown_count": 0,
+        }
         plans.append(
             {
                 "work_unit_id": unit,
@@ -210,6 +227,11 @@ def _two_unit_product_evidence(
                 "started_at": "2026-07-31T14:00:01Z",
                 "execution_tool_use_id": f"followup-tool-{index}",
                 "execution_dispatched_at": "2026-07-31T14:00:30Z",
+                "tool_evidence_schema": "agency.codex-product-child-tool-evidence.v1",
+                "tool_evidence": dict(tool_evidence),
+                "tool_evidence_source": "persisted_rollout",
+                "tool_evidence_recorded_at": "2026-07-31T14:01:01Z",
+                "tool_evidence_status": "recorded",
                 "ended_at": "2026-07-31T14:01:00Z",
             }
         )
@@ -250,23 +272,7 @@ def _two_unit_product_evidence(
                 "child_status": "completed",
                 "activation_completion_count": 1,
                 "execution_completion_count": 1,
-                "tool_evidence": {
-                    "child_tool_call_count": 1,
-                    "child_function_tool_call_count": 1,
-                    "child_custom_tool_call_count": 0,
-                    "child_exec_tool_call_count": 0,
-                    "child_apply_patch_tool_call_count": 0,
-                    "child_shell_command_tool_call_count": 1,
-                    "child_other_tool_call_count": 0,
-                    "child_completed_tool_call_count": 1,
-                    "child_failed_tool_call_count": 0,
-                    "child_unknown_tool_call_count": 0,
-                    "child_tool_output_count": 1,
-                    "child_tool_output_missing_count": 0,
-                    "child_patch_apply_success_count": 0,
-                    "child_patch_apply_failure_count": 0,
-                    "child_patch_apply_unknown_count": 0,
-                },
+                "tool_evidence": dict(tool_evidence),
                 "evidence_source": "persisted_rollout",
             }
         )
@@ -369,6 +375,48 @@ def test_product_proof_rejects_a_child_from_a_different_parent_session() -> None
     )
 
     assert "Codex product child did not belong to the exact parent session" in failures
+
+
+def test_product_proof_rejects_child_tool_evidence_missing_from_store() -> None:
+    response = _product_response()
+    evidence = _two_unit_product_evidence("a" * 64, response)
+    evidence["worker_runs"][0]["tool_evidence"] = None
+    evidence["worker_runs"][0]["tool_evidence_schema"] = ""
+    evidence["worker_runs"][0]["tool_evidence_source"] = ""
+    evidence["worker_runs"][0]["tool_evidence_recorded_at"] = None
+    evidence["worker_runs"][0]["tool_evidence_status"] = "missing"
+
+    failures = codex_product_activation_failures(
+        result={"collaboration": evidence["collaboration"]},
+        evidence=evidence,
+        response_hash=hashlib.sha256(response.encode()).hexdigest(),
+    )
+
+    assert (
+        "Codex product unit unit-product-one child tool evidence was not durably reconciled"
+        in failures
+    )
+
+
+def test_product_child_tool_store_write_failure_is_content_free_and_unit_scoped() -> None:
+    response = _product_response()
+    evidence = _two_unit_product_evidence("a" * 64, response)
+
+    class RejectingStore:
+        def record_codex_child_tool_evidence(self, **_record):
+            raise ValueError("private backend detail")
+
+    failures = product_host._persist_codex_child_tool_evidence(
+        store=RejectingStore(),
+        result={"collaboration": evidence["collaboration"]},
+        parent_session_id=str(evidence["session_id"]),
+    )
+
+    assert failures == (
+        "Codex product unit unit-product-one child tool evidence Store write failed",
+        "Codex product unit unit-product-two child tool evidence Store write failed",
+    )
+    assert "private backend detail" not in " ".join(failures)
 
 
 def test_product_proof_accepts_eight_units_with_one_turn_scoped_specialist_reuse() -> None:
@@ -746,6 +794,10 @@ def test_codex_product_host_uses_unmocked_multi_unit_product_proof(
         def recent_runtime_activity(self, *, limit: int):
             raise AssertionError(f"legacy activity summary was requested with limit={limit}")
 
+        def record_codex_child_tool_evidence(self, **record):
+            observed.setdefault("stored_tool_evidence", []).append(record)
+            return record
+
         def get_canary_activation_snapshot(self, *, host: str, query_hash: str, session_id: str):
             observed["exact_request"] = (host, query_hash, session_id)
             evidence = dict(observed["evidence"])
@@ -803,6 +855,13 @@ def test_codex_product_host_uses_unmocked_multi_unit_product_proof(
     assert result.agency_evidence["proof"]["collaboration"]["host_notice_count"] == 3
     assert result.actual_model == "codex-subscription/gpt-5.6-sol"
     assert result.workspace_write_proven is True
+    stored_tool_evidence = observed["stored_tool_evidence"]
+    assert isinstance(stored_tool_evidence, list)
+    assert len(stored_tool_evidence) == 2
+    assert {str(item["work_unit_id"]) for item in stored_tool_evidence} == {
+        "unit-product-one",
+        "unit-product-two",
+    }
     serialized_evidence = json.dumps(result.agency_evidence, sort_keys=True)
     assert "do-not-persist-parent" not in serialized_evidence
     assert "do-not-persist-child" not in serialized_evidence

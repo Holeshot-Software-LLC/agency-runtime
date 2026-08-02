@@ -13,6 +13,9 @@ from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.bounded_io import FileSizeLimitError
+from agency_runtime.core.codex_child_tool_evidence import (
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+)
 from agency_runtime.core.private_paths import private_temporary_directory
 
 _CODEX_ROLLOUT_MAX_BYTES = 1024 * 1024
@@ -44,23 +47,6 @@ _CODEX_ROLLOUT_CONTRACTS = frozenset({"canary", "product"})
 _CODEX_PRODUCT_COLLABORATION_SCHEMA = "agency.codex-product-collaboration.v2"
 _CODEX_PRODUCT_MAX_SPAWNS = 16
 _CODEX_PRODUCT_MAX_WAITS = 64
-CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS = (
-    "child_tool_call_count",
-    "child_function_tool_call_count",
-    "child_custom_tool_call_count",
-    "child_exec_tool_call_count",
-    "child_apply_patch_tool_call_count",
-    "child_shell_command_tool_call_count",
-    "child_other_tool_call_count",
-    "child_completed_tool_call_count",
-    "child_failed_tool_call_count",
-    "child_unknown_tool_call_count",
-    "child_tool_output_count",
-    "child_tool_output_missing_count",
-    "child_patch_apply_success_count",
-    "child_patch_apply_failure_count",
-    "child_patch_apply_unknown_count",
-)
 # Current Codex wait_agent schema ceiling; the activation canary separately requires 60 seconds.
 _CODEX_PRODUCT_MAX_WAIT_TIMEOUT_MS = 3_600_000
 CODEX_COLLABORATION_DIAGNOSTIC_SCHEMA = "agency.codex-collaboration-diagnostic.v1"

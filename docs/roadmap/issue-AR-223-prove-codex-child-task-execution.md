@@ -35,6 +35,7 @@ related:
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md
   - docs/decisions/0146-preserve-content-free-codex-child-tool-outcomes.md
+  - docs/decisions/0147-persist-codex-child-tool-evidence-on-worker-receipts.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -1037,6 +1038,19 @@ file content, output, error, task, or response content is retained. Sixty-five
 focused tests pass, and the new isolated decision mutation passes its baseline,
 is killed once, and leaves source unchanged. No product trial was run in this
 diagnostic slice.
+
+The next bounded repair closes the remaining diagnostic durability gap before
+another immutable trial. Schema v44 attaches the validated content-free child
+tool projection to the exact Codex `worker_runs` receipt with immutable,
+byte-identical replay semantics. The activation snapshot exposes each receipt
+as `recorded`, `missing`, or `invalid`; product admission requires the Store
+counts to equal the corresponding rollout projection. Missing or failed writes
+remain fixed unit-scoped failures instead of collapsing into an opaque
+reconciliation exception. One new decision mutation removes the Store write.
+The focused lifecycle, product-host, schema, activation, and conformance suite
+passes 128 tests with warning-strict execution; repository-wide Ruff lint,
+format, and diff checks pass. No candidate was built and no live evidence was
+consumed in this implementation slice.
 
 ## Approach
 

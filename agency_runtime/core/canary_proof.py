@@ -9,6 +9,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.codex_child_tool_evidence import (
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+    normalize_codex_child_tool_evidence,
+)
 from agency_runtime.core.installer_contracts import (
     CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
 )
@@ -791,35 +797,11 @@ def codex_activation_failures(
 def _codex_product_child_tool_evidence_valid(value: object) -> bool:
     """Validate one fixed content-free child tool projection."""
 
-    from agency_runtime.core.canary_backends import CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS
-
-    if (
-        not isinstance(value, Mapping)
-        or set(value) != set(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS)
-        or any(
-            not isinstance(value.get(field), int)
-            or isinstance(value.get(field), bool)
-            or value.get(field, -1) < 0
-            for field in CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS
-        )
-    ):
+    try:
+        normalize_codex_child_tool_evidence(value)
+    except ValueError:
         return False
-    return bool(
-        value["child_function_tool_call_count"] + value["child_custom_tool_call_count"]
-        == value["child_tool_call_count"]
-        and value["child_exec_tool_call_count"]
-        + value["child_apply_patch_tool_call_count"]
-        + value["child_shell_command_tool_call_count"]
-        + value["child_other_tool_call_count"]
-        == value["child_tool_call_count"]
-        and value["child_completed_tool_call_count"]
-        + value["child_failed_tool_call_count"]
-        + value["child_unknown_tool_call_count"]
-        == value["child_tool_call_count"]
-        and value["child_tool_output_count"] <= value["child_tool_call_count"]
-        and value["child_tool_output_missing_count"]
-        == value["child_tool_call_count"] - value["child_tool_output_count"]
-    )
+    return True
 
 
 def _merge_codex_product_child_tool_evidence(
@@ -855,8 +837,6 @@ def _codex_product_collaboration_spawns(
         or collaboration.get("evidence_source") != "persisted_rollout"
     ):
         return {}, ("Codex product collaboration evidence was not available",)
-    from agency_runtime.core.canary_backends import CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS
-
     counts = {
         name: collaboration.get(name)
         for name in (
@@ -953,7 +933,6 @@ def _codex_product_collaboration_projection(
     if failures or not isinstance(collaboration, Mapping):
         return None
     from agency_runtime.core.canary_backends import (
-        CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
         CODEX_STDOUT_HOST_NOTICE_COUNT_MAX,
         CODEX_STDOUT_HOST_NOTICE_TYPES,
     )
@@ -1329,6 +1308,17 @@ def codex_product_activation_failures(
             failures.append(f"Codex product unit {work_unit_id} lacked exact execution evidence")
             continue
         spawn, receiver_id = spawn_entry
+        if not (
+            worker.get("tool_evidence_status") == "recorded"
+            and worker.get("tool_evidence_schema") == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA
+            and worker.get("tool_evidence_source") == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE
+            and isinstance(worker.get("tool_evidence_recorded_at"), str)
+            and bool(worker.get("tool_evidence_recorded_at"))
+            and worker.get("tool_evidence") == spawn.get("tool_evidence")
+        ):
+            failures.append(
+                f"Codex product unit {work_unit_id} child tool evidence was not durably reconciled"
+            )
         specialist_load_entry = specialist_loads.get(str(plan.get("recommended_agent") or ""))
         specialist_load = specialist_load_entry[0] if specialist_load_entry is not None else None
         accepted_load_receipts = (

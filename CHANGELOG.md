@@ -66,6 +66,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex product child tool evidence is now durably attached to each exact
+  worker receipt before product admission. Store snapshots distinguish
+  recorded, missing, and invalid projections, and product proof reconciles the
+  fixed content-free counts against the rollout instead of relying on the
+  transient report alone.
 - Codex product collaboration reports now preserve fixed content-free child
   tool lifecycle counts per child and in aggregate. Schema v2 distinguishes
   safe tool classes, call status, output receipt, and patch outcome without
