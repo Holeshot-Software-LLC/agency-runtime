@@ -802,6 +802,22 @@ count is zero, and autonomous trust bypass changes no persistent profile state.
 Codex and ZCode install and the dashboard is active and reachable. The one
 writer sentinel is admitted and unspent.
 
+That one `7f0479f` writer sentinel is now consumed and terminal `NO-GO` after
+93.844 seconds. Session `019fc257-a0aa-7471-a8ea-0a9fae0e2dcd`, trace
+`019fc257-a116-74c1-977c-3c7181a0977a`, route
+`15739f24-8dec-49f4-8c9b-57601103dd56`, run
+`76cf2936-69db-49d1-ae70-920c91570ec5`, finalization
+`120d7ea3-2a8c-4931-87dc-4c2177076797`, delegation
+`80b72766-b091-4dd4-8d4c-0ec9d42cfc67`, and native child
+`019fc258-730c-7c30-bc22-d5067dce1428` retain the exact boundary. Inference
+selects, loads, and delegates `minimal-change-engineer` for one
+`workspace_write` unit; the parent records one spawn and one wait; the child
+terminates with exit code zero; and finalization is accepted. The first header
+is valid and correction count is zero. The workspace nevertheless remains
+empty, so `workspace_write_not_proven` is the sole product failure. This build
+must not be retried. Per the bounded delivery contract, no further repair loop
+starts without a new owner go-ahead.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

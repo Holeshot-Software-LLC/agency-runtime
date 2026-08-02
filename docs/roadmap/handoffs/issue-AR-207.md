@@ -105,11 +105,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - `d610630` writer is consumed `NO-GO` at the separate-assurance contradiction;
   do not retry. Repair preserves one-unit staffing and clean head `62b7f3e`
   passes the complete named gate, including 97/97 killed mutations.
-- Exact `7f0479f` builds and verifies; wheel SHA-256 is `e42ff9fa...f9186ef`.
-  Its autonomous activation passes: session `019fc253-aedf-7822-9744-7911d5b37901`,
-  trace `019fc253-bb0a-7f01-8927-ff2f945c76d2`, inferred/loaded/delegated
-  `code-reviewer`, terminal worker, accepted finalization, valid first header,
-  zero corrections, trust bypass without persistent change. Writer is unspent.
+- Exact `7f0479f` builds, verifies, and passes autonomous activation: session
+  `019fc253-aedf-7822-9744-7911d5b37901`, inferred/loaded/delegated
+  `code-reviewer`, terminal worker, valid first header, zero corrections. Its
+  writer is consumed `NO-GO`: exact `minimal-change-engineer` child exits zero
+  and the header passes, but the workspace remains empty. Do not retry.
 
 ## completed-evidence
 
@@ -130,9 +130,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-Build, install, activation, and the named gate pass; one exact writer remains before dashboard/header proof. Writer
-artifacts, concise header, dashboard parity, and the local report remain
-unproven. The README story remains `NO-GO`.
+Build, install, activation, routing, delegation, first header, and zero
+corrections pass. Exact child execution still creates no artifact; dashboard
+parity, concise header, and the local report remain deferred. README is `NO-GO`.
 
 ## same-task-continuity
 
@@ -144,7 +144,7 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Spend exact `7f0479f`'s one writer trial; stop on its terminal result.
+1. Stop. Next owner-approved package diagnoses the exact completed child with no artifact; do not retry `7f0479f`.
 
 ## verification
 
