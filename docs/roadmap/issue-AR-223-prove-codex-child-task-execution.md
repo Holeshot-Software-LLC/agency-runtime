@@ -1163,6 +1163,32 @@ either its 304-second control deadline or its one final 904-second deadline, so
 that optional mutation result is explicitly unknown and was not retried again.
 No build, install, activation, or live writer was consumed by this repair slice.
 
+Exact ledger candidate `5a97976ba6e1c37333577448f835bb15c3eceedf`
+then built canonically and independently verified. Wheel SHA-256 is
+`a7542966b2a1f243f3c91c2573c0880ca01a37a88a0efb5e0037734f33d2ef7d`;
+source SHA-256 is
+`10f25d3e3c096966fae31fd1c5e1b2decce6e9e4eaa37d5ecda8d31c4f167962`.
+Its full-suite autonomous install refreshed Codex and ZCode, left the dashboard
+active and reachable, and passed activation with inferred/executed
+`code-reviewer`, accepted finalization, valid first header, zero corrections,
+hook bypass, and no persistent profile change.
+
+The candidate's sole writer `ar223-agency-writer-5a97976-01` is consumed and
+terminal `NO-GO`. Session `019fc487-b580-7083-ab02-6278567f7ff7`, trace
+`019fc487-b5f5-7c13-959b-897fb1f9ff6e`, run
+`23a10be7-1469-4009-8d0f-9180c2e05e6f`, route
+`8dab6af7-fc16-4068-8e14-99c2e6c65303`, delegation
+`366c7249-4cf0-43a2-8190-fdc9d00caf91`, and child
+`019fc488-5f7f-7b81-8686-d55471e433dc` retain the boundary. Inference selected
+and loaded `minimal-change-engineer`; exact-workspace trust, autonomous hook
+bypass, valid first header, and zero corrections passed. The workspace remained
+empty and finalization declined missing `delegation_execution`. Store v2
+recorded exactly one classified nested `apply_patch`, one fixed `failed`
+wrapper outcome, zero unclassified inputs, and zero missing outputs. Therefore
+rebasing the three temp variables was insufficient; it did not prove or repair
+the actual nested wrapper failure. The next slice must classify a small fixed
+allowlist of wrapper failure causes content-freely before another live candidate.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
