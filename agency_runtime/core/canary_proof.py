@@ -788,6 +788,59 @@ def codex_activation_failures(
     return tuple(dict.fromkeys(failures))
 
 
+def _codex_product_child_tool_evidence_valid(value: object) -> bool:
+    """Validate one fixed content-free child tool projection."""
+
+    from agency_runtime.core.canary_backends import CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS
+
+    if (
+        not isinstance(value, Mapping)
+        or set(value) != set(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS)
+        or any(
+            not isinstance(value.get(field), int)
+            or isinstance(value.get(field), bool)
+            or value.get(field, -1) < 0
+            for field in CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS
+        )
+    ):
+        return False
+    return bool(
+        value["child_function_tool_call_count"] + value["child_custom_tool_call_count"]
+        == value["child_tool_call_count"]
+        and value["child_exec_tool_call_count"]
+        + value["child_apply_patch_tool_call_count"]
+        + value["child_shell_command_tool_call_count"]
+        + value["child_other_tool_call_count"]
+        == value["child_tool_call_count"]
+        and value["child_completed_tool_call_count"]
+        + value["child_failed_tool_call_count"]
+        + value["child_unknown_tool_call_count"]
+        == value["child_tool_call_count"]
+        and value["child_tool_output_count"] <= value["child_tool_call_count"]
+        and value["child_tool_output_missing_count"]
+        == value["child_tool_call_count"] - value["child_tool_output_count"]
+    )
+
+
+def _merge_codex_product_child_tool_evidence(
+    aggregate: dict[str, int],
+    observed: Mapping[str, int],
+) -> None:
+    """Add one validated child projection to the product aggregate."""
+
+    for field, value in observed.items():
+        aggregate[field] += value
+
+
+def _codex_product_child_tool_aggregate_matches(
+    collaboration: Mapping[str, Any],
+    aggregate: Mapping[str, int],
+) -> bool:
+    """Compare fixed reported tool counts with the sum of exact child rows."""
+
+    return all(collaboration.get(field) == value for field, value in aggregate.items())
+
+
 def _codex_product_collaboration_spawns(
     result: Mapping[str, Any],
     *,
@@ -798,10 +851,12 @@ def _codex_product_collaboration_spawns(
     collaboration = result.get("collaboration")
     if (
         not isinstance(collaboration, Mapping)
-        or collaboration.get("schema") != "agency.codex-product-collaboration.v1"
+        or collaboration.get("schema") != "agency.codex-product-collaboration.v2"
         or collaboration.get("evidence_source") != "persisted_rollout"
     ):
         return {}, ("Codex product collaboration evidence was not available",)
+    from agency_runtime.core.canary_backends import CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS
+
     counts = {
         name: collaboration.get(name)
         for name in (
@@ -812,9 +867,9 @@ def _codex_product_collaboration_spawns(
             "timed_out_wait_count",
             "completed_child_count",
             "failed_child_count",
-            "child_tool_call_count",
             "parent_agent_message_count",
             "unexpected_item_count",
+            *CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
         )
     }
     if any(
@@ -843,6 +898,7 @@ def _codex_product_collaboration_spawns(
     by_unit: dict[str, tuple[Mapping[str, Any], str]] = {}
     receivers: set[str] = set()
     parent_thread_id = ""
+    child_tool_totals = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS, 0)
     for row in raw_calls:
         if (
             not isinstance(row, Mapping)
@@ -855,6 +911,10 @@ def _codex_product_collaboration_spawns(
             or row.get("evidence_source") != "persisted_rollout"
         ):
             return {}, ("Codex product spawn evidence was malformed",)
+        tool_evidence = row.get("tool_evidence")
+        if not _codex_product_child_tool_evidence_valid(tool_evidence):
+            return {}, ("Codex product child tool evidence was malformed",)
+        _merge_codex_product_child_tool_evidence(child_tool_totals, tool_evidence)
         sender = str(row.get("sender_thread_id") or "")
         if sender != expected_parent_thread_id:
             return {}, ("Codex product child did not belong to the exact parent session",)
@@ -873,6 +933,8 @@ def _codex_product_collaboration_spawns(
             return {}, ("Codex product work-unit delivery was missing or duplicated",)
         receivers.add(receiver)
         by_unit[work_unit_id] = (row, receiver)
+    if not _codex_product_child_tool_aggregate_matches(collaboration, child_tool_totals):
+        return {}, ("Codex product child tool evidence did not match its aggregate",)
     return by_unit, ()
 
 
@@ -891,6 +953,7 @@ def _codex_product_collaboration_projection(
     if failures or not isinstance(collaboration, Mapping):
         return None
     from agency_runtime.core.canary_backends import (
+        CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
         CODEX_STDOUT_HOST_NOTICE_COUNT_MAX,
         CODEX_STDOUT_HOST_NOTICE_TYPES,
     )
@@ -903,10 +966,10 @@ def _codex_product_collaboration_projection(
         "timed_out_wait_count",
         "completed_child_count",
         "failed_child_count",
-        "child_tool_call_count",
         "parent_agent_message_count",
         "unexpected_item_count",
         "host_notice_count",
+        *CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
     )
     if any(
         not isinstance(collaboration.get(field), int)
@@ -959,6 +1022,10 @@ def _codex_product_collaboration_projection(
             "child_status": row.get("child_status"),
             "activation_completion_count": row.get("activation_completion_count"),
             "execution_completion_count": row.get("execution_completion_count"),
+            "tool_evidence": {
+                field: tool_evidence.get(field)
+                for field in CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS
+            },
             "evidence_source": row.get("evidence_source"),
         }
         for row, _receiver in sorted(
@@ -973,9 +1040,12 @@ def _codex_product_collaboration_projection(
             if isinstance(row.get("execution_delivery"), Mapping)
             else {},
         )
+        for tool_evidence in (
+            row.get("tool_evidence") if isinstance(row.get("tool_evidence"), Mapping) else {},
+        )
     ]
     return {
-        "schema": "agency.codex-product-collaboration.v1",
+        "schema": "agency.codex-product-collaboration.v2",
         "calls": calls,
         **{field: collaboration.get(field) for field in aggregate_fields},
         "host_notice_types": list(host_notice_types),

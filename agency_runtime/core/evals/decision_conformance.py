@@ -872,6 +872,23 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-product-drops-successful-child-patch-receipts",
+        invariant=(
+            "Codex product evidence preserves successful child patch receipts as bounded "
+            "counts without retaining tool content."
+        ),
+        source_path="agency_runtime/core/canary_backends.py",
+        before=('    "child_patch_apply_success_count",\n    "child_patch_apply_failure_count",\n'),
+        after=(
+            '    "child_patch_apply_success_count_removed",\n'
+            '    "child_patch_apply_failure_count",\n'
+        ),
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_product_child_tool_evidence_is_fixed_and_content_free"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-proof-allows-invalid-host-notice-projection",
         invariant=(
             "Malformed or missing Codex host-notice evidence cannot produce a passing "

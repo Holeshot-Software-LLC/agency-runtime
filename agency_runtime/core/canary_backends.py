@@ -41,9 +41,26 @@ _CODEX_STDOUT_HOST_NOTICE_BY_MESSAGE = {
     "to leave more room for the rest.": "skill_catalog_descriptions_shortened",
 }
 _CODEX_ROLLOUT_CONTRACTS = frozenset({"canary", "product"})
-_CODEX_PRODUCT_COLLABORATION_SCHEMA = "agency.codex-product-collaboration.v1"
+_CODEX_PRODUCT_COLLABORATION_SCHEMA = "agency.codex-product-collaboration.v2"
 _CODEX_PRODUCT_MAX_SPAWNS = 16
 _CODEX_PRODUCT_MAX_WAITS = 64
+CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS = (
+    "child_tool_call_count",
+    "child_function_tool_call_count",
+    "child_custom_tool_call_count",
+    "child_exec_tool_call_count",
+    "child_apply_patch_tool_call_count",
+    "child_shell_command_tool_call_count",
+    "child_other_tool_call_count",
+    "child_completed_tool_call_count",
+    "child_failed_tool_call_count",
+    "child_unknown_tool_call_count",
+    "child_tool_output_count",
+    "child_tool_output_missing_count",
+    "child_patch_apply_success_count",
+    "child_patch_apply_failure_count",
+    "child_patch_apply_unknown_count",
+)
 # Current Codex wait_agent schema ceiling; the activation canary separately requires 60 seconds.
 _CODEX_PRODUCT_MAX_WAIT_TIMEOUT_MS = 3_600_000
 CODEX_COLLABORATION_DIAGNOSTIC_SCHEMA = "agency.codex-collaboration-diagnostic.v1"
@@ -1367,6 +1384,74 @@ def _codex_product_rollout_output(call: Mapping[str, Any], output: object) -> An
     )
 
 
+def _codex_product_child_tool_evidence(events: list[dict[str, Any]]) -> dict[str, int]:
+    """Project fixed aggregate child-tool lifecycle counts without retaining content."""
+
+    evidence = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS, 0)
+    failed_statuses = {"failed", "errored", "cancelled", "canceled"}
+    for event in events:
+        payload = event.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        event_type = event.get("type")
+        item_type = str(payload.get("type") or "").strip()
+        if event_type == "response_item" and item_type in {
+            "function_call",
+            "custom_tool_call",
+        }:
+            evidence["child_tool_call_count"] += 1
+            kind_field = (
+                "child_function_tool_call_count"
+                if item_type == "function_call"
+                else "child_custom_tool_call_count"
+            )
+            evidence[kind_field] += 1
+            name_field = {
+                "exec": "child_exec_tool_call_count",
+                "apply_patch": "child_apply_patch_tool_call_count",
+                "shell_command": "child_shell_command_tool_call_count",
+            }.get(str(payload.get("name") or "").strip(), "child_other_tool_call_count")
+            evidence[name_field] += 1
+            status = str(payload.get("status") or "").strip().casefold()
+            if status == "completed":
+                evidence["child_completed_tool_call_count"] += 1
+            elif status in failed_statuses:
+                evidence["child_failed_tool_call_count"] += 1
+            else:
+                evidence["child_unknown_tool_call_count"] += 1
+            continue
+        if event_type == "response_item" and item_type in {
+            "function_call_output",
+            "custom_tool_call_output",
+        }:
+            evidence["child_tool_output_count"] += 1
+            continue
+        if event_type != "event_msg" or item_type != "patch_apply_end":
+            continue
+        status = str(payload.get("status") or "").strip().casefold()
+        if payload.get("success") is True and status == "completed":
+            evidence["child_patch_apply_success_count"] += 1
+        elif payload.get("success") is False or status in failed_statuses:
+            evidence["child_patch_apply_failure_count"] += 1
+        else:
+            evidence["child_patch_apply_unknown_count"] += 1
+    evidence["child_tool_output_missing_count"] = max(
+        evidence["child_tool_call_count"] - evidence["child_tool_output_count"],
+        0,
+    )
+    return evidence
+
+
+def _merge_codex_product_child_tool_evidence(
+    aggregate: dict[str, int],
+    observed: Mapping[str, int],
+) -> None:
+    """Add one fixed child projection into its bounded product aggregate."""
+
+    for field in CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS:
+        aggregate[field] += observed[field]
+
+
 def _codex_product_spawn_projection(
     spawn: dict[str, Any],
     followup: dict[str, Any],
@@ -1377,7 +1462,7 @@ def _codex_product_spawn_projection(
     parent_thread_id: str,
     not_before: float | None,
     not_after: float | None,
-) -> tuple[dict[str, Any], int]:
+) -> tuple[dict[str, Any], dict[str, int]]:
     """Prove one activated and explicitly executed product child."""
 
     arguments = spawn["arguments"]
@@ -1502,12 +1587,7 @@ def _codex_product_spawn_projection(
         for field in ("work_unit_id", "goal_hash")
     ):
         raise ValueError("Codex product execution did not match its activation delivery")
-    child_tool_call_count = sum(
-        event.get("type") == "response_item"
-        and isinstance(event.get("payload"), dict)
-        and event["payload"].get("type") in {"function_call", "custom_tool_call"}
-        for event in child_events
-    )
+    tool_evidence = _codex_product_child_tool_evidence(child_events)
     return (
         {
             "id": spawn["id"],
@@ -1524,9 +1604,10 @@ def _codex_product_spawn_projection(
             "child_status": "completed",
             "activation_completion_count": 1,
             "execution_completion_count": 1,
+            "tool_evidence": tool_evidence,
             "evidence_source": "persisted_rollout",
         },
-        child_tool_call_count,
+        tool_evidence,
     )
 
 
@@ -1539,7 +1620,7 @@ def _codex_product_direct_spawn_projection(
     parent_thread_id: str,
     not_before: float | None,
     not_after: float | None,
-) -> tuple[dict[str, Any], int]:
+) -> tuple[dict[str, Any], dict[str, int]]:
     """Prove one specialist executed its exact goal in the initial spawn turn."""
 
     arguments = spawn["arguments"]
@@ -1606,12 +1687,7 @@ def _codex_product_direct_spawn_projection(
         expected=expected_execution,
         opaque_message=str(arguments["message"]),
     )
-    child_tool_call_count = sum(
-        event.get("type") == "response_item"
-        and isinstance(event.get("payload"), dict)
-        and event["payload"].get("type") in {"function_call", "custom_tool_call"}
-        for event in child_events
-    )
+    tool_evidence = _codex_product_child_tool_evidence(child_events)
     return (
         {
             "id": spawn["id"],
@@ -1628,9 +1704,10 @@ def _codex_product_direct_spawn_projection(
             "child_status": "completed",
             "activation_completion_count": 0,
             "execution_completion_count": 1,
+            "tool_evidence": tool_evidence,
             "evidence_source": "persisted_rollout",
         },
-        child_tool_call_count,
+        tool_evidence,
     )
 
 
@@ -1776,14 +1853,14 @@ def _codex_product_rollout_collaboration_evidence(
         raise ValueError("Codex product collaboration outputs did not match its calls")
     ordered = sorted(calls, key=lambda call: call["index"])
     projected_spawns: list[dict[str, Any]] = []
-    child_tool_call_count = 0
+    child_tool_evidence = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS, 0)
     if direct_mode:
         direct_groups = _codex_product_direct_call_groups(
             ordered,
             spawn_count=len(spawns),
         )
         for spawn, _waits in direct_groups:
-            projected, tool_count = _codex_product_direct_spawn_projection(
+            projected, tool_evidence = _codex_product_direct_spawn_projection(
                 spawn,
                 outputs=outputs,
                 activities=activities,
@@ -1793,11 +1870,11 @@ def _codex_product_rollout_collaboration_evidence(
                 not_after=not_after,
             )
             projected_spawns.append(projected)
-            child_tool_call_count += tool_count
+            _merge_codex_product_child_tool_evidence(child_tool_evidence, tool_evidence)
     else:
         legacy_groups = _codex_product_call_groups(ordered, spawn_count=len(spawns))
         for spawn, followup, _execution_waits in legacy_groups:
-            projected, tool_count = _codex_product_spawn_projection(
+            projected, tool_evidence = _codex_product_spawn_projection(
                 spawn,
                 followup,
                 outputs=outputs,
@@ -1808,7 +1885,7 @@ def _codex_product_rollout_collaboration_evidence(
                 not_after=not_after,
             )
             projected_spawns.append(projected)
-            child_tool_call_count += tool_count
+            _merge_codex_product_child_tool_evidence(child_tool_evidence, tool_evidence)
     expected_activity_count = len(spawns) if direct_mode else len(spawns) * 2
     if len(activities) != expected_activity_count:
         raise ValueError("Codex product child activity cardinality was invalid")
@@ -1847,7 +1924,7 @@ def _codex_product_rollout_collaboration_evidence(
         "timed_out_wait_count": timed_out_waits,
         "completed_child_count": len(projected_spawns),
         "failed_child_count": 0,
-        "child_tool_call_count": child_tool_call_count,
+        **child_tool_evidence,
         "parent_agent_message_count": agent_message_count,
         "unexpected_item_count": (
             unexpected_count + int(stdout_projection.get("unexpected_item_count") or 0)

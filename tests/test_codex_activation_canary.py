@@ -17,6 +17,7 @@ from agency_runtime.core.agent_activation import PROTECTED_AGENT_SLUGS
 from agency_runtime.core.canary_backends import (
     _assert_codex_child_activation_is_tool_free,
     _codex_child_execution_projection,
+    _codex_product_child_tool_evidence,
     _codex_product_rollout_collaboration_evidence,
     _codex_product_wait_counts,
     codex_canary_record,
@@ -99,6 +100,96 @@ def _two_turn_child_events(execution_message: str) -> list[dict[str, object]]:
             },
         },
     ]
+
+
+def test_product_child_tool_evidence_is_fixed_and_content_free() -> None:
+    events = [
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call",
+                "name": "exec",
+                "status": "completed",
+                "input": "private exec input",
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "function_call",
+                "name": "shell_command",
+                "status": "failed",
+                "arguments": "private shell arguments",
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {"type": "function_call", "name": "apply_patch"},
+        },
+        {
+            "type": "response_item",
+            "payload": {"type": "function_call", "name": "private-tool", "status": "completed"},
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call_output",
+                "output": "private tool output",
+            },
+        },
+        {
+            "type": "event_msg",
+            "payload": {
+                "type": "patch_apply_end",
+                "success": True,
+                "status": "completed",
+                "changes": {"private-path": {"type": "add", "content": "private bytes"}},
+            },
+        },
+        {
+            "type": "event_msg",
+            "payload": {
+                "type": "patch_apply_end",
+                "success": False,
+                "status": "failed",
+                "stderr": "private failure",
+            },
+        },
+        {"type": "event_msg", "payload": {"type": "patch_apply_end"}},
+    ]
+
+    evidence = _codex_product_child_tool_evidence(events)
+
+    assert evidence == {
+        "child_tool_call_count": 4,
+        "child_function_tool_call_count": 3,
+        "child_custom_tool_call_count": 1,
+        "child_exec_tool_call_count": 1,
+        "child_apply_patch_tool_call_count": 1,
+        "child_shell_command_tool_call_count": 1,
+        "child_other_tool_call_count": 1,
+        "child_completed_tool_call_count": 2,
+        "child_failed_tool_call_count": 1,
+        "child_unknown_tool_call_count": 1,
+        "child_tool_output_count": 1,
+        "child_tool_output_missing_count": 3,
+        "child_patch_apply_success_count": 1,
+        "child_patch_apply_failure_count": 1,
+        "child_patch_apply_unknown_count": 1,
+    }
+    encoded = json.dumps(evidence)
+    assert all(
+        private not in encoded
+        for private in (
+            "private exec input",
+            "private shell arguments",
+            "private-tool",
+            "private tool output",
+            "private-path",
+            "private bytes",
+            "private failure",
+        )
+    )
 
 
 def test_codex_child_projection_rejects_duplicate_execution_delivery() -> None:
@@ -2589,6 +2680,7 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
                         "namespace": "functions",
                         "call_id": f"child-call-{index}",
                         "arguments": json.dumps({"command": f"private command {index}"}),
+                        "status": "completed",
                     },
                 },
                 {
@@ -2650,13 +2742,28 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
 
     assert record["status"] == "completed"
     collaboration = record["collaboration"]
-    assert collaboration["schema"] == "agency.codex-product-collaboration.v1"
+    assert collaboration["schema"] == "agency.codex-product-collaboration.v2"
     assert collaboration["spawn_count"] == 8
     assert collaboration["followup_count"] == 8
     assert collaboration["wait_count"] == 17
     assert collaboration["completed_wait_count"] == 17
     assert collaboration["completed_child_count"] == 8
     assert collaboration["child_tool_call_count"] == 8
+    assert collaboration["child_function_tool_call_count"] == 8
+    assert collaboration["child_custom_tool_call_count"] == 0
+    assert collaboration["child_exec_tool_call_count"] == 0
+    assert collaboration["child_apply_patch_tool_call_count"] == 0
+    assert collaboration["child_shell_command_tool_call_count"] == 8
+    assert collaboration["child_other_tool_call_count"] == 0
+    assert collaboration["child_completed_tool_call_count"] == 8
+    assert collaboration["child_failed_tool_call_count"] == 0
+    assert collaboration["child_unknown_tool_call_count"] == 0
+    assert collaboration["child_tool_output_count"] == 8
+    assert collaboration["child_tool_output_missing_count"] == 0
+    assert collaboration["child_patch_apply_success_count"] == 0
+    assert collaboration["child_patch_apply_failure_count"] == 0
+    assert collaboration["child_patch_apply_unknown_count"] == 0
+    assert all(row["tool_evidence"]["child_tool_call_count"] == 1 for row in collaboration["calls"])
     assert collaboration["host_notice_count"] == 1
     assert collaboration["host_notice_types"] == ["skill_catalog_descriptions_shortened"]
     assert [row["prompt_delivery"]["work_unit_id"] for row in collaboration["calls"]] == [*units]
