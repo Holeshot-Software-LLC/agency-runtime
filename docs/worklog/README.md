@@ -562,6 +562,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f91c94a` | 2026-08-02 | docs(ar-223): record parent finalization writer failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `3b35ae0` | 2026-08-02 | fix(ar-223): reject incomplete workspace finalization | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `9891970` | 2026-08-02 | docs(ar-223): record finalization guard proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `c6c02d0` | 2026-08-02 | fix(ar-223): order exact child execution last | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
