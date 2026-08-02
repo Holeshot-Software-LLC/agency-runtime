@@ -752,6 +752,19 @@ the rollout contains no correction hook prompt. Codex and ZCode install, the
 dashboard is active and reachable, autonomous trust bypass changes no persistent
 profile state, and the one writer sentinel is now admitted.
 
+That one `d610630` writer sentinel is consumed and terminal `NO-GO` after
+67.406 seconds. Session `019fc230-7a55-7263-b135-0051a291ea8b`, trace
+`019fc230-7ac7-7732-a4b7-037faea8d61b`, run
+`0ba1b3b8-dd4e-4687-a790-10dd5f9f87e5`, and preflight failure
+`f2902d64-1730-4ee2-a300-1ea2a1102866` retain the exact boundary. The planner
+applies one inference-authored unit, but both recruiter responses are rejected
+because the staffing verifier reports `independent_assurance_missing`. No
+route, specialist launch, header, or workspace artifact exists; correction
+count is zero and the workspace is empty. The remaining contradiction is
+exact: the runtime honors the explicit indivisible topology in planning, then
+requires a separate downstream assurance unit during staffing. This build must
+not be retried.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
