@@ -582,6 +582,24 @@ threshold, documentation and diff checks, and a full decision-conformance
 baseline that kills all 96 mutations with zero survivors or invalid results
 and leaves source unchanged.
 
+Clean checkpoint `d4c65a7b01f851cf2a4a1393ec227f7e53f0487c` builds
+canonically from a detached checkout. Its verified Windows wheel has SHA-256
+`581263464509639f9ca4efd7e9b8aff29e755af68e0da428c4cf9d7fd1e41075`.
+The exact wheel installs and the default autonomous suite refreshes Codex and
+ZCode plus an active reachable dashboard.
+
+Its one permitted Codex activation is terminal `NO-GO` before specialist
+selection. Session `019fc1a8-1217-70a0-83ca-bae1f67e008e`, trace
+`019fc1a8-1c0c-7193-861b-0d72f14b7fdc`, run
+`c53d8e06-abcf-45eb-8bd5-d714e70b2106`, and preflight failure
+`7dfa8d89-95eb-4e9f-91c3-3d693c6b7d48` prove the planner received no valid
+response from configured `codex-subscription` inference for
+`gpt-5.6-luna`. The turn records no route, plan, delegation, activation,
+worker, header, spawn, or correction. Trust bypass was used without a
+persistent profile change. This attempt did not exercise ADR-0144 and cannot
+prove or disprove the callback-order repair; exact `d4c65a7` must not be
+retried and no writer sentinel ran.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

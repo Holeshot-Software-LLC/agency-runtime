@@ -107,23 +107,23 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   documentation, metadata, policy, worklog, and diff checks. The full
   decision-conformance baseline passes and kills all 96 current mutations with
   zero survivors or invalid results and leaves source unchanged.
-- Clean `b6bcdfb` builds canonically; verified wheel SHA-256 is
-  `3f9c8c0ddd7fd59daa48b0f6edb7af8824a22133988a87d486aa714f51229f28`.
-  Its default autonomous install refreshes Codex and ZCode plus an active,
-  reachable dashboard. The consumed activation proves one inferred/loaded
-  `code-reviewer`, direct topology `spawn=1/followup=0/wait=1`, valid first
-  header, zero corrections, and accepted finalization, but lacks the direct
-  dispatch receipt and terminal worker. Retained Store timestamps prove the
-  parent callback preceded the real child start; the callback-order repair now
-  passes 37 activation and 52 execution/lifecycle tests.
+- Exact `b6bcdfb` activation proves an inferred/loaded `code-reviewer`, direct
+  `spawn=1/followup=0/wait=1`, zero corrections, and accepted finalization, but
+  lacks the dispatch receipt and terminal worker. Its retained callback order
+  motivated the locally green ADR-0144 repair.
+- Clean `d4c65a7` builds and installs; wheel SHA-256 is
+  `581263464509639f9ca4efd7e9b8aff29e755af68e0da428c4cf9d7fd1e41075`.
+  Codex, ZCode, and dashboard installation pass. Its single activation fails
+  before routing because `codex-subscription` returns no valid planner response.
+  Session `019fc1a8-1217-70a0-83ca-bae1f67e008e`, trace
+  `019fc1a8-1c0c-7193-861b-0d72f14b7fdc`; no correction or writer trial ran.
 
 ## exact-blocker
 
-The README main story remains NO-GO until a new exact installed build passes.
-The local ADR-0144 repair certifies whichever callback first has both the exact
-delegation and real activated child, with both callback orders green. No writer
-sentinel may run until the new activation passes; product artifacts, concise
-header, dashboard parity, and final report remain unproven.
+The README main story remains NO-GO. ADR-0144 is locally green and installed,
+but `d4c65a7` fails before routing because workforce inference returns no valid
+planner response. The callback repair is therefore unexercised. Product
+artifacts, concise header, dashboard parity, and final report remain unproven.
 
 ## same-task-continuity
 
@@ -135,11 +135,11 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run the named fast local gate once, checkpoint the callback-order repair,
-   and build and install that exact immutable commit.
-2. Consume one new autonomous activation. Only if it passes, consume one new
-   Agency writer sentinel; stop before a full product trial unless exact file
-   proof and zero corrections pass.
+1. Diagnose the content-free `provider_no_valid_response` planner boundary
+   without retrying `d4c65a7`; distinguish provider availability from response
+   acceptance and change code only for a proven product defect.
+2. A later new exact build gets one activation; only a pass admits one Agency
+   writer sentinel, exact file proof, and zero corrections.
 
 ## verification
 
@@ -168,7 +168,7 @@ git diff --check
   `f8e607d`, `386afca`, `5c45f154`, `ff39761`, and `43870c8` consumed governed
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
   activations; exact `b2be077` consumed both activation and product evidence;
-  `ae322ec`, `bffd2c8`, and `b6bcdfb` consumed governed evidence; none may be
-  rerun.
+  `ae322ec`, `bffd2c8`, `b6bcdfb`, and `d4c65a7` consumed governed evidence;
+  none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
