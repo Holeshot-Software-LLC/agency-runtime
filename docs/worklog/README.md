@@ -531,6 +531,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f39dd0a` | 2026-08-02 | fix(ar-223): make Codex execution turns self-contained | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `b497b83` | 2026-08-02 | docs(ar-223): record failed self-contained writer sentinel | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `335496e` | 2026-08-02 | fix(ar-223): use Codex stable multi-agent feature | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `0151581` | 2026-08-02 | fix(ar-223): gate writer proof on Agency plans | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
