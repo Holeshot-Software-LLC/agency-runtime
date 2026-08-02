@@ -539,6 +539,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `aef9399` | 2026-08-02 | docs(ar-223): record failed direct activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `0cddcaf` | 2026-08-02 | fix(ar-223): certify live Codex callback order | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `f14017e` | 2026-08-02 | docs(ar-223): record failed planner activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `2d8661c` | 2026-08-02 | docs(ar-223): classify planner activation failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
