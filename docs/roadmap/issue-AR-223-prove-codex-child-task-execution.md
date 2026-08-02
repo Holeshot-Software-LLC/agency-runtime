@@ -610,6 +610,25 @@ therefore not reproducible and remains unclassified rather than being assigned
 to recruiter acceptance without evidence. A fresh exact candidate, not a retry
 of `d4c65a7`, may proceed to the activation gate.
 
+Clean checkpoint `4d14b99ccbcfd3a78fcb3c867c16654ab85ded1f` builds
+canonically from a detached checkout. Strict metadata and independent
+distribution verification pass; the installed Windows wheel has SHA-256
+`ad2bddce9bdd2f253ae3b2b15f44c70d4a481442af994269cf2fc0463334ff69`.
+The default autonomous suite installs Codex and ZCode plus an active reachable
+dashboard. Its one permitted activation passes: session
+`019fc1be-ef9a-7392-8eab-ecb196c40eb5`, trace
+`019fc1be-fbbf-70c3-b299-e47e16b19010`, route
+`5b98f0a9-6697-40ae-be20-4f074824196b`, run
+`5793dda3-452e-4ea7-af5a-0393bea227d6`, finalization
+`c83b9b4b-8985-4b89-ba66-714e774aafc3`, and native worker
+`codex-agent:019fc1bf-f590-70f3-a8dd-55fbfb2f8fdd` prove one inferred, loaded,
+and delegated `code-reviewer`; one spawn, no follow-up, one wait; the exact
+ADR-0144 execution dispatch receipt; terminal exit zero; accepted finalization;
+a valid first header; and zero corrections. Autonomous trust bypass changes no
+persistent profile state. This admits one Agency-owned writer sentinel against
+the same installed build; it does not yet prove workspace mutation or the full
+README product story.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

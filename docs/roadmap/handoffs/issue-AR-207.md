@@ -107,28 +107,27 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   documentation, metadata, policy, worklog, and diff checks. The full
   decision-conformance baseline passes and kills all 96 current mutations with
   zero survivors or invalid results and leaves source unchanged.
-- Exact `b6bcdfb` activation proves an inferred/loaded `code-reviewer`, direct
-  `spawn=1/followup=0/wait=1`, zero corrections, and accepted finalization, but
-  lacks the dispatch receipt and terminal worker. Its retained callback order
-  motivated the locally green ADR-0144 repair.
-- Clean `d4c65a7` builds and installs; wheel SHA-256 is
-  `581263464509639f9ca4efd7e9b8aff29e755af68e0da428c4cf9d7fd1e41075`.
-  Codex, ZCode, and dashboard installation pass. Its single activation fails
-  before routing because `codex-subscription` returns no valid planner response.
-  Session `019fc1a8-1217-70a0-83ca-bae1f67e008e`, trace
-  `019fc1a8-1c0c-7193-861b-0d72f14b7fdc`; no correction or writer trial ran.
-- A bounded 2026-08-02 09:01 UTC diagnostic uses that installed build's exact
-  planner schema. Codex reports `gpt-5.6-luna` as account-visible, exits zero
-  with a complete structured turn, and Agency parses the response. The consumed
-  activation remains unclassified; the failure is not currently reproducible.
+- Exact `b6bcdfb` proves a real inferred/loaded `code-reviewer` and direct
+  `spawn=1/followup=0/wait=1`, but lacks the dispatch receipt and terminal worker;
+  its retained callback order motivates ADR-0144.
+- Clean `d4c65a7` builds and installs, but session
+  `019fc1a8-1217-70a0-83ca-bae1f67e008e` fails before routing with no valid
+  planner response. A later exact-schema diagnostic sees `gpt-5.6-luna` and
+  parses a complete plan, leaving the consumed failure unclassified.
+- Exact `4d14b99` builds canonically; wheel SHA-256 is
+  `ad2bddce9bdd2f253ae3b2b15f44c70d4a481442af994269cf2fc0463334ff69`.
+  Codex, ZCode, and the reachable dashboard install. Its autonomous activation,
+  session `019fc1be-ef9a-7392-8eab-ecb196c40eb5`, trace
+  `019fc1be-fbbf-70c3-b299-e47e16b19010`, proves one inferred/loaded/delegated
+  `code-reviewer`, `spawn=1/followup=0/wait=1`, a dispatch receipt, terminal
+  exit-zero worker, accepted finalization, valid first header, zero corrections,
+  and trust bypass without persistent profile change.
 
 ## exact-blocker
 
-The README main story remains NO-GO. ADR-0144 is locally green and installed,
-but `d4c65a7` was consumed by an unclassified planner transport failure before
-routing. Current exact-schema inference is healthy, so one fresh immutable
-candidate may attempt activation. Product artifacts, concise header, dashboard
-parity, and final report remain unproven.
+The README main story remains NO-GO only at the product boundary. ADR-0144 now
+has real installed execution proof; the Agency-owned writer sentinel, product
+artifacts, concise header, dashboard parity, and final report remain unproven.
 
 ## same-task-continuity
 
@@ -140,10 +139,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Build and install one fresh exact candidate without changing the already
-   gated runtime, then consume its one permitted autonomous activation.
-2. Only an activation pass admits one Agency writer sentinel, exact file proof,
-   and zero corrections.
+1. Run one Agency writer sentinel against exact installed `4d14b99`; require the
+   planned writer, dispatch receipt, terminal worker, exact bytes, and zero corrections.
+2. Only a pass admits the complete README/dashboard/header/report trial.
 
 ## verification
 
@@ -172,7 +170,7 @@ git diff --check
   `f8e607d`, `386afca`, `5c45f154`, `ff39761`, and `43870c8` consumed governed
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
   activations; exact `b2be077` consumed both activation and product evidence;
-  `ae322ec`, `bffd2c8`, `b6bcdfb`, and `d4c65a7` consumed governed evidence;
+  `ae322ec`, `bffd2c8`, `b6bcdfb`, `d4c65a7`, and `4d14b99` consumed governed evidence;
   none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
