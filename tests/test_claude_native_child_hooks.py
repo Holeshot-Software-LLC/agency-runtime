@@ -939,7 +939,7 @@ def test_codex_opaque_product_delivery_is_goal_hash_bound_child_context() -> Non
     assert delivery.original_task == ""
     assert delivery.goal_hash == work_unit_goal_hash(store.goals["unit-code"])
     assert delivery.specialist_slug == "code-reviewer"
-    assert "[AGENCY EXACT SPECIALIST ACTIVATION v2]" in context
+    assert "[AGENCY EXACT SPECIALIST EXECUTION v3]" in context
     assert context.endswith(store.prompts["code-reviewer"])
 
 

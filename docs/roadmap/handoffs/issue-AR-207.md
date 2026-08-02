@@ -44,6 +44,8 @@ related:
   - docs/decisions/0139-make-codex-execution-turns-self-contained.md
   - docs/decisions/0140-use-codex-stable-multi-agent-feature.md
   - docs/decisions/0141-admit-writer-proof-only-through-agency-plans.md
+  - docs/decisions/0142-require-terminal-product-child-before-next-unit.md
+  - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -75,10 +77,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   closes that worker at exit zero, and records zero corrections. It then
   truthfully finalizes `delegation_declined`; the other three accepted rows
   remain suggested and the exact workspace is empty.
-- The remaining boundary is the self-imposed two-turn Codex ceremony. Agency
-  forbids work in the initial spawn turn and depends on an encrypted follow-up
-  turn, while the direct native control already proves a self-contained first
-  turn can write exact bytes.
+- ADR-0143 removes the self-imposed two-turn Codex ceremony. Current direct
+  delivery executes the exact persisted goal in the initial spawn turn, waits
+  for terminal completion, and sends no execution follow-up. Historical V1/V2
+  evidence remains readable only for retained trials.
 
 ## completed-evidence
 
@@ -99,16 +101,25 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   Its default suite and autonomous activation pass with one inferred/loaded
   specialist, one completed worker, one accepted finalization, a valid first
   header, zero corrections, and no persistent trust change.
+- The changed-surface warning-strict suite passes 181 tests. Exact direct
+  evidence covers spawn/child ciphertext identity, lineage, one child turn,
+  final response, PostToolUse Store dispatch binding, direct rollout
+  projection, terminal waits, and no follow-up. The first full conformance run
+  passes every baseline and kills 94/97 mutations; the three survivors are
+  isolated to two obsolete superseded-decision mutations and one redundant
+  identity mutation. Their focused replacements pass. The final full rerun
+  kills all 95 current mutations with zero survivors or invalid results and
+  unchanged source. The named spine passes 657 tests with 6 skips, dashboard UI
+  passes 110 tests, every routing threshold passes, and repository-wide Ruff,
+  formatting, documentation, metadata, policy, worklog, and diff checks pass.
 
 ## exact-blocker
 
-The README main story remains NO-GO. The corrected installed writer sentinel
-proves specialist launch, load, exact terminal waiting, and zero corrections,
-but produces no artifact. The exact next repair removes Agency's two-turn Codex
-activation ceremony so the selected specialist executes the exact spawn goal
-in its first native turn. No Agency writer artifact, full product, concise
-header, dashboard configuration parity, or shareable final report is proven
-yet.
+The README main story remains NO-GO. The first-turn implementation passes the
+complete named local gate but has not been checkpointed into an immutable
+build or consumed a live Agency writer sentinel. No Agency writer artifact,
+full product, concise header, dashboard configuration parity, or shareable
+final report is proven yet.
 
 ## same-task-continuity
 
@@ -120,13 +131,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Replace the Codex activation-only spawn plus encrypted follow-up with one
-   self-contained specialist execution spawn and bounded terminal waits.
-2. Run focused lifecycle, hook, product-rollout, and decision-conformance tests;
-   checkpoint before any immutable build.
-3. Build and install one new exact commit, then consume one new Agency writer
-   sentinel. Stop before a full product trial unless exact file proof and zero
-   corrections pass.
+1. Create the substantive and ledger checkpoint, build and install that exact
+   commit, and prove default Codex/ZCode/dashboard installation.
+2. Consume one new Agency writer sentinel. Stop before a full product trial
+   unless exact file proof and zero corrections pass.
 
 ## verification
 

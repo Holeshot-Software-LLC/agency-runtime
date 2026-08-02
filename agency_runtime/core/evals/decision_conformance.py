@@ -665,9 +665,9 @@ class _NominationSemantics:""",
         invariant=("A product parent never advances after a nonterminal child commentary wake."),
         source_path="agency_runtime/core/evals/product_host.py",
         before=(
-            '    "completion: repeat that same wait up to two additional times until the exact child "'
+            '    "timeout_ms=120000. A nonterminal commentary update is not completion: repeat that "'
         ),
-        after=('    "completion: advance after that first nonterminal commentary update. "'),
+        after=('    "timeout_ms=120000. Advance after the first nonterminal commentary update. "'),
         test_node=(
             "tests/test_product_host.py::"
             "test_codex_product_backend_supplies_bounded_parent_and_child_delegation_authority"
@@ -679,8 +679,8 @@ class _NominationSemantics:""",
             "Product rollout evidence admits bounded repeated execution waits before terminal child completion."
         ),
         source_path="agency_runtime/core/canary_backends.py",
-        before="    if not len(spawns) * 2 <= len(waits) <= len(spawns) * 4 or (",
-        after="    if len(waits) != len(spawns) * 2 or (",
+        before=("    maximum_waits = len(spawns) * 3 if direct_mode else len(spawns) * 4\n"),
+        after="    maximum_waits = len(spawns)\n",
         test_node=(
             "tests/test_codex_activation_canary.py::"
             "test_codex_product_rollout_projects_exact_eight_unit_reuse_topology"
@@ -861,10 +861,10 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="codex-opaque-child-restores-canary-only-delivery",
+        mutation_id="codex-direct-child-restores-canary-only-delivery",
         invariant=(
             "Any exact persisted Codex product row can receive its specialist context; "
-            "opaque delivery is not restricted to the fixed activation canary."
+            "direct delivery is not restricted to the fixed activation canary."
         ),
         source_path="agency_runtime/adapters/hooks.py",
         before=(
@@ -873,7 +873,7 @@ class _NominationSemantics:""",
             '                        raise ValueError("pending Codex delivery does not '
             'match the exact plan")\n'
             "                    exact_delivery = "
-            "render_codex_opaque_native_child_prompt_delivery("
+            "render_codex_direct_native_child_prompt_delivery("
         ),
         after=(
             "                    if assignment is None or pending_identity != "
@@ -889,7 +889,7 @@ class _NominationSemantics:""",
             '                        raise ValueError("pending Codex delivery is not the '
             'activation canary")\n'
             "                    exact_delivery = "
-            "render_codex_opaque_native_child_prompt_delivery("
+            "render_codex_direct_native_child_prompt_delivery("
         ),
         test_node=(
             "tests/test_claude_native_child_hooks.py::"
@@ -897,12 +897,12 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="codex-opaque-child-drops-goal-hash-binding",
-        invariant=("Opaque Codex child context carries the exact persisted work-unit goal hash."),
+        mutation_id="codex-direct-child-drops-goal-hash-binding",
+        invariant=("Direct Codex child context carries the exact persisted work-unit goal hash."),
         source_path="agency_runtime/adapters/hooks.py",
         before=(
             "                    exact_delivery = "
-            "render_codex_opaque_native_child_prompt_delivery(\n"
+            "render_codex_direct_native_child_prompt_delivery(\n"
             '                        str(pending.get("prompt_body") or ""),\n'
             "                        parent_session_id=session_id,\n"
             "                        parent_trace_id=trace_id,\n"
@@ -916,7 +916,7 @@ class _NominationSemantics:""",
         ),
         after=(
             "                    exact_delivery = "
-            "render_codex_opaque_native_child_prompt_delivery(\n"
+            "render_codex_direct_native_child_prompt_delivery(\n"
             '                        str(pending.get("prompt_body") or ""),\n'
             "                        parent_session_id=session_id,\n"
             "                        parent_trace_id=trace_id,\n"
@@ -1003,22 +1003,17 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="codex-opaque-execution-drops-parent-session-identity",
+        mutation_id="codex-execution-drops-parent-session-identity",
         invariant=(
-            "Opaque Codex execution evidence requires the parent rollout to prove its "
-            "own exact session identity."
+            "Codex execution evidence requires the parent rollout to prove its exact "
+            "session identity."
         ),
         source_path="agency_runtime/core/codex_child_execution.py",
-        before=(
-            "    if not _parent_session_matches(events, parent_session_id):\n        return None\n"
-        ),
-        after=(
-            "    if False and not _parent_session_matches(events, parent_session_id):\n"
-            "        return None\n"
-        ),
+        before=("        == 1\n    )\n\n\ndef _parent_followup_ciphertext_from_events("),
+        after=("        >= 0\n    )\n\n\ndef _parent_followup_ciphertext_from_events("),
         test_node=(
             "tests/test_codex_child_execution.py::"
-            "test_current_turn_matches_exact_parent_and_child_ciphertext"
+            "test_direct_completion_requires_exact_parent_and_causal_delivery"
         ),
     ),
     DecisionMutation(
@@ -1028,38 +1023,13 @@ class _NominationSemantics:""",
             "byte-identical to the exact parent follow-up ciphertext."
         ),
         source_path="agency_runtime/core/codex_child_execution.py",
-        before="    return child_ciphertexts == [parent_ciphertext]\n",
-        after="    return len(child_ciphertexts) == 1\n",
+        before=(
+            "    return child_ciphertexts == [parent_ciphertext]\n\n\ndef _two_turn_boundaries("
+        ),
+        after=("    return len(child_ciphertexts) == 1\n\n\ndef _two_turn_boundaries("),
         test_node=(
             "tests/test_codex_child_execution.py::"
             "test_current_turn_matches_exact_parent_and_child_ciphertext"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="codex-parent-stop-skips-child-completion-reconciliation",
-        invariant=(
-            "Codex parent Stop reconciles exact completed follow-up evidence because the "
-            "host emits no second SubagentStop."
-        ),
-        source_path="agency_runtime/adapters/hooks.py",
-        before=(
-            "            self._reconcile_codex_child_completions(\n"
-            "                session_id=correlation.session_id,\n"
-            "                trace_id=trace_id,\n"
-            '                parent_transcript_path=payload.get("transcript_path"),\n'
-            "            )\n"
-        ),
-        after=(
-            "            if False:\n"
-            "                self._reconcile_codex_child_completions(\n"
-            "                    session_id=correlation.session_id,\n"
-            "                    trace_id=trace_id,\n"
-            '                    parent_transcript_path=payload.get("transcript_path"),\n'
-            "                )\n"
-        ),
-        test_node=(
-            "tests/test_codex_activation_canary.py::"
-            "test_codex_canary_requires_and_attests_one_complete_v2_activation_chain"
         ),
     ),
     DecisionMutation(
@@ -1082,8 +1052,14 @@ class _NominationSemantics:""",
             "The exact Codex execution delivery causally precedes the child final response."
         ),
         source_path="agency_runtime/core/codex_child_execution.py",
-        before="        execution_event_limit=response_index,\n",
-        after="        execution_event_limit=None,\n",
+        before=(
+            "        execution_event_start=boundaries[2] + 1,\n"
+            "        execution_event_limit=response_index,\n"
+        ),
+        after=(
+            "        execution_event_start=boundaries[2] + 1,\n"
+            "        execution_event_limit=None,\n"
+        ),
         test_node=(
             "tests/test_codex_child_execution.py::"
             "test_parent_stop_projection_rejects_tampered_or_ambiguous_completion"
@@ -1100,6 +1076,65 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_codex_child_execution.py::"
             "test_parent_stop_projection_rejects_tampered_or_ambiguous_completion"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-direct-execution-drops-ciphertext-identity",
+        invariant=(
+            "Direct Codex execution requires a child NEW_TASK ciphertext byte-identical "
+            "to the exact parent spawn ciphertext."
+        ),
+        source_path="agency_runtime/core/codex_child_execution.py",
+        before=(
+            "    return child_ciphertexts == [parent_ciphertext]\n\n\n"
+            "def _current_turn_execution_observed_from_events("
+        ),
+        after=(
+            "    return len(child_ciphertexts) == 1\n\n\n"
+            "def _current_turn_execution_observed_from_events("
+        ),
+        test_node=(
+            "tests/test_codex_child_execution.py::"
+            "test_direct_initial_turn_requires_exact_spawn_ciphertext_and_completion"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-direct-completion-accepts-missing-final-response",
+        invariant=(
+            "Direct Codex completion requires one nonempty final response before task completion."
+        ),
+        source_path="agency_runtime/core/codex_child_execution.py",
+        before=(
+            "    response_index = _completed_initial_response_index(child_events, boundaries)\n"
+            "    return bool(\n"
+            "        response_index is not None\n"
+        ),
+        after=(
+            "    response_index = _completed_initial_response_index(child_events, boundaries)\n"
+            "    return bool(\n"
+            "        True\n"
+        ),
+        test_node=(
+            "tests/test_codex_child_execution.py::"
+            "test_direct_completion_requires_exact_parent_and_causal_delivery"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-direct-completion-accepts-delivery-after-final-response",
+        invariant=(
+            "The exact direct Codex spawn delivery causally precedes the child final response."
+        ),
+        source_path="agency_runtime/core/codex_child_execution.py",
+        before=(
+            "            parent_events=parent_events,\n"
+            "            execution_event_limit=response_index,\n"
+        ),
+        after=(
+            "            parent_events=parent_events,\n            execution_event_limit=None,\n"
+        ),
+        test_node=(
+            "tests/test_codex_child_execution.py::"
+            "test_direct_completion_requires_exact_parent_and_causal_delivery"
         ),
     ),
     DecisionMutation(

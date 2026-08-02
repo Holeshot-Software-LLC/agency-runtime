@@ -8,6 +8,8 @@ from pathlib import Path
 from agency_runtime.core.codex_child_execution import (
     codex_child_execution_completion_observed,
     codex_current_turn_execution_observed,
+    codex_initial_turn_execution_completion_observed,
+    codex_initial_turn_execution_observed,
 )
 from agency_runtime.core.native_child_prompt_delivery import (
     parse_codex_native_child_execution_message,
@@ -166,6 +168,321 @@ def _complete_child_rollout(child_path: Path, *, turn: str, text: str = "reviewe
     child_path.write_text(
         "\n".join(json.dumps(event) for event in events) + "\n",
         encoding="utf-8",
+    )
+
+
+def _direct_rollouts(
+    child_path: Path,
+    parent_path: Path,
+    *,
+    worker: str,
+    parent: str,
+    turn: str,
+    tool_use_id: str,
+    ciphertext: str,
+    completed: bool = True,
+) -> None:
+    task_name = "unit_1234567890"
+    parent_events = [
+        {"type": "session_meta", "payload": {"id": parent}},
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "function_call",
+                "name": "spawn_agent",
+                "namespace": "collaboration",
+                "call_id": tool_use_id,
+                "arguments": json.dumps(
+                    {
+                        "fork_turns": "none",
+                        "message": ciphertext,
+                        "task_name": task_name,
+                    }
+                ),
+            },
+        },
+    ]
+    child_events = [
+        {
+            "type": "session_meta",
+            "payload": {
+                "id": worker,
+                "source": {
+                    "subagent": {
+                        "thread_spawn": {
+                            "parent_thread_id": parent,
+                            "agent_path": f"/root/{task_name}",
+                        }
+                    }
+                },
+            },
+        },
+        {"type": "event_msg", "payload": {"type": "task_started", "turn_id": turn}},
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "agent_message",
+                "id": "amsg-execution",
+                "author": "/root",
+                "recipient": f"/root/{task_name}",
+                "internal_chat_message_metadata_passthrough": {"turn_id": turn},
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": "Message Type: NEW_TASK\n"
+                        f"Task name: /root/{task_name}\n"
+                        "Sender: /root\n"
+                        "Payload:\n",
+                    },
+                    {"type": "encrypted_content", "encrypted_content": ciphertext},
+                ],
+            },
+        },
+    ]
+    if completed:
+        child_events.extend(
+            [
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "id": "assistant-final",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": "implemented"}],
+                        "phase": "final_answer",
+                        "internal_chat_message_metadata_passthrough": {"turn_id": turn},
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "task_complete",
+                        "turn_id": turn,
+                        "last_agent_message": "implemented",
+                    },
+                },
+            ]
+        )
+    parent_path.write_text(
+        "\n".join(json.dumps(event) for event in parent_events) + "\n",
+        encoding="utf-8",
+    )
+    child_path.write_text(
+        "\n".join(json.dumps(event) for event in child_events) + "\n",
+        encoding="utf-8",
+    )
+
+
+def test_direct_initial_turn_requires_exact_spawn_ciphertext_and_completion(
+    tmp_path: Path,
+) -> None:
+    worker = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    parent = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    turn = "019fa6a6-b197-7a83-b3fb-d2c20411f608"
+    tool_use_id = "call-native-spawn"
+    ciphertext = "gAAAAA" + "opaque-spawn-ciphertext" * 2
+    expected = parse_codex_native_child_execution_message(
+        render_codex_native_child_execution_message(
+            work_unit_id="unit-1234567890",
+            goal_hash=work_unit_goal_hash("Implement the unit."),
+        )
+    )
+    assert expected is not None
+    parent_path = tmp_path / f"rollout-test-{parent}.jsonl"
+    child_path = tmp_path / f"rollout-test-{worker}.jsonl"
+    _direct_rollouts(
+        child_path,
+        parent_path,
+        worker=worker,
+        parent=parent,
+        turn=turn,
+        tool_use_id=tool_use_id,
+        ciphertext=ciphertext,
+    )
+
+    assert codex_initial_turn_execution_observed(
+        child_path,
+        turn_id=turn,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id=tool_use_id,
+    )
+    assert codex_initial_turn_execution_completion_observed(
+        parent_path,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id=tool_use_id,
+    )
+
+    events = [json.loads(line) for line in child_path.read_text(encoding="utf-8").splitlines()]
+    events[2]["payload"]["content"][1]["encrypted_content"] += "tampered"
+    child_path.write_text(
+        "\n".join(json.dumps(event) for event in events) + "\n",
+        encoding="utf-8",
+    )
+    assert not codex_initial_turn_execution_completion_observed(
+        parent_path,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id=tool_use_id,
+    )
+
+
+def test_direct_completion_requires_exact_parent_and_causal_delivery(tmp_path: Path) -> None:
+    worker = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    parent = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    turn = "019fa6a6-b197-7a83-b3fb-d2c20411f608"
+    tool_use_id = "call-native-spawn"
+    ciphertext = "gAAAAA" + "opaque-spawn-ciphertext" * 2
+    expected = parse_codex_native_child_execution_message(
+        render_codex_native_child_execution_message(
+            work_unit_id="unit-1234567890",
+            goal_hash=work_unit_goal_hash("Implement the unit."),
+        )
+    )
+    assert expected is not None
+    parent_path = tmp_path / f"rollout-test-{parent}.jsonl"
+    child_path = tmp_path / f"rollout-test-{worker}.jsonl"
+
+    def _completion_observed() -> bool:
+        return codex_initial_turn_execution_completion_observed(
+            parent_path,
+            worker_id=worker,
+            expected=expected,
+            parent_session_id=parent,
+            execution_tool_use_id=tool_use_id,
+        )
+
+    _direct_rollouts(
+        child_path,
+        parent_path,
+        worker=worker,
+        parent=parent,
+        turn=turn,
+        tool_use_id=tool_use_id,
+        ciphertext=ciphertext,
+    )
+    assert _completion_observed()
+
+    child_events = [
+        json.loads(line) for line in child_path.read_text(encoding="utf-8").splitlines()
+    ]
+    child_path.write_text(
+        "\n".join(
+            json.dumps(event)
+            for event in child_events
+            if not (
+                event.get("type") == "response_item"
+                and event.get("payload", {}).get("phase") == "final_answer"
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    assert not _completion_observed()
+
+    _direct_rollouts(
+        child_path,
+        parent_path,
+        worker=worker,
+        parent=parent,
+        turn=turn,
+        tool_use_id=tool_use_id,
+        ciphertext=ciphertext,
+    )
+    parent_events = [
+        json.loads(line) for line in parent_path.read_text(encoding="utf-8").splitlines()
+    ]
+    parent_events[0]["payload"]["id"] = "019fa6a6-0000-7000-8000-000000000000"
+    parent_path.write_text(
+        "\n".join(json.dumps(event) for event in parent_events) + "\n",
+        encoding="utf-8",
+    )
+    assert not _completion_observed()
+
+    _direct_rollouts(
+        child_path,
+        parent_path,
+        worker=worker,
+        parent=parent,
+        turn=turn,
+        tool_use_id=tool_use_id,
+        ciphertext=ciphertext,
+    )
+    child_events = [
+        json.loads(line) for line in child_path.read_text(encoding="utf-8").splitlines()
+    ]
+    delivery = child_events.pop(2)
+    child_events.insert(-1, delivery)
+    child_path.write_text(
+        "\n".join(json.dumps(event) for event in child_events) + "\n",
+        encoding="utf-8",
+    )
+    assert not _completion_observed()
+
+
+def test_direct_initial_turn_rejects_incomplete_or_second_turn_child(tmp_path: Path) -> None:
+    worker = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    parent = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    turn = "019fa6a6-b197-7a83-b3fb-d2c20411f608"
+    tool_use_id = "call-native-spawn"
+    ciphertext = "gAAAAA" + "opaque-spawn-ciphertext" * 2
+    expected = parse_codex_native_child_execution_message(
+        render_codex_native_child_execution_message(
+            work_unit_id="unit-1234567890",
+            goal_hash=work_unit_goal_hash("Implement the unit."),
+        )
+    )
+    assert expected is not None
+    parent_path = tmp_path / f"rollout-test-{parent}.jsonl"
+    child_path = tmp_path / f"rollout-test-{worker}.jsonl"
+    _direct_rollouts(
+        child_path,
+        parent_path,
+        worker=worker,
+        parent=parent,
+        turn=turn,
+        tool_use_id=tool_use_id,
+        ciphertext=ciphertext,
+        completed=False,
+    )
+    assert not codex_initial_turn_execution_observed(
+        child_path,
+        turn_id=turn,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id=tool_use_id,
+    )
+
+    events = [json.loads(line) for line in child_path.read_text(encoding="utf-8").splitlines()]
+    events.extend(
+        [
+            {"type": "event_msg", "payload": {"type": "task_complete", "turn_id": turn}},
+            {
+                "type": "event_msg",
+                "payload": {"type": "task_started", "turn_id": "second-turn"},
+            },
+            {
+                "type": "event_msg",
+                "payload": {"type": "task_complete", "turn_id": "second-turn"},
+            },
+        ]
+    )
+    child_path.write_text(
+        "\n".join(json.dumps(event) for event in events) + "\n",
+        encoding="utf-8",
+    )
+    assert not codex_initial_turn_execution_observed(
+        child_path,
+        turn_id=turn,
+        worker_id=worker,
+        expected=expected,
+        parent_session_id=parent,
+        execution_tool_use_id=tool_use_id,
     )
 
 

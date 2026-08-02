@@ -1105,6 +1105,7 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
     instructions = json.loads(developer_configs[0])
     assert instructions == product_host.CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS
     for required_contract in (
+        "[AGENCY EXACT SPECIALIST EXECUTION v3]",
         "[AGENCY EXACT SPECIALIST ACTIVATION v1]",
         "[AGENCY EXACT TASK EXECUTION v1]",
         "[AGENCY DELEGATION PLAN]",
@@ -1117,10 +1118,9 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
         "one child at a time",
         "Use no non-collaboration tools",
         "do not delegate further",
-        "included in this current execution turn",
-        "JSON-decoded execution_message_prefix",
+        "executes in that initial child turn",
+        "Do not call followup_task",
         "permitted workspace tools for every required implementation",
-        "timeout_ms=60000",
         "timeout_ms=120000",
         "repeat that same wait up to two additional times",
         "Never spawn the next row until",

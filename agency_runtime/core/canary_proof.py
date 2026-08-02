@@ -420,6 +420,44 @@ def _codex_collaboration_chain(
         or collaboration.get("unexpected_item_types", []) not in ([], ())
     ):
         return None, "", ("Codex used a non-allowlisted tool during the activation canary",)
+    if isinstance(calls, list) and len(calls) == 2:
+        spawn, wait = calls
+        if (
+            not isinstance(spawn, Mapping)
+            or not isinstance(wait, Mapping)
+            or spawn.get("tool") != "spawn_agent"
+            or wait.get("tool") != "wait"
+            or spawn.get("status") != "completed"
+            or wait.get("status") != "completed"
+            or spawn.get("event_type") not in {"item.completed", "rollout_call_completed"}
+            or wait.get("event_type") != spawn.get("event_type")
+        ):
+            return None, "", ("Codex did not prove one direct spawn and one completed wait",)
+        sender_id = str(spawn.get("sender_thread_id") or "")
+        receivers = spawn.get("receiver_thread_ids")
+        if (
+            not sender_id
+            or wait.get("sender_thread_id") != sender_id
+            or not isinstance(receivers, list)
+            or len(receivers) != 1
+            or wait.get("receiver_thread_ids") != receivers
+        ):
+            return None, "", ("Codex collaboration calls did not share one parent and child",)
+        receiver_id = str(receivers[0])
+        wait_states = wait.get("agents_states")
+        if (
+            not isinstance(wait_states, Mapping)
+            or set(wait_states) != {receiver_id}
+            or wait_states.get(receiver_id) != "completed"
+        ):
+            return spawn, receiver_id, ("the sole Codex child did not reach the completed state",)
+        if not isinstance(spawn.get("execution_delivery"), Mapping):
+            return (
+                spawn,
+                receiver_id,
+                ("the sole Codex child did not receive its exact spawn turn",),
+            )
+        return spawn, receiver_id, ()
     if not isinstance(calls, list) or len(calls) != 4:
         return None, "", ("Codex did not prove one spawn, one followup, and two completed waits",)
     spawn_rows = [
@@ -785,12 +823,14 @@ def _codex_product_collaboration_spawns(
     ):
         return {}, ("Codex product collaboration counts were invalid",)
     spawn_count = counts["spawn_count"]
+    direct_mode = counts["followup_count"] == 0
     if counts["unexpected_item_count"] != 0:
         return {}, ("Codex product parent performed a non-collaboration tool call",)
     if (
         not 1 <= spawn_count <= 16
-        or counts["followup_count"] != spawn_count
-        or counts["wait_count"] != spawn_count * 2
+        or (not direct_mode and counts["followup_count"] != spawn_count)
+        or (direct_mode and not spawn_count <= counts["wait_count"] <= spawn_count * 3)
+        or (not direct_mode and counts["wait_count"] < spawn_count * 2)
         or counts["completed_wait_count"] != counts["wait_count"]
         or counts["timed_out_wait_count"] != 0
         or counts["completed_child_count"] != spawn_count
@@ -810,7 +850,7 @@ def _codex_product_collaboration_spawns(
             or row.get("tool") != "spawn_agent"
             or row.get("status") != "completed"
             or row.get("child_status") != "completed"
-            or row.get("activation_completion_count") != 1
+            or row.get("activation_completion_count") != (0 if direct_mode else 1)
             or row.get("execution_completion_count") != 1
             or row.get("evidence_source") != "persisted_rollout"
         ):

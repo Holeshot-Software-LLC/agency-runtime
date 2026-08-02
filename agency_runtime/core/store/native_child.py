@@ -364,7 +364,7 @@ class NativeChildStoreMixin:
         native_run_id: str,
         tool_use_id: str,
     ) -> bool:
-        """Atomically authorize one exact Codex follow-up, idempotent by tool call."""
+        """Bind one exact Codex execution dispatch, idempotent by tool call."""
 
         normalized_session = validate_correlation_id(session_id, field="session_id")
         normalized_trace = validate_correlation_id(trace_id, field="trace_id")

@@ -240,6 +240,53 @@ def _parent_followup_ciphertext_from_events(
     return messages[0] if len(messages) == 1 else None
 
 
+def _parent_spawn_ciphertext_from_events(
+    events: list[dict[str, Any]],
+    *,
+    parent_session_id: str,
+    execution_tool_use_id: str,
+    expected: CodexNativeChildExecutionDelivery,
+) -> str | None:
+    """Recover one exact first-turn spawn ciphertext from bounded parent events."""
+
+    if not _parent_session_matches(events, parent_session_id):
+        return None
+    messages: list[str] = []
+    for event in events:
+        payload = event.get("payload")
+        if (
+            event.get("type") != "response_item"
+            or not isinstance(payload, Mapping)
+            or payload.get("type") != "function_call"
+            or payload.get("namespace") != "collaboration"
+            or payload.get("name") != "spawn_agent"
+            or payload.get("call_id") != execution_tool_use_id
+        ):
+            continue
+        arguments = payload.get("arguments")
+        if not isinstance(arguments, str):
+            return None
+        try:
+            decoded = safe_load_bounded_json(
+                arguments,
+                maximum_bytes=_MAX_CODEX_CHILD_ROLLOUT_LINE_BYTES,
+                maximum_depth=8,
+                maximum_nodes=64,
+            )
+        except (TypeError, ValueError):
+            return None
+        if (
+            not isinstance(decoded, Mapping)
+            or set(decoded) != {"fork_turns", "message", "task_name"}
+            or decoded.get("fork_turns") != "none"
+            or decoded.get("task_name") != expected.native_task_name
+            or not is_codex_opaque_collaboration_message(decoded.get("message"))
+        ):
+            return None
+        messages.append(str(decoded["message"]))
+    return messages[0] if len(messages) == 1 else None
+
+
 def _parent_followup_ciphertext(
     child_path: Path,
     *,
@@ -256,6 +303,29 @@ def _parent_followup_ciphertext(
     if events is None:
         return None
     return _parent_followup_ciphertext_from_events(
+        events,
+        parent_session_id=parent_session_id,
+        execution_tool_use_id=execution_tool_use_id,
+        expected=expected,
+    )
+
+
+def _parent_spawn_ciphertext(
+    child_path: Path,
+    *,
+    parent_session_id: str,
+    execution_tool_use_id: str,
+    expected: CodexNativeChildExecutionDelivery,
+) -> str | None:
+    """Recover one exact first-turn spawn ciphertext without retaining it."""
+
+    parent_path = _parent_rollout_path(child_path, parent_session_id)
+    if parent_path is None:
+        return None
+    events = _rollout_events(parent_path)
+    if events is None:
+        return None
+    return _parent_spawn_ciphertext_from_events(
         events,
         parent_session_id=parent_session_id,
         execution_tool_use_id=execution_tool_use_id,
@@ -394,6 +464,111 @@ def _two_turn_boundaries(
     )
 
 
+def _one_turn_boundaries(
+    events: list[dict[str, Any]],
+    *,
+    expected_turn: str = "",
+) -> tuple[int, int, str] | None:
+    """Return one unambiguous started/completed child turn."""
+
+    starts: list[tuple[int, str]] = []
+    completions: list[tuple[int, str]] = []
+    for index, event in enumerate(events):
+        event_type = event.get("type")
+        event_payload = event.get("payload")
+        if (
+            event_type == "event_msg"
+            and isinstance(event_payload, Mapping)
+            and event_payload.get("type") == "task_started"
+        ):
+            turn = str(event_payload.get("turn_id") or "").strip()
+            if turn:
+                starts.append((index, turn))
+        if (
+            event_type == "event_msg"
+            and isinstance(event_payload, Mapping)
+            and event_payload.get("type") == "task_complete"
+        ):
+            turn = str(event_payload.get("turn_id") or "").strip()
+            if turn:
+                completions.append((index, turn))
+    if (
+        len(starts) != 1
+        or len(completions) != 1
+        or starts[0][1] != completions[0][1]
+        or (expected_turn and starts[0][1] != expected_turn)
+        or starts[0][0] >= completions[0][0]
+    ):
+        return None
+    return starts[0][0], completions[0][0], starts[0][1]
+
+
+def _initial_turn_execution_observed_from_events(
+    path: Path,
+    events: list[dict[str, Any]],
+    boundaries: tuple[int, int, str],
+    *,
+    expected: CodexNativeChildExecutionDelivery,
+    parent_session_id: object,
+    execution_tool_use_id: object,
+    parent_events: list[dict[str, Any]] | None = None,
+    execution_event_limit: int | None = None,
+) -> bool:
+    """Match one exact parent spawn ciphertext to the child's first turn."""
+
+    start, completion, turn = boundaries
+    try:
+        normalized_parent = validate_correlation_id(
+            parent_session_id,
+            field="parent_session_id",
+        )
+        normalized_tool_use = validate_correlation_id(
+            execution_tool_use_id,
+            field="execution_tool_use_id",
+        )
+    except ValueError:
+        return False
+    if not _child_lineage_matches(
+        events,
+        parent_session_id=normalized_parent,
+        expected=expected,
+    ):
+        return False
+    if parent_events is None:
+        parent_ciphertext = _parent_spawn_ciphertext(
+            path,
+            parent_session_id=normalized_parent,
+            execution_tool_use_id=normalized_tool_use,
+            expected=expected,
+        )
+    else:
+        parent_ciphertext = _parent_spawn_ciphertext_from_events(
+            parent_events,
+            parent_session_id=normalized_parent,
+            execution_tool_use_id=normalized_tool_use,
+            expected=expected,
+        )
+    if parent_ciphertext is None:
+        return False
+    event_end = completion + 1
+    if execution_event_limit is not None:
+        event_end = min(event_end, execution_event_limit)
+    child_ciphertexts = [
+        ciphertext
+        for event in events[start + 1 : event_end]
+        if event.get("type") == "response_item"
+        for ciphertext in (
+            codex_opaque_child_message_ciphertext(
+                event.get("payload"),
+                native_task_name=expected.native_task_name,
+                turn_id=turn,
+            ),
+        )
+        if ciphertext is not None
+    ]
+    return child_ciphertexts == [parent_ciphertext]
+
+
 def _current_turn_execution_observed_from_events(
     path: Path,
     events: list[dict[str, Any]],
@@ -482,6 +657,183 @@ def _completed_execution_response_index(
     ):
         return None
     return final_index
+
+
+def _completed_initial_response_index(
+    events: list[dict[str, Any]],
+    boundaries: tuple[int, int, str],
+) -> int | None:
+    """Require one nonempty final answer before the initial turn completes."""
+
+    start, completion, turn = boundaries
+    final_payloads: list[tuple[int, Mapping[str, Any]]] = []
+    for index in range(start + 1, completion):
+        event = events[index]
+        payload = event.get("payload")
+        if (
+            event.get("type") == "response_item"
+            and isinstance(payload, Mapping)
+            and payload.get("type") == "message"
+            and payload.get("role") == "assistant"
+            and payload.get("phase") == "final_answer"
+        ):
+            final_payloads.append((index, payload))
+    if len(final_payloads) != 1:
+        return None
+    final_index, final_payload = final_payloads[0]
+    passthrough = final_payload.get("internal_chat_message_metadata_passthrough")
+    content = final_payload.get("content")
+    if (
+        not isinstance(final_payload.get("id"), str)
+        or not str(final_payload["id"]).strip()
+        or not isinstance(passthrough, Mapping)
+        or passthrough.get("turn_id") != turn
+        or not isinstance(content, list)
+        or len(content) != 1
+        or not isinstance(content[0], Mapping)
+        or content[0].get("type") != "output_text"
+        or not isinstance(content[0].get("text"), str)
+        or not str(content[0]["text"]).strip()
+    ):
+        return None
+    completion_payload = events[completion].get("payload")
+    if not isinstance(completion_payload, Mapping):
+        return None
+    completion_message = completion_payload.get("last_agent_message")
+    if not (
+        completion_payload.get("error") is None
+        and isinstance(completion_message, str)
+        and completion_message.strip()
+        and completion_message == content[0]["text"]
+    ):
+        return None
+    return final_index
+
+
+def codex_initial_turn_execution_observed(
+    transcript_path: object,
+    *,
+    turn_id: object,
+    worker_id: object,
+    expected: CodexNativeChildExecutionDelivery,
+    parent_session_id: object,
+    execution_tool_use_id: object,
+) -> bool:
+    """Prove that one Codex child's exact spawn message ran in its first turn."""
+
+    if not isinstance(expected, CodexNativeChildExecutionDelivery):
+        raise TypeError("expected must be a CodexNativeChildExecutionDelivery")
+    try:
+        normalized_turn = validate_correlation_id(turn_id, field="turn_id")
+        normalized_worker = validate_correlation_id(worker_id, field="worker_id")
+    except ValueError:
+        return False
+    raw_path = str(transcript_path or "").strip()
+    if not raw_path:
+        return False
+    path = Path(raw_path)
+    if (
+        not path.is_absolute()
+        or path.suffix.casefold() != ".jsonl"
+        or not path.name.endswith(f"-{normalized_worker}.jsonl")
+    ):
+        return False
+    events = _rollout_events(path)
+    if events is None:
+        return False
+    session_matches = sum(
+        1
+        for event in events
+        if event.get("type") == "session_meta"
+        and isinstance(event.get("payload"), Mapping)
+        and event["payload"].get("id") == normalized_worker
+    )
+    boundaries = _one_turn_boundaries(events, expected_turn=normalized_turn)
+    return bool(
+        session_matches == 1
+        and boundaries is not None
+        and _initial_turn_execution_observed_from_events(
+            path,
+            events,
+            boundaries,
+            expected=expected,
+            parent_session_id=parent_session_id,
+            execution_tool_use_id=execution_tool_use_id,
+        )
+    )
+
+
+def codex_initial_turn_execution_completion_observed(
+    parent_transcript_path: object,
+    *,
+    worker_id: object,
+    expected: CodexNativeChildExecutionDelivery,
+    parent_session_id: object,
+    execution_tool_use_id: object,
+) -> bool:
+    """Prove one completed Codex initial execution turn from its parent transcript."""
+
+    if not isinstance(expected, CodexNativeChildExecutionDelivery):
+        raise TypeError("expected must be a CodexNativeChildExecutionDelivery")
+    try:
+        normalized_parent = validate_correlation_id(
+            parent_session_id,
+            field="parent_session_id",
+        )
+        normalized_worker = validate_correlation_id(worker_id, field="worker_id")
+        normalized_tool_use = validate_correlation_id(
+            execution_tool_use_id,
+            field="execution_tool_use_id",
+        )
+    except ValueError:
+        return False
+    raw_path = str(parent_transcript_path or "").strip()
+    if not raw_path:
+        return False
+    parent_path = Path(raw_path)
+    if (
+        not parent_path.is_absolute()
+        or parent_path.suffix.casefold() != ".jsonl"
+        or not parent_path.name.endswith(f"-{normalized_parent}.jsonl")
+    ):
+        return False
+    parent_events = _rollout_events(parent_path)
+    if parent_events is None or not _parent_session_matches(parent_events, normalized_parent):
+        return False
+    child_path = _child_rollout_path(parent_path, normalized_worker)
+    if child_path is None or _parent_rollout_path(child_path, normalized_parent) != parent_path:
+        return False
+    child_events = _rollout_events(child_path)
+    if child_events is None:
+        return False
+    session_matches = sum(
+        1
+        for event in child_events
+        if event.get("type") == "session_meta"
+        and isinstance(event.get("payload"), Mapping)
+        and event["payload"].get("id") == normalized_worker
+    )
+    boundaries = _one_turn_boundaries(child_events)
+    if session_matches != 1 or boundaries is None:
+        return False
+    try:
+        validate_correlation_id(boundaries[2], field="execution_turn_id")
+    except ValueError:
+        return False
+    response_index = _completed_initial_response_index(child_events, boundaries)
+    return bool(
+        response_index is not None
+        and _initial_turn_execution_observed_from_events(
+            child_path,
+            child_events,
+            boundaries,
+            expected=expected,
+            parent_session_id=normalized_parent,
+            execution_tool_use_id=normalized_tool_use,
+            parent_events=parent_events,
+            execution_event_limit=response_index,
+        )
+    )
 
 
 def codex_current_turn_execution_observed(
@@ -625,4 +977,6 @@ def codex_child_execution_completion_observed(
 __all__ = [
     "codex_child_execution_completion_observed",
     "codex_current_turn_execution_observed",
+    "codex_initial_turn_execution_completion_observed",
+    "codex_initial_turn_execution_observed",
 ]

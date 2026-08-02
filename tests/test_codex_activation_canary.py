@@ -13,11 +13,11 @@ import pytest
 
 from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core import canary
-from agency_runtime.core.activation_canary_contract import CODEX_ACTIVATION_CANARY_WORK_UNIT
 from agency_runtime.core.agent_activation import PROTECTED_AGENT_SLUGS
 from agency_runtime.core.canary_backends import (
     _assert_codex_child_activation_is_tool_free,
     _codex_child_execution_projection,
+    _codex_product_rollout_collaboration_evidence,
     _codex_product_wait_counts,
     codex_canary_record,
     codex_collaboration_evidence,
@@ -36,6 +36,7 @@ from agency_runtime.core.native_child_activation import (
 )
 from agency_runtime.core.native_child_prompt_delivery import (
     parse_native_child_prompt_delivery,
+    render_codex_direct_native_child_prompt_delivery,
     render_codex_native_child_execution_message,
     render_codex_opaque_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
@@ -246,7 +247,7 @@ def _prepare_exact_opaque_activation(
     )
 
 
-def _two_turn_collaboration(
+def _direct_collaboration(
     *,
     receiver_id: str,
     prompt_delivery: dict[str, object],
@@ -267,8 +268,8 @@ def _two_turn_collaboration(
     }
     return {
         "spawn_count": 1,
-        "followup_count": 1,
-        "wait_count": 2,
+        "followup_count": 0,
+        "wait_count": 1,
         "unexpected_item_count": 0,
         "unexpected_item_types": [],
         "calls": [
@@ -279,23 +280,7 @@ def _two_turn_collaboration(
                 "agents_states": {receiver_id: "running"},
                 "prompt_delivery": prompt_delivery,
                 "execution_delivery": execution_delivery,
-                "followup_tool_use_id": "followup-tool-use",
-            },
-            {
-                **common,
-                "id": "wait-activation",
-                "tool": "wait",
-                "agents_states": {receiver_id: "completed"},
-                "prompt_delivery": None,
-            },
-            {
-                **common,
-                "id": "followup-1",
-                "tool": "followup_task",
-                "agents_states": {receiver_id: "running"},
-                "prompt_delivery": None,
-                "execution_delivery": execution_delivery,
-                "followup_tool_use_id": "followup-tool-use",
+                "followup_tool_use_id": "spawn-tool-use",
             },
             {
                 **common,
@@ -321,7 +306,6 @@ def _finish_v2_chain_through_hooks(
     tool_use_id = "spawn-tool-use"
     receiver_id = "019fa500-1111-7222-8333-444455556666"
     encrypted_message = "gAAAAA" + "opaque-codex-canary-message" * 2
-    opaque_canary = str(plan["goal"]) == CODEX_ACTIVATION_CANARY_WORK_UNIT
     bridge = HookBridge("codex", store=store)
     pre_payload = {
         "hook_event_name": "PreToolUse",
@@ -335,19 +319,16 @@ def _finish_v2_chain_through_hooks(
         "tool_input": {
             "fork_turns": "none",
             "task_name": task_name,
-            "message": encrypted_message if opaque_canary else str(plan["goal"]),
+            "message": encrypted_message,
         },
     }
     pre_tool = bridge.handle(pre_payload)
     pre_output = pre_tool["hookSpecificOutput"]
-    if opaque_canary:
-        assert pre_output == {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "allow",
-        }
-        post_input = pre_payload["tool_input"]
-    else:
-        post_input = pre_output["updatedInput"]
+    assert pre_output == {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "allow",
+    }
+    post_input = pre_payload["tool_input"]
     start = bridge.handle(
         {
             "hook_event_name": "SubagentStart",
@@ -357,24 +338,19 @@ def _finish_v2_chain_through_hooks(
             "agent_type": "worker",
         }
     )
-    delivery = parse_native_child_prompt_delivery(
-        start["hookSpecificOutput"]["additionalContext"] if opaque_canary else post_input["message"]
-    )
+    delivery = parse_native_child_prompt_delivery(start["hookSpecificOutput"]["additionalContext"])
     assert delivery is not None
     assert delivery.tool_use_id == tool_use_id
     assert delivery.work_unit_id == unit
     assert delivery.specialist_slug == slug
-    if opaque_canary:
-        assert delivery.original_task == ""
-        assert delivery.goal_hash == str(plan["goal_hash"])
-        assert delivery.activation_token == ""
-        after_start = store.get_completion_evidence_snapshot(session_id, trace_id)
-        [started_activation] = after_start["specialist_activations"]
-        assert started_activation["specialist_slug"] == slug
-        assert started_activation["worker_id"] == receiver_id
-        assert started_activation["native_run_id"] == f"codex-agent:{receiver_id}"
-    else:
-        assert delivery.original_task == str(plan["goal"])
+    assert delivery.original_task == ""
+    assert delivery.goal_hash == str(plan["goal_hash"])
+    assert delivery.activation_token == ""
+    after_start = store.get_completion_evidence_snapshot(session_id, trace_id)
+    [started_activation] = after_start["specialist_activations"]
+    assert started_activation["specialist_slug"] == slug
+    assert started_activation["worker_id"] == receiver_id
+    assert started_activation["native_run_id"] == f"codex-agent:{receiver_id}"
     observed = bridge.handle(
         {
             **pre_payload,
@@ -386,54 +362,6 @@ def _finish_v2_chain_through_hooks(
     observed_context = observed["hookSpecificOutput"]["additionalContext"]
     assert observed_context.startswith("[AGENCY UPDATED HEADER SNAPSHOT v1]\n")
     assert observed_context.count("Agency/Agencies loaded:") == 1
-    assert (
-        bridge.handle(
-            {
-                "hook_event_name": "SubagentStop",
-                "session_id": session_id,
-                "turn_id": "codex-child-turn",
-                "agent_id": receiver_id,
-                "agent_type": "worker",
-                "last_assistant_message": "ready",
-            }
-        )
-        == {}
-    )
-    activation_only_worker = store.get_native_child_run(
-        host="codex",
-        session_id=session_id,
-        trace_id=trace_id,
-        worker_id=receiver_id,
-        native_run_id=f"codex-agent:{receiver_id}",
-    )
-    assert activation_only_worker is not None
-    assert not activation_only_worker["ended_at"]
-    execution_message = render_codex_native_child_execution_message(
-        work_unit_id=unit,
-        goal_hash=str(plan["goal_hash"]),
-        goal=str(plan["goal"]),
-    )
-    encrypted_execution_message = "gAAAAA" + "opaque-codex-execution-message" * 2
-    followup_message = encrypted_execution_message if opaque_canary else execution_message
-    followup_payload = {
-        "hook_event_name": "PreToolUse",
-        "session_id": session_id,
-        "turn_id": trace_id,
-        "tool_name": "collaborationfollowup_task",
-        "tool_use_id": "followup-tool-use",
-        "tool_input": {
-            "target": f"/root/{task_name}",
-            "message": followup_message,
-        },
-    }
-    assert bridge.handle(followup_payload) == {}
-    bridge.handle(
-        {
-            **followup_payload,
-            "hook_event_name": "PostToolUse",
-            "tool_response": "",
-        }
-    )
     execution_turn = "019fa500-2222-7333-8444-555566667777"
     transcript = store.db_path.parent / f"rollout-test-{receiver_id}.jsonl"
     parent_transcript = store.db_path.parent / f"rollout-test-{session_id}.jsonl"
@@ -446,10 +374,10 @@ def _finish_v2_chain_through_hooks(
                     "type": "response_item",
                     "payload": {
                         "type": "function_call",
-                        "name": "followup_task",
+                        "name": "spawn_agent",
                         "namespace": "collaboration",
-                        "call_id": "followup-tool-use",
-                        "arguments": json.dumps(followup_payload["tool_input"]),
+                        "call_id": tool_use_id,
+                        "arguments": json.dumps(post_input),
                     },
                 },
             )
@@ -457,30 +385,26 @@ def _finish_v2_chain_through_hooks(
         + "\n",
         encoding="utf-8",
     )
-    execution_input = (
-        {
-            "type": "agent_message",
-            "id": "amsg-execution",
-            "author": "/root",
-            "recipient": f"/root/{task_name}",
-            "internal_chat_message_metadata_passthrough": {"turn_id": execution_turn},
-            "content": [
-                {
-                    "type": "input_text",
-                    "text": "Message Type: NEW_TASK\n"
-                    f"Task name: /root/{task_name}\n"
-                    "Sender: /root\n"
-                    "Payload:\n",
-                },
-                {
-                    "type": "encrypted_content",
-                    "encrypted_content": encrypted_execution_message,
-                },
-            ],
-        }
-        if opaque_canary
-        else {"type": "message", "content": execution_message}
-    )
+    execution_input = {
+        "type": "agent_message",
+        "id": "amsg-execution",
+        "author": "/root",
+        "recipient": f"/root/{task_name}",
+        "internal_chat_message_metadata_passthrough": {"turn_id": execution_turn},
+        "content": [
+            {
+                "type": "input_text",
+                "text": "Message Type: NEW_TASK\n"
+                f"Task name: /root/{task_name}\n"
+                "Sender: /root\n"
+                "Payload:\n",
+            },
+            {
+                "type": "encrypted_content",
+                "encrypted_content": encrypted_message,
+            },
+        ],
+    }
     transcript.write_text(
         "\n".join(
             json.dumps(event)
@@ -497,19 +421,6 @@ def _finish_v2_chain_through_hooks(
                                 }
                             }
                         },
-                    },
-                },
-                {
-                    "type": "event_msg",
-                    "payload": {"type": "task_started", "turn_id": "activation-turn"},
-                },
-                {
-                    "type": "event_msg",
-                    "payload": {
-                        "type": "task_complete",
-                        "turn_id": "activation-turn",
-                        "last_agent_message": "ready",
-                        "error": None,
                     },
                 },
                 {
@@ -548,24 +459,52 @@ def _finish_v2_chain_through_hooks(
     [(expected_execution, _specialist, execution_identity)] = bridge._codex_execution_candidates(
         session_id=session_id, trace_id=trace_id
     )
-    assert bridge._codex_execution_claim_observed(
-        session_id=session_id,
-        trace_id=trace_id,
-        work_unit_id=unit,
-        identity=execution_identity,
+    assert (
+        bridge._codex_execution_claim_observed(
+            session_id=session_id,
+            trace_id=trace_id,
+            work_unit_id=unit,
+            identity=execution_identity,
+        )
+        == tool_use_id
     )
     from agency_runtime.core.codex_child_execution import (
-        codex_current_turn_execution_observed,
+        codex_initial_turn_execution_observed,
     )
 
-    assert codex_current_turn_execution_observed(
+    assert codex_initial_turn_execution_observed(
         transcript,
         turn_id=execution_turn,
         worker_id=receiver_id,
         expected=expected_execution,
         parent_session_id=session_id,
-        execution_tool_use_id="followup-tool-use",
+        execution_tool_use_id=tool_use_id,
     )
+    assert (
+        bridge.handle(
+            {
+                "hook_event_name": "SubagentStop",
+                "session_id": session_id,
+                "turn_id": execution_turn,
+                "agent_id": receiver_id,
+                "agent_type": "worker",
+                "agent_transcript_path": str(transcript),
+                "last_assistant_message": "reviewed",
+            }
+        )
+        == {}
+    )
+    completed_worker = store.get_native_child_run(
+        host="codex",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=receiver_id,
+        native_run_id=f"codex-agent:{receiver_id}",
+    )
+    assert completed_worker is not None
+    assert completed_worker["ended_at"]
+    assert completed_worker["exit_code"] == 0
     store.record_model_receipt(
         trace_id=trace_id,
         session_id=session_id,
@@ -600,7 +539,7 @@ def _finish_v2_chain_through_hooks(
         "status": "completed",
         "exit_code": 0,
         "output": response,
-        "collaboration": _two_turn_collaboration(
+        "collaboration": _direct_collaboration(
             receiver_id=receiver_id,
             work_unit_id=unit,
             task_name=task_name,
@@ -733,7 +672,7 @@ def _record_complete_v2_chain(
         work_unit_id=unit,
         worker_id=receiver_id,
         native_run_id=f"codex-agent:{receiver_id}",
-        tool_use_id="followup-tool-use",
+        tool_use_id=tool_use_id,
     )
     store.record_native_child_stopped(
         host="codex",
@@ -760,7 +699,7 @@ def _record_complete_v2_chain(
         "status": "completed",
         "exit_code": 0,
         "output": _valid_header(),
-        "collaboration": _two_turn_collaboration(
+        "collaboration": _direct_collaboration(
             receiver_id=receiver_id,
             work_unit_id=unit,
             task_name=task_name,
@@ -970,6 +909,16 @@ def test_codex_post_tool_reconciles_subagent_start_consumption_without_callback_
     assert delegation["retrieved_specialist_slug"] == slug
     assert delegation["executed_worker_id"] == receiver_id
     assert delegation["native_run_id"] == f"codex-agent:{receiver_id}"
+    assert (
+        configured_store.get_consumed_codex_spawn_tool_use_id(
+            session_id=session_id,
+            trace_id=trace_id,
+            work_unit_id=unit,
+            worker_id=receiver_id,
+            native_run_id=f"codex-agent:{receiver_id}",
+        )
+        == pre_tool_use_id
+    )
 
 
 def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
@@ -1619,6 +1568,176 @@ def _write_codex_rollout(
     )
     path.chmod(0o600)
     return path
+
+
+def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Path) -> None:
+    parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    receiver_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    tool_use_id = "call-native-spawn"
+    work_unit_id = "unit-code"
+    task_name = codex_task_name_for_work_unit(work_unit_id)
+    goal = "Review the implementation."
+    ciphertext = "gAAAAA" + "opaque-direct-spawn-message" * 2
+    prompt_body = "You are the exact reviewer."
+    delivery = render_codex_direct_native_child_prompt_delivery(
+        prompt_body,
+        parent_session_id=parent_id,
+        parent_trace_id="trace",
+        tool_use_id=tool_use_id,
+        work_unit_id=work_unit_id,
+        specialist_slug="code-reviewer",
+        specialist_version="v1",
+        specialist_prompt_hash=response_hash(prompt_body),
+        goal_hash=work_unit_goal_hash(goal),
+    )
+    rollout_root = tmp_path / "sessions"
+    _write_codex_rollout(
+        rollout_root,
+        parent_id,
+        [
+            {"type": "session_meta", "payload": {"id": parent_id, "source": "exec"}},
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "spawn-item",
+                    "name": "spawn_agent",
+                    "namespace": "collaboration",
+                    "call_id": tool_use_id,
+                    "arguments": json.dumps(
+                        {
+                            "fork_turns": "none",
+                            "message": ciphertext,
+                            "task_name": task_name,
+                        }
+                    ),
+                },
+            },
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "sub_agent_activity",
+                    "event_id": tool_use_id,
+                    "agent_thread_id": receiver_id,
+                    "agent_path": f"/root/{task_name}",
+                    "kind": "started",
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": tool_use_id,
+                    "output": json.dumps({"task_name": f"/root/{task_name}"}),
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "wait-item",
+                    "name": "wait_agent",
+                    "namespace": "collaboration",
+                    "call_id": "call-native-wait",
+                    "arguments": json.dumps({"timeout_ms": 60_000}),
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": "call-native-wait",
+                    "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
+                },
+            },
+        ],
+    )
+    _write_codex_rollout(
+        rollout_root,
+        receiver_id,
+        [
+            {
+                "type": "session_meta",
+                "payload": {
+                    "id": receiver_id,
+                    "source": {
+                        "subagent": {
+                            "thread_spawn": {
+                                "parent_thread_id": parent_id,
+                                "depth": 1,
+                                "agent_path": f"/root/{task_name}",
+                            }
+                        }
+                    },
+                },
+            },
+            {"type": "event_msg", "payload": {"type": "task_started", "turn_id": "run"}},
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "developer",
+                    "content": [{"type": "input_text", "text": delivery}],
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "agent_message",
+                    "id": "amsg-execution",
+                    "author": "/root",
+                    "recipient": f"/root/{task_name}",
+                    "internal_chat_message_metadata_passthrough": {"turn_id": "run"},
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": "Message Type: NEW_TASK\n"
+                            f"Task name: /root/{task_name}\n"
+                            "Sender: /root\n"
+                            "Payload:\n",
+                        },
+                        {"type": "encrypted_content", "encrypted_content": ciphertext},
+                    ],
+                },
+            },
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "task_complete",
+                    "turn_id": "run",
+                    "last_agent_message": "reviewed",
+                    "error": None,
+                },
+            },
+        ],
+    )
+    stdout = json.dumps({"type": "thread.started", "thread_id": parent_id})
+
+    collaboration = codex_collaboration_evidence(stdout, rollout_root=rollout_root)
+
+    assert collaboration is not None
+    assert [row["tool"] for row in collaboration["calls"]] == ["spawn_agent", "wait"]
+    assert collaboration["followup_count"] == 0
+    assert collaboration["wait_count"] == 1
+    spawn = collaboration["calls"][0]
+    assert spawn["execution_delivery"] == {
+        "work_unit_id": work_unit_id,
+        "native_task_name": task_name,
+        "goal_hash": work_unit_goal_hash(goal),
+    }
+    assert spawn["followup_tool_use_id"] == tool_use_id
+
+    product = _codex_product_rollout_collaboration_evidence(
+        stdout,
+        rollout_root,
+        not_before=None,
+        not_after=None,
+    )
+    assert product["spawn_count"] == 1
+    assert product["followup_count"] == 0
+    assert product["wait_count"] == 1
+    assert product["calls"][0]["activation_completion_count"] == 0
+    assert product["calls"][0]["execution_completion_count"] == 1
 
 
 def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> None:

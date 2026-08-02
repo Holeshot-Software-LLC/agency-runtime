@@ -841,6 +841,53 @@ class DelegationActivationStoreMixin:
         finally:
             conn.close()
 
+    def get_consumed_codex_spawn_tool_use_id(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        work_unit_id: str,
+        worker_id: str,
+        native_run_id: str,
+    ) -> str | None:
+        """Return the sole native-hook spawn identity for one consumed Codex grant."""
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        unit = _work_unit_identity(work_unit_id, required=True)
+        worker = _identity(
+            worker_id,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
+            field="worker_id",
+            required=True,
+        )
+        native = _identity(
+            native_run_id,
+            maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+            field="native_run_id",
+            required=True,
+        )
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT grant.tool_use_id "
+                "FROM delegation_activation_consumptions AS consumed "
+                "JOIN delegation_activation_receipts AS grant "
+                "ON grant.id = consumed.legacy_activation_receipt_id "
+                "AND grant.grant_id = consumed.grant_id "
+                "WHERE consumed.session_id = ? AND consumed.trace_id = ? "
+                "AND consumed.work_unit_id = ? AND consumed.child_host = 'codex' "
+                "AND consumed.worker_id = ? AND consumed.native_run_id = ? "
+                "AND grant.grant_origin = 'native_hook' "
+                "AND grant.consumed_at IS NOT NULL LIMIT 2",
+                (normalized_session, normalized_trace, unit, worker, native),
+            ).fetchall()
+            if len(rows) != 1:
+                return None
+            return validate_correlation_id(rows[0]["tool_use_id"], field="tool_use_id")
+        finally:
+            conn.close()
+
     def get_codex_native_plan_scope(
         self,
         *,

@@ -1,9 +1,9 @@
 ---
 title: "Make Codex execution turns self-contained"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-02
 tags: [codex, delegation, execution, context, evidence]
 related:
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
@@ -19,7 +19,7 @@ related:
   - docs/worklog/README.md
 supersedes:
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
-superseded_by: null
+superseded_by: docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
 id: ADR-0139
 type: decision
 deciders: [maintainers]

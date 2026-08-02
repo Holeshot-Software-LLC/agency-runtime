@@ -742,6 +742,73 @@ def _codex_child_turn_windows(
     )
 
 
+def _codex_child_initial_turn_window(
+    events: list[dict[str, Any]],
+) -> tuple[int, int, str]:
+    """Return one exact successful initial child turn."""
+
+    starts: list[tuple[int, str]] = []
+    completions: list[tuple[int, str, dict[str, Any]]] = []
+    for index, event in enumerate(events):
+        payload = event.get("payload")
+        if event.get("type") != "event_msg" or not isinstance(payload, dict):
+            continue
+        event_type = payload.get("type")
+        turn_id = str(payload.get("turn_id") or "").strip()
+        if event_type == "task_started" and turn_id:
+            starts.append((index, turn_id))
+        elif event_type == "task_complete" and turn_id:
+            completions.append((index, turn_id, payload))
+    if (
+        len(starts) != 1
+        or len(completions) != 1
+        or starts[0][1] != completions[0][1]
+        or starts[0][0] >= completions[0][0]
+    ):
+        raise ValueError("Codex child rollout did not prove one causal initial turn")
+    completion = completions[0][2]
+    if completion.get("error") not in {None, ""} or not isinstance(
+        completion.get("last_agent_message"),
+        str,
+    ):
+        raise ValueError("Codex child initial turn completed without a successful message")
+    return starts[0][0], completions[0][0] + 1, starts[0][1]
+
+
+def _codex_child_initial_execution_projection(
+    events: list[dict[str, Any]],
+    *,
+    expected: Mapping[str, str],
+    opaque_message: str,
+) -> dict[str, str]:
+    """Prove byte-equal spawn delivery inside one completed initial child turn."""
+
+    from agency_runtime.core.native_child_prompt_delivery import (
+        codex_opaque_child_message_ciphertext,
+        is_codex_opaque_collaboration_message,
+    )
+
+    if not is_codex_opaque_collaboration_message(opaque_message):
+        raise ValueError("Codex direct spawn did not retain its bounded ciphertext")
+    window_start, window_end, turn_id = _codex_child_initial_turn_window(events)
+    deliveries = [
+        ciphertext
+        for event in events[window_start:window_end]
+        if event.get("type") == "response_item"
+        for ciphertext in (
+            codex_opaque_child_message_ciphertext(
+                event.get("payload"),
+                native_task_name=expected.get("native_task_name"),
+                turn_id=turn_id,
+            ),
+        )
+        if ciphertext is not None
+    ]
+    if deliveries != [opaque_message]:
+        raise ValueError("Codex child did not receive its exact direct spawn message")
+    return dict(expected)
+
+
 def _assert_codex_child_activation_is_tool_free(events: list[dict[str, Any]]) -> None:
     """Reject product work or tool activity during the readiness-only turn."""
 
@@ -818,6 +885,68 @@ def _codex_child_execution_projection(
     if opaque_message is None or opaque_deliveries != [opaque_message]:
         raise ValueError("Codex child rollout did not carry one exact execution envelope")
     return dict(expected)
+
+
+def _codex_exact_direct_rollout_calls(
+    calls: list[dict[str, Any]],
+    outputs: dict[str, Any],
+    activities: list[dict[str, Any]],
+) -> tuple[dict[str, Any], dict[str, Any], str, str]:
+    """Validate one direct spawn and one completed terminal wait."""
+
+    spawn_calls = [call for call in calls if call["name"] == "spawn_agent"]
+    wait_calls = [call for call in calls if call["name"] == "wait_agent"]
+    if (
+        len(spawn_calls) != 1
+        or len(wait_calls) != 1
+        or any(call["name"] == "followup_task" for call in calls)
+    ):
+        raise ValueError("Codex rollout did not contain one direct spawn and one wait")
+    spawn = spawn_calls[0]
+    wait = wait_calls[0]
+    if set(outputs) != {spawn["call_id"], wait["call_id"]} or [
+        call["name"] for call in sorted(calls, key=lambda call: call["index"])
+    ] != ["spawn_agent", "wait_agent"]:
+        raise ValueError("Codex direct collaboration calls were not causally ordered")
+    spawn_args = spawn["arguments"]
+    if (
+        set(spawn_args) != {"fork_turns", "message", "task_name"}
+        or spawn_args.get("fork_turns") != "none"
+        or not isinstance(spawn_args.get("message"), str)
+        or not isinstance(spawn_args.get("task_name"), str)
+        or set(wait["arguments"]) != {"timeout_ms"}
+        or wait["arguments"].get("timeout_ms") != 60_000
+    ):
+        raise ValueError("Codex direct collaboration arguments exceeded the canary contract")
+    spawn_output = outputs.get(spawn["call_id"])
+    wait_output = outputs.get(wait["call_id"])
+    if (
+        not isinstance(spawn_output, dict)
+        or set(spawn_output) != {"task_name"}
+        or not isinstance(spawn_output.get("task_name"), str)
+        or not isinstance(wait_output, dict)
+        or wait_output.get("message") != "Wait completed."
+        or wait_output.get("timed_out") is not False
+    ):
+        raise ValueError("Codex direct rollout did not prove completed native calls")
+    start_activities = [
+        activity
+        for activity in activities
+        if activity.get("event_id") == spawn["call_id"] and activity.get("kind") == "started"
+    ]
+    if len(activities) != 1 or len(start_activities) != 1:
+        raise ValueError("Codex direct rollout did not identify one child start")
+    activity = start_activities[0]
+    receiver_id = _codex_thread_id(activity.get("agent_thread_id"))
+    native_task_name = str(spawn_args["task_name"]).strip()
+    if (
+        not native_task_name
+        or len(native_task_name) > 128
+        or activity.get("agent_path") != spawn_output["task_name"]
+        or not str(spawn_output["task_name"]).endswith(f"/{native_task_name}")
+    ):
+        raise ValueError("Codex direct child did not match its native task")
+    return spawn, wait, receiver_id, native_task_name
 
 
 def _codex_exact_rollout_calls(
@@ -968,6 +1097,78 @@ def _codex_rollout_collaboration_evidence(
         not_after=not_after,
     )
     calls, outputs, activities, unexpected = _codex_rollout_call_data(events)
+    if not any(call["name"] == "followup_task" for call in calls):
+        spawn, wait, receiver_id, native_task_name = _codex_exact_direct_rollout_calls(
+            calls,
+            outputs,
+            activities,
+        )
+        child_events = _codex_rollout_events(
+            rollout_root,
+            receiver_id,
+            parent_thread_id=parent_thread_id,
+            expected_agent_path=f"/root/{native_task_name}",
+            not_before=not_before,
+            not_after=not_after,
+        )
+        _assert_codex_child_rollout_is_tool_free(child_events)
+        prompt_delivery = _codex_child_prompt_delivery(
+            child_events,
+            parent_thread_id=parent_thread_id,
+            tool_use_id=spawn["call_id"],
+        )
+        from agency_runtime.core.delegation.native_labels import (
+            codex_task_name_for_work_unit,
+        )
+
+        if native_task_name != codex_task_name_for_work_unit(prompt_delivery["work_unit_id"]):
+            raise ValueError("Codex direct child task did not match its delivered work unit")
+        expected_execution = {
+            "work_unit_id": str(prompt_delivery["work_unit_id"]),
+            "native_task_name": native_task_name,
+            "goal_hash": str(prompt_delivery["goal_hash"]),
+        }
+        execution_delivery = _codex_child_initial_execution_projection(
+            child_events,
+            expected=expected_execution,
+            opaque_message=str(spawn["arguments"]["message"]),
+        )
+        projected_calls = [
+            {
+                "id": spawn["id"],
+                "event_type": "rollout_call_completed",
+                "tool": "spawn_agent",
+                "sender_thread_id": parent_thread_id,
+                "receiver_thread_ids": [receiver_id],
+                "agents_states": {receiver_id: "running"},
+                "status": "completed",
+                "prompt_delivery": prompt_delivery,
+                "native_task_name": native_task_name,
+                "execution_delivery": execution_delivery,
+                "followup_tool_use_id": spawn["call_id"],
+                "evidence_source": "persisted_rollout",
+            },
+            {
+                "id": wait["id"],
+                "event_type": "rollout_call_completed",
+                "tool": "wait",
+                "sender_thread_id": parent_thread_id,
+                "receiver_thread_ids": [receiver_id],
+                "agents_states": {receiver_id: "completed"},
+                "status": "completed",
+                "prompt_delivery": None,
+                "evidence_source": "persisted_rollout",
+            },
+        ]
+        return {
+            "calls": projected_calls,
+            "spawn_count": 1,
+            "followup_count": 0,
+            "wait_count": 1,
+            "unexpected_item_types": sorted(set(unexpected.values())),
+            "unexpected_item_count": len(unexpected),
+            "evidence_source": "persisted_rollout",
+        }
     spawn, waits, followup, receiver_id, native_task_name, declared_execution = (
         _codex_exact_rollout_calls(
             calls,
@@ -1329,6 +1530,110 @@ def _codex_product_spawn_projection(
     )
 
 
+def _codex_product_direct_spawn_projection(
+    spawn: dict[str, Any],
+    *,
+    outputs: Mapping[str, Any],
+    activities: list[dict[str, Any]],
+    rollout_root: Path,
+    parent_thread_id: str,
+    not_before: float | None,
+    not_after: float | None,
+) -> tuple[dict[str, Any], int]:
+    """Prove one specialist executed its exact goal in the initial spawn turn."""
+
+    arguments = spawn["arguments"]
+    if (
+        set(arguments) != {"fork_turns", "message", "task_name"}
+        or arguments.get("fork_turns") != "none"
+        or not isinstance(arguments.get("message"), str)
+        or not isinstance(arguments.get("task_name"), str)
+    ):
+        raise ValueError("Codex product direct spawn exceeded the exact contract")
+    native_task_name = str(arguments["task_name"]).strip()
+    if not native_task_name or len(native_task_name) > 128:
+        raise ValueError("Codex product direct spawn task name was invalid")
+    output = outputs.get(spawn["call_id"])
+    if (
+        not isinstance(output, dict)
+        or set(output) not in ({"task_name"}, {"task_name", "nickname"})
+        or not isinstance(output.get("task_name"), str)
+        or not str(output["task_name"]).endswith(f"/{native_task_name}")
+        or (
+            "nickname" in output
+            and (not isinstance(output.get("nickname"), str) or len(str(output["nickname"])) > 128)
+        )
+    ):
+        raise ValueError("Codex product direct spawn output did not match its native task")
+    matching_activities = [
+        activity
+        for activity in activities
+        if activity.get("event_id") == spawn["call_id"] and activity.get("kind") == "started"
+    ]
+    if len(matching_activities) != 1:
+        raise ValueError("Codex product direct spawn did not identify one native child start")
+    activity = matching_activities[0]
+    receiver_id = _codex_thread_id(activity.get("agent_thread_id"))
+    expected_path = f"/root/{native_task_name}"
+    if activity.get("agent_path") != expected_path or output["task_name"] != expected_path:
+        raise ValueError("Codex product direct child path did not match its native task")
+    child_events = _codex_rollout_events(
+        rollout_root,
+        receiver_id,
+        parent_thread_id=parent_thread_id,
+        expected_agent_path=expected_path,
+        not_before=not_before,
+        not_after=not_after,
+    )
+    prompt_delivery = _codex_child_prompt_delivery(
+        child_events,
+        parent_thread_id=parent_thread_id,
+        tool_use_id=spawn["call_id"],
+    )
+    from agency_runtime.core.delegation.native_labels import (
+        codex_task_name_for_work_unit,
+    )
+
+    if native_task_name != codex_task_name_for_work_unit(prompt_delivery["work_unit_id"]):
+        raise ValueError("Codex product direct task did not match its delivered work unit")
+    expected_execution = {
+        "work_unit_id": str(prompt_delivery["work_unit_id"]),
+        "native_task_name": native_task_name,
+        "goal_hash": str(prompt_delivery["goal_hash"]),
+    }
+    execution_delivery = _codex_child_initial_execution_projection(
+        child_events,
+        expected=expected_execution,
+        opaque_message=str(arguments["message"]),
+    )
+    child_tool_call_count = sum(
+        event.get("type") == "response_item"
+        and isinstance(event.get("payload"), dict)
+        and event["payload"].get("type") in {"function_call", "custom_tool_call"}
+        for event in child_events
+    )
+    return (
+        {
+            "id": spawn["id"],
+            "event_type": "rollout_call_completed",
+            "tool": "spawn_agent",
+            "sender_thread_id": parent_thread_id,
+            "receiver_thread_ids": [receiver_id],
+            "status": "completed",
+            "prompt_delivery": prompt_delivery,
+            "execution_delivery": execution_delivery,
+            "followup_id": None,
+            "followup_tool_use_id": spawn["call_id"],
+            "native_task_name": native_task_name,
+            "child_status": "completed",
+            "activation_completion_count": 0,
+            "execution_completion_count": 1,
+            "evidence_source": "persisted_rollout",
+        },
+        child_tool_call_count,
+    )
+
+
 def _codex_product_call_groups(
     ordered: list[dict[str, Any]],
     *,
@@ -1361,6 +1666,32 @@ def _codex_product_call_groups(
         groups.append((spawn, followup, tuple(execution_waits)))
     if cursor != len(ordered):
         raise ValueError("Codex product collaboration calls were not causally ordered")
+    return tuple(groups)
+
+
+def _codex_product_direct_call_groups(
+    ordered: list[dict[str, Any]],
+    *,
+    spawn_count: int,
+) -> tuple[tuple[dict[str, Any], tuple[dict[str, Any], ...]], ...]:
+    """Group each direct spawn with one to three terminal waits."""
+
+    groups: list[tuple[dict[str, Any], tuple[dict[str, Any], ...]]] = []
+    cursor = 0
+    for _index in range(spawn_count):
+        if cursor >= len(ordered) or ordered[cursor]["name"] != "spawn_agent":
+            raise ValueError("Codex product direct calls were not causally ordered")
+        spawn = ordered[cursor]
+        cursor += 1
+        waits: list[dict[str, Any]] = []
+        while cursor < len(ordered) and ordered[cursor]["name"] == "wait_agent" and len(waits) < 3:
+            waits.append(ordered[cursor])
+            cursor += 1
+        if not waits:
+            raise ValueError("Codex product direct child lacked a terminal wait")
+        groups.append((spawn, tuple(waits)))
+    if cursor != len(ordered):
+        raise ValueError("Codex product direct calls were not causally ordered")
     return tuple(groups)
 
 
@@ -1434,32 +1765,52 @@ def _codex_product_rollout_collaboration_evidence(
     waits = [call for call in calls if call["name"] == "wait_agent"]
     if not 1 <= len(spawns) <= _CODEX_PRODUCT_MAX_SPAWNS:
         raise ValueError("Codex product spawn cardinality was invalid")
-    if len(followups) != len(spawns):
+    direct_mode = len(followups) == 0
+    if not direct_mode and len(followups) != len(spawns):
         raise ValueError("Codex product followup cardinality was invalid")
-    if not len(spawns) * 2 <= len(waits) <= len(spawns) * 4 or (
-        len(waits) > _CODEX_PRODUCT_MAX_WAITS
-    ):
+    minimum_waits = len(spawns) if direct_mode else len(spawns) * 2
+    maximum_waits = len(spawns) * 3 if direct_mode else len(spawns) * 4
+    if not minimum_waits <= len(waits) <= maximum_waits or len(waits) > _CODEX_PRODUCT_MAX_WAITS:
         raise ValueError("Codex product wait cardinality was invalid")
     if set(outputs) != {call["call_id"] for call in calls}:
         raise ValueError("Codex product collaboration outputs did not match its calls")
     ordered = sorted(calls, key=lambda call: call["index"])
-    call_groups = _codex_product_call_groups(ordered, spawn_count=len(spawns))
     projected_spawns: list[dict[str, Any]] = []
     child_tool_call_count = 0
-    for spawn, followup, _execution_waits in call_groups:
-        projected, tool_count = _codex_product_spawn_projection(
-            spawn,
-            followup,
-            outputs=outputs,
-            activities=activities,
-            rollout_root=rollout_root,
-            parent_thread_id=parent_thread_id,
-            not_before=not_before,
-            not_after=not_after,
+    if direct_mode:
+        direct_groups = _codex_product_direct_call_groups(
+            ordered,
+            spawn_count=len(spawns),
         )
-        projected_spawns.append(projected)
-        child_tool_call_count += tool_count
-    if len(activities) != len(spawns) * 2:
+        for spawn, _waits in direct_groups:
+            projected, tool_count = _codex_product_direct_spawn_projection(
+                spawn,
+                outputs=outputs,
+                activities=activities,
+                rollout_root=rollout_root,
+                parent_thread_id=parent_thread_id,
+                not_before=not_before,
+                not_after=not_after,
+            )
+            projected_spawns.append(projected)
+            child_tool_call_count += tool_count
+    else:
+        legacy_groups = _codex_product_call_groups(ordered, spawn_count=len(spawns))
+        for spawn, followup, _execution_waits in legacy_groups:
+            projected, tool_count = _codex_product_spawn_projection(
+                spawn,
+                followup,
+                outputs=outputs,
+                activities=activities,
+                rollout_root=rollout_root,
+                parent_thread_id=parent_thread_id,
+                not_before=not_before,
+                not_after=not_after,
+            )
+            projected_spawns.append(projected)
+            child_tool_call_count += tool_count
+    expected_activity_count = len(spawns) if direct_mode else len(spawns) * 2
+    if len(activities) != expected_activity_count:
         raise ValueError("Codex product child activity cardinality was invalid")
     receiver_ids = [row["receiver_thread_ids"][0] for row in projected_spawns]
     task_names = [row["native_task_name"] for row in projected_spawns]

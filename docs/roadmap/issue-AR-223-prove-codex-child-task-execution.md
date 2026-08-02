@@ -29,6 +29,7 @@ related:
   - docs/decisions/0140-use-codex-stable-multi-agent-feature.md
   - docs/decisions/0141-admit-writer-proof-only-through-agency-plans.md
   - docs/decisions/0142-require-terminal-product-child-before-next-unit.md
+  - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -529,6 +530,28 @@ remove; the accepted specialist should execute its exact spawn goal in the
 first turn and the parent should wait for that same terminal child before any
 later row.
 
+ADR-0143 now removes that ceremony for current Codex execution. The initial
+spawn carries the exact persisted goal and direct specialist context; the child
+executes in that one turn, and the parent performs only bounded terminal waits.
+Strict rollout evidence binds the exact parent spawn ciphertext to the child's
+byte-identical `NEW_TASK`, lineage, single turn, and final response. The Store
+claims direct execution only after `PostToolUse` records the exact delegation,
+recovering the consumed spawn receipt when Codex omits the callback tool ID.
+Historical two-turn evidence remains readable but is no longer emitted.
+
+The changed-surface warning-strict suite passes 181 tests across child
+execution, prompt delivery, unit-aware delegation, product hosting, Codex
+activation, native child hooks, and decision conformance. The first full
+decision-conformance run passes every baseline and kills 94 of 97 mutations;
+its three survivors are exactly two obsolete mutations from superseded
+ADR-0137 plus one redundant parent-session check. Removing the obsolete checks
+and moving the identity mutation to the shared verifier passes the focused
+manifest, execution, and isolated mutation checks. The final full rerun passes
+its baseline and kills all 95 current mutations with zero survivors or invalid
+results and unchanged source. The named Python spine passes 657 tests with 6
+skips; all 110 dashboard tests, every routing threshold, repository-wide Ruff,
+formatting, documentation, metadata, policy, worklog, and diff checks pass.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -536,10 +559,11 @@ later row.
 2. Put exact plan-execution authorization at both current Codex boundaries: the
    installed global guidance requests delegation only for an accepted inferred
    plan, while the existing marker-scoped developer protocol schedules it.
-   Neither boundary may name or select a worker before inference. Bind each
-   actionable delivery to the exact spawned child, native task name, work-unit
-   ID, decoded goal hash, exact self-contained goal, and accepted row.
-3. Require a causal terminal child completion after that delivery. Reject
+   Neither boundary may name or select a worker before inference. Bind the
+   initial spawn to the exact child, native task name, work-unit ID, decoded
+   goal hash, exact self-contained goal, and accepted row; do not send an
+   execution follow-up.
+3. Require a causal terminal child completion after that initial delivery. Reject
    missing, duplicate, reordered, cross-child, malformed, or unbounded task
    messages without retaining task or response content.
 4. Preserve one-at-a-time dependency scheduling, the non-working parent,
@@ -573,10 +597,13 @@ accepted plan authority.
   self-contained execution turn, and creates exact retained file proof.
 - [x] Product scheduling cannot advance from a nonterminal commentary wake;
   bounded repeated waits remain causally and content-freely verifiable.
+- [x] Current Codex execution uses one initial specialist turn and no execution
+  follow-up; exact spawn/child ciphertext, lineage, completion, and final-answer
+  variants fail closed in focused tests.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
-- [x] Focused checks, bounded review, and the complete named local gate pass on
-  clean recovery head `a5b9d4b`.
+- [x] Focused checks, bounded review, and the complete named local gate pass for
+  the first-turn implementation; an immutable checkpoint commit is pending.
 - [x] The generated Codex `UserPromptSubmit` handler keeps the complete bounded
   inferred plan inline instead of spilling it outside the parent's allowed
   tool boundary.

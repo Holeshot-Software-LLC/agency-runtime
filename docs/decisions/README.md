@@ -205,12 +205,13 @@ Status meanings:
 | [ADR-0133](0133-treat-product-specialist-loads-as-turn-scoped.md) | Treat product specialist loads as turn-scoped | Accepted |
 | [ADR-0135](0135-require-explicit-codex-child-execution-turns.md) | Require explicit Codex child execution turns | Superseded |
 | [ADR-0136](0136-bind-opaque-codex-execution-by-ciphertext-identity.md) | Bind opaque Codex execution by ciphertext identity | Superseded |
-| [ADR-0137](0137-reconcile-codex-followup-completion-at-parent-stop.md) | Reconcile Codex follow-up completion at parent Stop | Accepted |
+| [ADR-0137](0137-reconcile-codex-followup-completion-at-parent-stop.md) | Reconcile Codex follow-up completion at parent Stop | Superseded |
 | [ADR-0138](0138-request-automatic-codex-delegation-through-managed-global-guidance.md) | Request automatic Codex delegation through managed global guidance | Accepted |
-| [ADR-0139](0139-make-codex-execution-turns-self-contained.md) | Make Codex execution turns self-contained | Accepted |
+| [ADR-0139](0139-make-codex-execution-turns-self-contained.md) | Make Codex execution turns self-contained | Superseded |
 | [ADR-0140](0140-use-codex-stable-multi-agent-feature.md) | Use the Codex stable multi-agent feature | Superseded |
 | [ADR-0141](0141-admit-writer-proof-only-through-agency-plans.md) | Admit writer proof only through Agency plans | Accepted |
-| [ADR-0142](0142-require-terminal-product-child-before-next-unit.md) | Require terminal product child before the next unit | Accepted |
+| [ADR-0142](0142-require-terminal-product-child-before-next-unit.md) | Require terminal product child before the next unit | Superseded |
+| [ADR-0143](0143-execute-codex-specialists-in-the-initial-spawn-turn.md) | Execute Codex specialists in the initial spawn turn | Accepted |
 
 ## Documentation governance
 

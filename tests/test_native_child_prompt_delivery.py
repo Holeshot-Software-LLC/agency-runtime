@@ -11,6 +11,7 @@ from agency_runtime.core.native_child_prompt_delivery import (
     is_codex_opaque_collaboration_message,
     parse_codex_native_child_execution_message,
     parse_native_child_prompt_delivery,
+    render_codex_direct_native_child_prompt_delivery,
     render_codex_native_child_execution_message,
     render_codex_opaque_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
@@ -88,6 +89,34 @@ def test_codex_opaque_delivery_round_trip_preserves_only_goal_hash_and_prompt() 
     assert "Do not execute, analyze, or modify" in rendered
     assert "[AGENCY EXACT TASK EXECUTION v1]" in rendered
     assert "Store-backed mutation authority" in rendered
+
+
+def test_codex_direct_delivery_executes_the_exact_initial_spawn_goal() -> None:
+    prompt = "Exact specialist prompt"
+    goal_hash = work_unit_goal_hash("Implement the requested product unit.")
+    rendered = render_codex_direct_native_child_prompt_delivery(
+        prompt,
+        parent_session_id="session",
+        parent_trace_id="trace",
+        tool_use_id="call-direct",
+        work_unit_id="unit-product",
+        specialist_slug="product-engineer",
+        specialist_version="v1",
+        specialist_prompt_hash=sha256(prompt.encode()).hexdigest(),
+        goal_hash=goal_hash,
+    )
+
+    parsed = parse_native_child_prompt_delivery(rendered)
+
+    assert parsed is not None
+    assert parsed.tool_use_id == "call-direct"
+    assert parsed.goal_hash == goal_hash
+    assert parsed.prompt_body == prompt
+    assert "[AGENCY EXACT SPECIALIST EXECUTION v3]" in rendered
+    assert "Execute that goal exactly once now" in rendered
+    assert "readiness ceremony" in rendered
+    assert "activation-only" not in rendered
+    assert "followup" not in rendered.casefold()
 
 
 def test_codex_execution_identity_message_round_trip_is_exact() -> None:

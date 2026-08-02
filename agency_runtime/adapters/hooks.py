@@ -20,6 +20,8 @@ from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded
 from agency_runtime.core.codex_child_execution import (
     codex_child_execution_completion_observed,
     codex_current_turn_execution_observed,
+    codex_initial_turn_execution_completion_observed,
+    codex_initial_turn_execution_observed,
 )
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation.native_labels import (
@@ -48,8 +50,8 @@ from agency_runtime.core.native_child_prompt_delivery import (
     is_codex_opaque_collaboration_message,
     parse_codex_native_child_execution_message,
     parse_native_child_prompt_delivery,
+    render_codex_direct_native_child_prompt_delivery,
     render_codex_native_child_execution_message,
-    render_codex_opaque_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
 )
 from agency_runtime.core.observability import (
@@ -669,7 +671,7 @@ def _native_child_delivery_output(
     """Validate one child envelope and preserve opaque Codex input unchanged."""
 
     if opaque_codex_task:
-        preview = render_codex_opaque_native_child_prompt_delivery(
+        preview = render_codex_direct_native_child_prompt_delivery(
             prompt_body,
             parent_session_id=assignment.session_id,
             parent_trace_id=assignment.trace_id,
@@ -1491,7 +1493,7 @@ class HookBridge:
             )
         # Codex owns decryption and dispatch of collaboration messages. Opaque
         # input is preserved byte-for-byte; SubagentStart retrieves the exact
-        # label-bound grant and injects its content-free v2 child context.
+        # label-bound grant and injects its direct-execution v3 child context.
         return result
 
     def _codex_execution_candidates(
@@ -1814,7 +1816,7 @@ class HookBridge:
                     )
                     if assignment is None or pending_identity != assignment_identity:
                         raise ValueError("pending Codex delivery does not match the exact plan")
-                    exact_delivery = render_codex_opaque_native_child_prompt_delivery(
+                    exact_delivery = render_codex_direct_native_child_prompt_delivery(
                         str(pending.get("prompt_body") or ""),
                         parent_session_id=session_id,
                         parent_trace_id=trace_id,
@@ -1935,20 +1937,23 @@ class HookBridge:
                 work_unit_id=expected.work_unit_id,
                 identity=identity,
             )
-            if (
-                not codex_current_turn_execution_observed(
-                    _optional_string(payload, "agent_transcript_path"),
-                    turn_id=_optional_string(payload, "turn_id"),
-                    worker_id=identity.worker_id,
-                    expected=expected,
-                    parent_session_id=session_id,
-                    execution_tool_use_id=execution_tool_use_id or "",
-                )
-                or execution_tool_use_id is None
-            ):
-                # The first Codex spawn turn is activation-only. Its stop edge
-                # deliberately remains non-terminal until followup_task creates
-                # the exact execution-bound turn.
+            direct_execution = codex_initial_turn_execution_observed(
+                _optional_string(payload, "agent_transcript_path"),
+                turn_id=_optional_string(payload, "turn_id"),
+                worker_id=identity.worker_id,
+                expected=expected,
+                parent_session_id=session_id,
+                execution_tool_use_id=execution_tool_use_id or "",
+            )
+            legacy_execution = codex_current_turn_execution_observed(
+                _optional_string(payload, "agent_transcript_path"),
+                turn_id=_optional_string(payload, "turn_id"),
+                worker_id=identity.worker_id,
+                expected=expected,
+                parent_session_id=session_id,
+                execution_tool_use_id=execution_tool_use_id or "",
+            )
+            if not (direct_execution or legacy_execution) or execution_tool_use_id is None:
                 return {}
             work_unit_id = expected.work_unit_id
         else:
@@ -1989,7 +1994,7 @@ class HookBridge:
         trace_id: str,
         parent_transcript_path: object,
     ) -> None:
-        """Close only children whose completed follow-up is proven at parent Stop."""
+        """Close only children whose exact completed execution is proven at parent Stop."""
 
         if self.host != "codex" or not session_id or not trace_id:
             return
@@ -2007,13 +2012,23 @@ class HookBridge:
                 work_unit_id=expected.work_unit_id,
                 identity=identity,
             )
-            if execution_tool_use_id is None or not codex_child_execution_completion_observed(
+            if execution_tool_use_id is None:
+                continue
+            direct_completion = codex_initial_turn_execution_completion_observed(
                 parent_transcript_path,
                 worker_id=identity.worker_id,
                 expected=expected,
                 parent_session_id=session_id,
                 execution_tool_use_id=execution_tool_use_id,
-            ):
+            )
+            legacy_completion = codex_child_execution_completion_observed(
+                parent_transcript_path,
+                worker_id=identity.worker_id,
+                expected=expected,
+                parent_session_id=session_id,
+                execution_tool_use_id=execution_tool_use_id,
+            )
+            if not (direct_completion or legacy_completion):
                 continue
             completed = recorder(
                 host=self.host,
@@ -2429,7 +2444,7 @@ class HookBridge:
             or not prompt["prompt_body"]
         ):
             return None
-        rendered = render_codex_opaque_native_child_prompt_delivery(
+        rendered = render_codex_direct_native_child_prompt_delivery(
             prompt["prompt_body"],
             parent_session_id=assignment.session_id,
             parent_trace_id=assignment.trace_id,
@@ -2441,6 +2456,64 @@ class HookBridge:
             goal_hash=assignment.goal_hash,
         )
         return parse_native_child_prompt_delivery(rendered)
+
+    def _claim_codex_direct_spawn_execution(
+        self,
+        *,
+        event: str,
+        tool_name: str,
+        session_id: str,
+        trace_id: str,
+        work_unit_id: str,
+        identity: NativeChildRunIdentity | None,
+        tool_use_id: str,
+    ) -> None:
+        """Bind direct execution only after spawn output records its delegation."""
+
+        if (
+            event != "PostToolUse"
+            or self.host != "codex"
+            or tool_name not in _CODEX_SPAWN_TOOL_NAMES
+            or not work_unit_id
+            or identity is None
+            or identity.worker_id.startswith("task:")
+        ):
+            return
+        if not tool_use_id:
+            tool_use_reader = getattr(
+                self.store,
+                "get_consumed_codex_spawn_tool_use_id",
+                None,
+            )
+            if callable(tool_use_reader):
+                tool_use_id = str(
+                    tool_use_reader(
+                        session_id=session_id,
+                        trace_id=trace_id,
+                        work_unit_id=work_unit_id,
+                        worker_id=identity.worker_id,
+                        native_run_id=identity.native_run_id,
+                    )
+                    or ""
+                )
+        execution_claimer = getattr(
+            self.store,
+            "claim_codex_native_child_execution",
+            None,
+        )
+        if (
+            not callable(execution_claimer)
+            or execution_claimer(
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=work_unit_id,
+                worker_id=identity.worker_id,
+                native_run_id=identity.native_run_id,
+                tool_use_id=tool_use_id,
+            )
+            is not True
+        ):
+            raise RuntimeError("Codex direct spawn execution receipt was not recorded")
 
     def _handle_post_tool_use(
         self,
@@ -2591,6 +2664,15 @@ class HookBridge:
             model=correlation.model,
             tool_use_id=correlation.tool_use_id,
             agent_id=_optional_string(payload, "agent_id"),
+        )
+        self._claim_codex_direct_spawn_execution(
+            event=event,
+            tool_name=tool_name,
+            session_id=correlation.session_id,
+            trace_id=trace_id,
+            work_unit_id=resolved_codex_unit,
+            identity=_delivery_identity,
+            tool_use_id=(delivery.tool_use_id if delivery is not None else correlation.tool_use_id),
         )
         return self._codex_post_tool_header_output(
             event=event,
