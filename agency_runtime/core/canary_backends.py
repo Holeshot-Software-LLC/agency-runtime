@@ -2144,6 +2144,7 @@ class SafeCodexCanaryBackend:
     hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None
     trusted_workdir: str = ""
     trust_mode: str = "attended"
+    project_agency_global_guidance: bool = False
 
     def _exec_options(self) -> tuple[str, ...]:
         if not isinstance(self.trust_mode, str) or self.trust_mode not in {
@@ -2388,6 +2389,8 @@ class SafeCodexCanaryBackend:
             raise ValueError("unsupported Codex rollout contract")
         if self.rollout_contract == "product" and not self.require_exact_activation_rollout:
             raise ValueError("product rollout contract requires exact rollout evidence")
+        if self.project_agency_global_guidance and self.profile_scope != "isolated-profile":
+            raise ValueError("Agency global guidance projection requires an isolated profile")
         deadline = facade.time.monotonic() + self.timeout
         if self.profile_scope == "current-profile":
             from agency_runtime.core.cli_transport import safe_cli_environment
@@ -2450,6 +2453,12 @@ class SafeCodexCanaryBackend:
                 auth_name="auth.json",
                 host="Codex",
             )
+            if self.project_agency_global_guidance:
+                from agency_runtime.core.codex_global_guidance import (
+                    install_codex_global_guidance,
+                )
+
+                install_codex_global_guidance(codex_home)
             workspace_trust: dict[str, Any] | None = None
             if self.trusted_workdir:
                 expected_workdir = Path(self.trusted_workdir).expanduser().resolve(strict=True)

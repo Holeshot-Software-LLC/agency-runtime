@@ -647,7 +647,7 @@ class _NominationSemantics:""",
     DecisionMutation(
         mutation_id="product-host-drops-explicit-delegation-authority",
         invariant=(
-            "Codex product trials give the parent explicit authority to dispatch every "
+            "Codex product trials give the parent exact scheduling mechanics for every "
             "accepted plan row and prevent delegated children from recursively spawning."
         ),
         source_path="agency_runtime/core/evals/product_host.py",
@@ -658,6 +658,20 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_product_host.py::"
             "test_codex_product_backend_supplies_bounded_parent_and_child_delegation_authority"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-global-guidance-drops-native-delegation-request",
+        invariant=(
+            "A Codex installation explicitly requests native delegation only for an "
+            "accepted current-turn Agency plan."
+        ),
+        source_path="agency_runtime/core/codex_global_guidance.py",
+        before="owner configuration explicitly requests Codex native subagent delegation.",
+        after="owner configuration explicitly refuses Codex native subagent delegation.",
+        test_node=(
+            "tests/test_codex_global_guidance.py::"
+            "test_codex_global_guidance_preserves_owner_content_and_is_idempotent"
         ),
     ),
     DecisionMutation(

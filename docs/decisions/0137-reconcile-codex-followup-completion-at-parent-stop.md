@@ -91,6 +91,10 @@ validation, repo-wide Ruff lint and format, every routing threshold, and 90 of
 90 killed decision mutations with zero survivors or invalid results and
 unchanged source.
 
+[PR 232](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/232)
+merges the reviewed package as exact commit
+`b2be07758737b8e89a98aa0b0e03cecd6eb68c83`.
+
 ## Alternatives
 
 - **Wait for a second `SubagentStop`.** Rejected because two immutable live

@@ -853,6 +853,21 @@ def plan_agent_adapter(
     gateway_gate: dict[str, Any] | None = None
     plan_ok = True
     exit_code = 0
+    global_guidance: dict[str, Any] | None = None
+    if host == "codex":
+        try:
+            global_guidance = _dispatch(
+                "_plan_codex_global_guidance",
+                _host_root("codex", home_dir=home_dir),
+            )
+        except Exception as exc:
+            global_guidance = {
+                "status": "blocked",
+                "changed": False,
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+            plan_ok = False
+            exit_code = 1
     if host == "openclaw" and executable:
         if _can_execute_native(home_dir=home_dir, command_runner=command_runner):
             live, probe = _openclaw_gateway_live(
@@ -891,5 +906,6 @@ def plan_agent_adapter(
         "config_mutations_will_run": host == "zcode" and (root_exists or current_root),
         "native_command_plan": command_plan,
         "gateway_safety_gate": gateway_gate,
+        "global_guidance": global_guidance,
         "restart_policy": "never automatic; OpenClaw install pauses when a live gateway is proven",
     }

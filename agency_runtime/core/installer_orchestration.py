@@ -592,6 +592,26 @@ def _install_agent_adapter_unlocked(
         filesystem,
         home_dir=home_dir,
     )
+    if host == "codex":
+        try:
+            guidance = _dispatch(
+                "_install_codex_global_guidance",
+                _dispatch("_host_root", "codex", home_dir=home_dir),
+            )
+        except Exception as exc:
+            failed = _registration_failure_result(result, host, [], "global_guidance")
+            failed["error"] = (
+                f"Codex delegation guidance installation failed: {type(exc).__name__}: {exc}"
+            )
+            failed["recovery"] = (
+                "Restore a safe Codex global AGENTS file, then rerun install; the staged "
+                "Agency bundle remains reversible."
+            )
+            return failed
+        result["global_guidance"] = guidance
+        if guidance.get("changed") is True:
+            result["changed"] = True
+
     staged = _staged_install_result(
         result,
         host,
@@ -939,6 +959,28 @@ def _rollback_agent_adapter_unlocked(
         displaced,
         home_dir=home_dir,
     )
+    if host == "codex":
+        try:
+            guidance = _dispatch(
+                "_install_codex_global_guidance",
+                _dispatch("_host_root", "codex", home_dir=home_dir),
+            )
+        except Exception as exc:
+            result.update(
+                {
+                    "ok": False,
+                    "exit_code": 1,
+                    "partial": True,
+                    "failed_step": "global_guidance",
+                    "maturity": "filesystem-restored-native-unverified",
+                    "error": (
+                        "Filesystem rollback succeeded, but Codex delegation guidance "
+                        f"installation failed: {type(exc).__name__}: {exc}"
+                    ),
+                }
+            )
+            return result
+        result["global_guidance"] = guidance
     return _refresh_rollback_registration(
         result,
         host,

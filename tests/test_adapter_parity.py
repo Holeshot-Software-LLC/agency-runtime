@@ -822,6 +822,9 @@ def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
     if host == "codex":
         assert manifest["hooks"] == "./hooks/hooks.json"
         assert manifest["interface"]["defaultPrompt"]
+        global_guidance = (tmp_path / ".codex" / "AGENTS.md").read_text(encoding="utf-8")
+        assert "[AGENCY DELEGATION PLAN]" in global_guidance
+        assert "explicitly requests Codex native subagent delegation" in global_guidance
     assert "UserPromptSubmit" in hooks["hooks"]
     for event, registrations in hooks["hooks"].items():
         command = registrations[0]["hooks"][0]

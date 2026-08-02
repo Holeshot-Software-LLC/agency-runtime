@@ -24,6 +24,7 @@ related:
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
   - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
+  - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -225,16 +226,88 @@ pass; routing passes every threshold. Decision conformance passes its
 invalid results, unchanged source, and 938.2 seconds total command time. Four
 new mutations independently prove the parent-`Stop` call, final-response
 requirement, execution-before-response order, and execution-inside-second-turn
-boundary. PR, merge, immutable install, and the one fresh activation remain.
+boundary. Publication and install evidence follow below; the one fresh
+activation remains.
+
+[PR 232](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/232)
+has no review threads, comments, or reviews and merges the exact locally green
+tree as `b2be07758737b8e89a98aa0b0e03cecd6eb68c83`. The global uv tool's
+`direct_url.json` independently reports that exact requested revision and
+commit ID. Bare full-suite install refreshes Codex to bundle digest
+`e314ab3c4c8488a09e127928afda957bdd534e874ebfa26a2117f7f39a1cef0c`,
+registers and enables ZCode, and installs and restarts an active reachable
+dashboard. Its partial result is solely Codex `activation_required`; the one
+fresh autonomous activation remains unspent.
+
+The one `b2be077` activation is now consumed and passes. Session
+`019fbfd8-bb78-7683-9d6e-2a4c2d7f4b60`, trace
+`019fbfd8-c7ec-77b0-aaac-9111ad12dd18`, run
+`ee965317-6bf8-41a9-8ee1-0b29d2462e96`, route
+`fe21a189-35fa-4599-b214-d9210f776994`, finalization
+`3fc23768-c5ac-4126-bcae-61eb0a17e98d`, delegation
+`8b17ef05-3cd3-4e4d-ba30-3a1cfd6706a6`, and child
+`019fbfd9-8678-7ec0-a4a7-beb1265ff15b` retain the exact proof. Inference
+selects and loads `code-reviewer`; one spawn, one follow-up, and two waits have
+no unexpected items. The Store records the exact execution dispatch and closes
+the worker with `ended_at`, exit code zero, completed delegation, and accepted
+finalization. The first header is valid with zero corrections. Autonomous trust
+bypass is proven, persistent profile state is unchanged, and install reports
+`complete: true`.
+
+The one `b2be077` product trial `ar223-b2be077-readme-01` is now consumed and
+fails at the parent launch boundary. Session
+`019fbfdf-0069-7f73-a2fc-9879f8336ab3`, trace
+`019fbfdf-00fa-76c2-983b-24d40ef327a5`, run
+`c77ede95-d8da-446e-8503-f4b19dc8b0d6`, route
+`37d9b5bc-2610-4ebe-b5dd-616c0036bcc0`, and finalization
+`3b0bed95-5875-4437-b350-41aa88436b13` retain the exact failure. Inference
+accepts an eight-unit team of onboarding, Python CLI architecture,
+implementation, testing, documentation, code review, test analysis, and
+application-security specialists. The Codex parent then emits zero spawns,
+follow-ups, waits, specialist loads, or workers; the isolated workspace stays
+empty. The evaluator correctly reports `codex_parent_spawn_missing` and
+`workspace_write_not_proven`, with no final header and zero corrections. The
+trial is terminal and must not be rerun.
+
+ADR-0126 placed exact product-delegation authority in Codex developer
+instructions after an older host rejected hook context alone. Current Codex
+delegates when the user asks or applicable `AGENTS.md` or skill instructions
+request it. Hook output is extra developer context. A real broad-skill probe
+adds a parent shell read and still reports `Skills loaded: none`, so that path
+would be both invalid in the product harness and untraceable. The bounded repair
+instead installs a marked global `AGENTS.md` or active override block that
+requests exact inference-owned delegation; the product wrapper remains an
+ordinary user request and projects the same canonical block.
+
+The bounded implementation now installs one marked block in the active Codex
+global guidance file, creates a missing fresh-container profile safely, exposes
+the write in dry-run output, projects the exact renderer into the isolated
+product profile, restores it on rollback, and removes only its own markers on
+uninstall. It preserves owner content and rejects malformed, linked, non-UTF-8,
+or oversized guidance. The broader focused run passes 248 tests; the final
+targeted rerun passes 21; repository Ruff checks pass; documentation validation
+covers 629 files; and the new decision mutation is killed 1/1. Two review passes
+are closed. This focused evidence did not yet prove the named gate or a newly
+installed live build.
+
+Clean recovery head `9f391b8` closes the complete named local gate. Metadata,
+policy, worklog, and 629-document validation pass; Ruff checks and formatting
+cover 609 files; the Python production spine passes 657 tests with 6 skipped;
+the dashboard passes 110/110; every routing threshold passes; and full decision
+conformance passes with all 91 mutations killed, zero survived or invalid
+results, and the source checkout unchanged. This remains local-build evidence,
+not installed runtime or product proof.
 
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
    proof that the assigned work unit executed.
-2. Adapt the product parent protocol to the current Codex V2 actionable-task
-   boundary without permitting retries or duplicate work. Bind the one
+2. Put exact plan-execution authorization at both current Codex boundaries: the
+   installed global guidance requests delegation only for an accepted inferred
+   plan, while the existing marker-scoped developer protocol schedules it.
+   Neither boundary may name or select a worker before inference. Bind each
    actionable delivery to the exact spawned child, native task name, work-unit
-   ID, decoded goal hash, and accepted plan row.
+   ID, decoded goal hash, and accepted row.
 3. Require a causal terminal child completion after that delivery. Reject
    missing, duplicate, reordered, cross-child, malformed, or unbounded task
    messages without retaining task or response content.
@@ -262,8 +335,8 @@ accepted plan authority.
   hash; all malformed variants fail closed.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
-- [x] Focused checks, at most two review passes, and the named local fast gate
-  pass on one exact head.
+- [x] Focused checks, two review passes, and the named local fast gate pass on
+  clean recovery head `9f391b8`.
 - [ ] One new exact build passes autonomous activation and one fresh product
   trial with real specialist-created artifacts, independent checks, a valid
   first header, and zero corrections.

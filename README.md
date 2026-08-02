@@ -468,6 +468,16 @@ configuration and control authority. Hook, MCP, and broker credentials remain
 read-only. See
 [ADR-0117](docs/decisions/0117-unify-owner-control-authority.md).
 
+For Codex, installation also adds one bounded Agency-managed block to the
+active global `~/.codex/AGENTS.override.md` when that file is nonempty, or to
+`~/.codex/AGENTS.md` otherwise. This is the durable owner request that lets an
+ordinary prompt dispatch every inference-accepted `[AGENCY DELEGATION PLAN]`
+row without adding "use subagents" to the prompt. It never selects or names a
+specialist, never changes repository `AGENTS.md` files, preserves all owner
+content outside its markers, and is idempotent. Codex uninstall removes only
+that managed block. See
+[ADR-0138](docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md).
+
 Release artifacts remain canonical and reject executable names or structurally
 valid PE payloads under disguised names. The Windows and portable wheel profiles
 contain the same Python package payload; platform metadata remains explicit.

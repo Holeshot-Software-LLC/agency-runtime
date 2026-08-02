@@ -12,6 +12,7 @@ import pytest
 
 from agency_runtime.core import installer_uninstall as uninstall_subject
 from agency_runtime.core import prepared_host_uninstall as prepared
+from agency_runtime.core.codex_global_guidance import install_codex_global_guidance
 from agency_runtime.core.installer import (
     INSTALL_MANIFEST,
     _host_root,
@@ -369,6 +370,11 @@ def test_prepared_uninstall_uses_canonical_transition_and_deterministic_retentio
     del private_installer_launcher
     installed = _stage_owned_bundle(host, tmp_path)
     target = Path(installed["target"])
+    codex_agents: Path | None = None
+    if host == "codex":
+        codex_agents = tmp_path / ".codex" / "AGENTS.md"
+        codex_agents.write_text("# Owner guidance\n", encoding="utf-8")
+        install_codex_global_guidance(tmp_path / ".codex")
     runner = UninstallNativeRunner(host, target)
     before = _tree_snapshot(tmp_path)
 
@@ -417,6 +423,9 @@ def test_prepared_uninstall_uses_canonical_transition_and_deterministic_retentio
     assert str(retained) in result["recovery"]
     assert target.exists() is False
     assert (retained / INSTALL_MANIFEST).is_file()
+    if codex_agents is not None:
+        assert result["global_guidance"]["status"] == "removed"
+        assert codex_agents.read_text(encoding="utf-8") == "# Owner guidance\n"
     if host == "openclaw":
         assert runner.openclaw_inspect_count >= 3
         assert any(command[-1] == "--force" for command in runner.mutation_commands)

@@ -336,6 +336,7 @@ def _codex_product_backend(
         hook_event_diagnostics=master_enabled,
         trusted_workdir=str(workspace.resolve(strict=True)),
         trust_mode="autonomous_bypass",
+        project_agency_global_guidance=True,
     )
 
 

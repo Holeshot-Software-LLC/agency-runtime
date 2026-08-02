@@ -1073,6 +1073,7 @@ def test_codex_product_backend_persists_parent_and_correlates_exact_rollout(
     assert backend.require_exact_activation_rollout is True
     assert backend.rollout_contract == "product"
     assert backend.trust_mode == "autonomous_bypass"
+    assert backend.project_agency_global_guidance is True
 
 
 def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_authority(

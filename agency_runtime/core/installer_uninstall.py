@@ -1470,6 +1470,29 @@ def _commit_agent_uninstall(  # noqa: C901 - ordered fail-closed host transactio
         )
         return result
 
+    if host == "codex":
+        try:
+            guidance = _dispatch(
+                "_remove_codex_global_guidance",
+                _dispatch("_host_root", "codex", home_dir=home_dir),
+            )
+        except Exception as exc:
+            result.update(
+                {
+                    "status": "partial_failure",
+                    "failed_step": "global_guidance_remove",
+                    "error": (
+                        "Native detachment succeeded, but Codex delegation guidance "
+                        f"could not be removed: {type(exc).__name__}: {exc}"
+                    ),
+                    "restart_required": native_changed,
+                }
+            )
+            return result
+        result["global_guidance"] = guidance
+        if guidance.get("changed") is True:
+            result["changed"] = True
+
     try:
         retirement = _retire_owned_target(
             host,

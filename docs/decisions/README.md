@@ -199,13 +199,14 @@ Status meanings:
 | [ADR-0119](0119-separate-native-trust-modes-from-activation-proof.md) | Separate native trust modes from activation proof | Accepted |
 | [ADR-0124](0124-grade-product-trials-against-the-inferred-unit-graph.md) | Grade product trials against the inferred unit graph | Superseded |
 | [ADR-0125](0125-admit-only-exact-content-free-codex-host-notices.md) | Admit only exact content-free Codex host notices | Accepted |
-| [ADR-0126](0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md) | Authorize exact product delegation at the Codex developer boundary | Accepted |
+| [ADR-0126](0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md) | Authorize exact product delegation at the Codex developer boundary | Superseded |
 | [ADR-0127](0127-bind-opaque-codex-children-through-exact-plan-labels.md) | Bind opaque Codex children through exact plan labels | Superseded |
 | [ADR-0128](0128-persist-exact-codex-plan-authority-and-serialize-launches.md) | Persist exact Codex plan authority and serialize opaque launches | Accepted |
 | [ADR-0133](0133-treat-product-specialist-loads-as-turn-scoped.md) | Treat product specialist loads as turn-scoped | Accepted |
 | [ADR-0135](0135-require-explicit-codex-child-execution-turns.md) | Require explicit Codex child execution turns | Superseded |
 | [ADR-0136](0136-bind-opaque-codex-execution-by-ciphertext-identity.md) | Bind opaque Codex execution by ciphertext identity | Accepted |
 | [ADR-0137](0137-reconcile-codex-followup-completion-at-parent-stop.md) | Reconcile Codex follow-up completion at parent Stop | Accepted |
+| [ADR-0138](0138-request-automatic-codex-delegation-through-managed-global-guidance.md) | Request automatic Codex delegation through managed global guidance | Accepted |
 
 ## Documentation governance
 

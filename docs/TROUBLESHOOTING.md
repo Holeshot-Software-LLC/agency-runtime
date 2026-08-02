@@ -301,6 +301,13 @@ missing, changed, or rejected, installation remains incomplete and prints the
 same resumable steps. An isolated-profile canary is useful for package testing
 but cannot establish normal-profile readiness.
 
+The Codex install result also includes `global_guidance`. Agency writes one
+marked delegation-request block to the active global `AGENTS.override.md` or
+`AGENTS.md`; it does not modify a repository's instructions. If installation
+fails at `global_guidance`, repair the reported unsafe, malformed, non-UTF-8, or
+oversized global file and rerun install. Uninstall removes only Agency's marked
+block and preserves all other owner guidance.
+
 For an owner-controlled fresh container or other disposable environment where
 no person can approve hook hashes, use the explicit autonomous transaction:
 

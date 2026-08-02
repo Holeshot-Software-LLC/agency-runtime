@@ -1,9 +1,9 @@
 ---
 title: "Authorize exact product delegation at the Codex developer boundary"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-31
-updated: 2026-07-31
+updated: 2026-08-01
 tags: [codex, product, delegation, authority, security, evaluation]
 related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
@@ -12,9 +12,10 @@ related:
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - docs/decisions/0124-grade-product-trials-against-the-inferred-unit-graph.md
   - docs/decisions/0127-bind-opaque-codex-children-through-exact-plan-labels.md
+  - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
 id: ADR-0126
 type: decision
 deciders: [maintainers]

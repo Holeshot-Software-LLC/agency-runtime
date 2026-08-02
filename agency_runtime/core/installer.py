@@ -30,6 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core import codex_global_guidance as _codex_guidance
 from agency_runtime.core import (
     installer_filesystem as _filesystem,
 )
@@ -123,6 +124,10 @@ _agency_control_skill = _payloads.agency_control_skill
 _openclaw_index = _payloads.openclaw_index
 _codex_plugin_version = _payloads.codex_plugin_version
 _bundle_files = _payloads.bundle_files
+_install_codex_global_guidance = _codex_guidance.install_codex_global_guidance
+_plan_codex_global_guidance = _codex_guidance.plan_codex_global_guidance
+_remove_codex_global_guidance = _codex_guidance.remove_codex_global_guidance
+_render_codex_global_guidance = _codex_guidance.render_codex_global_guidance
 
 # Transactional filesystem compatibility surface.
 _safe_relative = _filesystem.safe_relative

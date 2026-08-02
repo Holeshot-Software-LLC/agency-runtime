@@ -514,6 +514,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5849ff6` | 2026-08-01 | docs(ar-223): record missing second Codex stop | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `62ea12a` | 2026-08-01 | fix(ar-223): reconcile Codex completion at parent stop | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `34e36c0` | 2026-08-01 | docs(ar-223): record green parent-stop gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `b2be077` | 2026-08-01 | Merge pull request #232 from Holeshot-Software-LLC/codex/ar-223-post-merge-live-proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `614a1a7` | 2026-08-01 | docs(ar-223): checkpoint installed parent-stop merge | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `48aa370` | 2026-08-01 | docs(ar-223): record green parent-stop activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `c109b92` | 2026-08-01 | docs(ar-223): checkpoint product parent authority failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `730bd03` | 2026-08-01 | fix(ar-223): install Codex delegation guidance | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `dbf4e0c` | 2026-08-01 | docs(ar-223): record green Codex guidance gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

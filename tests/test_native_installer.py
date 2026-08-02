@@ -865,7 +865,30 @@ def test_dry_run_is_a_write_free_complete_plan(tmp_path: Path) -> None:
     assert plan["ok"] is True
     assert plan["dry_run"] is True
     assert plan["commands_will_run"] is True
+    assert plan["global_guidance"]["status"] == "planned"
+    assert plan["global_guidance"]["changed"] is True
+    assert plan["global_guidance"]["path"] == str(tmp_path / ".codex" / "AGENTS.md")
     assert ".agents/plugins/marketplace.json" in plan["filesystem"]["owned_files"]
+    assert not (tmp_path / ".agency-runtime").exists()
+    assert not (tmp_path / ".codex").exists()
+
+
+def test_codex_dry_run_reports_malformed_global_guidance_without_writing(
+    tmp_path: Path,
+) -> None:
+    codex_home = tmp_path / ".codex"
+    codex_home.mkdir()
+    agents = codex_home / "AGENTS.md"
+    original = "<!-- agency-runtime:codex-delegation:begin -->\ntruncated\n"
+    agents.write_text(original, encoding="utf-8")
+
+    plan = plan_agent_adapter("codex", home_dir=tmp_path, binary_resolver=_resolver("codex"))
+
+    assert plan["ok"] is False
+    assert plan["exit_code"] == 1
+    assert plan["global_guidance"]["status"] == "blocked"
+    assert "malformed managed boundary" in plan["global_guidance"]["error"]
+    assert agents.read_text(encoding="utf-8") == original
     assert not (tmp_path / ".agency-runtime").exists()
 
 
@@ -1743,6 +1766,15 @@ def test_rollback_refreshes_codex_native_cache_when_runner_is_available(
         binary_resolver=_resolver("codex"),
         command_runner=runner,
     )
+    from agency_runtime.core.codex_global_guidance import (
+        CODEX_GUIDANCE_BEGIN,
+        remove_codex_global_guidance,
+    )
+
+    remove_codex_global_guidance(tmp_path / ".codex")
+    assert CODEX_GUIDANCE_BEGIN not in (tmp_path / ".codex" / "AGENTS.md").read_text(
+        encoding="utf-8"
+    )
 
     result = rollback_agent_adapter(
         "codex",
@@ -1754,6 +1786,8 @@ def test_rollback_refreshes_codex_native_cache_when_runner_is_available(
 
     assert result["ok"] is True
     assert result["native_refreshed"] is True
+    assert result["global_guidance"]["status"] == "installed"
+    assert CODEX_GUIDANCE_BEGIN in (tmp_path / ".codex" / "AGENTS.md").read_text(encoding="utf-8")
     step_names = [step["name"] for step in result["native_steps"]]
     assert "plugin_remove_for_refresh" in step_names
     assert "plugin_add" in step_names

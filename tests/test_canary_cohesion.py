@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 
 from agency_runtime.core import canary
+from agency_runtime.core.codex_global_guidance import render_codex_global_guidance
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -153,6 +154,56 @@ def test_isolated_codex_activation_canary_marks_existing_store_contract(
     backend.execute(task="nonce-bound canary", workdir=str(tmp_path))
 
     assert calls[-1]["env"]["AGENCY_CANARY_REQUIRE_EXISTING_STORE"] == "1"
+
+
+def test_isolated_codex_product_profile_projects_exact_global_guidance(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    observed: list[str] = []
+
+    def prepare(runtime_home: Path, **_kwargs: Any) -> Path:
+        codex_home = runtime_home / "codex"
+        codex_home.mkdir()
+        return codex_home
+
+    def runner(_argv: list[str], **kwargs: Any) -> SimpleNamespace:
+        codex_home = Path(kwargs["env"]["CODEX_HOME"])
+        observed.append((codex_home / "AGENTS.md").read_text(encoding="utf-8"))
+        return _process_result()
+
+    monkeypatch.setattr(canary, "_prepare_private_host_home", prepare)
+    monkeypatch.setattr(canary, "_isolated_canary_environment", lambda *_args: {})
+    monkeypatch.setattr(
+        canary,
+        "_project_isolated_runtime_control",
+        lambda *_args, **_kwargs: {"enabled": True},
+    )
+    monkeypatch.setattr(
+        canary._SafeCodexCanaryBackend,
+        "_install_plugin",
+        lambda _self, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        canary._SafeCodexCanaryBackend,
+        "_verify_plugin",
+        lambda _self, **_kwargs: None,
+    )
+    guidance = render_codex_global_guidance()
+    backend = canary._SafeCodexCanaryBackend(
+        executable="codex",
+        db_path=tmp_path / "agency.db",
+        timeout=10.0,
+        marketplace=tmp_path / "marketplace",
+        auth_source=tmp_path / "auth.json",
+        process_runner=runner,
+        source_env={},
+        project_agency_global_guidance=True,
+    )
+
+    backend.execute(task="product request", workdir=str(tmp_path))
+
+    assert observed == [guidance]
 
 
 def test_claude_auth_preparation_consumes_the_same_execution_budget(
