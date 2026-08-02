@@ -298,6 +298,60 @@ conformance passes with all 91 mutations killed, zero survived or invalid
 results, and the source checkout unchanged. This remains local-build evidence,
 not installed runtime or product proof.
 
+PR 233 merges exact `8097e7708a52956862746ea3aa5b2fecbe7031ed`. The global
+uv `direct_url.json` receipt and `agency version --json` both name that exact
+revision. Bare suite installation refreshes Codex with bundle digest
+`a9aa4f7e5bee9ddc575d7358e3d6e5e8f1cbb5bd71884d033d53a216d9278b83`,
+registers and enables ZCode, and installs an active reachable dashboard. The
+installed `C:\Users\lucas\.codex\AGENTS.md` is byte-equal to the canonical
+1,123-byte renderer and contains exactly one begin and one end marker. Codex
+registration succeeds and truthfully remains `activation-required`; this
+installation consumes neither the activation nor product live-evidence slot.
+
+The exact installed build consumes one autonomous-bypass activation and exits
+zero. Session `019fc036-6716-76a1-a39e-8bf44a0ba502`, trace
+`019fc036-733e-7653-9d49-28683b815d4e`, and native run
+`codex-agent:019fc037-8811-78e0-94b9-2e167c75aa4a` prove the accepted inferred
+`code-reviewer` route, one plan, one spawn, one execution follow-up, two waits,
+one specialist load, a completed exit-zero worker, and an accepted
+finalization. The first header is valid, correction count and unexpected-item
+count are both zero, trust bypass is used, and the persistent profile is
+unchanged. The fresh product slot remains unconsumed.
+
+Product trial `ar223-8097e77-readme-01` is now consumed and fails after 104.094
+seconds. Session `019fc03e-1ce0-7b01-ad08-3b80c65c2ec2`, trace
+`019fc03e-1d71-7be0-aa0f-918623d2014e`, run
+`c100183d-6b38-45db-adc8-fb4258c432fe`, route
+`52f57ced-a4e2-4b6d-9f5a-9d3be4c9c6d6`, and finalization
+`bd418651-542f-42db-a0a0-7e4c4b35ce82` prove an accepted 11-unit inferred plan
+across `codebase-onboarding-engineer`, `python-cli-architecture-specialist`,
+`python-application-engineer`, `software-test-engineer`, `code-reviewer`,
+`test-results-analyzer`, and `technical-writer`. The parent rollout is observed
+but makes zero spawns, follow-ups, or waits; no specialist loads, activation
+receipts, or workers exist; the workspace remains empty; and no header is
+produced. The terminal reasons are `codex_parent_spawn_missing` and
+`workspace_write_not_proven`; correction count is zero. This build and trial
+must not be rerun.
+
+The missing edge is now isolated to current Codex's command-hook spill policy,
+not inference or global-guidance loading. Codex defaults `additionalContext` to
+an approximate 2,500-token model-visible threshold and spills larger output to
+disk. The one-row activation plan fits; the product's 11-row exact plan does
+not. Because the parent is collaboration-only, it cannot read the spill path
+and must not reconstruct missing rows. The bounded repair sets the supported
+`additionalContextLimit: 0` only on Codex `UserPromptSubmit`; Agency's existing
+32,000-character context ceiling remains enforced. Bundle generation and smoke
+validation bind the field. The focused installer, adapter-parity, and smoke set
+passes 200 tests; targeted Ruff lint and format checks pass.
+
+Clean recovery head `7327483` closes the complete named local gate for this
+repair. Metadata, policy, worklog, and 629-document validation pass; Ruff lint
+and format cover 609 files; the Python production spine passes 657 tests with 6
+skipped; the dashboard passes 110/110; every routing threshold passes; decision
+conformance kills every registered mutation with zero survived or invalid
+results; and the source checkout remains unchanged. The next boundary is one
+new immutable build, one autonomous activation, and one fresh product trial.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -335,8 +389,11 @@ accepted plan authority.
   hash; all malformed variants fail closed.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
-- [x] Focused checks, two review passes, and the named local fast gate pass on
-  clean recovery head `9f391b8`.
+- [x] Focused checks, bounded review, and the complete named local gate pass on
+  clean recovery head `7327483`.
+- [x] The generated Codex `UserPromptSubmit` handler keeps the complete bounded
+  inferred plan inline instead of spilling it outside the parent's allowed
+  tool boundary.
 - [ ] One new exact build passes autonomous activation and one fresh product
   trial with real specialist-created artifacts, independent checks, a valid
   first header, and zero corrections.

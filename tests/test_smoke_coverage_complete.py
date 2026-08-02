@@ -311,6 +311,20 @@ def test_codex_marketplace_smoke_rejects_invalid_handler_schema(
         smoke._smoke_marketplace_bundle("codex", manifest)
 
 
+def test_codex_marketplace_smoke_rejects_spilled_user_prompt_plan(
+    tmp_path: Path,
+    private_installer_launcher,
+) -> None:
+    _home, manifest = _marketplace_bundle(tmp_path / "context-limit")
+    path = manifest.parents[1] / "hooks" / "hooks.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["hooks"]["UserPromptSubmit"][0]["hooks"][0].pop("additionalContextLimit")
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="preserve the complete plan"):
+        smoke._smoke_marketplace_bundle("codex", manifest)
+
+
 def test_marketplace_smoke_rejects_skill_and_mcp_contracts(
     tmp_path: Path,
     private_installer_launcher,

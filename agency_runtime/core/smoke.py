@@ -254,6 +254,8 @@ def _validate_codex_hooks(hooks: Any) -> list[str]:
             raise RuntimeError(f"Codex {event} hook timeout is invalid")
         if handler.get("type") != "command" or handler.get("async") is not False:
             raise RuntimeError(f"Codex {event} hook must be a synchronous command handler")
+        if event == "UserPromptSubmit" and handler.get("additionalContextLimit") != 0:
+            raise RuntimeError("Codex UserPromptSubmit hook must preserve the complete plan")
         command = handler.get("command")
         command_windows = handler.get("commandWindows")
         if not (

@@ -255,7 +255,7 @@ def codex_hooks(
             *_config_args(config_path),
             *_runtime_control_args(runtime_control_path_value),
         )
-        return {
+        result = {
             "type": "command",
             "command": command,
             "commandWindows": command_windows,
@@ -263,6 +263,11 @@ def codex_hooks(
             "timeout": timeout_seconds,
             "statusMessage": status_message,
         }
+        if event == "UserPromptSubmit":
+            # Agency bounds the plan to 32,000 characters and the final hook
+            # output to 48,000. Codex's 2,500-token default would spill it.
+            result["additionalContextLimit"] = 0
+        return result
 
     hooks = {
         "SessionStart": [{"hooks": [handler("SessionStart", "Loading Agency Runtime managers")]}],

@@ -47,8 +47,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: b2be07758737b8e89a98aa0b0e03cecd6eb68c83
-minimum_ledger_commit: 38c757eedb38713753028127ddc7edfdc96e0b9e
+evidence_commit: 8097e7708a52956862746ea3aa5b2fecbe7031ed
+minimum_ledger_commit: 73274832a0985c7817c991061ac839386deb7cc1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -75,6 +75,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   zero spawns, follow-ups, waits, loads, or workers. The workspace is empty;
   failure is `codex_parent_spawn_missing` / `workspace_write_not_proven` with
   no header and zero corrections.
+- Exact `8097e77` consumes one autonomous-bypass activation and passes. Session
+  `019fc036-6716`, trace `019fc036-733e`, native run
+  `codex-agent:019fc037-8811`, and delegation `f4f618db` prove an inferred
+  `code-reviewer`, one exact spawn, one execution follow-up, two waits, a
+  completed exit-zero worker, valid first header, zero corrections, and zero
+  unexpected parent items. Trust bypass changes no persistent profile state.
+- Product trial `ar223-8097e77-readme-01` is consumed and fails after 104.094
+  seconds. Session `019fc03e-1ce0`, trace `019fc03e-1d71`, run `c100183d`,
+  route `52f57ced`, and finalization `bd418651` prove an accepted 11-unit plan
+  across seven specialists. The parent rollout is observed, but it makes zero
+  spawns, follow-ups, or waits; no specialist loads or workers exist; the
+  workspace is empty; the header is absent; and correction count is zero.
 
 ## completed-evidence
 
@@ -93,16 +105,34 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   Markdown documents, repo-wide Ruff over 609 files, Python 657 passed with 6
   skipped, dashboard 110/110, every routing threshold, and decision conformance
   91/91 killed with zero survived or invalid results and source unchanged.
+- PR 233 merges exact `8097e7708a52956862746ea3aa5b2fecbe7031ed` and the
+  global uv receipt names that exact revision. Default-suite installation
+  refreshes Codex bundle `a9aa4f7e...`, registers/enables ZCode, and leaves the
+  dashboard active and reachable. Codex global guidance is byte-equal to the
+  canonical 1,123-byte renderer with one begin and one end marker. Codex is
+  installed; the build then passes its single autonomous activation with one route,
+  plan, delegation, load, worker, and finalization; no preflight failures; a
+  valid first header; and zero corrections. Its consumed product trial proves
+  an accepted 11-unit inferred graph and exact isolated trust, then fails
+  `codex_parent_spawn_missing` / `workspace_write_not_proven` before execution.
+- The first missing edge is Codex's default 2,500-token hook-context spill, not
+  selection or guidance loading. The one-row activation fits; the 11-row plan
+  spills beyond the collaboration-only parent. The repair sets
+  `additionalContextLimit: 0` only for Codex `UserPromptSubmit` while Agency's
+  32,000-character bound remains; focused checks pass 200 tests and Ruff.
+- Clean recovery head `7327483` passes the complete named local gate for that
+  repair: 629-document validation, Ruff over 609 files, Python 657 passed with
+  6 skipped, dashboard 110/110, every routing threshold, and conformance with
+  every mutation killed, none invalid, and source unchanged.
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `b2be077` passes activation, but its
-product parent never invokes collaboration. ADR-0126's developer instruction
-does not satisfy current Codex's user-or-applicable-instruction delegation gate.
-A broad-skill probe adds a forbidden parent shell read and remains untraceable.
-The managed global-guidance path now installs, plans, projects, uninstalls, and
-rolls back under focused tests and the complete named gate. It is not yet merged,
-installed into the current Codex profile, or proven by fresh live evidence.
+The README main story remains NO-GO. Exact `8097e77` must never be rerun. Its
+consumed product trial identifies one bounded host-delivery defect: Codex spills
+the exact multi-unit plan outside the parent's allowed tools. The manifest-only
+repair is complete and locally green. One new immutable build may now consume
+exactly one autonomous activation and one fresh product trial; either live
+failure is the stop point, not the start of another repair loop.
 
 ## same-task-continuity
 
@@ -114,10 +144,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Publish the already authorized PR, merge exact green head, and install that
-   exact merge into the current Codex, ZCode, and dashboard scope.
-2. Spend one fresh activation and at most one product trial. Never rerun the
-   consumed `b2be077` evidence.
+1. Merge and exact-install one immutable build; do not wait for hosted Actions.
+2. Run one autonomous activation, checkpoint its result, and run one fresh
+   product trial. Stop on either failure and report the exact blocker.
 
 ## verification
 
