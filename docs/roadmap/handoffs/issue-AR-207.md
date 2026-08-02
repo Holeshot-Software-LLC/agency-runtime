@@ -53,8 +53,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: be1ca0e69652645f4bf5be7a48a81de47a869821
-minimum_ledger_commit: be1ca0e69652645f4bf5be7a48a81de47a869821
+evidence_commit: d5a4e3190a49b94b47620a98c4c313a0f1518d04
+minimum_ledger_commit: d5a4e3190a49b94b47620a98c4c313a0f1518d04
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -63,59 +63,46 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
-- The goal remains `README's main story works in reality.` Repair `260865e`
-  makes accepted activation explicit tool and workspace proof for each native
-  child; ledger `be1ca0e` is the clean candidate.
+- The goal remains `README's main story works in reality.` Scoped repair
+  `a854e8e` requires a successful local patch receipt before a
+  `workspace_write` child can record success; ledger `d5a4e31` is consumed.
 - The complete named gate passes: 657 Python tests with 6 skips, 110 dashboard
-  tests, every routing threshold, 97/97 killed decision mutations with unchanged
+  tests, every routing threshold, 98/98 killed decision mutations with unchanged
   source, and every documentation, policy, Ruff, formatting, and diff check.
-- Exact `be1ca0e69652645f4bf5be7a48a81de47a869821` builds canonically and
+- Exact `d5a4e3190a49b94b47620a98c4c313a0f1518d04` builds canonically and
   independently verifies. Wheel SHA-256 is
-  `c707342bfb4392d89ae5f07d202cd7a0e73d1a7dfc52304c5d16e2b53ad9f519`;
+  `c00a2317ea7db20512701602a7920216a824b8bdab9166eacfe8bb7e76dfa0f2`;
   source SHA-256 is
-  `451c8a4286f1167d5f29788c3a415c47f979305b6172f038369b274e46a69dd1`.
+  `a58c47522306900189db5760a07dc199f61536336816e4529207804e01772d9f`.
 - Codex, ZCode, and the reachable dashboard install. The one activation proves
   inferred/loaded/delegated `code-reviewer`, a terminal exit-zero worker,
   accepted finalization, valid first header, zero corrections, and autonomous
   trust bypass without persistent profile change.
-- Writer `ar223-agency-writer-be1ca0e-01` is consumed `NO-GO` after 78.672s.
-  Inference selects/loads/delegates `minimal-change-engineer`; one spawn and one
-  wait complete exit zero; finalization and the first header pass with zero
-  corrections. Independent inspection finds zero workspace entries, so
-  `workspace_write_not_proven` is the sole failure. Do not retry `be1ca0e`.
-- Direct child `ar223-direct-native-child-01` already proves current Codex child
-  workspace-write capability. The explicit tool/workspace-proof hypothesis is
-  falsified; the remaining defect is inside Agency's delivered specialist turn
-  or its native execution boundary, not OS permission.
-- Retained comparison proves both launches use `fork_turns=none`: the direct
-  child records a successful workspace-local patch and byte verification while
-  the Agency child records zero tool calls. Agency was accepting lifecycle and
-  a nonblank final answer without a write receipt.
-- The bounded local repair now requires a successful child-turn
-  `patch_apply_end` entirely inside the exact workspace before a
-  `workspace_write` row can record `ok`. One native `SubagentStop` continuation
-  tells the child to execute; a repeated miss terminates, and parent-`Stop`
-  applies the same receipt gate. Product/v3 instructions require the exact
-  proof mutation without generic specialist expansion. Ninety-seven focused
-  tests plus targeted Ruff/format/diff checks pass. No build has been consumed.
+- Writer `ar223-agency-writer-d5a4e31-01` is consumed `NO-GO` after 85.844s.
+  Inference selects/loads/delegates `minimal-change-engineer`; projection shows
+  one spawn, one wait, one completed child, zero corrections, and a valid first
+  header. Receipt enforcement leaves the Store worker unended and delegation
+  incomplete, but parent finalization still records `accept/completed` with no
+  missing rows. Independent inspection finds zero workspace entries. Do not
+  retry `d5a4e31`.
 
 ## completed-evidence
 
-- Activation session `019fc29f-f8da-7360-8a1c-38cbe9a2f9fa`, trace
-  `019fc2a0-0584-7f71-a1eb-a54ed8ebf098`, and worker
-  `codex-agent:019fc2a0-f083-7712-a042-f70fed29bef8` retain the fresh pass.
-- Writer session `019fc2a3-1b73-7162-a10b-ab2b891a7876`, trace
-  `019fc2a3-1be8-7481-b08f-df6801a08964`, run
-  `00ffae19-8b6c-4217-846d-a7dc2fc4dfb1`, and worker
-  `codex-agent:019fc2a3-c2c3-7b32-b16e-f2dbb27d97ed` retain the failure.
+- Activation session `019fc2ef-4dbf-7a93-961d-8af333446b0c`, trace
+  `019fc2ef-5984-7103-bf17-8c51acf3927e`, and worker
+  `codex-agent:019fc2f0-4b31-71f1-beb9-ce135020b0d7` retain the fresh pass.
+- Writer session `019fc2f2-63f6-7a62-af0b-bdd4dbe9124e`, trace
+  `019fc2f2-6465-7df0-a093-621733808dab`, run
+  `7b18905e-0621-497e-9f8c-7ec79486420b`, and worker
+  `codex-agent:019fc2f3-1864-7840-b5d2-84edf35dd077` retain the failure.
 
 ## exact-blocker
 
-Build, install, activation, routing, delegation, first header, and zero
-corrections pass on consumed `be1ca0e`. Its delegated workspace execution
-failed because Agency accepted a zero-tool child. The scoped receipt repair is
-focused-green but unbuilt and not live-proven, so README remains `NO-GO` and
-header/dashboard/report work remains deferred.
+Build, install, activation, routing, selection, delegation projection, first
+header, and zero corrections pass on consumed `d5a4e31`. Receipt enforcement
+prevents false worker completion, but parent finalization still accepts the run
+with its writer delegation incomplete. Workspace execution remains unproven, so
+README remains `NO-GO` and unrelated surfaces stay deferred.
 
 ## same-task-continuity
 
@@ -127,11 +114,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Commit this focused-green receipt repair and its ledger checkpoint.
-2. Run the complete named local gate once.
-3. If green, build/install one new immutable candidate, run one autonomous
-   activation, and spend one fresh Agency writer proof. Stop at its first
-   failure; do not broaden or retry the build.
+1. Repair only the parent-finalization gate so an accepted `workspace_write`
+   row cannot finalize while its receipt-gated worker or delegation is incomplete.
+2. Run focused tests, the named gate, and at most one new immutable activation
+   plus writer proof. Never retry `d5a4e31` or broaden the package.
 
 ## verification
 
@@ -161,7 +147,7 @@ git diff --check
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
   activations; exact `b2be077` consumed both activation and product evidence;
   `ae322ec`, `bffd2c8`, `b6bcdfb`, `d4c65a7`, `4d14b99`, `93e465a`,
-  `d610630`, `7f0479f`, and `be1ca0e` consumed governed evidence;
+  `d610630`, `7f0479f`, `be1ca0e`, and `d5a4e31` consumed governed evidence;
   none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

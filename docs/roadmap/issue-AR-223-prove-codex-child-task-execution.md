@@ -895,7 +895,44 @@ miss terminates instead of looping. Parent-`Stop` reconciliation applies the
 same receipt requirement and cannot backfill a false success. Ninety-seven
 focused child-delivery, product-host, activation, and execution tests pass with
 warning-strict Pytest; targeted Ruff lint/format and `git diff --check` pass.
-No new build or live trial has been consumed for this repair.
+Clean ledger head `d5a4e3190a49b94b47620a98c4c313a0f1518d04` passes the
+complete named gate: metadata, policy, worklog, 635-document validation,
+repository-wide Ruff lint and formatting, 657 Python passes with 6 platform
+skips, 110 dashboard passes, every routing threshold, and 98/98 killed
+decision mutations with unchanged source. Its detached canonical build passes
+strict Twine metadata and independent distribution verification. Windows wheel
+SHA-256 is
+`c00a2317ea7db20512701602a7920216a824b8bdab9166eacfe8bb7e76dfa0f2`;
+source SHA-256 is
+`a58c47522306900189db5760a07dc199f61536336816e4529207804e01772d9f`.
+
+The exact wheel installs and bare autonomous installation refreshes only Codex,
+ZCode, and the reachable dashboard. Its one activation passes with session
+`019fc2ef-4dbf-7a93-961d-8af333446b0c`, trace
+`019fc2ef-5984-7103-bf17-8c51acf3927e`, and native worker
+`codex-agent:019fc2f0-4b31-71f1-beb9-ce135020b0d7`; trust bypass is proven and
+the persistent profile is unchanged.
+
+Writer sentinel `ar223-agency-writer-d5a4e31-01` is consumed and terminal
+`NO-GO` after 85.844 seconds. Prompt hash
+`sha256:1a02a85f8d35af52f983b4c3886c0aa5470b7613aa2bd2b9045261b719c66729`,
+session `019fc2f2-63f6-7a62-af0b-bdd4dbe9124e`, trace
+`019fc2f2-6465-7df0-a093-621733808dab`, route
+`4956e672-f132-49f2-9583-fa106d6a7890`, run
+`7b18905e-0621-497e-9f8c-7ec79486420b`, delegation
+`d69e1e22-bc7d-4a57-b094-dc093a2060e7`, finalization
+`72a85da5-2e31-49ef-ab13-2f178bedebdb`, and native child
+`codex-agent:019fc2f3-1864-7840-b5d2-84edf35dd077` retain the exact failure.
+Inference selects, loads, and delegates `minimal-change-engineer` for one
+`workspace_write` row; the product projection records one spawn, one wait, one
+completed child, zero failed children, zero unexpected items, a valid first
+header, and zero corrections. Receipt enforcement correctly leaves the Store
+worker unended and the delegation incomplete after no patch receipt, but the
+parent still records `accept/completed` with no missing rows. Independent
+inspection finds zero workspace entries. The remaining AR-223 defect is now
+only the parent-finalization boundary: it must reject an accepted
+`workspace_write` row whose receipt-gated worker/delegation is incomplete.
+Do not retry `d5a4e31`.
 
 ## Approach
 
