@@ -1001,9 +1001,12 @@ The v3 renderer put the exact execution instruction before the immutable
 arbitrary text and root-cause/test requirements as the newest instructions.
 ADR-0145 replaces that envelope with v4: the independently hash-verified
 specialist body remains unchanged, while a byte-exact, fail-closed execution
-suffix follows it and requires `apply_patch` for `workspace_write`. The focused
-hook, parser, rollout, child-execution, lint, formatting, and diff checks pass;
-no immutable build or writer trial has been consumed yet.
+suffix follows it and requires `apply_patch` for `workspace_write`. Exact
+implementation `c6c02d0` and ledger `cd142c4` pass 103 focused tests plus the
+complete named gate: 636-document validation, repository-wide Ruff/format, 657
+Python passes with 6 skips, 110 dashboard passes, every routing threshold, and
+100/100 killed decision mutations with a green baseline and unchanged source.
+No immutable build or writer trial has been consumed yet.
 
 ## Approach
 

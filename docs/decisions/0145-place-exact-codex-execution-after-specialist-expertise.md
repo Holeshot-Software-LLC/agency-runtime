@@ -51,6 +51,9 @@ generic instructions conflicted with the already accepted exact action.
 5. A `workspace_write` assignment continues to require a successful local
    `apply_patch` receipt before the child may report success.
 
+Implementation commit `c6c02d0` carries this decision; ledger `cd142c4`
+records its worklog and roadmap traceability.
+
 ## Consequences
 
 - Inference and the immutable specialist identity remain authoritative.

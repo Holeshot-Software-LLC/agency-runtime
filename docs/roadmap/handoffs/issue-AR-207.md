@@ -54,8 +54,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: c8a0577cd60124eb8e29199c214bbeec81677349
-minimum_ledger_commit: c8a0577cd60124eb8e29199c214bbeec81677349
+evidence_commit: c6c02d032111328a743715ab9e4541db457ed9c9
+minimum_ledger_commit: cd142c4b792b7cbf8216499d48875059a7e376c0
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -90,9 +90,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   writes with the same encrypted task transport and inherited workspace, while
   v3 left generic specialist refusal clauses after the exact action contract.
   ADR-0145 v4 keeps the specialist body hash-bound and places a byte-exact,
-  fail-closed execution suffix last. Ninety-one focused hook, parser, rollout,
-  and execution tests plus scoped Ruff and diff checks pass. No build or live
-  trial has been consumed for v4.
+  fail-closed execution suffix last. Exact implementation `c6c02d0` and ledger
+  `cd142c4` pass 103 focused tests and the complete named gate: 636-document
+  validation, repository-wide Ruff/format, 657 Python passes with 6 skips, 110
+  dashboard passes, every routing threshold, and 100/100 killed decision
+  mutations with a green baseline and unchanged source. No build or live trial
+  has been consumed for v4.
 
 ## completed-evidence
 
@@ -127,8 +130,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run the named fast gate and create the substantive plus ledger checkpoint.
-2. Build and install that one immutable candidate, prove activation, then spend
+1. Build and install the one immutable candidate from the clean gate checkpoint.
+2. Prove activation, then spend
    exactly one fresh Agency writer trial for the exact 23-byte file.
 3. Stop at the first failed gate. Never retry `c8a0577` or broaden this package.
 
