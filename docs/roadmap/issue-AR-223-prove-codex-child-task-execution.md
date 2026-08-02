@@ -600,6 +600,16 @@ persistent profile change. This attempt did not exercise ADR-0144 and cannot
 prove or disprove the callback-order repair; exact `d4c65a7` must not be
 retried and no writer sentinel ran.
 
+A bounded 2026-08-02 09:01 UTC diagnostic does not retry that activation. It
+uses the installed `d4c65a7` runtime, configured `codex-subscription` provider,
+and exact production planner schema. Account-aware discovery reports
+`gpt-5.6-luna` visible; the CLI returns `thread.started`, `turn.started`,
+`item.completed`, and `turn.completed` with exit zero in 23.3 seconds, and the
+runtime parses the required plan object. The earlier content-free failure is
+therefore not reproducible and remains unclassified rather than being assigned
+to recruiter acceptance without evidence. A fresh exact candidate, not a retry
+of `d4c65a7`, may proceed to the activation gate.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

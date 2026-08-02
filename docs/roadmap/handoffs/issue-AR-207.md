@@ -117,13 +117,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   before routing because `codex-subscription` returns no valid planner response.
   Session `019fc1a8-1217-70a0-83ca-bae1f67e008e`, trace
   `019fc1a8-1c0c-7193-861b-0d72f14b7fdc`; no correction or writer trial ran.
+- A bounded 2026-08-02 09:01 UTC diagnostic uses that installed build's exact
+  planner schema. Codex reports `gpt-5.6-luna` as account-visible, exits zero
+  with a complete structured turn, and Agency parses the response. The consumed
+  activation remains unclassified; the failure is not currently reproducible.
 
 ## exact-blocker
 
 The README main story remains NO-GO. ADR-0144 is locally green and installed,
-but `d4c65a7` fails before routing because workforce inference returns no valid
-planner response. The callback repair is therefore unexercised. Product
-artifacts, concise header, dashboard parity, and final report remain unproven.
+but `d4c65a7` was consumed by an unclassified planner transport failure before
+routing. Current exact-schema inference is healthy, so one fresh immutable
+candidate may attempt activation. Product artifacts, concise header, dashboard
+parity, and final report remain unproven.
 
 ## same-task-continuity
 
@@ -135,11 +140,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Diagnose the content-free `provider_no_valid_response` planner boundary
-   without retrying `d4c65a7`; distinguish provider availability from response
-   acceptance and change code only for a proven product defect.
-2. A later new exact build gets one activation; only a pass admits one Agency
-   writer sentinel, exact file proof, and zero corrections.
+1. Build and install one fresh exact candidate without changing the already
+   gated runtime, then consume its one permitted autonomous activation.
+2. Only an activation pass admits one Agency writer sentinel, exact file proof,
+   and zero corrections.
 
 ## verification
 
