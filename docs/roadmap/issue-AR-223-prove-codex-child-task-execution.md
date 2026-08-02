@@ -1147,6 +1147,22 @@ this trial supports no more specific cause. Under the stop-loss contract it was
 not patched or retried. The next slice must reproduce and repair only that
 wrapper boundary before building another candidate.
 
+Read-only reconstruction then found the exact product-boundary mismatch: Codex
+received `workspace-write` for the trial workspace while `TEMP`, `TMP`, and
+`TMPDIR` named a separate private runtime directory. The observed Windows
+wrapper rejects split writable-root sets. Product execution now rebases those
+three variables to the already verified exact workspace only for the Codex
+model invocation; plugin installation, authentication, and runtime setup retain
+their private temp directory. This keeps the repair inside the existing exact
+workspace authority and does not disable sandboxing. The focused product-host
+and Store slice passes 43 tests with warning strictness. The named Python spine
+passes 657 tests with six platform skips; 110 dashboard tests, repository-wide
+Ruff and format checks, documentation checks, and every routing threshold also
+pass. The unchanged-source decision-conformance CLI produced no verdict before
+either its 304-second control deadline or its one final 904-second deadline, so
+that optional mutation result is explicitly unknown and was not retried again.
+No build, install, activation, or live writer was consumed by this repair slice.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

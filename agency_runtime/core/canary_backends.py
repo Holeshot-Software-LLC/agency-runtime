@@ -2705,6 +2705,27 @@ class SafeCodexCanaryBackend:
                 raise ValueError("hook event diagnostics require the existing Agency store")
             env[CODEX_HOOK_EVENT_DIAGNOSTICS_ENV] = "1"
 
+    def _execution_environment(
+        self,
+        env: Mapping[str, str],
+        *,
+        workdir: str,
+    ) -> dict[str, str]:
+        """Keep product tool writes inside one exact workspace root."""
+
+        execution_env = dict(env)
+        if self.rollout_contract != "product":
+            return execution_env
+        if not self.trusted_workdir:
+            raise ValueError("product rollout requires one trusted workspace")
+        expected = Path(self.trusted_workdir).expanduser().resolve(strict=True)
+        actual = Path(workdir).expanduser().resolve(strict=True)
+        if expected != actual:
+            raise ValueError("product rollout changed its trusted workspace")
+        for name in ("TEMP", "TMP", "TMPDIR"):
+            execution_env[name] = str(actual)
+        return execution_env
+
     def _verify_current_profile_hook_trust(
         self,
         *,
@@ -2947,7 +2968,7 @@ class SafeCodexCanaryBackend:
                 ],
                 timeout=timeout,
                 cwd=workdir,
-                env=env,
+                env=self._execution_environment(env, workdir=workdir),
                 input_text=task,
                 max_output_chars=256_000,
             )
@@ -3028,7 +3049,7 @@ class SafeCodexCanaryBackend:
                 ],
                 timeout=timeout,
                 cwd=workdir,
-                env=env,
+                env=self._execution_environment(env, workdir=workdir),
                 input_text=task,
                 max_output_chars=256_000,
             )

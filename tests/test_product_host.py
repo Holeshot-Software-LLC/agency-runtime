@@ -923,6 +923,7 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
     manifest.parent.mkdir(parents=True)
     manifest.write_text("{}", encoding="utf-8")
     isolated_configs: list[str] = []
+    setup_environments: list[dict[str, str]] = []
     execution_environments: list[dict[str, str]] = []
     execution_argv: list[list[str]] = []
     rollout_projection: dict[str, object] = {}
@@ -979,6 +980,7 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
                 )
             )
             return BoundedProcessResult(0, stdout, "")
+        setup_environments.append(dict(env))
         return BoundedProcessResult(0, "{}", "")
 
     backend = product_host._codex_product_backend(
@@ -1005,12 +1007,21 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
     assert parsed == {"projects": {expected: {"trust_level": "trusted"}}}
     assert persistent_config.read_bytes() == persistent_bytes
     assert execution_environments
+    assert setup_environments
+    assert all(
+        len({environment[name] for name in ("TEMP", "TMP", "TMPDIR")}) == 1
+        and environment["TEMP"] != str(workspace.resolve())
+        for environment in setup_environments
+    )
     assert "--dangerously-bypass-hook-trust" in execution_argv[0]
     assert result["trust_mode"] == "autonomous_bypass"
     assert result["trust_bypass_used"] is True
     assert result["persistent_trust_changed"] is False
     assert execution_environments[0]["AGENCY_CANARY_REQUIRE_EXISTING_STORE"] == "1"
     assert execution_environments[0]["AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS"] == "1"
+    assert {execution_environments[0][name] for name in ("TEMP", "TMP", "TMPDIR")} == {
+        str(workspace.resolve())
+    }
     assert Path(rollout_projection["rollout_root"]) == (
         Path(execution_environments[0]["CODEX_HOME"]) / "sessions"
     )

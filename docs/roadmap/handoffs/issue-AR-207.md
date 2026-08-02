@@ -88,6 +88,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Store v2 is recorded from the persisted rollout: all three exec inputs classify
   as one nested `apply_patch` and two nested shell calls; all three wrapper
   outcomes are `failed`, with zero unclassified or missing outputs.
+- Read-only reconstruction found product execution carried an external private
+  temp root alongside the exact workspace. The bounded repair rebases
+  `TEMP`/`TMP`/`TMPDIR` to that verified workspace only for Codex execution;
+  setup and authentication retain private temp isolation. Product-host plus
+  Store verification passes 43 tests. The named spine passes 657 with six
+  skips; 110 dashboard tests, Ruff/docs, and routing thresholds pass. The
+  unchanged-source decision-conformance CLI returned no verdict before 304- and
+  904-second deadlines and will not be retried in this package. No new live
+  evidence was consumed.
 
 ## completed-evidence
 
@@ -102,10 +111,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-Actual Agency child workspace execution remains unproven. Store v2 localizes
-the first failed boundary to three failed nested exec wrappers after correct
-inference, launch, and trust. It intentionally retains no arguments, output, or
-errors, so no more specific cause is claimed from this trial.
+Actual Agency child workspace execution remains unproven until a fresh exact
+candidate runs. The identified split-root execution contract is repaired
+locally and its focused product-host/Store proof is green; the consumed trial
+is not reinterpreted or retried.
 
 ## same-task-continuity
 
@@ -117,10 +126,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Reproduce the first nested-wrapper failure without another live writer and
-   repair only that boundary; add a bounded failure category only if required.
-2. Do not build or consume another sentinel until the focused wrapper proof is
-   green. Never retry `c8a0577`, `4c57507`, `2bbd885`, or `b967ad2`.
+1. Create the clean implementation/ledger checkpoint, then build one new exact
+   candidate and run the named fast gate.
+2. Only after that gate is green, install it and consume one fresh Agency writer
+   sentinel. Never retry `c8a0577`, `4c57507`, `2bbd885`, or `b967ad2`.
 
 ## verification
 
