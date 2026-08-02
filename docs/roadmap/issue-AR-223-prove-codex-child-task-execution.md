@@ -946,6 +946,52 @@ control pass, and 264 adjacent completion-policy, hook, child, activation, and
 product-host tests pass with one platform skip. The new decision mutation has
 one exact source anchor. No new immutable build or live trial has been consumed.
 
+Clean ledger head `c8a0577cd60124eb8e29199c214bbeec81677349`
+passes the complete named local gate: metadata, policy, worklog,
+635-document validation, repository-wide Ruff lint and formatting, 657 Python
+passes with 6 platform skips, 110 dashboard passes, every routing correctness
+threshold, and 99/99 killed decision mutations with unchanged source. The first
+routing invocation had one transient 10,000-agent warm p95 of 377.314 ms; the
+single bounded classification rerun passed at 84.435 ms, consistent with the
+immediately preceding clean gate's 41.543 ms rather than a correctness change.
+The detached canonical build passes strict Twine metadata and independent
+distribution verification. Windows wheel SHA-256 is
+`f09e0c179a71f69c0c0ad07e0cfeb1fa1827a5c9e015364f33bb1c95c2fdadc1`;
+source SHA-256 is
+`f39e04851f86ed79fdeb227c9d97f04b65760356159cbf5baaedd85315dc5458`.
+
+The exact wheel installs and bare autonomous installation refreshes only Codex,
+ZCode, and the reachable dashboard. Activation session
+`019fc32f-95d8-74d3-90f8-ff8b570df2b9`, trace
+`019fc32f-9efe-75a1-bd3a-7fa370adb701`, delegation
+`a61cc962-ba57-4003-a834-96affb35b2d7`, finalization
+`13841b28-dac1-489f-a2ec-3d6fb63a17a2`, and native worker
+`codex-agent:019fc330-525f-7b20-b337-f87b7b6ef063` prove inferred and loaded
+`code-reviewer`, a completed timestamped delegation, terminal exit-zero worker,
+accepted finalization, autonomous trust bypass, and no persistent profile
+change.
+
+Writer sentinel `ar223-agency-writer-c8a0577-01` is consumed and terminal
+`NO-GO` for the README writer outcome, but `PASS` for the scoped
+parent-finalization defect. Prompt hash
+`sha256:1a02a85f8d35af52f983b4c3886c0aa5470b7613aa2bd2b9045261b719c66729`,
+session `019fc331-f432-71e1-b473-ce62d345171b`, trace
+`019fc331-f4ad-73f3-ad67-f25092b925cd`, route
+`73333330-dd5d-475d-8c61-96fdf7138565`, run
+`c1c9475a-358d-4755-a665-3be459ce409a`, delegation
+`c23a05b3-1eff-475c-b7f4-c1a3f9000cda`, finalization
+`067e1925-23db-45d2-92a8-280115e72779`, and native child
+`codex-agent:019fc332-93f4-7c31-af81-742bcce29385` retain the exact outcome.
+Inference selected and loaded `minimal-change-engineer` for one
+`workspace_write` row, but the worker remained unended and its delegation
+remained `delegated` with no `completed_at`. The new guard therefore recorded
+`delegation_declined` with missing `delegation_execution`; the run ended in the
+same state. Independent inspection finds zero workspace entries and no
+`writer-result.txt`. The preceding `d5a4e31` candidate had accepted this same
+incomplete shape as `accept/completed`, so the controlled before/after proves
+the requested bug is fixed. Do not retry `c8a0577`. Actual delegated workspace
+execution remains the next separate AR-223 product gap.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -992,6 +1038,9 @@ accepted plan authority.
 - [x] A Codex `workspace_write` row cannot record success without a successful
   workspace-local patch receipt; one bounded native correction is permitted
   and a repeated missing receipt terminates without a loop.
+- [x] Parent finalization rejects a current `workspace_write` row whose exact
+  delegation lacks terminal completed evidence instead of recording
+  `accept/completed`.
 - [x] Product scheduling cannot advance from a nonterminal commentary wake;
   bounded repeated waits remain causally and content-freely verifiable.
 - [x] Current Codex execution uses one initial specialist turn and no execution
