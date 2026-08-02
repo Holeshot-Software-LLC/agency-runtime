@@ -514,6 +514,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5849ff6` | 2026-08-01 | docs(ar-223): record missing second Codex stop | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `62ea12a` | 2026-08-01 | fix(ar-223): reconcile Codex completion at parent stop | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `34e36c0` | 2026-08-01 | docs(ar-223): record green parent-stop gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `b2be077` | 2026-08-01 | Merge pull request #232 from Holeshot-Software-LLC/codex/ar-223-post-merge-live-proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

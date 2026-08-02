@@ -46,7 +46,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 62ea12a2f8b1e0ed6fef6b869b2ab7134ba9aa3f
+evidence_commit: b2be07758737b8e89a98aa0b0e03cecd6eb68c83
 minimum_ledger_commit: 44faf748432b125fb0d652a3ab696f839f1bf5fe
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
@@ -85,6 +85,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Exact `62ea12a` passes the named gate: Python 656/6, dashboard 110/110,
   628-document validation, repo-wide Ruff and routing, plus 90/90 killed
   decision mutations with zero invalid results and unchanged source.
+- PR 232 merges exact `b2be077`; `direct_url.json` proves that immutable global
+  install. Bare full-suite install refreshes Codex, enables ZCode, and restarts
+  an active reachable dashboard. Only Codex activation remains required.
 
 ## completed-evidence
 
@@ -117,9 +120,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO pending PR/merge/install and one new
-immutable-build activation. The locally green repair closes only an exactly
-proven follow-up worker at parent `Stop`; no live evidence has consumed it yet.
+The README main story remains NO-GO pending one new immutable-build activation.
+Exact installed merge `b2be077` contains the green parent-stop repair; no live
+evidence has consumed it yet.
 
 ## same-task-continuity
 
@@ -131,9 +134,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Open and merge the locally green parent-stop repair, then install its exact
-   immutable merge.
-2. Spend one activation; only after it passes, spend one product trial.
+1. Spend one autonomous activation on exact installed `b2be077`.
+2. Only after it passes, spend one product trial.
 
 ## verification
 

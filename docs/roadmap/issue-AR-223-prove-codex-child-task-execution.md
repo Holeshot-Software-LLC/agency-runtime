@@ -225,7 +225,18 @@ pass; routing passes every threshold. Decision conformance passes its
 invalid results, unchanged source, and 938.2 seconds total command time. Four
 new mutations independently prove the parent-`Stop` call, final-response
 requirement, execution-before-response order, and execution-inside-second-turn
-boundary. PR, merge, immutable install, and the one fresh activation remain.
+boundary. Publication and install evidence follow below; the one fresh
+activation remains.
+
+[PR 232](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/232)
+has no review threads, comments, or reviews and merges the exact locally green
+tree as `b2be07758737b8e89a98aa0b0e03cecd6eb68c83`. The global uv tool's
+`direct_url.json` independently reports that exact requested revision and
+commit ID. Bare full-suite install refreshes Codex to bundle digest
+`e314ab3c4c8488a09e127928afda957bdd534e874ebfa26a2117f7f39a1cef0c`,
+registers and enables ZCode, and installs and restarts an active reachable
+dashboard. Its partial result is solely Codex `activation_required`; the one
+fresh autonomous activation remains unspent.
 
 ## Approach
 
