@@ -298,6 +298,16 @@ conformance passes with all 91 mutations killed, zero survived or invalid
 results, and the source checkout unchanged. This remains local-build evidence,
 not installed runtime or product proof.
 
+PR 233 merges exact `8097e7708a52956862746ea3aa5b2fecbe7031ed`. The global
+uv `direct_url.json` receipt and `agency version --json` both name that exact
+revision. Bare suite installation refreshes Codex with bundle digest
+`a9aa4f7e5bee9ddc575d7358e3d6e5e8f1cbb5bd71884d033d53a216d9278b83`,
+registers and enables ZCode, and installs an active reachable dashboard. The
+installed `C:\Users\lucas\.codex\AGENTS.md` is byte-equal to the canonical
+1,123-byte renderer and contains exactly one begin and one end marker. Codex
+registration succeeds and truthfully remains `activation-required`; this
+installation consumes neither the activation nor product live-evidence slot.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

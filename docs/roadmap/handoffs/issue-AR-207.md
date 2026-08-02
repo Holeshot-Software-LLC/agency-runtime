@@ -93,6 +93,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   Markdown documents, repo-wide Ruff over 609 files, Python 657 passed with 6
   skipped, dashboard 110/110, every routing threshold, and decision conformance
   91/91 killed with zero survived or invalid results and source unchanged.
+- PR 233 merges exact `8097e7708a52956862746ea3aa5b2fecbe7031ed` and the
+  global uv receipt names that exact revision. Default-suite installation
+  refreshes Codex bundle `a9aa4f7e...`, registers/enables ZCode, and leaves the
+  dashboard active and reachable. Codex global guidance is byte-equal to the
+  canonical 1,123-byte renderer with one begin and one end marker. Codex is
+  honestly `activation-required`; no activation or product trial is consumed.
 
 ## exact-blocker
 
@@ -101,8 +107,9 @@ product parent never invokes collaboration. ADR-0126's developer instruction
 does not satisfy current Codex's user-or-applicable-instruction delegation gate.
 A broad-skill probe adds a forbidden parent shell read and remains untraceable.
 The managed global-guidance path now installs, plans, projects, uninstalls, and
-rolls back under focused tests and the complete named gate. It is not yet merged,
-installed into the current Codex profile, or proven by fresh live evidence.
+rolls back under focused tests and the complete named gate. Exact merge
+`8097e77` is installed in the current profile; fresh live activation and product
+evidence remain pending.
 
 ## same-task-continuity
 
@@ -114,10 +121,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Publish the already authorized PR, merge exact green head, and install that
-   exact merge into the current Codex, ZCode, and dashboard scope.
-2. Spend one fresh activation and at most one product trial. Never rerun the
-   consumed `b2be077` evidence.
+1. Run context telemetry, then spend exactly one autonomous-bypass Codex
+   activation for installed merge `8097e77`.
+2. If activation passes, checkpoint it and spend at most one fresh product
+   trial. Never rerun the consumed `b2be077` evidence.
 
 ## verification
 
