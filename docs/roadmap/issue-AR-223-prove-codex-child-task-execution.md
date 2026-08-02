@@ -486,7 +486,11 @@ The focused implementation and mutation slice passes 42 tests and kills both
 new decision mutations with zero survivors or invalid results. The second and
 final review pass covers 164 surrounding Codex activation, product-host,
 child-execution, and hook tests with warning-strict execution. Targeted Ruff,
-format, documentation, and diff checks pass. The new named gate remains.
+format, documentation, and diff checks pass. Clean recovery head `a5b9d4b`
+then passes the complete named gate: the Python spine reports 657 passes and 6
+skips, dashboard UI reports 110 passes, every routing threshold passes, and
+decision conformance kills 93 of 93 mutations with zero survivors or invalid
+results and unchanged source.
 
 ## Approach
 
@@ -535,7 +539,7 @@ accepted plan authority.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
 - [x] Focused checks, bounded review, and the complete named local gate pass on
-  clean recovery head `7327483`.
+  clean recovery head `a5b9d4b`.
 - [x] The generated Codex `UserPromptSubmit` handler keeps the complete bounded
   inferred plan inline instead of spilling it outside the parent's allowed
   tool boundary.

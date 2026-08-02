@@ -93,7 +93,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   and zero corrections.
 - The ADR-0142 focused slice passes 42 tests and both new decision mutations;
   the second and final surrounding lifecycle review passes 164 tests. Targeted
-  Ruff passes; the named gate and new immutable live proof remain pending.
+  Ruff passes. Clean head `a5b9d4b` passes the named gate: 657 Python tests
+  with 6 skips, 110 dashboard tests, every routing threshold, and 93/93
+  decision mutations with zero survivors or invalid results.
 
 ## exact-blocker
 
@@ -114,9 +116,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run the named local gate for the reviewed ADR-0142 repair.
-2. Build and install one new exact commit; do not reuse `ae322ec` evidence.
-3. Run one corrected accepted-plan Agency writer sentinel. Stop before a full
+1. Build and install one new exact commit; do not reuse `ae322ec` evidence.
+2. Run one corrected accepted-plan Agency writer sentinel. Stop before a full
    product trial unless exact file proof and zero corrections pass.
 
 ## verification
