@@ -46,8 +46,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 5ff4a08e587ce47d46c96b878ed0191712906059
-minimum_ledger_commit: ef42aff3757665e3e12d74ed066e28dbf150fbea
+evidence_commit: 62ea12a2f8b1e0ed6fef6b869b2ab7134ba9aa3f
+minimum_ledger_commit: 44faf748432b125fb0d652a3ab696f839f1bf5fe
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -82,6 +82,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Read-only reprojection over the consumed `5ff4a08` parent and child rollouts
   returns `completion_observed=True`. Two reviews are complete; they require
   exact lineage and place execution inside the second turn before its response.
+- Exact `62ea12a` passes the named gate: Python 656/6, dashboard 110/110,
+  628-document validation, repo-wide Ruff and routing, plus 90/90 killed
+  decision mutations with zero invalid results and unchanged source.
 
 ## completed-evidence
 
@@ -114,9 +117,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO pending the named fast gate and one new
-immutable-build activation. The local repair now closes only an exactly proven
-follow-up worker at parent `Stop`; no live evidence has consumed it yet.
+The README main story remains NO-GO pending PR/merge/install and one new
+immutable-build activation. The locally green repair closes only an exactly
+proven follow-up worker at parent `Stop`; no live evidence has consumed it yet.
 
 ## same-task-continuity
 
@@ -128,10 +131,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Finish the bounded review and named local gate for exact parent-stop
-   reconciliation.
-2. Merge/install one new build and spend one
-   activation; only after it passes, spend one product trial.
+1. Open and merge the locally green parent-stop repair, then install its exact
+   immutable merge.
+2. Spend one activation; only after it passes, spend one product trial.
 
 ## verification
 

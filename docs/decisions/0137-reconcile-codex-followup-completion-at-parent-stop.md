@@ -80,6 +80,17 @@ host lifecycle contract mismatch.
   bounded, link-resistant, fail-closed, and covered by exact host-shape tests
   because Codex documents that transcript format as unstable.
 
+## Implementation evidence
+
+Commit `62ea12a` implements the parent-`Stop` reconciler and its causal
+projector. The exact consumed `5ff4a08` parent and child rollouts reproject as
+`completion_observed=True` without mutating their terminal failed evidence.
+Forty-four focused tests pass after two review passes. The named local gate
+passes 656 Python tests with 6 skips, 110 dashboard tests, 628-document
+validation, repo-wide Ruff lint and format, every routing threshold, and 90 of
+90 killed decision mutations with zero survivors or invalid results and
+unchanged source.
+
 ## Alternatives
 
 - **Wait for a second `SubagentStop`.** Rejected because two immutable live

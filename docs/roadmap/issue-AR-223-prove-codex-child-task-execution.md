@@ -217,6 +217,16 @@ ordering so the exact execution input must occur inside the second turn and
 before its final response, and they require child lineage even for any future
 plaintext-capable projection.
 
+Exact reviewed commit `62ea12a` now passes the complete named local gate. The
+Python production spine reports 656 passes and 6 skips; dashboard UI reports
+110 passes; documentation validates 628 files; repo-wide Ruff lint and format
+pass; routing passes every threshold. Decision conformance passes its
+248.747-second baseline and kills all 90 mutations with zero survivors or
+invalid results, unchanged source, and 938.2 seconds total command time. Four
+new mutations independently prove the parent-`Stop` call, final-response
+requirement, execution-before-response order, and execution-inside-second-turn
+boundary. PR, merge, immutable install, and the one fresh activation remain.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
