@@ -918,6 +918,22 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-product-collapses-wrapper-failure-category",
+        invariant=(
+            "Codex product evidence classifies failed exec wrappers into bounded fixed "
+            "categories without retaining output content."
+        ),
+        source_path="agency_runtime/core/canary_backends.py",
+        before=(
+            "            failure = classify_codex_exec_wrapper_failure(exec_outputs.get(call_id))\n"
+        ),
+        after='            failure = "process_failed_other"\n',
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_product_child_tool_evidence_projects_fixed_wrapper_failure_category"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-host-skips-child-tool-evidence-store-write",
         invariant=(
             "Codex product admission writes each validated child tool summary into its "

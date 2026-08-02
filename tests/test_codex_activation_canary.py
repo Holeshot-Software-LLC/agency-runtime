@@ -30,6 +30,9 @@ from agency_runtime.core.codex_child_tool_evidence import (
     CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
     CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_FIELDS,
     CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_SCHEMA,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_SCHEMA,
+    classify_codex_exec_wrapper_failure,
     decode_stored_codex_child_tool_evidence,
 )
 from agency_runtime.core.codex_native_plan_scope import deserialize_codex_native_plan_scope
@@ -200,6 +203,12 @@ def test_product_child_tool_evidence_is_fixed_and_content_free() -> None:
         "child_exec_wrapper_failed_count": 1,
         "child_exec_wrapper_yielded_count": 0,
         "child_exec_wrapper_unknown_count": 0,
+        "child_exec_wrapper_windows_split_writable_roots_count": 0,
+        "child_exec_wrapper_windows_sandbox_setup_failed_count": 0,
+        "child_exec_wrapper_approval_rejected_count": 0,
+        "child_exec_wrapper_permission_denied_count": 0,
+        "child_exec_wrapper_process_failed_other_count": 1,
+        "child_exec_wrapper_failure_unknown_count": 0,
     }
     encoded = json.dumps(evidence)
     assert all(
@@ -290,6 +299,82 @@ def test_product_child_tool_evidence_keeps_canonical_v1_store_rows_readable() ->
         )
         == legacy
     )
+
+
+def test_product_child_tool_evidence_keeps_canonical_v2_store_rows_readable() -> None:
+    legacy = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS, 0)
+    payload = json.dumps(legacy, sort_keys=True, separators=(",", ":"))
+
+    assert (
+        decode_stored_codex_child_tool_evidence(
+            schema=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_SCHEMA,
+            source=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+            recorded_at="2026-08-02T19:40:48Z",
+            payload=payload,
+        )
+        == legacy
+    )
+
+
+@pytest.mark.parametrize(
+    ("output", "expected"),
+    (
+        (
+            "Script failed\nfailed to prepare windows sandbox wrapper: windows "
+            "sandbox cannot enforce split writable root sets directly",
+            "windows_split_writable_roots",
+        ),
+        ("Script failed\nfailed to prepare fs sandbox", "windows_sandbox_setup_failed"),
+        (
+            "Script failed\nThis action was rejected due to unacceptable risk.",
+            "approval_rejected",
+        ),
+        ("Script failed\nAccess is denied.", "permission_denied"),
+        ("Script failed\nExit code: 7", "process_failed_other"),
+        (
+            [
+                {"type": "input_text", "text": "Script failed"},
+                {"type": "private_type", "text": "private"},
+            ],
+            "failure_unknown",
+        ),
+    ),
+)
+def test_wrapper_failure_classification_is_fixed_and_content_free(
+    output: object,
+    expected: str,
+) -> None:
+    assert classify_codex_exec_wrapper_failure(output) == expected
+
+
+def test_product_child_tool_evidence_projects_fixed_wrapper_failure_category() -> None:
+    evidence = _codex_product_child_tool_evidence(
+        [
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "custom_tool_call",
+                    "name": "exec",
+                    "status": "completed",
+                    "call_id": "exec-call",
+                    "input": 'await tools.apply_patch("private");',
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "custom_tool_call_output",
+                    "call_id": "exec-call",
+                    "output": "Script failed\nAccess is denied at private path",
+                },
+            },
+        ]
+    )
+
+    assert evidence["child_exec_wrapper_failed_count"] == 1
+    assert evidence["child_exec_wrapper_permission_denied_count"] == 1
+    assert evidence["child_exec_wrapper_process_failed_other_count"] == 0
+    assert "private path" not in json.dumps(evidence)
 
 
 def test_codex_child_projection_rejects_duplicate_execution_delivery() -> None:

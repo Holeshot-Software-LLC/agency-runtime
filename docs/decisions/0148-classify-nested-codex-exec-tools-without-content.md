@@ -10,6 +10,7 @@ related:
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0146-preserve-content-free-codex-child-tool-outcomes.md
   - docs/decisions/0147-persist-codex-child-tool-evidence-on-worker-receipts.md
+  - docs/decisions/0149-classify-codex-wrapper-failures-without-content.md
   - agency_runtime/core/codex_child_tool_evidence.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/evals/decision_conformance.py

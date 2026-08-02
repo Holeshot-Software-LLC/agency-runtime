@@ -37,6 +37,7 @@ related:
   - docs/decisions/0146-preserve-content-free-codex-child-tool-outcomes.md
   - docs/decisions/0147-persist-codex-child-tool-evidence-on-worker-receipts.md
   - docs/decisions/0148-classify-nested-codex-exec-tools-without-content.md
+  - docs/decisions/0149-classify-codex-wrapper-failures-without-content.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -1188,6 +1189,17 @@ wrapper outcome, zero unclassified inputs, and zero missing outputs. Therefore
 rebasing the three temp variables was insufficient; it did not prove or repair
 the actual nested wrapper failure. The next slice must classify a small fixed
 allowlist of wrapper failure causes content-freely before another live candidate.
+
+ADR-0149 implements Store v3 at that exact boundary. New evidence retains all
+v1/v2 counts and adds only six bounded failure-category counts whose sum must
+equal the failed-wrapper count. Canonical v1 and v2 rows remain readable; raw
+output is never persisted. The focused Codex product, Store, and product-host
+slice passes 98 tests with warning strictness. The manifest anchor passes, and
+the isolated `codex-product-collapses-wrapper-failure-category` mutation is
+killed with unchanged source. No build, install, activation, or writer trial
+was consumed. The next bounded package is now one exact build, autonomous
+install and activation, and one new writer sentinel whose Store v3 receipt
+either proves the cause or admits the workspace write.
 
 ## Approach
 

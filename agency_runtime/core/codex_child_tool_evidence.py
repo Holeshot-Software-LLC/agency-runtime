@@ -7,7 +7,8 @@ import re
 from collections.abc import Mapping
 
 CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_SCHEMA = "agency.codex-product-child-tool-evidence.v1"
-CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA = "agency.codex-product-child-tool-evidence.v2"
+CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_SCHEMA = "agency.codex-product-child-tool-evidence.v2"
+CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA = "agency.codex-product-child-tool-evidence.v3"
 CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE = "persisted_rollout"
 CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_MAX_COUNT = 5_000
 CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_MAX_EXEC_INPUT_CHARS = 1_000_000
@@ -28,7 +29,7 @@ CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_FIELDS = (
     "child_patch_apply_failure_count",
     "child_patch_apply_unknown_count",
 )
-CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS = (
+CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS = (
     *CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_FIELDS,
     "child_exec_input_classified_count",
     "child_exec_input_unclassified_count",
@@ -40,6 +41,15 @@ CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS = (
     "child_exec_wrapper_failed_count",
     "child_exec_wrapper_yielded_count",
     "child_exec_wrapper_unknown_count",
+)
+CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS = (
+    *CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS,
+    "child_exec_wrapper_windows_split_writable_roots_count",
+    "child_exec_wrapper_windows_sandbox_setup_failed_count",
+    "child_exec_wrapper_approval_rejected_count",
+    "child_exec_wrapper_permission_denied_count",
+    "child_exec_wrapper_process_failed_other_count",
+    "child_exec_wrapper_failure_unknown_count",
 )
 
 _IDENTIFIER = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*")
@@ -169,6 +179,71 @@ def classify_codex_exec_wrapper_output(value: object) -> str:
     return "unknown"
 
 
+def _bounded_codex_exec_wrapper_text(value: object) -> str | None:
+    """Read bounded wrapper text transiently without changing its stored projection."""
+
+    if isinstance(value, str):
+        return (
+            value if len(value) <= CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_MAX_EXEC_INPUT_CHARS else None
+        )
+    if not isinstance(value, list) or not value:
+        return None
+    parts: list[str] = []
+    length = 0
+    for item in value:
+        if (
+            not isinstance(item, Mapping)
+            or item.get("type") != "input_text"
+            or not isinstance(item.get("text"), str)
+        ):
+            return None
+        text = item["text"]
+        length += len(text)
+        if length > CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_MAX_EXEC_INPUT_CHARS:
+            return None
+        parts.append(text)
+    return "\n".join(parts)
+
+
+def classify_codex_exec_wrapper_failure(value: object) -> str:
+    """Classify one failed wrapper into a fixed category without retaining content."""
+
+    text = _bounded_codex_exec_wrapper_text(value)
+    if text is None or classify_codex_exec_wrapper_output(value) != "failed":
+        return "failure_unknown"
+    normalized = text.casefold()
+    if "cannot enforce split writable root sets directly" in normalized:
+        return "windows_split_writable_roots"
+    if any(
+        marker in normalized
+        for marker in (
+            "failed to prepare windows sandbox wrapper",
+            "failed to prepare fs sandbox",
+            "windows sandbox setup failed",
+        )
+    ):
+        return "windows_sandbox_setup_failed"
+    if any(
+        marker in normalized
+        for marker in (
+            "this action was rejected due to unacceptable risk",
+            "approval request was rejected",
+            "approval was rejected",
+        )
+    ):
+        return "approval_rejected"
+    if any(
+        marker in normalized
+        for marker in (
+            "access is denied",
+            "permission denied",
+            "operation not permitted",
+        )
+    ):
+        return "permission_denied"
+    return "process_failed_other"
+
+
 def _normalize_codex_child_tool_evidence(
     value: object,
     *,
@@ -206,7 +281,10 @@ def _normalize_codex_child_tool_evidence(
         == total - normalized["child_tool_output_count"]
     ):
         raise ValueError("Codex child tool evidence relationships were invalid")
-    if fields == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS:
+    if fields in {
+        CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS,
+        CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+    }:
         exec_total = normalized["child_exec_tool_call_count"]
         nested_total = normalized["child_exec_nested_tool_call_count"]
         if not (
@@ -224,6 +302,16 @@ def _normalize_codex_child_tool_evidence(
             == exec_total
         ):
             raise ValueError("Codex nested exec evidence relationships were invalid")
+    if fields == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS and (
+        normalized["child_exec_wrapper_windows_split_writable_roots_count"]
+        + normalized["child_exec_wrapper_windows_sandbox_setup_failed_count"]
+        + normalized["child_exec_wrapper_approval_rejected_count"]
+        + normalized["child_exec_wrapper_permission_denied_count"]
+        + normalized["child_exec_wrapper_process_failed_other_count"]
+        + normalized["child_exec_wrapper_failure_unknown_count"]
+        != normalized["child_exec_wrapper_failed_count"]
+    ):
+        raise ValueError("Codex wrapper failure evidence relationships were invalid")
     return normalized
 
 
@@ -260,6 +348,7 @@ def decode_stored_codex_child_tool_evidence(
         return None
     schema_fields = {
         CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_SCHEMA: (CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_FIELDS),
+        CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_SCHEMA: CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS,
         CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA: CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
     }
     fields = schema_fields.get(values[0])

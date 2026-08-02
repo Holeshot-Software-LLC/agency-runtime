@@ -217,6 +217,7 @@ Status meanings:
 | [ADR-0146](0146-preserve-content-free-codex-child-tool-outcomes.md) | Preserve content-free Codex child tool outcomes | Accepted |
 | [ADR-0147](0147-persist-codex-child-tool-evidence-on-worker-receipts.md) | Persist Codex child tool evidence on worker receipts | Accepted |
 | [ADR-0148](0148-classify-nested-codex-exec-tools-without-content.md) | Classify nested Codex exec tools without content | Accepted |
+| [ADR-0149](0149-classify-codex-wrapper-failures-without-content.md) | Classify Codex wrapper failures without content | Accepted |
 
 ## Documentation governance
 

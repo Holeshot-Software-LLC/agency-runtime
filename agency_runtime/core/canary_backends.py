@@ -16,6 +16,7 @@ from agency_runtime.core.bounded_io import FileSizeLimitError
 from agency_runtime.core.codex_child_tool_evidence import (
     CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
     classify_codex_exec_nested_tools,
+    classify_codex_exec_wrapper_failure,
     classify_codex_exec_wrapper_output,
 )
 from agency_runtime.core.private_paths import private_temporary_directory
@@ -1478,6 +1479,9 @@ def _codex_product_child_tool_evidence(events: list[dict[str, Any]]) -> dict[str
     for call_id in exec_call_ids - duplicate_exec_call_ids:
         outcome = classify_codex_exec_wrapper_output(exec_outputs.get(call_id))
         evidence[f"child_exec_wrapper_{outcome}_count"] += 1
+        if outcome == "failed":
+            failure = classify_codex_exec_wrapper_failure(exec_outputs.get(call_id))
+            evidence[f"child_exec_wrapper_{failure}_count"] += 1
         classified_exec_outputs += 1
     evidence["child_exec_wrapper_unknown_count"] += max(
         evidence["child_exec_tool_call_count"] - classified_exec_outputs,

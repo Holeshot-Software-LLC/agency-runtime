@@ -104,6 +104,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 Actual Agency child workspace execution remains unproven. The temp-root repair
 did not clear the nested wrapper failure. Store v2 proves where it failed but
 does not distinguish a small fixed cause; the consumed trial is not retried.
+Store v3 classification is locally green but has not yet been built or used by
+a new immutable writer.
 
 ## same-task-continuity
 
@@ -115,10 +117,11 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Add only content-free fixed wrapper failure categories at the persisted
-   rollout parser/Store evidence boundary and kill them in focused tests.
-2. Do not build or run another writer until that diagnostic is green. Never
-   retry `c8a0577`, `4c57507`, `2bbd885`, `b967ad2`, or `5a97976`.
+1. Produce one exact canonical build from the Store v3 checkpoint, install the
+   full suite autonomously, and require activation to pass first.
+2. Run one new writer sentinel only. Use its v3 receipt to fix the named cause
+   or admit the workspace write. Never retry `c8a0577`, `4c57507`, `2bbd885`,
+   `b967ad2`, or `5a97976`.
 
 ## verification
 
