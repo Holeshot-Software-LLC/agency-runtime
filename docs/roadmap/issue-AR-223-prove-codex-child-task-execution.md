@@ -1114,6 +1114,39 @@ leaves source unchanged. Two representative failures from an optional broader
 diagnostic suite reproduce unchanged at exact clean `2bbd885`; they are
 pre-existing outside this package and the named production spine.
 
+Exact candidate `b967ad237d841e1ed37bb6e7312d82456b0aeab8` builds from
+canonical Git bytes and independently verifies. Wheel SHA-256 is
+`1774977dfcd457ac832eba59a45e037dca97e265849dabf652200b59afaa09db`;
+source SHA-256 is
+`47c005a0f946d4617e09d8f544ecfc42e40a75c4aefec2bd33934e2e9f07f917`.
+Its full-suite install refreshes Codex and ZCode, leaves the dashboard active
+and reachable, and passes one autonomous activation without persistent trust
+mutation. Session `019fc435-1a8c-7162-886f-389a168122ec` and trace
+`019fc435-22a1-78f0-ab79-8131253fe7a4` retain that activation.
+
+The candidate's sole writer `ar223-agency-writer-b967ad2-01` is consumed and
+terminal `NO-GO`. Session `019fc439-9621-72d1-8d7a-381942901577`, trace
+`019fc439-968f-7032-a181-69e4bc802335`, run
+`e771f645-beac-4fb7-b67a-c6853ec0eeb9`, route
+`3298fea5-e937-4394-a810-5ab813155ca4`, delegation
+`5f491f28-ee41-4e77-b317-9f807ea2ddfe`, finalization
+`6f753ee4-bc7a-4fd4-a4c5-33e1ba869f17`, and child
+`019fc43a-3cee-7140-b5aa-aae25a3d679e` retain the boundary. Inference selects
+and loads `minimal-change-engineer`; the parent proves one direct spawn, one
+completed wait, exact-workspace trust, autonomous hook bypass, a valid first
+header, and zero corrections. The workspace remains empty, the worker has no
+terminal receipt, and finalization declines missing `delegation_execution`.
+
+The immutable Store v2 row is diagnostic: three exec inputs are all classified,
+with one nested `apply_patch`, two nested shell calls, three fixed `failed`
+wrapper outcomes, zero unclassified inputs, and zero missing outputs. The first
+failed product boundary is therefore nested tool execution after correct
+selection, launch, and trust—not inference, staffing, header repair, or the
+Store write. Arguments, output, and errors remain intentionally unretained, so
+this trial supports no more specific cause. Under the stop-loss contract it was
+not patched or retried. The next slice must reproduce and repair only that
+wrapper boundary before building another candidate.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

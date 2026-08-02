@@ -57,7 +57,7 @@ type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
 evidence_commit: 95aec42db22b3b45ecb706c7fb2ada9f0ae3d181
-minimum_ledger_commit: e1c215719d8953efbbcf4ce176b593470dd0e1f8
+minimum_ledger_commit: b967ad237d841e1ed37bb6e7312d82456b0aeab8
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -66,69 +66,46 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
-- The goal remains `README's main story works in reality.` The owner froze this
-  package to the parent-finalization bug only. Repair `3b35ae0`, ledger
-  `c8a0577`, and its one immutable candidate are consumed.
-- The complete named gate passes: every docs/policy/Ruff/format check, 657
-  Python passes with 6 skips, 110 dashboard passes, every routing correctness
-  threshold after one bounded transient-latency classification rerun, and 99/99
-  killed decision mutations with unchanged source.
-- Exact `c8a0577cd60124eb8e29199c214bbeec81677349` builds canonically and
-  independently verifies. Wheel SHA-256 is
-  `f09e0c179a71f69c0c0ad07e0cfeb1fa1827a5c9e015364f33bb1c95c2fdadc1`;
-  source SHA-256 is
-  `f39e04851f86ed79fdeb227c9d97f04b65760356159cbf5baaedd85315dc5458`.
-- Codex, ZCode, and the reachable dashboard install. Activation proves
-  inferred/loaded/delegated `code-reviewer`, completed timestamped delegation,
-  a terminal exit-zero worker, accepted finalization, autonomous trust bypass,
-  and no persistent profile change.
-- Writer `ar223-agency-writer-c8a0577-01` is consumed. The workspace is empty;
-  its writer worker is unended and delegation is incomplete. The new guard
-  truthfully terminates the run as `delegation_declined` with missing
-  `delegation_execution`, replacing `d5a4e31`'s false `accept/completed` on the
-  same incomplete shape. Scoped parent-finalization repair is `PASS`; README
-  writer outcome remains `NO-GO`. Do not retry `c8a0577`.
-- The next package isolates the Agency-only prompt-order boundary. Direct Codex
-  writes with the same encrypted task transport and inherited workspace, while
-  v3 left generic specialist refusal clauses after the exact action contract.
-  ADR-0145 v4 keeps the specialist body hash-bound and places a byte-exact,
-  fail-closed execution suffix last. Exact candidate `4c57507` passes the full
-  named gate, builds and independently verifies, installs Codex, ZCode, and the
-  dashboard, and passes autonomous Codex activation. Its one writer trial is
-  consumed `NO-GO`: the child advances from zero to one tool call but creates
-  no patch receipt or file. Do not retry `4c57507`.
-- ADR-0147 implementation `2a19c79` durably attaches ADR-0146's validated fixed
-  counts to each exact worker receipt before product admission. Snapshot rows
-  expose `recorded`, `missing`, or `invalid`; missing writes remain unit-scoped
-  failures. The focused suite passes 128 warning-strict tests, documentation
-  validates 638 files, and repository Ruff/format/diff checks pass. No product
-  trial ran in this slice.
-- Clean head `e1c2157` passes the complete named gate: 638 docs, 610 formatted
-  files, 657 Python passes with 6 skips, 110 dashboard passes, every routing
-  threshold, and 102/102 killed decision mutations with unchanged source.
-- Exact candidate `2bbd885` builds, verifies, installs Codex, ZCode, and the
-  reachable dashboard, and passes one autonomous Codex activation. Its sole
-  writer `ar223-agency-writer-2bbd885-01` is consumed `NO-GO`: Store v1 records
-  three completed `functions.exec` wrappers and outputs, but the empty workspace
-  proves no writer artifact. Nested tool classes remain unobservable.
+- The goal remains `README's main story works in reality.` This stop-loss slice
+  froze at Store v2 diagnostics plus one immutable activation/writer attempt.
+- ADR-0148 implementation `95aec42` records content-free nested exec classes
+  and fixed wrapper outcomes on each exact worker receipt. The 118-case focused
+  slice, named 657-pass Python spine, 110 dashboard tests, docs/Ruff/format,
+  routing thresholds, and isolated new mutation are green. The full conformance
+  command completed but its oversized terminal JSON was not retained; it was
+  not rerun under the stop-loss contract.
+- Exact `b967ad237d841e1ed37bb6e7312d82456b0aeab8` builds canonically and
+  independently verifies. Wheel SHA-256 is `1774977dfcd457ac832eba59a45e037dca97e265849dabf652200b59afaa09db`;
+  source SHA-256 is `47c005a0f946d4617e09d8f544ecfc42e40a75c4aefec2bd33934e2e9f07f917`.
+- The full-suite install refreshes Codex and ZCode and leaves the dashboard
+  active and reachable. One autonomous activation passes without persistent
+  trust mutation.
+- Sole writer `ar223-agency-writer-b967ad2-01` is consumed `NO-GO`. Inference
+  selects and loads `minimal-change-engineer`; one spawn and one completed wait,
+  exact-workspace trust, hook bypass, a valid first header, and zero corrections
+  pass. The workspace remains empty and finalization declines missing
+  `delegation_execution`.
+- Store v2 is recorded from the persisted rollout: all three exec inputs classify
+  as one nested `apply_patch` and two nested shell calls; all three wrapper
+  outcomes are `failed`, with zero unclassified or missing outputs.
 
 ## completed-evidence
 
-- Activation session `019fc386-3a01-71f0-9477-f2f47c7ac47c`, trace
-  `019fc386-47c4-71d3-bfd2-608e2dee51e0`, and worker
-  `codex-agent:019fc387-1ec0-7712-9696-a97f941a097a` retain the pass.
-- Writer session `019fc389-092b-7f30-b22c-a99ed0a3ec5e`, trace
-  `019fc389-09a8-7600-9dd4-8dc624f33efb`, run
-  `603ea506-d34b-418f-8e6a-2157b20afaa6`, delegation
-  `7af31d7d-7561-4772-96ca-9380374740f4`, finalization
-  `9c787ccc-11a6-4e7a-8d42-f43f35eccf1a`, and worker
-  `codex-agent:019fc389-be08-7dc3-a4fe-7499e18e4890` retain the `NO-GO`.
+- Activation session `019fc435-1a8c-7162-886f-389a168122ec` and trace
+  `019fc435-22a1-78f0-ab79-8131253fe7a4` retain the pass.
+- Writer session `019fc439-9621-72d1-8d7a-381942901577`, trace
+  `019fc439-968f-7032-a181-69e4bc802335`, run
+  `e771f645-beac-4fb7-b67a-c6853ec0eeb9`, delegation
+  `5f491f28-ee41-4e77-b317-9f807ea2ddfe`, finalization
+  `6f753ee4-bc7a-4fd4-a4c5-33e1ba869f17`, and worker
+  `codex-agent:019fc43a-3cee-7140-b5aa-aae25a3d679e` retain the `NO-GO`.
 
 ## exact-blocker
 
-Actual Agency child workspace execution remains unproven. ADR-0148 `95aec42` v2
-now preserves nested tool classes and fixed wrapper outcomes without content;
-focused tests pass. The named gate and one new immutable writer remain.
+Actual Agency child workspace execution remains unproven. Store v2 localizes
+the first failed boundary to three failed nested exec wrappers after correct
+inference, launch, and trust. It intentionally retains no arguments, output, or
+errors, so no more specific cause is claimed from this trial.
 
 ## same-task-continuity
 
@@ -140,9 +117,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Complete bounded review, named verification, and one clean checkpoint.
-2. Build one new candidate and consume one fresh writer sentinel. Never retry
-   `c8a0577`, `4c57507`, or `2bbd885`; repair only its first proven boundary.
+1. Reproduce the first nested-wrapper failure without another live writer and
+   repair only that boundary; add a bounded failure category only if required.
+2. Do not build or consume another sentinel until the focused wrapper proof is
+   green. Never retry `c8a0577`, `4c57507`, `2bbd885`, or `b967ad2`.
 
 ## verification
 
@@ -172,7 +150,7 @@ git diff --check
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
   activations; exact `b2be077` consumed both activation and product evidence;
   `ae322ec`, `bffd2c8`, `b6bcdfb`, `d4c65a7`, `4d14b99`, `93e465a`,
-  `d610630`, `7f0479f`, `be1ca0e`, `d5a4e31`, `c8a0577`, `4c57507`, and
-  `2bbd885` consumed governed evidence; none may be rerun.
+  `d610630`, `7f0479f`, `be1ca0e`, `d5a4e31`, `c8a0577`, `4c57507`,
+  `2bbd885`, and `b967ad2` consumed governed evidence; none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
