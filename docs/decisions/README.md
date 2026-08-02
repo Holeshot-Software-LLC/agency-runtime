@@ -208,7 +208,8 @@ Status meanings:
 | [ADR-0137](0137-reconcile-codex-followup-completion-at-parent-stop.md) | Reconcile Codex follow-up completion at parent Stop | Accepted |
 | [ADR-0138](0138-request-automatic-codex-delegation-through-managed-global-guidance.md) | Request automatic Codex delegation through managed global guidance | Accepted |
 | [ADR-0139](0139-make-codex-execution-turns-self-contained.md) | Make Codex execution turns self-contained | Accepted |
-| [ADR-0140](0140-use-codex-stable-multi-agent-feature.md) | Use the Codex stable multi-agent feature | Accepted |
+| [ADR-0140](0140-use-codex-stable-multi-agent-feature.md) | Use the Codex stable multi-agent feature | Superseded |
+| [ADR-0141](0141-admit-writer-proof-only-through-agency-plans.md) | Admit writer proof only through Agency plans | Accepted |
 
 ## Documentation governance
 

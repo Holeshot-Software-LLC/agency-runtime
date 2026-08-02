@@ -92,7 +92,7 @@ CODEX_CURRENT_PROFILE_EXEC_OPTIONS = (
     "--ignore-rules",
     "--strict-config",
     "--enable",
-    "multi_agent",
+    "multi_agent_v2",
     "--sandbox",
     "read-only",
     "-c",

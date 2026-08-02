@@ -1125,8 +1125,7 @@ def test_current_codex_cli_exposes_every_canary_command_capability(
     assert "--ephemeral" not in CODEX_CURRENT_PROFILE_EXEC_OPTIONS
     assert "--ignore-user-config" not in CODEX_CANARY_EXEC_OPTIONS
     assert "--ignore-rules" in CODEX_CANARY_EXEC_OPTIONS
-    assert "multi_agent" in CODEX_CANARY_EXEC_OPTIONS
-    assert "multi_agent_v2" not in CODEX_CANARY_EXEC_OPTIONS
+    assert "multi_agent_v2" in CODEX_CANARY_EXEC_OPTIONS
     assert "--dangerously-bypass-hook-trust" not in CODEX_CURRENT_PROFILE_EXEC_OPTIONS
     assert "--json" in help_text("plugin", "marketplace", "add")
     assert "--json" in help_text("plugin", "add")

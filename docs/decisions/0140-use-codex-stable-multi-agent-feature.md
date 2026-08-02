@@ -1,6 +1,6 @@
 ---
 title: "Use the Codex stable multi-agent feature"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-08-02
 updated: 2026-08-02
@@ -17,7 +17,7 @@ related:
   - tests/test_product_host.py
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0141-admit-writer-proof-only-through-agency-plans.md
 id: ADR-0140
 type: decision
 deciders: [maintainers]

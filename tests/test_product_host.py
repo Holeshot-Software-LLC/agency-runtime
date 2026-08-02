@@ -571,8 +571,7 @@ def test_codex_product_host_uses_isolated_workspace_write_profile(
     assert "danger-full-access" not in options
     assert "--add-dir" not in options
     assert "--ephemeral" not in options
-    assert options[options.index("--enable") + 1] == "multi_agent"
-    assert "multi_agent_v2" not in options
+    assert options[options.index("--enable") + 1] == "multi_agent_v2"
     assert "agents.enabled=true" in options
     developer_configs = [
         option.removeprefix("developer_instructions=")
@@ -1061,8 +1060,7 @@ def test_codex_product_backend_persists_parent_and_correlates_exact_rollout(
     )
 
     assert "--ephemeral" not in backend.exec_options
-    assert backend.exec_options[backend.exec_options.index("--enable") + 1] == "multi_agent"
-    assert "multi_agent_v2" not in backend.exec_options
+    assert backend.exec_options[backend.exec_options.index("--enable") + 1] == "multi_agent_v2"
     assert "agents.enabled=true" in backend.exec_options
     developer_configs = [
         option.removeprefix("developer_instructions=")

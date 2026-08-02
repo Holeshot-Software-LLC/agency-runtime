@@ -43,6 +43,7 @@ related:
   - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
   - docs/decisions/0139-make-codex-execution-turns-self-contained.md
   - docs/decisions/0140-use-codex-stable-multi-agent-feature.md
+  - docs/decisions/0141-admit-writer-proof-only-through-agency-plans.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -84,6 +85,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Codex 0.146.0 exposes stable `multi_agent` as enabled and internal
   `multi_agent_v2` as disabled by default. ADR-0140 switches both Agency Codex
   backends to the stable feature; 38 focused tests and targeted Ruff pass.
+- Retained stable-feature control
+  `ar223-native-writer-stable-multi-agent-01` fails identically: zero spawns,
+  zero follow-ups, one completed wait with zero receivers, and an empty
+  workspace. Its parent fabricates a read-only child failure despite no child.
+- ADR-0141 supersedes that detour and restores V2 before any build. Generic
+  Agency-disabled controls omit the accepted plan and global guidance; the real
+  product already proves nine parent spawns, so the next admissible proof is
+  one accepted Agency writer row using the self-contained follow-up.
 
 ## completed-evidence
 
@@ -110,8 +119,9 @@ empty stdout/stderr and the exact workspace has zero files. The trial must not
 be rerun. The new native sentinel also remains NO-GO, but at an earlier exact
 boundary: `codex_parent_spawn_missing`. It neither proves nor disproves child
 workspace-write because no child was launched. The direct app child now proves
-workspace-write independently; the unproven boundary is stable-feature harness
-launch and evidence retention.
+workspace-write independently. Generic parent launch is non-admissible for the
+README gate; the unproven boundary is task realization by one accepted Agency
+writer row.
 
 ## same-task-continuity
 
@@ -124,10 +134,10 @@ hosted Actions, or touch the owner's two untracked files.
 ## next-bounded-work-package
 
 1. Preserve both consumed controls; do not rerun either exact workspace.
-2. Run one retained harness sentinel using stable `multi_agent`; require one
-   exact spawn, completed child, exact file bytes, and zero unexpected items.
-3. Only after that focused boundary passes, run the named local gate, build
-   once, and prove one Agency writer sentinel before any full product trial.
+2. Restore V2 locally, run focused checks, and checkpoint the rejected stable
+   hypothesis without producing a build.
+3. Run the named local gate, build once, and prove one accepted-plan Agency
+   writer sentinel before any full product trial.
 
 ## verification
 

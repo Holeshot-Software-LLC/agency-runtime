@@ -27,6 +27,7 @@ related:
   - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
   - docs/decisions/0139-make-codex-execution-turns-self-contained.md
   - docs/decisions/0140-use-codex-stable-multi-agent-feature.md
+  - docs/decisions/0141-admit-writer-proof-only-through-agency-plans.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -442,6 +443,21 @@ retains `agents.enabled=true`, and forbids V2 in focused tests. Thirty-eight
 focused host/product/decision tests and targeted Ruff checks pass. No stable-
 surface harness sentinel, build, or product trial has yet been spent.
 
+Retained stable-feature control
+`ar223-native-writer-stable-multi-agent-01` disproves that hypothesis. It
+completes in 33.7 seconds under autonomous bypass but again records zero
+spawns, zero follow-ups, one completed wait with zero receivers, and zero
+unexpected items. Its parent falsely reports a read-only child failure even
+though no child launched and the backend passed `workspace-write`; the exact
+workspace remains empty.
+
+ADR-0141 supersedes the stable-feature detour and restores the existing V2
+contract before any build. The generic controls omit the accepted Agency plan
+and installed global delegation request, so they cannot gate the README path.
+The consumed real product trial already proves nine Agency parent spawns; the
+direct app child proves exact workspace-write. The next admissible proof is one
+accepted Agency writer row using the new self-contained follow-up.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -457,9 +473,9 @@ surface harness sentinel, build, or product trial has yet been spent.
    messages without retaining task or response content.
 4. Preserve one-at-a-time dependency scheduling, the non-working parent,
    turn-scoped specialist authority, and the first workspace-write sentinel.
-5. Prove one retained stable-`multi_agent` harness writer sentinel before the
-   named local fast gate. Only then spend one fresh immutable-build activation
-   and at most one product trial.
+5. Prove one installed, accepted-plan Agency writer sentinel before any full
+   product trial. Require the exact lifecycle, file bytes, first header, and
+   zero corrections in the same run.
 
 ## Dependencies
 
@@ -482,8 +498,8 @@ accepted plan authority.
   sentinel before a new immutable build is produced.
 - [x] One direct current-host native child creates and reads back exact bytes,
   independently proving inherited workspace-write capability.
-- [ ] The Codex harness uses stable `multi_agent` and launches that same class
-  of self-contained writer child with retained collaboration evidence.
+- [ ] One accepted Agency plan row launches its selected writer, delivers the
+  self-contained execution turn, and creates exact retained file proof.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
 - [x] Focused checks, bounded review, and the complete named local gate pass on
