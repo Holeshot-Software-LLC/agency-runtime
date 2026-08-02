@@ -352,6 +352,15 @@ conformance kills every registered mutation with zero survived or invalid
 results; and the source checkout remains unchanged. The next boundary is one
 new immutable build, one autonomous activation, and one fresh product trial.
 
+PR 234 merges that clean head as exact
+`eb8e07770bf2b1d29933ff7730f09115928e4b1a`. The uv receipt and
+`agency version --json` match the merge. Bare installation discovers only
+Codex and ZCode, registers and enables both, and leaves the owned dashboard
+installed, active, current, and reachable. The installed Codex manifest places
+`additionalContextLimit: 0` on its sole nested `UserPromptSubmit` command
+handler and on no other event. Codex remains truthfully `activation-required`;
+neither the activation nor product slot has been consumed.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

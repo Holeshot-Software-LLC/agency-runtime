@@ -47,7 +47,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 8097e7708a52956862746ea3aa5b2fecbe7031ed
+evidence_commit: eb8e07770bf2b1d29933ff7730f09115928e4b1a
 minimum_ledger_commit: 73274832a0985c7817c991061ac839386deb7cc1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
@@ -127,12 +127,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `8097e77` must never be rerun. Its
-consumed product trial identifies one bounded host-delivery defect: Codex spills
-the exact multi-unit plan outside the parent's allowed tools. The manifest-only
-repair is complete and locally green. One new immutable build may now consume
-exactly one autonomous activation and one fresh product trial; either live
-failure is the stop point, not the start of another repair loop.
+The README main story remains NO-GO. PR 234 merges and uv installs exact
+`eb8e077`; bare install discovers only Codex and ZCode, enables both, and leaves
+the dashboard active and reachable. Its installed Codex manifest has the exact
+inline-plan field only on `UserPromptSubmit`. Codex remains
+`activation-required`; exactly one autonomous activation and one fresh product
+trial remain. Either failure is the stop point, not another repair loop.
 
 ## same-task-continuity
 
@@ -144,9 +144,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Merge and exact-install one immutable build; do not wait for hosted Actions.
-2. Run one autonomous activation, checkpoint its result, and run one fresh
-   product trial. Stop on either failure and report the exact blocker.
+1. Run one autonomous activation and checkpoint its exact result.
+2. Run one fresh product trial; stop and report on either failure.
 
 ## verification
 
