@@ -1006,7 +1006,20 @@ implementation `c6c02d0` and ledger `cd142c4` pass 103 focused tests plus the
 complete named gate: 636-document validation, repository-wide Ruff/format, 657
 Python passes with 6 skips, 110 dashboard passes, every routing threshold, and
 100/100 killed decision mutations with a green baseline and unchanged source.
-No immutable build or writer trial has been consumed yet.
+
+Exact clean candidate `4c57507` builds and independently verifies. Wheel
+SHA-256 is `01eb373868156423031e12c5bce13a54787c4bb2c7ccbca6fb0e9a0a404e4230`;
+source SHA-256 is
+`fab10f3a2769d921175c422757ec524cbfa4e092a7a83744659e4cb95037a4d3`.
+Autonomous suite refresh installs Codex, ZCode, and the reachable dashboard;
+Codex activation passes with trust bypass and no persistent profile change.
+Its one writer trial `ar223-agency-writer-4c57507-01` is consumed and terminal
+`NO-GO`. Inference selected and loaded `minimal-change-engineer`; the child now
+records one tool call, one completed child, a valid first header, and zero
+corrections, improving the preceding zero-tool behavior. It still produced no
+successful patch receipt or file. Delegation remained incomplete, the worker
+remained unended, and finalization truthfully recorded `delegation_declined`
+with missing `delegation_execution`. Do not retry `4c57507`.
 
 ## Approach
 

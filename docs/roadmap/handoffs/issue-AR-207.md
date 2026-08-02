@@ -90,35 +90,32 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   writes with the same encrypted task transport and inherited workspace, while
   v3 left generic specialist refusal clauses after the exact action contract.
   ADR-0145 v4 keeps the specialist body hash-bound and places a byte-exact,
-  fail-closed execution suffix last. Exact implementation `c6c02d0` and ledger
-  `cd142c4` pass 103 focused tests and the complete named gate: 636-document
-  validation, repository-wide Ruff/format, 657 Python passes with 6 skips, 110
-  dashboard passes, every routing threshold, and 100/100 killed decision
-  mutations with a green baseline and unchanged source. No build or live trial
-  has been consumed for v4.
+  fail-closed execution suffix last. Exact candidate `4c57507` passes the full
+  named gate, builds and independently verifies, installs Codex, ZCode, and the
+  dashboard, and passes autonomous Codex activation. Its one writer trial is
+  consumed `NO-GO`: the child advances from zero to one tool call but creates
+  no patch receipt or file. Do not retry `4c57507`.
 
 ## completed-evidence
 
-- Activation session `019fc32f-95d8-74d3-90f8-ff8b570df2b9`, trace
-  `019fc32f-9efe-75a1-bd3a-7fa370adb701`, delegation
-  `a61cc962-ba57-4003-a834-96affb35b2d7`, finalization
-  `13841b28-dac1-489f-a2ec-3d6fb63a17a2`, and worker
-  `codex-agent:019fc330-525f-7b20-b337-f87b7b6ef063` retain the pass.
-- Writer session `019fc331-f432-71e1-b473-ce62d345171b`, trace
-  `019fc331-f4ad-73f3-ad67-f25092b925cd`, run
-  `c1c9475a-358d-4755-a665-3be459ce409a`, delegation
-  `c23a05b3-1eff-475c-b7f4-c1a3f9000cda`, finalization
-  `067e1925-23db-45d2-92a8-280115e72779`, and worker
-  `codex-agent:019fc332-93f4-7c31-af81-742bcce29385` retain the scoped proof.
+- Activation session `019fc386-3a01-71f0-9477-f2f47c7ac47c`, trace
+  `019fc386-47c4-71d3-bfd2-608e2dee51e0`, and worker
+  `codex-agent:019fc387-1ec0-7712-9696-a97f941a097a` retain the pass.
+- Writer session `019fc389-092b-7f30-b22c-a99ed0a3ec5e`, trace
+  `019fc389-09a8-7600-9dd4-8dc624f33efb`, run
+  `603ea506-d34b-418f-8e6a-2157b20afaa6`, delegation
+  `7af31d7d-7561-4772-96ca-9380374740f4`, finalization
+  `9c787ccc-11a6-4e7a-8d42-f43f35eccf1a`, and worker
+  `codex-agent:019fc389-be08-7dc3-a4fe-7499e18e4890` retain the `NO-GO`.
 
 ## exact-blocker
 
 The requested parent-finalization bug is fixed and proven on the installed
-candidate. Actual Agency child workspace execution remains unproven. The first
-causal boundary is now repaired locally: v4 makes the accepted work-unit action
-newer than generic specialist preferences without changing selection or scope.
-README remains `NO-GO` until one immutable installed writer trial creates exact
-bytes and closes the full evidence chain.
+candidate. Actual Agency child workspace execution remains unproven. V4 changes
+the child from zero tool calls to one, but that call does not yield a successful
+workspace-local patch receipt. The exact next causal boundary is the retained
+child tool outcome versus hook/tool projection, not routing, trust, workspace
+authority, header repair, or parent finalization.
 
 ## same-task-continuity
 
@@ -130,10 +127,11 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Build and install the one immutable candidate from the clean gate checkpoint.
-2. Prove activation, then spend
-   exactly one fresh Agency writer trial for the exact 23-byte file.
-3. Stop at the first failed gate. Never retry `c8a0577` or broaden this package.
+1. Inspect the retained one-tool child projection and hook outcome without a new
+   product run; determine why no successful `patch_apply_end` was recorded.
+2. Repair only that first causal boundary, then repeat the governed gate/build
+   contract with one new immutable candidate.
+3. Never retry `c8a0577` or `4c57507`, and do not broaden this package.
 
 ## verification
 
@@ -163,7 +161,7 @@ git diff --check
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
   activations; exact `b2be077` consumed both activation and product evidence;
   `ae322ec`, `bffd2c8`, `b6bcdfb`, `d4c65a7`, `4d14b99`, `93e465a`,
-  `d610630`, `7f0479f`, `be1ca0e`, `d5a4e31`, and `c8a0577` consumed governed
-  evidence; none may be rerun.
+  `d610630`, `7f0479f`, `be1ca0e`, `d5a4e31`, `c8a0577`, and `4c57507`
+  consumed governed evidence; none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.
