@@ -542,6 +542,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2d8661c` | 2026-08-02 | docs(ar-223): classify planner activation failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `d12041b` | 2026-08-02 | docs(ar-223): record green callback-order activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `50fa505` | 2026-08-02 | docs(ar-223): record failed exact writer sentinel | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `10c047f` | 2026-08-02 | fix(ar-223): bind exact writer planning evidence | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
