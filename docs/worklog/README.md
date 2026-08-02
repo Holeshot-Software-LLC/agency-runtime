@@ -549,6 +549,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `73f9989` | 2026-08-02 | fix(ar-223): preserve inferred indivisible plans | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `bc5bdf8` | 2026-08-02 | docs(ar-223): record indivisible planner diagnosis | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `59f8514` | 2026-08-02 | docs(ar-223): record green indivisible plan gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `9ab2b57` | 2026-08-02 | docs(ar-223): record exact planner candidate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
