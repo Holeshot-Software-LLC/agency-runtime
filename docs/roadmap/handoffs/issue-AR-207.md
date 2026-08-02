@@ -47,8 +47,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: b2be07758737b8e89a98aa0b0e03cecd6eb68c83
-minimum_ledger_commit: 38c757eedb38713753028127ddc7edfdc96e0b9e
+evidence_commit: 8097e7708a52956862746ea3aa5b2fecbe7031ed
+minimum_ledger_commit: e73a641b76506c83ed86ad32f02d4cd8af02855a
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -75,6 +75,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   zero spawns, follow-ups, waits, loads, or workers. The workspace is empty;
   failure is `codex_parent_spawn_missing` / `workspace_write_not_proven` with
   no header and zero corrections.
+- Exact `8097e77` consumes one autonomous-bypass activation and passes. Session
+  `019fc036-6716`, trace `019fc036-733e`, native run
+  `codex-agent:019fc037-8811`, and delegation `f4f618db` prove an inferred
+  `code-reviewer`, one exact spawn, one execution follow-up, two waits, a
+  completed exit-zero worker, valid first header, zero corrections, and zero
+  unexpected parent items. Trust bypass changes no persistent profile state.
 
 ## completed-evidence
 
@@ -98,18 +104,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   refreshes Codex bundle `a9aa4f7e...`, registers/enables ZCode, and leaves the
   dashboard active and reachable. Codex global guidance is byte-equal to the
   canonical 1,123-byte renderer with one begin and one end marker. Codex is
-  honestly `activation-required`; no activation or product trial is consumed.
+  installed build then passes its single autonomous activation with one route,
+  plan, delegation, load, worker, and finalization; no preflight failures; a
+  valid first header; and zero corrections. No product trial is consumed.
 
 ## exact-blocker
 
 The README main story remains NO-GO. Exact `b2be077` passes activation, but its
-product parent never invokes collaboration. ADR-0126's developer instruction
-does not satisfy current Codex's user-or-applicable-instruction delegation gate.
-A broad-skill probe adds a forbidden parent shell read and remains untraceable.
-The managed global-guidance path now installs, plans, projects, uninstalls, and
-rolls back under focused tests and the complete named gate. Exact merge
-`8097e77` is installed in the current profile; fresh live activation and product
-evidence remain pending.
+product parent never invokes collaboration. Exact `8097e77` installs the
+managed global-guidance repair and passes its one allowed activation. The only
+remaining AR-223 live slot is one fresh product trial proving the parent now
+delegates the inferred graph and its specialists create verified artifacts.
 
 ## same-task-continuity
 
@@ -121,10 +126,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run context telemetry, then spend exactly one autonomous-bypass Codex
-   activation for installed merge `8097e77`.
-2. If activation passes, checkpoint it and spend at most one fresh product
-   trial. Never rerun the consumed `b2be077` evidence.
+1. Checkpoint the passed exact-build activation, then run context telemetry.
+2. Spend exactly one fresh product trial for `8097e77`. Never rerun either
+   consumed build or trial; checkpoint the terminal result before further work.
 
 ## verification
 

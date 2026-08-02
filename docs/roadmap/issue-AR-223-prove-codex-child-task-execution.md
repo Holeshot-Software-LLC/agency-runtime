@@ -308,6 +308,16 @@ installed `C:\Users\lucas\.codex\AGENTS.md` is byte-equal to the canonical
 registration succeeds and truthfully remains `activation-required`; this
 installation consumes neither the activation nor product live-evidence slot.
 
+The exact installed build consumes one autonomous-bypass activation and exits
+zero. Session `019fc036-6716-76a1-a39e-8bf44a0ba502`, trace
+`019fc036-733e-7653-9d49-28683b815d4e`, and native run
+`codex-agent:019fc037-8811-78e0-94b9-2e167c75aa4a` prove the accepted inferred
+`code-reviewer` route, one plan, one spawn, one execution follow-up, two waits,
+one specialist load, a completed exit-zero worker, and an accepted
+finalization. The first header is valid, correction count and unexpected-item
+count are both zero, trust bypass is used, and the persistent profile is
+unchanged. The fresh product slot remains unconsumed.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
