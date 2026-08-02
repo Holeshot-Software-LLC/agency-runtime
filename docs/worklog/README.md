@@ -557,6 +557,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `13991fc` | 2026-08-02 | docs(ar-223): record exact staffing candidate activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `f647eab` | 2026-08-02 | docs(ar-223): record failed exact writer execution | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `260865e` | 2026-08-02 | fix(ar-223): prove delegated child execution context | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `87a9786` | 2026-08-02 | docs(ar-223): record failed child-context writer proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
