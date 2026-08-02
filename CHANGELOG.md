@@ -66,6 +66,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex Agency children now receive the exact accepted work-unit execution
+  contract after their independently hash-verified specialist expertise. A
+  generic specialist preference can no longer override a valid proof-only
+  `workspace_write` assignment, and a missing or modified execution suffix
+  invalidates the delivery before any success claim.
 - Codex `UserPromptSubmit` hooks now keep Agency's already bounded multi-unit
   delegation plan model-visible instead of letting Codex's default hook-output
   threshold spill it to a file the non-working parent cannot read. Other hook

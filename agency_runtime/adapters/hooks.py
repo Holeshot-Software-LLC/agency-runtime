@@ -1494,7 +1494,7 @@ class HookBridge:
             )
         # Codex owns decryption and dispatch of collaboration messages. Opaque
         # input is preserved byte-for-byte; SubagentStart retrieves the exact
-        # label-bound grant and injects its direct-execution v3 child context.
+        # label-bound grant and injects its direct-execution v4 child context.
         return result
 
     def _codex_execution_candidates(

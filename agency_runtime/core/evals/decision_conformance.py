@@ -959,6 +959,26 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-direct-child-puts-execution-before-specialist",
+        invariant=(
+            "The exact accepted Codex work-unit execution contract follows the immutable "
+            "specialist expertise as the newest child instruction."
+        ),
+        source_path="agency_runtime/core/native_child_prompt_delivery.py",
+        before=(
+            '    return f"{_CODEX_DIRECT_SECTION}{marker}\\n{prompt_body}'
+            '{_CODEX_DIRECT_EXECUTION_SUFFIX}"\n'
+        ),
+        after=(
+            '    return f"{_CODEX_DIRECT_SECTION}{marker}\\n'
+            '{_CODEX_DIRECT_EXECUTION_SUFFIX}{prompt_body}"\n'
+        ),
+        test_node=(
+            "tests/test_claude_native_child_hooks.py::"
+            "test_codex_opaque_product_delivery_is_goal_hash_bound_child_context"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="codex-opaque-child-restores-workspace-wide-grant",
         invariant=(
             "An ordinary Codex child receives only the path prefixes derived from its "

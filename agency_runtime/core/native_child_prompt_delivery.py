@@ -23,7 +23,7 @@ from agency_runtime.core.store.version_identity import normalize_version_identit
 
 NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 1
 CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 2
-CODEX_DIRECT_NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 3
+CODEX_DIRECT_NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 4
 CODEX_NATIVE_CHILD_EXECUTION_VERSION: Final[int] = 1
 MAX_NATIVE_CHILD_DELIVERY_METADATA_BYTES: Final[int] = 2_048
 MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS: Final[int] = 256
@@ -60,26 +60,31 @@ _CODEX_OPAQUE_MARKER_PATTERN = re.compile(
     re.escape(_CODEX_OPAQUE_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
 )
 _CODEX_DIRECT_SECTION = (
-    "[AGENCY EXACT SPECIALIST EXECUTION v3]\n"
-    "The decrypted native child message is the exact work-unit goal. Execute that goal "
-    "exactly once now under the audited specialist instructions below. Use workspace tools "
-    "when the goal requires them; the accepted plan and current native activation have "
-    "already verified the required host tools, and the current working directory is the "
-    "exact isolated workspace for relative paths. Do not stop merely because the specialist "
-    "contract says tool availability must be proven; this activation is that proof. Report "
-    "a missing prerequisite only after an actual required tool is absent or denied. Hook "
-    "policy enforces the exact persisted mutation scope. "
-    "A goal ending in `mutation_scope=workspace_write` is an action contract: before any "
-    "final response, use `apply_patch` for the first required workspace mutation and require "
-    "a successful workspace-local patch receipt. An exact proof-only named-file change is a "
-    "legitimate implementation unit; do not reject it as arbitrary text or expand it into "
-    "unrequested root-cause analysis, tests, or refactoring. "
-    "Do not re-delegate, broaden, postpone, or convert this turn into a readiness ceremony. "
-    "Return one bounded evidence-backed result. The host hook bound the exact specialist and "
-    "Store-backed authority to this persisted work-unit row. Do not copy the specialist "
-    "instructions into the parent, another worker, status text, or the final response.\n"
+    "[AGENCY EXACT SPECIALIST ACTIVATION v4]\n"
+    "The host hook bound the exact audited specialist below and Store-backed authority to "
+    "this persisted work-unit row. Treat the text below as turn-scoped specialist expertise. "
+    "Do not copy it into the parent, another worker, status text, or the final response.\n"
 )
-_CODEX_DIRECT_MARKER_PREFIX = "<!-- agency-native-child-delivery:v3:"
+_CODEX_DIRECT_EXECUTION_SECTION = "[AGENCY EXACT WORK-UNIT EXECUTION CONTRACT v4]\n"
+_CODEX_DIRECT_EXECUTION_INSTRUCTION = (
+    "The decrypted native child message is the exact work-unit goal. Execute that goal "
+    "exactly once now using the specialist expertise above. This current work-unit contract "
+    "governs execution when a generic specialist preference conflicts with the exact accepted "
+    "assignment. Use workspace tools when the goal requires them; the accepted plan and "
+    "current native activation already prove the required host tools and exact isolated "
+    "working directory. Report a missing prerequisite only after an actual required tool is "
+    "absent or denied. Hook policy enforces the persisted mutation scope. A goal ending in "
+    "`mutation_scope=workspace_write` is an action contract: before any final response, use "
+    "`apply_patch` for the first required workspace mutation and require a successful "
+    "workspace-local patch receipt. An exact proof-only named-file change is legitimate; do "
+    "not reject it as arbitrary text or expand it into unrequested root-cause analysis, tests, "
+    "or refactoring. Do not re-delegate, broaden, postpone, or convert this turn into a "
+    "readiness ceremony. Return one bounded evidence-backed result."
+)
+_CODEX_DIRECT_EXECUTION_SUFFIX = (
+    f"\n\n{_CODEX_DIRECT_EXECUTION_SECTION}{_CODEX_DIRECT_EXECUTION_INSTRUCTION}"
+)
+_CODEX_DIRECT_MARKER_PREFIX = "<!-- agency-native-child-delivery:v4:"
 _CODEX_DIRECT_MARKER_PATTERN = re.compile(
     re.escape(_CODEX_DIRECT_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
 )
@@ -595,7 +600,24 @@ def render_codex_direct_native_child_prompt_delivery(
     if not content_identity_matches(prompt_body, metadata["specialist_prompt_hash"]):
         raise ValueError("specialist prompt body failed exact identity verification")
     marker = f"{_CODEX_DIRECT_MARKER_PREFIX}{_encoded_metadata(metadata)}{_MARKER_SUFFIX}"
-    return f"{_CODEX_DIRECT_SECTION}{marker}\n{prompt_body}"
+    return f"{_CODEX_DIRECT_SECTION}{marker}\n{prompt_body}{_CODEX_DIRECT_EXECUTION_SUFFIX}"
+
+
+def _prompt_body_for_delivery(
+    value: str,
+    *,
+    prompt_start: int,
+    envelope_version: int,
+) -> str | None:
+    """Return only the immutable specialist body from an exact delivery envelope."""
+
+    prompt_end = len(value)
+    if envelope_version == CODEX_DIRECT_NATIVE_CHILD_PROMPT_DELIVERY_VERSION:
+        if not value.endswith(_CODEX_DIRECT_EXECUTION_SUFFIX):
+            return None
+        prompt_end -= len(_CODEX_DIRECT_EXECUTION_SUFFIX)
+    prompt_body = value[prompt_start:prompt_end]
+    return prompt_body or None
 
 
 def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelivery | None:
@@ -674,8 +696,12 @@ def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelive
             prompt_start += 1
         else:
             continue
-        prompt_body = value[prompt_start:]
-        if not prompt_body or not content_identity_matches(
+        prompt_body = _prompt_body_for_delivery(
+            value,
+            prompt_start=prompt_start,
+            envelope_version=envelope_version,
+        )
+        if prompt_body is None or not content_identity_matches(
             prompt_body,
             normalized["specialist_prompt_hash"],
         ):

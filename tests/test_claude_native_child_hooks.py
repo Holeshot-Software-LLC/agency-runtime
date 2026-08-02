@@ -939,8 +939,23 @@ def test_codex_opaque_product_delivery_is_goal_hash_bound_child_context() -> Non
     assert delivery.original_task == ""
     assert delivery.goal_hash == work_unit_goal_hash(store.goals["unit-code"])
     assert delivery.specialist_slug == "code-reviewer"
-    assert "[AGENCY EXACT SPECIALIST EXECUTION v3]" in context
-    assert context.endswith(store.prompts["code-reviewer"])
+    assert "[AGENCY EXACT SPECIALIST ACTIVATION v4]" in context
+    assert "[AGENCY EXACT WORK-UNIT EXECUTION CONTRACT v4]" in context
+    assert context.index(store.prompts["code-reviewer"]) < context.index(
+        "[AGENCY EXACT WORK-UNIT EXECUTION CONTRACT v4]"
+    )
+    assert context.endswith("Return one bounded evidence-backed result.")
+    assert delivery.prompt_body == store.prompts["code-reviewer"]
+
+    assert (
+        parse_native_child_prompt_delivery(
+            context.replace(
+                "This current work-unit contract governs execution",
+                "A changed work-unit contract governs execution",
+            )
+        )
+        is None
+    )
 
 
 def _activate_codex_plan_child(

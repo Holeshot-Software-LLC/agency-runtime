@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
+  - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md
   - agency_runtime/adapters/hooks.py
   - tests/test_codex_activation_canary.py
   - docs/worklog/README.md

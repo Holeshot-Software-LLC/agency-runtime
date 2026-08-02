@@ -47,6 +47,7 @@ related:
   - docs/decisions/0142-require-terminal-product-child-before-next-unit.md
   - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
+  - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -85,6 +86,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `delegation_execution`, replacing `d5a4e31`'s false `accept/completed` on the
   same incomplete shape. Scoped parent-finalization repair is `PASS`; README
   writer outcome remains `NO-GO`. Do not retry `c8a0577`.
+- The next package isolates the Agency-only prompt-order boundary. Direct Codex
+  writes with the same encrypted task transport and inherited workspace, while
+  v3 left generic specialist refusal clauses after the exact action contract.
+  ADR-0145 v4 keeps the specialist body hash-bound and places a byte-exact,
+  fail-closed execution suffix last. Ninety-one focused hook, parser, rollout,
+  and execution tests plus scoped Ruff and diff checks pass. No build or live
+  trial has been consumed for v4.
 
 ## completed-evidence
 
@@ -103,10 +111,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 The requested parent-finalization bug is fixed and proven on the installed
-candidate. Actual Agency child workspace execution remains unproven: the exact
-writer child starts but records no terminal execution receipt and creates no
-file. README remains `NO-GO`; this is a distinct next package, not permission to
-broaden the completed bug fix.
+candidate. Actual Agency child workspace execution remains unproven. The first
+causal boundary is now repaired locally: v4 makes the accepted work-unit action
+newer than generic specialist preferences without changing selection or scope.
+README remains `NO-GO` until one immutable installed writer trial creates exact
+bytes and closes the full evidence chain.
 
 ## same-task-continuity
 
@@ -118,10 +127,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Close this package after its evidence and ledger checkpoint.
-2. If the owner explicitly resumes AR-223, freeze one separate package around
-   why the Agency writer child records no terminal patch receipt despite the
-   proven direct-child workspace-write control. Do not retry `c8a0577`.
+1. Run the named fast gate and create the substantive plus ledger checkpoint.
+2. Build and install that one immutable candidate, prove activation, then spend
+   exactly one fresh Agency writer trial for the exact 23-byte file.
+3. Stop at the first failed gate. Never retry `c8a0577` or broaden this package.
 
 ## verification
 

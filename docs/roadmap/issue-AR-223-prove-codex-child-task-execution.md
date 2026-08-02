@@ -33,6 +33,7 @@ related:
   - docs/decisions/0142-require-terminal-product-child-before-next-unit.md
   - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
+  - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -991,6 +992,18 @@ same state. Independent inspection finds zero workspace entries and no
 incomplete shape as `accept/completed`, so the controlled before/after proves
 the requested bug is fixed. Do not retry `c8a0577`. Actual delegated workspace
 execution remains the next separate AR-223 product gap.
+
+The next bounded diagnosis compares that failed Agency child with the retained
+direct native control. Both use current Codex encrypted task transport and an
+inherited writable workspace, but only Agency injects its direct-child context.
+The v3 renderer put the exact execution instruction before the immutable
+`minimal-change-engineer` prompt, leaving the specialist's generic refusal of
+arbitrary text and root-cause/test requirements as the newest instructions.
+ADR-0145 replaces that envelope with v4: the independently hash-verified
+specialist body remains unchanged, while a byte-exact, fail-closed execution
+suffix follows it and requires `apply_patch` for `workspace_write`. The focused
+hook, parser, rollout, child-execution, lint, formatting, and diff checks pass;
+no immutable build or writer trial has been consumed yet.
 
 ## Approach
 
