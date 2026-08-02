@@ -55,8 +55,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 3cc852f0b418a17252256532ec1c57946034b7ad
-minimum_ledger_commit: c09e0c1b58c6d6c65642b8ee78a053ec2865bc2f
+evidence_commit: 2a19c79a78f592897c1ffaf4da11be378ed7f419
+minimum_ledger_commit: e0a7492ae2807f9da7a526d883f0ffc3c1cd00b1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -96,13 +96,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   dashboard, and passes autonomous Codex activation. Its one writer trial is
   consumed `NO-GO`: the child advances from zero to one tool call but creates
   no patch receipt or file. Do not retry `4c57507`.
-- The retained-evidence audit cannot classify that historical call: the Store
-  has launch and dispatch but no worker end or tool receipt, no surviving parent
-  rollout contains the child ID, and the isolated child profile is gone.
-  ADR-0146 implementation `3cc852f` adds content-free per-child and aggregate
-  tool lifecycle counts for the next immutable run. Sixty-five focused tests
-  pass; its single decision mutation is killed. No product trial ran in this
-  slice.
+- ADR-0147 implementation `2a19c79` durably attaches ADR-0146's validated fixed
+  counts to each exact worker receipt before product admission. Snapshot rows
+  expose `recorded`, `missing`, or `invalid`; missing writes remain unit-scoped
+  failures. The focused suite passes 128 warning-strict tests, documentation
+  validates 638 files, and repository Ruff/format/diff checks pass. No product
+  trial ran in this slice.
 
 ## completed-evidence
 
@@ -118,12 +117,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The requested parent-finalization bug is fixed and proven on the installed
-candidate. Actual Agency child workspace execution remains unproven. V4 changes
-the child from zero tool calls to one, but the consumed evidence cannot classify
-that call. The next fresh candidate will expose call type, wrapper outcome,
-output receipt, and patch outcome without content; do not repair execution again
-until that evidence identifies the first failed boundary.
+The requested parent-finalization bug is fixed and proven. Actual Agency child
+workspace execution remains unproven. The new Store boundary can diagnose call
+type, wrapper outcome, output receipt, and patch outcome without content on the
+next fresh candidate. Do not repair execution again until that one sentinel
+identifies the first failed boundary.
 
 ## same-task-continuity
 

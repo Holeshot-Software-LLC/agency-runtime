@@ -73,6 +73,9 @@ errors, task text, or response content into durable state.
 - A curated mutation removes the product-host Store write and must be killed by
   the exact product-host test.
 
+Implementation `2a19c79` carries this decision; ledger `e0a7492` records its
+worklog and roadmap traceability.
+
 ## Alternatives
 
 - **Keep the report as the only copy.** Rejected because diagnosis would still

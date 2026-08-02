@@ -1039,9 +1039,10 @@ focused tests pass, and the new isolated decision mutation passes its baseline,
 is killed once, and leaves source unchanged. No product trial was run in this
 diagnostic slice.
 
-The next bounded repair closes the remaining diagnostic durability gap before
-another immutable trial. Schema v44 attaches the validated content-free child
-tool projection to the exact Codex `worker_runs` receipt with immutable,
+Implementation `2a19c79` closes the remaining diagnostic durability gap before
+another immutable trial; ledger `e0a7492` records it. Schema v44 attaches the
+validated content-free child tool projection to the exact Codex `worker_runs`
+receipt with immutable,
 byte-identical replay semantics. The activation snapshot exposes each receipt
 as `recorded`, `missing`, or `invalid`; product admission requires the Store
 counts to equal the corresponding rollout projection. Missing or failed writes
