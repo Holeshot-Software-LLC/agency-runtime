@@ -521,6 +521,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `730bd03` | 2026-08-01 | fix(ar-223): install Codex delegation guidance | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `dbf4e0c` | 2026-08-01 | docs(ar-223): record green Codex guidance gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `b3b2d4f` | 2026-08-01 | docs(ar-223): checkpoint installed Codex guidance merge | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `aa459fb` | 2026-08-01 | docs(ar-223): checkpoint exact activation proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
