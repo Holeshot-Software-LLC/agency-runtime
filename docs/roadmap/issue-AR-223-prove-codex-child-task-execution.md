@@ -344,6 +344,14 @@ and must not reconstruct missing rows. The bounded repair sets the supported
 validation bind the field. The focused installer, adapter-parity, and smoke set
 passes 200 tests; targeted Ruff lint and format checks pass.
 
+Clean recovery head `7327483` closes the complete named local gate for this
+repair. Metadata, policy, worklog, and 629-document validation pass; Ruff lint
+and format cover 609 files; the Python production spine passes 657 tests with 6
+skipped; the dashboard passes 110/110; every routing threshold passes; decision
+conformance kills every registered mutation with zero survived or invalid
+results; and the source checkout remains unchanged. The next boundary is one
+new immutable build, one autonomous activation, and one fresh product trial.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -381,8 +389,8 @@ accepted plan authority.
   hash; all malformed variants fail closed.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
-- [x] Focused checks, two review passes, and the named local fast gate pass on
-  clean recovery head `9f391b8`.
+- [x] Focused checks, bounded review, and the complete named local gate pass on
+  clean recovery head `7327483`.
 - [x] The generated Codex `UserPromptSubmit` handler keeps the complete bounded
   inferred plan inline instead of spilling it outside the parent's allowed
   tool boundary.

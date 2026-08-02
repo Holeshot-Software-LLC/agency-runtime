@@ -48,7 +48,7 @@ type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
 evidence_commit: 8097e7708a52956862746ea3aa5b2fecbe7031ed
-minimum_ledger_commit: 5c899b0e5d29163b14eebf212a9f43d540611ac9
+minimum_ledger_commit: 73274832a0985c7817c991061ac839386deb7cc1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -117,18 +117,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `codex_parent_spawn_missing` / `workspace_write_not_proven` before execution.
 - The first missing edge is Codex's default 2,500-token hook-context spill, not
   selection or guidance loading. The one-row activation fits; the 11-row plan
-  is replaced with a preview and file path that the collaboration-only parent
-  cannot read. The focused repair sets `additionalContextLimit: 0` only for
-  Codex `UserPromptSubmit` while preserving Agency's 32,000-character bound.
-  Installer, adapter-parity, and smoke checks pass 200 tests; Ruff passes.
+  spills beyond the collaboration-only parent. The repair sets
+  `additionalContextLimit: 0` only for Codex `UserPromptSubmit` while Agency's
+  32,000-character bound remains; focused checks pass 200 tests and Ruff.
+- Clean recovery head `7327483` passes the complete named local gate for that
+  repair: 629-document validation, Ruff over 609 files, Python 657 passed with
+  6 skipped, dashboard 110/110, every routing threshold, and conformance with
+  every mutation killed, none invalid, and source unchanged.
 
 ## exact-blocker
 
 The README main story remains NO-GO. Exact `8097e77` must never be rerun. Its
 consumed product trial identifies one bounded host-delivery defect: Codex spills
 the exact multi-unit plan outside the parent's allowed tools. The manifest-only
-repair is focused-green; one review and the named local gate remain before a
-new immutable build may consume live evidence.
+repair is complete and locally green. One new immutable build may now consume
+exactly one autonomous activation and one fresh product trial; either live
+failure is the stop point, not the start of another repair loop.
 
 ## same-task-continuity
 
@@ -140,10 +144,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Perform one focused review of the four-file behavior diff and close only
-   findings that invalidate complete-plan delivery.
-2. Run the named local gate once, then checkpoint before publishing or
-   installing one new immutable build.
+1. Merge and exact-install one immutable build; do not wait for hosted Actions.
+2. Run one autonomous activation, checkpoint its result, and run one fresh
+   product trial. Stop on either failure and report the exact blocker.
 
 ## verification
 
