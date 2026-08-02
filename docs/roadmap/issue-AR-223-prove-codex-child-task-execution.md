@@ -361,6 +361,18 @@ installed, active, current, and reachable. The installed Codex manifest places
 handler and on no other event. Codex remains truthfully `activation-required`;
 neither the activation nor product slot has been consumed.
 
+Exact installed `eb8e077` now consumes and passes its sole autonomous-bypass
+activation. Session `019fc073-ad61-7f60-b187-974936bb4c33`, trace
+`019fc073-b8fd-7e70-9a55-2ae74ba8adb1`, run
+`1602cd81-bc40-469a-8386-008077c2a0a1`, native run
+`codex-agent:019fc074-d7b4-71e1-8425-b21a855ba8ee`, delegation
+`9351fffd-5015-4b18-bc51-b2bdc0103b83`, and finalization
+`1be22617-6bab-4089-83fb-bd4ea4104c55` prove one accepted inferred
+`code-reviewer` plan, one spawn, one execution follow-up, two completed waits,
+one consumed grant, one specialist load, and one completed worker. The first
+header is valid, correction count is zero, the bypass changes no persistent
+profile state, and the product slot remains unconsumed.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

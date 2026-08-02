@@ -127,12 +127,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO. PR 234 merges and uv installs exact
-`eb8e077`; bare install discovers only Codex and ZCode, enables both, and leaves
-the dashboard active and reachable. Its installed Codex manifest has the exact
-inline-plan field only on `UserPromptSubmit`. Codex remains
-`activation-required`; exactly one autonomous activation and one fresh product
-trial remain. Either failure is the stop point, not another repair loop.
+The README main story remains NO-GO. Exact installed `eb8e077` passes its sole
+autonomous activation: session `019fc073-ad61`, trace `019fc073-b8fd`, run
+`1602cd81`, native run `codex-agent:019fc074-d7b4`, delegation `9351fffd`, and
+finalization `1be22617` prove inferred/loaded `code-reviewer`, one spawn, one
+follow-up, two completed waits, one completed worker, a valid first header, and
+zero corrections. Trust bypass changes no persistent state. Only one fresh
+product trial remains; failure is the stop point, not another repair loop.
 
 ## same-task-continuity
 
@@ -144,8 +145,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run one autonomous activation and checkpoint its exact result.
-2. Run one fresh product trial; stop and report on either failure.
+1. Run one fresh product trial for exact `eb8e077`.
+2. Stop and report if it fails; do not repair or rerun it.
 
 ## verification
 
