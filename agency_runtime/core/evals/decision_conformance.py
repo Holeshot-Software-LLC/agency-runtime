@@ -1312,6 +1312,20 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="parent-finalizes-incomplete-workspace-write",
+        invariant=(
+            "A parent cannot accept a current workspace-write row whose delegated "
+            "execution has no terminal completion receipt."
+        ),
+        source_path="agency_runtime/core/header/contract.py",
+        before="    if incomplete_workspace_writes:",
+        after="    if False and incomplete_workspace_writes:",
+        test_node=(
+            "tests/test_turn_coverage_complete_header_preflight.py::"
+            "test_completion_policy_rejects_incomplete_workspace_write_delegation"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-host-mislabels-hook-bypass-as-attended",
         invariant=(
             "Codex product trials record the supported one-invocation bypass without claiming "

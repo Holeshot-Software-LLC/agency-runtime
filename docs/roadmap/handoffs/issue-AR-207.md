@@ -85,6 +85,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   incomplete, but parent finalization still records `accept/completed` with no
   missing rows. Independent inspection finds zero workspace entries. Do not
   retry `d5a4e31`.
+- The focused parent-finalization repair now requires every current v14
+  `workspace_write` unit to have exactly one `completed` delegation with a
+  terminal timestamp before acceptance. Missing, delegated-only,
+  timestamp-free, duplicate, or malformed evidence fails closed as
+  `delegation_execution`. The exact regressions pass; 264 adjacent tests pass
+  with one platform skip. No new build or live trial has been consumed.
 
 ## completed-evidence
 
@@ -101,8 +107,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 Build, install, activation, routing, selection, delegation projection, first
 header, and zero corrections pass on consumed `d5a4e31`. Receipt enforcement
 prevents false worker completion, but parent finalization still accepts the run
-with its writer delegation incomplete. Workspace execution remains unproven, so
-README remains `NO-GO` and unrelated surfaces stay deferred.
+with its writer delegation incomplete. The focused parent-finalization repair
+is locally green but unbuilt. Workspace execution remains unproven, so README
+remains `NO-GO` and unrelated surfaces stay deferred.
 
 ## same-task-continuity
 
@@ -114,10 +121,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Repair only the parent-finalization gate so an accepted `workspace_write`
-   row cannot finalize while its receipt-gated worker or delegation is incomplete.
-2. Run focused tests, the named gate, and at most one new immutable activation
-   plus writer proof. Never retry `d5a4e31` or broaden the package.
+1. Commit the focused parent-finalization repair and its ledger checkpoint.
+2. Run the complete named gate once. If green, build/install one new immutable
+   candidate, run one activation, and spend one writer proof. Never retry
+   `d5a4e31` or broaden the package.
 
 ## verification
 

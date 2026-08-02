@@ -66,6 +66,26 @@ def _valid_header() -> str:
     )
 
 
+def _current_workspace_write_plan() -> dict[str, Any]:
+    return {
+        "assignment_version": "4",
+        "work_unit_id": "unit-1234567890",
+        "goal_hash": "a" * 64,
+        "deliverable_kind": "implementation",
+        "recommended_agent": "minimal-change-engineer",
+        "recommended_agents": ["minimal-change-engineer"],
+        "selection_confidence": 0.99,
+        "rationale_codes": ["exact_workspace_change"],
+        "depends_on": [],
+        "parallelization": "sequential",
+        "mutation_scope": "workspace_write",
+        "resource_hashes": [],
+        "required_tools": ["apply_patch"],
+        "required_evidence": ["workspace_patch_receipt"],
+        "delegation_strength": "strongly_preferred",
+    }
+
+
 def test_completion_snapshot_rejects_every_untrusted_shape() -> None:
     invalid: list[tuple[Any, str]] = [
         (None, "snapshot could not be verified"),
@@ -1535,6 +1555,88 @@ def test_completion_policy_covers_invalid_strength_and_open_optional_projection(
             trace_id="trace",
             store=object(),
             evidence_snapshot=optional,
+        )
+        is None
+    )
+
+
+def test_completion_policy_rejects_incomplete_workspace_write_delegation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        contract,
+        "_validate_completion_snapshot",
+        lambda snapshot, *_args, **_kwargs: dict(snapshot),
+    )
+    snapshot = _active_snapshot()
+    snapshot["selection_required"] = False
+    snapshot["preflight_recipe_version"] = 14
+    snapshot["unit_agent_plan"] = [_current_workspace_write_plan()]
+    snapshot["delegations"] = [
+        {
+            "id": "delegation",
+            "work_unit_id": "unit-1234567890",
+            "recommended_agent": "minimal-change-engineer",
+            "status": "delegated",
+            "completed_at": None,
+        }
+    ]
+
+    violation = contract.validate_completion_policy(
+        _valid_header(),
+        session_id="session",
+        trace_id="trace",
+        store=object(),
+        evidence_snapshot=snapshot,
+    )
+
+    assert violation is not None
+    assert violation["missing"] == ["delegation_execution"]
+    assert "unit-1234567890" in violation["message"]
+    snapshot["delegations"][0]["status"] = "completed"
+    assert contract.validate_completion_policy(
+        _valid_header(),
+        session_id="session",
+        trace_id="trace",
+        store=object(),
+        evidence_snapshot=snapshot,
+    )["missing"] == ["delegation_execution"]
+    snapshot["delegations"][0]["completed_at"] = "2026-08-02T15:00:00+00:00"
+    snapshot["preflight_recipe_version"] = True
+    assert contract.validate_completion_policy(
+        _valid_header(),
+        session_id="session",
+        trace_id="trace",
+        store=object(),
+        evidence_snapshot=snapshot,
+    )["missing"] == ["evidence_verification"]
+    snapshot["preflight_recipe_version"] = 14
+    snapshot["delegations"].append(
+        {
+            **snapshot["delegations"][0],
+            "id": "duplicate-delegation",
+        }
+    )
+    assert contract.validate_completion_policy(
+        _valid_header(),
+        session_id="session",
+        trace_id="trace",
+        store=object(),
+        evidence_snapshot=snapshot,
+    )["missing"] == ["evidence_verification"]
+    snapshot["delegations"].pop()
+    monkeypatch.setattr(
+        contract,
+        "fill_header_fields",
+        lambda fields, *_args, **_kwargs: dict(fields),
+    )
+    assert (
+        contract.validate_completion_policy(
+            _valid_header(),
+            session_id="session",
+            trace_id="trace",
+            store=object(),
+            evidence_snapshot=snapshot,
         )
         is None
     )

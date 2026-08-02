@@ -934,6 +934,18 @@ only the parent-finalization boundary: it must reject an accepted
 `workspace_write` row whose receipt-gated worker/delegation is incomplete.
 Do not retry `d5a4e31`.
 
+The bounded parent-finalization repair now validates the current v14 unit plan
+before any terminal acceptance. Every `workspace_write` work unit must map
+one-to-one to a delegation whose status is `completed` and whose
+`completed_at` receipt is present. Missing, merely delegated, timestamp-free,
+duplicate, malformed, or untrusted evidence returns
+`delegation_execution` instead of reaching `accept/completed`; the existing
+terminal policy records that outcome as `delegation_declined`. Read-only and
+legacy plans are unchanged. The exact regression plus its terminal-action
+control pass, and 264 adjacent completion-policy, hook, child, activation, and
+product-host tests pass with one platform skip. The new decision mutation has
+one exact source anchor. No new immutable build or live trial has been consumed.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
