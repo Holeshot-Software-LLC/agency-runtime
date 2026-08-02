@@ -533,6 +533,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `335496e` | 2026-08-02 | fix(ar-223): use Codex stable multi-agent feature | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `0151581` | 2026-08-02 | fix(ar-223): gate writer proof on Agency plans | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `5067b7a` | 2026-08-02 | fix(ar-223): wait for terminal product children | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `1743a22` | 2026-08-02 | docs(ar-223): record green terminal child gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
