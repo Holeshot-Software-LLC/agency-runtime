@@ -238,6 +238,21 @@ registers and enables ZCode, and installs and restarts an active reachable
 dashboard. Its partial result is solely Codex `activation_required`; the one
 fresh autonomous activation remains unspent.
 
+The one `b2be077` activation is now consumed and passes. Session
+`019fbfd8-bb78-7683-9d6e-2a4c2d7f4b60`, trace
+`019fbfd8-c7ec-77b0-aaac-9111ad12dd18`, run
+`ee965317-6bf8-41a9-8ee1-0b29d2462e96`, route
+`fe21a189-35fa-4599-b214-d9210f776994`, finalization
+`3fc23768-c5ac-4126-bcae-61eb0a17e98d`, delegation
+`8b17ef05-3cd3-4e4d-ba30-3a1cfd6706a6`, and child
+`019fbfd9-8678-7ec0-a4a7-beb1265ff15b` retain the exact proof. Inference
+selects and loads `code-reviewer`; one spawn, one follow-up, and two waits have
+no unexpected items. The Store records the exact execution dispatch and closes
+the worker with `ended_at`, exit code zero, completed delegation, and accepted
+finalization. The first header is valid with zero corrections. Autonomous trust
+bypass is proven, persistent profile state is unchanged, and install reports
+`complete: true`. The one fresh product trial remains unspent.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

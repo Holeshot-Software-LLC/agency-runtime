@@ -87,7 +87,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   decision mutations with zero invalid results and unchanged source.
 - PR 232 merges exact `b2be077`; `direct_url.json` proves that immutable global
   install. Bare full-suite install refreshes Codex, enables ZCode, and restarts
-  an active reachable dashboard. Only Codex activation remains required.
+  an active reachable dashboard. That pre-canary install required activation.
+- The one `b2be077` activation passes: session `019fbfd8-bb78`, trace
+  `019fbfd8-c7ec`, run `ee965317`, route `fe21a189`, finalization `3fc23768`,
+  delegation `8b17ef05`, and child `019fbfd9-8678` prove inferred and loaded
+  `code-reviewer`, exact follow-up execution, closed exit-zero worker, valid
+  first header, zero corrections, and autonomous trust without profile change.
 
 ## completed-evidence
 
@@ -120,9 +125,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The README main story remains NO-GO pending one new immutable-build activation.
-Exact installed merge `b2be077` contains the green parent-stop repair; no live
-evidence has consumed it yet.
+The README main story remains NO-GO pending one product trial. Exact installed
+merge `b2be077` passes its autonomous activation and closes the real worker.
 
 ## same-task-continuity
 
@@ -134,8 +138,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Spend one autonomous activation on exact installed `b2be077`.
-2. Only after it passes, spend one product trial.
+1. Spend one `python-cli-service` Agency product trial on exact installed
+   `b2be077` in a new empty isolated workspace.
+2. Stop at its first terminal result and record exact artifact, header, hiring,
+   and correction evidence.
 
 ## verification
 
