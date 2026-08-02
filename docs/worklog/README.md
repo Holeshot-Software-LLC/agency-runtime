@@ -571,6 +571,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `26cda4b` | 2026-08-02 | docs(ar-223): checkpoint durable Store diagnostics | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `c37b8e4` | 2026-08-02 | docs(ar-223): record green Store-backed gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `72043c9` | 2026-08-02 | docs(ar-223): checkpoint nested tool evidence gap | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `95aec42` | 2026-08-02 | fix(ar-223): classify nested exec tool evidence | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `1815a98` | 2026-08-02 | docs(ar-223): checkpoint nested exec diagnostics | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
