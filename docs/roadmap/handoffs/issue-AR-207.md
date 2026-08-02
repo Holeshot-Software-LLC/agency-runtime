@@ -55,8 +55,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 2a19c79a78f592897c1ffaf4da11be378ed7f419
-minimum_ledger_commit: e0a7492ae2807f9da7a526d883f0ffc3c1cd00b1
+evidence_commit: e1c215719d8953efbbcf4ce176b593470dd0e1f8
+minimum_ledger_commit: e1c215719d8953efbbcf4ce176b593470dd0e1f8
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -102,6 +102,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   failures. The focused suite passes 128 warning-strict tests, documentation
   validates 638 files, and repository Ruff/format/diff checks pass. No product
   trial ran in this slice.
+- Clean head `e1c2157` passes the complete named gate: 638 docs, 610 formatted
+  files, 657 Python passes with 6 skips, 110 dashboard passes, every routing
+  threshold, and 102/102 killed decision mutations with unchanged source.
 
 ## completed-evidence
 
@@ -117,11 +120,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-The requested parent-finalization bug is fixed and proven. Actual Agency child
-workspace execution remains unproven. The new Store boundary can diagnose call
-type, wrapper outcome, output receipt, and patch outcome without content on the
-next fresh candidate. Do not repair execution again until that one sentinel
-identifies the first failed boundary.
+Actual Agency child workspace execution remains unproven. The Store boundary
+and full local gate now pass. Build and install one fresh immutable candidate,
+then let its sole writer sentinel identify the first remaining failed boundary.
 
 ## same-task-continuity
 
@@ -133,9 +134,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run the governed named gate against the content-free telemetry checkpoint.
-2. Build and exact-install one new immutable candidate, then consume one fresh
-   accepted-plan writer sentinel and read its v2 child tool projection.
+1. Build and exact-install one new immutable candidate.
+2. Pass one autonomous activation, then consume one fresh accepted-plan writer
+   sentinel and read its Store-backed v2 child tool projection.
 3. Repair only the first failed boundary that projection proves. Never retry
    `c8a0577` or `4c57507`, and do not broaden this package.
 

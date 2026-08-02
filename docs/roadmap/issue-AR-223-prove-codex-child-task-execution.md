@@ -1053,6 +1053,15 @@ passes 128 tests with warning-strict execution; repository-wide Ruff lint,
 format, and diff checks pass. No candidate was built and no live evidence was
 consumed in this implementation slice.
 
+Clean ledger head `e1c2157` passes the complete named local gate. Metadata,
+policy, worklog, and 638-document validation pass; repository-wide Ruff lint
+and formatting cover 610 files; the Python production spine reports 657 passes
+with 6 platform skips; the dashboard reports 110 passes; and every routing
+threshold passes. Decision conformance passes its 206.261-second baseline and
+kills all 102 mutations with zero survivors or invalid results, unchanged
+source, and 1,189.1 seconds total command time. No immutable build or live
+trial has been consumed from this checkpoint.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
