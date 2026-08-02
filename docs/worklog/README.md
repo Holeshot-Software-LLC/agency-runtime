@@ -524,6 +524,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `aa459fb` | 2026-08-01 | docs(ar-223): checkpoint exact activation proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `3a0d691` | 2026-08-01 | docs(ar-223): checkpoint product guidance failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `4e348c1` | 2026-08-01 | fix(ar-223): keep Codex delegation plan inline | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `529c7ee` | 2026-08-01 | docs(ar-223): record green inline-plan gate | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
