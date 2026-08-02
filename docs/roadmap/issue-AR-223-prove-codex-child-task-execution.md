@@ -736,6 +736,22 @@ the source distribution SHA-256 is
 The global uv tool now points directly to that exact local wheel. No activation
 or writer evidence has been spent for this candidate.
 
+That candidate's single autonomous activation now passes. Session
+`019fc228-8701-7c63-8e71-0b700f7893a9`, trace
+`019fc228-93b9-73e2-b07e-2dde182d3e6d`, route
+`0dd11929-7673-4f7b-8b5e-4e00918b72d2`, run
+`f1a1f8d0-ef60-4a28-b852-215f249c5c26`, finalization
+`a216da1f-9819-4772-a04e-a015d329490c`, delegation
+`afbf90c8-a605-4b4d-a233-b53f239541e2`, and native worker
+`codex-agent:019fc229-71ca-70d2-a184-dda5064f98ed` retain the exact proof.
+Inference selects, loads, and delegates `code-reviewer`; the parent records one
+spawn, no follow-up, and one wait; Store records the exact execution dispatch,
+terminal exit zero, and accepted finalization. The first header validates with
+no missing fields, one terminal finalization yields correction count zero, and
+the rollout contains no correction hook prompt. Codex and ZCode install, the
+dashboard is active and reachable, autonomous trust bypass changes no persistent
+profile state, and the one writer sentinel is now admitted.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

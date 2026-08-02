@@ -102,9 +102,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   Python passes with 6 skips, 110 dashboard passes, every routing threshold, and
   97/97 killed decision mutations with unchanged source. No new live evidence
   has been consumed.
-- Exact `d610630` builds and independently verifies. Its installed wheel SHA-256
-  is `7f18ddaab3fc7859e45e794edc9582420847d3bfc73ddf1b32bb6a8c476d9f5d`;
-  the uv tool points directly to that local artifact. Activation is unspent.
+- Exact `d610630` builds, verifies, installs, and passes its one activation:
+  session `019fc228-8701-7c63-8e71-0b700f7893a9`, trace `019fc228-93b9-73e2-b07e-2dde182d3e6d`,
+  inferred/loaded/delegated `code-reviewer`, one spawn/wait, terminal exit zero,
+  accepted finalization, valid first header, zero corrections, and trust bypass
+  without persistent change. Its writer sentinel is admitted and unspent.
 
 ## completed-evidence
 
@@ -126,10 +128,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 Exact session binding and the prior build/install/activation pass. The planner
-contradiction, fresh named gate, canonical build, independent verification, and
-exact install pass. The candidate has not run activation. Writer and product
-artifacts, concise header, dashboard parity, and the local report remain
-unproven. The README story remains `NO-GO`.
+contradiction, gate, build, verification, install, and activation pass. Writer
+and product artifacts, concise header, dashboard parity, and the local report
+remain unproven. The README story remains `NO-GO`.
 
 ## same-task-continuity
 
@@ -141,8 +142,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Spend exact `d610630`'s one autonomous activation gate.
-2. If activation passes, spend its one Agency writer sentinel.
+1. Spend exact `d610630`'s one Agency writer sentinel.
+2. If it passes, advance directly to dashboard/config/header proof.
 
 ## verification
 
