@@ -765,6 +765,16 @@ exact: the runtime honors the explicit indivisible topology in planning, then
 requires a separate downstream assurance unit during staffing. This build must
 not be retried.
 
+The bounded repair carries that same explicit topology into the recruiter
+contract and staffing verifier. Only a genuinely one-unit plan skips the
+otherwise mandatory downstream independent-assurance unit; composition,
+eligibility, evidence, budgets, mutation scope, and every ordinary assurance
+check remain enforced. A full-path regression accepts one inference-authored
+implementation unit and one inference-selected filesystem specialist without a
+repair call. The focused workforce, routing, hiring, staffing, and product-host
+slice passes 189 tests with one platform skip; changed-file Ruff lint and
+formatting pass. The one named gate remains before a new immutable build.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as

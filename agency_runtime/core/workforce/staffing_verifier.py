@@ -934,6 +934,7 @@ def verify_staffing(
     *,
     context: StaffingContext,
     budget: StaffingBudget | None = None,
+    explicit_indivisible_unit: bool = False,
 ) -> StaffingDecision:
     """Recompute a proposal and accept it only when the complete recipe is safe."""
 
@@ -952,7 +953,8 @@ def verify_staffing(
             for detail in row.abstention_reasons or ("no_safe_candidate",):
                 _reason(reasons, "recruiter_abstained", unit_id=row.unit_id, detail=detail)
     _composition(plan, proposal, roster, context, reasons)
-    _assurance(plan, proposal, roster, reasons)
+    if not (explicit_indivisible_unit and len(plan.units) == 1):
+        _assurance(plan, proposal, roster, reasons)
     _budgets(plan, proposal, active_budget, reasons)
     if reasons:
         return StaffingDecision("abstained", (), tuple(reasons))

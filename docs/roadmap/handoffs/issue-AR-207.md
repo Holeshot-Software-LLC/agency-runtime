@@ -102,13 +102,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   Python passes with 6 skips, 110 dashboard passes, every routing threshold, and
   97/97 killed decision mutations with unchanged source. No new live evidence
   has been consumed.
-- Exact `d610630` builds, verifies, installs, and passes activation with one
-  inferred/loaded/delegated `code-reviewer`, terminal execution, a valid first
-  header, zero corrections, and no persistent trust change. Its writer is
-  consumed and `NO-GO`: session `019fc230-7a55-7263-b135-0051a291ea8b`, trace
-  `019fc230-7ac7-7732-a4b7-037faea8d61b`. One inferred unit reaches recruiter,
-  but assurance policy rejects it twice; no route, specialist, header, or file
-  exists. Do not retry this build.
+- Exact `d610630` builds, verifies, and passes activation with inferred/loaded
+  `code-reviewer`, a valid first header, zero corrections, and no trust change.
+  Its writer is consumed `NO-GO`: session `019fc230-7a55-7263-b135-0051a291ea8b`,
+  trace `019fc230-7ac7-7732-a4b7-037faea8d61b`. One inferred unit reaches the
+  recruiter, but separate assurance rejects it twice; no route or file exists.
+  Local repair preserves one-unit staffing while retaining every other check;
+  189 focused tests pass. Do not retry this build; named gate remains.
 
 ## completed-evidence
 
@@ -129,10 +129,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-Exact session binding, build, install, activation, and one-unit planning pass;
-staffing contradicts that topology by requiring a separate assurance unit.
-Writer artifacts, concise header, dashboard parity, and the local report
-remain unproven. The README story remains `NO-GO`.
+The staffing contradiction is repaired and focused checks pass. The named gate
+and one fresh immutable writer remain before dashboard/header proof. Writer
+artifacts, concise header, dashboard parity, and the local report remain
+unproven. The README story remains `NO-GO`.
 
 ## same-task-continuity
 
@@ -144,7 +144,7 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Preserve explicit indivisible topology through staffing assurance checks; run the focused regression and one named gate before one new exact build.
+1. Run one named gate, then build and spend one new exact writer candidate.
 
 ## verification
 

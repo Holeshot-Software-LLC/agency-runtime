@@ -1684,6 +1684,7 @@ def _verified_recruiter_proposal(
     *,
     config: AgencyConfig,
     context: StaffingContext,
+    explicit_indivisible_unit: bool = False,
 ) -> StaffingDecision:
     staffing = verify_staffing(
         plan,
@@ -1691,6 +1692,7 @@ def _verified_recruiter_proposal(
         snapshot.contracts,
         context=context,
         budget=staffing_budget_for_config(config),
+        explicit_indivisible_unit=explicit_indivisible_unit,
     )
     if staffing.accepted or _valid_inferred_gap_proposal(proposal, staffing):
         return staffing
@@ -1707,6 +1709,7 @@ def _recruit_ambiguous_plan(
     budget: _CallBudget,
     invoker: StructuredInvoker,
     routing_context_fingerprint: str,
+    explicit_indivisible_unit: bool = False,
 ) -> tuple[
     RecruiterProposal | None,
     list[WorkforceInferenceAttempt],
@@ -1771,6 +1774,7 @@ def _recruit_ambiguous_plan(
                 "gap_decision_requires_no_safe_team": True,
                 "candidate_ids_must_come_from_detail_cards": True,
                 "typed_recall_is_non_ranked_evidence": True,
+                "separate_independent_assurance_required": not explicit_indivisible_unit,
             },
             "detail_cards": detail_cards,
             "typed_recall": typed_recall,
@@ -1790,7 +1794,10 @@ def _recruit_ambiguous_plan(
         prompt=recruiter_prompt,
         schema=NOMINATION_RESPONSE_SCHEMA,
         system_prompt=_RECRUITER_SYSTEM,
-        extra={"staffing_budget": asdict(staffing_budget_for_config(config))},
+        extra={
+            "staffing_budget": asdict(staffing_budget_for_config(config)),
+            "explicit_indivisible_unit": explicit_indivisible_unit,
+        },
     )
     cached = workforce_cache_get(cache_identity)
     if isinstance(cached, RecruiterProposal):
@@ -1801,6 +1808,7 @@ def _recruit_ambiguous_plan(
                 snapshot,
                 config=config,
                 context=context,
+                explicit_indivisible_unit=explicit_indivisible_unit,
             )
         except _StaffingVerificationError:
             pass
@@ -1827,6 +1835,7 @@ def _recruit_ambiguous_plan(
                 snapshot,
                 config=config,
                 context=context,
+                explicit_indivisible_unit=explicit_indivisible_unit,
             )
         except _StaffingVerificationError as exc:
             # A whole-team rejection requires a complete replacement. Do not
@@ -2094,6 +2103,7 @@ def plan_and_staff_workforce(
         budget=budget,
         invoker=invoker,
         routing_context_fingerprint=routing_context_fingerprint,
+        explicit_indivisible_unit=explicit_indivisible_unit,
     )
     if recruiter_cache_hit:
         cache_hits.append("recruiter")
@@ -2117,6 +2127,7 @@ def plan_and_staff_workforce(
         snapshot.contracts,
         context=context,
         budget=staffing_budget_for_config(config),
+        explicit_indivisible_unit=explicit_indivisible_unit,
     )
 
     policy_violations = plan_policy_violations(

@@ -363,6 +363,47 @@ def test_explicit_indivisible_request_bounds_planner_prompt_schema_and_parser() 
     ]
 
 
+def test_explicit_indivisible_implementation_unit_embeds_assurance() -> None:
+    writer = replace(
+        _contract("filesystem-implementation-specialist"),
+        outcomes=("Workspace file implementation",),
+        artifact_kinds=("implementation-change",),
+        lifecycle_phases=("implementation",),
+        authority="modify",
+        tool_classes=("repository-write",),
+    )
+    snapshot = _snapshot(writer)
+    calls: list[str] = []
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        calls.append("planner" if "planning_taxonomy" in payload else "recruiter")
+        if "planning_taxonomy" in payload:
+            document = _compact_plan_document()
+            document["units"][0].update(
+                {
+                    "outcome": "Create and verify the exact workspace file",
+                    "artifact_kind": "implementation-change",
+                }
+            )
+            return _result(document)
+        assert payload["response_contract"]["separate_independent_assurance_required"] is False
+        return _result(_nomination_document("filesystem-implementation-specialist"))
+
+    outcome = plan_and_staff_workforce(
+        "Create one workspace-local file as one indivisible implementation work unit for one "
+        "filesystem implementation specialist. Do not split this into testing or review units.",
+        snapshot,
+        config=_config(),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert calls == ["planner", "recruiter"]
+    assert outcome.staffing.units[0].selected == ("filesystem-implementation-specialist",)
+
+
 def test_disabled_only_candidate_cannot_be_appointed_by_online_fallback() -> None:
     snapshot = _snapshot(_contract("technical-analyst", enabled=False))
 
