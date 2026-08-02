@@ -287,8 +287,16 @@ uninstall. It preserves owner content and rejects malformed, linked, non-UTF-8,
 or oversized guidance. The broader focused run passes 248 tests; the final
 targeted rerun passes 21; repository Ruff checks pass; documentation validation
 covers 629 files; and the new decision mutation is killed 1/1. Two review passes
-are closed. This is implementation evidence only: the named gate and a newly
-installed live build remain pending.
+are closed. This focused evidence did not yet prove the named gate or a newly
+installed live build.
+
+Clean recovery head `9f391b8` closes the complete named local gate. Metadata,
+policy, worklog, and 629-document validation pass; Ruff checks and formatting
+cover 609 files; the Python production spine passes 657 tests with 6 skipped;
+the dashboard passes 110/110; every routing threshold passes; and full decision
+conformance passes with all 91 mutations killed, zero survived or invalid
+results, and the source checkout unchanged. This remains local-build evidence,
+not installed runtime or product proof.
 
 ## Approach
 
@@ -327,8 +335,8 @@ accepted plan authority.
   hash; all malformed variants fail closed.
 - [ ] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
-- [ ] Focused checks and two review passes pass; the named local fast gate must
-  still pass on the new managed-guidance head.
+- [x] Focused checks, two review passes, and the named local fast gate pass on
+  clean recovery head `9f391b8`.
 - [ ] One new exact build passes autonomous activation and one fresh product
   trial with real specialist-created artifacts, independent checks, a valid
   first header, and zero corrections.

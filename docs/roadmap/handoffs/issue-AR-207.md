@@ -89,6 +89,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   21-test targeted rerun passes; Ruff passes; documentation validation covers
   629 files; and the new decision mutation is killed 1/1. Two review passes are
   closed. No persistent Codex profile or live trial has consumed this build.
+- Clean recovery head `9f391b8` passes the complete named local gate: 629
+  Markdown documents, repo-wide Ruff over 609 files, Python 657 passed with 6
+  skipped, dashboard 110/110, every routing threshold, and decision conformance
+  91/91 killed with zero survived or invalid results and source unchanged.
 
 ## exact-blocker
 
@@ -97,7 +101,8 @@ product parent never invokes collaboration. ADR-0126's developer instruction
 does not satisfy current Codex's user-or-applicable-instruction delegation gate.
 A broad-skill probe adds a forbidden parent shell read and remains untraceable.
 The managed global-guidance path now installs, plans, projects, uninstalls, and
-rolls back under focused tests, but the named gate and live proof remain pending.
+rolls back under focused tests and the complete named gate. It is not yet merged,
+installed into the current Codex profile, or proven by fresh live evidence.
 
 ## same-task-continuity
 
@@ -109,10 +114,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run the named local gate on the clean recovery head and repair only a
-   terminal failure in this bounded authority slice.
-2. Merge and install one exact green build, then spend one fresh activation and
-   at most one product trial. Never rerun the consumed `b2be077` evidence.
+1. Publish the already authorized PR, merge exact green head, and install that
+   exact merge into the current Codex, ZCode, and dashboard scope.
+2. Spend one fresh activation and at most one product trial. Never rerun the
+   consumed `b2be077` evidence.
 
 ## verification
 
