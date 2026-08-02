@@ -53,8 +53,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 73f99896cc8fb1cccf625afd189cc34b1350089b
-minimum_ledger_commit: 036c1d4ac375be36e75751cab06cfe0a9828bd98
+evidence_commit: d610630d4b3f8d04fc7cb2d0fc08fe6e19e44bbc
+minimum_ledger_commit: d610630d4b3f8d04fc7cb2d0fc08fe6e19e44bbc
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -102,6 +102,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   Python passes with 6 skips, 110 dashboard passes, every routing threshold, and
   97/97 killed decision mutations with unchanged source. No new live evidence
   has been consumed.
+- Exact `d610630` builds and independently verifies. Its installed wheel SHA-256
+  is `7f18ddaab3fc7859e45e794edc9582420847d3bfc73ddf1b32bb6a8c476d9f5d`;
+  the uv tool points directly to that local artifact. Activation is unspent.
 
 ## completed-evidence
 
@@ -123,10 +126,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ## exact-blocker
 
 Exact session binding and the prior build/install/activation pass. The planner
-contradiction and fresh named gate pass locally, but the green head has not
-produced an immutable candidate. Writer and product artifacts, concise header,
-dashboard parity, and the local report remain unproven. The README story remains
-`NO-GO`.
+contradiction, fresh named gate, canonical build, independent verification, and
+exact install pass. The candidate has not run activation. Writer and product
+artifacts, concise header, dashboard parity, and the local report remain
+unproven. The README story remains `NO-GO`.
 
 ## same-task-continuity
 
@@ -138,10 +141,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Build and independently verify clean head `0f40e8e` as one fresh immutable
-   candidate.
-2. Install the exact wheel and spend only its activation and writer gates in
-   order.
+1. Spend exact `d610630`'s one autonomous activation gate.
+2. If activation passes, spend its one Agency writer sentinel.
 
 ## verification
 

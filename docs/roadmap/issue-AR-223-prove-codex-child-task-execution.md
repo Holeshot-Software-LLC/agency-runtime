@@ -727,6 +727,15 @@ passes its 173.614-second baseline and kills all 97 mutations with zero invalid
 results, unchanged source, and 859.9 seconds total command time. One fresh
 immutable build may now proceed; no new live evidence has been consumed.
 
+Clean candidate `d610630d4b3f8d04fc7cb2d0fc08fe6e19e44bbc` builds
+canonically from a detached checkout and passes strict Twine metadata plus the
+independent distribution verifier. Its Windows wheel SHA-256 is
+`7f18ddaab3fc7859e45e794edc9582420847d3bfc73ddf1b32bb6a8c476d9f5d`;
+the source distribution SHA-256 is
+`42614e526e0190ec26d16d440a12fdcdb4835bc7580c655a924a634f315190a8`.
+The global uv tool now points directly to that exact local wheel. No activation
+or writer evidence has been spent for this candidate.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
