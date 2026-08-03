@@ -58,8 +58,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 263e3f594a8fbf8a86f3520e59c4e4a091ad98f1
-minimum_ledger_commit: 1c59ff34a0849e23d3935751c96eb97fbcb6ad11
+evidence_commit: 8e74d56b39b20a4358d3b5b2500dd941da4e51d0
+minimum_ledger_commit: 8e74d56b39b20a4358d3b5b2500dd941da4e51d0
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -68,52 +68,39 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
-- Exact Store v3 repair/ledger checkpoint `e90af86`/`6e0d3c6` is locally green,
-  builds canonically, and independently verifies. Wheel SHA-256 is
-  `a5f69ae7d169e52ea051c45609922379d14e2ec8a86f9c0e3faa8b763bfa5c6d`;
+- Exact candidate `8e74d56b39b20a4358d3b5b2500dd941da4e51d0` builds canonically
+  from a detached source tree and independently verifies. Wheel SHA-256 is
+  `08faa80e1cbfb7ab0f98fa4c51562f544b18d3b7e9ac48fe7a9f31e466f2aad0`;
   source SHA-256 is
-  `e2bab035649401f3998b3472e7ffcd235aad4319ff0ae502b92e5d3c62f0a66c`.
-- Autonomous install detects only Codex/ZCode, leaves the dashboard reachable,
-  and passes activation with `code-reviewer`, accepted finalization, a valid
-  first header, zero corrections, bypass, and no persistent trust change.
-- Sole writer `ar223-agency-writer-6e0d3c6-01` is consumed `NO-GO`. Inference
-  selects `minimal-change-engineer`; trust/header/correction gates pass, but the
-  workspace is empty and finalization lacks `delegation_execution`.
-- Exact Store v4 build `1c59ff3` canonically verifies; wheel SHA-256 is
-  `275f0a1a46fe9e9bf457a55a7caee5ba29e426920163ad31ea976a29a901e563`.
-- Autonomous install/activation passes for Codex/ZCode and dashboard with
-  `code-reviewer`, valid first header, zero corrections, and bypass.
-- Sole writer `ar223-agency-writer-1c59ff3-01` is consumed `NO-GO`; Store v4
-  proves the nested patch wrapper failed before the absent-file shell check.
-- Focused host A/B proves the cause: current Codex maps non-interactive
-  `approval_policy=never` to managed read-only even when the CLI requests
-  `workspace-write`. The documented `on-request` plus `auto_review` path
-  creates and reads back the exact 21-byte sentinel without disabling the
-  sandbox or changing persistent configuration.
-- Exact implementation `263e3f5` passes 28 focused tests and one Agency-enabled
-  no-build sentinel. Five inferred specialists launch and complete; both writer
-  patch wrappers succeed, all read-only specialists have zero patch wrappers,
-  and the exact workspace contains only the verified 29-byte sentinel.
+  `d9e41020f79249c1b7a916ce64bc2b3607b6b17cba4c15880a93b920902a703e`.
+- The exact wheel is installed by immutable path. Full-suite install detects
+  only Codex and ZCode, configures both, and leaves the dashboard active and
+  reachable. The initial partial result is solely expected activation state.
+- One autonomous activation passes with inferred `code-reviewer`, one completed
+  child, accepted finalization, a valid first header, zero corrections, trust
+  bypass, and no persistent trust mutation.
+- Sole writer `ar223-agency-writer-8e74d56-01` passes with inferred
+  `minimal-change-engineer`, exactly one completed child, two successful patch
+  receipts, accepted finalization, a valid first header, zero corrections, and
+  exact retained 23-byte workspace proof. AR-223 is complete.
 
 ## completed-evidence
 
-- Activation session `019fc50b-837d-7171-b2c9-2f2a160d72c7`, trace
-  `019fc50b-8fa5-7a83-8546-aed8cd5bd41f` retains the pass.
-- Writer session `019fc50e-b34b-7932-b4ca-fa4ebbe61db8`, trace
-  `019fc50e-b3d7-7633-bea9-c08e034f0ca9`, run
-  `21aca342-8681-4e31-a78c-6b1d69f80321`, delegation
-  `4336817f-dd28-49bf-a585-e2c3442d79cb`, and worker
-  `codex-agent:019fc50f-5b8a-75c0-baf0-ee15992d9ce2` retain the `NO-GO`.
-- Local repaired sentinel session `019fc528-cc4b-7a63-af76-bb7554c6832b` and
-  trace `019fc528-ccd0-7b41-8fb1-adc90324be21` retain five completed children,
-  exact patch and byte proof, a final five-specialist header, no correction
-  prompt, autonomous bypass, and no persistent trust mutation.
+- Activation session `019fc579-f916-7630-90cb-2157727164dd`, trace
+  `019fc57a-0efb-74d0-a414-387fab76e38f`, run
+  `0ed55d91-6ab6-4fdb-b761-6d5ac85e351f`, and delegation
+  `e3ce9948-dc35-46e5-bb0c-fc73e29e063b` retain the activation pass.
+- Writer session `019fc57d-f7ef-7721-9299-658529879311`, trace
+  `019fc57d-f85f-7ed3-9ee5-29c1134adf78`, run
+  `e49d2b57-2e18-4f63-b668-d88fcaba2183`, delegation
+  `867595fe-a025-4107-914e-ca3c19887e76`, worker
+  `019fc57e-a31b-7273-96ae-5ce30d16d1b1`, and finalization
+  `0b7cf50b-58be-4da0-8d90-cab7c2eec8c7` retain the writer pass.
 
 ## exact-blocker
 
-Actual Agency child workspace execution is now proven locally with Agency
-enabled. Immutable installed-build proof remains pending; the consumed v4 trial
-is not retried.
+None for AR-223. The immutable installed product now proves autonomous
+activation and real Agency child workspace execution with zero corrections.
 
 ## same-task-continuity
 
@@ -125,11 +112,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. From the clean checkpoint, produce one canonical immutable build, install it
-   autonomously for Codex/ZCode/dashboard, and consume one activation.
-2. Only after activation passes, consume one fresh governed writer sentinel.
-   Stop at its first terminal boundary; never retry `5a97976`, `6e0d3c6`, or
-   `1c59ff3`.
+Resume the README umbrella through AR-203 and AR-204 using the now-proven
+installed writer boundary. Freeze that package around the next missing visible
+README scenario, retain one trial per exact build, and fail any correction
+count greater than zero.
 
 ## verification
 

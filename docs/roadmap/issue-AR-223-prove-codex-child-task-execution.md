@@ -1,6 +1,6 @@
 ---
 title: "AR-223: Prove Codex child task execution"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-01
 updated: 2026-08-02
@@ -1308,6 +1308,42 @@ expected non-repository Git probe and does not affect the successful patch or
 byte proof. This closes the local wrapper repair without consuming an
 immutable build or governed writer slot.
 
+The final immutable-build checkpoint passes the remaining product boundary.
+Exact candidate `8e74d56b39b20a4358d3b5b2500dd941da4e51d0` produced canonical
+wheel SHA-256
+`08faa80e1cbfb7ab0f98fa4c51562f544b18d3b7e9ac48fe7a9f31e466f2aad0`
+and source SHA-256
+`d9e41020f79249c1b7a916ce64bc2b3607b6b17cba4c15880a93b920902a703e`;
+Twine and the independent distribution verifier both pass. Installed
+`direct_url.json` binds that exact wheel path even though package metadata does
+not embed `source_revision`.
+
+The full-suite install detects only Codex and ZCode, registers ZCode, refreshes
+Codex, and leaves the dashboard active and reachable. Its initial partial
+result is solely the expected Codex `activation_required` state. The one
+autonomous activation then passes under session
+`019fc579-f916-7630-90cb-2157727164dd`, route
+`3ae75ab3-0a8b-4589-9984-bd20352cb2ad`, and delegation
+`e3ce9948-dc35-46e5-bb0c-fc73e29e063b`: inference selects
+`code-reviewer`, one child completes, finalization accepts, the first header is
+valid, correction count is zero, autonomous trust bypass is used, and no
+persistent trust profile changes.
+
+The sole governed writer `ar223-agency-writer-8e74d56-01` also passes. Session
+`019fc57d-f7ef-7721-9299-658529879311`, route
+`39590cfb-2afa-41c4-9604-febfd98fc78a`, delegation
+`867595fe-a025-4107-914e-ca3c19887e76`, worker
+`019fc57e-a31b-7273-96ae-5ce30d16d1b1`, and accepted finalization
+`0b7cf50b-58be-4da0-8d90-cab7c2eec8c7` retain the proof. Inference selects
+`minimal-change-engineer`; exactly one spawn, one wait, and one completed child
+occur with zero unexpected collaboration items. Two patch receipts complete
+with zero failures. The exact workspace contains only `writer-result.txt`,
+whose 23 bytes are `AR223_AGENCY_WRITER_OK\n` and whose SHA-256 is
+`767303371a040770ecccc894befc37191c57af167b1dce19ed569b5d20c3e5eb`.
+The first header is valid, correction count is zero, runtime contract and
+workspace-write proof pass, and persistent trust remains unchanged. This
+completes AR-223; AR-203 and AR-204 retain the broader README scenario.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -1369,6 +1405,6 @@ accepted plan authority.
 - [x] The generated Codex `UserPromptSubmit` handler keeps the complete bounded
   inferred plan inline instead of spilling it outside the parent's allowed
   tool boundary.
-- [ ] One new exact build passes autonomous activation and one fresh product
+- [x] One new exact build passes autonomous activation and one fresh product
   trial with real specialist-created artifacts, independent checks, a valid
   first header, and zero corrections.
