@@ -582,6 +582,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `745f765` | 2026-08-02 | fix(ar-223): correlate Codex wrapper tool outcomes | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `53cfcfb` | 2026-08-02 | docs(ar-223): checkpoint Store v4 tool outcomes | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `1b09fb6` | 2026-08-02 | docs(ar-223): checkpoint Store v4 writer boundary | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `263e3f5` | 2026-08-02 | fix(ar-223): auto-review product workspace writes | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `46af36d` | 2026-08-02 | docs(ar-223): checkpoint auto-reviewed writer proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `f741a67` | 2026-08-02 | docs(ar-223): normalize recovery evidence commit | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
