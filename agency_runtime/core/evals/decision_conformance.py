@@ -50,6 +50,7 @@ class _PytestRun:
     failed_nodes: tuple[str, ...]
     duration_ms: int
     timed_out: bool = False
+    failure_excerpt: str | None = None
 
 
 MUTATIONS: Final[tuple[DecisionMutation, ...]] = (
@@ -1918,6 +1919,7 @@ def _run_pytest(
         exit_code=completed.returncode,
         failed_nodes=_failed_nodes(output),
         duration_ms=round((time.perf_counter() - started) * 1000),
+        failure_excerpt=(output[-4096:] if completed.returncode else None),
     )
 
 
@@ -1948,6 +1950,7 @@ def _run_baseline(
                 failed_nodes=result.failed_nodes,
                 duration_ms=duration_ms,
                 timed_out=result.timed_out,
+                failure_excerpt=result.failure_excerpt,
             )
     return _PytestRun(exit_code=0, failed_nodes=(), duration_ms=duration_ms)
 
@@ -2223,6 +2226,7 @@ def run_decision_conformance_eval(
             ),
             "exit_code": baseline_run.exit_code,
             "failed_nodes": list(baseline_run.failed_nodes),
+            "failure_excerpt": baseline_run.failure_excerpt,
             "test_nodes": list(baseline_nodes),
             "duration_ms": baseline_run.duration_ms,
         },

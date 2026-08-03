@@ -119,6 +119,26 @@ def test_baseline_stops_after_the_first_failed_node(tmp_path: Path) -> None:
     assert observed == ["test_one", "test_two"]
 
 
+def test_baseline_preserves_bounded_failure_diagnostic(tmp_path: Path) -> None:
+    failure = conformance._PytestRun(
+        1,
+        ("tests/test_one.py::test_one",),
+        3,
+        failure_excerpt="AssertionError: exact private path was rejected",
+    )
+
+    result = conformance._run_baseline(
+        tmp_path,
+        ("tests/test_one.py::test_one",),
+        sys.executable,
+        90,
+        tmp_path,
+        pytest_runner=lambda *_args: failure,
+    )
+
+    assert result.failure_excerpt == "AssertionError: exact private path was rejected"
+
+
 def test_evaluator_mutates_only_private_copies(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -226,11 +246,13 @@ def test_baseline_failure_never_admits_mutation_evidence(
             1,
             ("tests/test_example.py::test_decision",),
             2,
+            failure_excerpt="AssertionError: baseline diagnostic",
         ),
     )
 
     assert report["passed"] is False
     assert report["baseline"]["status"] == "failed"
+    assert report["baseline"]["failure_excerpt"] == "AssertionError: baseline diagnostic"
     assert report["mutations"] == []
     assert report["counts"]["killed"] == 0
 

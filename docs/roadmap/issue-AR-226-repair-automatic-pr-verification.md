@@ -59,7 +59,10 @@ decision-conformance activation baseline likewise hardens its Store root before
 asserting the positive routing contract. The shared provider-config fixture
 writer now also applies the production owner-private file mode after writing;
 previously its Linux output remained world-readable despite being used as a
-positive security fixture. It also raises
+positive security fixture. The decision-conformance baseline receipt now
+retains the final bounded 4 KiB of pytest failure output; previously it kept
+only the node name and discarded the evidence needed to diagnose a repeated
+platform failure. It also raises
 the dashboard aggregate ceiling from 268 KiB to a narrow
 300 KiB bound above the observed 296,619-byte audited payload, and validates
 repository identity from the authenticated 200 response without requiring an
