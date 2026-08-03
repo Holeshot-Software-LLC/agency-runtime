@@ -255,12 +255,16 @@ def uninstall_plan_digest(
 
 
 def _require_host_uninstall_authority(binding: _HostUninstallBinding) -> None:
-    """Keep host uninstall closed after retirement of Agency-owned authority."""
+    """Validate the prepared uninstall binding's authority primitives.
+
+    The retired Windows Hello verifier (ADR-0117) is gone; the attended two-step
+    dry-run -> confirm-plan flow plus the re-plan/digest/ownership safety chain
+    in ``_apply_prepared_host_uninstall`` is now the operator authority, matching
+    every other mutating owner CLI command. This function validates the binding
+    primitives rather than hard-blocking; a malformed binding still raises.
+    """
 
     _host_uninstall_binding_primitives(binding)
-    raise PreparedHostUninstallError(
-        "host integration uninstall is unavailable; no host mutation was made"
-    )
 
 
 def _canonical_targets(targets: Sequence[str], *, selected_by: str) -> tuple[str, ...]:

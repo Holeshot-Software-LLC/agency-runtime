@@ -556,15 +556,11 @@ artifact in its process chain, host profile environment, native plugin or
 marketplace source, gateway/ZCode state, or command plan invalidates the digest.
 Native provenance accepts only documented path aliases; an invalid, relative,
 or conflicting alias blocks even if another alias points at the
-managed target. A mutating uninstall plan currently stops at the retired
-authority boundary and makes no host change. The dry-run remains available for
-exact ownership and recovery review.
-
-Generic mutating install, rollback, native enable/disable toggle,
-prepared Codex refresh, and host uninstall share one owner-private
-`host-integrations.lock`. If a future authority boundary admits uninstall, it
-must revalidate the full binding before the first host mutation. Only a strict
-ownership-proven adapter tree may be moved after native detachment is proven,
+managed target. A mutating uninstall applies the exact two-step dry-run ->
+confirm-plan digest: the plan is recomputed and re-digested at apply time, so a
+changed selector, host, managed tree, ownership, or binding invalidates the
+digest and makes no host change. Only a strict ownership-proven adapter tree is
+moved after native detachment is proven,
 to the exact destination
 `~/.agency-runtime/backups/<host>/uninstall-<operation_uuid>`. Windows follows
 the validated directory through an open handle during rename, so a pathname
