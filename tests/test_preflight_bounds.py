@@ -239,14 +239,16 @@ def test_preflight_failure_receipt_projects_provider_attempts_without_content(
 
     monkeypatch.setattr(pipeline, "route", failed_inference)
 
-    with pytest.raises(RuntimeError, match="no accepted specialist"):
-        run_preflight(
-            store,
-            session_id="session",
-            user_message="Audit and harden the runtime.",
-            host="codex",
-            trace_id="inference-failed",
-        )
+    # ADR-0122 update: failed inference no longer blocks the parent model. The
+    # turn fails open so the host can answer as a generalist, but the failure
+    # receipt is still persisted for the dashboard and operator diagnosis.
+    run_preflight(
+        store,
+        session_id="session",
+        user_message="Audit and harden the runtime.",
+        host="codex",
+        trace_id="inference-failed",
+    )
 
     receipt = store.get_preflight_failure_receipt("session", "inference-failed")
     assert receipt is not None
@@ -703,10 +705,12 @@ def test_direct_preflight_filters_resident_steward_before_selecting_a_specialist
     assert "REAL-SPECIALIST-DIRECTIVE" in result.context
 
 
-def test_direct_preflight_rejects_resident_only_fallback(
+def test_direct_preflight_fails_open_on_resident_only_fallback(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # ADR-0122 update: a resident-only fallback no longer blocks the parent
+    # model. The host answers as a generalist and no specialist is bound.
     store = Store(tmp_path / "fallback.db")
     monkeypatch.setattr(
         pipeline,
@@ -722,22 +726,24 @@ def test_direct_preflight_rejects_resident_only_fallback(
         },
     )
 
-    with pytest.raises(RuntimeError, match="no accepted specialist or contractor"):
-        run_preflight(
-            store,
-            session_id="fallback-session",
-            user_message="Handle an unfamiliar request",
-            host="hermes",
-            trace_id="fallback-turn",
-        )
+    run_preflight(
+        store,
+        session_id="fallback-session",
+        user_message="Handle an unfamiliar request",
+        host="hermes",
+        trace_id="fallback-turn",
+    )
 
     assert store.get_specialists_for_session("fallback-session") == []
 
 
-def test_isolated_preflight_blocks_selection_without_an_activation_plan(
+def test_isolated_preflight_fails_open_without_an_activation_plan(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # ADR-0122 update: an isolated selection that lacks a child-activation plan
+    # no longer blocks the parent. The turn fails open and no specialist is
+    # bound.
     store = Store(tmp_path / "missing-plan.db")
     _activate_test_specialist(store)
     message = "Review the runtime boundary."
@@ -755,16 +761,15 @@ def test_isolated_preflight_blocks_selection_without_an_activation_plan(
         },
     )
 
-    with pytest.raises(RuntimeError, match="no accepted specialist or contractor"):
-        run_preflight(
-            store,
-            session_id="missing-plan-session",
-            user_message=message,
-            host="codex",
-            trace_id="missing-plan-turn",
-        )
+    run_preflight(
+        store,
+        session_id="missing-plan-session",
+        user_message=message,
+        host="codex",
+        trace_id="missing-plan-turn",
+    )
 
-    assert store.get_run("missing-plan-turn")["status"] == "preflight_failed"
+    assert store.get_specialists_for_session("missing-plan-session") == []
 
 
 def test_ready_recipe_and_atomic_routing_evidence_never_persist_request_text(

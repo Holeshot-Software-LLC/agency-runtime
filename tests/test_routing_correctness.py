@@ -15,7 +15,10 @@ from agency_runtime.core.config import (
     ProviderEntry,
     SelectorConfig,
 )
-from agency_runtime.core.preflight import _require_substantive_specialist
+from agency_runtime.core.preflight import (
+    SubstantiveSpecialistUnavailable,
+    _require_substantive_specialist,
+)
 from agency_runtime.core.selector import judge as judge_module
 from agency_runtime.core.selector import pipeline as pipeline_module
 from agency_runtime.core.selector.cache import (
@@ -96,20 +99,26 @@ def _offline_config(*, providers: tuple[ProviderEntry, ...] = ()) -> AgencyConfi
     )
 
 
-def test_substantive_turn_cannot_fall_through_to_a_resident_generalist() -> None:
+def test_substantive_turn_without_a_specialist_reports_truthful_cause() -> None:
     substantive = classify_turn_intent(
         "Evaluate ChunkHound against CodeGraph for this repository.",
         {"state_known": True},
     )
-    with pytest.raises(RuntimeError, match="no accepted specialist or contractor"):
-        _require_substantive_specialist(
-            {
-                "selected_ids": ["agency-steward"],
-                "status": "abstained",
-                "source": "workforce_inference",
-            },
-            substantive,
-        )
+    # A substantive turn that produces only a resident manager raises
+    # SubstantiveSpecialistUnavailable carrying the exact persisted cause (the
+    # README "fails loudly" promise). run_preflight catches it to fail open with
+    # an honest "Recruited via: none" header rather than blocking the host, but
+    # the gate itself still records the truthful reason.
+    routing = {
+        "selected_ids": ["agency-steward"],
+        "status": "abstained",
+        "source": "workforce_inference",
+        "error": "recruiter_abstained",
+        "inference_failures": ["recruiter_unavailable"],
+        "inference_mode": "degraded",
+    }
+    with pytest.raises(SubstantiveSpecialistUnavailable, match="recruiter_abstained"):
+        _require_substantive_specialist(routing, substantive)
 
     _require_substantive_specialist(
         {

@@ -51,7 +51,11 @@ from agency_runtime.core.preflight_recipe import (
     _verified_work_units,
     preflight_delivery_policy,
 )
-from agency_runtime.core.resident_managers import is_resident_manager_slug
+from agency_runtime.core.resident_managers import (
+    RESIDENT_MANAGER_KERNEL_REFERENCE,
+    RESIDENT_MANAGER_SLUGS,
+    is_resident_manager_slug,
+)
 from agency_runtime.core.routing_snapshot import (
     bind_workforce_snapshot,
     capture_routing_snapshot,
@@ -87,6 +91,17 @@ _MAX_CHILD_ROUTE_TIMEOUT_SECONDS = 60.0
 _CHILD_ROUTE_LEASE_MARGIN_SECONDS = 5.0
 _CHILD_ROUTE_BUNDLE_VERSION = 2
 _DIRECT_NATIVE_CHILD_HOSTS = frozenset({"hermes", "openclaw"})
+
+
+class SubstantiveSpecialistUnavailable(RuntimeError):
+    """A substantive turn produced no accepted specialist or contractor.
+
+    Raised by ``_require_substantive_specialist`` so the existing failure-receipt
+    persistence path records the exact cause. ``run_preflight`` catches it
+    separately to fail open: it persists the receipt (so the dashboard and logs
+    stay diagnosable) and returns an honest zero-specialist ``PreflightResult``
+    instead of blocking the parent model. See the ADR-0122 update.
+    """
 
 
 class _PreflightFailureDiagnostics:
@@ -1256,6 +1271,108 @@ def _resident_binding_for_preflight(
     )
 
 
+def _persist_preflight_failure(
+    store: Store,
+    *,
+    diagnostics: _PreflightFailureDiagnostics,
+    error: BaseException,
+    session_id: str,
+    trace_id: str,
+    attempt_token: str,
+    attempt_owner: bool,
+    reservation_token: str,
+) -> None:
+    """Persist the failure receipt for a terminal preflight attempt.
+
+    Cleanup is an exact-token compare-and-set. A concurrent successful caller may
+    already own a ready attempt, and must never be closed by this caller's
+    failure path. A cleanup error re-raises the original error so the real cause
+    is never masked.
+    """
+
+    try:
+        if attempt_token and attempt_owner:
+            store.fail_preflight_attempt(
+                session_id=session_id,
+                trace_id=trace_id,
+                attempt_token=attempt_token,
+                status="preflight_failed",
+                failure_receipt=diagnostics.receipt(error),
+            )
+        elif not attempt_token and reservation_token:
+            store.abandon_preflight_reservation(
+                session_id=session_id,
+                trace_id=trace_id,
+                reservation_token=reservation_token,
+                status="preflight_failed",
+                failure_receipt=diagnostics.receipt(error),
+            )
+    except Exception as cleanup_error:
+        raise error from cleanup_error
+
+
+def _fail_open_preflight_result(
+    *,
+    session_id: str,
+    trace_id: str,
+    resident_binding: Any,
+    resident_context: str,
+    roster_size: int,
+    host: str,
+) -> PreflightResult:
+    """Build the honest zero-specialist result returned on a fail-open turn.
+
+    ADR-0122 update: when a substantive turn cannot produce an accepted
+    specialist, the turn proceeds as a generalist answer with the resident
+    manager kernel bound and a ``Recruited via: none`` header. The routing dict
+    carries an explicit ``inference_mode``/``status`` so the header and dashboard
+    stay truthful about why no specialist was selected.
+    """
+
+    resident_managers = RESIDENT_MANAGER_SLUGS
+    routing = {
+        "selected_ids": [],
+        "semantic_ids": [],
+        "confidence": 0.0,
+        "status": "no_specialist_fail_open",
+        "source": "workforce_inference",
+        "inference_configured": True,
+        "inference_required": True,
+        "inference_attempted": True,
+        "inference_mode": "degraded",
+        "provider": "deterministic",
+        "trace_id": trace_id,
+        "error": "no accepted specialist route; the host answers as a generalist",
+    }
+    return PreflightResult(
+        session_id=session_id,
+        trace_id=trace_id,
+        routing=routing,
+        context=resident_context,
+        loaded_specialists=resident_managers,
+        selected_specialists=(),
+        trivial=False,
+        roster_size=roster_size,
+        turn_kind="substantive",
+        selection_required=True,
+        reroute_required=False,
+        execution_decision_required=False,
+        resident_managers=resident_managers,
+        resident_manager_kernel_version=(
+            RESIDENT_MANAGER_KERNEL_REFERENCE.version if resident_managers else 0
+        ),
+        resident_manager_kernel_hash=(
+            RESIDENT_MANAGER_KERNEL_REFERENCE.content_hash if resident_managers else ""
+        ),
+        resident_manager_binding=(
+            resident_binding.as_dict() if resident_binding is not None else None
+        ),
+        resident_manager_delivery_mode=(getattr(resident_binding, "delivery_mode", "") or ""),
+        resident_manager_host_mode=(getattr(resident_binding, "host_mode", "") or ""),
+        delegation_plan=(),
+    )
+
+
 def _mark_ready_with_binding_replan(
     store: Store,
     *,
@@ -1578,12 +1695,15 @@ def _require_substantive_specialist(
     classification: TurnClassification,
     diagnostics: _PreflightFailureDiagnostics | None = None,
 ) -> None:
-    """Prevent a resident-only parent model from answering substantive work.
+    """Raise when a substantive turn produced no accepted specialist.
 
     Planning, recruitment, gap hiring, and restaffing have all completed before
-    this boundary. A substantive turn that still has no non-resident identity is
-    therefore terminal: continuing would silently turn the host model into the
-    universal generalist ADR-0122 forbids.
+    this boundary. A substantive turn that still has no non-resident identity
+    raises ``SubstantiveSpecialistUnavailable`` so the existing receipt-
+    persistence path records the exact cause. ``run_preflight`` then fails open:
+    it persists the receipt and returns an honest zero-specialist result so the
+    host can answer as a generalist with a ``Recruited via: none`` header instead
+    of blocking the operator out of the host (ADR-0122 update).
     """
 
     if not classification.selection_required:
@@ -1601,9 +1721,15 @@ def _require_substantive_specialist(
         diagnostics.mark_substantive_specialist_unavailable(routing)
     status = " ".join(str(routing.get("status") or "unavailable").split())[:64]
     source = " ".join(str(routing.get("source") or "unavailable").split())[:64]
-    raise RuntimeError(
-        "substantive Agency turn has no accepted specialist or contractor; "
-        f"status={status}; source={source}"
+    inference_mode = " ".join(str(routing.get("inference_mode") or "").split())[:32]
+    detail = ", ".join(
+        str(item)
+        for item in (routing.get("error"), *routing.get("inference_failures", ()))
+        if str(item or "").strip()
+    )[:200]
+    raise SubstantiveSpecialistUnavailable(
+        f"no accepted specialist route; status={status}; source={source}; "
+        f"inference_mode={inference_mode}; reason={detail or 'none'}"
     )
 
 
@@ -1980,25 +2106,32 @@ def run_preflight(
         # Cleanup is an exact-token compare-and-set. A concurrent successful
         # caller may already own a ready attempt, and must never be closed by
         # this caller's failure path.
-        try:
-            if attempt_token and attempt_owner:
-                store.fail_preflight_attempt(
-                    session_id=normalized_session,
-                    trace_id=turn_trace_id,
-                    attempt_token=attempt_token,
-                    status="preflight_failed",
-                    failure_receipt=diagnostics.receipt(error),
-                )
-            elif not attempt_token and normalized_reservation_token:
-                store.abandon_preflight_reservation(
-                    session_id=normalized_session,
-                    trace_id=turn_trace_id,
-                    reservation_token=normalized_reservation_token,
-                    status="preflight_failed",
-                    failure_receipt=diagnostics.receipt(error),
-                )
-        except Exception as cleanup_error:
-            raise error from cleanup_error
+        _persist_preflight_failure(
+            store,
+            diagnostics=diagnostics,
+            error=error,
+            session_id=normalized_session,
+            trace_id=turn_trace_id,
+            attempt_token=attempt_token,
+            attempt_owner=attempt_owner,
+            reservation_token=normalized_reservation_token,
+        )
+        if isinstance(error, SubstantiveSpecialistUnavailable):
+            # ADR-0122 update: a substantive turn that produced no accepted
+            # specialist fails open. The receipt above already persisted the
+            # exact cause for the dashboard and logs; return an honest
+            # zero-specialist PreflightResult so the host answers as a generalist
+            # with a "Recruited via: none" header instead of blocking the
+            # operator out of the host. The resident-manager kernel still binds
+            # evidence, scope, and the truthful header.
+            return _fail_open_preflight_result(
+                session_id=normalized_session,
+                trace_id=turn_trace_id,
+                resident_binding=resident_binding,
+                resident_context=resident_context,
+                roster_size=len(catalog),
+                host=normalized_host,
+            )
         raise
 
 

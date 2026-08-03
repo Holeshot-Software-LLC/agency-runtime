@@ -131,9 +131,9 @@ _VERIFICATION_UNAVAILABLE = (
     "Do not publish this response; restore the evidence store and start a new turn."
 )
 _PREFLIGHT_UNAVAILABLE = (
-    "AGENCY PREFLIGHT FAILED: Agency could not produce and persist an accepted specialist "
-    "or contractor route. The parent model is not allowed to answer as a generalist. "
-    "Restore inference or staffing, then start a new turn."
+    "AGENCY PREFLIGHT FAILED: Agency could not persist the evidence contract for this turn. "
+    "The parent model is not allowed to answer without a verifiable evidence receipt. "
+    "Restore the evidence store or inference provider, then start a new turn."
 )
 _STOP_EVENT_DISCRIMINATOR = re.compile(
     rb'"hook_event_name"\s*:\s*"Stop"',
@@ -255,6 +255,7 @@ def _boundary_failure_result(
     oversized: bool = False,
     expected_event: str = "",
     host: str = "",
+    reason: str = "",
 ) -> dict[str, Any]:
     """Block failed preflight, Agency-owned launches, and malformed Stop events."""
 
@@ -262,11 +263,17 @@ def _boundary_failure_result(
         isinstance(payload, dict) and payload.get("hook_event_name") == "UserPromptSubmit"
     )
     if expected_event == "UserPromptSubmit" or parsed_user_prompt:
-        # Codex documents decision:block for UserPromptSubmit. Blocking here is
-        # materially earlier than relying on the Stop verifier: a failed
-        # specialist route must never spend a parent-model turn producing a
-        # generalist answer that can only be rejected after generation.
-        return _completion_rejection(_PREFLIGHT_UNAVAILABLE, retry=False)
+        # Staffing failures no longer reach this branch: a substantive turn with
+        # no accepted specialist fails open with an honest header (ADR-0122
+        # update). This block now fires only for non-staffing integrity failures
+        # (store/lifecycle/RuntimeError). Append the exact recorded cause so the
+        # operator diagnoses the real problem rather than a generic "restore
+        # inference" instruction (README "fails loudly" promise).
+        detail = " ".join(str(reason or "").split())[:180]
+        message = (
+            f"{_PREFLIGHT_UNAVAILABLE} Exact cause: {detail}" if detail else _PREFLIGHT_UNAVAILABLE
+        )
+        return _completion_rejection(message, retry=False)
 
     if isinstance(payload, dict) and _agency_owned_native_child_pre_tool_use(payload, host):
         return _pre_tool_use_denial(_VERIFICATION_UNAVAILABLE, host=host)
@@ -3660,6 +3667,7 @@ def _run_hook_stdio(
             oversized=oversized,
             expected_event=expected_event,
             host=host,
+            reason=str(exc),
         )
         outcome = "response publication blocked" if result else "host operation continues"
         mark_current_observation(
@@ -3675,6 +3683,7 @@ def _run_hook_stdio(
             oversized=oversized,
             expected_event=expected_event,
             host=host,
+            reason=str(exc),
         )
         outcome = "response publication blocked" if result else "host operation continues"
         mark_current_observation(

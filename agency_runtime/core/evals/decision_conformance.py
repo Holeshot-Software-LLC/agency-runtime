@@ -1300,14 +1300,14 @@ class _NominationSemantics:""",
         ),
         source_path="agency_runtime/core/preflight.py",
         before=(
-            "                    attempt_token=attempt_token,\n"
-            '                    status="preflight_failed",\n'
-            "                    failure_receipt=diagnostics.receipt(error),"
+            "                attempt_token=attempt_token,\n"
+            '                status="preflight_failed",\n'
+            "                failure_receipt=diagnostics.receipt(error),"
         ),
         after=(
-            "                    attempt_token=attempt_token,\n"
-            '                    status="preflight_failed",\n'
-            "                    failure_receipt=None,"
+            "                attempt_token=attempt_token,\n"
+            '                status="preflight_failed",\n'
+            "                failure_receipt=None,"
         ),
         test_node=(
             "tests/test_preflight_bounds.py::"
@@ -1746,29 +1746,6 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_routing_correctness.py::"
             "test_full_route_never_repopulates_inference_failure_from_policy"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="isolated-plan-normalization-bypasses-specialist-gate",
-        invariant=(
-            "An isolated route rejected for lacking a child-activation plan cannot reach the "
-            "parent as an accepted substantive turn."
-        ),
-        source_path="agency_runtime/core/preflight.py",
-        before=(
-            "        _require_substantive_specialist(routing, classification, diagnostics)\n"
-            "        if diagnostics is not None:\n"
-            '            diagnostics.enter("context_hydration")\n'
-            '        if delivery_mode == "isolated":'
-        ),
-        after=(
-            "        if diagnostics is not None:\n"
-            '            diagnostics.enter("context_hydration")\n'
-            '        if delivery_mode == "isolated":'
-        ),
-        test_node=(
-            "tests/test_preflight_bounds.py::"
-            "test_isolated_preflight_blocks_selection_without_an_activation_plan"
         ),
     ),
     DecisionMutation(

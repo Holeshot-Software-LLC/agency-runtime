@@ -52,10 +52,12 @@ context — your main agent stays small.
 - 🔭 **Ideal-specialist-first selection** — inference decomposes the ask, defines
   who an exacting owner would want for each unit from an open-ended role pool,
   then either reuses a faithful roster match or declares a real gap.
-- 🚨 **Fails loudly without inference** — deterministic code can recall and
+- 🚨 **Fails honestly, never locks you out** — deterministic code can recall and
   validate candidates, but it never chooses a specialist. A substantive turn
-  without a valid inference decision selects nobody and reports the exact
-  provider failure.
+  without a valid inference decision selects nobody, reports the exact cause
+  (recruiter abstention, plan-policy veto, provider failure), and lets the host
+  answer as a generalist with a `Recruited via: none` header rather than
+  blocking you out of the agent.
 - 🧬 **Specialists bind into subagents** — when your host spins up a child, the
   exact audited specialist is injected for that one task with a one-use
   activation receipt.
@@ -110,7 +112,9 @@ with 263 audited specialists already on payroll.
 5. The **recruiter** uses inference to accept a roster specialist only when it
    faithfully matches that ideal. Zero relevant candidates is a valid explicit
    gap, not a reason to invent a nearest worker. If inference is unavailable or
-   invalid, the prompt is blocked visibly and no generalist answer is allowed.
+   invalid, the turn fails open: no specialist is selected, the exact cause is
+   reported, and the host answers as a generalist with a `Recruited via: none`
+   header so you are never locked out of the agent.
 6. If two specialists would conflict, Agency separates their work instead of
    putting both in one prompt.
 7. Every substantive work unit is delegated through the host's native subagent
@@ -135,7 +139,7 @@ flowchart LR
     I --> R["Recall typed roster matches"]
     R --> D{"Inference decision valid?"}
     D -- yes --> RC["Accept faithful match / declare gap"]
-    D -- no --> DF["Block prompt: no generalist answer"]
+    D -- no --> DF["Fail open: generalist + Recruited via: none"]
     RC --> G{"Real gap?"}
     G -- yes --> H["Hire contractor"]
     G -- no --> V["Verify team"]
@@ -325,10 +329,12 @@ The router reads the repository's stacks, not the literal words.
 | "Build a FluxUI dashboard" | inference | `senior-developer` (owns FluxUI/Livewire/Laravel) |
 | "Investigate and contain this production incident" | inference | discovery → analysis → recovery plan → operations |
 
-**No provider configured, or no valid inference response?** Agency fails the
-substantive route visibly and selects no specialist. Deterministic recall may
-build the candidate shortlist and deterministic verification may reject unsafe
-model output, but neither is allowed to recommend a team.
+**No provider configured, or no valid inference response?** Agency selects no
+specialist, reports the exact cause, and lets the host answer as a generalist
+with a `Recruited via: none` header. Deterministic recall may build the
+candidate shortlist and deterministic verification may reject unsafe model
+output, but neither is allowed to recommend a team. You are never locked out of
+the agent by a staffing failure.
 
 Try it yourself on your own repo:
 

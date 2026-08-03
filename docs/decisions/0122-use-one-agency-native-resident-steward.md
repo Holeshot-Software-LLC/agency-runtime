@@ -13,15 +13,24 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - README.md
   - docs/worklog/README.md
+  - docs/decisions/0152-fail-open-with-honest-header-when-no-specialist.md
 supersedes:
   - docs/decisions/0065-keep-compact-resident-manager-kernel.md
-superseded_by: null
+superseded_by: docs/decisions/0152-fail-open-with-honest-header-when-no-specialist.md
 id: ADR-0122
 type: decision
 deciders: [maintainers]
 ---
 
 # ADR-0122: Use one Agency-native resident steward
+
+> **Provenance note (2026-08-03):** ADR-0152 partially supersedes the fail-closed
+> passages below ("Agency fails before accepting a domain answer" and "Resident-only
+> completion cannot turn the parent model into a generalist; substantive work is
+> specialist-staffed or terminally unavailable"). ADR-0122's core decision — one
+> Agency-native parent-only `agency-steward`, inference owns staffing, no
+> deterministic no-match fallback worker — stands unchanged. The original text is
+> preserved exactly.
 
 ## Context
 

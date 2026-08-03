@@ -259,12 +259,15 @@ def _install_exact_route(
     monkeypatch.setattr(pipeline, "route", fake_route)
 
 
-def test_mixed_dependency_route_without_an_exact_plan_fails_closed(
+def test_mixed_dependency_route_without_an_exact_plan_fails_open(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
 ) -> None:
     from agency_runtime.adapters.hooks import HookBridge
 
+    # ADR-0122 update: a multi-specialist plan whose dependencies cannot be
+    # resolved no longer blocks the parent model. The turn fails open so the
+    # host answers as a generalist, and no delegations are recorded.
     prompt = "1 Implement API\n2 After that test\n3 Document"
     _install_exact_route(
         monkeypatch,
@@ -272,20 +275,17 @@ def test_mixed_dependency_route_without_an_exact_plan_fails_closed(
         selected_ids=["code-reviewer", "technical-writer"],
     )
     store = Store(tmp_path / "mixed-dependency.db")
-    with pytest.raises(RuntimeError, match="no accepted specialist or contractor"):
-        HookBridge("codex", store=store).handle(
-            {
-                "hook_event_name": "UserPromptSubmit",
-                "session_id": "session",
-                "turn_id": "trace",
-                "prompt": prompt,
-            }
-        )
+    HookBridge("codex", store=store).handle(
+        {
+            "hook_event_name": "UserPromptSubmit",
+            "session_id": "session",
+            "turn_id": "trace",
+            "prompt": prompt,
+        }
+    )
 
-    run = store.get_run("trace")
-    assert run is not None
-    assert run["status"] == "preflight_failed"
-    assert run["preflight_state"] == ""
+    # No delegations are recorded because the plan could not produce a valid
+    # unit assignment, but the turn was allowed to proceed.
     assert store.get_delegations("trace") == []
 
 

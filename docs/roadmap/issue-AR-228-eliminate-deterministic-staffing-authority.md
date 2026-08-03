@@ -1,0 +1,108 @@
+---
+title: "AR-228: Fail open with an honest header when no specialist is selected"
+status: in_progress
+category: roadmap
+created: 2026-08-03
+updated: 2026-08-03
+tags: [bug, inference, routing, workforce, product, failure]
+related:
+  - docs/decisions/0152-fail-open-with-honest-header-when-no-specialist.md
+  - docs/decisions/0122-use-one-agency-native-resident-steward.md
+  - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - agency_runtime/core/preflight.py
+  - agency_runtime/adapters/hooks.py
+  - agency_runtime/cli/roster_commands.py
+  - docs/worklog/README.md
+supersedes: []
+superseded_by: null
+type: issue
+epic: routing
+issue_id: AR-228
+priority: p0
+tracker_url: null
+depends_on: []
+blocks: [AR-119]
+---
+
+# AR-228: Fail open with an honest header when no specialist is selected
+
+## Problem
+
+ADR-0122 mandated that a substantive turn with no accepted specialist must block
+the parent model terminally. The intent was honesty, but in practice the
+boundary bricked the host: any staffing hiccup (provider timeout, plan-policy
+veto, recruiter abstention, verifier rejection) produced a `decision: block`
+that locked the operator out of the main agent. The block message ("Restore
+inference or staffing") pointed at inference even when the provider was
+configured and successfully called, because the real reason was discarded before
+the message was composed.
+
+A prior framing of this issue alleged that "deterministic staffing authority"
+remained on the live production path after ADR-0118. Source audit disproved
+that: the deterministic staffing oracle (`fallback.py`) is already quarantined
+off production by its own docstring, ADR-0118, and the keystone test
+`test_production_staffing_entrypoints_have_no_deterministic_decider_dependency`.
+The live path (`plan_and_staff_workforce`) is already inference-owned and
+fail-closed. The real product defect was the hard block plus the misleading
+message, not a surviving deterministic staffing path.
+
+## Current state
+
+The fail-open change is implemented on `codex/ar-228-fail-open-honest-header`
+off merged main `c01f178`:
+
+- `_require_substantive_specialist` raises `SubstantiveSpecialistUnavailable`
+  carrying the exact persisted cause (`status`, `source`, `inference_mode`, and
+  the joined `error`/`inference_failures` reason codes).
+- `run_preflight` catches it, persists the failure receipt, and returns an
+  honest zero-specialist `PreflightResult` instead of re-raising. The
+  resident-manager kernel still binds evidence and the truthful header.
+- The hook block remains only for non-staffing integrity failures, now with the
+  exact cause appended.
+- The CLI surfaces `status`, `error`, and `inference_failures` so
+  `agency route "<prompt>"` is immediately diagnostic.
+- ADR-0152 supersedes ADR-0122's fail-closed passages; ADR-0122's core decision
+  (one Agency-native steward, inference owns staffing) stands unchanged.
+- README, TROUBLESHOOTING, RELEASE_CHECKLIST, and THREAT_MODEL updated.
+
+Verification: the rewritten contract tests pass (routing correctness, no-match
+fallback, preflight bounds, unit-aware delegation, host hooks). The broader
+workforce/header/mandatory-inference/child-routing cascade check passed 242
+with 2 skips. Two pre-existing failures on clean main (`c01f178`) are unrelated
+to this change: a header-field-name drift in
+`test_same_specialist_can_activate_for_two_out_of_order_native_work_units` and a
+Codex native-plan-scope validation issue in
+`test_expired_owner_is_recovered_and_stale_token_cannot_commit_or_fail`.
+
+Tracker creation is pending explicit authorization.
+
+## Approach
+
+1. Replace the hard staffing block with fail-open: the host answers as a
+   generalist with a `Recruited via: none` header.
+2. Persist the exact failure cause so the dashboard, logs, header, and CLI stay
+   diagnosable.
+3. Keep the hard block only for non-staffing integrity failures (evidence-store,
+   lifecycle, assignment corruption).
+4. Supersede ADR-0122's fail-closed passages with ADR-0152.
+
+## Dependencies
+
+AR-227 (roster expansion) is a separate package on its own branch. This change
+starts from a clean branch off merged main so the roster PR stays isolated.
+
+## Acceptance
+
+- [x] A substantive turn with no accepted specialist fails open instead of
+      blocking the parent model.
+- [x] The response carries an honest `Recruited via: none` header.
+- [x] The exact failure cause is persisted in the receipt and surfaced in the
+      header and CLI.
+- [x] Non-staffing integrity failures still hard-block with the exact cause.
+- [x] ADR-0152 supersedes ADR-0122's fail-closed passages.
+- [x] README, TROUBLESHOOTING, RELEASE_CHECKLIST, and THREAT_MODEL are updated.
+- [ ] The named fast production spine passes after merge with AR-227.
+- [ ] A live diagnosis matrix confirms ordinary prompts route or fail-open with
+      truthful reasons (Package 3).
+- [ ] A follow-up pull request is open with exact verification evidence.
