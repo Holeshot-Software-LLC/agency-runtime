@@ -51,6 +51,7 @@ related:
   - docs/decisions/0146-preserve-content-free-codex-child-tool-outcomes.md
   - docs/decisions/0148-classify-nested-codex-exec-tools-without-content.md
   - docs/decisions/0149-classify-codex-wrapper-failures-without-content.md
+  - docs/decisions/0151-route-codex-product-approvals-to-auto-review.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -84,6 +85,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `code-reviewer`, valid first header, zero corrections, and bypass.
 - Sole writer `ar223-agency-writer-1c59ff3-01` is consumed `NO-GO`; Store v4
   proves the nested patch wrapper failed before the absent-file shell check.
+- Focused host A/B proves the cause: current Codex maps non-interactive
+  `approval_policy=never` to managed read-only even when the CLI requests
+  `workspace-write`. The documented `on-request` plus `auto_review` path
+  creates and reads back the exact 21-byte sentinel without disabling the
+  sandbox or changing persistent configuration.
 
 ## completed-evidence
 
@@ -97,10 +103,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-Actual Agency child workspace execution remains unproven. Store v4 identifies
-the first failed boundary as the sole nested `apply_patch` wrapper: patch
-failed once, shell completed once, and the later shell verification failed.
-The consumed v4 trial is not retried.
+Actual Agency child workspace execution remains unproven on an immutable
+installed build. The nested `apply_patch` root cause is reproduced and repaired
+locally by ADR-0151; the consumed v4 trial is not retried.
 
 ## same-task-continuity
 
@@ -112,10 +117,12 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Reproduce and repair only current Codex nested `apply_patch` execution in a
-   focused non-product harness; prove the exact workspace write locally.
-2. Do not build or consume another live writer until that boundary is green.
-   Never retry `5a97976`, `6e0d3c6`, or `1c59ff3`.
+1. Run focused product-host tests and one no-build Agency-enabled local sentinel
+   to prove automatic review coexists with hook execution and exact rollout
+   projection.
+2. Only after that boundary is green, checkpoint the slice. A later package may
+   produce one immutable build and one fresh writer; never retry `5a97976`,
+   `6e0d3c6`, or `1c59ff3`.
 
 ## verification
 

@@ -219,6 +219,7 @@ Status meanings:
 | [ADR-0148](0148-classify-nested-codex-exec-tools-without-content.md) | Classify nested Codex exec tools without content | Accepted |
 | [ADR-0149](0149-classify-codex-wrapper-failures-without-content.md) | Classify Codex wrapper failures without content | Accepted |
 | [ADR-0150](0150-correlate-codex-wrapper-tools-with-outcomes.md) | Correlate Codex wrapper tools with outcomes | Accepted |
+| [ADR-0151](0151-route-codex-product-approvals-to-auto-review.md) | Route Codex product approvals to automatic review | Accepted |
 
 ## Documentation governance
 

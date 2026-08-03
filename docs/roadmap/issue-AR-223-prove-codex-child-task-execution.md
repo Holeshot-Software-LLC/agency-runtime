@@ -39,6 +39,7 @@ related:
   - docs/decisions/0148-classify-nested-codex-exec-tools-without-content.md
   - docs/decisions/0149-classify-codex-wrapper-failures-without-content.md
   - docs/decisions/0150-correlate-codex-wrapper-tools-with-outcomes.md
+  - docs/decisions/0151-route-codex-product-approvals-to-auto-review.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -1273,6 +1274,18 @@ completed, and one later shell wrapper failed. Both failures are residual
 approval, permission, and unknown counts are zero. The consumed build is not
 retried. The next bounded package reproduces and repairs only the nested
 `apply_patch` wrapper boundary before another immutable build.
+
+A focused non-product A/B now isolates that boundary. Current Codex 0.146.0
+records `workspace-write` plus its non-interactive default
+`approval_policy=never` as a managed read-only profile; the exact patch fails
+with no file. Ignoring Agency's plugin and removing the invocation-scoped hook
+trust bypass produces the same read-only result, so neither Agency hooks nor
+hook trust caused the downgrade. Keeping the exact `workspace-write` sandbox
+while setting `approval_policy=on-request` and
+`approvals_reviewer=auto_review` creates and independently reads back the exact
+21-byte `AR223_PATCH_REPRO_OK\n` file. ADR-0151 applies that documented
+autonomous approval contract only to product execution. No immutable build,
+installation, activation, or governed writer trial was consumed.
 
 ## Approach
 

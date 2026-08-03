@@ -635,6 +635,9 @@ def test_codex_product_host_uses_isolated_workspace_write_profile(
         options[options.index("--sandbox")],
         options[options.index("--sandbox") + 1],
     ) == ("--sandbox", "workspace-write")
+    assert 'approval_policy="on-request"' in options
+    assert 'approvals_reviewer="auto_review"' in options
+    assert 'approval_policy="never"' not in options
     assert "danger-full-access" not in options
     assert "--add-dir" not in options
     assert "--ephemeral" not in options
@@ -1014,6 +1017,9 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
         for environment in setup_environments
     )
     assert "--dangerously-bypass-hook-trust" in execution_argv[0]
+    assert 'approval_policy="on-request"' in execution_argv[0]
+    assert 'approvals_reviewer="auto_review"' in execution_argv[0]
+    assert 'approval_policy="never"' not in execution_argv[0]
     assert result["trust_mode"] == "autonomous_bypass"
     assert result["trust_bypass_used"] is True
     assert result["persistent_trust_changed"] is False
