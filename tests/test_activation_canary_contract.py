@@ -22,6 +22,7 @@ from agency_runtime.core.host_capabilities import native_adapter_capability_rece
 from agency_runtime.core.installer import seed_starter_roster
 from agency_runtime.core.native_child_prompt_delivery import parse_native_child_prompt_delivery
 from agency_runtime.core.preflight import run_preflight
+from agency_runtime.core.private_paths import ensure_private_directory
 from agency_runtime.core.selector import pipeline
 from agency_runtime.core.selector.cache import clear_cache
 from agency_runtime.core.selector.stickiness import clear_session_routing
@@ -480,6 +481,7 @@ def test_activation_canary_preflight_replays_one_exact_selected_only_unit(
 ) -> None:
     from agency_runtime.core.workforce import inference
 
+    ensure_private_directory(tmp_path)
     config_path = tmp_path / "agency.yaml"
     write_provider_config(config_path)
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(config_path))
