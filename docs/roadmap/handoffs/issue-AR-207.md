@@ -58,7 +58,7 @@ type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
 evidence_commit: e90af864df3af34b363dd28cec3bfe8cb74939ba
-minimum_ledger_commit: 6e0d3c6880fe8094a41d15f5f4f6547bad2e7004
+minimum_ledger_commit: 1c59ff34a0849e23d3935751c96eb97fbcb6ad11
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -78,25 +78,29 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Sole writer `ar223-agency-writer-6e0d3c6-01` is consumed `NO-GO`. Inference
   selects `minimal-change-engineer`; trust/header/correction gates pass, but the
   workspace is empty and finalization lacks `delegation_execution`.
-- Store v4 implementation `745f765` adds the fixed per-wrapper tool/outcome
-  matrix, preserves canonical v1-v3 reads, and retains only integer counts.
+- Exact Store v4 build `1c59ff3` canonically verifies; wheel SHA-256 is
+  `275f0a1a46fe9e9bf457a55a7caee5ba29e426920163ad31ea976a29a901e563`.
+- Autonomous install/activation passes for Codex/ZCode and dashboard with
+  `code-reviewer`, valid first header, zero corrections, and bypass.
+- Sole writer `ar223-agency-writer-1c59ff3-01` is consumed `NO-GO`; Store v4
+  proves the nested patch wrapper failed before the absent-file shell check.
 
 ## completed-evidence
 
-- Activation session `019fc4db-f463-73b0-9d09-bc6f73c66b0d`, trace
-  `019fc4dc-01c7-7140-b85c-c0a46fd25a23` retains the pass.
-- Writer session `019fc4df-14bf-7a83-847a-fc5fac1b6574`, trace
-  `019fc4df-155f-74a3-8cc3-6e9b40eb3522`, run
-  `7944b892-83f9-41c8-a7ac-602212df727c`, delegation
-  `75fc483d-93b9-4f98-b076-e7357882a3fc`, and worker
-  `codex-agent:019fc4df-e192-7332-a621-ef6466270984` retain the `NO-GO`.
+- Activation session `019fc50b-837d-7171-b2c9-2f2a160d72c7`, trace
+  `019fc50b-8fa5-7a83-8546-aed8cd5bd41f` retains the pass.
+- Writer session `019fc50e-b34b-7932-b4ca-fa4ebbe61db8`, trace
+  `019fc50e-b3d7-7633-bea9-c08e034f0ca9`, run
+  `21aca342-8681-4e31-a78c-6b1d69f80321`, delegation
+  `4336817f-dd28-49bf-a585-e2c3442d79cb`, and worker
+  `codex-agent:019fc50f-5b8a-75c0-baf0-ee15992d9ce2` retain the `NO-GO`.
 
 ## exact-blocker
 
-Actual Agency child workspace execution remains unproven. Store v4 now
-correlates sole nested patch/shell/other kinds with wrapper outcomes, so the
-next fresh worker receipt can identify the failed boundary. The consumed v3
-trial is not retried.
+Actual Agency child workspace execution remains unproven. Store v4 identifies
+the first failed boundary as the sole nested `apply_patch` wrapper: patch
+failed once, shell completed once, and the later shell verification failed.
+The consumed v4 trial is not retried.
 
 ## same-task-continuity
 
@@ -108,10 +112,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. From the clean Store v4 checkpoint, produce one exact build, run autonomous
-   Codex activation, then consume at most one new Agency writer sentinel.
-2. Stop at its first terminal boundary and diagnose only from Store v4. Never
-   retry `c8a0577`, `4c57507`, `2bbd885`, `b967ad2`, `5a97976`, or `6e0d3c6`.
+1. Reproduce and repair only current Codex nested `apply_patch` execution in a
+   focused non-product harness; prove the exact workspace write locally.
+2. Do not build or consume another live writer until that boundary is green.
+   Never retry `5a97976`, `6e0d3c6`, or `1c59ff3`.
 
 ## verification
 

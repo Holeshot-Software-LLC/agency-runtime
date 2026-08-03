@@ -1242,6 +1242,38 @@ Store/product-host tests passing; the isolated new mutation passed its baseline
 and was killed by its exact matrix test with the source unchanged. No build,
 installation, activation, or writer trial was consumed in this slice.
 
+Exact ledger checkpoint `1c59ff34a0849e23d3935751c96eb97fbcb6ad11`
+builds canonically and independently verifies. Wheel SHA-256 is
+`275f0a1a46fe9e9bf457a55a7caee5ba29e426920163ad31ea976a29a901e563`;
+source SHA-256 is
+`1d25def6d5738e0ba8300963341f0c0a245acf31bbe1c96fb34b7a6f9aef172d`.
+The autonomous full-suite install detects only Codex and ZCode, leaves the
+dashboard active and reachable, and passes activation with inferred/executed
+`code-reviewer`, accepted finalization, a valid first header, zero corrections,
+hook bypass, and no persistent profile change. Activation session
+`019fc50b-837d-7171-b2c9-2f2a160d72c7` and trace
+`019fc50b-8fa5-7a83-8546-aed8cd5bd41f` retain that pass.
+
+Its sole writer `ar223-agency-writer-1c59ff3-01` is consumed and terminal
+`NO-GO`. Session `019fc50e-b34b-7932-b4ca-fa4ebbe61db8`, trace
+`019fc50e-b3d7-7633-bea9-c08e034f0ca9`, run
+`21aca342-8681-4e31-a78c-6b1d69f80321`, route
+`a0052cd8-4f75-4a48-8779-93a17c105f5e`, delegation
+`4336817f-dd28-49bf-a585-e2c3442d79cb`, finalization
+`5c7bca53-c322-4915-89ee-1585b62c261f`, and child
+`019fc50f-5b8a-75c0-baf0-ee15992d9ce2` retain the result. Inference selected
+and loaded `minimal-change-engineer`; exact-workspace trust, autonomous bypass,
+a valid first header, and zero corrections passed. The workspace is empty and
+finalization declined missing `delegation_execution`.
+
+The canonical Store v4 worker receipt identifies the first failed boundary:
+one sole nested `apply_patch` wrapper failed, one sole nested shell wrapper
+completed, and one later shell wrapper failed. Both failures are residual
+`process_failed_other`; all ambiguous, missing-output, sandbox, split-root,
+approval, permission, and unknown counts are zero. The consumed build is not
+retried. The next bounded package reproduces and repairs only the nested
+`apply_patch` wrapper boundary before another immutable build.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
