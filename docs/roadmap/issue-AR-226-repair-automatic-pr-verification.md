@@ -1,6 +1,6 @@
 ---
 title: "AR-226: Repair automatic pull-request verification"
-status: complete
+status: done
 category: roadmap
 created: 2026-08-03
 updated: 2026-08-03
