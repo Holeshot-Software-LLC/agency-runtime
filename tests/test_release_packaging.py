@@ -712,6 +712,7 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
         "Check tracked release inputs",
         "Check out canonical documentation history",
         "Install documentation dependencies",
+        "Prepare private quality runtime",
         "Run fast Python production spine",
         "Verify fast workflow contracts",
         "Run dashboard UI tests with coverage",
@@ -773,6 +774,12 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     assert 'echo "::error::Committed whitespace check failed."' in whitespace["run"]
     assert "python scripts/check_ci_whitespace.py" not in whitespace["run"]
     assert quality_steps["Check dependency consistency"]["run"] == "python -m pip check"
+    private_quality = quality_steps["Prepare private quality runtime"]
+    assert private_quality["if"] == "steps.change-scope.outputs.code_required == 'true'"
+    assert "python -m scripts.prepare_ci_runtime" in private_quality["run"]
+    assert (
+        '--label "quality-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"' in private_quality["run"]
+    )
     quality_step_order = [step["name"] for step in jobs["quality-contracts"]["steps"]]
     assert quality_step_order.index("Install development dependencies") < quality_step_order.index(
         "Check dependency consistency"
@@ -789,8 +796,10 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     )["run"]
     assert "tests/test_ci_change_scope.py tests/test_ci_sharding.py" in quality_contracts
     assert "tests/test_ci_session_pair.py tests/test_release_packaging.py" in quality_contracts
+    assert '"${AGENCY_CI_PYTHON}" -m pytest' in quality_contracts
     production_spine = quality_steps["Run fast Python production spine"]
     assert production_spine["if"] == "steps.change-scope.outputs.code_required == 'true'"
+    assert production_spine["run"].startswith('"${AGENCY_CI_PYTHON}" -m pytest')
     assert re.findall(r"tests/test_[a-z0-9_]+\.py", production_spine["run"]) == [
         "tests/test_senior_audit_hardening.py",
         "tests/test_configuration_namespace_security.py",

@@ -47,7 +47,10 @@ The bounded repair makes the two real process-controller targets use the
 OS-owned POSIX interpreter rather than a replaceable hosted-tool-cache path.
 The Linux subreaper now preserves a trusted active interpreter when possible
 and otherwise tries only the exact OS-owned `/usr/bin/python3`, which must pass
-the same executable preparation and immutable identity checks. It also raises
+the same executable preparation and immutable identity checks. The automatic
+quality job now executes its security-sensitive Python suites through the
+existing owner-private CI runtime instead of merely preparing that runtime and
+continuing under GitHub's replaceable hosted-tool-cache interpreter. It also raises
 the dashboard aggregate ceiling from 268 KiB to a narrow
 300 KiB bound above the observed 296,619-byte audited payload, and validates
 repository identity from the authenticated 200 response without requiring an
@@ -60,11 +63,14 @@ suite passes 309 tests with 15 platform skips under warning-strict mode.
    process-controller targets and their subreaper through an OS-owned
    interpreter. The subreaper fallback remains subject to the complete frozen
    executable receipt policy and never searches `PATH`.
-2. Keep a bounded dashboard resource budget with measured headroom rather than
+2. Run the quality job's product tests and evaluator through the prepared
+   private interpreter so their self-executable identity satisfies the same
+   production policy under hosted CI.
+3. Keep a bounded dashboard resource budget with measured headroom rather than
    removing the package-size assertion.
-3. Bind dependency fallback to exact repository identity and the exact expected
+4. Bind dependency fallback to exact repository identity and the exact expected
    private-repository 403 response without depending on an optional API field.
-4. Rerun PR #235's automatic gates and merge only after they pass.
+5. Rerun PR #235's automatic gates and merge only after they pass.
 
 ## Dependencies
 

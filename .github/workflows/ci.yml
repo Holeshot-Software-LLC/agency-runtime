@@ -91,6 +91,15 @@ jobs:
       - name: Install development dependencies
         if: steps.change-scope.outputs.code_required == 'true'
         run: python -m pip install -e ".[dev]"
+      - name: Prepare private quality runtime
+        if: steps.change-scope.outputs.code_required == 'true'
+        shell: bash
+        env:
+          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          AGENCY_CI_RUN_ID: ${{ github.run_id }}
+        run: >-
+          python -m scripts.prepare_ci_runtime
+          --label "quality-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
       - name: Install documentation dependencies
         if: steps.change-scope.outputs.code_required == 'false'
         run: python -m pip install .
@@ -191,12 +200,12 @@ jobs:
       - name: Verify fast workflow contracts
         if: steps.change-scope.outputs.code_required == 'true'
         run: |
-          python -m pytest tests/test_ci_change_scope.py tests/test_ci_sharding.py \
+          "${AGENCY_CI_PYTHON}" -m pytest tests/test_ci_change_scope.py tests/test_ci_sharding.py \
             tests/test_ci_session_pair.py tests/test_release_packaging.py -q -W error
       - name: Run fast Python production spine
         if: steps.change-scope.outputs.code_required == 'true'
         run: |
-          python -m pytest \
+          "${AGENCY_CI_PYTHON}" -m pytest \
             tests/test_senior_audit_hardening.py \
             tests/test_configuration_namespace_security.py \
             tests/test_executable_namespace_security.py \
@@ -223,7 +232,9 @@ jobs:
             -q -W error
       - name: Prove decision-conformance mutations
         if: steps.change-scope.outputs.code_required == 'true'
-        run: python -m agency_runtime.cli eval decision-conformance --repository . --json
+        run: >-
+          "${AGENCY_CI_PYTHON}" -m agency_runtime.cli eval decision-conformance
+          --repository . --json
       - name: Run dashboard UI tests with coverage
         if: steps.change-scope.outputs.code_required == 'true'
         run: >-
