@@ -20,6 +20,8 @@ related:
   - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
   - docs/roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
+  - docs/roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md
+  - docs/analysis/2026-08-03-ar-203-readme-story-evidence.html
   - docs/analysis/2026-07-31-ar-212-readme-story-evidence.html
   - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
@@ -68,6 +70,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
+- Exact `624a6a3` activation and product runtime pass. Seven inferred units
+  delegate and complete, workspace write is proven, and all required files
+  exist. AR-225 owns the independent validator's undocumented CLI contract.
 - Exact candidate `8e74d56b39b20a4358d3b5b2500dd941da4e51d0` builds canonically
   from a detached source tree and independently verifies. Wheel SHA-256 is
   `08faa80e1cbfb7ab0f98fa4c51562f544b18d3b7e9ac48fe7a9f31e466f2aad0`;
@@ -99,8 +104,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-None for AR-223. The immutable installed product now proves autonomous
-activation and real Agency child workspace execution with zero corrections.
+None for AR-223. AR-225 is the next README blocker; Agency execution itself
+passes through real seven-worker product delegation with zero corrections.
 
 ## same-task-continuity
 
@@ -112,10 +117,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-Resume the README umbrella through AR-203 and AR-204 using the now-proven
-installed writer boundary. Freeze that package around the next missing visible
-README scenario, retain one trial per exact build, and fail any correction
-count greater than zero.
+Repair only AR-225's public-scenario/independent-validator mismatch, verify it
+locally, then create one fresh immutable build for one product trial. Never
+retry `624a6a3`; fail any correction count greater than zero.
 
 ## verification
 

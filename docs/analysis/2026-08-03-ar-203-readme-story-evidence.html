@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Agency Runtime README Reality Check — AR-203</title>
+  <style>
+    :root { --bg:#07100f; --panel:#101b19; --line:#2b3c38; --ink:#f4f7f2; --muted:#a9b9b4; --good:#5ee6a8; --bad:#ff7e79; --warn:#ffd279; --accent:#72d7ff; }
+    * { box-sizing:border-box; }
+    html { background:var(--bg); scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:radial-gradient(circle at 12% 0%,rgba(94,230,168,.13),transparent 32rem),radial-gradient(circle at 92% 8%,rgba(114,215,255,.12),transparent 30rem),var(--bg); font:16px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { width:min(1160px,calc(100% - 32px)); margin:auto; padding:54px 0 72px; }
+    header { display:grid; gap:16px; margin-bottom:30px; }
+    .eyebrow { color:var(--accent); font-size:.78rem; font-weight:850; letter-spacing:.16em; text-transform:uppercase; }
+    h1 { max-width:1050px; margin:0; font-size:clamp(2.35rem,6vw,5.6rem); line-height:.96; letter-spacing:-.055em; }
+    h2 { margin:0 0 14px; font-size:clamp(1.35rem,2.2vw,1.9rem); }
+    h3,p { margin:0; }
+    code,pre { font-family:"Cascadia Code",Consolas,monospace; }
+    code { overflow-wrap:anywhere; }
+    a { color:var(--accent); }
+    .lede { max-width:920px; color:var(--muted); font-size:1.08rem; }
+    .verdict { width:fit-content; padding:10px 14px; border:1px solid rgba(255,126,121,.55); border-radius:999px; color:#ffd8d5; background:rgba(255,126,121,.09); font-weight:850; }
+    .meta { display:flex; flex-wrap:wrap; gap:8px 18px; color:var(--muted); font-size:.84rem; }
+    .grid { display:grid; grid-template-columns:repeat(12,1fr); gap:14px; }
+    .card { grid-column:span 3; min-height:165px; padding:20px; border:1px solid var(--line); border-radius:17px; background:linear-gradient(145deg,rgba(18,31,28,.97),rgba(11,20,18,.97)); }
+    .state { display:inline-block; margin-bottom:20px; font-size:.72rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }
+    .good { color:var(--good); } .bad { color:var(--bad); } .warn { color:var(--warn); }
+    .card p { margin-top:8px; color:var(--muted); font-size:.92rem; }
+    section { margin-top:46px; }
+    .panel { overflow:hidden; border:1px solid var(--line); border-radius:18px; background:rgba(16,27,25,.94); }
+    .panel-head { padding:20px 22px; border-bottom:1px solid var(--line); }
+    .panel-body { padding:22px; }
+    table { width:100%; border-collapse:collapse; font-size:.93rem; }
+    th,td { padding:11px 13px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { width:27%; color:var(--muted); font-weight:650; }
+    tr:last-child th,tr:last-child td { border-bottom:0; }
+    .numbers { display:grid; grid-template-columns:repeat(7,1fr); gap:9px; }
+    .number { padding:14px 8px; border:1px solid var(--line); border-radius:13px; text-align:center; background:rgba(255,255,255,.018); }
+    .number strong { display:block; color:var(--good); font-size:1.75rem; line-height:1.1; }
+    .number span { color:var(--muted); font-size:.72rem; }
+    .callout { padding:20px 22px; border-left:4px solid var(--warn); border-radius:12px; background:rgba(255,210,121,.075); }
+    .callout strong { color:#ffe9b7; }
+    .team { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .person { padding:13px 15px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.018); }
+    .person code { color:#d9f8ed; }
+    pre { margin:12px 0 0; padding:16px; overflow:auto; border:1px solid var(--line); border-radius:12px; background:#050a09; color:#dce8e4; white-space:pre-wrap; }
+    footer { margin-top:52px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:.82rem; }
+    @media(max-width:900px){.card{grid-column:span 6}.numbers{grid-template-columns:repeat(4,1fr)}}
+    @media(max-width:620px){main{width:min(100% - 22px,1160px);padding-top:32px}.card{grid-column:1/-1}.numbers,.team{grid-template-columns:1fr 1fr}th,td{display:block;width:100%!important;padding:8px 11px}th{padding-bottom:0;border-bottom:0}}
+    @media print{:root{--bg:#fff;--panel:#fff;--ink:#111;--muted:#4d5955;--line:#ccd4d1}body{background:#fff}main{width:100%;padding:0}.card,.panel{break-inside:avoid}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Agency Runtime · README reality check</div>
+    <h1>The Agency runtime works. The published eval and hidden grader disagree.</h1>
+    <p class="lede">Exact build <code>624a6a398f4620eeb92e62193b1407a482941783</code> autonomously installed, activated, inferred a seven-unit specialist team, delegated every unit, and produced the required application files. The terminal verdict is still NO-GO because two independent probes require an undocumented CLI shape.</p>
+    <div class="verdict">NO-GO · runtime green · acceptance contract mismatch</div>
+    <div class="meta"><span>Prepared 2026-08-03 EDT</span><span>Host: Codex 0.146.0 · Windows</span><span>Trial: <code>ar203-624a6a3-readme-01</code></span><span>Next defect: <a href="../roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md">AR-225</a></span></div>
+  </header>
+
+  <div class="grid" aria-label="Gate summary">
+    <article class="card"><div class="state good">Passed</div><h3>Immutable package</h3><p>Canonical wheel and source distribution passed strict Twine and independent content verification.</p></article>
+    <article class="card"><div class="state good">Passed</div><h3>Autonomous activation</h3><p>Inference selected <code>code-reviewer</code>; delegation, worker, accepted finalization, first header, and zero corrections passed.</p></article>
+    <article class="card"><div class="state good">Passed</div><h3>Full Agency execution</h3><p>Seven planned units became seven completed native delegations and seven exit-zero workers.</p></article>
+    <article class="card"><div class="state bad">Failed</div><h3>Independent acceptance</h3><p>Project tests and docs passed. Hidden workflow and invalid-ID probes rejected an undocumented interface difference.</p></article>
+  </div>
+
+  <section><div class="callout"><strong>This is the breakthrough boundary.</strong> The product no longer fails at trust, routing, staffing, hiring, parent scheduling, child execution, workspace write, or missing artifacts. The only demonstrated blocker is now the evaluator’s public-versus-hidden CLI contract.</div></section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Immutable build and installation</h2></div>
+    <div class="panel-body"><table>
+      <tr><th>Exact source commit</th><td><code>624a6a398f4620eeb92e62193b1407a482941783</code></td></tr>
+      <tr><th>Wheel SHA-256</th><td><code>ed837b8a2547d62416934eb1efafcb713c4a438d0f8bc00a9c1c649fdeac5af0</code></td></tr>
+      <tr><th>Source SHA-256</th><td><code>d8dd95c78d89422eb572b24a1612f20b3134f5f001216c2462cf212bf307c432</code></td></tr>
+      <tr><th>Installed suite</th><td>Codex and ZCode detected and configured; dashboard installed, active, and reachable.</td></tr>
+      <tr><th>Trust boundary</th><td><code>autonomous_bypass</code> for the invocation only; persistent profile unchanged.</td></tr>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Activation proof</h2></div>
+    <div class="panel-body"><table>
+      <tr><th>Session / trace</th><td><code>019fc7a2-2ae5-7be2-8752-de032fb57f9c</code><br><code>019fc7a2-386e-7073-bdfb-5e5267ba578e</code></td></tr>
+      <tr><th>Route / run</th><td><code>2260f745-cf51-4321-b135-89bc505737f0</code><br><code>9bdb15e5-4793-4161-92f4-4bcca4b63f4c</code></td></tr>
+      <tr><th>Selected specialist</th><td><code>code-reviewer</code></td></tr>
+      <tr><th>Delegation / finalization</th><td><code>2cd7b839-e55d-4def-8a08-893a8902837f</code><br><code>cd608377-a999-467c-9705-a08da94d427d</code> · accept</td></tr>
+      <tr><th>Header / corrections</th><td>First response contract passed; <strong>0 corrections</strong>.</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Actual product team</h2>
+    <div class="team">
+      <div class="person"><code>python-cli-architecture-specialist</code><br><span class="good">completed</span></div>
+      <div class="person"><code>python-application-engineer</code><br><span class="good">completed</span></div>
+      <div class="person"><code>software-test-engineer</code><br><span class="good">completed</span></div>
+      <div class="person"><code>code-reviewer</code><br><span class="good">completed two units</span></div>
+      <div class="person"><code>technical-writer</code><br><span class="good">completed</span></div>
+      <div class="person"><code>test-results-analyzer</code><br><span class="good">completed</span></div>
+      <div class="person"><code>codebase-onboarding-engineer</code><br><span class="good">selected in accepted route</span></div>
+    </div>
+    <div class="numbers" style="margin-top:14px" aria-label="Store cardinalities">
+      <div class="number"><strong>1</strong><span>route</span></div><div class="number"><strong>7</strong><span>planned units</span></div><div class="number"><strong>7</strong><span>grants</span></div><div class="number"><strong>7</strong><span>delegations</span></div><div class="number"><strong>7</strong><span>workers</span></div><div class="number"><strong>7</strong><span>exit zero</span></div><div class="number"><strong>1</strong><span>accepted finalization</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Product execution evidence</h2></div>
+    <div class="panel-body"><table>
+      <tr><th>Session / trace / route</th><td><code>019fc7a4-acd5-77d1-bee0-701cfdda2dbd</code><br><code>019fc7a4-ad48-7fa3-bb41-c6e93c2be6d5</code><br><code>54729bf6-9667-4ea4-b1aa-b1582769a4c4</code></td></tr>
+      <tr><th>Finalization</th><td><code>018001e9-bc9d-46e1-b355-cb242f7d436e</code> · accept · no missing evidence</td></tr>
+      <tr><th>Runtime result</th><td>Completed, host exit 0, runtime contract passed, workspace-write proven.</td></tr>
+      <tr><th>Duration</th><td>661.766 seconds</td></tr>
+      <tr><th>Prompt hashes</th><td>Product <code>sha256:510be49b40697bee7229c199ace9a72654fdc09e3c1da9964d62d610b7eafd04</code><br>Executed <code>sha256:a2e2032d9aa900bfe9d94fc814c5ed0f5a19cecaffd5266ce404d993f7b59e3e</code></td></tr>
+      <tr><th>Workspace digest</th><td><code>sha256:797c0cffe585a9ec6e9d690e1a3ec6cb524513cc2a987e71c39c2bae06ac8b10</code></td></tr>
+      <tr><th>Required artifacts</th><td><code>app.py</code>, <code>tests/test_app.py</code>, and <code>README.md</code> all present and hashed.</td></tr>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Independent verdict</h2><p class="lede">Two checks passed and two failed. The failure is one contract mismatch with a downstream consequence.</p></div>
+    <div class="panel-body"><table>
+      <tr><th><span class="good">PASS</span> Project tests</th><td>The supplied unit and failure-path suite passes.</td></tr>
+      <tr><th><span class="good">PASS</span> Documentation</th><td>README documents add, list, and complete behavior.</td></tr>
+      <tr><th><span class="bad">FAIL</span> Workflow probe</th><td>The hidden probe invokes global <code>--data PATH add --title TEXT</code> and requires a <code>title</code> field. The public scenario never states those requirements; the generated app validly uses <code>add DESCRIPTION --data PATH</code> and <code>description</code>.</td></tr>
+      <tr><th><span class="bad">FAIL</span> Invalid-ID probe</th><td>The first hidden add never creates its data file, so the later safety probe cannot verify a persisted list or object. This is downstream of the same CLI mismatch.</td></tr>
+    </table>
+    <pre>Published: every command accepts --data PATH; machine output is JSON.
+Hidden:    app.py --data PATH add --title TEXT; record field must be title.
+Observed:  app.py add DESCRIPTION --data PATH; record field is description.</pre>
+    </div>
+  </section>
+
+  <section><div class="callout"><strong>Next bounded package — AR-225:</strong> publish one exact CLI grammar and JSON schema, prove the independent validator has no stronger hidden assumptions, run focused and named fast checks, then build one fresh immutable candidate for one product trial. This consumed build will not be retried.</div></section>
+
+  <footer>Evidence scope: one exact build, one Windows Codex activation, and one <code>python-cli-service</code> Agency product trial. This page does not claim cross-host, cross-platform, or comparative superiority.</footer>
+</main>
+</body>
+</html>

@@ -33,6 +33,8 @@ related:
   - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
+  - docs/roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md
+  - docs/analysis/2026-08-03-ar-203-readme-story-evidence.html
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes:
@@ -44,7 +46,7 @@ epic: product
 issue_id: AR-204
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
-depends_on: [AR-207, AR-209, AR-212, AR-214, AR-215, AR-216, AR-217, AR-218, AR-219, AR-220, AR-221, AR-223]
+depends_on: [AR-207, AR-209, AR-212, AR-214, AR-215, AR-216, AR-217, AR-218, AR-219, AR-220, AR-221, AR-223, AR-225]
 blocks: [AR-205]
 ---
 
@@ -74,6 +76,20 @@ installed build `5e3fab622b75f257e0ab4b74f1cc2c6d43b1d748` proves the dashboard
 service is healthy and the Codex plugin is registered, but it does not prove an
 authenticated rendered dashboard, a successful prompt route, specialist
 injection, delegation, or workspace write.
+
+Exact build `624a6a398f4620eeb92e62193b1407a482941783` proves that the
+reconciled default install, autonomous activation, inference-only staffing,
+native child execution, Store-backed first response, and isolated workspace
+write now work together. Its sole ordinary README trial accepts seven planned
+units, launches seven native specialists, records seven exit-zero workers and
+one accepted finalization, and creates all three required artifacts without a
+persistent trust change.
+
+The README story remains `NO-GO` only at independent product acceptance.
+Project tests and documentation checks pass, while the hidden workflow and
+invalid-ID probes enforce an interface absent from the published scenario:
+global `--data`, `add --title`, and JSON `title`. AR-225 owns that exact
+scenario/validator contradiction. The consumed build is not retried.
 
 ## Approach
 

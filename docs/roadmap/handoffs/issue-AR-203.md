@@ -10,6 +10,8 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
+  - docs/roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md
+  - docs/analysis/2026-08-03-ar-203-readme-story-evidence.html
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
@@ -20,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-203
 branch: codex/ar-204-readme-product-proof
-evidence_commit: 7727c0cd9bba3824acd3722c6c3964086667cfc9
-minimum_ledger_commit: 4081265af803f85ecafb5372a74e0fd06a93e110
+evidence_commit: 624a6a398f4620eeb92e62193b1407a482941783
+minimum_ledger_commit: 624a6a398f4620eeb92e62193b1407a482941783
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -30,6 +32,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## checkpoint
 
+- Exact `624a6a3` canonically verifies and activates with inferred
+  `code-reviewer`, accepted finalization, valid first header, zero corrections,
+  supported bypass, and no persistent trust change.
+- Its sole product trial completes seven units/workers, proves workspace write,
+  and creates all required files. AR-225 owns the two hidden CLI probe failures.
 - The active goal remains `README's main story works in reality.`
 - PR 195 merged exact revision `6b49f17d6787823f9ba78a8f09383001b6a77535`;
   build `0.1.0+g6b49f17d6787` is installed for Codex, ZCode, and dashboard.
@@ -129,9 +136,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## exact-blocker
 
-Installation, activation, and inference-selected product staffing pass. The
-product path fails after staffing and before delegation execution; preflight
-cleanup also erases the adjacent failure reason needed for bounded diagnosis.
+Installation, activation, inference-selected staffing, native delegation,
+worker completion, workspace write, and required artifacts pass. AR-225 is the
+only demonstrated blocker: independent validation assumes an undocumented CLI
+grammar and JSON field.
 
 ## same-task-continuity
 
@@ -141,11 +149,8 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-1. Persist and project bounded content-free preflight/delegation failure facts.
-2. Repair the first demonstrated no-spawn cause using bounded controls.
-3. Review twice at most, run focused plus named fast gates, merge, and exact-
-   install before one fresh product trial.
-4. Produce the evidence page and OpenClaw handoff after the terminal trial.
+Align the public scenario and independent validator under AR-225, run focused
+plus named fast checks, then admit one new build/trial. Never retry `624a6a3`.
 
 ## verification
 

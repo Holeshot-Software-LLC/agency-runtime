@@ -49,7 +49,7 @@ issue_id: AR-223
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/228
 depends_on: [AR-221]
-blocks: [AR-203, AR-204]
+blocks: [AR-203, AR-204, AR-225]
 ---
 
 # AR-223: Prove Codex child task execution
