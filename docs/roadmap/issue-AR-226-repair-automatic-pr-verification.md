@@ -69,6 +69,12 @@ repository identity from the authenticated 200 response without requiring an
 optional response field. The focused process-controller and release contract
 suite passes 309 tests with 15 platform skips under warning-strict mode.
 
+The retained excerpt proved the final evaluator failure was not a storage
+defect: the cross-platform activation baseline hard-coded a Windows capability
+receipt while executing on Linux, so host eligibility correctly rejected the
+otherwise valid `code-reviewer`. The baseline now declares the actual Windows
+or Linux platform; that specialist supports both.
+
 ## Approach
 
 1. Preserve executable namespace enforcement and run real POSIX

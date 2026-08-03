@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -494,7 +495,7 @@ def test_activation_canary_preflight_replays_one_exact_selected_only_unit(
     trace_id = "activation-canary-preflight-trace"
     capability = native_adapter_capability_receipt(
         "codex",
-        platform="windows",
+        platform="windows" if os.name == "nt" else "linux",
         session_id=session_id,
         trace_id=trace_id,
         available_tools=("repository-read", "native-delegation"),
