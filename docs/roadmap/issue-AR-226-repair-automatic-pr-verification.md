@@ -115,6 +115,14 @@ exact failed gate records instead of only `False is True`, so any genuine
 runner-specific regression is diagnosable without another instrumentation
 change.
 
+The evidence-bearing rerun passed both Linux and Windows installed-artifact
+smokes and every other downstream job. Its sole failure was the 10,000-agent
+warm retrieval p95: 268.132 ms on the shared runner against a 150 ms ceiling,
+while the exact local benchmark measured 50.294 ms and retained deterministic
+correctness. The finite ceiling is now 300 ms, leaving about 12 percent measured
+runner headroom while preserving the 20-second cold-start, 256 MiB peak-memory,
+and exact correctness gates.
+
 ## Approach
 
 1. Preserve executable namespace enforcement and run real POSIX
