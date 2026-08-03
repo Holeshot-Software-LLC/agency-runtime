@@ -20,6 +20,7 @@ from agency_runtime.core.private_paths import private_temporary_directory
 from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.selector.pipeline import build_routing_context
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.unit_assignment import work_unit_id_from_text
 
 
 def _header(store: Store, *, delegated: str | None = None) -> str:
@@ -219,17 +220,35 @@ def _case_suggestions_are_persisted() -> dict[str, Any] | None:
     def run(store: Store, adapter: HermesAdapter) -> dict[str, Any]:
         del adapter
         _create_eval_turn(store)
+        audit_unit = "audit delegation"
+        eval_unit = "add eval"
         count = record_suggested_delegations(
             store,
             session_id="eval-session",
             host="hermes",
             routing={
                 "trace_id": "trace",
-                "selected_ids": ["multi-agent-systems-architect"],
+                "selected_ids": ["multi-agent-systems-architect", "code-reviewer"],
+                "unit_assignment_agents": [
+                    {
+                        "slug": "multi-agent-systems-architect",
+                        "name": "Multi-agent Systems Architect",
+                        "description": "Audit delegation architecture.",
+                        "matched_work_unit_ids": [work_unit_id_from_text(audit_unit)],
+                        "primary_work_unit_ids": [work_unit_id_from_text(audit_unit)],
+                    },
+                    {
+                        "slug": "code-reviewer",
+                        "name": "Code Reviewer",
+                        "description": "Add and review delegation evaluation coverage.",
+                        "matched_work_unit_ids": [work_unit_id_from_text(eval_unit)],
+                        "primary_work_unit_ids": [work_unit_id_from_text(eval_unit)],
+                    },
+                ],
                 "work_units": {
                     "delegate": True,
                     "count": 2,
-                    "units": ["audit delegation", "add eval"],
+                    "units": [audit_unit, eval_unit],
                 },
             },
         )

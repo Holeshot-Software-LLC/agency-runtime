@@ -596,8 +596,14 @@ def run_smoke(*, all_hosts: bool = False) -> dict[str, Any]:
                 def _delegation_eval() -> dict[str, Any]:
                     report = run_delegation_eval()
                     if not report["passed"]:
+                        failures = [
+                            f"{case.get('name')}: {case.get('error')}"
+                            for case in report.get("cases", [])
+                            if not case.get("passed")
+                        ]
                         raise RuntimeError(
-                            f"delegation eval failed: {report['failed_count']} failed"
+                            f"delegation eval failed: {report['failed_count']} failed; "
+                            + "; ".join(failures[:3])
                         )
                     return {
                         "passed_count": report["passed_count"],

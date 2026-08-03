@@ -292,7 +292,8 @@ def test_routing_eval_meets_published_thresholds() -> None:
     assert report["corpus"]["version"] == "1.4.0"
     assert report["routing_contract"] == "deterministic_candidate_recall_only"
     assert report["corpus"]["routing_contract"] == "deterministic_candidate_recall_only"
-    assert report["passed"] is True
+    failed_gates = [gate for gate in report["gates"] if not gate["passed"]]
+    assert report["passed"] is True, failed_gates
     assert all(gate["passed"] for gate in report["gates"])
     routing = report["metrics"]["routing"]
     assert routing["candidate_precision_at_3"] >= 0.60

@@ -106,6 +106,15 @@ generalist. The performance job also stops collecting all 8,582 tests merely
 to select three marked cases; it names the two performance-bearing modules, so
 an unrelated wheel-test import cannot require undeclared build tooling.
 
+The scoped downstream rerun then made the remaining contracts precise. The
+delegation eval itself had not been updated after team-level selections stopped
+being valid per-unit assignment evidence; its persistence case now supplies
+two exact unit-to-specialist claims. Smoke failures also retain up to three
+bounded case names and errors. The routing performance assertion now emits the
+exact failed gate records instead of only `False is True`, so any genuine
+runner-specific regression is diagnosable without another instrumentation
+change.
+
 ## Approach
 
 1. Preserve executable namespace enforcement and run real POSIX
