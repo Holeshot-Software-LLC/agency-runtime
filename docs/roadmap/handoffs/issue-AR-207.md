@@ -78,8 +78,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Sole writer `ar223-agency-writer-6e0d3c6-01` is consumed `NO-GO`. Inference
   selects `minimal-change-engineer`; trust/header/correction gates pass, but the
   workspace is empty and finalization lacks `delegation_execution`.
-- Store v3 records one patch and two shell wrappers: one completed and two
-  `process_failed_other`. All five specific/unknown failure categories are zero.
+- Store v4 implementation `745f765` adds the fixed per-wrapper tool/outcome
+  matrix, preserves canonical v1-v3 reads, and retains only integer counts.
 
 ## completed-evidence
 
@@ -93,9 +93,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-Actual Agency child workspace execution remains unproven. Store v3 rules out
-the suspected named causes but loses which residual failure belongs to the
-patch versus shell wrapper. The consumed trial is not retried.
+Actual Agency child workspace execution remains unproven. Store v4 now
+correlates sole nested patch/shell/other kinds with wrapper outcomes, so the
+next fresh worker receipt can identify the failed boundary. The consumed v3
+trial is not retried.
 
 ## same-task-continuity
 
@@ -107,10 +108,10 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Add only a fixed content-free per-wrapper nested-tool/outcome matrix and kill
-   its removal in focused parser, Store, and product-host tests.
-2. Do not build or run another writer until it is green. Never retry
-   `c8a0577`, `4c57507`, `2bbd885`, `b967ad2`, `5a97976`, or `6e0d3c6`.
+1. From the clean Store v4 checkpoint, produce one exact build, run autonomous
+   Codex activation, then consume at most one new Agency writer sentinel.
+2. Stop at its first terminal boundary and diagnose only from Store v4. Never
+   retry `c8a0577`, `4c57507`, `2bbd885`, `b967ad2`, `5a97976`, or `6e0d3c6`.
 
 ## verification
 
@@ -120,6 +121,8 @@ python scripts/docs_metadata.py --check
 python scripts/update_policy_availability.py --check
 python scripts/update_worklog.py --check
 python scripts/verify_docs.py
+python -m pytest tests/test_codex_activation_canary.py -q -W error
+python -m pytest tests/test_native_child_lifecycle.py tests/test_product_host.py -q -W error
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 python -m pytest tests/test_workforce_inference.py tests/test_workforce_dynamic_hiring.py -q -W error

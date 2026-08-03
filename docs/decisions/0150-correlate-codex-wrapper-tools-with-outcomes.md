@@ -62,6 +62,8 @@ without another speculative trial.
 - Multi-tool wrappers remain visible but intentionally ambiguous rather than
   receiving a misleading nearest classification.
 
+Implementation `745f765` carries this decision.
+
 ## Alternatives
 
 - **Persist raw wrapper inputs or outputs.** Rejected because they may contain

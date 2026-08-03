@@ -1233,6 +1233,15 @@ but exposes one remaining diagnostic defect: aggregate counts do not correlate
 each wrapper outcome to its sole nested tool kind. The next bounded slice adds
 only that fixed content-free tool/outcome matrix; no writer is retried.
 
+ADR-0150 implementation `745f765` completes that bounded Store v4 repair. The
+current schema correlates each wrapper outcome with a sole nested
+`apply_patch`, `shell_command`, `other`, or `ambiguous` kind, validates the
+matrix against existing aggregate outcomes, and keeps canonical v1 through v3
+rows readable. Focused evidence is 51 parser/projector tests and 49
+Store/product-host tests passing; the isolated new mutation passed its baseline
+and was killed by its exact matrix test with the source unchanged. No build,
+installation, activation, or writer trial was consumed in this slice.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
