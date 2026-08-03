@@ -58,7 +58,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 263e3f5
+evidence_commit: 263e3f594a8fbf8a86f3520e59c4e4a091ad98f1
 minimum_ledger_commit: 1c59ff34a0849e23d3935751c96eb97fbcb6ad11
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
