@@ -37,8 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   supported bypass, and no persistent trust change.
 - Its sole product trial completes seven units/workers, proves workspace write,
   and creates all required files. AR-225 owns the two hidden CLI probe failures.
-- AR-225 source now publishes that exact task-CLI contract; 11 focused and 50
-  affected tests pass. The named fast gate remains next.
+- AR-225 publishes the exact task-CLI contract; 11 focused, 50 affected, and
+  the named fast spine pass, including 105/105 killed decision mutations.
 - The active goal remains `README's main story works in reality.`
 - PR 195 merged exact revision `6b49f17d6787823f9ba78a8f09383001b6a77535`;
   build `0.1.0+g6b49f17d6787` is installed for Codex, ZCode, and dashboard.
@@ -151,8 +151,8 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-Align the public scenario and independent validator under AR-225, run focused
-plus named fast checks, then admit one new build/trial. Never retry `624a6a3`.
+Create one fresh immutable build from the AR-225 verified checkpoint, install
+and activate it once, then consume one product trial. Never retry `624a6a3`.
 
 ## verification
 

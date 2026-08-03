@@ -63,7 +63,10 @@ storage preservation. The independent validator remains unchanged. The new
 regression fails twice on the pre-fix prompt and passes after repair. All 11
 scenario/validator tests and 50 directly affected product, CLI, context, and
 workforce tests pass under warning-strict mode; focused Ruff, formatting, and
-whitespace checks pass.
+whitespace checks pass. The complete named fast spine is also green. Its final
+decision-conformance evaluator passed a 196.847-second baseline, killed all
+105 curated mutations with zero survivors or invalid results, and left source
+fingerprints unchanged; the full evaluator completed in 979.8 seconds.
 
 ## Approach
 
@@ -93,5 +96,5 @@ whose published and independently graded interfaces disagree.
   for one minimal conforming application.
 - [x] Existing path, output-bound, timeout, artifact, and sandbox protections
   remain fail closed.
-- [ ] Focused checks and the named fast spine pass before another immutable
+- [x] Focused checks and the named fast spine pass before another immutable
   build or live product trial.

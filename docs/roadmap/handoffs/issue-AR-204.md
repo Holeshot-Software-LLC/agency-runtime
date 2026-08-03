@@ -47,7 +47,9 @@ Bounded projection for making the README product story executable.
 - AR-225 records the first causal defect: hidden probes require global `--data`,
   `add --title`, and JSON `title`, while the published scenario does not.
 - The AR-225 source repair and parity regressions pass 11 focused and 50
-  affected tests. No new build or product trial has been consumed.
+  affected tests. The complete named fast spine also passes, including 105/105
+  killed decision mutations, zero survivors or invalid results, and unchanged
+  source. No new build or product trial has been consumed.
 - The product contract remains frozen: default full-suite install with opt-outs;
   mirrored owner CLI/dashboard controls; inference-only specialist staffing;
   one parent-only steward; explicit attended or supported bypass activation;
@@ -146,9 +148,9 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Make every hidden `python-cli-service` probe assumption explicit in the
-   public scenario and add divergence regressions under AR-225.
-2. Run focused checks and the named fast spine before one new immutable build.
+1. Create and independently verify one fresh immutable build from the clean
+   AR-225 checkpoint.
+2. Install and activate that exact build once.
 3. Consume one fresh product trial only; never retry `624a6a3`.
 
 ## verification

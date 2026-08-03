@@ -74,7 +74,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   delegate and complete, workspace write is proven, and all required files
   exist. AR-225 owns the independent validator's undocumented CLI contract.
 - AR-225 now publishes the exact shared task-CLI probe contract; focused and
-  affected verification pass. The named fast gate remains before a new build.
+  affected verification and the complete named fast spine pass. Decision
+  conformance kills 105/105 mutations with zero survivors or invalid results
+  and unchanged source.
 - Exact candidate `8e74d56b39b20a4358d3b5b2500dd941da4e51d0` builds canonically
   from a detached source tree and independently verifies. Wheel SHA-256 is
   `08faa80e1cbfb7ab0f98fa4c51562f544b18d3b7e9ac48fe7a9f31e466f2aad0`;
@@ -119,9 +121,9 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-Repair only AR-225's public-scenario/independent-validator mismatch, verify it
-locally, then create one fresh immutable build for one product trial. Never
-retry `624a6a3`; fail any correction count greater than zero.
+Create one fresh immutable build from the verified AR-225 checkpoint, install
+and activate it once, then consume one product trial. Never retry `624a6a3`;
+fail any correction count greater than zero.
 
 ## verification
 
