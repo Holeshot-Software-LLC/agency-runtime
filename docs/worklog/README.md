@@ -614,6 +614,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c01f178` | 2026-08-03 | Merge pull request #235 from Holeshot-Software-LLC/codex/ar-203-readme-reality | null | null |
 | `fcb4d39` | 2026-08-04 | feat(roster): add six governed specialists and raise index envelope (AR-227) | null | null |
 | `892a7c3` | 2026-08-03 | feat(routing): fail open with an honest header when no specialist is selected (AR-228) | [AR-228](../roadmap/issue-AR-228-eliminate-deterministic-staffing-authority.md) | null |
+| `4e8dc55` | 2026-08-03 | fix(uninstall): enable attended host uninstall via two-step dry-run/confirm | [AR-189](../roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) | null |
+| `ed526b1` | 2026-08-03 | fix(workforce): stop deterministic gates from hiding roster specialists (AR-228) | [AR-228](../roadmap/issue-AR-228-eliminate-deterministic-staffing-authority.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
