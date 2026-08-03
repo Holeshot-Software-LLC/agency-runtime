@@ -63,12 +63,13 @@ def test_recovery_command_quotes_shell_metacharacters() -> None:
 
 
 def _stage_owned_bundle(host: str, home: Path) -> dict[str, Any]:
-    (home / ".agency-runtime").mkdir(parents=True, exist_ok=True)
+    ensure_private_directory(home)
+    ensure_private_directory(home / ".agency-runtime")
     root = _host_root(host, home_dir=home)
-    root.mkdir(parents=True, exist_ok=True)
+    ensure_private_directory(root)
     if host == "zcode":
         config = zcode_config_path(home_dir=home)
-        config.parent.mkdir(parents=True, exist_ok=True)
+        ensure_private_directory(config.parent)
         config.write_text(
             json.dumps(
                 {

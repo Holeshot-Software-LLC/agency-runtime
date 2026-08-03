@@ -13,6 +13,7 @@ from typing import Any
 import pytest
 
 from agency_runtime.core import update_service as subject
+from agency_runtime.core.private_paths import ensure_private_directory
 
 _MAIN_SHA = "b" * 40
 _RELEASE_SHA = "c" * 40
@@ -648,8 +649,8 @@ def test_uv_target_probe_binds_tool_and_binary_directories(
     tool_directory = tmp_path / "tools"
     prefix = tool_directory / "agency-runtime"
     binary_directory = tmp_path / "bin"
-    prefix.mkdir(parents=True)
-    binary_directory.mkdir()
+    ensure_private_directory(prefix)
+    ensure_private_directory(binary_directory)
     entrypoint = binary_directory / ("agency.exe" if os.name == "nt" else "agency")
     entrypoint.write_bytes(b"agency")
     launcher = _prepared_interpreter(tmp_path / ("uv.exe" if os.name == "nt" else "uv"))
@@ -813,9 +814,10 @@ def test_attended_install_uses_isolated_pip_only_without_a_uv_receipt(
 def test_uv_tool_environment_requires_exact_bounded_agency_receipt(
     tmp_path: Path,
 ) -> None:
+    ensure_private_directory(tmp_path)
     receipt = tmp_path / "uv-receipt.toml"
     entrypoint = tmp_path / "bin" / ("agency.exe" if os.name == "nt" else "agency")
-    entrypoint.parent.mkdir()
+    ensure_private_directory(entrypoint.parent)
     entrypoint.write_bytes(b"launcher")
     entrypoint.chmod(0o700)
     receipt.write_text(
@@ -911,11 +913,13 @@ def test_uv_tool_environment_rejects_missing_and_oversized_receipts(tmp_path: Pa
 def test_uv_tool_environment_accepts_only_an_in_prefix_posix_symlink(
     tmp_path: Path,
 ) -> None:
+    ensure_private_directory(tmp_path)
     prefix = tmp_path / "tools" / "agency-runtime"
     target = prefix / "bin" / "agency"
     entrypoint = tmp_path / "bin" / "agency"
-    target.parent.mkdir(parents=True)
-    entrypoint.parent.mkdir()
+    ensure_private_directory(prefix)
+    ensure_private_directory(target.parent)
+    ensure_private_directory(entrypoint.parent)
     target.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     target.chmod(0o700)
     entrypoint.symlink_to(target)
