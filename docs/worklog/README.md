@@ -587,6 +587,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f741a67` | 2026-08-02 | docs(ar-223): normalize recovery evidence commit | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `6754a19` | 2026-08-02 | docs(ar-223): record immutable writer pass | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `a931bb8` | 2026-08-03 | docs(ar-225): checkpoint product validator mismatch | [AR-225](../roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md) | null |
+| `ecc3966` | 2026-08-03 | fix(ar-225): publish task cli validator contract | [AR-225](../roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
