@@ -103,6 +103,36 @@ starts from a clean branch off merged main so the roster PR stays isolated.
 - [x] ADR-0152 supersedes ADR-0122's fail-closed passages.
 - [x] README, TROUBLESHOOTING, RELEASE_CHECKLIST, and THREAT_MODEL are updated.
 - [ ] The named fast production spine passes after merge with AR-227.
-- [ ] A live diagnosis matrix confirms ordinary prompts route or fail-open with
-      truthful reasons (Package 3).
+- [x] A live diagnosis matrix confirms ordinary prompts route or fail-open with
+      truthful reasons (Package 3 — see findings below).
 - [ ] A follow-up pull request is open with exact verification evidence.
+
+## Live diagnosis matrix (Package 3)
+
+The truthfulness fix made the real remaining defect fully diagnosable. Every
+substantive prompt now fails open with a truthful reason instead of blocking.
+The provider is configured and both planner and recruiter calls succeed
+(`status: applied`, model `gpt-5.6-luna`). The remaining product gap is that the
+recruiter abstains on ordinary prompts:
+
+| Prompt | Plan | Recruiter outcome | Candidates |
+|---|---|---|---|
+| `hello` (social) | n/a | n/a (deterministic, correct) | none |
+| `review this authentication design and propose tests` | valid | `recruiter_abstained` | test-automation-engineer (19), test-results-analyzer (19) |
+| `review this code for correctness and security` | valid | `recruiter_abstained` (inference-declared-gap) | ai-generated-code-security-auditor (32) |
+| `update the README install section` | valid (documentation + review) | `recruiter_abstained` (inference-declared-gap), `decision=None` | technical-writer not surfaced |
+| `add a docstring to the foo function` | valid | `recruiter_abstained` | score=0 across the board |
+
+Two distinct defects surface:
+
+1. The recruiter returns empty decisions (`decision=None`) and declares
+   `inference-declared-gap` even when a faithful roster match obviously exists
+   (e.g. `technical-writer` for a README change, `code-reviewer` for a review).
+   Both planner and recruiter calls report `status: applied`, so this is an
+   inference-quality / recruiter-prompt issue, not a provider failure.
+2. Typed recall returns score=0 for some ordinary prompts (documentation, simple
+   implementation), so the recruiter may not be shown the obvious specialist.
+
+These are Package 4 work (recruiter prompt/conditions and recall), not fail-open
+work. The fail-open change is complete: the operator is never locked out, and
+the exact cause is now visible.
