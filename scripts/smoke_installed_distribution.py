@@ -184,15 +184,13 @@ def _selection_safety() -> dict[str, object]:
             "agency-runtime-dashboard",
             "The Agency response header exposes unreadable reason codes and effect codes. "
             "Explain how to test agent selection live and how to open the dashboard.",
-            ("multi-agent-systems-architect",),
-            ("technical-writer",),
         ),
-        ("ambiguous-help", "Please help me with this.", (), ()),
+        ("ambiguous-help", "Please help me with this."),
     )
     observed: dict[str, list[str]] = {}
     forbidden = {"clinical-evidence-agent", "geographer", "language-translator"}
     platform_name = "windows" if os.name == "nt" else "linux"
-    for case_id, message, required, acceptable in cases:
+    for case_id, message in cases:
         clear_cache()
         clear_session_routing()
         session_id = f"installed-selection-{case_id}"
@@ -217,16 +215,16 @@ def _selection_safety() -> dict[str, object]:
         )
         selected = tuple(str(item) for item in decision.get("semantic_ids", []))
         selected_set = set(selected)
-        allowed = set(required) | set(acceptable)
         if (
-            not set(required).issubset(selected_set)
-            or not selected_set.issubset(allowed)
+            selected
+            or decision.get("status") != "inference_unavailable"
+            or decision.get("inference_required") is not True
             or forbidden.intersection(selected_set)
         ):
             raise RuntimeError(
-                "installed selection safety failed for "
-                f"{case_id}: selected={selected!r}, required={required!r}, "
-                f"acceptable={acceptable!r}"
+                "installed inference boundary failed for "
+                f"{case_id}: selected={selected!r}, status={decision.get('status')!r}, "
+                f"inference_required={decision.get('inference_required')!r}"
             )
         observed[case_id] = list(selected)
     return {

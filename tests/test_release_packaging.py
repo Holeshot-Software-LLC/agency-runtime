@@ -704,6 +704,9 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     assert "coverage report --fail-under=97" in combined_run
     performance_run = jobs["performance"]["steps"][-1]["run"]
     assert "-m performance" in performance_run
+    assert "tests/test_candidate_narrow_scaling.py" in performance_run
+    assert "tests/test_routing_eval_suite.py" in performance_run
+    assert "pytest tests " not in performance_run
     quality_steps = {step["name"]: step for step in jobs["quality-contracts"]["steps"]}
     assert {
         "Classify the complete event delta",

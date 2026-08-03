@@ -206,7 +206,7 @@ def test_full_roster_eval_gates_are_deterministic(report: dict[str, Any]) -> Non
     assert report["passed"] is True
 
 
-def test_real_agency_runtime_prompt_has_safe_offline_specialists() -> None:
+def test_real_agency_runtime_prompt_discloses_unavailable_offline_inference() -> None:
     _manifest, cards = _routing_cards()
     capability_receipt = native_adapter_capability_receipt(
         "codex",
@@ -238,10 +238,9 @@ def test_real_agency_runtime_prompt_has_safe_offline_specialists() -> None:
         trace_id="offline-agency-runtime-trace",
     )
 
-    selected = set(decision["semantic_ids"])
-    assert {"multi-agent-systems-architect"}.issubset(selected)
-    assert selected.issubset({"multi-agent-systems-architect", "technical-writer"})
-    assert selected.isdisjoint({"clinical-evidence-agent", "geographer", "language-translator"})
+    assert decision["semantic_ids"] == []
+    assert decision["status"] == "inference_unavailable"
+    assert decision["inference_required"] is True
 
 
 @pytest.mark.parametrize("candidate_limit", [True, 7, 81, 40.0, "40"])

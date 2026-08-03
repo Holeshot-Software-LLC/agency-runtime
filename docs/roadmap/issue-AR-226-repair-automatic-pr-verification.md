@@ -96,6 +96,16 @@ complete local documentation contract without asserting external tracker
 parity. The strict tracker option remains required after approved tracker
 creation and for release validation.
 
+That correction unblocked automatic fanout for the first time. Both review
+distribution platforms then exposed a stale deterministic smoke contract that
+demanded a named specialist while deliberately configuring no inference
+provider. The installed-artifact smoke now proves the actual safe boundary:
+no invented specialist, an explicit `inference_unavailable` status, and an
+`inference_required` disclosure while the host remains free to answer as a
+generalist. The performance job also stops collecting all 8,582 tests merely
+to select three marked cases; it names the two performance-bearing modules, so
+an unrelated wheel-test import cannot require undeclared build tooling.
+
 ## Approach
 
 1. Preserve executable namespace enforcement and run real POSIX
