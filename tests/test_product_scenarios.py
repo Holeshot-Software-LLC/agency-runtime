@@ -58,3 +58,25 @@ def test_product_prompt_separator_is_not_an_absolute_resource_token() -> None:
 
     assert "`python-cli-service`, trial `trial-1`" in prompt
     assert "`python-cli-service` / trial" not in prompt
+
+
+@pytest.mark.parametrize(
+    ("scenario_id", "entrypoint"),
+    (
+        ("python-cli-service", "app.py"),
+        ("typescript-node-application", "src/app.ts"),
+    ),
+)
+def test_task_cli_scenarios_publish_every_independent_probe_assumption(
+    scenario_id: str,
+    entrypoint: str,
+) -> None:
+    prompt = product_scenario(scenario_id).prompt(trial_id="contract-parity")
+
+    assert f"`{entrypoint} --data PATH add --title TEXT`" in prompt
+    assert f"`{entrypoint} --data PATH list`" in prompt
+    assert f"`{entrypoint} --data PATH complete ID`" in prompt
+    assert "`--data PATH` is a global option placed before the subcommand" in prompt
+    assert "`id`, `title`, and `completed`" in prompt
+    assert "JSON array or a JSON object with a `tasks` array" in prompt
+    assert "An unknown task ID exits nonzero without changing persisted data" in prompt

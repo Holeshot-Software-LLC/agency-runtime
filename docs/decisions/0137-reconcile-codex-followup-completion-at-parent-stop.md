@@ -1,9 +1,9 @@
 ---
 title: "Reconcile Codex follow-up completion at parent Stop"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-02
 tags: [codex, delegation, lifecycle, completion, evidence]
 related:
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
@@ -12,13 +12,14 @@ related:
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
+  - docs/decisions/0139-make-codex-execution-turns-self-contained.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/codex_child_execution.py
   - tests/test_codex_activation_canary.py
   - tests/test_codex_child_execution.py
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
 id: ADR-0137
 type: decision
 deciders: [maintainers]

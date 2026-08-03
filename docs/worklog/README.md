@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-01
+updated: 2026-08-03
 tags: []
 related: []
 supersedes: []
@@ -525,6 +525,71 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3a0d691` | 2026-08-01 | docs(ar-223): checkpoint product guidance failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `4e348c1` | 2026-08-01 | fix(ar-223): keep Codex delegation plan inline | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
 | `529c7ee` | 2026-08-01 | docs(ar-223): record green inline-plan gate | null | null |
+| `ba82b92` | 2026-08-01 | docs(ar-223): checkpoint installed inline-plan merge | null | null |
+| `75d2d71` | 2026-08-01 | docs(ar-223): record green inline-plan activation | null | null |
+| `c5563b1` | 2026-08-01 | docs(ar-223): checkpoint writer-child product failure | null | null |
+| `f39dd0a` | 2026-08-02 | fix(ar-223): make Codex execution turns self-contained | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `b497b83` | 2026-08-02 | docs(ar-223): record failed self-contained writer sentinel | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `335496e` | 2026-08-02 | fix(ar-223): use Codex stable multi-agent feature | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `0151581` | 2026-08-02 | fix(ar-223): gate writer proof on Agency plans | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `5067b7a` | 2026-08-02 | fix(ar-223): wait for terminal product children | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `1743a22` | 2026-08-02 | docs(ar-223): record green terminal child gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `55c52b9` | 2026-08-02 | docs(ar-223): record failed terminal writer | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `8c67cc2` | 2026-08-02 | fix(ar-223): execute Codex specialists on initial spawn | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `aef9399` | 2026-08-02 | docs(ar-223): record failed direct activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `0cddcaf` | 2026-08-02 | fix(ar-223): certify live Codex callback order | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `f14017e` | 2026-08-02 | docs(ar-223): record failed planner activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `2d8661c` | 2026-08-02 | docs(ar-223): classify planner activation failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `d12041b` | 2026-08-02 | docs(ar-223): record green callback-order activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `50fa505` | 2026-08-02 | docs(ar-223): record failed exact writer sentinel | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `10c047f` | 2026-08-02 | fix(ar-223): bind exact writer planning evidence | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `d866b64` | 2026-08-02 | docs(ar-223): record green exact writer gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `3e2be29` | 2026-08-02 | docs(ar-223): record exact candidate activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `502c44f` | 2026-08-02 | docs(ar-223): record rejected one-unit planner trial | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `73f9989` | 2026-08-02 | fix(ar-223): preserve inferred indivisible plans | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `bc5bdf8` | 2026-08-02 | docs(ar-223): record indivisible planner diagnosis | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `59f8514` | 2026-08-02 | docs(ar-223): record green indivisible plan gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `9ab2b57` | 2026-08-02 | docs(ar-223): record exact planner candidate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `ebbac76` | 2026-08-02 | docs(ar-223): record exact candidate activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `787cd4a` | 2026-08-02 | docs(ar-223): record failed staffing assurance trial | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `3f63d55` | 2026-08-02 | fix(ar-223): honor indivisible staffing topology | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `9f66c86` | 2026-08-02 | docs(ar-223): record green staffing topology gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `13991fc` | 2026-08-02 | docs(ar-223): record exact staffing candidate activation | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `f647eab` | 2026-08-02 | docs(ar-223): record failed exact writer execution | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `260865e` | 2026-08-02 | fix(ar-223): prove delegated child execution context | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `87a9786` | 2026-08-02 | docs(ar-223): record failed child-context writer proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `a854e8e` | 2026-08-02 | fix(ar-223): require workspace write receipts | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `f91c94a` | 2026-08-02 | docs(ar-223): record parent finalization writer failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `3b35ae0` | 2026-08-02 | fix(ar-223): reject incomplete workspace finalization | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `9891970` | 2026-08-02 | docs(ar-223): record finalization guard proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `c6c02d0` | 2026-08-02 | fix(ar-223): order exact child execution last | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `e67b406` | 2026-08-02 | docs(ar-223): record green execution ordering gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `eb34922` | 2026-08-02 | docs(ar-223): record failed v4 writer proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `3cc852f` | 2026-08-02 | fix(ar-223): preserve child tool outcomes | null | null |
+| `a56b6eb` | 2026-08-02 | docs(ar-223): checkpoint child tool outcome evidence | null | null |
+| `2a19c79` | 2026-08-02 | fix(ar-223): persist child tool evidence in Store | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `26cda4b` | 2026-08-02 | docs(ar-223): checkpoint durable Store diagnostics | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `c37b8e4` | 2026-08-02 | docs(ar-223): record green Store-backed gate | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `72043c9` | 2026-08-02 | docs(ar-223): checkpoint nested tool evidence gap | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `95aec42` | 2026-08-02 | fix(ar-223): classify nested exec tool evidence | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `1815a98` | 2026-08-02 | docs(ar-223): checkpoint nested exec diagnostics | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `1d050e0` | 2026-08-02 | docs(ar-223): checkpoint nested wrapper failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `e091252` | 2026-08-02 | fix(ar-223): isolate Codex product temp writes | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `8322398` | 2026-08-02 | docs(ar-223): checkpoint temp-rebase writer failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `e90af86` | 2026-08-02 | fix(ar-223): classify Codex wrapper failures | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `b071987` | 2026-08-02 | docs(ar-223): checkpoint wrapper failure diagnostics | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `9f6d52c` | 2026-08-02 | docs(ar-223): checkpoint Store v3 writer failure | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `745f765` | 2026-08-02 | fix(ar-223): correlate Codex wrapper tool outcomes | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `53cfcfb` | 2026-08-02 | docs(ar-223): checkpoint Store v4 tool outcomes | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `1b09fb6` | 2026-08-02 | docs(ar-223): checkpoint Store v4 writer boundary | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `263e3f5` | 2026-08-02 | fix(ar-223): auto-review product workspace writes | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `46af36d` | 2026-08-02 | docs(ar-223): checkpoint auto-reviewed writer proof | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `f741a67` | 2026-08-02 | docs(ar-223): normalize recovery evidence commit | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `6754a19` | 2026-08-02 | docs(ar-223): record immutable writer pass | [AR-223](../roadmap/issue-AR-223-prove-codex-child-task-execution.md) | null |
+| `a931bb8` | 2026-08-03 | docs(ar-225): checkpoint product validator mismatch | [AR-225](../roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md) | null |
+| `ecc3966` | 2026-08-03 | fix(ar-225): publish task cli validator contract | [AR-225](../roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md) | null |
+| `370adbd` | 2026-08-03 | docs(ar-225): checkpoint named fast verification | [AR-225](../roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md) | null |
+| `ce01d39` | 2026-08-03 | docs(ar-204): record README reality pass | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

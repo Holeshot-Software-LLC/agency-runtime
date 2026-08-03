@@ -66,6 +66,15 @@ MAX_TYPED_RECALL_CANDIDATES_PER_UNIT = 24
 _PLANNING_CAPABILITIES = tuple(sorted(CORE_CAPABILITY_IDS))
 _WORKFORCE_ROUTING_POLICY_VERSION = "1"
 _CACHE_CREDENTIAL_KEY = secrets.token_bytes(32)
+_EXPLICIT_SINGLE_WORK_UNIT = re.compile(
+    r"\b(?:exactly\s+one|one|single)\s+(?:indivisible\s+)?"
+    r"(?:[a-z0-9][a-z0-9-]*\s+){0,4}work\s+unit\b",
+    re.IGNORECASE,
+)
+_EXPLICIT_NO_SPLIT = re.compile(
+    r"\b(?:do\s+not|don't|must\s+not|never)\s+(?:split|decompose|divide)\b",
+    re.IGNORECASE,
+)
 _NOMINATION_FAILURE_CODES = frozenset(
     {
         "candidate_outside_detail_cards",
@@ -664,6 +673,36 @@ def _safe_request(value: object) -> str:
     return text
 
 
+def _explicit_indivisible_unit_request(request: str) -> bool:
+    """Recognize an explicit user-owned one-unit topology constraint."""
+
+    match = _EXPLICIT_SINGLE_WORK_UNIT.search(request)
+    if match is None:
+        return False
+    return (
+        "indivisible" in match.group(0).casefold() or _EXPLICIT_NO_SPLIT.search(request) is not None
+    )
+
+
+def _planning_unit_limit(
+    *,
+    configured_limit: int,
+    requested_limit: int | None,
+    explicit_indivisible_unit: bool,
+) -> int:
+    if requested_limit is None:
+        limit = configured_limit
+    else:
+        if (
+            isinstance(requested_limit, bool)
+            or not isinstance(requested_limit, int)
+            or not 1 <= requested_limit <= MAX_PRIMARY_UNITS
+        ):
+            raise ValueError(f"max_planned_units must be between 1 and {MAX_PRIMARY_UNITS}")
+        limit = min(configured_limit, requested_limit)
+    return 1 if explicit_indivisible_unit else limit
+
+
 def _legacy_provider(config: AgencyConfig) -> ProviderEntry | None:
     judge = config.judge
     if not judge.model or not judge.base_url or not (judge.api_key or judge.api_key_env):
@@ -1043,6 +1082,7 @@ def _compact_planner_prompt(
     *,
     max_work_units: int,
     required_artifact_kind: str | None = None,
+    explicit_indivisible_unit: bool = False,
 ) -> str:
     domains, stacks, capabilities = _known_intent_vocabulary(snapshot)
     return _json_prompt(
@@ -1061,6 +1101,7 @@ def _compact_planner_prompt(
                 "max_primary_units": min(max_work_units, MAX_PRIMARY_UNITS),
                 "no_worker_names": True,
                 "inference_owns_complete_plan": True,
+                "explicit_indivisible_unit": explicit_indivisible_unit,
                 "plan_acceptance_contract": planner_acceptance_contract(),
                 **(
                     {"required_artifact_kind": required_artifact_kind}
@@ -1080,6 +1121,7 @@ def _parse_compact_plan(
     context: StaffingContext,
     max_work_units: int,
     required_artifact_kind: str | None = None,
+    explicit_indivisible_unit: bool = False,
 ) -> WorkUnitPlan:
     domains, stacks, capabilities = _known_intent_vocabulary(snapshot)
     primary = compile_intent_plan(
@@ -1095,7 +1137,11 @@ def _parse_compact_plan(
         unit.artifact_kind != required_artifact_kind for unit in primary.units
     ):
         raise ValueError(f"compact intent units must use artifact kind {required_artifact_kind}")
-    violations = plan_policy_violations(request, primary)
+    violations = plan_policy_violations(
+        request,
+        primary,
+        explicit_indivisible_unit=explicit_indivisible_unit,
+    )
     if violations:
         raise _PlanPolicyValidationError(violations)
     return primary
@@ -1638,6 +1684,7 @@ def _verified_recruiter_proposal(
     *,
     config: AgencyConfig,
     context: StaffingContext,
+    explicit_indivisible_unit: bool = False,
 ) -> StaffingDecision:
     staffing = verify_staffing(
         plan,
@@ -1645,6 +1692,7 @@ def _verified_recruiter_proposal(
         snapshot.contracts,
         context=context,
         budget=staffing_budget_for_config(config),
+        explicit_indivisible_unit=explicit_indivisible_unit,
     )
     if staffing.accepted or _valid_inferred_gap_proposal(proposal, staffing):
         return staffing
@@ -1661,6 +1709,7 @@ def _recruit_ambiguous_plan(
     budget: _CallBudget,
     invoker: StructuredInvoker,
     routing_context_fingerprint: str,
+    explicit_indivisible_unit: bool = False,
 ) -> tuple[
     RecruiterProposal | None,
     list[WorkforceInferenceAttempt],
@@ -1725,6 +1774,7 @@ def _recruit_ambiguous_plan(
                 "gap_decision_requires_no_safe_team": True,
                 "candidate_ids_must_come_from_detail_cards": True,
                 "typed_recall_is_non_ranked_evidence": True,
+                "separate_independent_assurance_required": not explicit_indivisible_unit,
             },
             "detail_cards": detail_cards,
             "typed_recall": typed_recall,
@@ -1744,7 +1794,10 @@ def _recruit_ambiguous_plan(
         prompt=recruiter_prompt,
         schema=NOMINATION_RESPONSE_SCHEMA,
         system_prompt=_RECRUITER_SYSTEM,
-        extra={"staffing_budget": asdict(staffing_budget_for_config(config))},
+        extra={
+            "staffing_budget": asdict(staffing_budget_for_config(config)),
+            "explicit_indivisible_unit": explicit_indivisible_unit,
+        },
     )
     cached = workforce_cache_get(cache_identity)
     if isinstance(cached, RecruiterProposal):
@@ -1755,6 +1808,7 @@ def _recruit_ambiguous_plan(
                 snapshot,
                 config=config,
                 context=context,
+                explicit_indivisible_unit=explicit_indivisible_unit,
             )
         except _StaffingVerificationError:
             pass
@@ -1781,6 +1835,7 @@ def _recruit_ambiguous_plan(
                 snapshot,
                 config=config,
                 context=context,
+                explicit_indivisible_unit=explicit_indivisible_unit,
             )
         except _StaffingVerificationError as exc:
             # A whole-team rejection requires a complete replacement. Do not
@@ -1952,16 +2007,12 @@ def plan_and_staff_workforce(
     proposal: RecruiterProposal | None = None
 
     configured_unit_limit = min(config.workforce.max_work_units, MAX_PRIMARY_UNITS)
-    if max_planned_units is None:
-        planning_unit_limit = configured_unit_limit
-    else:
-        if (
-            isinstance(max_planned_units, bool)
-            or not isinstance(max_planned_units, int)
-            or not 1 <= max_planned_units <= MAX_PRIMARY_UNITS
-        ):
-            raise ValueError(f"max_planned_units must be between 1 and {MAX_PRIMARY_UNITS}")
-        planning_unit_limit = min(configured_unit_limit, max_planned_units)
+    explicit_indivisible_unit = _explicit_indivisible_unit_request(ask)
+    planning_unit_limit = _planning_unit_limit(
+        configured_limit=configured_unit_limit,
+        requested_limit=max_planned_units,
+        explicit_indivisible_unit=explicit_indivisible_unit,
+    )
     planner_schema = compact_intent_response_schema(
         max_work_units=planning_unit_limit,
         required_artifact_kind=required_planned_artifact_kind,
@@ -1975,6 +2026,7 @@ def plan_and_staff_workforce(
         context,
         max_work_units=planning_unit_limit,
         required_artifact_kind=required_planned_artifact_kind,
+        explicit_indivisible_unit=explicit_indivisible_unit,
     )
     planner_providers = configured_workforce_providers(config, stage="planner")
     planner_cache_identity = _stage_cache_identity(
@@ -2013,6 +2065,7 @@ def plan_and_staff_workforce(
                 context=context,
                 max_work_units=planning_unit_limit,
                 required_artifact_kind=required_planned_artifact_kind,
+                explicit_indivisible_unit=explicit_indivisible_unit,
             ),
         )
         if isinstance(parsed_plan, WorkUnitPlan):
@@ -2050,6 +2103,7 @@ def plan_and_staff_workforce(
         budget=budget,
         invoker=invoker,
         routing_context_fingerprint=routing_context_fingerprint,
+        explicit_indivisible_unit=explicit_indivisible_unit,
     )
     if recruiter_cache_hit:
         cache_hits.append("recruiter")
@@ -2073,9 +2127,14 @@ def plan_and_staff_workforce(
         snapshot.contracts,
         context=context,
         budget=staffing_budget_for_config(config),
+        explicit_indivisible_unit=explicit_indivisible_unit,
     )
 
-    policy_violations = plan_policy_violations(ask, plan)
+    policy_violations = plan_policy_violations(
+        ask,
+        plan,
+        explicit_indivisible_unit=explicit_indivisible_unit,
+    )
     if policy_violations:
         return _inference_failure(
             mode=mode,

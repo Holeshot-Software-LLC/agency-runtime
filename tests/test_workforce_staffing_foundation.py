@@ -846,6 +846,13 @@ def test_mutation_or_durable_claim_without_later_assurance_abstains() -> None:
     assert "independent_assurance_missing" in _codes(
         verify_staffing(plan, proposal, roster, context=_context())
     )
+    assert verify_staffing(
+        plan,
+        proposal,
+        roster,
+        context=_context(),
+        explicit_indivisible_unit=True,
+    ).accepted
 
 
 def test_terminal_review_claim_is_itself_assurance_not_recursive_work() -> None:

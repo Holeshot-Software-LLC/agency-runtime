@@ -13,16 +13,30 @@ import pytest
 
 from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core import canary
-from agency_runtime.core.activation_canary_contract import CODEX_ACTIVATION_CANARY_WORK_UNIT
 from agency_runtime.core.agent_activation import PROTECTED_AGENT_SLUGS
 from agency_runtime.core.canary_backends import (
     _assert_codex_child_activation_is_tool_free,
     _codex_child_execution_projection,
+    _codex_product_child_tool_evidence,
+    _codex_product_rollout_collaboration_evidence,
     _codex_product_wait_counts,
     codex_canary_record,
     codex_collaboration_evidence,
 )
 from agency_runtime.core.canary_proof import codex_activation_failures
+from agency_runtime.core.codex_child_tool_evidence import (
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_SCHEMA,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_SCHEMA,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_SCHEMA,
+    classify_codex_exec_wrapper_failure,
+    decode_stored_codex_child_tool_evidence,
+)
 from agency_runtime.core.codex_native_plan_scope import deserialize_codex_native_plan_scope
 from agency_runtime.core.config import reset_config_cache
 from agency_runtime.core.delegation.events import mark_delegation_executed
@@ -32,10 +46,12 @@ from agency_runtime.core.header.finalize import response_hash
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
 from agency_runtime.core.native_child_activation import (
+    build_native_child_run_identity,
     deserialize_native_child_activation_grant,
 )
 from agency_runtime.core.native_child_prompt_delivery import (
     parse_native_child_prompt_delivery,
+    render_codex_direct_native_child_prompt_delivery,
     render_codex_native_child_execution_message,
     render_codex_opaque_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
@@ -99,10 +115,359 @@ def _two_turn_child_events(execution_message: str) -> list[dict[str, object]]:
     ]
 
 
+def test_product_child_tool_evidence_is_fixed_and_content_free() -> None:
+    events = [
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call",
+                "name": "exec",
+                "status": "completed",
+                "call_id": "exec-call",
+                "input": (
+                    'const one=await tools.shell_command({command:"private exec input"});'
+                    'const two=await tools.apply_patch("private patch input");'
+                    "await tools.private_tool();"
+                ),
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "function_call",
+                "name": "shell_command",
+                "status": "failed",
+                "arguments": "private shell arguments",
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {"type": "function_call", "name": "apply_patch"},
+        },
+        {
+            "type": "response_item",
+            "payload": {"type": "function_call", "name": "private-tool", "status": "completed"},
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call_output",
+                "call_id": "exec-call",
+                "output": [{"type": "input_text", "text": "Script failed\nprivate tool output"}],
+            },
+        },
+        {
+            "type": "event_msg",
+            "payload": {
+                "type": "patch_apply_end",
+                "success": True,
+                "status": "completed",
+                "changes": {"private-path": {"type": "add", "content": "private bytes"}},
+            },
+        },
+        {
+            "type": "event_msg",
+            "payload": {
+                "type": "patch_apply_end",
+                "success": False,
+                "status": "failed",
+                "stderr": "private failure",
+            },
+        },
+        {"type": "event_msg", "payload": {"type": "patch_apply_end"}},
+    ]
+
+    evidence = _codex_product_child_tool_evidence(events)
+
+    assert evidence == {
+        "child_tool_call_count": 4,
+        "child_function_tool_call_count": 3,
+        "child_custom_tool_call_count": 1,
+        "child_exec_tool_call_count": 1,
+        "child_apply_patch_tool_call_count": 1,
+        "child_shell_command_tool_call_count": 1,
+        "child_other_tool_call_count": 1,
+        "child_completed_tool_call_count": 2,
+        "child_failed_tool_call_count": 1,
+        "child_unknown_tool_call_count": 1,
+        "child_tool_output_count": 1,
+        "child_tool_output_missing_count": 3,
+        "child_patch_apply_success_count": 1,
+        "child_patch_apply_failure_count": 1,
+        "child_patch_apply_unknown_count": 1,
+        "child_exec_input_classified_count": 1,
+        "child_exec_input_unclassified_count": 0,
+        "child_exec_nested_tool_call_count": 3,
+        "child_exec_nested_apply_patch_tool_call_count": 1,
+        "child_exec_nested_shell_command_tool_call_count": 1,
+        "child_exec_nested_other_tool_call_count": 1,
+        "child_exec_wrapper_completed_count": 0,
+        "child_exec_wrapper_failed_count": 1,
+        "child_exec_wrapper_yielded_count": 0,
+        "child_exec_wrapper_unknown_count": 0,
+        "child_exec_wrapper_windows_split_writable_roots_count": 0,
+        "child_exec_wrapper_windows_sandbox_setup_failed_count": 0,
+        "child_exec_wrapper_approval_rejected_count": 0,
+        "child_exec_wrapper_permission_denied_count": 0,
+        "child_exec_wrapper_process_failed_other_count": 1,
+        "child_exec_wrapper_failure_unknown_count": 0,
+        "child_exec_wrapper_apply_patch_completed_count": 0,
+        "child_exec_wrapper_apply_patch_failed_count": 0,
+        "child_exec_wrapper_apply_patch_yielded_count": 0,
+        "child_exec_wrapper_apply_patch_unknown_count": 0,
+        "child_exec_wrapper_shell_command_completed_count": 0,
+        "child_exec_wrapper_shell_command_failed_count": 0,
+        "child_exec_wrapper_shell_command_yielded_count": 0,
+        "child_exec_wrapper_shell_command_unknown_count": 0,
+        "child_exec_wrapper_other_completed_count": 0,
+        "child_exec_wrapper_other_failed_count": 0,
+        "child_exec_wrapper_other_yielded_count": 0,
+        "child_exec_wrapper_other_unknown_count": 0,
+        "child_exec_wrapper_ambiguous_completed_count": 0,
+        "child_exec_wrapper_ambiguous_failed_count": 1,
+        "child_exec_wrapper_ambiguous_yielded_count": 0,
+        "child_exec_wrapper_ambiguous_unknown_count": 0,
+    }
+    encoded = json.dumps(evidence)
+    assert all(
+        private not in encoded
+        for private in (
+            "private exec input",
+            "private patch input",
+            "private shell arguments",
+            "private-tool",
+            "private tool output",
+            "private-path",
+            "private bytes",
+            "private failure",
+        )
+    )
+
+
+def test_product_child_tool_evidence_ignores_quoted_names_and_fails_closed() -> None:
+    events = [
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call",
+                "name": "exec",
+                "status": "completed",
+                "call_id": "classified",
+                "input": (
+                    "const quoted='tools.apply_patch('; // tools.private_tool()\n"
+                    "await tools.shell_command({});"
+                ),
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call",
+                "name": "exec",
+                "status": "completed",
+                "call_id": "unclassified",
+                "input": "const dynamic=`${tools.apply_patch(value)}`;",
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call_output",
+                "call_id": "classified",
+                "output": [{"type": "input_text", "text": "Script completed\nprivate"}],
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "custom_tool_call_output",
+                "call_id": "unclassified",
+                "output": [
+                    {
+                        "type": "input_text",
+                        "text": "Script running with cell ID private\n",
+                    }
+                ],
+            },
+        },
+    ]
+
+    evidence = _codex_product_child_tool_evidence(events)
+
+    assert evidence["child_exec_input_classified_count"] == 1
+    assert evidence["child_exec_input_unclassified_count"] == 1
+    assert evidence["child_exec_nested_tool_call_count"] == 1
+    assert evidence["child_exec_nested_apply_patch_tool_call_count"] == 0
+    assert evidence["child_exec_nested_shell_command_tool_call_count"] == 1
+    assert evidence["child_exec_wrapper_completed_count"] == 1
+    assert evidence["child_exec_wrapper_yielded_count"] == 1
+    assert evidence["child_exec_wrapper_shell_command_completed_count"] == 1
+    assert evidence["child_exec_wrapper_ambiguous_yielded_count"] == 1
+    assert "private" not in json.dumps(evidence)
+
+
+def test_product_child_tool_evidence_keeps_canonical_v1_store_rows_readable() -> None:
+    legacy = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_FIELDS, 0)
+    payload = json.dumps(legacy, sort_keys=True, separators=(",", ":"))
+
+    assert (
+        decode_stored_codex_child_tool_evidence(
+            schema=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_SCHEMA,
+            source=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+            recorded_at="2026-08-02T19:40:48Z",
+            payload=payload,
+        )
+        == legacy
+    )
+
+
+def test_product_child_tool_evidence_keeps_canonical_v2_store_rows_readable() -> None:
+    legacy = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS, 0)
+    payload = json.dumps(legacy, sort_keys=True, separators=(",", ":"))
+
+    assert (
+        decode_stored_codex_child_tool_evidence(
+            schema=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_SCHEMA,
+            source=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+            recorded_at="2026-08-02T19:40:48Z",
+            payload=payload,
+        )
+        == legacy
+    )
+
+
+def test_product_child_tool_evidence_keeps_canonical_v3_store_rows_readable() -> None:
+    legacy = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_FIELDS, 0)
+    payload = json.dumps(legacy, sort_keys=True, separators=(",", ":"))
+
+    assert (
+        decode_stored_codex_child_tool_evidence(
+            schema=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_SCHEMA,
+            source=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+            recorded_at="2026-08-02T19:40:48Z",
+            payload=payload,
+        )
+        == legacy
+    )
+
+
+@pytest.mark.parametrize(
+    ("output", "expected"),
+    (
+        (
+            "Script failed\nfailed to prepare windows sandbox wrapper: windows "
+            "sandbox cannot enforce split writable root sets directly",
+            "windows_split_writable_roots",
+        ),
+        ("Script failed\nfailed to prepare fs sandbox", "windows_sandbox_setup_failed"),
+        (
+            "Script failed\nThis action was rejected due to unacceptable risk.",
+            "approval_rejected",
+        ),
+        ("Script failed\nAccess is denied.", "permission_denied"),
+        ("Script failed\nExit code: 7", "process_failed_other"),
+        (
+            [
+                {"type": "input_text", "text": "Script failed"},
+                {"type": "private_type", "text": "private"},
+            ],
+            "failure_unknown",
+        ),
+    ),
+)
+def test_wrapper_failure_classification_is_fixed_and_content_free(
+    output: object,
+    expected: str,
+) -> None:
+    assert classify_codex_exec_wrapper_failure(output) == expected
+
+
+def test_product_child_tool_evidence_projects_fixed_wrapper_failure_category() -> None:
+    evidence = _codex_product_child_tool_evidence(
+        [
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "custom_tool_call",
+                    "name": "exec",
+                    "status": "completed",
+                    "call_id": "exec-call",
+                    "input": 'await tools.apply_patch("private");',
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "custom_tool_call_output",
+                    "call_id": "exec-call",
+                    "output": "Script failed\nAccess is denied at private path",
+                },
+            },
+        ]
+    )
+
+    assert evidence["child_exec_wrapper_failed_count"] == 1
+    assert evidence["child_exec_wrapper_permission_denied_count"] == 1
+    assert evidence["child_exec_wrapper_process_failed_other_count"] == 0
+    assert evidence["child_exec_wrapper_apply_patch_failed_count"] == 1
+    assert "private path" not in json.dumps(evidence)
+
+
+def test_product_child_tool_evidence_correlates_nested_tool_and_wrapper_outcome() -> None:
+    events = []
+    wrappers = (
+        ("patch", 'await tools.apply_patch("private patch");', "Script failed\nExit code: 1"),
+        ("shell-ok", "await tools.shell_command({command: 'private'});", "Script completed"),
+        (
+            "shell-fail",
+            "await tools.shell_command({command: 'secret'});",
+            "Script failed\nExit code: 2",
+        ),
+    )
+    for call_id, input_value, output in wrappers:
+        events.extend(
+            (
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "custom_tool_call",
+                        "name": "exec",
+                        "status": "completed",
+                        "call_id": call_id,
+                        "input": input_value,
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "custom_tool_call_output",
+                        "call_id": call_id,
+                        "output": output,
+                    },
+                },
+            )
+        )
+
+    evidence = _codex_product_child_tool_evidence(events)
+
+    assert evidence["child_exec_wrapper_apply_patch_failed_count"] == 1
+    assert evidence["child_exec_wrapper_shell_command_completed_count"] == 1
+    assert evidence["child_exec_wrapper_shell_command_failed_count"] == 1
+    assert evidence["child_exec_wrapper_process_failed_other_count"] == 2
+    assert not any(
+        evidence[f"child_exec_wrapper_{kind}_{outcome}_count"]
+        for kind in ("other", "ambiguous")
+        for outcome in ("completed", "failed", "yielded", "unknown")
+    )
+    assert "private" not in json.dumps(evidence)
+    assert "secret" not in json.dumps(evidence)
+
+
 def test_codex_child_projection_rejects_duplicate_execution_delivery() -> None:
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Perform the exact task."),
+        goal="Perform the exact task.",
     )
     events = _two_turn_child_events(message)
     events.insert(4, deepcopy(events[3]))
@@ -123,6 +488,7 @@ def test_codex_product_child_activation_turn_must_be_tool_free() -> None:
     message = render_codex_native_child_execution_message(
         work_unit_id="unit-1234567890",
         goal_hash=work_unit_goal_hash("Perform the exact task."),
+        goal="Perform the exact task.",
     )
     events = _two_turn_child_events(message)
     events.insert(
@@ -244,7 +610,7 @@ def _prepare_exact_opaque_activation(
     )
 
 
-def _two_turn_collaboration(
+def _direct_collaboration(
     *,
     receiver_id: str,
     prompt_delivery: dict[str, object],
@@ -265,8 +631,8 @@ def _two_turn_collaboration(
     }
     return {
         "spawn_count": 1,
-        "followup_count": 1,
-        "wait_count": 2,
+        "followup_count": 0,
+        "wait_count": 1,
         "unexpected_item_count": 0,
         "unexpected_item_types": [],
         "calls": [
@@ -277,23 +643,7 @@ def _two_turn_collaboration(
                 "agents_states": {receiver_id: "running"},
                 "prompt_delivery": prompt_delivery,
                 "execution_delivery": execution_delivery,
-                "followup_tool_use_id": "followup-tool-use",
-            },
-            {
-                **common,
-                "id": "wait-activation",
-                "tool": "wait",
-                "agents_states": {receiver_id: "completed"},
-                "prompt_delivery": None,
-            },
-            {
-                **common,
-                "id": "followup-1",
-                "tool": "followup_task",
-                "agents_states": {receiver_id: "running"},
-                "prompt_delivery": None,
-                "execution_delivery": execution_delivery,
-                "followup_tool_use_id": "followup-tool-use",
+                "followup_tool_use_id": "spawn-tool-use",
             },
             {
                 **common,
@@ -319,7 +669,6 @@ def _finish_v2_chain_through_hooks(
     tool_use_id = "spawn-tool-use"
     receiver_id = "019fa500-1111-7222-8333-444455556666"
     encrypted_message = "gAAAAA" + "opaque-codex-canary-message" * 2
-    opaque_canary = str(plan["goal"]) == CODEX_ACTIVATION_CANARY_WORK_UNIT
     bridge = HookBridge("codex", store=store)
     pre_payload = {
         "hook_event_name": "PreToolUse",
@@ -333,19 +682,16 @@ def _finish_v2_chain_through_hooks(
         "tool_input": {
             "fork_turns": "none",
             "task_name": task_name,
-            "message": encrypted_message if opaque_canary else str(plan["goal"]),
+            "message": encrypted_message,
         },
     }
     pre_tool = bridge.handle(pre_payload)
     pre_output = pre_tool["hookSpecificOutput"]
-    if opaque_canary:
-        assert pre_output == {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "allow",
-        }
-        post_input = pre_payload["tool_input"]
-    else:
-        post_input = pre_output["updatedInput"]
+    assert pre_output == {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "allow",
+    }
+    post_input = pre_payload["tool_input"]
     start = bridge.handle(
         {
             "hook_event_name": "SubagentStart",
@@ -355,24 +701,19 @@ def _finish_v2_chain_through_hooks(
             "agent_type": "worker",
         }
     )
-    delivery = parse_native_child_prompt_delivery(
-        start["hookSpecificOutput"]["additionalContext"] if opaque_canary else post_input["message"]
-    )
+    delivery = parse_native_child_prompt_delivery(start["hookSpecificOutput"]["additionalContext"])
     assert delivery is not None
     assert delivery.tool_use_id == tool_use_id
     assert delivery.work_unit_id == unit
     assert delivery.specialist_slug == slug
-    if opaque_canary:
-        assert delivery.original_task == ""
-        assert delivery.goal_hash == str(plan["goal_hash"])
-        assert delivery.activation_token == ""
-        after_start = store.get_completion_evidence_snapshot(session_id, trace_id)
-        [started_activation] = after_start["specialist_activations"]
-        assert started_activation["specialist_slug"] == slug
-        assert started_activation["worker_id"] == receiver_id
-        assert started_activation["native_run_id"] == f"codex-agent:{receiver_id}"
-    else:
-        assert delivery.original_task == str(plan["goal"])
+    assert delivery.original_task == ""
+    assert delivery.goal_hash == str(plan["goal_hash"])
+    assert delivery.activation_token == ""
+    after_start = store.get_completion_evidence_snapshot(session_id, trace_id)
+    [started_activation] = after_start["specialist_activations"]
+    assert started_activation["specialist_slug"] == slug
+    assert started_activation["worker_id"] == receiver_id
+    assert started_activation["native_run_id"] == f"codex-agent:{receiver_id}"
     observed = bridge.handle(
         {
             **pre_payload,
@@ -384,53 +725,6 @@ def _finish_v2_chain_through_hooks(
     observed_context = observed["hookSpecificOutput"]["additionalContext"]
     assert observed_context.startswith("[AGENCY UPDATED HEADER SNAPSHOT v1]\n")
     assert observed_context.count("Agency/Agencies loaded:") == 1
-    assert (
-        bridge.handle(
-            {
-                "hook_event_name": "SubagentStop",
-                "session_id": session_id,
-                "turn_id": "codex-child-turn",
-                "agent_id": receiver_id,
-                "agent_type": "worker",
-                "last_assistant_message": "ready",
-            }
-        )
-        == {}
-    )
-    activation_only_worker = store.get_native_child_run(
-        host="codex",
-        session_id=session_id,
-        trace_id=trace_id,
-        worker_id=receiver_id,
-        native_run_id=f"codex-agent:{receiver_id}",
-    )
-    assert activation_only_worker is not None
-    assert not activation_only_worker["ended_at"]
-    execution_message = render_codex_native_child_execution_message(
-        work_unit_id=unit,
-        goal_hash=str(plan["goal_hash"]),
-    )
-    encrypted_execution_message = "gAAAAA" + "opaque-codex-execution-message" * 2
-    followup_message = encrypted_execution_message if opaque_canary else execution_message
-    followup_payload = {
-        "hook_event_name": "PreToolUse",
-        "session_id": session_id,
-        "turn_id": trace_id,
-        "tool_name": "collaborationfollowup_task",
-        "tool_use_id": "followup-tool-use",
-        "tool_input": {
-            "target": f"/root/{task_name}",
-            "message": followup_message,
-        },
-    }
-    assert bridge.handle(followup_payload) == {}
-    bridge.handle(
-        {
-            **followup_payload,
-            "hook_event_name": "PostToolUse",
-            "tool_response": "",
-        }
-    )
     execution_turn = "019fa500-2222-7333-8444-555566667777"
     transcript = store.db_path.parent / f"rollout-test-{receiver_id}.jsonl"
     parent_transcript = store.db_path.parent / f"rollout-test-{session_id}.jsonl"
@@ -443,10 +737,10 @@ def _finish_v2_chain_through_hooks(
                     "type": "response_item",
                     "payload": {
                         "type": "function_call",
-                        "name": "followup_task",
+                        "name": "spawn_agent",
                         "namespace": "collaboration",
-                        "call_id": "followup-tool-use",
-                        "arguments": json.dumps(followup_payload["tool_input"]),
+                        "call_id": tool_use_id,
+                        "arguments": json.dumps(post_input),
                     },
                 },
             )
@@ -454,30 +748,26 @@ def _finish_v2_chain_through_hooks(
         + "\n",
         encoding="utf-8",
     )
-    execution_input = (
-        {
-            "type": "agent_message",
-            "id": "amsg-execution",
-            "author": "/root",
-            "recipient": f"/root/{task_name}",
-            "internal_chat_message_metadata_passthrough": {"turn_id": execution_turn},
-            "content": [
-                {
-                    "type": "input_text",
-                    "text": "Message Type: NEW_TASK\n"
-                    f"Task name: /root/{task_name}\n"
-                    "Sender: /root\n"
-                    "Payload:\n",
-                },
-                {
-                    "type": "encrypted_content",
-                    "encrypted_content": encrypted_execution_message,
-                },
-            ],
-        }
-        if opaque_canary
-        else {"type": "message", "content": execution_message}
-    )
+    execution_input = {
+        "type": "agent_message",
+        "id": "amsg-execution",
+        "author": "/root",
+        "recipient": f"/root/{task_name}",
+        "internal_chat_message_metadata_passthrough": {"turn_id": execution_turn},
+        "content": [
+            {
+                "type": "input_text",
+                "text": "Message Type: NEW_TASK\n"
+                f"Task name: /root/{task_name}\n"
+                "Sender: /root\n"
+                "Payload:\n",
+            },
+            {
+                "type": "encrypted_content",
+                "encrypted_content": encrypted_message,
+            },
+        ],
+    }
     transcript.write_text(
         "\n".join(
             json.dumps(event)
@@ -494,19 +784,6 @@ def _finish_v2_chain_through_hooks(
                                 }
                             }
                         },
-                    },
-                },
-                {
-                    "type": "event_msg",
-                    "payload": {"type": "task_started", "turn_id": "activation-turn"},
-                },
-                {
-                    "type": "event_msg",
-                    "payload": {
-                        "type": "task_complete",
-                        "turn_id": "activation-turn",
-                        "last_agent_message": "ready",
-                        "error": None,
                     },
                 },
                 {
@@ -542,27 +819,55 @@ def _finish_v2_chain_through_hooks(
         + "\n",
         encoding="utf-8",
     )
-    [(expected_execution, _specialist, execution_identity)] = bridge._codex_execution_candidates(
-        session_id=session_id, trace_id=trace_id
+    [(expected_execution, _specialist, execution_identity, _mutation_scope)] = (
+        bridge._codex_execution_candidates(session_id=session_id, trace_id=trace_id)
     )
-    assert bridge._codex_execution_claim_observed(
-        session_id=session_id,
-        trace_id=trace_id,
-        work_unit_id=unit,
-        identity=execution_identity,
+    assert (
+        bridge._codex_execution_claim_observed(
+            session_id=session_id,
+            trace_id=trace_id,
+            work_unit_id=unit,
+            identity=execution_identity,
+        )
+        == tool_use_id
     )
     from agency_runtime.core.codex_child_execution import (
-        codex_current_turn_execution_observed,
+        codex_initial_turn_execution_observed,
     )
 
-    assert codex_current_turn_execution_observed(
+    assert codex_initial_turn_execution_observed(
         transcript,
         turn_id=execution_turn,
         worker_id=receiver_id,
         expected=expected_execution,
         parent_session_id=session_id,
-        execution_tool_use_id="followup-tool-use",
+        execution_tool_use_id=tool_use_id,
     )
+    assert (
+        bridge.handle(
+            {
+                "hook_event_name": "SubagentStop",
+                "session_id": session_id,
+                "turn_id": execution_turn,
+                "agent_id": receiver_id,
+                "agent_type": "worker",
+                "agent_transcript_path": str(transcript),
+                "last_assistant_message": "reviewed",
+            }
+        )
+        == {}
+    )
+    completed_worker = store.get_native_child_run(
+        host="codex",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=receiver_id,
+        native_run_id=f"codex-agent:{receiver_id}",
+    )
+    assert completed_worker is not None
+    assert completed_worker["ended_at"]
+    assert completed_worker["exit_code"] == 0
     store.record_model_receipt(
         trace_id=trace_id,
         session_id=session_id,
@@ -597,7 +902,7 @@ def _finish_v2_chain_through_hooks(
         "status": "completed",
         "exit_code": 0,
         "output": response,
-        "collaboration": _two_turn_collaboration(
+        "collaboration": _direct_collaboration(
             receiver_id=receiver_id,
             work_unit_id=unit,
             task_name=task_name,
@@ -615,6 +920,89 @@ def _finish_v2_chain_through_hooks(
             },
         ),
     }
+
+
+def test_codex_workspace_write_child_requires_patch_receipt_before_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters import hooks as hooks_module
+    from agency_runtime.core.native_child_prompt_delivery import (
+        parse_codex_native_child_execution_message,
+    )
+
+    expected = parse_codex_native_child_execution_message(
+        render_codex_native_child_execution_message(
+            work_unit_id="unit-workspace-write",
+            goal_hash=work_unit_goal_hash("Create writer-result.txt."),
+        )
+    )
+    assert expected is not None
+    identity = build_native_child_run_identity(
+        worker_kind="generic-worker",
+        worker_id="019fa500-4444-7555-8666-777788889999",
+        native_run_id="codex-agent:019fa500-4444-7555-8666-777788889999",
+    )
+    lifecycle: list[tuple[str, dict[str, object]]] = []
+
+    class RecordingStore:
+        def record_native_child_stopped(self, **kwargs: object) -> None:
+            lifecycle.append(("stopped", kwargs))
+
+        def record_native_child_ended(self, **kwargs: object) -> None:
+            lifecycle.append(("ended", kwargs))
+
+    bridge = HookBridge("codex", store=RecordingStore())  # type: ignore[arg-type]
+    monkeypatch.setattr(
+        bridge,
+        "_native_child_parent_scope",
+        lambda _payload: ("parent-session", "parent-trace", "unit-workspace-write"),
+    )
+    monkeypatch.setattr(
+        bridge,
+        "_codex_execution_candidates",
+        lambda **_kwargs: [(expected, "minimal-change-engineer", identity, "workspace_write")],
+    )
+    monkeypatch.setattr(
+        bridge,
+        "_codex_execution_claim_observed",
+        lambda **_kwargs: "call-native-spawn",
+    )
+    monkeypatch.setattr(
+        hooks_module, "codex_initial_turn_execution_observed", lambda *_a, **_k: True
+    )
+    monkeypatch.setattr(
+        hooks_module, "codex_current_turn_execution_observed", lambda *_a, **_k: False
+    )
+    write_observed = False
+    monkeypatch.setattr(
+        hooks_module,
+        "codex_current_turn_workspace_write_observed",
+        lambda *_a, **_k: write_observed,
+    )
+    payload = {
+        "session_id": "parent-session",
+        "turn_id": "child-turn",
+        "agent_id": identity.worker_id,
+        "agent_type": "worker",
+        "agent_transcript_path": "C:\\workspace\\child.jsonl",
+        "cwd": "C:\\workspace",
+        "last_assistant_message": "Done.",
+    }
+
+    first = bridge._handle_codex_subagent_stop(payload)
+    assert first["decision"] == "block"
+    assert "no successful workspace-local apply_patch receipt" in first["reason"]
+    assert lifecycle == []
+
+    terminal = bridge._handle_codex_subagent_stop({**payload, "stop_hook_active": True})
+    assert terminal["continue"] is False
+    assert "no successful workspace-local apply_patch receipt" in terminal["stopReason"]
+    assert lifecycle == []
+
+    write_observed = True
+    assert bridge._handle_codex_subagent_stop(payload) == {}
+    assert [event for event, _kwargs in lifecycle] == ["stopped", "ended"]
+    assert lifecycle[-1][1]["outcome"] == "ok"
 
 
 def _record_complete_v2_chain(
@@ -730,7 +1118,7 @@ def _record_complete_v2_chain(
         work_unit_id=unit,
         worker_id=receiver_id,
         native_run_id=f"codex-agent:{receiver_id}",
-        tool_use_id="followup-tool-use",
+        tool_use_id=tool_use_id,
     )
     store.record_native_child_stopped(
         host="codex",
@@ -757,7 +1145,7 @@ def _record_complete_v2_chain(
         "status": "completed",
         "exit_code": 0,
         "output": _valid_header(),
-        "collaboration": _two_turn_collaboration(
+        "collaboration": _direct_collaboration(
             receiver_id=receiver_id,
             work_unit_id=unit,
             task_name=task_name,
@@ -967,6 +1355,16 @@ def test_codex_post_tool_reconciles_subagent_start_consumption_without_callback_
     assert delegation["retrieved_specialist_slug"] == slug
     assert delegation["executed_worker_id"] == receiver_id
     assert delegation["native_run_id"] == f"codex-agent:{receiver_id}"
+    assert (
+        configured_store.get_consumed_codex_spawn_tool_use_id(
+            session_id=session_id,
+            trace_id=trace_id,
+            work_unit_id=unit,
+            worker_id=receiver_id,
+            native_run_id=f"codex-agent:{receiver_id}",
+        )
+        == pre_tool_use_id
+    )
 
 
 def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
@@ -1066,6 +1464,17 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     assert delegation["executed_worker_kind"] == "generic-worker"
     assert delegation["executed_worker_id"] == receiver_id
     assert delegation["native_run_id"] == f"codex-agent:{receiver_id}"
+    dispatched = configured_store.get_native_child_run(
+        host="codex",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=receiver_id,
+        native_run_id=f"codex-agent:{receiver_id}",
+    )
+    assert dispatched is not None
+    assert dispatched["execution_tool_use_id"] == tool_use_id
+    assert dispatched["execution_dispatched_at"]
     assert (
         bridge.handle(
             {
@@ -1102,6 +1511,41 @@ def test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation(
     assert worker_run["work_unit_id"] == unit
     assert worker_run["exit_code"] is None
     assert not worker_run["ended_at"]
+    empty_tool_evidence = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS, 0)
+    configured_store.record_codex_child_tool_evidence(
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        child_session_id=receiver_id,
+        evidence=empty_tool_evidence,
+    )
+    durable_evidence = configured_store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=response_hash(task),
+    )
+    [durable_worker] = durable_evidence["worker_runs"]
+    assert durable_worker["tool_evidence"] == empty_tool_evidence
+    assert durable_worker["tool_evidence_schema"] == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA
+    assert durable_worker["tool_evidence_source"] == "persisted_rollout"
+    assert durable_worker["tool_evidence_recorded_at"]
+    assert durable_worker["tool_evidence_status"] == "recorded"
+    connection = configured_store._connect()
+    try:
+        connection.execute(
+            "UPDATE worker_runs SET tool_evidence = '{\"malformed\":1}' "
+            "WHERE trace_id = ? AND worker_id = ?",
+            (trace_id, receiver_id),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    corrupt_evidence = configured_store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=response_hash(task),
+    )
+    [corrupt_worker] = corrupt_evidence["worker_runs"]
+    assert corrupt_worker["tool_evidence"] is None
+    assert corrupt_worker["tool_evidence_status"] == "invalid"
 
 
 def test_codex_opaque_children_serialize_until_subagent_start_consumes_grant(
@@ -1618,6 +2062,176 @@ def _write_codex_rollout(
     return path
 
 
+def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Path) -> None:
+    parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    receiver_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    tool_use_id = "call-native-spawn"
+    work_unit_id = "unit-code"
+    task_name = codex_task_name_for_work_unit(work_unit_id)
+    goal = "Review the implementation."
+    ciphertext = "gAAAAA" + "opaque-direct-spawn-message" * 2
+    prompt_body = "You are the exact reviewer."
+    delivery = render_codex_direct_native_child_prompt_delivery(
+        prompt_body,
+        parent_session_id=parent_id,
+        parent_trace_id="trace",
+        tool_use_id=tool_use_id,
+        work_unit_id=work_unit_id,
+        specialist_slug="code-reviewer",
+        specialist_version="v1",
+        specialist_prompt_hash=response_hash(prompt_body),
+        goal_hash=work_unit_goal_hash(goal),
+    )
+    rollout_root = tmp_path / "sessions"
+    _write_codex_rollout(
+        rollout_root,
+        parent_id,
+        [
+            {"type": "session_meta", "payload": {"id": parent_id, "source": "exec"}},
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "spawn-item",
+                    "name": "spawn_agent",
+                    "namespace": "collaboration",
+                    "call_id": tool_use_id,
+                    "arguments": json.dumps(
+                        {
+                            "fork_turns": "none",
+                            "message": ciphertext,
+                            "task_name": task_name,
+                        }
+                    ),
+                },
+            },
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "sub_agent_activity",
+                    "event_id": tool_use_id,
+                    "agent_thread_id": receiver_id,
+                    "agent_path": f"/root/{task_name}",
+                    "kind": "started",
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": tool_use_id,
+                    "output": json.dumps({"task_name": f"/root/{task_name}"}),
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "wait-item",
+                    "name": "wait_agent",
+                    "namespace": "collaboration",
+                    "call_id": "call-native-wait",
+                    "arguments": json.dumps({"timeout_ms": 60_000}),
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": "call-native-wait",
+                    "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
+                },
+            },
+        ],
+    )
+    _write_codex_rollout(
+        rollout_root,
+        receiver_id,
+        [
+            {
+                "type": "session_meta",
+                "payload": {
+                    "id": receiver_id,
+                    "source": {
+                        "subagent": {
+                            "thread_spawn": {
+                                "parent_thread_id": parent_id,
+                                "depth": 1,
+                                "agent_path": f"/root/{task_name}",
+                            }
+                        }
+                    },
+                },
+            },
+            {"type": "event_msg", "payload": {"type": "task_started", "turn_id": "run"}},
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "developer",
+                    "content": [{"type": "input_text", "text": delivery}],
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "agent_message",
+                    "id": "amsg-execution",
+                    "author": "/root",
+                    "recipient": f"/root/{task_name}",
+                    "internal_chat_message_metadata_passthrough": {"turn_id": "run"},
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": "Message Type: NEW_TASK\n"
+                            f"Task name: /root/{task_name}\n"
+                            "Sender: /root\n"
+                            "Payload:\n",
+                        },
+                        {"type": "encrypted_content", "encrypted_content": ciphertext},
+                    ],
+                },
+            },
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "task_complete",
+                    "turn_id": "run",
+                    "last_agent_message": "reviewed",
+                    "error": None,
+                },
+            },
+        ],
+    )
+    stdout = json.dumps({"type": "thread.started", "thread_id": parent_id})
+
+    collaboration = codex_collaboration_evidence(stdout, rollout_root=rollout_root)
+
+    assert collaboration is not None
+    assert [row["tool"] for row in collaboration["calls"]] == ["spawn_agent", "wait"]
+    assert collaboration["followup_count"] == 0
+    assert collaboration["wait_count"] == 1
+    spawn = collaboration["calls"][0]
+    assert spawn["execution_delivery"] == {
+        "work_unit_id": work_unit_id,
+        "native_task_name": task_name,
+        "goal_hash": work_unit_goal_hash(goal),
+    }
+    assert spawn["followup_tool_use_id"] == tool_use_id
+
+    product = _codex_product_rollout_collaboration_evidence(
+        stdout,
+        rollout_root,
+        not_before=None,
+        not_after=None,
+    )
+    assert product["spawn_count"] == 1
+    assert product["followup_count"] == 0
+    assert product["wait_count"] == 1
+    assert product["calls"][0]["activation_completion_count"] == 0
+    assert product["calls"][0]["execution_completion_count"] == 1
+
+
 def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> None:
     parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
     receiver_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
@@ -1876,6 +2490,7 @@ def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> 
     )
 
     assert record["status"] == "completed"
+    assert record["session_id"] == parent_id
     collaboration = record["collaboration"]
     assert collaboration["evidence_source"] == "persisted_rollout"
     assert collaboration["spawn_count"] == 1
@@ -2205,6 +2820,32 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
                 },
             )
         )
+        if index == 1:
+            parent_events.extend(
+                (
+                    {
+                        "type": "response_item",
+                        "payload": {
+                            "type": "function_call",
+                            "id": f"execution-commentary-wait-item-{index}",
+                            "name": "wait_agent",
+                            "namespace": "collaboration",
+                            "call_id": f"call-product-execution-commentary-wait-{index}",
+                            "arguments": json.dumps({"timeout_ms": 120_000}),
+                        },
+                    },
+                    {
+                        "type": "response_item",
+                        "payload": {
+                            "type": "function_call_output",
+                            "call_id": f"call-product-execution-commentary-wait-{index}",
+                            "output": json.dumps(
+                                {"message": "Wait completed.", "timed_out": False}
+                            ),
+                        },
+                    },
+                )
+            )
         stdout_events.extend(
             (
                 {
@@ -2345,6 +2986,7 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
                         "namespace": "functions",
                         "call_id": f"child-call-{index}",
                         "arguments": json.dumps({"command": f"private command {index}"}),
+                        "status": "completed",
                     },
                 },
                 {
@@ -2406,13 +3048,28 @@ def test_codex_product_rollout_projects_exact_eight_unit_reuse_topology(
 
     assert record["status"] == "completed"
     collaboration = record["collaboration"]
-    assert collaboration["schema"] == "agency.codex-product-collaboration.v1"
+    assert collaboration["schema"] == "agency.codex-product-collaboration.v2"
     assert collaboration["spawn_count"] == 8
     assert collaboration["followup_count"] == 8
-    assert collaboration["wait_count"] == 16
-    assert collaboration["completed_wait_count"] == 16
+    assert collaboration["wait_count"] == 17
+    assert collaboration["completed_wait_count"] == 17
     assert collaboration["completed_child_count"] == 8
     assert collaboration["child_tool_call_count"] == 8
+    assert collaboration["child_function_tool_call_count"] == 8
+    assert collaboration["child_custom_tool_call_count"] == 0
+    assert collaboration["child_exec_tool_call_count"] == 0
+    assert collaboration["child_apply_patch_tool_call_count"] == 0
+    assert collaboration["child_shell_command_tool_call_count"] == 8
+    assert collaboration["child_other_tool_call_count"] == 0
+    assert collaboration["child_completed_tool_call_count"] == 8
+    assert collaboration["child_failed_tool_call_count"] == 0
+    assert collaboration["child_unknown_tool_call_count"] == 0
+    assert collaboration["child_tool_output_count"] == 8
+    assert collaboration["child_tool_output_missing_count"] == 0
+    assert collaboration["child_patch_apply_success_count"] == 0
+    assert collaboration["child_patch_apply_failure_count"] == 0
+    assert collaboration["child_patch_apply_unknown_count"] == 0
+    assert all(row["tool_evidence"]["child_tool_call_count"] == 1 for row in collaboration["calls"])
     assert collaboration["host_notice_count"] == 1
     assert collaboration["host_notice_types"] == ["skill_catalog_descriptions_shortened"]
     assert [row["prompt_delivery"]["work_unit_id"] for row in collaboration["calls"]] == [*units]

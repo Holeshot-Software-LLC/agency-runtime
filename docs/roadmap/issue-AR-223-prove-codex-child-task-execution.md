@@ -1,14 +1,16 @@
 ---
 title: "AR-223: Prove Codex child task execution"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-02
 tags: [bug, product, codex, delegation, execution, evidence]
 related:
   - README.md
+  - agency_runtime/core/native_child_prompt_delivery.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/evals/product_host.py
+  - tests/test_native_child_prompt_delivery.py
   - tests/test_product_host.py
   - tests/test_codex_activation_canary.py
   - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
@@ -25,6 +27,19 @@ related:
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
   - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
+  - docs/decisions/0139-make-codex-execution-turns-self-contained.md
+  - docs/decisions/0140-use-codex-stable-multi-agent-feature.md
+  - docs/decisions/0141-admit-writer-proof-only-through-agency-plans.md
+  - docs/decisions/0142-require-terminal-product-child-before-next-unit.md
+  - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
+  - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
+  - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md
+  - docs/decisions/0146-preserve-content-free-codex-child-tool-outcomes.md
+  - docs/decisions/0147-persist-codex-child-tool-evidence-on-worker-receipts.md
+  - docs/decisions/0148-classify-nested-codex-exec-tools-without-content.md
+  - docs/decisions/0149-classify-codex-wrapper-failures-without-content.md
+  - docs/decisions/0150-correlate-codex-wrapper-tools-with-outcomes.md
+  - docs/decisions/0151-route-codex-product-approvals-to-auto-review.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -34,7 +49,7 @@ issue_id: AR-223
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/228
 depends_on: [AR-221]
-blocks: [AR-203, AR-204]
+blocks: [AR-203, AR-204, AR-225]
 ---
 
 # AR-223: Prove Codex child task execution
@@ -352,6 +367,983 @@ conformance kills every registered mutation with zero survived or invalid
 results; and the source checkout remains unchanged. The next boundary is one
 new immutable build, one autonomous activation, and one fresh product trial.
 
+PR 234 merges that clean head as exact
+`eb8e07770bf2b1d29933ff7730f09115928e4b1a`. The uv receipt and
+`agency version --json` match the merge. Bare installation discovers only
+Codex and ZCode, registers and enables both, and leaves the owned dashboard
+installed, active, current, and reachable. The installed Codex manifest places
+`additionalContextLimit: 0` on its sole nested `UserPromptSubmit` command
+handler and on no other event. Codex remains truthfully `activation-required`;
+neither the activation nor product slot has been consumed.
+
+Exact installed `eb8e077` now consumes and passes its sole autonomous-bypass
+activation. Session `019fc073-ad61-7f60-b187-974936bb4c33`, trace
+`019fc073-b8fd-7e70-9a55-2ae74ba8adb1`, run
+`1602cd81-bc40-469a-8386-008077c2a0a1`, native run
+`codex-agent:019fc074-d7b4-71e1-8425-b21a855ba8ee`, delegation
+`9351fffd-5015-4b18-bc51-b2bdc0103b83`, and finalization
+`1be22617-6bab-4089-83fb-bd4ea4104c55` prove one accepted inferred
+`code-reviewer` plan, one spawn, one execution follow-up, two completed waits,
+one consumed grant, one specialist load, and one completed worker. The first
+header is valid, correction count is zero, the bypass changes no persistent
+profile state, and the product slot remains unconsumed.
+
+Product trial `ar223-eb8e077-readme-01` is consumed and fails after 698.421
+seconds. Session `019fc07a-7f12-7423-8098-2f093898b361`, trace
+`019fc07a-7f90-7d41-afb3-663fb9c1a903`, run
+`21c91eda-a403-44a7-ac49-6e1e0d1ebdc0`, route
+`67300d45-cf3c-46d6-8d4e-25afaf60d725`, and finalization
+`76d583c5-fea3-4279-a1d8-63a7e5964811` prove a high-confidence, nine-unit
+inferred plan across `codebase-onboarding-engineer`,
+`python-cli-architecture-specialist`, `python-application-engineer`,
+`software-test-engineer`, `technical-writer`, `code-reviewer`, and
+`test-results-analyzer`. All nine delegations complete, all seven specialists
+load, all nine workers exit zero, the parent completes, and exactly one
+finalization is accepted; the first header is valid and correction count is
+zero. Existing contractors fill architecture, implementation, and test roles;
+no new hire is attempted.
+
+The trial's sole proof failure is `workspace_write_not_proven`. The plan
+correctly marks implementation unit `unit-e3a6637a0c`, test unit
+`unit-8e8634aa31`, and documentation unit `unit-f027038a2b` as
+`workspace_write`, but their worker records contain no stdout or stderr and the
+exact trial workspace remains empty. The expected proof file is missing, so
+artifact and check validation are correctly skipped. This consumed trial must
+not be rerun. The remaining defect is now below inference, plan delivery, and
+child lifecycle: Codex writer children did not realize their declared
+workspace-write capability.
+
+The first bounded diagnosis found no Agency denial of child workspace tools.
+Codex child turns inherit the parent sandbox policy; the failed native control
+was not self-contained because its sentinel path and content existed only in
+parent instructions. The product execution follow-up had the same defect: it
+carried a goal hash and told the child to recover the actual goal from its
+activation turn. Hash identity proved the message but did not make the later
+turn independently actionable.
+
+The local repair makes every execution follow-up contain the exact hash-bound
+goal in the current turn. Plan context still compresses repeated request text
+through one shared prefix and per-row suffix, then uses the same reconstructed
+goal for spawn and execution. Fifty-four focused protocol tests and 110 broader
+Codex lifecycle/product-host tests pass; targeted Ruff lint and format pass.
+Live writer-child proof remains pending and no new immutable build has been
+spent.
+
+Fresh native control `ar223-native-writer-self-contained-01` is consumed and
+fails before child activation. The isolated Codex backend completes in 42.4
+seconds with exit code 0 under `autonomous_bypass`, but its collaboration
+projection records zero spawns, zero follow-ups, one wait, and zero unexpected
+items. The exact workspace is empty and `.ar223-native-child-control` is
+absent. The self-contained child block therefore never reached a child; this
+run neither proves nor disproves child workspace-write. Do not rerun it. The
+next boundary is the missing parent spawn, not another execution-envelope or
+artifact repair.
+
+Direct Codex app child control `ar223-direct-native-child-01` then succeeds in
+a fresh workspace. The child creates and reads back exact 29-byte sentinel
+`.ar223-direct-native-child`; its content is `AR223_DIRECT_NATIVE_CHILD_OK`
+plus one LF and its SHA-256 is
+`15afa0a7dfc371b1982dae6c0dcb50d5f9146c8ef296a9dd0e68bf1770a0148c`.
+This proves the current host can give a native child workspace-write authority
+and that the child can use it. The remaining failure is parent launch policy.
+
+Installed Codex 0.146.0 exposes `multi_agent` as stable and enabled while the
+failed harness forces disabled-by-default `multi_agent_v2`. The public manual
+documents the stable feature and direct-request behavior, not V2. ADR-0140
+switches activation and product backends to explicit stable `multi_agent`,
+retains `agents.enabled=true`, and forbids V2 in focused tests. Thirty-eight
+focused host/product/decision tests and targeted Ruff checks pass. No stable-
+surface harness sentinel, build, or product trial has yet been spent.
+
+Retained stable-feature control
+`ar223-native-writer-stable-multi-agent-01` disproves that hypothesis. It
+completes in 33.7 seconds under autonomous bypass but again records zero
+spawns, zero follow-ups, one completed wait with zero receivers, and zero
+unexpected items. Its parent falsely reports a read-only child failure even
+though no child launched and the backend passed `workspace-write`; the exact
+workspace remains empty.
+
+ADR-0141 supersedes the stable-feature detour and restores the existing V2
+contract before any build. The generic controls omit the accepted Agency plan
+and installed global delegation request, so they cannot gate the README path.
+The consumed real product trial already proves nine Agency parent spawns; the
+direct app child proves exact workspace-write. The next admissible proof is one
+accepted Agency writer row using the new self-contained follow-up.
+
+Exact candidate `ae322ec` passes the named local gate: 657 Python production
+tests with 6 skips, 110 dashboard tests, every routing threshold, and all 91
+decision mutations with zero survivors or invalid results. Its independently
+verified wheel installs the default discovered suite. Codex autonomous
+activation passes with one inferred and loaded `code-reviewer`, one native
+worker, one accepted finalization, zero corrections, and no persistent trust
+change. ZCode is registered and enabled; the dashboard is active and reachable.
+
+Writer sentinel `ar223-agency-writer-ae322ec-01` is retained but invalid as a
+product verdict: the harness stated the correct 23-byte length but the wrong
+SHA-256. The correct hash for `AR223_AGENCY_WRITER_OK` plus LF is
+`767303371a040770ecccc894befc37191c57af167b1dce19ed569b5d20c3e5eb`.
+No retry is allowed on that build.
+
+The invalid run still exposes an independent terminal-order defect. Its
+accepted five-row plan dispatches four specialist children, including
+`minimal-change-engineer` with `mutation_scope=workspace_write`, but advances
+while every prior worker has `ended_at = null`; unit five remains suggested at
+the 300-second deadline and the proof file is absent. ADR-0142 now requires the
+parent to distinguish commentary wakes from terminal completion, permits up to
+three bounded execution waits, and forbids launching the next row before the
+exact prior child is terminal.
+
+The focused implementation and mutation slice passes 42 tests and kills both
+new decision mutations with zero survivors or invalid results. The second and
+final review pass covers 164 surrounding Codex activation, product-host,
+child-execution, and hook tests with warning-strict execution. Targeted Ruff,
+format, documentation, and diff checks pass. Clean recovery head `a5b9d4b`
+then passes the complete named gate: the Python spine reports 657 passes and 6
+skips, dashboard UI reports 110 passes, every routing threshold passes, and
+decision conformance kills 93 of 93 mutations with zero survivors or invalid
+results and unchanged source.
+
+Exact clean recovery head `bffd2c8f172ea774353158d10ad615a89c3d0095`
+then builds and installs as a wheel with SHA-256
+`1bf175f209969d773c4725a34ec70c6dace932b28304113a78d31eaf2e227aae`.
+Default autonomous installation discovers only Codex and ZCode, installs both
+plus the dashboard, and passes Codex activation. Activation session
+`019fc10f-f69d-7311-900e-12b13afd41b1` and trace
+`019fc110-02e5-7c10-a464-2f1bd571a992` prove one inferred and loaded
+`code-reviewer`, one completed native worker, one accepted finalization, a
+valid first header, zero corrections, and trust bypass without persistent
+profile change. ZCode is registered and enabled; the dashboard is active and
+reachable.
+
+Corrected writer sentinel `ar223-agency-writer-bffd2c8-01` is consumed and
+terminal `NO-GO`. Session `019fc112-9e30-7a10-a0bb-dba51de4b4bb`, trace
+`019fc112-9eca-7bf1-b1cd-889bf37422ad`, route
+`55f9ebef-2ca4-4dba-8d30-911ee97d4742`, run
+`f43fc4d9-9997-4069-9ba3-d771fb0c7afe`, and finalization
+`2a336e1c-3e75-4d12-8edc-7279afdd8eac` retain the exact result. Inference
+expands the explicitly indivisible request into four units and selects
+`minimal-change-engineer`, `software-test-engineer`, `code-reviewer`, and
+`test-results-analyzer`. The parent launches only the first specialist. Its
+activation and execution waits both reach terminal completion, the worker
+exits zero, and the rollout has zero corrections or unexpected items. The
+parent then truthfully finalizes `delegation_declined` because the other three
+accepted rows did not execute. The exact workspace remains empty and both
+`writer-result.txt` and the workspace-write proof are absent.
+
+The retained failure narrows the product defect past scheduler timing. Agency
+itself tells a newly spawned Codex specialist to perform no work in its first
+native turn, then relies on an encrypted `followup_task` turn for execution.
+The direct current-host control already proves a self-contained first-turn
+child can write exact bytes. The two-turn activation ceremony is therefore no
+longer justified by the product outcome and is the next bounded boundary to
+remove; the accepted specialist should execute its exact spawn goal in the
+first turn and the parent should wait for that same terminal child before any
+later row.
+
+ADR-0143 now removes that ceremony for current Codex execution. The initial
+spawn carries the exact persisted goal and direct specialist context; the child
+executes in that one turn, and the parent performs only bounded terminal waits.
+Strict rollout evidence binds the exact parent spawn ciphertext to the child's
+byte-identical `NEW_TASK`, lineage, single turn, and final response. The Store
+claims direct execution only after `PostToolUse` records the exact delegation,
+recovering the consumed spawn receipt when Codex omits the callback tool ID.
+Historical two-turn evidence remains readable but is no longer emitted.
+
+The changed-surface warning-strict suite passes 181 tests across child
+execution, prompt delivery, unit-aware delegation, product hosting, Codex
+activation, native child hooks, and decision conformance. The first full
+decision-conformance run passes every baseline and kills 94 of 97 mutations;
+its three survivors are exactly two obsolete mutations from superseded
+ADR-0137 plus one redundant parent-session check. Removing the obsolete checks
+and moving the identity mutation to the shared verifier passes the focused
+manifest, execution, and isolated mutation checks. The final full rerun passes
+its baseline and kills all 95 current mutations with zero survivors or invalid
+results and unchanged source. The named Python spine passes 657 tests with 6
+skips; all 110 dashboard tests, every routing threshold, repository-wide Ruff,
+formatting, documentation, metadata, policy, worklog, and diff checks pass.
+
+Clean head `b6bcdfb5b7c121863bea8e29f3d60b139a6a24ed` builds canonically
+from a detached checkout. Its independently verified Windows wheel has SHA-256
+`3f9c8c0ddd7fd59daa48b0f6edb7af8824a22133988a87d486aa714f51229f28`.
+The exact wheel installs, and bare autonomous installation refreshes Codex and
+ZCode plus an active reachable dashboard. ZCode is registered and enabled.
+
+The consumed Codex activation is terminal `NO-GO`. Session
+`019fc17d-8a96-7171-a384-225f1debf56f`, trace
+`019fc17d-96fa-7052-afa8-87b92e46e357`, route
+`08860e5b-b0c7-44c5-940b-dc47e4b70959`, run
+`9966776d-9d8c-4f81-a767-e1df6e409da3`, finalization
+`72b11aa9-52e8-4b25-9119-04e2a95ca29e`, and worker
+`019fc17e-a7b5-7f32-9c48-469054dde329` retain the exact boundary. The run
+proves inferred and loaded `code-reviewer`, one direct spawn, zero follow-ups,
+one completed wait, a valid first header, zero corrections, and an accepted
+finalization. Verification nevertheless fails because the exact spawn's
+one-use Store execution dispatch receipt is absent, leaving the delegation and
+worker lifecycle open. Store timestamps and the retained rollout prove that
+current Codex emitted the parent spawn result before the real child start and
+activation consumption. ADR-0144 therefore claims the exact dispatch at
+whichever callback is second and has both the recorded delegation and real
+activated identity. The live-order regression, reverse-order compatibility,
+37-test activation file, and 52 execution/lifecycle tests pass.
+The complete named local gate passes: repository Ruff and formatting, 657
+Python tests with 6 platform skips, 110 dashboard tests, every routing
+threshold, documentation and diff checks, and a full decision-conformance
+baseline that kills all 96 mutations with zero survivors or invalid results
+and leaves source unchanged.
+
+Clean checkpoint `d4c65a7b01f851cf2a4a1393ec227f7e53f0487c` builds
+canonically from a detached checkout. Its verified Windows wheel has SHA-256
+`581263464509639f9ca4efd7e9b8aff29e755af68e0da428c4cf9d7fd1e41075`.
+The exact wheel installs and the default autonomous suite refreshes Codex and
+ZCode plus an active reachable dashboard.
+
+Its one permitted Codex activation is terminal `NO-GO` before specialist
+selection. Session `019fc1a8-1217-70a0-83ca-bae1f67e008e`, trace
+`019fc1a8-1c0c-7193-861b-0d72f14b7fdc`, run
+`c53d8e06-abcf-45eb-8bd5-d714e70b2106`, and preflight failure
+`7dfa8d89-95eb-4e9f-91c3-3d693c6b7d48` prove the planner received no valid
+response from configured `codex-subscription` inference for
+`gpt-5.6-luna`. The turn records no route, plan, delegation, activation,
+worker, header, spawn, or correction. Trust bypass was used without a
+persistent profile change. This attempt did not exercise ADR-0144 and cannot
+prove or disprove the callback-order repair; exact `d4c65a7` must not be
+retried and no writer sentinel ran.
+
+A bounded 2026-08-02 09:01 UTC diagnostic does not retry that activation. It
+uses the installed `d4c65a7` runtime, configured `codex-subscription` provider,
+and exact production planner schema. Account-aware discovery reports
+`gpt-5.6-luna` visible; the CLI returns `thread.started`, `turn.started`,
+`item.completed`, and `turn.completed` with exit zero in 23.3 seconds, and the
+runtime parses the required plan object. The earlier content-free failure is
+therefore not reproducible and remains unclassified rather than being assigned
+to recruiter acceptance without evidence. A fresh exact candidate, not a retry
+of `d4c65a7`, may proceed to the activation gate.
+
+Clean checkpoint `4d14b99ccbcfd3a78fcb3c867c16654ab85ded1f` builds
+canonically from a detached checkout. Strict metadata and independent
+distribution verification pass; the installed Windows wheel has SHA-256
+`ad2bddce9bdd2f253ae3b2b15f44c70d4a481442af994269cf2fc0463334ff69`.
+The default autonomous suite installs Codex and ZCode plus an active reachable
+dashboard. Its one permitted activation passes: session
+`019fc1be-ef9a-7392-8eab-ecb196c40eb5`, trace
+`019fc1be-fbbf-70c3-b299-e47e16b19010`, route
+`5b98f0a9-6697-40ae-be20-4f074824196b`, run
+`5793dda3-452e-4ea7-af5a-0393bea227d6`, finalization
+`c83b9b4b-8985-4b89-ba66-714e774aafc3`, and native worker
+`codex-agent:019fc1bf-f590-70f3-a8dd-55fbfb2f8fdd` prove one inferred, loaded,
+and delegated `code-reviewer`; one spawn, no follow-up, one wait; the exact
+ADR-0144 execution dispatch receipt; terminal exit zero; accepted finalization;
+a valid first header; and zero corrections. Autonomous trust bypass changes no
+persistent profile state. This admits one Agency-owned writer sentinel against
+the same installed build; it does not yet prove workspace mutation or the full
+README product story.
+
+The one admitted `4d14b99` Agency writer sentinel is now consumed and terminal
+`NO-GO`. Workspace `ar223-agency-writer-4d14b99-01` remains empty and the
+evaluator correctly fails `route_ambiguous`, the missing Codex collaboration
+projection, and `workspace_write_not_proven`, with a valid first header and zero
+corrections. The product run is `89adc572-3fcd-485b-ba32-e67c71feeb27`; its
+current route `d710224d-b064-467b-bade-06a5caf01c4f`, session
+`019fc1c5-9657-7df0-a3f6-26e99c60fdb4`, trace
+`019fc1c5-96ce-70a2-a3cb-cfdec12416c8`, and finalization
+`32fb5ef7-a624-40c7-8328-faf5b328204e` retain the exact boundary.
+
+The failure proves two first-class defects. The product evaluator asks the
+Store for a route using only host and executed-prompt hash. That hash also
+matches historical route `55f9ebef-2ca4-4dba-8d30-911ee97d4742`, so the
+supposedly exact lookup sees two routes and rejects the current one as
+ambiguous instead of binding the Codex result's exact session. Independently,
+inference ignored the explicit one-indivisible-unit constraint and authored
+five units for onboarding, implementation, testing, review, and test evidence.
+Only `codebase-onboarding-engineer` ran and exited zero; the remaining four
+delegations stayed suggested, finalization truthfully recorded
+`delegation_declined`, and no writer artifact was created. The next candidate
+must repair exact session binding and inference-owned indivisible topology
+before any further build or live attempt.
+
+The bounded repair now binds the native Codex `thread.started` identity into
+the product result, requires that session at the product evaluator, and filters
+both ready-route and failed-preflight Store resolution by session as well as
+host and prompt hash. A regression records two routes for the same prompt and
+proves the historical lookup remains ambiguous while the current-session lookup
+resolves exactly. Separately, the planner recognizes an explicit one
+indivisible work-unit plus no-split constraint, presents inference with an
+exactly-one-unit schema and explicit topology fact, and updates the inference
+system contract to fold requested verification into that unit. It does not name
+or select a worker. The focused planner, Store, product-host, Codex-projection,
+and decision-manifest slice passes 127 warning-strict tests; Ruff passes the
+changed surface. Clean repair commit
+`10c047f2b18caf8b95fc74de5dd40a15a469d211` then passes the complete named
+local gate. The Python production spine reports 657 passes and 6 platform
+skips; dashboard UI reports 110/110; all routing thresholds pass; metadata,
+policy, worklog, 635-document validation, repository-wide Ruff and formatting,
+and diff checks pass. Decision conformance passes its 173.661-second baseline
+and kills all 97 mutations with zero survivors or invalid results, unchanged
+source, and 831.4 seconds total command time. This is local source evidence;
+one immutable build, install, and live writer sentinel remain pending.
+
+Clean checkpoint `93e465a9a42fbf8c73de44b8d56bcbd30c54e455` builds
+canonically from a detached checkout. Strict Twine metadata and independent
+distribution verification pass; the installed Windows wheel has SHA-256
+`6426f2e1e061a5b34f80aece547a0468e75f26a1d4a3667d2529dfa87df70d50`.
+The default autonomous suite installs Codex and ZCode plus an active reachable
+dashboard. Its one permitted activation passes: session
+`019fc1f7-00aa-72b3-9005-2cf180485a8d`, trace
+`019fc1f7-0c2c-7593-a44c-eb2d2394047a`, route
+`0d018c1d-86a9-49f9-a446-944da5ab1775`, run
+`46ef75fb-b233-445e-9d79-0ab2abb6ae67`, finalization
+`3f983200-0b34-484d-93d9-d399ac46812f`, and native worker
+`codex-agent:019fc1f8-0ae2-7263-a6ea-f051c16e0e97` prove one inferred,
+loaded, and delegated `code-reviewer`; one spawn, no follow-up, one wait; an
+exact execution dispatch; terminal exit zero; accepted finalization; a valid
+first header; and zero corrections. Autonomous trust bypass changes no
+persistent profile state. This admits one fresh Agency writer sentinel only.
+
+That one `93e465a` writer sentinel is now consumed and terminal `NO-GO`.
+Session `019fc1fb-9f81-7cd2-9de2-927b68fe12f1`, trace
+`019fc1fb-a004-7b42-a36e-8ba4beec5667`, run
+`de09a39d-8d10-42d8-a442-77db2f244840`, and preflight failure
+`e72322b5-96b7-4e26-a093-fd685856357a` retain the exact result. Both planner
+attempts used `codex-subscription/gpt-5.6-luna` and were rejected as
+`provider_response_contract_invalid`; no route, unit, specialist, delegation,
+or worker exists. The header is absent, correction count is zero, and the exact
+workspace is empty. Exact session reconciliation now works: the evaluator
+resolves this run's `preflight_failed` snapshot instead of the older same-prompt
+routes. The remaining defect is planner acceptance of the explicit one-unit
+contract, not product evidence correlation. This build must not be retried.
+
+A single bounded direct-planner diagnostic against that exact installed wheel
+and those exact product and executed prompt hashes reproduces the rejection
+without retrying the product. Luna returns one transport-schema-valid
+`implementation-change` unit under `maxItems: 1`; the semantic policy rejects
+it only for missing separate test implementation, independent review, and test
+evidence units. The runtime had therefore made its own repair impossible: the
+inference contract required one indivisible unit while the deterministic
+completeness policy required at least four.
+
+Commit `73f9989` carries the explicit indivisible fact through both semantic
+policy checks, so user-owned one-unit topology suppresses only decomposition
+requirements. External-write authorization remains enforced. A full-path
+regression deliberately includes code-mutation tokens and proves the accepted
+one-unit plan still comes from inference. The focused workforce, intent,
+routing, and product-host slice passes 141 warning-strict tests; changed-file
+Ruff lint and formatting pass. Clean head
+`0f40e8e8b0fe5894845bf2293d791bcab55a5908` passes the complete named gate:
+657 Python tests pass with 6 platform skips, dashboard UI passes 110/110, every
+routing threshold passes, metadata, policy, worklog, 635-document validation,
+repository-wide Ruff and formatting, and diff checks pass. Decision conformance
+passes its 173.614-second baseline and kills all 97 mutations with zero invalid
+results, unchanged source, and 859.9 seconds total command time. One fresh
+immutable build may now proceed; no new live evidence has been consumed.
+
+Clean candidate `d610630d4b3f8d04fc7cb2d0fc08fe6e19e44bbc` builds
+canonically from a detached checkout and passes strict Twine metadata plus the
+independent distribution verifier. Its Windows wheel SHA-256 is
+`7f18ddaab3fc7859e45e794edc9582420847d3bfc73ddf1b32bb6a8c476d9f5d`;
+the source distribution SHA-256 is
+`42614e526e0190ec26d16d440a12fdcdb4835bc7580c655a924a634f315190a8`.
+The global uv tool now points directly to that exact local wheel. No activation
+or writer evidence has been spent for this candidate.
+
+That candidate's single autonomous activation now passes. Session
+`019fc228-8701-7c63-8e71-0b700f7893a9`, trace
+`019fc228-93b9-73e2-b07e-2dde182d3e6d`, route
+`0dd11929-7673-4f7b-8b5e-4e00918b72d2`, run
+`f1a1f8d0-ef60-4a28-b852-215f249c5c26`, finalization
+`a216da1f-9819-4772-a04e-a015d329490c`, delegation
+`afbf90c8-a605-4b4d-a233-b53f239541e2`, and native worker
+`codex-agent:019fc229-71ca-70d2-a184-dda5064f98ed` retain the exact proof.
+Inference selects, loads, and delegates `code-reviewer`; the parent records one
+spawn, no follow-up, and one wait; Store records the exact execution dispatch,
+terminal exit zero, and accepted finalization. The first header validates with
+no missing fields, one terminal finalization yields correction count zero, and
+the rollout contains no correction hook prompt. Codex and ZCode install, the
+dashboard is active and reachable, autonomous trust bypass changes no persistent
+profile state, and the one writer sentinel is now admitted.
+
+That one `d610630` writer sentinel is consumed and terminal `NO-GO` after
+67.406 seconds. Session `019fc230-7a55-7263-b135-0051a291ea8b`, trace
+`019fc230-7ac7-7732-a4b7-037faea8d61b`, run
+`0ba1b3b8-dd4e-4687-a790-10dd5f9f87e5`, and preflight failure
+`f2902d64-1730-4ee2-a300-1ea2a1102866` retain the exact boundary. The planner
+applies one inference-authored unit, but both recruiter responses are rejected
+because the staffing verifier reports `independent_assurance_missing`. No
+route, specialist launch, header, or workspace artifact exists; correction
+count is zero and the workspace is empty. The remaining contradiction is
+exact: the runtime honors the explicit indivisible topology in planning, then
+requires a separate downstream assurance unit during staffing. This build must
+not be retried.
+
+The bounded repair carries that same explicit topology into the recruiter
+contract and staffing verifier. Only a genuinely one-unit plan skips the
+otherwise mandatory downstream independent-assurance unit; composition,
+eligibility, evidence, budgets, mutation scope, and every ordinary assurance
+check remain enforced. A full-path regression accepts one inference-authored
+implementation unit and one inference-selected filesystem specialist without a
+repair call. The focused workforce, routing, hiring, staffing, and product-host
+slice passes 189 tests with one platform skip; changed-file Ruff lint and
+formatting pass. The one named gate remains before a new immutable build.
+
+Clean executable and test head `62b7f3e` passes the complete named gate.
+Metadata, policy, worklog, and 635-document validation pass; repository-wide
+Ruff lint and formatting cover 609 files; the Python production spine reports
+657 passes and 6 expected platform skips; dashboard UI reports 110/110; and
+every routing threshold passes. Decision conformance passes its 182.490-second
+baseline and kills all 97 mutations with zero survivors or invalid results,
+unchanged source, and 891.8 seconds total command time. One new immutable build
+may now proceed; no new live evidence was consumed by the gate.
+
+Exact candidate `7f0479fd25010ca5a7a3bd00fb41d8d0e1da78d3` builds
+canonically, passes strict Twine metadata and independent distribution
+verification, and installs from a Windows wheel with SHA-256
+`e42ff9fa2d460cde6d2163f539c5b44c531e82433f08a4fe711e02fd3f9186ef`.
+Its one autonomous activation passes: session
+`019fc253-aedf-7822-9744-7911d5b37901`, trace
+`019fc253-bb0a-7f01-8927-ff2f945c76d2`, route
+`28683bc3-bb63-40f0-ba1f-1d5c06f9777f`, run
+`c73394ca-6e2a-47ef-ab68-6a243b636253`, finalization
+`a6a83fe7-7a52-4cb2-91ea-776f75c19f9e`, delegation
+`0bdb5869-7048-4a94-8069-2919fb3ee42a`, and native worker
+`codex-agent:019fc254-88cb-77a1-b441-8dc88143879a` retain the exact proof.
+Inference selects, loads, and delegates `code-reviewer`; the worker terminates
+successfully, finalization is accepted, the first header is valid, correction
+count is zero, and autonomous trust bypass changes no persistent profile state.
+Codex and ZCode install and the dashboard is active and reachable. The one
+writer sentinel is admitted and unspent.
+
+That one `7f0479f` writer sentinel is now consumed and terminal `NO-GO` after
+93.844 seconds. Session `019fc257-a0aa-7471-a8ea-0a9fae0e2dcd`, trace
+`019fc257-a116-74c1-977c-3c7181a0977a`, route
+`15739f24-8dec-49f4-8c9b-57601103dd56`, run
+`76cf2936-69db-49d1-ae70-920c91570ec5`, finalization
+`120d7ea3-2a8c-4931-87dc-4c2177076797`, delegation
+`80b72766-b091-4dd4-8d4c-0ec9d42cfc67`, and native child
+`019fc258-730c-7c30-bc22-d5067dce1428` retain the exact boundary. Inference
+selects, loads, and delegates `minimal-change-engineer` for one
+`workspace_write` unit; the parent records one spawn and one wait; the child
+terminates with exit code zero; and finalization is accepted. The first header
+is valid and correction count is zero. The workspace nevertheless remains
+empty, so `workspace_write_not_proven` is the sole product failure. This build
+must not be retried. Per the bounded delivery contract, no further repair loop
+starts without a new owner go-ahead.
+
+The bounded post-failure diagnosis separates current product projection from
+the activation-canary verifier: the product projector already permits and
+counts child tools, so its tool-free activation helper is not the writer cause.
+The exact specialist contract instead requires tool availability to be proven
+before use, while the direct child delivery did not state that the accepted
+plan and current native activation were that proof or that relative paths
+resolve against the exact isolated workspace. The focused repair carries those
+two already-verified facts into both direct specialist context and the product
+developer contract, keeps inference authoritative and the parent non-working,
+and tells the child to report a prerequisite only after an actual tool denial.
+The focused native-delivery, product-host, and Codex activation slice passes 84
+warning-strict tests; scoped Ruff lint, formatting, and diff checks pass. No new
+immutable build or live product evidence has been consumed.
+
+Clean head `be1ca0e69652645f4bf5be7a48a81de47a869821` passes the complete
+named local gate: metadata, policy, worklog, 635-document validation,
+repository-wide Ruff lint and formatting, 657 Python passes with 6 platform
+skips, 110 dashboard passes, every routing threshold, and a 196.478-second
+decision-conformance baseline followed by 97/97 killed mutations with unchanged
+source. The detached canonical build passes strict Twine metadata and independent
+distribution verification. Its Windows wheel SHA-256 is
+`c707342bfb4392d89ae5f07d202cd7a0e73d1a7dfc52304c5d16e2b53ad9f519`;
+the source distribution SHA-256 is
+`451c8a4286f1167d5f29788c3a415c47f979305b6172f038369b274e46a69dd1`.
+
+The exact wheel installs and bare autonomous installation refreshes only Codex,
+ZCode, and the reachable dashboard. Its one activation passes: session
+`019fc29f-f8da-7360-8a1c-38cbe9a2f9fa`, trace
+`019fc2a0-0584-7f71-a1eb-a54ed8ebf098`, delegation
+`e5ab2e88-be0f-44b6-93e5-9f088825dd85`, finalization
+`7a8426af-7ea4-4d4b-b290-9def315ce92c`, and native worker
+`codex-agent:019fc2a0-f083-7712-a042-f70fed29bef8` prove one inferred,
+loaded, and delegated `code-reviewer`, terminal exit-zero execution, accepted
+finalization, a valid first header, zero corrections, autonomous trust bypass,
+and no persistent profile change.
+
+Its one writer sentinel `ar223-agency-writer-be1ca0e-01` is consumed and
+terminal `NO-GO` after 78.672 seconds. Prompt hash
+`sha256:1a02a85f8d35af52f983b4c3886c0aa5470b7613aa2bd2b9045261b719c66729`,
+session `019fc2a3-1b73-7162-a10b-ab2b891a7876`, trace
+`019fc2a3-1be8-7481-b08f-df6801a08964`, route
+`5cec6a14-9cdc-4564-8e60-3a9d5d9f831a`, run
+`00ffae19-8b6c-4217-846d-a7dc2fc4dfb1`, delegation
+`1e26fd70-d29a-448a-baf6-3ebb28723afb`, finalization
+`5699518a-3c18-42bf-8965-f1bcbedd5d97`, and native child
+`codex-agent:019fc2a3-c2c3-7b32-b16e-f2dbb27d97ed` retain the exact failure.
+Inference selects, loads, and delegates `minimal-change-engineer` for one
+`workspace_write` unit; one spawn and one wait complete with exit code zero;
+finalization is accepted; the first header is valid; and correction count is
+zero. Independent inspection proves the isolated workspace has zero entries and
+no `writer-result.txt`, leaving `workspace_write_not_proven` as the sole product
+failure. The explicit tool/workspace-proof hypothesis is therefore falsified.
+This build must not be retried, and header/dashboard/report work remains
+deferred behind actual delegated workspace execution.
+
+The retained direct control and the failed Agency trial use the same
+`fork_turns=none` launch. The direct child immediately invokes `apply_patch`,
+records a successful workspace-local `patch_apply_end`, verifies the bytes, and
+finishes; the Agency child records zero tool calls. Current Codex 0.146.0 source
+also confirms that a `SubagentStop` `decision:block` result supplies a native
+continuation prompt. The first exact defect is therefore Agency's completion
+boundary: it accepted lifecycle, delivery, and a nonblank final response as
+`ok` without requiring any mutation receipt for a `workspace_write` row.
+
+The bounded repair makes the exact write contract actionable and fail-closed.
+The Codex v3 child context and product prompt require `apply_patch` for the
+first product proof mutation and explicitly admit a proof-only named-file unit
+without generic root-cause, test, or refactor expansion. `SubagentStop` now
+requires one successful `patch_apply_end` whose every changed path resolves
+inside the exact child workspace before recording a write child as `ok`. A
+first missing receipt produces one native execution continuation; a repeated
+miss terminates instead of looping. Parent-`Stop` reconciliation applies the
+same receipt requirement and cannot backfill a false success. Ninety-seven
+focused child-delivery, product-host, activation, and execution tests pass with
+warning-strict Pytest; targeted Ruff lint/format and `git diff --check` pass.
+Clean ledger head `d5a4e3190a49b94b47620a98c4c313a0f1518d04` passes the
+complete named gate: metadata, policy, worklog, 635-document validation,
+repository-wide Ruff lint and formatting, 657 Python passes with 6 platform
+skips, 110 dashboard passes, every routing threshold, and 98/98 killed
+decision mutations with unchanged source. Its detached canonical build passes
+strict Twine metadata and independent distribution verification. Windows wheel
+SHA-256 is
+`c00a2317ea7db20512701602a7920216a824b8bdab9166eacfe8bb7e76dfa0f2`;
+source SHA-256 is
+`a58c47522306900189db5760a07dc199f61536336816e4529207804e01772d9f`.
+
+The exact wheel installs and bare autonomous installation refreshes only Codex,
+ZCode, and the reachable dashboard. Its one activation passes with session
+`019fc2ef-4dbf-7a93-961d-8af333446b0c`, trace
+`019fc2ef-5984-7103-bf17-8c51acf3927e`, and native worker
+`codex-agent:019fc2f0-4b31-71f1-beb9-ce135020b0d7`; trust bypass is proven and
+the persistent profile is unchanged.
+
+Writer sentinel `ar223-agency-writer-d5a4e31-01` is consumed and terminal
+`NO-GO` after 85.844 seconds. Prompt hash
+`sha256:1a02a85f8d35af52f983b4c3886c0aa5470b7613aa2bd2b9045261b719c66729`,
+session `019fc2f2-63f6-7a62-af0b-bdd4dbe9124e`, trace
+`019fc2f2-6465-7df0-a093-621733808dab`, route
+`4956e672-f132-49f2-9583-fa106d6a7890`, run
+`7b18905e-0621-497e-9f8c-7ec79486420b`, delegation
+`d69e1e22-bc7d-4a57-b094-dc093a2060e7`, finalization
+`72a85da5-2e31-49ef-ab13-2f178bedebdb`, and native child
+`codex-agent:019fc2f3-1864-7840-b5d2-84edf35dd077` retain the exact failure.
+Inference selects, loads, and delegates `minimal-change-engineer` for one
+`workspace_write` row; the product projection records one spawn, one wait, one
+completed child, zero failed children, zero unexpected items, a valid first
+header, and zero corrections. Receipt enforcement correctly leaves the Store
+worker unended and the delegation incomplete after no patch receipt, but the
+parent still records `accept/completed` with no missing rows. Independent
+inspection finds zero workspace entries. The remaining AR-223 defect is now
+only the parent-finalization boundary: it must reject an accepted
+`workspace_write` row whose receipt-gated worker/delegation is incomplete.
+Do not retry `d5a4e31`.
+
+The bounded parent-finalization repair now validates the current v14 unit plan
+before any terminal acceptance. Every `workspace_write` work unit must map
+one-to-one to a delegation whose status is `completed` and whose
+`completed_at` receipt is present. Missing, merely delegated, timestamp-free,
+duplicate, malformed, or untrusted evidence returns
+`delegation_execution` instead of reaching `accept/completed`; the existing
+terminal policy records that outcome as `delegation_declined`. Read-only and
+legacy plans are unchanged. The exact regression plus its terminal-action
+control pass, and 264 adjacent completion-policy, hook, child, activation, and
+product-host tests pass with one platform skip. The new decision mutation has
+one exact source anchor. No new immutable build or live trial has been consumed.
+
+Clean ledger head `c8a0577cd60124eb8e29199c214bbeec81677349`
+passes the complete named local gate: metadata, policy, worklog,
+635-document validation, repository-wide Ruff lint and formatting, 657 Python
+passes with 6 platform skips, 110 dashboard passes, every routing correctness
+threshold, and 99/99 killed decision mutations with unchanged source. The first
+routing invocation had one transient 10,000-agent warm p95 of 377.314 ms; the
+single bounded classification rerun passed at 84.435 ms, consistent with the
+immediately preceding clean gate's 41.543 ms rather than a correctness change.
+The detached canonical build passes strict Twine metadata and independent
+distribution verification. Windows wheel SHA-256 is
+`f09e0c179a71f69c0c0ad07e0cfeb1fa1827a5c9e015364f33bb1c95c2fdadc1`;
+source SHA-256 is
+`f39e04851f86ed79fdeb227c9d97f04b65760356159cbf5baaedd85315dc5458`.
+
+The exact wheel installs and bare autonomous installation refreshes only Codex,
+ZCode, and the reachable dashboard. Activation session
+`019fc32f-95d8-74d3-90f8-ff8b570df2b9`, trace
+`019fc32f-9efe-75a1-bd3a-7fa370adb701`, delegation
+`a61cc962-ba57-4003-a834-96affb35b2d7`, finalization
+`13841b28-dac1-489f-a2ec-3d6fb63a17a2`, and native worker
+`codex-agent:019fc330-525f-7b20-b337-f87b7b6ef063` prove inferred and loaded
+`code-reviewer`, a completed timestamped delegation, terminal exit-zero worker,
+accepted finalization, autonomous trust bypass, and no persistent profile
+change.
+
+Writer sentinel `ar223-agency-writer-c8a0577-01` is consumed and terminal
+`NO-GO` for the README writer outcome, but `PASS` for the scoped
+parent-finalization defect. Prompt hash
+`sha256:1a02a85f8d35af52f983b4c3886c0aa5470b7613aa2bd2b9045261b719c66729`,
+session `019fc331-f432-71e1-b473-ce62d345171b`, trace
+`019fc331-f4ad-73f3-ad67-f25092b925cd`, route
+`73333330-dd5d-475d-8c61-96fdf7138565`, run
+`c1c9475a-358d-4755-a665-3be459ce409a`, delegation
+`c23a05b3-1eff-475c-b7f4-c1a3f9000cda`, finalization
+`067e1925-23db-45d2-92a8-280115e72779`, and native child
+`codex-agent:019fc332-93f4-7c31-af81-742bcce29385` retain the exact outcome.
+Inference selected and loaded `minimal-change-engineer` for one
+`workspace_write` row, but the worker remained unended and its delegation
+remained `delegated` with no `completed_at`. The new guard therefore recorded
+`delegation_declined` with missing `delegation_execution`; the run ended in the
+same state. Independent inspection finds zero workspace entries and no
+`writer-result.txt`. The preceding `d5a4e31` candidate had accepted this same
+incomplete shape as `accept/completed`, so the controlled before/after proves
+the requested bug is fixed. Do not retry `c8a0577`. Actual delegated workspace
+execution remains the next separate AR-223 product gap.
+
+The next bounded diagnosis compares that failed Agency child with the retained
+direct native control. Both use current Codex encrypted task transport and an
+inherited writable workspace, but only Agency injects its direct-child context.
+The v3 renderer put the exact execution instruction before the immutable
+`minimal-change-engineer` prompt, leaving the specialist's generic refusal of
+arbitrary text and root-cause/test requirements as the newest instructions.
+ADR-0145 replaces that envelope with v4: the independently hash-verified
+specialist body remains unchanged, while a byte-exact, fail-closed execution
+suffix follows it and requires `apply_patch` for `workspace_write`. Exact
+implementation `c6c02d0` and ledger `cd142c4` pass 103 focused tests plus the
+complete named gate: 636-document validation, repository-wide Ruff/format, 657
+Python passes with 6 skips, 110 dashboard passes, every routing threshold, and
+100/100 killed decision mutations with a green baseline and unchanged source.
+
+Exact clean candidate `4c57507` builds and independently verifies. Wheel
+SHA-256 is `01eb373868156423031e12c5bce13a54787c4bb2c7ccbca6fb0e9a0a404e4230`;
+source SHA-256 is
+`fab10f3a2769d921175c422757ec524cbfa4e092a7a83744659e4cb95037a4d3`.
+Autonomous suite refresh installs Codex, ZCode, and the reachable dashboard;
+Codex activation passes with trust bypass and no persistent profile change.
+Its one writer trial `ar223-agency-writer-4c57507-01` is consumed and terminal
+`NO-GO`. Inference selected and loaded `minimal-change-engineer`; the child now
+records one tool call, one completed child, a valid first header, and zero
+corrections, improving the preceding zero-tool behavior. It still produced no
+successful patch receipt or file. Delegation remained incomplete, the worker
+remained unended, and finalization truthfully recorded `delegation_declined`
+with missing `delegation_execution`. Do not retry `4c57507`.
+
+The bounded retained-evidence audit found no authoritative record of that one
+tool's type or outcome. The Store preserves launch, activation consumption, and
+execution dispatch but no worker end, exit code, stdout, stderr, or tool
+receipt; the surviving parent rollouts do not contain the child identity, and
+the isolated child profile no longer exists. Historical reconstruction is
+therefore unavailable rather than inferred.
+
+ADR-0146 implementation `3cc852f` upgrades the product collaboration projection
+to v2. Each exact child and the aggregate now retain only fixed counts for call
+kind, the safe `exec` / `apply_patch` / `shell_command` / `other` classes, call
+status, output receipt, and patch success/failure/unknown. No argument, path,
+file content, output, error, task, or response content is retained. Sixty-five
+focused tests pass, and the new isolated decision mutation passes its baseline,
+is killed once, and leaves source unchanged. No product trial was run in this
+diagnostic slice.
+
+Implementation `2a19c79` closes the remaining diagnostic durability gap before
+another immutable trial; ledger `e0a7492` records it. Schema v44 attaches the
+validated content-free child tool projection to the exact Codex `worker_runs`
+receipt with immutable,
+byte-identical replay semantics. The activation snapshot exposes each receipt
+as `recorded`, `missing`, or `invalid`; product admission requires the Store
+counts to equal the corresponding rollout projection. Missing or failed writes
+remain fixed unit-scoped failures instead of collapsing into an opaque
+reconciliation exception. One new decision mutation removes the Store write.
+The focused lifecycle, product-host, schema, activation, and conformance suite
+passes 128 tests with warning-strict execution; repository-wide Ruff lint,
+format, and diff checks pass. No candidate was built and no live evidence was
+consumed in this implementation slice.
+
+Clean ledger head `e1c2157` passes the complete named local gate. Metadata,
+policy, worklog, and 638-document validation pass; repository-wide Ruff lint
+and formatting cover 610 files; the Python production spine reports 657 passes
+with 6 platform skips; the dashboard reports 110 passes; and every routing
+threshold passes. Decision conformance passes its 206.261-second baseline and
+kills all 102 mutations with zero survivors or invalid results, unchanged
+source, and 1,189.1 seconds total command time. No immutable build or live
+trial has been consumed from this checkpoint.
+
+Exact clean candidate `2bbd88518109aeac32d5f9685ce425b4277fc4a1`
+builds canonically and independently verifies. Wheel SHA-256 is
+`a2b788ee1aae8df6bf545ebc03027c0a4894fd5daab37358c0bb289cb3d4d6e5`;
+source SHA-256 is
+`b25f1c6d5404eee7a6ff86c3990c946c49be419058089399f53581a819a77262`.
+Its autonomous full-suite transaction refreshes Codex and ZCode and leaves the
+dashboard installed, active, and reachable. The invocation-only Codex
+activation passes without persistent trust mutation. Session
+`019fc3f1-78b9-73d2-91fa-870def161377`, trace
+`019fc3f1-90a9-7af0-a5bb-b07c797ee82e`, run
+`b347c4f2-85d8-403f-bd84-fe98c5944af9`, delegation
+`9bf014f8-1d43-4263-8f99-ab172b5c24b9`, finalization
+`e0f85ae2-ce1f-47a0-a9eb-2d25399682dd`, and child
+`019fc3f2-9cda-7f71-9a3b-8278aeca2425` prove one inferred and loaded
+`code-reviewer`, one direct spawn, one completed wait, a terminal exit-zero
+worker, an accepted finalization, a valid header, and zero corrections.
+
+Its one writer trial `ar223-agency-writer-2bbd885-01` is consumed and terminal
+`NO-GO`. Session `019fc3fc-e8ca-78a2-b30a-8030008b7573`, trace
+`019fc3fc-e960-7282-b867-61db6bfb9a1a`, run
+`9ad5e0d7-0cb2-4e08-bc79-a7bc14329182`, route
+`3bac5a4d-820e-49c9-8a6d-e646bc70e3d3`, delegation
+`dfa8293d-fb86-4ab0-96d6-2a9dc2f08b94`, finalization
+`a4ddb6e8-0092-48e0-a34f-f0f8e084e99a`, and child
+`019fc3fd-ac85-7f80-9b89-06141dc7d024` retain the exact boundary. Inference
+selects and loads `minimal-change-engineer`; the parent proves one direct
+spawn, one completed wait, a valid first header, and zero corrections. The
+workspace remains empty, the worker remains unended, and finalization correctly
+declines missing `delegation_execution`.
+
+The schema-v44 Store write succeeds before product admission. Its immutable v1
+receipt records three completed custom `exec` calls, three outputs, zero failed
+calls, and zero direct `apply_patch` or `shell_command` calls. Current Codex
+executes nested tools through the `functions.exec` wrapper, however, so those
+aggregate transport counts do not prove which nested tool classes ran. The
+next bounded repair must preserve content-free per-wrapper nested tool classes
+and outcomes; it must not retain arguments, paths, content, output, or errors.
+
+ADR-0148 implementation `95aec42` upgrades new worker receipts to v2.
+It lexically classifies only direct nested tool calls outside strings and
+comments, fails ambiguous input to an explicit unclassified count, and reads
+only the fixed first wrapper-output line. Canonical v1 Store rows remain
+readable; product admission requires v2. The surrounding activation, product,
+lifecycle, and schema suite passes 118 warning-strict tests. A retained sample
+of the current Codex format classifies all 36 recent exec inputs as 7 nested
+patch, 29 shell, and 1 other call, with only fixed wrapper outcomes retained.
+The new isolated decision mutation passes its baseline, is killed once, and
+leaves source unchanged. Two representative failures from an optional broader
+diagnostic suite reproduce unchanged at exact clean `2bbd885`; they are
+pre-existing outside this package and the named production spine.
+
+Exact candidate `b967ad237d841e1ed37bb6e7312d82456b0aeab8` builds from
+canonical Git bytes and independently verifies. Wheel SHA-256 is
+`1774977dfcd457ac832eba59a45e037dca97e265849dabf652200b59afaa09db`;
+source SHA-256 is
+`47c005a0f946d4617e09d8f544ecfc42e40a75c4aefec2bd33934e2e9f07f917`.
+Its full-suite install refreshes Codex and ZCode, leaves the dashboard active
+and reachable, and passes one autonomous activation without persistent trust
+mutation. Session `019fc435-1a8c-7162-886f-389a168122ec` and trace
+`019fc435-22a1-78f0-ab79-8131253fe7a4` retain that activation.
+
+The candidate's sole writer `ar223-agency-writer-b967ad2-01` is consumed and
+terminal `NO-GO`. Session `019fc439-9621-72d1-8d7a-381942901577`, trace
+`019fc439-968f-7032-a181-69e4bc802335`, run
+`e771f645-beac-4fb7-b67a-c6853ec0eeb9`, route
+`3298fea5-e937-4394-a810-5ab813155ca4`, delegation
+`5f491f28-ee41-4e77-b317-9f807ea2ddfe`, finalization
+`6f753ee4-bc7a-4fd4-a4c5-33e1ba869f17`, and child
+`019fc43a-3cee-7140-b5aa-aae25a3d679e` retain the boundary. Inference selects
+and loads `minimal-change-engineer`; the parent proves one direct spawn, one
+completed wait, exact-workspace trust, autonomous hook bypass, a valid first
+header, and zero corrections. The workspace remains empty, the worker has no
+terminal receipt, and finalization declines missing `delegation_execution`.
+
+The immutable Store v2 row is diagnostic: three exec inputs are all classified,
+with one nested `apply_patch`, two nested shell calls, three fixed `failed`
+wrapper outcomes, zero unclassified inputs, and zero missing outputs. The first
+failed product boundary is therefore nested tool execution after correct
+selection, launch, and trust—not inference, staffing, header repair, or the
+Store write. Arguments, output, and errors remain intentionally unretained, so
+this trial supports no more specific cause. Under the stop-loss contract it was
+not patched or retried. The next slice must reproduce and repair only that
+wrapper boundary before building another candidate.
+
+Read-only reconstruction then found the exact product-boundary mismatch: Codex
+received `workspace-write` for the trial workspace while `TEMP`, `TMP`, and
+`TMPDIR` named a separate private runtime directory. The observed Windows
+wrapper rejects split writable-root sets. Product execution now rebases those
+three variables to the already verified exact workspace only for the Codex
+model invocation; plugin installation, authentication, and runtime setup retain
+their private temp directory. This keeps the repair inside the existing exact
+workspace authority and does not disable sandboxing. The focused product-host
+and Store slice passes 43 tests with warning strictness. The named Python spine
+passes 657 tests with six platform skips; 110 dashboard tests, repository-wide
+Ruff and format checks, documentation checks, and every routing threshold also
+pass. The unchanged-source decision-conformance CLI produced no verdict before
+either its 304-second control deadline or its one final 904-second deadline, so
+that optional mutation result is explicitly unknown and was not retried again.
+No build, install, activation, or live writer was consumed by this repair slice.
+
+Exact ledger candidate `5a97976ba6e1c37333577448f835bb15c3eceedf`
+then built canonically and independently verified. Wheel SHA-256 is
+`a7542966b2a1f243f3c91c2573c0880ca01a37a88a0efb5e0037734f33d2ef7d`;
+source SHA-256 is
+`10f25d3e3c096966fae31fd1c5e1b2decce6e9e4eaa37d5ecda8d31c4f167962`.
+Its full-suite autonomous install refreshed Codex and ZCode, left the dashboard
+active and reachable, and passed activation with inferred/executed
+`code-reviewer`, accepted finalization, valid first header, zero corrections,
+hook bypass, and no persistent profile change.
+
+The candidate's sole writer `ar223-agency-writer-5a97976-01` is consumed and
+terminal `NO-GO`. Session `019fc487-b580-7083-ab02-6278567f7ff7`, trace
+`019fc487-b5f5-7c13-959b-897fb1f9ff6e`, run
+`23a10be7-1469-4009-8d0f-9180c2e05e6f`, route
+`8dab6af7-fc16-4068-8e14-99c2e6c65303`, delegation
+`366c7249-4cf0-43a2-8190-fdc9d00caf91`, and child
+`019fc488-5f7f-7b81-8686-d55471e433dc` retain the boundary. Inference selected
+and loaded `minimal-change-engineer`; exact-workspace trust, autonomous hook
+bypass, valid first header, and zero corrections passed. The workspace remained
+empty and finalization declined missing `delegation_execution`. Store v2
+recorded exactly one classified nested `apply_patch`, one fixed `failed`
+wrapper outcome, zero unclassified inputs, and zero missing outputs. Therefore
+rebasing the three temp variables was insufficient; it did not prove or repair
+the actual nested wrapper failure. The next slice must classify a small fixed
+allowlist of wrapper failure causes content-freely before another live candidate.
+
+ADR-0149 implementation `e90af86` provides Store v3 at that exact boundary. New evidence retains all
+v1/v2 counts and adds only six bounded failure-category counts whose sum must
+equal the failed-wrapper count. Canonical v1 and v2 rows remain readable; raw
+output is never persisted. The focused Codex product, Store, and product-host
+slice passes 98 tests with warning strictness. The manifest anchor passes, and
+the isolated `codex-product-collapses-wrapper-failure-category` mutation is
+killed with unchanged source. No build, install, activation, or writer trial
+was consumed. The next bounded package is now one exact build, autonomous
+install and activation, and one new writer sentinel whose Store v3 receipt
+either proves the cause or admits the workspace write.
+
+Exact ledger checkpoint `6e0d3c6880fe8094a41d15f5f4f6547bad2e7004`
+builds canonically and independently verifies. Wheel SHA-256 is
+`a5f69ae7d169e52ea051c45609922379d14e2ec8a86f9c0e3faa8b763bfa5c6d`;
+source SHA-256 is
+`e2bab035649401f3998b3472e7ffcd235aad4319ff0ae502b92e5d3c62f0a66c`.
+The autonomous full-suite install detects only Codex and ZCode, leaves the
+dashboard active and reachable, and passes activation with inferred/executed
+`code-reviewer`, accepted finalization, a valid first header, zero corrections,
+hook bypass, and no persistent profile change.
+
+Its sole writer `ar223-agency-writer-6e0d3c6-01` is consumed and terminal
+`NO-GO`. Session `019fc4df-14bf-7a83-847a-fc5fac1b6574`, trace
+`019fc4df-155f-74a3-8cc3-6e9b40eb3522`, run
+`7944b892-83f9-41c8-a7ac-602212df727c`, route
+`7612d7b3-357f-4966-8a0c-4355452651d2`, delegation
+`75fc483d-93b9-4f98-b076-e7357882a3fc`, finalization
+`2d66c969-817d-4e46-bf64-d5eac5f6a153`, and child
+`019fc4df-e192-7332-a621-ef6466270984` retain the result. Inference selected
+and loaded `minimal-change-engineer`; exact-workspace trust, autonomous bypass,
+a valid first header, and zero corrections passed. The workspace is empty and
+finalization declined missing `delegation_execution`.
+
+Store v3 was written canonically on the exact worker receipt. It records three
+classified exec wrappers: one nested `apply_patch`, two nested shell calls, one
+completed wrapper, and two failed wrappers. Both failures are
+`process_failed_other`; every specific sandbox, split-root, approval,
+permission, and unknown count is zero. This eliminates those suspected causes
+but exposes one remaining diagnostic defect: aggregate counts do not correlate
+each wrapper outcome to its sole nested tool kind. The next bounded slice adds
+only that fixed content-free tool/outcome matrix; no writer is retried.
+
+ADR-0150 implementation `745f765` completes that bounded Store v4 repair. The
+current schema correlates each wrapper outcome with a sole nested
+`apply_patch`, `shell_command`, `other`, or `ambiguous` kind, validates the
+matrix against existing aggregate outcomes, and keeps canonical v1 through v3
+rows readable. Focused evidence is 51 parser/projector tests and 49
+Store/product-host tests passing; the isolated new mutation passed its baseline
+and was killed by its exact matrix test with the source unchanged. No build,
+installation, activation, or writer trial was consumed in this slice.
+
+Exact ledger checkpoint `1c59ff34a0849e23d3935751c96eb97fbcb6ad11`
+builds canonically and independently verifies. Wheel SHA-256 is
+`275f0a1a46fe9e9bf457a55a7caee5ba29e426920163ad31ea976a29a901e563`;
+source SHA-256 is
+`1d25def6d5738e0ba8300963341f0c0a245acf31bbe1c96fb34b7a6f9aef172d`.
+The autonomous full-suite install detects only Codex and ZCode, leaves the
+dashboard active and reachable, and passes activation with inferred/executed
+`code-reviewer`, accepted finalization, a valid first header, zero corrections,
+hook bypass, and no persistent profile change. Activation session
+`019fc50b-837d-7171-b2c9-2f2a160d72c7` and trace
+`019fc50b-8fa5-7a83-8546-aed8cd5bd41f` retain that pass.
+
+Its sole writer `ar223-agency-writer-1c59ff3-01` is consumed and terminal
+`NO-GO`. Session `019fc50e-b34b-7932-b4ca-fa4ebbe61db8`, trace
+`019fc50e-b3d7-7633-bea9-c08e034f0ca9`, run
+`21aca342-8681-4e31-a78c-6b1d69f80321`, route
+`a0052cd8-4f75-4a48-8779-93a17c105f5e`, delegation
+`4336817f-dd28-49bf-a585-e2c3442d79cb`, finalization
+`5c7bca53-c322-4915-89ee-1585b62c261f`, and child
+`019fc50f-5b8a-75c0-baf0-ee15992d9ce2` retain the result. Inference selected
+and loaded `minimal-change-engineer`; exact-workspace trust, autonomous bypass,
+a valid first header, and zero corrections passed. The workspace is empty and
+finalization declined missing `delegation_execution`.
+
+The canonical Store v4 worker receipt identifies the first failed boundary:
+one sole nested `apply_patch` wrapper failed, one sole nested shell wrapper
+completed, and one later shell wrapper failed. Both failures are residual
+`process_failed_other`; all ambiguous, missing-output, sandbox, split-root,
+approval, permission, and unknown counts are zero. The consumed build is not
+retried. The next bounded package reproduces and repairs only the nested
+`apply_patch` wrapper boundary before another immutable build.
+
+A focused non-product A/B now isolates that boundary. Current Codex 0.146.0
+records `workspace-write` plus its non-interactive default
+`approval_policy=never` as a managed read-only profile; the exact patch fails
+with no file. Ignoring Agency's plugin and removing the invocation-scoped hook
+trust bypass produces the same read-only result, so neither Agency hooks nor
+hook trust caused the downgrade. Keeping the exact `workspace-write` sandbox
+while setting `approval_policy=on-request` and
+`approvals_reviewer=auto_review` creates and independently reads back the exact
+21-byte `AR223_PATCH_REPRO_OK\n` file. ADR-0151 applies that documented
+autonomous approval contract only to product execution. No immutable build,
+installation, activation, or governed writer trial was consumed.
+
+Exact local implementation `263e3f5` then passes 28 warning-strict
+product-host tests, documentation validation for 642 files, focused Ruff lint
+and formatting, and `git diff --check`. Its one no-build Agency-enabled
+sentinel completes under the repaired backend. Parent session
+`019fc528-cc4b-7a63-af76-bb7554c6832b` and trace
+`019fc528-ccd0-7b41-8fb1-adc90324be21` preserve five inference-selected
+specialists, five direct native spawns, five completed waits, five completed
+children, zero unexpected collaboration items, autonomous hook bypass, and no
+persistent trust mutation. The final header reports all five delegated
+specialists, and the exact copied rollout contains no correction prompt.
+
+The selected `minimal-change-engineer` has one completed patch wrapper and zero
+patch failures; the later `software-test-engineer` also has one completed patch
+wrapper and zero patch failures. All three read-only specialists have zero
+patch wrappers. The workspace contains only
+`agency-auto-review-sentinel.txt`, whose exact 29 bytes are
+`AGENCY_AUTO_REVIEW_WRITER_OK\n`. One unrelated failed composite wrapper is the
+expected non-repository Git probe and does not affect the successful patch or
+byte proof. This closes the local wrapper repair without consuming an
+immutable build or governed writer slot.
+
+The final immutable-build checkpoint passes the remaining product boundary.
+Exact candidate `8e74d56b39b20a4358d3b5b2500dd941da4e51d0` produced canonical
+wheel SHA-256
+`08faa80e1cbfb7ab0f98fa4c51562f544b18d3b7e9ac48fe7a9f31e466f2aad0`
+and source SHA-256
+`d9e41020f79249c1b7a916ce64bc2b3607b6b17cba4c15880a93b920902a703e`;
+Twine and the independent distribution verifier both pass. Installed
+`direct_url.json` binds that exact wheel path even though package metadata does
+not embed `source_revision`.
+
+The full-suite install detects only Codex and ZCode, registers ZCode, refreshes
+Codex, and leaves the dashboard active and reachable. Its initial partial
+result is solely the expected Codex `activation_required` state. The one
+autonomous activation then passes under session
+`019fc579-f916-7630-90cb-2157727164dd`, route
+`3ae75ab3-0a8b-4589-9984-bd20352cb2ad`, and delegation
+`e3ce9948-dc35-46e5-bb0c-fc73e29e063b`: inference selects
+`code-reviewer`, one child completes, finalization accepts, the first header is
+valid, correction count is zero, autonomous trust bypass is used, and no
+persistent trust profile changes.
+
+The sole governed writer `ar223-agency-writer-8e74d56-01` also passes. Session
+`019fc57d-f7ef-7721-9299-658529879311`, route
+`39590cfb-2afa-41c4-9604-febfd98fc78a`, delegation
+`867595fe-a025-4107-914e-ca3c19887e76`, worker
+`019fc57e-a31b-7273-96ae-5ce30d16d1b1`, and accepted finalization
+`0b7cf50b-58be-4da0-8d90-cab7c2eec8c7` retain the proof. Inference selects
+`minimal-change-engineer`; exactly one spawn, one wait, and one completed child
+occur with zero unexpected collaboration items. Two patch receipts complete
+with zero failures. The exact workspace contains only `writer-result.txt`,
+whose 23 bytes are `AR223_AGENCY_WRITER_OK\n` and whose SHA-256 is
+`767303371a040770ecccc894befc37191c57af167b1dce19ed569b5d20c3e5eb`.
+The first header is valid, correction count is zero, runtime contract and
+workspace-write proof pass, and persistent trust remains unchanged. This
+completes AR-223; AR-203 and AR-204 retain the broader README scenario.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -359,16 +1351,18 @@ new immutable build, one autonomous activation, and one fresh product trial.
 2. Put exact plan-execution authorization at both current Codex boundaries: the
    installed global guidance requests delegation only for an accepted inferred
    plan, while the existing marker-scoped developer protocol schedules it.
-   Neither boundary may name or select a worker before inference. Bind each
-   actionable delivery to the exact spawned child, native task name, work-unit
-   ID, decoded goal hash, and accepted row.
-3. Require a causal terminal child completion after that delivery. Reject
+   Neither boundary may name or select a worker before inference. Bind the
+   initial spawn to the exact child, native task name, work-unit ID, decoded
+   goal hash, exact self-contained goal, and accepted row; do not send an
+   execution follow-up.
+3. Require a causal terminal child completion after that initial delivery. Reject
    missing, duplicate, reordered, cross-child, malformed, or unbounded task
    messages without retaining task or response content.
 4. Preserve one-at-a-time dependency scheduling, the non-working parent,
    turn-scoped specialist authority, and the first workspace-write sentinel.
-5. Run at most two reviews and the named local fast gate, then spend one fresh
-   immutable-build activation and at most one product trial.
+5. Prove one installed, accepted-plan Agency writer sentinel before any full
+   product trial. Require the exact lifecycle, file bytes, first header, and
+   zero corrections in the same run.
 
 ## Dependencies
 
@@ -384,16 +1378,33 @@ accepted plan authority.
   produce a passed worker outcome.
 - [x] Every accepted plan row receives exactly one actionable native task on
   its exact spawned child, with no retry or duplicate execution path.
-- [x] The actionable delivery and its later completion are proven causally and
-  content-free against the exact unit ID, task name, child identity, and goal
-  hash; all malformed variants fail closed.
-- [ ] Read-only children and the parent cannot mutate the workspace; the first
+- [x] The actionable delivery contains the exact hash-bound goal in its own
+  turn and its later completion is proven causally against the exact unit ID,
+  task name, child identity, and goal hash; all malformed variants fail closed.
+- [x] One isolated self-contained writer child creates and reads back its exact
+  sentinel before a new immutable build is produced.
+- [x] One direct current-host native child creates and reads back exact bytes,
+  independently proving inherited workspace-write capability.
+- [x] One accepted Agency plan row launches its selected writer, delivers the
+  self-contained execution turn, and creates exact retained file proof.
+- [x] A Codex `workspace_write` row cannot record success without a successful
+  workspace-local patch receipt; one bounded native correction is permitted
+  and a repeated missing receipt terminates without a loop.
+- [x] Parent finalization rejects a current `workspace_write` row whose exact
+  delegation lacks terminal completed evidence instead of recording
+  `accept/completed`.
+- [x] Product scheduling cannot advance from a nonterminal commentary wake;
+  bounded repeated waits remain causally and content-freely verifiable.
+- [x] Current Codex execution uses one initial specialist turn and no execution
+  follow-up; exact spawn/child ciphertext, lineage, completion, and final-answer
+  variants fail closed in focused tests.
+- [x] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
-- [x] Focused checks, bounded review, and the complete named local gate pass on
-  clean recovery head `7327483`.
+- [x] Focused checks, bounded review, and the complete named local gate pass for
+  the first-turn and callback-order implementation.
 - [x] The generated Codex `UserPromptSubmit` handler keeps the complete bounded
   inferred plan inline instead of spilling it outside the parent's allowed
   tool boundary.
-- [ ] One new exact build passes autonomous activation and one fresh product
+- [x] One new exact build passes autonomous activation and one fresh product
   trial with real specialist-created artifacts, independent checks, a valid
   first header, and zero corrections.

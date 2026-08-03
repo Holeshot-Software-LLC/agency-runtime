@@ -27,6 +27,7 @@ from agency_runtime.core.resident_managers import (
     RESIDENT_MANAGER_SLUGS,
     is_current_resident_manager_kernel_reference,
 )
+from agency_runtime.core.unit_assignment import project_unit_agent_plan
 
 HEADER_FIELDS: tuple[tuple[str, str], ...] = (
     ("agencies_loaded", "Agency/Agencies loaded"),
@@ -1003,6 +1004,49 @@ def _strong_delegation_correction(
     }
 
 
+def _incomplete_workspace_write_units(snapshot: Mapping[str, Any]) -> list[str]:
+    """Return current workspace-write units without one terminal delegation."""
+
+    recipe_version = snapshot.get("preflight_recipe_version", 0)
+    if isinstance(recipe_version, bool) or not isinstance(recipe_version, int):
+        raise EvidenceCorrelationError("workspace-write recipe version could not be verified")
+    if recipe_version < 14:
+        return []
+    plan = project_unit_agent_plan(
+        snapshot.get("unit_agent_plan", []),
+        require_current=True,
+    )
+    if plan is None:
+        raise EvidenceCorrelationError("workspace-write unit plan could not be verified")
+    required = {
+        str(row["work_unit_id"]) for row in plan if row.get("mutation_scope") == "workspace_write"
+    }
+    if not required:
+        return []
+    delegations = snapshot.get("delegations", [])
+    if not isinstance(delegations, list) or not all(
+        isinstance(row, Mapping) for row in delegations
+    ):
+        raise EvidenceCorrelationError("workspace-write delegation evidence could not be verified")
+    grouped: dict[str, list[Mapping[str, Any]]] = {work_unit_id: [] for work_unit_id in required}
+    for row in delegations:
+        work_unit_id = _clean(row.get("work_unit_id"))
+        if work_unit_id in grouped:
+            grouped[work_unit_id].append(row)
+    incomplete: list[str] = []
+    for work_unit_id in sorted(required):
+        rows = grouped[work_unit_id]
+        if len(rows) > 1:
+            raise EvidenceCorrelationError("workspace-write delegation evidence is not one-to-one")
+        if (
+            len(rows) != 1
+            or _clean(rows[0].get("status")) != "completed"
+            or not _clean(rows[0].get("completed_at"))
+        ):
+            incomplete.append(work_unit_id)
+    return incomplete
+
+
 def _completion_snapshot_violation(error: EvidenceCorrelationError) -> CompletionPolicyViolation:
     detail = _clean(error)
     if "specialist activation" in detail:
@@ -1074,6 +1118,22 @@ def validate_completion_policy(
         )
     except EvidenceCorrelationError as error:
         return _completion_snapshot_violation(error)
+
+    try:
+        incomplete_workspace_writes = _incomplete_workspace_write_units(snapshot)
+    except EvidenceCorrelationError as error:
+        return _completion_snapshot_violation(error)
+    if incomplete_workspace_writes:
+        rows = ", ".join(incomplete_workspace_writes[:16])
+        return {
+            "message": (
+                "AGENCY WORKSPACE EXECUTION INCOMPLETE: Accepted workspace-write work "
+                f"has no terminal delegated execution receipt: {rows}. Do not accept or "
+                "publish this response; record the exact specialist completion or one "
+                "explicit delegation failure."
+            ),
+            "missing": ["delegation_execution"],
+        }
 
     valid, missing = validate_header(response_text)
     if not valid:

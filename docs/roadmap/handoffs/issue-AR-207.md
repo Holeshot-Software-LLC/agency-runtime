@@ -3,7 +3,7 @@ title: "AR-207 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-31
-updated: 2026-08-01
+updated: 2026-08-02
 tags: [handoff, preflight, delegation, codex, diagnostics, evidence]
 related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
@@ -20,6 +20,8 @@ related:
   - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
   - docs/roadmap/issue-AR-221-preserve-codex-product-execution-boundaries.md
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
+  - docs/roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md
+  - docs/analysis/2026-08-03-ar-203-readme-story-evidence.html
   - docs/analysis/2026-07-31-ar-212-readme-story-evidence.html
   - docs/analysis/2026-08-01-ar-219-readme-story-evidence.html
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
@@ -41,14 +43,25 @@ related:
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
   - docs/decisions/0137-reconcile-codex-followup-completion-at-parent-stop.md
   - docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md
+  - docs/decisions/0139-make-codex-execution-turns-self-contained.md
+  - docs/decisions/0140-use-codex-stable-multi-agent-feature.md
+  - docs/decisions/0141-admit-writer-proof-only-through-agency-plans.md
+  - docs/decisions/0142-require-terminal-product-child-before-next-unit.md
+  - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
+  - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
+  - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md
+  - docs/decisions/0146-preserve-content-free-codex-child-tool-outcomes.md
+  - docs/decisions/0148-classify-nested-codex-exec-tools-without-content.md
+  - docs/decisions/0149-classify-codex-wrapper-failures-without-content.md
+  - docs/decisions/0151-route-codex-product-approvals-to-auto-review.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 8097e7708a52956862746ea3aa5b2fecbe7031ed
-minimum_ledger_commit: 73274832a0985c7817c991061ac839386deb7cc1
+evidence_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
+minimum_ledger_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -57,82 +70,41 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
-- The goal remains `README's main story works in reality.` AR-223's parent
-  `Stop` repair reconciles exact second-turn execution without a synthetic
-  second `SubagentStop`; exact `62ea12a` passes the named local gate and two
-  bounded reviews.
-- PR 232 merges that tree as `b2be077`. Independent install provenance matches
-  the merge; bare install refreshes Codex, enables ZCode, and runs an active
-  reachable dashboard.
-- The consumed `b2be077` activation passes. Session `019fbfd8-bb78`, trace
-  `019fbfd8-c7ec`, run `ee965317`, delegation `8b17ef05`, and child
-  `019fbfd9-8678` prove inferred/loaded `code-reviewer`, exact execution, a
-  closed exit-zero worker, valid first header, zero corrections, and autonomous
-  trust without persistent change.
-- Product trial `ar223-b2be077-readme-01` is consumed and fails. Session
-  `019fbfdf-0069`, trace `019fbfdf-00fa`, run `c77ede95`, route `37d9b5bc`, and
-  finalization `3b0bed95` prove an accepted eight-specialist inferred plan, but
-  zero spawns, follow-ups, waits, loads, or workers. The workspace is empty;
-  failure is `codex_parent_spawn_missing` / `workspace_write_not_proven` with
-  no header and zero corrections.
-- Exact `8097e77` consumes one autonomous-bypass activation and passes. Session
-  `019fc036-6716`, trace `019fc036-733e`, native run
-  `codex-agent:019fc037-8811`, and delegation `f4f618db` prove an inferred
-  `code-reviewer`, one exact spawn, one execution follow-up, two waits, a
-  completed exit-zero worker, valid first header, zero corrections, and zero
-  unexpected parent items. Trust bypass changes no persistent profile state.
-- Product trial `ar223-8097e77-readme-01` is consumed and fails after 104.094
-  seconds. Session `019fc03e-1ce0`, trace `019fc03e-1d71`, run `c100183d`,
-  route `52f57ced`, and finalization `bd418651` prove an accepted 11-unit plan
-  across seven specialists. The parent rollout is observed, but it makes zero
-  spawns, follow-ups, or waits; no specialist loads or workers exist; the
-  workspace is empty; the header is absent; and correction count is zero.
+- Exact `71faad8` closes the README path: activation, seven inferred product
+  units, seven workers, workspace write, required files, zero corrections, and
+  all independent checks pass.
+- Exact candidate `8e74d56b39b20a4358d3b5b2500dd941da4e51d0` builds canonically
+  from a detached source tree and independently verifies. Wheel SHA-256 is
+  `08faa80e1cbfb7ab0f98fa4c51562f544b18d3b7e9ac48fe7a9f31e466f2aad0`;
+  source SHA-256 is
+  `d9e41020f79249c1b7a916ce64bc2b3607b6b17cba4c15880a93b920902a703e`.
+- The exact wheel is installed by immutable path. Full-suite install detects
+  only Codex and ZCode, configures both, and leaves the dashboard active and
+  reachable. The initial partial result is solely expected activation state.
+- One autonomous activation passes with inferred `code-reviewer`, one completed
+  child, accepted finalization, a valid first header, zero corrections, trust
+  bypass, and no persistent trust mutation.
+- Sole writer `ar223-agency-writer-8e74d56-01` passes with inferred
+  `minimal-change-engineer`, exactly one completed child, two successful patch
+  receipts, accepted finalization, a valid first header, zero corrections, and
+  exact retained 23-byte workspace proof. AR-223 is complete.
 
 ## completed-evidence
 
-- Exact `62ea12a`: Python 656 passed/6 skipped, dashboard 110/110, 628-document
-  validation, repo-wide Ruff lint and format, all routing thresholds, and
-  decision conformance 90/90 killed with zero invalid results.
-- Earlier exact `43870c8` proves an accepted contractor hire and eight-unit
-  topology but not execution. Exact `b2be077` closes activation execution; its
-  product trial now isolates the remaining parent-authority regression.
-- The managed global-guidance slice is focused-green: 248 broader installer,
-  uninstall, canary, product-host, adapter, and decision tests pass; the final
-  21-test targeted rerun passes; Ruff passes; documentation validation covers
-  629 files; and the new decision mutation is killed 1/1. Two review passes are
-  closed. No persistent Codex profile or live trial has consumed this build.
-- Clean recovery head `9f391b8` passes the complete named local gate: 629
-  Markdown documents, repo-wide Ruff over 609 files, Python 657 passed with 6
-  skipped, dashboard 110/110, every routing threshold, and decision conformance
-  91/91 killed with zero survived or invalid results and source unchanged.
-- PR 233 merges exact `8097e7708a52956862746ea3aa5b2fecbe7031ed` and the
-  global uv receipt names that exact revision. Default-suite installation
-  refreshes Codex bundle `a9aa4f7e...`, registers/enables ZCode, and leaves the
-  dashboard active and reachable. Codex global guidance is byte-equal to the
-  canonical 1,123-byte renderer with one begin and one end marker. Codex is
-  installed; the build then passes its single autonomous activation with one route,
-  plan, delegation, load, worker, and finalization; no preflight failures; a
-  valid first header; and zero corrections. Its consumed product trial proves
-  an accepted 11-unit inferred graph and exact isolated trust, then fails
-  `codex_parent_spawn_missing` / `workspace_write_not_proven` before execution.
-- The first missing edge is Codex's default 2,500-token hook-context spill, not
-  selection or guidance loading. The one-row activation fits; the 11-row plan
-  spills beyond the collaboration-only parent. The repair sets
-  `additionalContextLimit: 0` only for Codex `UserPromptSubmit` while Agency's
-  32,000-character bound remains; focused checks pass 200 tests and Ruff.
-- Clean recovery head `7327483` passes the complete named local gate for that
-  repair: 629-document validation, Ruff over 609 files, Python 657 passed with
-  6 skipped, dashboard 110/110, every routing threshold, and conformance with
-  every mutation killed, none invalid, and source unchanged.
+- Activation session `019fc579-f916-7630-90cb-2157727164dd`, trace
+  `019fc57a-0efb-74d0-a414-387fab76e38f`, run
+  `0ed55d91-6ab6-4fdb-b761-6d5ac85e351f`, and delegation
+  `e3ce9948-dc35-46e5-bb0c-fc73e29e063b` retain the activation pass.
+- Writer session `019fc57d-f7ef-7721-9299-658529879311`, trace
+  `019fc57d-f85f-7ed3-9ee5-29c1134adf78`, run
+  `e49d2b57-2e18-4f63-b668-d88fcaba2183`, delegation
+  `867595fe-a025-4107-914e-ca3c19887e76`, worker
+  `019fc57e-a31b-7273-96ae-5ce30d16d1b1`, and finalization
+  `0b7cf50b-58be-4da0-8d90-cab7c2eec8c7` retain the writer pass.
 
 ## exact-blocker
 
-The README main story remains NO-GO. Exact `8097e77` must never be rerun. Its
-consumed product trial identifies one bounded host-delivery defect: Codex spills
-the exact multi-unit plan outside the parent's allowed tools. The manifest-only
-repair is complete and locally green. One new immutable build may now consume
-exactly one autonomous activation and one fresh product trial; either live
-failure is the stop point, not the start of another repair loop.
+None for the README story. AR-223 and AR-225 are complete locally.
 
 ## same-task-continuity
 
@@ -144,9 +116,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Merge and exact-install one immutable build; do not wait for hosted Actions.
-2. Run one autonomous activation, checkpoint its result, and run one fresh
-   product trial. Stop on either failure and report the exact blocker.
+Do not rerun consumed product evidence. Tracker synchronization remains deferred
+until GitHub spending and outward-write authorization are available.
 
 ## verification
 
@@ -156,6 +127,8 @@ python scripts/docs_metadata.py --check
 python scripts/update_policy_availability.py --check
 python scripts/update_worklog.py --check
 python scripts/verify_docs.py
+python -m pytest tests/test_codex_activation_canary.py -q -W error
+python -m pytest tests/test_native_child_lifecycle.py tests/test_product_host.py -q -W error
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 python -m pytest tests/test_workforce_inference.py tests/test_workforce_dynamic_hiring.py -q -W error
@@ -175,6 +148,8 @@ git diff --check
   `f8e607d`, `386afca`, `5c45f154`, `ff39761`, and `43870c8` consumed governed
   live evidence; exact `ba76ce7`, `a2d1a7c`, and `5ff4a08` also consumed their
   activations; exact `b2be077` consumed both activation and product evidence;
-  none may be rerun.
+  `ae322ec`, `bffd2c8`, `b6bcdfb`, `d4c65a7`, `4d14b99`, `93e465a`,
+  `d610630`, `7f0479f`, `be1ca0e`, `d5a4e31`, `c8a0577`, `4c57507`,
+  `2bbd885`, and `b967ad2` consumed governed evidence; none may be rerun.
 - Durable diagnostics are content-free and allowlisted.
 - Hosted Actions remain out of scope while GitHub spending is unavailable.

@@ -1,6 +1,6 @@
 ---
 title: "Bind opaque Codex execution by ciphertext identity"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-08-01
 updated: 2026-08-01
@@ -20,7 +20,7 @@ related:
   - docs/worklog/README.md
 supersedes:
   - docs/decisions/0135-require-explicit-codex-child-execution-turns.md
-superseded_by: null
+superseded_by: docs/decisions/0139-make-codex-execution-turns-self-contained.md
 id: ADR-0136
 type: decision
 deciders: [maintainers]

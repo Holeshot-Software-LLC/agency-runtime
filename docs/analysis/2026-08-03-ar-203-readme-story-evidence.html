@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Agency Runtime README Reality Check — AR-203</title>
+  <style>
+    :root { --bg:#07100f; --panel:#101b19; --line:#2b3c38; --ink:#f4f7f2; --muted:#a9b9b4; --good:#5ee6a8; --bad:#ff7e79; --warn:#ffd279; --accent:#72d7ff; }
+    * { box-sizing:border-box; }
+    html { background:var(--bg); scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:radial-gradient(circle at 12% 0%,rgba(94,230,168,.13),transparent 32rem),radial-gradient(circle at 92% 8%,rgba(114,215,255,.12),transparent 30rem),var(--bg); font:16px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { width:min(1160px,calc(100% - 32px)); margin:auto; padding:54px 0 72px; }
+    header { display:grid; gap:16px; margin-bottom:30px; }
+    .eyebrow { color:var(--accent); font-size:.78rem; font-weight:850; letter-spacing:.16em; text-transform:uppercase; }
+    h1 { max-width:1050px; margin:0; font-size:clamp(2.35rem,6vw,5.6rem); line-height:.96; letter-spacing:-.055em; }
+    h2 { margin:0 0 14px; font-size:clamp(1.35rem,2.2vw,1.9rem); }
+    h3,p { margin:0; }
+    code,pre { font-family:"Cascadia Code",Consolas,monospace; }
+    code { overflow-wrap:anywhere; }
+    a { color:var(--accent); }
+    .lede { max-width:920px; color:var(--muted); font-size:1.08rem; }
+    .verdict { width:fit-content; padding:10px 14px; border:1px solid rgba(94,230,168,.55); border-radius:999px; color:#d8ffed; background:rgba(94,230,168,.09); font-weight:850; }
+    .meta { display:flex; flex-wrap:wrap; gap:8px 18px; color:var(--muted); font-size:.84rem; }
+    .grid { display:grid; grid-template-columns:repeat(12,1fr); gap:14px; }
+    .card { grid-column:span 3; min-height:165px; padding:20px; border:1px solid var(--line); border-radius:17px; background:linear-gradient(145deg,rgba(18,31,28,.97),rgba(11,20,18,.97)); }
+    .state { display:inline-block; margin-bottom:20px; font-size:.72rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }
+    .good { color:var(--good); } .bad { color:var(--bad); } .warn { color:var(--warn); }
+    .card p { margin-top:8px; color:var(--muted); font-size:.92rem; }
+    section { margin-top:46px; }
+    .panel { overflow:hidden; border:1px solid var(--line); border-radius:18px; background:rgba(16,27,25,.94); }
+    .panel-head { padding:20px 22px; border-bottom:1px solid var(--line); }
+    .panel-body { padding:22px; }
+    table { width:100%; border-collapse:collapse; font-size:.93rem; }
+    th,td { padding:11px 13px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { width:27%; color:var(--muted); font-weight:650; }
+    tr:last-child th,tr:last-child td { border-bottom:0; }
+    .numbers { display:grid; grid-template-columns:repeat(7,1fr); gap:9px; }
+    .number { padding:14px 8px; border:1px solid var(--line); border-radius:13px; text-align:center; background:rgba(255,255,255,.018); }
+    .number strong { display:block; color:var(--good); font-size:1.75rem; line-height:1.1; }
+    .number span { color:var(--muted); font-size:.72rem; }
+    .callout { padding:20px 22px; border-left:4px solid var(--warn); border-radius:12px; background:rgba(255,210,121,.075); }
+    .callout strong { color:#ffe9b7; }
+    .team { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .person { padding:13px 15px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.018); }
+    .person code { color:#d9f8ed; }
+    pre { margin:12px 0 0; padding:16px; overflow:auto; border:1px solid var(--line); border-radius:12px; background:#050a09; color:#dce8e4; white-space:pre-wrap; }
+    footer { margin-top:52px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:.82rem; }
+    @media(max-width:900px){.card{grid-column:span 6}.numbers{grid-template-columns:repeat(4,1fr)}}
+    @media(max-width:620px){main{width:min(100% - 22px,1160px);padding-top:32px}.card{grid-column:1/-1}.numbers,.team{grid-template-columns:1fr 1fr}th,td{display:block;width:100%!important;padding:8px 11px}th{padding-bottom:0;border-bottom:0}}
+    @media print{:root{--bg:#fff;--panel:#fff;--ink:#111;--muted:#4d5955;--line:#ccd4d1}body{background:#fff}main{width:100%;padding:0}.card,.panel{break-inside:avoid}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Agency Runtime · README reality check</div>
+    <h1>The README story works in reality.</h1>
+    <p class="lede">Exact build <code>71faad8badc40a74b1b00ab01063cc5feb97800d</code> autonomously installed, activated, inferred a seven-unit specialist team, delegated every unit, wrote the application, and passed every independent product check. The authenticated dashboard also rendered and displayed the completed work.</p>
+    <div class="verdict">GO · runtime, product, validator, and dashboard green</div>
+    <div class="meta"><span>Prepared 2026-08-03 EDT</span><span>Host: Codex 0.146.0 · Windows</span><span>Trial: <code>ar203-71faad8-readme-01</code></span><span>Result: <a href="../roadmap/issue-AR-204-reconcile-readme-story-contract.md">AR-204 complete</a></span></div>
+  </header>
+
+  <div class="grid" aria-label="Gate summary">
+    <article class="card"><div class="state good">Passed</div><h3>Immutable package</h3><p>Canonical wheel and source distribution passed strict Twine and independent content verification.</p></article>
+    <article class="card"><div class="state good">Passed</div><h3>Autonomous activation</h3><p>Inference selected <code>code-reviewer</code>; delegation, worker, accepted finalization, first header, and zero corrections passed.</p></article>
+    <article class="card"><div class="state good">Passed</div><h3>Full Agency execution</h3><p>Seven planned units became seven completed native delegations and seven exit-zero workers.</p></article>
+    <article class="card"><div class="state good">Passed</div><h3>Independent acceptance</h3><p>Workflow, invalid-ID recovery, project tests, and documentation all passed.</p></article>
+  </div>
+
+  <section><div class="callout"><strong>EUREKA.</strong> Trust bypass, inference staffing, contractor creation, native delegation, child execution, workspace write, artifacts, independent grading, first-pass evidence, and the authenticated dashboard all pass in one exact immutable candidate.</div></section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Immutable build and installation</h2></div>
+    <div class="panel-body"><table>
+      <tr><th>Exact source commit</th><td><code>71faad8badc40a74b1b00ab01063cc5feb97800d</code></td></tr>
+      <tr><th>Wheel SHA-256</th><td><code>e27c7bc64ef8f85df41413ad91718225f902c673da98e0e5636795294930ccd5</code></td></tr>
+      <tr><th>Source SHA-256</th><td><code>a0002e14d5efa4be88103325c6424928e9fef9bb69e9ea30be99819e4554fbf8</code></td></tr>
+      <tr><th>Installed suite</th><td>Codex and ZCode detected and configured; dashboard installed, active, and reachable.</td></tr>
+      <tr><th>Trust boundary</th><td><code>autonomous_bypass</code> for the invocation only; persistent profile unchanged.</td></tr>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Activation proof</h2></div>
+    <div class="panel-body"><table>
+      <tr><th>Session / trace</th><td><code>019fc7f1-608e-7113-bb70-7daf1c75f952</code><br><code>019fc7f1-6d96-78b1-b951-64813c820b66</code></td></tr>
+      <tr><th>Route / run</th><td><code>72a22d30-70a0-4189-8d33-da63ba59a440</code><br><code>df7311fb-6b75-414c-802b-71829b03f323</code></td></tr>
+      <tr><th>Selected specialist</th><td><code>code-reviewer</code></td></tr>
+      <tr><th>Delegation / finalization</th><td><code>a49494de-8c62-42bf-be42-2fcfeb73dbdb</code><br><code>5dd6ee97-8ed6-43fe-9946-27ef20b28a7c</code> · accept</td></tr>
+      <tr><th>Header / corrections</th><td>First response contract passed; <strong>0 corrections</strong>.</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Actual product team</h2>
+    <div class="team">
+      <div class="person"><code>python-cli-architecture-specialist</code><br><span class="good">completed</span></div>
+      <div class="person"><code>python-application-engineer</code><br><span class="good">completed</span></div>
+      <div class="person"><code>software-test-engineer</code><br><span class="good">completed</span></div>
+      <div class="person"><code>code-reviewer</code><br><span class="good">completed two units</span></div>
+      <div class="person"><code>technical-writer</code><br><span class="good">completed</span></div>
+      <div class="person"><code>application-integration-verifier</code><br><span class="good">completed</span></div>
+      <div class="person"><code>codebase-onboarding-engineer</code><br><span class="good">selected in accepted route</span></div>
+    </div>
+    <div class="numbers" style="margin-top:14px" aria-label="Store cardinalities">
+      <div class="number"><strong>1</strong><span>route</span></div><div class="number"><strong>7</strong><span>planned units</span></div><div class="number"><strong>7</strong><span>grants</span></div><div class="number"><strong>7</strong><span>delegations</span></div><div class="number"><strong>7</strong><span>workers</span></div><div class="number"><strong>7</strong><span>exit zero</span></div><div class="number"><strong>1</strong><span>accepted finalization</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Product execution evidence</h2></div>
+    <div class="panel-body"><table>
+      <tr><th>Session / trace / route</th><td><code>019fc7f3-915b-7531-8edb-7b36bcfd51c4</code><br><code>019fc7f3-91ca-72b1-aec6-283b00ffcf87</code><br><code>641fa1eb-d4d1-45ca-85bd-61fff9762572</code></td></tr>
+      <tr><th>Run / finalization</th><td><code>0a80a6d9-968c-4278-ab9b-0aba05d4e9da</code><br><code>6a4f9f05-6e46-4375-bcf6-2de0e21324ac</code> · accept · no missing evidence</td></tr>
+      <tr><th>Runtime result</th><td>Completed, host exit 0, runtime contract passed, workspace-write proven.</td></tr>
+      <tr><th>Duration</th><td>668.313 seconds</td></tr>
+      <tr><th>Prompt hashes</th><td>Product <code>sha256:01ec341232ffe7baeae04ab1cecfeab4cfb63462b95b3eb88b008eb89e3947e2</code><br>Executed <code>sha256:ddf45c428183dfee2f6b499398279d4545e65a58079cc6f4372439790af58f4d</code></td></tr>
+      <tr><th>Workspace digest</th><td><code>sha256:dbe42c259d0258820c4aed989fee1ca0f77f46cb1d46e04689d4dc9549d60d42</code></td></tr>
+      <tr><th>Required artifacts</th><td><code>app.py</code>, <code>tests/test_app.py</code>, and <code>README.md</code> all present and hashed.</td></tr>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Independent verdict</h2><p class="lede">All four independent product checks pass against the published contract.</p></div>
+    <div class="panel-body"><table>
+      <tr><th><span class="good">PASS</span> Project tests</th><td>The supplied unit and failure-path suite passes.</td></tr>
+      <tr><th><span class="good">PASS</span> Documentation</th><td>README documents add, list, and complete behavior.</td></tr>
+      <tr><th><span class="good">PASS</span> Workflow probe</th><td>Global <code>--data PATH</code> plus add, list, and complete persist the published JSON task schema.</td></tr>
+      <tr><th><span class="good">PASS</span> Invalid-ID probe</th><td>An unknown ID exits nonzero without changing persisted task data.</td></tr>
+    </table>
+    <pre>app.py --data PATH add --title TEXT
+app.py --data PATH list
+app.py --data PATH complete ID
+Result: workflow PASS · invalid-ID PASS · tests PASS · docs PASS</pre>
+    </div>
+  </section>
+
+  <section><div class="callout"><strong>Final checkpoint:</strong> AR-203, AR-204, and AR-225 are complete locally. The consumed build will not be retried. Only deferred GitHub tracker synchronization remains while hosted spending is unavailable.</div></section>
+
+  <footer>Evidence scope: one exact build, one Windows Codex activation, one authenticated dashboard render, and one <code>python-cli-service</code> Agency product trial. This page does not claim cross-host, cross-platform, or comparative superiority.</footer>
+</main>
+</body>
+</html>

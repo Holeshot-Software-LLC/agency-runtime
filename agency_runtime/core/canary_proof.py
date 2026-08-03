@@ -9,6 +9,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.codex_child_tool_evidence import (
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+    normalize_codex_child_tool_evidence,
+)
 from agency_runtime.core.installer_contracts import (
     CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
 )
@@ -420,6 +426,44 @@ def _codex_collaboration_chain(
         or collaboration.get("unexpected_item_types", []) not in ([], ())
     ):
         return None, "", ("Codex used a non-allowlisted tool during the activation canary",)
+    if isinstance(calls, list) and len(calls) == 2:
+        spawn, wait = calls
+        if (
+            not isinstance(spawn, Mapping)
+            or not isinstance(wait, Mapping)
+            or spawn.get("tool") != "spawn_agent"
+            or wait.get("tool") != "wait"
+            or spawn.get("status") != "completed"
+            or wait.get("status") != "completed"
+            or spawn.get("event_type") not in {"item.completed", "rollout_call_completed"}
+            or wait.get("event_type") != spawn.get("event_type")
+        ):
+            return None, "", ("Codex did not prove one direct spawn and one completed wait",)
+        sender_id = str(spawn.get("sender_thread_id") or "")
+        receivers = spawn.get("receiver_thread_ids")
+        if (
+            not sender_id
+            or wait.get("sender_thread_id") != sender_id
+            or not isinstance(receivers, list)
+            or len(receivers) != 1
+            or wait.get("receiver_thread_ids") != receivers
+        ):
+            return None, "", ("Codex collaboration calls did not share one parent and child",)
+        receiver_id = str(receivers[0])
+        wait_states = wait.get("agents_states")
+        if (
+            not isinstance(wait_states, Mapping)
+            or set(wait_states) != {receiver_id}
+            or wait_states.get(receiver_id) != "completed"
+        ):
+            return spawn, receiver_id, ("the sole Codex child did not reach the completed state",)
+        if not isinstance(spawn.get("execution_delivery"), Mapping):
+            return (
+                spawn,
+                receiver_id,
+                ("the sole Codex child did not receive its exact spawn turn",),
+            )
+        return spawn, receiver_id, ()
     if not isinstance(calls, list) or len(calls) != 4:
         return None, "", ("Codex did not prove one spawn, one followup, and two completed waits",)
     spawn_rows = [
@@ -750,6 +794,35 @@ def codex_activation_failures(
     return tuple(dict.fromkeys(failures))
 
 
+def _codex_product_child_tool_evidence_valid(value: object) -> bool:
+    """Validate one fixed content-free child tool projection."""
+
+    try:
+        normalize_codex_child_tool_evidence(value)
+    except ValueError:
+        return False
+    return True
+
+
+def _merge_codex_product_child_tool_evidence(
+    aggregate: dict[str, int],
+    observed: Mapping[str, int],
+) -> None:
+    """Add one validated child projection to the product aggregate."""
+
+    for field, value in observed.items():
+        aggregate[field] += value
+
+
+def _codex_product_child_tool_aggregate_matches(
+    collaboration: Mapping[str, Any],
+    aggregate: Mapping[str, int],
+) -> bool:
+    """Compare fixed reported tool counts with the sum of exact child rows."""
+
+    return all(collaboration.get(field) == value for field, value in aggregate.items())
+
+
 def _codex_product_collaboration_spawns(
     result: Mapping[str, Any],
     *,
@@ -760,7 +833,7 @@ def _codex_product_collaboration_spawns(
     collaboration = result.get("collaboration")
     if (
         not isinstance(collaboration, Mapping)
-        or collaboration.get("schema") != "agency.codex-product-collaboration.v1"
+        or collaboration.get("schema") != "agency.codex-product-collaboration.v2"
         or collaboration.get("evidence_source") != "persisted_rollout"
     ):
         return {}, ("Codex product collaboration evidence was not available",)
@@ -774,9 +847,9 @@ def _codex_product_collaboration_spawns(
             "timed_out_wait_count",
             "completed_child_count",
             "failed_child_count",
-            "child_tool_call_count",
             "parent_agent_message_count",
             "unexpected_item_count",
+            *CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
         )
     }
     if any(
@@ -785,12 +858,14 @@ def _codex_product_collaboration_spawns(
     ):
         return {}, ("Codex product collaboration counts were invalid",)
     spawn_count = counts["spawn_count"]
+    direct_mode = counts["followup_count"] == 0
     if counts["unexpected_item_count"] != 0:
         return {}, ("Codex product parent performed a non-collaboration tool call",)
     if (
         not 1 <= spawn_count <= 16
-        or counts["followup_count"] != spawn_count
-        or counts["wait_count"] != spawn_count * 2
+        or (not direct_mode and counts["followup_count"] != spawn_count)
+        or (direct_mode and not spawn_count <= counts["wait_count"] <= spawn_count * 3)
+        or (not direct_mode and counts["wait_count"] < spawn_count * 2)
         or counts["completed_wait_count"] != counts["wait_count"]
         or counts["timed_out_wait_count"] != 0
         or counts["completed_child_count"] != spawn_count
@@ -803,6 +878,7 @@ def _codex_product_collaboration_spawns(
     by_unit: dict[str, tuple[Mapping[str, Any], str]] = {}
     receivers: set[str] = set()
     parent_thread_id = ""
+    child_tool_totals = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS, 0)
     for row in raw_calls:
         if (
             not isinstance(row, Mapping)
@@ -810,11 +886,15 @@ def _codex_product_collaboration_spawns(
             or row.get("tool") != "spawn_agent"
             or row.get("status") != "completed"
             or row.get("child_status") != "completed"
-            or row.get("activation_completion_count") != 1
+            or row.get("activation_completion_count") != (0 if direct_mode else 1)
             or row.get("execution_completion_count") != 1
             or row.get("evidence_source") != "persisted_rollout"
         ):
             return {}, ("Codex product spawn evidence was malformed",)
+        tool_evidence = row.get("tool_evidence")
+        if not _codex_product_child_tool_evidence_valid(tool_evidence):
+            return {}, ("Codex product child tool evidence was malformed",)
+        _merge_codex_product_child_tool_evidence(child_tool_totals, tool_evidence)
         sender = str(row.get("sender_thread_id") or "")
         if sender != expected_parent_thread_id:
             return {}, ("Codex product child did not belong to the exact parent session",)
@@ -833,6 +913,8 @@ def _codex_product_collaboration_spawns(
             return {}, ("Codex product work-unit delivery was missing or duplicated",)
         receivers.add(receiver)
         by_unit[work_unit_id] = (row, receiver)
+    if not _codex_product_child_tool_aggregate_matches(collaboration, child_tool_totals):
+        return {}, ("Codex product child tool evidence did not match its aggregate",)
     return by_unit, ()
 
 
@@ -863,10 +945,10 @@ def _codex_product_collaboration_projection(
         "timed_out_wait_count",
         "completed_child_count",
         "failed_child_count",
-        "child_tool_call_count",
         "parent_agent_message_count",
         "unexpected_item_count",
         "host_notice_count",
+        *CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
     )
     if any(
         not isinstance(collaboration.get(field), int)
@@ -919,6 +1001,10 @@ def _codex_product_collaboration_projection(
             "child_status": row.get("child_status"),
             "activation_completion_count": row.get("activation_completion_count"),
             "execution_completion_count": row.get("execution_completion_count"),
+            "tool_evidence": {
+                field: tool_evidence.get(field)
+                for field in CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS
+            },
             "evidence_source": row.get("evidence_source"),
         }
         for row, _receiver in sorted(
@@ -933,9 +1019,12 @@ def _codex_product_collaboration_projection(
             if isinstance(row.get("execution_delivery"), Mapping)
             else {},
         )
+        for tool_evidence in (
+            row.get("tool_evidence") if isinstance(row.get("tool_evidence"), Mapping) else {},
+        )
     ]
     return {
-        "schema": "agency.codex-product-collaboration.v1",
+        "schema": "agency.codex-product-collaboration.v2",
         "calls": calls,
         **{field: collaboration.get(field) for field in aggregate_fields},
         "host_notice_types": list(host_notice_types),
@@ -1219,6 +1308,17 @@ def codex_product_activation_failures(
             failures.append(f"Codex product unit {work_unit_id} lacked exact execution evidence")
             continue
         spawn, receiver_id = spawn_entry
+        if not (
+            worker.get("tool_evidence_status") == "recorded"
+            and worker.get("tool_evidence_schema") == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA
+            and worker.get("tool_evidence_source") == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE
+            and isinstance(worker.get("tool_evidence_recorded_at"), str)
+            and bool(worker.get("tool_evidence_recorded_at"))
+            and worker.get("tool_evidence") == spawn.get("tool_evidence")
+        ):
+            failures.append(
+                f"Codex product unit {work_unit_id} child tool evidence was not durably reconciled"
+            )
         specialist_load_entry = specialist_loads.get(str(plan.get("recommended_agent") or ""))
         specialist_load = specialist_load_entry[0] if specialist_load_entry is not None else None
         accepted_load_receipts = (
