@@ -589,6 +589,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a931bb8` | 2026-08-03 | docs(ar-225): checkpoint product validator mismatch | [AR-225](../roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md) | null |
 | `ecc3966` | 2026-08-03 | fix(ar-225): publish task cli validator contract | [AR-225](../roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md) | null |
 | `370adbd` | 2026-08-03 | docs(ar-225): checkpoint named fast verification | [AR-225](../roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md) | null |
+| `ce01d39` | 2026-08-03 | docs(ar-204): record README reality pass | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
