@@ -1287,6 +1287,27 @@ while setting `approval_policy=on-request` and
 autonomous approval contract only to product execution. No immutable build,
 installation, activation, or governed writer trial was consumed.
 
+Exact local implementation `263e3f5` then passes 28 warning-strict
+product-host tests, documentation validation for 642 files, focused Ruff lint
+and formatting, and `git diff --check`. Its one no-build Agency-enabled
+sentinel completes under the repaired backend. Parent session
+`019fc528-cc4b-7a63-af76-bb7554c6832b` and trace
+`019fc528-ccd0-7b41-8fb1-adc90324be21` preserve five inference-selected
+specialists, five direct native spawns, five completed waits, five completed
+children, zero unexpected collaboration items, autonomous hook bypass, and no
+persistent trust mutation. The final header reports all five delegated
+specialists, and the exact copied rollout contains no correction prompt.
+
+The selected `minimal-change-engineer` has one completed patch wrapper and zero
+patch failures; the later `software-test-engineer` also has one completed patch
+wrapper and zero patch failures. All three read-only specialists have zero
+patch wrappers. The workspace contains only
+`agency-auto-review-sentinel.txt`, whose exact 29 bytes are
+`AGENCY_AUTO_REVIEW_WRITER_OK\n`. One unrelated failed composite wrapper is the
+expected non-repository Git probe and does not affect the successful patch or
+byte proof. This closes the local wrapper repair without consuming an
+immutable build or governed writer slot.
+
 ## Approach
 
 1. Freeze child completion as lifecycle evidence only; never treat it alone as
@@ -1324,11 +1345,11 @@ accepted plan authority.
 - [x] The actionable delivery contains the exact hash-bound goal in its own
   turn and its later completion is proven causally against the exact unit ID,
   task name, child identity, and goal hash; all malformed variants fail closed.
-- [ ] One isolated self-contained writer child creates and reads back its exact
+- [x] One isolated self-contained writer child creates and reads back its exact
   sentinel before a new immutable build is produced.
 - [x] One direct current-host native child creates and reads back exact bytes,
   independently proving inherited workspace-write capability.
-- [ ] One accepted Agency plan row launches its selected writer, delivers the
+- [x] One accepted Agency plan row launches its selected writer, delivers the
   self-contained execution turn, and creates exact retained file proof.
 - [x] A Codex `workspace_write` row cannot record success without a successful
   workspace-local patch receipt; one bounded native correction is permitted
@@ -1341,7 +1362,7 @@ accepted plan authority.
 - [x] Current Codex execution uses one initial specialist turn and no execution
   follow-up; exact spawn/child ciphertext, lineage, completion, and final-answer
   variants fail closed in focused tests.
-- [ ] Read-only children and the parent cannot mutate the workspace; the first
+- [x] Read-only children and the parent cannot mutate the workspace; the first
   workspace-write child creates the exact proof before any other mutation.
 - [x] Focused checks, bounded review, and the complete named local gate pass for
   the first-turn and callback-order implementation.

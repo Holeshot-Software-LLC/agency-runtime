@@ -68,3 +68,5 @@ Removing Agency hooks and the autonomous hook-trust bypass did not make the
   product harness is isolated and must not mutate owner security state.
 - **Remove Agency hooks or the hook-trust bypass.** Rejected because the no-hook
   control remained read-only and did not repair the boundary.
+
+Implementation `263e3f5` carries this decision.

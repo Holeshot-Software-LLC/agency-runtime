@@ -58,7 +58,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: e90af864df3af34b363dd28cec3bfe8cb74939ba
+evidence_commit: 263e3f5
 minimum_ledger_commit: 1c59ff34a0849e23d3935751c96eb97fbcb6ad11
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
@@ -90,6 +90,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `workspace-write`. The documented `on-request` plus `auto_review` path
   creates and reads back the exact 21-byte sentinel without disabling the
   sandbox or changing persistent configuration.
+- Exact implementation `263e3f5` passes 28 focused tests and one Agency-enabled
+  no-build sentinel. Five inferred specialists launch and complete; both writer
+  patch wrappers succeed, all read-only specialists have zero patch wrappers,
+  and the exact workspace contains only the verified 29-byte sentinel.
 
 ## completed-evidence
 
@@ -100,12 +104,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
   `21aca342-8681-4e31-a78c-6b1d69f80321`, delegation
   `4336817f-dd28-49bf-a585-e2c3442d79cb`, and worker
   `codex-agent:019fc50f-5b8a-75c0-baf0-ee15992d9ce2` retain the `NO-GO`.
+- Local repaired sentinel session `019fc528-cc4b-7a63-af76-bb7554c6832b` and
+  trace `019fc528-ccd0-7b41-8fb1-adc90324be21` retain five completed children,
+  exact patch and byte proof, a final five-specialist header, no correction
+  prompt, autonomous bypass, and no persistent trust mutation.
 
 ## exact-blocker
 
-Actual Agency child workspace execution remains unproven on an immutable
-installed build. The nested `apply_patch` root cause is reproduced and repaired
-locally by ADR-0151; the consumed v4 trial is not retried.
+Actual Agency child workspace execution is now proven locally with Agency
+enabled. Immutable installed-build proof remains pending; the consumed v4 trial
+is not retried.
 
 ## same-task-continuity
 
@@ -117,12 +125,11 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-1. Run focused product-host tests and one no-build Agency-enabled local sentinel
-   to prove automatic review coexists with hook execution and exact rollout
-   projection.
-2. Only after that boundary is green, checkpoint the slice. A later package may
-   produce one immutable build and one fresh writer; never retry `5a97976`,
-   `6e0d3c6`, or `1c59ff3`.
+1. From the clean checkpoint, produce one canonical immutable build, install it
+   autonomously for Codex/ZCode/dashboard, and consume one activation.
+2. Only after activation passes, consume one fresh governed writer sentinel.
+   Stop at its first terminal boundary; never retry `5a97976`, `6e0d3c6`, or
+   `1c59ff3`.
 
 ## verification
 
