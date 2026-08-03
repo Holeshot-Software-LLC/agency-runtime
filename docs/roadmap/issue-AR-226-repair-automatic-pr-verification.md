@@ -30,8 +30,8 @@ blocks: []
 ## Problem
 
 PR #235 exposed three automatic verification defects unrelated to its proven
-product outcome. The Linux quality job runs executable-namespace tests without
-first publishing the governed private interpreter expected by those tests. The
+product outcome. The Linux quality job runs executable-namespace tests through
+the hosted tool cache, whose parent namespace is intentionally rejected. The
 dashboard resource ceiling predates the current audited product-proof UI. The
 dependency-review classifier rejects an exact authenticated repository response
 when GitHub omits its optional `permissions` projection, even though the
@@ -42,8 +42,9 @@ unmergeable and prevent all downstream automatic jobs from running.
 
 ## Current state
 
-The bounded repair prepares the existing private CI runtime before the quality
-contract tests, raises the dashboard aggregate ceiling from 268 KiB to a narrow
+The bounded repair makes the two real process-controller tests use the OS-owned
+POSIX interpreter rather than a replaceable hosted-tool-cache path, raises the
+dashboard aggregate ceiling from 268 KiB to a narrow
 300 KiB bound above the observed 296,619-byte audited payload, and validates
 repository identity from the authenticated 200 response without requiring an
 optional response field. The focused workflow, runtime, dependency, and release
@@ -51,8 +52,8 @@ contract suite passes 185 tests under warning-strict mode.
 
 ## Approach
 
-1. Preserve executable namespace enforcement and supply its governed CI-private
-   interpreter before real process-controller tests run.
+1. Preserve executable namespace enforcement and run real POSIX
+   process-controller tests through an OS-owned interpreter.
 2. Keep a bounded dashboard resource budget with measured headroom rather than
    removing the package-size assertion.
 3. Bind dependency fallback to exact repository identity and the exact expected
@@ -67,7 +68,7 @@ proof or reopen its live evaluation.
 ## Acceptance
 
 - [x] The focused workflow, runtime, dependency, and release tests pass locally.
-- [ ] The Linux quality contract runs with a governed private interpreter.
+- [ ] The Linux quality contract runs real process tests with an OS-owned interpreter.
 - [ ] The dashboard resource assertion passes while retaining a finite ceiling.
 - [ ] Dependency review either runs natively or enters its exact audited fallback.
 - [ ] Every automatic PR #235 gate passes before merge.

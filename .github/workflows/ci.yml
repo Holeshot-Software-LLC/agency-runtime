@@ -91,15 +91,6 @@ jobs:
       - name: Install development dependencies
         if: steps.change-scope.outputs.code_required == 'true'
         run: python -m pip install -e ".[dev]"
-      - name: Prepare private quality runtime
-        if: steps.change-scope.outputs.code_required == 'true'
-        shell: bash
-        env:
-          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
-          AGENCY_CI_RUN_ID: ${{ github.run_id }}
-        run: >-
-          python -m scripts.prepare_ci_runtime
-          --label "quality-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
       - name: Install documentation dependencies
         if: steps.change-scope.outputs.code_required == 'false'
         run: python -m pip install .
