@@ -117,6 +117,7 @@ def write_provider_config(
         f"{store_line}",
         encoding="utf-8",
     )
+    harden_private_test_file(config_path)
 
 
 __all__ = [
