@@ -75,6 +75,13 @@ receipt while executing on Linux, so host eligibility correctly rejected the
 otherwise valid `code-reviewer`. The baseline now declares the actual Windows
 or Linux platform; that specialist supports both.
 
+With that baseline fixed, the next retained excerpt proved the evaluator's
+least-privilege child environment discarded `AGENCY_CI_PYTHON`. Installer
+fixtures therefore fell back to GitHub's hosted-tool-cache executable even
+though the evaluator was already running through its validated private Python.
+The child environment now binds fixture authority to that same exact evaluator
+interpreter.
+
 ## Approach
 
 1. Preserve executable namespace enforcement and run real POSIX

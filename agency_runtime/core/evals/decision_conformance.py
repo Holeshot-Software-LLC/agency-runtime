@@ -1871,6 +1871,7 @@ def _run_pytest(
         current_directory=checkout,
         forbidden_roots=(source_root,),
         extra_env={
+            "AGENCY_CI_PYTHON": python_executable,
             "AGENCY_DECISION_CONFORMANCE": "1",
             "PYTHONIOENCODING": "utf-8",
             "PYTHONPATH": str(checkout),

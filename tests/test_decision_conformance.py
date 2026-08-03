@@ -139,6 +139,30 @@ def test_baseline_preserves_bounded_failure_diagnostic(tmp_path: Path) -> None:
     assert result.failure_excerpt == "AssertionError: exact private path was rejected"
 
 
+def test_pytest_environment_binds_fixture_interpreter_to_evaluator_python(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    observed: dict[str, str] = {}
+
+    def run(_command, **kwargs):
+        observed.update(kwargs["env"])
+        return type("Result", (), {"returncode": 0, "stdout": "", "stderr": ""})()
+
+    monkeypatch.setattr(conformance.subprocess, "run", run)
+    conformance._run_pytest(
+        checkout,
+        ("tests/test_example.py::test_decision",),
+        "/private/evaluator-python",
+        10,
+        tmp_path,
+    )
+
+    assert observed["AGENCY_CI_PYTHON"] == "/private/evaluator-python"
+
+
 def test_evaluator_mutates_only_private_copies(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
