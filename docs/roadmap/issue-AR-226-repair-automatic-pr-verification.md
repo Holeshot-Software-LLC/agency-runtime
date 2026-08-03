@@ -1,6 +1,6 @@
 ---
 title: "AR-226: Repair automatic pull-request verification"
-status: in_progress
+status: complete
 category: roadmap
 created: 2026-08-03
 updated: 2026-08-03
@@ -123,6 +123,15 @@ correctness. The finite ceiling is now 300 ms, leaving about 12 percent measured
 runner headroom while preserving the 20-second cold-start, 256 MiB peak-memory,
 and exact correctness gates.
 
+Run `30836808176` passed the complete automatic production gate at exact head
+`c38471f`: the fast Python production spine, all 105 decision mutations, 110
+dashboard tests with finite coverage floors, uninstrumented performance,
+deterministic dependency/security audit, Windows portability on Python 3.11,
+3.12, and 3.13, Linux and Windows installed-distribution smoke, artifact
+assembly, and the final aggregate. Dependency review and CodeQL also passed in
+their companion runs. The intentionally manual integration matrix and
+four-shard 97-percent coverage workflow remained skipped, as designed.
+
 ## Approach
 
 1. Preserve executable namespace enforcement and run real POSIX
@@ -146,8 +155,8 @@ proof or reopen its live evaluation.
 ## Acceptance
 
 - [x] The focused workflow, runtime, dependency, and release tests pass locally.
-- [ ] The Linux quality contract runs real process tests with an OS-owned interpreter.
+- [x] The Linux quality contract runs real process tests with an OS-owned interpreter.
 - [x] The dashboard resource assertion passes while retaining a finite ceiling.
 - [x] The dashboard's 110 tests pass under finite audited coverage floors.
 - [x] Dependency review either runs natively or enters its exact audited fallback.
-- [ ] Every automatic PR #235 gate passes before merge.
+- [x] Every automatic PR #235 gate passes before merge.
