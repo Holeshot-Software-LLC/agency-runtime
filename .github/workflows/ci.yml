@@ -260,7 +260,7 @@ jobs:
           python scripts/docs_metadata.py --check
           python scripts/update_policy_availability.py --check
           python scripts/update_worklog.py --check
-          python scripts/verify_docs.py --require-tracker
+          python scripts/verify_docs.py
 
   coverage:
     name: integration coverage / pair ${{ matrix.label }} of 2 / shards ${{ matrix.shard_a }}+${{ matrix.shard_b }}

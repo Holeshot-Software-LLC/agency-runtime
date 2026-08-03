@@ -1077,7 +1077,8 @@ def test_history_derived_ledgers_use_the_complete_durable_head() -> None:
     assert 'test "$(git rev-parse --is-shallow-repository)" = "false"' in ledger["run"]
     assert 'test "$(git rev-parse HEAD)" = "${EXPECTED_HISTORY_HEAD}"' in ledger["run"]
     assert "update_worklog.py --check" in ledger["run"]
-    assert "verify_docs.py --require-tracker" in ledger["run"]
+    assert "python scripts/verify_docs.py" in ledger["run"]
+    assert "--require-tracker" not in ledger["run"]
     assert source_checkout["with"] == {
         "fetch-depth": 0,
         "persist-credentials": False,

@@ -86,6 +86,16 @@ though the evaluator was already running through its validated private Python.
 The child environment now binds fixture authority to that same exact evaluator
 interpreter.
 
+The final automatic run passed the production spine, all 105 decision
+mutations, and the 110-test dashboard coverage gate, then exposed an unrelated
+governance contradiction: ordinary pull-request validation used
+`verify_docs.py --require-tracker` even though tracker creation is an
+authorization-gated outward write and 75 governed local items intentionally
+record that authorization as pending. Automatic PR validation now runs the
+complete local documentation contract without asserting external tracker
+parity. The strict tracker option remains required after approved tracker
+creation and for release validation.
+
 ## Approach
 
 1. Preserve executable namespace enforcement and run real POSIX
