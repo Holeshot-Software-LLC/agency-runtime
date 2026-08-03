@@ -609,6 +609,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `83b6af2` | 2026-08-03 | fix(ci): align downstream inference contracts | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 | `c5b2e5e` | 2026-08-03 | fix(eval): retain exact downstream failures | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 | `d278a32` | 2026-08-03 | fix(eval): align measured retrieval budget | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
+| `8eb1746` | 2026-08-03 | docs(ar-226): close automatic PR verification | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
+| `ae335d9` | 2026-08-03 | docs(ar-226): use canonical done status | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
