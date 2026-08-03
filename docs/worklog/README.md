@@ -606,6 +606,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `93c2eca` | 2026-08-03 | fix(eval): bind private fixture interpreter | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 | `95890a1` | 2026-08-03 | fix(ci): align audited dashboard coverage gates | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 | `75d7d9f` | 2026-08-03 | fix(ci): respect tracker write authority | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
+| `83b6af2` | 2026-08-03 | fix(ci): align downstream inference contracts | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
