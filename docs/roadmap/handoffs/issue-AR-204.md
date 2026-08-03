@@ -11,6 +11,8 @@ related:
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-206-accept-bounded-ready-routing-receipts.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
+  - docs/roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md
+  - docs/analysis/2026-08-03-ar-203-readme-story-evidence.html
   - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
@@ -24,8 +26,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-204
 branch: codex/ar-204-readme-product-proof
-evidence_commit: 7727c0cd9bba3824acd3722c6c3964086667cfc9
-minimum_ledger_commit: 4081265af803f85ecafb5372a74e0fd06a93e110
+evidence_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
+minimum_ledger_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 ---
@@ -36,6 +38,11 @@ Bounded projection for making the README product story executable.
 
 ## checkpoint
 
+- Exact `71faad8` passes canonical build, default suite install, autonomous
+  activation, seven-worker product execution, zero corrections, workspace
+  artifacts, and every independent acceptance check.
+- The authenticated dashboard renders in Chrome and shows the final trial.
+- The README main story is complete locally; no product blocker remains.
 - The product contract remains frozen: default full-suite install with opt-outs;
   mirrored owner CLI/dashboard controls; inference-only specialist staffing;
   one parent-only steward; explicit attended or supported bypass activation;
@@ -123,10 +130,7 @@ Bounded projection for making the README product story executable.
 
 ## exact-blocker
 
-Exact installation, activation, AR-206, and inference-selected product staffing
-pass. README acceptance is blocked after staffing: the parent did not execute
-native delegation, and adjacent preflight failures are not diagnosable without
-replay.
+None. The full Agency execution and README acceptance stories pass.
 
 ## same-task-continuity
 
@@ -136,13 +140,8 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Persist and project bounded content-free preflight/delegation failure facts.
-2. Use bounded controls to repair the first demonstrated no-spawn cause; run
-   focused tests and decision mutations.
-3. Complete at most two review passes, run the named fast spine, merge, and
-   exact-install before one fresh product trial.
-4. Generate the local evidence page and OpenClaw handoff after that terminal
-   exact-build trial.
+Do not rerun the consumed build. Synchronize tracker closure when GitHub
+spending and outward-write authorization are available.
 
 ## verification
 

@@ -7,6 +7,9 @@ from hashlib import sha256
 from typing import Any
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
+from agency_runtime.core.codex_child_tool_evidence import (
+    decode_stored_codex_child_tool_evidence,
+)
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation_status import (
     DELEGATION_STATUS_PRIORITY as _DELEGATION_STATUS_PRIORITY,
@@ -159,6 +162,27 @@ def _project_canary_work_units(value: object) -> dict[str, Any] | None:
     }
 
 
+def _project_canary_worker_run(item: Any) -> dict[str, Any]:
+    """Decode child tool counts while preserving an explicit integrity status."""
+
+    projected = dict(item)
+    try:
+        projected["tool_evidence"] = decode_stored_codex_child_tool_evidence(
+            schema=projected["tool_evidence_schema"],
+            source=projected["tool_evidence_source"],
+            recorded_at=projected["tool_evidence_recorded_at"],
+            payload=projected["tool_evidence"],
+        )
+    except ValueError:
+        projected["tool_evidence"] = None
+        projected["tool_evidence_status"] = "invalid"
+    else:
+        projected["tool_evidence_status"] = (
+            "recorded" if projected["tool_evidence"] is not None else "missing"
+        )
+    return projected
+
+
 def _empty_canary_activation_snapshot(
     *,
     host: str,
@@ -208,9 +232,12 @@ def _failed_preflight_canary_snapshot(
     *,
     host: str,
     query_hash: str,
+    session_id: str | None = None,
 ) -> dict[str, Any] | None:
     """Resolve one exact failed preflight when no ready route was committed."""
 
+    session_clause = "" if session_id is None else "AND run.session_id = ? "
+    parameters = (host, query_hash) if session_id is None else (host, query_hash, session_id)
     rows = conn.execute(
         "SELECT run.id, run.trace_id, run.session_id, run.host, run.started_at, "
         "run.last_activity_at, run.evidence_revision, run.turn_sequence, run.ended_at, "
@@ -227,8 +254,9 @@ def _failed_preflight_canary_snapshot(
         "FROM runs AS run JOIN preflight_failure_receipts AS failure "
         "ON failure.trace_id = run.trace_id AND failure.session_id = run.session_id "
         "WHERE run.host = ? AND run.preflight_request_fingerprint = ? "
-        "AND run.status = 'preflight_failed' ORDER BY run.turn_sequence",
-        (host, query_hash),
+        + session_clause
+        + "AND run.status = 'preflight_failed' ORDER BY run.turn_sequence",
+        parameters,
     ).fetchall()
     if len(rows) != 1:
         return None
@@ -1561,13 +1589,17 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         *,
         host: str,
         query_hash: str,
+        session_id: str | None = None,
     ) -> dict[str, Any]:
         """Read one exact, content-free canary evidence graph in one transaction.
 
         ``proven`` means only that one route and its parent run were resolved and
         their ready preflight recipe passed correlation checks.  Callers must
-        still evaluate the returned activation/delegation topology; this method
-        never turns the presence of a route into an activation-success claim.
+        still evaluate the returned activation/delegation topology. When
+        ``session_id`` is supplied, both ready and failed-preflight resolution
+        are bound to that exact host session instead of every historical use of
+        the same prompt hash. This method never turns the presence of a route
+        into an activation-success claim.
         """
 
         normalized_host = str(host or "").strip().casefold()
@@ -1577,6 +1609,15 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         normalized_hash = content_digest_identity(supplied_hash)
         if normalized_hash is None or normalized_hash != supplied_hash:
             raise ValueError("query_hash must be a lowercase SHA-256 digest")
+        normalized_session = (
+            None if session_id is None else validate_correlation_id(session_id, field="session_id")
+        )
+        session_clause = "" if normalized_session is None else "AND run.session_id = ? "
+        route_parameters = (
+            (normalized_hash, normalized_host)
+            if normalized_session is None
+            else (normalized_hash, normalized_host, normalized_session)
+        )
 
         conn = self._connect()
         try:
@@ -1586,8 +1627,9 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 "JOIN runs AS run ON run.trace_id = route.trace_id "
                 "AND run.session_id = route.session_id "
                 "WHERE route.query_hash = ? AND run.host = ? "
-                "AND run.preflight_request_fingerprint = route.query_hash",
-                (normalized_hash, normalized_host),
+                + session_clause
+                + "AND run.preflight_request_fingerprint = route.query_hash",
+                route_parameters,
             ).fetchone()
             route_count = int(route_count_row["count"] if route_count_row is not None else 0)
             if route_count != 1:
@@ -1596,6 +1638,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                         conn,
                         host=normalized_host,
                         query_hash=normalized_hash,
+                        session_id=normalized_session,
                     )
                     if route_count == 0
                     else None
@@ -1605,6 +1648,8 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                     route_count=route_count,
                     reason="route_not_found" if route_count == 0 else "route_ambiguous",
                 )
+                if normalized_session is not None and snapshot.get("session_id") is None:
+                    snapshot["session_id"] = normalized_session
                 conn.commit()
                 return snapshot
 
@@ -1635,8 +1680,9 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 "FROM routing_decisions AS route JOIN runs AS run "
                 "ON run.trace_id = route.trace_id AND run.session_id = route.session_id "
                 "WHERE route.query_hash = ? AND run.host = ? "
-                "AND run.preflight_request_fingerprint = route.query_hash",
-                (normalized_hash, normalized_host),
+                + session_clause
+                + "AND run.preflight_request_fingerprint = route.query_hash",
+                route_parameters,
             ).fetchone()
             if row is None:
                 raise RuntimeError("exact canary route disappeared inside its read transaction")
@@ -1808,13 +1854,14 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 ).fetchall()
             ]
             worker_runs = [
-                dict(item)
+                _project_canary_worker_run(item)
                 for item in conn.execute(
                     "SELECT id, delegation_event_id, backend, session_id, trace_id, "
                     "work_unit_id, host, worker_id, native_run_id, exit_code, "
-                    "started_at, execution_tool_use_id, execution_dispatched_at, ended_at "
-                    "FROM worker_runs WHERE trace_id = ? "
-                    "ORDER BY started_at, rowid",
+                    "started_at, execution_tool_use_id, execution_dispatched_at, "
+                    "tool_evidence_schema, tool_evidence, tool_evidence_source, "
+                    "tool_evidence_recorded_at, ended_at "
+                    "FROM worker_runs WHERE trace_id = ? ORDER BY started_at, rowid",
                     (normalized_trace,),
                 ).fetchall()
             ]

@@ -10,6 +10,8 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
+  - docs/roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md
+  - docs/analysis/2026-08-03-ar-203-readme-story-evidence.html
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0112-stage-preflight-workforce-evidence-until-ready.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
@@ -20,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-203
 branch: codex/ar-204-readme-product-proof
-evidence_commit: 7727c0cd9bba3824acd3722c6c3964086667cfc9
-minimum_ledger_commit: 4081265af803f85ecafb5372a74e0fd06a93e110
+evidence_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
+minimum_ledger_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -30,7 +32,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## checkpoint
 
-- The active goal remains `README's main story works in reality.`
+- Exact `71faad8` canonically builds, verifies, installs, and activates with
+  zero corrections and no persistent trust change.
+- Sole trial `ar203-71faad8-readme-01` completes seven inferred units, seven
+  workers, workspace write, required artifacts, and all independent checks.
+- The authenticated dashboard renders and shows those completed delegations.
+- The goal `README's main story works in reality.` is complete locally.
 - PR 195 merged exact revision `6b49f17d6787823f9ba78a8f09383001b6a77535`;
   build `0.1.0+g6b49f17d6787` is installed for Codex, ZCode, and dashboard.
 - Supported-bypass activation passed with zero corrections. Session
@@ -129,9 +136,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## exact-blocker
 
-Installation, activation, and inference-selected product staffing pass. The
-product path fails after staffing and before delegation execution; preflight
-cleanup also erases the adjacent failure reason needed for bounded diagnosis.
+None. Installation, activation, inference staffing, native execution, workspace
+artifacts, independent validation, and authenticated dashboard render pass.
 
 ## same-task-continuity
 
@@ -141,11 +147,8 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-1. Persist and project bounded content-free preflight/delegation failure facts.
-2. Repair the first demonstrated no-spawn cause using bounded controls.
-3. Review twice at most, run focused plus named fast gates, merge, and exact-
-   install before one fresh product trial.
-4. Produce the evidence page and OpenClaw handoff after the terminal trial.
+Do not rerun the consumed build. Synchronize tracker closure when GitHub
+spending and outward-write authorization are available.
 
 ## verification
 

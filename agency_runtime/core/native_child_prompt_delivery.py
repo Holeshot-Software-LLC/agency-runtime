@@ -12,7 +12,7 @@ import base64
 import json
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Final
 
 from agency_runtime.core.agent_activation import normalize_agent_slug
@@ -23,6 +23,7 @@ from agency_runtime.core.store.version_identity import normalize_version_identit
 
 NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 1
 CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 2
+CODEX_DIRECT_NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 4
 CODEX_NATIVE_CHILD_EXECUTION_VERSION: Final[int] = 1
 MAX_NATIVE_CHILD_DELIVERY_METADATA_BYTES: Final[int] = 2_048
 MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS: Final[int] = 256
@@ -44,8 +45,9 @@ _CODEX_OPAQUE_SECTION = (
     "spawn turn establishes specialist context only. Do not execute, analyze, or modify "
     "the workspace during this activation turn; return one bounded readiness "
     "acknowledgement. Execute the goal exactly once only when a later newest inter-agent "
-    "task contains a valid [AGENCY EXACT TASK EXECUTION v1] envelope matching this "
-    "work-unit and goal hash. Do not answer the specialist prompt as a standalone "
+    "task contains a valid [AGENCY EXACT TASK EXECUTION v1] envelope with the exact "
+    "hash-bound goal matching this work-unit. Never recover an actionable goal from prior "
+    "turn memory. Do not answer the specialist prompt as a standalone "
     "request. The host "
     "hook bound the exact audited specialist below and Store-backed mutation authority "
     "to that persisted work-unit row. Use workspace tools when the goal requires them; "
@@ -57,12 +59,41 @@ _CODEX_OPAQUE_MARKER_PREFIX = "<!-- agency-native-child-delivery:v2:"
 _CODEX_OPAQUE_MARKER_PATTERN = re.compile(
     re.escape(_CODEX_OPAQUE_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
 )
+_CODEX_DIRECT_SECTION = (
+    "[AGENCY EXACT SPECIALIST ACTIVATION v4]\n"
+    "The host hook bound the exact audited specialist below and Store-backed authority to "
+    "this persisted work-unit row. Treat the text below as turn-scoped specialist expertise. "
+    "Do not copy it into the parent, another worker, status text, or the final response.\n"
+)
+_CODEX_DIRECT_EXECUTION_SECTION = "[AGENCY EXACT WORK-UNIT EXECUTION CONTRACT v4]\n"
+_CODEX_DIRECT_EXECUTION_INSTRUCTION = (
+    "The decrypted native child message is the exact work-unit goal. Execute that goal "
+    "exactly once now using the specialist expertise above. This current work-unit contract "
+    "governs execution when a generic specialist preference conflicts with the exact accepted "
+    "assignment. Use workspace tools when the goal requires them; the accepted plan and "
+    "current native activation already prove the required host tools and exact isolated "
+    "working directory. Report a missing prerequisite only after an actual required tool is "
+    "absent or denied. Hook policy enforces the persisted mutation scope. A goal ending in "
+    "`mutation_scope=workspace_write` is an action contract: before any final response, use "
+    "`apply_patch` for the first required workspace mutation and require a successful "
+    "workspace-local patch receipt. An exact proof-only named-file change is legitimate; do "
+    "not reject it as arbitrary text or expand it into unrequested root-cause analysis, tests, "
+    "or refactoring. Do not re-delegate, broaden, postpone, or convert this turn into a "
+    "readiness ceremony. Return one bounded evidence-backed result."
+)
+_CODEX_DIRECT_EXECUTION_SUFFIX = (
+    f"\n\n{_CODEX_DIRECT_EXECUTION_SECTION}{_CODEX_DIRECT_EXECUTION_INSTRUCTION}"
+)
+_CODEX_DIRECT_MARKER_PREFIX = "<!-- agency-native-child-delivery:v4:"
+_CODEX_DIRECT_MARKER_PATTERN = re.compile(
+    re.escape(_CODEX_DIRECT_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
+)
 _CODEX_EXECUTION_SECTION = "[AGENCY EXACT TASK EXECUTION v1]\n"
 _CODEX_EXECUTION_INSTRUCTION = (
-    "Execute the exact work-unit goal delivered in your immediately preceding activation "
-    "turn now. Do not re-delegate, broaden, or repeat it. Return one bounded "
-    "evidence-backed result."
+    "Execute the exact work-unit goal included in this execution turn now. Do not "
+    "re-delegate, broaden, or repeat it. Return one bounded evidence-backed result."
 )
+_CODEX_EXECUTION_GOAL_SECTION = "\n[AGENCY EXACT WORK-UNIT GOAL]\n"
 _CODEX_EXECUTION_MARKER_PREFIX = "<!-- agency-native-child-execution:v1:"
 _CODEX_EXECUTION_MARKER_PATTERN = re.compile(
     re.escape(_CODEX_EXECUTION_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
@@ -120,11 +151,12 @@ class NativeChildPromptDelivery:
 
 @dataclass(frozen=True, slots=True)
 class CodexNativeChildExecutionDelivery:
-    """One content-free second-turn authorization for an exact Codex child."""
+    """One hash-bound second-turn authorization for an exact Codex child."""
 
     work_unit_id: str
     native_task_name: str
     goal_hash: str
+    goal: str = field(default="", compare=False, repr=False)
 
 
 def _encoded_metadata(value: dict[str, Any]) -> str:
@@ -265,6 +297,35 @@ def _codex_opaque_metadata(
     return metadata
 
 
+def _codex_direct_metadata(
+    *,
+    parent_session_id: object,
+    parent_trace_id: object,
+    tool_use_id: object,
+    work_unit_id: object,
+    specialist_slug: object,
+    specialist_version: object,
+    specialist_prompt_hash: object,
+    goal_hash: object,
+) -> dict[str, Any]:
+    metadata = _identity_metadata(
+        envelope_version=CODEX_DIRECT_NATIVE_CHILD_PROMPT_DELIVERY_VERSION,
+        host="codex",
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        tool_use_id=tool_use_id,
+        work_unit_id=work_unit_id,
+        specialist_slug=specialist_slug,
+        specialist_version=specialist_version,
+        specialist_prompt_hash=specialist_prompt_hash,
+    )
+    digest = str(goal_hash or "").strip().casefold()
+    if _DIGEST_PATTERN.fullmatch(digest) is None:
+        raise ValueError("goal_hash is invalid")
+    metadata["goal_hash"] = digest
+    return metadata
+
+
 def _codex_execution_metadata(
     *,
     work_unit_id: object,
@@ -290,15 +351,41 @@ def render_codex_native_child_execution_message(
     *,
     work_unit_id: object,
     goal_hash: object,
+    goal: object = "",
 ) -> str:
-    """Render the one exact actionable turn for a previously activated Codex child."""
+    """Render one exact execution turn, optionally with its hash-bound goal."""
 
     metadata = _codex_execution_metadata(
         work_unit_id=work_unit_id,
         goal_hash=goal_hash,
     )
     marker = f"{_CODEX_EXECUTION_MARKER_PREFIX}{_encoded_metadata(metadata)}{_MARKER_SUFFIX}"
-    return f"{_CODEX_EXECUTION_SECTION}{marker}\n{_CODEX_EXECUTION_INSTRUCTION}"
+    identity_message = f"{_CODEX_EXECUTION_SECTION}{marker}\n{_CODEX_EXECUTION_INSTRUCTION}"
+    if goal is None or goal == "":
+        return identity_message
+    if not isinstance(goal, str) or not goal:
+        raise ValueError("execution goal must be a non-empty string")
+    from agency_runtime.core.unit_assignment import work_unit_goal_hash
+
+    if work_unit_goal_hash(goal) != metadata["goal_hash"]:
+        raise ValueError("execution goal does not match goal_hash")
+    return f"{identity_message}{_CODEX_EXECUTION_GOAL_SECTION}{goal}"
+
+
+def render_codex_native_child_execution_prefix(
+    *,
+    work_unit_id: object,
+    goal_hash: object,
+) -> str:
+    """Render the bounded prefix that must be concatenated with one exact goal."""
+
+    return (
+        render_codex_native_child_execution_message(
+            work_unit_id=work_unit_id,
+            goal_hash=goal_hash,
+        )
+        + _CODEX_EXECUTION_GOAL_SECTION
+    )
 
 
 def is_codex_opaque_collaboration_message(value: object) -> bool:
@@ -391,13 +478,26 @@ def parse_codex_native_child_execution_message(
         section_start = value.rfind(_CODEX_EXECUTION_SECTION, 0, match.start())
         if section_start < 0 or section_start + len(_CODEX_EXECUTION_SECTION) != match.start():
             continue
-        message_end = match.end() + 1 + len(_CODEX_EXECUTION_INSTRUCTION)
-        if value[match.end() : message_end] != f"\n{_CODEX_EXECUTION_INSTRUCTION}":
+        instruction_end = match.end() + 1 + len(_CODEX_EXECUTION_INSTRUCTION)
+        if value[match.end() : instruction_end] != f"\n{_CODEX_EXECUTION_INSTRUCTION}":
             continue
+        remainder = value[instruction_end:]
+        goal = ""
+        if remainder:
+            if not remainder.startswith(_CODEX_EXECUTION_GOAL_SECTION):
+                continue
+            goal = remainder[len(_CODEX_EXECUTION_GOAL_SECTION) :]
+            if not goal:
+                continue
+            from agency_runtime.core.unit_assignment import work_unit_goal_hash
+
+            if work_unit_goal_hash(goal) != normalized["goal_hash"]:
+                continue
         return CodexNativeChildExecutionDelivery(
             work_unit_id=normalized["work_unit_id"],
             native_task_name=normalized["native_task_name"],
             goal_hash=normalized["goal_hash"],
+            goal=goal,
         )
     return None
 
@@ -471,6 +571,55 @@ def render_codex_opaque_native_child_prompt_delivery(
     return f"{_CODEX_OPAQUE_SECTION}{marker}\n{prompt_body}"
 
 
+def render_codex_direct_native_child_prompt_delivery(
+    prompt_body: object,
+    *,
+    parent_session_id: object,
+    parent_trace_id: object,
+    tool_use_id: object,
+    work_unit_id: object,
+    specialist_slug: object,
+    specialist_version: object,
+    specialist_prompt_hash: object,
+    goal_hash: object,
+) -> str:
+    """Render specialist context that executes the exact Codex spawn goal immediately."""
+
+    if not isinstance(prompt_body, str) or not prompt_body:
+        raise ValueError("specialist prompt body must be a non-empty string")
+    metadata = _codex_direct_metadata(
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        tool_use_id=tool_use_id,
+        work_unit_id=work_unit_id,
+        specialist_slug=specialist_slug,
+        specialist_version=specialist_version,
+        specialist_prompt_hash=specialist_prompt_hash,
+        goal_hash=goal_hash,
+    )
+    if not content_identity_matches(prompt_body, metadata["specialist_prompt_hash"]):
+        raise ValueError("specialist prompt body failed exact identity verification")
+    marker = f"{_CODEX_DIRECT_MARKER_PREFIX}{_encoded_metadata(metadata)}{_MARKER_SUFFIX}"
+    return f"{_CODEX_DIRECT_SECTION}{marker}\n{prompt_body}{_CODEX_DIRECT_EXECUTION_SUFFIX}"
+
+
+def _prompt_body_for_delivery(
+    value: str,
+    *,
+    prompt_start: int,
+    envelope_version: int,
+) -> str | None:
+    """Return only the immutable specialist body from an exact delivery envelope."""
+
+    prompt_end = len(value)
+    if envelope_version == CODEX_DIRECT_NATIVE_CHILD_PROMPT_DELIVERY_VERSION:
+        if not value.endswith(_CODEX_DIRECT_EXECUTION_SUFFIX):
+            return None
+        prompt_end -= len(_CODEX_DIRECT_EXECUTION_SUFFIX)
+    prompt_body = value[prompt_start:prompt_end]
+    return prompt_body or None
+
+
 def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelivery | None:
     """Recover the last valid exact envelope from a rewritten native child task."""
 
@@ -487,6 +636,14 @@ def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelive
             match,
         )
         for match in _CODEX_OPAQUE_MARKER_PATTERN.finditer(value)
+    )
+    matches.extend(
+        (
+            match.start(),
+            CODEX_DIRECT_NATIVE_CHILD_PROMPT_DELIVERY_VERSION,
+            match,
+        )
+        for match in _CODEX_DIRECT_MARKER_PATTERN.finditer(value)
     )
     for _start, envelope_version, match in sorted(matches, reverse=True):
         fields = _V1_FIELDS if envelope_version == 1 else _V2_FIELDS
@@ -506,8 +663,19 @@ def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelive
                     specialist_prompt_hash=metadata.get("specialist_prompt_hash"),
                     activation_token=metadata.get("activation_token"),
                 )
-            else:
+            elif envelope_version == CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION:
                 normalized = _codex_opaque_metadata(
+                    parent_session_id=metadata.get("parent_session_id"),
+                    parent_trace_id=metadata.get("parent_trace_id"),
+                    tool_use_id=metadata.get("tool_use_id"),
+                    work_unit_id=metadata.get("work_unit_id"),
+                    specialist_slug=metadata.get("specialist_slug"),
+                    specialist_version=metadata.get("specialist_version"),
+                    specialist_prompt_hash=metadata.get("specialist_prompt_hash"),
+                    goal_hash=metadata.get("goal_hash"),
+                )
+            else:
+                normalized = _codex_direct_metadata(
                     parent_session_id=metadata.get("parent_session_id"),
                     parent_trace_id=metadata.get("parent_trace_id"),
                     tool_use_id=metadata.get("tool_use_id"),
@@ -528,8 +696,12 @@ def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelive
             prompt_start += 1
         else:
             continue
-        prompt_body = value[prompt_start:]
-        if not prompt_body or not content_identity_matches(
+        prompt_body = _prompt_body_for_delivery(
+            value,
+            prompt_start=prompt_start,
+            envelope_version=envelope_version,
+        )
+        if prompt_body is None or not content_identity_matches(
             prompt_body,
             normalized["specialist_prompt_hash"],
         ):
@@ -544,8 +716,13 @@ def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelive
             goal_hash = work_unit_goal_hash(original_task)
             activation_token = normalized["activation_token"]
         else:
-            section_start = value.rfind(_CODEX_OPAQUE_SECTION, 0, match.start())
-            if section_start != 0 or len(_CODEX_OPAQUE_SECTION) != match.start():
+            section = (
+                _CODEX_OPAQUE_SECTION
+                if envelope_version == CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION
+                else _CODEX_DIRECT_SECTION
+            )
+            section_start = value.rfind(section, 0, match.start())
+            if section_start != 0 or len(section) != match.start():
                 continue
             original_task = ""
             goal_hash = normalized["goal_hash"]
@@ -568,6 +745,7 @@ def parse_native_child_prompt_delivery(value: object) -> NativeChildPromptDelive
 
 
 __all__ = [
+    "CODEX_DIRECT_NATIVE_CHILD_PROMPT_DELIVERY_VERSION",
     "CODEX_NATIVE_CHILD_EXECUTION_VERSION",
     "CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION",
     "MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS",
@@ -579,7 +757,9 @@ __all__ = [
     "is_codex_opaque_collaboration_message",
     "parse_codex_native_child_execution_message",
     "parse_native_child_prompt_delivery",
+    "render_codex_direct_native_child_prompt_delivery",
     "render_codex_native_child_execution_message",
+    "render_codex_native_child_execution_prefix",
     "render_codex_opaque_native_child_prompt_delivery",
     "render_native_child_prompt_delivery",
 ]

@@ -26,6 +26,7 @@ STATUS_LIMIT = 4096
 STATUS_ENV = "_AGENCY_OWNED_PROCESS_STATUS_FD"
 PARENT_ENV = "_AGENCY_OWNED_PROCESS_PARENT_PID"
 GO_ENV = "_AGENCY_OWNED_PROCESS_GO_FD"
+SYSTEM_SUPERVISOR_INTERPRETER = "/usr/bin/python3"
 
 
 class DescriptorOwner:
@@ -956,17 +957,31 @@ def supervisor_command(
 ) -> PreparedProcessArgv:
     """Freeze the trusted interpreter used by the dedicated Linux subreaper."""
 
-    # Preserve the executable identity selected by the caller.  In a virtual
-    # environment this may be an owner-private real copy while
-    # ``_base_executable`` points back to a shared system or hosted-toolcache
-    # interpreter.  Preferring the base executable would silently cross that
-    # trust boundary and can also make the otherwise-private runtime unusable
-    # when the shared executable is group- or other-writable.
-    interpreter = str(sys.executable or getattr(sys, "_base_executable", ""))
-    prepared = prepare_process_argv([interpreter])
-    if not isinstance(prepared, PreparedProcessArgv):
-        prepared = PreparedProcessArgv(prepared, artifact_paths=(prepared[0],))
-    frozen = freeze_process_argv(prepared, forbidden_roots=forbidden_roots)
+    # Preserve the active executable when it satisfies the ownership policy.
+    # Hosted runners can place that executable below a replaceable tool-cache
+    # parent, however.  The only fallback is Linux's exact OS-owned Python;
+    # it must pass the same preparation and immutable identity checks.  Never
+    # search PATH or fall back to a caller-controlled executable namespace.
+    active = str(sys.executable or getattr(sys, "_base_executable", ""))
+    interpreters = tuple(dict.fromkeys((active, SYSTEM_SUPERVISOR_INTERPRETER)))
+    frozen: PreparedProcessArgv | None = None
+    failure: OSError | ValueError | None = None
+    for interpreter in interpreters:
+        if not interpreter:
+            continue
+        try:
+            prepared = prepare_process_argv([interpreter])
+            if not isinstance(prepared, PreparedProcessArgv):
+                prepared = PreparedProcessArgv(prepared, artifact_paths=(prepared[0],))
+            frozen = freeze_process_argv(prepared, forbidden_roots=forbidden_roots)
+        except (OSError, ValueError) as exc:
+            failure = exc
+            continue
+        break
+    if frozen is None:
+        if failure is not None:
+            raise failure
+        raise OSError("no trusted Linux supervisor interpreter is available")
     target_payload = base64.urlsafe_b64encode(
         json.dumps(list(target), ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     ).decode("ascii")

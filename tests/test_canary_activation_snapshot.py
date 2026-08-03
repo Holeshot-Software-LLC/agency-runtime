@@ -30,7 +30,13 @@ def store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         reset_config_cache()
 
 
-def _ready_turn(store: Store, monkeypatch: pytest.MonkeyPatch) -> tuple[str, str]:
+def _ready_turn(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    session_id: str = "session",
+    trace_id: str = "trace",
+) -> tuple[str, str]:
     from agency_runtime.core.workforce import inference
 
     monkeypatch.setattr(
@@ -40,15 +46,15 @@ def _ready_turn(store: Store, monkeypatch: pytest.MonkeyPatch) -> tuple[str, str
     )
     result = run_preflight(
         store,
-        session_id="session",
-        trace_id="trace",
+        session_id=session_id,
+        trace_id=trace_id,
         user_message=_REQUEST,
         host="codex",
         capability_receipt=native_adapter_capability_receipt(
             "codex",
             platform="windows" if os.name == "nt" else "linux",
-            session_id="session",
-            trace_id="trace",
+            session_id=session_id,
+            trace_id=trace_id,
         ),
     )
     slug = next(
@@ -56,7 +62,7 @@ def _ready_turn(store: Store, monkeypatch: pytest.MonkeyPatch) -> tuple[str, str
         for candidate in result.selected_specialists
         if candidate not in PROTECTED_AGENT_SLUGS
     )
-    completion = store.get_completion_evidence_snapshot("session", "trace")
+    completion = store.get_completion_evidence_snapshot(session_id, trace_id)
     unit = next(
         item["work_unit_id"]
         for item in completion["unit_agent_plan"]
@@ -221,6 +227,43 @@ def test_canary_activation_snapshot_fails_closed_for_missing_or_ambiguous_route(
         store.get_canary_activation_snapshot(host="codex", query_hash=query_hash.upper())
     with pytest.raises(ValueError, match="supported execution host"):
         store.get_canary_activation_snapshot(host="unknown", query_hash=query_hash)
+
+
+def test_canary_activation_snapshot_binds_repeated_prompt_to_exact_session(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _ready_turn(
+        store,
+        monkeypatch,
+        session_id="historical-session",
+        trace_id="historical-trace",
+    )
+    _ready_turn(
+        store,
+        monkeypatch,
+        session_id="current-session",
+        trace_id="current-trace",
+    )
+    query_hash = sha256(_REQUEST.encode("utf-8")).hexdigest()
+
+    historical_lookup = store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=query_hash,
+    )
+    exact_lookup = store.get_canary_activation_snapshot(
+        host="codex",
+        query_hash=query_hash,
+        session_id="current-session",
+    )
+
+    assert historical_lookup["proven"] is False
+    assert historical_lookup["reason"] == "route_ambiguous"
+    assert historical_lookup["cardinalities"]["routes"] == 2
+    assert exact_lookup["proven"] is True
+    assert exact_lookup["reason"] == "exact_route_resolved"
+    assert exact_lookup["session_id"] == "current-session"
+    assert exact_lookup["trace_id"] == "current-trace"
 
 
 def test_canary_activation_snapshot_projects_exact_preflight_failure(

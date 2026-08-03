@@ -1001,9 +1001,9 @@ def test_isolated_native_hook_receives_exact_unit_agent_plan(
             assert CODEX_TASK_NAME_PATTERN.fullmatch(native_task_name)
             assert internal_work_unit_from_codex_task_name(native_task_name) == work_unit_id
             assert f"native_task_name={native_task_name}" in context
-            assert "execution_message=" in context
-            assert "[AGENCY EXACT TASK EXECUTION v1]" in context
-            assert "followup_task" in context
+            assert "execution_message_prefix=" not in context
+            assert "executes that goal in the initial native child turn" in context
+            assert "do not send a follow-up execution message" in context
             assert "set `fork_turns` to `none`" in context
     assert len(context) <= preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS
 
@@ -1093,6 +1093,8 @@ def test_isolated_multi_unit_context_encodes_one_shared_request_prefix(
         if "; goal_suffix=" in line
     ]
     assert [shared + suffix for suffix in suffixes] == [item["goal"] for item in hydrated]
+    assert "execution_message_prefix=" not in delegation
+    assert "executes that goal in the initial native child turn" in delegation
     assert len(combined) > 8_192
     assert len(combined) <= preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS
 

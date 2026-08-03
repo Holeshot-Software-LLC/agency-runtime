@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-01
+updated: 2026-08-02
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -66,6 +66,23 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex product child diagnostics now classify nested `apply_patch`,
+  `shell_command`, and other calls inside current `functions.exec` wrappers,
+  plus fixed wrapper outcomes. The Store persists only bounded counts, keeps
+  canonical v1 rows readable, and never retains wrapper input or output.
+- Codex product child tool evidence is now durably attached to each exact
+  worker receipt before product admission. Store snapshots distinguish
+  recorded, missing, and invalid projections, and product proof reconciles the
+  fixed content-free counts against the rollout instead of relying on the
+  transient report alone.
+- Codex product collaboration reports now preserve fixed content-free child
+  tool lifecycle counts per child and in aggregate. Schema v2 distinguishes
+  safe tool classes, call status, output receipt, and patch outcome without
+  retaining arguments, paths, file content, output, errors, or task text.
+- Codex Agency children now receive the exact accepted work-unit execution
+  contract after their independently hash-verified specialist expertise, and
+  a missing or modified execution suffix invalidates delivery. This repairs the
+  context-order boundary; live delegated workspace-write remains unproven.
 - Codex `UserPromptSubmit` hooks now keep Agency's already bounded multi-unit
   delegation plan model-visible instead of letting Codex's default hook-output
   threshold spill it to a file the non-working parent cannot read. Other hook

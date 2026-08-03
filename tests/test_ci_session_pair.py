@@ -18,6 +18,16 @@ from tests.runtime_support import trusted_test_interpreter, wait_for_process_exi
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _real_process_interpreter() -> Path:
+    """Use an OS-owned POSIX interpreter outside hosted tool-cache namespaces."""
+
+    if os.name != "nt":
+        system_python = Path("/usr/bin/python3")
+        if system_python.is_file() and os.access(system_python, os.X_OK):
+            return system_python
+    return trusted_test_interpreter()
+
+
 def _result(
     returncode: int = 0,
     *,
@@ -94,7 +104,7 @@ def test_pair_executes_both_sessions_concurrently_with_distinct_state(tmp_path: 
 
 
 def test_pair_runs_real_cross_platform_owned_processes(tmp_path: Path) -> None:
-    interpreter = str(trusted_test_interpreter())
+    interpreter = str(_real_process_interpreter())
     plans = []
     for label in ("real-a", "real-b"):
         runtime = _runtime(tmp_path, label)
@@ -211,7 +221,7 @@ def test_pair_cancels_peer_after_nonordinary_session_outcome(
 
 
 def test_real_timeout_cancels_and_reaps_peer_descendant(tmp_path: Path) -> None:
-    interpreter = str(trusted_test_interpreter())
+    interpreter = str(_real_process_interpreter())
     ready = tmp_path / "peer-pids.txt"
     timeout_runtime = _runtime(tmp_path, "timeout-runtime")
     peer_runtime = _runtime(tmp_path, "peer-runtime")

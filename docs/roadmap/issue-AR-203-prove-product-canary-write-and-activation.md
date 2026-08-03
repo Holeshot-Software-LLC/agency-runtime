@@ -1,6 +1,6 @@
 ---
 title: "AR-203: Prove product-canary workspace writes and exact activation"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-30
 updated: 2026-08-01
@@ -24,6 +24,8 @@ related:
   - docs/roadmap/issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md
   - docs/roadmap/issue-AR-220-converge-product-recruiter-evidence.md
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
+  - docs/roadmap/issue-AR-225-align-product-scenario-with-independent-validator.md
+  - docs/analysis/2026-08-03-ar-203-readme-story-evidence.html
   - docs/roadmap/handoffs/issue-AR-203.md
   - docs/worklog/README.md
 supersedes: []
@@ -33,7 +35,7 @@ epic: testing
 issue_id: AR-203
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
-depends_on: [AR-201, AR-207, AR-209, AR-212, AR-214, AR-215, AR-216, AR-217, AR-218, AR-219, AR-220, AR-221, AR-223]
+depends_on: [AR-201, AR-207, AR-209, AR-212, AR-214, AR-215, AR-216, AR-217, AR-218, AR-219, AR-220, AR-221, AR-223, AR-225]
 blocks: [AR-200]
 ---
 
@@ -360,6 +362,38 @@ empty: exact multi-unit collaboration projection is unavailable, the first
 header is absent, and artifact validation is skipped. AR-219 owns that current
 workspace-write and evidence boundary.
 
+Exact build `624a6a398f4620eeb92e62193b1407a482941783` now proves the product
+runtime boundary that remained open. Its autonomous activation passes with
+inference-selected `code-reviewer`, one completed delegation and worker,
+accepted finalization, a valid first header, zero corrections, supported
+bypass, and no persistent trust change. The sole ordinary trial
+`ar203-624a6a3-readme-01` then completes in 661.766 seconds with a seven-unit
+inference-authored plan, seven native delegations, seven exit-zero workers,
+one accepted finalization, proven workspace trust, and proven workspace write.
+
+The trial creates `app.py`, `tests/test_app.py`, and `README.md`. Project tests
+and documentation validation pass, but the independent workflow and invalid-ID
+checks fail. AR-225 records the first causal defect: the hidden validator
+requires global `--data`, `add --title`, and a `title` JSON field that the
+published scenario never specifies. The generated CLI uses a valid published
+shape with per-command `--data`, a positional description, and a `description`
+field. This build is consumed and is not retried.
+
+Exact candidate `71faad8badc40a74b1b00ab01063cc5feb97800d` closes the
+boundary. Its wheel and source distributions pass canonical build, strict
+Twine, and independent content verification. Autonomous activation completes
+one inferred `code-reviewer` lifecycle with a valid first header, zero
+corrections, supported bypass, and no persistent profile change. Sole product
+trial `ar203-71faad8-readme-01` passes in 668.313 seconds: inference authors
+seven units and selects seven specialists, all seven planned delegations and
+workers complete with exit code zero, finalization accepts, workspace write is
+proven, and the three required source artifacts exist. Independent workflow,
+invalid-ID, project-test, and documentation checks all pass. Product trace
+`019fc7f3-91ca-72b1-aec6-283b00ffcf87` and Store route
+`641fa1eb-d4d1-45ca-85bd-61fff9762572` retain the exact execution evidence.
+The supported authenticated dashboard open also rendered in an attended Chrome
+tab and displayed the seven completed trial delegations.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host
@@ -411,7 +445,7 @@ demonstrates both mismatches.
 - [x] Codex Agency product evaluation reads
   `agency.canary-activation-evidence.v1` for the exact prompt hash and never
   reports that schema unavailable when the Store returns it.
-- [ ] The isolated Codex profile proves effective workspace-write authority for
+- [x] The isolated Codex profile proves effective workspace-write authority for
   the exact empty trial directory without changing persistent user trust.
 - [x] The product backend retains sandboxing and cannot write outside the trial
   directory.
@@ -440,7 +474,7 @@ demonstrates both mismatches.
 - [x] The post-review repair merges and is exact-installed for Codex, ZCode,
   and the dashboard.
 - [x] The dashboard service is installed and locally reachable.
-- [ ] An attended browser opens and renders the authenticated dashboard page.
+- [x] An attended browser opens and renders the authenticated dashboard page.
 - [x] Exact installed activation passes through attended trust or the supported
   one-invocation bypass, with bypassed evidence never mislabeled trusted.
 - [x] Recruiter response acceptance or bounded repair produces a defensible
@@ -453,7 +487,7 @@ demonstrates both mismatches.
   upgrade; current shared-prefix rendering is policy-versioned.
 - [x] Oversized UTF-8 hook model metadata blocks before reservation or preflight
   and cannot consume the reserved Codex first-pass-header budget after ready.
-- [ ] The replacement trial selects and launches at least one specialist/team,
+- [x] The replacement trial selects and launches at least one specialist/team,
   or records a defensible gap plus an actual hiring decision.
-- [ ] The next ordinary canary reports exact activation evidence and can create
+- [x] The next ordinary canary reports exact activation evidence and can create
   required artifacts when workforce execution reaches the parent model.

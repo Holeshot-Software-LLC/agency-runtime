@@ -15,6 +15,10 @@ from agency_runtime.core.canary_proof import (
     _codex_product_collaboration_projection,
     codex_product_activation_failures,
 )
+from agency_runtime.core.codex_child_tool_evidence import (
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
+)
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
 from agency_runtime.core.evals import product_host
@@ -47,6 +51,7 @@ def test_workspace_write_proof_is_owned_by_a_delegated_workspace_write_unit() ->
     assert "terminal `mutation_scope` field" in wrapped
     assert "with `mutation_scope=workspace_write`" in wrapped
     assert "If it is absent, create it" in wrapped
+    assert "first mutation with `apply_patch`" in wrapped
     assert "Read-only children and the non-working parent must not create it" in wrapped
     assert token in wrapped
 
@@ -144,6 +149,16 @@ def _two_unit_product_evidence(
         delegation_id = f"delegation-{index}"
         tool_use_id = f"spawn-call-{index}"
         task_name = codex_task_name_for_work_unit(unit)
+        tool_evidence = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS, 0)
+        tool_evidence.update(
+            {
+                "child_tool_call_count": 1,
+                "child_function_tool_call_count": 1,
+                "child_shell_command_tool_call_count": 1,
+                "child_completed_tool_call_count": 1,
+                "child_tool_output_count": 1,
+            }
+        )
         plans.append(
             {
                 "work_unit_id": unit,
@@ -209,6 +224,11 @@ def _two_unit_product_evidence(
                 "started_at": "2026-07-31T14:00:01Z",
                 "execution_tool_use_id": f"followup-tool-{index}",
                 "execution_dispatched_at": "2026-07-31T14:00:30Z",
+                "tool_evidence_schema": CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
+                "tool_evidence": dict(tool_evidence),
+                "tool_evidence_source": "persisted_rollout",
+                "tool_evidence_recorded_at": "2026-07-31T14:01:01Z",
+                "tool_evidence_status": "recorded",
                 "ended_at": "2026-07-31T14:01:00Z",
             }
         )
@@ -249,6 +269,7 @@ def _two_unit_product_evidence(
                 "child_status": "completed",
                 "activation_completion_count": 1,
                 "execution_completion_count": 1,
+                "tool_evidence": dict(tool_evidence),
                 "evidence_source": "persisted_rollout",
             }
         )
@@ -299,7 +320,7 @@ def _two_unit_product_evidence(
             }
         ],
         "collaboration": {
-            "schema": "agency.codex-product-collaboration.v1",
+            "schema": "agency.codex-product-collaboration.v2",
             "calls": calls,
             "spawn_count": len(specs),
             "followup_count": len(specs),
@@ -308,7 +329,10 @@ def _two_unit_product_evidence(
             "timed_out_wait_count": 0,
             "completed_child_count": len(specs),
             "failed_child_count": 0,
-            "child_tool_call_count": 4,
+            **{
+                field: tool_evidence[field] * len(specs)
+                for field in CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS
+            },
             "parent_agent_message_count": 1,
             "unexpected_item_count": 0,
             "host_notice_types": [
@@ -337,6 +361,48 @@ def test_product_proof_rejects_a_child_from_a_different_parent_session() -> None
     )
 
     assert "Codex product child did not belong to the exact parent session" in failures
+
+
+def test_product_proof_rejects_child_tool_evidence_missing_from_store() -> None:
+    response = _product_response()
+    evidence = _two_unit_product_evidence("a" * 64, response)
+    evidence["worker_runs"][0]["tool_evidence"] = None
+    evidence["worker_runs"][0]["tool_evidence_schema"] = ""
+    evidence["worker_runs"][0]["tool_evidence_source"] = ""
+    evidence["worker_runs"][0]["tool_evidence_recorded_at"] = None
+    evidence["worker_runs"][0]["tool_evidence_status"] = "missing"
+
+    failures = codex_product_activation_failures(
+        result={"collaboration": evidence["collaboration"]},
+        evidence=evidence,
+        response_hash=hashlib.sha256(response.encode()).hexdigest(),
+    )
+
+    assert (
+        "Codex product unit unit-product-one child tool evidence was not durably reconciled"
+        in failures
+    )
+
+
+def test_product_child_tool_store_write_failure_is_content_free_and_unit_scoped() -> None:
+    response = _product_response()
+    evidence = _two_unit_product_evidence("a" * 64, response)
+
+    class RejectingStore:
+        def record_codex_child_tool_evidence(self, **_record):
+            raise ValueError("private backend detail")
+
+    failures = product_host._persist_codex_child_tool_evidence(
+        store=RejectingStore(),
+        result={"collaboration": evidence["collaboration"]},
+        parent_session_id=str(evidence["session_id"]),
+    )
+
+    assert failures == (
+        "Codex product unit unit-product-one child tool evidence Store write failed",
+        "Codex product unit unit-product-two child tool evidence Store write failed",
+    )
+    assert "private backend detail" not in " ".join(failures)
 
 
 def test_product_proof_accepts_eight_units_with_one_turn_scoped_specialist_reuse() -> None:
@@ -484,6 +550,7 @@ class _Backend:
             )
         return {
             "backend": "codex",
+            "session_id": "019fa6a6-9432-7c70-a594-68ccdf7e4988",
             "profile_scope": "isolated-profile",
             "isolated_plugin": {"registered": True, "enabled": True},
             "status": "completed",
@@ -568,6 +635,9 @@ def test_codex_product_host_uses_isolated_workspace_write_profile(
         options[options.index("--sandbox")],
         options[options.index("--sandbox") + 1],
     ) == ("--sandbox", "workspace-write")
+    assert 'approval_policy="on-request"' in options
+    assert 'approvals_reviewer="auto_review"' in options
+    assert 'approval_policy="never"' not in options
     assert "danger-full-access" not in options
     assert "--add-dir" not in options
     assert "--ephemeral" not in options
@@ -602,8 +672,8 @@ def test_codex_agency_product_host_consumes_the_exact_activation_snapshot(
         def recent_runtime_activity(self, *, limit: int):
             raise AssertionError(f"legacy activity summary was requested with limit={limit}")
 
-        def get_canary_activation_snapshot(self, *, host: str, query_hash: str):
-            observed["exact_request"] = (host, query_hash)
+        def get_canary_activation_snapshot(self, *, host: str, query_hash: str, session_id: str):
+            observed["exact_request"] = (host, query_hash, session_id)
             return {
                 "schema": "agency.canary-activation-evidence.v1",
                 "proven": True,
@@ -643,7 +713,11 @@ def test_codex_agency_product_host_consumes_the_exact_activation_snapshot(
 
     executed_prompt = str(observed["invocation"]["task"])
     executed_hash = hashlib.sha256(executed_prompt.encode("utf-8")).hexdigest()
-    assert observed["exact_request"] == ("codex", executed_hash)
+    assert observed["exact_request"] == (
+        "codex",
+        executed_hash,
+        "019fa6a6-9432-7c70-a594-68ccdf7e4988",
+    )
     assert result.agency_evidence["runtime"]["schema"] == ("agency.canary-activation-evidence.v1")
     assert result.agency_evidence["workspace_trust"]["proven"] is True
     assert result.agency_evidence["hook_trust"] == {
@@ -655,6 +729,44 @@ def test_codex_agency_product_host_consumes_the_exact_activation_snapshot(
     }
     assert result.workspace_write_proven is True
     assert not (tmp_path / ".agency-runtime-workspace-write-proof").exists()
+
+
+def test_codex_agency_product_host_requires_native_parent_session(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: dict[str, object] = {}
+
+    @dataclass(frozen=True)
+    class MissingSessionBackend(_Backend):
+        def execute(self, *, task: str, workdir: str, check: bool):
+            record = super().execute(task=task, workdir=workdir, check=check)
+            record.pop("session_id")
+            return record
+
+    monkeypatch.setattr(
+        product_host,
+        "_codex_product_backend",
+        lambda **_kwargs: MissingSessionBackend(observed),
+    )
+    prompt = "Build the exact-session product."
+
+    result = execute_product_host(
+        prompt=prompt,
+        prompt_hash=_hash(prompt),
+        host="codex",
+        mode="agency",
+        workspace=tmp_path,
+        timeout=60,
+        db_path=tmp_path / "agency.db",
+        inspector=lambda _host: {"managed_target": str(tmp_path)},
+        resolver=lambda _host: "codex",
+        environ={"HOME": str(tmp_path), "PATH": ""},
+    )
+
+    assert result.status == "failed"
+    assert result.runtime_contract_passed is False
+    assert result.error == "runtime evidence reconciliation failed: ValueError"
 
 
 def test_codex_product_host_uses_unmocked_multi_unit_product_proof(
@@ -671,8 +783,12 @@ def test_codex_product_host_uses_unmocked_multi_unit_product_proof(
         def recent_runtime_activity(self, *, limit: int):
             raise AssertionError(f"legacy activity summary was requested with limit={limit}")
 
-        def get_canary_activation_snapshot(self, *, host: str, query_hash: str):
-            observed["exact_request"] = (host, query_hash)
+        def record_codex_child_tool_evidence(self, **record):
+            observed.setdefault("stored_tool_evidence", []).append(record)
+            return record
+
+        def get_canary_activation_snapshot(self, *, host: str, query_hash: str, session_id: str):
+            observed["exact_request"] = (host, query_hash, session_id)
             evidence = dict(observed["evidence"])
             assert evidence["query_hash"] == query_hash
             evidence.pop("collaboration")
@@ -728,6 +844,13 @@ def test_codex_product_host_uses_unmocked_multi_unit_product_proof(
     assert result.agency_evidence["proof"]["collaboration"]["host_notice_count"] == 3
     assert result.actual_model == "codex-subscription/gpt-5.6-sol"
     assert result.workspace_write_proven is True
+    stored_tool_evidence = observed["stored_tool_evidence"]
+    assert isinstance(stored_tool_evidence, list)
+    assert len(stored_tool_evidence) == 2
+    assert {str(item["work_unit_id"]) for item in stored_tool_evidence} == {
+        "unit-product-one",
+        "unit-product-two",
+    }
     serialized_evidence = json.dumps(result.agency_evidence, sort_keys=True)
     assert "do-not-persist-parent" not in serialized_evidence
     assert "do-not-persist-child" not in serialized_evidence
@@ -803,6 +926,7 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
     manifest.parent.mkdir(parents=True)
     manifest.write_text("{}", encoding="utf-8")
     isolated_configs: list[str] = []
+    setup_environments: list[dict[str, str]] = []
     execution_environments: list[dict[str, str]] = []
     execution_argv: list[list[str]] = []
     rollout_projection: dict[str, object] = {}
@@ -859,6 +983,7 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
                 )
             )
             return BoundedProcessResult(0, stdout, "")
+        setup_environments.append(dict(env))
         return BoundedProcessResult(0, "{}", "")
 
     backend = product_host._codex_product_backend(
@@ -885,12 +1010,24 @@ def test_codex_product_backend_trusts_only_the_isolated_trial_workspace(
     assert parsed == {"projects": {expected: {"trust_level": "trusted"}}}
     assert persistent_config.read_bytes() == persistent_bytes
     assert execution_environments
+    assert setup_environments
+    assert all(
+        len({environment[name] for name in ("TEMP", "TMP", "TMPDIR")}) == 1
+        and environment["TEMP"] != str(workspace.resolve())
+        for environment in setup_environments
+    )
     assert "--dangerously-bypass-hook-trust" in execution_argv[0]
+    assert 'approval_policy="on-request"' in execution_argv[0]
+    assert 'approvals_reviewer="auto_review"' in execution_argv[0]
+    assert 'approval_policy="never"' not in execution_argv[0]
     assert result["trust_mode"] == "autonomous_bypass"
     assert result["trust_bypass_used"] is True
     assert result["persistent_trust_changed"] is False
     assert execution_environments[0]["AGENCY_CANARY_REQUIRE_EXISTING_STORE"] == "1"
     assert execution_environments[0]["AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS"] == "1"
+    assert {execution_environments[0][name] for name in ("TEMP", "TMP", "TMPDIR")} == {
+        str(workspace.resolve())
+    }
     assert Path(rollout_projection["rollout_root"]) == (
         Path(execution_environments[0]["CODEX_HOME"]) / "sessions"
     )
@@ -910,6 +1047,7 @@ def test_product_host_reports_missing_workspace_write_proof_separately(
             self.observed["invocation"] = {"task": task, "workdir": workdir, "check": check}
             return {
                 "backend": "codex",
+                "session_id": "019fa6a6-9432-7c70-a594-68ccdf7e4988",
                 "profile_scope": "isolated-profile",
                 "isolated_plugin": {"registered": True, "enabled": True},
                 "status": "completed",
@@ -1105,6 +1243,7 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
     instructions = json.loads(developer_configs[0])
     assert instructions == product_host.CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS
     for required_contract in (
+        "[AGENCY EXACT SPECIALIST EXECUTION v3]",
         "[AGENCY EXACT SPECIALIST ACTIVATION v1]",
         "[AGENCY EXACT TASK EXECUTION v1]",
         "[AGENCY DELEGATION PLAN]",
@@ -1117,9 +1256,16 @@ def test_codex_product_backend_supplies_bounded_parent_and_child_delegation_auth
         "one child at a time",
         "Use no non-collaboration tools",
         "do not delegate further",
-        "immediately preceding activation turn",
-        "JSON-decoded exact execution_message",
+        "executes in that initial child turn",
+        "Do not call followup_task",
+        "accepted plan and native activation already prove the required host tools",
+        "current working directory is the exact isolated product workspace",
         "permitted workspace tools for every required implementation",
+        "successful workspace-local patch receipt before any final response",
+        "proof-only named-file change is a legitimate implementation unit",
+        "timeout_ms=120000",
+        "repeat that same wait up to two additional times",
+        "Never spawn the next row until",
     ):
         assert required_contract in instructions
 

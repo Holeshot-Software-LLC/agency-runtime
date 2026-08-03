@@ -10,6 +10,12 @@ from __future__ import annotations
 from hashlib import sha256
 from typing import Any
 
+from agency_runtime.core.codex_child_tool_evidence import (
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+    decode_stored_codex_child_tool_evidence,
+    encode_codex_child_tool_evidence,
+)
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation_status import (
     MAX_DELEGATION_BACKEND_CHARS,
@@ -364,7 +370,7 @@ class NativeChildStoreMixin:
         native_run_id: str,
         tool_use_id: str,
     ) -> bool:
-        """Atomically authorize one exact Codex follow-up, idempotent by tool call."""
+        """Bind one exact Codex execution dispatch, idempotent by tool call."""
 
         normalized_session = validate_correlation_id(session_id, field="session_id")
         normalized_trace = validate_correlation_id(trace_id, field="trace_id")
@@ -489,6 +495,113 @@ class NativeChildStoreMixin:
                 raise RuntimeError("Codex child execution claim postcondition failed")
             conn.commit()
             return True
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def record_codex_child_tool_evidence(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        work_unit_id: str,
+        child_session_id: str,
+        evidence: object,
+    ) -> dict[str, Any]:
+        """Attach one immutable content-free rollout summary to its worker receipt."""
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        normalized_unit = _identity(
+            work_unit_id,
+            maximum=MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+            field="work_unit_id",
+        )
+        normalized_child = _identity(
+            child_session_id,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
+            field="child_session_id",
+        )
+        native_run_id = _identity(
+            f"codex-agent:{normalized_child}",
+            maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+            field="native_run_id",
+        )
+        row_id = _worker_run_id(
+            "codex",
+            normalized_session,
+            normalized_trace,
+            normalized_child,
+            native_run_id,
+        )
+        payload = encode_codex_child_tool_evidence(evidence)
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT id, tool_evidence_schema, tool_evidence, "
+                "tool_evidence_source, tool_evidence_recorded_at "
+                "FROM worker_runs WHERE id = ? AND backend = 'spawn_agent' "
+                "AND host = 'codex' AND session_id = ? AND trace_id = ? "
+                "AND work_unit_id = ? AND worker_id = ? AND native_run_id = ?",
+                (
+                    row_id,
+                    normalized_session,
+                    normalized_trace,
+                    normalized_unit,
+                    normalized_child,
+                    native_run_id,
+                ),
+            ).fetchone()
+            if row is None:
+                raise ValueError("Codex child tool evidence had no exact worker receipt")
+            existing = decode_stored_codex_child_tool_evidence(
+                schema=row["tool_evidence_schema"],
+                source=row["tool_evidence_source"],
+                recorded_at=row["tool_evidence_recorded_at"],
+                payload=row["tool_evidence"],
+            )
+            if existing is None:
+                updated = conn.execute(
+                    "UPDATE worker_runs SET tool_evidence_schema = ?, tool_evidence = ?, "
+                    "tool_evidence_source = ?, "
+                    f"tool_evidence_recorded_at = {STORE_CLOCK_SQL} "  # nosec B608
+                    "WHERE id = ? AND tool_evidence_schema = '' "
+                    "AND tool_evidence = '' AND tool_evidence_source = '' "
+                    "AND tool_evidence_recorded_at IS NULL",
+                    (
+                        CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
+                        payload,
+                        CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+                        row_id,
+                    ),
+                ).rowcount
+                if updated != 1:
+                    raise RuntimeError("Codex child tool evidence write was not atomic")
+                row = conn.execute(
+                    "SELECT tool_evidence_schema, tool_evidence, tool_evidence_source, "
+                    "tool_evidence_recorded_at FROM worker_runs WHERE id = ?",
+                    (row_id,),
+                ).fetchone()
+                if row is None:
+                    raise RuntimeError("Codex child tool evidence postcondition failed")
+                existing = decode_stored_codex_child_tool_evidence(
+                    schema=row["tool_evidence_schema"],
+                    source=row["tool_evidence_source"],
+                    recorded_at=row["tool_evidence_recorded_at"],
+                    payload=row["tool_evidence"],
+                )
+            if existing is None or encode_codex_child_tool_evidence(existing) != payload:
+                raise ValueError("Codex child tool evidence conflicts with its worker receipt")
+            conn.commit()
+            return {
+                "schema": str(row["tool_evidence_schema"]),
+                "source": str(row["tool_evidence_source"]),
+                "recorded_at": str(row["tool_evidence_recorded_at"]),
+                "tool_evidence": existing,
+            }
         except Exception:
             conn.rollback()
             raise
@@ -714,11 +827,21 @@ class NativeChildStoreMixin:
             row = conn.execute(
                 "SELECT id, delegation_event_id, backend, session_id, trace_id, "
                 "work_unit_id, host, worker_id, native_run_id, exit_code, started_at, "
-                "execution_tool_use_id, execution_dispatched_at, ended_at "
+                "execution_tool_use_id, execution_dispatched_at, tool_evidence_schema, "
+                "tool_evidence, tool_evidence_source, tool_evidence_recorded_at, ended_at "
                 "FROM worker_runs WHERE id = ? AND (? = '' OR work_unit_id = ?)",
                 (row_id, normalized_unit, normalized_unit),
             ).fetchone()
-            return dict(row) if row is not None else None
+            if row is None:
+                return None
+            projected = dict(row)
+            projected["tool_evidence"] = decode_stored_codex_child_tool_evidence(
+                schema=projected["tool_evidence_schema"],
+                source=projected["tool_evidence_source"],
+                recorded_at=projected["tool_evidence_recorded_at"],
+                payload=projected["tool_evidence"],
+            )
+            return projected
         finally:
             conn.close()
 

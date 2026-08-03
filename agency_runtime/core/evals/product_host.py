@@ -16,6 +16,10 @@ from typing import Any, Final
 from agency_runtime.core import canary
 from agency_runtime.core.bounded_io import FileSizeLimitError, read_bounded_regular_file
 from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
+from agency_runtime.core.codex_child_tool_evidence import (
+    normalize_codex_child_tool_evidence,
+)
+from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation.backends import run_bounded_process
 from agency_runtime.core.evals.product_one_shot import ProductHostExecution
 from agency_runtime.core.filesystem_trust import metadata_is_link_or_reparse_point
@@ -24,16 +28,26 @@ from agency_runtime.core.store.sqlite import Store, _default_db_path
 
 CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS: Final[str] = (
     "This is a bounded Agency Runtime product evaluation. If the current task contains "
-    "[AGENCY EXACT TASK EXECUTION v1], you are an activated specialist child: execute the "
-    "exact work-unit goal delivered in your immediately preceding activation turn under "
-    "those specialist instructions. Use permitted workspace tools for every required "
-    "implementation or documentation change. When that goal contains the product harness "
+    "[AGENCY EXACT SPECIALIST EXECUTION v3], you are an activated specialist child: "
+    "execute the exact work-unit goal in the decrypted native child message under the "
+    "already activated specialist instructions. The accepted plan and native activation "
+    "already prove the required host tools, and the current working directory is the exact "
+    "isolated product workspace for relative paths. Do not report an unproven-tool or "
+    "unproven-workspace prerequisite unless an actual required tool is absent or denied. Use "
+    "permitted workspace tools for every required implementation or documentation change. "
+    "When that goal contains the product harness "
     "workspace-write proof, read its terminal `mutation_scope` field before working. A "
     "`workspace_write` child must check the named proof file before any other workspace "
-    "mutation, create it with the exact supplied line when absent, and leave an existing "
-    "proof unchanged. Verify the requested evidence before returning. Do not call "
+    "mutation, create it with `apply_patch` and the exact supplied line when absent, and "
+    "leave an existing proof unchanged. A proof-only named-file change is a legitimate "
+    "implementation unit and must not be replaced by explanation, readiness, root-cause "
+    "analysis, tests, or refactoring. A workspace-write child must obtain a successful "
+    "workspace-local patch receipt before any final response. Verify the requested evidence "
+    "before returning. Do not call "
     "spawn_agent, wait_agent, or followup_task, do not delegate further, and return one "
-    "bounded evidence-backed result. If the current task contains "
+    "bounded evidence-backed result. If the current task contains [AGENCY EXACT TASK "
+    "EXECUTION v1], execute that legacy exact hash-bound goal with the same child rules. "
+    "If the current task contains "
     "[AGENCY EXACT SPECIALIST ACTIVATION v1] or "
     "[AGENCY EXACT SPECIALIST ACTIVATION v2], you are a delegated specialist child: "
     "this first turn only activates the exact goal and specialist. Perform no product work, "
@@ -44,10 +58,12 @@ CODEX_PRODUCT_DEVELOPER_INSTRUCTIONS: Final[str] = (
     "exactly once, with no retries, one child at a time. For each dependency-ready row call "
     "spawn_agent with fork_turns set to none, task_name set to "
     "that row's exact native_task_name, and message set to that row's exact decoded goal. "
-    "Call wait_agent once for its activation-only turn, then call followup_task exactly "
-    "once on the exact canonical task path returned by spawn_agent with message set to the "
-    "row's JSON-decoded exact execution_message. Call wait_agent once more for that "
-    "execution turn before spawning the next row. Use no "
+    "The selected specialist executes in that initial child turn. Call wait_agent with "
+    "timeout_ms=120000. A nonterminal commentary update is not completion: repeat that "
+    "same wait up to two additional times until the exact child reports completed. Do not "
+    "call followup_task. If a wait times out, the child fails, or the third wait "
+    "remains nonterminal, stop without scheduling another row. Never spawn the next row until "
+    "the exact prior child execution is terminal. Use no "
     "non-collaboration tools and perform no product work in the parent. "
     "Do not merge, omit, broaden, decline, or duplicate an accepted row. After every child "
     "finishes, consolidate only their reported outcomes and return the required Agency "
@@ -65,6 +81,10 @@ _CODEX_PRODUCT_EXEC_PREFIX: Final[tuple[str, ...]] = (
     "multi_agent_v2",
     "--sandbox",
     "workspace-write",
+    "-c",
+    'approval_policy="on-request"',
+    "-c",
+    'approvals_reviewer="auto_review"',
     "-c",
     'web_search="disabled"',
     "-c",
@@ -130,13 +150,15 @@ def _prompt_with_workspace_write_proof(prompt: str, prompt_hash: str) -> tuple[s
         "Read the terminal `mutation_scope` field in this exact work-unit goal. A delegated "
         "child with `mutation_scope=workspace_write` must check the relative file below "
         "before any other workspace mutation. If it is absent, create it as that child's "
-        "first mutation with the exact single line below. If it already exists, leave it "
+        "first mutation with `apply_patch` and the exact single line below. If it already "
+        "exists, leave it "
         "unchanged. Read-only children and the non-working parent must not create it. File: "
         f"`{_WORKSPACE_WRITE_PROOF_FILE}` containing this single line exactly:\n"
         f"{token}\n"
         "Leave that file in place for the harness. It is evidence only, not a product "
-        "artifact. Continue with the complete product request after the delegated "
-        "workspace-write child creates it.\n"
+        "artifact and does not add a work unit. Preserve any explicit unit-count or "
+        "indivisible-topology constraint in the product request. Continue with the complete "
+        "product request after the delegated workspace-write child creates it.\n"
         "[END AGENCY PRODUCT HARNESS WORKSPACE-WRITE PROOF]\n\n"
         f"{prompt}"
     )
@@ -340,6 +362,89 @@ def _codex_product_backend(
     )
 
 
+def _persist_codex_child_tool_evidence(
+    *,
+    store: Store,
+    result: Mapping[str, Any],
+    parent_session_id: str,
+) -> tuple[str, ...]:
+    """Persist only validated per-child counts from the product rollout projection."""
+
+    collaboration = result.get("collaboration")
+    if not isinstance(collaboration, Mapping):
+        return ()
+    try:
+        if (
+            collaboration.get("schema") != "agency.codex-product-collaboration.v2"
+            or collaboration.get("evidence_source") != "persisted_rollout"
+        ):
+            raise ValueError("invalid collaboration evidence")
+        calls = collaboration.get("calls")
+        if not isinstance(calls, list) or not 1 <= len(calls) <= 16:
+            raise ValueError("invalid collaboration calls")
+        records: list[tuple[str, str, str, dict[str, int]]] = []
+        identities: set[tuple[str, str]] = set()
+        for row in calls:
+            if (
+                not isinstance(row, Mapping)
+                or row.get("event_type") != "rollout_call_completed"
+                or row.get("tool") != "spawn_agent"
+                or row.get("evidence_source") != "persisted_rollout"
+            ):
+                raise ValueError("invalid child evidence source")
+            delivery = row.get("prompt_delivery")
+            receivers = row.get("receiver_thread_ids")
+            if not isinstance(delivery, Mapping) or not isinstance(receivers, list):
+                raise ValueError("invalid child evidence identity")
+            if (
+                row.get("sender_thread_id") != parent_session_id
+                or delivery.get("parent_session_id") != parent_session_id
+                or len(receivers) != 1
+            ):
+                raise ValueError("invalid child evidence parent")
+            trace_id = validate_correlation_id(
+                delivery.get("parent_trace_id"),
+                field="trace_id",
+            )
+            work_unit_id = validate_correlation_id(
+                delivery.get("work_unit_id"),
+                field="work_unit_id",
+            )
+            child_session_id = validate_correlation_id(
+                receivers[0],
+                field="child_session_id",
+            )
+            identity = (work_unit_id, child_session_id)
+            if identity in identities:
+                raise ValueError("duplicated child evidence identity")
+            identities.add(identity)
+            records.append(
+                (
+                    trace_id,
+                    work_unit_id,
+                    child_session_id,
+                    normalize_codex_child_tool_evidence(row.get("tool_evidence")),
+                )
+            )
+    except (TypeError, ValueError):
+        return ("Codex product child tool evidence was not safe to persist",)
+    failures: list[str] = []
+    for trace_id, work_unit_id, child_session_id, evidence in records:
+        try:
+            store.record_codex_child_tool_evidence(
+                session_id=parent_session_id,
+                trace_id=trace_id,
+                work_unit_id=work_unit_id,
+                child_session_id=child_session_id,
+                evidence=evidence,
+            )
+        except Exception:
+            failures.append(
+                f"Codex product unit {work_unit_id} child tool evidence Store write failed"
+            )
+    return tuple(failures)
+
+
 def execute_product_host(
     *,
     prompt: str,
@@ -430,10 +535,21 @@ def execute_product_host(
             workspace=resolved_workspace,
         )
         hook_trust_evidence = _hook_trust_evidence(result)
+        tool_evidence_store_failures: tuple[str, ...] = ()
         if normalized_host == "codex" and normalized_mode == "agency":
+            session_id = validate_correlation_id(
+                str(result.get("session_id") or ""),
+                field="session_id",
+            )
+            tool_evidence_store_failures = _persist_codex_child_tool_evidence(
+                store=store,
+                result=result,
+                parent_session_id=session_id,
+            )
             evidence = store.get_canary_activation_snapshot(
                 host=normalized_host,
                 query_hash=executed_prompt_hash.removeprefix("sha256:"),
+                session_id=session_id,
             )
         else:
             after = store.recent_runtime_activity(limit=500)
@@ -464,7 +580,10 @@ def execute_product_host(
     response_summary = (
         f"nonempty response captured ({len(response)} characters)" if response.strip() else ""
     )
-    failures = tuple(str(item) for item in proof.failures)
+    failures = (
+        *(str(item) for item in proof.failures),
+        *tool_evidence_store_failures,
+    )
     if trust_evidence.get("proven") is not True:
         failures = (*failures, "workspace_trust_not_proven")
     if hook_trust_evidence.get("proven") is not True:
@@ -480,6 +599,7 @@ def execute_product_host(
         profile_scope=proof.result_scope,
         runtime_contract_passed=bool(
             proof.passed
+            and not tool_evidence_store_failures
             and trust_evidence.get("proven") is True
             and hook_trust_evidence.get("proven") is True
             and write_evidence.get("proven") is True
@@ -491,6 +611,7 @@ def execute_product_host(
             "workspace_trust": trust_evidence,
             "hook_trust": hook_trust_evidence,
             "workspace_write": write_evidence,
+            "store_failures": list(tool_evidence_store_failures),
             "product_prompt_hash": prompt_hash,
             "executed_prompt_hash": executed_prompt_hash,
             "failures": list(failures),

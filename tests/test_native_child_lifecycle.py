@@ -10,6 +10,10 @@ import pytest
 from agency_runtime.adapters.hermes.bridge import handle as handle_hermes_bridge
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
 from agency_runtime.adapters.hooks import HookBridge
+from agency_runtime.core.codex_child_tool_evidence import (
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA,
+)
 from agency_runtime.core.delegation.events import work_unit_id_from_text
 from agency_runtime.core.native_child_activation import build_native_child_run_identity
 from agency_runtime.core.roster.bundled import BundledRoster
@@ -21,6 +25,17 @@ _PARENT_SCOPE = {
     "trace_id": "parent-run",
     "work_unit_id": "unit-1",
 }
+_TOOL_EVIDENCE = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS, 0)
+_TOOL_EVIDENCE.update(
+    {
+        "child_tool_call_count": 1,
+        "child_function_tool_call_count": 1,
+        "child_apply_patch_tool_call_count": 1,
+        "child_completed_tool_call_count": 1,
+        "child_tool_output_count": 1,
+        "child_patch_apply_success_count": 1,
+    }
+)
 
 
 def _delegation(
@@ -156,6 +171,80 @@ def test_codex_child_execution_dispatch_is_one_use_and_tool_idempotent(
         native_run_id=second_native_run_id,
         tool_use_id="followup-1",
     )
+
+
+def test_codex_child_tool_evidence_is_content_free_immutable_and_readable(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.db"
+    store = Store(path)
+    worker_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    native_run_id = f"codex-agent:{worker_id}"
+    _delegation(
+        store,
+        host="codex",
+        backend="spawn_agent",
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    store.record_native_child_started(
+        host="codex",
+        backend="spawn_agent",
+        **_PARENT_SCOPE,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    store.record_native_child_ended(
+        host="codex",
+        backend="spawn_agent",
+        **_PARENT_SCOPE,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+        outcome="ok",
+    )
+
+    recorded = store.record_codex_child_tool_evidence(
+        **_PARENT_SCOPE,
+        child_session_id=worker_id,
+        evidence=_TOOL_EVIDENCE,
+    )
+    replay = store.record_codex_child_tool_evidence(
+        **_PARENT_SCOPE,
+        child_session_id=worker_id,
+        evidence=dict(_TOOL_EVIDENCE),
+    )
+    child = store.get_native_child_run(
+        host="codex",
+        **_PARENT_SCOPE,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+
+    assert recorded == replay
+    assert recorded["schema"] == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA
+    assert recorded["source"] == "persisted_rollout"
+    assert recorded["recorded_at"]
+    assert recorded["tool_evidence"] == _TOOL_EVIDENCE
+    assert child is not None
+    assert child["tool_evidence"] == _TOOL_EVIDENCE
+    assert b"private-child-prompt" not in path.read_bytes()
+
+    changed = dict(_TOOL_EVIDENCE)
+    changed["child_completed_tool_call_count"] = 0
+    changed["child_unknown_tool_call_count"] = 1
+    with pytest.raises(ValueError, match="conflicts with its worker receipt"):
+        store.record_codex_child_tool_evidence(
+            **_PARENT_SCOPE,
+            child_session_id=worker_id,
+            evidence=changed,
+        )
+    with pytest.raises(ValueError, match="fields were invalid"):
+        store.record_codex_child_tool_evidence(
+            **_PARENT_SCOPE,
+            child_session_id=worker_id,
+            evidence={**_TOOL_EVIDENCE, "private-child-prompt": "secret"},
+        )
+    assert b"private-child-prompt" not in path.read_bytes()
 
 
 def test_native_child_completion_atomically_records_workforce_assignment(

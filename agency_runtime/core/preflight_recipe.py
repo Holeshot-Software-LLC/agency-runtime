@@ -261,7 +261,6 @@ def _isolated_delegation_context(
     from agency_runtime.core.unit_assignment import (
         UNIT_AGENT_ASSIGNMENT_VERSION,
         hydrate_unit_agent_plan,
-        work_unit_goal_hash,
         work_unit_id_from_text,
     )
 
@@ -329,8 +328,12 @@ def _isolated_delegation_context(
         from agency_runtime.core.delegation.native_labels import (
             codex_task_name_for_work_unit,
         )
-        from agency_runtime.core.native_child_prompt_delivery import (
-            render_codex_native_child_execution_message,
+
+        lines.append(
+            "For every Codex row, spawn exactly once with that row's exact decoded goal. "
+            "The selected specialist executes that goal in the initial native child turn. "
+            "Wait for that exact child to become terminal before starting another row; do "
+            "not send a follow-up execution message."
         )
 
     for item in hydrated:
@@ -349,22 +352,11 @@ def _isolated_delegation_context(
                 raise RuntimeError("isolated delegation goal prefix no longer matches")
             goal = goal[len(shared_goal_prefix) :]
             goal_field = "goal_suffix"
-        execution_field = ""
-        if normalized_host == "codex":
-            goal_hash = str(item.get("goal_hash") or "").strip().casefold()
-            goal_hash = goal_hash or work_unit_goal_hash(str(item["goal"]))
-            execution_field = "; execution_message=" + json.dumps(
-                render_codex_native_child_execution_message(
-                    work_unit_id=work_unit_id,
-                    goal_hash=goal_hash,
-                ),
-                ensure_ascii=False,
-            )
         lines.append(
             f"- unit={work_unit_id}; agent={item['recommended_agent']}; "
             f"strength={item['delegation_strength']}; depends_on={dependencies}"
             f"; mutation_scope={mutation_scope}"
-            f"{native_label}{execution_field}; "
+            f"{native_label}; "
             f"{goal_field}={json.dumps(goal, ensure_ascii=False)}"
         )
     lines.append(native_delegation_instruction(normalized_host))

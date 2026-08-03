@@ -119,6 +119,50 @@ def test_baseline_stops_after_the_first_failed_node(tmp_path: Path) -> None:
     assert observed == ["test_one", "test_two"]
 
 
+def test_baseline_preserves_bounded_failure_diagnostic(tmp_path: Path) -> None:
+    failure = conformance._PytestRun(
+        1,
+        ("tests/test_one.py::test_one",),
+        3,
+        failure_excerpt="AssertionError: exact private path was rejected",
+    )
+
+    result = conformance._run_baseline(
+        tmp_path,
+        ("tests/test_one.py::test_one",),
+        sys.executable,
+        90,
+        tmp_path,
+        pytest_runner=lambda *_args: failure,
+    )
+
+    assert result.failure_excerpt == "AssertionError: exact private path was rejected"
+
+
+def test_pytest_environment_binds_fixture_interpreter_to_evaluator_python(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    observed: dict[str, str] = {}
+
+    def run(_command, **kwargs):
+        observed.update(kwargs["env"])
+        return type("Result", (), {"returncode": 0, "stdout": "", "stderr": ""})()
+
+    monkeypatch.setattr(conformance.subprocess, "run", run)
+    conformance._run_pytest(
+        checkout,
+        ("tests/test_example.py::test_decision",),
+        "/private/evaluator-python",
+        10,
+        tmp_path,
+    )
+
+    assert observed["AGENCY_CI_PYTHON"] == "/private/evaluator-python"
+
+
 def test_evaluator_mutates_only_private_copies(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -226,11 +270,13 @@ def test_baseline_failure_never_admits_mutation_evidence(
             1,
             ("tests/test_example.py::test_decision",),
             2,
+            failure_excerpt="AssertionError: baseline diagnostic",
         ),
     )
 
     assert report["passed"] is False
     assert report["baseline"]["status"] == "failed"
+    assert report["baseline"]["failure_excerpt"] == "AssertionError: baseline diagnostic"
     assert report["mutations"] == []
     assert report["counts"]["killed"] == 0
 

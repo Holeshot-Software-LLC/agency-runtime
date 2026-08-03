@@ -304,10 +304,11 @@ def test_release_resources_are_addressable() -> None:
     # PR #129 added substantial workforce/dashboard lifecycle UI (dashboard-render
     # grew ~25%). The original 256 KiB budget no longer accommodates the full
     # unmodified JS (required for 100% V8 branch coverage) plus minified CSS/HTML.
-    # AR-188 adds the authenticated update projection, strict client validation,
-    # and an attended-command banner. Keep that production behavior readable and
-    # branch-testable while retaining a tight aggregate ceiling.
-    assert dashboard_bytes < 268 * 1024, "dashboard assets exceeded the 268 KiB budget"
+    # AR-188 adds the authenticated update projection and attended-command banner;
+    # the later README-reality work adds traceable product proof projections. Keep
+    # that production behavior readable and branch-testable while retaining a
+    # narrow aggregate ceiling above the currently audited 296,619-byte payload.
+    assert dashboard_bytes < 300 * 1024, "dashboard assets exceeded the 300 KiB budget"
 
 
 def test_release_metadata_is_single_source_and_cross_platform() -> None:
@@ -703,6 +704,9 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     assert "coverage report --fail-under=97" in combined_run
     performance_run = jobs["performance"]["steps"][-1]["run"]
     assert "-m performance" in performance_run
+    assert "tests/test_candidate_narrow_scaling.py" in performance_run
+    assert "tests/test_routing_eval_suite.py" in performance_run
+    assert "pytest tests " not in performance_run
     quality_steps = {step["name"]: step for step in jobs["quality-contracts"]["steps"]}
     assert {
         "Classify the complete event delta",
@@ -711,6 +715,7 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
         "Check tracked release inputs",
         "Check out canonical documentation history",
         "Install documentation dependencies",
+        "Prepare private quality runtime",
         "Run fast Python production spine",
         "Verify fast workflow contracts",
         "Run dashboard UI tests with coverage",
@@ -720,6 +725,10 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
         "code_required": "${{ steps.change-scope.outputs.code_required }}",
         "scope_reason": "${{ steps.change-scope.outputs.scope_reason }}",
     }
+    dashboard_coverage = quality_steps["Run dashboard UI tests with coverage"]["run"]
+    assert "--test-coverage-lines=95" in dashboard_coverage
+    assert "--test-coverage-branches=86" in dashboard_coverage
+    assert "--test-coverage-functions=93" in dashboard_coverage
     classifier = quality_steps["Classify the complete event delta"]
     assert classifier["id"] == "change-scope"
     assert classifier["env"] == {
@@ -772,6 +781,12 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     assert 'echo "::error::Committed whitespace check failed."' in whitespace["run"]
     assert "python scripts/check_ci_whitespace.py" not in whitespace["run"]
     assert quality_steps["Check dependency consistency"]["run"] == "python -m pip check"
+    private_quality = quality_steps["Prepare private quality runtime"]
+    assert private_quality["if"] == "steps.change-scope.outputs.code_required == 'true'"
+    assert "python -m scripts.prepare_ci_runtime" in private_quality["run"]
+    assert (
+        '--label "quality-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"' in private_quality["run"]
+    )
     quality_step_order = [step["name"] for step in jobs["quality-contracts"]["steps"]]
     assert quality_step_order.index("Install development dependencies") < quality_step_order.index(
         "Check dependency consistency"
@@ -788,8 +803,14 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     )["run"]
     assert "tests/test_ci_change_scope.py tests/test_ci_sharding.py" in quality_contracts
     assert "tests/test_ci_session_pair.py tests/test_release_packaging.py" in quality_contracts
+    assert '"${AGENCY_CI_PYTHON}" -m pytest' in quality_contracts
+    assert 'export TMPDIR="${AGENCY_CI_TEMP}"' in quality_contracts
+    assert '--basetemp "${AGENCY_CI_TEMP}/pytest-workflow"' in quality_contracts
     production_spine = quality_steps["Run fast Python production spine"]
     assert production_spine["if"] == "steps.change-scope.outputs.code_required == 'true'"
+    assert 'export TMPDIR="${AGENCY_CI_TEMP}"' in production_spine["run"]
+    assert '"${AGENCY_CI_PYTHON}" -m pytest' in production_spine["run"]
+    assert '--basetemp "${AGENCY_CI_TEMP}/pytest-production-spine"' in production_spine["run"]
     assert re.findall(r"tests/test_[a-z0-9_]+\.py", production_spine["run"]) == [
         "tests/test_senior_audit_hardening.py",
         "tests/test_configuration_namespace_security.py",
@@ -1059,7 +1080,8 @@ def test_history_derived_ledgers_use_the_complete_durable_head() -> None:
     assert 'test "$(git rev-parse --is-shallow-repository)" = "false"' in ledger["run"]
     assert 'test "$(git rev-parse HEAD)" = "${EXPECTED_HISTORY_HEAD}"' in ledger["run"]
     assert "update_worklog.py --check" in ledger["run"]
-    assert "verify_docs.py --require-tracker" in ledger["run"]
+    assert "python scripts/verify_docs.py" in ledger["run"]
+    assert "--require-tracker" not in ledger["run"]
     assert source_checkout["with"] == {
         "fetch-depth": 0,
         "persist-credentials": False,
@@ -1145,7 +1167,7 @@ def test_dependency_review_paths_are_exactly_gated_and_aggregated() -> None:
         "metadata.st_size <= maximum_bytes",
         "repository_status != 200",
         'repository.get("full_name") != expected_repository',
-        'repository["permissions"].get("pull") is not True',
+        'repository.get("private") is not (expected_visibility != "public")',
         "comparison_status == 403",
         '"message": "Forbidden"',
         '"status": "403"',
@@ -1272,7 +1294,6 @@ def test_dependency_review_classifier_rejects_ambiguous_api_responses(
         ("403", {"message": "Forbidden"}, "private", "false"),
         ("404", {"message": "Not Found"}, "private", "false"),
         ("200", _repository_identity_payload(full_name="other/repository"), "private", "false"),
-        ("200", _repository_identity_payload(pull=False), "private", "false"),
         ("200", _repository_identity_payload(visibility="public"), "private", "false"),
         ("200", _repository_identity_payload(fork=True), "private", "false"),
         ("200", _repository_identity_payload(visibility="public"), "public", "false"),
@@ -1297,6 +1318,23 @@ def test_dependency_review_classifier_rejects_unproven_repository_identity_or_sc
     )
     assert completed.returncode != 0
     assert outputs == {}
+
+
+def test_dependency_review_classifier_accepts_exact_identity_without_permissions_projection(
+    tmp_path: Path,
+) -> None:
+    repository = _repository_identity_payload()
+    repository.pop("permissions")
+
+    completed, outputs = _run_dependency_capability_classifier(
+        tmp_path,
+        repository_payload=repository,
+        comparison_status="403",
+        comparison_payload=DEPENDENCY_REVIEW_UNAVAILABLE,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert outputs["available"] == "false"
 
 
 @pytest.mark.parametrize(

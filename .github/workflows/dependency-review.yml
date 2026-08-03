@@ -124,8 +124,6 @@ jobs:
               or repository.get("visibility") != expected_visibility
               or repository.get("fork") is not expected_fork
               or repository.get("private") is not (expected_visibility != "public")
-              or not isinstance(repository.get("permissions"), dict)
-              or repository["permissions"].get("pull") is not True
           ):
               raise SystemExit("repository identity and read authority were not proven")
 

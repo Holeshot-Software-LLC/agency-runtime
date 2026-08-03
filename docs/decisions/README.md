@@ -204,9 +204,22 @@ Status meanings:
 | [ADR-0128](0128-persist-exact-codex-plan-authority-and-serialize-launches.md) | Persist exact Codex plan authority and serialize opaque launches | Accepted |
 | [ADR-0133](0133-treat-product-specialist-loads-as-turn-scoped.md) | Treat product specialist loads as turn-scoped | Accepted |
 | [ADR-0135](0135-require-explicit-codex-child-execution-turns.md) | Require explicit Codex child execution turns | Superseded |
-| [ADR-0136](0136-bind-opaque-codex-execution-by-ciphertext-identity.md) | Bind opaque Codex execution by ciphertext identity | Accepted |
-| [ADR-0137](0137-reconcile-codex-followup-completion-at-parent-stop.md) | Reconcile Codex follow-up completion at parent Stop | Accepted |
+| [ADR-0136](0136-bind-opaque-codex-execution-by-ciphertext-identity.md) | Bind opaque Codex execution by ciphertext identity | Superseded |
+| [ADR-0137](0137-reconcile-codex-followup-completion-at-parent-stop.md) | Reconcile Codex follow-up completion at parent Stop | Superseded |
 | [ADR-0138](0138-request-automatic-codex-delegation-through-managed-global-guidance.md) | Request automatic Codex delegation through managed global guidance | Accepted |
+| [ADR-0139](0139-make-codex-execution-turns-self-contained.md) | Make Codex execution turns self-contained | Superseded |
+| [ADR-0140](0140-use-codex-stable-multi-agent-feature.md) | Use the Codex stable multi-agent feature | Superseded |
+| [ADR-0141](0141-admit-writer-proof-only-through-agency-plans.md) | Admit writer proof only through Agency plans | Accepted |
+| [ADR-0142](0142-require-terminal-product-child-before-next-unit.md) | Require terminal product child before the next unit | Superseded |
+| [ADR-0143](0143-execute-codex-specialists-in-the-initial-spawn-turn.md) | Execute Codex specialists in the initial spawn turn | Superseded |
+| [ADR-0144](0144-claim-codex-spawn-execution-at-the-first-complete-callback.md) | Claim Codex spawn execution at the first complete callback | Accepted |
+| [ADR-0145](0145-place-exact-codex-execution-after-specialist-expertise.md) | Place exact Codex execution after specialist expertise | Accepted |
+| [ADR-0146](0146-preserve-content-free-codex-child-tool-outcomes.md) | Preserve content-free Codex child tool outcomes | Accepted |
+| [ADR-0147](0147-persist-codex-child-tool-evidence-on-worker-receipts.md) | Persist Codex child tool evidence on worker receipts | Accepted |
+| [ADR-0148](0148-classify-nested-codex-exec-tools-without-content.md) | Classify nested Codex exec tools without content | Accepted |
+| [ADR-0149](0149-classify-codex-wrapper-failures-without-content.md) | Classify Codex wrapper failures without content | Accepted |
+| [ADR-0150](0150-correlate-codex-wrapper-tools-with-outcomes.md) | Correlate Codex wrapper tools with outcomes | Accepted |
+| [ADR-0151](0151-route-codex-product-approvals-to-auto-review.md) | Route Codex product approvals to automatic review | Accepted |
 
 ## Documentation governance
 
