@@ -46,6 +46,8 @@ Bounded projection for making the README product story executable.
   and all required artifacts. Independent grading alone remains `NO-GO`.
 - AR-225 records the first causal defect: hidden probes require global `--data`,
   `add --title`, and JSON `title`, while the published scenario does not.
+- The AR-225 source repair and parity regressions pass 11 focused and 50
+  affected tests. No new build or product trial has been consumed.
 - The product contract remains frozen: default full-suite install with opt-outs;
   mirrored owner CLI/dashboard controls; inference-only specialist staffing;
   one parent-only steward; explicit attended or supported bypass activation;

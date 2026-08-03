@@ -71,8 +71,13 @@ PRODUCT_SCENARIOS: Final[tuple[ProductScenario, ...]] = (
         "Python task CLI",
         "A production-quality Python task manager CLI with durable JSON storage.",
         (
-            "`app.py` supports `add`, `list`, and `complete` subcommands.",
-            "Every command accepts `--data PATH`; machine output is JSON.",
+            "`app.py --data PATH add --title TEXT`, `app.py --data PATH list`, and "
+            "`app.py --data PATH complete ID` are the exact command forms; `--data PATH` is "
+            "a global option placed before the subcommand.",
+            "Successful `add` and `complete` commands emit one JSON task object with `id`, "
+            "`title`, and `completed`; `list` emits a JSON array or a JSON object with a "
+            "`tasks` array containing those task objects.",
+            "An unknown task ID exits nonzero without changing persisted data.",
             "Invalid input exits nonzero with a concise stderr error and never corrupts storage.",
             "Writes are atomic and portable across Windows and Linux.",
         ),
@@ -94,7 +99,13 @@ PRODUCT_SCENARIOS: Final[tuple[ProductScenario, ...]] = (
         "A type-safe Node.js task manager CLI implemented as directly executable TypeScript.",
         (
             "Use Node's built-in TypeScript type stripping; do not download a compiler.",
-            "`src/app.ts` supports `add`, `list`, and `complete` with `--data PATH`.",
+            "`src/app.ts --data PATH add --title TEXT`, `src/app.ts --data PATH list`, and "
+            "`src/app.ts --data PATH complete ID` are the exact command forms; `--data PATH` "
+            "is a global option placed before the subcommand.",
+            "Successful `add` and `complete` commands emit one JSON task object with `id`, "
+            "`title`, and `completed`; `list` emits a JSON array or a JSON object with a "
+            "`tasks` array containing those task objects.",
+            "An unknown task ID exits nonzero without changing persisted data.",
             "Machine output is JSON and durable writes are atomic.",
             "`node --experimental-strip-types --test test/app.test.ts` is the test command.",
         ),

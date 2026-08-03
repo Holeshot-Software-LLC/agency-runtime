@@ -37,6 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
   supported bypass, and no persistent trust change.
 - Its sole product trial completes seven units/workers, proves workspace write,
   and creates all required files. AR-225 owns the two hidden CLI probe failures.
+- AR-225 source now publishes that exact task-CLI contract; 11 focused and 50
+  affected tests pass. The named fast gate remains next.
 - The active goal remains `README's main story works in reality.`
 - PR 195 merged exact revision `6b49f17d6787823f9ba78a8f09383001b6a77535`;
   build `0.1.0+g6b49f17d6787` is installed for Codex, ZCode, and dashboard.

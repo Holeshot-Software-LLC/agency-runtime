@@ -56,6 +56,15 @@ and emits that field. The hidden workflow invokes `--data PATH add --title
 TEXT` and recognizes only `title`. That first mismatch prevents storage
 creation, so the later invalid-ID probe also sees no persisted list or object.
 
+The bounded source repair now publishes the exact shared probe contract for
+both Python and TypeScript task CLI scenarios: global `--data PATH`, exact add,
+list, and complete forms, task fields, accepted list shapes, and unknown-ID
+storage preservation. The independent validator remains unchanged. The new
+regression fails twice on the pre-fix prompt and passes after repair. All 11
+scenario/validator tests and 50 directly affected product, CLI, context, and
+workforce tests pass under warning-strict mode; focused Ruff, formatting, and
+whitespace checks pass.
+
 ## Approach
 
 1. Make the scenario prompt state one exact CLI grammar, JSON record schema,
@@ -76,13 +85,13 @@ whose published and independently graded interfaces disagree.
 
 ## Acceptance
 
-- [ ] The `python-cli-service` prompt specifies the exact option placement,
+- [x] The `python-cli-service` prompt specifies the exact option placement,
   add-title input, task JSON fields, and list response shape used by validation.
-- [ ] Independent probes require no interface behavior absent from the
+- [x] Independent probes require no interface behavior absent from the
   published scenario.
-- [ ] Focused tests fail when prompt and validator contracts diverge and pass
+- [x] Focused tests fail when prompt and validator contracts diverge and pass
   for one minimal conforming application.
-- [ ] Existing path, output-bound, timeout, artifact, and sandbox protections
+- [x] Existing path, output-bound, timeout, artifact, and sandbox protections
   remain fail closed.
 - [ ] Focused checks and the named fast spine pass before another immutable
   build or live product trial.

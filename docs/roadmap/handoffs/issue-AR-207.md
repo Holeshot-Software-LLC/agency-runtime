@@ -73,6 +73,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 - Exact `624a6a3` activation and product runtime pass. Seven inferred units
   delegate and complete, workspace write is proven, and all required files
   exist. AR-225 owns the independent validator's undocumented CLI contract.
+- AR-225 now publishes the exact shared task-CLI probe contract; focused and
+  affected verification pass. The named fast gate remains before a new build.
 - Exact candidate `8e74d56b39b20a4358d3b5b2500dd941da4e51d0` builds canonically
   from a detached source tree and independently verifies. Wheel SHA-256 is
   `08faa80e1cbfb7ab0f98fa4c51562f544b18d3b7e9ac48fe7a9f31e466f2aad0`;

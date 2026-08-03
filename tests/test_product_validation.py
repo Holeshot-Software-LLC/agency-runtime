@@ -204,6 +204,20 @@ def test_typescript_validator_uses_fixed_argv_and_independent_state_probe(
     assert report.passed
     assert all(isinstance(command, list) for command in commands)
     assert any("--test" in command for command in commands)
+    task_commands = [
+        command[command.index("--data") :] for command in commands if "--data" in command
+    ]
+    assert len(task_commands) == 4
+    data_path = task_commands[0][1]
+    assert task_commands == [
+        ["--data", data_path, "add", "--title", "independent-eval-task"],
+        ["--data", data_path, "list"],
+        ["--data", data_path, "complete", "1"],
+        ["--data", data_path, "complete", "missing-task-id"],
+    ]
+    prompt = product_scenario("typescript-node-application").prompt(trial_id="parity")
+    assert "`src/app.ts --data PATH add --title TEXT`" in prompt
+    assert "`id`, `title`, and `completed`" in prompt
 
 
 def test_invalid_extended_product_cannot_produce_a_false_pass(tmp_path: Path) -> None:
