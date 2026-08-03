@@ -1,6 +1,6 @@
 ---
 title: "AR-203: Prove product-canary workspace writes and exact activation"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-30
 updated: 2026-08-01
@@ -379,6 +379,21 @@ published scenario never specifies. The generated CLI uses a valid published
 shape with per-command `--data`, a positional description, and a `description`
 field. This build is consumed and is not retried.
 
+Exact candidate `71faad8badc40a74b1b00ab01063cc5feb97800d` closes the
+boundary. Its wheel and source distributions pass canonical build, strict
+Twine, and independent content verification. Autonomous activation completes
+one inferred `code-reviewer` lifecycle with a valid first header, zero
+corrections, supported bypass, and no persistent profile change. Sole product
+trial `ar203-71faad8-readme-01` passes in 668.313 seconds: inference authors
+seven units and selects seven specialists, all seven planned delegations and
+workers complete with exit code zero, finalization accepts, workspace write is
+proven, and the three required source artifacts exist. Independent workflow,
+invalid-ID, project-test, and documentation checks all pass. Product trace
+`019fc7f3-91ca-72b1-aec6-283b00ffcf87` and Store route
+`641fa1eb-d4d1-45ca-85bd-61fff9762572` retain the exact execution evidence.
+The supported authenticated dashboard open also rendered in an attended Chrome
+tab and displayed the seven completed trial delegations.
+
 ## Approach
 
 1. For Codex Agency product trials, read the exact activation snapshot by host
@@ -459,7 +474,7 @@ demonstrates both mismatches.
 - [x] The post-review repair merges and is exact-installed for Codex, ZCode,
   and the dashboard.
 - [x] The dashboard service is installed and locally reachable.
-- [ ] An attended browser opens and renders the authenticated dashboard page.
+- [x] An attended browser opens and renders the authenticated dashboard page.
 - [x] Exact installed activation passes through attended trust or the supported
   one-invocation bypass, with bypassed evidence never mislabeled trusted.
 - [x] Recruiter response acceptance or bounded repair produces a defensible

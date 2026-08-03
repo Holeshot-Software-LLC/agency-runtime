@@ -26,8 +26,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-204
 branch: codex/ar-204-readme-product-proof
-evidence_commit: 624a6a398f4620eeb92e62193b1407a482941783
-minimum_ledger_commit: 624a6a398f4620eeb92e62193b1407a482941783
+evidence_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
+minimum_ledger_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/189
 ---
@@ -38,18 +38,11 @@ Bounded projection for making the README product story executable.
 
 ## checkpoint
 
-- Exact build `624a6a398f4620eeb92e62193b1407a482941783` passes canonical
-  verification, default install, autonomous activation, and the complete
-  Agency product runtime contract with zero corrections.
-- Its sole README trial completes seven planned specialist units, seven native
-  delegations, seven exit-zero workers, accepted finalization, workspace write,
-  and all required artifacts. Independent grading alone remains `NO-GO`.
-- AR-225 records the first causal defect: hidden probes require global `--data`,
-  `add --title`, and JSON `title`, while the published scenario does not.
-- The AR-225 source repair and parity regressions pass 11 focused and 50
-  affected tests. The complete named fast spine also passes, including 105/105
-  killed decision mutations, zero survivors or invalid results, and unchanged
-  source. No new build or product trial has been consumed.
+- Exact `71faad8` passes canonical build, default suite install, autonomous
+  activation, seven-worker product execution, zero corrections, workspace
+  artifacts, and every independent acceptance check.
+- The authenticated dashboard renders in Chrome and shows the final trial.
+- The README main story is complete locally; no product blocker remains.
 - The product contract remains frozen: default full-suite install with opt-outs;
   mirrored owner CLI/dashboard controls; inference-only specialist staffing;
   one parent-only steward; explicit attended or supported bypass activation;
@@ -137,8 +130,7 @@ Bounded projection for making the README product story executable.
 
 ## exact-blocker
 
-The full Agency execution story now passes. README acceptance is blocked only
-by AR-225's published-scenario versus hidden-validator contradiction.
+None. The full Agency execution and README acceptance stories pass.
 
 ## same-task-continuity
 
@@ -148,10 +140,8 @@ lock files.
 
 ## next-bounded-work-package
 
-1. Create and independently verify one fresh immutable build from the clean
-   AR-225 checkpoint.
-2. Install and activate that exact build once.
-3. Consume one fresh product trial only; never retry `624a6a3`.
+Do not rerun the consumed build. Synchronize tracker closure when GitHub
+spending and outward-write authorization are available.
 
 ## verification
 

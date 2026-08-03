@@ -1,6 +1,6 @@
 ---
 title: "AR-204: Reconcile the README story contract"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-30
 updated: 2026-08-01
@@ -387,6 +387,16 @@ team and eight completed native workers, but the multi-unit collaboration
 projector rejects the topology and the workspace remains empty. AR-219 is the
 one remaining bounded product boundary; the README main story is still NO-GO.
 
+Exact candidate `71faad8badc40a74b1b00ab01063cc5feb97800d` completes the
+README story. Bare install configures the detected Codex and ZCode hosts plus
+the default dashboard; autonomous activation passes with one inference-selected
+specialist lifecycle, zero corrections, and no persistent trust change. Its
+sole product trial `ar203-71faad8-readme-01` accepts an inference-authored
+seven-unit team, executes all seven native delegations and workers, proves
+workspace write, creates the required application, tests, and README, and
+passes all four independent acceptance checks. The authenticated dashboard
+also renders in an attended browser and shows those completed delegations.
+
 ## Acceptance
 
 - [x] Owner CLI configuration/control commands dispatch without the retired
@@ -413,6 +423,6 @@ one remaining bounded product boundary; the README main story is still NO-GO.
 - [x] README, troubleshooting, threat model, roadmap, decisions, and tests state
   the same contract without stale operator-presence or offline-selection text.
 - [x] The named fast verification spine passes before the live demo resumes.
-- [ ] One exact installed build completes the README product trial with a real
+- [x] One exact installed build completes the README product trial with a real
   inferred specialist team, actual delegation where planned, a workspace
   artifact, and zero response corrections.

@@ -60,8 +60,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-207
 branch: codex/ar-223-post-merge-live-proof
-evidence_commit: 8e74d56b39b20a4358d3b5b2500dd941da4e51d0
-minimum_ledger_commit: 8e74d56b39b20a4358d3b5b2500dd941da4e51d0
+evidence_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
+minimum_ledger_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 ---
@@ -70,13 +70,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## checkpoint
 
-- Exact `624a6a3` activation and product runtime pass. Seven inferred units
-  delegate and complete, workspace write is proven, and all required files
-  exist. AR-225 owns the independent validator's undocumented CLI contract.
-- AR-225 now publishes the exact shared task-CLI probe contract; focused and
-  affected verification and the complete named fast spine pass. Decision
-  conformance kills 105/105 mutations with zero survivors or invalid results
-  and unchanged source.
+- Exact `71faad8` closes the README path: activation, seven inferred product
+  units, seven workers, workspace write, required files, zero corrections, and
+  all independent checks pass.
 - Exact candidate `8e74d56b39b20a4358d3b5b2500dd941da4e51d0` builds canonically
   from a detached source tree and independently verifies. Wheel SHA-256 is
   `08faa80e1cbfb7ab0f98fa4c51562f544b18d3b7e9ac48fe7a9f31e466f2aad0`;
@@ -108,8 +104,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/196
 
 ## exact-blocker
 
-None for AR-223. AR-225 is the next README blocker; Agency execution itself
-passes through real seven-worker product delegation with zero corrections.
+None for the README story. AR-223 and AR-225 are complete locally.
 
 ## same-task-continuity
 
@@ -121,9 +116,8 @@ hosted Actions, or touch the owner's two untracked files.
 
 ## next-bounded-work-package
 
-Create one fresh immutable build from the verified AR-225 checkpoint, install
-and activate it once, then consume one product trial. Never retry `624a6a3`;
-fail any correction count greater than zero.
+Do not rerun consumed product evidence. Tracker synchronization remains deferred
+until GitHub spending and outward-write authorization are available.
 
 ## verification
 

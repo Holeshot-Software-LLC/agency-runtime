@@ -1,6 +1,6 @@
 ---
 title: "AR-225: Align product scenario with independent validator"
-status: open
+status: done
 category: roadmap
 created: 2026-08-03
 updated: 2026-08-03
@@ -67,6 +67,14 @@ whitespace checks pass. The complete named fast spine is also green. Its final
 decision-conformance evaluator passed a 196.847-second baseline, killed all
 105 curated mutations with zero survivors or invalid results, and left source
 fingerprints unchanged; the full evaluator completed in 979.8 seconds.
+
+Exact immutable candidate `71faad8badc40a74b1b00ab01063cc5feb97800d`
+then passed autonomous activation and consumed one product trial only. Trial
+`ar203-71faad8-readme-01` passed the formerly failing `python-cli-workflow`
+and `python-cli-errors` probes plus project tests and documentation. The
+validator and published scenario now agree in real Codex product execution;
+the final workspace digest is
+`sha256:dbe42c259d0258820c4aed989fee1ca0f77f46cb1d46e04689d4dc9549d60d42`.
 
 ## Approach
 

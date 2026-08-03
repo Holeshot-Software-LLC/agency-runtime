@@ -22,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-203
 branch: codex/ar-204-readme-product-proof
-evidence_commit: 624a6a398f4620eeb92e62193b1407a482941783
-minimum_ledger_commit: 624a6a398f4620eeb92e62193b1407a482941783
+evidence_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
+minimum_ledger_commit: 71faad8badc40a74b1b00ab01063cc5feb97800d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 ---
@@ -32,14 +32,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## checkpoint
 
-- Exact `624a6a3` canonically verifies and activates with inferred
-  `code-reviewer`, accepted finalization, valid first header, zero corrections,
-  supported bypass, and no persistent trust change.
-- Its sole product trial completes seven units/workers, proves workspace write,
-  and creates all required files. AR-225 owns the two hidden CLI probe failures.
-- AR-225 publishes the exact task-CLI contract; 11 focused, 50 affected, and
-  the named fast spine pass, including 105/105 killed decision mutations.
-- The active goal remains `README's main story works in reality.`
+- Exact `71faad8` canonically builds, verifies, installs, and activates with
+  zero corrections and no persistent trust change.
+- Sole trial `ar203-71faad8-readme-01` completes seven inferred units, seven
+  workers, workspace write, required artifacts, and all independent checks.
+- The authenticated dashboard renders and shows those completed delegations.
+- The goal `README's main story works in reality.` is complete locally.
 - PR 195 merged exact revision `6b49f17d6787823f9ba78a8f09383001b6a77535`;
   build `0.1.0+g6b49f17d6787` is installed for Codex, ZCode, and dashboard.
 - Supported-bypass activation passed with zero corrections. Session
@@ -138,10 +136,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/183
 
 ## exact-blocker
 
-Installation, activation, inference-selected staffing, native delegation,
-worker completion, workspace write, and required artifacts pass. AR-225 is the
-only demonstrated blocker: independent validation assumes an undocumented CLI
-grammar and JSON field.
+None. Installation, activation, inference staffing, native execution, workspace
+artifacts, independent validation, and authenticated dashboard render pass.
 
 ## same-task-continuity
 
@@ -151,8 +147,8 @@ fail-closed validation, mutate private trust state, or rerun a product trial on
 
 ## next-bounded-work-package
 
-Create one fresh immutable build from the AR-225 verified checkpoint, install
-and activate it once, then consume one product trial. Never retry `624a6a3`.
+Do not rerun the consumed build. Synchronize tracker closure when GitHub
+spending and outward-write authorization are available.
 
 ## verification
 
