@@ -304,10 +304,11 @@ def test_release_resources_are_addressable() -> None:
     # PR #129 added substantial workforce/dashboard lifecycle UI (dashboard-render
     # grew ~25%). The original 256 KiB budget no longer accommodates the full
     # unmodified JS (required for 100% V8 branch coverage) plus minified CSS/HTML.
-    # AR-188 adds the authenticated update projection, strict client validation,
-    # and an attended-command banner. Keep that production behavior readable and
-    # branch-testable while retaining a tight aggregate ceiling.
-    assert dashboard_bytes < 268 * 1024, "dashboard assets exceeded the 268 KiB budget"
+    # AR-188 adds the authenticated update projection and attended-command banner;
+    # the later README-reality work adds traceable product proof projections. Keep
+    # that production behavior readable and branch-testable while retaining a
+    # narrow aggregate ceiling above the currently audited 296,619-byte payload.
+    assert dashboard_bytes < 300 * 1024, "dashboard assets exceeded the 300 KiB budget"
 
 
 def test_release_metadata_is_single_source_and_cross_platform() -> None:
@@ -1145,7 +1146,7 @@ def test_dependency_review_paths_are_exactly_gated_and_aggregated() -> None:
         "metadata.st_size <= maximum_bytes",
         "repository_status != 200",
         'repository.get("full_name") != expected_repository',
-        'repository["permissions"].get("pull") is not True',
+        'repository.get("private") is not (expected_visibility != "public")',
         "comparison_status == 403",
         '"message": "Forbidden"',
         '"status": "403"',
@@ -1272,7 +1273,6 @@ def test_dependency_review_classifier_rejects_ambiguous_api_responses(
         ("403", {"message": "Forbidden"}, "private", "false"),
         ("404", {"message": "Not Found"}, "private", "false"),
         ("200", _repository_identity_payload(full_name="other/repository"), "private", "false"),
-        ("200", _repository_identity_payload(pull=False), "private", "false"),
         ("200", _repository_identity_payload(visibility="public"), "private", "false"),
         ("200", _repository_identity_payload(fork=True), "private", "false"),
         ("200", _repository_identity_payload(visibility="public"), "public", "false"),
@@ -1297,6 +1297,23 @@ def test_dependency_review_classifier_rejects_unproven_repository_identity_or_sc
     )
     assert completed.returncode != 0
     assert outputs == {}
+
+
+def test_dependency_review_classifier_accepts_exact_identity_without_permissions_projection(
+    tmp_path: Path,
+) -> None:
+    repository = _repository_identity_payload()
+    repository.pop("permissions")
+
+    completed, outputs = _run_dependency_capability_classifier(
+        tmp_path,
+        repository_payload=repository,
+        comparison_status="403",
+        comparison_payload=DEPENDENCY_REVIEW_UNAVAILABLE,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert outputs["available"] == "false"
 
 
 @pytest.mark.parametrize(
