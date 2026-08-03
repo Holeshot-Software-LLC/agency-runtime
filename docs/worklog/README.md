@@ -603,6 +603,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bff75d3` | 2026-08-03 | test(ci): harden generated provider configs | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 | `916a995` | 2026-08-03 | fix(eval): retain bounded baseline diagnostics | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 | `eea7c45` | 2026-08-03 | test(ci): declare evaluator host platform | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
+| `93c2eca` | 2026-08-03 | fix(eval): bind private fixture interpreter | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
