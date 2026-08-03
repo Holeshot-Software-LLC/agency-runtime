@@ -8,6 +8,7 @@ tags: [bug, ci, release, security, testing]
 related:
   - .github/workflows/ci.yml
   - .github/workflows/dependency-review.yml
+  - agency_runtime/core/owned_process_linux.py
   - tests/runtime_support.py
   - tests/test_ci_session_pair.py
   - tests/test_prepare_ci_runtime.py
@@ -42,18 +43,23 @@ unmergeable and prevent all downstream automatic jobs from running.
 
 ## Current state
 
-The bounded repair makes the two real process-controller tests use the OS-owned
-POSIX interpreter rather than a replaceable hosted-tool-cache path, raises the
-dashboard aggregate ceiling from 268 KiB to a narrow
+The bounded repair makes the two real process-controller targets use the
+OS-owned POSIX interpreter rather than a replaceable hosted-tool-cache path.
+The Linux subreaper now preserves a trusted active interpreter when possible
+and otherwise tries only the exact OS-owned `/usr/bin/python3`, which must pass
+the same executable preparation and immutable identity checks. It also raises
+the dashboard aggregate ceiling from 268 KiB to a narrow
 300 KiB bound above the observed 296,619-byte audited payload, and validates
 repository identity from the authenticated 200 response without requiring an
-optional response field. The focused workflow, runtime, dependency, and release
-contract suite passes 185 tests under warning-strict mode.
+optional response field. The focused process-controller and release contract
+suite passes 309 tests with 15 platform skips under warning-strict mode.
 
 ## Approach
 
 1. Preserve executable namespace enforcement and run real POSIX
-   process-controller tests through an OS-owned interpreter.
+   process-controller targets and their subreaper through an OS-owned
+   interpreter. The subreaper fallback remains subject to the complete frozen
+   executable receipt policy and never searches `PATH`.
 2. Keep a bounded dashboard resource budget with measured headroom rather than
    removing the package-size assertion.
 3. Bind dependency fallback to exact repository identity and the exact expected
@@ -69,6 +75,6 @@ proof or reopen its live evaluation.
 
 - [x] The focused workflow, runtime, dependency, and release tests pass locally.
 - [ ] The Linux quality contract runs real process tests with an OS-owned interpreter.
-- [ ] The dashboard resource assertion passes while retaining a finite ceiling.
-- [ ] Dependency review either runs natively or enters its exact audited fallback.
+- [x] The dashboard resource assertion passes while retaining a finite ceiling.
+- [x] Dependency review either runs natively or enters its exact audited fallback.
 - [ ] Every automatic PR #235 gate passes before merge.

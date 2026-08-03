@@ -466,27 +466,58 @@ def test_supervisor_command_falls_back_when_active_interpreter_is_unavailable(
     assert observed == ["/trusted/base-python"]
 
 
-def test_supervisor_command_never_falls_back_from_an_untrusted_active_interpreter(
+def test_supervisor_command_falls_back_to_frozen_os_interpreter(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     observed: list[str] = []
     monkeypatch.setattr(linux.sys, "executable", "/untrusted/active-python")
     monkeypatch.setattr(linux.sys, "_base_executable", "/trusted/base-python", raising=False)
+
+    def prepare(argv: list[str]) -> PreparedProcessArgv:
+        observed.extend(argv)
+        return PreparedProcessArgv(argv, artifact_paths=(argv[0],))
+
+    monkeypatch.setattr(linux, "prepare_process_argv", prepare)
+
+    def freeze(value: PreparedProcessArgv, **_kwargs: Any) -> PreparedProcessArgv:
+        if value[0] == "/untrusted/active-python":
+            raise PermissionError("active interpreter is not trusted")
+        value.executable_identities = (object(),)  # type: ignore[assignment]
+        value.frozen_launcher = (value[0],)
+        value.frozen_platform = "posix"
+        return value
+
+    monkeypatch.setattr(linux, "freeze_process_argv", freeze)
+
+    result = linux.supervisor_command(_prepared("--version"), forbidden_roots=())
+
+    assert observed == ["/untrusted/active-python", linux.SYSTEM_SUPERVISOR_INTERPRETER]
+    assert result[0] == linux.SYSTEM_SUPERVISOR_INTERPRETER
+    assert result.executable_identities
+
+
+def test_supervisor_command_fails_closed_when_os_interpreter_is_untrusted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: list[str] = []
+    monkeypatch.setattr(linux.sys, "executable", "/untrusted/active-python")
     monkeypatch.setattr(
         linux,
         "prepare_process_argv",
         lambda argv: observed.extend(argv) or _prepared(),
     )
+    monkeypatch.setattr(
+        linux,
+        "freeze_process_argv",
+        lambda _value, **_kwargs: (_ for _ in ()).throw(
+            PermissionError("interpreter is not trusted")
+        ),
+    )
 
-    def reject_active(_value: PreparedProcessArgv, **_kwargs: Any) -> PreparedProcessArgv:
-        raise PermissionError("active interpreter is not trusted")
-
-    monkeypatch.setattr(linux, "freeze_process_argv", reject_active)
-
-    with pytest.raises(PermissionError, match="active interpreter is not trusted"):
+    with pytest.raises(PermissionError, match="interpreter is not trusted"):
         linux.supervisor_command(_prepared("--version"), forbidden_roots=())
 
-    assert observed == ["/untrusted/active-python"]
+    assert observed == ["/untrusted/active-python", linux.SYSTEM_SUPERVISOR_INTERPRETER]
 
 
 def test_supervisor_command_preserves_prepared_interpreter_receipt(
