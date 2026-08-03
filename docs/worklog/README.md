@@ -594,6 +594,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ce01d39` | 2026-08-03 | docs(ar-204): record README reality pass | [AR-204](../roadmap/issue-AR-204-reconcile-readme-story-contract.md) | null |
 | `3381f68` | 2026-08-03 | merge: reconcile README reality proof with main | null | null |
 | `55a00db` | 2026-08-03 | fix(ci): repair automatic PR verification | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
+| `1e1bd3e` | 2026-08-03 | fix(ci): use OS-owned process test interpreter | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
