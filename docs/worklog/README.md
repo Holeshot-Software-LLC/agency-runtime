@@ -596,6 +596,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `55a00db` | 2026-08-03 | fix(ci): repair automatic PR verification | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 | `1e1bd3e` | 2026-08-03 | fix(ci): use OS-owned process test interpreter | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 | `4e957e8` | 2026-08-03 | fix(ci): trust exact Linux supervisor interpreter | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
+| `36a29b3` | 2026-08-03 | fix(ci): invoke private quality runtime | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
