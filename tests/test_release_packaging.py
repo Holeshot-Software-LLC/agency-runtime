@@ -797,9 +797,13 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     assert "tests/test_ci_change_scope.py tests/test_ci_sharding.py" in quality_contracts
     assert "tests/test_ci_session_pair.py tests/test_release_packaging.py" in quality_contracts
     assert '"${AGENCY_CI_PYTHON}" -m pytest' in quality_contracts
+    assert 'export TMPDIR="${AGENCY_CI_TEMP}"' in quality_contracts
+    assert '--basetemp "${AGENCY_CI_TEMP}/pytest-workflow"' in quality_contracts
     production_spine = quality_steps["Run fast Python production spine"]
     assert production_spine["if"] == "steps.change-scope.outputs.code_required == 'true'"
-    assert production_spine["run"].startswith('"${AGENCY_CI_PYTHON}" -m pytest')
+    assert 'export TMPDIR="${AGENCY_CI_TEMP}"' in production_spine["run"]
+    assert '"${AGENCY_CI_PYTHON}" -m pytest' in production_spine["run"]
+    assert '--basetemp "${AGENCY_CI_TEMP}/pytest-production-spine"' in production_spine["run"]
     assert re.findall(r"tests/test_[a-z0-9_]+\.py", production_spine["run"]) == [
         "tests/test_senior_audit_hardening.py",
         "tests/test_configuration_namespace_security.py",

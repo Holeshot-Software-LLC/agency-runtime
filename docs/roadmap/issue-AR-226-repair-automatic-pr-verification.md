@@ -50,7 +50,9 @@ and otherwise tries only the exact OS-owned `/usr/bin/python3`, which must pass
 the same executable preparation and immutable identity checks. The automatic
 quality job now executes its security-sensitive Python suites through the
 existing owner-private CI runtime instead of merely preparing that runtime and
-continuing under GitHub's replaceable hosted-tool-cache interpreter. It also raises
+continuing under GitHub's replaceable hosted-tool-cache interpreter. Pytest's
+temporary roots are likewise bound below that private runtime instead of the
+shared `/tmp` namespace. It also raises
 the dashboard aggregate ceiling from 268 KiB to a narrow
 300 KiB bound above the observed 296,619-byte audited payload, and validates
 repository identity from the authenticated 200 response without requiring an

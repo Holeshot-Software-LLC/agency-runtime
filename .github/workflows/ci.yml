@@ -200,11 +200,14 @@ jobs:
       - name: Verify fast workflow contracts
         if: steps.change-scope.outputs.code_required == 'true'
         run: |
+          export TMPDIR="${AGENCY_CI_TEMP}"
           "${AGENCY_CI_PYTHON}" -m pytest tests/test_ci_change_scope.py tests/test_ci_sharding.py \
-            tests/test_ci_session_pair.py tests/test_release_packaging.py -q -W error
+            tests/test_ci_session_pair.py tests/test_release_packaging.py -q -W error \
+            -p no:cacheprovider --basetemp "${AGENCY_CI_TEMP}/pytest-workflow"
       - name: Run fast Python production spine
         if: steps.change-scope.outputs.code_required == 'true'
         run: |
+          export TMPDIR="${AGENCY_CI_TEMP}"
           "${AGENCY_CI_PYTHON}" -m pytest \
             tests/test_senior_audit_hardening.py \
             tests/test_configuration_namespace_security.py \
@@ -229,7 +232,8 @@ jobs:
             tests/test_host_boundary_hardening.py \
           tests/test_cli_owner_authority.py \
             tests/test_security_turn_boundaries.py \
-            -q -W error
+            -q -W error -p no:cacheprovider \
+            --basetemp "${AGENCY_CI_TEMP}/pytest-production-spine"
       - name: Prove decision-conformance mutations
         if: steps.change-scope.outputs.code_required == 'true'
         run: >-
