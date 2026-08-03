@@ -907,7 +907,11 @@ def test_open_ended_pool_can_declare_gap_without_inventing_a_roster_candidate() 
         invoker=invoke,
     )
 
-    assert recruiter_prompt["detail_cards"] == []
+    # ADR-0118: the recruiter sees every enabled specialist's card (no
+    # deterministic domain filter hides candidates) and still declares a gap
+    # because none faithfully matches the quantum-build-system ideal.
+    assert len(recruiter_prompt["detail_cards"]) == 1
+    assert recruiter_prompt["detail_cards"][0]["agent_id"] == "technical-analyst"
     assert not outcome.accepted
     assert outcome.inference_mode == "inferred"
     assert outcome.decision_source == "inferred"

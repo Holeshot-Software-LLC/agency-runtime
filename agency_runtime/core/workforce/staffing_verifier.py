@@ -30,6 +30,7 @@ _ASSURANCE_ARTIFACTS = frozenset({"review-report", "test-evidence"})
 _ASSURANCE_PHASES = frozenset({"review", "testing", "release"})
 _AUTHORITY_COMPATIBILITY = {
     "advise": frozenset({"advise", "plan", "review"}),
+    "author": frozenset({"author", "modify"}),
     "modify": frozenset({"modify"}),
     "plan": frozenset({"plan"}),
     "review": frozenset({"review"}),
@@ -398,6 +399,7 @@ def _requirements(unit: WorkUnit) -> tuple[str, ...]:
 
 
 def _coverage(unit: WorkUnit, contract: WorkforceContract) -> frozenset[str]:
+    requirements = _requirements(unit)
     covered: set[str] = set()
     if unit.artifact_kind in contract.artifact_kinds:
         covered.add(f"artifact:{unit.artifact_kind}")
@@ -412,6 +414,19 @@ def _coverage(unit: WorkUnit, contract: WorkforceContract) -> frozenset[str]:
     )
     if _authority_satisfies(unit, contract):
         covered.add(f"authority:{unit.authority}")
+    # ADR-0118 / settled inference-only contract: deterministic coverage
+    # verification is sound only when contracts carry typed coverage fields.
+    # When a contract declares none of artifact_kinds, lifecycle_phases, domains,
+    # or stacks (the common state for roster specialists before enrichment
+    # runs), it can neither prove nor disprove coverage. Treat it as a wildcard
+    # that covers every requirement so the recruiter's faithful-match decision
+    # is not hard-rejected by a typed-data gate that has no data to evaluate.
+    # Objective invariants (eligibility, host/platform/tools, forbidden
+    # conflicts) still apply downstream.
+    if not covered and not (
+        contract.artifact_kinds or contract.lifecycle_phases or contract.domains or contract.stacks
+    ):
+        return frozenset(requirements)
     return frozenset(covered)
 
 
