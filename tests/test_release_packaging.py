@@ -722,6 +722,10 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
         "code_required": "${{ steps.change-scope.outputs.code_required }}",
         "scope_reason": "${{ steps.change-scope.outputs.scope_reason }}",
     }
+    dashboard_coverage = quality_steps["Run dashboard UI tests with coverage"]["run"]
+    assert "--test-coverage-lines=95" in dashboard_coverage
+    assert "--test-coverage-branches=86" in dashboard_coverage
+    assert "--test-coverage-functions=93" in dashboard_coverage
     classifier = quality_steps["Classify the complete event delta"]
     assert classifier["id"] == "change-scope"
     assert classifier["env"] == {

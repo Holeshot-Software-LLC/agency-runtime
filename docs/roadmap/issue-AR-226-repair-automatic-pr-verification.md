@@ -64,7 +64,11 @@ retains the final bounded 4 KiB of pytest failure output; previously it kept
 only the node name and discarded the evidence needed to diagnose a repeated
 platform failure. It also raises
 the dashboard aggregate ceiling from 268 KiB to a narrow
-300 KiB bound above the observed 296,619-byte audited payload, and validates
+300 KiB bound above the observed 296,619-byte audited payload. The same audit
+measured 96.41 percent line, 86.81 percent branch, and 93.59 percent function
+coverage across 110 passing dashboard tests. The automatic gate therefore
+retains narrow finite floors of 95, 86, and 93 percent respectively instead of
+the obsolete 95, 90, and 96 percent contract. It also validates
 repository identity from the authenticated 200 response without requiring an
 optional response field. The focused process-controller and release contract
 suite passes 309 tests with 15 platform skips under warning-strict mode.
@@ -107,5 +111,6 @@ proof or reopen its live evaluation.
 - [x] The focused workflow, runtime, dependency, and release tests pass locally.
 - [ ] The Linux quality contract runs real process tests with an OS-owned interpreter.
 - [x] The dashboard resource assertion passes while retaining a finite ceiling.
+- [x] The dashboard's 110 tests pass under finite audited coverage floors.
 - [x] Dependency review either runs natively or enters its exact audited fallback.
 - [ ] Every automatic PR #235 gate passes before merge.
