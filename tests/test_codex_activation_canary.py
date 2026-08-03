@@ -32,6 +32,8 @@ from agency_runtime.core.codex_child_tool_evidence import (
     CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_SCHEMA,
     CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS,
     CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_SCHEMA,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_FIELDS,
+    CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_SCHEMA,
     classify_codex_exec_wrapper_failure,
     decode_stored_codex_child_tool_evidence,
 )
@@ -209,6 +211,22 @@ def test_product_child_tool_evidence_is_fixed_and_content_free() -> None:
         "child_exec_wrapper_permission_denied_count": 0,
         "child_exec_wrapper_process_failed_other_count": 1,
         "child_exec_wrapper_failure_unknown_count": 0,
+        "child_exec_wrapper_apply_patch_completed_count": 0,
+        "child_exec_wrapper_apply_patch_failed_count": 0,
+        "child_exec_wrapper_apply_patch_yielded_count": 0,
+        "child_exec_wrapper_apply_patch_unknown_count": 0,
+        "child_exec_wrapper_shell_command_completed_count": 0,
+        "child_exec_wrapper_shell_command_failed_count": 0,
+        "child_exec_wrapper_shell_command_yielded_count": 0,
+        "child_exec_wrapper_shell_command_unknown_count": 0,
+        "child_exec_wrapper_other_completed_count": 0,
+        "child_exec_wrapper_other_failed_count": 0,
+        "child_exec_wrapper_other_yielded_count": 0,
+        "child_exec_wrapper_other_unknown_count": 0,
+        "child_exec_wrapper_ambiguous_completed_count": 0,
+        "child_exec_wrapper_ambiguous_failed_count": 1,
+        "child_exec_wrapper_ambiguous_yielded_count": 0,
+        "child_exec_wrapper_ambiguous_unknown_count": 0,
     }
     encoded = json.dumps(evidence)
     assert all(
@@ -283,6 +301,8 @@ def test_product_child_tool_evidence_ignores_quoted_names_and_fails_closed() -> 
     assert evidence["child_exec_nested_shell_command_tool_call_count"] == 1
     assert evidence["child_exec_wrapper_completed_count"] == 1
     assert evidence["child_exec_wrapper_yielded_count"] == 1
+    assert evidence["child_exec_wrapper_shell_command_completed_count"] == 1
+    assert evidence["child_exec_wrapper_ambiguous_yielded_count"] == 1
     assert "private" not in json.dumps(evidence)
 
 
@@ -308,6 +328,21 @@ def test_product_child_tool_evidence_keeps_canonical_v2_store_rows_readable() ->
     assert (
         decode_stored_codex_child_tool_evidence(
             schema=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_SCHEMA,
+            source=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
+            recorded_at="2026-08-02T19:40:48Z",
+            payload=payload,
+        )
+        == legacy
+    )
+
+
+def test_product_child_tool_evidence_keeps_canonical_v3_store_rows_readable() -> None:
+    legacy = dict.fromkeys(CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_FIELDS, 0)
+    payload = json.dumps(legacy, sort_keys=True, separators=(",", ":"))
+
+    assert (
+        decode_stored_codex_child_tool_evidence(
+            schema=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_SCHEMA,
             source=CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE,
             recorded_at="2026-08-02T19:40:48Z",
             payload=payload,
@@ -374,7 +409,58 @@ def test_product_child_tool_evidence_projects_fixed_wrapper_failure_category() -
     assert evidence["child_exec_wrapper_failed_count"] == 1
     assert evidence["child_exec_wrapper_permission_denied_count"] == 1
     assert evidence["child_exec_wrapper_process_failed_other_count"] == 0
+    assert evidence["child_exec_wrapper_apply_patch_failed_count"] == 1
     assert "private path" not in json.dumps(evidence)
+
+
+def test_product_child_tool_evidence_correlates_nested_tool_and_wrapper_outcome() -> None:
+    events = []
+    wrappers = (
+        ("patch", 'await tools.apply_patch("private patch");', "Script failed\nExit code: 1"),
+        ("shell-ok", "await tools.shell_command({command: 'private'});", "Script completed"),
+        (
+            "shell-fail",
+            "await tools.shell_command({command: 'secret'});",
+            "Script failed\nExit code: 2",
+        ),
+    )
+    for call_id, input_value, output in wrappers:
+        events.extend(
+            (
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "custom_tool_call",
+                        "name": "exec",
+                        "status": "completed",
+                        "call_id": call_id,
+                        "input": input_value,
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "custom_tool_call_output",
+                        "call_id": call_id,
+                        "output": output,
+                    },
+                },
+            )
+        )
+
+    evidence = _codex_product_child_tool_evidence(events)
+
+    assert evidence["child_exec_wrapper_apply_patch_failed_count"] == 1
+    assert evidence["child_exec_wrapper_shell_command_completed_count"] == 1
+    assert evidence["child_exec_wrapper_shell_command_failed_count"] == 1
+    assert evidence["child_exec_wrapper_process_failed_other_count"] == 2
+    assert not any(
+        evidence[f"child_exec_wrapper_{kind}_{outcome}_count"]
+        for kind in ("other", "ambiguous")
+        for outcome in ("completed", "failed", "yielded", "unknown")
+    )
+    assert "private" not in json.dumps(evidence)
+    assert "secret" not in json.dumps(evidence)
 
 
 def test_codex_child_projection_rejects_duplicate_execution_delivery() -> None:

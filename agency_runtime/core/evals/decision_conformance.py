@@ -934,6 +934,20 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-product-collapses-wrapper-tool-outcome-correlation",
+        invariant=(
+            "Codex product evidence correlates each unambiguous nested tool kind with "
+            "its wrapper outcome without retaining input or output content."
+        ),
+        source_path="agency_runtime/core/canary_backends.py",
+        before=('        nested_kind = exec_nested_kinds.get(call_id, "ambiguous")\n'),
+        after='        nested_kind = "ambiguous"\n',
+        test_node=(
+            "tests/test_codex_activation_canary.py::"
+            "test_product_child_tool_evidence_correlates_nested_tool_and_wrapper_outcome"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="product-host-skips-child-tool-evidence-store-write",
         invariant=(
             "Codex product admission writes each validated child tool summary into its "

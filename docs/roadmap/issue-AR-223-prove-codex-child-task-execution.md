@@ -38,6 +38,7 @@ related:
   - docs/decisions/0147-persist-codex-child-tool-evidence-on-worker-receipts.md
   - docs/decisions/0148-classify-nested-codex-exec-tools-without-content.md
   - docs/decisions/0149-classify-codex-wrapper-failures-without-content.md
+  - docs/decisions/0150-correlate-codex-wrapper-tools-with-outcomes.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

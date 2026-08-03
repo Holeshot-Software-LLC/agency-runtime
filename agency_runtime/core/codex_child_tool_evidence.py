@@ -8,7 +8,8 @@ from collections.abc import Mapping
 
 CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_SCHEMA = "agency.codex-product-child-tool-evidence.v1"
 CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_SCHEMA = "agency.codex-product-child-tool-evidence.v2"
-CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA = "agency.codex-product-child-tool-evidence.v3"
+CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_SCHEMA = "agency.codex-product-child-tool-evidence.v3"
+CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA = "agency.codex-product-child-tool-evidence.v4"
 CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SOURCE = "persisted_rollout"
 CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_MAX_COUNT = 5_000
 CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_MAX_EXEC_INPUT_CHARS = 1_000_000
@@ -42,7 +43,7 @@ CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS = (
     "child_exec_wrapper_yielded_count",
     "child_exec_wrapper_unknown_count",
 )
-CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS = (
+CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_FIELDS = (
     *CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS,
     "child_exec_wrapper_windows_split_writable_roots_count",
     "child_exec_wrapper_windows_sandbox_setup_failed_count",
@@ -50,6 +51,14 @@ CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS = (
     "child_exec_wrapper_permission_denied_count",
     "child_exec_wrapper_process_failed_other_count",
     "child_exec_wrapper_failure_unknown_count",
+)
+CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS = (
+    *CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_FIELDS,
+    *(
+        f"child_exec_wrapper_{kind}_{outcome}_count"
+        for kind in ("apply_patch", "shell_command", "other", "ambiguous")
+        for outcome in ("completed", "failed", "yielded", "unknown")
+    ),
 )
 
 _IDENTIFIER = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*")
@@ -283,6 +292,7 @@ def _normalize_codex_child_tool_evidence(
         raise ValueError("Codex child tool evidence relationships were invalid")
     if fields in {
         CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS,
+        CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_FIELDS,
         CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
     }:
         exec_total = normalized["child_exec_tool_call_count"]
@@ -302,7 +312,10 @@ def _normalize_codex_child_tool_evidence(
             == exec_total
         ):
             raise ValueError("Codex nested exec evidence relationships were invalid")
-    if fields == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS and (
+    if fields in {
+        CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_FIELDS,
+        CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
+    } and (
         normalized["child_exec_wrapper_windows_split_writable_roots_count"]
         + normalized["child_exec_wrapper_windows_sandbox_setup_failed_count"]
         + normalized["child_exec_wrapper_approval_rejected_count"]
@@ -312,6 +325,14 @@ def _normalize_codex_child_tool_evidence(
         != normalized["child_exec_wrapper_failed_count"]
     ):
         raise ValueError("Codex wrapper failure evidence relationships were invalid")
+    if fields == CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS:
+        for outcome in ("completed", "failed", "yielded", "unknown"):
+            matrix_total = sum(
+                normalized[f"child_exec_wrapper_{kind}_{outcome}_count"]
+                for kind in ("apply_patch", "shell_command", "other", "ambiguous")
+            )
+            if matrix_total != normalized[f"child_exec_wrapper_{outcome}_count"]:
+                raise ValueError("Codex wrapper tool outcome relationships were invalid")
     return normalized
 
 
@@ -349,6 +370,7 @@ def decode_stored_codex_child_tool_evidence(
     schema_fields = {
         CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_SCHEMA: (CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V1_FIELDS),
         CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_SCHEMA: CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V2_FIELDS,
+        CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_SCHEMA: CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_V3_FIELDS,
         CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_SCHEMA: CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
     }
     fields = schema_fields.get(values[0])

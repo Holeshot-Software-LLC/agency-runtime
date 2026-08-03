@@ -1379,6 +1379,7 @@ def _record_codex_exec_input_evidence(
     *,
     call_ids: set[str],
     duplicate_call_ids: set[str],
+    nested_kinds: dict[str, str],
 ) -> None:
     """Project one exec wrapper input into fixed nested-call counts."""
 
@@ -1389,11 +1390,21 @@ def _record_codex_exec_input_evidence(
         evidence["child_exec_input_classified_count"] += 1
         for field, count in nested.items():
             evidence[field] += count
+    nested_kind = "ambiguous"
+    if nested is not None and nested["child_exec_nested_tool_call_count"] == 1:
+        if nested["child_exec_nested_apply_patch_tool_call_count"] == 1:
+            nested_kind = "apply_patch"
+        elif nested["child_exec_nested_shell_command_tool_call_count"] == 1:
+            nested_kind = "shell_command"
+        elif nested["child_exec_nested_other_tool_call_count"] == 1:
+            nested_kind = "other"
     call_id = str(payload.get("call_id") or "").strip()
     if not call_id or call_id in call_ids:
         duplicate_call_ids.add(call_id)
+        nested_kinds.pop(call_id, None)
     else:
         call_ids.add(call_id)
+        nested_kinds[call_id] = nested_kind
 
 
 def _record_codex_exec_output(
@@ -1416,6 +1427,7 @@ def _codex_product_child_tool_evidence(events: list[dict[str, Any]]) -> dict[str
     failed_statuses = {"failed", "errored", "cancelled", "canceled"}
     exec_call_ids: set[str] = set()
     duplicate_exec_call_ids: set[str] = set()
+    exec_nested_kinds: dict[str, str] = {}
     exec_outputs: dict[str, object] = {}
     for event in events:
         payload = event.get("payload")
@@ -1446,6 +1458,7 @@ def _codex_product_child_tool_evidence(events: list[dict[str, Any]]) -> dict[str
                     payload,
                     call_ids=exec_call_ids,
                     duplicate_call_ids=duplicate_exec_call_ids,
+                    nested_kinds=exec_nested_kinds,
                 )
             status = str(payload.get("status") or "").strip().casefold()
             if status == "completed":
@@ -1479,14 +1492,18 @@ def _codex_product_child_tool_evidence(events: list[dict[str, Any]]) -> dict[str
     for call_id in exec_call_ids - duplicate_exec_call_ids:
         outcome = classify_codex_exec_wrapper_output(exec_outputs.get(call_id))
         evidence[f"child_exec_wrapper_{outcome}_count"] += 1
+        nested_kind = exec_nested_kinds.get(call_id, "ambiguous")
+        evidence[f"child_exec_wrapper_{nested_kind}_{outcome}_count"] += 1
         if outcome == "failed":
             failure = classify_codex_exec_wrapper_failure(exec_outputs.get(call_id))
             evidence[f"child_exec_wrapper_{failure}_count"] += 1
         classified_exec_outputs += 1
-    evidence["child_exec_wrapper_unknown_count"] += max(
+    unclassified_exec_outputs = max(
         evidence["child_exec_tool_call_count"] - classified_exec_outputs,
         0,
     )
+    evidence["child_exec_wrapper_unknown_count"] += unclassified_exec_outputs
+    evidence["child_exec_wrapper_ambiguous_unknown_count"] += unclassified_exec_outputs
     evidence["child_tool_output_missing_count"] = max(
         evidence["child_tool_call_count"] - evidence["child_tool_output_count"],
         0,
