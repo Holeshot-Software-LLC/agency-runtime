@@ -623,6 +623,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e87747d` | 2026-08-04 | docs: commit analysis handoffs and uv.lock | null | null |
 | `c1fbfbe` | 2026-08-04 | docs(roadmap): AR-235 plan autonomous gap hiring with isolated security review and amend-first staffing | [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | [AR-235 capsule](../roadmap/handoffs/issue-AR-235.md) |
 | `f629b63` | 2026-08-04 | docs(roadmap): AR-236 plan full CLI and dashboard functional and presentational parity | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | [AR-236 capsule](../roadmap/handoffs/issue-AR-236.md), [parity analysis](../analysis/2026-08-04-cli-dashboard-parity.md) |
+| `38bb16a` | 2026-08-04 | docs(roadmap): fix AR-236 capsule relative path to parity analysis | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
