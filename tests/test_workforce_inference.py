@@ -1636,6 +1636,7 @@ def test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requir
                     ],
                     "execution_eligible": True,
                     "ineligibility_reasons": [],
+                    "untyped_candidate": False,
                 }
             ]
             return _result(unsafe)

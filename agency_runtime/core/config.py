@@ -234,7 +234,7 @@ class DelegationConfig:
 class WorkforceConfig:
     """Inference-first planning, staffing, hiring, and promotion policy."""
 
-    mode: str = "fast"
+    mode: str = "strict"
     provider: str = ""
     planner_model: str = ""
     recruiter_model: str = ""
@@ -500,7 +500,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             child_cache_ttl_seconds=int(delegation_raw.get("child_cache_ttl_seconds", 900)),
         ),
         workforce=WorkforceConfig(
-            mode=str(workforce_raw.get("mode", "fast")).strip().casefold(),
+            mode=str(workforce_raw.get("mode", "strict")).strip().casefold(),
             provider=str(workforce_raw.get("provider", "")).strip(),
             planner_model=str(workforce_raw.get("planner_model", "")).strip(),
             recruiter_model=str(workforce_raw.get("recruiter_model", "")).strip(),

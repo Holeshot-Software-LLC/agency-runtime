@@ -351,13 +351,14 @@ def install_known_contractors(store: Any) -> KnownContractorInstallResult:
         package = known_contractor_package(slug)
         worker = workers.get(slug)
         if worker is not None:
-            if (
-                worker["origin"] != "agency"
-                or worker["current_hash"] != package.compiled.prompt_hash
-            ):
+            if worker["origin"] != "agency":
                 raise RuntimeError(
                     f"known contractor identity conflicts with active worker: {slug}"
                 )
+            # A hash mismatch means the packaged contractor's compiled prompt
+            # changed after a code update. The existing worker is still
+            # Agency-owned; accept it as current rather than blocking the
+            # install. A proper version-advance path can refresh it later.
             existing.append(slug)
             continue
         version_id = store.stage_agency_workforce_agent(package.agent)

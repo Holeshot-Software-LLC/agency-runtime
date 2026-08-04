@@ -617,7 +617,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `781e83e` | 2026-08-04 | AR-229: Fix README specialist count and two pre-existing test failures (#238) | null | null |
 | `21c0aaa` | 2026-08-04 | AR-230: Close completed issues and stale PR (#239) | null | null |
 | `def4f8b` | 2026-08-04 | AR-231: Resource-file filtering, multi-host upgrade, ZCode delegation note, close AR-210 (#240) | null | null |
-| `2f89411` | 2026-08-04 | fix: remove MAX_PLAN_LIST_ITEMS cap that truncated resource scopes | null | null |
+| `7c33b35` | 2026-08-04 | AR-232: Remove MAX_PLAN_LIST_ITEMS cap that truncated resource scopes (#241) | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

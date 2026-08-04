@@ -101,7 +101,24 @@ class SubstantiveSpecialistUnavailable(RuntimeError):
     separately to fail open: it persists the receipt (so the dashboard and logs
     stay diagnosable) and returns an honest zero-specialist ``PreflightResult``
     instead of blocking the parent model. See the ADR-0122 update.
+
+    Carries the routing dict's inference fields so the fail-open result can
+    report the real cause (inference attempted vs not, plan-policy veto vs
+    provider failure) instead of hard-coding ``inference_attempted=True``.
     """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        routing: Mapping[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message)
+        r = routing or {}
+        self.inference_attempted = bool(r.get("inference_attempted", True))
+        self.inference_mode = str(r.get("inference_mode") or "degraded")
+        self.routing_error = str(r.get("error") or "")
+        self.inference_failures: tuple[str, ...] = tuple(r.get("inference_failures") or ())
 
 
 class _PreflightFailureDiagnostics:
@@ -1319,17 +1336,23 @@ def _fail_open_preflight_result(
     resident_context: str,
     roster_size: int,
     host: str,
+    inference_attempted: bool = True,
+    inference_mode: str = "degraded",
+    routing_error: str = "",
+    inference_failures: tuple[str, ...] = (),
 ) -> PreflightResult:
     """Build the honest zero-specialist result returned on a fail-open turn.
 
     ADR-0122 update: when a substantive turn cannot produce an accepted
     specialist, the turn proceeds as a generalist answer with the resident
     manager kernel bound and a ``Recruited via: none`` header. The routing dict
-    carries an explicit ``inference_mode``/``status`` so the header and dashboard
-    stay truthful about why no specialist was selected.
+    carries the real ``inference_attempted``/``inference_mode`` from the
+    SubstantiveSpecialistUnavailable exception so the header and dashboard stay
+    truthful about why no specialist was selected.
     """
 
     resident_managers = RESIDENT_MANAGER_SLUGS
+    error_detail = ", ".join(s for s in (routing_error, *inference_failures) if s.strip())
     routing = {
         "selected_ids": [],
         "semantic_ids": [],
@@ -1338,11 +1361,13 @@ def _fail_open_preflight_result(
         "source": "workforce_inference",
         "inference_configured": True,
         "inference_required": True,
-        "inference_attempted": True,
-        "inference_mode": "degraded",
+        "inference_attempted": inference_attempted,
+        "inference_mode": inference_mode,
+        "stage_latencies": {},
+        "total_inference_calls": 0,
         "provider": "deterministic",
         "trace_id": trace_id,
-        "error": "no accepted specialist route; the host answers as a generalist",
+        "error": error_detail or "no accepted specialist route; the host answers as a generalist",
     }
     return PreflightResult(
         session_id=session_id,
@@ -1729,7 +1754,8 @@ def _require_substantive_specialist(
     )[:200]
     raise SubstantiveSpecialistUnavailable(
         f"no accepted specialist route; status={status}; source={source}; "
-        f"inference_mode={inference_mode}; reason={detail or 'none'}"
+        f"inference_mode={inference_mode}; reason={detail or 'none'}",
+        routing=routing,
     )
 
 
@@ -2131,6 +2157,10 @@ def run_preflight(
                 resident_context=resident_context,
                 roster_size=len(catalog),
                 host=normalized_host,
+                inference_attempted=error.inference_attempted,
+                inference_mode=error.inference_mode,
+                routing_error=error.routing_error,
+                inference_failures=error.inference_failures,
             )
         raise
 

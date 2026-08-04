@@ -18,6 +18,18 @@ from agency_runtime.core.unit_assignment import (
 )
 from agency_runtime.core.workforce.inference import WorkforceRoutingOutcome
 
+
+def _stage_latencies(attempts: Sequence[Any]) -> dict[str, int]:
+    """Aggregate per-stage latency_ms from inference attempts."""
+
+    totals: dict[str, int] = {}
+    for item in attempts:
+        stage = str(getattr(item, "stage", "") or "")
+        latency = int(getattr(item, "latency_ms", 0) or 0)
+        totals[stage] = totals.get(stage, 0) + latency
+    return totals
+
+
 _ARTIFACTS = frozenset(
     {
         "analysis",
@@ -326,6 +338,8 @@ def project_workforce_routing(
         "confidence": min(confidences, default=0.0),
         "margin": min(margins, default=0.0),
         "latency_ms": sum(item.latency_ms for item in outcome.attempts),
+        "stage_latencies": _stage_latencies(outcome.attempts),
+        "total_inference_calls": outcome.calls_used,
         "status": outcome.status,
         "source": (
             "workforce_inference_failure"

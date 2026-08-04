@@ -58,7 +58,7 @@ delegation:
 # and recruiter. Fast and balanced fund one bounded repair for each stage;
 # strict also funds an independent critic.
 workforce:
-  mode: fast
+  mode: strict
   provider: ""                  # blank = use the configured provider chain
   planner_model: ""             # blank = provider's configured model/alias
   recruiter_model: ""
