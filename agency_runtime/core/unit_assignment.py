@@ -28,7 +28,6 @@ MAX_ASSIGNMENT_AGENT_NAME_CHARS = 128
 MAX_ASSIGNMENT_AGENT_DESCRIPTION_CHARS = 256
 MAX_ASSIGNMENT_AGENT_LABEL_CHARS = 64
 MAX_ASSIGNMENT_AGENT_LABELS = 8
-MAX_PLAN_LIST_ITEMS = 8
 MAX_PLAN_LIST_ITEM_CHARS = 128
 MAX_RESOURCE_CHARS = 512
 MAX_UNIT_SELECTION_WORKERS = 4
@@ -885,8 +884,6 @@ def _likely_resources(unit: str) -> list[str]:
         if normalized and normalized not in seen:
             seen.add(normalized)
             resources.append(normalized)
-            if len(resources) >= MAX_PLAN_LIST_ITEMS:
-                break
     return resources or ["repository-workspace"]
 
 
@@ -970,7 +967,7 @@ def _metadata_union(
 
 
 def _bounded_plan_strings(value: Any, *, digests: bool = False) -> list[str] | None:
-    if not isinstance(value, list) or len(value) > MAX_PLAN_LIST_ITEMS:
+    if not isinstance(value, list):
         return None
     result: list[str] = []
     seen: set[str] = set()
