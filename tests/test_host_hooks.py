@@ -2367,15 +2367,20 @@ def test_hook_boundary_blocks_oversized_native_child_pre_tool_use(host: str) -> 
 
 
 @pytest.mark.parametrize("host", ["codex", "zcode"])
-def test_hook_boundary_blocks_prompt_before_generalist_generation_when_preflight_fails(
+def test_hook_boundary_blocks_prompt_when_preflight_integrity_fails(
     host: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # Staffing failures no longer reach this block (ADR-0122 update: a
+    # substantive turn with no accepted specialist fails open with an honest
+    # header). This boundary still blocks for non-staffing integrity failures
+    # raised by the bridge, and now appends the exact cause so the operator can
+    # diagnose it.
     from agency_runtime.adapters import hooks as hooks_module
 
     class _FailingBridge:
         def handle(self, _payload: dict[str, Any]) -> dict[str, Any]:
-            raise RuntimeError("substantive turn has no accepted specialist")
+            raise RuntimeError("evidence store unavailable")
 
     monkeypatch.setattr(
         hooks_module,
@@ -2406,7 +2411,7 @@ def test_hook_boundary_blocks_prompt_before_generalist_generation_when_preflight
     result = json.loads(sink.getvalue())
     assert result["decision"] == "block"
     assert "AGENCY PREFLIGHT FAILED" in result["reason"]
-    assert "not allowed to answer as a generalist" in result["reason"]
+    assert "evidence store unavailable" in result["reason"]
 
 
 def test_hook_boundary_blocks_planned_child_when_bridge_fails(

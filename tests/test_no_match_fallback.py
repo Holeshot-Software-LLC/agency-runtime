@@ -363,21 +363,27 @@ def test_isolated_trivial_steward_can_finalize_without_child_activation(
     ("host", "adapter_type"),
     (("codex", CodexAdapter), ("claude", ClaudeAdapter)),
 )
-def test_isolated_nontrivial_turn_fails_before_a_generalist_answer(
+def test_isolated_nontrivial_turn_fails_open_without_a_specialist(
     tmp_path: Path,
     host: str,
     adapter_type: type[CodexAdapter] | type[ClaudeAdapter],
 ) -> None:
+    # ADR-0122 update: a substantive turn that cannot produce an accepted
+    # specialist no longer blocks the parent model. The host answers as a
+    # generalist with an honest "Recruited via: none" header, and no specialist
+    # is bound to the session. The operator is never locked out of the host.
     store = _resident_only_store(tmp_path / f"{host}-nontrivial.db")
     adapter = adapter_type(store=store)
     trace_id = f"{host}-nontrivial-turn"
 
-    with pytest.raises(RuntimeError, match="no accepted specialist or contractor"):
-        adapter.build_preflight_context(
-            f"{host}-session",
-            "Investigate this unusual request thoroughly and produce a durable implementation.",
-            trace_id=trace_id,
-        )
+    context = adapter.build_preflight_context(
+        f"{host}-session",
+        "Investigate this unusual request thoroughly and produce a durable implementation.",
+        trace_id=trace_id,
+    )
+    # The turn proceeds (a result dict is returned rather than raising), but no
+    # specialist is persisted for the session.
+    assert isinstance(context, dict)
     assert store.get_specialists_for_session(f"{host}-session") == []
 
 

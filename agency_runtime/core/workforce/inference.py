@@ -1164,16 +1164,18 @@ def _typed_shortlists(
     result: list[dict[str, Any]] = []
     for unit in plan.units:
         required = typed_staffing_requirements(unit)
-        unit_domains = frozenset(unit.domains)
         candidates: list[tuple[str, frozenset[str], tuple[str, ...]]] = []
         eligible_coverage: set[str] = set()
         for contract in contracts:
-            # Broad eligibility: domain overlap and enabled.
-            # Host filtering is NOT applied at recall — contracts may not
-            # declare every supported host (zcode is new). The recruiter
-            # and verifier handle host eligibility downstream.
-            domain_match = bool(unit_domains & set(contract.domains)) if unit_domains else True
-            if not (domain_match and contract.enabled):
+            # ADR-0118 / settled inference-only contract: do not exclude
+            # candidates by a deterministic domain-overlap filter. Most roster
+            # specialists carry no typed domains until enrichment runs, so a
+            # domain gate here would hide them, produce empty coverage evidence,
+            # and force the recruiter into spurious gaps. Consider every enabled
+            # specialist; typed coverage and hard ineligibility remain objective
+            # invariants. Host filtering is NOT applied at recall either;
+            # downstream stages handle host eligibility.
+            if not contract.enabled:
                 continue
             coverage = typed_staffing_coverage(unit, contract)
             ineligibility = (
@@ -1728,30 +1730,34 @@ def _recruit_ambiguous_plan(
     # contract. The recruiter may reason over those audited fields;
     # deterministic code still only narrows and rejects and never chooses a
     # worker.
-    # Build compact cards for all domain-eligible specialists
-    compact_cards = []
-    eligible_ids = set()
-    for unit in plan.units:
-        unit_domains = frozenset(unit.domains)
-        for contract in snapshot.contracts:
-            if unit_domains and not (unit_domains & set(contract.domains)):
-                continue
-            if not contract.enabled:
-                continue
-            if contract.agent_id not in eligible_ids:
-                eligible_ids.add(contract.agent_id)
-                compact_cards.append(
-                    {
-                        "agent_id": contract.agent_id,
-                        "display_name": contract.display_name,
-                        "outcomes": list(contract.outcomes[:2]),
-                        "scope_qualifiers": list(contract.scope_qualifiers),
-                        "not_for": list(contract.not_for),
-                    }
-                )
-    detail_cards = compact_cards
-    allowed_candidate_ids = frozenset(eligible_ids)
+    # Build compact cards for the typed-recall candidate set and let inference
+    # decide faithful matches. Sending all ~273 specialists' cards overwhelms a
+    # single structured inference call and the model defaults to spurious gaps.
+    # The typed-recall evidence is objective (typed field coverage, not a
+    # semantic ranking): it surfaces the specialists whose audited
+    # artifact/lifecycle/domain/capability/authority fields cover each unit's
+    # requirements. The full roster remains visible to the recruiter through the
+    # non-ranked typed_recall block so it can still declare a real gap; only the
+    # rankable detail cards are bounded to the relevant subset.
     typed_recall = _typed_shortlists(plan, snapshot.contracts, context=context)
+    recall_ids: set[str] = set()
+    for entry in typed_recall:
+        for candidate in entry["candidates"]:
+            recall_ids.add(candidate["agent_id"])
+    contracts_by_id = {contract.agent_id: contract for contract in snapshot.contracts}
+    compact_cards = [
+        {
+            "agent_id": agent_id,
+            "display_name": contracts_by_id[agent_id].display_name,
+            "outcomes": list(contracts_by_id[agent_id].outcomes[:2]),
+            "scope_qualifiers": list(contracts_by_id[agent_id].scope_qualifiers),
+            "not_for": list(contracts_by_id[agent_id].not_for),
+        }
+        for agent_id in sorted(recall_ids)
+        if agent_id in contracts_by_id and contracts_by_id[agent_id].enabled
+    ]
+    detail_cards = compact_cards
+    allowed_candidate_ids = frozenset(item["agent_id"] for item in detail_cards)
     recruiter_prompt = _recruiter_prompt(
         {
             "request": request,

@@ -1145,7 +1145,7 @@ def cmd_route(args: argparse.Namespace) -> int:
         if selected:
             print(f"selected: {', '.join(selected)}")
         else:
-            print(f"selected: none (status={routing.get('status', 'unknown')})")
+            _print_no_selection_diagnostic(routing)
         print(
             f"confidence={float(routing.get('confidence', 0.0)):.3f} "
             f"source={routing.get('provider', 'deterministic')} "
@@ -1157,6 +1157,28 @@ def cmd_route(args: argparse.Namespace) -> int:
             print(f"companion actions: {', '.join(routing['companion_actions'])}")
         _print_disabled_candidate_shadows(routing)
     return 0
+
+
+def _print_no_selection_diagnostic(routing: dict[str, Any]) -> None:
+    """Print the exact persisted cause when no specialist was selected.
+
+    Surfaces status, inference_mode, error, and inference_failures so the
+    operator can diagnose the real failure (recruiter abstention, plan-policy
+    veto, provider failure) instead of guessing. The README "fails honestly"
+    promise requires this.
+    """
+
+    inference_mode = routing.get("inference_mode") or ""
+    inference_failures = routing.get("inference_failures") or []
+    error = str(routing.get("error") or "").strip()
+    status_label = routing.get("status", "unknown")
+    if inference_mode:
+        status_label = f"{status_label}; inference_mode={inference_mode}"
+    print(f"selected: none (status={status_label})")
+    if error:
+        print(f"reason: {error}")
+    if inference_failures:
+        print(f"inference failures: {', '.join(inference_failures)}")
 
 
 def _print_disabled_candidate_shadows(routing: dict[str, Any]) -> None:

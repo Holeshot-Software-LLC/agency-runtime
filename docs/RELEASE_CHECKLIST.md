@@ -197,8 +197,9 @@ agency eval compare --input path/to/paired-observations.jsonl
       work; imported managers remain optional workers.
 - [ ] For a novel-domain unit with zero relevant roster cards, inference records
       an explicit empty-ranked gap, hiring materializes a narrow contractor, and
-      same-turn restaffing selects that contractor. A failed route blocks
-      `UserPromptSubmit` before any parent/generalist answer is generated.
+      same-turn restaffing selects that contractor. A failed route fails open
+      (ADR-0152): no specialist is selected, the exact cause is reported, and the
+      host answers as a generalist with a `Recruited via: none` header.
 - [ ] `agency eval full-roster` proves every approved enabled routing card
       participates in lexical and semantic retrieval, candidate recall is
       `1.0`, identity-free target recall@10 is at least `0.99`, and the checked-in

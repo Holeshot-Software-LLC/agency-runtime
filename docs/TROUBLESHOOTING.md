@@ -797,10 +797,13 @@ agency explain "describe the concrete task" --session-id debug
 Configured inference is mandatory for conversation, new intent, revision, and
 any continuation that must reroute. The provider chain is tried in declared
 order within one bounded budget. Authentication failure, timeout, malformed
-output, an invalid selection, or exhaustion keeps the decision degraded. The
-`UserPromptSubmit` boundary blocks the substantive prompt before parent-model
-generation; Agency does not fall through to its steward or the host generalist.
-The dashboard lists configuration
+output, an invalid selection, or exhaustion keeps the decision degraded. When a
+substantive turn cannot produce an accepted specialist, Agency fails open
+(ADR-0152): no specialist is selected, the exact cause is reported in the header
+and dashboard, and the host answers as a generalist with a `Recruited via: none`
+header so the operator is never locked out. The hard block remains only for
+non-staffing integrity failures (evidence-store, lifecycle, or assignment
+corruption). The dashboard lists configuration
 readiness and recent persisted failures, but intentionally performs no live
 provider probe.
 
@@ -817,8 +820,9 @@ A proven pure acknowledgement can intentionally bypass specialist selection.
 Every other selection-requiring turn first infers the ideal specialist from an
 open-ended role pool. It either accepts a faithful roster match or declares a
 gap and attempts to create a narrow contractor. If neither path produces an
-accepted specialist, the prompt fails loudly. Inspect the active roster and
-decision receipt:
+accepted specialist, the turn fails open (ADR-0152): the host answers as a
+generalist with a `Recruited via: none` header and the exact cause is persisted.
+Inspect the active roster and decision receipt:
 
 ```bash
 agency roster list

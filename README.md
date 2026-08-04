@@ -52,10 +52,12 @@ context — your main agent stays small.
 - 🔭 **Ideal-specialist-first selection** — inference decomposes the ask, defines
   who an exacting owner would want for each unit from an open-ended role pool,
   then either reuses a faithful roster match or declares a real gap.
-- 🚨 **Fails loudly without inference** — deterministic code can recall and
+- 🚨 **Fails honestly, never locks you out** — deterministic code can recall and
   validate candidates, but it never chooses a specialist. A substantive turn
-  without a valid inference decision selects nobody and reports the exact
-  provider failure.
+  without a valid inference decision selects nobody, reports the exact cause
+  (recruiter abstention, plan-policy veto, provider failure), and lets the host
+  answer as a generalist with a `Recruited via: none` header rather than
+  blocking you out of the agent.
 - 🧬 **Specialists bind into subagents** — when your host spins up a child, the
   exact audited specialist is injected for that one task with a one-use
   activation receipt.
@@ -110,7 +112,9 @@ with 263 audited specialists already on payroll.
 5. The **recruiter** uses inference to accept a roster specialist only when it
    faithfully matches that ideal. Zero relevant candidates is a valid explicit
    gap, not a reason to invent a nearest worker. If inference is unavailable or
-   invalid, the prompt is blocked visibly and no generalist answer is allowed.
+   invalid, the turn fails open: no specialist is selected, the exact cause is
+   reported, and the host answers as a generalist with a `Recruited via: none`
+   header so you are never locked out of the agent.
 6. If two specialists would conflict, Agency separates their work instead of
    putting both in one prompt.
 7. Every substantive work unit is delegated through the host's native subagent
@@ -135,7 +139,7 @@ flowchart LR
     I --> R["Recall typed roster matches"]
     R --> D{"Inference decision valid?"}
     D -- yes --> RC["Accept faithful match / declare gap"]
-    D -- no --> DF["Block prompt: no generalist answer"]
+    D -- no --> DF["Fail open: generalist + Recruited via: none"]
     RC --> G{"Real gap?"}
     G -- yes --> H["Hire contractor"]
     G -- no --> V["Verify team"]
@@ -325,10 +329,12 @@ The router reads the repository's stacks, not the literal words.
 | "Build a FluxUI dashboard" | inference | `senior-developer` (owns FluxUI/Livewire/Laravel) |
 | "Investigate and contain this production incident" | inference | discovery → analysis → recovery plan → operations |
 
-**No provider configured, or no valid inference response?** Agency fails the
-substantive route visibly and selects no specialist. Deterministic recall may
-build the candidate shortlist and deterministic verification may reject unsafe
-model output, but neither is allowed to recommend a team.
+**No provider configured, or no valid inference response?** Agency selects no
+specialist, reports the exact cause, and lets the host answer as a generalist
+with a `Recruited via: none` header. Deterministic recall may build the
+candidate shortlist and deterministic verification may reject unsafe model
+output, but neither is allowed to recommend a team. You are never locked out of
+the agent by a staffing failure.
 
 Try it yourself on your own repo:
 
@@ -550,15 +556,11 @@ artifact in its process chain, host profile environment, native plugin or
 marketplace source, gateway/ZCode state, or command plan invalidates the digest.
 Native provenance accepts only documented path aliases; an invalid, relative,
 or conflicting alias blocks even if another alias points at the
-managed target. A mutating uninstall plan currently stops at the retired
-authority boundary and makes no host change. The dry-run remains available for
-exact ownership and recovery review.
-
-Generic mutating install, rollback, native enable/disable toggle,
-prepared Codex refresh, and host uninstall share one owner-private
-`host-integrations.lock`. If a future authority boundary admits uninstall, it
-must revalidate the full binding before the first host mutation. Only a strict
-ownership-proven adapter tree may be moved after native detachment is proven,
+managed target. A mutating uninstall applies the exact two-step dry-run ->
+confirm-plan digest: the plan is recomputed and re-digested at apply time, so a
+changed selector, host, managed tree, ownership, or binding invalidates the
+digest and makes no host change. Only a strict ownership-proven adapter tree is
+moved after native detachment is proven,
 to the exact destination
 `~/.agency-runtime/backups/<host>/uninstall-<operation_uuid>`. Windows follows
 the validated directory through an open handle during rename, so a pathname
