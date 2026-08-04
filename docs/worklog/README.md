@@ -624,6 +624,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c1fbfbe` | 2026-08-04 | docs(roadmap): AR-235 plan autonomous gap hiring with isolated security review and amend-first staffing | [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | [AR-235 capsule](../roadmap/handoffs/issue-AR-235.md) |
 | `f629b63` | 2026-08-04 | docs(roadmap): AR-236 plan full CLI and dashboard functional and presentational parity | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | [AR-236 capsule](../roadmap/handoffs/issue-AR-236.md), [parity analysis](../analysis/2026-08-04-cli-dashboard-parity.md) |
 | `38bb16a` | 2026-08-04 | docs(roadmap): fix AR-236 capsule relative path to parity analysis | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
+| `b98f22b` | 2026-08-04 | chore(scripts): add transient AR-236 issue-body extraction helper | null | null |
+| `66a066f` | 2026-08-04 | AR-235 slice 1: per-stage inference profile schema and route resolver | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
