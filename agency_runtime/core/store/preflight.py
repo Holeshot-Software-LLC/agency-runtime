@@ -2131,11 +2131,6 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         normalized_session = evidence.session_id
         normalized_trace = evidence.trace_id
         normalized_attempt = evidence.attempt_token
-        projected_codex_scopes = _project_codex_native_plan_scopes(
-            evidence,
-            [] if codex_native_plan_scopes is None else codex_native_plan_scopes,
-        )
-
         conn = self._connect()
         try:
             conn.execute("BEGIN IMMEDIATE")
@@ -2172,7 +2167,10 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                         self,
                         conn,
                         evidence,
-                        projected_codex_scopes,
+                        _project_codex_native_plan_scopes(
+                            evidence,
+                            [] if codex_native_plan_scopes is None else codex_native_plan_scopes,
+                        ),
                     )
                     conn.execute(
                         f"UPDATE runs SET last_activity_at = {STORE_CLOCK_SQL} "  # nosec B608
@@ -2230,7 +2228,10 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                 self,
                 conn,
                 evidence,
-                projected_codex_scopes,
+                _project_codex_native_plan_scopes(
+                    evidence,
+                    [] if codex_native_plan_scopes is None else codex_native_plan_scopes,
+                ),
             )
             _commit_pending_hiring_evidence(self, conn, evidence)
             safe_decision = projected_routing["decision"]
