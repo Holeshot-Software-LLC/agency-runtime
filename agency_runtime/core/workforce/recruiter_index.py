@@ -11,7 +11,11 @@ from typing import Any
 from agency_runtime.core.workforce.contract import WorkforceContract
 
 RECRUITER_INDEX_SCHEMA_VERSION = "1"
-MAX_RECRUITER_INDEX_BYTES = 256 * 1024
+# AR-227: the complete 278-worker governed index is 263,616 bytes. Keep a
+# finite 288 KiB envelope (~11 percent measured headroom) so adding the six
+# reviewed specialists does not disable all inference while still bounding the
+# exact provider payload.
+MAX_RECRUITER_INDEX_BYTES = 288 * 1024
 
 # These legends make positional rows self-describing once per complete index,
 # instead of repeating long object keys for every worker.

@@ -27,14 +27,26 @@ from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY
 PACKAGED_CONTRACTOR_AUTHORITY = "agency.packaged-contractor.v1"
 
 _ARTIFACTS: dict[str, tuple[str, ...]] = {
+    "ai-evaluation-engineer": ("test-evidence", "review-report"),
+    "ai-governance-auditor": ("review-report",),
+    "ai-observability-engineer": ("architecture-record", "plan"),
     "software-test-engineer": ("test-code",),
+    "documentation-evidence-researcher": ("analysis", "review-report"),
+    "hallucination-root-cause-investigator": ("analysis", "review-report"),
     "application-integration-verifier": ("test-evidence", "review-report"),
+    "policy-guardrail-architect": ("plan",),
     "cross-platform-release-verifier": ("test-evidence", "review-report"),
     "selection-safety-critic": ("review-report",),
 }
 _DOMAINS: dict[str, tuple[str, ...]] = {
+    "ai-evaluation-engineer": ("software-engineering",),
+    "ai-governance-auditor": ("workforce-governance",),
+    "ai-observability-engineer": ("software-engineering",),
     "software-test-engineer": ("quality-assurance",),
+    "documentation-evidence-researcher": ("research",),
+    "hallucination-root-cause-investigator": ("software-engineering",),
     "application-integration-verifier": ("quality-assurance",),
+    "policy-guardrail-architect": ("ai-governance",),
     "cross-platform-release-verifier": ("quality-assurance",),
     "selection-safety-critic": ("workforce-governance",),
 }
@@ -54,15 +66,21 @@ _TOOL_CLASSES: dict[str, str] = {
     "staffing-plan-reader": "runtime-evidence",
     "test-runner": "test-execution",
     "workforce-index": "runtime-evidence",
+    "web-research": "web-research",
 }
 # Contract tools describe the worker's complete operating toolkit. A tool that
 # is needed only for one scenario is affinity metadata, not an unconditional
 # routing prerequisite. Keeping those concepts separate prevents a verifier
 # from disappearing merely because an unrelated optional surface is absent.
 _OPTIONAL_TOOLS: dict[str, frozenset[str]] = {
+    "ai-observability-engineer": frozenset({"monitoring"}),
     "application-integration-verifier": frozenset({"browser"}),
+    "documentation-evidence-researcher": frozenset({"web-research"}),
 }
 _LIFECYCLES: dict[str, str] = {
+    "design": "design",
+    "discovery": "discovery",
+    "documentation": "documentation",
     "implementation": "implementation",
     "installation": "release",
     "integration": "testing",

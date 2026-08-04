@@ -244,6 +244,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-224` | [Simplify Agency evidence header](issue-AR-224-simplify-agency-evidence-header.md) | open | p1 | product | pending authorization |
 | `AR-225` | [Align product scenario with independent validator](issue-AR-225-align-product-scenario-with-independent-validator.md) | done | p0 | testing | tracker creation pending authorization |
 | `AR-226` | [Repair automatic pull-request verification](issue-AR-226-repair-automatic-pr-verification.md) | done | p0 | release | tracker creation pending authorization |
+| `AR-227` | [Expand the specialist roster](issue-AR-227-expand-specialist-roster.md) | done | p1 | roster-governance | [PR #236](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/236) |
 
 ## Traceability
 
@@ -477,6 +478,7 @@ not stable internal identifiers.
 | [AR-224](issue-AR-224-simplify-agency-evidence-header.md) | `e2cb340`; queued after AR-223 live execution proof; remove the generic `Why` and `How it shaped outcome` fields atomically across producers, verifiers, dashboard consumers, and tests; tracker creation pending authorization | None |
 | [AR-225](issue-AR-225-align-product-scenario-with-independent-validator.md) | `a931bb8`, `ecc3966`, `370adbd`, `71faad8`, `ce01d39`; exact build `71faad8` passes autonomous activation and its sole product trial passes the aligned workflow, invalid-ID, project-test, and documentation checks after seven completed specialist delegations; tracker creation pending authorization | None |
 | [AR-226](issue-AR-226-repair-automatic-pr-verification.md) | `55a00db`, `1e1bd3e`, `4e957e8`, `36a29b3`, `b124109`, `ae3df2f`, `0add6c8`, `bff75d3`, `916a995`, `eea7c45`, `93c2eca`, `95890a1`, `75d7d9f`, `83b6af2`, `c5b2e5e`, `d278a32`, `8eb1746`, `ae335d9`; exact head `c38471f` passes complete automatic run `30836808176`: core production spine, 105 decision mutations, 110 dashboard tests and coverage, performance, dependency/security audit, Windows Python 3.11-3.13 portability, both platform artifact smokes, artifact assembly, and final aggregate; dependency review and CodeQL pass; manual integration and exhaustive coverage remain intentionally skipped | None |
+| [AR-227](issue-AR-227-expand-specialist-roster.md) | `40353bb`; six governed contractors added, 278-worker index (263,616 bytes) under 288 KiB envelope; named fast spine 661 passed / 6 skipped; focused counts updated; tracker creation pending authorization | None |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

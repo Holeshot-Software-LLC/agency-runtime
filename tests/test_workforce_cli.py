@@ -27,7 +27,7 @@ def test_workforce_list_search_show_and_hiring_evidence_are_json_capable(
 
     assert cli.main(["workforce", "list", "--state", "contractor", "--json"]) == 0
     listed = json.loads(capsys.readouterr().out)
-    assert listed["count"] == 9
+    assert listed["count"] == 15
     assert all(item["state"] == "contractor" for item in listed["workers"])
 
     assert cli.main(["workforce", "search", "typescript", "--json"]) == 0
@@ -54,7 +54,7 @@ def test_workforce_list_search_show_and_hiring_evidence_are_json_capable(
 
     assert cli.main(["hiring", "list", "--status", "applied", "--json"]) == 0
     hiring = json.loads(capsys.readouterr().out)
-    assert hiring["count"] == 9
+    assert hiring["count"] == 15
     case_id = hiring["hiring_cases"][0]["id"]
     assert cli.main(["hiring", "show", case_id, "--json"]) == 0
     shown = json.loads(capsys.readouterr().out)
@@ -76,7 +76,7 @@ def test_workforce_list_search_show_and_hiring_evidence_are_json_capable(
     )
     duplicates = json.loads(capsys.readouterr().out)
     assert duplicates["authority"] == "read_only_recommendation"
-    assert duplicates["workforce_count"] == 9
+    assert duplicates["workforce_count"] == 15
     assert len(duplicates["comparisons"]) == 3
     assert duplicates["comparisons"][0]["recommendation"] == "keep_distinct"
 

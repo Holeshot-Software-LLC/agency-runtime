@@ -35,6 +35,7 @@ from agency_runtime.core.workforce.known_installer import known_contractor_agent
 from agency_runtime.core.workforce.lifecycle_roles import role_anchors
 from agency_runtime.core.workforce.planning_contracts import parse_work_unit_plan
 from agency_runtime.core.workforce.recruiter_index import (
+    MAX_RECRUITER_INDEX_BYTES,
     project_recruiter_index_record,
     recruiter_index_fingerprint,
     serialize_recruiter_index,
@@ -93,6 +94,15 @@ def _snapshot() -> WorkforceIndexSnapshot:
         recruiter_fingerprint=recruiter_index_fingerprint(records),
         recruiter_index=serialize_recruiter_index(records),
     )
+
+
+def test_ar227_complete_recruiter_index_fits_measured_finite_envelope() -> None:
+    payload = _snapshot().recruiter_index.encode("utf-8")
+    # AR-227: exact-size regression assertion against the measured 278-worker
+    # governed index. Update this value only when the reviewed roster changes.
+    assert len(payload) == 263_616
+    assert len(payload) <= MAX_RECRUITER_INDEX_BYTES
+    assert MAX_RECRUITER_INDEX_BYTES == 288 * 1024
 
 
 def _unit(
@@ -1312,7 +1322,7 @@ def test_captured_typescript_plan_forms_exact_safe_lifecycle_team_from_full_work
         budget=staffing_budget_for_config(config),
     )
 
-    assert snapshot.worker_count == 272
+    assert snapshot.worker_count == 278
     assert decision.accepted
     assert {unit.unit_id: unit.selected for unit in decision.units} == {
         unit_id: (agent_id,) for unit_id, agent_id in expected.items()
@@ -1719,5 +1729,5 @@ def test_every_worker_contract_has_positive_negative_shadow_and_eligibility_evid
         if unavailable.selected or "agent_not_live_eligible" not in unavailable_reasons:
             failures.append((contract.agent_id, "live-eligibility", unavailable))
 
-    assert snapshot.worker_count == 272
+    assert snapshot.worker_count == 278
     assert failures == []
