@@ -626,6 +626,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `38bb16a` | 2026-08-04 | docs(roadmap): fix AR-236 capsule relative path to parity analysis | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 | `b98f22b` | 2026-08-04 | chore(scripts): add transient AR-236 issue-body extraction helper | null | null |
 | `66a066f` | 2026-08-04 | AR-235 slice 1: per-stage inference profile schema and route resolver | null | null |
+| `064162d` | 2026-08-04 | docs(roadmap): plan AR-237 hiring list and show parity (sub-issue 1 of AR-236) | [AR-237](../roadmap/issue-AR-237-hiring-list-and-show-parity.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
+| `5dc5925` | 2026-08-04 | AR-237 sub-issue 1: bring hiring list and show to full CLI / dashboard parity | [AR-237](../roadmap/issue-AR-237-hiring-list-and-show-parity.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
