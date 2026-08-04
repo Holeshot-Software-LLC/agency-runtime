@@ -615,12 +615,13 @@ This registry connects repository history to the roadmap and to optional detail 
 | `14a34ae` | 2026-08-04 | AR-227: Expand the specialist roster (#236) | null | null |
 | `45be7ea` | 2026-08-04 | AR-228: Fail open with honest header + fix deterministic gates hiding specialists (#237) | null | null |
 | `781e83e` | 2026-08-04 | AR-229: Fix README specialist count and two pre-existing test failures (#238) | null | null |
-| `c1fbfbe` | 2026-08-04 | docs(roadmap): AR-235 plan autonomous gap hiring with isolated security review and amend-first staffing | [AR-235](issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | [AR-235 capsule](handoffs/issue-AR-235.md) |
 | `21c0aaa` | 2026-08-04 | AR-230: Close completed issues and stale PR (#239) | null | null |
 | `def4f8b` | 2026-08-04 | AR-231: Resource-file filtering, multi-host upgrade, ZCode delegation note, close AR-210 (#240) | null | null |
 | `7c33b35` | 2026-08-04 | AR-232: Remove MAX_PLAN_LIST_ITEMS cap that truncated resource scopes (#241) | null | null |
-| `4928a87` | 2026-08-04 | AR-233: Architecture fixes — honest headers, wildcard distinction, strict default, metrics (#242) | null | null |
+| `4928a87` | 2026-08-04 | AR-233: Architecture fixes â€” honest headers, wildcard distinction, strict default, metrics (#242) | null | null |
 | `f6e65ea` | 2026-08-04 | AR-234: Drop round-trip evidence fields from recruiter schema (#243) | null | null |
+| `e87747d` | 2026-08-04 | docs: commit analysis handoffs and uv.lock | null | null |
+| `c1fbfbe` | 2026-08-04 | docs(roadmap): AR-235 plan autonomous gap hiring with isolated security review and amend-first staffing | [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | [AR-235 capsule](../roadmap/handoffs/issue-AR-235.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
