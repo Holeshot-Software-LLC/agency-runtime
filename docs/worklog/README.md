@@ -614,7 +614,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c01f178` | 2026-08-03 | Merge pull request #235 from Holeshot-Software-LLC/codex/ar-203-readme-reality | null | null |
 | `14a34ae` | 2026-08-04 | AR-227: Expand the specialist roster (#236) | null | null |
 | `45be7ea` | 2026-08-04 | AR-228: Fail open with honest header + fix deterministic gates hiding specialists (#237) | null | null |
-| `2271626` | 2026-08-04 | fix: README specialist count, header field drift test, stale-token scope validation | null | null |
+| `781e83e` | 2026-08-04 | AR-229: Fix README specialist count and two pre-existing test failures (#238) | null | null |
+| `2ee393d` | 2026-08-04 | docs: close AR-202, AR-205, AR-213 as done; close stale PR #156 / issue #155 | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
