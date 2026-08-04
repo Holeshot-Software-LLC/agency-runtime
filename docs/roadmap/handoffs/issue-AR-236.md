@@ -34,7 +34,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245
 Bounded current-state projection for the CLI/dashboard parity task.
 The [canonical issue](../issue-AR-236-achieve-full-cli-dashboard-parity.md)
 owns the full acceptance history; the
-[parity analysis](../analysis/2026-08-04-cli-dashboard-parity.md) owns
+[parity analysis](../../analysis/2026-08-04-cli-dashboard-parity.md) owns
 the gap inventory.
 
 ## checkpoint
