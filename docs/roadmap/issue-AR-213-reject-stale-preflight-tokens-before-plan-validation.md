@@ -1,6 +1,6 @@
 ---
 title: "AR-213: Reject stale preflight tokens before plan validation"
-status: open
+status: done
 category: roadmap
 created: 2026-07-31
 updated: 2026-07-31
@@ -56,7 +56,7 @@ scope contracts.
 
 ## Acceptance
 
-- [ ] A stale ready token returns `False` before native-plan-scope validation.
-- [ ] The current owner still receives strict complete-plan validation.
-- [ ] Stale commit and stale failure paths make no durable mutation.
-- [ ] Focused preflight fencing and native plan scope tests pass.
+- [x] A stale ready token returns `False` before native-plan-scope validation.
+- [x] The current owner still receives strict complete-plan validation.
+- [x] Stale commit and stale failure paths make no durable mutation.
+- [x] Focused preflight fencing and native plan scope tests pass.

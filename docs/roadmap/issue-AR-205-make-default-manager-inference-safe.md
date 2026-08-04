@@ -1,6 +1,6 @@
 ---
 title: "AR-205: Make the default manager inference-safe"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-30
 updated: 2026-07-31
@@ -207,8 +207,13 @@ the exact installed product proof and final README-story acceptance.
   `not_for` activation contract.
 - [x] Exact negative activation criteria remain reject-only hard verification
   and can produce a visible staffing gap.
-- [x] Every substantive ask has an accepted roster specialist or inference-
-  created contractor; a resident-only/generalist answer is a terminal failure.
+- [x] ~~Every substantive ask has an accepted roster specialist or inference-
+  created contractor; a resident-only/generalist answer is a terminal failure.~~
+  **Superseded by [ADR-0152](../decisions/0152-fail-open-with-honest-header-when-no-specialist.md)**:
+  a substantive turn with no accepted specialist now fails open as a generalist
+  with an honest `Recruited via: none` header. The singleton inference-safe
+  steward is still resident and cannot answer domain work; only the hard block
+  was removed.
 - [x] An arbitrary novel-domain gap can create a narrow task-scoped contractor
   without a deterministic keyword or pre-created-agent rule.
 - [x] Recruiter inference reasons ideal-role-first against an open-ended pool

@@ -1,6 +1,6 @@
 ---
 title: "AR-202: Make recruiter repair converge across invalid units"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-30
 updated: 2026-07-30
