@@ -18,6 +18,9 @@ from agency_runtime.core.workforce.known_contractors import (
 )
 
 EXPECTED_SLUGS = {
+    "ai-evaluation-engineer",
+    "ai-governance-auditor",
+    "ai-observability-engineer",
     "python-application-engineer",
     "typescript-application-engineer",
     "backend-service-engineer",
@@ -26,6 +29,9 @@ EXPECTED_SLUGS = {
     "application-observability-engineer",
     "application-integration-verifier",
     "cross-platform-release-verifier",
+    "documentation-evidence-researcher",
+    "hallucination-root-cause-investigator",
+    "policy-guardrail-architect",
     "selection-safety-critic",
 }
 
@@ -35,7 +41,7 @@ def _raw(slug: str = "python-application-engineer") -> dict:
 
 
 def test_known_contractor_set_is_exact_bounded_and_immediately_enabled() -> None:
-    assert len(KNOWN_CONTRACTOR_CONTRACTS) == 9
+    assert len(KNOWN_CONTRACTOR_CONTRACTS) == 15
     assert set(KNOWN_CONTRACTORS_BY_SLUG) == EXPECTED_SLUGS
     assert all(
         item.schema_version == HIRING_CONTRACT_SCHEMA_VERSION for item in KNOWN_CONTRACTOR_CONTRACTS
@@ -53,7 +59,28 @@ def test_known_contractor_set_is_exact_bounded_and_immediately_enabled() -> None
     compiled = [compile_contractor(item) for item in KNOWN_CONTRACTOR_CONTRACTS]
     assert all(item.enabled and item.employment_status == "contractor" for item in compiled)
     assert all(item.display_name.startswith("Contractor · ") for item in compiled)
-    assert len({item.worker_id for item in compiled}) == 9
+    assert len({item.worker_id for item in compiled}) == 15
+
+
+def test_ar227_specialists_are_distinct_evidence_bound_and_nonduplicative() -> None:
+    assert "backend-implementation-engineer" not in KNOWN_CONTRACTORS_BY_SLUG
+    backend = KNOWN_CONTRACTORS_BY_SLUG["backend-service-engineer"]
+    assert "idempotency, retry, and rollback behavior" in backend.capabilities
+    assert any("authorization" in item.casefold() for item in backend.evidence_requirements)
+
+    for slug in {
+        "ai-evaluation-engineer",
+        "ai-governance-auditor",
+        "ai-observability-engineer",
+        "documentation-evidence-researcher",
+        "hallucination-root-cause-investigator",
+        "policy-guardrail-architect",
+    }:
+        contract = KNOWN_CONTRACTORS_BY_SLUG[slug]
+        assert len(contract.evidence_requirements) >= 3
+        assert contract.closest_workers
+        assert contract.positive_evaluations
+        assert contract.hard_negative_evaluations
 
 
 def test_schema_is_closed_versioned_normalized_and_bounded() -> None:
