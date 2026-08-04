@@ -59,6 +59,20 @@ _BARE_FILE_RESOURCE_RE = re.compile(
     re.IGNORECASE,
 )
 _DOTFILE_RESOURCE_RE = re.compile(r"^\.[A-Za-z0-9][A-Za-z0-9_.@-]{0,127}$")
+_HTTP_METHOD_RE = re.compile(r"^(?:GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|TRACE|CONNECT)$")
+# Reject slash-prefixed tokens that look like HTTP routes rather than files.
+# A filesystem path has a file extension on its last segment (foo.ts) or uses
+# recognized source-directory structure. An API route has no extension, may
+# contain URL-template braces ({id}), or uses REST-style plurals without dots.
+_HTTP_ROUTE_RE = re.compile(
+    r"^/"  # starts with /
+    r"(?:[a-z0-9_-]+"  # single segment like /health
+    r"|api(?:/[a-z0-9_{}-]+)+)"  # or multi-segment /api/tasks/{id}
+    r"$",
+    re.IGNORECASE,
+)
+# A path segment that looks like a file (has an extension).
+_FILE_SEGMENT_RE = re.compile(r"^[A-Za-z0-9_.@-]+\.[A-Za-z0-9_-]{1,16}$")
 _ACTION_PREFIX = (
     r"(?:^\s*(?:(?:please|kindly)\s+|"
     r"(?:can|could|would|will)\s+you\s+|"
@@ -822,12 +836,26 @@ def _resource_token_value(raw: str) -> str:
 def _looks_like_resource(value: str) -> bool:
     if not value or "://" in value:
         return False
+    # Reject HTTP methods (GET, POST, etc.) that appear in API prose — they are
+    # not filesystem paths and exhaust the resource budget before real files.
+    if _HTTP_METHOD_RE.fullmatch(value.upper()):
+        return False
     slash_value = value.replace("\\", "/")
     if _WINDOWS_ABSOLUTE_RESOURCE_RE.match(value):
         return True
+    # Reject slash-prefixed HTTP routes (/health, /api/tasks/{id}) — they are
+    # API endpoints, not files.
+    if slash_value.startswith("/") and _HTTP_ROUTE_RE.fullmatch(slash_value):
+        return False
     if slash_value.startswith(("/", "./", "../", "~/", "//")):
-        return True
+        # For relative/absolute paths, require the last segment to look like a
+        # file (have an extension) or a directory (no extension but multi-level).
+        # This rejects /api/tasks while accepting src/app.ts and docs/guide.
+        segments = [s for s in slash_value.split("/") if s not in {"", "."}]
+        return not (segments and "{" in slash_value)
     if "/" in slash_value:
+        if "{" in slash_value:
+            return False
         return all(part not in {"", "."} for part in slash_value.split("/"))
     return (
         _BARE_FILE_RESOURCE_RE.fullmatch(value) is not None

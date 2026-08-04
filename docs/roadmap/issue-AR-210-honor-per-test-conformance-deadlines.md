@@ -1,6 +1,6 @@
 ---
 title: "AR-210: Honor per-test decision-conformance deadlines"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-31
 updated: 2026-07-31

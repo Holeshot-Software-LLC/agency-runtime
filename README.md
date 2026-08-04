@@ -167,10 +167,12 @@ is reported separately** — a copied plugin directory is never proof a host loa
 it. Run `agency doctor --json` to see what is installed and verified.
 
 > **ZCode note:** ZCode reuses the Claude hook model and `Agent`-tool primitive,
-> so it's first-class for main-session routing. ZCode **native children are
-> host-limited**: ZCode does not emit `SubagentStart`/`SubagentStop`, so governed
-> native-child self-routing can't fire for ZCode children yet (tracked, gated on
-> host support). Main-session specialist binding works.
+> so it's first-class for main-session routing and native delegation. Specialist
+> binding, activation, and delegation recording work through `PreToolUse` and
+> `PostToolUse` on the `Agent` tool. ZCode does not emit
+> `SubagentStart`/`SubagentStop`, so the supplementary child-identity context and
+> stop lifecycle recording available on Claude/Codex are not produced; the core
+> delegation lifecycle is functional without them.
 
 ---
 
