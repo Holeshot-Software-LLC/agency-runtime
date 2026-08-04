@@ -11,8 +11,10 @@ related:
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
+  - docs/roadmap/issue-AR-237-hiring-list-and-show-parity.md
   - agency_runtime/cli/parser.py
   - agency_runtime/cli/main.py
+  - agency_runtime/cli/_render.py
   - agency_runtime/dashboard/dashboard-render.js
   - agency_runtime/dashboard/dashboard-actions.js
   - agency_runtime/server/http.py
