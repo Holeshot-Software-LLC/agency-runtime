@@ -9,10 +9,12 @@ import math
 import re
 import secrets
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any
 
 from agency_runtime.core.config import AgencyConfig, ProviderEntry
+from agency_runtime.core.configuration_contracts import ConfigValidationError
+from agency_runtime.core.inference_profiles import resolve as resolve_inference_route
 from agency_runtime.core.structured_provider import (
     StructuredProviderResult,
     invoke_structured_provider_result,
@@ -707,24 +709,35 @@ def configured_workforce_providers(
     config: AgencyConfig,
     *,
     stage: str,
+    route_key: str | None = None,
 ) -> tuple[ProviderEntry, ...]:
-    """Resolve the configured provider chain and stage-specific model override."""
+    """Resolve the configured provider chain and stage-specific model override.
 
+    ``route_key`` (ADR-0153 / AR-235 §3) selects the per-stage profile through
+    ``inference.routes``. When ``route_key`` resolves, the profile's provider
+    is returned. When the route is missing, the resolver's default-profile
+    fallback applies (returning the default profile if one is configured).
+    When neither the route nor the default resolves, this falls back to the
+    legacy provider chain so dashboards and CLI evals that pre-date the
+    inference block still work.
+    """
+
+    if route_key:
+        try:
+            return (resolve_inference_route(config, route_key).provider,)
+        except ConfigValidationError:
+            pass
+    if config.inference.default_profile:
+        try:
+            return (resolve_inference_route(config, route_key or "default").provider,)
+        except ConfigValidationError:
+            pass
     providers = list(config.providers)
     if not providers and (legacy := _legacy_provider(config)) is not None:
         providers.append(legacy)
     preferred = config.workforce.provider.casefold()
     if preferred:
         providers = [item for item in providers if item.name.casefold() == preferred]
-    override = {
-        "combined": config.workforce.recruiter_model or config.workforce.planner_model,
-        "planner": config.workforce.planner_model,
-        "recruiter": config.workforce.recruiter_model,
-        "hiring": config.workforce.hiring_model,
-        "critic": config.workforce.critic_model,
-    }.get(stage, "")
-    if override:
-        providers = [replace(item, model=override) for item in providers]
     return tuple(providers)
 
 
@@ -1781,7 +1794,9 @@ def _recruit_ambiguous_plan(
             "typed_recall": typed_recall,
         }
     )
-    providers = configured_workforce_providers(config, stage="recruiter")
+    providers = configured_workforce_providers(
+        config, stage="recruiter", route_key="workforce.recruiter"
+    )
     cache_identity = _stage_cache_identity(
         "recruiter",
         request=request,
@@ -1956,7 +1971,9 @@ def _strict_critic(
 
     critic, attempts, failure = _invoke_stage(
         stage="critic",
-        providers=configured_workforce_providers(config, stage="critic"),
+        providers=configured_workforce_providers(
+            config, stage="critic", route_key="workforce.recruiter.critic"
+        ),
         prompt=critic_prompt,
         schema=CRITIC_RESPONSE_SCHEMA,
         system_prompt=_CRITIC_SYSTEM,
@@ -2029,7 +2046,9 @@ def plan_and_staff_workforce(
         required_artifact_kind=required_planned_artifact_kind,
         explicit_indivisible_unit=explicit_indivisible_unit,
     )
-    planner_providers = configured_workforce_providers(config, stage="planner")
+    planner_providers = configured_workforce_providers(
+        config, stage="planner", route_key="workforce.planner"
+    )
     planner_cache_identity = _stage_cache_identity(
         "plan",
         request=ask,

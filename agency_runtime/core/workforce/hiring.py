@@ -1438,7 +1438,7 @@ def hire_contractor_for_gap(
 
     if not request.strip():
         raise ValueError("hiring request is required")
-    providers = configured_workforce_providers(config, stage="hiring")
+    providers = configured_workforce_providers(config, stage="hiring", route_key="workforce.hiring")
     if not providers:
         return ContractorHiringOutcome("abstained", ("hiring_inference_unavailable",))
     if config.workforce.max_hires_per_task < 1:
@@ -1495,7 +1495,9 @@ def hire_contractor_for_gap(
             contract=candidate.contract,
             attempts=(hire_attempt,),
         )
-    critic_providers = configured_workforce_providers(config, stage="critic")
+    critic_providers = configured_workforce_providers(
+        config, stage="critic", route_key="workforce.hiring.critic"
+    )
     critic_result, critic_attempt = _invoke(
         critic_providers,
         prompt=_critic_prompt(request, unit, candidate, hiring_input=hiring_input),

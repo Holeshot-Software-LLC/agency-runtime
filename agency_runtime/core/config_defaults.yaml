@@ -56,14 +56,11 @@ delegation:
 # Planning uses configured inference whenever any provider is available. Every
 # mode searches the complete local capability index through an inference planner
 # and recruiter. Fast and balanced fund one bounded repair for each stage;
-# strict also funds an independent critic.
+# strict also funds an independent critic. Per-stage model ownership lives
+# under ``inference`` below (ADR-0153 / AR-235 §3).
 workforce:
   mode: strict
   provider: ""                  # blank = use the configured provider chain
-  planner_model: ""             # blank = provider's configured model/alias
-  recruiter_model: ""
-  hiring_model: ""
-  critic_model: ""
   fast_call_budget: 4
   balanced_call_budget: 4
   strict_call_budget: 5
@@ -77,6 +74,68 @@ workforce:
   max_hires_per_day: 3
   auto_promote_successes: 0     # zero keeps promotion human-controlled
   contractor_review_days: 30
+
+# Per-stage inference profile routes. Mirrors the conveyor project shape
+# (conveyor/src/config/types.ts:294-310). When a route is missing, the resolver
+# falls back to default_profile. Reference:
+# docs/roadmap/reference-workforce-inference-stages.md.
+inference:
+  default_profile: "agency-default"
+  strict_independence: false
+  routes:
+    workforce.planner: "agency-planner"
+    workforce.recruiter: "agency-recruiter"
+    workforce.recruiter.critic: "agency-recruiter-critic"
+    workforce.recruiter.repair.json: "agency-recruiter"
+    workforce.hiring: "agency-hiring"
+    workforce.hiring.critic: "agency-hiring-critic"
+    workforce.hiring.repair.json: "agency-hiring"
+    workforce.hiring.repair.json.critic: "agency-hiring-critic"
+    workforce.hiring.security_review: "agency-security"
+    workforce.hiring.safety_repair: "agency-hiring"
+  profiles:
+    agency-default:
+      adapter: litellm
+      model: gpt5.6-luna
+      thinking_level: medium
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-planner:
+      adapter: litellm
+      model: gpt5.6-luna-medium
+      thinking_level: medium
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-recruiter:
+      adapter: litellm
+      model: gpt5.6-luna-medium
+      thinking_level: medium
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-recruiter-critic:
+      adapter: litellm
+      model: gpt5.6-luna-medium
+      thinking_level: high
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-hiring:
+      adapter: litellm
+      model: gpt5.6-luna-low
+      thinking_level: low
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-hiring-critic:
+      adapter: litellm
+      model: gpt5.6-luna-medium
+      thinking_level: high
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-security:
+      adapter: litellm
+      model: gpt5.6-luna-high
+      thinking_level: high
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
 
 # Reversible selection policy. Definitions and version history remain in the
 # roster while listed specialists are unavailable to routing and new loads.

@@ -5877,8 +5877,7 @@ test("operational dashboard markup and accessibility policies stay discoverable"
     "review-list", "upstream-status",
   ]) assert.match(INDEX_SOURCE, new RegExp(`id="${id}"`));
   for (const path of [
-    "workforce.mode", "workforce.provider", "workforce.planner_model",
-    "workforce.recruiter_model", "workforce.hiring_model", "workforce.critic_model",
+    "workforce.mode", "workforce.provider",
     "workforce.max_work_units", "workforce.max_selected_per_unit",
     "workforce.max_selected_total", "workforce.max_hires_per_task",
     "workforce.max_hires_per_day", "workforce.auto_promote_successes",

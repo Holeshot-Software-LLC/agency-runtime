@@ -221,6 +221,7 @@ Status meanings:
 | [ADR-0150](0150-correlate-codex-wrapper-tools-with-outcomes.md) | Correlate Codex wrapper tools with outcomes | Accepted |
 | [ADR-0151](0151-route-codex-product-approvals-to-auto-review.md) | Route Codex product approvals to automatic review | Accepted |
 | [ADR-0152](0152-fail-open-with-honest-header-when-no-specialist.md) | Fail open with an honest header when no specialist is selected | Accepted |
+| [ADR-0153](0153-adopt-per-stage-inference-profile-routes.md) | Adopt per-stage inference profile routes | Accepted |
 
 ## Documentation governance
 

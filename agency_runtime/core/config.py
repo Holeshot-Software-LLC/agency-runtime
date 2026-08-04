@@ -216,6 +216,14 @@ class SelectorConfig:
 DELEGATION_MODES = frozenset({"observe", "prefer", "strong"})
 WORKFORCE_MODES = frozenset({"fast", "balanced", "strict"})
 
+# Per-stage inference profile adapter allowlist and thinking-level vocabulary
+# mirror the conveyor project reference pattern (conveyor/src/config/types.ts:294-310).
+INFERENCE_ADAPTER_TYPES = frozenset({"openai-compatible", "anthropic", "ollama", "litellm", "cli"})
+INFERENCE_THINKING_LEVELS = frozenset({"low", "medium", "high", "xhigh"})
+INFERENCE_CAPABILITY_CLASSES = frozenset({"text", "embeddings", "code"})
+INFERENCE_PROFILE_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]{0,127}\Z")
+INFERENCE_ROUTE_KEY_PATTERN = re.compile(r"^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){0,4}\Z")
+
 
 @dataclass(frozen=True, slots=True)
 class DelegationConfig:
@@ -232,14 +240,15 @@ class DelegationConfig:
 
 @dataclass(frozen=True, slots=True)
 class WorkforceConfig:
-    """Inference-first planning, staffing, hiring, and promotion policy."""
+    """Inference-first planning, staffing, hiring, and promotion policy.
+
+    Per-stage model ownership lives under :class:`InferenceConfig` (ADR-0153).
+    The four legacy flat ``*_model`` knobs are removed; operators retarget a
+    stage by editing ``inference.routes`` / ``inference.profiles`` instead.
+    """
 
     mode: str = "strict"
     provider: str = ""
-    planner_model: str = ""
-    recruiter_model: str = ""
-    hiring_model: str = ""
-    critic_model: str = ""
     fast_call_budget: int = 4
     balanced_call_budget: int = 4
     strict_call_budget: int = 5
@@ -253,6 +262,45 @@ class WorkforceConfig:
     max_hires_per_day: int = 3
     auto_promote_successes: int = 0
     contractor_review_days: int = 30
+
+
+@dataclass(frozen=True, slots=True)
+class InferenceProfile:
+    """Named per-stage profile: adapter, model, thinking level, capability class.
+
+    ADR-0153 / AR-235 §3. Mirrors the conveyor project shape. Profiles are
+    looked up by name from ``InferenceConfig.profiles`` and selected by
+    ``InferenceConfig.routes[route_key]``.
+    """
+
+    name: str = ""
+    adapter: str = "openai-compatible"
+    model: str = ""
+    thinking_level: str = ""  # one of INFERENCE_THINKING_LEVELS or empty
+    capability_class: str = ""  # one of INFERENCE_CAPABILITY_CLASSES or empty
+    base_url: str = ""
+    api_key: str = ""
+    api_key_env: str = ""
+    timeout_ms: int = 30_000
+
+    def uses_thinking(self) -> bool:
+        return bool(self.thinking_level)
+
+
+@dataclass(frozen=True, slots=True)
+class InferenceConfig:
+    """Per-stage inference routes and named profiles.
+
+    The legacy flat ``workforce.*_model`` knobs continue to resolve as a
+    fallback for this slice. ``default_profile`` is used when a route key is
+    missing. ``strict_independence`` enforces different provider/model for
+    profiles whose schema would otherwise permit shared independence.
+    """
+
+    default_profile: str = ""
+    strict_independence: bool = False
+    routes: dict[str, str] = field(default_factory=dict)
+    profiles: dict[str, InferenceProfile] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -334,6 +382,7 @@ class AgencyConfig:
     selector: SelectorConfig = field(default_factory=SelectorConfig)
     delegation: DelegationConfig = field(default_factory=DelegationConfig)
     workforce: WorkforceConfig = field(default_factory=WorkforceConfig)
+    inference: InferenceConfig = field(default_factory=InferenceConfig)
     agents: AgentActivationConfig = field(default_factory=AgentActivationConfig)
     store: StoreConfig = field(default_factory=StoreConfig)
     server: ServerConfig = field(default_factory=ServerConfig)
@@ -418,6 +467,64 @@ def _build_provider_entry(raw: dict[str, Any]) -> ProviderEntry:
     )
 
 
+def _build_inference_profile(name: str, raw: Any) -> InferenceProfile:
+    """Materialize one named per-stage inference profile from a config section."""
+
+    if not isinstance(raw, Mapping):
+        raise ValueError(f"inference.profiles.{name}: must be a mapping")
+    if not INFERENCE_PROFILE_NAME_PATTERN.fullmatch(name):
+        raise ValueError(
+            f"inference.profiles.{name}: profile names must be lowercase alphanumeric or hyphenated"
+        )
+    return InferenceProfile(
+        name=name,
+        adapter=str(raw.get("adapter", "openai-compatible")).strip().casefold()
+        or "openai-compatible",
+        model=str(raw.get("model", "")).strip(),
+        thinking_level=str(raw.get("thinking_level", "")).strip().casefold(),
+        capability_class=str(raw.get("capability_class", "")).strip().casefold(),
+        base_url=str(raw.get("base_url", "")).strip(),
+        api_key=str(raw.get("api_key", "")),
+        api_key_env=str(raw.get("api_key_env", "")).strip(),
+        timeout_ms=int(raw.get("timeout_ms", 30_000)),
+    )
+
+
+def _build_inference(raw: Any) -> InferenceConfig:
+    """Materialize the per-stage inference routes and profiles section."""
+
+    if raw is None:
+        return InferenceConfig()
+    if not isinstance(raw, Mapping):
+        raise ValueError("inference: must be a mapping")
+    routes_raw = raw.get("routes", {})
+    if not isinstance(routes_raw, Mapping):
+        raise ValueError("inference.routes: must be a mapping")
+    routes: dict[str, str] = {}
+    for key, value in routes_raw.items():
+        if not isinstance(key, str) or not INFERENCE_ROUTE_KEY_PATTERN.fullmatch(key):
+            raise ValueError(
+                f"inference.routes.{key!r}: route keys must be lowercase dotted identifiers"
+            )
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"inference.routes.{key}: must name a profile")
+        routes[key] = value.strip()
+    profiles_raw = raw.get("profiles", {})
+    if not isinstance(profiles_raw, Mapping):
+        raise ValueError("inference.profiles: must be a mapping")
+    profiles: dict[str, InferenceProfile] = {}
+    for name, section in profiles_raw.items():
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("inference.profiles: profile names must be non-empty strings")
+        profiles[name] = _build_inference_profile(name, section)
+    return InferenceConfig(
+        default_profile=str(raw.get("default_profile", "")).strip(),
+        strict_independence=bool(raw.get("strict_independence", False)),
+        routes=routes,
+        profiles=profiles,
+    )
+
+
 def _build_providers(raw: list[Any] | None) -> tuple[ProviderEntry, ...]:
     if not raw or not isinstance(raw, list):
         return ()
@@ -463,6 +570,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
     dashboard_raw = raw.get("dashboard", {})
     observability_raw = raw.get("observability", {})
     adapters_raw = raw.get("adapters", {})
+    inference_raw = raw.get("inference", {})
     if not isinstance(observability_raw, dict):
         observability_raw = {}
 
@@ -502,10 +610,6 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
         workforce=WorkforceConfig(
             mode=str(workforce_raw.get("mode", "strict")).strip().casefold(),
             provider=str(workforce_raw.get("provider", "")).strip(),
-            planner_model=str(workforce_raw.get("planner_model", "")).strip(),
-            recruiter_model=str(workforce_raw.get("recruiter_model", "")).strip(),
-            hiring_model=str(workforce_raw.get("hiring_model", "")).strip(),
-            critic_model=str(workforce_raw.get("critic_model", "")).strip(),
             fast_call_budget=int(workforce_raw.get("fast_call_budget", 4)),
             balanced_call_budget=int(workforce_raw.get("balanced_call_budget", 4)),
             strict_call_budget=int(workforce_raw.get("strict_call_budget", 5)),
@@ -520,6 +624,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             auto_promote_successes=int(workforce_raw.get("auto_promote_successes", 0)),
             contractor_review_days=int(workforce_raw.get("contractor_review_days", 30)),
         ),
+        inference=_build_inference(inference_raw),
         agents=AgentActivationConfig(
             disabled=normalize_disabled_agents(agents_raw.get("disabled", [])),
         ),
@@ -939,6 +1044,7 @@ def _load_config_uncached(
             "dashboard",
             "observability",
             "adapters",
+            "inference",
         ):
             if key in defaults_raw and key in file_raw:
                 override = file_raw[key]
@@ -1083,10 +1189,6 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
         "workforce": {
             "mode": cfg.workforce.mode,
             "provider": cfg.workforce.provider,
-            "planner_model": cfg.workforce.planner_model,
-            "recruiter_model": cfg.workforce.recruiter_model,
-            "hiring_model": cfg.workforce.hiring_model,
-            "critic_model": cfg.workforce.critic_model,
             "fast_call_budget": cfg.workforce.fast_call_budget,
             "balanced_call_budget": cfg.workforce.balanced_call_budget,
             "strict_call_budget": cfg.workforce.strict_call_budget,
@@ -1130,6 +1232,24 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "codex": {"enabled": cfg.adapters.codex.enabled},
             "claude": {"enabled": cfg.adapters.claude.enabled},
             "zcode": {"enabled": cfg.adapters.zcode.enabled},
+        },
+        "inference": {
+            "default_profile": cfg.inference.default_profile,
+            "strict_independence": cfg.inference.strict_independence,
+            "routes": dict(cfg.inference.routes),
+            "profiles": {
+                name: {
+                    "adapter": profile.adapter,
+                    "model": profile.model,
+                    "thinking_level": profile.thinking_level,
+                    "capability_class": profile.capability_class,
+                    "base_url": profile.base_url,
+                    "api_key": "***REDACTED***" if redact and profile.api_key else profile.api_key,
+                    "api_key_env": profile.api_key_env,
+                    "timeout_ms": profile.timeout_ms,
+                }
+                for name, profile in cfg.inference.profiles.items()
+            },
         },
         "profile": cfg.profile,
         "companion_policy_path": cfg.companion_policy_path,

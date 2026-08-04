@@ -335,8 +335,6 @@ def _config(*, provider_type: str = "litellm") -> AgencyConfig:
         workforce=replace(
             WorkforceConfig(),
             provider="task-agency-router",
-            hiring_model="hiring-model",
-            critic_model="critic-model",
             max_hires_per_day=3,
         ),
     )

@@ -122,18 +122,6 @@ _SET_VALIDATORS = {
         item, "workforce.mode", frozenset({"fast", "balanced", "strict"})
     ),
     "workforce.provider": lambda item: _string(item, "workforce.provider", maximum=80).strip(),
-    "workforce.planner_model": lambda item: _string(
-        item, "workforce.planner_model", maximum=512
-    ).strip(),
-    "workforce.recruiter_model": lambda item: _string(
-        item, "workforce.recruiter_model", maximum=512
-    ).strip(),
-    "workforce.hiring_model": lambda item: _string(
-        item, "workforce.hiring_model", maximum=512
-    ).strip(),
-    "workforce.critic_model": lambda item: _string(
-        item, "workforce.critic_model", maximum=512
-    ).strip(),
     "workforce.fast_call_budget": lambda item: _integer(
         item, "workforce.fast_call_budget", minimum=1, maximum=8
     ),

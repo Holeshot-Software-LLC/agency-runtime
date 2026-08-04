@@ -275,11 +275,6 @@ def test_workforce_policy_round_trips_through_shared_cli_dashboard_config(
         [
             {"op": "set", "path": "workforce.mode", "value": "strict"},
             {"op": "set", "path": "workforce.provider", "value": "codex-oauth"},
-            {
-                "op": "set",
-                "path": "workforce.recruiter_model",
-                "value": "gpt-5.6-mini",
-            },
             {"op": "set", "path": "workforce.max_hires_per_task", "value": 0},
             {"op": "set", "path": "workforce.auto_promote_successes", "value": 12},
         ],
@@ -290,14 +285,12 @@ def test_workforce_policy_round_trips_through_shared_cli_dashboard_config(
     assert result.state.persisted["workforce"] == {
         "mode": "strict",
         "provider": "codex-oauth",
-        "recruiter_model": "gpt-5.6-mini",
         "max_hires_per_task": 0,
         "auto_promote_successes": 12,
     }
     loaded = load_config(path, reload=True)
     assert loaded.workforce.mode == "strict"
     assert loaded.workforce.provider == "codex-oauth"
-    assert loaded.workforce.recruiter_model == "gpt-5.6-mini"
     assert loaded.workforce.max_hires_per_task == 0
     assert loaded.workforce.auto_promote_successes == 12
 

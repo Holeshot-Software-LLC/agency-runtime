@@ -13,6 +13,11 @@ from urllib.parse import urlsplit
 from agency_runtime.core.agent_activation import normalize_disabled_agents
 from agency_runtime.core.config import (
     CODEX_REASONING_EFFORTS,
+    INFERENCE_ADAPTER_TYPES,
+    INFERENCE_CAPABILITY_CLASSES,
+    INFERENCE_PROFILE_NAME_PATTERN,
+    INFERENCE_ROUTE_KEY_PATTERN,
+    INFERENCE_THINKING_LEVELS,
     MAX_PROVIDER_CHAIN_ENTRIES,
     is_safe_cli_model_id,
     is_safe_credential_url,
@@ -409,10 +414,6 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
     allowed = {
         "mode",
         "provider",
-        "planner_model",
-        "recruiter_model",
-        "hiring_model",
-        "critic_model",
         "fast_call_budget",
         "balanced_call_budget",
         "strict_call_budget",
@@ -432,12 +433,6 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
     validators: dict[str, Callable[[Any], Any]] = {
         "mode": lambda item: _choice(item, "workforce.mode", _WORKFORCE_MODES),
         "provider": lambda item: _string(item, "workforce.provider", maximum=80).strip(),
-        "planner_model": lambda item: _string(item, "workforce.planner_model", maximum=512).strip(),
-        "recruiter_model": lambda item: _string(
-            item, "workforce.recruiter_model", maximum=512
-        ).strip(),
-        "hiring_model": lambda item: _string(item, "workforce.hiring_model", maximum=512).strip(),
-        "critic_model": lambda item: _string(item, "workforce.critic_model", maximum=512).strip(),
         "fast_call_budget": lambda item: _integer(
             item, "workforce.fast_call_budget", minimum=1, maximum=8
         ),
@@ -497,9 +492,8 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         raise _error(
             "workforce.max_selected_total", "must be greater than or equal to max_selected_per_unit"
         )
-    for field in ("provider", "planner_model", "recruiter_model", "hiring_model", "critic_model"):
-        if has_terminal_control(result.get(field, "")):
-            raise _error(f"workforce.{field}", "contains terminal control characters")
+    if has_terminal_control(result.get("provider", "")):
+        raise _error("workforce.provider", "contains terminal control characters")
     return result
 
 
@@ -607,6 +601,163 @@ def _validate_adapters(value: Any) -> dict[str, Any]:
     return {name: _validate_adapter_entry(item, name) for name, item in section.items()}
 
 
+def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
+    path = f"inference.profiles.{name}"
+    section = _mapping(value, path)
+    if not INFERENCE_PROFILE_NAME_PATTERN.fullmatch(name):
+        raise _error(path, "profile names must be lowercase alphanumeric or hyphenated")
+    allowed = {
+        "adapter",
+        "model",
+        "thinking_level",
+        "capability_class",
+        "base_url",
+        "api_key",
+        "api_key_env",
+        "timeout_ms",
+    }
+    if set(section) - allowed:
+        raise _error(path, "contains unsupported fields")
+    adapter = _choice(
+        section.get("adapter", "openai-compatible"), f"{path}.adapter", INFERENCE_ADAPTER_TYPES
+    )
+    is_cli = adapter == "cli"
+    model = _string(
+        section.get("model", ""),
+        f"{path}.model",
+        allow_empty=is_cli,
+        maximum=512,
+    )
+    if not is_cli and not model:
+        raise _error(f"{path}.model", "must be a non-empty model identifier")
+    thinking_level = (
+        _string(
+            section.get("thinking_level", ""),
+            f"{path}.thinking_level",
+            allow_empty=True,
+            maximum=16,
+        )
+        .strip()
+        .casefold()
+    )
+    if thinking_level and thinking_level not in INFERENCE_THINKING_LEVELS:
+        raise _error(
+            f"{path}.thinking_level",
+            "must be one of " + ", ".join(sorted(INFERENCE_THINKING_LEVELS)),
+        )
+    capability_class = (
+        _string(
+            section.get("capability_class", ""),
+            f"{path}.capability_class",
+            allow_empty=True,
+            maximum=32,
+        )
+        .strip()
+        .casefold()
+    )
+    if capability_class and capability_class not in INFERENCE_CAPABILITY_CLASSES:
+        raise _error(
+            f"{path}.capability_class",
+            "must be one of " + ", ".join(sorted(INFERENCE_CAPABILITY_CLASSES)),
+        )
+    base_url = _url(
+        section.get("base_url", ""),
+        f"{path}.base_url",
+        allow_empty=is_cli,
+    )
+    api_key = _string(section.get("api_key", ""), f"{path}.api_key", maximum=65536)
+    api_key_env = _env_name(section.get("api_key_env", ""), f"{path}.api_key_env")
+    if api_key and api_key_env:
+        raise _error(
+            path,
+            "api_key and api_key_env are mutually exclusive; choose one",
+        )
+    timeout_ms = _integer(
+        section.get("timeout_ms", 30_000),
+        f"{path}.timeout_ms",
+        minimum=50,
+        maximum=120_000,
+    )
+    if is_cli and (base_url or api_key or api_key_env):
+        raise _error(
+            path,
+            "CLI profiles cannot configure URL or API-key fields",
+        )
+    if not is_cli and not (api_key or api_key_env) and not base_url:
+        raise _error(
+            path,
+            "non-CLI profiles must declare base_url or credential fields",
+        )
+    if (api_key or api_key_env) and not is_safe_credential_url(base_url):
+        raise _error(
+            f"{path}.base_url",
+            "credentials require HTTPS or literal loopback HTTP",
+        )
+    return {
+        "adapter": adapter,
+        "model": model,
+        "thinking_level": thinking_level,
+        "capability_class": capability_class,
+        "base_url": base_url,
+        "api_key": api_key,
+        "api_key_env": api_key_env,
+        "timeout_ms": timeout_ms,
+    }
+
+
+def _validate_inference(value: Any) -> dict[str, Any]:
+    path = "inference"
+    section = _mapping(value, path)
+    allowed = {"default_profile", "strict_independence", "routes", "profiles"}
+    if set(section) - allowed:
+        raise _error(path, "contains unsupported fields")
+    default_profile = _string(
+        section.get("default_profile", ""),
+        "inference.default_profile",
+        maximum=128,
+    ).strip()
+    strict_independence = _boolean(
+        section.get("strict_independence", False),
+        "inference.strict_independence",
+    )
+    routes_raw = section.get("routes", {})
+    routes_section = _mapping(routes_raw, "inference.routes")
+    routes: dict[str, str] = {}
+    for key, item in routes_section.items():
+        if not isinstance(key, str) or not INFERENCE_ROUTE_KEY_PATTERN.fullmatch(key):
+            raise _error(
+                f"inference.routes.{key!r}",
+                "route keys must be lowercase dotted identifiers",
+            )
+        if not isinstance(item, str) or not item.strip():
+            raise _error(f"inference.routes.{key}", "must name a profile")
+        routes[key] = item.strip()
+    profiles_raw = section.get("profiles", {})
+    profiles_section = _mapping(profiles_raw, "inference.profiles")
+    profiles: dict[str, dict[str, Any]] = {}
+    for name, item in profiles_section.items():
+        if not isinstance(name, str) or not name.strip():
+            raise _error("inference.profiles", "profile names must be non-empty strings")
+        profiles[name] = _validate_inference_profile(name, item)
+    if default_profile and default_profile not in profiles:
+        raise _error(
+            "inference.default_profile",
+            f"must reference a profile in inference.profiles (got {default_profile!r})",
+        )
+    missing = sorted(set(routes.values()) - set(profiles))
+    if missing:
+        raise _error(
+            "inference.routes",
+            "routes reference undefined profile(s): " + ", ".join(missing),
+        )
+    return {
+        "default_profile": default_profile,
+        "strict_independence": strict_independence,
+        "routes": routes,
+        "profiles": profiles,
+    }
+
+
 _TOP_LEVEL_VALIDATORS: dict[str, Callable[[Any], Any]] = {
     "providers": _validate_providers,
     "judge": _validate_judge,
@@ -614,6 +765,7 @@ _TOP_LEVEL_VALIDATORS: dict[str, Callable[[Any], Any]] = {
     "selector": _validate_selector,
     "delegation": _validate_delegation,
     "workforce": _validate_workforce,
+    "inference": _validate_inference,
     "agents": _validate_agents,
     "store": _validate_store,
     "server": _validate_server,

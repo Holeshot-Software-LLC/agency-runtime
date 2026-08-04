@@ -419,7 +419,9 @@ def _provider_document(provider: ProviderEntry) -> dict[str, Any]:
 
 
 def _matched_provider_and_config(config: AgencyConfig) -> tuple[ProviderEntry, AgencyConfig]:
-    providers = configured_workforce_providers(config, stage="planner")
+    providers = configured_workforce_providers(
+        config, stage="planner", route_key="workforce.planner"
+    )
     if not providers:
         raise ValueError("matched upstream selection requires a configured planner provider")
     provider = providers[0]
@@ -427,7 +429,6 @@ def _matched_provider_and_config(config: AgencyConfig) -> tuple[ProviderEntry, A
         config.workforce,
         mode="fast",
         provider=provider.name,
-        planner_model=provider.model,
         fast_call_budget=1,
     )
     return provider, replace(config, providers=(provider,), workforce=matched_workforce)

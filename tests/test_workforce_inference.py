@@ -8,7 +8,13 @@ from typing import Any
 
 import pytest
 
-from agency_runtime.core.config import AgencyConfig, ProviderEntry, WorkforceConfig
+from agency_runtime.core.config import (
+    AgencyConfig,
+    InferenceConfig,
+    InferenceProfile,
+    ProviderEntry,
+    WorkforceConfig,
+)
 from agency_runtime.core.preflight_failure import preflight_staffing_reason_codes
 from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 from agency_runtime.core.selector.pipeline import _record_workforce_model_receipts
@@ -1897,20 +1903,48 @@ def test_fast_mode_uses_planner_and_recruiter_and_binds_runtime_hashes() -> None
 
 
 def test_provider_and_stage_model_selection_are_explicit_and_case_insensitive() -> None:
+    # ADR-0153: stage-specific model selection now lives on the inference
+    # profile, not on the legacy workforce.*_model knobs. Two routes resolve
+    # to two different profiles backed by the same providers chain.
+    planner_profile = InferenceProfile(
+        name="agency-planner",
+        adapter="litellm",
+        model="cheap-planner",
+        base_url="https://router.example.test/v1",
+        api_key_env="LITELLM_API_KEY",
+    )
+    recruiter_profile = InferenceProfile(
+        name="agency-recruiter",
+        adapter="litellm",
+        model="task-agency-router",
+        base_url="https://router.example.test/v1",
+        api_key_env="LITELLM_API_KEY",
+    )
     config = AgencyConfig(
         providers=(_provider("Primary"), _provider("Backup", model="backup-model")),
-        workforce=WorkforceConfig(
-            provider="backup",
-            planner_model="cheap-planner",
-            recruiter_model="task-agency-router",
+        workforce=WorkforceConfig(provider="backup"),
+        inference=InferenceConfig(
+            default_profile="agency-planner",
+            routes={
+                "workforce.planner": "agency-planner",
+                "workforce.recruiter": "agency-recruiter",
+            },
+            profiles={
+                "agency-planner": planner_profile,
+                "agency-recruiter": recruiter_profile,
+            },
         ),
     )
 
-    planner = configured_workforce_providers(config, stage="planner")
-    recruiter = configured_workforce_providers(config, stage="recruiter")
+    planner = configured_workforce_providers(config, stage="planner", route_key="workforce.planner")
+    recruiter = configured_workforce_providers(
+        config, stage="recruiter", route_key="workforce.recruiter"
+    )
 
-    assert [(item.name, item.model) for item in planner] == [("Backup", "cheap-planner")]
-    assert [(item.name, item.model) for item in recruiter] == [("Backup", "task-agency-router")]
+    assert [(item.name, item.model) for item in planner] == [("agency-planner", "cheap-planner")]
+    assert [(item.name, item.model) for item in recruiter] == [
+        ("agency-recruiter", "task-agency-router")
+    ]
 
 
 def test_no_provider_declines_without_selecting_or_calling_the_model() -> None:

@@ -40,6 +40,51 @@ _HTTP_PROVIDER_TYPES = frozenset(
     }
 )
 
+# Per-adapter ``thinking_level`` mapping. Mirrors
+# ``docs/roadmap/reference-workforce-inference-stages.md`` §"thinking_level
+# adapter mapping".
+_ANTHROPIC_THINKING_BUDGETS = {
+    "low": 1024,
+    "medium": 4096,
+    "high": 16384,
+    "xhigh": 32768,
+}
+_OPENAI_REASONING_EFFORTS = frozenset({"low", "medium", "high"})
+
+
+def _translate_thinking_level_for_adapter(
+    provider_type: str,
+    thinking_level: str,
+) -> str:
+    """Return the consumed thinking level for ``provider_type``.
+
+    The receipt records both the configured value (what the operator asked
+    for) and the consumed value (what the adapter actually applied). When
+    the adapter does not understand a value, the consumed value is the
+    string ``"unsupported"`` and the request omits the parameter. CLI and
+    ollama transports ignore the value at call time and the configured
+    value is still recorded for the audit trail.
+    """
+    if not thinking_level:
+        return ""
+    normalized = thinking_level.strip().casefold()
+    if not normalized:
+        return ""
+    if provider_type == "openai-compatible":
+        return normalized if normalized in _OPENAI_REASONING_EFFORTS else "unsupported"
+    if provider_type == "anthropic":
+        return normalized if normalized in _ANTHROPIC_THINKING_BUDGETS else "unsupported"
+    return normalized  # ollama / litellm / cli: pass through / ignored
+
+
+def translate_thinking_level_for_adapter(
+    provider_type: str,
+    thinking_level: str,
+) -> str:
+    """Public adapter: project the consumed thinking level for one provider type."""
+
+    return _translate_thinking_level_for_adapter(provider_type, thinking_level)
+
 
 @dataclass(frozen=True, slots=True)
 class StructuredProviderResult:
@@ -54,6 +99,8 @@ class StructuredProviderResult:
     actual_model: str
     model_receipt_source: str
     latency_ms: int
+    thinking_level_configured: str = ""
+    thinking_level_consumed: str = ""
 
     def receipt(self) -> dict[str, Any]:
         return {
@@ -65,6 +112,8 @@ class StructuredProviderResult:
             "actual_model": self.actual_model,
             "model_receipt_source": self.model_receipt_source,
             "latency_ms": self.latency_ms,
+            "thinking_level_configured": self.thinking_level_configured,
+            "thinking_level_consumed": self.thinking_level_consumed,
         }
 
 
@@ -289,17 +338,20 @@ def _http_payload(
             "/api/chat",
         )
     if provider_type == "anthropic":
-        return (
-            {
-                "max_tokens": 2048,
-                "messages": [{"content": prompt, "role": "user"}],
-                "model": provider.model,
-                "system": system_prompt,
-                "temperature": 0,
-            },
-            "/v1/messages",
-        )
-    payload: dict[str, Any] = {
+        payload: dict[str, Any] = {
+            "max_tokens": 2048,
+            "messages": [{"content": prompt, "role": "user"}],
+            "model": provider.model,
+            "system": system_prompt,
+            "temperature": 0,
+        }
+        if provider.reasoning_effort in _ANTHROPIC_THINKING_BUDGETS:
+            payload["thinking"] = {
+                "type": "enabled",
+                "budget_tokens": _ANTHROPIC_THINKING_BUDGETS[provider.reasoning_effort],
+            }
+        return payload, "/v1/messages"
+    payload = {
         "messages": [
             {"content": system_prompt, "role": "system"},
             {"content": prompt, "role": "user"},
@@ -314,6 +366,11 @@ def _http_payload(
         payload.pop("temperature", None)
     else:
         payload["max_tokens"] = 2048
+    if (
+        provider_type == "openai-compatible"
+        and provider.reasoning_effort in _OPENAI_REASONING_EFFORTS
+    ):
+        payload["reasoning_effort"] = provider.reasoning_effort
     return payload, "/v1/chat/completions"
 
 
@@ -402,6 +459,10 @@ def invoke_structured_provider_result(
             actual_model=provider.model,
             model_receipt_source="cli.explicit_model_argument",
             latency_ms=max(0, int((time.monotonic() - started) * 1000)),
+            thinking_level_configured=provider.reasoning_effort,
+            thinking_level_consumed=_translate_thinking_level_for_adapter(
+                provider_type, provider.reasoning_effort
+            ),
         )
 
     api_key = provider.resolve_api_key()
@@ -453,6 +514,10 @@ def invoke_structured_provider_result(
         actual_model=actual_model,
         model_receipt_source="response.body.model" if actual_model else "unavailable",
         latency_ms=max(0, int((time.monotonic() - started) * 1000)),
+        thinking_level_configured=provider.reasoning_effort,
+        thinking_level_consumed=_translate_thinking_level_for_adapter(
+            provider_type, provider.reasoning_effort
+        ),
     )
 
 
@@ -483,4 +548,5 @@ __all__ = [
     "StructuredProviderResult",
     "invoke_structured_provider",
     "invoke_structured_provider_result",
+    "translate_thinking_level_for_adapter",
 ]
