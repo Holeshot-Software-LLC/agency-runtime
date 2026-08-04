@@ -1316,17 +1316,31 @@ def attended_upgrade_plan(status: Mapping[str, Any]) -> dict[str, Any]:
             ),
         }
     install, installer, interpreter = selected_install
-    refresh_codex = [
-        interpreter,
-        "-I",
-        "-m",
-        "agency_runtime.cli",
-        "install",
-        "--agent",
-        "codex",
-        "--no-dashboard",
-    ]
-    commands = [install, refresh_codex]
+    commands: list[list[str]] = [install]
+    # Refresh every installed host integration after the package reinstall so
+    # the rendered plugin source and managed guidance match the new version.
+    # Codex is always included (it has managed AGENTS.override.md guidance);
+    # other hosts are included only when they show installation evidence.
+    from agency_runtime.core.installer_native import detect_installed_agents
+
+    installed_hosts = detect_installed_agents()
+    refresh_hosts = ["codex"]
+    refresh_hosts.extend(
+        host for host in ("claude", "zcode", "hermes", "openclaw") if host in installed_hosts
+    )
+    for host in dict.fromkeys(refresh_hosts):
+        commands.append(  # noqa: PERF401 — each entry is one distinct command argv list
+            [
+                interpreter,
+                "-I",
+                "-m",
+                "agency_runtime.cli",
+                "install",
+                "--agent",
+                host,
+                "--no-dashboard",
+            ]
+        )
     return {
         "mode": "attended-external",
         "installer": installer,

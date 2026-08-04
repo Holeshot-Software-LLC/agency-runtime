@@ -615,7 +615,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `14a34ae` | 2026-08-04 | AR-227: Expand the specialist roster (#236) | null | null |
 | `45be7ea` | 2026-08-04 | AR-228: Fail open with honest header + fix deterministic gates hiding specialists (#237) | null | null |
 | `781e83e` | 2026-08-04 | AR-229: Fix README specialist count and two pre-existing test failures (#238) | null | null |
-| `2ee393d` | 2026-08-04 | docs: close AR-202, AR-205, AR-213 as done; close stale PR #156 / issue #155 | null | null |
+| `21c0aaa` | 2026-08-04 | AR-230: Close completed issues and stale PR (#239) | null | null |
+| `9c52eed` | 2026-08-04 | fix: resource-file filtering, multi-host upgrade, ZCode delegation note, close AR-210 | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
