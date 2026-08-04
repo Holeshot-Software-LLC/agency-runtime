@@ -618,7 +618,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5288c77` | 2026-08-03 | fix(uninstall): enable attended host uninstall via two-step dry-run/confirm | null | null |
 | `a30190c` | 2026-08-03 | fix(workforce): stop deterministic gates from hiding roster specialists (AR-228) | null | null |
 | `495ecac` | 2026-08-03 | docs(ar-228): record routing verification — specialist teams fire on a verified host | null | null |
-| `1c7b6dc` | 2026-08-03 | docs(ar-228): record PR #237 tracker url | null | null |
+| `c379d66` | 2026-08-03 | docs(ar-228): record PR #237 tracker url | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
