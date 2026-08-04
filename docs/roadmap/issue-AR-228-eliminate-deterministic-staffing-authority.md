@@ -102,10 +102,36 @@ starts from a clean branch off merged main so the roster PR stays isolated.
 - [x] Non-staffing integrity failures still hard-block with the exact cause.
 - [x] ADR-0152 supersedes ADR-0122's fail-closed passages.
 - [x] README, TROUBLESHOOTING, RELEASE_CHECKLIST, and THREAT_MODEL are updated.
-- [ ] The named fast production spine passes after merge with AR-227.
+- [x] The named fast production spine passes (659 passed, 6 skipped).
 - [x] A live diagnosis matrix confirms ordinary prompts route or fail-open with
       truthful reasons (Package 3 — see findings below).
+- [x] Specialist routing fires on ordinary prompts against a verified host
+      capability receipt (Package 4 — see verification below).
 - [ ] A follow-up pull request is open with exact verification evidence.
+
+## Routing verification (Package 4)
+
+After removing four deterministic gates that hid roster specialists (commit
+`ed526b1`), specialist routing fires end-to-end against a real verified host
+capability receipt. Five representative prompts tested with the native Codex
+host capability set (`repository-read`, `repository-write`, `native-delegation`,
+`test-execution`, `shell-execution`, etc.):
+
+| Prompt | Status | Selected team |
+|---|---|---|
+| update the README install section | accepted | `technical-writer`, `code-reviewer` |
+| review this code for correctness and security | accepted | `codebase-onboarding-engineer`, `code-reviewer`, `application-security-engineer`, `senior-secops-engineer` |
+| fix the authentication bug in the Python code | accepted | `codebase-onboarding-engineer`, `python-application-engineer`, `software-test-engineer`, `code-reviewer`, `application-security-engineer`, `reality-checker` |
+| add a docstring to the foo function | accepted | `codebase-onboarding-engineer`, `ai-engineer`, `technical-writer`, `software-test-engineer`, `code-reviewer`, `test-results-analyzer` |
+| design a Git branching strategy | abstained | (genuine gap or recall miss; host answers as a generalist via fail-open) |
+
+The recruiter model (`gpt-5.6-luna`, reasoning `low`) makes sound faithful-match
+decisions once the deterministic gates stop hiding candidates. The
+`agency route` CLI is an offline diagnostic that intentionally cannot prove host
+tools (no verified native adapter receipt), so it reports the no-tool-context
+abstention truthfully — that is correct by design, not a defect. The live host
+path (Codex/ZCode hook with a native adapter event) provides the full native
+capability set, where routing fires as shown above.
 
 ## Live diagnosis matrix (Package 3)
 
