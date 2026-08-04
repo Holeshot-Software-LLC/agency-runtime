@@ -52,6 +52,7 @@ from agency_runtime.core.workforce.staffing_verifier import (
     StaffingContext,
     StaffingDecision,
     build_verified_proposal,
+    is_wildcard_coverage,
     typed_staffing_coverage,
     typed_staffing_ineligibility,
     typed_staffing_requirements,
@@ -167,7 +168,10 @@ _RECRUITER_SYSTEM = (
     "typed coverage from a display name or prose card. A nonempty uncovered_requirements list "
     "proves that the current roster cannot staff that unit and requires a gap. Otherwise, selected "
     "required/acceptable candidates must jointly cover every requirement within the configured "
-    "per-unit limit; deterministic verification rejects unsupported coverage.\n\n"
+    "per-unit limit; deterministic verification rejects unsupported coverage. Candidates marked "
+    "untyped_candidate have no audited typed coverage fields; their covers list is empty because "
+    "their fit cannot be proven or disproven deterministically — judge them from their outcomes, "
+    "scope_qualifiers, and not_for card fields, not from typed coverage.\n\n"
     "For every unit, rank the strongest semantic candidates in descending order. "
     "Set decision to staff when the ranked candidates can form the intended team, or gap "
     "only when no supplied specialist or combination is semantically appropriate. Classify "
@@ -1177,13 +1181,14 @@ def _typed_shortlists(
             # downstream stages handle host eligibility.
             if not contract.enabled:
                 continue
-            coverage = typed_staffing_coverage(unit, contract)
+            wildcard = is_wildcard_coverage(unit, contract)
+            coverage = frozenset() if wildcard else typed_staffing_coverage(unit, contract)
             ineligibility = (
                 () if context is None else typed_staffing_ineligibility(unit, contract, context)
             )
-            if not ineligibility:
+            if not ineligibility and not wildcard:
                 eligible_coverage.update(coverage)
-            candidates.append((contract.agent_id, frozenset(coverage), ineligibility))
+            candidates.append((contract.agent_id, coverage, ineligibility, wildcard))
         selected = _bounded_typed_candidates(required, candidates)
         result.append(
             {
@@ -1199,8 +1204,9 @@ def _typed_shortlists(
                         "covers": sorted(covers),
                         "execution_eligible": not ineligibility,
                         "ineligibility_reasons": list(ineligibility),
+                        "untyped_candidate": wildcard,
                     }
-                    for agent_id, covers, ineligibility in selected
+                    for agent_id, covers, ineligibility, wildcard in selected
                 ],
             }
         )
@@ -1209,32 +1215,42 @@ def _typed_shortlists(
 
 def _bounded_typed_candidates(
     required: Sequence[str],
-    candidates: Sequence[tuple[str, frozenset[str], tuple[str, ...]]],
-) -> list[tuple[str, frozenset[str], tuple[str, ...]]]:
-    """Recall stable coverage evidence without ranking or selecting a worker."""
+    candidates: Sequence[tuple[str, frozenset[str], tuple[str, ...], bool]],
+) -> list[tuple[str, frozenset[str], tuple[str, ...], bool]]:
+    """Recall stable coverage evidence ordered by coverage breadth then identity.
 
-    ordered = sorted(candidates, key=lambda item: item[0])
-    recalled: dict[str, tuple[str, frozenset[str], tuple[str, ...]]] = {}
+    Wildcard candidates (untyped contracts with no typed coverage fields) enter
+    via the fill loop only — never the sufficiency short-circuit or per-
+    requirement match — so they are available for the recruiter to consider but
+    are not presented as proven coverage.
+    """
+
     required_set = set(required)
+    ordered = sorted(
+        candidates,
+        key=lambda item: (-(len(item[1] & required_set)), item[0]),
+    )
+    recalled: dict[str, tuple[str, frozenset[str], tuple[str, ...], bool]] = {}
     for candidate in ordered:
-        agent_id, covers, ineligibility = candidate
-        if not ineligibility and required_set <= covers:
+        agent_id, covers, ineligibility, wildcard = candidate
+        if not ineligibility and not wildcard and required_set <= covers:
             recalled.setdefault(agent_id, candidate)
             if len(recalled) >= MAX_TYPED_RECALL_CANDIDATES_PER_UNIT:
                 break
     for requirement in required:
         for candidate in ordered:
-            agent_id, covers, ineligibility = candidate
-            if not ineligibility and requirement in covers:
+            agent_id, covers, ineligibility, wildcard = candidate
+            if not ineligibility and not wildcard and requirement in covers:
                 recalled.setdefault(agent_id, candidate)
                 break
     for candidate in ordered:
         if len(recalled) >= MAX_TYPED_RECALL_CANDIDATES_PER_UNIT:
             break
         recalled.setdefault(candidate[0], candidate)
-    return sorted(recalled.values(), key=lambda item: item[0])[
-        :MAX_TYPED_RECALL_CANDIDATES_PER_UNIT
-    ]
+    return sorted(
+        recalled.values(),
+        key=lambda item: (-(len(item[1] & required_set)), item[0]),
+    )[:MAX_TYPED_RECALL_CANDIDATES_PER_UNIT]
 
 
 def staffing_budget_for_config(config: AgencyConfig) -> StaffingBudget:

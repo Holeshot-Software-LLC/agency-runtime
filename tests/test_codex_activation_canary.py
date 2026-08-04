@@ -1563,7 +1563,9 @@ def test_codex_opaque_children_serialize_until_subagent_start_consumes_grant(
 
     def invoke(_provider, _prompt, schema, **_kwargs):
         properties = schema.get("properties", {})
-        if "request_summary" in properties:
+        if "approved" in properties:
+            value = {"approved": True, "reason_codes": []}
+        elif "request_summary" in properties:
             value = {
                 "request_summary": "Two exact implementation units.",
                 "units": [
@@ -1764,8 +1766,10 @@ def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
 
     def invoke(_provider, _prompt, schema, **_kwargs):
         properties = schema.get("properties", {})
-        value = (
-            {
+        if "approved" in properties:
+            value = {"approved": True, "reason_codes": []}
+        elif "request_summary" in properties:
+            value = {
                 "request_summary": "A complete bounded CLI implementation and assurance plan.",
                 "units": [
                     {
@@ -1789,8 +1793,8 @@ def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
                     ) in outcomes
                 ],
             }
-            if "request_summary" in properties
-            else {
+        else:
+            value = {
                 "units": [
                     {
                         "unit_id": unit_id,
@@ -1808,7 +1812,6 @@ def test_codex_preflight_stages_exact_path_for_ordinary_workspace_write(
                     for unit_id, *_rest, specialist in outcomes
                 ]
             }
-        )
         return StructuredProviderResult(
             value=value,
             provider_name="task-agency-router",

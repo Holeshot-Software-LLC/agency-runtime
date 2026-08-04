@@ -89,8 +89,10 @@ def configured_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 def _accepted_product_provider(_provider, _prompt, schema, **_kwargs):
     properties = schema.get("properties", {})
-    value = (
-        {
+    if "approved" in properties:
+        value = {"approved": True, "reason_codes": []}
+    elif "request_summary" in properties:
+        value = {
             "request_summary": "A bounded Python CLI implementation and assurance plan.",
             "units": [
                 {
@@ -114,8 +116,8 @@ def _accepted_product_provider(_provider, _prompt, schema, **_kwargs):
                 ) in _OUTCOMES
             ],
         }
-        if "request_summary" in properties
-        else {
+    else:
+        value = {
             "units": [
                 {
                     "unit_id": unit_id,
@@ -133,7 +135,6 @@ def _accepted_product_provider(_provider, _prompt, schema, **_kwargs):
                 for unit_id, *_rest, specialist in _OUTCOMES
             ]
         }
-    )
     return StructuredProviderResult(
         value=value,
         provider_name="task-agency-router",

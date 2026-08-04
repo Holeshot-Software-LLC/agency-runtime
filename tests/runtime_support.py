@@ -176,6 +176,8 @@ def stub_inference_invoker(
 
     def _invoke(_provider, _prompt, schema, **_kwargs):
         props = schema.get("properties", {}) if isinstance(schema, Mapping) else {}
+        if "approved" in props:
+            return _structured({"approved": True, "reason_codes": []})
         if "request_summary" in props and "units" in props:
             return _structured(
                 {

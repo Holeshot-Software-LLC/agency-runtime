@@ -430,6 +430,21 @@ def _coverage(unit: WorkUnit, contract: WorkforceContract) -> frozenset[str]:
     return frozenset(covered)
 
 
+def is_wildcard_coverage(unit: WorkUnit, contract: WorkforceContract) -> bool:
+    """Return whether this contract's coverage is a wildcard (no typed fields).
+
+    A wildcard contract covers every requirement by default so the verifier
+    does not hard-reject teams that include un-enriched roster specialists.
+    But wildcard coverage is NOT positive evidence of fit — callers should
+    present it as ``untyped_candidate`` to the recruiter rather than as
+    typed coverage.
+    """
+
+    return not (
+        contract.artifact_kinds or contract.lifecycle_phases or contract.domains or contract.stacks
+    )
+
+
 def typed_staffing_requirements(unit: WorkUnit) -> tuple[str, ...]:
     """Expose the deterministic requirements used to prove team sufficiency."""
 

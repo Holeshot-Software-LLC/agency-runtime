@@ -1151,6 +1151,7 @@ def cmd_route(args: argparse.Namespace) -> int:
             f"source={routing.get('provider', 'deterministic')} "
             f"trace={routing.get('trace_id', '')}"
         )
+        _print_latency_metrics(routing)
         for agent in candidate_rows:
             print(f"candidate: {agent['slug']} score={agent['score']:.3f}")
         if routing.get("companion_actions"):
@@ -1162,10 +1163,10 @@ def cmd_route(args: argparse.Namespace) -> int:
 def _print_no_selection_diagnostic(routing: dict[str, Any]) -> None:
     """Print the exact persisted cause when no specialist was selected.
 
-    Surfaces status, inference_mode, error, and inference_failures so the
-    operator can diagnose the real failure (recruiter abstention, plan-policy
-    veto, provider failure) instead of guessing. The README "fails honestly"
-    promise requires this.
+    Surfaces status, inference_mode, error, inference_failures, and latency
+    metrics so the operator can diagnose the real failure (recruiter abstention,
+    plan-policy veto, provider failure) instead of guessing. The README "fails
+    honestly" promise requires this.
     """
 
     inference_mode = routing.get("inference_mode") or ""
@@ -1179,6 +1180,21 @@ def _print_no_selection_diagnostic(routing: dict[str, Any]) -> None:
         print(f"reason: {error}")
     if inference_failures:
         print(f"inference failures: {', '.join(inference_failures)}")
+    _print_latency_metrics(routing)
+
+
+def _print_latency_metrics(routing: dict[str, Any]) -> None:
+    """Print per-stage inference latency if present."""
+
+    stage_latencies = routing.get("stage_latencies") or {}
+    total_calls = routing.get("total_inference_calls")
+    if not stage_latencies and total_calls is None:
+        return
+    parts = [f"{stage}={ms}ms" for stage, ms in sorted(stage_latencies.items())]
+    if total_calls is not None:
+        parts.append(f"total_calls={total_calls}")
+    if parts:
+        print(f"inference: {', '.join(parts)}")
 
 
 def _print_disabled_candidate_shadows(routing: dict[str, Any]) -> None:

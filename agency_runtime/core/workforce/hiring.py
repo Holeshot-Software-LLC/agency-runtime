@@ -1775,6 +1775,24 @@ def restaff_after_hire(
         budget=budget,
     )
     if not staffing.accepted:
+        # The full-team re-verification failed, but the contractor was already
+        # committed. Return abstained with inference_mode="inferred+hiring" so
+        # downstream code can distinguish "hire committed but team composition
+        # failed" from a plain abstention. The workforce is mutated; the header
+        # should acknowledge the hire via the hiring_event in the routing dict
+        # (threaded by _run_gap_hiring) rather than hiding it behind selected=[].
+        return WorkforceRoutingOutcome(
+            status="abstained",
+            mode=outcome.mode,
+            inference_mode="inferred+hiring",
+            plan=outcome.plan,
+            proposal=proposal,
+            staffing=staffing,
+            attempts=outcome.attempts,
+            abstention_codes=tuple(item.code for item in staffing.abstention_reasons),
+            calls_used=outcome.calls_used,
+            decision_source="inferred+hiring",
+        )
         return WorkforceRoutingOutcome(
             status="abstained",
             mode=outcome.mode,

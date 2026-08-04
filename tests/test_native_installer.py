@@ -585,6 +585,7 @@ def test_generated_hook_timeout_covers_balanced_workforce_call_budget() -> None:
 
 def test_generated_hook_timeout_covers_default_fast_stage_repair_budget() -> None:
     cfg = AgencyConfig(
+        workforce=WorkforceConfig(mode="fast"),
         providers=(
             ProviderEntry(
                 name="oauth-router",
