@@ -12,6 +12,8 @@ related:
   - docs/roadmap/issue-AR-142-instrument-runtime-boundaries.md
   - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
+  - docs/roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md
+  - docs/analysis/2026-08-04-cli-dashboard-parity.md
   - docs/roadmap/reference-workforce-inference-stages.md
   - agency_runtime/core/workforce/hiring.py
   - agency_runtime/core/workforce/hiring_contract.py
