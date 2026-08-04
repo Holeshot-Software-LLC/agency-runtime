@@ -618,6 +618,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `21c0aaa` | 2026-08-04 | AR-230: Close completed issues and stale PR (#239) | null | null |
 | `def4f8b` | 2026-08-04 | AR-231: Resource-file filtering, multi-host upgrade, ZCode delegation note, close AR-210 (#240) | null | null |
 | `7c33b35` | 2026-08-04 | AR-232: Remove MAX_PLAN_LIST_ITEMS cap that truncated resource scopes (#241) | null | null |
+| `559b428` | 2026-08-04 | fix(architecture): honest headers, wildcard distinction, strict default, metrics | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
