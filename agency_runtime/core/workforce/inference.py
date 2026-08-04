@@ -351,20 +351,6 @@ _RANK_SCHEMA = _closed_object(
     },
     ("agent_id", "rank", "score"),
 )
-_COVERAGE_SCHEMA = _closed_object(
-    {
-        "requirement": {"maxLength": 128, "minLength": 1, "type": "string"},
-        "agent_ids": _IDENTIFIER_ARRAY,
-    },
-    ("requirement", "agent_ids"),
-)
-_EVIDENCE_SCHEMA = _closed_object(
-    {
-        "agent_id": {"maxLength": 128, "minLength": 1, "type": "string"},
-        "reason_codes": _IDENTIFIER_ARRAY,
-    },
-    ("agent_id", "reason_codes"),
-)
 _CONTEXT_SCHEMA = _closed_object(
     {
         "agent_id": {"maxLength": 128, "minLength": 1, "type": "string"},
@@ -395,9 +381,6 @@ _RECRUITMENT_ROW_SCHEMA = _closed_object(
         "ranked_executable": {"items": _RANK_SCHEMA, "maxItems": 16, "type": "array"},
         "disabled_shadows": {"items": _SHADOW_SCHEMA, "maxItems": 16, "type": "array"},
         "unavailable_shadows": {"items": _SHADOW_SCHEMA, "maxItems": 16, "type": "array"},
-        "coverage": {"items": _COVERAGE_SCHEMA, "maxItems": 16, "type": "array"},
-        "positive_evidence": {"items": _EVIDENCE_SCHEMA, "maxItems": 16, "type": "array"},
-        "negative_evidence": {"items": _EVIDENCE_SCHEMA, "maxItems": 16, "type": "array"},
         "contexts": {"items": _CONTEXT_SCHEMA, "maxItems": 16, "type": "array"},
         "confidence": {"maximum": 1, "minimum": 0, "type": "number"},
         "margin": {"maximum": 1, "minimum": 0, "type": "number"},
@@ -420,9 +403,6 @@ _RECRUITMENT_ROW_SCHEMA = _closed_object(
         "ranked_executable",
         "disabled_shadows",
         "unavailable_shadows",
-        "coverage",
-        "positive_evidence",
-        "negative_evidence",
         "contexts",
         "confidence",
         "margin",
@@ -1661,7 +1641,6 @@ def _mode_budget(config: AgencyConfig) -> int:
 
 _INFERRED_GAP_VERIFIER_CODES = frozenset(
     {
-        "coverage_evidence_mismatch",
         "independent_assurance_missing",
         "no_safe_sufficient_team",
         "required_agents_missing",

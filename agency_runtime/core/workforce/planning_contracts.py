@@ -154,18 +154,6 @@ class CandidateRank:
 
 
 @dataclass(frozen=True, slots=True)
-class CoverageClaim:
-    requirement: str
-    agent_ids: tuple[str, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class SelectionEvidence:
-    agent_id: str
-    reason_codes: tuple[str, ...]
-
-
-@dataclass(frozen=True, slots=True)
 class ContextBinding:
     agent_id: str
     context_id: str
@@ -193,9 +181,6 @@ class UnitRecruitment:
     ranked_executable: tuple[CandidateRank, ...]
     disabled_shadows: tuple[ShadowEvidence, ...]
     unavailable_shadows: tuple[ShadowEvidence, ...]
-    coverage: tuple[CoverageClaim, ...]
-    positive_evidence: tuple[SelectionEvidence, ...]
-    negative_evidence: tuple[SelectionEvidence, ...]
     contexts: tuple[ContextBinding, ...]
     confidence: float
     margin: float
@@ -264,9 +249,6 @@ _ROW_FIELDS = frozenset(
         "ranked_executable",
         "disabled_shadows",
         "unavailable_shadows",
-        "coverage",
-        "positive_evidence",
-        "negative_evidence",
         "contexts",
         "confidence",
         "margin",
@@ -388,24 +370,6 @@ def _ranks(value: object, *, label: str) -> tuple[CandidateRank, ...]:
     return result
 
 
-def _parse_coverage(value: object) -> CoverageClaim:
-    raw = _mapping(value, label="coverage", fields=frozenset({"requirement", "agent_ids"}))
-    return CoverageClaim(
-        _text(raw["requirement"], label="coverage requirement", maximum=MAX_LABEL_CHARS),
-        _items(raw["agent_ids"], label="coverage agent_ids", identifiers=True, required=True),
-    )
-
-
-def _parse_evidence(value: object) -> SelectionEvidence:
-    raw = _mapping(
-        value, label="selection evidence", fields=frozenset({"agent_id", "reason_codes"})
-    )
-    return SelectionEvidence(
-        _identifier(raw["agent_id"], label="evidence agent_id"),
-        _items(raw["reason_codes"], label="reason_codes", identifiers=True, required=True),
-    )
-
-
 def _parse_context(value: object) -> ContextBinding:
     raw = _mapping(value, label="context binding", fields=frozenset({"agent_id", "context_id"}))
     return ContextBinding(
@@ -461,13 +425,6 @@ def _parse_row(value: object) -> UnitRecruitment:
         unavailable_shadows=_objects(
             raw["unavailable_shadows"], _parse_shadow, label="unavailable_shadows"
         ),
-        coverage=_objects(raw["coverage"], _parse_coverage, label="coverage"),
-        positive_evidence=_objects(
-            raw["positive_evidence"], _parse_evidence, label="positive_evidence"
-        ),
-        negative_evidence=_objects(
-            raw["negative_evidence"], _parse_evidence, label="negative_evidence"
-        ),
         contexts=_objects(raw["contexts"], _parse_context, label="contexts"),
         confidence=_probability(raw["confidence"], label="confidence"),
         margin=_probability(raw["margin"], label="margin"),
@@ -520,9 +477,7 @@ __all__ = [
     "RECRUITMENT_SCHEMA_VERSION",
     "CandidateRank",
     "ContextBinding",
-    "CoverageClaim",
     "RecruiterProposal",
-    "SelectionEvidence",
     "ShadowEvidence",
     "UnitRecruitment",
     "WorkUnit",
