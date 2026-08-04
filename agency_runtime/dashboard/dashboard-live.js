@@ -854,7 +854,7 @@ export function createLiveController(core, config, renderer) {
 	async function fetchWorkforceCollections(signal) {
 		const [workforceFirst, hiringFirst] = await Promise.all([
 			api("/api/workforce?limit=200", { signal }),
-			api("/api/hiring?limit=200", { signal }),
+			api(buildHiringPath(state.hiringFilters, { limit: 200 }), { signal }),
 		]);
 		const [workforce, hiring] = await Promise.all([
 			completeCollection(workforceFirst, {
@@ -864,7 +864,7 @@ export function createLiveController(core, config, renderer) {
 				signal,
 			}),
 			completeCollection(hiringFirst, {
-				basePath: "/api/hiring?limit=200",
+				basePath: buildHiringPath(state.hiringFilters, { limit: 200 }),
 				itemField: "hiring_cases",
 				revisionField: "collection_revision",
 				signal,
@@ -873,6 +873,24 @@ export function createLiveController(core, config, renderer) {
 			}),
 		]);
 		return { workforce, hiring };
+	}
+
+	function buildHiringPath(filters, { limit = 200 } = {}) {
+		const search = new URLSearchParams();
+		search.set("limit", String(limit));
+		const status = String(filters?.status || "").trim();
+		const riskTier = String(filters?.risk_tier || "").trim();
+		if (status) search.set("status", status);
+		if (riskTier) search.set("risk_tier", riskTier);
+		return `/api/hiring?${search.toString()}`;
+	}
+
+	function hiringFilterValues() {
+		const fields = ["status", "risk_tier"];
+		return Object.fromEntries(fields.flatMap((field) => {
+			const value = String(byId(`hiring-filter-${field === "risk_tier" ? "risk" : field}`)?.value || "").trim();
+			return value ? [[field, value]] : [];
+		}));
 	}
 
 	function applyRosterPage(payload = {}) {
@@ -1030,6 +1048,43 @@ export function createLiveController(core, config, renderer) {
 				if (control) control.value = "";
 			});
 		return applyOperationalFilters();
+	}
+
+	async function applyHiringFilters(event) {
+		event?.preventDefault?.();
+		if (config.serviceRestartRequired()) {
+			showNotice("Restart the dashboard service before filtering hiring cases.", true);
+			return false;
+		}
+		if (lifecycleInactive()) return false;
+		const filters = hiringFilterValues();
+		state.hiringFilterIntentGeneration += 1;
+		const intentGeneration = state.hiringFilterIntentGeneration;
+		const request = beginViewRequest("workforce");
+		try {
+			const collections = await fetchWorkforceCollections(request.controller.signal);
+			if (!viewRequestIsCurrent("workforce", request)) return false;
+			if (intentGeneration !== state.hiringFilterIntentGeneration) return false;
+			state.hiringFilters = filters;
+			commitWorkforceCollections(collections, { render: true });
+			return true;
+		} catch (error) {
+			if (error?.name !== "AbortError" && viewRequestIsCurrent("workforce", request)) {
+				showNotice(error.message, true);
+			}
+			return false;
+		} finally {
+			finishViewRequest("workforce", request);
+		}
+	}
+
+	function clearHiringFilters() {
+		["status", "risk"]
+			.forEach((field) => {
+				const control = byId(`hiring-filter-${field}`);
+				if (control) control.value = "";
+			});
+		return applyHiringFilters();
 	}
 
 	async function loadMoreRemediation(kind) {
@@ -1616,6 +1671,8 @@ export function createLiveController(core, config, renderer) {
 		operationalRosterPath,
 		applyOperationalFilters,
 		clearOperationalFilters,
+		applyHiringFilters,
+		clearHiringFilters,
 		loadMoreRemediation,
 		rosterRequestPath,
 		normalizeRosterFilter,

@@ -32,6 +32,7 @@ _EMPLOYMENT_CLASSES = frozenset({"contractor", "employee"})
 _STANDINGS = frozenset({"active", "suspended", "retired", "merged"})
 _CASE_TYPES = frozenset({"hire", "amend"})
 _CASE_STATUSES = frozenset({"proposed", "audited", "rejected", "applied", "folded"})
+_RISK_TIERS = frozenset({"low", "standard", "high"})
 _CASE_TRANSITIONS = {
     "proposed": frozenset({"audited", "rejected", "folded"}),
     "audited": frozenset({"rejected", "folded"}),
@@ -1359,6 +1360,7 @@ class WorkforceStoreMixin:
         *,
         status: str = "",
         case_type: str = "",
+        risk_tier: str = "",
         limit: int = 100,
         after_created_at: str = "",
         after_id: str = "",
@@ -1371,10 +1373,13 @@ class WorkforceStoreMixin:
             raise ValueError("hiring case limit is invalid")
         normalized_status = str(status or "").strip().casefold()
         normalized_type = str(case_type or "").strip().casefold()
+        normalized_risk = str(risk_tier or "").strip().casefold()
         if normalized_status and normalized_status not in _CASE_STATUSES:
             raise ValueError("hiring case status is invalid")
         if normalized_type and normalized_type not in _CASE_TYPES:
             raise ValueError("hiring case type is invalid")
+        if normalized_risk and normalized_risk not in _RISK_TIERS:
+            raise ValueError("hiring case risk_tier is invalid")
         cursor_time = str(after_created_at or "").strip()
         cursor_id = str(after_id or "").strip()
         if bool(cursor_time) != bool(cursor_id):
@@ -1388,6 +1393,9 @@ class WorkforceStoreMixin:
         if normalized_type:
             clauses.append("case_type = ?")
             values.append(normalized_type)
+        if normalized_risk:
+            clauses.append("risk_tier = ?")
+            values.append(normalized_risk)
         filter_where = " WHERE " + " AND ".join(clauses) if clauses else ""
         page_clauses = list(clauses)
         page_values = list(values)
@@ -1418,6 +1426,12 @@ class WorkforceStoreMixin:
                 str(row["case_type"]): int(row["count"])
                 for row in conn.execute(
                     "SELECT case_type, COUNT(*) AS count FROM agent_hiring_cases GROUP BY case_type"
+                ).fetchall()
+            }
+            risk_tier_counts = {
+                str(row["risk_tier"]): int(row["count"])
+                for row in conn.execute(
+                    "SELECT risk_tier, COUNT(*) AS count FROM agent_hiring_cases GROUP BY risk_tier"
                 ).fetchall()
             }
             revision_rows = [
@@ -1463,6 +1477,7 @@ class WorkforceStoreMixin:
             "filtered_count": filtered_count,
             "status_counts": status_counts,
             "type_counts": type_counts,
+            "risk_tier_counts": risk_tier_counts,
             "truncated": len(stored_rows) > limit,
             "next_created_at": str(cases[-1]["created_at"])
             if len(stored_rows) > limit and cases

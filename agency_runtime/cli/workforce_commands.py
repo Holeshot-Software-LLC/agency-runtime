@@ -19,6 +19,7 @@ from agency_runtime.core.workforce.comparison import (
 from agency_runtime.core.workforce.hiring import apply_approved_hiring_case
 from agency_runtime.core.workforce.promotion import promotion_readiness
 
+from . import _render
 from ._common import print_json, store
 
 
@@ -285,20 +286,41 @@ def cmd_hiring_list(
     payload = {"count": len(cases), "hiring_cases": cases}
     if args.json:
         _emit(payload, as_json=True, dependencies=dependencies)
-    else:
-        for case in cases:
-            print(
-                "\t".join(
-                    (
-                        str(case["id"]),
-                        str(case["case_type"]),
-                        str(case["status"]),
-                        str(case["proposed_slug"]),
-                        str(case["work_unit_id"]),
-                    )
+        return 0
+    if _render.use_card_default(args):
+        cards = [_hiring_summary_card(case) for case in cases]
+        print(_render.render_cards(cards))
+        return 0
+    for case in cases:
+        print(
+            "\t".join(
+                (
+                    str(case["id"]),
+                    str(case["case_type"]),
+                    str(case["status"]),
+                    str(case["proposed_slug"]),
+                    str(case["risk_tier"]),
+                    str(case["work_unit_id"]),
                 )
             )
+        )
     return 0
+
+
+def _hiring_summary_card(case: dict[str, Any]) -> _render.Card:
+    title = str(case.get("proposed_slug") or "Unnamed candidate")
+    subtitle = f"{case.get('case_type') or 'hire'!s} · {case.get('status') or 'unknown'!s}"
+    return _render.from_mapping(
+        title=title,
+        subtitle=subtitle,
+        fields=(
+            ("Case", case.get("id") or "—"),
+            ("Risk", case.get("risk_tier") or "standard"),
+            ("Work unit", case.get("work_unit_id") or "—"),
+            ("Created", case.get("created_at") or "—"),
+            ("Approved by", case.get("human_approved_by") or "—"),
+        ),
+    )
 
 
 def cmd_hiring_show(
@@ -309,16 +331,48 @@ def cmd_hiring_show(
     case = dependencies.store_factory().get_hiring_case(args.case_id)
     if args.json:
         _emit(case, as_json=True, dependencies=dependencies)
-    else:
-        print(f"{case['id']}\t{case['case_type']}\t{case['status']}\t{case['proposed_slug']}")
-        print("gap\t" + json.dumps(case["gap_evidence"], ensure_ascii=False, sort_keys=True))
-        print(
-            "duplicates\t"
-            + json.dumps(case["duplicate_evidence"], ensure_ascii=False, sort_keys=True)
-        )
-        print("critic\t" + json.dumps(case["critic_evidence"], ensure_ascii=False, sort_keys=True))
-        print("models\t" + json.dumps(case["model_evidence"], ensure_ascii=False, sort_keys=True))
+        return 0
+    if _render.use_card_default(args):
+        print(_hiring_detail_card(case).render())
+        return 0
+    print(
+        f"{case['id']}\t{case['case_type']}\t{case['status']}\t{case['proposed_slug']}\t{case['risk_tier']}"
+    )
+    print("gap\t" + json.dumps(case["gap_evidence"], ensure_ascii=False, sort_keys=True))
+    print(
+        "duplicates\t" + json.dumps(case["duplicate_evidence"], ensure_ascii=False, sort_keys=True)
+    )
+    print("contract\t" + json.dumps(case["contract_evidence"], ensure_ascii=False, sort_keys=True))
+    print("critic\t" + json.dumps(case["critic_evidence"], ensure_ascii=False, sort_keys=True))
+    print("models\t" + json.dumps(case["model_evidence"], ensure_ascii=False, sort_keys=True))
     return 0
+
+
+def _hiring_detail_card(case: dict[str, Any]) -> _render.Card:
+    title = str(case.get("proposed_slug") or "Unnamed candidate")
+    subtitle = f"{case.get('case_type') or 'hire'!s} · {case.get('status') or 'unknown'!s}"
+    sections: list[tuple[str, Any]] = []
+    for field_name, label in _render.HIRING_EVIDENCE_LABELS:
+        body = case.get(field_name) or {}
+        sections.append((label, body))
+    return _render.from_mapping(
+        title=title,
+        subtitle=subtitle,
+        fields=(
+            ("Case", case.get("id") or "—"),
+            ("Risk", case.get("risk_tier") or "standard"),
+            ("Work unit", case.get("work_unit_id") or "—"),
+            ("Created", case.get("created_at") or "—"),
+            ("Decided", case.get("decided_at") or "—"),
+            ("Applied", case.get("applied_at") or "—"),
+            ("Approved by", case.get("human_approved_by") or "—"),
+            ("Target worker", case.get("target_worker_id") or "—"),
+        ),
+        sections=sections,
+        notes=("Full evidence loaded from the exact hiring-case response.",)
+        if case.get("evidence_included")
+        else (),
+    )
 
 
 def cmd_hiring_approve(

@@ -86,6 +86,56 @@ def test_workforce_list_search_show_and_hiring_evidence_are_json_capable(
     assert consolidation["authority"] == "read_only_recommendation"
 
 
+def test_hiring_list_and_show_render_card_and_tabular_outputs(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    store = _installed_store(tmp_path)
+    monkeypatch.setattr(cli, "_store", lambda *args, **kwargs: store)
+
+    assert cli.main(["hiring", "list", "--limit", "5", "--no-card"]) == 0
+    listed = capsys.readouterr().out
+    lines = [line for line in listed.splitlines() if line.strip()]
+    assert lines, "hiring list --no-card should print at least one line"
+    parts = lines[0].split("\t")
+    assert len(parts) == 6
+    assert parts[4] == "standard", "tab-separated line must carry the risk_tier column"
+
+    assert cli.main(["hiring", "list", "--limit", "5", "--card"]) == 0
+    card_output = capsys.readouterr().out
+    assert "─" * 40 in card_output
+    assert "Case" in card_output
+    assert "Risk" in card_output
+    assert "applied" in card_output
+    assert card_output.count("Case") >= 1
+
+    case_id = (
+        json.loads(capsys.readouterr().out or listed or "")
+        if False
+        else store.list_hiring_cases(limit=1)[0]["id"]
+    )
+
+    assert cli.main(["hiring", "show", case_id, "--json"]) == 0
+    shown = json.loads(capsys.readouterr().out)
+    assert shown["id"] == case_id
+    assert "contract_evidence" in shown
+
+    assert cli.main(["hiring", "show", case_id, "--no-card"]) == 0
+    plain = capsys.readouterr().out
+    assert "contract\t" in plain
+    assert "gap\t" in plain
+    assert "critic\t" in plain
+
+    assert cli.main(["hiring", "show", case_id, "--card"]) == 0
+    card_detail = capsys.readouterr().out
+    assert "Contract evidence" in card_detail
+    assert "Gap evidence" in card_detail
+    assert "Independent critic" in card_detail
+    assert "Model receipts" in card_detail
+    assert "Duplicate analysis" in card_detail
+
+
 def test_workforce_amend_alias_requires_governed_case_approval_confirmation(
     capsys,
 ) -> None:

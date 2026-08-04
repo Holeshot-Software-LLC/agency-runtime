@@ -1023,6 +1023,87 @@ def test_dashboard_hiring_response_budget_failure_is_a_generic_500(
     assert payload == {"error": "internal server error"}
 
 
+def test_dashboard_hiring_risk_tier_and_status_filters_are_bounded(
+    dashboard_server,
+) -> None:
+    store = dashboard_server["store"]
+    contract_evidence = {"capability": "risk-tier-filter"}
+    contract_document = json.dumps(
+        contract_evidence,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    contract_hash = hashlib.sha256(contract_document.encode("utf-8")).hexdigest()
+    high_case = store.create_hiring_case(
+        case_type="hire",
+        proposed_slug="risk-tier-high",
+        work_unit_id="risk-tier-unit-high",
+        request_hash=hashlib.sha256(b"risk-tier-high").hexdigest(),
+        gap_evidence=contract_evidence,
+        duplicate_evidence=contract_evidence,
+        contract_evidence=contract_evidence,
+        critic_evidence={"approved": True},
+        model_evidence={"model": "m"},
+        contract_hash=contract_hash,
+        risk_tier="high",
+        human_approval_required=True,
+    )
+    store.create_hiring_case(
+        case_type="hire",
+        proposed_slug="risk-tier-low",
+        work_unit_id="risk-tier-unit-low",
+        request_hash=hashlib.sha256(b"risk-tier-low").hexdigest(),
+        gap_evidence=contract_evidence,
+        duplicate_evidence=contract_evidence,
+        contract_evidence=contract_evidence,
+        critic_evidence={"approved": True},
+        model_evidence={"model": "m"},
+        contract_hash=contract_hash,
+        risk_tier="low",
+    )
+
+    status, high_filtered, _headers = _json_response(
+        dashboard_server,
+        "/api/hiring?risk_tier=high&limit=20",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert high_filtered["count"] == 1
+    assert high_filtered["hiring_cases"][0]["id"] == high_case["id"]
+    assert high_filtered["hiring_cases"][0]["risk_tier"] == "high"
+    assert high_filtered["risk_tier_counts"]["high"] == 1
+
+    status, status_filtered, _headers = _json_response(
+        dashboard_server,
+        "/api/hiring?status=proposed&limit=20",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert status_filtered["count"] == 2
+    assert status_filtered["status_counts"]["proposed"] == 2
+
+    status, invalid, _headers = _json_response(
+        dashboard_server,
+        "/api/hiring?risk_tier=unknown&limit=20",
+        token=dashboard_server["token"],
+    )
+    assert status == 400
+    assert "risk_tier" in invalid["error"]
+
+
+def test_dashboard_hiring_detail_returns_404_for_unknown_case(
+    dashboard_server,
+) -> None:
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/hiring?case_id=missing-case-id",
+        token=dashboard_server["token"],
+    )
+    assert status == 404
+    assert payload["error"].strip("'") == "hiring case not found"
+
+
 def test_dashboard_worker_detail_omits_history_documents_with_readiness_parity(
     dashboard_server,
 ) -> None:

@@ -1589,10 +1589,29 @@ export function createRenderer(core, config, callbacks) {
 		const hiringTotal = Number.isInteger(hiringPage.total_count)
 			? hiringPage.total_count
 			: hiringFiltered;
-		setMetric(
-			"hiring-count",
-			`${hiring.length} shown · ${hiringFiltered} filtered · ${hiringTotal} total`,
-		);
+		const hiringFilters = state.hiringFilters || {};
+		const hiringActiveFilterCount = Object.keys(hiringFilters).length;
+		const hiringFilterSummary = hiringActiveFilterCount
+			? Object.entries(hiringFilters)
+				.map(([key, value]) => `${key}=${value}`)
+				.join(", ")
+			: "";
+		const hiringCountLabel = hiringFilterSummary
+			? `${hiring.length} shown · ${hiringFiltered} filtered · ${hiringTotal} total · ${hiringFilterSummary}`
+			: `${hiring.length} shown · ${hiringFiltered} filtered · ${hiringTotal} total`;
+		setMetric("hiring-count", hiringCountLabel);
+		const hiringPageStatus = byId("hiring-page-status");
+		if (hiringPageStatus) {
+			if (hiringActiveFilterCount) {
+				hiringPageStatus.hidden = false;
+				hiringPageStatus.textContent = (
+					`Filter active: ${hiringFilterSummary}.`
+				);
+			} else {
+				hiringPageStatus.hidden = true;
+				hiringPageStatus.textContent = "";
+			}
+		}
 		const hiringList = byId("hiring-list");
 		if (hiringList) {
 			hiringList.replaceChildren();

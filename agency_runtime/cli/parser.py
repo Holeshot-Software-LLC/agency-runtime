@@ -1026,10 +1026,25 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
         "--limit", type=_search_limit, default=100, help="Maximum hiring cases to return"
     )
     hiring_list.add_argument("--json", action="store_true", help="Print machine-readable output")
+    hiring_list.add_argument(
+        "--card",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=("Render one card per case (default when stdout is a TTY and --json is not set)"),
+    )
     _bind(hiring_list, handlers, "cmd_hiring_list")
     hiring_show = hiring_sub.add_parser("show", help="Show complete hiring evidence")
     hiring_show.add_argument("case_id", help="Stable hiring case ID")
     hiring_show.add_argument("--json", action="store_true", help="Print machine-readable output")
+    hiring_show.add_argument(
+        "--card",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "Render one card with title, fields, and evidence sections "
+            "(default when stdout is a TTY and --json is not set)"
+        ),
+    )
     _bind(hiring_show, handlers, "cmd_hiring_show")
     hiring_approve = hiring_sub.add_parser(
         "approve", help="Approve a high-risk proposed hire before audit"

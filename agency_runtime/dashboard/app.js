@@ -211,6 +211,10 @@ export function createDashboard(runtime = globalThis) {
 		if (clearOperationalFilters) {
 			listen(clearOperationalFilters, "click", live.clearOperationalFilters);
 		}
+		const hiringFilters = byId("hiring-filter-form");
+		if (hiringFilters) listen(hiringFilters, "submit", live.applyHiringFilters);
+		const clearHiringFilters = byId("hiring-filter-clear");
+		if (clearHiringFilters) listen(clearHiringFilters, "click", live.clearHiringFilters);
 		const pendingRemediation = byId("review-pending-more");
 		if (pendingRemediation) {
 			listen(pendingRemediation, "click", () => live.loadMoreRemediation("pending"));

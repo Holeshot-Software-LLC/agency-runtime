@@ -59,6 +59,8 @@ export function createState() {
 		hiringPage: null,
 		hiringEvidence: null,
 		hiringEvidenceLoadingCaseId: "",
+		hiringFilters: {},
+		hiringFilterIntentGeneration: 0,
 		selectedWorkerDetail: null,
 		snapshots: [],
 		config: null,

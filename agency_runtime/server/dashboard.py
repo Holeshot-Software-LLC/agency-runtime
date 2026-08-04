@@ -2088,18 +2088,23 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
 
         limit, after, filters = _collection_query(
             self.path,
-            allowed_filters=frozenset({"case_id", "status", "type"}),
+            allowed_filters=frozenset({"case_id", "status", "type", "risk_tier"}),
             default_limit=100,
         )
         case_id = str(filters.get("case_id") or "").strip()
         status = str(filters.get("status") or "").strip().casefold()
         case_type = str(filters.get("type") or "").strip().casefold()
-        if case_id and (after or status or case_type):
+        risk_tier = str(filters.get("risk_tier") or "").strip().casefold()
+        if case_id and (after or status or case_type or risk_tier):
             raise ValueError("hiring case detail cannot be combined with collection filters")
         state = read_config_state(self.config_path)
         binding = _require_store_service_binding(self.store, state)
         if case_id:
-            payload = {"hiring_case": self.store.get_hiring_case(case_id)}
+            try:
+                payload = {"hiring_case": self.store.get_hiring_case(case_id)}
+            except KeyError as exc:
+                self._json_error(HTTPStatus.NOT_FOUND, str(exc))
+                return
         else:
             cursor = (
                 _decode_collection_cursor(after, kind="hiring.v1", fields=2) if after else ("", "")
@@ -2107,6 +2112,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             snapshot = self.store.get_hiring_cases_page_snapshot(
                 status=status,
                 case_type=case_type,
+                risk_tier=risk_tier,
                 limit=limit,
                 after_created_at=cursor[0],
                 after_id=cursor[1],
@@ -2121,6 +2127,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "total_count": snapshot["total_count"],
                 "status_counts": snapshot["status_counts"],
                 "type_counts": snapshot["type_counts"],
+                "risk_tier_counts": snapshot.get("risk_tier_counts", {}),
                 "limit": limit,
                 "truncated": snapshot["truncated"],
                 "next_cursor": _encode_collection_cursor(
