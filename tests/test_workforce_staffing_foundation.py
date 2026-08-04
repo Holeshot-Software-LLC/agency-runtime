@@ -125,34 +125,6 @@ def _plan(*units: dict[str, object]):
     )
 
 
-def _requirements(unit) -> tuple[str, ...]:
-    return (
-        f"artifact:{unit.artifact_kind}",
-        f"lifecycle:{unit.lifecycle_phase}",
-        *(f"domain:{item}" for item in unit.domains),
-        *(f"stack:{item}" for item in unit.languages + unit.frameworks),
-        *(f"capability:{item}" for item in unit.required_capabilities),
-        f"authority:{unit.authority}",
-    )
-
-
-def _covers(contract: WorkforceContract, requirement: str) -> bool:
-    kind, value = requirement.split(":", 1)
-    if kind == "artifact":
-        return value in contract.artifact_kinds
-    if kind == "lifecycle":
-        return value in contract.lifecycle_phases
-    if kind == "domain":
-        return value in contract.domains
-    if kind == "stack":
-        return value in contract.stacks
-    if kind == "authority":
-        return value == contract.authority
-    tokens = set(value.replace("-", " ").split())
-    corpus = " ".join(contract.outcomes).casefold().replace("-", " ").split()
-    return tokens <= set(corpus)
-
-
 def _ranks(ids: tuple[str, ...], semantic: tuple[str, ...]) -> list[dict[str, object]]:
     scores = {agent_id: round(1 - index * 0.05, 2) for index, agent_id in enumerate(semantic)}
     return [
@@ -180,19 +152,6 @@ def _row(
 ) -> dict[str, object]:
     contracts = {item.agent_id: item for item in roster}
     enabled = tuple(item for item in semantic if contracts[item].enabled)
-    coverage = (
-        [
-            {
-                "requirement": requirement,
-                "agent_ids": [
-                    agent for agent in selected if _covers(contracts[agent], requirement)
-                ],
-            }
-            for requirement in _requirements(unit)
-        ]
-        if selected
-        else []
-    )
     return {
         "unit_id": unit.unit_id,
         "required": list(selected),
@@ -205,13 +164,6 @@ def _row(
         "ranked_executable": _ranks(executable, semantic),
         "disabled_shadows": list(disabled_shadows),
         "unavailable_shadows": list(unavailable_shadows),
-        "coverage": coverage,
-        "positive_evidence": [
-            {"agent_id": agent, "reason_codes": ["capability-match"]} for agent in selected
-        ],
-        "negative_evidence": [
-            {"agent_id": agent, "reason_codes": ["not-selected"]} for agent in forbidden + runner_up
-        ],
         "contexts": [
             {
                 "agent_id": agent,
@@ -297,7 +249,7 @@ def test_review_authority_can_satisfy_advisory_analysis_but_not_the_reverse() ->
     assert not review.accepted
     assert "agent_authority_mismatch" in {
         reason
-        for item in review_proposal.units[0].negative_evidence
+        for item in review_proposal.units[0].unavailable_shadows
         for reason in item.reason_codes
     }
 
@@ -437,8 +389,6 @@ def test_wrong_but_host_and_tool_compatible_candidate_is_rejected() -> None:
         selected=("generic-coder",),
         forbidden=("generic-coder",),
     )
-    for claim in row["coverage"]:
-        claim["agent_ids"] = ["generic-coder"]
     proposal = _proposal(plan, roster, row)
 
     decision = verify_staffing(plan, proposal, roster, context=_context())
@@ -752,21 +702,6 @@ def test_selection_exclusive_contract_is_enforced() -> None:
     )
 
     assert "selection_exclusive_conflict" in _codes(
-        verify_staffing(plan, proposal, roster, context=_context())
-    )
-
-
-def test_positive_negative_and_coverage_evidence_are_not_trusted() -> None:
-    roster = (_contract("analyst", outcomes=("Technical analysis",)),)
-    plan = _plan(_unit("unit-analysis"))
-    row = _row(
-        plan.units[0], roster, semantic=("analyst",), executable=("analyst",), selected=("analyst",)
-    )
-    row["positive_evidence"] = []
-    row["coverage"] = []
-    proposal = _proposal(plan, roster, row)
-
-    assert {"coverage_evidence_mismatch", "positive_evidence_mismatch"} <= _codes(
         verify_staffing(plan, proposal, roster, context=_context())
     )
 

@@ -516,9 +516,15 @@ def _minimum_team_with_required(
 
 
 def _semantic_forbidden(row: UnitRecruitment) -> frozenset[str]:
-    return frozenset(
-        item.agent_id for item in row.negative_evidence if "semantic-forbidden" in item.reason_codes
-    )
+    """Return the set of agents the recruiter classified as forbidden.
+
+    Previously derived from ``row.negative_evidence`` reason codes, but that
+    was a round-trip: the deterministic builder wrote ``forbidden`` IDs into
+    ``negative_evidence`` with a ``semantic-forbidden`` tag, then this function
+    read it back. Derive directly from ``row.forbidden`` instead.
+    """
+
+    return frozenset(row.forbidden)
 
 
 def _rank_signature(items: Sequence[Any]) -> tuple[tuple[str, int, float], ...]:
@@ -638,32 +644,6 @@ def _selection(
     if row.runner_up != expected_runner:
         _reason(reasons, "runner_up_order_mismatch", unit_id=unit.unit_id)
     return expected
-
-
-def _evidence(
-    unit: WorkUnit,
-    row: UnitRecruitment,
-    selected: tuple[str, ...],
-    roster: dict[str, WorkforceContract],
-    reasons: list[AbstentionReason],
-) -> None:
-    expected_coverage = tuple(
-        (
-            requirement,
-            tuple(agent for agent in selected if requirement in _coverage(unit, roster[agent])),
-        )
-        for requirement in _requirements(unit)
-    )
-    actual_coverage = tuple((item.requirement, item.agent_ids) for item in row.coverage)
-    if actual_coverage != expected_coverage or any(not agents for _, agents in expected_coverage):
-        _reason(reasons, "coverage_evidence_mismatch", unit_id=unit.unit_id)
-    positive = tuple(item.agent_id for item in row.positive_evidence)
-    if positive != selected or len(set(positive)) != len(positive):
-        _reason(reasons, "positive_evidence_mismatch", unit_id=unit.unit_id)
-    expected_negative = tuple(dict.fromkeys(row.forbidden + row.runner_up))
-    negative = tuple(item.agent_id for item in row.negative_evidence)
-    if negative != expected_negative or len(set(negative)) != len(negative):
-        _reason(reasons, "negative_evidence_mismatch", unit_id=unit.unit_id)
 
 
 def _shadow_signature(
@@ -976,8 +956,6 @@ def verify_staffing(
     for unit, row in zip(plan.units, proposal.units, strict=True):
         executable = _ranking(unit, row, roster, context, reasons)
         selected = _selection(unit, row, roster, executable, context, active_budget, reasons)
-        if selected and all(item in roster for item in selected):
-            _evidence(unit, row, selected, roster, reasons)
         _shadows(unit, row, roster, context, selected, reasons)
         if not row.selected:
             for detail in row.abstention_reasons or ("no_safe_candidate",):
@@ -1136,17 +1114,6 @@ def build_deterministic_proposal(
                     "tradeoff": "The higher deterministic match is unavailable under current policy.",
                 }
             )
-        coverage = [
-            {
-                "requirement": requirement,
-                "agent_ids": [
-                    agent_id
-                    for agent_id in selected
-                    if requirement in _coverage(unit, roster[agent_id])
-                ],
-            }
-            for requirement in _requirements(unit)
-        ]
         score_by_id = dict(semantic)
         confidence = min((score_by_id[item] for item in selected), default=0.0)
         # Margin compares complete executable teams, not an individually
@@ -1184,7 +1151,6 @@ def build_deterministic_proposal(
             default=0.0,
         )
         margin = round(max(0.0, confidence - alternative_score), 6) if selected else 0.0
-        negative_ids = tuple(dict.fromkeys((*forbidden, *runner_up)))
         projected_required = required_ids if explicit_semantics else frozenset(selected)
         projected_acceptable = acceptable_ids if explicit_semantics else frozenset()
         rows.append(
@@ -1209,26 +1175,6 @@ def build_deterministic_proposal(
                 ],
                 "disabled_shadows": disabled_shadows,
                 "unavailable_shadows": unavailable_shadows,
-                "coverage": coverage if selected else [],
-                "positive_evidence": [
-                    {
-                        "agent_id": item,
-                        "reason_codes": ["deterministic-capability-coverage"],
-                    }
-                    for item in selected
-                ],
-                "negative_evidence": [
-                    {
-                        "agent_id": item,
-                        "reason_codes": (
-                            ["semantic-forbidden"]
-                            if item in forbidden_ids
-                            else list(_eligibility(unit, roster[item], context))
-                            or ["lower-deterministic-score"]
-                        ),
-                    }
-                    for item in negative_ids
-                ],
                 "contexts": [
                     {"agent_id": item, "context_id": f"ctx-{unit.unit_id}-{item}"}
                     for item in selected

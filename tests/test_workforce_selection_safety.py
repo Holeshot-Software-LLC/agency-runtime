@@ -1702,7 +1702,7 @@ def test_every_worker_contract_has_positive_negative_shadow_and_eligibility_evid
                 contract, negative_plan, context, snapshot.contracts
             ).units[0]
             reasons = {
-                code for evidence in negative.negative_evidence for code in evidence.reason_codes
+                code for shadow in negative.unavailable_shadows for code in shadow.reason_codes
             }
             if negative.selected or "agent_explicitly_out_of_scope" not in reasons:
                 failures.append((contract.agent_id, "hard-negative", negative))
