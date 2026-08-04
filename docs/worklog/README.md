@@ -612,10 +612,13 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8eb1746` | 2026-08-03 | docs(ar-226): close automatic PR verification | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 | `ae335d9` | 2026-08-03 | docs(ar-226): use canonical done status | [AR-226](../roadmap/issue-AR-226-repair-automatic-pr-verification.md) | null |
 | `c01f178` | 2026-08-03 | Merge pull request #235 from Holeshot-Software-LLC/codex/ar-203-readme-reality | null | null |
-| `fcb4d39` | 2026-08-04 | feat(roster): add six governed specialists and raise index envelope (AR-227) | null | null |
-| `892a7c3` | 2026-08-03 | feat(routing): fail open with an honest header when no specialist is selected (AR-228) | [AR-228](../roadmap/issue-AR-228-eliminate-deterministic-staffing-authority.md) | null |
-| `4e8dc55` | 2026-08-03 | fix(uninstall): enable attended host uninstall via two-step dry-run/confirm | [AR-189](../roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) | null |
-| `ed526b1` | 2026-08-03 | fix(workforce): stop deterministic gates from hiding roster specialists (AR-228) | [AR-228](../roadmap/issue-AR-228-eliminate-deterministic-staffing-authority.md) | null |
+| `14a34ae` | 2026-08-04 | AR-227: Expand the specialist roster (#236) | null | null |
+| `71517b7` | 2026-08-03 | feat(routing): fail open with an honest header when no specialist is selected (AR-228) | null | null |
+| `c0eedbb` | 2026-08-03 | docs(ar-228): record live diagnosis matrix findings | null | null |
+| `5288c77` | 2026-08-03 | fix(uninstall): enable attended host uninstall via two-step dry-run/confirm | null | null |
+| `a30190c` | 2026-08-03 | fix(workforce): stop deterministic gates from hiding roster specialists (AR-228) | null | null |
+| `495ecac` | 2026-08-03 | docs(ar-228): record routing verification — specialist teams fire on a verified host | null | null |
+| `1c7b6dc` | 2026-08-03 | docs(ar-228): record PR #237 tracker url | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
