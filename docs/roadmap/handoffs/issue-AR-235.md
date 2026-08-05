@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-235
 branch: ar-243-workforce-promotion-readiness-parity
-evidence_commit: 43c8e43
-minimum_ledger_commit: 43c8e43
+evidence_commit: b4f7a2b84cb69aa2ad404258ab4e59a4731625f9
+minimum_ledger_commit: b4f7a2b84cb69aa2ad404258ab4e59a4731625f9
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/244
 ---
@@ -79,6 +79,22 @@ independently.
    each onto main and PR individually).
 2. Push to origin + create tracker issues for AR-238/240/241/242/243.
 3. Continue AR-236 sub-issues S3-S10 (dashboard-side parity).
+
+## verification
+
+~~~text
+python scripts/docs_metadata.py --check
+python scripts/verify_docs.py
+python scripts/update_worklog.py --check
+ruff check agency_runtime tests scripts
+ruff format --check agency_runtime tests scripts
+python -m pytest tests/test_workforce_dynamic_hiring.py \
+  tests/test_workforce_hiring_contract.py tests/test_workforce_selection_safety.py \
+  tests/test_workforce_promotion.py tests/test_routing_correctness.py \
+  tests/test_decision_conformance.py tests/test_dashboard.py \
+  tests/test_workforce_cli.py -q -W error
+git diff --check
+~~~
 
 ## constraints
 

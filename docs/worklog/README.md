@@ -636,6 +636,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f85074f` | 2026-08-04 | AR-242: autonomous promotion with review window (slice 6 of AR-235) | [AR-242](../roadmap/issue-AR-242-autonomous-promotion-review-window.md), [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | null |
 | `6b6b505` | 2026-08-04 | fix(eval): align decision-conformance anchor for max_hires_per_turn rename (AR-241) | [AR-241](../roadmap/issue-AR-241-cap-removal-and-dashboard-visibility.md) | null |
 | `bdc24be` | 2026-08-04 | AR-243: workforce promotion readiness parity (sub-issue 2 of AR-236) | [AR-243](../roadmap/issue-AR-243-workforce-promotion-readiness-parity.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
+| `b4f7a2b` | 2026-08-04 | AR-244: workforce duplicates and consolidate parity (sub-issue 3 of AR-236) | [AR-244](../roadmap/issue-AR-244-workforce-duplicates-consolidate-parity.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
