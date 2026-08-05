@@ -2816,7 +2816,7 @@ class HookBridge:
                 marker="UPDATED",
                 instruction=(
                     "Agency recorded the preceding tool observation. Start the next "
-                    "substantive or final parent response with these exact seven lines, "
+                    "substantive or final parent response with these exact five lines, "
                     "unchanged, then add the response body. A later Agency header snapshot "
                     "for this turn supersedes this one."
                 ),
@@ -2864,7 +2864,7 @@ class HookBridge:
             marker="FINAL",
             instruction=(
                 "The native wait completed. Start the next substantive or final parent "
-                "response with these exact seven lines, unchanged, then add the response "
+                "response with these exact five lines, unchanged, then add the response "
                 "body. This is current-turn Store evidence, not a suggested draft."
             ),
         )
@@ -2880,7 +2880,11 @@ class HookBridge:
     ) -> str:
         """Render one exact current-turn header without manufacturing evidence."""
 
-        if self.host != "codex" or not session_id or not trace_id:
+        # Codex and Claude both deliver the header through injected context;
+        # ZCode has no SubagentStart/Stop lifecycle and keeps its v1 envelope
+        # path. Restricting this to codex silently left Claude turns with no
+        # header delivery mechanism at all.
+        if self.host not in {"codex", "claude"} or not session_id or not trace_id:
             return ""
         from agency_runtime.core.header.contract import (
             EvidenceCorrelationError,
@@ -2944,7 +2948,7 @@ class HookBridge:
             marker="INITIAL",
             instruction=(
                 "Start each substantive progress update and the final parent response "
-                "with these exact seven lines, unchanged, then add the response body. "
+                "with these exact five lines, unchanged, then add the response body. "
                 "A later Agency header snapshot for this turn supersedes this one."
             ),
         )
