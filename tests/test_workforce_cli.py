@@ -86,6 +86,30 @@ def test_workforce_list_search_show_and_hiring_evidence_are_json_capable(
     assert consolidation["authority"] == "read_only_recommendation"
 
 
+def test_workforce_show_text_mode_prints_full_promotion_readiness(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """AR-243: the CLI text-mode workforce show prints the same promotion
+    readiness fields the dashboard renders (verified, required, remaining,
+    automatic state, review-window, reasons, evidence rule)."""
+
+    store = _installed_store(tmp_path)
+    monkeypatch.setattr(cli, "_store", lambda *args, **kwargs: store)
+
+    assert (
+        cli.main(["workforce", "show", "application-integration-verifier"]) == 0
+    )
+    output = capsys.readouterr().out
+    assert "promotion\t" in output
+    assert "verified=" in output
+    assert "required=" in output
+    assert "remaining=" in output
+    assert "automatic=" in output
+    assert "evidence-rule\t" in output
+
+
 def test_hiring_list_and_show_render_card_and_tabular_outputs(
     tmp_path: Path,
     monkeypatch,

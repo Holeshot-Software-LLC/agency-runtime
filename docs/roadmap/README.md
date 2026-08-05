@@ -253,6 +253,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-240` | [Amend-first staffing default (slice 4 of AR-235)](issue-AR-240-amend-first-staffing-default.md) | open | p0 | routing | pending authorization |
 | `AR-241` | [Hiring cap removal and dashboard visibility (slice 5 of AR-235)](issue-AR-241-cap-removal-and-dashboard-visibility.md) | open | p0 | routing | pending authorization |
 | `AR-242` | [Autonomous promotion with review window (slice 6 of AR-235)](issue-AR-242-autonomous-promotion-review-window.md) | open | p0 | routing | pending authorization |
+| `AR-243` | [Workforce promotion readiness parity (sub-issue 2 of AR-236)](issue-AR-243-workforce-promotion-readiness-parity.md) | open | p1 | operations | pending authorization |
 
 ## Traceability
 
@@ -495,6 +496,7 @@ not stable internal identifiers.
 | [AR-240](issue-AR-240-amend-first-staffing-default.md) | `0b6c059`; slice 4 of AR-235; amend-first default + `amend_overlap_threshold` gate; below-threshold fallthrough to hire | None |
 | [AR-241](issue-AR-241-cap-removal-and-dashboard-visibility.md) | `e750593`; slice 5 of AR-235; removes hard per-task/per-day caps; adds `max_hires_per_turn` + `daily_hire_alert_threshold` soft bounds; daily count in critic_evidence | None |
 | [AR-242](issue-AR-242-autonomous-promotion-review-window.md) | `f85074f`; slice 6 of AR-235; `auto_promote_successes: 3` + `contractor_review_days: 7`; review-window suppression in promotion_readiness; CLI + dashboard projections pass the window | None |
+| [AR-243](issue-AR-243-workforce-promotion-readiness-parity.md) | planning pair; sub-issue 2 of AR-236; CLI workforce show prints full promotion readiness fields matching the dashboard card | None |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

@@ -111,12 +111,22 @@ def cmd_workforce_show(
         f"outcomes={len(detail['outcomes'])}, hiring_cases={len(detail['hiring_cases'])}"
     )
     readiness = detail["promotion_readiness"]
+    ready_state = "ready" if readiness["eligible_for_automatic_promotion"] else "not-ready"
+    if readiness.get("in_review_window"):
+        ready_state = "review-window"
     print(
         "promotion\t"
         f"verified={readiness['verified_successes']}, "
         f"required={readiness['required_successes']}, "
-        f"automatic={'ready' if readiness['eligible_for_automatic_promotion'] else 'not-ready'}"
+        f"remaining={readiness['remaining_successes']}, "
+        f"automatic={ready_state}"
     )
+    if readiness.get("in_review_window"):
+        print("review-window\tactive")
+    for reason in readiness.get("reasons", []):
+        print(f"promotion-reason\t{reason}")
+    if readiness.get("evidence_rule"):
+        print(f"evidence-rule\t{readiness['evidence_rule']}")
     return 0
 
 
