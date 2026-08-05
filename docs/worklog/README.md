@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-04
+updated: 2026-08-05
 tags: []
 related: []
 supersedes: []
@@ -642,6 +642,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c333f0c` | 2026-08-04 | docs(roadmap): record tracker URLs for AR-245/246/247/248 | [AR-245](../roadmap/issue-AR-245-roster-diff-parity.md), [AR-246](../roadmap/issue-AR-246-roster-scans-parity.md), [AR-247](../roadmap/issue-AR-247-roster-sources-parity.md), [AR-248](../roadmap/issue-AR-248-doctor-db-stats-parity.md) | null |
 | `dff722b` | 2026-08-04 | AR-249/250/251: explain, upgrade, CLI presentation richness + ADR-0154 | [AR-249](../roadmap/issue-AR-249-explain-parity.md), [AR-250](../roadmap/issue-AR-250-upgrade-flow-parity.md), [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | [ADR-0154](../decisions/0154-plain-text-cli-cards-over-rich-dependency.md) |
 | `aa98451` | 2026-08-04 | docs(roadmap): record tracker URLs for AR-249/250/251 | null | null |
+| `ca114f6` | 2026-08-04 | docs(roadmap): mark AR-212/215/217/218/228/235-251 as done and close tracker parity | null | null |
+| `a498ceb` | 2026-08-05 | AR-224: simplify Agency evidence header to five factual fields | null | null |
+| `41cd201` | 2026-08-05 | docs(roadmap): record AR-224 tracker URL and done status | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

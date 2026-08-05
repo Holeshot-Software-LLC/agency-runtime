@@ -27,8 +27,18 @@ from agency_runtime.core.unit_assignment import (
 
 
 def _routing(*units: str) -> dict[str, object]:
+    from agency_runtime.core.unit_assignment import work_unit_id_from_text
+
+    unit_ids = [work_unit_id_from_text(unit) for unit in units]
     return {
         "selected_ids": ["code-reviewer"],
+        "unit_assignment_agents": [
+            {
+                "slug": "code-reviewer",
+                "primary_work_unit_ids": unit_ids[:1],
+                "matched_work_unit_ids": unit_ids,
+            }
+        ],
         "work_units": {
             "delegate": True,
             "count": len(units),
@@ -132,7 +142,8 @@ def test_resource_parser_stops_at_prose_and_normalizes_equivalent_paths() -> Non
         "README.md",
     ]
     many = " ".join(f"src/component-{index}.py" for index in range(12))
-    assert len(_likely_resources(many)) == 8
+    # AR-232 removed the MAX_PLAN_LIST_ITEMS cap; all 12 resources are preserved.
+    assert len(_likely_resources(many)) == 12
 
 
 def test_native_child_activation_rehydrates_exact_scope_and_content_free_evidence() -> None:

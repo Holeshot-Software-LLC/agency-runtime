@@ -1,6 +1,6 @@
 ---
 title: "AR-222: Reconcile legacy work-unit integrity tests"
-status: open
+status: done
 category: roadmap
 created: 2026-08-01
 updated: 2026-08-01

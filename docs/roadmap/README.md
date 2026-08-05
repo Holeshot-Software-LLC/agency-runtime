@@ -239,7 +239,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-219` | [Preserve exact multi-unit Codex product execution evidence](issue-AR-219-preserve-exact-multi-unit-product-execution-evidence.md) | in_progress | p0 | product | [#221](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/221) |
 | `AR-220` | [Make product gap hiring evidence converge](issue-AR-220-converge-product-recruiter-evidence.md) | in_progress | p0 | product | pending authorization |
 | `AR-221` | [Preserve Codex product execution boundaries](issue-AR-221-preserve-codex-product-execution-boundaries.md) | in_progress | p0 | product | pending authorization |
-| `AR-222` | [Reconcile legacy work-unit integrity tests](issue-AR-222-reconcile-legacy-work-unit-integrity-tests.md) | open | p2 | testing | pending authorization |
+| `AR-222` | [Reconcile legacy work-unit integrity tests](issue-AR-222-reconcile-legacy-work-unit-integrity-tests.md) | done | p2 | testing | pending authorization |
 | `AR-223` | [Prove Codex child task execution](issue-AR-223-prove-codex-child-task-execution.md) | done | p0 | product | [#228](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/228) |
 | `AR-224` | [Simplify Agency evidence header](issue-AR-224-simplify-agency-evidence-header.md) | done | p1 | product | [#261](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/261) |
 | `AR-225` | [Align product scenario with independent validator](issue-AR-225-align-product-scenario-with-independent-validator.md) | done | p0 | testing | tracker creation pending authorization |
