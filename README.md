@@ -288,14 +288,22 @@ A declared gap is a contractor specification. Agency:
   critic rejects a deterministically valid proposal, the default four-call
   budget permits one complete inference-authored replacement and one fresh
   independent critique; a second rejection remains terminal.
-- **Risk-tiers** it and runs deterministic Unicode / injection / exfiltration /
-  authority / tool / conflict / duplicate checks.
+- **Risk-tiers** it deterministically: injection / policy-override pattern
+  screens, invisible and bidirectional Unicode rejection, denial-aware
+  high-risk domain markers (legal, medical, financial, destructive, approval,
+  credential, offensive security, exfiltration), and conflict / duplicate
+  checks. The isolated inference security reviewer remains the safety gate on
+  contract content.
 - **Admits** the worker as a least-privilege, visibly-marked probationary
   contractor tied to the agency origin (`origin="agency"`,
   `employment="contractor"`), with a one-use activation receipt.
 - **Keeps roles narrow** — ordinary task staffing creates the exact missing
   specialist instead of expanding a near-match into a broad generalist.
-- High-risk domains still require explicit owner approval.
+- A contract asserting an owner-gated high-risk domain class is persisted as a
+  high-tier case that stops before registration: no worker exists until an
+  explicit `agency hiring approve` (or the dashboard approval) records the
+  owner's decision. Externally mutating scope alone stays reviewer-gated
+  (AR-238) rather than owner-gated.
 
 Contractors follow the **same audited, versioned, composition-bound path** as
 employees. **Promotion to employee is owner-controlled** — an owner-authorized

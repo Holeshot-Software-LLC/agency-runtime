@@ -1962,12 +1962,14 @@ def hire_contractor_for_gap(
         for item in attempts
     ]
     contract_document = workforce_contract.to_dict()
-    # The security reviewer is the gate on the gap-hire path (AR-238). A safe
-    # verdict (or no marker hit) maps to the legacy "standard" tier so the
-    # existing schema CHECK and dashboard filters continue to work; the full
-    # verdict is recorded in critic_evidence.security_review. An unsafe contract
-    # never reaches this point — it is rejected inside the repair loop above.
-    risk_tier = "standard"
+    # The security reviewer gates contract safety (AR-238); the compiled
+    # contract's deterministic OWNER_APPROVAL_RISK_CLASSES gate authority. A
+    # contract asserting a high-risk domain class is persisted as a high-tier
+    # case requiring explicit owner approval — commit stops before
+    # registration and the case waits for `agency hiring approve` / the
+    # dashboard approval. external_mutation alone stays reviewer-gated.
+    human_approval_required = compiled.human_approval_required
+    risk_tier = "high" if human_approval_required else "standard"
     case_arguments = {
         "case_type": candidate.action,
         "proposed_slug": contract.slug,
@@ -1995,6 +1997,7 @@ def hire_contractor_for_gap(
                 "verdict": "unsafe" if security_reasons else "safe",
                 "reasons": list(security_reasons),
                 "same_provider_as_creator": same_provider_as_creator,
+                "risk_classes": list(compiled.risk_classes),
             },
             "daily_hire_count": daily_hire_count,
             "daily_hire_alert": daily_hire_alert,
@@ -2007,10 +2010,13 @@ def hire_contractor_for_gap(
         "session_id": session_id,
         "trace_id": trace_id,
         "risk_tier": risk_tier,
-        "human_approval_required": False,
+        "human_approval_required": human_approval_required,
     }
     target = candidate.target_worker
-    status = "amended" if candidate.action == "amend" else "hired"
+    if human_approval_required:
+        status = "pending_approval"
+    else:
+        status = "amended" if candidate.action == "amend" else "hired"
     projected_worker = {
         **({} if target is None else dict(target)),
         "worker_id": compiled.worker_id if target is None else str(target["worker_id"]),
@@ -2023,17 +2029,25 @@ def hire_contractor_for_gap(
         "current_version": str(agent["version"]),
         "current_hash": str(agent["hash"]),
     }
-    notification = (
-        f"Expanded {projected_worker['display_label']} for {unit.unit_id} without creating a "
-        f"new worker. Preserved its identity and enabled revision "
-        f"{projected_worker['current_version']} for immediate assignment."
-        if candidate.action == "amend"
-        else (
+    if human_approval_required:
+        notification = (
+            f"High-risk contractor proposal · {contract.role} for {unit.unit_id} "
+            f"({', '.join(compiled.risk_classes)}). The case is recorded and awaits "
+            f"explicit owner approval via `agency hiring approve` or the dashboard "
+            f"before any worker is created or assigned."
+        )
+    elif candidate.action == "amend":
+        notification = (
+            f"Expanded {projected_worker['display_label']} for {unit.unit_id} without creating a "
+            f"new worker. Preserved its identity and enabled revision "
+            f"{projected_worker['current_version']} for immediate assignment."
+        )
+    else:
+        notification = (
             f"Hired Contractor · {contract.role} for {unit.unit_id}. "
             f"No enabled worker covered {', '.join(gap.get('missing_capabilities', []))}. "
             f"Enabled as {projected_worker['current_version']} and assigned immediately."
         )
-    )
     pending = PendingHiringCommit(
         action=candidate.action,
         case_arguments=case_arguments,

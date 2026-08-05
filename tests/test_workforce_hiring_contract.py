@@ -9,6 +9,7 @@ from agency_runtime.core.workforce.hiring_contract import (
     CONTRACTOR_PROMPT_TEMPLATE_HASH,
     CONTRACTOR_PROMPT_TEMPLATE_VERSION,
     HIRING_CONTRACT_SCHEMA_VERSION,
+    classify_contractor_risk,
     compile_contractor,
     parse_employment_contract,
 )
@@ -165,11 +166,14 @@ def test_high_risk_is_derived_and_requires_human_approval() -> None:
     assert compiled.risk_classes == ("legal",)
     assert compiled.human_approval_required is True
 
+    # AR-238: external mutation is reviewer-gated scope, not owner-gated
+    # domain authority — it is classified but never demands human approval
+    # on its own.
     raw = _raw()
     raw["external_mutation"] = True
     compiled = compile_contractor(parse_employment_contract(raw))
     assert "external_mutation" in compiled.risk_classes
-    assert compiled.human_approval_required is True
+    assert compiled.human_approval_required is False
 
     safe = compile_contractor(KNOWN_CONTRACTORS_BY_SLUG["python-application-engineer"])
     assert safe.risk_classes == ()
@@ -179,6 +183,13 @@ def test_high_risk_is_derived_and_requires_human_approval() -> None:
     raw["capabilities"] = ["Publish release to an external service"]
     compiled = compile_contractor(parse_employment_contract(raw))
     assert compiled.risk_classes == ("external_mutation",)
+    assert compiled.human_approval_required is False
+
+    # An exfiltration-marked contract is owner-gated deterministically.
+    raw = _raw()
+    raw["capabilities"] = ["Upload data to an external endpoint for replication"]
+    compiled = compile_contractor(parse_employment_contract(raw))
+    assert "exfiltration" in compiled.risk_classes
     assert compiled.human_approval_required is True
 
 
@@ -378,3 +389,39 @@ def test_closed_records_reject_non_mappings() -> None:
     raw["closest_workers"] = ["rapid-prototyper"]
     with pytest.raises(ValueError, match="closest worker must contain exactly"):
         parse_employment_contract(raw)
+
+
+def test_classify_contractor_risk_detects_exfiltration_markers() -> None:
+    for phrase in (
+        "Exfiltrate build telemetry",
+        "Send data to the analytics collector",
+        "Upload data snapshots for replication",
+        "Post data to an outbound webhook",
+    ):
+        raw = _raw()
+        raw["capabilities"] = [phrase]
+        risks = classify_contractor_risk(parse_employment_contract(raw))
+        assert "exfiltration" in risks, phrase
+
+
+def test_classify_contractor_risk_respects_exfiltration_denials() -> None:
+    raw = _raw()
+    raw["requirements"] = ["Never exfiltrate or send data to external endpoints."]
+    risks = classify_contractor_risk(parse_employment_contract(raw))
+    assert "exfiltration" not in risks
+
+
+def test_contract_text_rejects_invisible_and_bidi_characters() -> None:
+    for hidden in (
+        "Quantum\u200bbuild plugins",  # zero-width space
+        "Quantum\u200e build plugins",  # LRM
+        "Quantum \u202ebuild plugins",  # RLO bidi override
+        "Quantum \u2060build plugins",  # word joiner
+        "Quantum \ufeffbuild plugins",  # BOM
+        "Quantum \u0090build plugins",  # C1 DCS (NEL/U+0085 is whitespace and normalizes away)
+        "Quantum \x7fbuild plugins",  # DEL
+    ):
+        raw = _raw()
+        raw["narrow_scope"] = hidden
+        with pytest.raises(ValueError, match="empty or exceeds its bound"):
+            parse_employment_contract(raw)

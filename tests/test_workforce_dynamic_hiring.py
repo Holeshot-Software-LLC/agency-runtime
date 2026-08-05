@@ -27,6 +27,7 @@ from agency_runtime.core.workforce.contract import (
     WorkforceContract,
 )
 from agency_runtime.core.workforce.hiring import (
+    apply_approved_hiring_case,
     commit_pending_contractor_hiring,
     hire_contractor_for_gap,
     restaff_after_hire,
@@ -1523,12 +1524,12 @@ def test_amendment_reports_content_free_projection_stage(
     assert store.get_workforce_worker(existing.agent_id)["revision"] == 0
 
 
-def test_high_risk_amendment_is_revision_bound_and_reviewer_gated(
+def test_high_risk_amendment_waits_for_owner_approval_then_applies(
     tmp_path: Path,
 ) -> None:
-    """AR-238: an amendment carrying an approval marker is gated by the security
-    reviewer, not human approval. When the reviewer approves, the amendment is
-    applied directly and bound to the existing worker's revision."""
+    """An amendment asserting an owner-gated risk class (approval authority) is
+    recorded as a high-tier proposed case and applies only after explicit
+    owner approval; the reviewer verdict alone no longer instantiates it."""
 
     store = Store(tmp_path / "agency.db")
     existing = _install_existing(store)
@@ -1548,12 +1549,24 @@ def test_high_risk_amendment_is_revision_bound_and_reviewer_gated(
         ),
     )
 
-    assert outcome.status == "amended"
-    assert outcome.hiring_case["case_type"] == "amend"
-    assert outcome.hiring_case["critic_evidence"]["security_review"]["verdict"] == "safe"
-    worker = store.get_workforce_worker(existing.agent_id)
+    assert outcome.status == "pending_approval"
+    assert outcome.worker is None
+    assert outcome.workforce_changed is False
+    case = outcome.hiring_case
+    assert case["case_type"] == "amend"
+    assert case["status"] == "proposed"
+    assert case["risk_tier"] == "high"
+    assert case["human_approval_required"] is True
+    assert "approval" in case["critic_evidence"]["security_review"]["risk_classes"]
+    assert "hiring approve" in outcome.notification
+    # The existing worker is untouched while the case waits.
+    assert store.get_workforce_worker(existing.agent_id)["revision"] == 0
+
+    # Owner approval materializes the amendment through the audited path.
+    store.approve_hiring_case(case["id"], approved_by="operator")
+    worker = apply_approved_hiring_case(store, case["id"])
     assert worker["revision"] == 1
-    assert store.get_hiring_case(outcome.hiring_case["id"])["status"] == "applied"
+    assert store.get_hiring_case(case["id"])["status"] == "applied"
 
 
 def test_security_review_approved_external_hire_is_hired_without_human_gate(
@@ -1591,6 +1604,52 @@ def test_security_review_approved_external_hire_is_hired_without_human_gate(
     receipts = outcome.hiring_case["model_evidence"]["receipts"]
     assert all(item["actual_model"] == "" for item in receipts)
     assert all(item["model_receipt_source"] == "cli.explicit_model_argument" for item in receipts)
+    assert store.get_roster_entry("quantum-build-engineer") is not None
+
+
+def test_owner_gated_hire_waits_for_approval_then_materializes(
+    tmp_path: Path,
+) -> None:
+    """A hire asserting an owner-gated risk class stops before registration:
+    the case persists as proposed/high/approval-required, no worker or roster
+    entry exists, and `apply_approved_hiring_case` materializes it only after
+    an operator records approval."""
+
+    store = Store(tmp_path / "agency.db")
+    response = _hiring_response()
+    response["contract"]["capabilities"] = [
+        "Quantum compiler build plugins",
+        "Credential access for the build signing service",
+    ]
+    outcome = hire_contractor_for_gap(
+        "Implement the quantum compiler build integration with signing.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(provider_type="cli"),
+        invoker=_invoker(
+            response,
+            {"approved": True, "reason_codes": []},
+            _SAFE_SECURITY_REVIEW,
+        ),
+    )
+
+    assert outcome.status == "pending_approval"
+    assert outcome.hired is False
+    assert outcome.worker is None
+    case = outcome.hiring_case
+    assert case["status"] == "proposed"
+    assert case["risk_tier"] == "high"
+    assert case["human_approval_required"] is True
+    assert "credential" in case["critic_evidence"]["security_review"]["risk_classes"]
+    assert store.get_roster_entry("quantum-build-engineer") is None
+    with pytest.raises(ValueError, match="requires explicit human approval"):
+        apply_approved_hiring_case(store, case["id"])
+
+    store.approve_hiring_case(case["id"], approved_by="operator")
+    worker = apply_approved_hiring_case(store, case["id"])
+    assert worker["agent_slug"] == "quantum-build-engineer"
+    assert store.get_hiring_case(case["id"])["status"] == "applied"
     assert store.get_roster_entry("quantum-build-engineer") is not None
 
 

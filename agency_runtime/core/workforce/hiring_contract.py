@@ -77,6 +77,37 @@ _HIGH_RISK_MARKERS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "external_mutation",
         ("mutate external", "change external system", "send external message", "publish release"),
     ),
+    (
+        "exfiltration",
+        (
+            "exfiltrat",
+            "send data to",
+            "upload data",
+            "transmit data",
+            "post data to",
+            "external endpoint",
+            "outbound webhook",
+            "forward contents",
+        ),
+    ),
+)
+
+# Risk classes that require explicit owner approval before a hire is applied.
+# external_mutation is deliberately excluded: AR-238 made the isolated
+# security reviewer the gate for externally mutating scope, and unit binding
+# sets that flag mechanically for any external_write unit — owner approval is
+# reserved for asserted high-risk domain authority.
+OWNER_APPROVAL_RISK_CLASSES: frozenset[str] = frozenset(
+    {
+        "legal",
+        "medical",
+        "financial",
+        "destructive",
+        "approval",
+        "credential",
+        "security_offensive",
+        "exfiltration",
+    }
 )
 _RISK_CLAUSE_SEPARATOR = re.compile(r"[.;!?]+|\b(?:but|however)\b")
 _RISK_DENIAL_CLAUSE = re.compile(
@@ -220,11 +251,29 @@ def _closed(value: object, fields: frozenset[str], label: str) -> Mapping[str, A
     return value
 
 
+def _invisible_or_control(char: str) -> bool:
+    # C0/C1 controls and DEL, plus the invisible/bidirectional formatting set
+    # that survives whitespace normalization: zero-width and directional marks
+    # (U+200B-200F), bidi embedding/override (U+202A-202E), invisible operators
+    # and joiners (U+2060-2064), bidi isolates (U+2066-2069), and the BOM
+    # (U+FEFF). Any of these can hide or reorder contract text from review.
+    code = ord(char)
+    return (
+        code < 32
+        or 0x7F <= code <= 0x9F
+        or 0x200B <= code <= 0x200F
+        or 0x202A <= code <= 0x202E
+        or 0x2060 <= code <= 0x2064
+        or 0x2066 <= code <= 0x2069
+        or code == 0xFEFF
+    )
+
+
 def _text(value: object, label: str, *, maximum: int = MAX_TEXT) -> str:
     if not isinstance(value, str):
         raise ValueError(f"{label} must be text")
     result = " ".join(value.split())
-    if not result or len(result) > maximum or any(ord(char) < 32 for char in result):
+    if not result or len(result) > maximum or any(_invisible_or_control(char) for char in result):
         raise ValueError(f"{label} is empty or exceeds its bound")
     unauthorized_without_approval = re.search(
         r"(?i)\bwithout\s+(?:human\s+)?(?:approval|confirmation|permission)\b",
@@ -441,7 +490,7 @@ def compile_contractor(contract: EmploymentContract) -> CompiledContractor:
         prompt=prompt,
         prompt_hash=prompt_hash,
         risk_classes=risks,
-        human_approval_required=bool(risks),
+        human_approval_required=bool(set(risks) & OWNER_APPROVAL_RISK_CLASSES),
     )
 
 
@@ -453,6 +502,7 @@ __all__ = [
     "CompiledContractor",
     "ContractorEvalCase",
     "EmploymentContract",
+    "OWNER_APPROVAL_RISK_CLASSES",
     "TypedRelationship",
     "classify_contractor_risk",
     "compile_contractor",
