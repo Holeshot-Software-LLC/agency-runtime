@@ -259,9 +259,9 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-246` | [Roster scans parity (sub-issue 5 of AR-236)](issue-AR-246-roster-scans-parity.md) | open | p1 | operations | [#255](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/255) |
 | `AR-247` | [Roster sources parity (sub-issue 6 of AR-236)](issue-AR-247-roster-sources-parity.md) | open | p1 | operations | [#256](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/256) |
 | `AR-248` | [Doctor and DB stats parity (sub-issue 7 of AR-236)](issue-AR-248-doctor-db-stats-parity.md) | open | p2 | operations | [#257](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/257) |
-| `AR-249` | [Explain parity (sub-issue 8 of AR-236)](issue-AR-249-explain-parity.md) | open | p1 | operations | pending authorization |
-| `AR-250` | [Upgrade flow parity (sub-issue 9 of AR-236)](issue-AR-250-upgrade-flow-parity.md) | open | p2 | operations | pending authorization |
-| `AR-251` | [CLI presentation richness (sub-issue 10 of AR-236)](issue-AR-251-cli-presentation-richness.md) | open | p2 | operations | pending authorization |
+| `AR-249` | [Explain parity (sub-issue 8 of AR-236)](issue-AR-249-explain-parity.md) | open | p1 | operations | [#258](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/258) |
+| `AR-250` | [Upgrade flow parity (sub-issue 9 of AR-236)](issue-AR-250-upgrade-flow-parity.md) | open | p2 | operations | [#259](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/259) |
+| `AR-251` | [CLI presentation richness (sub-issue 10 of AR-236)](issue-AR-251-cli-presentation-richness.md) | open | p2 | operations | [#260](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/260) |
 
 ## Traceability
 
