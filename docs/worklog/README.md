@@ -637,9 +637,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6b6b505` | 2026-08-04 | fix(eval): align decision-conformance anchor for max_hires_per_turn rename (AR-241) | [AR-241](../roadmap/issue-AR-241-cap-removal-and-dashboard-visibility.md) | null |
 | `bdc24be` | 2026-08-04 | AR-243: workforce promotion readiness parity (sub-issue 2 of AR-236) | [AR-243](../roadmap/issue-AR-243-workforce-promotion-readiness-parity.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 | `b4f7a2b` | 2026-08-04 | AR-244: workforce duplicates and consolidate parity (sub-issue 3 of AR-236) | [AR-244](../roadmap/issue-AR-244-workforce-duplicates-consolidate-parity.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
+| `a7a1f61` | 2026-08-04 | docs(roadmap): record tracker URLs for AR-238/240/241/242/243/244 | [AR-238](../roadmap/issue-AR-238-isolated-security-review-with-bounded-repair.md), [AR-240](../roadmap/issue-AR-240-amend-first-staffing-default.md), [AR-241](../roadmap/issue-AR-241-cap-removal-and-dashboard-visibility.md), [AR-242](../roadmap/issue-AR-242-autonomous-promotion-review-window.md), [AR-243](../roadmap/issue-AR-243-workforce-promotion-readiness-parity.md), [AR-244](../roadmap/issue-AR-244-workforce-duplicates-consolidate-parity.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
 
 - `2434f30` contains the name `Hermes` in its historical subject. The subject is retained exactly as committed for faithful provenance; the name does not create an active cross-repository link or dependency.
 - `8f6d320` records a handoff document that was later removed. The subject remains part of the immutable commit record; no deleted document was restored for this worklog.
+- `a183594` is a `docs(worklog):` ledger commit that also updated `docs/roadmap/handoffs/issue-AR-235.md`. The worklog-ledger exemption allows only `docs/worklog/**` and the reciprocal roadmap README cell. The capsule refresh should have been a separate `docs(roadmap):` commit. Retained as-is; no history rewrite.
