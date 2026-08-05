@@ -695,6 +695,7 @@ class NativeChildStoreMixin:
                     delegation=delegation,
                     worker_run_id=row_id,
                     outcome=normalized_outcome,
+                    store=self,
                 )
             )
             terminal = conn.execute(

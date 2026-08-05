@@ -306,9 +306,19 @@ A declared gap is a contractor specification. Agency:
   (AR-238) rather than owner-gated.
 
 Contractors follow the **same audited, versioned, composition-bound path** as
-employees. **Promotion to employee is owner-controlled** — an owner-authorized
-CLI or dashboard action must occur, and only after independently verified
-successful assignments.
+employees. **Promotion to employee happens two ways.** The owner can promote
+any active contractor at any time through the CLI or dashboard transition
+action, informed by the surfaced promotion-readiness projection. Separately, a
+policy-based automatic promotion fires after
+`workforce.auto_promote_successes` (default 3) receipt-validated assignments
+whose acceptance was independently verified by a different worker in the same
+turn; it is suppressed during the `workforce.contractor_review_days` review
+window and disabled entirely with `auto_promote_successes: 0`. Every promotion
+— automatic or operator — is recorded as a worker event with its actor and
+evidence. (Live native-child outcomes do not yet record verified-acceptance
+evidence, so automatic promotion stays dormant until
+[AR-252](docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md)
+lands.)
 
 ---
 

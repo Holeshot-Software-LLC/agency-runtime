@@ -496,8 +496,16 @@ def record_native_assignment_outcome(
     delegation: Mapping[str, Any],
     worker_run_id: str,
     outcome: str,
+    store: Any | None = None,
 ) -> str | None:
-    """Atomically bind one native child result to its consumed specialist receipt."""
+    """Atomically bind one native child result to its consumed specialist receipt.
+
+    When ``store`` is supplied, the configured automatic-promotion policy runs
+    in the same transaction after the event is recorded — the live outcome
+    path participates in promotion readiness exactly like the mixin recorder.
+    Assignment events carry no independent-verifier evidence, so promotion
+    fires only once verified acceptance events exist for the worker.
+    """
 
     receipt_id = str(delegation["activation_receipt_id"] or "")
     if not receipt_id:
@@ -575,6 +583,22 @@ def record_native_assignment_outcome(
             expected["evidence_refs"],
         ),
     )
+    if store is not None:
+        worker = conn.execute(
+            "SELECT * FROM agent_workers WHERE worker_id = ?",
+            (expected["worker_id"],),
+        ).fetchone()
+        if worker is not None:
+            successes, disabled, review_window_days = _outcome_promotion_policy(
+                store, None, None
+            )
+            _auto_promote_if_ready(
+                conn,
+                worker,
+                disabled=disabled,
+                required_successes=successes,
+                review_window_days=review_window_days,
+            )
     return event_id
 
 

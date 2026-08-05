@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
+from contextlib import closing
 import time
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
@@ -1024,3 +1025,96 @@ def test_consumed_lineage_can_repair_one_unlinked_delegation_receipt(tmp_path: P
     assert delegation["executed_worker_id"] == "native-worker"
     assert delegation["native_run_id"] == "codex-agent:native-worker"
     assert delegation["activation_receipt_id"] == prepared["receipt_id"]
+
+
+def test_native_child_end_runs_auto_promotion_policy_in_transaction(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The live outcome path participates in the automatic-promotion policy.
+
+    Recording a native child's terminal outcome must evaluate the configured
+    promotion policy in the same transaction (a no-op for workers without
+    receipt-validated acceptance evidence, but never dead code)."""
+
+    from agency_runtime.core.store import workforce as store_workforce
+    from agency_runtime.core.workforce.known_installer import install_known_contractors
+
+    store = Store(tmp_path / "auto-promote-live.db")
+    install_known_contractors(store)
+    slug = "python-application-engineer"
+    worker_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    native_run_id = f"codex-agent:{worker_id}"
+    unit = "unit-live"
+    store.create_run(trace_id="trace", session_id="session", host="codex")
+    event_id = store.record_delegation(
+        trace_id="trace",
+        session_id="session",
+        host="codex",
+        work_unit_id=unit,
+        recommended_agent=slug,
+        status="delegated",
+        backend="spawn_agent",
+        executed_worker_kind="generic-worker",
+        executed_worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    connection = store._connect()
+    try:
+        connection.execute(
+            "INSERT INTO delegation_activation_receipts "
+            "(id, token_hash, session_id, trace_id, work_unit_id, specialist_slug, "
+            "specialist_version, specialist_prompt_hash, worker_kind, worker_id, "
+            "native_run_id, created_at, consumed_at) VALUES "
+            "('live-receipt', ?, 'session', 'trace', ?, ?, "
+            "'1.0.0', ?, 'generic-worker', '', '', 'created', 'consumed')",
+            ("a" * 64, unit, slug, "b" * 64),
+        )
+        activation_store.attach_consumed_activation_to_delegation(
+            connection,
+            event_id=event_id,
+            trace_id="trace",
+            work_unit_id=unit,
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    calls: list[str] = []
+    original = store_workforce._auto_promote_if_ready
+
+    def spy(conn: object, worker: object, **kwargs: object) -> None:
+        calls.append(str(worker["agent_slug"]))
+        original(conn, worker, **kwargs)
+
+    monkeypatch.setattr(store_workforce, "_auto_promote_if_ready", spy)
+    store.record_native_child_started(
+        host="codex",
+        backend="spawn_agent",
+        session_id="session",
+        trace_id="trace",
+        work_unit_id=unit,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    ended = store.record_native_child_ended(
+        host="codex",
+        backend="spawn_agent",
+        session_id="session",
+        trace_id="trace",
+        work_unit_id=unit,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+        outcome="ok",
+    )
+
+    assert ended["ended_at"]
+    assert calls == [slug]
+    # Assignment events carry no verifier evidence, so the policy never
+    # promotes on the live path until verified acceptances exist.
+    with closing(store._connect()) as conn:
+        contractor = conn.execute(
+            "SELECT employment_class FROM agent_workers WHERE agent_slug = ?",
+            (slug,),
+        ).fetchone()
+    assert contractor is not None
+    assert contractor["employment_class"] == "contractor"
