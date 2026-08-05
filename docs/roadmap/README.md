@@ -255,10 +255,10 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-242` | [Autonomous promotion with review window (slice 6 of AR-235)](issue-AR-242-autonomous-promotion-review-window.md) | open | p0 | routing | [#251](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/251) |
 | `AR-243` | [Workforce promotion readiness parity (sub-issue 2 of AR-236)](issue-AR-243-workforce-promotion-readiness-parity.md) | open | p1 | operations | [#252](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/252) |
 | `AR-244` | [Workforce duplicates and consolidate parity (sub-issue 3 of AR-236)](issue-AR-244-workforce-duplicates-consolidate-parity.md) | open | p1 | operations | [#253](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/253) |
-| `AR-245` | [Roster diff parity (sub-issue 4 of AR-236)](issue-AR-245-roster-diff-parity.md) | open | p1 | operations | pending authorization |
-| `AR-246` | [Roster scans parity (sub-issue 5 of AR-236)](issue-AR-246-roster-scans-parity.md) | open | p1 | operations | pending authorization |
-| `AR-247` | [Roster sources parity (sub-issue 6 of AR-236)](issue-AR-247-roster-sources-parity.md) | open | p1 | operations | pending authorization |
-| `AR-248` | [Doctor and DB stats parity (sub-issue 7 of AR-236)](issue-AR-248-doctor-db-stats-parity.md) | open | p2 | operations | pending authorization |
+| `AR-245` | [Roster diff parity (sub-issue 4 of AR-236)](issue-AR-245-roster-diff-parity.md) | open | p1 | operations | [#254](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/254) |
+| `AR-246` | [Roster scans parity (sub-issue 5 of AR-236)](issue-AR-246-roster-scans-parity.md) | open | p1 | operations | [#255](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/255) |
+| `AR-247` | [Roster sources parity (sub-issue 6 of AR-236)](issue-AR-247-roster-sources-parity.md) | open | p1 | operations | [#256](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/256) |
+| `AR-248` | [Doctor and DB stats parity (sub-issue 7 of AR-236)](issue-AR-248-doctor-db-stats-parity.md) | open | p2 | operations | [#257](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/257) |
 
 ## Traceability
 
