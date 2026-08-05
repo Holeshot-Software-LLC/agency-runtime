@@ -631,6 +631,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b5423ce` | 2026-08-04 | docs(roadmap): drop AR-237 depends_on AR-236 to respect the planning pair lesson | [AR-237](../roadmap/issue-AR-237-hiring-list-and-show-parity.md) | null |
 | `a331630` | 2026-08-04 | docs(roadmap): plan AR-238 isolated security review with bounded repair (slices 2-3 of AR-235) | [AR-238](../roadmap/issue-AR-238-isolated-security-review-with-bounded-repair.md), [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | null |
 | `b5bd549` | 2026-08-04 | AR-238: isolated security review with bounded repair (slices 2-3 of AR-235) | [AR-238](../roadmap/issue-AR-238-isolated-security-review-with-bounded-repair.md), [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | null |
+| `0b6c059` | 2026-08-04 | AR-240: amend-first staffing default (slice 4 of AR-235) | [AR-240](../roadmap/issue-AR-240-amend-first-staffing-default.md), [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
