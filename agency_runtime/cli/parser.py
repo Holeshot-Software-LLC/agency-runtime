@@ -864,6 +864,11 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
     )
     workforce_list.add_argument("--after", default="", help="Continue after this worker slug")
     workforce_list.add_argument("--json", action="store_true", help="Print machine-readable output")
+    workforce_list.add_argument(
+        "--card",
+        action="store_true",
+        help="Render one card per worker (default when stdout is a TTY and --json is not set)",
+    )
     _bind(workforce_list, handlers, "cmd_workforce_list")
 
     workforce_search = workforce_sub.add_parser(

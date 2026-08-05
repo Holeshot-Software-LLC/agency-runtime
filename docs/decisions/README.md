@@ -222,6 +222,7 @@ Status meanings:
 | [ADR-0151](0151-route-codex-product-approvals-to-auto-review.md) | Route Codex product approvals to automatic review | Accepted |
 | [ADR-0152](0152-fail-open-with-honest-header-when-no-specialist.md) | Fail open with an honest header when no specialist is selected | Accepted |
 | [ADR-0153](0153-adopt-per-stage-inference-profile-routes.md) | Adopt per-stage inference profile routes | Accepted |
+| [ADR-0154](0154-plain-text-cli-cards-over-rich-dependency.md) | Plain-text CLI cards over a rich dependency | Accepted |
 
 ## Documentation governance
 

@@ -63,6 +63,21 @@ def cmd_workforce_list(
     payload = {"count": len(workers), "workers": workers}
     if args.json:
         _emit(payload, as_json=True, dependencies=dependencies)
+    elif _render.use_card_default(args):
+        cards = [
+            _render.Card(
+                title=str(worker.get("agent_slug") or worker.get("display_label") or ""),
+                subtitle=str(worker.get("state") or ""),
+                fields=(
+                    _render.field("worker_id", worker.get("worker_id")),
+                    _render.field("display", worker.get("display_label")),
+                    _render.field("version", worker.get("current_version")),
+                    _render.field("revision", worker.get("revision")),
+                ),
+            )
+            for worker in workers
+        ]
+        print(_render.render_cards(cards))
     else:
         for worker in workers:
             print(_worker_line(worker))
