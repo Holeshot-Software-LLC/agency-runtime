@@ -508,7 +508,10 @@ def bundle_files(
         effective_cfg = replace(effective_cfg, config_path=config_path)
     timeout_seconds = _hook_timeout_seconds(effective_cfg)
     if host == "hermes":
-        return build_hermes_bundle(hermes_plugin(timeout_seconds, effective_cfg))
+        return build_hermes_bundle(
+            hermes_plugin(timeout_seconds, effective_cfg),
+            mcp=_mcp_config(config_path) if config_path else _mcp_config(),
+        )
 
     if host == "openclaw":
         index = (
@@ -516,7 +519,10 @@ def bundle_files(
             if config_path
             else _openclaw_index(timeout_seconds)
         )
-        return build_openclaw_bundle(index)
+        return build_openclaw_bundle(
+            index,
+            mcp=_mcp_config(config_path) if config_path else _mcp_config(),
+        )
 
     if host == "codex":
         hooks = (

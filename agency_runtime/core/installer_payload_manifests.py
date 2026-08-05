@@ -33,7 +33,11 @@ def render_codex_plugin_version(
     return f"{PLUGIN_VERSION}+codex.{bundle_digest(fingerprint_inputs)[:12]}"
 
 
-def build_hermes_bundle(plugin_source: str) -> tuple[dict[str, str], str]:
+def build_hermes_bundle(
+    plugin_source: str,
+    *,
+    mcp: Mapping[str, Any],
+) -> tuple[dict[str, str], str]:
     files = {
         "__init__.py": plugin_source,
         "plugin.yaml": (
@@ -49,12 +53,18 @@ def build_hermes_bundle(plugin_source: str) -> tuple[dict[str, str], str]:
             "  - pre_verify\n"
             "  - transform_llm_output\n"
             "  - on_session_end\n"
+            "mcp_servers: ./.mcp.json\n"
         ),
+        ".mcp.json": json.dumps(mcp, indent=2) + "\n",
     }
     return files, "__init__.py"
 
 
-def build_openclaw_bundle(index_source: str) -> tuple[dict[str, str], str]:
+def build_openclaw_bundle(
+    index_source: str,
+    *,
+    mcp: Mapping[str, Any],
+) -> tuple[dict[str, str], str]:
     files = {
         "index.js": index_source,
         "openclaw.plugin.json": json.dumps(
@@ -63,6 +73,7 @@ def build_openclaw_bundle(index_source: str) -> tuple[dict[str, str], str]:
                 "name": "Agency Preflight",
                 "description": _DESCRIPTION,
                 "activation": {"onStartup": True, "onCapabilities": ["hook"]},
+                "mcpServers": "./.mcp.json",
                 "configSchema": {
                     "type": "object",
                     "additionalProperties": False,
@@ -83,6 +94,7 @@ def build_openclaw_bundle(index_source: str) -> tuple[dict[str, str], str]:
             indent=2,
         )
         + "\n",
+        ".mcp.json": json.dumps(mcp, indent=2) + "\n",
     }
     return files, "index.js"
 
