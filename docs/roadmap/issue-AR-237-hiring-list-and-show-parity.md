@@ -26,8 +26,7 @@ epic: operations
 issue_id: AR-237
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/246"
-depends_on:
-  - AR-236
+depends_on: []
 blocks: []
 ---
 
