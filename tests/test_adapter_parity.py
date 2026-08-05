@@ -1319,10 +1319,7 @@ def test_openclaw_exact_first_pass_accepts_and_invalid_first_pass_terminalizes(
         trace_id="accept-turn",
     )
     fields = fill_header_fields(
-        {
-            "why": "A review was requested.",
-            "how_it_shaped_outcome": "The specialist evidence shaped the response.",
-        },
+        {},
         "accept-session",
         store,
         "",
@@ -1606,10 +1603,7 @@ def test_openclaw_bridge_acceptance_closes_exact_turn(
         trace_id="accepted-turn",
     )
     fields = fill_header_fields(
-        {
-            "why": "A code review was requested.",
-            "how_it_shaped_outcome": "The review evidence shaped the answer.",
-        },
+        {},
         "accepted-session",
         store,
         "task-general",
@@ -1709,10 +1703,7 @@ def test_openclaw_commits_the_exact_normalized_outbound_text(
         trace_id="normalized-turn",
     )
     fields = fill_header_fields(
-        {
-            "why": "A code review was requested.",
-            "how_it_shaped_outcome": "The review evidence shaped the answer.",
-        },
+        {},
         "normalized-session",
         store,
         "task-general",

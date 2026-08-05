@@ -21,8 +21,6 @@ def _fields(**overrides: str) -> dict[str, str]:
         "skills_loaded": "none",
         "actual_model_selected": "task-general -> unavailable",
         "recruited_via": "none",
-        "why": "audit",
-        "how_it_shaped_outcome": "made evidence visible",
     }
     values.update(overrides)
     return values
@@ -33,12 +31,14 @@ def test_header_cleaning_parsing_and_validation_edge_cases() -> None:
     assert contract._clean(" first\nsecond ") == "first second"
     assert contract._is_present("<none>") is False
     assert contract._is_present("evidence") is True
-    assert contract.parse_header("malformed\nUnknown: value\nWhy: valid") == {"why": "valid"}
+    assert contract.parse_header("malformed\nUnknown: value\nRecruited via: valid") == {
+        "recruited_via": "valid"
+    }
 
-    empty = contract.format_header(_fields(why=""))
+    empty = contract.format_header(_fields(recruited_via=""))
     valid, missing = contract.validate_header(empty)
     assert valid is False
-    assert missing == ["why"]
+    assert missing == ["recruited_via"]
 
     out_of_order = empty.replace("Agency/Agencies loaded: none", "Wrong label: none", 1)
     valid, missing = contract.validate_header(out_of_order)
@@ -52,10 +52,10 @@ def test_header_split_and_dedupe_cover_empty_and_duplicate_values() -> None:
     assert contract._starts_with_header(header) is True
     assert contract._starts_with_header("body") is False
     lines, body = contract._split_header_body(header)
-    assert len(lines) == 7
+    assert len(lines) == 5
     assert body == ""
     lines, body = contract._split_header_body(header + "\n\nBody")
-    assert len(lines) == 7
+    assert len(lines) == 5
     assert body == "Body"
     assert contract._dedupe(["", " alpha ", "alpha", "beta\nline"]) == [
         "alpha",
@@ -251,57 +251,12 @@ def test_header_model_and_delegation_lines_cover_truthful_outcomes() -> None:
 def test_fill_and_finalize_header_without_store_is_complete_and_idempotent() -> None:
     filled = contract.fill_header_fields({}, "", None, "task-general")
     assert filled["agencies_loaded"] == "none"
-    assert filled["why"] == (
-        "Unavailable - no authoritative explanation was recorded for this turn."
-    )
-    assert filled["how_it_shaped_outcome"] == (
-        "Unavailable - no authoritative routing effect was recorded for this turn."
-    )
+    assert filled["recruited_via"] == "none (no routing receipt)"
 
     first = contract.finalize_header("\nBody", "", None, "task-general")
     second = contract.finalize_header(first, "", None, "task-general")
     assert second == first
     assert first.endswith("Body")
-
-
-def test_header_explanations_humanize_live_routing_receipt_codes() -> None:
-    why = contract.humanize_reason_codes(
-        [
-            "requested_question_task_or_output",
-            "turn_kind:new_intent",
-            "routing_status:policy_fallback",
-            "inference_mode:heuristic",
-            "eligibility:missing_capabilities",
-            "eligibility:unsupported_tool_platform",
-        ]
-    )
-    effect = contract.humanize_effect_codes(
-        [
-            "inference_attempted",
-            "eligibility_exclusions_applied",
-            "compatibility_constraints_applied",
-            "specialists_selected",
-            "policy_fallback_applied",
-        ]
-    )
-
-    assert contract.humanize_reason_codes(["custom_family:some_value"]) == (
-        "Custom family was some value."
-    )
-    assert (
-        contract.humanize_reason_codes(
-            ["requested_question_task_or_output", "requested_question_task_or_output", ""]
-        )
-        == "The request asked for a substantive answer or action."
-    )
-
-    assert "substantive answer or action" in why
-    assert "default coordinator policy" in why
-    assert "required capabilities" in why
-    assert "reason_codes=" not in why
-    assert "Agency attempted inference" in effect
-    assert "default coordinators" in effect
-    assert "effect_codes=" not in effect
 
 
 class _FinalizationRecorder:

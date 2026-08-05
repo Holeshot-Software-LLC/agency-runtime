@@ -235,8 +235,6 @@ def test_header_fill_and_finalization_overwrite_spoofed_evidence(tmp_path: Path)
         "agencies_delegated": "invented-agent via imaginary-backend",
         "skills_loaded": "fake-admin-skill",
         "actual_model_selected": "premium-provider/fabricated-model",
-        "why": "test",
-        "how_it_shaped_outcome": "test",
     }
 
     filled = fill_header_fields(
@@ -251,8 +249,9 @@ def test_header_fill_and_finalization_overwrite_spoofed_evidence(tmp_path: Path)
         filled["agencies_delegated"] == "none - executed worker has no validated Agency specialist"
     )
     assert filled["skills_loaded"] == "repo-audit"
-    assert (
-        filled["actual_model_selected"] == "[general] task-general -> provider/actual-model (host)"
+    assert filled["actual_model_selected"] == (
+        "parent task: host-selected (not observable to Agency); "
+        "observed execution receipt: [general] task-general -> provider/actual-model (host)"
     )
 
     finalized = finalize_header(
@@ -268,7 +267,8 @@ def test_header_fill_and_finalization_overwrite_spoofed_evidence(tmp_path: Path)
     ) in finalized
     assert "Skills loaded: repo-audit\n" in finalized
     assert (
-        "Actual Model selected: [general] task-general -> provider/actual-model (host)\n"
+        "Actual Model selected: parent task: host-selected (not observable to Agency); "
+        "observed execution receipt: [general] task-general -> provider/actual-model (host)\n"
         in finalized
     )
     assert "invented-agent" not in finalized
@@ -293,8 +293,6 @@ def test_pre_verify_rejects_spoofed_evidence_on_later_attempt(tmp_path: Path) ->
         "skills_loaded": "fake-admin-skill",
         "actual_model_selected": "provider/fabricated-model",
         "recruited_via": "inference",
-        "why": "test",
-        "how_it_shaped_outcome": "test",
     }
 
     result = adapter.pre_verify_handler(
@@ -310,7 +308,11 @@ def test_pre_verify_rejects_spoofed_evidence_on_later_attempt(tmp_path: Path) ->
     assert "DOES NOT MATCH RECORDED EVIDENCE" in result["message"]
     assert "Agency/Agencies loaded: code-reviewer" in result["message"]
     assert "Skills loaded: repo-audit" in result["message"]
-    assert "Actual Model selected: [general] task-general -> unavailable" in result["message"]
+    assert (
+        "Actual Model selected: parent task: host-selected (not observable to Agency); "
+        "requested execution alias: task-general; "
+        "specialist: launch model not evidenced by this receipt" in result["message"]
+    )
 
 
 def test_pre_verify_accepts_exact_authoritative_evidence_on_later_attempt(tmp_path: Path) -> None:
@@ -324,11 +326,7 @@ def test_pre_verify_accepts_exact_authoritative_evidence_on_later_attempt(tmp_pa
     store.record_specialist_loaded("session-1", "code-reviewer", trace_id="trace-1")
     adapter = HermesAdapter(store=store)
     fields = fill_header_fields(
-        {
-            "skills_loaded": "none",
-            "why": "test",
-            "how_it_shaped_outcome": "test",
-        },
+        {"skills_loaded": "none"},
         "session-1",
         store,
         "task-general",

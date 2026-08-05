@@ -10,10 +10,6 @@ import re
 from collections.abc import Mapping
 from typing import Any, TypedDict
 
-from agency_runtime.core.header.explanations import (
-    humanize_effect_codes,
-    humanize_reason_codes,
-)
 from agency_runtime.core.host_guidance import (
     NATIVE_DELEGATION_GUIDANCE,
     native_delegation_instruction,
@@ -35,8 +31,6 @@ HEADER_FIELDS: tuple[tuple[str, str], ...] = (
     ("skills_loaded", "Skills loaded"),
     ("actual_model_selected", "Actual Model selected"),
     ("recruited_via", "Recruited via"),
-    ("why", "Why"),
-    ("how_it_shaped_outcome", "How it shaped outcome"),
 )
 
 _REQUIRED_KEYS = tuple(key for key, _ in HEADER_FIELDS)
@@ -892,42 +886,6 @@ def _ready_routing_receipt(
     return normalize_durable_routing_receipt(value)
 
 
-def _header_reason_codes(
-    snapshot: Mapping[str, Any] | None,
-    receipt: Mapping[str, Any] | None,
-) -> list[str]:
-    values: list[str] = []
-    if snapshot is not None:
-        values.extend(_bounded_evidence_codes(snapshot.get("reason_codes")))
-    if receipt is not None:
-        values.extend(_bounded_evidence_codes(receipt.get("reason_codes")))
-    return _bounded_evidence_codes(values)
-
-
-def _header_effect_codes(
-    snapshot: Mapping[str, Any] | None,
-    receipt: Mapping[str, Any] | None,
-) -> list[str]:
-    values = _bounded_evidence_codes(receipt.get("effect_codes")) if receipt is not None else []
-    if snapshot is not None:
-        if snapshot.get("specialists"):
-            values.append("specialist_context_loaded")
-        if snapshot.get("skills"):
-            values.append("skill_context_loaded")
-        model_receipt = snapshot.get("model_receipt")
-        if isinstance(model_receipt, Mapping):
-            values.append("model_receipt_recorded")
-        delegations = snapshot.get("delegations")
-        if isinstance(delegations, list) and any(
-            isinstance(row, Mapping)
-            and _clean(row.get("retrieved_specialist_slug"))
-            and _clean(row.get("status")) in {"completed", "running", "started", "delegated"}
-            for row in delegations
-        ):
-            values.append("delegated_specialist_executed")
-    return _bounded_evidence_codes(values)
-
-
 def _noneish_agency_line(value: str) -> bool:
     text = _clean(value).lower().rstrip(".!")
     return text == "none" or text.startswith(("none ", "none-", "none--"))
@@ -1409,10 +1367,6 @@ def fill_header_fields(
         specialist_loaded=bool(snapshot and snapshot.get("specialists")),
     )
     filled["recruited_via"] = _recruited_via_line(routing_receipt)
-    filled["why"] = humanize_reason_codes(_header_reason_codes(snapshot, routing_receipt))
-    filled["how_it_shaped_outcome"] = humanize_effect_codes(
-        _header_effect_codes(snapshot, routing_receipt)
-    )
 
     return filled
 
