@@ -67,7 +67,7 @@ class ProfileResolution:
 def _profile_to_provider(profile: InferenceProfile) -> ProviderEntry:
     """Project one ``InferenceProfile`` to a runnable ``ProviderEntry``."""
 
-    timeout_seconds = max(0.05, min(60.0, profile.timeout_ms / 1000.0))
+    timeout_seconds = max(0.05, min(120.0, profile.timeout_ms / 1000.0))
     return ProviderEntry(
         name=profile.name or "inference-profile",
         type=profile.adapter,
