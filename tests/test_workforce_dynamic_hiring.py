@@ -2268,3 +2268,30 @@ def test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful(
     # AR-241: max_daily == 0 no longer rejects (daily cap removed).
     receipt = project_durable_routing_receipt(result)
     assert [item["status"] for item in receipt["hiring"]["events"]] == list(expected_statuses)
+
+
+def test_task_gap_amendment_is_rejected_when_amendment_is_disallowed(
+    tmp_path: Path,
+) -> None:
+    """An ordinary task gap creates a distinct exact specialist: when the
+    caller forbids existing-worker amendment (the pipeline's task-staffing
+    default), an inference-proposed amend abstains with the exact reason
+    instead of broadening a near-match."""
+
+    store = Store(tmp_path / "agency.db")
+    existing = _install_existing(store)
+    outcome = hire_contractor_for_gap(
+        "Review the missing quantum compiler build integration.",
+        _amendment_unit(),
+        (existing,),
+        store=store,
+        config=_config(),
+        allow_existing_worker_amendment=False,
+        invoker=_invoker(_amendment_response(), {"approved": True, "reason_codes": []}),
+    )
+
+    assert outcome.status == "abstained"
+    assert "task_gap_requires_distinct_specialist" in outcome.reason_codes
+    assert outcome.worker is None
+    assert outcome.hiring_case is None
+    assert store.get_workforce_worker(existing.agent_id)["revision"] == 0

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from contextlib import contextmanager
 from pathlib import Path
@@ -34,7 +35,18 @@ def test_curated_manifest_anchors_are_current_and_unique() -> None:
         source = root / mutation.source_path
         assert source.is_file()
         assert source.read_text(encoding="utf-8").count(mutation.before) == 1
-        assert (root / mutation.test_node.split("::", 1)[0]).is_file()
+        test_path, node = mutation.test_node.split("::", 1)
+        test_file = root / test_path
+        assert test_file.is_file()
+        # The baseline collects every named node; a test renamed or removed
+        # without updating the manifest makes the whole gate unrunnable, so
+        # pin node existence too (parametrized ids reduce to the function).
+        function_name = node.split("[", 1)[0]
+        assert re.search(
+            rf"^def {re.escape(function_name)}\(",
+            test_file.read_text(encoding="utf-8"),
+            re.MULTILINE,
+        ), f"{mutation.mutation_id} names a missing test node: {mutation.test_node}"
 
 
 @pytest.mark.parametrize(

@@ -1641,7 +1641,7 @@ class _NominationSemantics:""",
         ),
         test_node=(
             "tests/test_workforce_dynamic_hiring.py::"
-            "test_task_gap_rejects_near_match_amendment_in_open_ended_pool"
+            "test_task_gap_amendment_is_rejected_when_amendment_is_disallowed"
         ),
     ),
     DecisionMutation(
