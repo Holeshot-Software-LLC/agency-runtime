@@ -633,6 +633,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b5bd549` | 2026-08-04 | AR-238: isolated security review with bounded repair (slices 2-3 of AR-235) | [AR-238](../roadmap/issue-AR-238-isolated-security-review-with-bounded-repair.md), [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | null |
 | `0b6c059` | 2026-08-04 | AR-240: amend-first staffing default (slice 4 of AR-235) | [AR-240](../roadmap/issue-AR-240-amend-first-staffing-default.md), [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | null |
 | `e750593` | 2026-08-04 | AR-241: hiring cap removal and dashboard visibility (slice 5 of AR-235) | [AR-241](../roadmap/issue-AR-241-cap-removal-and-dashboard-visibility.md), [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | null |
+| `f85074f` | 2026-08-04 | AR-242: autonomous promotion with review window (slice 6 of AR-235) | [AR-242](../roadmap/issue-AR-242-autonomous-promotion-review-window.md), [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
