@@ -255,6 +255,10 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-242` | [Autonomous promotion with review window (slice 6 of AR-235)](issue-AR-242-autonomous-promotion-review-window.md) | open | p0 | routing | [#251](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/251) |
 | `AR-243` | [Workforce promotion readiness parity (sub-issue 2 of AR-236)](issue-AR-243-workforce-promotion-readiness-parity.md) | open | p1 | operations | [#252](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/252) |
 | `AR-244` | [Workforce duplicates and consolidate parity (sub-issue 3 of AR-236)](issue-AR-244-workforce-duplicates-consolidate-parity.md) | open | p1 | operations | [#253](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/253) |
+| `AR-245` | [Roster diff parity (sub-issue 4 of AR-236)](issue-AR-245-roster-diff-parity.md) | open | p1 | operations | pending authorization |
+| `AR-246` | [Roster scans parity (sub-issue 5 of AR-236)](issue-AR-246-roster-scans-parity.md) | open | p1 | operations | pending authorization |
+| `AR-247` | [Roster sources parity (sub-issue 6 of AR-236)](issue-AR-247-roster-sources-parity.md) | open | p1 | operations | pending authorization |
+| `AR-248` | [Doctor and DB stats parity (sub-issue 7 of AR-236)](issue-AR-248-doctor-db-stats-parity.md) | open | p2 | operations | pending authorization |
 
 ## Traceability
 
@@ -499,6 +503,10 @@ not stable internal identifiers.
 | [AR-242](issue-AR-242-autonomous-promotion-review-window.md) | `f85074f`; slice 6 of AR-235; `auto_promote_successes: 3` + `contractor_review_days: 7`; review-window suppression in promotion_readiness; CLI + dashboard projections pass the window | None |
 | [AR-243](issue-AR-243-workforce-promotion-readiness-parity.md) | `bdc24be`; sub-issue 2 of AR-236; CLI workforce show prints full promotion readiness fields matching the dashboard card | None |
 | [AR-244](issue-AR-244-workforce-duplicates-consolidate-parity.md) | `b4f7a2b`; sub-issue 3 of AR-236; `GET /api/workforce/duplicates` endpoint mirroring CLI `workforce consolidate`; dashboard test expectations updated for AR-242 defaults and AR-235 slice 1 inference block | None |
+| [AR-245](issue-AR-245-roster-diff-parity.md) | planning pair; sub-issue 4 of AR-236; `GET /api/roster/diff` endpoint | None |
+| [AR-246](issue-AR-246-roster-scans-parity.md) | planning pair; sub-issue 5 of AR-236; `GET /api/roster/scans` endpoint | None |
+| [AR-247](issue-AR-247-roster-sources-parity.md) | planning pair; sub-issue 6 of AR-236; `GET /api/roster/sources` endpoint | None |
+| [AR-248](issue-AR-248-doctor-db-stats-parity.md) | planning pair; sub-issue 7 of AR-236; `GET /api/db-stats` endpoint | None |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

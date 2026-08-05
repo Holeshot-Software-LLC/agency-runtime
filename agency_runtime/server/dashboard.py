@@ -85,7 +85,12 @@ from agency_runtime.core.roster.selector_projection import (
     selector_roster_projection,
     ui_roster_projection,
 )
-from agency_runtime.core.roster.sync import activate_snapshot, approve_snapshot
+from agency_runtime.core.roster.sync import (
+    activate_snapshot,
+    approve_snapshot,
+    create_roster_diff,
+    list_source_scans,
+)
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
 from agency_runtime.core.routing_snapshot import (
     RoutingSnapshot,
@@ -1125,6 +1130,10 @@ def _dashboard_observation_operation(method: str, path: str) -> str:
         ("GET", "/api/roster"): "roster",
         ("GET", "/api/roster/operations"): "roster_operations",
         ("GET", "/api/roster/reviews"): "roster_reviews",
+        ("GET", "/api/roster/diff"): "roster_diff",
+        ("GET", "/api/roster/scans"): "roster_scans",
+        ("GET", "/api/roster/sources"): "roster_sources",
+        ("GET", "/api/db-stats"): "db_stats",
         ("GET", "/api/runtime"): "runtime",
         ("GET", "/api/snapshots"): "snapshots",
         ("GET", "/api/update"): "update",
@@ -1409,6 +1418,10 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "/api/roster": self._handle_roster,
                 "/api/roster/operations": self._handle_roster_operations,
                 "/api/roster/reviews": self._handle_roster_reviews,
+                "/api/roster/diff": self._handle_roster_diff,
+                "/api/roster/scans": self._handle_roster_scans,
+                "/api/roster/sources": self._handle_roster_sources,
+                "/api/db-stats": self._handle_db_stats,
                 "/api/agents/lookup": self._handle_agent_lookup,
                 "/api/activity": self._handle_activity,
                 "/api/control": self._handle_control,
@@ -1956,6 +1969,47 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 **_store_response_identity(state, binding),
             }
         )
+
+    def _handle_roster_diff(self) -> None:
+        """Return the roster snapshot diff (AR-245 / AR-236 S4).
+
+        Mirrors ``agency roster diff``: a side-by-side diff of
+        quarantined/approved candidates vs the active roster.
+        """
+
+        diff = create_roster_diff(self.store)
+        self._json_ok(diff)
+
+    def _handle_db_stats(self) -> None:
+        """Return SQLite database stats (AR-248 / AR-236 S7).
+
+        Mirrors ``agency db-stats``: db path, file sizes, and per-table
+        row counts.
+        """
+
+        self._json_ok(self.store.database_stats())
+
+    def _handle_roster_scans(self) -> None:
+        """Return roster source scan evidence (AR-246 / AR-236 S5).
+
+        Mirrors ``agency roster scans``: immutable full/partial scan
+        evidence used by retirement review.
+        """
+
+        limit, _after, _filters = _collection_query(
+            self.path,
+            allowed_filters=frozenset(),
+            default_limit=50,
+        )
+        self._json_ok(list_source_scans(self.store, limit=min(limit, 200)))
+
+    def _handle_roster_sources(self) -> None:
+        """Return configured roster sources (AR-247 / AR-236 S6).
+
+        Mirrors ``agency roster source-list``.
+        """
+
+        self._json_ok(self.store.list_agent_sources())
 
     def _handle_roster_reviews(self) -> None:
         limit, candidate_id, candidate_cursor, pending_cursor, history_cursor = _review_query(
