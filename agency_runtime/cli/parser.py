@@ -1345,6 +1345,11 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
         action="store_true",
         help="Smoke-test every supported generated host plugin",
     )
+    smoke.add_argument(
+        "--agent",
+        choices=["codex", "claude", "zcode", "hermes", "openclaw"],
+        help="Smoke-test one host's generated plugin",
+    )
     smoke.add_argument("--json", action="store_true", help="Print machine-readable results")
     _bind(smoke, handlers, "cmd_smoke")
 

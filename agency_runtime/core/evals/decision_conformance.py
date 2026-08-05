@@ -1805,6 +1805,17 @@ class _NominationSemantics:""",
             "test_hermes_transform_rejects_unfinalized_natural_response_without_repair"
         ),
     ),
+    DecisionMutation(
+        mutation_id="ranking-order-reversed",
+        invariant="The model's semantic ranking order is preserved, never locally reranked.",
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="    ordered = sorted(scores.items(), key=lambda item: (-item[1], item[0]))",
+        after="    ordered = sorted(scores.items(), key=lambda item: (item[1], item[0]))",
+        test_node=(
+            "tests/test_workforce_inference.py::"
+            "test_inference_uses_semantic_order_without_trusting_uncalibrated_score_gaps"
+        ),
+    ),
 )
 
 PytestRunner = Callable[[Path, Sequence[str], str, float, Path], _PytestRun]

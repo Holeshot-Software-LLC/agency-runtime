@@ -1606,7 +1606,11 @@ def cmd_eval_routing(args: argparse.Namespace) -> int:
 def cmd_smoke(args: argparse.Namespace) -> int:
     from agency_runtime.core.smoke import run_smoke
 
-    report = run_smoke(all_hosts=args.all)
+    host = getattr(args, "agent", None)
+    if host and args.all:
+        print("--agent and --all are mutually exclusive", file=sys.stderr)
+        return 2
+    report = run_smoke(all_hosts=args.all, host=host)
     if args.json:
         _print_json(report)
     else:

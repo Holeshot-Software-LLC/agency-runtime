@@ -544,14 +544,19 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
     return {"host": host, "plugin_path": str(plugin_path), "adapter": "HermesBridge"}
 
 
-def run_smoke(*, all_hosts: bool = False) -> dict[str, Any]:
+def run_smoke(*, all_hosts: bool = False, host: str | None = None) -> dict[str, Any]:
     """Run local deterministic smoke checks and return a JSON-safe report."""
     # --all means "every host this machine could actually exercise", not "every
     # known host including ones whose CLI/native state is absent". A host that
     # install_agent_adapter reports as not installed (e.g. zcode on a runner that
     # cannot install it) is skipped via _SkipHost in _smoke_generated_plugin,
-    # never failed.
-    hosts = sorted(HOSTS) if all_hosts else detect_installed_agents()
+    # never failed. --agent narrows to one host's generated plugin.
+    if host is not None:
+        if host not in HOSTS:
+            raise ValueError(f"unsupported smoke host: {host}")
+        hosts = [host]
+    else:
+        hosts = sorted(HOSTS) if all_hosts else detect_installed_agents()
     checks: list[dict[str, Any]] = []
     prepared_launcher: tuple[str, str] | None = None
     launcher_error: Exception | None = None
