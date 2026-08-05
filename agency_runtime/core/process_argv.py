@@ -1018,7 +1018,11 @@ def _trusted_npm_companion(
             return [str(native)]
         script = npm_root / "node_modules" / "@openai" / "codex" / "bin" / "codex.js"
     elif command == "claude":
-        script = npm_root / "node_modules" / "@anthropic-ai" / "claude-code" / "cli.js"
+        package_root = npm_root / "node_modules" / "@anthropic-ai" / "claude-code"
+        native = package_root / "bin" / "claude.exe"
+        if native.is_file():
+            return [str(native)]
+        script = package_root / "cli.js"
     else:
         return None
 

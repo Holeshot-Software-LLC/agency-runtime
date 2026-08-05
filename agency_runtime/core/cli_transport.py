@@ -934,11 +934,17 @@ def invoke_cli_structured(
                     "json",
                     "--json-schema",
                     schema_json,
+                    # Structured output arrives via a forced tool call; models
+                    # sometimes emit one text turn first, which "--max-turns 1"
+                    # kills mid-response (error_max_turns). Two turns tolerates
+                    # that preamble while staying bounded and tool-free.
                     "--max-turns",
-                    "1",
+                    "2",
                     "--no-session-persistence",
-                    "--tools",
-                    "",
+                    # "--tools ''" is the CLI's documented all-tools-off value,
+                    # but the owned-process runner rejects empty argv items;
+                    # the =-joined spelling parses identically and stays non-empty.
+                    "--tools=",
                     "--disallowedTools",
                     "mcp__*",
                     "--strict-mcp-config",

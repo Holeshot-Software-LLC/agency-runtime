@@ -207,7 +207,7 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
             f"{path}.ollama_mode",
         ),
         "timeout": _number(
-            entry.get("timeout", 15.0), f"{path}.timeout", minimum=0.05, maximum=60.0
+            entry.get("timeout", 15.0), f"{path}.timeout", minimum=0.05, maximum=120.0
         ),
         "reasoning_effort": _string(
             entry.get("reasoning_effort", ""),
