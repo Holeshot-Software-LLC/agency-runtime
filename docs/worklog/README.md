@@ -618,7 +618,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `21c0aaa` | 2026-08-04 | AR-230: Close completed issues and stale PR (#239) | null | null |
 | `def4f8b` | 2026-08-04 | AR-231: Resource-file filtering, multi-host upgrade, ZCode delegation note, close AR-210 (#240) | null | null |
 | `7c33b35` | 2026-08-04 | AR-232: Remove MAX_PLAN_LIST_ITEMS cap that truncated resource scopes (#241) | null | null |
-| `4928a87` | 2026-08-04 | AR-233: Architecture fixes â€” honest headers, wildcard distinction, strict default, metrics (#242) | null | null |
+| `4928a87` | 2026-08-04 | AR-233: Architecture fixes — honest headers, wildcard distinction, strict default, metrics (#242) | null | null |
 | `f6e65ea` | 2026-08-04 | AR-234: Drop round-trip evidence fields from recruiter schema (#243) | null | null |
 | `e87747d` | 2026-08-04 | docs: commit analysis handoffs and uv.lock | null | null |
 | `c1fbfbe` | 2026-08-04 | docs(roadmap): AR-235 plan autonomous gap hiring with isolated security review and amend-first staffing | [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | [AR-235 capsule](../roadmap/handoffs/issue-AR-235.md) |
@@ -629,6 +629,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `064162d` | 2026-08-04 | docs(roadmap): plan AR-237 hiring list and show parity (sub-issue 1 of AR-236) | [AR-237](../roadmap/issue-AR-237-hiring-list-and-show-parity.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 | `5dc5925` | 2026-08-04 | AR-237 sub-issue 1: bring hiring list and show to full CLI / dashboard parity | [AR-237](../roadmap/issue-AR-237-hiring-list-and-show-parity.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 | `b5423ce` | 2026-08-04 | docs(roadmap): drop AR-237 depends_on AR-236 to respect the planning pair lesson | [AR-237](../roadmap/issue-AR-237-hiring-list-and-show-parity.md) | null |
+| `a331630` | 2026-08-04 | docs(roadmap): plan AR-238 isolated security review with bounded repair (slices 2-3 of AR-235) | [AR-238](../roadmap/issue-AR-238-isolated-security-review-with-bounded-repair.md), [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | null |
+| `b5bd549` | 2026-08-04 | AR-238: isolated security review with bounded repair (slices 2-3 of AR-235) | [AR-238](../roadmap/issue-AR-238-isolated-security-review-with-bounded-repair.md), [AR-235](../roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
