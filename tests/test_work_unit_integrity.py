@@ -146,6 +146,59 @@ def test_resource_parser_stops_at_prose_and_normalizes_equivalent_paths() -> Non
     assert len(_likely_resources(many)) == 12
 
 
+def test_required_files_survive_before_inferred_resources() -> None:
+    """AR-216: explicit required files are preserved before inferred tokens."""
+
+    unit = (
+        "Build the dashboard. Endpoints: GET /health, POST /api/tasks, "
+        "list/create tasks, /api/tasks/{id}/complete. "
+        "Edit web/app.ts and README.md."
+    )
+    result = _likely_resources(unit, required_files=("web/app.ts", "README.md"))
+    # Required files come first, regardless of prose noise.
+    assert result[0] == "web/app.ts"
+    assert result[1] == "README.md"
+    # API routes and prose actions are NOT admitted as resources.
+    assert "/health" not in result
+    assert "/api/tasks" not in result
+    assert "list/create" not in result
+
+
+def test_api_routes_and_prose_actions_are_not_resources() -> None:
+    """AR-216: HTTP routes, verbs, and prose actions are rejected as paths."""
+
+    assert not _looks_like_resource("/health")
+    assert not _looks_like_resource("/api/tasks")
+    assert not _looks_like_resource("/api/tasks/{id}/complete")
+    assert not _looks_like_resource("GET")
+    assert not _looks_like_resource("POST")
+    assert not _looks_like_resource("list/create")
+    assert not _looks_like_resource("add/remove")
+    # Real files are still accepted.
+    assert _looks_like_resource("web/app.ts")
+    assert _looks_like_resource("README.md")
+    assert _looks_like_resource("src/app.ts")
+    assert _looks_like_resource("tests/test_app.py")
+
+
+def test_all_six_product_scenarios_have_valid_resource_scopes() -> None:
+    """AR-216: every product scenario's required files are valid resources."""
+
+    from agency_runtime.core.evals.product_scenarios import PRODUCT_SCENARIOS
+
+    for scenario in PRODUCT_SCENARIOS:
+        for file_contract in scenario.files:
+            assert _looks_like_resource(file_contract.path), (
+                f"{scenario.scenario_id}: {file_contract.path} is not a valid resource"
+            )
+        # Required files preserved via _likely_resources with required_files kwarg.
+        paths = tuple(f.path for f in scenario.files)
+        result = _likely_resources("Build it.", required_files=paths)
+        assert result[: len(paths)] == list(paths), (
+            f"{scenario.scenario_id}: required files not preserved in order"
+        )
+
+
 def test_native_child_activation_rehydrates_exact_scope_and_content_free_evidence() -> None:
     goal = "Update Src/Auth.py and verify the change"
     resource = "Src/Auth.py"

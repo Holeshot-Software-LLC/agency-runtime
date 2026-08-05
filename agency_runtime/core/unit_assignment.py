@@ -855,7 +855,17 @@ def _looks_like_resource(value: str) -> bool:
     if "/" in slash_value:
         if "{" in slash_value:
             return False
-        return all(part not in {"", "."} for part in slash_value.split("/"))
+        parts = [part for part in slash_value.split("/") if part not in {"", "."}]
+        if not parts:
+            return False
+        # Reject prose actions like "list/create" or "add/remove" — at least
+        # one segment must look like a file (have an extension) or a source
+        # directory (src, tests, docs, etc.) for the token to be a resource.
+        if not any(_FILE_SEGMENT_RE.fullmatch(part) for part in parts):
+            known_dirs = {"src", "tests", "test", "docs", "lib", "bin", "config", "web", "app"}
+            if not any(part.casefold() in known_dirs for part in parts):
+                return False
+        return True
     return (
         _BARE_FILE_RESOURCE_RE.fullmatch(value) is not None
         or _DOTFILE_RESOURCE_RE.fullmatch(value) is not None
@@ -873,9 +883,21 @@ def _resource_contention_key(value: object) -> str:
     return str(value or "").casefold()
 
 
-def _likely_resources(unit: str) -> list[str]:
+def _likely_resources(unit: str, *, required_files: Sequence[str] = ()) -> list[str]:
+    """Extract likely filesystem resources from a work-unit description.
+
+    Explicit ``required_files`` (AR-216) are preserved first, before inferred
+    resource tokens, so they survive the bounded resource ceiling even when
+    prose-heavy units produce many false-positive tokens.
+    """
+
     resources: list[str] = []
     seen: set[str] = set()
+    for filepath in required_files:
+        normalized = _normalized_resource(str(filepath))
+        if normalized and normalized not in seen and _looks_like_resource(normalized):
+            seen.add(normalized)
+            resources.append(normalized)
     for match in _RESOURCE_TOKEN_RE.finditer(unit):
         value = _resource_token_value(match.group(0))
         if not _looks_like_resource(value):

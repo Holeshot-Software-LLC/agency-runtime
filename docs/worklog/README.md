@@ -646,6 +646,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a498ceb` | 2026-08-05 | AR-224: simplify Agency evidence header to five factual fields | null | null |
 | `41cd201` | 2026-08-05 | docs(roadmap): record AR-224 tracker URL and done status | null | null |
 | `9ff23e8` | 2026-08-05 | AR-222: reconcile legacy work-unit integrity tests | [AR-222](../roadmap/issue-AR-222-reconcile-legacy-work-unit-integrity-tests.md) | null |
+| `4297142` | 2026-08-05 | docs(roadmap): record AR-222 tracker URL | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
