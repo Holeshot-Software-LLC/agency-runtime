@@ -262,8 +262,8 @@ class WorkforceConfig:
     max_hires_per_day: int = 3
     max_hires_per_turn: int = 16
     daily_hire_alert_threshold: int = 50
-    auto_promote_successes: int = 0
-    contractor_review_days: int = 30
+    auto_promote_successes: int = 3
+    contractor_review_days: int = 7
     hiring_repair_budget: int = 3
     amend_overlap_threshold: float = 0.7
 
@@ -627,8 +627,8 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             max_hires_per_day=int(workforce_raw.get("max_hires_per_day", 3)),
             max_hires_per_turn=int(workforce_raw.get("max_hires_per_turn", 16)),
             daily_hire_alert_threshold=int(workforce_raw.get("daily_hire_alert_threshold", 50)),
-            auto_promote_successes=int(workforce_raw.get("auto_promote_successes", 0)),
-            contractor_review_days=int(workforce_raw.get("contractor_review_days", 30)),
+            auto_promote_successes=int(workforce_raw.get("auto_promote_successes", 3)),
+            contractor_review_days=int(workforce_raw.get("contractor_review_days", 7)),
             hiring_repair_budget=int(workforce_raw.get("hiring_repair_budget", 3)),
             amend_overlap_threshold=float(workforce_raw.get("amend_overlap_threshold", 0.7)),
         ),

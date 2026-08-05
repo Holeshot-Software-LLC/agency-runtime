@@ -332,12 +332,16 @@ def _outcome_promotion_policy(
     store: Any,
     configured_successes: int | None,
     disabled_agents: Container[str] | None,
-) -> tuple[int, frozenset[str]]:
+) -> tuple[int, frozenset[str], int]:
     if configured_successes is None:
         from agency_runtime.core.config_binding import config_for_store
 
         config = config_for_store(store)
-        return config.workforce.auto_promote_successes, frozenset(config.agents.disabled)
+        return (
+            config.workforce.auto_promote_successes,
+            frozenset(config.agents.disabled),
+            config.workforce.contractor_review_days,
+        )
     if (
         isinstance(configured_successes, bool)
         or not isinstance(configured_successes, int)
@@ -347,7 +351,7 @@ def _outcome_promotion_policy(
     disabled = (
         store.get_disabled_agent_slugs() if disabled_agents is None else frozenset(disabled_agents)
     )
-    return configured_successes, disabled
+    return configured_successes, disabled, 0
 
 
 def _bind_outcome_activation(
@@ -432,6 +436,7 @@ def _auto_promote_if_ready(
     *,
     disabled: Container[str],
     required_successes: int,
+    review_window_days: int = 0,
 ) -> None:
     performance_rows = conn.execute(
         "SELECT * FROM agent_performance_events WHERE worker_id = ? ORDER BY created_at, rowid",
@@ -445,12 +450,17 @@ def _auto_promote_if_ready(
         else str(worker["standing"])
     )
     readiness = promotion_readiness(
-        {"worker_id": str(worker["worker_id"]), "state": state},
+        {
+            "worker_id": str(worker["worker_id"]),
+            "state": state,
+            "created_at": worker.get("created_at"),
+        },
         [
             {**dict(item), "evidence_refs": _decoded(item["evidence_refs"])}
             for item in performance_rows
         ],
         required_successes=required_successes,
+        review_window_days=review_window_days,
     )
     if not readiness["eligible_for_automatic_promotion"]:
         return
@@ -2237,7 +2247,7 @@ class WorkforceStoreMixin:
         )
         if event in _ACTIVATION_BOUND_OUTCOMES and not activation_id:
             raise ValueError(f"{event} outcomes require an activation receipt")
-        auto_promote_successes, disabled = _outcome_promotion_policy(
+        auto_promote_successes, disabled, review_window_days = _outcome_promotion_policy(
             self,
             auto_promote_successes,
             disabled_agents,
@@ -2323,6 +2333,7 @@ class WorkforceStoreMixin:
                 worker,
                 disabled=disabled,
                 required_successes=auto_promote_successes,
+                review_window_days=review_window_days,
             )
         projection = dict(row)
         projection["evidence_refs"] = _decoded(projection["evidence_refs"])

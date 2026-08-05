@@ -68,3 +68,54 @@ def test_manual_policy_and_non_contractor_never_claim_automatic_readiness() -> N
 def test_promotion_threshold_is_bounded_to_non_negative_integers(value: object) -> None:
     with pytest.raises(ValueError, match="non-negative integer"):
         promotion_readiness({}, [], required_successes=value)  # type: ignore[arg-type]
+
+
+def test_review_window_suppresses_auto_promotion_for_young_contractor() -> None:
+    """AR-242: a contractor younger than the review window is not auto-promoted
+    even when the success threshold is met."""
+
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+    recent = (now - timedelta(days=2)).isoformat()
+    worker = {
+        "worker_id": "worker-contractor",
+        "state": "contractor",
+        "created_at": recent,
+    }
+    result = promotion_readiness(
+        worker,
+        [_outcome("unit-1"), _outcome("unit-2"), _outcome("unit-3")],
+        required_successes=3,
+        review_window_days=7,
+        now=now,
+    )
+
+    assert result["verified_successes"] == 3
+    assert result["in_review_window"] is True
+    assert result["eligible_for_automatic_promotion"] is False
+    assert any("review window" in reason for reason in result["reasons"])
+
+
+def test_review_window_releases_after_expiry() -> None:
+    """AR-242: once the review window expires, auto-promotion proceeds."""
+
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+    old = (now - timedelta(days=30)).isoformat()
+    worker = {
+        "worker_id": "worker-contractor",
+        "state": "contractor",
+        "created_at": old,
+    }
+    result = promotion_readiness(
+        worker,
+        [_outcome("unit-1"), _outcome("unit-2"), _outcome("unit-3")],
+        required_successes=3,
+        review_window_days=7,
+        now=now,
+    )
+
+    assert result["in_review_window"] is False
+    assert result["eligible_for_automatic_promotion"] is True

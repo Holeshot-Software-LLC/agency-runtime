@@ -1148,6 +1148,7 @@ def _dashboard_promotion_projection(
     outcomes: Sequence[Mapping[str, Any]],
     *,
     required_successes: int,
+    review_window_days: int = 0,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Compute readiness from Store-proven scalars, then discard the private proof bit."""
 
@@ -1181,6 +1182,7 @@ def _dashboard_promotion_projection(
         worker,
         readiness_inputs,
         required_successes=required_successes,
+        review_window_days=review_window_days,
     )
 
 
@@ -2037,6 +2039,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 detail["worker"],
                 detail["outcomes"],
                 required_successes=config.workforce.auto_promote_successes,
+                review_window_days=config.workforce.contractor_review_days,
             )
             detail["compiled_prompt"] = (
                 None

@@ -74,8 +74,8 @@ workforce:
   max_hires_per_day: 3
   max_hires_per_turn: 16          # soft per-turn bound; amend-first is the real guard (AR-241)
   daily_hire_alert_threshold: 50  # soft daily warning; never rejects (AR-241)
-  auto_promote_successes: 0     # zero keeps promotion human-controlled
-  contractor_review_days: 30
+  auto_promote_successes: 3     # three verified successes auto-promote a contractor (AR-242)
+  contractor_review_days: 7     # first-batch review window before auto-promotion (AR-242)
   hiring_repair_budget: 3       # bounded safety-repair turns after an unsafe verdict (AR-238)
   amend_overlap_threshold: 0.7  # amend-first: overlap required to amend vs hire distinct (AR-240)
 

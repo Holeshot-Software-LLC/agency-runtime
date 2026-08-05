@@ -3,9 +3,44 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 _SUCCESS_OUTCOMES = frozenset({"accepted", "completed", "passed", "succeeded", "success"})
+
+
+def _parse_created_at(value: Any) -> datetime | None:
+    """Parse a store timestamp into an aware UTC datetime, or None."""
+
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return datetime.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def _within_review_window(
+    created_at: datetime | None,
+    *,
+    review_window_days: int,
+    now: datetime | None = None,
+) -> bool:
+    """Return True when a contractor is younger than the review window (AR-242).
+
+    When True, automatic promotion is suppressed even if the success threshold
+    is met. The window is computed per-contractor from ``created_at``.
+    """
+
+    if created_at is None or review_window_days <= 0:
+        return False
+    moment = now or datetime.now(timezone.utc)
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return created_at + timedelta(days=review_window_days) > moment
 
 
 def _independent_success_units(
@@ -40,8 +75,16 @@ def promotion_readiness(
     outcomes: Sequence[Mapping[str, Any]],
     *,
     required_successes: int,
+    review_window_days: int = 0,
+    created_at: Any = None,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
-    """Project strict promotion evidence without performing a lifecycle mutation."""
+    """Project strict promotion evidence without performing a lifecycle mutation.
+
+    When ``review_window_days > 0`` and the worker's ``created_at`` falls inside
+    the window, automatic promotion is suppressed (AR-242). The worker still
+    accumulates verified successes; only the auto-promotion is held back.
+    """
 
     if (
         isinstance(required_successes, bool)
@@ -54,7 +97,14 @@ def promotion_readiness(
     units = _independent_success_units(outcomes, worker_id=worker_id)
     policy_enabled = required_successes > 0
     contractor = state == "contractor"
-    eligible = contractor and policy_enabled and len(units) >= required_successes
+    in_review_window = _within_review_window(
+        _parse_created_at(created_at if created_at is not None else worker.get("created_at")),
+        review_window_days=review_window_days,
+        now=now,
+    )
+    eligible = (
+        contractor and policy_enabled and len(units) >= required_successes and not in_review_window
+    )
     reasons: list[str] = []
     if not contractor:
         reasons.append("Only an active contractor can be promoted.")
@@ -66,6 +116,11 @@ def promotion_readiness(
             f"{remaining} more independently verified successful "
             f"{'assignment is' if remaining == 1 else 'assignments are'} required."
         )
+    if in_review_window:
+        reasons.append(
+            f"The contractor is within its {review_window_days}-day review window; "
+            "automatic promotion is suppressed until the window expires."
+        )
     if eligible:
         reasons.append("The configured automatic-promotion evidence threshold is satisfied.")
     return {
@@ -73,6 +128,7 @@ def promotion_readiness(
         "human_promotion_available": contractor,
         "automatic_policy_enabled": policy_enabled,
         "eligible_for_automatic_promotion": eligible,
+        "in_review_window": in_review_window,
         "required_successes": required_successes,
         "verified_successes": len(units),
         "remaining_successes": max(0, required_successes - len(units)),

@@ -93,6 +93,7 @@ def cmd_workforce_show(
         detail["worker"],
         detail["outcomes"],
         required_successes=config.workforce.auto_promote_successes,
+        review_window_days=config.workforce.contractor_review_days,
     )
     if args.json:
         _emit(detail, as_json=True, dependencies=dependencies)
