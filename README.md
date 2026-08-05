@@ -324,21 +324,26 @@ lands.)
 
 ## 🧪 What gets routed for an ask
 
-Agency reads the **intent** of the ask and the **detected stack/domain** to
-pick specialists — it doesn't keyword-match. The same phrasing routes to a
-different specialist depending on the repository context, and a single ask often
-decomposes into a multi-specialist team. *(Representative — actual picks depend
-on the detected stack and the live roster.)*
+Inference reads the **intent** of the ask together with the repository's
+**detected stacks**: a bounded, deterministic marker-file scan of the turn's
+working directory (`pyproject.toml`, `package.json`/`tsconfig.json`,
+`go.mod`, `composer.json` dependencies, ...) is surfaced to the planner and
+recruiter as context evidence. The same phrasing can route to a different
+specialist depending on that repository context, and a single ask often
+decomposes into a multi-specialist team. *(Representative — actual picks
+depend on the detected stacks, the model's reading of intent, and the live
+roster.)*
 
 **Same ask, different specialists by context:**
 
-| Ask (with context) | Recruited via | Specialist |
+| Ask (with detected stacks) | Recruited via | Specialist |
 |---|---|---|
 | "fix the auth bug" — in a Python repo | inference | `python-application-engineer` |
 | "fix the auth bug" — in a TypeScript repo | inference | `typescript-application-engineer` |
 | "fix the auth bug" — in a Go repo | inference | `go-application-engineer` |
 
-The router reads the repository's stacks, not the literal words.
+Stack detection is evidence, not a selector: deterministic code reports what
+the repository proves, and inference still owns the pick.
 
 **One ask → a governed multi-specialist team (sequential units):**
 

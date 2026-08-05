@@ -1257,12 +1257,15 @@ def _run_gap_hiring(
         unit_id = hireable[0]
         attempted_units.add(unit_id)
         unit = next(item for item in outcome.plan.units if item.unit_id == unit_id)
+        from agency_runtime.core.workspace_stacks import detect_workspace_stacks
+
         staffing_context = StaffingContext(
             request.host,
             request.platform,
             frozenset(request.available_tools),
             active_snapshot.generation,
             None,
+            detected_stacks=detect_workspace_stacks(),
         )
         hiring = hire_contractor_for_gap(
             request.user_message,
@@ -1509,6 +1512,8 @@ def route(
         )
         from agency_runtime.core.workforce.staffing_verifier import StaffingContext
 
+        from agency_runtime.core.workspace_stacks import detect_workspace_stacks
+
         staffing_context = StaffingContext(
             request.host,
             request.platform,
@@ -1520,6 +1525,7 @@ def route(
             # whose broad required-tool metadata can include optional
             # surfaces unrelated to this exact work unit.
             None,
+            detected_stacks=detect_workspace_stacks(),
         )
         activation_canary = is_exact_codex_activation_canary_task(
             request.user_message,

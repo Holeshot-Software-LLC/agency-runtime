@@ -190,7 +190,9 @@ _RECRUITER_SYSTEM = (
     "fit). Every forbidden candidate needs concise negative evidence (why they "
     "don't). Disabled or unavailable specialists can be acceptable but not required.\n\n"
     "Return exactly one unit row for every planned unit, in plan order. Never omit "
-    "a unit. Never invent a specialist ID that is not in the detail_cards.\n"
+    "a unit. Copy each unit_id verbatim from response_contract.exact_unit_ids_in_order "
+    "— do not reformat, rephrase, split, or merge compound words in the identifier. "
+    "Never invent a specialist ID that is not in the detail_cards.\n"
     "Return only one JSON object matching the supplied schema."
 )
 _RECRUITER_REPAIR_SYSTEM = (
@@ -1071,6 +1073,7 @@ def _context_document(context: StaffingContext) -> dict[str, Any]:
         "platform": context.platform,
         "available_tools": sorted(context.available_tools),
         "roster_generation": context.roster_generation,
+        "detected_stacks": list(context.detected_stacks),
     }
 
 
@@ -1377,6 +1380,55 @@ class _NominationSemantics:
     failures: tuple[_NominationFailure, ...]
 
 
+def _reconcile_unit_id(
+    returned_id: str,
+    plan_unit_ids: frozenset[str],
+) -> str | None:
+    """Map a model-returned unit_id to a canonical plan unit_id when unambiguous.
+
+    LLMs (notably GLM-5.2) sometimes normalize compound words in slug-like
+    identifiers — for example, returning ``unit-discovery-code-paths`` when the
+    plan's canonical id is ``unit-discovery-codepath-mapping``. The nomination
+    rankings themselves are often correct; only the identifier string diverges.
+
+    This helper performs one reconciliation attempt that is safe by
+    construction:
+
+    * Exact match returns immediately (the common path; no behavior change).
+    * Otherwise, candidates are scored by their longest-common-prefix length
+      against the returned id, after both are lowercased and stripped. A
+      candidate is accepted only when it shares at least 60% of its characters
+      as a common prefix **and** exactly one plan id qualifies. Ambiguous or
+      low-similarity ids are rejected (returned as ``None``) so the caller
+      emits the existing ``missing_work_unit`` failure.
+
+    The positional ordering of the rows is validated separately by the caller,
+    so reconciliation never reorders units.
+    """
+
+    candidate = returned_id.strip().casefold()
+    if candidate in plan_unit_ids:
+        return candidate
+    if not candidate:
+        return None
+    threshold = max(4, int(len(candidate) * 0.6))
+    matches: list[str] = []
+    for plan_id in plan_unit_ids:
+        canonical = plan_id.casefold()
+        if not canonical:
+            continue
+        common = 0
+        for left, right in zip(candidate, canonical, strict=False):
+            if left != right:
+                break
+            common += 1
+        if common >= threshold:
+            matches.append(plan_id)
+    if len(matches) == 1:
+        return matches[0]
+    return None
+
+
 def _collect_nomination_semantics(
     rows_by_unit: Mapping[str, Mapping[str, Any]],
     plan: WorkUnitPlan,
@@ -1498,6 +1550,7 @@ def _proposal_from_nominations(
     if not isinstance(rows, list) or not rows or len(rows) > len(plan.units):
         raise ValueError("workforce nomination rows are invalid")
     rows_by_unit: dict[str, Mapping[str, Any]] = {}
+    plan_unit_ids = frozenset(unit.unit_id for unit in plan.units)
     for row in rows:
         if not isinstance(row, Mapping) or set(row) != {
             "unit_id",
@@ -1506,7 +1559,8 @@ def _proposal_from_nominations(
         }:
             raise ValueError("workforce nomination row is invalid")
         unit_id = str(row["unit_id"] or "").strip().casefold()
-        if unit_id not in {unit.unit_id for unit in plan.units} or unit_id in rows_by_unit:
+        unit_id = _reconcile_unit_id(unit_id, plan_unit_ids) or unit_id
+        if unit_id not in plan_unit_ids or unit_id in rows_by_unit:
             raise ValueError("workforce nominations contain an invalid work unit")
         rows_by_unit[unit_id] = row
     semantics = _collect_nomination_semantics(
@@ -1578,6 +1632,7 @@ class _NominationAccumulator:
         if not isinstance(rows, list) or not rows or len(rows) > len(self._plan.units):
             raise ValueError("workforce nomination rows are invalid")
         expected = {unit.unit_id for unit in self._plan.units}
+        expected_frozen = frozenset(expected)
         response_ids: list[str] = []
         response_rows: list[tuple[str, Mapping[str, Any]]] = []
         for row in rows:
@@ -1588,6 +1643,7 @@ class _NominationAccumulator:
             }:
                 raise ValueError("workforce nomination row is invalid")
             unit_id = str(row["unit_id"] or "").strip().casefold()
+            unit_id = _reconcile_unit_id(unit_id, expected_frozen) or unit_id
             if unit_id not in expected or unit_id in response_ids:
                 raise ValueError("workforce nominations contain an invalid work unit")
             response_ids.append(unit_id)

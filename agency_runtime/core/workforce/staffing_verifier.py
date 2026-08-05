@@ -77,6 +77,10 @@ class StaffingContext:
     available_tools: frozenset[str]
     roster_generation: int
     eligible_worker_ids: frozenset[str] | None = None
+    # Deterministic marker-file evidence from the turn's working directory
+    # (core/workspace_stacks.py). Surfaced to inference through the context
+    # document; deterministic code never selects on it.
+    detected_stacks: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.host or not self.platform:
