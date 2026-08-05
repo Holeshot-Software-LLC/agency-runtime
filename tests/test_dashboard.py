@@ -837,17 +837,22 @@ def test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle(
     assert detail["detail"]["promotion_readiness"] == {
         "state": "contractor",
         "human_promotion_available": True,
-        "automatic_policy_enabled": False,
+        "automatic_policy_enabled": True,
         "eligible_for_automatic_promotion": False,
-        "required_successes": 0,
+        "in_review_window": True,
+        "required_successes": 3,
         "verified_successes": 0,
-        "remaining_successes": 0,
+        "remaining_successes": 3,
         "verified_work_units": [],
         "evidence_rule": (
             "Distinct accepted work units with an activation receipt and a receipt from "
             "a different verifying worker."
         ),
-        "reasons": ["Automatic promotion is off; promotion requires an operator."],
+        "reasons": [
+            "3 more independently verified successful assignments are required.",
+            "The contractor is within its 7-day review window; automatic promotion is "
+            "suppressed until the window expires.",
+        ],
     }
     assert detail["detail"]["compiled_prompt"]["preview"]
     assert detail["detail"]["compiled_prompt"]["hash"]
@@ -1197,7 +1202,8 @@ def test_dashboard_worker_detail_omits_history_documents_with_readiness_parity(
     expected_readiness = promotion_readiness(
         full["worker"],
         full["outcomes"],
-        required_successes=0,
+        required_successes=3,
+        review_window_days=7,
     )
     assert full["outcomes"][0]["evidence_refs"] == recorded["evidence_refs"]
 
@@ -2405,9 +2411,9 @@ def test_dashboard_operational_roster_review_and_inference_apis_are_bounded(
     )
     assert status == 200
     assert inference["schema_version"] == "agency.dashboard.inference_operations.v1"
-    assert inference["configured"] is False
-    assert inference["required_for_eligible_turns"] is False
-    assert inference["state"] == "not_configured"
+    assert inference["configured"] is True
+    assert inference["required_for_eligible_turns"] is True
+    assert inference["state"] == "unknown"
     assert [provider["name"] for provider in inference["provider_chain"]] == [
         "legacy-judge",
         "ollama-fallback",

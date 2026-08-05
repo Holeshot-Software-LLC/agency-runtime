@@ -98,9 +98,7 @@ def test_workforce_show_text_mode_prints_full_promotion_readiness(
     store = _installed_store(tmp_path)
     monkeypatch.setattr(cli, "_store", lambda *args, **kwargs: store)
 
-    assert (
-        cli.main(["workforce", "show", "application-integration-verifier"]) == 0
-    )
+    assert cli.main(["workforce", "show", "application-integration-verifier"]) == 0
     output = capsys.readouterr().out
     assert "promotion\t" in output
     assert "verified=" in output

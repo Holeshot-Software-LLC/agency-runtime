@@ -453,7 +453,7 @@ def _auto_promote_if_ready(
         {
             "worker_id": str(worker["worker_id"]),
             "state": state,
-            "created_at": worker.get("created_at"),
+            "created_at": dict(worker).get("created_at"),
         },
         [
             {**dict(item), "evidence_refs": _decoded(item["evidence_refs"])}

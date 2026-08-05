@@ -1506,10 +1506,7 @@ class _NominationSemantics:""",
         before=(
             "        if not hireable or workforce_changes >= config.workforce.max_hires_per_turn:"
         ),
-        after=(
-            "if not hireable or len(attempted_units) >= "
-            "config.workforce.max_hires_per_turn:"
-        ),
+        after=("if not hireable or len(attempted_units) >= config.workforce.max_hires_per_turn:"),
         test_node=(
             "tests/test_workforce_dynamic_hiring.py::"
             "test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful"

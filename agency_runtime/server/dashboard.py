@@ -110,7 +110,7 @@ from agency_runtime.core.store.workforce import (
     MAX_HIRING_COLLECTION_RESPONSE_BYTES,
     WorkforcePayloadBudgetError,
 )
-from agency_runtime.core.workforce.comparison import nearest_workers
+from agency_runtime.core.workforce.comparison import consolidation_candidates, nearest_workers
 from agency_runtime.core.workforce.hiring import apply_approved_hiring_case
 from agency_runtime.core.workforce.promotion import promotion_readiness
 from agency_runtime.server.http import (
@@ -1129,6 +1129,7 @@ def _dashboard_observation_operation(method: str, path: str) -> str:
         ("GET", "/api/snapshots"): "snapshots",
         ("GET", "/api/update"): "update",
         ("GET", "/api/workforce"): "workforce",
+        ("GET", "/api/workforce/duplicates"): "workforce_duplicates",
         ("POST", "/api/route"): "route",
         ("POST", "/api/search"): "search",
         ("POST", "/api/agents/toggle"): "agent_toggle",
@@ -1414,6 +1415,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "/api/hosts": self._handle_hosts,
                 "/api/inference": self._handle_inference,
                 "/api/workforce": self._handle_workforce,
+                "/api/workforce/duplicates": self._handle_workforce_duplicates,
                 "/api/hiring": self._handle_hiring,
                 "/api/runtime": lambda: self._json_ok(
                     {"master": self._master_control(use_cache=False)}
@@ -2085,6 +2087,31 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             )
         else:
             self._json_ok(response)
+
+    def _handle_workforce_duplicates(self) -> None:
+        """Return near-duplicate consolidation candidates (AR-244 / AR-236 S3).
+
+        Mirrors ``agency workforce consolidate``: lists worker pairs above the
+        ``amend_overlap_threshold`` so the dashboard can surface the same
+        near-duplicates the CLI shows.
+        """
+
+        limit, _after, _filters = _collection_query(
+            self.path,
+            allowed_filters=frozenset(),
+            default_limit=20,
+        )
+        snapshot = workforce_index_snapshot(self.store)
+        candidates = consolidation_candidates(snapshot.contracts, limit=min(limit, 50))
+        self._json_ok(
+            {
+                "workforce_count": len(snapshot.contracts),
+                "contract_fingerprint": snapshot.contract_fingerprint,
+                "authority": "read_only_recommendation",
+                "automatic_mutation": False,
+                "candidates": candidates,
+            }
+        )
 
     def _handle_hiring(self) -> None:
         """Return one full-evidence case or a bounded fixed-field summary page."""
