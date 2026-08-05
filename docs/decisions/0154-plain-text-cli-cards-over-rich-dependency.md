@@ -1,9 +1,10 @@
 ---
-title: "ADR-0154: Plain-text CLI cards over a rich dependency"
-status: active
-category: cli
+title: "Plain-text CLI cards over a rich dependency"
+status: accepted
+category: decisions
 created: 2026-08-04
 updated: 2026-08-04
+deciders: [lkrammes]
 tags:
   - cli
   - presentation
@@ -16,6 +17,8 @@ related:
   - agency_runtime/cli/_render.py
 supersedes: []
 superseded_by: null
+id: ADR-0154
+type: decision
 ---
 
 # ADR-0154: Plain-text CLI cards over a rich dependency
