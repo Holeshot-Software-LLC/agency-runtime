@@ -1255,13 +1255,6 @@ def _bind_contract_to_causing_unit(
     )
 
 
-def _high_risk_reason_codes(risk_classes: Sequence[str]) -> tuple[str, ...]:
-    return (
-        "high_risk_human_approval_required",
-        *(f"high_risk_class_{item}" for item in risk_classes),
-    )
-
-
 def _merged_composition(
     existing: WorkforceContract,
     extension: Mapping[str, Any],

@@ -1583,19 +1583,16 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="high-risk-hiring-erases-derived-class",
-        invariant=("A high-risk hiring failure identifies each derived content-free risk class."),
-        source_path="agency_runtime/core/workforce/hiring.py",
-        before=(
-            "    return (\n"
-            '        "high_risk_human_approval_required",\n'
-            '        *(f"high_risk_class_{item}" for item in risk_classes),\n'
-            "    )"
+        mutation_id="owner-approval-gate-severed",
+        invariant=(
+            "An owner-gated high-risk contract never instantiates without recorded approval."
         ),
-        after='    return ("high_risk_human_approval_required",)',
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before="    human_approval_required = compiled.human_approval_required",
+        after="    human_approval_required = False",
         test_node=(
             "tests/test_workforce_dynamic_hiring.py::"
-            "test_high_risk_hire_requires_approval_and_cli_receipt_remains_truthful"
+            "test_owner_gated_hire_waits_for_approval_then_materializes"
         ),
     ),
     DecisionMutation(
