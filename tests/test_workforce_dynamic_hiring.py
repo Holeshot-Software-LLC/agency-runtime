@@ -1106,7 +1106,13 @@ def test_deferred_hire_commits_only_with_the_preflight_ready_cas(tmp_path: Path)
     assert receipt_count == 3
 
 
-def test_deferred_hire_rechecks_the_daily_limit_at_commit(tmp_path: Path) -> None:
+def test_deferred_hire_commits_even_when_daily_count_exceeds_old_limit(
+    tmp_path: Path,
+) -> None:
+    """AR-241: the daily hire cap no longer rejects at commit time. A deferred
+    hire commits successfully even when a competing hire already pushed the
+    daily count past the old max_hires_per_day."""
+
     store = Store(tmp_path / "agency.db")
     config = replace(
         _config(),
@@ -1138,9 +1144,11 @@ def test_deferred_hire_rechecks_the_daily_limit_at_commit(tmp_path: Path) -> Non
     )
     assert competing.hired is True
 
-    with pytest.raises(RuntimeError, match="daily hiring limit changed before commit"):
-        commit_pending_contractor_hiring(pending.pending_commit, store=store)
-    assert store.get_roster_entry("quantum-build-engineer") is None
+    # AR-241: no RuntimeError — the daily cap no longer rejects at commit.
+    _case, worker = commit_pending_contractor_hiring(pending.pending_commit, store=store)
+    assert worker is not None
+    assert worker["agent_slug"] == "quantum-build-engineer"
+    assert store.get_roster_entry("quantum-build-engineer") is not None
 
 
 def test_codex_preflight_hydrates_and_commits_a_deferred_contractor(
@@ -2015,7 +2023,15 @@ def test_route_hires_and_assigns_real_gap_in_same_preflight(tmp_path: Path, monk
             ("unit-quantum-build", "unit-photonic-build"),
             True,
         ),
-        (2, 0, False, ("abstained", "not_attempted"), ("unit-quantum-build",), False),
+        # AR-241: daily hire cap removal — max_daily=0 no longer rejects.
+        (
+            2,
+            0,
+            False,
+            ("hired", "hired"),
+            ("unit-quantum-build", "unit-photonic-build"),
+            True,
+        ),
     ],
 )
 def test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful(
@@ -2158,7 +2174,7 @@ def test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful(
         config,
         workforce=replace(
             config.workforce,
-            max_hires_per_task=max_hires,
+            max_hires_per_turn=max_hires,
             max_hires_per_day=max_daily,
         ),
     )
@@ -2190,8 +2206,6 @@ def test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful(
         assert result["hiring_events"][1]["reason_codes"] == ["task_hiring_limit_reached"]
     if decline_first:
         assert result["hiring_events"][0]["reason_codes"] == ["hiring_inference_abstained"]
-    if max_daily == 0:
-        assert result["hiring_events"][0]["reason_codes"] == ["daily_hiring_limit_reached"]
-        assert result["hiring_events"][1]["reason_codes"] == ["daily_hiring_limit_reached"]
+    # AR-241: max_daily == 0 no longer rejects (daily cap removed).
     receipt = project_durable_routing_receipt(result)
     assert [item["status"] for item in receipt["hiring"]["events"]] == list(expected_statuses)

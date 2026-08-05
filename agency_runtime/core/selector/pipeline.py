@@ -1252,7 +1252,7 @@ def _run_gap_hiring(
         hireable = tuple(
             unit_id for unit_id in _hireable_gap_units(outcome) if unit_id not in attempted_units
         )
-        if not hireable or workforce_changes >= config.workforce.max_hires_per_task:
+        if not hireable or workforce_changes >= config.workforce.max_hires_per_turn:
             break
         unit_id = hireable[0]
         attempted_units.add(unit_id)
@@ -1334,7 +1334,7 @@ def _run_gap_hiring(
         events_by_unit,
         hiring_allowed=hiring_allowed,
         daily_limit_reached=daily_limit_reached,
-        max_hires=config.workforce.max_hires_per_task,
+        max_hires=config.workforce.max_hires_per_turn,
         workforce_changes=workforce_changes,
         store_available=store is not None,
     )

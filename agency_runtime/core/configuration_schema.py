@@ -425,6 +425,8 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         "min_margin",
         "max_hires_per_task",
         "max_hires_per_day",
+        "max_hires_per_turn",
+        "daily_hire_alert_threshold",
         "auto_promote_successes",
         "contractor_review_days",
         "hiring_repair_budget",
@@ -465,6 +467,12 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         ),
         "max_hires_per_day": lambda item: _integer(
             item, "workforce.max_hires_per_day", minimum=0, maximum=100
+        ),
+        "max_hires_per_turn": lambda item: _integer(
+            item, "workforce.max_hires_per_turn", minimum=1, maximum=256
+        ),
+        "daily_hire_alert_threshold": lambda item: _integer(
+            item, "workforce.daily_hire_alert_threshold", minimum=0, maximum=10_000
         ),
         "auto_promote_successes": lambda item: _integer(
             item, "workforce.auto_promote_successes", minimum=0, maximum=10_000

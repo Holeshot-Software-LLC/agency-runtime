@@ -817,13 +817,7 @@ def _repair_rejected_candidate(
             reason_codes=("hiring_repair_invalid", *repaired.reason_codes)[:MAX_ITEMS],
             attempts=repair_attempts,
         )
-    if repaired.action == "hire" and _today_hires(store) >= config.workforce.max_hires_per_day:
-        return ContractorHiringOutcome(
-            "abstained",
-            ("daily_hiring_limit_reached",),
-            contract=repaired.contract,
-            attempts=repair_attempts,
-        )
+    # AR-241: daily hire cap removal — no rejection, only visibility.
     critic_result, critic_attempt = _invoke(
         critic_providers,
         prompt=_critic_prompt(request, unit, repaired, hiring_input=hiring_input),
@@ -1796,8 +1790,6 @@ def hire_contractor_for_gap(
     providers = configured_workforce_providers(config, stage="hiring", route_key="workforce.hiring")
     if not providers:
         return ContractorHiringOutcome("abstained", ("hiring_inference_unavailable",))
-    if config.workforce.max_hires_per_task < 1:
-        return ContractorHiringOutcome("abstained", ("task_hiring_limit_reached",))
     workforce = [item.to_dict() for item in contracts]
     verified_gap_reasons = tuple(
         dict.fromkeys(
@@ -1844,13 +1836,10 @@ def hire_contractor_for_gap(
     )
     if isinstance(candidate, ContractorHiringOutcome):
         return candidate
-    if candidate.action == "hire" and _today_hires(store) >= config.workforce.max_hires_per_day:
-        return ContractorHiringOutcome(
-            "abstained",
-            ("daily_hiring_limit_reached",),
-            contract=candidate.contract,
-            attempts=(hire_attempt,),
-        )
+    # AR-241: the daily hire count is recorded for dashboard visibility but no
+    # longer rejects. The amend-first default (AR-240) is the real guard.
+    daily_hire_count = _today_hires(store) if candidate.action == "hire" else 0
+    daily_hire_alert = daily_hire_count >= config.workforce.daily_hire_alert_threshold
     critic_providers = configured_workforce_providers(
         config, stage="critic", route_key="workforce.hiring.critic"
     )
@@ -2000,6 +1989,8 @@ def hire_contractor_for_gap(
                 "reasons": list(security_reasons),
                 "same_provider_as_creator": same_provider_as_creator,
             },
+            "daily_hire_count": daily_hire_count,
+            "daily_hire_alert": daily_hire_alert,
         },
         "model_evidence": {"inference_required": True, "receipts": receipts},
         "contract_hash": _digest(contract_document),
@@ -2070,9 +2061,9 @@ def commit_pending_contractor_hiring(
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
     """Apply one validated pending hire through the existing Store invariants."""
 
-    if pending.action == "hire" and _today_hires(store) >= pending.max_hires_per_day:
-        raise RuntimeError("daily hiring limit changed before commit")
-
+    # AR-241: the daily hire cap no longer rejects at commit time. The
+    # max_hires_per_day field is retained on PendingHiringCommit for ledger
+    # visibility but is not enforced as a hard gate.
     case = store.create_hiring_case(**pending.case_arguments)
     if bool(pending.case_arguments["human_approval_required"]):
         return case, None

@@ -260,6 +260,8 @@ class WorkforceConfig:
     min_margin: float = 0.1
     max_hires_per_task: int = 1
     max_hires_per_day: int = 3
+    max_hires_per_turn: int = 16
+    daily_hire_alert_threshold: int = 50
     auto_promote_successes: int = 0
     contractor_review_days: int = 30
     hiring_repair_budget: int = 3
@@ -623,6 +625,8 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             min_margin=float(workforce_raw.get("min_margin", 0.1)),
             max_hires_per_task=int(workforce_raw.get("max_hires_per_task", 1)),
             max_hires_per_day=int(workforce_raw.get("max_hires_per_day", 3)),
+            max_hires_per_turn=int(workforce_raw.get("max_hires_per_turn", 16)),
+            daily_hire_alert_threshold=int(workforce_raw.get("daily_hire_alert_threshold", 50)),
             auto_promote_successes=int(workforce_raw.get("auto_promote_successes", 0)),
             contractor_review_days=int(workforce_raw.get("contractor_review_days", 30)),
             hiring_repair_budget=int(workforce_raw.get("hiring_repair_budget", 3)),
@@ -1204,6 +1208,8 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "min_margin": cfg.workforce.min_margin,
             "max_hires_per_task": cfg.workforce.max_hires_per_task,
             "max_hires_per_day": cfg.workforce.max_hires_per_day,
+            "max_hires_per_turn": cfg.workforce.max_hires_per_turn,
+            "daily_hire_alert_threshold": cfg.workforce.daily_hire_alert_threshold,
             "auto_promote_successes": cfg.workforce.auto_promote_successes,
             "contractor_review_days": cfg.workforce.contractor_review_days,
             "hiring_repair_budget": cfg.workforce.hiring_repair_budget,

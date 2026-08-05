@@ -155,6 +155,12 @@ _SET_VALIDATORS = {
     "workforce.max_hires_per_day": lambda item: _integer(
         item, "workforce.max_hires_per_day", minimum=0, maximum=100
     ),
+    "workforce.max_hires_per_turn": lambda item: _integer(
+        item, "workforce.max_hires_per_turn", minimum=1, maximum=256
+    ),
+    "workforce.daily_hire_alert_threshold": lambda item: _integer(
+        item, "workforce.daily_hire_alert_threshold", minimum=0, maximum=10_000
+    ),
     "workforce.auto_promote_successes": lambda item: _integer(
         item, "workforce.auto_promote_successes", minimum=0, maximum=10_000
     ),
