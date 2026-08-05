@@ -94,7 +94,7 @@ trial proves both the product projection and the wider README story.
 - [x] Every PR 198 and PR 201 review thread has a commit-backed response and
   accurate resolved disposition.
 - [ ] **codex**: The fail-closed repair is reviewed, merged, and exact-installed.
-- [ ] **zcode**: The fail-closed repair is reviewed, merged, and exact-installed.
+- [x] **zcode**: The fail-closed repair is reviewed, merged, and exact-installed.
 - [ ] **claude**: The fail-closed repair is reviewed, merged, and exact-installed.
 - [ ] **hermes**: The fail-closed repair is reviewed, merged, and exact-installed.
 - [ ] **openclaw**: The fail-closed repair is reviewed, merged, and exact-installed.

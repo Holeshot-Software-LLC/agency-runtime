@@ -139,7 +139,7 @@ serialized opaque launch semantics.
 - [x] Focused warning-strict tests and curated mutations pass.
 - [ ] The post-review named fast verification spine passes.
 - [ ] **codex**: The reviewed repair is merged and exact-installed.
-- [ ] **zcode**: The reviewed repair is merged and exact-installed.
+- [x] **zcode**: The reviewed repair is merged and exact-installed.
 - [ ] **claude**: The reviewed repair is merged and exact-installed.
 - [ ] **hermes**: The reviewed repair is merged and exact-installed.
 - [ ] **openclaw**: The reviewed repair is merged and exact-installed.
