@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-08-01
+updated: 2026-08-05
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
@@ -106,9 +106,12 @@ with 278 audited specialists already on payroll.
    or ordinary conversation.
 3. It **plans** the work into typed units (no agent names yet) and describes
    the ideal owner for each unit from the open-ended pool.
-4. It **recalls** every approved, enabled specialist that could plausibly fit
-   (typed contract fields: artifact, lifecycle, domain, stack, capability,
-   authority).
+4. It **recalls** a bounded, coverage-first sample of enabled specialists that
+   could plausibly fit (typed contract fields: artifact, lifecycle, domain,
+   stack, capability, authority — up to 24 candidates per unit, including
+   untyped wildcard workers). Recall lists unapproved workers with their
+   ineligibility flagged; approval is hard-enforced later, at verification,
+   where an unapproved worker can never execute.
 5. The **recruiter** uses inference to accept a roster specialist only when it
    faithfully matches that ideal. Zero relevant candidates is a valid explicit
    gap, not a reason to invent a nearest worker. If inference is unavailable or
@@ -193,24 +196,21 @@ assignment. It preserves the ciphertext and requires the unencrypted native
 task label or canonical child path to resolve exactly one persisted row.
 Preflight privately stages that row's exact canonical write paths while
 plaintext is still available; only a genuinely repository-wide row receives
-`.`. `SubagentStart` then injects a token-free v2 context carrying that row's
-immutable specialist prompt and content-free goal hash. It consumes the one-use
-activation receipt against the observed child identity before another opaque
-child may launch.
+`.`. `SubagentStart` then consumes the one-use activation receipt against the
+observed child identity and injects a token-free direct delivery (v4) carrying
+that row's immutable specialist prompt, its content-free goal hash, and the
+execution contract for the same turn.
 
-Codex's first spawned turn is deliberately activation-only because a terminal
-spawn acknowledgement does not prove the child executed its task. After that
-turn completes, the parent sends the plan row's exact goal-hash-bound
-`[AGENCY EXACT TASK EXECUTION v1]` envelope through `followup_task` once and
-waits again. The parent hook binds the opaque follow-up to that exact activated
-child and atomically claims it once. Current Codex persists the same ciphertext
-in the parent call and the child's later `NEW_TASK` record, so Agency requires
-those values to match exactly together with the Store tool-use ID, child
-lineage, canonical task path, and second terminal turn. The content-free
-work-unit and goal identity comes from the already verified activation context;
-ciphertext is compared transiently and never retained in evidence. `send_message`,
-retries, child reuse, missing or duplicate triggers, and cross-child evidence
-fail closed. Payloads are byte-budgeted (64 KiB) and never silently truncated.
+The specialist executes in that initial child turn — Codex delegation is a
+single direct spawn. The injected guidance explicitly forbids `send_message`,
+`followup_task`, spawn retries, and child reuse; the one-use Store claim makes
+any of them fail closed rather than double-dispatch. (An older two-turn
+topology — activation-only first turn, then one goal-hash-bound
+`[AGENCY EXACT TASK EXECUTION v1]` envelope through `followup_task` — remains
+an accepted *alternate proof shape* in canary and rollout verification for
+sessions recorded under it, but it is no longer the prescribed flow.) Outbound
+hook payloads are byte-budgeted at 64 KiB and inbound events at 1 MiB; both
+directions fail closed on overflow rather than silently truncating.
 
 ```mermaid
 sequenceDiagram
@@ -228,11 +228,7 @@ sequenceDiagram
         Host->>Hook: PostToolUse (spawn acknowledged)
         Host->>Hook: SubagentStart (observed child identity)
         Hook->>Store: consume the only unconsumed grant
-        Hook-->>Child: token-free v2 specialist context + goal hash
-        Child-->>Host: activation readiness only
-        Host->>Hook: followup_task (host-encrypted execution trigger)
-        Hook->>Store: claim one-use execution dispatch
-        Hook-->>Host: allow exact follow-up once
+        Hook-->>Child: token-free v4 direct delivery (specialist + goal hash + execution contract)
     end
     Host->>Child: execute the authorized specialist turn
     Child-->>Host: result
@@ -241,12 +237,12 @@ sequenceDiagram
 
 Codex does not currently expose the decrypted spawn assignment or an
 authenticated digest to either relevant hook. The exact plan label, byte-equal
-parent and child ciphertext, isolated workspace, goal-hash-bound v2 context,
-one-use Store dispatch, and two causal child turns form the observable binding;
-Agency rejects missing or ambiguous rows rather than falling back to an untyped
-worker. Current Codex opaque children are scheduled one at a time because the
-host does not expose enough authenticated task identity to correlate multiple
-grants awaiting `SubagentStart`.
+parent and child ciphertext, isolated workspace, goal-hash-bound direct
+delivery, one-use Store consumption, and the causal child turn form the
+observable binding; Agency rejects missing or ambiguous rows rather than
+falling back to an untyped worker. Current Codex opaque children are scheduled
+one at a time because the host does not expose enough authenticated task
+identity to correlate multiple grants awaiting `SubagentStart`.
 
 ### MCP-plugin hosts (Hermes, OpenClaw)
 
@@ -264,10 +260,13 @@ Selection is inference-owned:
    (outcome, artifact, lifecycle, domain, stack, capabilities, authority,
    dependencies).
 2. **Define the ideal** — inference asks who an exacting owner would want for
-   each unit if the possible-role pool were unlimited. The parent model and a
-   generalist are never candidates.
-3. **Recall** — deterministic typed recall returns plausibly relevant audited
-   workers without ranking or choosing them; an empty result remains valid.
+   each unit if the possible-role pool were unlimited. The parent model is
+   structurally excluded (it has no roster identity a nomination can name);
+   the recruiter and critic are instructed never to stretch a generalist into
+   the role, though that half is a prompt rule, not a deterministic gate.
+3. **Recall** — deterministic typed recall returns a bounded, coverage-first
+   sample of plausibly relevant audited workers without ranking or choosing
+   them; an empty result remains valid.
 4. **Recruit** — the recruiter explicitly decides `staff` or `gap` per unit and
    classifies only faithful roster candidates as `required`, `acceptable`, or
    `forbidden`. A gap may contain no roster candidate at all.
@@ -285,9 +284,9 @@ A declared gap is a contractor specification. Agency:
 - **Compiles** a structured contract through a fixed, security-reviewed prompt
   template (never an unrestricted model-written system prompt).
 - **Criticizes** it with an independent hiring-critic inference pass. If that
-  critic rejects a deterministically valid proposal, the default four-call
-  budget permits one complete inference-authored replacement and one fresh
-  independent critique; a second rejection remains terminal.
+  critic rejects a deterministically valid proposal and at least two calls
+  remain in the hiring budget, one complete inference-authored replacement
+  runs with a fresh independent critique; a second rejection remains terminal.
 - **Risk-tiers** it deterministically: injection / policy-override pattern
   screens, invisible and bidirectional Unicode rejection, denial-aware
   high-risk domain markers (legal, medical, financial, destructive, approval,
@@ -418,6 +417,38 @@ agency config set delegation.child_inference_budget 4
 If the configured chain is unavailable or invalid, Agency reports a terminal
 selection failure rather than pretending deterministic candidates were
 model-selected.
+
+**Per-stage profiles and per-harness routing.** Named `inference.profiles`
+assign a model and thinking level to each selection stage, across every
+provider kind: LiteLLM routers and API-key endpoints (`adapter: litellm`,
+`anthropic`, `openai-compatible`, `ollama`) and OAuth subscriptions through
+`adapter: cli` with `transport: codex` or `transport: claude` (codex forwards
+`thinking_level` as its reasoning effort; the claude CLI has no per-call
+thinking control, so a configured level is recorded as unsupported).
+`inference.harnesses.<host>` sections scope a `default_profile` and `routes`
+to the harness that owns the turn, so one installation staffs from a
+different subscription per host — e.g. Claude turns on an Anthropic
+subscription, Codex turns on an OpenAI subscription:
+
+```yaml
+inference:
+  profiles:
+    claude-haiku: {adapter: cli, transport: claude, model: haiku, timeout_ms: 120000}
+    claude-sonnet: {adapter: cli, transport: claude, model: sonnet, timeout_ms: 120000}
+    codex-fast: {adapter: cli, transport: codex, model: gpt-5.6-luna, thinking_level: low, timeout_ms: 120000}
+  harnesses:
+    claude:
+      default_profile: claude-haiku
+      routes:
+        workforce.recruiter: claude-sonnet
+        workforce.recruiter.critic: claude-sonnet
+    codex:
+      default_profile: codex-fast
+```
+
+Precedence: harness routes → harness default → global routes → global default
+→ the legacy provider chain. `AGENCY_INFERENCE_HARNESS` naming a configured
+section overrides harness selection for terminal testing.
 
 Default files: config `~/.agency-runtime/agency.yaml`, database
 `~/.agency-runtime/agency.db`, global switch `~/.agency-runtime/run/control.json`.
@@ -697,15 +728,18 @@ Agency/Agencies delegated: code-reviewer via generic-worker/spawn_agent
 Skills loaded: none
 Actual Model selected: parent task: host-selected (not observable to Agency); workforce inference: gpt-5.6-luna -> codex/gpt-5.6-luna; specialist: launch model not evidenced by this receipt
 Recruited via: inference
-Why: Security review requested for auth code
-How it shaped outcome: The isolated reviewer completed the exact security-review unit
 ```
 
-The **`Recruited via`** line is machine-stamped (`inference`, an inference-backed
-`cached` decision, or `none`) — distinct from the model-authored `Why`. The
-header is a compact projection of correlated Store evidence, not independent
-proof. A missing, malformed, corrected, or evidence-mismatched header makes the
-turn fail; successful product evidence requires correction count zero.
+The canonical header is exactly these five machine-stamped lines (AR-224
+removed the earlier model-authored `Why` / `How it shaped outcome` lines from
+the contract). The **`Recruited via`** value is stamped from the durable
+routing receipt — `inference`, an inference-backed `cached` decision,
+`deterministic` for turns that need no specialist selection (exact control
+commands, plain conversation), or `none` on a staffing failure — and can never
+be model-authored. The header is a compact projection of correlated Store
+evidence, not independent proof. A missing, malformed, corrected, or
+evidence-mismatched header makes the turn fail; successful product evidence
+requires correction count zero.
 
 Agency constructs that header before the first visible response. Native Codex
 receives exact Store-backed snapshots at preflight and after recorded tool or
@@ -733,8 +767,9 @@ recorded in the bundled roster manifest and in [LICENSE](LICENSE).)
   activation** step, so nothing enters the live roster unreviewed.
 - A nightly workflow runs the upstream delta audit and publishes review evidence.
 - Enrichment (`scripts/enrich_workforce_contracts.py`) regenerates typed
-  `stacks`/`domains` and user-facing `scope_qualifiers` for the roster so the
-  deterministic verifier scores real stack coverage.
+  `stacks` and user-facing `scope_qualifiers` for the roster so the
+  deterministic verifier scores real stack coverage; `domains` come from a
+  read-time contract overlay rather than the enrichment script.
 
 ---
 
@@ -755,10 +790,24 @@ with stubs; a canary catches what tests can't — a broken hook registration, a
 wrong config path, or a provider that times out. It refuses to claim success
 without explicit confirmation before any live backend call.
 
+Deterministic plugin smoke (no live model calls):
+
 ```bash
 agency smoke --agent codex --json
 agency smoke --all --json
 ```
+
+Live host canaries print their exact confirmation phrase on the readiness
+report and run only when you pass it back:
+
+```bash
+agency host-canary claude
+agency host-canary claude --execute --confirm "RUN LIVE claude CANARY"
+```
+
+Claude canaries always run in a disposable isolated profile;
+`--profile-scope current-profile` and `agency install --agent codex
+--verify-activation` are Codex-only surfaces.
 
 ---
 
