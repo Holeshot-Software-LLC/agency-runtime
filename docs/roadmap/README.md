@@ -241,7 +241,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-221` | [Preserve Codex product execution boundaries](issue-AR-221-preserve-codex-product-execution-boundaries.md) | in_progress | p0 | product | pending authorization |
 | `AR-222` | [Reconcile legacy work-unit integrity tests](issue-AR-222-reconcile-legacy-work-unit-integrity-tests.md) | open | p2 | testing | pending authorization |
 | `AR-223` | [Prove Codex child task execution](issue-AR-223-prove-codex-child-task-execution.md) | done | p0 | product | [#228](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/228) |
-| `AR-224` | [Simplify Agency evidence header](issue-AR-224-simplify-agency-evidence-header.md) | open | p1 | product | pending authorization |
+| `AR-224` | [Simplify Agency evidence header](issue-AR-224-simplify-agency-evidence-header.md) | done | p1 | product | [#261](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/261) |
 | `AR-225` | [Align product scenario with independent validator](issue-AR-225-align-product-scenario-with-independent-validator.md) | done | p0 | testing | tracker creation pending authorization |
 | `AR-226` | [Repair automatic pull-request verification](issue-AR-226-repair-automatic-pr-verification.md) | done | p0 | release | tracker creation pending authorization |
 | `AR-227` | [Expand the specialist roster](issue-AR-227-expand-specialist-roster.md) | done | p1 | roster-governance | [PR #236](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/236) |
