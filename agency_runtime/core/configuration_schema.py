@@ -428,6 +428,7 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         "auto_promote_successes",
         "contractor_review_days",
         "hiring_repair_budget",
+        "amend_overlap_threshold",
     }
     if set(section) - allowed:
         raise _error("workforce", "contains unsupported fields")
@@ -473,6 +474,9 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         ),
         "hiring_repair_budget": lambda item: _integer(
             item, "workforce.hiring_repair_budget", minimum=0, maximum=8
+        ),
+        "amend_overlap_threshold": lambda item: _number(
+            item, "workforce.amend_overlap_threshold", minimum=0.0, maximum=1.0
         ),
     }
     result = {name: validators[name](item) for name, item in section.items()}

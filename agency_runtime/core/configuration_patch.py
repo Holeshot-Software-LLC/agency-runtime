@@ -164,6 +164,9 @@ _SET_VALIDATORS = {
     "workforce.hiring_repair_budget": lambda item: _integer(
         item, "workforce.hiring_repair_budget", minimum=0, maximum=8
     ),
+    "workforce.amend_overlap_threshold": lambda item: _number(
+        item, "workforce.amend_overlap_threshold", minimum=0.0, maximum=1.0
+    ),
     "agents.disabled": lambda item: list(normalize_disabled_agents(item)),
     "store.db_path": lambda item: _string(item, "store.db_path", allow_empty=False, maximum=4096),
     "server.host": lambda item: _loopback_host(item, "server.host"),

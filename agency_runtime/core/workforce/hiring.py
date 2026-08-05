@@ -56,11 +56,14 @@ _HIRE_SYSTEM = (
     "inference_declared_gap and no_safe_sufficient_team, the recruiter explicitly declared "
     "this unit uncovered and the staffing verifier confirmed that declaration against the "
     "nominated team. Independently compare the required capability against every supplied worker, "
-    "including disabled and non-active workers. Return only the closed JSON contract. Hire "
-    "a distinct, narrowly scoped specialist for every proven gap, even when its first scope "
-    "is this single work unit; do not require a broad or pre-existing reusable role. If a "
-    "disabled worker covers the gap, abstain. Do not stretch or amend a near-match to fill an "
-    "ordinary task gap: the open-ended pool makes a distinct exact specialist safer. Do not "
+    "including disabled and non-active workers. Return only the closed JSON contract. Prefer "
+    "amending a near-match when one coherent existing worker covers most of the gap (set "
+    "action to amend with a coherent_amendment_target and a high maximum_overlap); only hire "
+    "a distinct specialist when no coherent amendment target exists. Hire a distinct, narrowly "
+    "scoped specialist for every proven gap that no existing worker can safely cover, even when "
+    "its first scope is this single work unit; do not require a broad or pre-existing reusable "
+    "role. If a disabled worker covers the gap, abstain. Do not stretch an incoherent near-match "
+    "into a generalist: when the overlap is low, a distinct exact specialist is safer. Do not "
     "invent composition edges: relationships must be empty unless one exact typed relationship "
     "to a supplied worker is necessary and coherent. Make evidence_requirements cover every "
     "item in uncovered_work_unit.acceptance_evidence, and make positive evaluations exercise "
@@ -761,6 +764,7 @@ def _repair_rejected_candidate(
     budget: _CallBudget,
     staffing_context: StaffingContext | None,
     allow_existing_worker_amendment: bool,
+    amend_overlap_threshold: float,
     invoker: StructuredInvoker,
 ) -> (
     tuple[_ValidatedCandidate, Mapping[str, Any], tuple[HiringInferenceAttempt, ...]]
@@ -804,6 +808,7 @@ def _repair_rejected_candidate(
         store=store,
         staffing_context=staffing_context,
         allow_existing_worker_amendment=allow_existing_worker_amendment,
+        amend_overlap_threshold=amend_overlap_threshold,
     )
     repair_attempts = (*attempts, repair_attempt)
     if isinstance(repaired, ContractorHiringOutcome):
@@ -985,6 +990,7 @@ def _safety_repair_loop(
     budget: _CallBudget,
     staffing_context: StaffingContext | None,
     allow_existing_worker_amendment: bool,
+    amend_overlap_threshold: float,
     invoker: StructuredInvoker,
 ) -> (
     tuple[
@@ -1049,6 +1055,7 @@ def _safety_repair_loop(
             store=store,
             staffing_context=staffing_context,
             allow_existing_worker_amendment=allow_existing_worker_amendment,
+            amend_overlap_threshold=amend_overlap_threshold,
         )
         if isinstance(repaired, ContractorHiringOutcome):
             return replace(
@@ -1643,6 +1650,29 @@ def _candidate_documents(
     return contract, agent, workforce_contract, worker
 
 
+def _amendment_should_fall_through(
+    action: str,
+    duplicate: Mapping[str, Any],
+    allow_existing_worker_amendment: bool,
+    amend_overlap_threshold: float,
+) -> bool:
+    """Return True when an amend proposal should fall through to hire (AR-240).
+
+    The amendment falls through when the overlap is below the threshold or no
+    coherent amendment target exists, so an incoherent near-match is not forced
+    into an amendment.
+    """
+
+    if action != "amend" or not allow_existing_worker_amendment:
+        return False
+    overlap = duplicate.get("maximum_overlap")
+    target = str(duplicate.get("coherent_amendment_target") or "").strip()
+    try:
+        return not (float(overlap) >= amend_overlap_threshold and bool(target))
+    except (TypeError, ValueError):
+        return True
+
+
 def _validated_candidate(
     raw: Mapping[str, Any],
     unit: WorkUnit,
@@ -1652,6 +1682,7 @@ def _validated_candidate(
     store: Any,
     staffing_context: StaffingContext | None,
     allow_existing_worker_amendment: bool,
+    amend_overlap_threshold: float = 0.7,
 ) -> _ValidatedCandidate | ContractorHiringOutcome:
     gap = raw.get("gap_evidence")
     duplicate = raw.get("duplicate_evidence")
@@ -1675,11 +1706,21 @@ def _validated_candidate(
         return failure(decision_failure)
     if action == "amend" and not allow_existing_worker_amendment:
         return failure("task_gap_requires_distinct_specialist")
+    # Amend-first gate (AR-240): when the recruiter proposes an amendment but
+    # the overlap is below threshold or no coherent target exists, fall through
+    # to the standard hire path rather than forcing an incoherent amendment.
+    amendment_fell_through = _amendment_should_fall_through(
+        action, duplicate, allow_existing_worker_amendment, amend_overlap_threshold
+    )
+    if amendment_fell_through:
+        action = "hire"
     if gap.get("uncovered_work_unit") != unit.unit_id:
         return failure("hiring_unit_mismatch")
     if gap.get("disabled_covering_workers"):
         return failure("disabled_worker_covers_gap")
-    if duplicate.get("decision") != action:
+    if duplicate.get("decision") != action and not (
+        amendment_fell_through and duplicate.get("decision") == "amend"
+    ):
         return failure("duplicate_decision_mismatch")
     try:
         contract = parse_employment_contract(raw.get("contract"))
@@ -1740,13 +1781,14 @@ def hire_contractor_for_gap(
     defer_commit: bool = False,
     staffing_context: StaffingContext | None = None,
     gap_reason_codes: Sequence[str] = (),
-    allow_existing_worker_amendment: bool = False,
+    allow_existing_worker_amendment: bool = True,
     invoker: StructuredInvoker = invoke_structured_provider_result,
 ) -> ContractorHiringOutcome:
     """Prove, criticize, persist, and immediately enable one narrow contractor.
 
-    Ordinary task staffing never expands a near-match into a generalist. The
-    amendment switch exists only for explicit legacy workforce maintenance.
+    The amend-first default (AR-240) prefers amending a near-match with a
+    coherent target and sufficient overlap over spawning a duplicate. The
+    ``amend_overlap_threshold`` gates when amend is coherent enough to apply.
     """
 
     if not request.strip():
@@ -1798,6 +1840,7 @@ def hire_contractor_for_gap(
         store=store,
         staffing_context=staffing_context,
         allow_existing_worker_amendment=allow_existing_worker_amendment,
+        amend_overlap_threshold=config.workforce.amend_overlap_threshold,
     )
     if isinstance(candidate, ContractorHiringOutcome):
         return candidate
@@ -1845,6 +1888,7 @@ def hire_contractor_for_gap(
             budget=budget,
             staffing_context=staffing_context,
             allow_existing_worker_amendment=allow_existing_worker_amendment,
+            amend_overlap_threshold=config.workforce.amend_overlap_threshold,
             invoker=invoker,
         )
         if isinstance(repair, ContractorHiringOutcome):
@@ -1897,6 +1941,7 @@ def hire_contractor_for_gap(
             budget=budget,
             staffing_context=staffing_context,
             allow_existing_worker_amendment=allow_existing_worker_amendment,
+            amend_overlap_threshold=config.workforce.amend_overlap_threshold,
             invoker=invoker,
         )
         if isinstance(repair, ContractorHiringOutcome):

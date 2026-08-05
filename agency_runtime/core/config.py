@@ -263,6 +263,7 @@ class WorkforceConfig:
     auto_promote_successes: int = 0
     contractor_review_days: int = 30
     hiring_repair_budget: int = 3
+    amend_overlap_threshold: float = 0.7
 
 
 @dataclass(frozen=True, slots=True)
@@ -625,6 +626,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             auto_promote_successes=int(workforce_raw.get("auto_promote_successes", 0)),
             contractor_review_days=int(workforce_raw.get("contractor_review_days", 30)),
             hiring_repair_budget=int(workforce_raw.get("hiring_repair_budget", 3)),
+            amend_overlap_threshold=float(workforce_raw.get("amend_overlap_threshold", 0.7)),
         ),
         inference=_build_inference(inference_raw),
         agents=AgentActivationConfig(
@@ -1205,6 +1207,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "auto_promote_successes": cfg.workforce.auto_promote_successes,
             "contractor_review_days": cfg.workforce.contractor_review_days,
             "hiring_repair_budget": cfg.workforce.hiring_repair_budget,
+            "amend_overlap_threshold": cfg.workforce.amend_overlap_threshold,
         },
         "agents": {"disabled": list(cfg.agents.disabled)},
         "store": {"db_path": cfg.store.db_path},

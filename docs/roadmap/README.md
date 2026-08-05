@@ -250,6 +250,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-236` | [Achieve full CLI and dashboard functional and presentational parity](issue-AR-236-achieve-full-cli-dashboard-parity.md) | open | p0 | operations | [#245](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245) |
 | `AR-237` | [Hiring list and show parity (sub-issue 1 of AR-236)](issue-AR-237-hiring-list-and-show-parity.md) | open | p0 | operations | [#246](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/246) |
 | `AR-238` | [Isolated security review with bounded repair (slices 2-3 of AR-235)](issue-AR-238-isolated-security-review-with-bounded-repair.md) | open | p0 | routing | pending authorization |
+| `AR-240` | [Amend-first staffing default (slice 4 of AR-235)](issue-AR-240-amend-first-staffing-default.md) | open | p0 | routing | pending authorization |
 
 ## Traceability
 
@@ -489,6 +490,7 @@ not stable internal identifiers.
 | [AR-236](issue-AR-236-achieve-full-cli-dashboard-parity.md) | `f629b63`; tracker created at issue #245; gap inventory in [parity analysis](../analysis/2026-08-04-cli-dashboard-parity.md); 10-sub-issue roadmap; planning pair only, sub-issue work pending user greenlight | None |
 | [AR-237](issue-AR-237-hiring-list-and-show-parity.md) | `064162d`, `5dc5925`; tracker created at issue #246; sub-issue 1 of AR-236; server risk_tier filter + 404 on unknown case, dashboard status + risk_tier filter form, CLI `--card` flag, `cli/_render.py` helper, focused tests | None |
 | [AR-238](issue-AR-238-isolated-security-review-with-bounded-repair.md) | `a331630`, `b5bd549`; slices 2-3 of AR-235; isolated `security_review` stage + bounded `safety_repair` loop; marker classes preserved as reviewer hints; reviewer is the gate | [ADR-0153](../decisions/0153-adopt-per-stage-inference-profile-routes.md) |
+| [AR-240](issue-AR-240-amend-first-staffing-default.md) | planning pair; slice 4 of AR-235; amend-first default + `amend_overlap_threshold` gate | None |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

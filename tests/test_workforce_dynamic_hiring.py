@@ -1319,7 +1319,11 @@ def test_hiring_decline_preserves_its_decision_stage(
     assert store.list_hiring_cases(limit=10) == []
 
 
-def test_task_gap_rejects_near_match_amendment_in_open_ended_pool(tmp_path: Path) -> None:
+def test_amend_first_default_amends_near_match_above_threshold(tmp_path: Path) -> None:
+    """AR-240: the amend-first default amends a near-match whose overlap is
+    above the threshold, rather than rejecting it. The existing worker's
+    revision is bumped and no duplicate is created."""
+
     store = Store(tmp_path / "agency.db")
     existing = _install_existing(store)
 
@@ -1332,14 +1336,51 @@ def test_task_gap_rejects_near_match_amendment_in_open_ended_pool(tmp_path: Path
         invoker=_invoker(
             _amendment_response(),
             {"approved": True, "reason_codes": []},
+            _SAFE_SECURITY_REVIEW,
         ),
     )
 
-    assert outcome.status == "abstained"
-    assert outcome.reason_codes == ("task_gap_requires_distinct_specialist",)
+    assert outcome.status == "amended"
+    assert outcome.reason_codes == ()
     assert len(store.list_workforce_workers(limit=10)) == 1
-    assert store.list_hiring_cases(limit=10) == []
-    assert store.get_workforce_worker(existing.agent_id)["revision"] == 0
+    assert store.get_workforce_worker(existing.agent_id)["revision"] == 1
+
+
+def test_amend_first_below_threshold_falls_through_to_hire(tmp_path: Path) -> None:
+    """AR-240: when the overlap is below the threshold, the amendment falls
+    through to the standard hire path. The recruiter's duplicate_evidence
+    decision stays amend but the low overlap makes the amendment incoherent,
+    so the candidate is treated as a distinct hire."""
+
+    store = Store(tmp_path / "agency.db")
+    existing = _install_existing(store)
+    # A distinct hire contract with a low-overlap amend proposal: the model
+    # proposed amend but the overlap is below threshold, so we fall through.
+    response = _hiring_response()
+    response["action"] = "amend"
+    response["duplicate_evidence"] = {
+        "decision": "amend",
+        "closest_workers": ["general-build-reviewer"],
+        "maximum_overlap": 0.4,
+        "coherent_amendment_target": "general-build-reviewer",
+        "reason": "Low overlap; amendment is incoherent.",
+    }
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (existing,),
+        store=store,
+        config=_config(),
+        invoker=_invoker(
+            response,
+            {"approved": True, "reason_codes": []},
+            _SAFE_SECURITY_REVIEW,
+        ),
+    )
+
+    assert outcome.status == "hired"
+    assert outcome.worker["agent_slug"] == "quantum-build-engineer"
 
 
 def test_amendment_binds_model_extension_slug_to_inferred_target(tmp_path: Path) -> None:

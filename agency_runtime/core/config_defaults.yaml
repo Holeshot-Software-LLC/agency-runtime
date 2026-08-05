@@ -75,6 +75,7 @@ workforce:
   auto_promote_successes: 0     # zero keeps promotion human-controlled
   contractor_review_days: 30
   hiring_repair_budget: 3       # bounded safety-repair turns after an unsafe verdict (AR-238)
+  amend_overlap_threshold: 0.7  # amend-first: overlap required to amend vs hire distinct (AR-240)
 
 # Per-stage inference profile routes. Mirrors the conveyor project shape
 # (conveyor/src/config/types.ts:294-310). When a route is missing, the resolver
