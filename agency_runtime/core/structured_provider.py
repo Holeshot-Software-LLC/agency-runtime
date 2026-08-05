@@ -288,13 +288,26 @@ def _response_text(
         blocks = data.get("content")
         if not isinstance(blocks, list):
             return ""
-        return "".join(
+        text = "".join(
             str(block["text"])
             for block in blocks
             if isinstance(block, Mapping)
             and block.get("type") == "text"
             and isinstance(block.get("text"), str)
         )
+        # The assistant prefill was "{"; strip any markdown fence the model
+        # added, then prepend the prefill so the JSON object is complete.
+        stripped = text.strip()
+        if stripped.startswith("```"):
+            lines = stripped.splitlines()
+            if lines and lines[0].strip().casefold() in {"```", "```json"}:
+                lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            stripped = "\n".join(lines).strip()
+        if stripped.startswith("{"):
+            return stripped
+        return "{" + stripped
     choices = data.get("choices")
     first = choices[0] if isinstance(choices, list) and choices else None
     message = first.get("message") if isinstance(first, Mapping) else None
@@ -338,11 +351,18 @@ def _http_payload(
             "/api/chat",
         )
     if provider_type == "anthropic":
+        schema_instruction = (
+            f"{system_prompt}\n\nReturn ONLY a single valid JSON object matching this "
+            f"schema (no prose, no markdown, no explanation):\n{json.dumps(schema, ensure_ascii=False)}"
+        )
         payload: dict[str, Any] = {
-            "max_tokens": 2048,
-            "messages": [{"content": prompt, "role": "user"}],
+            "max_tokens": 4096,
+            "messages": [
+                {"content": prompt, "role": "user"},
+                {"content": "{", "role": "assistant"},
+            ],
             "model": provider.model,
-            "system": system_prompt,
+            "system": schema_instruction,
             "temperature": 0,
         }
         if provider.reasoning_effort in _ANTHROPIC_THINKING_BUDGETS:
