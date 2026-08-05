@@ -252,7 +252,7 @@ class WorkforceConfig:
     fast_call_budget: int = 4
     balanced_call_budget: int = 4
     strict_call_budget: int = 5
-    hiring_call_budget: int = 4
+    hiring_call_budget: int = 6
     max_work_units: int = 16
     max_selected_per_unit: int = 4
     max_selected_total: int = 16
@@ -262,6 +262,7 @@ class WorkforceConfig:
     max_hires_per_day: int = 3
     auto_promote_successes: int = 0
     contractor_review_days: int = 30
+    hiring_repair_budget: int = 3
 
 
 @dataclass(frozen=True, slots=True)
@@ -613,7 +614,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             fast_call_budget=int(workforce_raw.get("fast_call_budget", 4)),
             balanced_call_budget=int(workforce_raw.get("balanced_call_budget", 4)),
             strict_call_budget=int(workforce_raw.get("strict_call_budget", 5)),
-            hiring_call_budget=int(workforce_raw.get("hiring_call_budget", 4)),
+            hiring_call_budget=int(workforce_raw.get("hiring_call_budget", 6)),
             max_work_units=int(workforce_raw.get("max_work_units", 16)),
             max_selected_per_unit=int(workforce_raw.get("max_selected_per_unit", 4)),
             max_selected_total=int(workforce_raw.get("max_selected_total", 16)),
@@ -623,6 +624,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             max_hires_per_day=int(workforce_raw.get("max_hires_per_day", 3)),
             auto_promote_successes=int(workforce_raw.get("auto_promote_successes", 0)),
             contractor_review_days=int(workforce_raw.get("contractor_review_days", 30)),
+            hiring_repair_budget=int(workforce_raw.get("hiring_repair_budget", 3)),
         ),
         inference=_build_inference(inference_raw),
         agents=AgentActivationConfig(
@@ -1202,6 +1204,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "max_hires_per_day": cfg.workforce.max_hires_per_day,
             "auto_promote_successes": cfg.workforce.auto_promote_successes,
             "contractor_review_days": cfg.workforce.contractor_review_days,
+            "hiring_repair_budget": cfg.workforce.hiring_repair_budget,
         },
         "agents": {"disabled": list(cfg.agents.disabled)},
         "store": {"db_path": cfg.store.db_path},

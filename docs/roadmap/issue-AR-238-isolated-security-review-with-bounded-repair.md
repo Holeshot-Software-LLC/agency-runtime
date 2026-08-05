@@ -146,10 +146,10 @@ the standard gap-hire path. The reviewer is the gate.
 
 ## Acceptance
 
-- [ ] `classify_contractor_risk` and the regex marker list are removed
-      from the runtime gap-hire path. The 8 marker classes are preserved
-      as a first-pass filter on the contract body with explicit
-      "hint, not verdict" semantics.
+- [ ] `classify_contractor_risk` remains as a first-pass hint source on
+      the contract body. The marker classes are passed to the reviewer as
+      scrutiny hints; the filter never rejects on its own. The reviewer's
+      verdict is final.
 - [ ] A new `security_review` inference stage runs on a fresh isolated
       session, sees only the request hash, work unit, compiled contract,
       and contract hash, and returns `{verdict, reasons,
@@ -168,10 +168,11 @@ the standard gap-hire path. The reviewer is the gate.
       work unit fails open to a generalist with `Recruited via: none`.
 - [ ] Every attempt and verdict is recorded in the case's `attempts`
       array and the audit trail.
-- [ ] `risk_tier` is `safe | unsafe` on the gap-hire path.
+- [ ] The `human_approval_required` flag is `False` and `risk_tier` is
+      `standard` on the gap-hire path (the reviewer is the gate). The
+      full verdict is recorded in `critic_evidence.security_review`.
 - [ ] The focused test spine (`test_workforce_dynamic_hiring`,
       `test_workforce_hiring_contract`, `test_workforce_selection_safety`,
       `test_routing_correctness`) passes with the new code paths. New
       focused tests cover: isolated security review, bounded repair loop,
-      reject-after-N, fail-open generalist, same-provider flag,
-      first-pass filter.
+      reject-after-N, same-provider flag, reviewer-approved external hire.

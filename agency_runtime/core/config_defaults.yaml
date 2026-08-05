@@ -64,7 +64,7 @@ workforce:
   fast_call_budget: 4
   balanced_call_budget: 4
   strict_call_budget: 5
-  hiring_call_budget: 4
+  hiring_call_budget: 6
   max_work_units: 16
   max_selected_per_unit: 4
   max_selected_total: 16
@@ -74,6 +74,7 @@ workforce:
   max_hires_per_day: 3
   auto_promote_successes: 0     # zero keeps promotion human-controlled
   contractor_review_days: 30
+  hiring_repair_budget: 3       # bounded safety-repair turns after an unsafe verdict (AR-238)
 
 # Per-stage inference profile routes. Mirrors the conveyor project shape
 # (conveyor/src/config/types.ts:294-310). When a route is missing, the resolver

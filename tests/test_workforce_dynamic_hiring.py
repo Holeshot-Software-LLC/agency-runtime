@@ -27,7 +27,6 @@ from agency_runtime.core.workforce.contract import (
     WorkforceContract,
 )
 from agency_runtime.core.workforce.hiring import (
-    apply_approved_hiring_case,
     commit_pending_contractor_hiring,
     hire_contractor_for_gap,
     restaff_after_hire,
@@ -355,8 +354,20 @@ def _result(value: dict[str, Any], provider: ProviderEntry) -> StructuredProvide
     )
 
 
-def _invoker(hiring: dict[str, Any], critic: dict[str, Any]):
-    responses = iter((hiring, critic))
+_SAFE_SECURITY_REVIEW = {
+    "verdict": "safe",
+    "reasons": [],
+    "required_changes": [],
+    "same_provider_as_creator_warning": False,
+}
+
+
+def _invoker(
+    hiring: dict[str, Any],
+    critic: dict[str, Any],
+    security: dict[str, Any] | None = None,
+):
+    responses = iter((hiring, critic, security or _SAFE_SECURITY_REVIEW))
 
     def invoke(provider, _prompt, _schema, **_kwargs):
         return _result(next(responses), provider)
@@ -377,7 +388,11 @@ def _recording_invoker(
                 "system_prompt": str(kwargs.get("system_prompt") or ""),
             }
         )
-        return _result(next(pending), provider)
+        try:
+            value = next(pending)
+        except StopIteration:
+            value = _SAFE_SECURITY_REVIEW
+        return _result(value, provider)
 
     return invoke
 
@@ -399,7 +414,11 @@ def test_inferred_gap_hires_registers_and_immediately_enables_contractor(tmp_pat
     assert outcome.hiring_case["status"] == "applied"
     assert store.get_roster_entry("quantum-build-engineer") is not None
     assert "Hired Contractor · Quantum Build Engineer" in outcome.notification
-    assert [item.stage for item in outcome.attempts] == ["hiring", "hiring-critic"]
+    assert [item.stage for item in outcome.attempts] == [
+        "hiring",
+        "hiring-critic",
+        "security_review",
+    ]
 
 
 def test_hiring_prompts_preserve_instruction_and_mutation_boundaries(tmp_path: Path) -> None:
@@ -434,6 +453,8 @@ def test_critic_can_independently_validate_runtime_gap_evidence(tmp_path: Path) 
         calls += 1
         if calls == 1:
             return _result(_hiring_response(), provider)
+        if "safety reviewer" in str(_kwargs.get("system_prompt") or ""):
+            return _result(_SAFE_SECURITY_REVIEW, provider)
         document = json.loads(prompt)
         evidence = document.get("runtime_gap_evidence", {})
         workforce = evidence.get("complete_workforce", [])
@@ -489,7 +510,7 @@ def test_critic_can_independently_validate_runtime_gap_evidence(tmp_path: Path) 
     )
 
     assert outcome.hired is True
-    assert calls == 2
+    assert calls == 3
 
 
 def test_verified_gap_projection_excludes_ineligible_partial_coverage(
@@ -602,6 +623,7 @@ def test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval(
         "hiring-critic",
         "hiring-repair",
         "hiring-repair-critic",
+        "security_review",
     ]
     repair_prompt = json.loads(calls[2]["prompt"])
     assert repair_prompt["critic_feedback"]["reason_codes"] == [
@@ -638,6 +660,7 @@ def test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval(
         "hiring-critic",
         "hiring-repair",
         "hiring-repair-critic",
+        "security_review",
     ]
 
 
@@ -1080,7 +1103,7 @@ def test_deferred_hire_commits_only_with_the_preflight_ready_cas(tmp_path: Path)
         ).fetchone()[0]
     finally:
         connection.close()
-    assert receipt_count == 2
+    assert receipt_count == 3
 
 
 def test_deferred_hire_rechecks_the_daily_limit_at_commit(tmp_path: Path) -> None:
@@ -1451,9 +1474,13 @@ def test_amendment_reports_content_free_projection_stage(
     assert store.get_workforce_worker(existing.agent_id)["revision"] == 0
 
 
-def test_high_risk_amendment_is_revision_bound_and_applies_only_after_approval(
+def test_high_risk_amendment_is_revision_bound_and_reviewer_gated(
     tmp_path: Path,
 ) -> None:
+    """AR-238: an amendment carrying an approval marker is gated by the security
+    reviewer, not human approval. When the reviewer approves, the amendment is
+    applied directly and bound to the existing worker's revision."""
+
     store = Store(tmp_path / "agency.db")
     existing = _install_existing(store)
     response = _amendment_response()
@@ -1468,24 +1495,28 @@ def test_high_risk_amendment_is_revision_bound_and_applies_only_after_approval(
         invoker=_invoker(
             response,
             {"approved": True, "reason_codes": []},
+            _SAFE_SECURITY_REVIEW,
         ),
     )
 
-    assert outcome.status == "approval_required"
+    assert outcome.status == "amended"
     assert outcome.hiring_case["case_type"] == "amend"
-    assert store.get_workforce_worker(existing.agent_id)["revision"] == 0
-    approved = store.approve_hiring_case(
-        outcome.hiring_case["id"],
-        approved_by="release-security-reviewer",
-    )
-    worker = apply_approved_hiring_case(store, approved["id"])
-
-    assert worker["worker_id"] == existing.worker_id
+    assert outcome.hiring_case["critic_evidence"]["security_review"]["verdict"] == "safe"
+    worker = store.get_workforce_worker(existing.agent_id)
     assert worker["revision"] == 1
-    assert store.get_hiring_case(approved["id"])["status"] == "applied"
+    assert store.get_hiring_case(outcome.hiring_case["id"])["status"] == "applied"
 
 
-def test_high_risk_hire_requires_approval_and_cli_receipt_remains_truthful(tmp_path: Path) -> None:
+def test_security_review_approved_external_hire_is_hired_without_human_gate(
+    tmp_path: Path,
+) -> None:
+    """AR-238: the isolated security reviewer is the gate, not human approval.
+
+    An external-mutation contract that the reviewer approves (verdict safe) is
+    hired directly. The reviewer runs in the same CLI provider chain and its
+    receipt is recorded truthfully alongside the hiring and critic receipts.
+    """
+
     store = Store(tmp_path / "agency.db")
     external_unit = replace(_unit(), mutation_scope="external_write")
     outcome = hire_contractor_for_gap(
@@ -1497,38 +1528,76 @@ def test_high_risk_hire_requires_approval_and_cli_receipt_remains_truthful(tmp_p
         invoker=_invoker(
             _hiring_response(external_mutation=False),
             {"approved": True, "reason_codes": []},
+            _SAFE_SECURITY_REVIEW,
         ),
     )
 
-    assert outcome.status == "approval_required"
-    assert outcome.reason_codes == (
-        "high_risk_human_approval_required",
-        "high_risk_class_external_mutation",
-    )
-    assert outcome.worker is None
-    assert outcome.hiring_case["status"] == "proposed"
+    assert outcome.hired is True
+    assert outcome.worker["agent_slug"] == "quantum-build-engineer"
+    assert outcome.hiring_case["status"] == "applied"
+    assert outcome.hiring_case["risk_tier"] == "standard"
+    assert outcome.hiring_case["human_approval_required"] is False
+    review = outcome.hiring_case["critic_evidence"]["security_review"]
+    assert review["verdict"] == "safe"
     receipts = outcome.hiring_case["model_evidence"]["receipts"]
     assert all(item["actual_model"] == "" for item in receipts)
     assert all(item["model_receipt_source"] == "cli.explicit_model_argument" for item in receipts)
-    assert store.get_roster_entry("quantum-build-engineer") is None
-
-    approved = store.approve_hiring_case(
-        outcome.hiring_case["id"],
-        approved_by="security-reviewer",
-    )
-    assert approved["status"] == "proposed"
-    worker = apply_approved_hiring_case(store, approved["id"])
-
-    assert worker["agent_slug"] == "quantum-build-engineer"
-    assert worker["state"] == "contractor"
-    assert store.get_hiring_case(approved["id"])["status"] == "applied"
     assert store.get_roster_entry("quantum-build-engineer") is not None
-    assert apply_approved_hiring_case(store, approved["id"])["worker_id"] == worker["worker_id"]
-    replay = store.approve_hiring_case(approved["id"], approved_by="security-reviewer")
-    assert replay["status"] == "applied"
+
+
+def test_security_review_unsafe_verdict_rejects_without_instantiating_worker(
+    tmp_path: Path,
+) -> None:
+    """AR-238: an unsafe verdict rejects the case; the worker is never created.
+
+    The reviewer returns unsafe on every attempt; after the bounded repair
+    budget is exhausted the case is rejected and the worker is never
+    instantiated.
+    """
+
+    store = Store(tmp_path / "agency.db")
+    unsafe = {
+        "verdict": "unsafe",
+        "reasons": ["credential_access_marker"],
+        "required_changes": ["Remove credential access from capabilities."],
+        "same_provider_as_creator_warning": False,
+    }
+    config = replace(_config(), workforce=replace(_config().workforce, hiring_call_budget=8))
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=config,
+        invoker=_recording_invoker(
+            _hiring_response(),
+            {"approved": True, "reason_codes": []},
+            unsafe,
+            _hiring_response(),
+            unsafe,
+            _hiring_response(),
+            unsafe,
+            _hiring_response(),
+            unsafe,
+            _hiring_response(),
+            unsafe,
+            _hiring_response(),
+            unsafe,
+            calls=[],
+        ),
+    )
+
+    assert outcome.status == "rejected"
+    assert "safety_repair_budget_exhausted" in outcome.reason_codes
+    assert outcome.worker is None
+    assert outcome.hiring_case is None
+    assert store.get_roster_entry("quantum-build-engineer") is None
 
 
 def test_deferred_external_hire_reports_class_without_committing(tmp_path: Path) -> None:
+    """AR-238: a deferred external hire is held until the preflight ready CAS,
+    gated by the security reviewer (safe) rather than human approval."""
+
     store = Store(tmp_path / "agency.db")
 
     outcome = hire_contractor_for_gap(
@@ -1541,16 +1610,14 @@ def test_deferred_external_hire_reports_class_without_committing(tmp_path: Path)
         invoker=_invoker(
             _hiring_response(external_mutation=False),
             {"approved": True, "reason_codes": []},
+            _SAFE_SECURITY_REVIEW,
         ),
     )
 
-    assert outcome.status == "approval_required"
-    assert outcome.reason_codes == (
-        "high_risk_human_approval_required",
-        "high_risk_class_external_mutation",
-    )
+    assert outcome.status == "hired"
+    assert outcome.reason_codes == ()
     assert outcome.pending_commit is not None
-    assert outcome.worker is None
+    assert outcome.worker is not None
     assert store.list_hiring_cases(limit=10) == []
 
 
@@ -1694,6 +1761,7 @@ def test_hired_contractor_is_restaffed_without_repeating_inference(tmp_path: Pat
         "hiring-critic",
         "hiring-repair",
         "hiring-repair-critic",
+        "security_review",
     ]
     assert result.accepted is True
     assert result.calls_used == 1

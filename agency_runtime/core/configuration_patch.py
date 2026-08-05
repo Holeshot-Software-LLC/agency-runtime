@@ -161,6 +161,9 @@ _SET_VALIDATORS = {
     "workforce.contractor_review_days": lambda item: _integer(
         item, "workforce.contractor_review_days", minimum=1, maximum=3650
     ),
+    "workforce.hiring_repair_budget": lambda item: _integer(
+        item, "workforce.hiring_repair_budget", minimum=0, maximum=8
+    ),
     "agents.disabled": lambda item: list(normalize_disabled_agents(item)),
     "store.db_path": lambda item: _string(item, "store.db_path", allow_empty=False, maximum=4096),
     "server.host": lambda item: _loopback_host(item, "server.host"),

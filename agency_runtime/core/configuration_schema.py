@@ -427,6 +427,7 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         "max_hires_per_day",
         "auto_promote_successes",
         "contractor_review_days",
+        "hiring_repair_budget",
     }
     if set(section) - allowed:
         raise _error("workforce", "contains unsupported fields")
@@ -469,6 +470,9 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         ),
         "contractor_review_days": lambda item: _integer(
             item, "workforce.contractor_review_days", minimum=1, maximum=3650
+        ),
+        "hiring_repair_budget": lambda item: _integer(
+            item, "workforce.hiring_repair_budget", minimum=0, maximum=8
         ),
     }
     result = {name: validators[name](item) for name, item in section.items()}
