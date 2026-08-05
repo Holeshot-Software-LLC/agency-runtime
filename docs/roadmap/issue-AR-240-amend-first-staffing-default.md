@@ -16,7 +16,7 @@ type: issue
 epic: routing
 issue_id: AR-240
 priority: p0
-tracker_url: ""
+tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/249"
 depends_on: []
 blocks: []
 ---

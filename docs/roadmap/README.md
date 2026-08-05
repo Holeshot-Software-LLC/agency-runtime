@@ -249,12 +249,12 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-235` | [Make gap contractor hiring autonomous with isolated security review and amend-first staffing](issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | open | p0 | routing | [#244](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/244) |
 | `AR-236` | [Achieve full CLI and dashboard functional and presentational parity](issue-AR-236-achieve-full-cli-dashboard-parity.md) | open | p0 | operations | [#245](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245) |
 | `AR-237` | [Hiring list and show parity (sub-issue 1 of AR-236)](issue-AR-237-hiring-list-and-show-parity.md) | open | p0 | operations | [#246](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/246) |
-| `AR-238` | [Isolated security review with bounded repair (slices 2-3 of AR-235)](issue-AR-238-isolated-security-review-with-bounded-repair.md) | open | p0 | routing | pending authorization |
-| `AR-240` | [Amend-first staffing default (slice 4 of AR-235)](issue-AR-240-amend-first-staffing-default.md) | open | p0 | routing | pending authorization |
-| `AR-241` | [Hiring cap removal and dashboard visibility (slice 5 of AR-235)](issue-AR-241-cap-removal-and-dashboard-visibility.md) | open | p0 | routing | pending authorization |
-| `AR-242` | [Autonomous promotion with review window (slice 6 of AR-235)](issue-AR-242-autonomous-promotion-review-window.md) | open | p0 | routing | pending authorization |
-| `AR-243` | [Workforce promotion readiness parity (sub-issue 2 of AR-236)](issue-AR-243-workforce-promotion-readiness-parity.md) | open | p1 | operations | pending authorization |
-| `AR-244` | [Workforce duplicates and consolidate parity (sub-issue 3 of AR-236)](issue-AR-244-workforce-duplicates-consolidate-parity.md) | open | p1 | operations | pending authorization |
+| `AR-238` | [Isolated security review with bounded repair (slices 2-3 of AR-235)](issue-AR-238-isolated-security-review-with-bounded-repair.md) | open | p0 | routing | [#248](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/248) |
+| `AR-240` | [Amend-first staffing default (slice 4 of AR-235)](issue-AR-240-amend-first-staffing-default.md) | open | p0 | routing | [#249](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/249) |
+| `AR-241` | [Hiring cap removal and dashboard visibility (slice 5 of AR-235)](issue-AR-241-cap-removal-and-dashboard-visibility.md) | open | p0 | routing | [#250](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/250) |
+| `AR-242` | [Autonomous promotion with review window (slice 6 of AR-235)](issue-AR-242-autonomous-promotion-review-window.md) | open | p0 | routing | [#251](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/251) |
+| `AR-243` | [Workforce promotion readiness parity (sub-issue 2 of AR-236)](issue-AR-243-workforce-promotion-readiness-parity.md) | open | p1 | operations | [#252](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/252) |
+| `AR-244` | [Workforce duplicates and consolidate parity (sub-issue 3 of AR-236)](issue-AR-244-workforce-duplicates-consolidate-parity.md) | open | p1 | operations | [#253](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/253) |
 
 ## Traceability
 
