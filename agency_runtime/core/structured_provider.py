@@ -27,7 +27,7 @@ from agency_runtime.core.http_safety import open_no_redirect
 MAX_STRUCTURED_PROMPT_BYTES = 1_280 * 1024
 MAX_STRUCTURED_SCHEMA_BYTES = 64 * 1024
 MAX_STRUCTURED_RESPONSE_BYTES = 128 * 1024
-MAX_STRUCTURED_TIMEOUT_SECONDS = 60.0
+MAX_STRUCTURED_TIMEOUT_SECONDS = 120.0
 MAX_STRUCTURED_REQUEST_BYTES = (2 * MAX_STRUCTURED_PROMPT_BYTES) + (96 * 1024)
 _STRUCTURED_READ_CHUNK_BYTES = 16 * 1024
 _HTTP_PROVIDER_TYPES = frozenset(
@@ -295,8 +295,8 @@ def _response_text(
             and block.get("type") == "text"
             and isinstance(block.get("text"), str)
         )
-        # The assistant prefill was "{"; strip any markdown fence the model
-        # added, then prepend the prefill so the JSON object is complete.
+        # GLM may wrap JSON in markdown code fences; strip them so the
+        # parser can find the JSON object.
         stripped = text.strip()
         if stripped.startswith("```"):
             lines = stripped.splitlines()
@@ -305,9 +305,7 @@ def _response_text(
             if lines and lines[-1].strip() == "```":
                 lines = lines[:-1]
             stripped = "\n".join(lines).strip()
-        if stripped.startswith("{"):
-            return stripped
-        return "{" + stripped
+        return stripped
     choices = data.get("choices")
     first = choices[0] if isinstance(choices, list) and choices else None
     message = first.get("message") if isinstance(first, Mapping) else None
@@ -353,23 +351,21 @@ def _http_payload(
     if provider_type == "anthropic":
         schema_instruction = (
             f"{system_prompt}\n\nReturn ONLY a single valid JSON object matching this "
-            f"schema (no prose, no markdown, no explanation):\n{json.dumps(schema, ensure_ascii=False)}"
+            f"schema (no prose, no markdown, no explanation). Start with {{ and end with }}:\n"
+            f"{json.dumps(schema, ensure_ascii=False)}"
         )
         payload: dict[str, Any] = {
-            "max_tokens": 4096,
+            "max_tokens": 8192,
             "messages": [
                 {"content": prompt, "role": "user"},
-                {"content": "{", "role": "assistant"},
             ],
             "model": provider.model,
             "system": schema_instruction,
             "temperature": 0,
         }
-        if provider.reasoning_effort in _ANTHROPIC_THINKING_BUDGETS:
-            payload["thinking"] = {
-                "type": "enabled",
-                "budget_tokens": _ANTHROPIC_THINKING_BUDGETS[provider.reasoning_effort],
-            }
+        # Thinking mode is disabled for structured JSON: thinking consumes
+        # the response budget and truncates the JSON output. The schema
+        # instruction already enforces JSON without needing extended reasoning.
         return payload, "/v1/messages"
     payload = {
         "messages": [
