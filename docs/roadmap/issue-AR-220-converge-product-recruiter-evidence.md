@@ -4,7 +4,7 @@ status: in_progress
 category: roadmap
 created: 2026-08-01
 updated: 2026-08-01
-tags: [bug, product, inference, workforce, hiring, evidence]
+tags: [bug, product, inference, workforce, hiring, evidence, multi-harness]
 related:
   - README.md
   - agency_runtime/core/workforce/inference.py
@@ -122,6 +122,20 @@ authorization.
   mutation is killed with unchanged source.
 - [x] Two bounded review passes, focused tests, and the named local fast gate
   pass on one exact head.
-- [ ] One new exact installed build passes activation and at most one fresh
-  product trial with a valid first header, zero corrections, real specialist
-  execution, workspace writes, artifacts, and independent acceptance checks.
+- [ ] **codex**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **zcode**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **claude**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **hermes**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **openclaw**: One fresh exact-build product trial passes with zero corrections.
+
+## Harness scope
+
+This issue's concept applies across all supported execution hosts (codex,
+claude, zcode, hermes, openclaw). The shared code path lives in
+`agency_runtime/core/workforce/inference.py`,
+`agency_runtime/core/workforce/staffing_verifier.py`, and
+`agency_runtime/core/workforce/hiring.py` (gap hiring evidence converged
+identically for every host), while per-host trial execution is routed through
+`agency_runtime/adapters/hooks.py` (codex/claude/zcode via HookBridge) and
+`agency_runtime/adapters/base.py` (hermes/openclaw via BaseAdapter). Each host's
+live-trial checkbox above is independent.

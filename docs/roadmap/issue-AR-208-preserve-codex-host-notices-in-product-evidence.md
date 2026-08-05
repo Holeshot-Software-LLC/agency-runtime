@@ -4,7 +4,7 @@ status: in_progress
 category: roadmap
 created: 2026-07-31
 updated: 2026-07-31
-tags: [product, evidence, codex, diagnostics, security]
+tags: [product, evidence, multi-harness, diagnostics, security]
 related:
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
@@ -93,4 +93,18 @@ trial proves both the product projection and the wider README story.
 - [x] Focused warning-strict tests and the named fast spine pass.
 - [x] Every PR 198 and PR 201 review thread has a commit-backed response and
   accurate resolved disposition.
-- [ ] The fail-closed repair is reviewed, merged, and exact-installed.
+- [ ] **codex**: The fail-closed repair is reviewed, merged, and exact-installed.
+- [ ] **zcode**: The fail-closed repair is reviewed, merged, and exact-installed.
+- [ ] **claude**: The fail-closed repair is reviewed, merged, and exact-installed.
+- [ ] **hermes**: The fail-closed repair is reviewed, merged, and exact-installed.
+- [ ] **openclaw**: The fail-closed repair is reviewed, merged, and exact-installed.
+
+## Harness scope
+
+This issue's concept applies across all supported execution hosts (codex,
+claude, zcode, hermes, openclaw). The shared code path lives in the product
+collaboration projection that preserves validated `host_notice_types` and
+`host_notice_count` for every host, while the host-notice classifier itself is
+host-specific: `agency_runtime/adapters/hooks.py` (codex/claude/zcode via
+HookBridge) and `agency_runtime/adapters/base.py` (hermes/openclaw via
+BaseAdapter). Each host's live-trial checkbox above is independent.

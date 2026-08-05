@@ -4,7 +4,7 @@ status: in_progress
 category: roadmap
 created: 2026-07-21
 updated: 2026-07-30
-tags: [routing, workforce, contractors, delegation, participation, evaluation, performance]
+tags: [routing, workforce, contractors, delegation, participation, evaluation, performance, multi-harness]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
@@ -3479,5 +3479,10 @@ out upstream arms remain invalid, never losses.
 - [ ] Paired Agency-on/off trials prove specialist participation and a better independently graded outcome for the same host and model.
 - [ ] A pinned held-out comparison materially beats the source-visible upstream Agency Agents routing baseline without any forbidden or incompatible selection regression.
 - [ ] Every completion gate in tracker issue #132 has direct current evidence.
-- [ ] The final hosted matrix, installed artifacts, five host contracts, and live canaries pass.
+- [ ] The final hosted matrix, installed artifacts, and host contracts pass for all five supported hosts (codex, claude, zcode, hermes, openclaw).
+- [ ] **codex**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **zcode**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **claude**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **hermes**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **openclaw**: One fresh exact-build product trial passes with zero corrections.
 - [ ] The merged and reinstalled artifact is verified before this item closes.

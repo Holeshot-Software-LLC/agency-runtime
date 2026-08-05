@@ -4,7 +4,7 @@ status: in_progress
 category: roadmap
 created: 2026-07-31
 updated: 2026-07-31
-tags: [codex, delegation, activation, product, security, evidence]
+tags: [multi-harness, delegation, activation, product, security, evidence]
 related:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
@@ -118,6 +118,10 @@ serialized opaque launch semantics.
   its task label resolves exactly one persisted accepted assignment.
 - [x] The v2 child context binds the exact work-unit ID, goal hash, immutable
   specialist identity, and one observed child without retaining task content.
+- [ ] ZCode/claude: Agent-tool child launches bind to exact plan rows with the
+  same v2 child context.
+- [ ] hermes/openclaw: BaseAdapter child launches bind to exact plan rows with
+  the same v2 child context.
 - [x] Wrong plaintext, malformed opaque input, and an unpersisted planned label
   fail closed.
 - [x] A real Store regression proves the non-canary grant, load, worker, and
@@ -134,6 +138,23 @@ serialized opaque launch semantics.
   token-free launches use the single-slot guard.
 - [x] Focused warning-strict tests and curated mutations pass.
 - [ ] The post-review named fast verification spine passes.
-- [ ] The reviewed repair is merged and exact-installed.
-- [ ] One fresh exact-build activation and one product trial pass with zero
-  corrections and proven workspace write.
+- [ ] **codex**: The reviewed repair is merged and exact-installed.
+- [ ] **zcode**: The reviewed repair is merged and exact-installed.
+- [ ] **claude**: The reviewed repair is merged and exact-installed.
+- [ ] **hermes**: The reviewed repair is merged and exact-installed.
+- [ ] **openclaw**: The reviewed repair is merged and exact-installed.
+- [ ] **codex**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **zcode**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **claude**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **hermes**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **openclaw**: One fresh exact-build product trial passes with zero corrections.
+
+## Harness scope
+
+This issue's concept applies across all supported execution hosts (codex,
+claude, zcode, hermes, openclaw). The shared code path lives in the plan-row
+grant and v2 child-context construction that binds every launch to an exact
+persisted assignment, while the opaque-launch hook is host-specific:
+`agency_runtime/adapters/hooks.py` (codex/claude/zcode via HookBridge) and
+`agency_runtime/adapters/base.py` (hermes/openclaw via BaseAdapter). Each
+host's live-trial checkbox above is independent.

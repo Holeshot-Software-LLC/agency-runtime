@@ -4,7 +4,7 @@ status: in_progress
 category: roadmap
 created: 2026-08-01
 updated: 2026-08-01
-tags: [bug, product, codex, delegation, evidence, workspace]
+tags: [bug, product, multi-harness, delegation, evidence, workspace]
 related:
   - README.md
   - agency_runtime/core/canary_backends.py
@@ -245,6 +245,20 @@ workspace sentinel before artifact validation.
   approval-gated.
 - [x] Focused checks, at most two review passes, and the named local fast gate
   pass on one exact head.
-- [ ] One next exact build passes autonomous activation and at most one fresh
-  README product trial with real artifacts, independent checks, a valid first
-  header, and zero corrections.
+- [ ] **codex**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **zcode**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **claude**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **hermes**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **openclaw**: One fresh exact-build product trial passes with zero corrections.
+
+## Harness scope
+
+This issue's concept applies across all supported execution hosts (codex,
+claude, zcode, hermes, openclaw). The shared code path lives in the product
+collaboration projection and multi-unit topology grading
+(`agency_runtime/core/evals/product_host.py`) plus contractor mutation-scope
+binding (`agency_runtime/core/workforce/hiring.py`), consumed identically by
+every host, while per-host trial execution is routed through
+`agency_runtime/adapters/hooks.py` (codex/claude/zcode via HookBridge) and
+`agency_runtime/adapters/base.py` (hermes/openclaw via BaseAdapter). Each host's
+live-trial checkbox above is independent.

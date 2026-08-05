@@ -4,7 +4,7 @@ status: in_progress
 category: roadmap
 created: 2026-08-01
 updated: 2026-08-01
-tags: [bug, product, codex, delegation, workspace, evidence]
+tags: [bug, product, multi-harness, delegation, workspace, evidence]
 related:
   - README.md
   - agency_runtime/core/canary_backends.py
@@ -144,7 +144,22 @@ ADR-0128 binds every opaque Codex launch to exact plan authority.
   proof remains terminal failure.
 - [x] Focused checks, at most two review passes, and the named local fast gate
   pass on one exact head.
-- [ ] One new exact build passes autonomous activation and one fresh product
-  trial with real artifacts, independent checks, a valid first header, and zero
-  corrections. Exact `43870c8` activation passes, but its consumed product
-  trial fails `workspace_write_not_proven`; AR-223 owns the next repair.
+- [ ] **codex**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **zcode**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **claude**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **hermes**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **openclaw**: One fresh exact-build product trial passes with zero corrections.
+- Exact `43870c8` activation passes, but its consumed product trial fails
+  `workspace_write_not_proven`; AR-223 owns the next repair.
+
+## Harness scope
+
+This issue's concept applies across all supported execution hosts (codex,
+claude, zcode, hermes, openclaw). The shared code path lives in
+`agency_runtime/core/evals/product_host.py`,
+`agency_runtime/core/workforce/routing_projection.py`, and the wait-validator
+and mutation-scope boundary consumed identically by every host, while per-host
+trial execution is routed through `agency_runtime/adapters/hooks.py`
+(codex/claude/zcode via HookBridge) and `agency_runtime/adapters/base.py`
+(hermes/openclaw via BaseAdapter). Each host's live-trial checkbox above is
+independent.

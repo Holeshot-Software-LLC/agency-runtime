@@ -4,7 +4,7 @@ status: in_progress
 category: roadmap
 created: 2026-07-31
 updated: 2026-07-31
-tags: [product, evidence, preflight, delegation, codex, diagnostics]
+tags: [product, evidence, preflight, delegation, multi-harness, diagnostics]
 related:
   - README.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
@@ -319,6 +319,10 @@ those proofs exposed.
   regressions fail.
 - [x] Exact known Codex non-critical notices are content-free and traceable;
   near-miss or arbitrary `error` items remain fatal.
+- [ ] ZCode/claude: Agent-tool delegation host telemetry is classified with the
+  same content-free boundary as Codex host notices.
+- [ ] hermes/openclaw: BaseAdapter delegation telemetry is classified with the
+  same content-free boundary as Codex host notices.
 - [x] The host-notice repair passes the named fast verification spine.
 - [x] Both exact Codex-packaged skill-catalog notice spellings pass the named
   fast spine and the arbitrary-error mutation remains killed.
@@ -326,5 +330,19 @@ those proofs exposed.
   notices without admitting an unknown error.
 - [x] The complete Codex host-notice repair is reviewed, merged, and
   exact-installed before any fresh product trial.
-- [ ] One fresh exact-build product trial reaches native delegation and writes
-  its workspace artifacts with zero response corrections.
+- [ ] **codex**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **zcode**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **claude**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **hermes**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **openclaw**: One fresh exact-build product trial passes with zero corrections.
+
+## Harness scope
+
+This issue's concept applies across all supported execution hosts (codex,
+claude, zcode, hermes, openclaw). The shared code path lives in
+`agency_runtime/core/preflight.py` and `agency_runtime/core/preflight_failure.py`
+(content-free failure receipts produced identically for every host), while the
+host-notice classification boundary is host-specific: `agency_runtime/adapters/hooks.py`
+(codex/claude/zcode via HookBridge) and `agency_runtime/adapters/base.py`
+(hermes/openclaw via BaseAdapter). Each host's live-trial checkbox above is
+independent.

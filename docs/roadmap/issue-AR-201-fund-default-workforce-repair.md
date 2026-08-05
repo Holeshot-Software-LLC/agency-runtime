@@ -4,7 +4,7 @@ status: in_progress
 category: roadmap
 created: 2026-07-30
 updated: 2026-07-30
-tags: [workforce, inference, configuration, budgets, routing, regression]
+tags: [workforce, inference, configuration, budgets, routing, regression, multi-harness]
 related:
   - docs/decisions/0114-fund-one-default-workforce-semantic-repair.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
@@ -117,6 +117,19 @@ the default and explicit-override boundary.
   before Codex and ZCode are refreshed from the exact tool revision.
 - [x] The refreshed Codex and ZCode bundles use timeout evidence derived from
   the effective three-call budget.
-- [ ] One bounded ordinary Codex canary records accepted staffing, specialist
-  launch/delegation, accepted finalization, and zero header corrections.
+- [ ] **codex**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **zcode**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **claude**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **hermes**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **openclaw**: One fresh exact-build product trial passes with zero corrections.
 - [x] The local evidence page and tracker contain the terminal scoped verdict.
+
+## Harness scope
+
+This issue's concept applies across all supported execution hosts (codex,
+claude, zcode, hermes, openclaw). The shared code path lives in
+`agency_runtime/core/workforce/inference.py` and the fast-mode budget
+configuration consumed by every host, while per-host trial execution is routed
+through `agency_runtime/adapters/hooks.py` (codex/claude/zcode via HookBridge)
+and `agency_runtime/adapters/base.py` (hermes/openclaw via BaseAdapter). Each
+host's live-trial checkbox above is independent.

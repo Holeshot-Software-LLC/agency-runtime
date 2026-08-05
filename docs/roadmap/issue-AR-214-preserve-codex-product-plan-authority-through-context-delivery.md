@@ -4,7 +4,7 @@ status: in_progress
 category: roadmap
 created: 2026-07-31
 updated: 2026-08-01
-tags: [bug, product, codex, preflight, delegation]
+tags: [bug, product, multi-harness, preflight, delegation]
 related:
   - agency_runtime/core/preflight.py
   - agency_runtime/core/preflight_recipe.py
@@ -111,6 +111,19 @@ and opaque Codex child plan binding.
   exact least-authority Codex workspace-write scopes without broadening to `.`.
 - [x] Atomic failure still persists no route, unit plan, grant, or delegation.
 - [x] The named local gate and focused review pass on one exact head.
-- [ ] One new exact build passes default install, supported activation, and one
-  governed product trial with specialist delegation, workspace write, a
-  first-pass valid header, zero corrections, and independent artifact checks.
+- [ ] **codex**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **zcode**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **claude**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **hermes**: One fresh exact-build product trial passes with zero corrections.
+- [ ] **openclaw**: One fresh exact-build product trial passes with zero corrections.
+
+## Harness scope
+
+This issue's concept applies across all supported execution hosts (codex,
+claude, zcode, hermes, openclaw). The shared code path lives in
+`agency_runtime/core/preflight_recipe.py` and `agency_runtime/core/preflight.py`
+(context delivery and least-authority workspace-write scope resolved identically
+for every host), while per-host trial execution is routed through
+`agency_runtime/adapters/hooks.py` (codex/claude/zcode via HookBridge) and
+`agency_runtime/adapters/base.py` (hermes/openclaw via BaseAdapter). Each host's
+live-trial checkbox above is independent.
