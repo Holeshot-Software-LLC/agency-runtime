@@ -1,6 +1,6 @@
 ---
 title: "AR-228: Fail open with an honest header when no specialist is selected"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-03
 updated: 2026-08-03

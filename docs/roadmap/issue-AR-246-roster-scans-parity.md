@@ -1,6 +1,6 @@
 ---
 title: "AR-246: Roster scans parity (sub-issue 5 of AR-236)"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
 updated: 2026-08-04

@@ -1,6 +1,6 @@
 ---
 title: "AR-247: Roster sources parity (sub-issue 6 of AR-236)"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
 updated: 2026-08-04

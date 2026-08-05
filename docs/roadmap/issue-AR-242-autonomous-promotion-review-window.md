@@ -1,6 +1,6 @@
 ---
 title: "AR-242: Autonomous promotion with review window (slice 6 of AR-235)"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
 updated: 2026-08-04

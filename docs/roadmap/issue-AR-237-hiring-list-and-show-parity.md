@@ -1,6 +1,6 @@
 ---
 title: "AR-237: Hiring list and show parity (sub-issue 1 of AR-236)"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
 updated: 2026-08-04

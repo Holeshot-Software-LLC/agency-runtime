@@ -1,6 +1,6 @@
 ---
 title: "AR-238: Isolated security review with bounded repair (slices 2-3 of AR-235)"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
 updated: 2026-08-04

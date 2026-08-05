@@ -1,6 +1,6 @@
 ---
 title: "AR-215: Repair critic-rejected contractor proposals once"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-01
 updated: 2026-08-01

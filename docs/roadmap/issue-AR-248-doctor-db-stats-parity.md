@@ -1,6 +1,6 @@
 ---
 title: "AR-248: Doctor and DB stats parity (sub-issue 7 of AR-236)"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
 updated: 2026-08-04

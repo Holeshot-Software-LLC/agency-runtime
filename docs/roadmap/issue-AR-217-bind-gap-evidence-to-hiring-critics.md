@@ -1,6 +1,6 @@
 ---
 title: "AR-217: Bind independent gap evidence into contractor critiques"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-01
 updated: 2026-08-01

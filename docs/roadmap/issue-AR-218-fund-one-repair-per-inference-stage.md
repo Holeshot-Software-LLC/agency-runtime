@@ -1,6 +1,6 @@
 ---
 title: "AR-218: Fund one bounded repair per workforce inference stage"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-01
 updated: 2026-08-01

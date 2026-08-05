@@ -1,6 +1,6 @@
 ---
 title: "AR-250: Upgrade flow parity (sub-issue 9 of AR-236)"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
 updated: 2026-08-04

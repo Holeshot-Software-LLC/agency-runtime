@@ -1,6 +1,6 @@
 ---
 title: "AR-235: Make gap contractor hiring autonomous with isolated security review and amend-first staffing"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
 updated: 2026-08-04

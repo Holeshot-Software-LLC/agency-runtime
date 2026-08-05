@@ -1,6 +1,6 @@
 ---
 title: "AR-244: Workforce duplicates and consolidate parity (sub-issue 3 of AR-236)"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
 updated: 2026-08-04

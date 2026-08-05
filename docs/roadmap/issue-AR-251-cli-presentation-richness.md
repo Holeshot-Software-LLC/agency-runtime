@@ -1,6 +1,6 @@
 ---
 title: "AR-251: CLI presentation richness (sub-issue 10 of AR-236)"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
 updated: 2026-08-04

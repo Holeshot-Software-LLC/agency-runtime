@@ -1,6 +1,6 @@
 ---
 title: "AR-236: Achieve full CLI and dashboard functional and presentational parity"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
 updated: 2026-08-04

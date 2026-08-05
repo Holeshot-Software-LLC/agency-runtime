@@ -1,6 +1,6 @@
 ---
 title: "AR-212: Repair verifier-rejected recruiter proposals once"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-31
 updated: 2026-08-01
