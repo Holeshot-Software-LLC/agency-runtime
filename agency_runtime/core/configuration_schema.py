@@ -15,6 +15,7 @@ from agency_runtime.core.config import (
     CODEX_REASONING_EFFORTS,
     INFERENCE_ADAPTER_TYPES,
     INFERENCE_CAPABILITY_CLASSES,
+    INFERENCE_HARNESS_NAMES,
     INFERENCE_PROFILE_NAME_PATTERN,
     INFERENCE_ROUTE_KEY_PATTERN,
     INFERENCE_THINKING_LEVELS,
@@ -631,6 +632,7 @@ def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
         "api_key",
         "api_key_env",
         "timeout_ms",
+        "transport",
     }
     if set(section) - allowed:
         raise _error(path, "contains unsupported fields")
@@ -694,6 +696,24 @@ def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
         minimum=50,
         maximum=120_000,
     )
+    transport = (
+        _string(
+            section.get("transport", ""),
+            f"{path}.transport",
+            allow_empty=True,
+            maximum=16,
+        )
+        .strip()
+        .casefold()
+    )
+    if is_cli:
+        if transport not in _CLI_TRANSPORTS:
+            raise _error(
+                f"{path}.transport",
+                "CLI profiles must set transport to one of " + ", ".join(sorted(_CLI_TRANSPORTS)),
+            )
+    elif transport:
+        raise _error(f"{path}.transport", "transport applies only to CLI profiles")
     if is_cli and (base_url or api_key or api_key_env):
         raise _error(
             path,
@@ -718,13 +738,29 @@ def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
         "api_key": api_key,
         "api_key_env": api_key_env,
         "timeout_ms": timeout_ms,
+        "transport": transport,
     }
+
+
+def _validate_inference_routes(value: Any, path: str) -> dict[str, str]:
+    routes_section = _mapping(value, path)
+    routes: dict[str, str] = {}
+    for key, item in routes_section.items():
+        if not isinstance(key, str) or not INFERENCE_ROUTE_KEY_PATTERN.fullmatch(key):
+            raise _error(
+                f"{path}.{key!r}",
+                "route keys must be lowercase dotted identifiers",
+            )
+        if not isinstance(item, str) or not item.strip():
+            raise _error(f"{path}.{key}", "must name a profile")
+        routes[key] = item.strip()
+    return routes
 
 
 def _validate_inference(value: Any) -> dict[str, Any]:
     path = "inference"
     section = _mapping(value, path)
-    allowed = {"default_profile", "strict_independence", "routes", "profiles"}
+    allowed = {"default_profile", "strict_independence", "routes", "profiles", "harnesses"}
     if set(section) - allowed:
         raise _error(path, "contains unsupported fields")
     default_profile = _string(
@@ -736,18 +772,7 @@ def _validate_inference(value: Any) -> dict[str, Any]:
         section.get("strict_independence", False),
         "inference.strict_independence",
     )
-    routes_raw = section.get("routes", {})
-    routes_section = _mapping(routes_raw, "inference.routes")
-    routes: dict[str, str] = {}
-    for key, item in routes_section.items():
-        if not isinstance(key, str) or not INFERENCE_ROUTE_KEY_PATTERN.fullmatch(key):
-            raise _error(
-                f"inference.routes.{key!r}",
-                "route keys must be lowercase dotted identifiers",
-            )
-        if not isinstance(item, str) or not item.strip():
-            raise _error(f"inference.routes.{key}", "must name a profile")
-        routes[key] = item.strip()
+    routes = _validate_inference_routes(section.get("routes", {}), "inference.routes")
     profiles_raw = section.get("profiles", {})
     profiles_section = _mapping(profiles_raw, "inference.profiles")
     profiles: dict[str, dict[str, Any]] = {}
@@ -766,11 +791,49 @@ def _validate_inference(value: Any) -> dict[str, Any]:
             "inference.routes",
             "routes reference undefined profile(s): " + ", ".join(missing),
         )
+    harnesses_raw = section.get("harnesses", {})
+    harnesses_section = _mapping(harnesses_raw, "inference.harnesses")
+    harnesses: dict[str, dict[str, Any]] = {}
+    for name, item in harnesses_section.items():
+        if not isinstance(name, str) or name.strip().casefold() not in INFERENCE_HARNESS_NAMES:
+            raise _error(
+                "inference.harnesses",
+                "harness names must be one of " + ", ".join(sorted(INFERENCE_HARNESS_NAMES)),
+            )
+        harness_name = name.strip().casefold()
+        harness_path = f"inference.harnesses.{harness_name}"
+        harness = _mapping(item, harness_path)
+        if set(harness) - {"default_profile", "routes"}:
+            raise _error(harness_path, "contains unsupported fields")
+        harness_default = _string(
+            harness.get("default_profile", ""),
+            f"{harness_path}.default_profile",
+            maximum=128,
+        ).strip()
+        if harness_default and harness_default not in profiles:
+            raise _error(
+                f"{harness_path}.default_profile",
+                f"must reference a profile in inference.profiles (got {harness_default!r})",
+            )
+        harness_routes = _validate_inference_routes(
+            harness.get("routes", {}), f"{harness_path}.routes"
+        )
+        harness_missing = sorted(set(harness_routes.values()) - set(profiles))
+        if harness_missing:
+            raise _error(
+                f"{harness_path}.routes",
+                "routes reference undefined profile(s): " + ", ".join(harness_missing),
+            )
+        harnesses[harness_name] = {
+            "default_profile": harness_default,
+            "routes": harness_routes,
+        }
     return {
         "default_profile": default_profile,
         "strict_independence": strict_independence,
         "routes": routes,
         "profiles": profiles,
+        "harnesses": harnesses,
     }
 
 

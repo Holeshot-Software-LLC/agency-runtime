@@ -221,6 +221,9 @@ WORKFORCE_MODES = frozenset({"fast", "balanced", "strict"})
 INFERENCE_ADAPTER_TYPES = frozenset({"openai-compatible", "anthropic", "ollama", "litellm", "cli"})
 INFERENCE_THINKING_LEVELS = frozenset({"low", "medium", "high", "xhigh"})
 INFERENCE_CAPABILITY_CLASSES = frozenset({"text", "embeddings", "code"})
+INFERENCE_CLI_TRANSPORTS = frozenset({"codex", "claude"})
+# Harness sections scope inference routes to the host that owns the turn.
+INFERENCE_HARNESS_NAMES = frozenset({"codex", "claude", "zcode", "hermes", "openclaw", "cli"})
 INFERENCE_PROFILE_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]{0,127}\Z")
 INFERENCE_ROUTE_KEY_PATTERN = re.compile(r"^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){0,4}\Z")
 
@@ -286,9 +289,23 @@ class InferenceProfile:
     api_key: str = ""
     api_key_env: str = ""
     timeout_ms: int = 30_000
+    transport: str = ""  # cli adapter only: one of INFERENCE_CLI_TRANSPORTS
 
     def uses_thinking(self) -> bool:
         return bool(self.thinking_level)
+
+
+@dataclass(frozen=True, slots=True)
+class HarnessInferenceConfig:
+    """Route overrides that apply only when a specific harness owns the turn.
+
+    A harness section may override any subset of route keys; unresolved keys
+    fall through to the harness ``default_profile``, then the global
+    ``inference.routes`` / ``inference.default_profile``.
+    """
+
+    default_profile: str = ""
+    routes: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -299,12 +316,15 @@ class InferenceConfig:
     fallback for this slice. ``default_profile`` is used when a route key is
     missing. ``strict_independence`` enforces different provider/model for
     profiles whose schema would otherwise permit shared independence.
+    ``harnesses`` scopes route tables to the host that owns the turn so the
+    same installation can staff from different subscriptions per harness.
     """
 
     default_profile: str = ""
     strict_independence: bool = False
     routes: dict[str, str] = field(default_factory=dict)
     profiles: dict[str, InferenceProfile] = field(default_factory=dict)
+    harnesses: dict[str, HarnessInferenceConfig] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -491,6 +511,37 @@ def _build_inference_profile(name: str, raw: Any) -> InferenceProfile:
         api_key=str(raw.get("api_key", "")),
         api_key_env=str(raw.get("api_key_env", "")).strip(),
         timeout_ms=int(raw.get("timeout_ms", 30_000)),
+        transport=str(raw.get("transport", "")).strip().casefold(),
+    )
+
+
+def _build_inference_routes(raw: Any, *, path: str) -> dict[str, str]:
+    """Materialize one route table (global or harness-scoped)."""
+
+    if not isinstance(raw, Mapping):
+        raise ValueError(f"{path}: must be a mapping")
+    routes: dict[str, str] = {}
+    for key, value in raw.items():
+        if not isinstance(key, str) or not INFERENCE_ROUTE_KEY_PATTERN.fullmatch(key):
+            raise ValueError(f"{path}.{key!r}: route keys must be lowercase dotted identifiers")
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"{path}.{key}: must name a profile")
+        routes[key] = value.strip()
+    return routes
+
+
+def _build_inference_harness(name: str, raw: Any) -> HarnessInferenceConfig:
+    """Materialize one harness-scoped inference route section."""
+
+    if not isinstance(raw, Mapping):
+        raise ValueError(f"inference.harnesses.{name}: must be a mapping")
+    if name not in INFERENCE_HARNESS_NAMES:
+        raise ValueError(f"inference.harnesses.{name}: unknown harness name")
+    return HarnessInferenceConfig(
+        default_profile=str(raw.get("default_profile", "")).strip(),
+        routes=_build_inference_routes(
+            raw.get("routes", {}), path=f"inference.harnesses.{name}.routes"
+        ),
     )
 
 
@@ -521,11 +572,22 @@ def _build_inference(raw: Any) -> InferenceConfig:
         if not isinstance(name, str) or not name.strip():
             raise ValueError("inference.profiles: profile names must be non-empty strings")
         profiles[name] = _build_inference_profile(name, section)
+    harnesses_raw = raw.get("harnesses", {})
+    if not isinstance(harnesses_raw, Mapping):
+        raise ValueError("inference.harnesses: must be a mapping")
+    harnesses: dict[str, HarnessInferenceConfig] = {}
+    for name, section in harnesses_raw.items():
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("inference.harnesses: harness names must be non-empty strings")
+        harnesses[name.strip().casefold()] = _build_inference_harness(
+            name.strip().casefold(), section
+        )
     return InferenceConfig(
         default_profile=str(raw.get("default_profile", "")).strip(),
         strict_independence=bool(raw.get("strict_independence", False)),
         routes=routes,
         profiles=profiles,
+        harnesses=harnesses,
     )
 
 
@@ -1259,8 +1321,16 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
                     "api_key": "***REDACTED***" if redact and profile.api_key else profile.api_key,
                     "api_key_env": profile.api_key_env,
                     "timeout_ms": profile.timeout_ms,
+                    "transport": profile.transport,
                 }
                 for name, profile in cfg.inference.profiles.items()
+            },
+            "harnesses": {
+                name: {
+                    "default_profile": harness.default_profile,
+                    "routes": dict(harness.routes),
+                }
+                for name, harness in cfg.inference.harnesses.items()
             },
         },
         "profile": cfg.profile,

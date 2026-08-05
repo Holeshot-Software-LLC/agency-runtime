@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 import math
+import os
 import re
 import secrets
 from collections.abc import Callable, Mapping, Sequence
@@ -710,26 +711,45 @@ def configured_workforce_providers(
     *,
     stage: str,
     route_key: str | None = None,
+    harness: str = "",
 ) -> tuple[ProviderEntry, ...]:
     """Resolve the configured provider chain and stage-specific model override.
 
     ``route_key`` (ADR-0153 / AR-235 §3) selects the per-stage profile through
-    ``inference.routes``. When ``route_key`` resolves, the profile's provider
-    is returned. When the route is missing, the resolver's default-profile
-    fallback applies (returning the default profile if one is configured).
-    When neither the route nor the default resolves, this falls back to the
-    legacy provider chain so dashboards and CLI evals that pre-date the
-    inference block still work.
+    ``inference.routes``. ``harness`` scopes resolution to that harness's
+    ``inference.harnesses`` section when one is configured, so the same
+    installation staffs from a different subscription per host. A harness
+    without a configured section falls back to the ``AGENCY_INFERENCE_HARNESS``
+    environment override (CLI testing from an arbitrary terminal), then to the
+    global routes. When neither a route nor a default resolves, this falls
+    back to the legacy provider chain so dashboards and CLI evals that
+    pre-date the inference block still work.
     """
 
+    # An explicit AGENCY_INFERENCE_HARNESS naming a configured section is the
+    # operator's master switch (CLI testing from any terminal); otherwise the
+    # turn-owning host picks its own section.
+    override = os.environ.get("AGENCY_INFERENCE_HARNESS", "").strip().casefold()
+    effective_harness = harness.strip().casefold()
+    if override in config.inference.harnesses:
+        effective_harness = override
     if route_key:
         try:
-            return (resolve_inference_route(config, route_key).provider,)
+            return (
+                resolve_inference_route(config, route_key, harness=effective_harness).provider,
+            )
         except ConfigValidationError:
             pass
-    if config.inference.default_profile:
+    if config.inference.default_profile or (
+        effective_harness in config.inference.harnesses
+        and config.inference.harnesses[effective_harness].default_profile
+    ):
         try:
-            return (resolve_inference_route(config, route_key or "default").provider,)
+            return (
+                resolve_inference_route(
+                    config, route_key or "default", harness=effective_harness
+                ).provider,
+            )
         except ConfigValidationError:
             pass
     providers = list(config.providers)
@@ -1795,7 +1815,7 @@ def _recruit_ambiguous_plan(
         }
     )
     providers = configured_workforce_providers(
-        config, stage="recruiter", route_key="workforce.recruiter"
+        config, stage="recruiter", route_key="workforce.recruiter", harness=context.host
     )
     cache_identity = _stage_cache_identity(
         "recruiter",
@@ -1941,6 +1961,7 @@ def _strict_critic(
     config: AgencyConfig,
     budget: _CallBudget,
     invoker: StructuredInvoker,
+    harness: str = "",
 ) -> tuple[list[WorkforceInferenceAttempt], tuple[str, ...]]:
     selected = {agent_id for unit in staffing.units for agent_id in unit.selected}
     critic_prompt = _json_prompt(
@@ -1972,7 +1993,7 @@ def _strict_critic(
     critic, attempts, failure = _invoke_stage(
         stage="critic",
         providers=configured_workforce_providers(
-            config, stage="critic", route_key="workforce.recruiter.critic"
+            config, stage="critic", route_key="workforce.recruiter.critic", harness=harness
         ),
         prompt=critic_prompt,
         schema=CRITIC_RESPONSE_SCHEMA,
@@ -2047,7 +2068,7 @@ def plan_and_staff_workforce(
         explicit_indivisible_unit=explicit_indivisible_unit,
     )
     planner_providers = configured_workforce_providers(
-        config, stage="planner", route_key="workforce.planner"
+        config, stage="planner", route_key="workforce.planner", harness=context.host
     )
     planner_cache_identity = _stage_cache_identity(
         "plan",
@@ -2206,6 +2227,7 @@ def plan_and_staff_workforce(
             config=config,
             budget=budget,
             invoker=invoker,
+            harness=context.host,
         )
         attempts.extend(stage_attempts)
         if critic_reasons:

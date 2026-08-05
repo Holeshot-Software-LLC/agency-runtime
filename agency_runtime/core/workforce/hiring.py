@@ -918,6 +918,7 @@ def _security_review(
     creator_providers: Sequence[ProviderEntry],
     budget: _CallBudget,
     invoker: StructuredInvoker,
+    harness: str = "",
 ) -> _SecurityVerdict | None:
     """Run the isolated security review stage (AR-238).
 
@@ -928,7 +929,8 @@ def _security_review(
     """
 
     review_providers = configured_workforce_providers(
-        config, stage="security_review", route_key="workforce.hiring.security_review"
+        config, stage="security_review", route_key="workforce.hiring.security_review",
+        harness=harness,
     )
     if not review_providers:
         return None
@@ -1068,6 +1070,7 @@ def _safety_repair_loop(
             creator_providers=providers,
             budget=budget,
             invoker=invoker,
+            harness=staffing_context.host if staffing_context is not None else "",
         )
         if next_verdict is None:
             return ContractorHiringOutcome(
@@ -1787,7 +1790,10 @@ def hire_contractor_for_gap(
 
     if not request.strip():
         raise ValueError("hiring request is required")
-    providers = configured_workforce_providers(config, stage="hiring", route_key="workforce.hiring")
+    harness = staffing_context.host if staffing_context is not None else ""
+    providers = configured_workforce_providers(
+        config, stage="hiring", route_key="workforce.hiring", harness=harness
+    )
     if not providers:
         return ContractorHiringOutcome("abstained", ("hiring_inference_unavailable",))
     workforce = [item.to_dict() for item in contracts]
@@ -1841,7 +1847,7 @@ def hire_contractor_for_gap(
     daily_hire_count = _today_hires(store) if candidate.action == "hire" else 0
     daily_hire_alert = daily_hire_count >= config.workforce.daily_hire_alert_threshold
     critic_providers = configured_workforce_providers(
-        config, stage="critic", route_key="workforce.hiring.critic"
+        config, stage="critic", route_key="workforce.hiring.critic", harness=harness
     )
     critic_result, critic_attempt = _invoke(
         critic_providers,
@@ -1905,6 +1911,7 @@ def hire_contractor_for_gap(
         creator_providers=providers,
         budget=budget,
         invoker=invoker,
+        harness=harness,
     )
     if security_verdict is None:
         return ContractorHiringOutcome(

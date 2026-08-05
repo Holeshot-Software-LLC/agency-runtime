@@ -68,28 +68,65 @@ def _profile_to_provider(profile: InferenceProfile) -> ProviderEntry:
     """Project one ``InferenceProfile`` to a runnable ``ProviderEntry``."""
 
     timeout_seconds = max(0.05, min(120.0, profile.timeout_ms / 1000.0))
+    adapter = profile.adapter.strip().casefold()
+    transport = profile.transport.strip().casefold() if adapter == "cli" else ""
+    # The codex CLI forwards thinking as model_reasoning_effort; the claude CLI
+    # has no per-call thinking flag and rejects a non-empty effort, so its
+    # configured level is recorded but never forwarded.
+    reasoning_effort = "" if transport == "claude" else profile.thinking_level
     return ProviderEntry(
         name=profile.name or "inference-profile",
         type=profile.adapter,
-        transport="",
+        transport=transport,
         model=profile.model,
         base_url=profile.base_url,
         api_key=profile.api_key,
         api_key_env=profile.api_key_env,
-        ollama_mode=profile.adapter.strip().casefold() == "ollama",
+        ollama_mode=adapter == "ollama",
         timeout=timeout_seconds,
-        reasoning_effort=profile.thinking_level,
+        reasoning_effort=reasoning_effort,
     )
+
+
+def _named_profile(
+    config: AgencyConfig,
+    route_key: str,
+    harness: str,
+) -> tuple[str, str]:
+    """Return ``(profile_name, origin)`` for a route, or ``("", "")``.
+
+    Precedence: harness routes -> harness default_profile -> global routes ->
+    global default_profile. A harness section only participates when the
+    caller supplies a harness that has a configured section, so installs
+    without harness sections behave exactly as before. ``origin`` names the
+    table that supplied the profile ("route" or "default_profile", with a
+    harness prefix when harness-scoped) so error messages stay exact.
+    """
+
+    inference = config.inference
+    if not isinstance(inference, InferenceConfig):
+        return "", ""
+    harness_key = harness.strip().casefold()
+    harness_config = inference.harnesses.get(harness_key) if harness_key else None
+    if harness_config is not None:
+        if name := harness_config.routes.get(route_key, ""):
+            return name, f"harnesses.{harness_key}.routes"
+        if harness_config.default_profile:
+            return harness_config.default_profile, f"harnesses.{harness_key}.default_profile"
+    if name := inference.routes.get(route_key, ""):
+        return name, "route"
+    return inference.default_profile, "default_profile" if inference.default_profile else ""
 
 
 def _resolve_profile(
     config: AgencyConfig,
     route_key: str,
+    harness: str = "",
 ) -> InferenceProfile | None:
     """Return the profile a route resolves to, or ``None`` when no match.
 
     Returns ``None`` when:
-    - the route key is not present in ``inference.routes`` and no
+    - the route key is not present in any participating route table and no
       ``default_profile`` is configured, or
     - the named profile is missing.
 
@@ -104,11 +141,9 @@ def _resolve_profile(
     inference = config.inference
     if not isinstance(inference, InferenceConfig):
         return None
-    profile_name = inference.routes.get(route_key, "")
+    profile_name, _ = _named_profile(config, route_key, harness)
     if profile_name:
         return inference.profiles.get(profile_name)
-    if inference.default_profile:
-        return inference.profiles.get(inference.default_profile)
     return None
 
 
@@ -127,7 +162,11 @@ def translate_thinking_level(
       omitted at call time.
     - ``anthropic``: token budgets are owned by the structured provider; this
       function only records the configured level as consumed.
-    - ``ollama`` / ``cli``: recorded and ignored at call time.
+    - ``cli`` + ``codex`` transport: forwarded as ``model_reasoning_effort``.
+    - ``cli`` + ``claude`` transport: recorded as ``"unsupported"`` — the
+      claude CLI has no per-call thinking control, so a configured level is
+      never forwarded.
+    - ``ollama``: recorded and ignored at call time.
     - ``litellm``: passed through as the native ``thinking`` parameter; the
       consumed value matches the configured value.
     """
@@ -136,14 +175,20 @@ def translate_thinking_level(
     adapter = profile.adapter.strip().casefold()
     if adapter == "openai-compatible" and profile.thinking_level == "xhigh":
         return "unsupported"
+    if adapter == "cli" and profile.transport.strip().casefold() == "claude":
+        return "unsupported"
     return profile.thinking_level
 
 
 def resolve(
     config: AgencyConfig,
     route_key: str,
+    harness: str = "",
 ) -> ProfileResolution:
     """Resolve one route key to its profile, provider, and consumed thinking level.
+
+    ``harness`` scopes resolution to that harness's route section when one is
+    configured; unresolved keys fall through to the global routes and default.
 
     Raises ``ConfigValidationError`` when a route is configured but its named
     profile is missing, or when ``default_profile`` is set but its named
@@ -156,19 +201,17 @@ def resolve(
     inference = config.inference
     if not isinstance(inference, InferenceConfig):
         raise ConfigValidationError(f"inference route {route_key!r}: config.inference is invalid")
-    profile_name = inference.routes.get(route_key, "")
+    profile_name, origin = _named_profile(config, route_key, harness)
     if profile_name:
         if profile_name not in inference.profiles:
+            if origin.endswith("default_profile"):
+                raise ConfigValidationError(
+                    f"inference {origin} {profile_name!r}: profile is not defined"
+                )
             raise ConfigValidationError(
                 f"inference route {route_key!r}: profile {profile_name!r} is not defined"
             )
         profile = inference.profiles[profile_name]
-    elif inference.default_profile:
-        if inference.default_profile not in inference.profiles:
-            raise ConfigValidationError(
-                f"inference default_profile {inference.default_profile!r}: profile is not defined"
-            )
-        profile = inference.profiles[inference.default_profile]
     else:
         raise ConfigValidationError(
             f"inference route {route_key!r}: no route and no default_profile "

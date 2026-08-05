@@ -611,3 +611,267 @@ def test_legacy_default_config_yaml_loads_with_inference_block() -> None:
     assert config.inference.profiles["agency-hiring"].thinking_level == "low"
     assert config.inference.profiles["agency-security"].thinking_level == "high"
     assert config.inference.profiles["agency-default"].model == "gpt5.6-luna"
+
+
+# ── Harness-scoped routing + CLI transport profiles (per-harness configs) ──
+
+
+from agency_runtime.core.config import HarnessInferenceConfig
+
+
+def _harness_config(
+    profiles: dict[str, InferenceProfile],
+    *,
+    routes: dict[str, str] | None = None,
+    default_profile: str = "",
+    harnesses: dict[str, HarnessInferenceConfig] | None = None,
+) -> AgencyConfig:
+    return AgencyConfig(
+        providers=(
+            ProviderEntry(
+                name="fallback",
+                type="litellm",
+                model="fallback-model",
+                base_url="https://fallback.example.test/v1",
+                api_key="fallback",
+            ),
+        ),
+        workforce=WorkforceConfig(),
+        inference=InferenceConfig(
+            default_profile=default_profile,
+            routes=routes or {},
+            profiles=profiles,
+            harnesses=harnesses or {},
+        ),
+    )
+
+
+def _cli_profile(
+    name: str, *, transport: str, model: str, thinking_level: str = ""
+) -> InferenceProfile:
+    return InferenceProfile(
+        name=name,
+        adapter="cli",
+        model=model,
+        thinking_level=thinking_level,
+        transport=transport,
+    )
+
+
+def test_cli_codex_profile_projects_transport_and_effort() -> None:
+    config = _harness_config(
+        {
+            "codex-fast": _cli_profile(
+                "codex-fast", transport="codex", model="gpt-x", thinking_level="low"
+            )
+        },
+        routes={"workforce.planner": "codex-fast"},
+    )
+    provider = resolve(config, "workforce.planner").provider
+
+    assert provider.type == "cli"
+    assert provider.transport == "codex"
+    assert provider.reasoning_effort == "low"
+
+
+def test_cli_claude_profile_never_forwards_thinking() -> None:
+    profile = _cli_profile(
+        "claude-fast", transport="claude", model="haiku", thinking_level="medium"
+    )
+    config = _harness_config(
+        {"claude-fast": profile}, routes={"workforce.planner": "claude-fast"}
+    )
+    provider = resolve(config, "workforce.planner").provider
+
+    assert provider.transport == "claude"
+    assert provider.reasoning_effort == ""
+    assert translate_thinking_level(profile) == "unsupported"
+
+
+def test_harness_routes_take_precedence_over_global() -> None:
+    config = _harness_config(
+        {
+            "global-p": _profile("global-p"),
+            "claude-p": _cli_profile("claude-p", transport="claude", model="haiku"),
+        },
+        routes={"workforce.recruiter": "global-p"},
+        harnesses={
+            "claude": HarnessInferenceConfig(routes={"workforce.recruiter": "claude-p"}),
+        },
+    )
+
+    assert resolve(config, "workforce.recruiter", harness="claude").profile.name == "claude-p"
+    assert resolve(config, "workforce.recruiter").profile.name == "global-p"
+
+
+def test_harness_default_profile_beats_global_routes() -> None:
+    # A harness section is a complete staffing override for that harness: its
+    # default wins over a global route so a harness never silently staffs
+    # from another harness's subscription.
+    config = _harness_config(
+        {
+            "global-p": _profile("global-p"),
+            "claude-p": _cli_profile("claude-p", transport="claude", model="haiku"),
+        },
+        routes={"workforce.recruiter": "global-p"},
+        harnesses={"claude": HarnessInferenceConfig(default_profile="claude-p")},
+    )
+
+    assert resolve(config, "workforce.recruiter", harness="claude").profile.name == "claude-p"
+
+
+def test_unknown_harness_falls_through_to_global() -> None:
+    config = _harness_config(
+        {"global-p": _profile("global-p")},
+        routes={"workforce.recruiter": "global-p"},
+        harnesses={"claude": HarnessInferenceConfig(default_profile="global-p")},
+    )
+
+    assert resolve(config, "workforce.recruiter", harness="hermes").profile.name == "global-p"
+
+
+def test_configured_workforce_providers_uses_harness(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AGENCY_INFERENCE_HARNESS", raising=False)
+    config = _harness_config(
+        {
+            "claude-p": _cli_profile("claude-p", transport="claude", model="haiku"),
+            "codex-p": _cli_profile("codex-p", transport="codex", model="gpt-x"),
+        },
+        harnesses={
+            "claude": HarnessInferenceConfig(default_profile="claude-p"),
+            "codex": HarnessInferenceConfig(default_profile="codex-p"),
+        },
+    )
+
+    claude = configured_workforce_providers(
+        config, stage="recruiter", route_key="workforce.recruiter", harness="claude"
+    )
+    codex = configured_workforce_providers(
+        config, stage="recruiter", route_key="workforce.recruiter", harness="codex"
+    )
+    none = configured_workforce_providers(
+        config, stage="recruiter", route_key="workforce.recruiter"
+    )
+
+    assert [p.name for p in claude] == ["claude-p"]
+    assert [p.name for p in codex] == ["codex-p"]
+    assert [p.name for p in none] == ["fallback"]
+
+
+def test_env_override_selects_harness_for_unknown_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = _harness_config(
+        {"claude-p": _cli_profile("claude-p", transport="claude", model="haiku")},
+        harnesses={"claude": HarnessInferenceConfig(default_profile="claude-p")},
+    )
+    monkeypatch.setenv("AGENCY_INFERENCE_HARNESS", "claude")
+
+    chain = configured_workforce_providers(
+        config, stage="recruiter", route_key="workforce.recruiter", harness="unknown"
+    )
+
+    assert [p.name for p in chain] == ["claude-p"]
+
+
+def test_schema_accepts_cli_transport_and_harness_sections() -> None:
+    document = {
+        "inference": {
+            "profiles": {
+                "claude-fast": {"adapter": "cli", "transport": "claude", "model": "haiku"},
+                "codex-fast": {
+                    "adapter": "cli",
+                    "transport": "codex",
+                    "model": "gpt-x",
+                    "thinking_level": "low",
+                },
+            },
+            "harnesses": {
+                "claude": {"default_profile": "claude-fast"},
+                "codex": {
+                    "default_profile": "codex-fast",
+                    "routes": {"workforce.recruiter.critic": "codex-fast"},
+                },
+            },
+        }
+    }
+
+    validated = validate_config_document(document)["inference"]
+
+    assert validated["profiles"]["claude-fast"]["transport"] == "claude"
+    assert validated["harnesses"]["claude"]["default_profile"] == "claude-fast"
+    assert validated["harnesses"]["codex"]["routes"] == {
+        "workforce.recruiter.critic": "codex-fast"
+    }
+
+
+def test_schema_rejects_cli_profile_without_transport() -> None:
+    document = {
+        "inference": {
+            "profiles": {"bad": {"adapter": "cli", "model": "haiku"}},
+        }
+    }
+
+    with pytest.raises(ConfigValidationError, match=r"inference\.profiles\.bad\.transport"):
+        validate_config_document(document)
+
+
+def test_schema_rejects_transport_on_http_profile() -> None:
+    document = {
+        "inference": {
+            "profiles": {
+                "bad": {
+                    "adapter": "litellm",
+                    "transport": "claude",
+                    "model": "alias",
+                    "base_url": "https://router.example.test/v1",
+                    "api_key_env": "ROUTER_KEY",
+                }
+            },
+        }
+    }
+
+    with pytest.raises(ConfigValidationError, match=r"inference\.profiles\.bad\.transport"):
+        validate_config_document(document)
+
+
+def test_schema_rejects_unknown_harness_name() -> None:
+    document = {
+        "inference": {
+            "profiles": {
+                "p": {
+                    "adapter": "litellm",
+                    "model": "alias",
+                    "base_url": "https://router.example.test/v1",
+                    "api_key_env": "ROUTER_KEY",
+                }
+            },
+            "harnesses": {"vscode": {"default_profile": "p"}},
+        }
+    }
+
+    with pytest.raises(ConfigValidationError, match=r"inference\.harnesses"):
+        validate_config_document(document)
+
+
+def test_schema_rejects_harness_route_to_undefined_profile() -> None:
+    document = {
+        "inference": {
+            "profiles": {
+                "p": {
+                    "adapter": "litellm",
+                    "model": "alias",
+                    "base_url": "https://router.example.test/v1",
+                    "api_key_env": "ROUTER_KEY",
+                }
+            },
+            "harnesses": {"claude": {"routes": {"workforce.recruiter": "ghost"}}},
+        }
+    }
+
+    with pytest.raises(
+        ConfigValidationError, match=r"inference\.harnesses\.claude\.routes"
+    ):
+        validate_config_document(document)
