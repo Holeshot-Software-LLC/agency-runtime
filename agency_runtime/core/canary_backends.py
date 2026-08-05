@@ -3139,15 +3139,17 @@ class SafeClaudeCanaryBackend:
                     "-p",
                     "--output-format",
                     "json",
+                    # One bounded preamble turn before the final message; a
+                    # hard 1-turn cap kills responses that open with text.
                     "--max-turns",
-                    "1",
+                    "2",
                     "--no-session-persistence",
-                    "--setting-sources",
-                    "",
+                    # =-joined spellings: the empty argv items the plain forms
+                    # require are rejected by the owned-process runner.
+                    "--setting-sources=",
                     "--plugin-dir",
                     str(self.plugin_dir),
-                    "--tools",
-                    "",
+                    "--tools=",
                     "--disallowedTools",
                     "mcp__*",
                     "--strict-mcp-config",

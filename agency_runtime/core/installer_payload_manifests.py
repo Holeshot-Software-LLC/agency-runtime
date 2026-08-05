@@ -159,8 +159,9 @@ def build_claude_bundle(
         "description": _DESCRIPTION,
         "author": {"name": "Agency Runtime Contributors"},
         "license": "MIT",
-        "hooks": "./hooks/hooks.json",
-        "mcpServers": "./.mcp.json",
+        # hooks/hooks.json and .mcp.json are Claude's standard plugin files and
+        # load automatically; referencing them here again is a fatal duplicate
+        # ("Hook load failed: Duplicate hooks file detected") on Claude >= 2.x.
     }
     marketplace = {
         "name": MARKETPLACE_ID,

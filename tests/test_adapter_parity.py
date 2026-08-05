@@ -825,6 +825,12 @@ def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
         global_guidance = (tmp_path / ".codex" / "AGENTS.md").read_text(encoding="utf-8")
         assert "[AGENCY DELEGATION PLAN]" in global_guidance
         assert "explicitly requests Codex native subagent delegation" in global_guidance
+    if host == "claude":
+        # Claude auto-loads the standard hooks/hooks.json and .mcp.json plugin
+        # files; a manifest reference to either is a fatal duplicate-load error
+        # on Claude >= 2.x ("Hook load failed: Duplicate hooks file detected").
+        assert "hooks" not in manifest
+        assert "mcpServers" not in manifest
     assert "UserPromptSubmit" in hooks["hooks"]
     for event, registrations in hooks["hooks"].items():
         command = registrations[0]["hooks"][0]

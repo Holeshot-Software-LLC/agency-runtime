@@ -1058,8 +1058,11 @@ def test_claude_canary_loads_managed_plugin_without_safe_mode_or_profile_setting
     argv = calls[0]["argv"]
     assert "--safe-mode" not in argv
     assert argv[argv.index("--plugin-dir") + 1] == str(plugin_dir)
-    assert argv[argv.index("--setting-sources") + 1] == ""
-    assert argv[argv.index("--tools") + 1] == ""
+    # =-joined empty values: the plain two-token forms would put empty argv
+    # items in the command, which the owned-process runner rejects.
+    assert "--setting-sources=" in argv
+    assert "--tools=" in argv
+    assert "" not in argv
     assert "mcp__*" in argv
     assert "--strict-mcp-config" in argv
     assert "--no-session-persistence" in argv

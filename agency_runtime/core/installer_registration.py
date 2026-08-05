@@ -603,7 +603,11 @@ def _register_claude(
         "enable",
         [session.binary, "plugin", "enable", selector, "--scope", "user"],
     )
-    if not enabled.ok:
+    # Claude exits nonzero when the plugin is already enabled at the requested
+    # scope; that is the desired end state, and the inventory check below is
+    # the authoritative proof either way.
+    already_enabled = "already enabled" in f"{enabled.stdout}\n{enabled.stderr}".casefold()
+    if not enabled.ok and not already_enabled:
         return session.result(False, "enable")
     record = _verify_plugin_inventory(session)
     proven = (
