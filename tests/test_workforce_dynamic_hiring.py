@@ -958,6 +958,50 @@ def test_hire_reports_content_free_workforce_projection_stage(
     assert store.list_hiring_cases(limit=10) == []
 
 
+def test_hire_rejects_relationship_targets_unknown_to_the_roster(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    response = _hiring_response()
+    response["contract"]["relationships"] = [
+        {"kind": "must_follow", "target": "nonexistent-review-gate"}
+    ]
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_invoker(response, {"approved": True, "reason_codes": []}),
+    )
+
+    assert outcome.status == "abstained"
+    assert outcome.reason_codes == ("contract_invalid:relationship_target_unknown",)
+    assert store.list_hiring_cases(limit=10) == []
+
+
+def test_hire_accepts_relationship_targets_present_in_the_roster(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    response = _hiring_response()
+    response["contract"]["relationships"] = [
+        {"kind": "must_follow", "target": "general-build-reviewer"}
+    ]
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_invoker(response, {"approved": True, "reason_codes": []}),
+    )
+
+    assert outcome.hired is True
+
+
 def test_hire_reports_content_free_employment_revalidation_stage(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

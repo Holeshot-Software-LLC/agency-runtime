@@ -561,6 +561,17 @@ def _canonical_json(contract: WorkforceContract) -> bytes:
     ).encode("utf-8")
 
 
+COMPOSITION_RELATIONSHIP_FIELDS = (
+    "substitutes_for",
+    "complements",
+    "same_context_conflicts",
+    "selection_exclusive",
+    "requires",
+    "must_follow",
+    "must_review_independently",
+)
+
+
 def workforce_index_fingerprint(contracts: Sequence[WorkforceContract]) -> str:
     """Return a stable digest over a complete, duplicate-free workforce index."""
 
@@ -576,15 +587,7 @@ def workforce_index_fingerprint(contracts: Sequence[WorkforceContract]) -> str:
         if contract.schema_version != WORKFORCE_CONTRACT_SCHEMA_VERSION:
             raise ValueError("workforce index contains an unsupported schema version")
         relationships = contract.composition
-        for field in (
-            "substitutes_for",
-            "complements",
-            "same_context_conflicts",
-            "selection_exclusive",
-            "requires",
-            "must_follow",
-            "must_review_independently",
-        ):
+        for field in COMPOSITION_RELATIONSHIP_FIELDS:
             targets = getattr(relationships, field)
             if contract.agent_id in targets:
                 raise ValueError(f"workforce {field} relationship cannot target self")
@@ -601,6 +604,7 @@ __all__ = [
     "MAX_TAXONOMY_ITEMS",
     "MAX_TEXT_BYTES",
     "WORKFORCE_CONTRACT_SCHEMA_VERSION",
+    "COMPOSITION_RELATIONSHIP_FIELDS",
     "AuditContract",
     "CompositionContract",
     "WorkforceContract",

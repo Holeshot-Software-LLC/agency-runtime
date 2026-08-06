@@ -16,6 +16,7 @@ from agency_runtime.core.structured_provider import (
     invoke_structured_provider_result,
 )
 from agency_runtime.core.workforce.contract import (
+    COMPOSITION_RELATIONSHIP_FIELDS,
     MAX_OUTCOMES,
     MAX_RELATIONSHIPS,
     MAX_TAXONOMY_ITEMS,
@@ -1738,6 +1739,16 @@ def _validated_candidate(
             if action == "amend"
             else "contract_invalid:candidate_construction"
         )
+    # Relationship targets must name real roster agents: an unknown target
+    # survives single-contract validation but poisons the whole-index
+    # fingerprint later, turning one bad hire proposal into a turn-fatal
+    # snapshot failure instead of a bounded abstain.
+    if any(
+        target not in known
+        for field in COMPOSITION_RELATIONSHIP_FIELDS
+        for target in getattr(workforce_contract.composition, field)
+    ):
+        return failure("contract_invalid:relationship_target_unknown")
     if action == "hire" and (
         contract.slug in known
         or any(_obvious_duplicate(workforce_contract, item) for item in contracts)
