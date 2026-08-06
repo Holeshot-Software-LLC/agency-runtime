@@ -482,10 +482,25 @@ def _decline_delegation(arguments: dict[str, Any], store: Any) -> dict[str, Any]
     if len(rows) != 1:
         return {"error": "delegation decline requires one exact suggested work unit"}
     row = rows[0]
-    if str(row.get("status") or "").strip() != "suggested":
-        return {"error": "delegation work unit is no longer open"}
+    status = str(row.get("status") or "").strip()
     if str(row.get("recommended_agent") or "").strip() != agent:
         return {"error": "delegation decline agent does not match the durable plan"}
+    if status == "skipped":
+        # PreToolUse records a decline receipt when it denies a launch, so a
+        # parent following the documented flow can arrive here after the work
+        # unit is already closed. The receipt it asked for exists and names the
+        # same agent, so report that rather than an error for doing as told.
+        return {
+            "status": "delegation declined",
+            "delegation_event_id": str(row.get("id") or ""),
+            "agent": agent,
+            "trace_id": trace_id,
+            "work_unit_id": work_unit_id,
+            "reason": str(row.get("skip_reason") or "").strip() or reason,
+            "already_recorded": True,
+        }
+    if status != "suggested":
+        return {"error": "delegation work unit is no longer open"}
     updated = mark_delegation_skipped(
         store,
         session_id=session_id,

@@ -1387,6 +1387,52 @@ class HookBridge:
             )
         return {}
 
+    def _denied_with_decline_receipt(
+        self,
+        reason: str,
+        *,
+        session_id: str,
+        trace_id: str,
+        work_unit_id: str,
+        agent: str,
+        decline_reason: str,
+    ) -> dict[str, Any]:
+        """Deny a planned launch and record its decline in the same invocation.
+
+        A denied launch is a decided outcome, not an unfinished one: this work
+        unit will never run. Leaving the row open forced the parent to spend a
+        second tool call restating what the hook already knew -- once per unit,
+        so a dependent chain paid for it repeatedly.
+
+        Recording is never allowed to change the denial. If the receipt cannot
+        be written the launch is still refused, because a missing receipt is an
+        evidence gap while a permitted launch would be an authority failure.
+        """
+
+        if session_id and trace_id and work_unit_id:
+            try:
+                from agency_runtime.core.delegation.events import mark_delegation_skipped
+
+                mark_delegation_skipped(
+                    self.store,
+                    session_id=session_id,
+                    trace_id=trace_id,
+                    host=self.host,
+                    backend="native-denial",
+                    agent=agent,
+                    work_unit_id=work_unit_id,
+                    reason=decline_reason,
+                )
+            except Exception:
+                logger.error(
+                    "could not record the decline receipt for a denied launch "
+                    "(work_unit_id=%s, agent=%s); the launch stays denied",
+                    work_unit_id,
+                    agent,
+                    exc_info=True,
+                )
+        return _pre_tool_use_denial(reason, host=self.host)
+
     def _handle_native_child_pre_tool_use(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Inject one exact prompt while leaving the native scheduler in control."""
 
@@ -1418,16 +1464,26 @@ class HookBridge:
                     host=self.host,
                 )
             return {}
+        def deny(reason: str, decline_reason: str) -> dict[str, Any]:
+            return self._denied_with_decline_receipt(
+                reason,
+                session_id=assignment.session_id,
+                trace_id=assignment.trace_id,
+                work_unit_id=assignment.work_unit_id,
+                agent=assignment.specialist_slug,
+                decline_reason=decline_reason,
+            )
+
         task_matches, opaque_codex_task = _native_child_task_match(
             self.host,
             task,
             assignment,
         )
         if not task_matches:
-            return _pre_tool_use_denial(
+            return deny(
                 "Agency refused this native child because its task does not exactly match "
                 "the persisted work-unit goal. Use the exact goal from the delegation plan.",
-                host=self.host,
+                "launch task did not match the persisted work-unit goal",
             )
         activation_contract: dict[str, Any] | None = None
         if not opaque_codex_task:
@@ -1438,17 +1494,17 @@ class HookBridge:
                     opaque_codex_task=False,
                 )
             except ValueError:
-                return _pre_tool_use_denial(
+                return deny(
                     "Agency could not verify this native child's planned mutation and evidence "
                     "boundary. Use the exact current delegation plan.",
-                    host=self.host,
+                    "planned mutation and evidence boundary could not be verified",
                 )
         prompt_reader = getattr(self.store, "get_versioned_specialist_prompt", None)
         if not callable(prompt_reader):
-            return _pre_tool_use_denial(
+            return deny(
                 "Agency could not access the exact planned specialist; the native child "
                 "was not launched as an untyped substitute.",
-                host=self.host,
+                "the exact planned specialist prompt was unavailable",
             )
         prompt = prompt_reader(
             assignment.specialist_slug,
@@ -1464,10 +1520,10 @@ class HookBridge:
             or not isinstance(prompt.get("prompt_body"), str)
             or not prompt["prompt_body"]
         ):
-            return _pre_tool_use_denial(
+            return deny(
                 f"Agency could not verify {assignment.specialist_slug}'s exact selected "
                 "prompt version; the planned native child was not launched.",
-                host=self.host,
+                "the selected specialist prompt version could not be verified",
             )
         try:
             _native_child_delivery_output(
@@ -1481,10 +1537,10 @@ class HookBridge:
                 opaque_codex_task=opaque_codex_task,
             )
         except ValueError:
-            return _pre_tool_use_denial(
+            return deny(
                 "Agency's exact child context exceeds the host hook limit; split the "
                 "work unit or use a smaller audited specialist prompt.",
-                host=self.host,
+                "exact child context exceeded the host hook limit",
             )
         try:
             activation = _prepare_native_child_activation(
@@ -1508,10 +1564,10 @@ class HookBridge:
                 opaque_codex_task=opaque_codex_task,
             )
         except (RuntimeError, ValueError):
-            return _pre_tool_use_denial(
+            return deny(
                 f"Agency could not issue {assignment.specialist_slug}'s one-use activation; "
                 "the planned native child was not launched.",
-                host=self.host,
+                "a one-use activation grant could not be issued",
             )
         # Codex owns decryption and dispatch of collaboration messages. Opaque
         # input is preserved byte-for-byte; SubagentStart retrieves the exact
