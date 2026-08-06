@@ -8,6 +8,7 @@ a shell, transcript parsing, or host-private Python APIs.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import sys
@@ -66,6 +67,14 @@ from agency_runtime.core.unit_assignment import (
     native_child_activation_contract,
     work_unit_goal_hash,
 )
+
+logger = logging.getLogger(__name__)
+# A hook speaks one JSON object on stdout and must leave stderr clean; the host
+# and the stdio tests both treat stderr output as a boundary violation. Without
+# a handler, logging.lastResort would print every WARNING+ record straight to
+# stderr. A NullHandler suppresses that while still delivering records to an
+# operator who explicitly configures logging for this logger.
+logger.addHandler(logging.NullHandler())
 
 MAX_HOOK_INPUT_BYTES = 1_048_576
 MAX_HOOK_OUTPUT_BYTES = 65_536
@@ -3027,6 +3036,10 @@ class HookBridge:
         """Apply bounded manager-binding lifecycle effects for native host hooks."""
 
         correlation = self._correlation(payload)
+        # A stale installed runtime is reported once per session rather than on
+        # every tool call: the pointer read is cheap but not free, and an
+        # operator only needs to be told once that a reinstall is due.
+        notice = self._runtime_staleness_notice() if event == "SessionStart" else {}
         if event == "SessionEnd":
             self._close_session_turns(correlation.session_id, "session_ended")
             operation = getattr(self.store, "retire_resident_manager_binding", None)
@@ -3038,11 +3051,37 @@ class HookBridge:
             operation = getattr(self.store, "mark_resident_manager_restore_required", None)
             failure = "evidence store cannot restore resident managers"
         else:
-            return {}
+            return notice
         if not callable(operation):
             raise RuntimeError(failure)
         operation(session_id=correlation.session_id, host=self.host)
-        return {}
+        return notice
+
+    def _runtime_staleness_notice(self) -> dict[str, Any]:
+        """Report a stale installed hook runtime loudly without blocking work.
+
+        The drift is advisory: it names a reinstall the operator must run, but
+        it never denies an event.  A stale runtime still enforces old code
+        paths, so silently continuing was the original defect -- what changes
+        here is that the operator is told why, not whether work proceeds.
+        """
+
+        from agency_runtime.core.runtime_staleness import runtime_staleness
+
+        try:
+            drift = runtime_staleness(host=self.host)
+        except Exception:
+            return {}
+        if drift is None:
+            return {}
+        with suppress(Exception):
+            print(f"agency_runtime_stale_runtime {drift.message}", file=sys.stderr)
+        return {
+            "hookSpecificOutput": {
+                "hookEventName": "SessionStart",
+                "additionalContext": drift.message[:MAX_CONTEXT_CHARS],
+            }
+        }
 
     def _acknowledge_resident_manager_delivery(
         self,
@@ -3276,6 +3315,20 @@ class HookBridge:
             and all(isinstance(item, str) for item in verification["missing"])
             else []
         )
+
+        logger.debug(
+            "handle_terminal_rejection_start",
+            extra={
+                "session_id": correlation.session_id,
+                "trace_id": trace_id,
+                "action": action,
+                "status": status,
+                "delegation_strength": verification.get("delegation_strength"),
+                "evidence_revision": verification.get("evidence_revision"),
+                "missing_count": len(missing),
+            },
+        )
+
         committed = self._commit_terminal_finalization(
             session_id=correlation.session_id,
             trace_id=trace_id,
@@ -3286,11 +3339,45 @@ class HookBridge:
             missing=missing,
         )
         if not committed:
+            logger.error(
+                "handle_terminal_rejection_commit_failed",
+                extra={
+                    "session_id": correlation.session_id,
+                    "trace_id": trace_id,
+                    "action": action,
+                    "status": status,
+                },
+            )
             return self._verification_failed(correlation.session_id, trace_id)
+
+        logger.info(
+            "handle_terminal_rejection_committed",
+            extra={
+                "session_id": correlation.session_id,
+                "trace_id": trace_id,
+                "action": action,
+                "status": status,
+            },
+        )
         return self._terminal_completion_result(action)
 
     def _verification_failed(self, session_id: str, trace_id: str) -> dict[str, Any]:
-        self._close_turn(session_id, trace_id, "verification_failed")
+        logger.error(
+            "verification_failed_closing_turn",
+            extra={
+                "session_id": session_id,
+                "trace_id": trace_id,
+            },
+        )
+        closed = self._close_turn(session_id, trace_id, "verification_failed")
+        if not closed:
+            logger.error(
+                "verification_failed_close_turn_failed",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                },
+            )
         return self._reject_completion(_VERIFICATION_UNAVAILABLE, retry=True)
 
     def _commit_terminal_finalization(
@@ -3309,14 +3396,52 @@ class HookBridge:
 
         committer = getattr(self.store, "commit_terminal_finalization", None)
         if not callable(committer):
+            logger.error(
+                "commit_terminal_finalization store method unavailable",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "action": action,
+                    "status": status,
+                },
+            )
             return False
         digest = response_hash(response_text)
-        if (
-            isinstance(expected_evidence_revision, bool)
-            or not isinstance(expected_evidence_revision, int)
-            or expected_evidence_revision <= 0
-        ):
+
+        # Validate expected_evidence_revision early and log issues
+        if isinstance(expected_evidence_revision, bool):
+            logger.error(
+                "evidence_revision_validation_failed: bool_type",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "expected_evidence_revision_type": type(expected_evidence_revision).__name__,
+                    "expected_evidence_revision_value": str(expected_evidence_revision),
+                },
+            )
             return False
+        if not isinstance(expected_evidence_revision, int):
+            logger.error(
+                "evidence_revision_validation_failed: not_int",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "expected_evidence_revision_type": type(expected_evidence_revision).__name__,
+                    "expected_evidence_revision_value": str(expected_evidence_revision),
+                },
+            )
+            return False
+        if expected_evidence_revision <= 0:
+            logger.error(
+                "evidence_revision_validation_failed: non_positive",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "expected_evidence_revision_value": expected_evidence_revision,
+                },
+            )
+            return False
+
         arguments: dict[str, Any] = {
             "session_id": session_id,
             "trace_id": trace_id,
@@ -3335,18 +3460,127 @@ class HookBridge:
                 pending_interaction_kind=pending.kind,
                 pending_interaction_fingerprint=pending.response_fingerprint,
             )
+
+        logger.debug(
+            "store_commit_terminal_finalization_call",
+            extra={
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "action": action,
+                "status": status,
+                "expected_evidence_revision": expected_evidence_revision,
+                "response_hash": digest[:16],
+            },
+        )
+
         try:
             result = committer(**arguments)
-        except Exception:
+        except Exception as exc:
+            logger.error(
+                "store_commit_terminal_finalization_exception",
+                exc_info=True,
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "action": action,
+                    "status": status,
+                    "exception_type": type(exc).__name__,
+                    "exception_message": str(exc),
+                },
+            )
             return False
-        return bool(
-            isinstance(result, dict)
-            and result.get("authoritative") is True
-            and result.get("outcome") in {"committed", "replay"}
-            and result.get("action") == action
-            and result.get("response_hash") == digest
-            and result.get("status") == status
+
+        # Validate the result from Store and log which constraint fails
+        if not isinstance(result, dict):
+            logger.error(
+                "store_result_validation_failed: not_dict",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "result_type": type(result).__name__,
+                    "result_value": str(result)[:200],
+                },
+            )
+            return False
+
+        result_authoritative = result.get("authoritative")
+        if result_authoritative is not True:
+            logger.error(
+                "store_result_validation_failed: authoritative_constraint",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "expected_authoritative": True,
+                    "actual_authoritative": result_authoritative,
+                    "actual_authoritative_type": type(result_authoritative).__name__,
+                },
+            )
+            return False
+
+        result_outcome = result.get("outcome")
+        if result_outcome not in {"committed", "replay"}:
+            logger.error(
+                "store_result_validation_failed: outcome_constraint",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "expected_outcomes": ["committed", "replay"],
+                    "actual_outcome": result_outcome,
+                    "full_result": str(result)[:500],
+                },
+            )
+            return False
+
+        result_action = result.get("action")
+        if result_action != action:
+            logger.error(
+                "store_result_validation_failed: action_constraint",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "expected_action": action,
+                    "actual_action": result_action,
+                },
+            )
+            return False
+
+        result_response_hash = result.get("response_hash")
+        if result_response_hash != digest:
+            logger.error(
+                "store_result_validation_failed: response_hash_constraint",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "expected_response_hash": digest[:16],
+                    "actual_response_hash": (str(result_response_hash) or "")[:16],
+                },
+            )
+            return False
+
+        result_status = result.get("status")
+        if result_status != status:
+            logger.error(
+                "store_result_validation_failed: status_constraint",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "expected_status": status,
+                    "actual_status": result_status,
+                },
+            )
+            return False
+
+        logger.info(
+            "store_terminal_finalization_committed",
+            extra={
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "action": action,
+                "status": status,
+                "outcome": result_outcome,
+            },
         )
+        return True
 
     def _authoritative_trace_for_response(
         self,
@@ -3496,21 +3730,95 @@ class HookBridge:
 
     def _close_turn(self, session_id: str, trace_id: str, status: str) -> bool:
         if not session_id or not trace_id:
+            # Ordinary, not a fault: hosts that omit turn_id leave the trace
+            # deliberately uncorrelated, so there is no turn to close.
+            logger.debug(
+                "close_turn_skipped: no correlated turn",
+                extra={
+                    "session_id_empty": not session_id,
+                    "trace_id_empty": not trace_id,
+                },
+            )
             return False
         closer = getattr(self.store, "close_turn_evidence", None)
         getter = getattr(self.store, "get_run", None)
         if not callable(closer) or not callable(getter):
+            logger.error(
+                "close_turn_store_method_unavailable",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "closer_available": callable(closer),
+                    "getter_available": callable(getter),
+                },
+            )
             return False
         try:
             closer(session_id, trace_id, status=status)
             run = getter(trace_id)
-        except Exception:
+        except Exception as exc:
+            logger.error(
+                "close_turn_store_call_exception",
+                exc_info=True,
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "status": status,
+                    "exception_type": type(exc).__name__,
+                    "exception_message": str(exc),
+                },
+            )
             return False
-        return bool(
-            isinstance(run, dict)
-            and str(run.get("session_id") or "") == session_id
-            and str(run.get("status") or "") == status
+
+        # Validate the result
+        if not isinstance(run, dict):
+            logger.error(
+                "close_turn_result_validation_failed: not_dict",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "status": status,
+                    "result_type": type(run).__name__,
+                },
+            )
+            return False
+
+        run_session_id = str(run.get("session_id") or "")
+        if run_session_id != session_id:
+            logger.error(
+                "close_turn_result_validation_failed: session_id_mismatch",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "status": status,
+                    "expected_session_id": session_id,
+                    "actual_session_id": run_session_id,
+                },
+            )
+            return False
+
+        run_status = str(run.get("status") or "")
+        if run_status != status:
+            logger.error(
+                "close_turn_result_validation_failed: status_mismatch",
+                extra={
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "expected_status": status,
+                    "actual_status": run_status,
+                },
+            )
+            return False
+
+        logger.info(
+            "close_turn_success",
+            extra={
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "status": status,
+            },
         )
+        return True
 
     def _close_session_turns(self, session_id: str, status: str) -> None:
         getter = getattr(self.store, "get_open_traces_for_session", None)

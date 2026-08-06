@@ -732,6 +732,37 @@ def plan_private_package_runtime(source_path: str | Path) -> PrivateRuntimePlan:
     )
 
 
+def runtime_digest_for_bootstrap(source_path: str | Path) -> str:
+    """Return the projection digest naming one staged bootstrap, or "".
+
+    An empty result means the path is not inside a private launcher
+    projection — Agency is running from an ordinary checkout or site-packages
+    install, so there is no pinned runtime to compare against.
+    """
+
+    runtime_root = _projection_root(source_path)
+    if runtime_root is None:
+        return ""
+    try:
+        return _runtime_digest(runtime_root)
+    except PermissionError:
+        return ""
+
+
+def running_runtime_digest() -> str:
+    """Return the projection digest this process is executing from, or "".
+
+    Hooks launched by an installed bundle run one frozen projection; this
+    reports which. Direct CLI and test invocations return "".
+    """
+
+    try:
+        source = agency_bootstrap_path()
+    except (OSError, ValueError):
+        return ""
+    return runtime_digest_for_bootstrap(source)
+
+
 def verify_private_package_runtime(source_path: str | Path) -> str:
     """Attest an existing projection for inspection without mutating it.
 
@@ -755,6 +786,8 @@ __all__ = [
     "current_python_cache_tag",
     "plan_private_package_runtime",
     "prepare_private_package_runtime",
+    "running_runtime_digest",
+    "runtime_digest_for_bootstrap",
     "stage_private_package_runtime",
     "verify_private_package_runtime",
 ]

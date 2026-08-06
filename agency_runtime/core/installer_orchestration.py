@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -30,6 +31,7 @@ from agency_runtime.core.launcher_bootstrap import (
     prepare_private_package_runtime,
 )
 from agency_runtime.core.openclaw_streaming_policy import retained_backup_status
+from agency_runtime.core.runtime_staleness import record_installed_runtime
 from agency_runtime.core.process_argv import (
     PersistentArtifactIdentity,
     revalidate_persistent_artifacts,
@@ -333,6 +335,18 @@ def _prepare_adapter_launcher_paths() -> tuple[str, str]:
     return prepared
 
 
+def _record_installed_runtime_pointer(bootstrap_path: str, host: str) -> None:
+    """Note which projection this install published, for later drift reports.
+
+    Advisory only: hooks read this to warn that they are running an older
+    projection, never to choose the runtime they execute.  A failed write must
+    therefore not abort an otherwise complete install.
+    """
+
+    with suppress(OSError, ValueError):
+        record_installed_runtime(bootstrap_path, host=host)
+
+
 def _openclaw_failure_facts(
     steps: list[dict[str, Any]],
     failed_step: str | None,
@@ -538,6 +552,7 @@ def _install_agent_adapter_unlocked(
         }
     try:
         launcher_paths = _prepare_adapter_launcher_paths()
+        _record_installed_runtime_pointer(launcher_paths[1], host)
         with bind_launcher_artifact_paths(launcher_paths):
             files, primary = _bundle_files(
                 host,

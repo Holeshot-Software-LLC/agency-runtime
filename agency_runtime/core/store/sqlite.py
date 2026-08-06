@@ -7,6 +7,7 @@ roster — lives here. No loose JSON files.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sqlite3
 import stat
@@ -117,6 +118,10 @@ _DIAGNOSTIC_REASON_LIMIT = DIAGNOSTIC_REASON_LIMIT
 _API_BASE_LIMIT = API_BASE_LIMIT
 _IS_WINDOWS = os.name == "nt"
 _STORAGE_PERMISSION_REPAIR_LOCK = threading.RLock()
+logger = logging.getLogger(__name__)
+# The store runs inside hook subprocesses whose stderr must stay clean; see the
+# matching note in agency_runtime.adapters.hooks.
+logger.addHandler(logging.NullHandler())
 
 
 def _enable_recursive_triggers(conn: sqlite3.Connection) -> None:
@@ -2001,13 +2006,49 @@ class Store(
         normalized_status = str(status or "").strip()[:64]
         normalized_pending = str(pending_interaction_kind or "").strip()
         normalized_pending_fingerprint = str(pending_interaction_fingerprint or "").strip()
+
+        # Validate input parameters early
         if not normalized_action:
+            logger.error(
+                "store_input_validation_failed: action_required",
+                extra={
+                    "session_id": normalized_session,
+                    "trace_id": normalized_trace,
+                    "action": action,
+                },
+            )
             raise ValueError("action is required for terminal finalization")
         if not normalized_status or normalized_status in {"active", "evidence_only"}:
+            logger.error(
+                "store_input_validation_failed: status_invalid",
+                extra={
+                    "session_id": normalized_session,
+                    "trace_id": normalized_trace,
+                    "status": status,
+                    "normalized_status": normalized_status,
+                },
+            )
             raise ValueError("terminal finalization requires a terminal status")
         if normalized_pending not in {"", "question", "authorization"}:
+            logger.error(
+                "store_input_validation_failed: pending_kind_invalid",
+                extra={
+                    "session_id": normalized_session,
+                    "trace_id": normalized_trace,
+                    "pending_interaction_kind": pending_interaction_kind,
+                },
+            )
             raise ValueError("pending_interaction_kind is invalid")
         if bool(normalized_pending) != bool(normalized_pending_fingerprint):
+            logger.error(
+                "store_input_validation_failed: pending_fingerprint_mismatch",
+                extra={
+                    "session_id": normalized_session,
+                    "trace_id": normalized_trace,
+                    "pending_present": bool(normalized_pending),
+                    "fingerprint_present": bool(normalized_pending_fingerprint),
+                },
+            )
             raise ValueError("pending interaction kind and fingerprint must be paired")
         if normalized_pending_fingerprint:
             _require_response_hash(normalized_pending_fingerprint)
@@ -2016,7 +2057,28 @@ class Store(
             or not isinstance(expected_evidence_revision, int)
             or expected_evidence_revision <= 0
         ):
+            logger.error(
+                "store_input_validation_failed: evidence_revision_invalid",
+                extra={
+                    "session_id": normalized_session,
+                    "trace_id": normalized_trace,
+                    "expected_evidence_revision_type": type(expected_evidence_revision).__name__,
+                    "expected_evidence_revision_value": str(expected_evidence_revision),
+                },
+            )
             raise ValueError("expected_evidence_revision must be a positive integer")
+
+        logger.debug(
+            "store_commit_terminal_finalization_start",
+            extra={
+                "session_id": normalized_session,
+                "trace_id": normalized_trace,
+                "host": normalized_host,
+                "action": normalized_action,
+                "status": normalized_status,
+                "expected_evidence_revision": expected_evidence_revision,
+            },
+        )
 
         conn = self._connect()
         try:
@@ -2028,6 +2090,15 @@ class Store(
                 (normalized_trace,),
             ).fetchone()
             if run is None or str(run["session_id"] or "") != normalized_session:
+                logger.error(
+                    "store_run_validation_failed: not_found_or_session_mismatch",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "run_found": run is not None,
+                        "session_matches": run is not None and str(run["session_id"] or "") == normalized_session,
+                    },
+                )
                 conn.commit()
                 return self._terminal_finalization_result(
                     outcome="not_active",
@@ -2042,6 +2113,14 @@ class Store(
 
             binding = str(run["terminal_finalization_id"] or "")
             if binding:
+                logger.debug(
+                    "store_replay_detection_start",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "terminal_finalization_id": binding,
+                    },
+                )
                 terminal_metadata = _bounded_run_metadata(run["metadata"])
                 event = conn.execute(
                     "SELECT id, trace_id, action, response_hash, policy_response_hash, "
@@ -2049,6 +2128,56 @@ class Store(
                     "FROM finalization_events WHERE id = ?",
                     (binding,),
                 ).fetchone()
+
+                # Log detailed replay validation
+                if event is None:
+                    logger.error(
+                        "store_replay_validation_failed: event_not_found",
+                        extra={
+                            "session_id": normalized_session,
+                            "trace_id": normalized_trace,
+                            "terminal_finalization_id": binding,
+                        },
+                    )
+                else:
+                    event_trace_match = str(event["trace_id"] or "") == normalized_trace
+                    event_action_match = str(event["action"] or "") == normalized_action
+                    event_hash_match = str(event["response_hash"] or "") == normalized_hash
+                    event_policy_hash_match = str(event["policy_response_hash"] or "") == normalized_policy_hash
+                    event_status_match = str(event["terminal_status"] or "") == normalized_status
+                    run_status_match = str(run["status"] or "") == normalized_status
+                    run_ended = bool(run["ended_at"])
+                    pending_match = str(terminal_metadata.get("pending_interaction") or "") == normalized_pending
+                    pending_fingerprint_match = str(terminal_metadata.get("pending_interaction_fingerprint") or "") == normalized_pending_fingerprint
+
+                    if not all([
+                        event_trace_match,
+                        event_action_match,
+                        event_hash_match,
+                        event_policy_hash_match,
+                        event_status_match,
+                        run_status_match,
+                        run_ended,
+                        pending_match,
+                        pending_fingerprint_match,
+                    ]):
+                        logger.error(
+                            "store_replay_validation_failed: fields_mismatch",
+                            extra={
+                                "session_id": normalized_session,
+                                "trace_id": normalized_trace,
+                                "event_trace_match": event_trace_match,
+                                "event_action_match": event_action_match,
+                                "event_hash_match": event_hash_match,
+                                "event_policy_hash_match": event_policy_hash_match,
+                                "event_status_match": event_status_match,
+                                "run_status_match": run_status_match,
+                                "run_ended": run_ended,
+                                "pending_match": pending_match,
+                                "pending_fingerprint_match": pending_fingerprint_match,
+                            },
+                        )
+
                 exact_replay = bool(
                     event is not None
                     and str(event["trace_id"] or "") == normalized_trace
@@ -2064,8 +2193,17 @@ class Store(
                     == normalized_pending_fingerprint
                 )
                 conn.commit()
+                outcome = "replay" if exact_replay else "conflict"
+                logger.info(
+                    f"store_existing_finalization_detected_{outcome}",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "outcome": outcome,
+                    },
+                )
                 return self._terminal_finalization_result(
-                    outcome="replay" if exact_replay else "conflict",
+                    outcome=outcome,
                     authoritative=exact_replay,
                     session_id=normalized_session,
                     trace_id=normalized_trace,
@@ -2076,7 +2214,16 @@ class Store(
                     event_id=binding,
                 )
 
-            if str(run["status"] or "") not in {"active", "evidence_only"}:
+            run_status = str(run["status"] or "")
+            if run_status not in {"active", "evidence_only"}:
+                logger.error(
+                    "store_run_validation_failed: status_not_active",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "run_status": run_status,
+                    },
+                )
                 conn.commit()
                 return self._terminal_finalization_result(
                     outcome="not_active",
@@ -2090,6 +2237,14 @@ class Store(
                 )
 
             if bool(run["ended_at"]):
+                logger.error(
+                    "store_run_validation_failed: lifecycle_conflict",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "ended_at_present": bool(run["ended_at"]),
+                    },
+                )
                 conn.commit()
                 return self._terminal_finalization_result(
                     outcome="lifecycle_conflict",
@@ -2102,7 +2257,17 @@ class Store(
                     status=normalized_status,
                 )
 
-            if int(run["evidence_revision"]) != expected_evidence_revision:
+            actual_evidence_revision = int(run["evidence_revision"])
+            if actual_evidence_revision != expected_evidence_revision:
+                logger.error(
+                    "store_evidence_validation_failed: revision_mismatch",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "expected_evidence_revision": expected_evidence_revision,
+                        "actual_evidence_revision": actual_evidence_revision,
+                    },
+                )
                 conn.commit()
                 return self._terminal_finalization_result(
                     outcome="stale_evidence",
@@ -2124,6 +2289,17 @@ class Store(
                     "pending_interaction_fingerprint": normalized_pending_fingerprint,
                 },
             )
+
+            logger.debug(
+                "store_finalization_insert_start",
+                extra={
+                    "session_id": normalized_session,
+                    "trace_id": normalized_trace,
+                    "event_id": event_id,
+                    "action": normalized_action,
+                },
+            )
+
             conn.execute(
                 "INSERT INTO finalization_events "
                 "(id, trace_id, host, action, missing, response_hash, "
@@ -2149,14 +2325,38 @@ class Store(
                 "AND status IN ('active', 'evidence_only')",
                 (closed_at, normalized_status, event_id, terminal_metadata, run["id"]),
             )
+
             if closed.rowcount != 1:
+                logger.error(
+                    "store_finalization_update_failed: cas_mismatch",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "event_id": event_id,
+                        "expected_rowcount": 1,
+                        "actual_rowcount": closed.rowcount,
+                    },
+                )
                 raise RuntimeError("terminal finalization compare-and-swap failed")
+
             conn.execute(
                 "UPDATE specialists_loaded SET expired_at = ? "
                 "WHERE session_id = ? AND trace_id = ? AND expired_at IS NULL",
                 (closed_at, normalized_session, normalized_trace),
             )
             conn.commit()
+
+            logger.info(
+                "store_terminal_finalization_committed",
+                extra={
+                    "session_id": normalized_session,
+                    "trace_id": normalized_trace,
+                    "event_id": event_id,
+                    "action": normalized_action,
+                    "status": normalized_status,
+                },
+            )
+
             return self._terminal_finalization_result(
                 outcome="committed",
                 authoritative=True,
@@ -2168,7 +2368,19 @@ class Store(
                 status=normalized_status,
                 event_id=event_id,
             )
-        except Exception:
+        except Exception as exc:
+            logger.error(
+                "store_terminal_finalization_exception",
+                exc_info=True,
+                extra={
+                    "session_id": normalized_session,
+                    "trace_id": normalized_trace,
+                    "action": normalized_action,
+                    "status": normalized_status,
+                    "exception_type": type(exc).__name__,
+                    "exception_message": str(exc),
+                },
+            )
             conn.rollback()
             raise
         finally:
