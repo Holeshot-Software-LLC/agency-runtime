@@ -43,10 +43,29 @@ def native_delegation_instruction(host: object) -> str:
             "is terminal before starting the next row. Never use `send_message`, "
             "`followup_task`, or retry the spawn."
         )
-    elif normalized == "claude":
+    elif normalized in {"claude", "zcode"}:
+        # Both hosts drive the same Agent tool and bind the plan row through
+        # `description` (see hooks._planned_native_work_unit_id).
+        #
+        # Each plan row names its specialist as `agent=<slug>`, which reads like a
+        # subagent_type and had been mis-mapped onto one. A specialist slug is not
+        # a native agent type, so the launch fails before the child ever starts --
+        # after the hook has already resolved the row and minted a one-use grant
+        # that then goes unconsumed. State the mapping explicitly.
+        #
+        # Choose a native profile whose tools can satisfy the row's mutation_scope:
+        # a read-only profile cannot complete a workspace_write unit, and Agency
+        # deliberately does not pick the worker on the host's behalf.
         dispatch = (
             f"Dispatch with {tool}; use the unchanged work_unit_id as description so "
-            "installed PreToolUse and SubagentStart hooks can bind the child."
+            "installed PreToolUse and SubagentStart hooks can bind the child. Set "
+            "`subagent_type` to a native agent type this host provides, such as "
+            "`general-purpose`; never pass the row's `agent=<slug>` specialist "
+            "identity as `subagent_type` -- it is not a native agent type, and the "
+            "PreToolUse hook injects the selected specialist prompt into the child "
+            "for you without replacing the native worker profile you chose. Pick a "
+            "profile whose tools can satisfy the row's mutation_scope: a read-only "
+            "profile cannot complete a workspace_write unit."
         )
     else:
         dispatch = (
