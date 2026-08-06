@@ -1855,7 +1855,8 @@ class Store(
                 for row in conn.execute(
                     "SELECT id, session_id, trace_id, work_unit_id, specialist_slug, "
                     "specialist_version, specialist_prompt_hash, worker_kind, worker_id, "
-                    "native_run_id, created_at, consumed_at, delegation_event_id "
+                    "native_run_id, launch_model, created_at, consumed_at, "
+                    "delegation_event_id "
                     "FROM delegation_activation_receipts WHERE session_id = ? "
                     "AND trace_id = ? AND consumed_at IS NOT NULL "
                     "ORDER BY consumed_at, rowid",

@@ -7,7 +7,7 @@ specialist use, delegation, skill context, and actual model selection explicit.
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any, TypedDict
 
 from agency_runtime.core.host_guidance import (
@@ -792,21 +792,41 @@ def _is_workforce_inference_receipt(
     )
 
 
+def _specialist_launch_models(activations: object) -> list[str]:
+    """Return the distinct models the launches explicitly requested."""
+
+    if not isinstance(activations, (list, tuple)):
+        return []
+    return _dedupe(
+        [
+            _clean(row.get("launch_model"))
+            for row in activations
+            if isinstance(row, Mapping) and _clean(row.get("launch_model"))
+        ]
+    )
+
+
 def _scoped_model_line(
     receipt: Mapping[str, Any] | None,
     requested_model: str,
     routing_receipt: Mapping[str, Any] | None,
     *,
     specialist_loaded: bool,
+    launch_models: Sequence[str] = (),
 ) -> str:
     """Keep parent, workforce-planner, and specialist model identities distinct."""
 
     parent = "parent task: host-selected (not observable to Agency)"
-    specialist = (
-        "specialist: launch model not evidenced by this receipt"
-        if specialist_loaded
-        else "specialist: not launched"
-    )
+    if not specialist_loaded:
+        specialist = "specialist: not launched"
+    elif launch_models:
+        specialist = f"specialist: {', '.join(launch_models)} (requested at launch)"
+    else:
+        # The launch named no model, so the host resolved one itself -- from the
+        # agent definition or the session default. Which of those it picked is
+        # not observable from a hook, so claiming either would be a fresh false
+        # statement in place of a merely pessimistic one.
+        specialist = "specialist: no model requested at launch; host default applies"
     if _is_workforce_inference_receipt(receipt, routing_receipt):
         return (
             f"{parent}; workforce inference: {_model_line(receipt, requested_model)}; {specialist}"
@@ -1365,6 +1385,9 @@ def fill_header_fields(
         model,
         routing_receipt,
         specialist_loaded=bool(snapshot and snapshot.get("specialists")),
+        launch_models=_specialist_launch_models(
+            snapshot.get("specialist_activations") if snapshot else None
+        ),
     )
     filled["recruited_via"] = _recruited_via_line(routing_receipt)
 

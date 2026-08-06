@@ -724,6 +724,7 @@ def _prepare_native_child_activation(
     *,
     opaque_codex_task: bool,
     activation_contract: dict[str, Any] | None,
+    launch_model: str = "",
 ) -> dict[str, Any]:
     """Issue one exact plaintext or Store-scoped opaque activation grant."""
 
@@ -757,6 +758,7 @@ def _prepare_native_child_activation(
             worker_kind="generic-worker",
             grant_origin="native_hook",
             tool_use_id=assignment.tool_use_id,
+            launch_model=launch_model,
             **(activation_contract or {}),
         )
     if (
@@ -1490,6 +1492,9 @@ class HookBridge:
                 assignment,
                 opaque_codex_task=opaque_codex_task,
                 activation_contract=activation_contract,
+                # Only what the launch explicitly asked for. Absent means the
+                # host resolved the model itself, which the hook cannot see.
+                launch_model=_first_string(args, "model"),
             )
             activation_token = str(activation.get("activation_token") or "")
             result = _native_child_delivery_output(

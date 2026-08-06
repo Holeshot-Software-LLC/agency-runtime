@@ -61,6 +61,22 @@ _DEFAULT_EVIDENCE_CONTRACT_ID = "agency-native-child-v1"
 _DEFAULT_EVIDENCE_REQUIREMENTS = ("delegation-execution", "specialist-load")
 _ACTIVATION_GRANT_ORIGINS = frozenset({"manual_api", "native_hook"})
 _DIGEST_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+_MAX_LAUNCH_MODEL_CHARS = 128
+_LAUNCH_MODEL_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,127}$")
+
+
+def _clean_launch_model(value: object) -> str:
+    """Normalize an explicitly requested launch model, or return "".
+
+    A model the host never echoes back is caller-supplied text on an evidence
+    row, so it is bounded and shape-checked rather than stored verbatim.  An
+    unrecognisable value degrades to "" -- the same state as "no model was
+    requested" -- because the header must never present unvalidated input as
+    an observed fact.
+    """
+
+    normalized = " ".join(str(value or "").split())[:_MAX_LAUNCH_MODEL_CHARS]
+    return normalized if _LAUNCH_MODEL_PATTERN.fullmatch(normalized) else ""
 
 
 def _identity(value: object, *, maximum: int, field: str, required: bool = False) -> str:
@@ -1156,6 +1172,7 @@ class DelegationActivationStoreMixin:
         worker_id: str = "",
         grant_origin: str = "manual_api",
         tool_use_id: str = "",
+        launch_model: str = "",
         ttl_seconds: int = _DEFAULT_ACTIVATION_TTL_SECONDS,
         mutation_mode: str = "read_only",
         mutation_path_prefixes: Sequence[str] = (),
@@ -1355,9 +1372,9 @@ class DelegationActivationStoreMixin:
                 "grant_expires_unix, child_host, grant_origin, tool_use_id, "
                 "session_id, trace_id, work_unit_id, "
                 "specialist_slug, specialist_version, specialist_prompt_hash, "
-                "worker_kind, worker_id, native_run_id, created_at, consumed_at, "
-                "delegation_event_id) "
-                f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', "  # nosec B608
+                "worker_kind, worker_id, native_run_id, launch_model, created_at, "
+                "consumed_at, delegation_event_id) "
+                f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', ?, "  # nosec B608
                 f"{STORE_CLOCK_SQL}, NULL, NULL)",  # nosec B608
                 (
                     receipt_id,
@@ -1377,6 +1394,7 @@ class DelegationActivationStoreMixin:
                     reference["hash"],
                     kind,
                     worker,
+                    _clean_launch_model(launch_model),
                 ),
             )
             conn.commit()

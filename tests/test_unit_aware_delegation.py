@@ -1301,7 +1301,7 @@ def test_same_specialist_can_activate_for_two_out_of_order_native_work_units(
     assert fields["agencies_delegated"] == (f"technical-writer via generic-worker/{backend}")
     assert fields["actual_model_selected"] == (
         "parent task: host-selected (not observable to Agency); "
-        "specialist: launch model not evidenced by this receipt"
+        "specialist: no model requested at launch; host default applies"
     )
     assert fields["why"].endswith(".")
     assert "specialist instructions were loaded" in fields["how_it_shaped_outcome"]

@@ -1009,6 +1009,7 @@ CREATE TABLE IF NOT EXISTS delegation_activation_receipts (
     worker_kind TEXT NOT NULL,
     worker_id TEXT NOT NULL DEFAULT '',
     native_run_id TEXT NOT NULL DEFAULT '',
+    launch_model TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     consumed_at TEXT,
     delegation_event_id TEXT,
@@ -4250,6 +4251,9 @@ def migrate_delegation_activation_unit_identity(conn: sqlite3.Connection) -> Non
             "CHECK (grant_origin IN ('manual_api', 'native_hook'))",
         ),
         ("tool_use_id", "TEXT NOT NULL DEFAULT ''"),
+        # Empty means the launch requested no explicit model, which is a fact
+        # about the call, not a gap in the evidence.
+        ("launch_model", "TEXT NOT NULL DEFAULT ''"),
     ):
         ensure_column(conn, "delegation_activation_receipts", column, definition)
 
@@ -4315,6 +4319,7 @@ def migrate_delegation_activation_unit_identity(conn: sqlite3.Connection) -> Non
             worker_kind TEXT NOT NULL,
             worker_id TEXT NOT NULL DEFAULT '',
             native_run_id TEXT NOT NULL DEFAULT '',
+            launch_model TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL,
             consumed_at TEXT,
             delegation_event_id TEXT,
@@ -4335,7 +4340,8 @@ def migrate_delegation_activation_unit_identity(conn: sqlite3.Connection) -> Non
         "grant_expires_unix, child_host, grant_origin, tool_use_id, session_id, "
         "trace_id, work_unit_id, "
         "specialist_slug, specialist_version, specialist_prompt_hash, worker_kind, "
-        "worker_id, native_run_id, created_at, consumed_at, delegation_event_id"
+        "worker_id, native_run_id, launch_model, created_at, consumed_at, "
+        "delegation_event_id"
     )
     conn.execute(
         f"INSERT INTO delegation_activation_receipts ({columns}) "  # nosec B608

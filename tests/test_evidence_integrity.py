@@ -311,7 +311,7 @@ def test_pre_verify_rejects_spoofed_evidence_on_later_attempt(tmp_path: Path) ->
     assert (
         "Actual Model selected: parent task: host-selected (not observable to Agency); "
         "requested execution alias: task-general; "
-        "specialist: launch model not evidenced by this receipt" in result["message"]
+        "specialist: no model requested at launch; host default applies" in result["message"]
     )
 
 
