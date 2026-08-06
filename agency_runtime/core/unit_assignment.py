@@ -746,6 +746,31 @@ def native_child_evidence_requirements(required_evidence: Any) -> list[str]:
     return evidence
 
 
+def _mutation_path_prefixes(resources: Sequence[str]) -> list[str]:
+    """Project heuristic goal resources onto a canonical write boundary.
+
+    Goal text is prose, so extracted resources can be absolute paths, home
+    paths, or abbreviation noise that can never form a repository-relative
+    write prefix. Any non-canonical candidate proves the heuristic unreliable
+    for this goal, so the boundary widens to the whole workspace instead of
+    issuing an unissuable or wrongly narrow write scope.
+    """
+
+    from agency_runtime.core.native_child_activation import canonical_native_child_path_prefix
+
+    prefixes: list[str] = []
+    for resource in resources:
+        if resource == "repository-workspace":
+            return ["."]
+        try:
+            canonical = canonical_native_child_path_prefix(resource)
+        except ValueError:
+            return ["."]
+        if canonical not in prefixes:
+            prefixes.append(canonical)
+    return prefixes or ["."]
+
+
 def native_child_activation_contract(
     goal: Any,
     *,
@@ -767,11 +792,7 @@ def native_child_activation_contract(
         raise ValueError("external writes cannot be delegated by a native child activation")
     if normalized_scope not in {"read_only", "workspace_write"}:
         raise ValueError("native child activation mutation scope is unsupported")
-    path_prefixes = (
-        []
-        if normalized_scope == "read_only"
-        else ["." if resource == "repository-workspace" else resource for resource in resources]
-    )
+    path_prefixes = [] if normalized_scope == "read_only" else _mutation_path_prefixes(resources)
     return {
         "mutation_mode": normalized_scope,
         "mutation_path_prefixes": path_prefixes,

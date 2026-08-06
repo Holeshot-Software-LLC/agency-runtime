@@ -7,6 +7,7 @@ from copy import deepcopy
 import pytest
 
 from agency_runtime.core.codex_native_plan_scope import build_codex_native_plan_scope
+from agency_runtime.core.native_child_activation import build_native_child_mutation_scope
 from agency_runtime.core.selector.delegation_detection import (
     _imperative_units,
     detect_work_units,
@@ -231,6 +232,31 @@ def test_native_child_activation_rehydrates_exact_scope_and_content_free_evidenc
             resource_hashes=[_plan_hash(resource)],
             required_evidence=[],
         )
+
+
+def test_workspace_write_prose_resources_widen_to_the_whole_workspace() -> None:
+    """Absolute/home paths and abbreviation noise in prose goals must not
+    produce an unissuable workspace_write scope (they are not
+    repository-relative POSIX prefixes)."""
+
+    goal = (
+        "Request: In C:\\Workspaces\\Example: fix the worker "
+        "(agency_runtime/server/dashboard_service.py, e.g. "
+        "~/.agency-runtime/run/dashboard-startup-error.json). "
+        "Work unit 2: implementation with mutation_scope=workspace_write."
+    )
+    resources = _likely_resources(goal)
+    contract = native_child_activation_contract(
+        goal,
+        mutation_scope="workspace_write",
+        resource_hashes=[_plan_hash(item) for item in resources],
+        required_evidence=["delegation-execution"],
+    )
+    assert contract["mutation_path_prefixes"] == ["."]
+    build_native_child_mutation_scope(
+        mode=contract["mutation_mode"],
+        path_prefixes=contract["mutation_path_prefixes"],
+    )
 
 
 def test_opaque_codex_scope_preserves_the_exact_planned_path() -> None:

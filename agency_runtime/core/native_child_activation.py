@@ -439,6 +439,12 @@ def _canonical_path_prefix(value: object) -> str:
     return path
 
 
+def canonical_native_child_path_prefix(value: object) -> str:
+    """Validate one repository-relative POSIX write prefix (raises ValueError)."""
+
+    return _canonical_path_prefix(value)
+
+
 def build_native_child_mutation_scope(
     *,
     mode: object,
