@@ -160,3 +160,85 @@ def test_host_falls_back_to_the_recorded_pointer_host(
 
     assert drift is not None
     assert "agency install --agent codex" in drift.message
+
+
+def test_cli_drift_is_reported_when_source_moves_ahead_of_the_install(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+) -> None:
+    runtime_staleness.record_installed_runtime(
+        _projection_bootstrap(_DIGEST_A),
+        host="claude",
+    )
+    monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: "")
+    monkeypatch.setattr(
+        runtime_staleness,
+        "agency_bootstrap_path",
+        lambda: str(Path("/checkout") / "agency_runtime" / "_bootstrap.py"),
+    )
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_B)
+
+    drift = runtime_staleness.cli_install_drift()
+
+    assert drift is not None
+    assert drift.source_digest == _DIGEST_B
+    assert drift.installed_digest == _DIGEST_A
+    assert drift.package_root == str(Path("/checkout") / "agency_runtime")
+    assert drift.host == "claude"
+    assert _DIGEST_B[:12] in drift.message
+    assert _DIGEST_A[:12] in drift.message
+    assert "--agent claude" in drift.message
+
+
+def test_cli_drift_is_silent_when_source_matches_the_install(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+) -> None:
+    runtime_staleness.record_installed_runtime(
+        _projection_bootstrap(_DIGEST_A),
+        host="claude",
+    )
+    monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: "")
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_A)
+
+    assert runtime_staleness.cli_install_drift() is None
+
+
+def test_cli_drift_is_silent_inside_a_frozen_projection(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+) -> None:
+    """A hook would only ever hash itself, so it must never report this."""
+
+    runtime_staleness.record_installed_runtime(
+        _projection_bootstrap(_DIGEST_A),
+        host="claude",
+    )
+    monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: _DIGEST_B)
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_B)
+
+    assert runtime_staleness.cli_install_drift() is None
+
+
+def test_cli_drift_is_silent_without_a_recorded_pointer(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+) -> None:
+    monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: "")
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_B)
+
+    assert runtime_staleness.cli_install_drift() is None
+
+
+def test_cli_drift_is_silent_when_the_projection_cannot_be_planned(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+) -> None:
+    runtime_staleness.record_installed_runtime(
+        _projection_bootstrap(_DIGEST_A),
+        host="claude",
+    )
+    monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: "")
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: "")
+
+    assert runtime_staleness.cli_install_drift() is None

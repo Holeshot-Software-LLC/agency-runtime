@@ -19,8 +19,16 @@ resolving the runtime path dynamically at hook time.
 A hook cannot detect the second drift direction -- source edited but never
 reinstalled.  ``_collect_runtime_files`` only accepts the active package, and
 inside a hook the active package *is* the projection, so it would hash itself
-and always agree.  That check belongs to the ``agency`` CLI, which runs from
-the real checkout; see ``source_runtime_drift``.
+and always agree.  That check belongs to the ``agency`` CLI; see
+``cli_install_drift``.
+
+Note what that check compares: the package the CLI *itself* runs from, not
+whichever checkout happens to be the working directory.  A packaged tool
+install commonly owns the ``agency`` on PATH, in which case editing source
+moves neither the CLI nor the projection it would stage, and both agree with
+the pointer while every hook keeps running last week's code.  Running the
+check from the checkout (``python -m agency_runtime.cli status``) is what
+catches that, so the report names the package root it compared.
 """
 
 from __future__ import annotations
@@ -40,6 +48,7 @@ from agency_runtime.core.launcher_bootstrap import (
     running_runtime_digest,
     runtime_digest_for_bootstrap,
 )
+from agency_runtime.core.process_argv import agency_bootstrap_path
 from agency_runtime.core.private_paths import private_runtime_directory
 
 _POINTER_NAME = "current.json"
@@ -189,6 +198,67 @@ def runtime_staleness(*, host: str = "") -> RuntimeStaleness | None:
     )
 
 
+@dataclass(frozen=True, slots=True)
+class InstallDrift:
+    """Source that has moved ahead of the last install, seen from the CLI."""
+
+    source_digest: str
+    installed_digest: str
+    package_root: str
+    host: str
+
+    @property
+    def message(self) -> str:
+        agent = f" --agent {self.host}" if self.host else ""
+        return (
+            "installed hooks are behind this CLI: it would stage projection "
+            f"{self.source_digest[:12]} but the last install published "
+            f"{self.installed_digest[:12]}; hooks keep running the old code until "
+            f"`agency install{agent}`"
+        )
+
+
+def cli_install_drift() -> InstallDrift | None:
+    """Return drift between what this CLI would stage and the last install.
+
+    This is the drift direction a hook cannot see.  :func:`runtime_staleness`
+    covers the other one -- a session whose hooks predate the last install --
+    but it compares a projection against a pointer that the very same install
+    wrote, so it stays silent when source moves and nobody reinstalls.  Only a
+    process running the real package can notice that, which is why this is
+    reported by the CLI.
+
+    Silent None means "no drift is provable": this process is itself a frozen
+    projection (a hook, which would only ever hash itself), no install pointer
+    has been recorded yet, or no projection can be planned from this package.
+    All three are ordinary states and must not produce a warning.
+
+    ``package_root`` is reported because the CLI on PATH is frequently *not*
+    the checkout being edited -- a packaged tool install answers to `agency`
+    while source changes land somewhere else entirely.  Naming the directory
+    this CLI actually runs from is what makes that case diagnosable.
+    """
+
+    if running_runtime_digest():
+        return None
+    installed, pointer_host = installed_runtime_pointer()
+    if not installed:
+        return None
+    try:
+        source = agency_bootstrap_path()
+    except (OSError, ValueError):
+        return None
+    digest = source_runtime_drift(source)
+    if not digest or digest == installed:
+        return None
+    return InstallDrift(
+        source_digest=digest,
+        installed_digest=installed,
+        package_root=str(Path(source).parent),
+        host=pointer_host,
+    )
+
+
 def source_runtime_drift(bootstrap_path: str | Path) -> str:
     """Return the digest the current source *would* stage, or "" on failure.
 
@@ -206,7 +276,9 @@ def source_runtime_drift(bootstrap_path: str | Path) -> str:
 
 
 __all__ = [
+    "InstallDrift",
     "RuntimeStaleness",
+    "cli_install_drift",
     "installed_runtime_pointer",
     "record_installed_runtime",
     "runtime_staleness",

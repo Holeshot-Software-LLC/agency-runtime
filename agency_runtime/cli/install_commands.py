@@ -1404,6 +1404,10 @@ def cmd_install(
                 "error": f"{type(exc).__name__}: {safe_display_token(str(exc), limit=500)}",
             }
 
+    # Checked after the hosts are staged: a completed install should have
+    # published this CLI's projection, so surviving drift means the install
+    # reported success without actually publishing anything.
+    residual_drift = _cli_install_drift_projection()
     if not json_mode:
         _render_install_summary(
             profile_name=profile_name,
@@ -1415,6 +1419,13 @@ def cmd_install(
             dashboard_result=dashboard_result,
             dashboard_opted_out=dashboard_opted_out,
         )
+        if residual_drift is not None:
+            print(
+                "\n⚠️  Install finished but the published projection still differs from "
+                "this CLI; your hooks did not pick up this source."
+            )
+            print(f"   {residual_drift['message']}")
+            print(f"   This CLI runs from: {residual_drift['package_root']}")
         if all_hosts:
             detected = ", ".join(targets) if targets else "none"
             print(f"\n🔍 Auto-detected {len(targets)} agent host(s): {detected}")
@@ -1436,6 +1447,7 @@ def cmd_install(
                 "selected_hosts": "all_detected" if all_hosts else "explicit",
                 "hosts": host_results,
                 "dashboard": dashboard_result,
+                "runtime_drift": residual_drift,
                 "partial": not complete
                 and bool(
                     dashboard_result.get("ok") or any(item.get("ok") for item in host_results)
@@ -1448,6 +1460,30 @@ def cmd_install(
         all_hosts=all_hosts,
     )
     return 0 if successful else 1
+
+
+def _cli_install_drift_projection() -> dict[str, Any] | None:
+    """Project CLI-side install drift without letting a report break a command.
+
+    Reporting drift is advisory: a status or install run that cannot compute
+    the comparison must still deliver everything else it was asked for.
+    """
+
+    try:
+        from agency_runtime.core.runtime_staleness import cli_install_drift
+
+        drift = cli_install_drift()
+    except Exception:  # noqa: BLE001 - advisory only; never fail a command over it
+        return None
+    if drift is None:
+        return None
+    return {
+        "source_digest": drift.source_digest,
+        "installed_digest": drift.installed_digest,
+        "package_root": drift.package_root,
+        "host": drift.host,
+        "message": drift.message,
+    }
 
 
 def _print_install_result(host: str, result: dict[str, Any]) -> None:
@@ -2011,11 +2047,13 @@ def cmd_status(
             else:
                 print(f"❌ {message}")
             return 1
+    drift = _cli_install_drift_projection()
     payload = {
         "master": master,
         "master_transport": master_transport,
         "hosts": statuses,
         "inference": inference,
+        "runtime_drift": drift,
     }
     if getattr(args, "json", False):
         dependencies.emit_json(payload)
@@ -2025,6 +2063,9 @@ def cmd_status(
         f"global: {global_state}; generation {master.get('generation', 0)}; "
         f"source {master.get('source', 'unknown')}"
     )
+    if drift is not None:
+        print(f"runtime: {drift['message']}")
+        print(f"  This CLI runs from: {drift['package_root']}")
     print(
         f"inference: {inference['state']}; {len(inference['provider_chain'])} provider entries; "
         f"eligible-turn inference "
