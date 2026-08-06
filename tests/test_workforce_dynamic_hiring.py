@@ -499,7 +499,7 @@ def test_critic_can_independently_validate_runtime_gap_evidence(tmp_path: Path) 
     outcome = hire_contractor_for_gap(
         "Implement the missing quantum compiler build integration.",
         _unit(),
-        (_existing(),),
+        (replace(_existing(), stacks=("cobol",)),),
         store=store,
         config=_config(),
         gap_reason_codes=(
@@ -518,7 +518,9 @@ def test_verified_gap_projection_excludes_ineligible_partial_coverage(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "agency.db")
-    partial = replace(_existing(), artifact_kinds=("implementation-change",))
+    partial = replace(
+        _existing(), artifact_kinds=("implementation-change",), stacks=("cobol",)
+    )
     calls: list[dict[str, str]] = []
 
     outcome = hire_contractor_for_gap(
@@ -560,6 +562,7 @@ def test_verified_gap_projection_excludes_ineligible_partial_coverage(
             "ineligibility_reasons": [
                 "agent_authority_mismatch",
                 "agent_domain_mismatch",
+                "agent_stack_mismatch",
                 "agent_capability_mismatch",
                 "agent_explicitly_out_of_scope",
             ],
@@ -594,7 +597,7 @@ def test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval(
     outcome = hire_contractor_for_gap(
         request,
         _unit(),
-        (_existing(),),
+        (replace(_existing(), stacks=("cobol",)),),
         store=store,
         config=_config(),
         gap_reason_codes=(
@@ -687,7 +690,7 @@ def test_product_request_gap_repair_receives_live_reason_family_and_typed_proof(
     outcome = hire_contractor_for_gap(
         request,
         _unit(),
-        (_existing(),),
+        (replace(_existing(), stacks=("cobol",)),),
         store=store,
         config=_config(),
         gap_reason_codes=(

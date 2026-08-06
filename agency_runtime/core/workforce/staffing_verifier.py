@@ -410,9 +410,18 @@ def _coverage(unit: WorkUnit, contract: WorkforceContract) -> frozenset[str]:
     if unit.lifecycle_phase in contract.lifecycle_phases:
         covered.add(f"lifecycle:{unit.lifecycle_phase}")
     covered.update(f"domain:{item}" for item in unit.domains if item in contract.domains)
-    covered.update(
-        f"stack:{item}" for item in unit.languages + unit.frameworks if item in contract.stacks
-    )
+    if contract.stacks:
+        covered.update(
+            f"stack:{item}" for item in unit.languages + unit.frameworks if item in contract.stacks
+        )
+    else:
+        # Per-axis wildcard: a contract that declares no stacks neither proves
+        # nor disproves stack coverage. Nearly the whole roster predates stack
+        # enrichment (4/280 contracts declare stacks), so treating absence as
+        # non-coverage made every stack-bearing unit provably unstaffable and
+        # forced the recruiter into mandatory gaps. Declared stacks keep exact
+        # matching; empty stacks defer the stack judgment to inference.
+        covered.update(f"stack:{item}" for item in unit.languages + unit.frameworks)
     covered.update(
         f"capability:{item}" for item in unit.required_capabilities if _supports(contract, item)
     )

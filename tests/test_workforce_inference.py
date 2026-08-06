@@ -1581,16 +1581,19 @@ def test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requir
         authority="plan",
     )
     snapshot = _snapshot(architect)
+    # The uncovered proof lives on the capability axis: stacks are per-axis
+    # wildcarded (undeclared stacks defer to inference), so a mandatory gap
+    # needs a requirement no enabled worker's declared typed data covers.
     plan = {
-        "request_summary": "Design a Python and TypeScript application architecture.",
+        "request_summary": "Design an automated application architecture pipeline.",
         "units": [
             {
                 "unit_id": "unit-architecture",
-                "outcome": "Design the Python and TypeScript application architecture",
+                "outcome": "Design the automated application architecture pipeline",
                 "artifact_kind": "architecture-record",
                 "domains": ["software-engineering"],
-                "stacks": ["python", "typescript"],
-                "capability_ids": ["architecture", "design"],
+                "stacks": [],
+                "capability_ids": ["architecture", "design", "automation"],
                 "novel_capability": "",
                 "depends_on": [],
             }
@@ -1626,8 +1629,7 @@ def test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requir
             recruiter = json.loads(prompt)
             recall = recruiter["typed_recall"][0]
             assert recall["uncovered_requirements"] == [
-                "stack:python",
-                "stack:typescript",
+                "capability:automation",
             ]
             assert recall["candidates"] == [
                 {
@@ -1661,7 +1663,7 @@ def test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requir
         return _result(gap)
 
     outcome = plan_and_staff_workforce(
-        "Design a Python and TypeScript application architecture.",
+        "Design an automated application architecture pipeline.",
         snapshot,
         config=_config(mode="fast"),
         context=_context(),
@@ -2313,3 +2315,58 @@ def test_workforce_routing_reports_only_rejected_or_failed_attempts_as_failures(
     )
 
     assert routing["inference_failures"] == ["provider_response_contract_invalid"]
+
+
+def test_reconcile_unit_id_handles_exact_match() -> None:
+    """Exact plan unit_ids pass through unchanged (the common path)."""
+
+    from agency_runtime.core.workforce.inference import _reconcile_unit_id
+
+    plan_ids = frozenset({"unit-discovery", "unit-implementation", "unit-review"})
+    assert _reconcile_unit_id("unit-discovery", plan_ids) == "unit-discovery"
+    assert _reconcile_unit_id("UNIT-DISCOVERY", plan_ids) == "unit-discovery"
+
+
+def test_reconcile_unit_id_maps_normalized_compound_word() -> None:
+    """GLM-5.2 sometimes splits compound words (codepath→code-paths).
+
+    The helper must reconcile the normalized form to the canonical plan id
+    when exactly one plan unit is a high-prefix-similarity match.
+    """
+
+    from agency_runtime.core.workforce.inference import _reconcile_unit_id
+
+    plan_ids = frozenset(
+        {
+            "unit-discovery-codepath-mapping",
+            "unit-implementation-bugfix",
+            "unit-review-correctness",
+        }
+    )
+    # GLM-5.2 returned this instead of unit-discovery-codepath-mapping
+    assert (
+        _reconcile_unit_id("unit-discovery-code-paths", plan_ids)
+        == "unit-discovery-codepath-mapping"
+    )
+
+
+def test_reconcile_unit_id_rejects_unknown_id() -> None:
+    """Genuinely unknown unit_ids return None (no false reconciliation)."""
+
+    from agency_runtime.core.workforce.inference import _reconcile_unit_id
+
+    plan_ids = frozenset({"unit-discovery", "unit-implementation"})
+    assert _reconcile_unit_id("unit-totally-different-thing", plan_ids) is None
+    assert _reconcile_unit_id("", plan_ids) is None
+
+
+def test_reconcile_unit_id_rejects_ambiguous_match() -> None:
+    """When two plan ids match equally well, reconciliation is rejected."""
+
+    from agency_runtime.core.workforce.inference import _reconcile_unit_id
+
+    plan_ids = frozenset(
+        {"unit-discovery-codepath-mapping", "unit-discovery-codepath-analysis"}
+    )
+    # Both share the same long prefix, so this is ambiguous
+    assert _reconcile_unit_id("unit-discovery-code-paths", plan_ids) is None

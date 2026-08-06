@@ -165,7 +165,9 @@ _RECRUITER_SYSTEM = (
     "empty ranked_semantic list when no candidate card is even relevant; never invent a "
     "roster identity just to make the ranking nonempty.\n\n"
     "typed_recall is deterministic, non-ranked evidence: requirements and uncovered_requirements "
-    "are exact over the full eligible roster; each included candidate's covers list is exact; "
+    "are exact over the full eligible roster; each included candidate's covers list is exact. "
+    "Workers that declare no stacks are counted as able to cover stack requirements — absence "
+    "of stack enrichment is not evidence of incapability; judge their stack fit semantically; "
     "execution_eligible is a hard boundary. Candidate rows are a bounded coverage-first recall "
     "sample and need not repeat every detail card, so omission is not exclusion. Do not guess "
     "typed coverage from a display name or prose card. A nonempty uncovered_requirements list "
@@ -1199,12 +1201,22 @@ def _typed_shortlists(
                 continue
             wildcard = is_wildcard_coverage(unit, contract)
             coverage = frozenset() if wildcard else typed_staffing_coverage(unit, contract)
+            # Deferred (undeclared-stack) coverage counts toward sufficiency so
+            # absence of enrichment never proves a gap, but only declared
+            # coverage ranks candidates or appears as evidence — otherwise the
+            # per-axis wildcard flattens recall ordering and alphabetical
+            # filler crowds out genuinely stack-matched specialists.
+            declared = (
+                coverage
+                if contract.stacks
+                else frozenset(item for item in coverage if not item.startswith("stack:"))
+            )
             ineligibility = (
                 () if context is None else typed_staffing_ineligibility(unit, contract, context)
             )
             if not ineligibility and not wildcard:
                 eligible_coverage.update(coverage)
-            candidates.append((contract.agent_id, coverage, ineligibility, wildcard))
+            candidates.append((contract.agent_id, declared, ineligibility, wildcard))
         selected = _bounded_typed_candidates(required, candidates)
         result.append(
             {

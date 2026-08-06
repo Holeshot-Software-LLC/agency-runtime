@@ -935,11 +935,12 @@ def invoke_cli_structured(
                     "--json-schema",
                     schema_json,
                     # Structured output arrives via a forced tool call; models
-                    # sometimes emit one text turn first, which "--max-turns 1"
-                    # kills mid-response (error_max_turns). Two turns tolerates
-                    # that preamble while staying bounded and tool-free.
+                    # sometimes emit one or two text turns first, which a hard
+                    # 1-turn cap kills mid-response (error_max_turns). Three
+                    # turns tolerates the preamble on large recruiter prompts
+                    # while staying bounded and tool-free.
                     "--max-turns",
-                    "2",
+                    "3",
                     "--no-session-persistence",
                     # "--tools ''" is the CLI's documented all-tools-off value,
                     # but the owned-process runner rejects empty argv items;
