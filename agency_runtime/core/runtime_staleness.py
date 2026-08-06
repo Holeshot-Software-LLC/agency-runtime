@@ -26,9 +26,15 @@ Note what that check compares: the package the CLI *itself* runs from, not
 whichever checkout happens to be the working directory.  A packaged tool
 install commonly owns the ``agency`` on PATH, in which case editing source
 moves neither the CLI nor the projection it would stage, and both agree with
-the pointer while every hook keeps running last week's code.  Running the
-check from the checkout (``python -m agency_runtime.cli status``) is what
-catches that, so the report names the package root it compared.
+the pointer while every hook keeps running last week's code.
+
+Digests cannot detect that across environments.  ``_collect_runtime_files``
+hashes the installed distribution closure along with the sources, so a
+checkout and a packaged tool never produce the same digest however identical
+their source, and comparing them would fire forever.  The pointer therefore
+records the source package root as well, the roots decide whether a digest
+comparison is meaningful at all, and a mismatch is reported by naming the
+directory the install actually came from.
 """
 
 from __future__ import annotations
@@ -40,6 +46,7 @@ import stat
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import safe_load_bounded_json
@@ -92,12 +99,35 @@ def _validated_host(value: object) -> str:
     return text if _HOST_PATTERN.fullmatch(text) else ""
 
 
+def _running_package_root() -> str:
+    """Return the package directory this process runs from, or ""."""
+
+    try:
+        return str(Path(agency_bootstrap_path()).parent)
+    except (OSError, ValueError):
+        return ""
+
+
+def _same_package_root(left: str, right: str) -> bool:
+    """Compare two package roots the way the host filesystem would."""
+
+    if not left or not right:
+        return False
+    return os.path.normcase(os.path.normpath(left)) == os.path.normcase(os.path.normpath(right))
+
+
 def record_installed_runtime(bootstrap_path: str | Path, *, host: str = "") -> str:
     """Record which projection this install published; return its digest.
 
     Returns "" when the staged path is not a private projection, which keeps
     non-projection installs (tests, direct source runs) from writing a pointer
     that no hook could ever match.
+
+    The source package root is recorded alongside the digest.  Staging is
+    restricted to the active package, so the recorded root is the one this
+    install ran from -- and a later comparison needs it, because the digest
+    covers the installed distribution closure as well as the sources, and is
+    therefore only meaningful against the same environment.
     """
 
     digest = runtime_digest_for_bootstrap(bootstrap_path)
@@ -110,6 +140,7 @@ def record_installed_runtime(bootstrap_path: str | Path, *, host: str = "") -> s
                 "schema_version": _POINTER_SCHEMA_VERSION,
                 "runtime_digest": digest,
                 "host": _validated_host(host),
+                "source_root": _running_package_root(),
             },
             ensure_ascii=False,
             sort_keys=True,
@@ -148,8 +179,8 @@ def _remove_staging(path: Path) -> None:
         os.unlink(path)
 
 
-def installed_runtime_pointer() -> tuple[str, str]:
-    """Return the (digest, host) the last install published, or ("", "")."""
+def _pointer_document() -> dict[str, Any]:
+    """Return the validated pointer document, or an empty mapping."""
 
     try:
         payload = read_bounded_regular_file(
@@ -158,7 +189,7 @@ def installed_runtime_pointer() -> tuple[str, str]:
             label="installed runtime pointer",
         )
     except (OSError, ValueError):
-        return "", ""
+        return {}
     try:
         value = safe_load_bounded_json(
             payload,
@@ -167,12 +198,21 @@ def installed_runtime_pointer() -> tuple[str, str]:
             maximum_nodes=32,
         )
     except (ValueError, TypeError):
-        return "", ""
+        return {}
     if (
         not isinstance(value, dict)
         or value.get("schema") != _POINTER_SCHEMA
         or value.get("schema_version") != _POINTER_SCHEMA_VERSION
     ):
+        return {}
+    return value
+
+
+def installed_runtime_pointer() -> tuple[str, str]:
+    """Return the (digest, host) the last install published, or ("", "")."""
+
+    value = _pointer_document()
+    if not value:
         return "", ""
     return _validated_digest(value.get("runtime_digest")), _validated_host(value.get("host"))
 
@@ -200,16 +240,29 @@ def runtime_staleness(*, host: str = "") -> RuntimeStaleness | None:
 
 @dataclass(frozen=True, slots=True)
 class InstallDrift:
-    """Source that has moved ahead of the last install, seen from the CLI."""
+    """A reason the installed hooks do not correspond to this CLI's package."""
 
     source_digest: str
     installed_digest: str
     package_root: str
+    installed_source_root: str
     host: str
+
+    @property
+    def foreign_package(self) -> bool:
+        """Whether the install came from a different package than this one."""
+
+        return not _same_package_root(self.package_root, self.installed_source_root)
 
     @property
     def message(self) -> str:
         agent = f" --agent {self.host}" if self.host else ""
+        if self.foreign_package:
+            return (
+                "installed hooks were staged from a different package than this one "
+                f"({self.installed_source_root or 'unrecorded'}); edits here do not reach "
+                f"them, and `agency install{agent}` from this package would replace them"
+            )
         return (
             "installed hooks are behind this CLI: it would stage projection "
             f"{self.source_digest[:12]} but the last install published "
@@ -219,43 +272,65 @@ class InstallDrift:
 
 
 def cli_install_drift() -> InstallDrift | None:
-    """Return drift between what this CLI would stage and the last install.
+    """Return why the installed hooks do not correspond to this CLI, else None.
 
     This is the drift direction a hook cannot see.  :func:`runtime_staleness`
     covers the other one -- a session whose hooks predate the last install --
-    but it compares a projection against a pointer that the very same install
-    wrote, so it stays silent when source moves and nobody reinstalls.  Only a
-    process running the real package can notice that, which is why this is
-    reported by the CLI.
+    but it compares a projection against a pointer the very same install wrote,
+    so it stays silent when source moves and nobody reinstalls.
 
-    Silent None means "no drift is provable": this process is itself a frozen
-    projection (a hook, which would only ever hash itself), no install pointer
-    has been recorded yet, or no projection can be planned from this package.
-    All three are ordinary states and must not produce a warning.
+    Two distinct failures are reported here, and conflating them produces a
+    warning that always fires:
 
-    ``package_root`` is reported because the CLI on PATH is frequently *not*
-    the checkout being edited -- a packaged tool install answers to `agency`
-    while source changes land somewhere else entirely.  Naming the directory
-    this CLI actually runs from is what makes that case diagnosable.
+    *Foreign package.*  The `agency` on PATH is frequently not the checkout
+    being edited.  Digests cannot settle this, because a projection digest
+    covers the installed distribution closure as well as the sources, so two
+    environments never agree however identical their source.  Comparing them
+    across environments is a guaranteed false positive, and a warning that
+    always fires is worse than none.  The recorded source root decides it
+    instead, and the report names the directory rather than a digest.
+
+    *Stale install.*  Same package, moved-on source: the digests are then
+    directly comparable and their difference is real.
+
+    Silent None means no drift is provable: this process is itself a frozen
+    projection (a hook, which would only ever hash itself), no pointer has been
+    recorded, no projection can be planned from this package, or the pointer
+    predates source-root recording and cannot be attributed to an environment.
     """
 
     if running_runtime_digest():
         return None
-    installed, pointer_host = installed_runtime_pointer()
+    pointer = _pointer_document()
+    installed = _validated_digest(pointer.get("runtime_digest"))
     if not installed:
         return None
-    try:
-        source = agency_bootstrap_path()
-    except (OSError, ValueError):
+    package_root = _running_package_root()
+    if not package_root:
         return None
-    digest = source_runtime_drift(source)
+    installed_root = str(pointer.get("source_root") or "")
+    # A pointer written before source roots were recorded cannot be attributed
+    # to an environment, so no comparison it supports is trustworthy.
+    if not installed_root:
+        return None
+    host = _validated_host(pointer.get("host"))
+    if not _same_package_root(package_root, installed_root):
+        return InstallDrift(
+            source_digest="",
+            installed_digest=installed,
+            package_root=package_root,
+            installed_source_root=installed_root,
+            host=host,
+        )
+    digest = source_runtime_drift(agency_bootstrap_path())
     if not digest or digest == installed:
         return None
     return InstallDrift(
         source_digest=digest,
         installed_digest=installed,
-        package_root=str(Path(source).parent),
-        host=pointer_host,
+        package_root=package_root,
+        installed_source_root=installed_root,
+        host=host,
     )
 
 

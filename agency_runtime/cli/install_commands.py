@@ -1406,7 +1406,9 @@ def cmd_install(
 
     # Checked after the hosts are staged: a completed install should have
     # published this CLI's projection, so surviving drift means the install
-    # reported success without actually publishing anything.
+    # reported success without actually publishing anything. A foreign-package
+    # report cannot survive an install from this package, so it would mean the
+    # pointer was not rewritten -- still worth reporting, not filtered out.
     residual_drift = _cli_install_drift_projection()
     if not json_mode:
         _render_install_summary(
@@ -1481,6 +1483,8 @@ def _cli_install_drift_projection() -> dict[str, Any] | None:
         "source_digest": drift.source_digest,
         "installed_digest": drift.installed_digest,
         "package_root": drift.package_root,
+        "installed_source_root": drift.installed_source_root,
+        "foreign_package": drift.foreign_package,
         "host": drift.host,
         "message": drift.message,
     }

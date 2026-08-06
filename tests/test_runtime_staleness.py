@@ -162,44 +162,110 @@ def test_host_falls_back_to_the_recorded_pointer_host(
     assert "agency install --agent codex" in drift.message
 
 
-def test_cli_drift_is_reported_when_source_moves_ahead_of_the_install(
-    monkeypatch: pytest.MonkeyPatch,
-    pointer_root: Path,
-) -> None:
-    runtime_staleness.record_installed_runtime(
-        _projection_bootstrap(_DIGEST_A),
-        host="claude",
-    )
+_CHECKOUT_ROOT = str(Path("/checkout") / "agency_runtime")
+_TOOL_ROOT = str(Path("/tools") / "agency-runtime" / "agency_runtime")
+
+
+@pytest.fixture
+def in_checkout(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Run as an ordinary CLI out of the checkout package."""
+
     monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: "")
+    monkeypatch.setattr(runtime_staleness, "_running_package_root", lambda: _CHECKOUT_ROOT)
     monkeypatch.setattr(
         runtime_staleness,
         "agency_bootstrap_path",
-        lambda: str(Path("/checkout") / "agency_runtime" / "_bootstrap.py"),
+        lambda: str(Path(_CHECKOUT_ROOT) / "_bootstrap.py"),
     )
+
+
+def _record(pointer_root: Path, digest: str, source_root: str, host: str = "claude") -> None:
+    payload = {
+        "schema": "agency-runtime.installed-launcher-runtime",
+        "schema_version": 1,
+        "runtime_digest": digest,
+        "host": host,
+    }
+    if source_root:
+        payload["source_root"] = source_root
+    pointer_root.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_cli_drift_is_reported_when_source_moves_ahead_in_the_same_package(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+    in_checkout: None,
+) -> None:
+    _record(pointer_root, _DIGEST_A, _CHECKOUT_ROOT)
     monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_B)
 
     drift = runtime_staleness.cli_install_drift()
 
     assert drift is not None
+    assert drift.foreign_package is False
     assert drift.source_digest == _DIGEST_B
     assert drift.installed_digest == _DIGEST_A
-    assert drift.package_root == str(Path("/checkout") / "agency_runtime")
-    assert drift.host == "claude"
     assert _DIGEST_B[:12] in drift.message
-    assert _DIGEST_A[:12] in drift.message
     assert "--agent claude" in drift.message
 
 
 def test_cli_drift_is_silent_when_source_matches_the_install(
     monkeypatch: pytest.MonkeyPatch,
     pointer_root: Path,
+    in_checkout: None,
 ) -> None:
-    runtime_staleness.record_installed_runtime(
-        _projection_bootstrap(_DIGEST_A),
-        host="claude",
-    )
-    monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: "")
+    _record(pointer_root, _DIGEST_A, _CHECKOUT_ROOT)
     monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_A)
+
+    assert runtime_staleness.cli_install_drift() is None
+
+
+def test_a_foreign_install_is_named_rather_than_digest_compared(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+    in_checkout: None,
+) -> None:
+    """Cross-environment digests never agree, so comparing them always fires."""
+
+    _record(pointer_root, _DIGEST_A, _TOOL_ROOT)
+
+    def _unreachable(_path: object) -> str:
+        raise AssertionError("a foreign package must not be digest-compared")
+
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", _unreachable)
+
+    drift = runtime_staleness.cli_install_drift()
+
+    assert drift is not None
+    assert drift.foreign_package is True
+    assert _TOOL_ROOT in drift.message
+    assert "different package" in drift.message
+    # A digest it could not meaningfully compute must not be implied.
+    assert drift.source_digest == ""
+
+
+def test_package_roots_compare_the_way_the_filesystem_does(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+    in_checkout: None,
+) -> None:
+    """A differently-spelled but identical root is not a foreign package."""
+
+    _record(pointer_root, _DIGEST_A, str(Path(_CHECKOUT_ROOT) / "." / ""))
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_A)
+
+    assert runtime_staleness.cli_install_drift() is None
+
+
+def test_a_pointer_without_a_source_root_is_not_attributed(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+    in_checkout: None,
+) -> None:
+    """Legacy pointers support no trustworthy comparison, so stay silent."""
+
+    _record(pointer_root, _DIGEST_A, "")
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_B)
 
     assert runtime_staleness.cli_install_drift() is None
 
@@ -210,35 +276,41 @@ def test_cli_drift_is_silent_inside_a_frozen_projection(
 ) -> None:
     """A hook would only ever hash itself, so it must never report this."""
 
-    runtime_staleness.record_installed_runtime(
-        _projection_bootstrap(_DIGEST_A),
-        host="claude",
-    )
+    _record(pointer_root, _DIGEST_A, _CHECKOUT_ROOT)
     monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: _DIGEST_B)
-    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_B)
 
     assert runtime_staleness.cli_install_drift() is None
 
 
 def test_cli_drift_is_silent_without_a_recorded_pointer(
-    monkeypatch: pytest.MonkeyPatch,
     pointer_root: Path,
+    in_checkout: None,
 ) -> None:
-    monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: "")
-    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_B)
-
     assert runtime_staleness.cli_install_drift() is None
 
 
 def test_cli_drift_is_silent_when_the_projection_cannot_be_planned(
     monkeypatch: pytest.MonkeyPatch,
     pointer_root: Path,
+    in_checkout: None,
 ) -> None:
+    _record(pointer_root, _DIGEST_A, _CHECKOUT_ROOT)
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: "")
+
+    assert runtime_staleness.cli_install_drift() is None
+
+
+def test_recorded_pointer_carries_the_running_package_root(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+) -> None:
+    monkeypatch.setattr(runtime_staleness, "_running_package_root", lambda: _CHECKOUT_ROOT)
+
     runtime_staleness.record_installed_runtime(
         _projection_bootstrap(_DIGEST_A),
         host="claude",
     )
-    monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: "")
-    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: "")
 
-    assert runtime_staleness.cli_install_drift() is None
+    stored = json.loads(pointer_root.read_text(encoding="utf-8"))
+    assert stored["source_root"] == _CHECKOUT_ROOT
+    assert stored["runtime_digest"] == _DIGEST_A
