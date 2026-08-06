@@ -27,6 +27,7 @@ rewriting them makes the audit trail claim an identity that was never used.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shutil
 import sqlite3
@@ -50,6 +51,46 @@ HISTORY_TARGETS = (
     ("delegation_activation_receipts", "specialist_version"),
     ("delegation_activation_consumptions", "specialist_version"),
 )
+
+# The same version is ALSO embedded inside a stored recruitment-contract JSON
+# document, and store.roster hard-fails the whole active-roster decode when the
+# document's version disagrees with the row's:
+#
+#     if contract.agent_id != agent["agent_slug"] or contract.version != agent["version"]:
+#         raise RuntimeError("stored workforce recruitment contract identity is invalid")
+#
+# Rewriting only the columns therefore bricks every read of the active roster,
+# which fails preflight and blocks the user's prompt outright. Each document is
+# additionally covered by a `recruitment_contract_hash` column that would have
+# to be recomputed, so this is not a blind string substitution.
+#
+# Until that is implemented and tested, refuse to produce a half-migration.
+EMBEDDED_CONTRACT_TARGETS = (
+    ("agent_version_lineage", "recruitment_contract", "recruitment_contract_hash"),
+    ("agent_recruitment_contract_projections", "recruitment_contract", "recruitment_contract_hash"),
+)
+
+
+def embedded_contract_conflicts(conn: sqlite3.Connection, mapping: dict[str, str]) -> list[str]:
+    """Report stored contract documents that would disagree after a repair."""
+
+    conflicts: list[str] = []
+    for table, column, _hash_column in EMBEDDED_CONTRACT_TARGETS:
+        try:
+            rows = conn.execute(
+                f'SELECT "{column}" AS document FROM "{table}" WHERE "{column}" IS NOT NULL'
+            ).fetchall()
+        except sqlite3.Error:
+            continue
+        for row in rows:
+            try:
+                document = json.loads(str(row["document"]))
+            except (TypeError, ValueError):
+                continue
+            version = str(document.get("version") or "")
+            if version in mapping:
+                conflicts.append(f"{table}: {document.get('agent_id')} -> {version}")
+    return conflicts
 
 
 def canonical_version(stored_version: str, prompt_hash: str) -> str:
@@ -92,6 +133,29 @@ def count_rows(conn: sqlite3.Connection, table: str, column: str, value: str) ->
         )
     except sqlite3.Error:
         return 0
+
+
+def _report_embedded_conflicts(conflicts: list[str]) -> None:
+    """Explain why a column-only repair would brick the active roster."""
+
+    print(
+        f"\nREFUSING TO APPLY: {len(conflicts)} stored recruitment-contract "
+        "document(s) embed one of these versions.",
+        file=sys.stderr,
+    )
+    for line in conflicts[:10]:
+        print(f"  {line}", file=sys.stderr)
+    if len(conflicts) > 10:
+        print(f"  ... and {len(conflicts) - 10} more", file=sys.stderr)
+    print(
+        "\nRewriting only the version columns leaves each document disagreeing with "
+        "its row. store.roster then raises 'stored workforce recruitment contract "
+        "identity is invalid', the entire active-roster decode fails, preflight fails, "
+        "and every prompt is blocked.\n"
+        "Repairing the documents also requires recomputing recruitment_contract_hash. "
+        "That is not implemented here yet, so no partial migration is written.",
+        file=sys.stderr,
+    )
 
 
 def main() -> int:
@@ -142,6 +206,10 @@ def main() -> int:
         print(f"\ntotal rows affected: {total}")
         if not args.include_history:
             print("(resolution tables only; pass --include-history to rewrite evidence rows)")
+
+        if conflicts := embedded_contract_conflicts(conn, mapping):
+            _report_embedded_conflicts(conflicts)
+            return 1
 
         if not args.apply:
             print("\nDRY RUN -- nothing written. Re-run with --apply --backup <path>.")
