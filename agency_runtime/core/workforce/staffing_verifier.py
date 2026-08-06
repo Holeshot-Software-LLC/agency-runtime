@@ -108,6 +108,11 @@ class VerifiedUnitStaffing:
     unavailable_shadows: tuple[ShadowEvidence, ...]
 
 
+# Verifier findings that annotate an accepted staffing decision instead of
+# vetoing it (staff-first doctrine). Everything not listed here stays fatal.
+ADVISORY_STAFFING_CODES: frozenset[str] = frozenset({"independent_assurance_missing"})
+
+
 @dataclass(frozen=True, slots=True)
 class StaffingDecision:
     status: str
@@ -977,7 +982,14 @@ def verify_staffing(
     if not (explicit_indivisible_unit and len(plan.units) == 1):
         _assurance(plan, proposal, roster, reasons)
     _budgets(plan, proposal, active_budget, reasons)
-    if reasons:
+    # Staff-first doctrine: advisory findings annotate an accepted decision
+    # instead of vetoing it. Missing independent assurance is a composition
+    # preference the receipt records honestly; it is not a reason to leave a
+    # fully staffed team unstaffed. Every other code stays fatal, and any
+    # unstaffed unit keeps the whole decision abstained regardless.
+    fatal = [item for item in reasons if item.code not in ADVISORY_STAFFING_CODES]
+    fully_staffed = all(row.selected for row in proposal.units)
+    if fatal or not fully_staffed:
         return StaffingDecision("abstained", (), tuple(reasons))
     return StaffingDecision(
         "accepted",
@@ -993,7 +1005,9 @@ def verify_staffing(
             )
             for row in proposal.units
         ),
-        (),
+        # Advisory findings ride along on the accepted decision so receipts
+        # stay honest about composition preferences the team does not meet.
+        tuple(reasons),
     )
 
 

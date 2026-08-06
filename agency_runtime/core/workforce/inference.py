@@ -96,8 +96,9 @@ _NOMINATION_REPAIR_REQUIREMENTS = {
         "non-ranked evidence and need not repeat every available card."
     ),
     "gap_with_safe_team": (
-        "Re-evaluate the non-ranked typed_recall evidence. Declare staff only when a "
-        "semantically faithful required/acceptable combination covers every requirement."
+        "Your ranking already names semantically faithful candidates, so staff them: change "
+        "the decision to staff and select the faithful team. Keep gap only if every ranked "
+        "candidate is genuinely the wrong specialty."
     ),
     "invalid_candidate": "Return one schema-valid, non-duplicated ranking row.",
     "invalid_decision": "Set decision to exactly staff or gap.",
@@ -107,9 +108,9 @@ _NOMINATION_REPAIR_REQUIREMENTS = {
     ),
     "missing_work_unit": "Return the missing planned-unit row.",
     "staff_without_safe_team": (
-        "Consult typed_recall for this unit. If uncovered_requirements is nonempty, declare gap. "
-        "Otherwise rank every semantically faithful coverage complement needed to cover all "
-        "requirements within maximum_selected_per_unit."
+        "Rank at least one semantically faithful candidate for this unit so the staff decision "
+        "can select a team, adding the coverage complements a complete team needs within "
+        "maximum_selected_per_unit. Declare gap only when no supplied candidate is faithful."
     ),
 }
 
@@ -170,24 +171,26 @@ _RECRUITER_SYSTEM = (
     "of stack enrichment is not evidence of incapability; judge their stack fit semantically; "
     "execution_eligible is a hard boundary. Candidate rows are a bounded coverage-first recall "
     "sample and need not repeat every detail card, so omission is not exclusion. Do not guess "
-    "typed coverage from a display name or prose card. A nonempty uncovered_requirements list "
-    "proves that the current roster cannot staff that unit and requires a gap. Otherwise, selected "
-    "required/acceptable candidates must jointly cover every requirement within the configured "
-    "per-unit limit; deterministic verification rejects unsupported coverage. Candidates marked "
+    "typed coverage from a display name or prose card. uncovered_requirements lists what the "
+    "roster's declared typed data does not cover — it is honest evidence of enrichment limits, "
+    "not proof the unit cannot be staffed, and it never mandates a gap on its own. Candidates marked "
     "untyped_candidate have no audited typed coverage fields; their covers list is empty because "
     "their fit cannot be proven or disproven deterministically — judge them from their outcomes, "
     "scope_qualifiers, and not_for card fields, not from typed coverage.\n\n"
-    "For every unit, rank the strongest semantic candidates in descending order. "
-    "Set decision to staff when the ranked candidates can form the intended team, or gap "
-    "only when no supplied specialist or combination is semantically appropriate. Classify "
+    "Staff first. Every unit should staff the nearest faithful specialists; imperfect typed "
+    "coverage is recorded honestly on the receipt, never a reason to leave good candidates "
+    "unstaffed. For every unit, rank the strongest semantic candidates in descending order. "
+    "Set decision to staff when any ranked candidate is a semantically faithful owner for the "
+    "unit, and gap only when no supplied specialist or combination is semantically appropriate "
+    "— a gap hires a new contractor, so reserve it for genuinely missing specialties. Classify "
     "each candidate as required, acceptable, or forbidden:\n"
     "- required: the specialist whose expertise is essential for this unit\n"
     "- acceptable: a valid alternative or complement\n"
     "- forbidden: unrelated, wrong specialty, or outside the unit's scope\n"
-    "A staff decision must leave enough required/acceptable candidates to cover every typed "
-    "requirement within response_contract.maximum_selected_per_unit. Do not mark a necessary "
+    "A staff decision should include the coverage complements a complete team needs within "
+    "response_contract.maximum_selected_per_unit. Do not mark a necessary "
     "coverage complement forbidden merely because it is secondary. A gap decision must not "
-    "leave a safe team.\n"
+    "leave a semantically faithful candidate behind.\n"
     "Every required/acceptable candidate needs concise positive evidence (why they "
     "fit). Every forbidden candidate needs concise negative evidence (why they "
     "don't). Disabled or unavailable specialists can be acceptable but not required.\n\n"
@@ -207,9 +210,10 @@ _RECRUITER_REPAIR_SYSTEM = (
     "for every listed failed unit, in listed order. Omit every unlisted planned unit because "
     "the runtime retains its previously validated row.\n\n"
     "For each listed unit, use typed_recall as bounded, non-ranked coverage evidence whose "
-    "requirements and uncovered_requirements are exact over the full roster. A nonempty "
-    "uncovered_requirements list requires a gap; otherwise a staff response must include every "
-    "semantically faithful coverage complement needed within the per-unit limit. Then reason "
+    "requirements and uncovered_requirements are exact over the full roster. "
+    "uncovered_requirements records declared-data limits honestly; it never mandates a gap. A "
+    "staff response should include every semantically faithful coverage complement needed "
+    "within the per-unit limit. Then reason "
     "from the ideal specialist in an open-ended pool and rank "
     "only supplied candidates that faithfully match it in descending order. A repaired "
     "gap may use an empty ranked_semantic list when no supplied candidate is relevant. "

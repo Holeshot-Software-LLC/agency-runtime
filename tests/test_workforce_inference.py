@@ -1654,9 +1654,10 @@ def test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requir
                 "unit_id": "unit-architecture",
                 "code": "staff_without_safe_team",
                 "required_correction": (
-                    "Consult typed_recall for this unit. If uncovered_requirements is nonempty, "
-                    "declare gap. Otherwise rank every semantically faithful coverage complement "
-                    "needed to cover all requirements within maximum_selected_per_unit."
+                    "Rank at least one semantically faithful candidate for this unit so the "
+                    "staff decision can select a team, adding the coverage complements a "
+                    "complete team needs within maximum_selected_per_unit. Declare gap only "
+                    "when no supplied candidate is faithful."
                 ),
             }
         ]

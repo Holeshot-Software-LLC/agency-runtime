@@ -40,12 +40,23 @@ superseded_by: null
   <img alt="Platforms" src="https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg"/>
 </p>
 
-For each request, Agency Runtime first asks inference who should own the work as
-if the specialist pool were unlimited. It reuses an audited roster specialist
-only when that worker faithfully fits the inferred ideal; otherwise it designs,
-audits, and hires a narrow contractor for the gap. Each chosen specialist's
+For each request, Agency Runtime asks inference who should own the work as if
+the specialist pool were unlimited, then **staffs the nearest faithful roster
+specialist for every unit** — imperfect fit is recorded honestly on the
+response receipt, never used as a reason to leave good candidates unstaffed.
+When no specialist is semantically faithful at all, Agency designs, audits,
+and hires a narrow contractor for the gap. Each chosen specialist's
 instructions apply only inside its exact child task and then leave the active
 context — your main agent stays small.
+
+> **Doctrine note (2026-08-05).** Earlier revisions treated any near-match as
+> a mandatory gap and let deterministic coverage checks veto inference-chosen
+> teams. In practice that made refusal the default outcome: the models picked
+> the right specialists and the machinery abstained. The doctrine is now
+> staff-first — deterministic verification annotates the receipt (coverage
+> limits, missing independent assurance) instead of vetoing a staffed team,
+> and only the safety screens (injection, authority escalation, high-risk
+> hiring approval) hard-block.
 
 **You get:**
 
@@ -112,12 +123,13 @@ with 278 audited specialists already on payroll.
    untyped wildcard workers). Recall lists unapproved workers with their
    ineligibility flagged; approval is hard-enforced later, at verification,
    where an unapproved worker can never execute.
-5. The **recruiter** uses inference to accept a roster specialist only when it
-   faithfully matches that ideal. Zero relevant candidates is a valid explicit
-   gap, not a reason to invent a nearest worker. If inference is unavailable or
-   invalid, the turn fails open: no specialist is selected, the exact cause is
-   reported, and the host answers as a generalist with a `Recruited via: none`
-   header so you are never locked out of the agent.
+5. The **recruiter** uses inference to staff the nearest faithful roster
+   specialists — staff-first: imperfect typed coverage annotates the receipt
+   rather than blocking the pick. A gap is declared only when no supplied
+   specialist is semantically appropriate, and a gap hires. If inference is
+   unavailable or invalid, the turn fails open: no specialist is selected, the
+   exact cause is reported, and the host answers as a generalist with a
+   `Recruited via: none` header so you are never locked out of the agent.
 6. If two specialists would conflict, Agency separates their work instead of
    putting both in one prompt.
 7. Every substantive work unit is delegated through the host's native subagent
@@ -269,10 +281,15 @@ Selection is inference-owned:
    them; an empty result remains valid.
 4. **Recruit** — the recruiter explicitly decides `staff` or `gap` per unit and
    classifies only faithful roster candidates as `required`, `acceptable`, or
-   `forbidden`. A gap may contain no roster candidate at all.
+   `forbidden`. Staff-first: any faithful candidate staffs; a gap is reserved
+   for genuinely missing specialties and may contain no roster candidate at
+   all.
 5. **Verify** — deterministic code validates eligibility, composition, coverage,
-   and budget around the model's decision. A contradictory `staff` or `gap`
-   result gets one bounded inference repair; code does not silently reverse it.
+   and budget around the model's decision. Hard failures (ineligible workers,
+   empty teams, forbidden conflicts, budget) abstain; advisory findings such as
+   missing independent assurance are recorded on the accepted receipt instead
+   of vetoing the staffed team. A contradictory `staff` or `gap` result gets
+   one bounded inference repair; code does not silently reverse it.
 6. **Gap → hire** — only an explicit gap with verifier-confirmed safe no-team
    evidence enters independent whole-workforce contractor analysis. Declined
    analysis does not consume the task's applied-hire allowance.
