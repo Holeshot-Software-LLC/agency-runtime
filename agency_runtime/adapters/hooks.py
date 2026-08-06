@@ -4035,6 +4035,13 @@ def run_hook_stdio(
 ) -> int:
     """Observe one host-hook boundary without admitting envelope content."""
 
+    from agency_runtime.core.hook_logging import install_hook_log_sink
+
+    # Opt-in and file-only; absent AGENCY_HOOK_LOG this is a no-op and stderr
+    # stays clean either way.  Installed here because this is the one entry
+    # every hook event passes through.
+    if install_hook_log_sink():
+        logger.debug("hook stdio start host=%s event=%s", host, expected_event or "<any>")
     operation = _hook_observation_operation(host, expected_event)
     with RuntimeBoundary(surface="hook", operation=operation):
         return _run_hook_stdio(
