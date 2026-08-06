@@ -82,6 +82,28 @@ CODEX_HOOK_TRUST_ACTION = (
     "is not the local command-hook trust screen. Then start a new session and "
     "run `agency install --agent codex --verify-activation`."
 )
+CODEX_HOOKS_DISABLED_ACTION = (
+    "The Agency Runtime hooks are already trusted but individually disabled — current "
+    "Codex shows no startup trust review in this state and has no CLI surface for "
+    "per-hook enablement. Open a fresh terminal, run `codex`, then run `/hooks` inside "
+    f"the TUI and enable all {len(CODEX_HOOK_EVENTS)} Agency Runtime hook events "
+    f"({_CODEX_HOOK_TRUST_INVENTORY}). Then start a new session and run "
+    "`agency install --agent codex --verify-activation`."
+)
+
+
+def codex_hook_trust_action(trust_status: object) -> str:
+    """Return remediation guidance matched to the observed hook-trust state.
+
+    ``disabled`` means every hook is present and trusted but switched off —
+    telling the operator to look for a trust ceremony that will never appear
+    sends them in circles. Any other unproven state keeps the trust-ceremony
+    guidance.
+    """
+
+    if str(trust_status or "").strip().casefold() == "disabled":
+        return CODEX_HOOKS_DISABLED_ACTION
+    return CODEX_HOOK_TRUST_ACTION
 _OPENCLAW_VERSION = re.compile(
     r"(?<!\d)(?P<year>\d{4})\.(?P<month>\d{1,2})\.(?P<patch>\d{1,9})"
     r"(?P<prerelease>-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?"

@@ -1038,6 +1038,17 @@ def _activation_verification_result(
     else:
         activation = _codex_activation_required()
         activation.update(state="verification_failed", verification=dict(verification))
+        invocation = verification.get("invocation")
+        hook_trust = (
+            invocation.get("hook_trust") if isinstance(invocation, Mapping) else None
+        )
+        if isinstance(hook_trust, Mapping):
+            from agency_runtime.core.installer_contracts import codex_hook_trust_action
+
+            # Trusted-but-disabled hooks never show a startup trust review;
+            # match the remediation to the observed per-hook state instead of
+            # sending the operator to a ceremony that will not appear.
+            activation["action"] = codex_hook_trust_action(hook_trust.get("status"))
     if fresh_attestation is not None:
         activation["fresh_attestation"] = dict(fresh_attestation)
     result: dict[str, Any] = {
@@ -1078,6 +1089,24 @@ def _render_activation_verification(host_result: Mapping[str, Any]) -> None:
         if isinstance(unmet, list):
             for item in unmet[:8]:
                 print(f"   Unmet: {safe_display_token(str(item), limit=500)}")
+        invocation = verification.get("invocation")
+        if isinstance(invocation, Mapping):
+            failure_reason = invocation.get("failure_reason")
+            if failure_reason:
+                print(f"   Cause: {safe_display_token(str(failure_reason), limit=200)}")
+            hook_trust = invocation.get("hook_trust")
+            if isinstance(hook_trust, Mapping):
+                summary = (
+                    f"status={hook_trust.get('status')}"
+                    f" observed={hook_trust.get('observed_count')}"
+                    f" trusted={hook_trust.get('trusted_count')}"
+                    f" disabled={hook_trust.get('disabled_count')}"
+                    f" untrusted={hook_trust.get('untrusted_count')}"
+                    f" missing={hook_trust.get('missing_count')}"
+                )
+                if hook_trust.get("error"):
+                    summary += f" error={hook_trust.get('error')}"
+                print(f"   Hook trust: {safe_display_token(summary, limit=300)}")
     action = activation.get("action")
     if action:
         print(f"   Action: {safe_display_token(str(action), limit=1000)}")

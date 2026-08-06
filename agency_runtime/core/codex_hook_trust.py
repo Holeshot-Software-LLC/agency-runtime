@@ -674,7 +674,7 @@ def inspect_codex_hook_trust(
     from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
     from agency_runtime.core.process_argv import (
         PreparedProcessArgv,
-        freeze_persistent_process_argv,
+        freeze_process_argv,
         isolated_python_argv,
     )
 
@@ -703,11 +703,23 @@ def inspect_codex_hook_trust(
         worker_values,
         artifact_paths=(worker_values[0], worker_values[3]),
     )
-    try:
-        freeze_persistent_process_argv(worker_argv)
-    except (OSError, TypeError, ValueError):
-        return _base_report(len(expected_events), error="inspection_failed")
     process_runner = runner or run_bounded_process
+    if runner is None:
+        try:
+            # This argv is executed immediately by the current process,
+            # exactly like the CLI transports — not stored for later
+            # execution — so the persistent-artifact namespace contract does
+            # not apply. That contract's ACL assertion rejects every
+            # user-writable interpreter location (uv tool environments,
+            # venvs), which made the inspection fail as "inspection_failed"
+            # on ordinary installations while the codex protocol itself was
+            # healthy. argv[0] is sys.executable (the interpreter already
+            # running this code), so repository forbidden roots add nothing
+            # here. Injected runners never spawn, so freezing is skipped for
+            # that test/embedding seam.
+            worker_argv = freeze_process_argv(worker_argv, forbidden_roots=())
+        except (OSError, TypeError, ValueError):
+            return _base_report(len(expected_events), error="inspection_failed")
     try:
         completed = process_runner(
             worker_argv,
