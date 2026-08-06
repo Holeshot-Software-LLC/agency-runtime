@@ -54,6 +54,25 @@ _FAILURE_STATES = frozenset(
     }
 )
 _SUCCESS_STATES = frozenset({"applied", "completed", "inferred", "ok", "success"})
+
+
+def _preflight_inference_applied(record: Mapping[str, Any]) -> bool:
+    """Whether every provider attempt in one preflight failure succeeded.
+
+    A preflight failure is not evidence about inference unless inference is
+    what failed.  Recorded attempts are the only thing that can distinguish
+    the two, so a failure carrying none stays classified as a failure rather
+    than being excused by silence.
+    """
+
+    attempts = record.get("provider_attempts")
+    if not isinstance(attempts, list) or not attempts:
+        return False
+    return all(
+        isinstance(attempt, Mapping)
+        and str(attempt.get("status") or "").strip().lower() in _SUCCESS_STATES
+        for attempt in attempts
+    )
 _SAFE_ACTIVE_FIELDS = (
     "agent_slug",
     "name",
@@ -805,7 +824,14 @@ def inference_operational_snapshot(
         or str(latest_preflight.get("recorded_at") or "")
         >= str(latest_routing.get("created_at") or "")
     ):
-        latest_status = "preflight_failed"
+        # A preflight can fail downstream of inference -- the recruiter
+        # abstaining, or no safe sufficient team -- with every provider attempt
+        # applied. That is a staffing outcome. Reporting it as degraded
+        # inference sends an operator to audit providers that are working, and
+        # leaves the panel stuck there until some later turn happens to succeed.
+        latest_status = (
+            "applied" if _preflight_inference_applied(latest_preflight) else "preflight_failed"
+        )
     if not configured:
         state = "not_configured"
     elif latest_status in _FAILURE_STATES:

@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-31
+updated: 2026-08-06
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -65,6 +65,7 @@ Status meanings:
 | [ADR-0049](0049-openclaw-final-only-full-payload-delivery.md) | Require final-only full-payload delivery on OpenClaw | Accepted |
 | [ADR-0050](0050-isolate-installed-python-module-resolution.md) | Isolate installed Python module resolution from host workspaces | Accepted |
 | [ADR-0108](0108-retire-only-owned-host-integrations.md) | Retire only ownership-proven host integrations | Accepted |
+| [ADR-0155](0155-defer-agent-plugins-conformance-to-client-adoption.md) | Defer Agent Plugins conformance to client adoption | Accepted |
 
 ## Routing, policy, and providers
 
