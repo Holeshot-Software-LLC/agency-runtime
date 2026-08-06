@@ -83,12 +83,13 @@ CODEX_HOOK_TRUST_ACTION = (
     "run `agency install --agent codex --verify-activation`."
 )
 CODEX_HOOKS_DISABLED_ACTION = (
-    "The Agency Runtime hooks are already trusted but individually disabled — current "
-    "Codex shows no startup trust review in this state and has no CLI surface for "
-    "per-hook enablement. Open a fresh terminal, run `codex`, then run `/hooks` inside "
-    f"the TUI and enable all {len(CODEX_HOOK_EVENTS)} Agency Runtime hook events "
-    f"({_CODEX_HOOK_TRUST_INVENTORY}). Then start a new session and run "
-    "`agency install --agent codex --verify-activation`."
+    "All Agency Runtime hooks are registered but individually disabled — current Codex "
+    "shows no startup trust review in this state and has no CLI surface for per-hook "
+    "enablement (a freshly refreshed bundle may also need re-trusting; the same screen "
+    "handles both). Open a fresh terminal, run `codex`, then run `/hooks` inside the "
+    f"TUI and enable (and trust, if prompted) all {len(CODEX_HOOK_EVENTS)} Agency "
+    f"Runtime hook events ({_CODEX_HOOK_TRUST_INVENTORY}). Then start a new session "
+    "and run `agency install --agent codex --verify-activation`."
 )
 
 
