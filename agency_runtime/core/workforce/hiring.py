@@ -32,6 +32,7 @@ from agency_runtime.core.workforce.hiring_contract import (
     CompiledContractor,
     EmploymentContract,
     compile_contractor,
+    contractor_prompt_version,
     parse_employment_contract,
 )
 from agency_runtime.core.workforce.inference import (
@@ -1192,7 +1193,7 @@ def _agent_document(
         "audit_status": "approved",
         "routing_contract_valid": True,
         "findings": [],
-        "version": f"contractor-{CONTRACTOR_PROMPT_TEMPLATE_VERSION}-{compiled.prompt_hash.removeprefix('sha256:')[:16]}",
+        "version": contractor_prompt_version(compiled.prompt_hash),
         "hash": compiled.prompt_hash,
         "version_hash": compiled.prompt_hash,
         "prompt_path": f"generated://agency-contractors/{contract.slug}",

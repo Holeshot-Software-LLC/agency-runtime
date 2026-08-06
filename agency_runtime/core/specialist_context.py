@@ -364,12 +364,27 @@ def rebuild_versioned_specialist_context(
         if disabled_agents is not None and _supports_disabled_snapshot(getter):
             prompt_kwargs["disabled_agents"] = disabled_agents
         prompt = getter(slug, version, content_hash, **prompt_kwargs)
-        if (
-            not isinstance(prompt, dict)
-            or not str(prompt.get("prompt_body") or "").strip()
-            or bool(prompt.get("prompt_truncated"))
-        ):
-            raise RuntimeError(f"specialist prompt version is unavailable: {slug}@{version}")
+        # These three failures need three messages. They have different causes
+        # and different fixes, and this error reaches the operator as a hard
+        # preflight block -- collapsing them into one "unavailable" string made
+        # a missing registration indistinguishable from an oversized prompt.
+        if not isinstance(prompt, dict):
+            raise RuntimeError(
+                f"specialist prompt version is not registered: {slug}@{version} "
+                f"(hash {content_hash[:16]}). No matching active row exists; the "
+                "specialist was referenced but never installed under this exact version."
+            )
+        if not str(prompt.get("prompt_body") or "").strip():
+            raise RuntimeError(
+                f"specialist prompt body is empty: {slug}@{version} "
+                f"(hash {content_hash[:16]}). The version row exists but stores no prompt."
+            )
+        if bool(prompt.get("prompt_truncated")):
+            raise RuntimeError(
+                f"specialist prompt exceeds the exact-delivery ceiling: {slug}@{version} "
+                f"(limit {MAX_SPECIALIST_PROMPT_CHARS} chars). The prompt is registered "
+                "but cannot be delivered whole, and a partial specialist prompt is never sent."
+            )
         prompt_identity = (
             _slug(prompt),
             str(prompt.get("version") or "").strip(),

@@ -464,6 +464,30 @@ def _risk_marker_is_asserted(value: str, marker: str) -> bool:
     return False
 
 
+CONTRACTOR_VERSION_DIGEST_CHARS = 16
+_CONTRACTOR_VERSION_DIGEST = re.compile(rf"[0-9a-f]{{{CONTRACTOR_VERSION_DIGEST_CHARS}}}")
+
+
+def contractor_prompt_version(prompt_hash: str) -> str:
+    """Mint the one canonical version identity for a compiled contractor prompt.
+
+    A contractor is content-addressed by the bare hex digest of its prompt: the
+    ``sha256:`` algorithm prefix is stripped so the version is a stable token
+    rather than a namespaced one.  Every path that registers or references a
+    contractor must agree byte-for-byte -- a contractor registered under one
+    spelling is unresolvable by a reference minted under another, and preflight
+    then fails closed on a specialist that appears not to exist at all.
+
+    The digest is validated rather than merely truncated so a prefixed or
+    otherwise malformed hash cannot mint an identity that no lookup can match.
+    """
+
+    digest = str(prompt_hash or "").removeprefix("sha256:")[:CONTRACTOR_VERSION_DIGEST_CHARS]
+    if _CONTRACTOR_VERSION_DIGEST.fullmatch(digest) is None:
+        raise ValueError("contractor prompt hash must be a lowercase sha256 hex digest")
+    return f"contractor-{CONTRACTOR_PROMPT_TEMPLATE_VERSION}-{digest}"
+
+
 def compile_contractor(contract: EmploymentContract) -> CompiledContractor:
     """Compile a validated contract through the single reviewed prompt template."""
 
@@ -497,14 +521,16 @@ def compile_contractor(contract: EmploymentContract) -> CompiledContractor:
 __all__ = [
     "CONTRACTOR_PROMPT_TEMPLATE_HASH",
     "CONTRACTOR_PROMPT_TEMPLATE_VERSION",
+    "CONTRACTOR_VERSION_DIGEST_CHARS",
     "HIRING_CONTRACT_SCHEMA_VERSION",
+    "OWNER_APPROVAL_RISK_CLASSES",
     "ClosestWorker",
     "CompiledContractor",
     "ContractorEvalCase",
     "EmploymentContract",
-    "OWNER_APPROVAL_RISK_CLASSES",
     "TypedRelationship",
     "classify_contractor_risk",
     "compile_contractor",
+    "contractor_prompt_version",
     "parse_employment_contract",
 ]

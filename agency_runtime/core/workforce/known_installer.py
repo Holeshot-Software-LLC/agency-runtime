@@ -21,6 +21,7 @@ from agency_runtime.core.workforce.hiring_contract import (
     CompiledContractor,
     EmploymentContract,
     compile_contractor,
+    contractor_prompt_version,
 )
 from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY_SLUG
 
@@ -161,7 +162,7 @@ def known_contractor_agent(contract: EmploymentContract) -> dict[str, Any]:
         if contract.authority == "review"
         else "implementer"
     )
-    version = f"contractor-{CONTRACTOR_PROMPT_TEMPLATE_VERSION}-{compiled.prompt_hash[:16]}"
+    version = contractor_prompt_version(compiled.prompt_hash)
     return {
         "slug": contract.slug,
         "name": contract.role,
