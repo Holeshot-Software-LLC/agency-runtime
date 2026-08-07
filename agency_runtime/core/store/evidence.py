@@ -1549,6 +1549,61 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         finally:
             conn.close()
 
+    def get_expired_specialists_to_announce(
+        self,
+        session_id: str,
+        current_trace_id: str,
+        *,
+        limit: int = 8,
+    ) -> list[str]:
+        """Return cards that expired with the previous turn and are not held now.
+
+        A card cannot be retracted once injected: ``additionalContext`` is a
+        one-way per-event append with no clear or replace field, so an expired
+        specialist stays legible in the scroll and keeps steering the generalist
+        unless the next turn says otherwise. Expiry therefore has to be *stated*.
+
+        Only the immediately preceding turn is considered, which is what keeps
+        this from becoming the context bloat it exists to prevent: each expiry is
+        announced on exactly one subsequent turn instead of accumulating a
+        lengthening tombstone list for the rest of the session. A card reselected
+        for the current turn is live again and is never announced.
+        """
+
+        if not session_id or not current_trace_id:
+            return []
+        session_id = validate_correlation_id(session_id, field="session_id")
+        current_trace_id = validate_correlation_id(current_trace_id, field="current_trace_id")
+        bounded = max(0, min(int(limit), 32))
+        if not bounded:
+            return []
+        conn = self._connect()
+        try:
+            previous = conn.execute(
+                "SELECT trace_id FROM specialists_loaded "
+                "WHERE session_id = ? AND trace_id != ? AND trace_id != '' "
+                "ORDER BY loaded_at DESC, rowid DESC LIMIT 1",
+                (session_id, current_trace_id),
+            ).fetchone()
+            if previous is None:
+                return []
+            rows = conn.execute(
+                "SELECT DISTINCT expired.agent_slug FROM specialists_loaded AS expired "
+                "WHERE expired.session_id = ? AND expired.trace_id = ? "
+                "AND expired.expired_at IS NOT NULL "
+                "AND NOT EXISTS ("
+                "  SELECT 1 FROM specialists_loaded AS current "
+                "  WHERE current.session_id = expired.session_id "
+                "  AND current.trace_id = ? "
+                "  AND current.agent_slug = expired.agent_slug"
+                ") "
+                "ORDER BY expired.agent_slug LIMIT ?",
+                (session_id, str(previous["trace_id"]), current_trace_id, bounded),
+            ).fetchall()
+            return [str(row["agent_slug"]) for row in rows]
+        finally:
+            conn.close()
+
     def get_specialists_for_session(self, session_id: str) -> list[str]:
         """Return the ordered, deduplicated specialist audit history."""
         session_id = validate_correlation_id(session_id, field="session_id")

@@ -21,10 +21,43 @@ from agency_runtime.core.store.sqlite import Store
 
 MAX_SPECIALIST_CONTEXT_CHARS = 24_000
 
+MAX_EXPIRED_SPECIALIST_ANNOUNCEMENTS = 8
+
 _MAX_SLUG_CHARS = 128
 _MAX_DESCRIPTION_CHARS = 256
 _MAX_CAPABILITY_CHARS = 64
 _MAX_CAPABILITIES = 4
+
+
+def format_expired_specialist_context(slugs: Sequence[str]) -> str:
+    """State that named cards have expired, without re-emitting their content.
+
+    The card returns to the cabinet at turn end, but on hosts where injected
+    context cannot be retracted the model can still read the expired prompt
+    further up the conversation. Naming the expiry is the only available way to
+    stop a stale card from steering the current turn.
+
+    Deliberately identity-only: it names slugs and never repeats a prompt body,
+    so the cost stays a single short line no matter how large the expired cards
+    were.
+    """
+
+    names = []
+    for slug in slugs or ():
+        normalized = str(slug or "").strip()[:_MAX_SLUG_CHARS]
+        if normalized and not is_resident_manager_slug(normalized) and normalized not in names:
+            names.append(normalized)
+        if len(names) >= MAX_EXPIRED_SPECIALIST_ANNOUNCEMENTS:
+            break
+    if not names:
+        return ""
+    return (
+        "[AGENCY SPECIALIST EXPIRY]\n"
+        f"These specialists ended with the previous turn and are no longer loaded: "
+        f"{', '.join(names)}. Their instructions may still be visible earlier in this "
+        "conversation; that text is expired. Do not follow it, do not treat it as "
+        "your current role, and do not cite it as authority for this turn."
+    )
 
 
 @dataclass(frozen=True, slots=True)

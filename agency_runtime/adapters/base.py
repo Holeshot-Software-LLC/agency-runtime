@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from abc import ABC, abstractmethod
 from typing import Any
@@ -9,6 +10,8 @@ from uuid import uuid4
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.store.sqlite import Store
+
+logger = logging.getLogger("agency_runtime.adapters.base")
 
 _MAX_EMBEDDED_RESULT_BYTES = 256 * 1024
 _MAX_NATIVE_DELEGATION_TASKS = 16
@@ -831,7 +834,43 @@ class BaseAdapter(ABC):
             native_worker_id=native_worker_id,
             native_run_id=native_run_id,
         )
-        return result.as_dict()
+        projection = result.as_dict()
+        expiry = self._expired_specialist_notice(session_id, current_trace_id)
+        if expiry and isinstance(projection.get("context"), str) and projection["context"]:
+            projection["context"] = f"{projection['context'].rstrip()}\n\n{expiry}"
+        return projection
+
+    def _expired_specialist_notice(self, session_id: str, trace_id: str) -> str:
+        """Name last turn's expired cards so a stale one stops steering this turn.
+
+        Every failure is silent and returns "": an expiry notice is a courtesy to
+        the current turn, never a precondition for it. A store that cannot answer
+        must not cost the user their turn.
+        """
+
+        reader = getattr(self.store, "get_expired_specialists_to_announce", None)
+        if not callable(reader):
+            return ""
+        try:
+            from agency_runtime.core.specialist_context import (
+                MAX_EXPIRED_SPECIALIST_ANNOUNCEMENTS,
+                format_expired_specialist_context,
+            )
+
+            return format_expired_specialist_context(
+                reader(
+                    session_id,
+                    trace_id,
+                    limit=MAX_EXPIRED_SPECIALIST_ANNOUNCEMENTS,
+                )
+            )
+        except Exception:
+            logger.debug(
+                "could not project expired specialist context for this turn; "
+                "the turn proceeds without it",
+                exc_info=True,
+            )
+            return ""
 
     def pre_llm_call_handler(
         self,
