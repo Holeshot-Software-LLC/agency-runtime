@@ -726,45 +726,6 @@ class DelegationActivationStoreMixin:
             f"specialist '{specialist_slug}' is disabled; start a fresh Agency preflight"
         )
 
-    def requires_delegation_activation(
-        self,
-        *,
-        session_id: str,
-        trace_id: str,
-        specialist_slug: str,
-    ) -> bool:
-        """Return whether this host forbids every tokenless prompt load."""
-
-        normalized_session = validate_correlation_id(session_id, field="session_id")
-        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
-        _identity(
-            specialist_slug,
-            maximum=MAX_DELEGATION_AGENT_CHARS,
-            field="specialist_slug",
-            required=True,
-        )
-        conn = self._connect()
-        try:
-            row = conn.execute(
-                "SELECT host, status, preflight_state, preflight_result FROM runs "
-                "WHERE session_id = ? AND trace_id = ?",
-                (normalized_session, normalized_trace),
-            ).fetchone()
-            if row is None or str(row["status"] or "") not in {"active", "evidence_only"}:
-                return False
-            if str(row["host"] or "").strip().casefold() in {"codex", "claude"}:
-                return True
-            if str(row["preflight_state"] or "") != "ready":
-                return False
-            recipe = _decode_preflight_recipe(
-                row["preflight_result"],
-                session_id=normalized_session,
-                trace_id=normalized_trace,
-            )
-            return bool(recipe and recipe["delivery_mode"] == "isolated")
-        finally:
-            conn.close()
-
     def get_consumed_delegation_lineage(
         self,
         *,

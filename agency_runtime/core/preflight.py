@@ -15,8 +15,6 @@ from math import ceil
 from threading import Event, Thread, current_thread
 from typing import Any
 
-from agency_runtime.core.agent_identity import agent_identity
-from agency_runtime.core.codex_native_plan_scope import build_codex_native_plan_scope
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.host_capabilities import (
@@ -25,7 +23,6 @@ from agency_runtime.core.host_capabilities import (
 )
 from agency_runtime.core.preflight_failure import (
     PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
-    PreflightInvariantError,
     default_preflight_failure_reason,
     preflight_exception_category,
     preflight_hiring_reason_codes,
@@ -74,9 +71,7 @@ from agency_runtime.core.unit_assignment import (
     MAX_SUGGESTED_WORK_UNITS,
     MAX_UNIT_SELECTION_WORKERS,
     assignment_agents_from_catalog,
-    hydrate_unit_agent_plan,
     native_child_activation_contract,
-    project_unit_agent_plan,
     project_unit_assignment_agents,
     work_unit_goal_hash,
 )
@@ -479,151 +474,6 @@ def _ensure_preflight_catalog(
     return routing_snapshot
 
 
-def _planned_parent_unit_routing(
-    store: Store,
-    *,
-    parent_session_id: str,
-    parent_trace_id: str,
-    user_message: str,
-    host: str,
-    catalog: list[dict[str, Any]],
-    routing_fingerprint: str,
-    capability_receipt: HostCapabilityReceipt,
-) -> dict[str, Any] | None:
-    """Reuse one exact parent unit locally before spending any child inference."""
-
-    snapshot_reader = getattr(store, "get_completion_evidence_snapshot", None)
-    if not callable(snapshot_reader):
-        return None
-    try:
-        snapshot = snapshot_reader(parent_session_id, parent_trace_id)
-    except Exception:
-        return None
-    run = snapshot.get("run") if isinstance(snapshot, Mapping) else None
-    if (
-        not isinstance(snapshot, Mapping)
-        or not isinstance(run, Mapping)
-        or snapshot.get("session_id") != parent_session_id
-        or snapshot.get("trace_id") != parent_trace_id
-        or snapshot.get("status") not in {"active", "evidence_only"}
-        or snapshot.get("delivery_mode") != "isolated"
-        or str(run.get("host") or "").strip().casefold() != str(host or "").strip().casefold()
-    ):
-        return None
-    raw_plan = snapshot.get("unit_agent_plan")
-    raw_references = snapshot.get("selected_specialists")
-    if not isinstance(raw_plan, list) or not isinstance(raw_references, list):
-        return None
-    goal_hash = work_unit_goal_hash(user_message)
-    matches = [
-        row
-        for row in raw_plan
-        if isinstance(row, Mapping) and str(row.get("goal_hash") or "") == goal_hash
-    ]
-    if len(matches) != 1:
-        return None
-    source_plan = dict(matches[0])
-    primary = str(source_plan.get("recommended_agent") or "").strip().casefold()
-    raw_team = source_plan.get("recommended_agents")
-    team = (
-        [str(item or "").strip().casefold() for item in raw_team]
-        if isinstance(raw_team, list)
-        else [primary]
-    )
-    # One native unit currently has one exact child context. Multi-specialist
-    # teams must be represented as separate planned units, never silently
-    # collapsed to their first member.
-    if not primary or team != [primary]:
-        return None
-    references = {
-        str(item.get("slug") or "").strip().casefold(): item
-        for item in raw_references
-        if isinstance(item, Mapping)
-    }
-    reference = references.get(primary)
-    catalog_by_slug = {agent_identity(item).casefold(): item for item in catalog}
-    agent = catalog_by_slug.get(primary)
-    if reference is None or agent is None:
-        return None
-    if (
-        str(agent.get("version") or "").strip() != str(reference.get("version") or "").strip()
-        or str(agent.get("hash") or "").strip() != str(reference.get("hash") or "").strip()
-    ):
-        return None
-
-    child_plan = project_unit_agent_plan(
-        [{**source_plan, "depends_on": []}],
-        allow_legacy=False,
-        require_current=True,
-    )
-    work_unit_id = str(source_plan.get("work_unit_id") or "").strip().casefold()
-    tags: list[Any] = []
-    for field in ("tags", "categories"):
-        values = agent.get(field)
-        if isinstance(values, (list, tuple)):
-            tags.extend(values)
-    assignment_agents = project_unit_assignment_agents(
-        [
-            {
-                "slug": primary,
-                "name": agent.get("name"),
-                "description": agent.get("description"),
-                "capabilities": agent.get("capabilities"),
-                "tags": tags,
-                "required_tools": agent.get("required_tools"),
-                "evidence_requirements": agent.get("evidence_requirements"),
-                "matched_work_unit_ids": [work_unit_id],
-                "primary_work_unit_ids": [work_unit_id],
-            }
-        ],
-        strict=True,
-    )
-    if child_plan is None or assignment_agents is None or not assignment_agents:
-        return None
-
-    from agency_runtime.core.selector.delegation_detection import detect_work_units
-
-    work_units = {
-        **detect_work_units(user_message),
-        "delegate": True,
-        "count": 1,
-        "source": "parent_unit_reuse",
-    }
-    current_message_hash = sha256(user_message.encode("utf-8", errors="surrogatepass")).hexdigest()
-    routing = {
-        "selected_ids": [primary],
-        "semantic_ids": [primary],
-        "companion_ids": [],
-        "confidence": float(source_plan.get("selection_confidence") or 0.0),
-        "top_score": float(source_plan.get("selection_confidence") or 0.0),
-        "latency_ms": 0,
-        "candidate_count": len(catalog),
-        "status": "parent_unit_reused",
-        "source": "parent_unit_reuse",
-        "work_units": work_units,
-        "query_hash": current_message_hash,
-        "source_message_hash": current_message_hash,
-        "context_fingerprint": routing_fingerprint,
-        "origin_trace_id": parent_trace_id,
-        "cache_hit": False,
-        "session_reused": False,
-        "parent_unit_reused": True,
-        "continuation_reused": False,
-        "continuation_resolution_required": False,
-        "fallback_considered": False,
-        "fallback_applied": False,
-        "inference_attempted": False,
-        "inference_mode": "parent_unit_reuse",
-        "child_routing_source": "parent_unit_reuse",
-        "execution_context": capability_receipt.as_dict(),
-        "_cached_unit_assignment_agents": assignment_agents,
-        "_cached_unit_agent_plan": child_plan,
-    }
-    try:
-        hydrate_unit_agent_plan(routing, child_plan)
-    except RuntimeError:
-        return None
-    return routing
 
 
 def _activate_direct_native_child(
@@ -895,19 +745,6 @@ def _resolve_preflight_routing(
             None,
             classification,
         )
-
-    planned_parent_unit = _planned_parent_unit_routing(
-        store,
-        parent_session_id=parent_session_id,
-        parent_trace_id=parent_trace_id,
-        user_message=user_message,
-        host=host,
-        catalog=catalog,
-        routing_fingerprint=routing_fingerprint,
-        capability_receipt=capability_receipt,
-    )
-    if planned_parent_unit is not None:
-        return planned_parent_unit, None, classification
 
     from agency_runtime.core.selector.judge import inference_is_configured
 
@@ -1193,64 +1030,8 @@ def _recipe_revision_refs(
     return source_specialist_refs, list(source.get("selection_refs", []))
 
 
-def _require_available_unit_plan_agents(
-    *,
-    delivery_mode: str,
-    suggestions: list[dict[str, Any]],
-    loaded_slugs: tuple[str, ...],
-) -> None:
-    """Fail before ready commit when any persisted assignment is unpreparable."""
-
-    if delivery_mode != "isolated":
-        return
-    if loaded_slugs and not suggestions:
-        raise RuntimeError("isolated specialist selection lacks an exact unit-agent plan")
-    if not suggestions:
-        return
-    planned_agents = set(_suggested_specialist_slugs(suggestions))
-    missing_agents = planned_agents.difference(loaded_slugs)
-    if missing_agents:
-        missing = ", ".join(sorted(missing_agents))
-        raise RuntimeError(f"unit-agent plan has unavailable specialist prompts: {missing}")
 
 
-def _abstain_unplanned_isolated_selection(
-    routing: dict[str, Any],
-    unit_assignment_agents: list[dict[str, Any]],
-    suggestions: list[dict[str, Any]],
-    *,
-    delivery_mode: str,
-) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
-    """Never present an unbound specialist as usable in a persistent parent.
-
-    Current workforce routes produce exact unit rows. This guard contains a
-    legacy, malformed, or degraded route that selected identities without a
-    child-activation recipe; guessing a unit-to-specialist mapping here would
-    bypass conflict and goal binding.
-    """
-
-    selected = [str(item).strip() for item in routing.get("selected_ids", []) if str(item).strip()]
-    if delivery_mode != "isolated" or not selected or suggestions:
-        return routing, unit_assignment_agents, suggestions
-    work_units = routing.get("work_units")
-    bounded_units = dict(work_units) if isinstance(work_units, Mapping) else {}
-    bounded_units.update(delegate=False, source="isolated_plan_policy")
-    return (
-        {
-            **routing,
-            "selected_ids": [],
-            "semantic_ids": [],
-            "companion_ids": [],
-            "confidence": 0.0,
-            "status": "abstained",
-            "source": "isolated_plan_policy",
-            "work_units": bounded_units,
-            "fallback_considered": False,
-            "fallback_applied": False,
-        },
-        [],
-        [],
-    )
 
 
 def _resident_binding_for_preflight(
@@ -1435,56 +1216,6 @@ def _mark_ready_with_binding_replan(
     return store.mark_preflight_ready(**arguments)
 
 
-def _codex_native_plan_scopes_for_result(
-    result: PreflightResult,
-    *,
-    host: str,
-    delivery_mode: str,
-    specialist_refs: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Project exact private path authority while plaintext goals are available."""
-
-    if host != "codex" or delivery_mode != "isolated":
-        return []
-    if result.routing.get("continuation_reused") is True:
-        # A continuation replays public context but does not authorize a second
-        # execution of the source turn's already-issued native plan.
-        return []
-    references = {
-        str(item.get("slug") or "").strip(): item
-        for item in specialist_refs
-        if isinstance(item, dict) and str(item.get("slug") or "").strip()
-    }
-    scopes: list[dict[str, Any]] = []
-    for row in result.delegation_plan:
-        goal = str(row.get("goal") or "").strip()
-        slug = str(row.get("recommended_agent") or "").strip()
-        reference = references.get(slug)
-        if not goal or reference is None:
-            raise RuntimeError("Codex native plan scope lost its exact preflight authority")
-        try:
-            contract = native_child_activation_contract(
-                goal,
-                mutation_scope=row.get("mutation_scope"),
-                resource_hashes=row.get("resource_hashes"),
-                required_evidence=row.get("required_evidence"),
-            )
-            scope = build_codex_native_plan_scope(
-                work_unit_id=row.get("work_unit_id"),
-                specialist_slug=slug,
-                specialist_version=reference.get("version"),
-                specialist_prompt_hash=reference.get("hash"),
-                goal_hash=row.get("goal_hash"),
-                resource_hashes=row.get("resource_hashes"),
-                mutation_mode=contract["mutation_mode"],
-                mutation_path_prefixes=contract["mutation_path_prefixes"],
-                evidence_contract_id=contract["evidence_contract_id"],
-                evidence_requirements=contract["evidence_requirements"],
-            )
-        except (TypeError, ValueError) as exc:
-            raise PreflightInvariantError("native_plan_scope_invalid") from exc
-        scopes.append(scope.as_dict())
-    return scopes
 
 
 def _prepare_preflight_evidence(
@@ -1523,9 +1254,7 @@ def _prepare_preflight_evidence(
     """Build one replay-safe recipe without committing its lifecycle state."""
 
     from agency_runtime.core.specialist_context import (
-        MAX_SPECIALIST_CONTEXT_CHARS,
         hydrate_selected_specialist_context,
-        hydrate_selected_specialist_references,
     )
 
     if diagnostics is not None:
@@ -1579,55 +1308,26 @@ def _prepare_preflight_evidence(
             available_tools=runtime_capabilities.capabilities,
             capability_receipt=runtime_capabilities,
         )
-        routing, unit_assignment_agents, suggestions = _abstain_unplanned_isolated_selection(
-            routing,
-            unit_assignment_agents,
-            suggestions,
-            delivery_mode=delivery_mode,
-        )
-        # Isolated delivery may reject a selected identity that lacks an exact
-        # child-activation plan. Recheck the normalized route so a malformed
-        # pre-plan selection cannot bypass the no-generalist boundary.
         _require_substantive_specialist(routing, classification, diagnostics)
         if diagnostics is not None:
             diagnostics.enter("context_hydration")
-        if delivery_mode == "isolated":
-            specialist_budget = MAX_SPECIALIST_CONTEXT_CHARS
-        else:
-            routing_context = pipeline.build_routing_context(routing, config)
-            manager_routing_context = _combine_context(
-                resident_context,
-                routing_context,
-                maximum_chars=context_limit,
-            )
-            specialist_budget = max(0, context_limit - len(manager_routing_context) - 2)
-        hydration_routing = _specialist_hydration_routing(routing)
-        hydration_arguments = {
-            "session_id": session_id,
-            "trace_id": trace_id,
-            "disabled_agents": frozenset(config.agents.disabled),
-        }
-        loaded = (
-            hydrate_selected_specialist_references(
-                hydration_store,
-                hydration_catalog,
-                hydration_routing,
-                **hydration_arguments,
-            )
-            if delivery_mode == "isolated"
-            else hydrate_selected_specialist_context(
-                hydration_store,
-                hydration_catalog,
-                hydration_routing,
-                record_evidence=False,
-                maximum_chars=specialist_budget,
-                **hydration_arguments,
-            )
+        routing_context = pipeline.build_routing_context(routing, config)
+        manager_routing_context = _combine_context(
+            resident_context,
+            routing_context,
+            maximum_chars=context_limit,
         )
-        _require_available_unit_plan_agents(
-            delivery_mode=delivery_mode,
-            suggestions=suggestions,
-            loaded_slugs=loaded.slugs,
+        specialist_budget = max(0, context_limit - len(manager_routing_context) - 2)
+        hydration_routing = _specialist_hydration_routing(routing)
+        loaded = hydrate_selected_specialist_context(
+            hydration_store,
+            hydration_catalog,
+            hydration_routing,
+            record_evidence=False,
+            maximum_chars=specialist_budget,
+            session_id=session_id,
+            trace_id=trace_id,
+            disabled_agents=frozenset(config.agents.disabled),
         )
         if diagnostics is not None:
             diagnostics.enter("context_delivery")
@@ -1661,7 +1361,10 @@ def _prepare_preflight_evidence(
         }
         if continuation_snapshot is not None:
             recipe["continuation_guard"] = continuation_snapshot["guard"]
-        validated_result = _result_from_recipe(
+        # Replayed for its validation side effects: it raises if the recipe cannot
+        # rebuild the exact result being committed. The rebuilt value itself is
+        # unused now that no delivery mode derives private plan scopes from it.
+        _result_from_recipe(
             hydration_store,
             recipe,
             session_id=session_id,
@@ -1670,12 +1373,7 @@ def _prepare_preflight_evidence(
             config=config,
             pipeline=pipeline,
         )
-        codex_native_plan_scopes = _codex_native_plan_scopes_for_result(
-            validated_result,
-            host=host,
-            delivery_mode=delivery_mode,
-            specialist_refs=specialist_refs,
-        )
+        codex_native_plan_scopes: list[dict[str, Any]] = []
         if isinstance(cache_owner, Mapping):
             _publish_child_routing_bundle(
                 store,

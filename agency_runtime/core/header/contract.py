@@ -23,7 +23,6 @@ from agency_runtime.core.resident_managers import (
     RESIDENT_MANAGER_SLUGS,
     is_current_resident_manager_kernel_reference,
 )
-from agency_runtime.core.unit_assignment import project_unit_agent_plan
 
 HEADER_FIELDS: tuple[tuple[str, str], ...] = (
     ("agencies_loaded", "Agency/Agencies loaded"),
@@ -223,10 +222,17 @@ def _validate_specialist_activations(
     session_id: str,
     trace_id: str,
 ) -> None:
-    """Require every isolated selected ref to have one exact consumed grant."""
+    """Check the shape of specialist evidence without demanding a consumed grant.
+
+    Requiring an activation receipt per selected specialist was the completion-side
+    half of mandatory delegation: a turn could not finalize until someone had been
+    hired and had filed paperwork. Specialists load into the caller now, so there is
+    no grant to correlate and nothing here may block the turn. Only the evidence
+    shape is still verified, so malformed rows are still caught.
+    """
 
     delivery_mode = _clean(snapshot.get("delivery_mode"))
-    if delivery_mode not in {"", "direct", "isolated"}:
+    if delivery_mode not in {"", "direct"}:
         raise EvidenceCorrelationError("specialist delivery mode could not be verified")
     selected = snapshot.get("selected_specialists", [])
     activations = snapshot.get("specialist_activations", [])
@@ -236,71 +242,6 @@ def _validate_specialist_activations(
         isinstance(row, Mapping) for row in activations
     ):
         raise EvidenceCorrelationError("specialist activation evidence could not be verified")
-    if delivery_mode != "isolated":
-        return
-
-    request_kind = _clean(snapshot.get("request_kind"))
-    selection_required = snapshot.get(
-        "selection_required",
-        request_kind == "nontrivial",
-    )
-    if not isinstance(selection_required, bool):
-        raise EvidenceCorrelationError("turn specialist-selection policy could not be verified")
-    delegation_rows = snapshot.get("delegations", [])
-    expected = _expected_activation_identities(
-        selected,
-        snapshot.get("unit_agent_plan", []),
-    )
-    events = {
-        _clean(event.get("id")): event
-        for event in delegation_rows
-        if isinstance(event, Mapping) and _clean(event.get("id"))
-    }
-    actual: set[tuple[str, str, str, str]] = set()
-    for row in activations:
-        activation_identity = _validated_activation_identity(
-            row,
-            events=events,
-            session_id=session_id,
-            trace_id=trace_id,
-        )
-        if activation_identity in actual:
-            raise EvidenceCorrelationError("specialist activation evidence is not one-use")
-        actual.add(activation_identity)
-    claimed = {_clean(slug) for slug in snapshot.get("specialists", []) if _clean(slug)}
-    activated = {identity[1] for identity in actual}
-    if claimed != activated:
-        raise EvidenceCorrelationError(
-            "specialist activation loaded-specialist evidence is mismatched"
-        )
-    if not actual.issubset(expected):
-        raise EvidenceCorrelationError(
-            "specialist activation was not assigned by this turn's unit-agent plan"
-        )
-    unit_plan = snapshot.get("unit_agent_plan", [])
-    required = expected
-    if unit_plan:
-        selected_identities = {
-            identity[0]: identity
-            for identity in (_specialist_identity(row, activation=False) for row in selected)
-        }
-        executed_work_units = {
-            _clean(event.get("work_unit_id"))
-            for event in delegation_rows
-            if isinstance(event, Mapping)
-            and _clean(event.get("status")) in {"started", "running", "delegated", "completed"}
-        }
-        required = {
-            (
-                _clean(assignment.get("work_unit_id")),
-                *selected_identities[_clean(assignment.get("recommended_agent"))],
-            )
-            for assignment in unit_plan
-            if _clean(assignment.get("work_unit_id")) in executed_work_units
-            and _clean(assignment.get("recommended_agent")) in selected_identities
-        }
-    if selection_required and required != actual:
-        raise EvidenceCorrelationError("selected specialist activation is incomplete")
 
 
 def _clean(value: Any) -> str:
@@ -974,9 +915,9 @@ def _strong_delegation_correction(
         "message": (
             "AGENCY DELEGATION CORRECTION (one pass only): strongly_preferred native "
             f"work remains unresolved: {rows}. {native_delegation_instruction(host)} "
-            "Delegation is expected to keep the parent responsive and preserve isolated "
-            "specialist execution. Record either authoritative native worker/run evidence "
-            "or one explicit decline receipt for every listed work unit."
+            "Delegation is expected to keep the parent responsive. Record either "
+            "authoritative native worker/run evidence or one explicit decline receipt "
+            "for every listed work unit."
         ),
         "missing": ["delegation_execution"],
     }
@@ -999,9 +940,9 @@ def _completion_snapshot_violation(error: EvidenceCorrelationError) -> Completio
     if "specialist activation" in detail:
         return {
             "message": (
-                "AGENCY SPECIALIST ACTIVATION INCOMPLETE: Every assigned isolated "
-                "work unit must consume its own exact-version, one-use specialist "
-                "activation receipt before finalization."
+                "AGENCY SPECIALIST EVIDENCE MALFORMED: This turn's specialist rows "
+                "could not be read. No activation receipt is required to finalize; "
+                "the recorded evidence itself is the wrong shape."
             ),
             "missing": ["specialist_activation"],
         }

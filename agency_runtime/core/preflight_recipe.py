@@ -248,7 +248,7 @@ def _shared_delegation_goal_prefix(goals: list[str]) -> str:
     return prefix
 
 
-def _isolated_delegation_context(
+def _unit_delegation_context(
     routing: dict[str, Any],
     *,
     host: str,
@@ -349,7 +349,7 @@ def _isolated_delegation_context(
         goal_field = "goal"
         if shared_goal_prefix:
             if not goal.startswith(shared_goal_prefix):
-                raise RuntimeError("isolated delegation goal prefix no longer matches")
+                raise RuntimeError("unit delegation goal prefix no longer matches")
             goal = goal[len(shared_goal_prefix) :]
             goal_field = "goal_suffix"
         lines.append(
@@ -462,19 +462,6 @@ def _persistent_host_context_output_bytes(context: str) -> int:
         )
         + 1
     )
-
-
-def _require_persistent_host_context_output(
-    context: str,
-    *,
-    delivery_mode: str,
-) -> None:
-    """Reject an isolated context that cannot fit the bounded hook envelope."""
-
-    if delivery_mode != "isolated":
-        return
-    if _persistent_host_context_output_bytes(context) > PERSISTENT_HOST_CONTEXT_OUTPUT_BYTES:
-        raise RuntimeError("specialist recipe exceeds the encoded host delivery ceiling")
 
 
 def _context_policy_fingerprint(
@@ -747,12 +734,6 @@ def _verified_work_units(recipe_routing: dict[str, Any], user_message: str) -> d
             "source": "activation-canary-contract",
             "units": [CODEX_ACTIVATION_CANARY_WORK_UNIT],
         }
-    elif expected.get("source") == "isolated_plan_policy":
-        detected = {
-            **detect_work_units(user_message),
-            "delegate": False,
-            "source": "isolated_plan_policy",
-        }
     else:
         detected = detect_work_units(user_message)
     detected_metadata = _work_unit_metadata(detected)
@@ -890,7 +871,7 @@ def _result_from_recipe(
         or not isinstance(selection_refs, list)
         or not isinstance(unit_assignment_agents, list)
         or not isinstance(unit_agent_plan, list)
-        or delivery_mode not in {"direct", "isolated"}
+        or delivery_mode != "direct"
         or isinstance(context_limit, bool)
         or not isinstance(context_limit, int)
         or not 256 <= context_limit <= MAX_PREFLIGHT_CONTEXT_CHARS
@@ -972,10 +953,7 @@ def _result_from_recipe(
         delegation=config.delegation,
     )
 
-    from agency_runtime.core.specialist_context import (
-        format_isolated_specialist_context,
-        rebuild_versioned_specialist_context,
-    )
+    from agency_runtime.core.specialist_context import rebuild_versioned_specialist_context
     from agency_runtime.core.unit_assignment import (
         UNIT_AGENT_ASSIGNMENT_VERSION,
         hydrate_unit_agent_plan,
@@ -1003,48 +981,6 @@ def _result_from_recipe(
             maximum_chars=context_limit,
         )
         loaded_slugs = ()
-    elif delivery_mode == "isolated":
-        selected = rebuild_versioned_specialist_context(
-            store,
-            references,
-            disabled_agents=disabled,
-            include_context=False,
-        )
-        specialist_context = format_isolated_specialist_context(
-            selected.references,
-            host=str(recipe.get("host") or "unknown"),
-            session_id=session_id,
-            trace_id=trace_id,
-            nontrivial=classification.selection_required,
-            unit_plan=unit_agent_plan,
-            resident_managers=resident_managers,
-        )
-        delegation_context = (
-            _continuation_delegation_context(
-                replay_routing,
-                unit_plan=unit_agent_plan,
-            )
-            if continuation_reused
-            else _isolated_delegation_context(
-                replay_routing,
-                host=str(recipe.get("host") or "unknown"),
-                unit_plan=unit_agent_plan,
-                context_policy_version=int(recipe_version),
-            )
-        )
-        execution_context = _combine_context(
-            specialist_context,
-            delegation_context,
-            maximum_chars=context_limit,
-        )
-        context = _combine_context(
-            resident_context,
-            execution_context,
-            maximum_chars=context_limit,
-        )
-        if len(context) > context_limit:
-            raise RuntimeError("isolated specialist recipe exceeds the host delivery ceiling")
-        loaded_slugs: tuple[str, ...] = ()
     else:
         routing_context = pipeline.build_routing_context(replay_routing, config)
         if continuation_reused:
@@ -1059,7 +995,7 @@ def _result_from_recipe(
         elif unit_agent_plan:
             routing_context = _combine_context(
                 routing_context,
-                _isolated_delegation_context(
+                _unit_delegation_context(
                     replay_routing,
                     host=str(recipe.get("host") or "unknown"),
                     unit_plan=unit_agent_plan,
@@ -1085,10 +1021,6 @@ def _result_from_recipe(
             maximum_chars=context_limit,
         )
         loaded_slugs = selected.slugs
-    _require_persistent_host_context_output(
-        context,
-        delivery_mode=str(delivery_mode),
-    )
     return PreflightResult(
         session_id=session_id,
         trace_id=trace_id,

@@ -1866,10 +1866,6 @@ class Store(
                     (normalized_session, normalized_trace),
                 ).fetchall()
             ]
-            if recipe is not None and recipe["delivery_mode"] == "isolated":
-                specialists = list(
-                    dict.fromkeys(str(row["specialist_slug"]) for row in specialist_activations)
-                )
             delegations = [
                 dict(row)
                 for row in conn.execute(
