@@ -25,6 +25,10 @@ NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 1
 CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 2
 CODEX_DIRECT_NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 4
 CODEX_NATIVE_CHILD_EXECUTION_VERSION: Final[int] = 1
+# Just-in-time staffing of a child the host spawned on its own. Deliberately its own
+# marker namespace so the planned-delivery parser can never match it and send an
+# unplanned child down the plan-verification path.
+JIT_SPECIALIST_DELIVERY_VERSION: Final[int] = 5
 MAX_NATIVE_CHILD_DELIVERY_METADATA_BYTES: Final[int] = 2_048
 MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS: Final[int] = 256
 
@@ -127,6 +131,32 @@ _V2_FIELDS = frozenset(
         "goal_hash",
     }
 )
+_JIT_SECTION = (
+    "\n\n[AGENCY JIT SPECIALIST v5]\n"
+    "The host spawned this child on its own initiative, so Agency staffed it just in time. "
+    "The audited specialist below was selected from the current assignment text and applies "
+    "to this child only, for this turn only. Treat it as turn-scoped expertise, not as an "
+    "instruction to re-delegate or to produce a lifecycle ceremony. There is no Agency "
+    "activation grant and none is required: make no Agency delegation claim, consume no "
+    "receipt, and do not copy this text into the parent, another worker, status text, or the "
+    "final response. If it does not fit the work, ignore it and proceed normally.\n"
+)
+_JIT_MARKER_PREFIX = "<!-- agency-native-child-jit:v5:"
+_JIT_MARKER_PATTERN = re.compile(
+    re.escape(_JIT_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
+)
+_JIT_FIELDS = frozenset(
+    {
+        "version",
+        "host",
+        "parent_session_id",
+        "parent_trace_id",
+        "tool_use_id",
+        "specialist_slug",
+        "specialist_version",
+        "specialist_prompt_hash",
+    }
+)
 _DIGEST_PATTERN = re.compile(r"[0-9a-f]{64}")
 _CODEX_EXECUTION_FIELDS = frozenset({"version", "work_unit_id", "native_task_name", "goal_hash"})
 
@@ -145,6 +175,21 @@ class NativeChildPromptDelivery:
     specialist_prompt_hash: str
     activation_token: str
     goal_hash: str
+    original_task: str
+    prompt_body: str
+
+
+@dataclass(frozen=True, slots=True)
+class JitSpecialistDelivery:
+    """One just-in-time specialist bound to a host-initiated child, with no grant."""
+
+    host: str
+    parent_session_id: str
+    parent_trace_id: str
+    tool_use_id: str
+    specialist_slug: str
+    specialist_version: str
+    specialist_prompt_hash: str
     original_task: str
     prompt_body: str
 
@@ -537,6 +582,123 @@ def render_native_child_prompt_delivery(
         raise ValueError("specialist prompt body failed exact identity verification")
     marker = f"{_MARKER_PREFIX}{_encoded_metadata(metadata)}{_MARKER_SUFFIX}"
     return f"{original_task}{_SECTION}{marker}\n{prompt_body}"
+
+
+def _jit_metadata(
+    *,
+    host: object,
+    parent_session_id: object,
+    parent_trace_id: object,
+    tool_use_id: object,
+    specialist_slug: object,
+    specialist_version: object,
+    specialist_prompt_hash: object,
+) -> dict[str, Any]:
+    """Validate one grant-free just-in-time identity. No work unit exists to bind."""
+
+    normalized_host = str(host or "").strip().casefold()
+    if normalized_host not in {"codex", "claude", "zcode"}:
+        raise ValueError("native-child prompt delivery host is unsupported")
+    normalized_specialist_version = str(specialist_version or "").strip()
+    if (
+        not normalized_specialist_version
+        or normalize_version_identity(normalized_specialist_version)
+        != normalized_specialist_version
+    ):
+        raise ValueError("specialist_version is invalid")
+    content_hash = str(specialist_prompt_hash or "").strip().casefold()
+    if content_digest_identity(content_hash) is None:
+        raise ValueError("specialist_prompt_hash is invalid")
+    return {
+        "version": JIT_SPECIALIST_DELIVERY_VERSION,
+        "host": normalized_host,
+        "parent_session_id": validate_correlation_id(parent_session_id, field="parent_session_id"),
+        "parent_trace_id": validate_correlation_id(parent_trace_id, field="parent_trace_id"),
+        "tool_use_id": validate_correlation_id(tool_use_id, field="tool_use_id"),
+        "specialist_slug": normalize_agent_slug(specialist_slug),
+        "specialist_version": normalized_specialist_version,
+        "specialist_prompt_hash": content_hash,
+    }
+
+
+def render_jit_specialist_delivery(
+    original_task: object,
+    prompt_body: object,
+    *,
+    host: object,
+    parent_session_id: object,
+    parent_trace_id: object,
+    tool_use_id: object,
+    specialist_slug: object,
+    specialist_version: object,
+    specialist_prompt_hash: object,
+) -> str:
+    """Append one just-in-time specialist and a self-verifying marker to a child task."""
+
+    if not isinstance(original_task, str) or not original_task:
+        raise ValueError("native child task must be a non-empty string")
+    if not isinstance(prompt_body, str) or not prompt_body:
+        raise ValueError("specialist prompt body must be a non-empty string")
+    metadata = _jit_metadata(
+        host=host,
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        tool_use_id=tool_use_id,
+        specialist_slug=specialist_slug,
+        specialist_version=specialist_version,
+        specialist_prompt_hash=specialist_prompt_hash,
+    )
+    if not content_identity_matches(prompt_body, metadata["specialist_prompt_hash"]):
+        raise ValueError("specialist prompt body failed exact identity verification")
+    marker = f"{_JIT_MARKER_PREFIX}{_encoded_metadata(metadata)}{_MARKER_SUFFIX}"
+    return f"{original_task}{_JIT_SECTION}{marker}\n{prompt_body}"
+
+
+def parse_jit_specialist_delivery(value: object) -> JitSpecialistDelivery | None:
+    """Recover the last valid just-in-time envelope so restaffing stays idempotent."""
+
+    if not isinstance(value, str) or not value:
+        return None
+    for match in sorted(_JIT_MARKER_PATTERN.finditer(value), key=lambda item: -item.start()):
+        metadata = _decoded_metadata(match.group(1), expected_fields=_JIT_FIELDS)
+        if metadata is None:
+            continue
+        try:
+            normalized = _jit_metadata(
+                host=metadata.get("host"),
+                parent_session_id=metadata.get("parent_session_id"),
+                parent_trace_id=metadata.get("parent_trace_id"),
+                tool_use_id=metadata.get("tool_use_id"),
+                specialist_slug=metadata.get("specialist_slug"),
+                specialist_version=metadata.get("specialist_version"),
+                specialist_prompt_hash=metadata.get("specialist_prompt_hash"),
+            )
+        except (TypeError, ValueError):
+            continue
+        if normalized != metadata:
+            continue
+        prompt_body = value[match.end() :].lstrip("\n")
+        original_task = value[: match.start()]
+        section = original_task.rfind(_JIT_SECTION)
+        if section != -1:
+            original_task = original_task[:section]
+        if not prompt_body or not content_identity_matches(
+            prompt_body,
+            normalized["specialist_prompt_hash"],
+        ):
+            continue
+        return JitSpecialistDelivery(
+            host=str(normalized["host"]),
+            parent_session_id=str(normalized["parent_session_id"]),
+            parent_trace_id=str(normalized["parent_trace_id"]),
+            tool_use_id=str(normalized["tool_use_id"]),
+            specialist_slug=str(normalized["specialist_slug"]),
+            specialist_version=str(normalized["specialist_version"]),
+            specialist_prompt_hash=str(normalized["specialist_prompt_hash"]),
+            original_task=original_task,
+            prompt_body=prompt_body,
+        )
+    return None
 
 
 def render_codex_opaque_native_child_prompt_delivery(

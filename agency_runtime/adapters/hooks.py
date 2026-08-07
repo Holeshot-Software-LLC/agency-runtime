@@ -202,6 +202,9 @@ _CLAUDE_AGENT_TOOL_NAME = "Agent"
 _CLAUDE_CHILD_IDENTITY_MARKER = "[AGENCY NATIVE CHILD IDENTITY v1]"
 _NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN = "x" * NATIVE_CHILD_ACTIVATION_TOKEN_CHARS
 _PLANNED_NATIVE_WORK_UNIT_PATTERN = re.compile(r"^unit-[0-9a-f]{10}$")
+# Deterministic lexical narrowing runs inside the hook, so a few candidates are read
+# in rank order until one has a pinned, resolvable prompt version.
+_JIT_STAFFING_CANDIDATE_LIMIT = 5
 
 
 def _emit_codex_reconciliation_diagnostic(
@@ -1433,6 +1436,197 @@ class HookBridge:
                 )
         return _pre_tool_use_denial(reason, host=self.host)
 
+    def _handle_unassigned_native_child(
+        self,
+        *,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        task_field: str,
+        task: str,
+    ) -> dict[str, Any]:
+        """Separate a missing plan row from a child the host spawned on its own."""
+
+        if _planned_native_work_unit_id(self.host, payload):
+            return _pre_tool_use_denial(
+                "Agency could not verify this planned native child in the evidence "
+                "Store; it was not launched as an untyped substitute.",
+                host=self.host,
+            )
+        # No plan means the host chose to spawn this itself. Staff it just in time
+        # rather than telling it to go route for itself.
+        return self._jit_staff_native_child(
+            payload=payload,
+            args=args,
+            task_field=task_field,
+            task=task,
+        )
+
+    def _jit_staff_native_child(
+        self,
+        *,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        task_field: str,
+        task: str,
+    ) -> dict[str, Any]:
+        """Never let a staffing failure block a child the host chose to spawn."""
+
+        try:
+            return self._jit_specialist_delivery(
+                payload=payload,
+                args=args,
+                task_field=task_field,
+                task=task,
+            )
+        except Exception:
+            logger.debug(
+                "just-in-time staffing did not apply to this host-initiated child; "
+                "it runs unstaffed",
+                exc_info=True,
+            )
+            return {}
+
+    def _jit_specialist_delivery(
+        self,
+        *,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        task_field: str,
+        task: str,
+    ) -> dict[str, Any]:
+        """Staff a child the host spawned on its own initiative.
+
+        Agency never decides to spawn, but when the host does, the child still gets a
+        specialist. There is no plan, no work unit, and no activation grant on this
+        path, so it is structurally incapable of emitting a lifecycle skeleton and it
+        creates no obligation the parent must finalize against. Every failure returns
+        an empty response and lets the child run exactly as it otherwise would.
+        """
+
+        from agency_runtime.core.native_child_prompt_delivery import (
+            parse_jit_specialist_delivery,
+            render_jit_specialist_delivery,
+        )
+        from agency_runtime.core.resident_managers import is_resident_manager_slug
+        from agency_runtime.core.selector.candidate_narrow import pre_narrow
+
+        if _is_codex_opaque_native_task(self.host, task):
+            return {}
+        if parse_jit_specialist_delivery(task) is not None:
+            return {}
+        correlation = self._correlation(payload, args)
+        if not correlation.session_id or not correlation.tool_use_id:
+            return {}
+        # Claude does not guarantee a turn_id, and _correlation falls back to the
+        # tool_use_id. Resolve the parent turn the same way every other native-child
+        # path does, so the audit row is never stamped with a tool identity.
+        session_id, trace_id, _work_unit_id = self._native_child_parent_scope(payload)
+        if session_id != correlation.session_id or not trace_id:
+            return {}
+        catalog_reader = getattr(self.store, "get_active_roster_as_catalog", None)
+        prompt_reader = getattr(self.store, "get_versioned_specialist_prompt", None)
+        if not callable(catalog_reader) or not callable(prompt_reader):
+            return {}
+        try:
+            candidates, _scores = pre_narrow(
+                task,
+                catalog_reader(),
+                limit=_JIT_STAFFING_CANDIDATE_LIMIT,
+            )
+        except (RuntimeError, TypeError, ValueError):
+            return {}
+        for candidate in candidates:
+            if not isinstance(candidate, dict):
+                continue
+            slug = str(candidate.get("slug") or "").strip()
+            version = str(candidate.get("version") or "").strip()
+            content_hash = str(candidate.get("hash") or "").strip()
+            if not slug or not version or not content_hash or is_resident_manager_slug(slug):
+                continue
+            try:
+                prompt = prompt_reader(
+                    slug,
+                    version,
+                    content_hash,
+                    max_chars=MAX_SPECIALIST_PROMPT_CHARS,
+                )
+            except (RuntimeError, ValueError):
+                continue
+            if (
+                not isinstance(prompt, dict)
+                or prompt.get("prompt_truncated") is not False
+                or not isinstance(prompt.get("prompt_body"), str)
+                or not prompt["prompt_body"]
+            ):
+                continue
+            try:
+                delivered_task = render_jit_specialist_delivery(
+                    task,
+                    prompt["prompt_body"],
+                    host=self.host,
+                    parent_session_id=correlation.session_id,
+                    parent_trace_id=trace_id,
+                    tool_use_id=correlation.tool_use_id,
+                    specialist_slug=slug,
+                    specialist_version=str(prompt.get("version") or version),
+                    specialist_prompt_hash=str(prompt.get("hash") or content_hash),
+                )
+            except (RuntimeError, TypeError, ValueError):
+                continue
+            result = {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "allow",
+                    "updatedInput": {**args, task_field: delivered_task},
+                }
+            }
+            try:
+                encoded = json.dumps(
+                    result,
+                    allow_nan=False,
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            except (TypeError, ValueError):
+                continue
+            if len(encoded) >= MAX_HOOK_OUTPUT_BYTES:
+                continue
+            self._record_jit_specialist_load(
+                session_id=correlation.session_id,
+                trace_id=trace_id,
+                slug=slug,
+            )
+            return result
+        return {}
+
+    def _record_jit_specialist_load(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        slug: str,
+    ) -> None:
+        """Record the load for audit only. It is deliberately not a delegation row.
+
+        A host-initiated child is staffed but not accounted: the parent never planned
+        it, so requiring a receipt to finalize would reintroduce the blocking that the
+        specialist load exists to remove. The row expires with the turn like any other
+        loaded specialist; the exact version stays pinned in the delivered envelope.
+        """
+
+        recorder = getattr(self.store, "record_specialist_loaded", None)
+        if not callable(recorder):
+            return
+        try:
+            recorder(session_id, slug, trace_id=trace_id)
+        except Exception:
+            logger.debug(
+                "could not record the just-in-time specialist load for %s; the child "
+                "keeps its specialist",
+                slug,
+                exc_info=True,
+            )
+
     def _handle_native_child_pre_tool_use(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Inject one exact prompt while leaving the native scheduler in control."""
 
@@ -1457,13 +1651,13 @@ class HookBridge:
         if delivery is not None:
             return self._verify_existing_native_child_delivery(delivery, assignment)
         if assignment is None:
-            if _planned_native_work_unit_id(self.host, payload):
-                return _pre_tool_use_denial(
-                    "Agency could not verify this planned native child in the evidence "
-                    "Store; it was not launched as an untyped substitute.",
-                    host=self.host,
-                )
-            return {}
+            return self._handle_unassigned_native_child(
+                payload=payload,
+                args=args,
+                task_field=task_field,
+                task=task,
+            )
+
         def deny(reason: str, decline_reason: str) -> dict[str, Any]:
             return self._denied_with_decline_receipt(
                 reason,

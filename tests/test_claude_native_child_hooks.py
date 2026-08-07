@@ -14,6 +14,7 @@ import agency_runtime.adapters.hooks as hooks
 from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
 from agency_runtime.core.native_child_prompt_delivery import (
+    parse_jit_specialist_delivery,
     parse_native_child_prompt_delivery,
     render_codex_native_child_execution_message,
     render_native_child_prompt_delivery,
@@ -1402,3 +1403,134 @@ def test_isolated_parent_guidance_pins_authoritative_resident_manager_header() -
     assert "Agency/Agencies loaded: agency-steward" in context
     assert "copy its value exactly, never `none`" in context
     assert "Agency/Agencies loaded: <agent-id" not in context
+
+
+class _JitRosterStore:
+    """Only what just-in-time staffing reads: an open trace and a versioned roster."""
+
+    def __init__(self) -> None:
+        self.prompt = "You are the exact database tuning specialist for slow SQL queries."
+        self.hash = sha256(self.prompt.encode()).hexdigest()
+        self.loaded: list[tuple[str, str, str]] = []
+
+    def get_open_traces_for_session(self, _session_id: str) -> list[str]:
+        return ["trace"]
+
+    def get_run(self, trace_id: str) -> dict[str, Any] | None:
+        # Only the real routed turn exists; a tool identity must not resolve to a run.
+        if trace_id != "trace":
+            return None
+        return {"session_id": "session", "trace_id": "trace", "status": "active"}
+
+    def get_completion_evidence_snapshot(self, session_id: str, trace_id: str) -> dict[str, Any]:
+        return {
+            "session_id": session_id,
+            "trace_id": trace_id,
+            "status": "active",
+            "delivery_mode": "direct",
+            "selected_specialists": [],
+            "unit_agent_plan": [],
+        }
+
+    def get_active_roster_as_catalog(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "slug": "database-optimizer",
+                "agent_slug": "database-optimizer",
+                "version": "v1",
+                "hash": self.hash,
+                "description": "Tunes slow SQL queries, indexes, and query plans",
+                "capabilities": ["sql", "index", "query", "database"],
+            }
+        ]
+
+    def get_versioned_specialist_prompt(
+        self,
+        slug: str,
+        version: str,
+        content_hash: str,
+        *,
+        max_chars: int,
+    ) -> dict[str, Any] | None:
+        if slug != "database-optimizer" or version != "v1" or content_hash != self.hash:
+            return None
+        return {
+            "slug": slug,
+            "version": version,
+            "hash": content_hash,
+            "prompt_body": self.prompt[:max_chars],
+            "prompt_truncated": len(self.prompt) > max_chars,
+        }
+
+    def record_specialist_loaded(
+        self,
+        session_id: str,
+        agent_slug: str,
+        *,
+        trace_id: str = "",
+    ) -> None:
+        self.loaded.append((session_id, agent_slug, trace_id))
+
+
+def _unplanned_child_payload(prompt: str) -> dict[str, Any]:
+    # No ``description`` means no plan row can match, which is exactly how a child the
+    # host spawned on its own initiative arrives.
+    return {
+        "hook_event_name": "PreToolUse",
+        "session_id": "session",
+        "tool_use_id": "tool-1",
+        "tool_name": "Agent",
+        "tool_input": {"prompt": prompt},
+    }
+
+
+def test_host_initiated_child_is_staffed_just_in_time_without_a_grant() -> None:
+    store = _JitRosterStore()
+    task = "Speed up the slow SQL query and add an index."
+
+    result = HookBridge("claude", store=store).handle(_unplanned_child_payload(task))
+
+    delivered = result["hookSpecificOutput"]["updatedInput"]["prompt"]
+    assert result["hookSpecificOutput"]["permissionDecision"] == "allow"
+    assert "[AGENCY JIT SPECIALIST v5]" in delivered
+    assert store.prompt in delivered
+    # Staffed but not accounted: no grant is issued, so no delegation obligation is
+    # created that the parent's turn would then have to finalize against.
+    assert "activation_token" not in delivered
+    assert parse_native_child_prompt_delivery(delivered) is None
+    delivery = parse_jit_specialist_delivery(delivered)
+    assert delivery is not None
+    assert delivery.specialist_slug == "database-optimizer"
+    assert delivery.specialist_version == "v1"
+    assert delivery.original_task == task
+    assert store.loaded == [("session", "database-optimizer", "trace")]
+
+
+def test_host_initiated_child_runs_unstaffed_when_no_specialist_fits() -> None:
+    class _EmptyRoster(_JitRosterStore):
+        def get_active_roster_as_catalog(self) -> list[dict[str, Any]]:
+            return []
+
+    store = _EmptyRoster()
+
+    result = HookBridge("claude", store=store).handle(
+        _unplanned_child_payload("Speed up the slow SQL query.")
+    )
+
+    # Abstaining must never block the child the host chose to spawn.
+    assert result == {}
+    assert store.loaded == []
+
+
+def test_just_in_time_staffing_is_never_reapplied_to_an_already_staffed_task() -> None:
+    store = _JitRosterStore()
+    bridge = HookBridge("claude", store=store)
+    task = "Speed up the slow SQL query and add an index."
+
+    delivered = bridge.handle(_unplanned_child_payload(task))["hookSpecificOutput"]["updatedInput"][
+        "prompt"
+    ]
+    again = bridge.handle(_unplanned_child_payload(delivered))
+
+    assert again == {}
+    assert store.loaded == [("session", "database-optimizer", "trace")]
