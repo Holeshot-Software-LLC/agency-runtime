@@ -1464,12 +1464,12 @@ def test_whole_team_verifier_rejection_gets_one_bounded_recruiter_repair() -> No
     assert outcome.attempts[1].validation_detail == (
         "workforce staffing verification failures: "
         "global=selected_agent_budget_exceeded,"
-        "global=delegated_agent_budget_exceeded"
+        "global=loaded_agent_budget_exceeded"
     )
     feedback = json.loads(prompts[2].partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
     assert feedback["staffing_violations"] == [
         {"unit_id": "", "code": "selected_agent_budget_exceeded"},
-        {"unit_id": "", "code": "delegated_agent_budget_exceeded"},
+        {"unit_id": "", "code": "loaded_agent_budget_exceeded"},
     ]
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
 
@@ -1540,7 +1540,7 @@ def test_verifier_repair_exhaustion_is_terminal_and_not_cached() -> None:
     ]
     assert tuple(reason.code for reason in first.staffing.abstention_reasons) == (
         "selected_agent_budget_exceeded",
-        "delegated_agent_budget_exceeded",
+        "loaded_agent_budget_exceeded",
     )
     failed_routing = project_workforce_routing(
         first,
@@ -1551,7 +1551,7 @@ def test_verifier_repair_exhaustion_is_terminal_and_not_cached() -> None:
     )
     assert preflight_staffing_reason_codes(failed_routing) == [
         "selected_agent_budget_exceeded",
-        "delegated_agent_budget_exceeded",
+        "loaded_agent_budget_exceeded",
     ]
 
     repair_phase = True

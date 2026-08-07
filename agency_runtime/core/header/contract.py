@@ -983,46 +983,15 @@ def _strong_delegation_correction(
 
 
 def _incomplete_workspace_write_units(snapshot: Mapping[str, Any]) -> list[str]:
-    """Return current workspace-write units without one terminal delegation."""
+    """Return no unit as blocked: a workspace-write unit never requires a delegation.
 
-    recipe_version = snapshot.get("preflight_recipe_version", 0)
-    if isinstance(recipe_version, bool) or not isinstance(recipe_version, int):
-        raise EvidenceCorrelationError("workspace-write recipe version could not be verified")
-    if recipe_version < 14:
-        return []
-    plan = project_unit_agent_plan(
-        snapshot.get("unit_agent_plan", []),
-        require_current=True,
-    )
-    if plan is None:
-        raise EvidenceCorrelationError("workspace-write unit plan could not be verified")
-    required = {
-        str(row["work_unit_id"]) for row in plan if row.get("mutation_scope") == "workspace_write"
-    }
-    if not required:
-        return []
-    delegations = snapshot.get("delegations", [])
-    if not isinstance(delegations, list) or not all(
-        isinstance(row, Mapping) for row in delegations
-    ):
-        raise EvidenceCorrelationError("workspace-write delegation evidence could not be verified")
-    grouped: dict[str, list[Mapping[str, Any]]] = {work_unit_id: [] for work_unit_id in required}
-    for row in delegations:
-        work_unit_id = _clean(row.get("work_unit_id"))
-        if work_unit_id in grouped:
-            grouped[work_unit_id].append(row)
-    incomplete: list[str] = []
-    for work_unit_id in sorted(required):
-        rows = grouped[work_unit_id]
-        if len(rows) > 1:
-            raise EvidenceCorrelationError("workspace-write delegation evidence is not one-to-one")
-        if (
-            len(rows) != 1
-            or _clean(rows[0].get("status")) != "completed"
-            or not _clean(rows[0].get("completed_at"))
-        ):
-            incomplete.append(work_unit_id)
-    return incomplete
+    Agency does not decide to spawn, so it cannot require a delegation receipt to
+    discharge a unit. A specialist loaded into the caller discharges a workspace-write
+    unit exactly as a delegated worker did. The native host owns worker lifecycle and
+    the permissions of anything it spawns.
+    """
+
+    return []
 
 
 def _completion_snapshot_violation(error: EvidenceCorrelationError) -> CompletionPolicyViolation:

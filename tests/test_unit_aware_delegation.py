@@ -105,27 +105,7 @@ def test_isolated_hydration_uses_every_unique_planned_agent() -> None:
         {"work_unit_id": "unit-c", "recommended_agent": "orchestrator"},
     ]
 
-    assert (
-        preflight_module._specialist_hydration_routing(
-            routing,
-            delivery_mode="direct",
-            suggestions=suggestions,
-        )
-        is routing
-    )
-    assert (
-        preflight_module._specialist_hydration_routing(
-            routing,
-            delivery_mode="isolated",
-            suggestions=[],
-        )
-        is routing
-    )
-    assert preflight_module._specialist_hydration_routing(
-        routing,
-        delivery_mode="isolated",
-        suggestions=suggestions,
-    )["selected_ids"] == ["writer", "reviewer", "orchestrator"]
+    assert preflight_module._specialist_hydration_routing(routing) is routing
     preflight_module._require_available_unit_plan_agents(
         delivery_mode="direct",
         suggestions=suggestions,
@@ -158,39 +138,22 @@ def test_isolated_hydration_uses_every_unique_planned_agent() -> None:
         )
 
 
-def test_full_catalog_unit_winners_do_not_expand_a_direct_prompt_context() -> None:
+def test_hydration_never_truncates_the_selected_team() -> None:
     routing = {"selected_ids": ["code-reviewer", "technical-writer", "security-engineer"]}
-    suggestions = [
-        {
-            "work_unit_id": "unit-0000000001",
-            "recommended_agent": "database-migration-specialist",
-        },
-        {
-            "work_unit_id": "unit-0000000002",
-            "recommended_agent": "technical-writer",
-        },
-    ]
 
-    direct = preflight_module._specialist_hydration_routing(
-        routing,
-        delivery_mode="direct",
-        suggestions=suggestions,
-    )
-    isolated = preflight_module._specialist_hydration_routing(
-        routing,
-        delivery_mode="isolated",
-        suggestions=suggestions,
-    )
+    hydrated = preflight_module._specialist_hydration_routing(routing)
 
+    # A job may need more than one specialist. How many may be selected is the
+    # staffing budget's decision and is not re-imposed at hydration.
     assert routing["selected_ids"] == [
         "code-reviewer",
         "technical-writer",
         "security-engineer",
     ]
-    assert direct["selected_ids"] == ["code-reviewer"]
-    assert isolated["selected_ids"] == [
-        "database-migration-specialist",
+    assert hydrated["selected_ids"] == [
+        "code-reviewer",
         "technical-writer",
+        "security-engineer",
     ]
 
 

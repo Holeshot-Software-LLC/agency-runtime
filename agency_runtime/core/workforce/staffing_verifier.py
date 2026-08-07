@@ -49,7 +49,10 @@ class StaffingBudget:
     max_work_units: int = 16
     max_selected_per_unit: int = 4
     max_selected_total: int = 16
-    max_loaded: int = 1
+    # Loading and delegating are two deliveries of the same selection, not a
+    # hierarchy. Their ceilings stay symmetric; prompt-size limits are enforced
+    # separately against the host context budget.
+    max_loaded: int = 16
     max_delegated: int = 16
     min_confidence: float = 0.8
     min_margin: float = 0.1
@@ -736,8 +739,6 @@ def _agent_composition(
         return
     contract = roster[agent_id]
     relation = contract.composition
-    if row.delivery == "load" and contract.context_mode == "isolated_only":
-        _reason(reasons, "agent_requires_delegation", unit_id=row.unit_id, agent_id=agent_id)
     if row.delivery == "delegate" and "native-delegation" not in context.available_tools:
         _reason(
             reasons,
@@ -1208,7 +1209,7 @@ def build_deterministic_proposal(
                 ],
                 "confidence": confidence,
                 "margin": margin,
-                "delivery": "delegate",
+                "delivery": "load",
                 "timing": "after_artifact"
                 if unit.authority == "review" and unit.depends_on
                 else "immediate",

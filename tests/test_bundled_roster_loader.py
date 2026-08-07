@@ -296,7 +296,6 @@ def test_bundle_rejects_resigned_cf_in_manifest_metadata_and_paths(
         (lambda data: data.update(extra="value"), "schema is unsupported"),
         (lambda data: data["agents"][0].update(extra="value"), "agent entry"),
         (lambda data: data["agents"][0].update(authority="owner"), "authority"),
-        (lambda data: data["agents"][0].update(authority="modify"), "direct-safe authority"),
         (lambda data: data["agents"][0].update(context_mode="shared"), "context mode"),
         (lambda data: data["agents"][0].update(prompt_file="../escape.txt"), "safe package"),
         (lambda data: data["agents"][0].update(relative_path="engineering/con.md"), "safe package"),

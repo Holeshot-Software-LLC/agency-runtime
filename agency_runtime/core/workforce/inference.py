@@ -1290,7 +1290,7 @@ def staffing_budget_for_config(config: AgencyConfig) -> StaffingBudget:
         max_work_units=config.workforce.max_work_units,
         max_selected_per_unit=config.workforce.max_selected_per_unit,
         max_selected_total=config.workforce.max_selected_total,
-        max_loaded=1,
+        max_loaded=config.workforce.max_selected_total,
         max_delegated=config.workforce.max_selected_total,
         min_confidence=config.workforce.min_confidence,
         min_margin=config.workforce.min_margin,

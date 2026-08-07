@@ -412,7 +412,7 @@ def preflight_delivery_policy(
     if normalized in {"openclaw", "hermes"} and native_child:
         return "direct", MAX_PREFLIGHT_CONTEXT_CHARS
     if normalized in {"codex", "claude", "openclaw", "hermes", "zcode"}:
-        return "isolated", PERSISTENT_HOST_CONTEXT_CHARS
+        return "direct", PERSISTENT_HOST_CONTEXT_CHARS
     if normalized == "litellm":
         return "direct", LITELLM_PREFLIGHT_CONTEXT_CHARS
     return "direct", MAX_PREFLIGHT_CONTEXT_CHARS

@@ -203,11 +203,9 @@ def _validate_routing_contract(result: Mapping[str, Any]) -> None:
         not result["supported_hosts"] or not result["supported_platforms"]
     ):
         raise BundledRosterError(f"approved bundled agent has no execution target: {slug}")
-    if result["context_mode"] == "direct_safe" and result["authority"] in {
-        "modify",
-        "approve",
-    }:
-        raise BundledRosterError(f"direct-safe authority is invalid for {slug}")
+    # Authority describes what an agent may do, not how it must be delivered. The
+    # native host owns permissions for the worker it runs, so a modify-authority
+    # specialist is loadable into the caller like any other.
 
 
 def _validate_source(source: object) -> dict[str, str]:

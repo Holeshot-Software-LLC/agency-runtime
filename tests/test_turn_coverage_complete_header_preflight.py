@@ -1560,7 +1560,7 @@ def test_completion_policy_covers_invalid_strength_and_open_optional_projection(
     )
 
 
-def test_completion_policy_rejects_incomplete_workspace_write_delegation(
+def test_completion_policy_never_requires_a_workspace_write_delegation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
@@ -1568,10 +1568,32 @@ def test_completion_policy_rejects_incomplete_workspace_write_delegation(
         "_validate_completion_snapshot",
         lambda snapshot, *_args, **_kwargs: dict(snapshot),
     )
+    monkeypatch.setattr(
+        contract,
+        "fill_header_fields",
+        lambda fields, *_args, **_kwargs: dict(fields),
+    )
     snapshot = _active_snapshot()
     snapshot["selection_required"] = False
     snapshot["preflight_recipe_version"] = 14
     snapshot["unit_agent_plan"] = [_current_workspace_write_plan()]
+
+    # Agency does not decide to spawn, so it cannot require a delegation receipt to
+    # discharge a unit. A workspace-write unit finalizes with no delegation evidence
+    # at all: the specialist was loaded into the caller instead.
+    snapshot["delegations"] = []
+    assert (
+        contract.validate_completion_policy(
+            _valid_header(),
+            session_id="session",
+            trace_id="trace",
+            store=object(),
+            evidence_snapshot=snapshot,
+        )
+        is None
+    )
+
+    # An unfinished delegation is likewise not a completion blocker.
     snapshot["delegations"] = [
         {
             "id": "delegation",
@@ -1581,55 +1603,6 @@ def test_completion_policy_rejects_incomplete_workspace_write_delegation(
             "completed_at": None,
         }
     ]
-
-    violation = contract.validate_completion_policy(
-        _valid_header(),
-        session_id="session",
-        trace_id="trace",
-        store=object(),
-        evidence_snapshot=snapshot,
-    )
-
-    assert violation is not None
-    assert violation["missing"] == ["delegation_execution"]
-    assert "unit-1234567890" in violation["message"]
-    snapshot["delegations"][0]["status"] = "completed"
-    assert contract.validate_completion_policy(
-        _valid_header(),
-        session_id="session",
-        trace_id="trace",
-        store=object(),
-        evidence_snapshot=snapshot,
-    )["missing"] == ["delegation_execution"]
-    snapshot["delegations"][0]["completed_at"] = "2026-08-02T15:00:00+00:00"
-    snapshot["preflight_recipe_version"] = True
-    assert contract.validate_completion_policy(
-        _valid_header(),
-        session_id="session",
-        trace_id="trace",
-        store=object(),
-        evidence_snapshot=snapshot,
-    )["missing"] == ["evidence_verification"]
-    snapshot["preflight_recipe_version"] = 14
-    snapshot["delegations"].append(
-        {
-            **snapshot["delegations"][0],
-            "id": "duplicate-delegation",
-        }
-    )
-    assert contract.validate_completion_policy(
-        _valid_header(),
-        session_id="session",
-        trace_id="trace",
-        store=object(),
-        evidence_snapshot=snapshot,
-    )["missing"] == ["evidence_verification"]
-    snapshot["delegations"].pop()
-    monkeypatch.setattr(
-        contract,
-        "fill_header_fields",
-        lambda fields, *_args, **_kwargs: dict(fields),
-    )
     assert (
         contract.validate_completion_policy(
             _valid_header(),

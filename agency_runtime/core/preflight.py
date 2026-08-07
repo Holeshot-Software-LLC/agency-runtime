@@ -288,34 +288,19 @@ def _catalog_with_policy(store: Store, disabled_agents: frozenset[str]) -> list[
     )
 
 
-def _specialist_hydration_routing(
-    routing: dict[str, Any],
-    *,
-    delivery_mode: str,
-    suggestions: list[dict[str, Any]],
-) -> dict[str, Any]:
-    """Choose prompt bodies that may safely share one host context.
+def _specialist_hydration_routing(routing: dict[str, Any]) -> dict[str, Any]:
+    """Choose prompt bodies that share the caller's host context.
 
-    Isolated hosts prepare every planned specialist for a separate native child.
-    Direct hosts have no equivalent context boundary, so they receive one
-    directive specialist by default. Resident managers use their own compact
-    parent kernel and are never hydrated as ordinary specialists. Other selected
-    identities remain visible as routing suggestions without having their raw
-    instructions concatenated.
+    Every specialist the recruiter selected is hydrated. How many may be selected
+    belongs to the staffing budget and how large they may be belongs to the host
+    context limit; neither ceiling is re-imposed here. Resident managers use their
+    own compact parent kernel and are never hydrated as ordinary specialists.
     """
 
-    if delivery_mode == "isolated":
-        if not suggestions:
-            selected = list(routing.get("selected_ids", []))
-        else:
-            selected = _suggested_specialist_slugs(suggestions)
-    else:
-        selected = [
-            str(slug).strip() for slug in routing.get("selected_ids", []) if str(slug).strip()
-        ]
+    selected = [
+        str(slug).strip() for slug in routing.get("selected_ids", []) if str(slug).strip()
+    ]
     selected = [slug for slug in selected if not is_resident_manager_slug(slug)]
-    if delivery_mode != "isolated":
-        selected = selected[:1]
     if selected == routing.get("selected_ids"):
         return routing
     return {**routing, "selected_ids": selected}
@@ -1616,11 +1601,7 @@ def _prepare_preflight_evidence(
                 maximum_chars=context_limit,
             )
             specialist_budget = max(0, context_limit - len(manager_routing_context) - 2)
-        hydration_routing = _specialist_hydration_routing(
-            routing,
-            delivery_mode=delivery_mode,
-            suggestions=suggestions,
-        )
+        hydration_routing = _specialist_hydration_routing(routing)
         hydration_arguments = {
             "session_id": session_id,
             "trace_id": trace_id,

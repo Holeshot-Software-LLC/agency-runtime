@@ -80,7 +80,7 @@ class _BoundaryStore:
 
 
 def test_resident_kernel_is_compact_versioned_and_content_addressed() -> None:
-    assert RESIDENT_MANAGER_KERNEL_VERSION == 2
+    assert RESIDENT_MANAGER_KERNEL_VERSION == 3
     assert len(RESIDENT_MANAGER_KERNEL) <= MAX_RESIDENT_MANAGER_KERNEL_CHARS
     assert (
         hashlib.sha256(RESIDENT_MANAGER_KERNEL.encode("utf-8")).hexdigest()
