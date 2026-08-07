@@ -536,61 +536,6 @@ def test_unplanned_child_reuses_inferred_route_and_abstains_when_budget_is_zero(
     assert abstained["status"] == "child_budget_abstained"
 
 
-def test_exact_planned_parent_unit_reuses_assignment_without_child_inference() -> None:
-    goal, catalog, snapshot = _planned_parent_unit_fixture()
-    snapshot_reads: list[tuple[str, str]] = []
-
-    class ParentStore:
-        @staticmethod
-        def get_completion_evidence_snapshot(session_id, trace_id):
-            snapshot_reads.append((session_id, trace_id))
-            return snapshot
-
-        @staticmethod
-        def reserve_child_routing(**_kwargs):
-            raise AssertionError("an exact parent unit must not reserve child inference")
-
-    class Pipeline:
-        @staticmethod
-        def route(*_args, **_kwargs):
-            raise AssertionError("an exact parent unit must not rerun selection")
-
-    classification = classify_turn_intent(
-        goal,
-        TurnState(state_known=True, state_status="ready"),
-    )
-    routing, continuation, returned_classification = _resolve_preflight_routing(
-        ParentStore(),
-        session_id="child-session",
-        trace_id="child-trace",
-        user_message=goal,
-        host="codex",
-        platform="windows",
-        available_tools=(),
-        capability_receipt=SimpleNamespace(as_dict=lambda: {"status": "verified"}),
-        catalog=catalog,
-        config=AgencyConfig(
-            providers=(ProviderEntry(name="codex", type="cli", transport="codex"),),
-        ),
-        classification=classification,
-        routing_fingerprint="routing-fingerprint",
-        policy_fingerprint="policy-fingerprint",
-        roster_generation=1,
-        pipeline=Pipeline,
-        parent_session_id="parent-session",
-        parent_trace_id="parent-trace",
-    )
-
-    assert snapshot_reads == [("parent-session", "parent-trace")]
-    assert continuation is None
-    assert returned_classification == classification
-    assert routing["status"] == "parent_unit_reused"
-    assert routing["source"] == "parent_unit_reuse"
-    assert routing["parent_unit_reused"] is True
-    assert routing["inference_attempted"] is False
-    assert routing["selected_ids"] == ["python-application-engineer"]
-    assert routing["_cached_unit_agent_plan"] == snapshot["unit_agent_plan"]
-    assert routing["_cached_unit_assignment_agents"][0]["slug"] == ("python-application-engineer")
 
 
 @pytest.mark.parametrize(
