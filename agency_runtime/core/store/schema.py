@@ -43,6 +43,29 @@ from agency_runtime.core.store.trace_identity import (
 
 SCHEMA_VERSION = 44
 
+# Columns an already-created activation receipts table gains by migration.
+#
+# The startup staleness predicate derives its required columns from this tuple
+# rather than restating them.  A column added here but not there would leave
+# every existing database stamped current, skip the migration that adds it, and
+# fail at query time on exactly the installs that needed migrating -- while a
+# fresh test database, created from the full DDL, passes.
+DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("grant_id", "TEXT NOT NULL DEFAULT ''"),
+    ("grant_payload", "TEXT NOT NULL DEFAULT ''"),
+    ("grant_issued_unix", "INTEGER NOT NULL DEFAULT 0"),
+    ("grant_expires_unix", "INTEGER NOT NULL DEFAULT 0"),
+    ("child_host", "TEXT NOT NULL DEFAULT ''"),
+    (
+        "grant_origin",
+        "TEXT NOT NULL DEFAULT 'manual_api' CHECK (grant_origin IN ('manual_api', 'native_hook'))",
+    ),
+    ("tool_use_id", "TEXT NOT NULL DEFAULT ''"),
+    # Empty means the launch requested no explicit model, which is a fact
+    # about the call, not a gap in the evidence.
+    ("launch_model", "TEXT NOT NULL DEFAULT ''"),
+)
+
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_worker_runs_native_scope "
@@ -4239,22 +4262,7 @@ def migrate_specialist_identity(conn: sqlite3.Connection) -> None:
 def migrate_delegation_activation_unit_identity(conn: sqlite3.Connection) -> None:
     """Scope exact specialist activation uniqueness to one planned work unit."""
 
-    for column, definition in (
-        ("grant_id", "TEXT NOT NULL DEFAULT ''"),
-        ("grant_payload", "TEXT NOT NULL DEFAULT ''"),
-        ("grant_issued_unix", "INTEGER NOT NULL DEFAULT 0"),
-        ("grant_expires_unix", "INTEGER NOT NULL DEFAULT 0"),
-        ("child_host", "TEXT NOT NULL DEFAULT ''"),
-        (
-            "grant_origin",
-            "TEXT NOT NULL DEFAULT 'manual_api' "
-            "CHECK (grant_origin IN ('manual_api', 'native_hook'))",
-        ),
-        ("tool_use_id", "TEXT NOT NULL DEFAULT ''"),
-        # Empty means the launch requested no explicit model, which is a fact
-        # about the call, not a gap in the evidence.
-        ("launch_model", "TEXT NOT NULL DEFAULT ''"),
-    ):
+    for column, definition in DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS:
         ensure_column(conn, "delegation_activation_receipts", column, definition)
 
     expected = (

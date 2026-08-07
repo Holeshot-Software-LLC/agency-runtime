@@ -59,6 +59,7 @@ from agency_runtime.core.store.schema import (
     DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL,
     DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES,
     DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL,
+    DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS,
     NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL,
     NATIVE_CHILD_PARENT_SCOPE_TRIGGER_NAME,
     NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL,
@@ -339,6 +340,9 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
     """
 
     required_columns = {
+        # Migration-added columns come from the migration's own list, so a new
+        # one cannot land here stamped current and skip the migration that
+        # creates it.
         "delegation_activation_receipts": {
             "id",
             "token_hash",
@@ -354,9 +358,8 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
             "created_at",
             "consumed_at",
             "delegation_event_id",
-            "grant_origin",
-            "tool_use_id",
-        },
+        }
+        | {name for name, _ in DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS},
         "delegation_events": {
             "executed_worker_kind",
             "executed_worker_id",

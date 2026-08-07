@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 
 import pytest
 
@@ -11,7 +12,11 @@ from agency_runtime.core.header.contract import (
     _specialist_launch_models,
 )
 from agency_runtime.core.store.delegation_activation import _clean_launch_model
-from agency_runtime.core.store.schema import migrate_delegation_activation_unit_identity
+from agency_runtime.core.store.schema import (
+    DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS,
+    migrate_delegation_activation_unit_identity,
+)
+from agency_runtime.core.store.sqlite import Store, _v20_receipt_schema_is_current
 
 _LEGACY_RECEIPTS_DDL = """
 CREATE TABLE delegation_activation_receipts (
@@ -59,6 +64,47 @@ def test_legacy_database_gains_launch_model_without_losing_rows() -> None:
     preserved = conn.execute("SELECT id, launch_model FROM delegation_activation_receipts").fetchone()
     assert preserved["id"] == "i"
     assert preserved["launch_model"] == ""
+    conn.close()
+
+
+@pytest.mark.parametrize(
+    "column", [name for name, _definition in DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS]
+)
+def test_startup_predicate_reports_stale_when_a_migrated_column_is_missing(
+    tmp_path: Path, column: str
+) -> None:
+    """Adding a column to the migration is useless if startup never runs it.
+
+    A database already stamped at the current schema version migrates only when
+    the startup predicate calls it stale. That predicate used to restate the
+    receipt columns by hand, so ``launch_model`` landed in the migration, never
+    reached an existing database, and failed every turn with ``no such column``
+    -- while fresh test databases, built from the full DDL, stayed green.
+
+    Baselining on a fully migrated store is what makes this real: the missing
+    column is then the only thing the predicate can be reacting to.
+    """
+
+    store = Store(db_path=tmp_path / "agency.db")
+    close = getattr(store, "close", None)
+    if callable(close):
+        close()
+
+    conn = sqlite3.connect(tmp_path / "agency.db")
+    conn.row_factory = sqlite3.Row
+    assert _v20_receipt_schema_is_current(conn) is True
+
+    try:
+        conn.execute(f"ALTER TABLE delegation_activation_receipts DROP COLUMN {column}")
+    except sqlite3.OperationalError as exc:
+        # A trigger or index names the column, so the schema already pins it and
+        # SQLite will not let it go missing. Tearing those down to force the drop
+        # is what made an earlier version of this test pass on their absence
+        # rather than on the column's, so leave them standing and skip instead.
+        conn.close()
+        pytest.skip(f"{column} is structurally pinned: {exc}")
+
+    assert _v20_receipt_schema_is_current(conn) is False
     conn.close()
 
 
