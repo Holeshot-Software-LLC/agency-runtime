@@ -3,12 +3,17 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-import tomllib
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # 3.10 is a supported target and keeps TOML parsing in the backport.
+    import tomli as tomllib
 
 from agency_runtime.core import canary
 from agency_runtime.core.canary_proof import (

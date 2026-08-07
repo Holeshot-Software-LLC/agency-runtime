@@ -40,6 +40,7 @@ dev = [
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
     "ruff==0.15.20",
+    "tomli==2.4.1; python_version < '3.11'",
 ]
 release = [
     "build==1.5.0",
