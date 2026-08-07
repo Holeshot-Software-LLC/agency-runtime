@@ -1281,7 +1281,11 @@ def _run_gap_hiring(
                 "inference_declared_gap",
                 *_gap_unit_reason_codes(outcome, unit_id),
             ),
-            allow_existing_worker_amendment=False,
+            # Inherit the amend-first default from hire_contractor_for_gap.
+            # Pinning this False here kept AR-240's amend path unreachable at
+            # runtime: a near-match worker could never be extended, so every
+            # gap aborted to task_gap_requires_distinct_specialist instead of
+            # amending. The overlap gate is workforce.amend_overlap_threshold.
         )
         event = _hiring_event(unit_id, hiring)
         if hiring.pending_commit is not None:
