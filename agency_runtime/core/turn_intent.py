@@ -64,6 +64,30 @@ _CONTEXTUAL_CONTINUATION = re.compile(
     r"retry|ship\s+it|skip|stop|sure|wait|yes|yep)\s*[!.]*$",
     re.IGNORECASE,
 )
+# A short question *about* the work rather than a request to perform it.
+#
+# Staffing these produced work units nobody asked for -- including
+# workspace_write rows on turns that requested no change at all, which can
+# mutate a repository while another run is live. The parent answers these
+# directly, so no specialist identity is required.
+#
+# Deliberately narrow: an optional discourse lead-in, one recognized
+# interrogative opener, no imperative verb, and a question mark. Anything
+# carrying an object to act on falls through to new_intent, because a missed
+# conversational turn only costs an unnecessary plan while a missed work
+# request would strand real work unstaffed.
+_META_CONVERSATION = re.compile(
+    r"^(?:(?:yeah|yes|ok(?:ay)?|so|and|but|hmm|huh|well|right)[,\s]+){0,3}"
+    r"(?:so\s+)?"
+    r"(?:what(?:'?s|\s+is|\s+was)?\s+(?:next|now|up|happening|going\s+on|the\s+status)|"
+    r"what\s+(?:now|next)|"
+    r"how(?:'s|\s+is)\s+(?:it|that|this)\s+(?:going|looking)|"
+    r"where\s+(?:are\s+we|do\s+we\s+stand)|"
+    r"any(?:thing)?\s+(?:else|updates?)|"
+    r"status)"
+    r"\s*\??\s*[!.]*$",
+    re.IGNORECASE,
+)
 _REVISION_PREFIX = re.compile(
     r"^(?:actually|additionally|also|but|change|except|instead|"
     r"make\s+it|no,\s+|not\s+that|plus|remove|support|wait,\s+)",
@@ -613,6 +637,13 @@ def _untrusted_state_decision(
         kind = "conversation"
         signal_reason = "conversation_state_untrusted"
         confidence = 0.5
+    elif _META_CONVERSATION.fullmatch(text):
+        # A status question needs no specialist whether or not turn state is
+        # trustworthy: the surface form alone proves no work was requested, so
+        # honouring it here is not a selection bypass.
+        kind = "conversation"
+        signal_reason = "status_question_state_untrusted"
+        confidence = 0.5
     elif _REVISION_PREFIX.match(text):
         kind = "new_intent"
         signal_reason = "revision_without_trusted_state"
@@ -753,6 +784,19 @@ def classify_turn_intent(
             "pure_social_conversation",
             "no_pending_state",
             confidence=0.99,
+            selection_required=False,
+            reroute_required=False,
+            execution_decision_required=False,
+        )
+
+    if _META_CONVERSATION.fullmatch(text):
+        return _decision(
+            "conversation",
+            current_state,
+            raw_message,
+            "status_question_without_work_request",
+            "no_pending_state",
+            confidence=0.9,
             selection_required=False,
             reroute_required=False,
             execution_decision_required=False,
