@@ -464,6 +464,21 @@ def _persistent_host_context_output_bytes(context: str) -> int:
     )
 
 
+def _require_persistent_host_context_output(context: str) -> None:
+    """Reject any context that cannot fit the bounded hook envelope.
+
+    This ceiling is a property of the hook transport, not of a delivery mode.
+    It was previously enforced for isolated delivery only, which left the
+    encoded envelope unguarded once direct became the only mode: the character
+    limit permits 32k characters, and multibyte content can encode to well over
+    the byte ceiling. Applied unconditionally, so the bound follows the
+    transport it actually protects.
+    """
+
+    if _persistent_host_context_output_bytes(context) > PERSISTENT_HOST_CONTEXT_OUTPUT_BYTES:
+        raise RuntimeError("specialist recipe exceeds the encoded host delivery ceiling")
+
+
 def _context_policy_fingerprint(
     config: AgencyConfig,
     pipeline: Any,
@@ -1021,6 +1036,7 @@ def _result_from_recipe(
             maximum_chars=context_limit,
         )
         loaded_slugs = selected.slugs
+    _require_persistent_host_context_output(context)
     return PreflightResult(
         session_id=session_id,
         trace_id=trace_id,

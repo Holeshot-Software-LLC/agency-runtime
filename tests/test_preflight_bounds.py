@@ -467,7 +467,7 @@ def test_preflight_fingerprint_conflict_preserves_existing_active_turn(
     assert store.get_open_traces_for_session("session") == ["active"]
 
 
-def test_preflight_persists_trivial_kind_and_bounds_isolated_parent_context(
+def test_preflight_persists_trivial_kind_and_bounds_parent_context(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -480,13 +480,6 @@ def test_preflight_persists_trivial_kind_and_bounds_isolated_parent_context(
         "work_units": detect_work_units("thanks"),
     }
     monkeypatch.setattr(pipeline, "route", lambda *_args, **_kwargs: routing)
-    monkeypatch.setattr(
-        pipeline,
-        "build_routing_context",
-        lambda *_args, **_kwargs: pytest.fail(
-            "isolated preflight must not build direct routing context"
-        ),
-    )
 
     from agency_runtime.core import specialist_context
 
@@ -519,19 +512,14 @@ def test_preflight_persists_trivial_kind_and_bounds_isolated_parent_context(
     assert result.trivial is True
     assert store.get_turn_request_kind("session", "bounded-turn") == "trivial"
     assert result.context.startswith(RESIDENT_MANAGER_KERNEL)
-    assert "[AGENCY PREFLIGHT] Current isolated turn" in result.context
     assert len(result.context) <= 4_096
     assert "r" * 100 not in result.context
     assert "s" * 100 not in result.context
-    assert "Agency/Agencies loaded: agency-steward" in result.context
-    assert "copy its value exactly, never `none`" in result.context
-    assert "substantive progress updates and the final parent response" in result.context
-    assert "Agency/Agencies delegated:" in result.context
-    assert "Actual Model selected:" in result.context
-    assert result.context.index("Agency/Agencies loaded:") < result.context.index(
-        "Agency/Agencies delegated:"
-    )
+    # The header-block assertions that used to live here came from the isolated
+    # context formatter. A trivial turn now carries the resident kernel and
+    # nothing else, which is the point: Agency stays out of the way.
     assert result.loaded_specialists == ()
+    assert result.selected_specialists == ()
 
 
 def test_oversized_complete_context_fails_before_ready_is_persisted(
@@ -544,12 +532,15 @@ def test_oversized_complete_context_fails_before_ready_is_persisted(
     _activate_test_specialist(store)
     monkeypatch.setattr(pipeline, "route", _route_to_test_specialist())
     monkeypatch.setattr(
-        specialist_context,
-        "format_isolated_specialist_context",
+        preflight_recipe,
+        "_combine_context",
         lambda *_args, **_kwargs: "x" * (preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS + 1),
     )
 
-    with pytest.raises(RuntimeError, match="exceeds the host delivery ceiling"):
+    # An oversized character count trips the length ceiling first; a multibyte
+    # payload under that limit trips the encoded-bytes ceiling. Either way the
+    # turn must fail before anything is persisted ready.
+    with pytest.raises(RuntimeError, match="delivery ceiling"):
         run_preflight(
             store,
             session_id="session",
@@ -588,8 +579,8 @@ def test_multibyte_complete_context_fails_before_ready_is_persisted(
         > preflight_recipe.PERSISTENT_HOST_CONTEXT_OUTPUT_BYTES
     )
     monkeypatch.setattr(
-        specialist_context,
-        "format_isolated_specialist_context",
+        preflight_recipe,
+        "_combine_context",
         lambda *_args, **_kwargs: multibyte_context,
     )
 
@@ -616,7 +607,7 @@ def test_multibyte_complete_context_fails_before_ready_is_persisted(
     assert state != "ready"
 
 
-def test_direct_preflight_never_concatenates_unrelated_specialist_instructions(
+def test_direct_preflight_loads_every_selected_specialist(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -658,9 +649,12 @@ def test_direct_preflight_never_concatenates_unrelated_specialist_instructions(
         trace_id="direct-turn",
     )
 
-    assert result.loaded_specialists == ("implementer",)
+    # Two specialists were selected for a job that genuinely has two parts, so
+    # both are handed over. This assertion previously proved the opposite,
+    # because a hardcoded `selected[:1]` truncated every turn to one card.
+    assert result.loaded_specialists == ("implementer", "independent-reviewer")
     assert "IMPLEMENTER-ONLY-DIRECTIVE" in result.context
-    assert "REVIEWER-ONLY-DIRECTIVE" not in result.context
+    assert "REVIEWER-ONLY-DIRECTIVE" in result.context
 
 
 def test_direct_preflight_filters_resident_steward_before_selecting_a_specialist(
@@ -737,39 +731,6 @@ def test_direct_preflight_fails_open_on_resident_only_fallback(
     assert store.get_specialists_for_session("fallback-session") == []
 
 
-def test_isolated_preflight_fails_open_without_an_activation_plan(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    # ADR-0122 update: an isolated selection that lacks a child-activation plan
-    # no longer blocks the parent. The turn fails open and no specialist is
-    # bound.
-    store = Store(tmp_path / "missing-plan.db")
-    _activate_test_specialist(store)
-    message = "Review the runtime boundary."
-    monkeypatch.setattr(
-        pipeline,
-        "route",
-        lambda *_args, **_kwargs: {
-            "selected_ids": ["implementer"],
-            "confidence": 0.99,
-            "status": "applied",
-            "source": "test",
-            "query_hash": hashlib.sha256(message.encode()).hexdigest(),
-            "context_fingerprint": "c" * 64,
-            "work_units": detect_work_units(message),
-        },
-    )
-
-    run_preflight(
-        store,
-        session_id="missing-plan-session",
-        user_message=message,
-        host="codex",
-        trace_id="missing-plan-turn",
-    )
-
-    assert store.get_specialists_for_session("missing-plan-session") == []
 
 
 def test_ready_recipe_and_atomic_routing_evidence_never_persist_request_text(
@@ -916,7 +877,8 @@ def test_ready_replay_uses_immutable_prompt_and_persisted_roster_metadata(
     finally:
         _inference.invoke_structured_provider_result = original_invoker
     assert "code-reviewer" in first.selected_specialists, first.routing
-    assert first.loaded_specialists == ()
+    # The specialist is handed to the caller, so the turn records it as loaded.
+    assert first.loaded_specialists == ("code-reviewer",)
     connection = store._connect()
     try:
         persisted = connection.execute(
@@ -928,9 +890,11 @@ def test_ready_replay_uses_immutable_prompt_and_persisted_roster_metadata(
         ).fetchone()["content"]
     finally:
         connection.close()
+    # The durable recipe stays content-free: it pins identity, never a body.
     assert str(prompt_body) not in str(persisted)
-    assert str(prompt_body) not in first.context
-    assert store.get_specialists_for_trace("session", "versioned-ready") == []
+    # The context is the opposite: handing the card to the caller IS the delivery.
+    assert str(prompt_body) in first.context
+    assert store.get_specialists_for_trace("session", "versioned-ready") == ["code-reviewer"]
     store.deactivate_agent("code-reviewer")
 
     monkeypatch.setattr(
@@ -952,7 +916,9 @@ def test_ready_replay_uses_immutable_prompt_and_persisted_roster_metadata(
 
     assert second.as_dict() == first.as_dict()
     assert "code-reviewer" in second.context
-    assert str(prompt_body) not in second.context
+    # Replay rebuilds the same delivered context from the pinned version, even
+    # though the agent was deactivated between the two runs.
+    assert str(prompt_body) in second.context
 
 
 def test_ready_replay_fails_closed_under_changed_context_policy(
@@ -1266,7 +1232,7 @@ def test_expired_owner_is_recovered_and_stale_token_cannot_commit_or_fail(
     assert store.runtime_table_counts()["routing_decisions"] == 1
     assert store.get_model_receipt(trace_id) is None
     assert store.get_skills_for_trace(session_id, trace_id) == []
-    assert store.get_specialists_for_trace(session_id, trace_id) == []
+    assert store.get_specialists_for_trace(session_id, trace_id) == ["implementer"]
     delegations = store.get_delegations(trace_id)
     assert [(row["recommended_agent"], row["status"]) for row in delegations] == [
         ("implementer", "suggested")
