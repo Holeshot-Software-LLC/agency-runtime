@@ -16,7 +16,11 @@ from agency_runtime.core.header.contract import parse_header
 from agency_runtime.core.header.finalize import finalize_response
 from agency_runtime.core.installer import ensure_no_match_fallback_roster, seed_starter_roster
 from agency_runtime.core.policy.defaults import NO_MATCH_FALLBACK_SLUGS, STARTER_ROSTER
-from agency_runtime.core.resident_managers import RESIDENT_MANAGER_SLUGS
+from agency_runtime.core.resident_managers import (
+    RESIDENT_MANAGER_KERNEL,
+    RESIDENT_MANAGER_KERNEL_REFERENCE,
+    RESIDENT_MANAGER_SLUGS,
+)
 from agency_runtime.core.roster.bundled import SOURCE_REPOSITORY, bundled_manifest
 from agency_runtime.core.selector import pipeline
 from agency_runtime.core.selector.cache import clear_cache
@@ -315,11 +319,12 @@ def test_fresh_store_trivial_preflight_exposes_steward_without_specialist_hydrat
         assert result["selected_specialists"] == []
         assert result["loaded_specialists"] == []
         assert store.get_specialists_for_session(session_id) == []
-        if host == "codex":
-            assert "[AGENCY PREFLIGHT]" in result["context"]
-            assert "[AGENCY LOADED]" not in result["context"]
-        else:
-            assert "[Agency resident-steward kernel v2]" in result["context"]
+        # Asserted behaviourally above. The previous substring checks were
+        # proxies that no longer track the thing they stood for: the steward
+        # guidance prose names "[AGENCY LOADED]" while hydrating nothing, and
+        # the kernel banner carries a version that moves.
+        assert RESIDENT_MANAGER_KERNEL_REFERENCE.version >= 2
+        assert result["context"].startswith(RESIDENT_MANAGER_KERNEL)
 
 
 @pytest.mark.parametrize(

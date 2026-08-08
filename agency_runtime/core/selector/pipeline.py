@@ -755,6 +755,8 @@ def _merge_computed_routing(
         routing,
         request.catalog,
         limit=request.config.judge.max_selected,
+        user_message=request.user_message,
+        config=request.config,
         review_overflow_ids=(
             tuple(signals.available_companion_ids)
             if not inference_failed and _explicit_review_requested(request.user_message)
@@ -992,12 +994,81 @@ def _activation_canary_projection(
     return projected
 
 
+def _conflict_provider(config: Any) -> Any:
+    """Return the first attemptable provider, or None to skip the check."""
+
+    from agency_runtime.core.selector.judge import _provider_is_attemptable
+
+    providers = getattr(config, "providers", None) or ()
+    for provider in providers:
+        try:
+            if _provider_is_attemptable(provider):
+                return provider
+        except Exception:
+            continue
+    return None
+
+
+def _resolve_undeclared_conflicts(
+    routing: dict[str, Any],
+    catalog: list[dict[str, Any]],
+    *,
+    user_message: str,
+    config: Any,
+) -> None:
+    """Ask inference whether plural cards actually contradict for this task.
+
+    The deterministic pass above only sees declared conflicts, which cover a
+    fraction of a percent of real pairings. Two cards can therefore be
+    "compatible" and still pull in opposite directions. This is the check the
+    vision specifies for that case; it demotes the card least suited to the job.
+
+    Entirely advisory: any failure leaves the deterministic selection alone.
+    """
+
+    selected = list(routing.get("selected_ids", []))
+    if len(selected) < 2:
+        return
+    from agency_runtime.core.selector.card_conflict import (
+        declared_companion_pairs,
+        resolve_card_conflicts,
+    )
+    from agency_runtime.core.structured_provider import invoke_structured_provider_result
+
+    by_slug = {slug: agent for agent in catalog if (slug := agent_identity(agent))}
+    # Policy companions were put together deliberately, so they are declared.
+    declared = declared_companion_pairs(
+        by_slug,
+        policy_groups=[routing.get("available_companion_ids") or ()],
+    )
+    resolution = resolve_card_conflicts(
+        selected,
+        by_slug,
+        user_message=user_message,
+        provider=_conflict_provider(config),
+        invoker=invoke_structured_provider_result,
+        declared=declared,
+    )
+    routing["card_conflict"] = resolution
+    if resolution["selected_ids"] and resolution["selected_ids"] != selected:
+        demoted = {row["slug"] for row in resolution["demoted"]}
+        routing["selected_ids"] = list(resolution["selected_ids"])
+        routing["semantic_ids"] = [
+            slug for slug in routing.get("semantic_ids", []) if slug not in demoted
+        ]
+        routing["selected_companion_ids"] = [
+            slug for slug in routing.get("selected_companion_ids", []) if slug not in demoted
+        ]
+
+
 def _apply_compatible_selection(
     routing: dict[str, Any],
     catalog: list[dict[str, Any]],
     *,
     limit: int = MAX_COMPATIBLE_SPECIALISTS,
     review_overflow_ids: tuple[str, ...] = (),
+    user_message: str = "",
+    config: Any = None,
 ) -> dict[str, Any]:
     """Enforce explicit requirements and conflicts on one judge proposal."""
 
@@ -1012,6 +1083,14 @@ def _apply_compatible_selection(
     if compatible["requested_ids"] and not compatible["selected_ids"]:
         routing["status"] = "abstained"
         routing["error"] = "selected specialists failed compatibility constraints"
+        return routing
+    if config is not None:
+        _resolve_undeclared_conflicts(
+            routing,
+            catalog,
+            user_message=user_message,
+            config=config,
+        )
     return routing
 
 
