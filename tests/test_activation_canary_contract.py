@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core import canary
 from agency_runtime.core.activation_canary_contract import (
     CODEX_ACTIVATION_CANARY_PROMPT,
@@ -17,23 +14,16 @@ from agency_runtime.core.activation_canary_contract import (
     CODEX_ACTIVATION_CANARY_WORK_UNIT,
     is_exact_codex_activation_canary_task,
 )
-from agency_runtime.core.config import AgencyConfig, reset_config_cache
-from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
+from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
-from agency_runtime.core.installer import seed_starter_roster
-from agency_runtime.core.native_child_prompt_delivery import parse_native_child_prompt_delivery
-from agency_runtime.core.preflight import run_preflight
-from agency_runtime.core.private_paths import ensure_private_directory
 from agency_runtime.core.selector import pipeline
 from agency_runtime.core.selector.cache import clear_cache
 from agency_runtime.core.selector.stickiness import clear_session_routing
-from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.unit_assignment import (
     MAX_WORK_UNIT_CHARS,
     build_unit_agent_plan,
     hydrate_unit_agent_plan,
 )
-from tests.runtime_support import stub_inference_invoker, write_provider_config
 
 _CANARY_ENV = {
     "AGENCY_CANARY_MODE": "1",
@@ -474,117 +464,3 @@ def test_ordinary_exact_text_without_restricted_environment_uses_workforce_plann
     assert "max_planned_units" not in planner_options[0]
     assert "required_planned_artifact_kind" not in planner_options[0]
     assert result["source"] == "workforce_inference"
-
-
-def test_activation_canary_preflight_replays_one_exact_selected_only_unit(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from agency_runtime.core.workforce import inference
-
-    ensure_private_directory(tmp_path)
-    config_path = tmp_path / "agency.yaml"
-    write_provider_config(config_path)
-    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(config_path))
-    reset_config_cache()
-    store = Store(tmp_path / "agency.db", config_path=config_path)
-    seed_starter_roster(store)
-    for name, value in _CANARY_ENV.items():
-        monkeypatch.setenv(name, value)
-    session_id = "activation-canary-preflight"
-    trace_id = "activation-canary-preflight-trace"
-    capability = native_adapter_capability_receipt(
-        "codex",
-        platform="windows" if os.name == "nt" else "linux",
-        session_id=session_id,
-        trace_id=trace_id,
-        available_tools=("repository-read", "native-delegation"),
-    )
-    monkeypatch.setattr(
-        inference,
-        "invoke_structured_provider_result",
-        stub_inference_invoker(("code-reviewer",)),
-    )
-    try:
-        result = run_preflight(
-            store,
-            session_id=session_id,
-            trace_id=trace_id,
-            user_message=_task(),
-            host="codex",
-            capability_receipt=capability,
-        )
-    finally:
-        reset_config_cache()
-
-    assert result.routing["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
-    inference_receipt = result.routing["routing_receipt"]["inference"]
-    assert inference_receipt["required"] is True
-    assert inference_receipt["attempted"] is True
-    assert inference_receipt["provider_attempts"]
-    assert result.selected_specialists == ("code-reviewer",)
-    assert len(result.delegation_plan) == 1
-    plan = result.delegation_plan[0]
-    assert plan["recommended_agent"] == "code-reviewer"
-    assert plan["mutation_scope"] == "read_only"
-    assert plan["goal"] == CODEX_ACTIVATION_CANARY_WORK_UNIT
-    assert plan["goal"] != " ".join(_task().split())
-
-    task_name = codex_task_name_for_work_unit(str(plan["work_unit_id"]))
-    bridge = HookBridge("codex", store=store)
-    hook_payload = {
-        "hook_event_name": "PreToolUse",
-        "session_id": session_id,
-        "turn_id": trace_id,
-        "tool_name": "collaborationspawn_agent",
-        "tool_use_id": "canonical-child-goal",
-        "tool_input": {
-            "fork_turns": "none",
-            "task_name": task_name,
-            "message": CODEX_ACTIVATION_CANARY_WORK_UNIT,
-        },
-    }
-    parent_as_child = bridge.handle(
-        {
-            **hook_payload,
-            "tool_use_id": "parent-prompt-is-not-child-goal",
-            "tool_input": {**hook_payload["tool_input"], "message": _task()},
-        }
-    )["hookSpecificOutput"]
-    assert parent_as_child["permissionDecision"] == "deny"
-    assert "does not exactly match" in parent_as_child["permissionDecisionReason"]
-
-    hook_result = bridge.handle(
-        {
-            **hook_payload,
-            "tool_input": {
-                **hook_payload["tool_input"],
-                "message": "gAAAAABopaque-parent-tool-ciphertext",
-            },
-        }
-    )
-    assert hook_result["hookSpecificOutput"] == {
-        "hookEventName": "PreToolUse",
-        "permissionDecision": "allow",
-    }
-    start = bridge.handle(
-        {
-            "hook_event_name": "SubagentStart",
-            "session_id": session_id,
-            "turn_id": "activation-canary-child-trace",
-            "agent_id": "activation-canary-child",
-            "agent_type": "worker",
-        }
-    )
-    delivery = parse_native_child_prompt_delivery(start["hookSpecificOutput"]["additionalContext"])
-    assert delivery is not None
-    assert delivery.original_task == ""
-    assert delivery.goal_hash == plan["goal_hash"]
-    assert delivery.activation_token == ""
-    assert hook_payload["tool_input"]["task_name"] == task_name
-
-    snapshot = store.get_canary_activation_snapshot(
-        host="codex",
-        query_hash=result.routing["query_hash"],
-    )
-    assert snapshot["route"]["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE

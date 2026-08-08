@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 import pytest
@@ -17,14 +16,8 @@ from agency_runtime.core.delegation.events import (
     work_unit_id_from_text,
 )
 from agency_runtime.core.delegation.native_labels import (
-    CODEX_TASK_NAME_PATTERN,
     codex_task_name_for_work_unit,
     internal_work_unit_from_codex_task_name,
-)
-from agency_runtime.core.header.contract import (
-    fill_header_fields,
-    format_header,
-    validate_completion_policy,
 )
 from agency_runtime.core.resident_manager_binding import build_resident_manager_binding
 from agency_runtime.core.selector.delegation_detection import (
@@ -32,16 +25,11 @@ from agency_runtime.core.selector.delegation_detection import (
     _imperative_units,
     detect_work_units,
 )
-from agency_runtime.core.specialist_context import (
-    SpecialistPromptReference,
-    format_isolated_specialist_context,
-)
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.unit_assignment import (
     assignment_agents_from_catalog,
     project_unit_assignment_agents,
 )
-from agency_runtime.server.mcp import handle_tool_call
 
 
 @pytest.mark.parametrize("verb", ["improve", "redesign", "harden", "enhance", "secure"])
@@ -91,8 +79,6 @@ def test_long_imperatives_with_the_same_prefix_remain_distinct() -> None:
     assert len(units) == 2
     assert units[0].endswith("Windows-specific failures")
     assert units[1].endswith("Linux-specific failures")
-
-
 
 
 def test_hydration_never_truncates_the_selected_team() -> None:
@@ -851,348 +837,58 @@ def test_event_recording_refuses_an_overflowing_unit_plan() -> None:
     assert build_unit_agent_plan(routing) == []
 
 
-@pytest.mark.parametrize("host", ["codex", "claude"])
-def test_isolated_native_hook_receives_exact_unit_agent_plan(
-    host: str,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-) -> None:
-    from agency_runtime.adapters.hooks import HookBridge
-    from agency_runtime.core.selector import pipeline
+def _verified_binding(delivery: str) -> dict[str, Any]:
+    """One verifier-approved unit binding differing only in delivery."""
 
-    prompt = "1. Review the authentication code\n2. Document the public API"
-
-    def fake_route(
-        session_id: str,
-        user_message: str,
-        catalog: list[dict[str, Any]],
-        **_kwargs: Any,
-    ) -> dict[str, Any]:
-        assert catalog
-        is_parent = user_message == prompt
-        assert session_id == (
-            "session" if is_parent else f"session:unit:{work_unit_id_from_text(user_message)}"
-        )
-        selected_ids = (
-            ["code-reviewer", "technical-writer"]
-            if is_parent
-            else {
-                "Review the authentication code": ["code-reviewer"],
-                "Document the public API": ["technical-writer"],
-            }[user_message]
-        )
-        return {
-            "selected_ids": selected_ids,
-            "confidence": 0.99,
-            "latency_ms": 0,
-            "status": "applied",
-            "source": "test",
-            "query_hash": "a" * 64,
-            "context_fingerprint": "b" * 64,
-            "source_message_hash": "c" * 64,
-            "work_units": detect_work_units(user_message),
-            "inference_configured": True,
-            "inference_mode": "inferred",
-        }
-
-    monkeypatch.setattr(pipeline, "route", fake_route)
-    store = Store(tmp_path / f"{host}.db")
-    result = HookBridge(host, store=store).handle(
-        {
-            "hook_event_name": "UserPromptSubmit",
-            "session_id": "session",
-            "turn_id": "turn",
-            "prompt": prompt,
-        }
-    )
-
-    context = result["hookSpecificOutput"]["additionalContext"]
-    assert "[AGENCY DELEGATION PLAN]" in context
-    assert 'goal="Review the authentication code"' in context
-    assert 'goal="Document the public API"' in context
-    assert "agent=code-reviewer" in context
-    assert "agent=technical-writer" in context
-    assert "mutation_scope=read_only" in context
-    for unit in detect_work_units(prompt)["units"]:
-        work_unit_id = work_unit_id_from_text(unit)
-        assert work_unit_id in context
-        if host == "codex":
-            native_task_name = codex_task_name_for_work_unit(work_unit_id)
-            assert CODEX_TASK_NAME_PATTERN.fullmatch(native_task_name)
-            assert internal_work_unit_from_codex_task_name(native_task_name) == work_unit_id
-            assert f"native_task_name={native_task_name}" in context
-            assert "execution_message_prefix=" not in context
-            assert "executes that goal in the initial native child turn" in context
-            assert "do not send a follow-up execution message" in context
-            assert "set `fork_turns` to `none`" in context
-    assert len(context) <= preflight_recipe.PERSISTENT_HOST_CONTEXT_CHARS
-
-
-
-
-
-
-@pytest.mark.parametrize(
-    ("host", "tool_name", "native_label", "backend"),
-    [
-        (
-            "codex",
-            "functions.collaboration.spawn_agent",
-            "task_name",
-            "spawn_agent",
-        ),
-        ("claude", "Agent", "description", "delegate_task"),
-    ],
-)
-def test_same_specialist_can_activate_for_two_out_of_order_native_work_units(
-    host: str,
-    tool_name: str,
-    native_label: str,
-    backend: str,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-) -> None:
-    from agency_runtime.adapters.hooks import HookBridge
-
-    prompt = "1. Write the README\n2. Write contributor documentation"
-    _install_exact_route(
-        monkeypatch,
-        prompt=prompt,
-        selected_ids=["technical-writer"],
-    )
-    store = Store(tmp_path / f"same-agent-{host}.db")
-    bridge = HookBridge(host, store=store)
-    result = bridge.handle(
-        {
-            "hook_event_name": "UserPromptSubmit",
-            "session_id": "session",
-            "turn_id": "trace",
-            "prompt": prompt,
-        }
-    )
-
-    context = result["hookSpecificOutput"]["additionalContext"]
-    rows = store.get_delegations("trace")
-    assert len(rows) == 2
-    assert {row["recommended_agent"] for row in rows} == {"technical-writer"}
-    assert "unit-plan specialists: technical-writer" in context
-    assert "technical-writer => work_unit_id=specialist:technical-writer" not in context
-
-    for index, row in enumerate(reversed(rows)):
-        work_unit_id = str(row["work_unit_id"])
-        native_work_unit = (
-            codex_task_name_for_work_unit(work_unit_id) if host == "codex" else work_unit_id
-        )
-        if host == "codex":
-            assert CODEX_TASK_NAME_PATTERN.fullmatch(native_work_unit)
-        worker_id = f"{host}-worker-{index}"
-        native_run_id = (
-            f"codex-agent:{worker_id}" if host == "codex" else f"claude-agent:{worker_id}"
-        )
-        if host == "claude":
-            start = bridge.handle(
-                {
-                    "hook_event_name": "SubagentStart",
-                    "session_id": "session",
-                    "agent_id": worker_id,
-                    "agent_type": "general-purpose",
-                }
-            )
-            assert start["hookSpecificOutput"]["hookEventName"] == "SubagentStart"
-        prepared = handle_tool_call(
-            "agency.prepare_delegation",
+    goal = "Review the authentication code"
+    return {
+        "work_units": {
+            "count": 1,
+            "confidence": "high",
+            "source": "verified-workforce-plan",
+            "units": [goal],
+            "delegate": True,
+        },
+        "workforce_unit_bindings": [
             {
-                "session_id": "session",
-                "trace_id": "trace",
-                "slug": "technical-writer",
-                "work_unit_id": work_unit_id,
-            },
-            store,
-        )
-        assert "error" not in prepared
-        loaded = handle_tool_call(
-            "agency.load_specialist",
-            {
-                "session_id": "session",
-                "trace_id": "trace",
-                "slug": "technical-writer",
-                "work_unit_id": work_unit_id,
-                "activation_token": prepared["activation_token"],
-                "worker_id": worker_id,
-                "native_run_id": native_run_id,
-            },
-            store,
-        )
-        assert "error" not in loaded
-        if host == "claude":
-            assert (
-                bridge.handle(
-                    {
-                        "hook_event_name": "SubagentStop",
-                        "session_id": "session",
-                        "agent_id": worker_id,
-                        "agent_type": "general-purpose",
-                    }
-                )
-                == {}
-            )
-        bridge.handle(
-            {
-                "hook_event_name": "PostToolUse",
-                "session_id": "session",
-                "turn_id": "trace",
-                "tool_use_id": native_run_id,
-                "tool_name": tool_name,
-                "tool_input": {
-                    native_label: native_work_unit,
-                    "message" if host == "codex" else "prompt": "apply the assigned unit",
-                },
-                "tool_response": {
-                    "agent_id": worker_id,
-                    "status": "completed",
-                },
+                "source_unit_id": "unit-work",
+                "work_unit_id": work_unit_id_from_text(goal),
+                "selected": ["code-reviewer"],
+                "delivery": delivery,
+                "timing": "immediate",
+                "depends_on": [],
+                "parallelization": "sequential",
+                "mutation_scope": "read_only",
+                "artifact_kind": "review-report",
+                "required_tools": [],
+                "required_evidence": [],
+                "confidence": 1.0,
             }
-        )
-
-    snapshot = store.get_completion_evidence_snapshot("session", "trace")
-    activation_identities = {
-        (
-            row["work_unit_id"],
-            row["specialist_slug"],
-            row["specialist_version"],
-            row["specialist_prompt_hash"],
-        )
-        for row in snapshot["specialist_activations"]
+        ],
     }
-    assert len(activation_identities) == 2
-    assert {identity[0] for identity in activation_identities} == {
-        row["work_unit_id"] for row in rows
-    }
-    fields = fill_header_fields(
-        {},
-        "session",
-        store,
-        "",
-        "trace",
-        evidence_snapshot=snapshot,
-    )
-    assert fields["agencies_delegated"] == (f"technical-writer via generic-worker/{backend}")
-    assert fields["actual_model_selected"] == (
-        "parent task: host-selected (not observable to Agency); "
-        "specialist: no model requested at launch; host default applies"
-    )
-    assert fields["why"].endswith(".")
-    assert "specialist instructions were loaded" in fields["how_it_shaped_outcome"]
-    draft = (
-        "Agency/Agencies loaded: agency-steward, technical-writer\n"
-        f"Agency/Agencies delegated: generic-worker via {backend}\n"
-        "Skills loaded: none\n"
-        "Actual Model selected: unknown -> unavailable - no model receipt recorded\n"
-        f"Recruited via: {fields['recruited_via']}\n"
-        "Why: Both documentation units required specialist context.\n"
-        "How it shaped outcome: Each isolated unit used its exact activation grant.\n\n"
-        "Done."
-    )
-    stale = validate_completion_policy(
-        draft,
-        session_id="session",
-        trace_id="trace",
-        store=store,
-        evidence_snapshot=snapshot,
-    )
-    assert stale is not None
-    # The completion policy checks workspace-write delegation completion before
-    # header-value fidelity. Codex's delegation path leaves workspace-write units
-    # incomplete (no terminal completion receipt in this scenario), so the
-    # delegation_execution check surfaces first. Claude completes the
-    # delegations via SubagentStop, so the stale header values are what the
-    # policy detects.
-    if host == "codex":
-        assert stale["missing"] == ["delegation_execution"]
-    else:
-        assert stale["missing"] == [
-            "agencies_delegated",
-            "actual_model_selected",
-            "why",
-            "how_it_shaped_outcome",
-        ]
-
-    authoritative_draft = format_header(fields) + "\n\nDone."
-    authoritative_policy = validate_completion_policy(
-        authoritative_draft,
-        session_id="session",
-        trace_id="trace",
-        store=store,
-        evidence_snapshot=snapshot,
-    )
-    # Claude completes delegations via SubagentStop, so a correct header passes.
-    # Codex requires a follow-up causal turn this scenario does not simulate, so
-    # the workspace-write completion check still reports delegation_execution.
-    if host == "claude":
-        assert authoritative_policy is None
-    else:
-        assert authoritative_policy is not None
-        assert authoritative_policy["missing"] == ["delegation_execution"]
 
 
-@pytest.mark.parametrize("host", ["codex", "claude"])
-def test_unmatched_unit_is_omitted_without_assigning_a_resident_manager(
-    host: str,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-) -> None:
-    from agency_runtime.adapters.hooks import HookBridge
+def test_a_loaded_unit_produces_no_delegation_plan() -> None:
+    """`load` is the deterministic default, and it must not plan a spawn.
 
-    prompt = "1. Analyze lunar telemetry\n2. Document the public API"
-    _install_exact_route(
-        monkeypatch,
-        prompt=prompt,
-        selected_ids=["technical-writer", "code-reviewer"],
-        unit_routes={
-            "Analyze lunar telemetry": [],
-            "Document the public API": ["technical-writer"],
-        },
-    )
-    store = Store(tmp_path / f"fallback-plan-{host}.db")
-    result = HookBridge(host, store=store).handle(
-        {
-            "hook_event_name": "UserPromptSubmit",
-            "session_id": "session",
-            "turn_id": "trace",
-            "prompt": prompt,
-        }
-    )
+    This is rule 2 -- the specialist works inside the existing conversation --
+    expressed where it is actually decided. Before Job B was removed the
+    default was `delegate`, so every staffed unit produced a plan row telling
+    the host to dispatch a child. Nothing may reintroduce that silently.
+    """
 
-    context = result["hookSpecificOutput"]["additionalContext"]
-    rows = store.get_delegations("trace")
-    assert [row["recommended_agent"] for row in rows] == ["technical-writer"]
-    assert "unit-plan specialists: technical-writer" in context
-    assert "work_unit_id=specialist:" not in context
-    if host == "codex":
-        for row in rows:
-            native_task_name = codex_task_name_for_work_unit(row["work_unit_id"])
-            assert CODEX_TASK_NAME_PATTERN.fullmatch(native_task_name)
-            assert f"native_task_name={native_task_name}" in context
-    mismatched = handle_tool_call(
-        "agency.prepare_delegation",
-        {
-            "session_id": "session",
-            "trace_id": "trace",
-            "slug": "code-reviewer",
-            "work_unit_id": rows[0]["work_unit_id"],
-        },
-        store,
-    )
-    assert "not selected by this turn's ready recipe" in mismatched["error"]
-    for row in rows:
-        prepared = handle_tool_call(
-            "agency.prepare_delegation",
-            {
-                "session_id": "session",
-                "trace_id": "trace",
-                "slug": row["recommended_agent"],
-                "work_unit_id": row["work_unit_id"],
-            },
-            store,
-        )
-        assert "error" not in prepared
+    assert build_unit_agent_plan(_verified_binding("load")) == []
+
+
+def test_an_explicitly_delegated_unit_still_produces_a_plan() -> None:
+    """Delegation stays available when inference asks for it by name.
+
+    Removing Job B removed the *mandate*, not the capability: the native host
+    is still the scheduler and may act on a plan it is offered. Pairing this
+    with the test above is what keeps the two apart.
+    """
+
+    plan = build_unit_agent_plan(_verified_binding("delegate"))
+
+    assert len(plan) == 1
+    assert plan[0]["recommended_agent"] == "code-reviewer"

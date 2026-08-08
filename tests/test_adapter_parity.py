@@ -1010,7 +1010,10 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
         "updated_at": None,
         "source": "default",
     }
-    assert store.get_specialists_for_session("bridge") == ["chief-of-staff"]
+    # Plural by design: a turn may load more than one card, so this records the
+    # inference-selected specialist alongside the resident manager rather than
+    # truncating to one.
+    assert store.get_specialists_for_session("bridge") == ["code-reviewer", "chief-of-staff"]
 
 
 def test_hermes_preflight_appends_exact_first_pass_header_snapshot(

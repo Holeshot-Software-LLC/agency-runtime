@@ -314,12 +314,17 @@ def _planned_parent_unit_fixture() -> tuple[str, list[dict], dict]:
     return goal, catalog, snapshot
 
 
-def test_persistent_native_parents_are_isolated_and_child_hooks_deliver_directly() -> None:
-    for host in ("openclaw", "hermes"):
-        assert preflight_delivery_policy(host)[0] == "isolated"
+def test_every_host_delivers_specialists_directly_into_the_caller() -> None:
+    """Delivery is direct on every host, for parents and for native children.
+
+    Isolated delivery -- send the specialist to a spawned worker instead of the
+    caller -- was the transport half of mandatory delegation. Asserting parity
+    across all five hosts here is what stops it reappearing for one of them.
+    """
+
+    for host in ("codex", "claude", "zcode", "openclaw", "hermes"):
+        assert preflight_delivery_policy(host)[0] == "direct"
         assert preflight_delivery_policy(host, native_child=True)[0] == "direct"
-    for host in ("codex", "claude"):
-        assert preflight_delivery_policy(host, native_child=True)[0] == "isolated"
 
 
 def test_direct_native_child_abstains_without_lineage_or_an_exact_parent_unit() -> None:

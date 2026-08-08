@@ -211,7 +211,7 @@ def _activation_snapshot() -> dict[str, Any]:
         "specialist_prompt_hash": "hash",
     }
     return {
-        "delivery_mode": "isolated",
+        "delivery_mode": "direct",
         "request_kind": "nontrivial",
         "selected_specialists": [{"slug": "reviewer", "version": "1", "hash": "hash"}],
         "specialist_activations": [activation],
@@ -269,30 +269,41 @@ def test_header_activation_receipt_validation_errors(mutation: Any, message: str
         (lambda value: value.update(delivery_mode="future"), "delivery mode"),
         (lambda value: value.update(selected_specialists=[None]), "selected specialist evidence"),
         (lambda value: value.update(specialist_activations=[None]), "activation evidence"),
-        (
-            lambda value: value["specialist_activations"].append(
-                dict(value["specialist_activations"][0])
-            ),
-            "not one-use",
-        ),
-        (lambda value: value.update(specialists=[]), "loaded-specialist evidence"),
-        (
-            lambda value: value.update(
-                unit_agent_plan=[{"work_unit_id": "other", "recommended_agent": "reviewer"}]
-            ),
-            "not assigned",
-        ),
-        (
-            lambda value: value.update(specialist_activations=[], specialists=[]),
-            "activation is incomplete",
-        ),
     ],
 )
 def test_header_activation_snapshot_validation_errors(mutate: Any, message: str) -> None:
+    """Only evidence shape is still verified; a missing receipt may not block a turn."""
+
     snapshot = _activation_snapshot()
     mutate(snapshot)
     with pytest.raises(header_contract.EvidenceCorrelationError, match=message):
         header_contract._validate_specialist_activations(snapshot, "session", "trace")
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda value: value.update(specialist_activations=[], specialists=[]),
+        lambda value: value.update(specialists=[]),
+        lambda value: value.update(
+            unit_agent_plan=[{"work_unit_id": "other", "recommended_agent": "reviewer"}]
+        ),
+        lambda value: value["specialist_activations"].append(
+            dict(value["specialist_activations"][0])
+        ),
+    ],
+)
+def test_header_validation_never_demands_a_consumed_activation_receipt(mutate: Any) -> None:
+    """Each case below used to be a hard error under mandatory delegation.
+
+    A specialist loads into the caller now, so there is no grant to correlate.
+    Absent, duplicated, or unassigned receipts must therefore leave the turn
+    finalizable -- blocking on one is the drift this deletion removed.
+    """
+
+    snapshot = _activation_snapshot()
+    mutate(snapshot)
+    header_contract._validate_specialist_activations(snapshot, "session", "trace")
 
 
 def test_host_status_explicit_master_state_skips_global_probe() -> None:
@@ -322,10 +333,21 @@ def test_catalog_signature_failure_uses_legacy_policy_filter(
 
 
 def test_preflight_recipe_delegation_and_context_error_branches() -> None:
-    from agency_runtime.core.unit_assignment import build_unit_agent_plan
+    from agency_runtime.core.unit_assignment import build_unit_agent_plan, work_unit_id_from_text
 
+    # A team-level `selected_ids` is deliberately not evidence that any one
+    # specialist owns a unit, so the plan needs exact per-unit assignment
+    # claims -- without them `build_unit_agent_plan` correctly returns [].
+    work_unit_id = work_unit_id_from_text("review task")
     routing = {
         "selected_ids": ["reviewer"],
+        "unit_assignment_agents": [
+            {
+                "slug": "reviewer",
+                "matched_work_unit_ids": [work_unit_id],
+                "primary_work_unit_ids": [work_unit_id],
+            }
+        ],
         "work_units": {
             "confidence": "high",
             "count": 2,
@@ -335,7 +357,7 @@ def test_preflight_recipe_delegation_and_context_error_branches() -> None:
         },
     }
     unit_plan = build_unit_agent_plan(routing)
-    context = preflight_recipe._isolated_delegation_context(
+    context = preflight_recipe._unit_delegation_context(
         routing,
         host="codex",
         unit_plan=unit_plan,
@@ -346,7 +368,7 @@ def test_preflight_recipe_delegation_and_context_error_branches() -> None:
         "work_units": {**routing["work_units"], "units": ["different review task"]},
     }
     with pytest.raises(RuntimeError, match="does not match the current request"):
-        preflight_recipe._isolated_delegation_context(
+        preflight_recipe._unit_delegation_context(
             mismatched_routing,
             host="claude",
             unit_plan=unit_plan,
@@ -416,33 +438,6 @@ def test_preflight_recipe_skips_non_mapping_reference(monkeypatch: pytest.Monkey
         pipeline=pipeline,
     )
     assert result.context
-
-
-def test_preflight_recipe_defensively_rejects_oversized_isolated_result(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    loaded = SimpleNamespace(context="", references=(), slugs=())
-    monkeypatch.setattr(
-        specialist_context, "rebuild_versioned_specialist_context", lambda *_a, **_k: loaded
-    )
-    monkeypatch.setattr(
-        specialist_context, "format_isolated_specialist_context", lambda *_a, **_k: ""
-    )
-    monkeypatch.setattr(
-        preflight_recipe,
-        "_combine_context",
-        lambda *_a, **_k: "x" * (preflight_recipe.MAX_PREFLIGHT_CONTEXT_CHARS + 1),
-    )
-    with pytest.raises(RuntimeError, match="exceeds the host delivery ceiling"):
-        preflight_recipe._result_from_recipe(
-            object(),
-            _replay_recipe("isolated"),
-            session_id="session",
-            trace_id="trace",
-            user_message="hello",
-            config=AgencyConfig(),
-            pipeline=pipeline,
-        )
 
 
 def test_pipeline_default_policy_patch_seam(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -575,7 +570,7 @@ def test_store_ready_evidence_rejects_unit_plan_suggestion_mismatch() -> None:
         "session_id": "session",
         "trace_id": "trace",
         "host": "codex",
-        "delivery_mode": "isolated",
+        "delivery_mode": "direct",
         "context_limit": 4096,
         "routing": projected["decision"],
         "specialist_refs": [],
@@ -1330,87 +1325,6 @@ def test_disabled_specialist_expires_active_loaded_projection(
             specialist_slug="reviewer",
         )
     assert len(conn.statements) == 2
-
-
-@pytest.mark.parametrize(
-    "row",
-    [
-        None,
-        {
-            "status": "active",
-            "host": "hermes",
-            "preflight_state": "pending",
-            "preflight_result": None,
-        },
-    ],
-)
-def test_requires_activation_returns_false_without_ready_run(row: Any) -> None:
-    conn = _QueueConnection(_Result(row=row))
-    store = _ActivationStore(conn)
-    assert (
-        store.requires_delegation_activation(
-            session_id="session",
-            trace_id="trace",
-            specialist_slug="reviewer",
-        )
-        is False
-    )
-    assert conn.closed is True
-
-
-@pytest.mark.parametrize(
-    ("recipe", "expected"), [(None, False), ({"delivery_mode": "isolated"}, True)]
-)
-def test_requires_activation_uses_ready_non_native_recipe(
-    monkeypatch: pytest.MonkeyPatch,
-    recipe: Any,
-    expected: bool,
-) -> None:
-    conn = _QueueConnection(
-        _Result(
-            row={
-                "status": "active",
-                "host": "hermes",
-                "preflight_state": "ready",
-                "preflight_result": "recipe",
-            }
-        )
-    )
-    monkeypatch.setattr(
-        delegation_activation,
-        "_decode_preflight_recipe",
-        lambda *_args, **_kwargs: recipe,
-    )
-    assert (
-        _ActivationStore(conn).requires_delegation_activation(
-            session_id="session",
-            trace_id="trace",
-            specialist_slug="reviewer",
-        )
-        is expected
-    )
-
-
-def test_requires_activation_is_mandatory_for_native_isolated_hosts() -> None:
-    conn = _QueueConnection(
-        _Result(
-            row={
-                "status": "active",
-                "host": "codex",
-                "preflight_state": "ready",
-                "preflight_result": "recipe",
-            }
-        )
-    )
-
-    assert (
-        _ActivationStore(conn).requires_delegation_activation(
-            session_id="session",
-            trace_id="trace",
-            specialist_slug="reviewer",
-        )
-        is True
-    )
 
 
 def test_prepare_activation_rejects_invalid_kind_and_run(
