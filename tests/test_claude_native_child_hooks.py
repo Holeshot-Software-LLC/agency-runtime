@@ -19,10 +19,6 @@ from agency_runtime.core.native_child_prompt_delivery import (
     render_codex_native_child_execution_message,
     render_native_child_prompt_delivery,
 )
-from agency_runtime.core.specialist_context import (
-    SpecialistPromptReference,
-    format_isolated_specialist_context,
-)
 from agency_runtime.core.unit_assignment import work_unit_goal_hash
 
 
@@ -1302,107 +1298,6 @@ def test_post_tool_use_without_an_exact_open_turn_records_nothing() -> None:
 
     assert result == {}
     assert adapter.calls == []
-
-
-@pytest.mark.parametrize(
-    ("host", "native_tool", "binding", "activation_marker", "forbidden_marker"),
-    [
-        ("codex", "`spawn_agent`", "`native_task_name`", "PreToolUse hook", "`Agent`"),
-        ("claude", "`Agent`", "`description`", "PreToolUse hook", "`spawn_agent`"),
-        (
-            "hermes",
-            "`delegate_task`",
-            "unchanged `work_unit_id` and exact `goal`",
-            "child pre-LLM hook",
-            "PreToolUse hook",
-        ),
-        (
-            "openclaw",
-            "`sessions_spawn`",
-            "unchanged `work_unit_id` and exact `goal`",
-            "child pre-LLM hook",
-            "PreToolUse hook",
-        ),
-    ],
-)
-def test_isolated_parent_guidance_uses_the_exact_host_activation_contract(
-    host: str,
-    native_tool: str,
-    binding: str,
-    activation_marker: str,
-    forbidden_marker: str,
-) -> None:
-    reference = SpecialistPromptReference(
-        slug="code-reviewer",
-        version="v1",
-        content_hash="a" * 64,
-        description="Review code",
-        capabilities=("review",),
-    )
-
-    context = format_isolated_specialist_context(
-        [reference],
-        host=host,
-        session_id=f"{host}-session",
-        trace_id="trace",
-        nontrivial=True,
-        unit_plan=[{"work_unit_id": "unit-review"}],
-    )
-
-    assert native_tool in context
-    assert binding in context
-    assert activation_marker in context
-    assert forbidden_marker not in context
-    assert "Do not call `agency.prepare_delegation`" in context
-    assert "`agency.load_specialist`" in context
-    assert "code-reviewer" in context
-
-
-def test_isolated_parent_guidance_rejects_selected_specialist_without_exact_plan() -> None:
-    reference = SpecialistPromptReference(
-        slug="code-reviewer",
-        version="v1",
-        content_hash="a" * 64,
-        description="Review code",
-        capabilities=("review",),
-    )
-
-    with pytest.raises(RuntimeError, match="lacks an exact unit-agent plan"):
-        format_isolated_specialist_context(
-            [reference],
-            host="codex",
-            session_id="codex-session",
-            trace_id="trace",
-            nontrivial=True,
-        )
-
-
-def test_isolated_parent_guidance_does_not_dispatch_an_untyped_worker() -> None:
-    context = format_isolated_specialist_context(
-        [],
-        host="openclaw",
-        session_id="openclaw-session",
-        trace_id="trace",
-        nontrivial=False,
-    )
-
-    assert "No specialist assignment was accepted" in context
-    assert "Do not dispatch an untyped native worker" in context
-
-
-def test_isolated_parent_guidance_pins_authoritative_resident_manager_header() -> None:
-    context = format_isolated_specialist_context(
-        [],
-        host="codex",
-        session_id="codex-session",
-        trace_id="trace",
-        nontrivial=False,
-        resident_managers=("agency-steward",),
-    )
-
-    assert "Agency/Agencies loaded: agency-steward" in context
-    assert "copy its value exactly, never `none`" in context
-    assert "Agency/Agencies loaded: <agent-id" not in context
 
 
 class _JitRosterStore:

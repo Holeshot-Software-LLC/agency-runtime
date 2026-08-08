@@ -8,10 +8,7 @@ from inspect import Parameter, signature
 from typing import Any
 
 from agency_runtime.core.agent_identity import agent_identity
-from agency_runtime.core.resident_managers import (
-    RESIDENT_MANAGER_SLUGS,
-    is_resident_manager_slug,
-)
+from agency_runtime.core.resident_managers import is_resident_manager_slug
 from agency_runtime.core.specialist_contracts import (
     MAX_DURABLE_SPECIALIST_REFERENCES,
     MAX_SELECTED_SPECIALISTS,
@@ -223,112 +220,6 @@ def _format_loaded_context(
     return context
 
 
-def format_isolated_specialist_context(
-    references: Sequence[SpecialistPromptReference],
-    *,
-    host: str,
-    session_id: str,
-    trace_id: str,
-    nontrivial: bool,
-    unit_plan: Sequence[Mapping[str, Any]] = (),
-    resident_managers: Sequence[str] = (),
-) -> str:
-    """Return a compact recipe that keeps prompt bodies out of parent history."""
-
-    normalized_host = str(host or "").strip().casefold()
-    # ADR-0087: zcode reuses the Claude hook model and the `Agent`-tool native
-    # delegation primitive (same `description` field binding), so it shares
-    # Claude's isolated-delivery instructions.
-    native_tools = {
-        "codex": "`spawn_agent`",
-        "claude": "`Agent`",
-        "zcode": "`Agent`",
-        "hermes": "`delegate_task`",
-        "openclaw": "`sessions_spawn`",
-    }
-    native_tool = native_tools.get(normalized_host)
-    if native_tool is None:
-        raise ValueError(f"isolated specialist delivery is unsupported for host: {host}")
-    slugs = ", ".join(reference.slug for reference in references) or "none"
-    resident_loaded = ", ".join(
-        slug
-        for slug in resident_managers
-        if isinstance(slug, str) and slug in RESIDENT_MANAGER_SLUGS
-    )
-    loaded_header_value = resident_loaded or "<agent-id[, agent-id...] or none>"
-    loaded_header_instruction = (
-        "`Agency/Agencies loaded` is fixed by current-turn resident evidence; "
-        "copy its value exactly, never `none`. "
-        if resident_loaded
-        else ""
-    )
-    requirement = "Before substantive work" if nontrivial else "When specialist work is needed"
-    if unit_plan:
-        native_binding = {
-            "codex": (
-                "set `fork_turns` to `none` and set `task_name` to that row's "
-                "legal `native_task_name`"
-            ),
-            "claude": "set `description` to that row's unchanged `work_unit_id`",
-            "zcode": "set `description` to that row's unchanged `work_unit_id`",
-            "hermes": "pass that row's unchanged `work_unit_id` and exact `goal`",
-            "openclaw": "pass that row's unchanged `work_unit_id` and exact `goal`",
-        }[normalized_host]
-        hook_delivery = (
-            "the installed PreToolUse hook verifies the exact persisted row, injects "
-            "the selected immutable specialist prompt only into that child launch, and "
-            "issues its one-use grant. PostToolUse consumes the grant only after "
-            "authoritative native launch evidence supplies the child identity"
-            if normalized_host in {"codex", "claude", "zcode"}
-            else "the installed child pre-LLM hook verifies the exact persisted row, "
-            "injects the selected immutable specialist prompt only at that child's "
-            "inference boundary, and consumes its one-use grant against host-issued "
-            "child lineage"
-        )
-        activation_flow = (
-            "For every accepted row in the [AGENCY DELEGATION PLAN] below, dispatch one "
-            f"native {native_tool} and {native_binding}. Do not call "
-            f"`agency.prepare_delegation` or `agency.load_specialist`; {hook_delivery}. "
-            "For a declined row, "
-            "record one explicit `agency.decline_delegation` receipt instead"
-        )
-        execution_instruction = (
-            f"{requirement}, use the host-native {native_tool} worker. {activation_flow}. "
-            "Apply the returned exact-version prompt only inside the child, and return "
-            "a bounded result. Do not load a specialist prompt body in the parent"
-        )
-    else:
-        if references:
-            raise RuntimeError("isolated specialist selection lacks an exact unit-agent plan")
-        execution_instruction = (
-            "No specialist assignment was accepted for this turn. Do not dispatch an "
-            "untyped native worker or claim Agency participation. Continue under the "
-            "native host's own policy without attributing specialist work to Agency"
-        )
-    return (
-        f"[AGENCY PREFLIGHT] Current isolated turn {trace_id}; unit-plan specialists: "
-        f"{slugs}. "
-        "Earlier Agency turn recipes are expired. Full specialist prompt bodies are "
-        f"excluded from this persistent {normalized_host} parent transcript. "
-        f"{execution_instruction}. Native worker labels are not Agency specialist identities. Preserve "
-        "delegated goal text exactly from the current user request. Include the "
-        "Agency evidence header in substantive progress updates and the final parent "
-        "response. Start each such response with "
-        "exactly these field labels, in this order, and fill values only from "
-        "current-turn runtime evidence (use `none` or an explicit unavailable state "
-        "when evidence is absent). "
-        f"{loaded_header_instruction}\n"
-        f"Agency/Agencies loaded: {loaded_header_value}\n"
-        "Agency/Agencies delegated: <agent-id[, agent-id...] or none>\n"
-        "Skills loaded: <skill-id[, skill-id...] or none>\n"
-        "Actual Model selected: <requested alias> -> <resolved provider/model or "
-        "unavailable reason>\n"
-        "Recruited via: <inference | cached | none>\n"
-        "Why: <one evidence-grounded line>\n"
-        "How it shaped outcome: <one evidence-grounded line>"
-    )
-
-
 def _prompt_reference(prompt: Mapping[str, Any]) -> SpecialistPromptReference:
     raw_capabilities = prompt.get("capabilities")
     capabilities = (
@@ -528,7 +419,6 @@ __all__ = [
     "LoadedSpecialistContext",
     "SpecialistPromptDeliveryError",
     "SpecialistPromptReference",
-    "format_isolated_specialist_context",
     "hydrate_selected_specialist_context",
     "hydrate_selected_specialist_references",
     "rebuild_versioned_specialist_context",
