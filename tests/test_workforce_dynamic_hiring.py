@@ -518,9 +518,7 @@ def test_verified_gap_projection_excludes_ineligible_partial_coverage(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "agency.db")
-    partial = replace(
-        _existing(), artifact_kinds=("implementation-change",), stacks=("cobol",)
-    )
+    partial = replace(_existing(), artifact_kinds=("implementation-change",), stacks=("cobol",))
     calls: list[dict[str, str]] = []
 
     outcome = hire_contractor_for_gap(
@@ -2342,3 +2340,91 @@ def test_task_gap_amendment_is_rejected_when_amendment_is_disallowed(
     assert outcome.worker is None
     assert outcome.hiring_case is None
     assert store.get_workforce_worker(existing.agent_id)["revision"] == 0
+
+
+def _renamed_repeat_of_the_candidate() -> WorkforceContract:
+    """An incumbent already answering to the candidate's role, under another slug.
+
+    Deliberately not a subset of the candidate on outcomes or domains, so
+    `_obvious_duplicate` cannot see it. That is the live failure shape, not a
+    contrived one.
+    """
+
+    return replace(
+        _existing(),
+        worker_id="worker:quantum-build-engineer-legacy",
+        agent_id="quantum-build-engineer-legacy",
+        # Spacing and case differ; the role claim does not.
+        display_name="quantum  build   ENGINEER",
+        authority="modify",
+        outcomes=("legacy quantum toolchain ownership",),
+        domains=("legacy-build-systems",),
+    )
+
+
+def test_structural_duplicate_check_alone_cannot_see_a_renamed_repeat() -> None:
+    """Pins why the role-identity check has to exist at all.
+
+    If `_obvious_duplicate` ever starts catching this on its own, the extra
+    check is redundant and this test says so by failing.
+    """
+
+    incumbent = _renamed_repeat_of_the_candidate()
+    candidate = replace(
+        _existing(),
+        worker_id="worker:quantum-build-engineer",
+        agent_id="quantum-build-engineer",
+        display_name="Quantum Build Engineer",
+        authority="modify",
+        outcomes=("quantum build implementation",),
+        domains=("quantum-build-systems",),
+    )
+
+    assert hiring_module._obvious_duplicate(candidate, incumbent) is False
+    assert hiring_module._duplicate_role_identity(candidate, (incumbent,)) == incumbent.agent_id
+
+
+def test_a_role_identity_match_needs_the_same_authority() -> None:
+    """Same name at a different authority is a different job, not a duplicate."""
+
+    incumbent = replace(_renamed_repeat_of_the_candidate(), authority="review")
+    candidate = replace(
+        _existing(),
+        worker_id="worker:quantum-build-engineer",
+        agent_id="quantum-build-engineer",
+        display_name="Quantum Build Engineer",
+        authority="modify",
+    )
+
+    assert hiring_module._duplicate_role_identity(candidate, (incumbent,)) == ""
+
+
+def test_second_contractor_for_an_existing_role_is_refused_and_names_the_incumbent(
+    tmp_path: Path,
+) -> None:
+    """Rule 6's dedupe requirement, at the seam where a card is actually minted.
+
+    The roster grew two "Request Clarification Specialist" contractors this way:
+    identical name, authority and task types, different slug, prose different
+    enough that the structural check passed. Abstaining is the whole point --
+    the incumbent is still selectable, so nothing is lost by not minting.
+    """
+
+    store = Store(tmp_path / "agency.db")
+    incumbent = _renamed_repeat_of_the_candidate()
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(), incumbent),
+        store=store,
+        config=_config(),
+        invoker=_invoker(_hiring_response(), {"approved": True, "reason_codes": []}),
+    )
+
+    assert outcome.status == "abstained"
+    assert "deterministic_duplicate_detected" in outcome.reason_codes
+    # Forensics: a bare "duplicate detected" cannot be reconstructed later.
+    assert f"duplicate_role_identity:{incumbent.agent_id}" in outcome.reason_codes
+    assert outcome.worker is None
+    assert store.list_hiring_cases(limit=10) == []

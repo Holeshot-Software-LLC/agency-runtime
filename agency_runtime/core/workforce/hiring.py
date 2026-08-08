@@ -931,7 +931,9 @@ def _security_review(
     """
 
     review_providers = configured_workforce_providers(
-        config, stage="security_review", route_key="workforce.hiring.security_review",
+        config,
+        stage="security_review",
+        route_key="workforce.hiring.security_review",
         harness=harness,
     )
     if not review_providers:
@@ -1587,6 +1589,66 @@ def _obvious_duplicate(candidate: WorkforceContract, existing: WorkforceContract
     )
 
 
+def _role_identity(value: str) -> str:
+    """Reduce a display name to the role it claims, for equality only."""
+
+    return " ".join(re.sub(r"[^0-9a-z]+", " ", str(value or "").casefold()).split())
+
+
+def _duplicate_role_identity(
+    candidate: WorkforceContract,
+    contracts: Sequence[WorkforceContract],
+) -> str:
+    """Return an existing worker already claiming this candidate's role, or "".
+
+    ``_obvious_duplicate`` alone cannot see this. It requires the candidate to
+    be a subset of an incumbent on every axis *including* free-text ``outcomes``,
+    and two independently authored contracts never write the same sentences --
+    so a second contractor for an existing role passes it every time. That is
+    not hypothetical: this roster carries both ``request-clarification-specialist``
+    and ``request-clarity-on-agent-harness-scope``, minted separately, both named
+    "Request Clarification Specialist", same authority, same division, same
+    task types. The second is the first narrowed to one task.
+
+    Display name is the right axis because it is the role claim itself. Two
+    workers answering to one name are a duplicate whatever their prose differs
+    on, and a genuinely new specialisation earns a distinguishable name.
+    """
+
+    claimed = _role_identity(candidate.display_name)
+    if not claimed:
+        return ""
+    for item in contracts:
+        if item.agent_id == candidate.agent_id:
+            continue
+        if _role_identity(item.display_name) == claimed and item.authority == candidate.authority:
+            return item.agent_id
+    return ""
+
+
+def _duplicate_hire_reason_codes(
+    candidate: WorkforceContract,
+    slug: str,
+    known: set[str],
+    contracts: Sequence[WorkforceContract],
+) -> tuple[str, ...]:
+    """Return why this hire duplicates an incumbent, or () to let it proceed."""
+
+    duplicated_role = _duplicate_role_identity(candidate, contracts)
+    if not (
+        slug in known
+        or duplicated_role
+        or any(_obvious_duplicate(candidate, item) for item in contracts)
+    ):
+        return ()
+    # Name the incumbent. "A duplicate was detected" cannot be reconstructed
+    # after the fact, and every contractor decision stays forensically
+    # reviewable -- that is a standing requirement, not a nicety here.
+    if duplicated_role:
+        return ("deterministic_duplicate_detected", f"duplicate_role_identity:{duplicated_role}")
+    return ("deterministic_duplicate_detected",)
+
+
 def _today_hires(store: Any) -> int:
     today = datetime.now(timezone.utc).date().isoformat()
     return sum(
@@ -1751,12 +1813,11 @@ def _validated_candidate(
     ):
         return failure("contract_invalid:relationship_target_unknown")
     if action == "hire" and (
-        contract.slug in known
-        or any(_obvious_duplicate(workforce_contract, item) for item in contracts)
+        codes := _duplicate_hire_reason_codes(workforce_contract, contract.slug, known, contracts)
     ):
         return ContractorHiringOutcome(
             "abstained",
-            ("deterministic_duplicate_detected",),
+            codes,
             contract=contract,
             attempts=(attempt,),
         )
