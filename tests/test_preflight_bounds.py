@@ -731,8 +731,6 @@ def test_direct_preflight_fails_open_on_resident_only_fallback(
     assert store.get_specialists_for_session("fallback-session") == []
 
 
-
-
 def test_ready_recipe_and_atomic_routing_evidence_never_persist_request_text(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1233,11 +1231,11 @@ def test_expired_owner_is_recovered_and_stale_token_cannot_commit_or_fail(
     assert store.get_model_receipt(trace_id) is None
     assert store.get_skills_for_trace(session_id, trace_id) == []
     assert store.get_specialists_for_trace(session_id, trace_id) == ["implementer"]
+    # A verified workforce route plans no delegation, so the recovered attempt
+    # suggests none either. What this test is about is unchanged: the stale
+    # token wrote nothing, and in particular no "stale-unit" row survived.
     delegations = store.get_delegations(trace_id)
-    assert [(row["recommended_agent"], row["status"]) for row in delegations] == [
-        ("implementer", "suggested")
-    ]
-    assert all(row["work_unit_id"] != "stale-unit" for row in delegations)
+    assert delegations == []
     connection = store._connect()
     try:
         stale_finalizations = connection.execute(

@@ -1226,14 +1226,18 @@ def build_unit_agent_plan(
         return []
     if len(raw_units) > MAX_SUGGESTED_WORK_UNITS:
         return []
-    workforce_bindings = routing.get("workforce_unit_bindings")
-    if isinstance(workforce_bindings, (list, tuple)):
-        return _build_verified_workforce_plan(
-            routing,
-            raw_units,
-            workforce_bindings,
-            policy or DelegationConfig(),
-        )
+    if isinstance(routing.get("workforce_unit_bindings"), (list, tuple)):
+        # A verified workforce route never plans a delegation. The builder this
+        # used to call kept only bindings with delivery="delegate", and nothing
+        # can produce one: the sole schema carrying `delivery` had no caller and
+        # was deleted, so the staffing verifier's deterministic "load" default
+        # always stands. The call returned [] on every real turn; saying so
+        # directly stops it reading as a live branch.
+        #
+        # Returning early is load-bearing -- falling through to the catalog
+        # assignment path below would start building plans for routes that have
+        # never had one.
+        return []
     metadata = project_unit_assignment_agents(routing.get("unit_assignment_agents")) or []
     catalog_assignment = any(item.get("matched_work_unit_ids") for item in metadata)
     assignment_version = (
@@ -1317,93 +1321,6 @@ def build_unit_agent_plan(
     projected = project_unit_agent_plan(suggestions, require_current=True)
     if projected is None:
         raise RuntimeError("generated unit-agent plan is invalid")
-    return projected
-
-
-def _build_verified_workforce_plan(
-    routing: Mapping[str, Any],
-    raw_units: Sequence[Any],
-    raw_bindings: Sequence[Any],
-    policy: DelegationConfig,
-) -> list[dict[str, Any]]:
-    """Translate verifier-approved unit bindings without rerouting any unit."""
-
-    goals: dict[str, str] = {}
-    for raw in raw_units:
-        goal = _normalized_goal(raw)
-        if goal:
-            goals[work_unit_id_from_text(goal)] = goal
-    suggestions: list[dict[str, Any]] = []
-    for raw in raw_bindings[:MAX_SUGGESTED_WORK_UNITS]:
-        if not isinstance(raw, Mapping) or raw.get("delivery") != "delegate":
-            continue
-        work_unit_id = _clean(raw.get("work_unit_id"), 15).casefold()
-        goal = goals.get(work_unit_id)
-        agents = _bounded_agent_ids(raw.get("selected"))[:MAX_UNIT_SELECTION_WORKERS]
-        dependencies = _bounded_work_unit_ids(raw.get("depends_on"), strict=True)
-        required_tools = _bounded_strings(raw.get("required_tools"))
-        required_evidence = _bounded_strings(raw.get("required_evidence"))
-        mutation_scope = _clean(raw.get("mutation_scope"), 32).casefold()
-        parallelization = _clean(raw.get("parallelization"), 32).casefold()
-        timing = _clean(raw.get("timing"), 32).casefold()
-        artifact = _clean(raw.get("artifact_kind"), 64).casefold()
-        try:
-            confidence = float(raw.get("confidence") or 0.0)
-        except (TypeError, ValueError, OverflowError):
-            confidence = 0.0
-        if (
-            goal is None
-            or not agents
-            or dependencies is None
-            or mutation_scope not in MUTATION_SCOPES
-            or parallelization not in PARALLELIZATION_MODES
-            or timing not in {"immediate", "after_dependencies", "after_artifact"}
-            or not math.isfinite(confidence)
-            or not 0.0 <= confidence <= 1.0
-        ):
-            raise RuntimeError("verified workforce unit binding is malformed")
-        deliverable = (
-            "review"
-            if artifact == "review-report"
-            else "verification"
-            if artifact == "test-evidence"
-            else "documentation"
-            if artifact == "documentation"
-            else "implementation"
-            if artifact in {"implementation-change", "test-code"}
-            else "outcome"
-        )
-        resources = _likely_resources(goal)
-        suggestions.append(
-            {
-                "assignment_version": str(UNIT_AGENT_ASSIGNMENT_VERSION),
-                "work_unit_id": work_unit_id,
-                "goal_hash": _plan_hash(goal),
-                "deliverable_kind": deliverable,
-                "recommended_agent": agents[0],
-                "recommended_agents": agents,
-                "selection_confidence": confidence,
-                "rationale_codes": [
-                    "workforce:verified",
-                    f"timing:{timing}",
-                    f"policy:{policy.mode}",
-                ],
-                "depends_on": dependencies,
-                "parallelization": parallelization,
-                "mutation_scope": mutation_scope,
-                "resource_hashes": [_plan_hash(resource) for resource in resources],
-                "required_tools": required_tools,
-                "required_evidence": required_evidence,
-                "delegation_strength": _delegation_strength(
-                    policy=policy,
-                    unit_count=len(raw_bindings),
-                    confidence=confidence,
-                ),
-            }
-        )
-    projected = project_unit_agent_plan(suggestions, require_current=True)
-    if projected is None:
-        raise RuntimeError("verified workforce unit plan is invalid")
     return projected
 
 

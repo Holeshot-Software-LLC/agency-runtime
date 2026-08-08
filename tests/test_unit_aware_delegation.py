@@ -880,15 +880,16 @@ def test_a_loaded_unit_produces_no_delegation_plan() -> None:
     assert build_unit_agent_plan(_verified_binding("load")) == []
 
 
-def test_an_explicitly_delegated_unit_still_produces_a_plan() -> None:
-    """Delegation stays available when inference asks for it by name.
+def test_a_verified_workforce_route_plans_no_delegation_at_all() -> None:
+    """Corrects this test's earlier claim, which was measured and found false.
 
-    Removing Job B removed the *mandate*, not the capability: the native host
-    is still the scheduler and may act on a plan it is offered. Pairing this
-    with the test above is what keeps the two apart.
+    It used to assert that `delivery="delegate"` still produced a plan, and read
+    as proof that inference could ask for delegation. It could not: the only
+    schema carrying `delivery` had no caller, so the staffing verifier's "load"
+    default always stood. A hand-built binding reached a branch no real turn
+    could. The branch is retired, so the delivery value is now irrelevant --
+    a verified workforce route plans nothing either way.
     """
 
-    plan = build_unit_agent_plan(_verified_binding("delegate"))
-
-    assert len(plan) == 1
-    assert plan[0]["recommended_agent"] == "code-reviewer"
+    assert build_unit_agent_plan(_verified_binding("delegate")) == []
+    assert build_unit_agent_plan(_verified_binding("load")) == []

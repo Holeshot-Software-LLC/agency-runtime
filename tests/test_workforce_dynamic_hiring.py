@@ -1305,7 +1305,10 @@ def test_codex_preflight_hydrates_and_commits_a_deferred_contractor(
     )
 
     assert result.selected_specialists == ("quantum-build-engineer",)
-    assert result.delegation_plan[0]["recommended_agent"] == "quantum-build-engineer"
+    # The hired contractor loads into the caller. A verified workforce route
+    # plans no delegation, so this used to read delegation_plan[0] only because
+    # the delegate branch was still reachable from a hand-built binding.
+    assert result.delegation_plan == ()
     assert store.get_workforce_worker("quantum-build-engineer")["state"] == "contractor"
     cases = store.get_hiring_cases_page_snapshot(limit=100)
     assert any(
