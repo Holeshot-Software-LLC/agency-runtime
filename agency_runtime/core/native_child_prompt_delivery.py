@@ -679,7 +679,10 @@ def parse_jit_specialist_delivery(value: object) -> JitSpecialistDelivery | None
             continue
         prompt_body = value[match.end() :].lstrip("\n")
         original_task = value[: match.start()]
-        section = original_task.rfind(_JIT_SECTION)
+        # The FIRST section, not the last: a child may carry several cards, and
+        # anything from the first marker onward is delivered context rather than
+        # the task the host actually wrote.
+        section = original_task.find(_JIT_SECTION)
         if section != -1:
             original_task = original_task[:section]
         if not prompt_body or not content_identity_matches(
@@ -699,6 +702,68 @@ def parse_jit_specialist_delivery(value: object) -> JitSpecialistDelivery | None
             prompt_body=prompt_body,
         )
     return None
+
+
+def parse_all_jit_specialist_deliveries(value: object) -> list[JitSpecialistDelivery]:
+    """Recover every just-in-time card delivered to one child, in delivery order.
+
+    A host-initiated child may be handed more than one card. Each is rendered as
+    its own self-verifying envelope, so every prompt body is still checked
+    against its own pinned version hash rather than a combined digest that could
+    not attribute a mismatch.
+    """
+
+    if not isinstance(value, str) or not value:
+        return []
+    matches = list(_JIT_MARKER_PATTERN.finditer(value))
+    if not matches:
+        return []
+    first_section = value.find(_JIT_SECTION)
+    original_task = value[:first_section] if first_section != -1 else ""
+    deliveries: list[JitSpecialistDelivery] = []
+    for index, match in enumerate(matches):
+        metadata = _decoded_metadata(match.group(1), expected_fields=_JIT_FIELDS)
+        if metadata is None:
+            continue
+        try:
+            normalized = _jit_metadata(
+                host=metadata.get("host"),
+                parent_session_id=metadata.get("parent_session_id"),
+                parent_trace_id=metadata.get("parent_trace_id"),
+                tool_use_id=metadata.get("tool_use_id"),
+                specialist_slug=metadata.get("specialist_slug"),
+                specialist_version=metadata.get("specialist_version"),
+                specialist_prompt_hash=metadata.get("specialist_prompt_hash"),
+            )
+        except (TypeError, ValueError):
+            continue
+        if normalized != metadata:
+            continue
+        end = (
+            value.find(_JIT_SECTION, match.end())
+            if index + 1 < len(matches)
+            else len(value)
+        )
+        prompt_body = value[match.end() : end if end != -1 else len(value)].lstrip("\n")
+        if not prompt_body or not content_identity_matches(
+            prompt_body,
+            normalized["specialist_prompt_hash"],
+        ):
+            continue
+        deliveries.append(
+            JitSpecialistDelivery(
+                host=str(normalized["host"]),
+                parent_session_id=str(normalized["parent_session_id"]),
+                parent_trace_id=str(normalized["parent_trace_id"]),
+                tool_use_id=str(normalized["tool_use_id"]),
+                specialist_slug=str(normalized["specialist_slug"]),
+                specialist_version=str(normalized["specialist_version"]),
+                specialist_prompt_hash=str(normalized["specialist_prompt_hash"]),
+                original_task=original_task,
+                prompt_body=prompt_body,
+            )
+        )
+    return deliveries
 
 
 def render_codex_opaque_native_child_prompt_delivery(
@@ -917,6 +982,7 @@ __all__ = [
     "NativeChildPromptDelivery",
     "codex_opaque_child_message_ciphertext",
     "is_codex_opaque_collaboration_message",
+    "parse_all_jit_specialist_deliveries",
     "parse_codex_native_child_execution_message",
     "parse_native_child_prompt_delivery",
     "render_codex_direct_native_child_prompt_delivery",

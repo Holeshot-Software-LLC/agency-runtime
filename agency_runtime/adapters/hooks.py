@@ -205,6 +205,10 @@ _PLANNED_NATIVE_WORK_UNIT_PATTERN = re.compile(r"^unit-[0-9a-f]{10}$")
 # Deterministic lexical narrowing runs inside the hook, so a few candidates are read
 # in rank order until one has a pinned, resolvable prompt version.
 _JIT_STAFFING_CANDIDATE_LIMIT = 5
+# Rule 4 is explicit that a harness-spawned child gets cards, plural. Three is
+# the practical ceiling: bodies are ~2.6k chars at the median, so three cards is
+# roughly 8k against the bounded hook envelope.
+_JIT_STAFFING_MAX_CARDS = 3
 
 
 def _emit_codex_reconciliation_diagnostic(
@@ -1507,7 +1511,6 @@ class HookBridge:
             parse_jit_specialist_delivery,
             render_jit_specialist_delivery,
         )
-        from agency_runtime.core.resident_managers import is_resident_manager_slug
         from agency_runtime.core.selector.candidate_narrow import pre_narrow
 
         if _is_codex_opaque_native_task(self.host, task):
@@ -1535,6 +1538,77 @@ class HookBridge:
             )
         except (RuntimeError, TypeError, ValueError):
             return {}
+        resolved = self._resolvable_jit_candidates(candidates, prompt_reader)
+        if not resolved:
+            return {}
+        # A child gets cards, plural. Only the deterministic compatibility rules
+        # apply here: this runs inside a PreToolUse hook, so asking inference
+        # whether two cards conflict is not available at any price.
+        accepted = self._compatible_jit_slugs([slug for slug, _prompt in resolved], candidates)
+        delivered_task = task
+        delivered: list[str] = []
+        result: dict[str, Any] = {}
+        for slug, prompt in resolved:
+            if slug not in accepted or len(delivered) >= _JIT_STAFFING_MAX_CARDS:
+                continue
+            try:
+                candidate_task = render_jit_specialist_delivery(
+                    delivered_task,
+                    prompt["prompt_body"],
+                    host=self.host,
+                    parent_session_id=correlation.session_id,
+                    parent_trace_id=trace_id,
+                    tool_use_id=correlation.tool_use_id,
+                    specialist_slug=slug,
+                    specialist_version=str(prompt.get("version") or prompt["_version"]),
+                    specialist_prompt_hash=str(prompt.get("hash") or prompt["_hash"]),
+                )
+            except (RuntimeError, TypeError, ValueError):
+                continue
+            candidate_result = {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "allow",
+                    "updatedInput": {**args, task_field: candidate_task},
+                }
+            }
+            try:
+                encoded = json.dumps(
+                    candidate_result,
+                    allow_nan=False,
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            except (TypeError, ValueError):
+                continue
+            # The envelope ceiling decides how many cards actually fit. Stop at
+            # the first that does not rather than dropping the ones already
+            # staffed: a smaller real team beats an oversized rejected one.
+            if len(encoded) >= MAX_HOOK_OUTPUT_BYTES:
+                break
+            delivered_task = candidate_task
+            result = candidate_result
+            delivered.append(slug)
+        if not delivered:
+            return {}
+        for slug in delivered:
+            self._record_jit_specialist_load(
+                session_id=correlation.session_id,
+                trace_id=trace_id,
+                slug=slug,
+            )
+        return result
+
+    def _resolvable_jit_candidates(
+        self,
+        candidates: list[Any],
+        prompt_reader: Any,
+    ) -> list[tuple[str, dict[str, Any]]]:
+        """Keep only candidates whose pinned prompt version actually resolves."""
+
+        from agency_runtime.core.resident_managers import is_resident_manager_slug
+
+        resolved: list[tuple[str, dict[str, Any]]] = []
         for candidate in candidates:
             if not isinstance(candidate, dict):
                 continue
@@ -1559,45 +1633,41 @@ class HookBridge:
                 or not prompt["prompt_body"]
             ):
                 continue
-            try:
-                delivered_task = render_jit_specialist_delivery(
-                    task,
-                    prompt["prompt_body"],
-                    host=self.host,
-                    parent_session_id=correlation.session_id,
-                    parent_trace_id=trace_id,
-                    tool_use_id=correlation.tool_use_id,
-                    specialist_slug=slug,
-                    specialist_version=str(prompt.get("version") or version),
-                    specialist_prompt_hash=str(prompt.get("hash") or content_hash),
-                )
-            except (RuntimeError, TypeError, ValueError):
-                continue
-            result = {
-                "hookSpecificOutput": {
-                    "hookEventName": "PreToolUse",
-                    "permissionDecision": "allow",
-                    "updatedInput": {**args, task_field: delivered_task},
-                }
-            }
-            try:
-                encoded = json.dumps(
-                    result,
-                    allow_nan=False,
-                    ensure_ascii=False,
-                    separators=(",", ":"),
-                ).encode("utf-8")
-            except (TypeError, ValueError):
-                continue
-            if len(encoded) >= MAX_HOOK_OUTPUT_BYTES:
-                continue
-            self._record_jit_specialist_load(
-                session_id=correlation.session_id,
-                trace_id=trace_id,
-                slug=slug,
+            resolved.append((slug, {**prompt, "_version": version, "_hash": content_hash}))
+        return resolved
+
+    def _compatible_jit_slugs(
+        self,
+        slugs: list[str],
+        candidates: list[Any],
+    ) -> set[str]:
+        """Return the deterministic compatible subset, or everything on failure.
+
+        Fail-open matches the rest of this path: a compatibility check that
+        cannot run must not cost the child its specialists. The first slug is
+        always kept so a degraded check can never staff nobody.
+        """
+
+        if len(slugs) < 2:
+            return set(slugs)
+        try:
+            from agency_runtime.core.selector.compatibility import enforce_compatible_set
+
+            catalog = [item for item in candidates if isinstance(item, dict)]
+            compatible = enforce_compatible_set(
+                slugs,
+                catalog,
+                limit=_JIT_STAFFING_MAX_CARDS,
             )
-            return result
-        return {}
+            accepted = {str(slug) for slug in compatible.get("selected_ids") or ()}
+        except Exception:
+            logger.debug(
+                "just-in-time compatibility check did not run; delivering the "
+                "narrowed candidates as selected",
+                exc_info=True,
+            )
+            return set(slugs)
+        return accepted or {slugs[0]}
 
     def _record_jit_specialist_load(
         self,

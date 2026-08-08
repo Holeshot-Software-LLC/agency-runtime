@@ -18,8 +18,10 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.adapters.hooks import _JIT_STAFFING_MAX_CARDS as JIT_STAFFING_MAX_CARDS
 from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core.native_child_prompt_delivery import (
+    parse_all_jit_specialist_deliveries,
     parse_jit_specialist_delivery,
     parse_native_child_prompt_delivery,
 )
@@ -214,3 +216,140 @@ def test_openclaw_and_hermes_have_no_hook_model_to_staff_through() -> None:
     for host in ("openclaw", "hermes"):
         with pytest.raises(ValueError, match="unsupported hook host"):
             HookBridge(host, store=_JitRosterStore())
+
+
+class _PluralRosterStore(_JitRosterStore):
+    """Three specialists that all fit one multi-part assignment."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.bodies = {
+            "database-optimizer": self.prompt,
+            "backend-architect": "You are the exact backend API design specialist.",
+            "test-writer": "You are the exact automated test authoring specialist.",
+        }
+        self.hashes = {
+            slug: sha256(body.encode()).hexdigest() for slug, body in self.bodies.items()
+        }
+
+    def get_active_roster_as_catalog(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "slug": "database-optimizer",
+                "agent_slug": "database-optimizer",
+                "version": "v1",
+                "hash": self.hashes["database-optimizer"],
+                "description": "Tunes slow SQL queries, indexes, and query plans",
+                "capabilities": ["sql", "index", "query", "database"],
+            },
+            {
+                "slug": "backend-architect",
+                "agent_slug": "backend-architect",
+                "version": "v1",
+                "hash": self.hashes["backend-architect"],
+                "description": "Designs backend API endpoints and service boundaries",
+                "capabilities": ["api", "endpoint", "backend", "query"],
+            },
+            {
+                "slug": "test-writer",
+                "agent_slug": "test-writer",
+                "version": "v1",
+                "hash": self.hashes["test-writer"],
+                "description": "Writes automated tests for new endpoints and queries",
+                "capabilities": ["test", "endpoint", "query", "index"],
+            },
+        ]
+
+    def get_versioned_specialist_prompt(
+        self,
+        slug: str,
+        version: str,
+        content_hash: str,
+        *,
+        max_chars: int,
+    ) -> dict[str, Any] | None:
+        body = self.bodies.get(slug)
+        if body is None or version != "v1" or content_hash != self.hashes[slug]:
+            return None
+        return {
+            "slug": slug,
+            "version": version,
+            "hash": content_hash,
+            "prompt_body": body[:max_chars],
+            "prompt_truncated": len(body) > max_chars,
+        }
+
+
+_PLURAL_TASK = "Add an indexed query endpoint and cover it with tests."
+
+
+@pytest.mark.parametrize(("host", "tool_name", "task_field"), _HOSTS)
+def test_a_host_initiated_child_is_handed_cards_plural(
+    host: str,
+    tool_name: str,
+    task_field: str,
+) -> None:
+    """Rule 4 says harness-spawned children get cards -- plural, not one."""
+
+    store = _PluralRosterStore()
+
+    result = HookBridge(host, store=store).handle(
+        _unplanned_child_payload(tool_name, task_field, _PLURAL_TASK)
+    )
+
+    delivered = result["hookSpecificOutput"]["updatedInput"][task_field]
+    deliveries = parse_all_jit_specialist_deliveries(delivered)
+    assert len(deliveries) > 1, "a child that needs several specialists must get several"
+    assert len(deliveries) <= JIT_STAFFING_MAX_CARDS
+    # Every card is independently verifiable against its own pinned version.
+    for delivery in deliveries:
+        assert delivery.host == host
+        assert delivery.prompt_body == store.bodies[delivery.specialist_slug]
+        assert delivery.specialist_prompt_hash == store.hashes[delivery.specialist_slug]
+    # The host's own task survives intact underneath every card.
+    assert {delivery.original_task for delivery in deliveries} == {_PLURAL_TASK}
+
+
+def test_every_delivered_card_is_recorded_as_loaded() -> None:
+    """Staffed but not accounted still means each card is auditable."""
+
+    store = _PluralRosterStore()
+
+    result = HookBridge("claude", store=store).handle(
+        _unplanned_child_payload("Agent", "prompt", _PLURAL_TASK)
+    )
+
+    delivered = result["hookSpecificOutput"]["updatedInput"]["prompt"]
+    staffed = {d.specialist_slug for d in parse_all_jit_specialist_deliveries(delivered)}
+    recorded = {slug for _session, slug, _trace in store.loaded}
+    assert recorded == staffed
+    assert all(trace == "trace" for _session, _slug, trace in store.loaded)
+
+
+def test_plural_staffing_stays_idempotent() -> None:
+    """Re-staffing an already multi-carded child must add nothing."""
+
+    store = _PluralRosterStore()
+    bridge = HookBridge("claude", store=store)
+
+    delivered = bridge.handle(_unplanned_child_payload("Agent", "prompt", _PLURAL_TASK))[
+        "hookSpecificOutput"
+    ]["updatedInput"]["prompt"]
+    first = list(store.loaded)
+    again = bridge.handle(_unplanned_child_payload("Agent", "prompt", delivered))
+
+    assert again == {}
+    assert store.loaded == first
+
+
+def test_a_child_whose_roster_offers_one_fit_still_gets_exactly_one() -> None:
+    """Plural is a ceiling, not a quota: never pad a team to reach it."""
+
+    store = _JitRosterStore()
+
+    result = HookBridge("claude", store=store).handle(
+        _unplanned_child_payload("Agent", "prompt", _TASK)
+    )
+
+    delivered = result["hookSpecificOutput"]["updatedInput"]["prompt"]
+    assert len(parse_all_jit_specialist_deliveries(delivered)) == 1
