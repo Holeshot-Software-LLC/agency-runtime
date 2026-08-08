@@ -354,100 +354,6 @@ PLAN_RESPONSE_SCHEMA = _closed_object(
     ("schema_version", "request_summary", "units"),
 )
 
-_RANK_SCHEMA = _closed_object(
-    {
-        "agent_id": {"maxLength": 128, "minLength": 1, "type": "string"},
-        "rank": {"maximum": 16, "minimum": 1, "type": "integer"},
-        "score": {"maximum": 1, "minimum": 0, "type": "number"},
-    },
-    ("agent_id", "rank", "score"),
-)
-_CONTEXT_SCHEMA = _closed_object(
-    {
-        "agent_id": {"maxLength": 128, "minLength": 1, "type": "string"},
-        "context_id": {"maxLength": 128, "minLength": 1, "type": "string"},
-    },
-    ("agent_id", "context_id"),
-)
-_SHADOW_SCHEMA = _closed_object(
-    {
-        "agent_id": {"maxLength": 128, "minLength": 1, "type": "string"},
-        "rank": {"maximum": 263, "minimum": 1, "type": "integer"},
-        "reason_codes": _IDENTIFIER_ARRAY,
-        "fallback_agent_id": {"maxLength": 128, "type": "string"},
-        "tradeoff": {"maxLength": 256, "minLength": 1, "type": "string"},
-    },
-    ("agent_id", "rank", "reason_codes", "fallback_agent_id", "tradeoff"),
-)
-_RECRUITMENT_ROW_SCHEMA = _closed_object(
-    {
-        "unit_id": {"maxLength": 128, "minLength": 1, "type": "string"},
-        "required": _IDENTIFIER_ARRAY,
-        "acceptable": _IDENTIFIER_ARRAY,
-        "forbidden": _IDENTIFIER_ARRAY,
-        "selected": _IDENTIFIER_ARRAY,
-        "runner_up": _IDENTIFIER_ARRAY,
-        "ranked_semantic": {"items": _RANK_SCHEMA, "maxItems": 16, "type": "array"},
-        "ranked_enabled": {"items": _RANK_SCHEMA, "maxItems": 16, "type": "array"},
-        "ranked_executable": {"items": _RANK_SCHEMA, "maxItems": 16, "type": "array"},
-        "disabled_shadows": {"items": _SHADOW_SCHEMA, "maxItems": 16, "type": "array"},
-        "unavailable_shadows": {"items": _SHADOW_SCHEMA, "maxItems": 16, "type": "array"},
-        "contexts": {"items": _CONTEXT_SCHEMA, "maxItems": 16, "type": "array"},
-        "confidence": {"maximum": 1, "minimum": 0, "type": "number"},
-        "margin": {"maximum": 1, "minimum": 0, "type": "number"},
-        "delivery": {"enum": ["delegate", "load"], "type": "string"},
-        "timing": {
-            "enum": ["after_artifact", "after_dependencies", "immediate"],
-            "type": "string",
-        },
-        "abstention_reasons": _IDENTIFIER_ARRAY,
-    },
-    (
-        "unit_id",
-        "required",
-        "acceptable",
-        "forbidden",
-        "selected",
-        "runner_up",
-        "ranked_semantic",
-        "ranked_enabled",
-        "ranked_executable",
-        "disabled_shadows",
-        "unavailable_shadows",
-        "contexts",
-        "confidence",
-        "margin",
-        "delivery",
-        "timing",
-        "abstention_reasons",
-    ),
-)
-
-
-def recruitment_response_schema(*, bound: bool = True) -> dict[str, Any]:
-    properties: dict[str, Any] = {
-        "units": {"items": _RECRUITMENT_ROW_SCHEMA, "maxItems": 16, "minItems": 1, "type": "array"}
-    }
-    required = ["units"]
-    if bound:
-        properties.update(
-            schema_version={"const": RECRUITMENT_SCHEMA_VERSION, "type": "integer"},
-            plan_hash={"pattern": r"^sha256:[0-9a-f]{64}$", "type": "string"},
-            roster_fingerprint={"pattern": r"^sha256:[0-9a-f]{64}$", "type": "string"},
-            roster_count={"minimum": 0, "type": "integer"},
-            roster_generation={"minimum": 0, "type": "integer"},
-        )
-        required = [
-            "schema_version",
-            "plan_hash",
-            "roster_fingerprint",
-            "roster_count",
-            "roster_generation",
-            "units",
-        ]
-    return _closed_object(properties, required)
-
-
 _NOMINATION_RANK_SCHEMA = _closed_object(
     {
         "agent_id": {
@@ -743,9 +649,7 @@ def configured_workforce_providers(
         effective_harness = override
     if route_key:
         try:
-            return (
-                resolve_inference_route(config, route_key, harness=effective_harness).provider,
-            )
+            return (resolve_inference_route(config, route_key, harness=effective_harness).provider,)
         except ConfigValidationError:
             pass
     if config.inference.default_profile or (
@@ -2340,6 +2244,5 @@ __all__ = [
     "WorkforceRoutingOutcome",
     "configured_workforce_providers",
     "plan_and_staff_workforce",
-    "recruitment_response_schema",
     "staffing_budget_for_config",
 ]
