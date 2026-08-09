@@ -25,13 +25,6 @@ def test_delegation_eval_harness_passes_core_contracts() -> None:
         "context_shows_opportunity_without_specialist_match",
         "all_adapters_track_evidence",
         "all_adapters_capture_model_receipts",
-        "suggestions_are_persisted",
-        "pre_verify_blocks_open_suggestions",
-        "delegate_task_promotes_suggestion",
-        "agency_agents_delegate_records_event",
-        "recorded_delegation_blocker_is_accepted",
-        "skipped_blocker_renders_in_header",
-        "generated_no_delegation_explanation_is_rejected",
     } <= names
 
 

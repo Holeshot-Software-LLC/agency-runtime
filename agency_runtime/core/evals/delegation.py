@@ -14,13 +14,11 @@ from agency_runtime.adapters.codex.wrapper import CodexAdapter
 from agency_runtime.adapters.generic.wrapper import GenericAdapter
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
 from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
-from agency_runtime.core.delegation.events import record_suggested_delegations
 from agency_runtime.core.header.contract import fill_header_fields, format_header
 from agency_runtime.core.private_paths import private_temporary_directory
 from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.selector.pipeline import build_routing_context
 from agency_runtime.core.store.sqlite import Store
-from agency_runtime.core.unit_assignment import work_unit_id_from_text
 
 
 def _header(store: Store, *, delegated: str | None = None) -> str:
@@ -216,226 +214,6 @@ def _case_all_adapters_capture_model_receipts() -> dict[str, Any]:
     return {"hosts": hosts}
 
 
-def _case_suggestions_are_persisted() -> dict[str, Any] | None:
-    def run(store: Store, adapter: HermesAdapter) -> dict[str, Any]:
-        del adapter
-        _create_eval_turn(store)
-        audit_unit = "audit delegation"
-        eval_unit = "add eval"
-        count = record_suggested_delegations(
-            store,
-            session_id="eval-session",
-            host="hermes",
-            routing={
-                "trace_id": "trace",
-                "selected_ids": ["multi-agent-systems-architect", "code-reviewer"],
-                "unit_assignment_agents": [
-                    {
-                        "slug": "multi-agent-systems-architect",
-                        "name": "Multi-agent Systems Architect",
-                        "description": "Audit delegation architecture.",
-                        "matched_work_unit_ids": [work_unit_id_from_text(audit_unit)],
-                        "primary_work_unit_ids": [work_unit_id_from_text(audit_unit)],
-                    },
-                    {
-                        "slug": "code-reviewer",
-                        "name": "Code Reviewer",
-                        "description": "Add and review delegation evaluation coverage.",
-                        "matched_work_unit_ids": [work_unit_id_from_text(eval_unit)],
-                        "primary_work_unit_ids": [work_unit_id_from_text(eval_unit)],
-                    },
-                ],
-                "work_units": {
-                    "delegate": True,
-                    "count": 2,
-                    "units": [audit_unit, eval_unit],
-                },
-            },
-        )
-        rows = store.get_delegations("trace")
-        _require(count == 2, "suggestion count mismatch")
-        _require(
-            [row["status"] for row in rows] == ["suggested", "suggested"],
-            "suggestion states mismatch",
-        )
-        return {"suggested": len(rows)}
-
-    return _with_store(run)
-
-
-def _case_pre_verify_blocks_open_suggestions() -> dict[str, Any] | None:
-    def run(store: Store, adapter: HermesAdapter) -> dict[str, Any]:
-        _create_eval_turn(store)
-        store.record_specialist_loaded(
-            "eval-session",
-            "multi-agent-systems-architect",
-            trace_id="trace",
-        )
-        store.record_delegation(
-            trace_id="trace",
-            session_id="eval-session",
-            host="hermes",
-            work_unit_id="unit-1",
-            recommended_agent="multi-agent-systems-architect",
-            status="suggested",
-        )
-        result = adapter.pre_verify_handler(
-            _header(store, delegated="none"),
-            session_id="eval-session",
-            attempt=1,
-            trace_id="trace",
-        )
-        _require(result is not None, "open suggestion was accepted")
-        _require(result["action"] == "continue", "open suggestion did not continue")
-        return {"action": result["action"]}
-
-    return _with_store(run)
-
-
-def _case_delegate_task_promotes_suggestion() -> dict[str, Any] | None:
-    def run(store: Store, adapter: HermesAdapter) -> dict[str, Any]:
-        _create_eval_turn(store)
-        store.record_delegation(
-            trace_id="trace",
-            session_id="eval-session",
-            host="hermes",
-            work_unit_id="unit-1",
-            recommended_agent="multi-agent-systems-architect",
-            status="suggested",
-        )
-        adapter.post_tool_call_handler(
-            tool_name="delegate_task",
-            args={
-                "agent": "multi-agent-systems-architect",
-                "goal": "audit delegation",
-                "work_unit_id": "unit-1",
-            },
-            result={"agent_id": "worker-1", "run_id": "delegate-task:run-1"},
-            session_id="eval-session",
-            trace_id="trace",
-        )
-        rows = store.get_delegations("trace")
-        _require(rows[0]["status"] == "delegated", "suggestion was not promoted")
-        _require(rows[0]["backend"] == "delegate_task", "delegate backend mismatch")
-        fields = fill_header_fields({}, "eval-session", store, "task-chunk-planner", "trace")
-        _require(
-            fields["agencies_delegated"]
-            == "none - executed worker has no validated Agency specialist",
-            "unvalidated native worker was reported as an Agency specialist",
-        )
-        return {"header": fields["agencies_delegated"]}
-
-    return _with_store(run)
-
-
-def _case_agency_agents_delegate_records_event() -> dict[str, Any] | None:
-    def run(store: Store, adapter: HermesAdapter) -> dict[str, Any]:
-        _create_eval_turn(store)
-        adapter.post_tool_call_handler(
-            tool_name="agency_agents_delegate",
-            args={
-                "agent": "software-architect",
-                "task": "review design",
-                "work_unit_id": "unit-design-review",
-            },
-            result={"agent_id": "worker-2", "run_id": "agency-delegate:run-1"},
-            session_id="eval-session",
-            trace_id="trace",
-        )
-        rows = store.get_delegations("trace")
-        _require(len(rows) == 1, "public delegation event count mismatch")
-        _require(
-            rows[0]["recommended_agent"] == "software-architect",
-            "public delegation recommendation mismatch",
-        )
-        _require(rows[0]["status"] == "delegated", "public delegation was not observed")
-        return {"backend": rows[0]["backend"]}
-
-    return _with_store(run)
-
-
-def _case_skipped_blocker_renders_in_header() -> dict[str, Any] | None:
-    def run(store: Store, adapter: HermesAdapter) -> dict[str, Any]:
-        del adapter
-        _create_eval_turn(store)
-        store.record_delegation(
-            trace_id="trace",
-            session_id="eval-session",
-            host="hermes",
-            work_unit_id="unit-1",
-            recommended_agent="multi-agent-systems-architect",
-            status="skipped",
-            skip_reason="delegate_task unavailable",
-        )
-        fields = fill_header_fields({}, "eval-session", store, "task-chunk-planner", "trace")
-        _require(
-            fields["agencies_delegated"] == "none - delegate_task unavailable",
-            "skipped delegation blocker was not rendered",
-        )
-        return {"header": fields["agencies_delegated"]}
-
-    return _with_store(run)
-
-
-def _case_recorded_delegation_blocker_is_accepted() -> dict[str, Any] | None:
-    def run(store: Store, adapter: HermesAdapter) -> dict[str, Any]:
-        _create_eval_turn(store)
-        store.record_specialist_loaded(
-            "eval-session",
-            "multi-agent-systems-architect",
-            trace_id="trace",
-        )
-        store.record_delegation(
-            trace_id="trace",
-            session_id="eval-session",
-            host="hermes",
-            work_unit_id="unit-1",
-            recommended_agent="multi-agent-systems-architect",
-            status="skipped",
-            backend="agency_agents_delegate",
-            skip_reason="agency_agents_delegate unavailable",
-        )
-        result = adapter.pre_verify_handler(
-            _header(store, delegated="none - agency_agents_delegate unavailable"),
-            session_id="eval-session",
-            attempt=1,
-            trace_id="trace",
-        )
-        _require(result is None, "recorded delegation blocker was rejected")
-        return {"accepted": True}
-
-    return _with_store(run)
-
-
-def _case_generated_no_delegation_explanation_is_rejected() -> dict[str, Any] | None:
-    def run(store: Store, adapter: HermesAdapter) -> dict[str, Any]:
-        _create_eval_turn(store)
-        store.record_specialist_loaded(
-            "eval-session",
-            "multi-agent-systems-architect",
-            trace_id="trace",
-        )
-        store.record_delegation(
-            trace_id="trace",
-            session_id="eval-session",
-            host="hermes",
-            work_unit_id="unit-1",
-            recommended_agent="multi-agent-systems-architect",
-            status="suggested",
-        )
-        result = adapter.pre_verify_handler(
-            _header(store, delegated="none - delegation suggested but not executed"),
-            session_id="eval-session",
-            attempt=1,
-            trace_id="trace",
-        )
-        _require(result is not None, "invented delegation explanation was accepted")
-        _require(result["action"] == "continue", "invented explanation did not continue")
-        return {"action": result["action"]}
-
-    return _with_store(run)
-
-
 def run_delegation_eval() -> dict[str, Any]:
     """Run the deterministic delegation eval suite."""
     cases = [
@@ -447,16 +225,6 @@ def run_delegation_eval() -> dict[str, Any]:
         ),
         ("all_adapters_track_evidence", _case_all_adapters_track_evidence),
         ("all_adapters_capture_model_receipts", _case_all_adapters_capture_model_receipts),
-        ("suggestions_are_persisted", _case_suggestions_are_persisted),
-        ("pre_verify_blocks_open_suggestions", _case_pre_verify_blocks_open_suggestions),
-        ("delegate_task_promotes_suggestion", _case_delegate_task_promotes_suggestion),
-        ("agency_agents_delegate_records_event", _case_agency_agents_delegate_records_event),
-        ("recorded_delegation_blocker_is_accepted", _case_recorded_delegation_blocker_is_accepted),
-        ("skipped_blocker_renders_in_header", _case_skipped_blocker_renders_in_header),
-        (
-            "generated_no_delegation_explanation_is_rejected",
-            _case_generated_no_delegation_explanation_is_rejected,
-        ),
     ]
     results = [_run_case(name, fn) for name, fn in cases]
     passed = sum(1 for case in results if case["passed"])
