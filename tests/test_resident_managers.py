@@ -245,29 +245,6 @@ def test_ordinary_specialist_hydration_omits_resident_manager_prompts() -> None:
                 "slug": "agency-steward",
             },
         ),
-        (
-            "agency.prepare_delegation",
-            {
-                "session_id": "session",
-                "trace_id": "trace",
-                "slug": "agency-steward",
-                "work_unit_id": "unit-0123456789",
-            },
-        ),
-        (
-            "agency.delegate",
-            {
-                "session_id": "session",
-                "trace_id": "trace",
-                "agent": "agency-steward",
-                "task": "Execute work",
-                "backend": "spawn_agent",
-                "work_unit_id": "unit-0123456789",
-                "worker_kind": "native-agent",
-                "worker_id": "worker-1",
-                "native_run_id": "run-1",
-            },
-        ),
     ],
 )
 def test_mcp_ordinary_specialist_boundaries_reject_resident_managers(

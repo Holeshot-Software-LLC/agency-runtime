@@ -490,7 +490,6 @@ class BaseAdapter(ABC):
                 )
 
         elif tool_name in (
-            "agency.delegate",
             "agency_agents_delegate",
             "delegate_task",
             "delegate_async",
@@ -622,11 +621,7 @@ class BaseAdapter(ABC):
                 ),
                 kwargs.get("tool_use_id"),
             )
-            backend = (
-                _clean(args.get("backend")) or "agency.delegate"
-                if tool_name == "agency.delegate"
-                else tool_name
-            )
+            backend = tool_name
             _record_native_delegation_observation(
                 self.store,
                 session_id=session_id,

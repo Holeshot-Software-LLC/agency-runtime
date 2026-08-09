@@ -99,7 +99,7 @@ def test_mcp_status_global_off_is_store_free_for_direct_and_protocol_calls(
             },
         ),
         ("agency.preflight", {}, {"runtime_enabled": False, "bypassed": True}),
-        ("agency.delegate", {}, {"runtime_enabled": False, "bypassed": True}),
+        ("agency.record_skill_loaded", {}, {"runtime_enabled": False, "bypassed": True}),
     ],
 )
 def test_mcp_protocol_global_off_precedes_normal_tool_schema_validation(

@@ -18,16 +18,6 @@ from agency_runtime.core.turn_correlation import active_turn_error
 
 ToolHandler = Callable[[dict[str, Any], Any], dict[str, Any]]
 
-_NATIVE_GENERIC_WORKER_KINDS = frozenset(
-    {
-        "generic-worker",
-        "codex-native-subagent",
-        "claude-native-subagent",
-        "hermes-native-subagent",
-        "openclaw-native-subagent",
-    }
-)
-
 
 def _correlation(arguments: dict[str, Any]) -> tuple[str, str] | None:
     try:
@@ -300,46 +290,6 @@ def _load_specialist(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     }
 
 
-def _prepare_delegation(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
-    correlation = _correlation(arguments)
-    if correlation is None:
-        return {"error": "session_id and trace_id are required to prepare delegation"}
-    session_id, trace_id = correlation
-    if field := _noncanonical_identifier(
-        arguments,
-        "slug",
-        "work_unit_id",
-        "worker_kind",
-        "worker_id",
-    ):
-        return {"error": f"{field} must be an exact canonical identifier"}
-    if error := active_turn_error(store, session_id, trace_id):
-        return {"error": error}
-    slug = str(arguments.get("slug") or "").strip()
-    if error := resident_manager_boundary_error(
-        slug,
-        operation="receive ordinary delegation activation",
-    ):
-        return {"error": error}
-    requested_worker_kind = str(arguments.get("worker_kind") or "generic-worker").strip()
-    if requested_worker_kind not in _NATIVE_GENERIC_WORKER_KINDS:
-        return {"error": "delegated specialist retrieval uses generic-worker attribution"}
-    try:
-        return store.prepare_delegation_activation(
-            session_id=session_id,
-            trace_id=trace_id,
-            specialist_slug=slug,
-            work_unit_id=str(arguments.get("work_unit_id") or ""),
-            # Native hosts use different names for their ordinary worker. The
-            # durable Agency contract intentionally records all of them as a
-            # generic worker so it cannot be mistaken for specialist identity.
-            worker_kind="generic-worker",
-            worker_id=str(arguments.get("worker_id") or ""),
-        )
-    except ValueError as exc:
-        return {"error": str(exc)}
-
-
 def _record_skill_loaded(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     correlation = _correlation(arguments)
     if correlation is None:
@@ -353,164 +303,6 @@ def _record_skill_loaded(arguments: dict[str, Any], store: Any) -> dict[str, Any
         trace_id=trace_id,
     )
     return {"status": "recorded"}
-
-
-def _delegate(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
-    from agency_runtime.core.delegation.events import mark_delegation_executed
-
-    correlation = _correlation(arguments)
-    if correlation is None:
-        return {"error": "session_id and trace_id are required to record delegation execution"}
-    session_id, trace_id = correlation
-    if field := _noncanonical_identifier(
-        arguments,
-        "agent",
-        "backend",
-        "work_unit_id",
-        "worker_kind",
-        "worker_id",
-        "native_run_id",
-    ):
-        return {"error": f"{field} must be an exact canonical identifier"}
-    if error := active_turn_error(store, session_id, trace_id):
-        return {"error": error}
-    agent = str(arguments.get("agent") or "").strip()
-    if error := resident_manager_boundary_error(
-        agent,
-        operation="be delegated as a worker",
-    ):
-        return {"error": error}
-    task = str(arguments.get("task") or "").strip()
-    backend = str(arguments.get("backend") or "").strip()
-    work_unit_id = str(arguments.get("work_unit_id") or "").strip()
-    worker_kind = str(arguments.get("worker_kind") or "").strip()
-    worker_id = str(arguments.get("worker_id") or "").strip()
-    native_run_id = str(arguments.get("native_run_id") or "").strip()
-    lineage_reader = getattr(store, "get_consumed_delegation_lineage", None)
-    if callable(lineage_reader) and agent and work_unit_id:
-        consumed_lineage = lineage_reader(
-            session_id=session_id,
-            trace_id=trace_id,
-            specialist_slug=agent,
-            work_unit_id=work_unit_id,
-        )
-        if consumed_lineage is not None:
-            worker_kind = consumed_lineage["worker_kind"]
-            worker_id = consumed_lineage["worker_id"]
-            native_run_id = consumed_lineage["native_run_id"]
-    missing = [
-        name
-        for name, value in (
-            ("agent", agent),
-            ("task", task),
-            ("backend", backend),
-            ("work_unit_id", work_unit_id),
-            ("worker_kind", worker_kind),
-            ("worker_id", worker_id),
-            ("native_run_id", native_run_id),
-        )
-        if not value
-    ]
-    if missing:
-        return {
-            "error": "observed delegation requires non-empty " + ", ".join(missing),
-        }
-    mark_delegation_executed(
-        store,
-        trace_id=trace_id,
-        session_id=session_id,
-        host="mcp",
-        work_unit_id=work_unit_id,
-        agent=agent,
-        goal=task,
-        backend=backend,
-        executed_worker_kind=worker_kind,
-        executed_worker_id=worker_id,
-        native_run_id=native_run_id,
-    )
-    return {
-        "status": "delegation observed",
-        "agent": agent,
-        "trace_id": trace_id,
-        "work_unit_id": work_unit_id,
-        "backend": backend,
-        "worker_kind": worker_kind,
-        "worker_id": worker_id,
-        "native_run_id": native_run_id,
-    }
-
-
-def _decline_delegation(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
-    from agency_runtime.core.delegation.events import mark_delegation_skipped
-
-    correlation = _correlation(arguments)
-    if correlation is None:
-        return {"error": "session_id and trace_id are required to decline delegation"}
-    session_id, trace_id = correlation
-    if field := _noncanonical_identifier(arguments, "agent", "work_unit_id"):
-        return {"error": f"{field} must be an exact canonical identifier"}
-    if error := active_turn_error(store, session_id, trace_id):
-        return {"error": error}
-    agent = str(arguments.get("agent") or "").strip()
-    reason = " ".join(str(arguments.get("reason") or "").split())
-    work_unit_id = str(arguments.get("work_unit_id") or "").strip()
-    if not agent or not reason or not work_unit_id:
-        return {"error": "agent, reason, and work_unit_id are required"}
-    if len(reason) > 512:
-        return {"error": "delegation decline reason exceeds 512 characters"}
-    if error := resident_manager_boundary_error(
-        agent,
-        operation="be named in a delegation decline",
-    ):
-        return {"error": error}
-    rows = [
-        row
-        for row in store.get_delegations(trace_id)
-        if str(row.get("session_id") or "").strip() == session_id
-        and str(row.get("work_unit_id") or "").strip() == work_unit_id
-    ]
-    if len(rows) != 1:
-        return {"error": "delegation decline requires one exact suggested work unit"}
-    row = rows[0]
-    status = str(row.get("status") or "").strip()
-    if str(row.get("recommended_agent") or "").strip() != agent:
-        return {"error": "delegation decline agent does not match the durable plan"}
-    if status == "skipped":
-        # PreToolUse records a decline receipt when it denies a launch, so a
-        # parent following the documented flow can arrive here after the work
-        # unit is already closed. The receipt it asked for exists and names the
-        # same agent, so report that rather than an error for doing as told.
-        return {
-            "status": "delegation declined",
-            "delegation_event_id": str(row.get("id") or ""),
-            "agent": agent,
-            "trace_id": trace_id,
-            "work_unit_id": work_unit_id,
-            "reason": str(row.get("skip_reason") or "").strip() or reason,
-            "already_recorded": True,
-        }
-    if status != "suggested":
-        return {"error": "delegation work unit is no longer open"}
-    updated = mark_delegation_skipped(
-        store,
-        session_id=session_id,
-        trace_id=trace_id,
-        host="mcp",
-        backend="native-decline",
-        agent=agent,
-        work_unit_id=work_unit_id,
-        reason=reason,
-    )
-    if updated != 1:
-        return {"error": "delegation decline was not recorded"}
-    return {
-        "status": "delegation declined",
-        "delegation_event_id": str(row.get("id") or ""),
-        "agent": agent,
-        "trace_id": trace_id,
-        "work_unit_id": work_unit_id,
-        "reason": reason,
-    }
 
 
 def _finalize(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
@@ -561,11 +353,8 @@ _TOOL_HANDLERS: dict[str, ToolHandler] = {
     "agency.preflight": _preflight,
     "agency.search_agents": _search_agents,
     "agency.explain_selection": _explain_selection,
-    "agency.prepare_delegation": _prepare_delegation,
     "agency.load_specialist": _load_specialist,
     "agency.record_skill_loaded": _record_skill_loaded,
-    "agency.delegate": _delegate,
-    "agency.decline_delegation": _decline_delegation,
     "agency.finalize": _finalize,
     "agency.status": _status,
     "agency.host_status": _host_status,

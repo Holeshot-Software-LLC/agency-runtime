@@ -439,7 +439,6 @@ def test_canary_mode_blocks_every_mutating_mcp_surface(
         "agency.explain_selection": {"task": "explain"},
         "agency.load_specialist": {"slug": "x", "session_id": "s"},
         "agency.record_skill_loaded": {"skill_name": "x"},
-        "agency.delegate": {"agent": "x", "task": "work"},
         "agency.finalize": {"draft_text": "draft"},
     }
     for name, arguments in calls.items():
@@ -569,17 +568,6 @@ def test_mcp_load_specialist_rejects_inexact_prompt_without_evidence(
                 "trace_id": "missing-turn",
             },
         ),
-        (
-            "agency.delegate",
-            {
-                "agent": "code-reviewer",
-                "task": "Review the patch",
-                "backend": "spawn_agent",
-                "work_unit_id": "unit-review",
-                "session_id": "session",
-                "trace_id": "missing-turn",
-            },
-        ),
     ],
 )
 def test_mcp_public_evidence_mutations_require_an_existing_active_turn(
@@ -612,17 +600,6 @@ def test_mcp_public_evidence_mutations_require_an_existing_active_turn(
             "agency.record_skill_loaded",
             {
                 "skill_name": "security-review",
-                "session_id": "session",
-                "trace_id": "reserved-turn",
-            },
-        ),
-        (
-            "agency.delegate",
-            {
-                "agent": "code-reviewer",
-                "task": "Review the patch",
-                "backend": "spawn_agent",
-                "work_unit_id": "unit-review",
                 "session_id": "session",
                 "trace_id": "reserved-turn",
             },

@@ -588,23 +588,6 @@ def test_direct_tool_handlers_cover_status_search_record_and_errors(tmp_path: Pa
         {"session_id": "s", "trace_id": "turn", "skill_name": "audit"},
         store,
     ) == {"status": "recorded"}
-    delegated = mcp.handle_tool_call(
-        "agency.delegate",
-        {
-            "agent": "reviewer",
-            "task": "review",
-            "session_id": "s",
-            "trace_id": "turn",
-            "work_unit_id": "u1",
-            "backend": "test",
-            "worker_kind": "test-worker",
-            "worker_id": "worker-1",
-            "native_run_id": "test:run-1",
-        },
-        store,
-    )
-    assert delegated["trace_id"] == "turn"
-    assert delegated["work_unit_id"] == "u1"
     assert "unknown tool" in mcp.handle_tool_call("agency.missing", {}, store)["error"]
 
 

@@ -172,8 +172,6 @@ _SPECIALIST_TOOL_NAMES = {
     "mcp__agency__agency_agents_inspect": "agency_agents_inspect",
 }
 _DELEGATION_TOOL_NAMES = {
-    "agency.delegate": "agency.delegate",
-    "mcp__agency__agency.delegate": "agency.delegate",
     "agency_agents_delegate": "agency_agents_delegate",
     "mcp__agency__agency_agents_delegate": "agency_agents_delegate",
     "delegate_task": "delegate_task",

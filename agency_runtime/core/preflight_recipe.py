@@ -311,8 +311,8 @@ def _unit_delegation_context(
     lines = [
         "[AGENCY DELEGATION PLAN] Current-turn work units; the native host remains the scheduler.",
         "Dispatch with the exact native label and goal encoded below. Hooks bind the audited "
-        "specialist and its full assignment contract only inside that child. Decline a row "
-        "explicitly with agency.decline_delegation when native delegation is not appropriate.",
+        "specialist and its full assignment contract only inside that child. Skip a row when "
+        "native delegation is not appropriate.",
     ]
     if shared_goal_prefix:
         lines.extend(

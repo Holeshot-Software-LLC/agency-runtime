@@ -21,12 +21,9 @@ from agency_runtime.core.agent_activation import MAX_AGENT_SLUG_CHARS
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.correlation import MAX_CORRELATION_ID_BYTES
 from agency_runtime.core.delegation_status import (
-    MAX_DELEGATION_AGENT_CHARS,
-    MAX_DELEGATION_BACKEND_CHARS,
     MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
     MAX_DELEGATION_WORK_UNIT_ID_CHARS,
     MAX_DELEGATION_WORKER_ID_CHARS,
-    MAX_DELEGATION_WORKER_KIND_CHARS,
 )
 from agency_runtime.core.host_control import SUPPORTED_HOSTS
 from agency_runtime.core.native_child_prompt_delivery import (
@@ -55,11 +52,8 @@ _CANARY_MUTATING_TOOLS = frozenset(
     {
         "agency.preflight",
         "agency.explain_selection",
-        "agency.prepare_delegation",
         "agency.load_specialist",
         "agency.record_skill_loaded",
-        "agency.delegate",
-        "agency.decline_delegation",
         "agency.finalize",
     }
 )
@@ -129,23 +123,6 @@ MCP_TOOLS = [
         ),
     },
     {
-        "name": "agency.prepare_delegation",
-        "description": (
-            "Issue a one-use work-unit grant for an exact selected specialist version."
-        ),
-        "inputSchema": _schema(
-            {
-                "slug": _string(MAX_AGENT_SLUG_CHARS),
-                "session_id": _string(MAX_CORRELATION_ID_BYTES),
-                "trace_id": _string(MAX_CORRELATION_ID_BYTES),
-                "work_unit_id": _string(MAX_DELEGATION_WORK_UNIT_ID_CHARS),
-                "worker_kind": _string(MAX_DELEGATION_WORKER_KIND_CHARS),
-                "worker_id": _string(MAX_DELEGATION_WORKER_ID_CHARS),
-            },
-            ["slug", "session_id", "trace_id", "work_unit_id"],
-        ),
-    },
-    {
         "name": "agency.load_specialist",
         "description": "Consume an isolated activation grant or load a direct specialist prompt.",
         "inputSchema": _schema(
@@ -171,51 +148,6 @@ MCP_TOOLS = [
                 "skill_name": _string(_MAX_SKILL_NAME_CHARS),
             },
             ["session_id", "trace_id", "skill_name"],
-        ),
-    },
-    {
-        "name": "agency.delegate",
-        "description": "Record an observed delegation executed by a named backend.",
-        "inputSchema": _schema(
-            {
-                "agent": _string(MAX_DELEGATION_AGENT_CHARS),
-                "task": _string(_MAX_TASK_CHARS),
-                "backend": _string(MAX_DELEGATION_BACKEND_CHARS),
-                "trace_id": _string(MAX_CORRELATION_ID_BYTES),
-                "session_id": _string(MAX_CORRELATION_ID_BYTES),
-                "work_unit_id": _string(MAX_DELEGATION_WORK_UNIT_ID_CHARS),
-                "worker_kind": _string(MAX_DELEGATION_WORKER_KIND_CHARS),
-                "worker_id": _string(MAX_DELEGATION_WORKER_ID_CHARS),
-                "native_run_id": _string(MAX_DELEGATION_NATIVE_RUN_ID_CHARS),
-            },
-            [
-                "agent",
-                "task",
-                "backend",
-                "session_id",
-                "trace_id",
-                "work_unit_id",
-                "worker_kind",
-                "worker_id",
-                "native_run_id",
-            ],
-        ),
-    },
-    {
-        "name": "agency.decline_delegation",
-        "description": (
-            "Record an explicit native-host decision not to execute one exact suggested "
-            "delegation. This never launches a worker."
-        ),
-        "inputSchema": _schema(
-            {
-                "agent": _string(MAX_DELEGATION_AGENT_CHARS),
-                "reason": {**_string(512), "minLength": 1},
-                "trace_id": _string(MAX_CORRELATION_ID_BYTES),
-                "session_id": _string(MAX_CORRELATION_ID_BYTES),
-                "work_unit_id": _string(MAX_DELEGATION_WORK_UNIT_ID_CHARS),
-            },
-            ["agent", "reason", "session_id", "trace_id", "work_unit_id"],
         ),
     },
     {

@@ -8,8 +8,7 @@ SPECIALIST_TOOL_GUIDANCE = (
 NATIVE_DELEGATION_GUIDANCE = (
     "Dispatch through the current host's native worker tool: Codex `spawn_agent`, "
     "Claude Code `Agent`, Hermes `delegate_task`, or OpenClaw `sessions_spawn`. "
-    "`agency.delegate` only records an already-observed execution; it does not "
-    "launch a worker."
+    "Agency never launches a worker."
 )
 
 WORK_UNIT_CORRELATION_GUIDANCE = (
@@ -75,9 +74,7 @@ def native_delegation_instruction(host: object) -> str:
     return (
         f"{dispatch} Dispatch every persisted plan row exactly once; do not merge, omit, "
         "or perform a planned specialist unit in the parent. If a row cannot be safely "
-        "dispatched, call `agency.decline_delegation` once with the exact session_id, "
-        "trace_id, work_unit_id, recommended agent, and a concrete bounded reason, then "
-        "stop the parent turn without claiming the planned outcome."
+        "dispatched, stop the parent turn without claiming the planned outcome."
     )
 
 
@@ -110,7 +107,7 @@ def specialist_load_guidance(host: object, session_id: str, trace_id: str) -> st
             f"dispatch an isolated {native_tool} worker for every accepted persisted "
             f"unit-agent plan row. {label_instruction}{delivery} for "
             f"`session_id={session_id}` and `trace_id={trace_id}`. Do not "
-            "call `agency.prepare_delegation` or `agency.load_specialist` manually, and "
+            "call `agency.load_specialist` manually, and "
             "do not load the specialist prompt body into the persistent parent transcript"
         )
     return SPECIALIST_TOOL_GUIDANCE
