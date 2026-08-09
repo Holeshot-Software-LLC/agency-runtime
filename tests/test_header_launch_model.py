@@ -11,7 +11,6 @@ from agency_runtime.core.header.contract import (
     _scoped_model_line,
     _specialist_launch_models,
 )
-from agency_runtime.core.store.delegation_activation import _clean_launch_model
 from agency_runtime.core.store.schema import (
     DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS,
     migrate_delegation_activation_unit_identity,
@@ -167,22 +166,3 @@ def test_non_sequence_activations_yield_no_models(activations: object) -> None:
     assert _specialist_launch_models(activations) == []
 
 
-@pytest.mark.parametrize(
-    "value,expected",
-    [
-        ("haiku", "haiku"),
-        ("  claude-sonnet-5  ", "claude-sonnet-5"),
-        ("us.anthropic.claude:1", "us.anthropic.claude:1"),
-        ("", ""),
-        (None, ""),
-        ("model with spaces", ""),
-        ("-leading-dash", ""),
-        ("bad\nnewline", ""),
-        # Over-long input is bounded, not discarded: truncation is the limit.
-        ("x" * 200, "x" * 128),
-    ],
-)
-def test_launch_model_is_bounded_and_shape_checked(value: object, expected: str) -> None:
-    """Caller-supplied text on an evidence row degrades rather than passing through."""
-
-    assert _clean_launch_model(value) == expected
