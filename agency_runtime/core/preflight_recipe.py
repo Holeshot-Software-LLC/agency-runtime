@@ -218,17 +218,16 @@ def _suggestion_recipe(
     routing: dict[str, Any],
     delegation: DelegationConfig | None = None,
 ) -> list[dict[str, Any]]:
-    """Derive content-free suggested-delegation rows before atomic commit."""
-    from agency_runtime.core.delegation.events import (
-        build_unit_agent_plan,
-    )
+    """Return no suggested delegations; Agency does not plan units.
 
-    work_units = routing.get("work_units")
-    if not isinstance(work_units, dict) or not work_units.get("delegate"):
-        return []
-    if _bounded_count(work_units.get("count")) < 1:
-        return []
-    return build_unit_agent_plan(routing, delegation)
+    Deciding which work units exist and who should execute them is Job B. The
+    harness decides what to spawn and Agency staffs whoever exists, so the
+    recipe carries an empty plan and every downstream reader degrades to its
+    no-plan arm.
+    """
+
+    del routing, delegation
+    return []
 
 
 def _shared_delegation_goal_prefix(goals: list[str]) -> str:
@@ -246,121 +245,6 @@ def _shared_delegation_goal_prefix(goals: list[str]) -> str:
     ):
         return ""
     return prefix
-
-
-def _unit_delegation_context(
-    routing: dict[str, Any],
-    *,
-    host: str,
-    unit_plan: list[dict[str, Any]],
-    context_policy_version: int = PREFLIGHT_CONTEXT_POLICY_VERSION,
-) -> str:
-    """Render an exact, bounded unit plan for persistent native-host parents."""
-
-    from agency_runtime.core.host_guidance import native_delegation_instruction
-    from agency_runtime.core.unit_assignment import (
-        UNIT_AGENT_ASSIGNMENT_VERSION,
-        hydrate_unit_agent_plan,
-        work_unit_id_from_text,
-    )
-
-    if not unit_plan:
-        return ""
-    current_plan = all(
-        str(item.get("assignment_version") or "1") == str(UNIT_AGENT_ASSIGNMENT_VERSION)
-        for item in unit_plan
-    )
-    if current_plan:
-        hydrated = hydrate_unit_agent_plan(routing, unit_plan)
-    else:
-        work_units = routing.get("work_units")
-        raw_units = work_units.get("units") if isinstance(work_units, dict) else None
-        if not isinstance(raw_units, list):
-            raise RuntimeError("legacy unit-agent plan has no correlated current request")
-        goals = {
-            work_unit_id_from_text(str(unit)): " ".join(str(unit).split())
-            for unit in raw_units
-            if str(unit).strip()
-        }
-        hydrated = []
-        for item in unit_plan:
-            goal = goals.get(str(item.get("work_unit_id") or ""))
-            if not goal:
-                raise RuntimeError("legacy unit-agent plan does not match the current request")
-            agent = str(item.get("recommended_agent") or "")
-            hydrated.append(
-                {
-                    **item,
-                    "goal": goal,
-                    "delegation_strength": "preferred",
-                    "recommended_agents": [agent],
-                    "selection_confidence": 0.5,
-                    "mutation_scope": "read_only",
-                    "parallelization": "unspecified",
-                    "expected_deliverable": "Completed outcome with supporting evidence.",
-                    "dependencies": [],
-                    "required_tools": [],
-                    "required_evidence": [],
-                    "likely_files_or_resources": ["repository-workspace"],
-                }
-            )
-    goals = [str(item.get("goal") or "") for item in hydrated]
-    shared_goal_prefix = (
-        _shared_delegation_goal_prefix(goals) if int(context_policy_version) >= 12 else ""
-    )
-    lines = [
-        "[AGENCY DELEGATION PLAN] Current-turn work units; the native host remains the scheduler.",
-        "Dispatch with the exact native label and goal encoded below. Hooks bind the audited "
-        "specialist and its full assignment contract only inside that child. Skip a row when "
-        "native delegation is not appropriate.",
-    ]
-    if shared_goal_prefix:
-        lines.extend(
-            (
-                f"shared_goal_prefix={json.dumps(shared_goal_prefix, ensure_ascii=False)}",
-                "For every row, set the native child message to the exact concatenation of the "
-                "JSON-decoded shared_goal_prefix and that row's JSON-decoded goal_suffix; add no "
-                "separator and change no character.",
-            )
-        )
-    normalized_host = str(host or "").strip().casefold()
-    if normalized_host == "codex":
-        from agency_runtime.core.delegation.native_labels import (
-            codex_task_name_for_work_unit,
-        )
-
-        lines.append(
-            "For every Codex row, spawn exactly once with that row's exact decoded goal. "
-            "The selected specialist executes that goal in the initial native child turn. "
-            "Wait for that exact child to become terminal before starting another row; do "
-            "not send a follow-up execution message."
-        )
-
-    for item in hydrated:
-        work_unit_id = item["work_unit_id"]
-        native_label = (
-            f"; native_task_name={codex_task_name_for_work_unit(work_unit_id)}"
-            if normalized_host == "codex"
-            else ""
-        )
-        dependencies = ",".join(item.get("dependencies", ())) or "none"
-        mutation_scope = str(item.get("mutation_scope") or "read_only")
-        goal = str(item["goal"])
-        goal_field = "goal"
-        if shared_goal_prefix:
-            if not goal.startswith(shared_goal_prefix):
-                raise RuntimeError("unit delegation goal prefix no longer matches")
-            goal = goal[len(shared_goal_prefix) :]
-            goal_field = "goal_suffix"
-        lines.append(
-            f"- unit={work_unit_id}; agent={item['recommended_agent']}; "
-            f"strength={item['delegation_strength']}; depends_on={dependencies}"
-            f"; mutation_scope={mutation_scope}"
-            f"{native_label}; "
-            f"{goal_field}={json.dumps(goal, ensure_ascii=False)}"
-        )
-    lines.append(native_delegation_instruction(normalized_host))
-    return "\n".join(lines)
 
 
 def _continuation_delegation_context(
@@ -781,59 +665,9 @@ def _replay_routing_from_recipe(
     replay["unit_assignment_agents"] = unit_assignment_agents
     if continuation:
         return replay
-    from agency_runtime.core.delegation.events import build_unit_agent_plan
-    from agency_runtime.core.unit_assignment import work_unit_id_from_text
-
-    rebuilt = build_unit_agent_plan(replay, delegation)
-    if unit_agent_plan and int(unit_agent_plan[0].get("assignment_version", 1)) < 4:
-        work_units = replay.get("work_units")
-        raw_units = work_units.get("units") if isinstance(work_units, dict) else None
-        expected_unit_ids = {
-            work_unit_id_from_text(str(unit))
-            for unit in (raw_units if isinstance(raw_units, list) else [])
-            if str(unit).strip()
-        }
-        assignment_slugs = {
-            str(item.get("slug") or "").strip().casefold()
-            for item in unit_assignment_agents
-            if isinstance(item, dict)
-        }
-        selected_slugs = {
-            str(item or "").strip().casefold()
-            for item in routing.get("selected_ids", [])
-            if str(item or "").strip()
-        }
-        allowed_slugs = assignment_slugs | selected_slugs
-        durable_identity: list[tuple[str, str]] = []
-        for item in unit_agent_plan:
-            if not isinstance(item, dict):
-                durable_identity = []
-                break
-            work_unit_id = str(item.get("work_unit_id") or "").strip().casefold()
-            specialist = str(item.get("recommended_agent") or "").strip().casefold()
-            durable_identity.append((work_unit_id, specialist))
-        if (
-            not durable_identity
-            or len({work_unit_id for work_unit_id, _ in durable_identity}) != len(durable_identity)
-            or any(work_unit_id not in expected_unit_ids for work_unit_id, _ in durable_identity)
-            or any(specialist not in allowed_slugs for _, specialist in durable_identity)
-        ):
-            raise RuntimeError("ready preflight legacy unit-agent plan does not match")
-    elif rebuilt != unit_agent_plan:
-        mismatches: list[str] = []
-        if len(rebuilt) != len(unit_agent_plan):
-            mismatches.append("count")
-        for ordinal, (actual, expected) in enumerate(zip(rebuilt, unit_agent_plan, strict=False)):
-            if not isinstance(actual, dict) or not isinstance(expected, dict):
-                mismatches.append(f"row-{ordinal}:shape")
-                continue
-            mismatches.extend(
-                f"row-{ordinal}:{field}"
-                for field in sorted(set(actual) | set(expected))
-                if actual.get(field) != expected.get(field)
-            )
-        detail = ",".join(mismatches[:32]) or "unknown"
-        raise RuntimeError(f"ready preflight unit-agent plan does not match: {detail}")
+    # Agency no longer builds a unit plan, so there is nothing to re-derive and
+    # compare. Stored recipes that still carry one replay without it rather than
+    # failing the comparison against an empty rebuild.
     return replay
 
 
@@ -953,20 +787,11 @@ def _result_from_recipe(
     )
 
     from agency_runtime.core.specialist_context import rebuild_versioned_specialist_context
-    from agency_runtime.core.unit_assignment import (
-        UNIT_AGENT_ASSIGNMENT_VERSION,
-        hydrate_unit_agent_plan,
-    )
 
-    current_plan = bool(unit_agent_plan) and all(
-        str(item.get("assignment_version") or "1") == str(UNIT_AGENT_ASSIGNMENT_VERSION)
-        for item in unit_agent_plan
-    )
-    public_plan = (
-        tuple(unit_agent_plan)
-        if continuation_reused or not current_plan
-        else tuple(hydrate_unit_agent_plan(replay_routing, unit_agent_plan))
-    )
+    # Stored recipes are surfaced exactly as recorded. There is no live plan to
+    # hydrate them against, and re-deriving task text for a retired plan would
+    # only reconstruct Job B output.
+    public_plan = tuple(unit_agent_plan)
 
     if continuation_abstained:
         selected = rebuild_versioned_specialist_context(
@@ -988,17 +813,6 @@ def _result_from_recipe(
                 _continuation_delegation_context(
                     replay_routing,
                     unit_plan=unit_agent_plan,
-                ),
-                maximum_chars=context_limit,
-            )
-        elif unit_agent_plan:
-            routing_context = _combine_context(
-                routing_context,
-                _unit_delegation_context(
-                    replay_routing,
-                    host=str(recipe.get("host") or "unknown"),
-                    unit_plan=unit_agent_plan,
-                    context_policy_version=int(recipe_version),
                 ),
                 maximum_chars=context_limit,
             )

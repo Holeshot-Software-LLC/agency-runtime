@@ -10,13 +10,10 @@ from threading import Barrier
 
 import pytest
 
-from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 from agency_runtime.core.delegation.events import (
     mark_delegation_executed,
     mark_delegation_skipped,
-    record_suggested_delegations,
     suggested_delegations,
-    work_unit_id_from_text,
 )
 from agency_runtime.core.header.contract import fill_header_fields
 from agency_runtime.core.preflight import run_preflight
@@ -92,115 +89,6 @@ def test_preflight_requires_both_correlation_inputs(tmp_path: Path) -> None:
             user_message="",
             host="codex",
         )
-
-
-def test_native_response_id_reconciles_to_planned_task_and_sessions_spawn(
-    tmp_path: Path,
-) -> None:
-    store = Store(tmp_path / "agency.db")
-    routing = {
-        "trace_id": "turn",
-        "selected_ids": ["code-reviewer"],
-        "work_units": {
-            "delegate": True,
-            "count": 2,
-            "units": ["audit delegation", "add regression tests"],
-        },
-        "workforce_unit_bindings": [
-            {
-                "work_unit_id": work_unit_id_from_text("audit delegation"),
-                "selected": ["code-reviewer"],
-                "delivery": "delegate",
-                "timing": "immediate",
-                "depends_on": [],
-                "parallelization": "parallel",
-                "mutation_scope": "read_only",
-                "artifact_kind": "review-report",
-                "required_tools": [],
-                "required_evidence": ["review-report"],
-                "confidence": 1.0,
-            },
-            {
-                "work_unit_id": work_unit_id_from_text("add regression tests"),
-                "selected": ["code-reviewer"],
-                "delivery": "delegate",
-                "timing": "immediate",
-                "depends_on": [],
-                "parallelization": "parallel",
-                "mutation_scope": "workspace_write",
-                "artifact_kind": "test-code",
-                "required_tools": [],
-                "required_evidence": ["test-evidence"],
-                "confidence": 1.0,
-            },
-        ],
-    }
-    assert (
-        record_suggested_delegations(
-            store,
-            session_id="session",
-            host="openclaw",
-            routing=routing,
-        )
-        == 2
-    )
-
-    OpenClawAdapter(store=store).post_tool_call_handler(
-        tool_name="sessions_spawn",
-        args={"agentId": "code-reviewer", "task": "audit delegation"},
-        result={
-            "runId": "native-run-42",
-            "agent_id": "worker-42",
-            "status": "completed",
-        },
-        session_id="session",
-        trace_id="turn",
-    )
-
-    rows = store.get_delegations("turn")
-    assert len(rows) == 2
-    executed = next(
-        row for row in rows if row["work_unit_id"] == work_unit_id_from_text("audit delegation")
-    )
-    assert executed["status"] == "delegated"
-    assert executed["backend"] == "sessions_spawn"
-    assert all(row["work_unit_id"] != "native-run-42" for row in rows)
-
-    # A reordered terminal failure carries the same native response ID. It
-    # must update the planned task row, not create contradictory evidence.
-    adapter = OpenClawAdapter(store=store)
-    adapter.post_tool_call_handler(
-        tool_name="sessions_spawn",
-        args={"agentId": "code-reviewer", "task": "audit delegation"},
-        result={
-            "runId": "native-run-42",
-            "agent_id": "worker-42",
-            "status": "failed",
-            "error": "worker crashed",
-        },
-        session_id="session",
-        trace_id="turn",
-    )
-    adapter.post_tool_call_handler(
-        tool_name="sessions_spawn",
-        args={"agentId": "code-reviewer", "task": "audit delegation"},
-        result={
-            "runId": "native-run-42",
-            "agent_id": "worker-42",
-            "status": "completed",
-        },
-        session_id="session",
-        trace_id="turn",
-    )
-
-    rows = store.get_delegations("turn")
-    assert len(rows) == 2
-    failed = next(
-        row for row in rows if row["work_unit_id"] == work_unit_id_from_text("audit delegation")
-    )
-    assert failed["status"] == "skipped"
-    assert failed["skip_reason"] == "worker crashed"
-    assert all(row["work_unit_id"] != "native-run-42" for row in rows)
 
 
 def test_concurrent_execution_callbacks_are_atomically_idempotent(tmp_path: Path) -> None:

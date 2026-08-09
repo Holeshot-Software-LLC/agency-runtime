@@ -15,7 +15,6 @@ from agency_runtime.core.unit_assignment import (
     MAX_SUGGESTED_WORK_UNITS,
     MAX_WORK_UNIT_CHARS,
     UNIT_AGENT_ASSIGNMENT_VERSION,
-    build_unit_agent_plan,
     work_unit_id_from_text,
 )
 
@@ -42,70 +41,6 @@ def suggested_delegations(
             if len(result) >= MAX_SUGGESTED_WORK_UNITS:
                 break
     return result
-
-
-def record_suggested_delegations(
-    store: Store,
-    *,
-    session_id: str,
-    host: str,
-    routing: dict[str, Any],
-) -> int:
-    """Persist detected independent work units as suggested delegations.
-
-    Repeated pre-LLM hook calls can see the same user message again. Existing
-    session/work-unit rows are kept instead of duplicating suggestions.
-    """
-    normalized_session = _clean(session_id)
-    if not normalized_session:
-        return 0
-    work_units = routing.get("work_units") if isinstance(routing.get("work_units"), dict) else {}
-    try:
-        work_unit_count = int(work_units.get("count") or 1)
-    except (TypeError, ValueError, OverflowError):
-        return 0
-    if not work_units.get("delegate") or work_unit_count < 2:
-        return 0
-
-    trace_id = _clean(routing.get("trace_id"))
-    if not trace_id:
-        return 0
-    suggestions = build_unit_agent_plan(routing)
-
-    if not suggestions:
-        return 0
-
-    batch_recorder = getattr(store, "record_suggested_delegations_batch", None)
-    if callable(batch_recorder):
-        recorded = int(
-            batch_recorder(
-                trace_id=trace_id,
-                session_id=normalized_session,
-                host=host,
-                suggestions=suggestions,
-            )
-        )
-        return max(0, min(recorded, len(suggestions)))
-
-    # Compatibility stores remain strictly bounded. Production Store exposes
-    # the transactional batch API above.
-    existing = {row.get("work_unit_id") for row in store.get_delegations(trace_id)}
-    recorded = 0
-    for suggestion in suggestions:
-        if suggestion["work_unit_id"] in existing:
-            continue
-        store.record_delegation(
-            trace_id=trace_id,
-            session_id=normalized_session,
-            host=host,
-            work_unit_id=suggestion["work_unit_id"],
-            recommended_agent=suggestion["recommended_agent"],
-            status="suggested",
-            backend="",
-        )
-        existing.add(suggestion["work_unit_id"])
-        recorded += 1
-    return recorded
 
 
 def mark_delegation_executed(
@@ -367,10 +302,8 @@ __all__ = [
     "MAX_SUGGESTED_WORK_UNITS",
     "MAX_WORK_UNIT_CHARS",
     "UNIT_AGENT_ASSIGNMENT_VERSION",
-    "build_unit_agent_plan",
     "mark_delegation_executed",
     "mark_delegation_skipped",
-    "record_suggested_delegations",
     "suggested_delegations",
     "work_unit_id_from_text",
 ]

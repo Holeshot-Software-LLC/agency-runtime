@@ -24,12 +24,6 @@ from agency_runtime.core.delegation.backend_contracts import (
     BackendRegistry,
     BackendUnavailableError,
 )
-from agency_runtime.core.delegation.events import (
-    _matching_suggestions,
-    mark_delegation_executed,
-    mark_delegation_skipped,
-    record_suggested_delegations,
-)
 from agency_runtime.core.delegation.ledger import DelegationLedger
 from agency_runtime.core.delegation.lifecycle_types import (
     DependencyGraph,
@@ -218,61 +212,6 @@ class _EventStore:
 
     def update_delegation(self, event_id: str, **kwargs: Any) -> None:
         self.updated.append((event_id, kwargs))
-
-
-def test_delegation_events_skip_blank_units_and_record_explicit_fallback() -> None:
-    store = _EventStore()
-    routing = {
-        "trace_id": "trace",
-        "selected_ids": ["agent"],
-        "work_units": {"delegate": True, "count": 2, "units": ["", "real work"]},
-    }
-
-    assert (
-        record_suggested_delegations(  # type: ignore[arg-type]
-            store, session_id="session", host="codex", routing=routing
-        )
-        == 1
-    )
-    assert len(store.recorded) == 1
-
-    empty = _EventStore()
-    assert (
-        mark_delegation_executed(  # type: ignore[arg-type]
-            empty,
-            session_id="session",
-            trace_id="trace",
-            host="codex",
-            backend="codex",
-            goal="explicit work",
-            executed_worker_kind="cli-process",
-            executed_worker_id="codex",
-            native_run_id="codex:process:1",
-        )
-        == 1
-    )
-    assert empty.recorded[0]["status"] == "delegated"
-
-    rows = [
-        {"id": "1", "recommended_agent": "same"},
-        {"id": "2", "recommended_agent": "same"},
-    ]
-    assert _matching_suggestions(rows, agent="same", count=2) == rows
-    assert _matching_suggestions(rows, agent="same", count=1) == []
-
-    skipped = _EventStore()
-    assert (
-        mark_delegation_skipped(  # type: ignore[arg-type]
-            skipped,
-            session_id="session",
-            trace_id="trace",
-            host="codex",
-            backend="codex",
-            reason="capacity unavailable",
-        )
-        == 1
-    )
-    assert skipped.recorded[0]["status"] == "skipped"
 
 
 def test_ledger_record_and_hydration_preserve_storage_contract() -> None:

@@ -10,9 +10,6 @@ from agency_runtime.core import preflight as preflight_module
 from agency_runtime.core import preflight_recipe
 from agency_runtime.core.delegation.events import (
     MAX_SUGGESTED_WORK_UNITS,
-    UNIT_AGENT_ASSIGNMENT_VERSION,
-    build_unit_agent_plan,
-    record_suggested_delegations,
     work_unit_id_from_text,
 )
 from agency_runtime.core.delegation.native_labels import (
@@ -27,7 +24,6 @@ from agency_runtime.core.selector.delegation_detection import (
 )
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.unit_assignment import (
-    assignment_agents_from_catalog,
     project_unit_assignment_agents,
 )
 
@@ -193,229 +189,6 @@ def test_mixed_dependency_route_without_an_exact_plan_fails_open(
     # No delegations are recorded because the plan could not produce a valid
     # unit assignment, but the turn was allowed to proceed.
     assert store.get_delegations("trace") == []
-
-
-def test_selected_team_is_not_reinterpreted_as_per_unit_assignments() -> None:
-    routing = _routing(
-        selected_ids=[
-            "technical-writer",
-            "security-engineer",
-            "workflow-architect",
-            "code-reviewer",
-        ],
-        units=[
-            "Review the authentication code",
-            "Document the public API in the README",
-            "Harden authentication against vulnerabilities",
-            "Redesign the release workflow",
-        ],
-    )
-
-    plan = build_unit_agent_plan(routing)
-
-    assert plan == []
-    assert preflight_recipe._suggestion_recipe(routing) == plan
-
-
-def test_unconfigured_metadata_routing_fails_closed() -> None:
-    routing = _routing(
-        selected_ids=["agent-01", "agent-02"],
-        units=[
-            "Audit OAuth authentication security controls",
-            "Write installation documentation for the README",
-        ],
-    )
-    routing["unit_assignment_agents"] = assignment_agents_from_catalog(
-        [
-            {
-                "slug": "agent-01",
-                "name": "Guardian",
-                "description": "Reviews trust boundaries.",
-                "capabilities": ["OAuth threat modeling", "security review"],
-                "categories": ["security"],
-                "authority": "review",
-                "task_types": ["analysis", "review"],
-            },
-            {
-                "slug": "agent-02",
-                "name": "Scribe",
-                "description": "Maintains public guidance.",
-                "capabilities": ["installation documentation", "README writing"],
-                "categories": ["documentation"],
-                "authority": "modify",
-                "task_types": ["analysis", "implementation", "review"],
-            },
-        ],
-        routing,
-    )
-
-    plan = build_unit_agent_plan(routing)
-
-    assert routing["unit_assignment_agents"] == []
-    assert plan == []
-
-
-def test_exact_inference_assignment_can_select_a_specialist_outside_global_team() -> None:
-    catalog = [
-        {
-            "slug": "code-reviewer",
-            "name": "Code Reviewer",
-            "capabilities": ["code review", "test validation"],
-            "categories": ["quality"],
-            "authority": "review",
-            "task_types": ["analysis", "review"],
-        },
-        {
-            "slug": "technical-writer",
-            "name": "Technical Writer",
-            "capabilities": ["README writing", "installation documentation"],
-            "categories": ["documentation"],
-            "authority": "modify",
-            "task_types": ["analysis", "implementation", "review"],
-        },
-        {
-            "slug": "security-engineer",
-            "name": "Security Engineer",
-            "capabilities": ["authentication security", "threat modeling"],
-            "categories": ["security"],
-            "authority": "review",
-            "task_types": ["analysis", "review"],
-        },
-        {
-            "slug": "database-migration-specialist",
-            "name": "Database Migration Specialist",
-            "capabilities": ["PostgreSQL schema migration", "database migration"],
-            "categories": ["database"],
-            "authority": "modify",
-            "task_types": ["analysis", "implementation"],
-        },
-    ]
-    routing = _routing(
-        selected_ids=["code-reviewer", "technical-writer", "security-engineer"],
-        units=[
-            "Migrate the PostgreSQL database schema",
-            "Write installation documentation in the README",
-        ],
-    )
-
-    database_unit_id = work_unit_id_from_text("Migrate the PostgreSQL database schema")
-    documentation_unit_id = work_unit_id_from_text("Write installation documentation in the README")
-    snapshot = project_unit_assignment_agents(
-        [
-            {
-                **catalog[3],
-                "tags": catalog[3]["categories"],
-                "matched_work_unit_ids": [database_unit_id],
-                "primary_work_unit_ids": [database_unit_id],
-            },
-            {
-                **catalog[1],
-                "tags": catalog[1]["categories"],
-                "matched_work_unit_ids": [documentation_unit_id],
-                "primary_work_unit_ids": [documentation_unit_id],
-            },
-        ],
-        strict=True,
-    )
-    assert snapshot is not None
-    assignment_routing = {**routing, "unit_assignment_agents": snapshot}
-    plan = build_unit_agent_plan(assignment_routing)
-
-    assert "database-migration-specialist" not in routing["selected_ids"]
-    assert [item["slug"] for item in snapshot] == [
-        "database-migration-specialist",
-        "technical-writer",
-    ]
-    assert [item["recommended_agent"] for item in plan] == [
-        "database-migration-specialist",
-        "technical-writer",
-    ]
-    assert {item["assignment_version"] for item in plan} == {str(UNIT_AGENT_ASSIGNMENT_VERSION)}
-    assert project_unit_assignment_agents(snapshot, strict=True) == snapshot
-    assert (
-        build_unit_agent_plan(
-            {
-                **routing,
-                "unit_assignment_agents": project_unit_assignment_agents(snapshot, strict=True),
-            }
-        )
-        == plan
-    )
-
-
-@pytest.mark.parametrize(
-    "work_units",
-    [
-        None,
-        {
-            "delegate": False,
-            "count": 1,
-            "units": ["Write installation documentation in the README"],
-        },
-    ],
-)
-def test_non_delegated_routes_keep_selected_only_assignment_behavior(
-    work_units: dict[str, Any] | None,
-) -> None:
-    catalog = [
-        {
-            "slug": "technical-writer",
-            "name": "Technical Writer",
-            "capabilities": ["installation documentation"],
-        },
-        {
-            "slug": "database-migration-specialist",
-            "name": "Database Migration Specialist",
-            "capabilities": ["database migration"],
-        },
-    ]
-    routing: dict[str, Any] = {"selected_ids": ["technical-writer"]}
-    if work_units is not None:
-        routing["work_units"] = work_units
-
-    snapshot = assignment_agents_from_catalog(catalog, routing)
-
-    assert [item["slug"] for item in snapshot] == ["technical-writer"]
-    assert all("matched_work_unit_ids" not in item for item in snapshot)
-    assert build_unit_agent_plan({**routing, "unit_assignment_agents": snapshot}) == []
-
-
-def test_missing_unit_evidence_does_not_create_a_legacy_slug_assignment() -> None:
-    routing = _routing(
-        selected_ids=["technical-writer", "code-reviewer"],
-        units=["Document the README", "Review the tests"],
-    )
-
-    plan = build_unit_agent_plan(routing)
-
-    assert plan == []
-
-
-def test_selected_only_metadata_does_not_create_a_new_unit_assignment() -> None:
-    routing = _routing(
-        selected_ids=["opaque-a", "opaque-b"],
-        units=["Audit OAuth authentication", "Write installation documentation"],
-        unit_assignment_agents=[
-            {
-                "slug": "opaque-a",
-                "name": "Guardian",
-                "description": "Reviews trust boundaries and authentication.",
-                "capabilities": ["OAuth security audit"],
-                "tags": ["security"],
-            },
-            {
-                "slug": "opaque-b",
-                "name": "Scribe",
-                "description": "Maintains installation guidance.",
-                "capabilities": ["documentation writing"],
-                "tags": ["writer"],
-            },
-        ],
-    )
-
-    plan = build_unit_agent_plan(routing)
-
-    assert plan == []
 
 
 def test_persisted_v2_assignment_recipe_remains_replayable(tmp_path) -> None:
@@ -623,72 +396,6 @@ def test_assignment_metadata_projection_is_bounded_and_fail_closed() -> None:
     )
 
 
-def test_assignment_catalog_and_work_unit_bounds_are_deterministic() -> None:
-    assert assignment_agents_from_catalog([], {"selected_ids": "agent"}) == []
-    catalog = [
-        {"slug": "", "name": "invalid"},
-        {"slug": "agent", "name": "First"},
-        {"slug": "agent", "name": "Ignored duplicate"},
-    ]
-    assert assignment_agents_from_catalog(
-        catalog,
-        {"selected_ids": ["", "agent", "missing", "agent"]},
-    ) == [
-        {
-            "slug": "agent",
-            "name": "First",
-            "description": "",
-            "capabilities": [],
-            "tags": [],
-        }
-    ]
-    assert build_unit_agent_plan({"work_units": []}) == []
-    assert (
-        build_unit_agent_plan({"work_units": {"delegate": True, "count": 2, "units": "not-a-list"}})
-        == []
-    )
-
-    plan = build_unit_agent_plan(
-        _routing(
-            selected_ids=["", "opaque-a", "opaque-a", "opaque-b"],
-            units=["", "the and", "the and"],
-        )
-    )
-
-    assert plan == []
-    selected_only = assignment_agents_from_catalog(
-        catalog,
-        {
-            "selected_ids": ["agent"],
-            "work_units": {"delegate": True, "count": 2, "units": "malformed"},
-        },
-    )
-    deduplicated = assignment_agents_from_catalog(
-        catalog,
-        {
-            "selected_ids": ["agent"],
-            "work_units": {
-                "delegate": True,
-                "count": 3,
-                "units": ["", "same unit", "same unit"],
-            },
-        },
-    )
-    assert (
-        selected_only
-        == deduplicated
-        == [
-            {
-                "slug": "agent",
-                "name": "First",
-                "description": "",
-                "capabilities": [],
-                "tags": [],
-            }
-        ]
-    )
-
-
 def test_preflight_replay_preserves_the_metadata_assignment(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
@@ -761,48 +468,11 @@ def test_preflight_replay_preserves_the_metadata_assignment(
         host="codex",
         user_message=prompt,
     )
-    plan = store.get_completion_evidence_snapshot("session", "trace")["unit_agent_plan"]
-
     assert first.context == replay.context
     assert first.routing["unit_assignment_agents"] == replay.routing["unit_assignment_agents"]
-    assert [item["recommended_agent"] for item in plan] == ["agent-01", "agent-02"]
-    assert {item["assignment_version"] for item in plan} == {str(UNIT_AGENT_ASSIGNMENT_VERSION)}
-
-
-def test_unmatched_units_do_not_fall_back_to_resident_managers() -> None:
-    routing = _routing(
-        selected_ids=["code-reviewer", "technical-writer"],
-        units=["Reconcile lunar telemetry"],
-    )
-    orchestrated = build_unit_agent_plan(routing)
-    chief_led = build_unit_agent_plan(
-        {
-            **routing,
-            "unavailable_fallback_companion_ids": ["agents-orchestrator"],
-        }
-    )
-    unavailable = build_unit_agent_plan(
-        {
-            **routing,
-            "unavailable_fallback_companion_ids": [
-                "agents-orchestrator",
-                "chief-of-staff",
-            ],
-        }
-    )
-
-    assert orchestrated == chief_led == unavailable == []
-
-
-def test_sole_domain_specialist_still_requires_exact_unit_evidence() -> None:
-    plan = build_unit_agent_plan(
-        _routing(
-            selected_ids=["payments-billing-engineer"],
-            units=["Verify Stripe webhook signatures"],
-        )
-    )
-
-    assert plan == []
+    # The assignment metadata is what replay has to preserve. The unit-agent plan
+    # that used to be asserted here is Job B and is no longer produced.
+    assert store.get_completion_evidence_snapshot("session", "trace")["unit_agent_plan"] == []
 
 
 class _BatchStore:
@@ -812,29 +482,6 @@ class _BatchStore:
     def record_suggested_delegations_batch(self, **kwargs: Any) -> int:
         self.suggestions = list(kwargs["suggestions"])
         return len(self.suggestions)
-
-
-def test_event_recording_refuses_an_overflowing_unit_plan() -> None:
-    units = [f"Document component {index}" for index in range(100)]
-    routing = {
-        **_routing(
-            selected_ids=["code-reviewer", "technical-writer"],
-            units=units,
-        ),
-        "trace_id": "turn",
-    }
-    store = _BatchStore()
-
-    recorded = record_suggested_delegations(
-        store,  # type: ignore[arg-type]
-        session_id="session",
-        host="codex",
-        routing=routing,
-    )
-
-    assert recorded == 0
-    assert store.suggestions == []
-    assert build_unit_agent_plan(routing) == []
 
 
 def _verified_binding(delivery: str) -> dict[str, Any]:
@@ -868,28 +515,3 @@ def _verified_binding(delivery: str) -> dict[str, Any]:
     }
 
 
-def test_a_loaded_unit_produces_no_delegation_plan() -> None:
-    """`load` is the deterministic default, and it must not plan a spawn.
-
-    This is rule 2 -- the specialist works inside the existing conversation --
-    expressed where it is actually decided. Before Job B was removed the
-    default was `delegate`, so every staffed unit produced a plan row telling
-    the host to dispatch a child. Nothing may reintroduce that silently.
-    """
-
-    assert build_unit_agent_plan(_verified_binding("load")) == []
-
-
-def test_a_verified_workforce_route_plans_no_delegation_at_all() -> None:
-    """Corrects this test's earlier claim, which was measured and found false.
-
-    It used to assert that `delivery="delegate"` still produced a plan, and read
-    as proof that inference could ask for delegation. It could not: the only
-    schema carrying `delivery` had no caller, so the staffing verifier's "load"
-    default always stood. A hand-built binding reached a branch no real turn
-    could. The branch is retired, so the delivery value is now irrelevant --
-    a verified workforce route plans nothing either way.
-    """
-
-    assert build_unit_agent_plan(_verified_binding("delegate")) == []
-    assert build_unit_agent_plan(_verified_binding("load")) == []

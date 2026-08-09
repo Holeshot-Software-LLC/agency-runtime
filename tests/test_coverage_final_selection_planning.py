@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import io
 import json
-from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -160,40 +159,6 @@ def test_bounded_plan_strings_rejects_invalid_or_duplicate_values(
     digests: bool,
 ) -> None:
     assert unit_assignment._bounded_plan_strings(value, digests=digests) is None
-
-
-def test_unit_plan_projection_rejects_every_version_boundary(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    assert unit_assignment.project_unit_agent_plan("not-a-plan") is None
-    assert unit_assignment.project_unit_agent_plan(["not-a-row"]) is None
-    assert (
-        unit_assignment.project_unit_agent_plan(
-            [{**_legacy_plan(), "assignment_version": "invalid"}]
-        )
-        is None
-    )
-    assert unit_assignment.project_unit_agent_plan([_legacy_plan()]) == [_legacy_plan()]
-    assert unit_assignment.project_unit_agent_plan([_legacy_plan()], allow_legacy=False) is None
-
-    current = unit_assignment.build_unit_agent_plan(_simple_routing())
-    assert len(current) == 1
-    missing_field = deepcopy(current[0])
-    missing_field.pop("goal_hash")
-    assert unit_assignment.project_unit_agent_plan([missing_field]) is None
-
-    invalid_confidence = deepcopy(current[0])
-    invalid_confidence["selection_confidence"] = True
-    assert unit_assignment.project_unit_agent_plan([invalid_confidence]) is None
-
-    future = deepcopy(current[0])
-    future["assignment_version"] = str(unit_assignment.UNIT_AGENT_ASSIGNMENT_VERSION + 1)
-    assert unit_assignment.project_unit_agent_plan([future]) is None
-    assert unit_assignment.project_unit_agent_plan([_legacy_plan(), current[0]]) is None
-
-    monkeypatch.setattr(unit_assignment, "project_unit_agent_plan", lambda *_args, **_kwargs: None)
-    with pytest.raises(RuntimeError, match="generated unit-agent plan is invalid"):
-        unit_assignment.build_unit_agent_plan(_simple_routing())
 
 
 def test_pipeline_reuse_guards_and_compatibility_abstention() -> None:

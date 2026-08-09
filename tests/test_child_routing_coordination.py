@@ -24,10 +24,6 @@ from agency_runtime.core.preflight_recipe import (
 from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.turn_intent import TurnState, classify_turn_intent
-from agency_runtime.core.unit_assignment import build_unit_agent_plan, work_unit_id_from_text
-from agency_runtime.core.workforce.routing_projection import (
-    workforce_work_units_from_descriptors,
-)
 
 
 def _key(value: str) -> str:
@@ -246,71 +242,6 @@ def test_native_child_parent_scope_ambiguity_and_timeout_fail_closed(tmp_path) -
         )
 
 
-def _planned_parent_unit_fixture() -> tuple[str, list[dict], dict]:
-    request = "Review and refactor this Python code for security and correctness"
-    goal = workforce_work_units_from_descriptors(
-        request,
-        [
-            {
-                "ordinal": 1,
-                "artifact_kind": "implementation-change",
-                "lifecycle_phase": "implementation",
-                "authority": "modify",
-            }
-        ],
-    )[0]
-    work_unit_id = work_unit_id_from_text(goal)
-    catalog = [
-        {
-            "slug": "python-application-engineer",
-            "name": "Python Application Engineer",
-            "description": "Implements secure Python application changes.",
-            "capabilities": ["python-application-development"],
-            "tags": ["python", "implementation"],
-            "categories": ["engineering"],
-            "required_tools": [],
-            "evidence_requirements": ["targeted-tests"],
-            "version": "revision-1",
-            "hash": "a" * 64,
-        }
-    ]
-    routing = {
-        "selected_ids": ["python-application-engineer"],
-        "work_units": {
-            "delegate": True,
-            "count": 1,
-            "confidence": "high",
-            "source": "test",
-            "units": [goal],
-        },
-        "unit_assignment_agents": [
-            {
-                **catalog[0],
-                "matched_work_unit_ids": [work_unit_id],
-                "primary_work_unit_ids": [work_unit_id],
-            }
-        ],
-    }
-    plan = build_unit_agent_plan(routing)
-    assert len(plan) == 1
-    snapshot = {
-        "session_id": "parent-session",
-        "trace_id": "parent-trace",
-        "status": "active",
-        "delivery_mode": "isolated",
-        "run": {"host": "codex"},
-        "unit_agent_plan": plan,
-        "selected_specialists": [
-            {
-                "slug": catalog[0]["slug"],
-                "version": catalog[0]["version"],
-                "hash": catalog[0]["hash"],
-            }
-        ],
-    }
-    return goal, catalog, snapshot
-
-
 def test_every_host_delivers_specialists_directly_into_the_caller() -> None:
     """Delivery is direct on every host, for parents and for native children.
 
@@ -494,76 +425,6 @@ def test_unplanned_child_reuses_inferred_route_and_abstains_when_budget_is_zero(
     assert abstained["status"] == "child_budget_abstained"
 
 
-
-
-@pytest.mark.parametrize(
-    "case",
-    [
-        "wrong_goal",
-        "wrong_host",
-        "stale_revision",
-        "multi_specialist_unit",
-        "malformed_run",
-    ],
-)
-def test_parent_unit_reuse_rejects_unbound_or_ambiguous_assignments(case) -> None:
-    goal, catalog, snapshot = _planned_parent_unit_fixture()
-    child_goal = goal
-    if case == "wrong_goal":
-        child_goal = f"{goal} Also publish the release."
-    elif case == "wrong_host":
-        snapshot["run"]["host"] = "claude"
-    elif case == "stale_revision":
-        catalog[0]["hash"] = "b" * 64
-    elif case == "multi_specialist_unit":
-        snapshot["unit_agent_plan"][0]["recommended_agents"] = [
-            "python-application-engineer",
-            "code-reviewer",
-        ]
-    elif case == "malformed_run":
-        snapshot["run"] = "codex"
-
-    route_calls: list[str] = []
-
-    class ParentStore:
-        @staticmethod
-        def get_completion_evidence_snapshot(_session_id, _trace_id):
-            return snapshot
-
-    class Pipeline:
-        @staticmethod
-        def route(_session_id, message, _catalog, **_kwargs):
-            route_calls.append(message)
-            return {"selected_ids": [], "status": "abstained"}
-
-    classification = classify_turn_intent(
-        child_goal,
-        TurnState(state_known=True, state_status="ready"),
-    )
-    routing, _, _ = _resolve_preflight_routing(
-        ParentStore(),
-        session_id="child-session",
-        trace_id="child-trace",
-        user_message=child_goal,
-        host="codex",
-        platform="windows",
-        available_tools=(),
-        capability_receipt=SimpleNamespace(as_dict=lambda: {}),
-        catalog=catalog,
-        config=AgencyConfig(providers=()),
-        classification=classification,
-        routing_fingerprint="routing-fingerprint",
-        policy_fingerprint="policy-fingerprint",
-        roster_generation=1,
-        pipeline=Pipeline,
-        parent_session_id="parent-session",
-        parent_trace_id="parent-trace",
-    )
-
-    assert route_calls == [child_goal]
-    assert routing["child_routing_source"] == "inference_unavailable"
-    assert routing["selected_ids"] == []
-    assert routing.get("parent_unit_reused") is not True
 
 
 def test_parent_unit_cache_identity_binds_parent_policy_roster_and_workforce() -> None:

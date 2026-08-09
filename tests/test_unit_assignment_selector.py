@@ -19,17 +19,13 @@ from agency_runtime.core.host_capabilities import (
     host_capability_receipt_from_native_evidence,
     native_adapter_capability_receipt,
 )
-from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.selector import judge, pipeline
-from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.unit_assignment import (
     MAX_UNIT_SELECTION_WORKERS,
     _compatible_unit_selection,
     _mutation_scope,
     _supports_unit_deliverable,
     assignment_agents_from_catalog,
-    build_unit_agent_plan,
-    hydrate_unit_agent_plan,
     work_unit_id_from_text,
 )
 
@@ -326,58 +322,6 @@ def test_mutating_documentation_units_filter_non_modifiers_before_inference(
     assert [item["slug"] for item in snapshot] == ["technical-writer"]
 
 
-def test_mutating_primary_keeps_required_reviewer_in_compatible_closure(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    catalog = [
-        _agent(
-            "ui-designer",
-            "dashboard UI layout implementation",
-            requires=["accessibility-auditor"],
-            authority="modify",
-            task_types=["analysis", "implementation"],
-        ),
-        _agent(
-            "accessibility-auditor",
-            "dashboard accessibility review",
-        ),
-    ]
-    calls = _install_provider(monkeypatch, lambda _task, _candidates: ["ui-designer"])
-
-    snapshot = assignment_agents_from_catalog(
-        catalog,
-        _routing(
-            "Update the dashboard UI layout",
-            "Revise the dashboard navigation layout",
-        ),
-        config=_provider_config(),
-        host="codex",
-        platform="windows",
-        **_capability_kwargs(),
-    )
-    plan = build_unit_agent_plan(
-        {
-            **_routing(
-                "Update the dashboard UI layout",
-                "Revise the dashboard navigation layout",
-            ),
-            "unit_assignment_agents": snapshot,
-        }
-    )
-
-    assert [slugs for _task, slugs in calls] == [
-        ("ui-designer",),
-        ("ui-designer",),
-    ]
-    assert [item["slug"] for item in snapshot] == [
-        "ui-designer",
-        "accessibility-auditor",
-    ]
-    assert all(
-        item["recommended_agents"] == ["ui-designer", "accessibility-auditor"] for item in plan
-    )
-
-
 def test_mutating_units_without_proven_authority_never_call_inference(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -481,60 +425,6 @@ def test_unavailable_inference_cannot_be_reinterpreted_as_a_unit_assignment() ->
     assert _compatible_unit_selection("Review this patch", routing, catalog) == []
 
 
-def test_offline_unit_routing_never_recommends_reviewed_contracts() -> None:
-    task = (
-        "Audit the Python security model, implement the remediation, and update its "
-        "operator documentation as independent work units."
-    )
-    routing = {
-        "selected_ids": [],
-        "work_units": detect_work_units(task),
-    }
-    config = AgencyConfig(
-        providers=(),
-        judge=JudgeConfig(model="", confidence_bypass_threshold=999.0, max_selected=3),
-        ollama=OllamaConfig(enabled=False, model=""),
-    )
-    receipt = host_capability_receipt_from_native_evidence(
-        "codex",
-        platform="windows",
-        native_record={
-            "host": "codex",
-            "executable_discovered": True,
-            "registered": True,
-            "enabled": True,
-            "managed_plugin_version": "0.1.0",
-            "launcher_artifacts_current": True,
-        },
-    )
-    assert receipt.status == "native-installation-verified"
-
-    assignments = assignment_agents_from_catalog(
-        bundled_roster(),
-        routing,
-        config=config,
-        session_id="parent",
-        trace_id="turn",
-        host="codex",
-        platform="windows",
-        available_tools=tuple(receipt.capabilities),
-        capability_receipt=receipt.as_dict(),
-    )
-    planned_routing = {**routing, "unit_assignment_agents": assignments}
-    plan = hydrate_unit_agent_plan(
-        planned_routing,
-        build_unit_agent_plan(planned_routing),
-    )
-
-    assert plan == []
-    assert "clinical-evidence-agent" not in {
-        specialist for item in plan for specialist in item["compatible_specialists"]
-    }
-    assert "operations-manager" not in {
-        specialist for item in plan for specialist in item["compatible_specialists"]
-    }
-
-
 def test_diagnostic_unit_routing_accepts_an_opaque_installation_receipt() -> None:
     receipt = host_capability_receipt_from_native_evidence(
         "codex",
@@ -628,85 +518,3 @@ def test_mutation_scope_is_imperative_aware(unit: str, expected: str) -> None:
     assert _mutation_scope(unit) == expected
 
 
-def test_compatible_requirement_closure_is_primary_first_and_unions_metadata(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    catalog = [
-        _agent(
-            "architecture-reviewer",
-            "delegation architecture review",
-            requires=["evidence-specialist"],
-            required_tools=["repository-read"],
-            evidence=["architecture findings"],
-        ),
-        _agent(
-            "evidence-specialist",
-            "test evidence verification",
-            required_tools=["test-execution"],
-            evidence=["test receipts"],
-        ),
-    ]
-    _install_provider(monkeypatch, lambda _task, _candidates: ["architecture-reviewer"])
-    routing = _routing("Review delegation architecture", "Review worker architecture")
-
-    snapshot = assignment_agents_from_catalog(
-        catalog,
-        routing,
-        config=_provider_config(),
-        host="codex",
-        platform="windows",
-        **_capability_kwargs(),
-    )
-    plan = build_unit_agent_plan({**routing, "unit_assignment_agents": snapshot})
-
-    assert all(
-        item["recommended_agents"] == ["architecture-reviewer", "evidence-specialist"]
-        for item in plan
-    )
-    assert all(item["required_tools"] == ["repository-read", "test-execution"] for item in plan)
-    assert all(
-        item["required_evidence"] == ["architecture findings", "test receipts"] for item in plan
-    )
-    hydrated = hydrate_unit_agent_plan(
-        {**routing, "unit_assignment_agents": snapshot},
-        plan,
-    )
-    assert all(
-        item["compatible_specialists"] == ["architecture-reviewer", "evidence-specialist"]
-        for item in hydrated
-    )
-
-
-def test_conflicting_inferred_specialist_is_excluded_from_each_unit_plan(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    catalog = [
-        _agent(
-            "implementation-reviewer",
-            "implementation review",
-            conflicts_with=["conflicting-reviewer"],
-        ),
-        _agent(
-            "conflicting-reviewer",
-            "implementation review",
-            conflicts_with=["implementation-reviewer"],
-        ),
-    ]
-    _install_provider(
-        monkeypatch,
-        lambda _task, _candidates: ["implementation-reviewer", "conflicting-reviewer"],
-    )
-    routing = _routing("Review implementation one", "Review implementation two")
-
-    snapshot = assignment_agents_from_catalog(
-        catalog,
-        routing,
-        config=_provider_config(),
-        host="codex",
-        platform="windows",
-        **_capability_kwargs(),
-    )
-    plan = build_unit_agent_plan({**routing, "unit_assignment_agents": snapshot})
-
-    assert [item["slug"] for item in snapshot] == ["implementation-reviewer"]
-    assert all(item["recommended_agents"] == ["implementation-reviewer"] for item in plan)

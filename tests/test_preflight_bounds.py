@@ -21,7 +21,6 @@ from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.delegation.events import (
     MAX_SUGGESTED_WORK_UNITS,
     MAX_WORK_UNIT_CHARS,
-    record_suggested_delegations,
 )
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.preflight import run_preflight
@@ -526,7 +525,6 @@ def test_oversized_complete_context_fails_before_ready_is_persisted(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from agency_runtime.core import specialist_context
 
     store = Store(tmp_path / "oversized-context.db")
     _activate_test_specialist(store)
@@ -567,7 +565,6 @@ def test_multibyte_complete_context_fails_before_ready_is_persisted(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from agency_runtime.core import specialist_context
 
     store = Store(tmp_path / "multibyte-context.db")
     _activate_test_specialist(store)
@@ -1564,49 +1561,6 @@ class _BatchStore:
     def record_suggested_delegations_batch(self, **kwargs: Any) -> int:
         self.calls.append(kwargs)
         return 10_000
-
-
-def test_suggestion_recording_refuses_overflow_and_requires_correlation() -> None:
-    store = _BatchStore()
-    routing = {
-        "trace_id": "turn",
-        "selected_ids": ["agent-" + "a" * 1_000],
-        "work_units": {
-            "delegate": True,
-            "count": 100,
-            "units": [f"unit {index} " + "x" * 1_000 for index in range(100)],
-        },
-    }
-
-    recorded = record_suggested_delegations(
-        store,  # type: ignore[arg-type]
-        session_id="session",
-        host="codex",
-        routing=routing,
-    )
-
-    assert recorded == 0
-    assert store.calls == []
-
-    assert (
-        record_suggested_delegations(
-            store,  # type: ignore[arg-type]
-            session_id="",
-            host="codex",
-            routing=routing,
-        )
-        == 0
-    )
-    assert (
-        record_suggested_delegations(
-            store,  # type: ignore[arg-type]
-            session_id="session",
-            host="codex",
-            routing={**routing, "trace_id": ""},
-        )
-        == 0
-    )
-    assert store.calls == []
 
 
 def test_public_model_receipt_requires_explicit_session_and_trace(

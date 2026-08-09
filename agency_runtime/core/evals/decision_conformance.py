@@ -575,17 +575,6 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="modern-preflight-plan-drift-is-accepted",
-        invariant="Modern durable unit plans must exactly match their replayed construction.",
-        source_path="agency_runtime/core/preflight_recipe.py",
-        before="    elif rebuilt != unit_agent_plan:",
-        after="    elif False:",
-        test_node=(
-            "tests/test_turn_coverage_complete_header_preflight.py::"
-            "test_preflight_recipe_rejects_current_unit_plan_drift"
-        ),
-    ),
-    DecisionMutation(
         mutation_id="product-host-restores-ephemeral-parent",
         invariant=(
             "Ordinary Codex product trials persist the parent turn required by native "

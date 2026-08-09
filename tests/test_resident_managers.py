@@ -30,12 +30,6 @@ from agency_runtime.core.specialist_context import (
     hydrate_selected_specialist_context,
     rebuild_versioned_specialist_context,
 )
-from agency_runtime.core.unit_assignment import (
-    assignment_agents_from_catalog,
-    build_unit_agent_plan,
-    project_unit_assignment_agents,
-    work_unit_id_from_text,
-)
 from agency_runtime.server.mcp_tools import dispatch_tool_call
 
 
@@ -147,62 +141,6 @@ def test_resident_identity_is_canonical_and_compatibility_aliases_share_it() -> 
         == "resident manager 'agency-steward' is parent-only and cannot "
         "be used as an ordinary specialist"
     )
-
-
-def test_resident_managers_are_rejected_from_assignment_metadata_and_plans() -> None:
-    resident = {
-        "slug": "agency-steward",
-        "name": "Agency Steward",
-        "description": "Protects the parent evidence boundary.",
-    }
-    specialist = {
-        "slug": "technical-writer",
-        "name": "Technical Writer",
-        "description": "Writes documentation.",
-    }
-    assert project_unit_assignment_agents([resident]) == []
-    assert project_unit_assignment_agents([resident], strict=True) is None
-    assert project_unit_assignment_agents([resident, specialist]) == [
-        {
-            "slug": "technical-writer",
-            "name": "Technical Writer",
-            "description": "Writes documentation.",
-            "capabilities": [],
-            "tags": [],
-        }
-    ]
-
-    manager_only = {
-        "selected_ids": list(RESIDENT_MANAGER_SLUGS),
-        "unit_assignment_agents": [resident],
-        "work_units": {
-            "delegate": True,
-            "count": 2,
-            "units": ["Analyze lunar telemetry", "Coordinate the release"],
-        },
-    }
-    assert assignment_agents_from_catalog([resident], manager_only) == []
-    assert build_unit_agent_plan(manager_only) == []
-
-    unit_goals = ["Write installation documentation", "Update the README"]
-    claimed_specialist = {
-        **specialist,
-        "matched_work_unit_ids": [work_unit_id_from_text(item) for item in unit_goals],
-        "primary_work_unit_ids": [work_unit_id_from_text(item) for item in unit_goals],
-    }
-    specialist_route = {
-        **manager_only,
-        "selected_ids": ["agency-steward", "technical-writer"],
-        "unit_assignment_agents": [resident, claimed_specialist],
-        "work_units": {
-            "delegate": True,
-            "count": 2,
-            "units": unit_goals,
-        },
-    }
-    assert {row["recommended_agent"] for row in build_unit_agent_plan(specialist_route)} == {
-        "technical-writer"
-    }
 
 
 def test_ordinary_specialist_hydration_omits_resident_manager_prompts() -> None:

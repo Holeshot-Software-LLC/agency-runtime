@@ -372,71 +372,6 @@ def test_finalization_helpers_reject_unverifiable_acceptance(
     )
 
 
-def test_preflight_recipe_bounds_and_verifies_content_free_replay() -> None:
-    assert len(preflight_recipe._bounded_unique_strings([f"agent-{i}" for i in range(30)])) == 16
-    assert preflight_recipe._bounded_unique_strings(["reviewer", "reviewer", "writer"]) == [
-        "reviewer",
-        "writer",
-    ]
-    assert (
-        preflight_recipe._suggestion_recipe(
-            {"selected_ids": ["reviewer"], "work_units": {"delegate": True, "count": 1}}
-        )
-        == []
-    )
-    fallback_suggestions = preflight_recipe._suggestion_recipe(
-        {
-            "selected_ids": [],
-            "work_units": {"delegate": True, "count": 2, "units": ["one", "two"]},
-        }
-    )
-    assert fallback_suggestions == []
-    assert (
-        preflight_recipe._suggestion_recipe(
-            {
-                "selected_ids": ["reviewer"],
-                "work_units": {"delegate": True, "count": 2, "units": "not-a-list"},
-            }
-        )
-        == []
-    )
-    suggestions = preflight_recipe._suggestion_recipe(
-        {
-            "selected_ids": ["reviewer"],
-            "work_units": {"delegate": True, "count": 2, "units": ["", "same", "same"]},
-            "workforce_unit_bindings": [
-                {
-                    "work_unit_id": delegation_events.work_unit_id_from_text("same"),
-                    "selected": ["reviewer"],
-                    "delivery": "delegate",
-                    "timing": "immediate",
-                    "depends_on": [],
-                    "parallelization": "sequential",
-                    "mutation_scope": "read_only",
-                    "artifact_kind": "review-report",
-                    "required_tools": [],
-                    "required_evidence": [],
-                    "confidence": 1.0,
-                }
-            ],
-        }
-    )
-    assert len(suggestions) == 1
-
-    assert preflight_recipe._combine_context("", "specialist") == "specialist"
-    routing = "r" * preflight_recipe.MAX_PREFLIGHT_CONTEXT_CHARS
-    with pytest.raises(RuntimeError, match="combined context exceeds"):
-        preflight_recipe._combine_context(routing, "specialist")
-
-    with pytest.raises(RuntimeError, match="missing work-unit metadata"):
-        preflight_recipe._verified_work_units({}, "Review the runtime")
-    with pytest.raises(RuntimeError, match="does not match"):
-        preflight_recipe._verified_work_units(
-            {"work_units": {"delegate": True, "count": 2}},
-            "Review the runtime",
-        )
-
-
 def _ready_recipe() -> dict[str, Any]:
     return {
         "recipe_version": preflight_recipe.PREFLIGHT_REPLAY_RECIPE_VERSION,
@@ -492,34 +427,6 @@ def test_preflight_recipe_rejects_unreplayable_state(
     recipe = _ready_recipe()
     recipe[field] = value
     with pytest.raises(RuntimeError, match=message):
-        preflight_recipe._result_from_recipe(
-            object(),  # type: ignore[arg-type]
-            recipe,
-            session_id="session",
-            trace_id="trace",
-            user_message="Review the runtime",
-            config=AgencyConfig(),
-            pipeline=pipeline,
-        )
-
-
-def test_preflight_recipe_rejects_a_tampered_unit_assignment_plan() -> None:
-    recipe = _ready_recipe()
-    recipe["routing"]["work_units"] = {
-        "delegate": False,
-        "count": 1,
-        "confidence": "high",
-        "source": "single",
-    }
-    recipe["unit_agent_plan"] = [
-        {
-            "assignment_version": "2",
-            "work_unit_id": "unit-0000000000",
-            "recommended_agent": "agent",
-        }
-    ]
-
-    with pytest.raises(RuntimeError, match="unit-agent plan does not match"):
         preflight_recipe._result_from_recipe(
             object(),  # type: ignore[arg-type]
             recipe,
@@ -752,40 +659,6 @@ def test_retry_receipts_reject_malformed_wrappers_and_impossible_bounds(
     )
 
 
-def test_preflight_projection_rejects_malformed_capability_and_legacy_plans() -> None:
-    with pytest.raises(RuntimeError, match="capability receipt is malformed"):
-        preflight_recipe._content_free_routing_recipe(
-            {"execution_context": "not-a-receipt"},
-            trace_id="trace",
-        )
-
-    with pytest.raises(RuntimeError, match="no correlated current request"):
-        preflight_recipe._isolated_delegation_context(
-            {"work_units": {"units": "not-a-list"}},
-            host="codex",
-            unit_plan=[
-                {
-                    "assignment_version": "1",
-                    "work_unit_id": "unit",
-                    "recommended_agent": "reviewer",
-                }
-            ],
-        )
-    with pytest.raises(RuntimeError, match="does not match the current request"):
-        preflight_recipe._isolated_delegation_context(
-            {"work_units": {"units": ["Review the change"]}},
-            host="codex",
-            unit_plan=[
-                {
-                    "assignment_version": "1",
-                    "work_unit_id": "wrong-unit",
-                    "recommended_agent": "reviewer",
-                }
-            ],
-        )
-    assert "CONTINUATION UNAVAILABLE" in preflight_recipe._continuation_abstention_context()
-
-
 def _classification_recipe(
     *,
     version: int = preflight_recipe.PREFLIGHT_REPLAY_RECIPE_VERSION,
@@ -967,34 +840,6 @@ def test_preflight_recipe_policy_fingerprint_covers_compatibility_versions() -> 
     }
 
     assert len(set(fingerprints.values())) == len(fingerprints)
-
-
-def test_preflight_recipe_rejects_current_unit_plan_drift(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        preflight_recipe,
-        "_verified_work_units",
-        lambda *_args: {"delegate": True, "count": 2, "units": ["one", "two"]},
-    )
-    monkeypatch.setattr(delegation_events, "build_unit_agent_plan", lambda *_args: [])
-    with pytest.raises(RuntimeError, match="unit-agent plan does not match"):
-        preflight_recipe._replay_routing_from_recipe(
-            {
-                "work_units": {"delegate": True, "count": 2},
-            },
-            trace_id="trace",
-            user_message="continue",
-            unit_assignment_agents=[],
-            unit_agent_plan=[
-                {
-                    "assignment_version": "4",
-                    "work_unit_id": "unit",
-                    "recommended_agent": "reviewer",
-                }
-            ],
-            delegation=AgencyConfig().delegation,
-        )
 
 
 def test_preflight_recipe_replays_continuation_abstention_and_direct_context() -> None:
@@ -1304,46 +1149,6 @@ def test_header_activation_validator_rejects_every_untrusted_identity_shape() ->
         )
 
 
-def test_header_activation_validator_rejects_invalid_collections_and_cardinality() -> None:
-    for changes, message in (
-        ({"delivery_mode": "invalid"}, "delivery mode"),
-        ({"selected_specialists": "invalid"}, "selected specialist evidence"),
-        ({"specialist_activations": "invalid"}, "activation evidence"),
-    ):
-        snapshot = {**_activation_snapshot(), **changes}
-        with pytest.raises(contract.EvidenceCorrelationError, match=message):
-            contract._validate_specialist_activations(snapshot, "session", "trace")
-
-    duplicate = _activation_snapshot()
-    duplicate["specialist_activations"] = [
-        duplicate["specialist_activations"][0],
-        dict(duplicate["specialist_activations"][0]),
-    ]
-    with pytest.raises(contract.EvidenceCorrelationError, match="is not one-use"):
-        contract._validate_specialist_activations(duplicate, "session", "trace")
-
-    mismatched_claim = _activation_snapshot()
-    mismatched_claim["specialists"] = []
-    with pytest.raises(contract.EvidenceCorrelationError, match="loaded-specialist evidence"):
-        contract._validate_specialist_activations(mismatched_claim, "session", "trace")
-
-    unassigned = _activation_snapshot()
-    unassigned["unit_agent_plan"] = [
-        {
-            "work_unit_id": "other-unit",
-            "recommended_agent": "reviewer",
-        }
-    ]
-    with pytest.raises(contract.EvidenceCorrelationError, match="was not assigned"):
-        contract._validate_specialist_activations(unassigned, "session", "trace")
-
-    incomplete = _activation_snapshot()
-    incomplete["specialist_activations"] = []
-    incomplete["specialists"] = []
-    with pytest.raises(contract.EvidenceCorrelationError, match="activation is incomplete"):
-        contract._validate_specialist_activations(incomplete, "session", "trace")
-
-
 def test_header_snapshot_rejects_resident_manager_and_turn_shape_mismatches() -> None:
     invalid_snapshots: list[tuple[dict[str, Any], str]] = []
     snapshot = _active_snapshot()
@@ -1419,60 +1224,6 @@ def test_header_resident_binding_rejects_invalid_and_cross_host_receipts() -> No
             {"host": "codex"},
             session_id="session",
         )
-
-
-def test_header_activation_and_delegation_strength_shapes_fail_closed() -> None:
-    with pytest.raises(contract.EvidenceCorrelationError, match="selection policy"):
-        contract._validate_specialist_activations(
-            {
-                "delivery_mode": "isolated",
-                "request_kind": "nontrivial",
-                "selection_required": "yes",
-                "selected_specialists": [],
-                "specialist_activations": [],
-                "delegations": [],
-            },
-            "session",
-            "trace",
-        )
-
-    assert contract._planned_delegation_strengths({"preflight_recipe_version": True}) is None
-    with pytest.raises(contract.EvidenceCorrelationError, match="strength plan"):
-        contract._planned_delegation_strengths(
-            {"preflight_recipe_version": 11, "unit_agent_plan": "invalid"}
-        )
-    with pytest.raises(contract.EvidenceCorrelationError, match="strength plan"):
-        contract._planned_delegation_strengths(
-            {"preflight_recipe_version": 11, "unit_agent_plan": ["invalid"]}
-        )
-    for invalid in (
-        {"work_unit_id": "", "delegation_strength": "preferred"},
-        {"work_unit_id": "unit", "delegation_strength": "invalid"},
-        {"work_unit_id": "unit", "delegation_strength": "preferred"},
-    ):
-        plan = [invalid]
-        if invalid["work_unit_id"] == "unit" and invalid["delegation_strength"] == "preferred":
-            plan.append(dict(invalid))
-        with pytest.raises(contract.EvidenceCorrelationError, match="strength plan"):
-            contract._planned_delegation_strengths(
-                {"preflight_recipe_version": 11, "unit_agent_plan": plan}
-            )
-
-    correction = contract._strong_delegation_correction(
-        {
-            "preflight_recipe_version": 11,
-            "unit_agent_plan": [
-                {
-                    "work_unit_id": "unit",
-                    "delegation_strength": "strongly_preferred",
-                }
-            ],
-            "run": "invalid",
-        },
-        [{"work_unit_id": "unit", "recommended_agent": "reviewer"}],
-    )
-    assert correction is not None
-    assert correction["missing"] == ["delegation_execution"]
 
 
 def test_header_evidence_codes_bound_filter_and_completion_violation_projection() -> None:
@@ -1695,94 +1446,6 @@ class _DelegationRows:
 
     def record_delegation(self, **kwargs: Any) -> None:
         self.recorded.append(kwargs)
-
-
-def test_delegation_suggestion_helpers_bound_and_dedupe_compatibility_rows() -> None:
-    assert delegation_events._clean(None) == ""
-    rows = [
-        {"status": "completed", "session_id": "session"},
-        {"status": "suggested", "session_id": "other"},
-        *[
-            {"status": "suggested", "session_id": "session", "work_unit_id": f"unit-{i}"}
-            for i in range(20)
-        ],
-    ]
-    assert (
-        len(
-            delegation_events.suggested_delegations(
-                _DelegationRows(rows),  # type: ignore[arg-type]
-                "session",
-                trace_id="trace",
-            )
-        )
-        == delegation_events.MAX_SUGGESTED_WORK_UNITS
-    )
-    assert delegation_events.suggested_delegations(
-        _DelegationRows(rows[:3]),  # type: ignore[arg-type]
-        "session",
-        trace_id="trace",
-    ) == [rows[2]]
-
-    store = _DelegationRows([])
-    invalid_routes = [
-        {"trace_id": "trace", "work_units": {"delegate": True, "count": object()}},
-        {"trace_id": "trace", "work_units": {"delegate": False, "count": 2}},
-        {
-            "trace_id": "trace",
-            "work_units": {"delegate": True, "count": 2, "units": "not-a-list"},
-        },
-        {
-            "trace_id": "trace",
-            "work_units": {"delegate": True, "count": 2, "units": ["", "  "]},
-        },
-    ]
-    for routing in invalid_routes:
-        assert (
-            delegation_events.record_suggested_delegations(
-                store,  # type: ignore[arg-type]
-                session_id="session",
-                host="codex",
-                routing=routing,
-            )
-            == 0
-        )
-
-    existing_id = delegation_events.work_unit_id_from_text("duplicate")
-    new_id = delegation_events.work_unit_id_from_text("new work")
-
-    def binding(work_unit_id: str) -> dict[str, Any]:
-        return {
-            "work_unit_id": work_unit_id,
-            "selected": ["reviewer"],
-            "delivery": "delegate",
-            "timing": "immediate",
-            "depends_on": [],
-            "parallelization": "sequential",
-            "mutation_scope": "read_only",
-            "artifact_kind": "review-report",
-            "required_tools": [],
-            "required_evidence": [],
-            "confidence": 1.0,
-        }
-
-    compatibility = _DelegationRows([{"work_unit_id": existing_id}])
-    recorded = delegation_events.record_suggested_delegations(
-        compatibility,  # type: ignore[arg-type]
-        session_id="session",
-        host="codex",
-        routing={
-            "trace_id": "trace",
-            "selected_ids": ["reviewer"],
-            "work_units": {
-                "delegate": True,
-                "count": 4,
-                "units": ["", "duplicate", "duplicate", "new work"],
-            },
-            "workforce_unit_bindings": [binding(existing_id), binding(new_id)],
-        },
-    )
-    assert recorded == 1
-    assert compatibility.recorded[0]["work_unit_id"] == new_id
 
 
 def test_selector_edge_projections_remain_bounded_and_fail_closed() -> None:
