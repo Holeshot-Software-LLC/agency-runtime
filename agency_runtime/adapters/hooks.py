@@ -35,7 +35,6 @@ from agency_runtime.core.installer_contracts import (
     CODEX_NATIVE_WAIT_HOOK_TOOL_NAMES,
 )
 from agency_runtime.core.native_child_activation import (
-    NATIVE_CHILD_ACTIVATION_TOKEN_CHARS,
     NativeChildRunIdentity,
     build_native_child_run_identity,
 )
@@ -43,8 +42,6 @@ from agency_runtime.core.native_child_prompt_delivery import (
     NativeChildPromptDelivery,
     is_codex_opaque_collaboration_message,
     parse_native_child_prompt_delivery,
-    render_codex_direct_native_child_prompt_delivery,
-    render_native_child_prompt_delivery,
 )
 from agency_runtime.core.observability import (
     RuntimeBoundary,
@@ -53,10 +50,6 @@ from agency_runtime.core.observability import (
 )
 from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.store.sqlite import Store
-from agency_runtime.core.unit_assignment import (
-    native_child_activation_contract,
-    work_unit_goal_hash,
-)
 
 logger = logging.getLogger(__name__)
 # A hook speaks one JSON object on stdout and must leave stderr clean; the host
@@ -188,7 +181,6 @@ _CODEX_FOLLOWUP_TOOL_NAMES = frozenset(
 )
 _CLAUDE_AGENT_TOOL_NAME = "Agent"
 _CLAUDE_CHILD_IDENTITY_MARKER = "[AGENCY NATIVE CHILD IDENTITY v1]"
-_NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN = "x" * NATIVE_CHILD_ACTIVATION_TOKEN_CHARS
 _PLANNED_NATIVE_WORK_UNIT_PATTERN = re.compile(r"^unit-[0-9a-f]{10}$")
 # Deterministic lexical narrowing runs inside the hook, so a few candidates are read
 # in rank order until one has a pinned, resolvable prompt version.
@@ -197,41 +189,6 @@ _JIT_STAFFING_CANDIDATE_LIMIT = 5
 # the practical ceiling: bodies are ~2.6k chars at the median, so three cards is
 # roughly 8k against the bounded hook envelope.
 _JIT_STAFFING_MAX_CARDS = 3
-
-
-def _emit_codex_reconciliation_diagnostic(
-    reason: str,
-    *,
-    resolved_work_unit: str,
-    delivery_activated: bool,
-    store: Any,
-    session_id: str,
-    trace_id: str,
-) -> None:
-    """Emit one content-free rejection code only inside the activation canary."""
-
-    if not reason or not resolved_work_unit or delivery_activated:
-        return
-    from agency_runtime.core.codex_activation_verification import (
-        CODEX_RECONCILIATION_DIAGNOSTIC_REASONS,
-        is_restricted_codex_activation_canary_environment,
-    )
-
-    if reason not in CODEX_RECONCILIATION_DIAGNOSTIC_REASONS:
-        raise ValueError("Codex reconciliation diagnostic reason is invalid")
-    if is_restricted_codex_activation_canary_environment(os.environ):
-        recorder = getattr(store, "record_codex_canary_reconciliation_diagnostic", None)
-        if not callable(recorder):
-            raise RuntimeError("Codex canary diagnostic store is unavailable")
-        recorder(
-            session_id=session_id,
-            trace_id=trace_id,
-            reason=reason,
-        )
-        print(
-            f"agency_hook_diagnostic codex_post_tool_reconcile={reason}",
-            file=sys.stderr,
-        )
 
 
 def _bounded_completion_reason(reason: object) -> str:
@@ -329,23 +286,6 @@ class HookCorrelation:
         # A session is not a turn. Falling back to it would falsely correlate
         # unrelated turns; callers without a turn/tool id remain uncorrelated.
         return self.turn_id or self.tool_use_id
-
-
-@dataclass(frozen=True, slots=True)
-class NativeChildAssignment:
-    """One exact store-verified native child work-unit binding."""
-
-    session_id: str
-    trace_id: str
-    tool_use_id: str
-    work_unit_id: str
-    specialist_slug: str
-    specialist_version: str
-    specialist_prompt_hash: str
-    goal_hash: str
-    mutation_scope: str
-    resource_hashes: tuple[str, ...]
-    required_evidence: tuple[str, ...]
 
 
 def _optional_string(payload: dict[str, Any], key: str) -> str:
@@ -590,181 +530,10 @@ def _native_child_tool_identity(
     )
 
 
-def _native_child_pre_tool_output(
-    *,
-    args: dict[str, Any],
-    task_field: str,
-    task: str,
-    prompt_body: str,
-    host: str,
-    assignment: NativeChildAssignment,
-    activation_token: str,
-) -> dict[str, Any]:
-    """Render and size-check one pure hook response before Store mutation."""
-
-    delivered_task = render_native_child_prompt_delivery(
-        task,
-        prompt_body,
-        host=host,
-        parent_session_id=assignment.session_id,
-        parent_trace_id=assignment.trace_id,
-        tool_use_id=assignment.tool_use_id,
-        work_unit_id=assignment.work_unit_id,
-        specialist_slug=assignment.specialist_slug,
-        specialist_version=assignment.specialist_version,
-        specialist_prompt_hash=assignment.specialist_prompt_hash,
-        activation_token=activation_token,
-    )
-    result = {
-        "hookSpecificOutput": {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "allow",
-            "updatedInput": {**args, task_field: delivered_task},
-        }
-    }
-    encoded = json.dumps(
-        result,
-        allow_nan=False,
-        ensure_ascii=False,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    if len(encoded) >= MAX_HOOK_OUTPUT_BYTES:
-        raise ValueError("native-child delivery exceeds the host hook limit")
-    return result
-
-
 def _is_codex_opaque_native_task(host: str, task: str) -> bool:
     """Recognize only Codex's bounded encrypted collaboration-message shape."""
 
     return host == "codex" and is_codex_opaque_collaboration_message(task)
-
-
-def _native_child_activation_contract_for_assignment(
-    task: str,
-    assignment: NativeChildAssignment,
-    *,
-    opaque_codex_task: bool,
-) -> dict[str, Any]:
-    if opaque_codex_task:
-        raise ValueError("opaque Codex authority must come from the exact Store plan scope")
-    return native_child_activation_contract(
-        task,
-        mutation_scope=assignment.mutation_scope,
-        resource_hashes=assignment.resource_hashes,
-        required_evidence=assignment.required_evidence,
-    )
-
-
-def _native_child_task_match(
-    host: str,
-    task: str,
-    assignment: NativeChildAssignment,
-) -> tuple[bool, bool]:
-    """Return exact-match status and whether Codex owns the hidden task text."""
-
-    if work_unit_goal_hash(task) == assignment.goal_hash:
-        return True, False
-    if _is_codex_opaque_native_task(host, task):
-        return True, True
-    return False, False
-
-
-def _native_child_delivery_output(
-    *,
-    args: dict[str, Any],
-    task_field: str,
-    task: str,
-    prompt_body: str,
-    host: str,
-    assignment: NativeChildAssignment,
-    activation_token: str,
-    opaque_codex_task: bool,
-) -> dict[str, Any]:
-    """Validate one child envelope and preserve opaque Codex input unchanged."""
-
-    if opaque_codex_task:
-        preview = render_codex_direct_native_child_prompt_delivery(
-            prompt_body,
-            parent_session_id=assignment.session_id,
-            parent_trace_id=assignment.trace_id,
-            tool_use_id=assignment.tool_use_id,
-            work_unit_id=assignment.work_unit_id,
-            specialist_slug=assignment.specialist_slug,
-            specialist_version=assignment.specialist_version,
-            specialist_prompt_hash=assignment.specialist_prompt_hash,
-            goal_hash=assignment.goal_hash,
-        )
-        if len(preview) > MAX_CONTEXT_CHARS:
-            raise ValueError("native-child delivery exceeds the host context limit")
-        return {
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "permissionDecision": "allow",
-            }
-        }
-    return _native_child_pre_tool_output(
-        args=args,
-        task_field=task_field,
-        task=task,
-        prompt_body=prompt_body,
-        host=host,
-        assignment=assignment,
-        activation_token=activation_token,
-    )
-
-
-def _prepare_native_child_activation(
-    store: Any,
-    assignment: NativeChildAssignment,
-    *,
-    opaque_codex_task: bool,
-    activation_contract: dict[str, Any] | None,
-    launch_model: str = "",
-) -> dict[str, Any]:
-    """Issue one exact plaintext or Store-scoped opaque activation grant."""
-
-    method_name = (
-        "prepare_codex_opaque_native_child_activation"
-        if opaque_codex_task
-        else "prepare_delegation_activation"
-    )
-    preparer = getattr(store, method_name, None)
-    if not callable(preparer):
-        raise ValueError("native-child activation preparation is unavailable")
-    if opaque_codex_task:
-        activation = preparer(
-            session_id=assignment.session_id,
-            trace_id=assignment.trace_id,
-            work_unit_id=assignment.work_unit_id,
-            specialist_slug=assignment.specialist_slug,
-            specialist_version=assignment.specialist_version,
-            specialist_prompt_hash=assignment.specialist_prompt_hash,
-            goal_hash=assignment.goal_hash,
-            resource_hashes=assignment.resource_hashes,
-            required_evidence=assignment.required_evidence,
-            tool_use_id=assignment.tool_use_id,
-        )
-    else:
-        activation = preparer(
-            session_id=assignment.session_id,
-            trace_id=assignment.trace_id,
-            specialist_slug=assignment.specialist_slug,
-            work_unit_id=assignment.work_unit_id,
-            worker_kind="generic-worker",
-            grant_origin="native_hook",
-            tool_use_id=assignment.tool_use_id,
-            launch_model=launch_model,
-            **(activation_contract or {}),
-        )
-    if (
-        not isinstance(activation, dict)
-        or activation.get("version") != assignment.specialist_version
-        or activation.get("prompt_hash") != assignment.specialist_prompt_hash
-    ):
-        raise ValueError("prepared activation identity does not match the plan")
-    if not str(activation.get("activation_token") or "") and not opaque_codex_task:
-        raise ValueError("prepared activation token is unavailable")
-    return activation
 
 
 def _project_native_child_goal(
