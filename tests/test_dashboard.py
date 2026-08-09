@@ -29,6 +29,7 @@ from agency_runtime.core.dashboard_runtime import (
     remove_dashboard_runtime,
     write_dashboard_runtime,
 )
+from agency_runtime.core.installer_contracts import CODEX_ACTIVATION_CANARY_PROOF_CONTRACT
 from agency_runtime.core.observability import correlation_observation_digest
 from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.roster.ingress import MAX_LIST_ITEMS
@@ -3749,7 +3750,7 @@ def test_dashboard_host_api_preserves_content_free_activation_proof(
     store = Store(tmp_path / "dashboard.db")
     token = "token"
     attestation = {
-        "proof_contract": "agency.codex-activation-canary.v2",
+        "proof_contract": CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
         "proof_digest": "a" * 64,
         "profile_scope": "current-profile",
         "passed_at": "2026-07-27T12:34:56Z",

@@ -10,6 +10,7 @@ import pytest
 
 from agency_runtime.core import config
 from agency_runtime.core.bounded_io import UnsafeFileError
+from agency_runtime.core.installer_contracts import CODEX_ACTIVATION_CANARY_PROOF_CONTRACT
 from agency_runtime.core.store import projections, schema, security
 from agency_runtime.core.store import sqlite as sqlite_store
 from agency_runtime.core.store.evidence import EvidenceStoreMixin
@@ -236,7 +237,7 @@ def test_store_evidence_and_roster_persistence_error_and_update_paths(tmp_path: 
     with pytest.raises(ValueError, match="complete host canary"):
         store.record_host_canary_attestation(
             host="",
-            proof_contract="agency.codex-activation-canary.v2",
+            proof_contract=CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
             proof_digest="a" * 64,
             profile_scope="current-profile",
             platform_system="Windows",
@@ -251,7 +252,7 @@ def test_store_evidence_and_roster_persistence_error_and_update_paths(tmp_path: 
     with pytest.raises(ValueError, match="profile_scope"):
         store.record_host_canary_attestation(
             host="codex",
-            proof_contract="agency.codex-activation-canary.v2",
+            proof_contract=CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
             proof_digest="a" * 64,
             profile_scope="invalid",
             platform_system="Windows",
@@ -266,7 +267,7 @@ def test_store_evidence_and_roster_persistence_error_and_update_paths(tmp_path: 
     with pytest.raises(ValueError, match="Codex current-profile"):
         store.record_host_canary_attestation(
             host="codex",
-            proof_contract="agency.codex-activation-canary.v2",
+            proof_contract=CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
             proof_digest="a" * 64,
             profile_scope="isolated-profile",
             platform_system="Windows",
@@ -342,7 +343,7 @@ def test_canary_attestation_postcondition_fails_closed() -> None:
     with pytest.raises(RuntimeError, match="postcondition"):
         store.record_host_canary_attestation(
             host="codex",
-            proof_contract="agency.codex-activation-canary.v2",
+            proof_contract=CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
             proof_digest="a" * 64,
             profile_scope="current-profile",
             platform_system="Windows",

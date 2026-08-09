@@ -12,7 +12,9 @@ MARKETPLACE_ID = "agency-runtime"
 INSTALL_MANIFEST = ".agency-runtime-install.json"
 ADAPTER_LAUNCHER_MANIFEST = ".agency-runtime-launcher.json"
 PLUGIN_VERSION = "0.1.0"
-CODEX_ACTIVATION_CANARY_PROOF_CONTRACT = "agency.codex-activation-canary.v2"
+# v3: the proof changed meaning. It attests card delivery to a harness-spawned
+# child, not the retired plan/delegation/grant/consumption chain.
+CODEX_ACTIVATION_CANARY_PROOF_CONTRACT = "agency.codex-activation-canary.v3"
 CODEX_AUTOMATION_CANARY_PROOF_CONTRACT = "agency.codex-automation-canary.v1"
 CODEX_CANARY_PROOF_CONTRACTS = frozenset(
     {

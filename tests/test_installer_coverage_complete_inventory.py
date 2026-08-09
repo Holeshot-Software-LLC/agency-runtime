@@ -14,6 +14,7 @@ import pytest
 from agency_runtime.core import installer as installer_facade
 from agency_runtime.core import installer_inventory as inventory
 from agency_runtime.core.installer_contracts import (
+    CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
     INSTALL_MANIFEST,
     PLUGIN_ID,
     PLUGIN_VERSION,
@@ -232,7 +233,7 @@ def test_native_version_and_host_version_validation_is_conservative() -> None:
 
 def _attestation(**overrides: Any) -> dict[str, Any]:
     value: dict[str, Any] = {
-        "proof_contract": "agency.codex-activation-canary.v2",
+        "proof_contract": CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
         "proof_digest": "a" * 64,
         "profile_scope": "current-profile",
         "platform_system": platform.system(),

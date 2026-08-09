@@ -40,7 +40,10 @@ from agency_runtime.core.delegation.native_labels import codex_task_name_for_wor
 from agency_runtime.core.header.contract import finalize_header
 from agency_runtime.core.header.finalize import response_hash
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
-from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
+from agency_runtime.core.installer_contracts import (
+    CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
+    CODEX_HOOK_EVENTS,
+)
 from agency_runtime.core.native_child_prompt_delivery import (
     parse_native_child_prompt_delivery,
     render_codex_direct_native_child_prompt_delivery,
@@ -2624,7 +2627,7 @@ def test_failed_current_profile_reverification_invalidates_prior_attestation(
 ) -> None:
     configured_store.record_host_canary_attestation(
         host="codex",
-        proof_contract="agency.codex-activation-canary.v2",
+        proof_contract=CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
         proof_digest="a" * 64,
         profile_scope="current-profile",
         platform_system="test",

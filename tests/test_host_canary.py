@@ -28,7 +28,10 @@ from agency_runtime.core.installer import (
     inspect_host_installations,
     install_agent_adapter,
 )
-from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
+from agency_runtime.core.installer_contracts import (
+    CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
+    CODEX_HOOK_EVENTS,
+)
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -1375,7 +1378,7 @@ def test_inspection_uses_only_current_matching_canary_attestation(
     ) -> None:
         store.record_host_canary_attestation(
             host="codex",
-            proof_contract="agency.codex-activation-canary.v2",
+            proof_contract=CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
             proof_digest="a" * 64,
             profile_scope=profile_scope,
             platform_system=platform.system(),

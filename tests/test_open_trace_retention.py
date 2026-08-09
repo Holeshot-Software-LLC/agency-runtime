@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core.installer_contracts import CODEX_ACTIVATION_CANARY_PROOF_CONTRACT
 from agency_runtime.core.runtime_control import RuntimeControlSnapshot
 from agency_runtime.core.store import resident_binding as resident_binding_store
 from agency_runtime.core.store.schema import RUNTIME_DELETE_ORDER
@@ -465,7 +466,7 @@ def test_retired_trace_key_corruption_fails_closed_on_reopen(
     )
     store.record_host_canary_attestation(
         host="codex",
-        proof_contract="agency.codex-activation-canary.v2",
+        proof_contract=CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
         proof_digest="a" * 64,
         profile_scope="current-profile",
         platform_system="Windows",

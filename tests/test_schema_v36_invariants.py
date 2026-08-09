@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from agency_runtime.core.installer_contracts import CODEX_ACTIVATION_CANARY_PROOF_CONTRACT
 from agency_runtime.core.native_child_activation import CANONICAL_NATIVE_CHILD_HOSTS
 from agency_runtime.core.store.schema import (
     DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES,
@@ -208,7 +209,7 @@ def test_schema_v38_upgrades_v37_attestation_and_hook_provenance_columns(
     store = Store(path)
     store.record_host_canary_attestation(
         host="codex",
-        proof_contract="agency.codex-activation-canary.v2",
+        proof_contract=CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
         proof_digest="a" * 64,
         profile_scope="current-profile",
         platform_system=platform.system(),
