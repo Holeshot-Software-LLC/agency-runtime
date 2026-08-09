@@ -209,14 +209,7 @@ def _load_specialist(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     if correlation is None:
         return {"error": "session_id and trace_id are required to load active specialist evidence"}
     session_id, trace_id = correlation
-    if field := _noncanonical_identifier(
-        arguments,
-        "slug",
-        "activation_token",
-        "work_unit_id",
-        "worker_id",
-        "native_run_id",
-    ):
+    if field := _noncanonical_identifier(arguments, "slug"):
         return {"error": f"{field} must be an exact canonical identifier"}
     if error := active_turn_error(store, session_id, trace_id):
         return {"error": error}
@@ -226,45 +219,8 @@ def _load_specialist(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
         operation="be loaded as an ordinary specialist",
     ):
         return {"error": error}
-    activation_token = str(arguments.get("activation_token") or "").strip()
-    if activation_token:
-        try:
-            row = store.consume_delegation_activation(
-                activation_token=activation_token,
-                session_id=session_id,
-                trace_id=trace_id,
-                specialist_slug=slug,
-                work_unit_id=str(arguments.get("work_unit_id") or ""),
-                worker_id=str(arguments.get("worker_id") or ""),
-                native_run_id=str(arguments.get("native_run_id") or ""),
-            )
-        except ValueError as exc:
-            return {"error": str(exc)}
-        return {
-            "trace_id": trace_id,
-            "session_id": session_id,
-            "work_unit_id": row["work_unit_id"],
-            # ``activation_receipt_id`` is the legacy grant-row identity kept
-            # for protocol compatibility.  The append-only public proof is the
-            # distinct consumption receipt below.
-            "activation_receipt_id": row["id"],
-            "legacy_activation_receipt_id": row["id"],
-            "consumption_receipt_id": row["consumption_receipt_id"],
-            "activation_grant": row["activation_grant"],
-            "activation_receipt": row["activation_receipt"],
-            "worker_kind": row["worker_kind"],
-            "worker_id": row["worker_id"],
-            "native_run_id": row["native_run_id"],
-            "slug": row["slug"],
-            "name": "",
-            "description": "",
-            "version": row["version"],
-            "prompt_hash": row["prompt_hash"],
-            "prompt": row["prompt_body"],
-            "prompt_truncated": bool(row.get("prompt_truncated")),
-        }
-    # A tokenless load is the product, not a violation: the specialist goes to
-    # whoever is already doing the work. Nothing forbids it, so nothing is checked.
+    # The specialist goes to whoever is already doing the work. There is no
+    # token to redeem and no receipt to file: loading a card is the product.
     row = store.get_specialist_prompt(slug)
     if not row or not row.get("prompt_body"):
         return {"error": f"active agent prompt '{slug}' not found"}

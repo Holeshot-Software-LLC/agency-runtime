@@ -1083,38 +1083,6 @@ def _record_complete_v2_chain(
 
 
 
-def test_codex_plaintext_grants_skip_the_opaque_serialization_slot() -> None:
-    """Token-correlated plaintext delivery never queries the opaque-only slot."""
-
-    from agency_runtime.core.store.delegation_activation import (
-        _require_open_codex_native_hook_slot,
-    )
-
-    class _UnexpectedQuery:
-        def execute(self, *_args, **_kwargs):
-            raise AssertionError("plaintext grants must not enter opaque serialization")
-
-    _require_open_codex_native_hook_slot(
-        _UnexpectedQuery(),
-        planned_scope=SimpleNamespace(),
-        opaque_launch=False,
-        session_id="codex-plaintext-slot-session",
-        trace_id="codex-plaintext-slot-trace",
-    )
-
-
-
-
-
-
-
-
-@pytest.mark.parametrize(
-    "failure_kind",
-    ["tool_unavailable", "extra_child", "unexpected_tool", "wrong_output"],
-)
-
-
 def _process_result(
     stdout: str,
     *,

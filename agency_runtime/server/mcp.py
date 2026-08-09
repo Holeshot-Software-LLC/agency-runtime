@@ -20,15 +20,7 @@ from agency_runtime import __version__
 from agency_runtime.core.agent_activation import MAX_AGENT_SLUG_CHARS
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.correlation import MAX_CORRELATION_ID_BYTES
-from agency_runtime.core.delegation_status import (
-    MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
-    MAX_DELEGATION_WORK_UNIT_ID_CHARS,
-    MAX_DELEGATION_WORKER_ID_CHARS,
-)
 from agency_runtime.core.host_control import SUPPORTED_HOSTS
-from agency_runtime.core.native_child_prompt_delivery import (
-    MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS,
-)
 from agency_runtime.core.observability import (
     RuntimeBoundary,
     correlate_current_observation,
@@ -124,16 +116,12 @@ MCP_TOOLS = [
     },
     {
         "name": "agency.load_specialist",
-        "description": "Consume an isolated activation grant or load a direct specialist prompt.",
+        "description": "Load a specialist prompt into the caller already doing the work.",
         "inputSchema": _schema(
             {
                 "slug": _string(MAX_AGENT_SLUG_CHARS),
                 "session_id": _string(MAX_CORRELATION_ID_BYTES),
                 "trace_id": _string(MAX_CORRELATION_ID_BYTES),
-                "activation_token": _string(MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS),
-                "work_unit_id": _string(MAX_DELEGATION_WORK_UNIT_ID_CHARS),
-                "worker_id": _string(MAX_DELEGATION_WORKER_ID_CHARS),
-                "native_run_id": _string(MAX_DELEGATION_NATIVE_RUN_ID_CHARS),
             },
             ["slug", "session_id", "trace_id"],
         ),
