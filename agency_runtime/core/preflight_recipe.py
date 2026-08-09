@@ -705,17 +705,6 @@ def _verified_work_units(recipe_routing: dict[str, Any], user_message: str) -> d
             "source": expected.get("source"),
             "units": units,
         }
-    elif expected.get("source") == "parent_unit_reuse":
-        normalized = " ".join(str(user_message or "").split())
-        if not normalized:
-            raise RuntimeError("parent unit replay has no current work-unit goal")
-        detected = {
-            "delegate": True,
-            "count": 1,
-            "confidence": expected.get("confidence"),
-            "source": "parent_unit_reuse",
-            "units": [normalized],
-        }
     elif expected.get("source") == "activation-canary-contract":
         from agency_runtime.core.activation_canary_contract import (
             CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
@@ -791,11 +780,6 @@ def _replay_routing_from_recipe(
     )
     replay["unit_assignment_agents"] = unit_assignment_agents
     if continuation:
-        return replay
-    if routing.get("source") == "parent_unit_reuse":
-        from agency_runtime.core.unit_assignment import hydrate_unit_agent_plan
-
-        hydrate_unit_agent_plan(replay, unit_agent_plan)
         return replay
     from agency_runtime.core.delegation.events import build_unit_agent_plan
     from agency_runtime.core.unit_assignment import work_unit_id_from_text

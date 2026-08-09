@@ -71,9 +71,7 @@ from agency_runtime.core.unit_assignment import (
     MAX_SUGGESTED_WORK_UNITS,
     MAX_UNIT_SELECTION_WORKERS,
     assignment_agents_from_catalog,
-    native_child_activation_contract,
     project_unit_assignment_agents,
-    work_unit_goal_hash,
 )
 from agency_runtime.core.workforce.cache import WORKFORCE_CACHE_IDENTITY_VERSION
 from agency_runtime.core.workforce.planning_contracts import (
@@ -85,7 +83,6 @@ MAX_PREFLIGHT_CONTEXT_CHARS = _MAX_PREFLIGHT_CONTEXT_CHARS
 _MAX_CHILD_ROUTE_TIMEOUT_SECONDS = 60.0
 _CHILD_ROUTE_LEASE_MARGIN_SECONDS = 5.0
 _CHILD_ROUTE_BUNDLE_VERSION = 2
-_DIRECT_NATIVE_CHILD_HOSTS = frozenset({"hermes", "openclaw"})
 
 
 class SubstantiveSpecialistUnavailable(RuntimeError):
@@ -474,164 +471,6 @@ def _ensure_preflight_catalog(
     return routing_snapshot
 
 
-
-
-def _activate_direct_native_child(
-    store: Store,
-    result: PreflightResult,
-    *,
-    parent_session_id: str,
-    parent_trace_id: str,
-    user_message: str,
-    host: str,
-    worker_id: str,
-    native_run_id: str,
-) -> PreflightResult:
-    """Consume one exact parent grant at a native child's pre-LLM boundary."""
-
-    normalized_host = str(host or "").strip().casefold()
-    if not parent_trace_id or normalized_host not in _DIRECT_NATIVE_CHILD_HOSTS:
-        return result
-    worker = str(worker_id or "").strip()
-    native = str(native_run_id or "").strip()
-    if not worker or not native:
-        raise RuntimeError("direct native child activation lacks host-issued child lineage")
-    if (
-        result.routing.get("source") != "parent_unit_reuse"
-        or result.routing.get("status") != "parent_unit_reused"
-        or len(result.selected_specialists) != 1
-        or len(result.delegation_plan) != 1
-    ):
-        raise RuntimeError("direct native child activation requires one exact parent plan row")
-    slug = result.selected_specialists[0]
-    plan = result.delegation_plan[0]
-    if (
-        plan.get("recommended_agent") != slug
-        or plan.get("recommended_agents") != [slug]
-        or work_unit_goal_hash(user_message) != plan.get("goal_hash")
-    ):
-        raise RuntimeError("direct native child activation does not match the parent assignment")
-    unit = str(plan.get("work_unit_id") or "").strip()
-    snapshot = store.get_completion_evidence_snapshot(parent_session_id, parent_trace_id)
-    references = {
-        str(item.get("slug") or "").strip(): item
-        for item in snapshot.get("selected_specialists", [])
-        if isinstance(item, Mapping)
-    }
-    reference = references.get(slug)
-    if reference is None:
-        raise RuntimeError("direct native child specialist reference is unavailable")
-    prompt = store.get_versioned_specialist_prompt(
-        slug,
-        str(reference.get("version") or ""),
-        str(reference.get("hash") or ""),
-        max_chars=_MAX_PREFLIGHT_CONTEXT_CHARS,
-    )
-    prompt_body = prompt.get("prompt_body") if isinstance(prompt, Mapping) else None
-    if (
-        not isinstance(prompt_body, str)
-        or not prompt_body
-        or prompt.get("prompt_truncated") is not False
-        or prompt_body not in result.context
-    ):
-        raise RuntimeError(
-            "direct native child context lacks the exact selected specialist "
-            f"(prompt_chars={len(prompt_body or '')}, context_chars={len(result.context)})"
-        )
-    lineage = store.get_consumed_delegation_lineage(
-        session_id=parent_session_id,
-        trace_id=parent_trace_id,
-        specialist_slug=slug,
-        work_unit_id=unit,
-    )
-    expected_lineage = {
-        "worker_kind": "generic-worker",
-        "worker_id": worker,
-        "native_run_id": native,
-    }
-    if lineage is not None:
-        if lineage != expected_lineage:
-            raise RuntimeError("direct native child activation is bound to another worker")
-        return result
-    activation_contract = native_child_activation_contract(
-        user_message,
-        mutation_scope=plan.get("mutation_scope"),
-        resource_hashes=plan.get("resource_hashes"),
-        required_evidence=plan.get("required_evidence"),
-    )
-    try:
-        prepared = store.prepare_delegation_activation(
-            session_id=parent_session_id,
-            trace_id=parent_trace_id,
-            specialist_slug=slug,
-            work_unit_id=unit,
-            worker_kind="generic-worker",
-            worker_id=worker,
-            **activation_contract,
-        )
-        consumed = store.consume_delegation_activation(
-            activation_token=prepared["activation_token"],
-            session_id=parent_session_id,
-            trace_id=parent_trace_id,
-            specialist_slug=slug,
-            work_unit_id=unit,
-            worker_id=worker,
-            native_run_id=native,
-        )
-    except ValueError as error:
-        lineage = store.get_consumed_delegation_lineage(
-            session_id=parent_session_id,
-            trace_id=parent_trace_id,
-            specialist_slug=slug,
-            work_unit_id=unit,
-        )
-        if lineage != expected_lineage:
-            raise RuntimeError("direct native child activation could not be consumed") from error
-        return result
-    if (
-        consumed.get("slug") != slug
-        or consumed.get("version") != reference.get("version")
-        or consumed.get("prompt_hash") != reference.get("hash")
-        or consumed.get("prompt_body") != prompt_body
-    ):
-        raise RuntimeError("direct native child activation receipt changed specialist identity")
-    return result
-
-
-def _activate_or_close_direct_native_child(
-    store: Store,
-    result: PreflightResult,
-    *,
-    child_session_id: str,
-    child_trace_id: str,
-    parent_session_id: str,
-    parent_trace_id: str,
-    user_message: str,
-    host: str,
-    worker_id: str,
-    native_run_id: str,
-) -> PreflightResult:
-    """Terminalize a child whose exact pre-LLM activation cannot be proven."""
-
-    try:
-        return _activate_direct_native_child(
-            store,
-            result,
-            parent_session_id=parent_session_id,
-            parent_trace_id=parent_trace_id,
-            user_message=user_message,
-            host=host,
-            worker_id=worker_id,
-            native_run_id=native_run_id,
-        )
-    except Exception:
-        if parent_trace_id and str(host or "").strip().casefold() in _DIRECT_NATIVE_CHILD_HOSTS:
-            store.close_turn_evidence(
-                child_session_id,
-                child_trace_id,
-                status="specialist_activation_failed",
-            )
-        raise
 
 
 def _route_arguments(
@@ -1512,16 +1351,6 @@ def run_preflight(
         field="trace_id",
     )
     normalized_host = str(host or "unknown").strip() or "unknown"
-    direct_activation_arguments = {
-        "child_session_id": normalized_session,
-        "child_trace_id": turn_trace_id,
-        "parent_session_id": normalized_parent_session,
-        "parent_trace_id": normalized_parent_trace,
-        "user_message": user_message,
-        "host": normalized_host,
-        "worker_id": native_worker_id,
-        "native_run_id": native_run_id,
-    }
 
     current_origin = current_turn_origin(
         origin_receipt,
@@ -1611,12 +1440,7 @@ def run_preflight(
                 config=cfg,
                 pipeline=pipeline,
             )
-            diagnostics.enter("direct_activation")
-            return _activate_or_close_direct_native_child(
-                store,
-                reused_result,
-                **direct_activation_arguments,
-            )
+            return reused_result
         if outcome == "reused_in_progress":
             diagnostics.enter("ready_read")
             reused_result = _await_ready_result(
@@ -1629,12 +1453,7 @@ def run_preflight(
                 pipeline=pipeline,
                 timeout_seconds=lease_seconds,
             )
-            diagnostics.enter("direct_activation")
-            return _activate_or_close_direct_native_child(
-                store,
-                reused_result,
-                **direct_activation_arguments,
-            )
+            return reused_result
         attempt_owner = outcome in {"started", "recovered_started"}
         diagnostics.enter("resident_binding")
         resident_binding, resident_context = _resident_binding_for_preflight(
@@ -1801,12 +1620,7 @@ def run_preflight(
             config=cfg,
             pipeline=pipeline,
         )
-        diagnostics.enter("direct_activation")
-        return _activate_or_close_direct_native_child(
-            store,
-            ready_result,
-            **direct_activation_arguments,
-        )
+        return ready_result
     except Exception as error:
         # Cleanup is an exact-token compare-and-set. A concurrent successful
         # caller may already own a ready attempt, and must never be closed by

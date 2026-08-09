@@ -3,7 +3,6 @@ from __future__ import annotations
 import sqlite3
 import time
 from contextlib import closing
-from dataclasses import replace
 from hashlib import sha256
 from types import SimpleNamespace
 
@@ -11,7 +10,6 @@ import pytest
 
 from agency_runtime.core.config import AgencyConfig, DelegationConfig, ProviderEntry
 from agency_runtime.core.preflight import (
-    _activate_direct_native_child,
     _assignment_recipe,
     _child_route_timeout,
     _normalize_parent_correlation,
@@ -20,7 +18,6 @@ from agency_runtime.core.preflight import (
     _resolve_preflight_routing,
 )
 from agency_runtime.core.preflight_recipe import (
-    PreflightResult,
     _content_free_routing_recipe,
     preflight_delivery_policy,
 )
@@ -325,50 +322,6 @@ def test_every_host_delivers_specialists_directly_into_the_caller() -> None:
     for host in ("codex", "claude", "zcode", "openclaw", "hermes"):
         assert preflight_delivery_policy(host)[0] == "direct"
         assert preflight_delivery_policy(host, native_child=True)[0] == "direct"
-
-
-def test_direct_native_child_abstains_without_lineage_or_an_exact_parent_unit() -> None:
-    base = PreflightResult(
-        session_id="child-session",
-        trace_id="child-trace",
-        routing={"source": "parent_unit_reuse", "status": "parent_unit_reused"},
-        context="context",
-        loaded_specialists=("code-reviewer",),
-        selected_specialists=("code-reviewer",),
-        trivial=False,
-        roster_size=1,
-        delegation_plan=(
-            {
-                "work_unit_id": "unit-a",
-                "goal_hash": _key("Review this patch"),
-                "recommended_agent": "code-reviewer",
-                "recommended_agents": ["code-reviewer"],
-            },
-        ),
-    )
-    with pytest.raises(RuntimeError, match="lacks host-issued child lineage"):
-        _activate_direct_native_child(
-            SimpleNamespace(),
-            base,
-            parent_session_id="parent-session",
-            parent_trace_id="parent-trace",
-            user_message="Review this patch",
-            host="openclaw",
-            worker_id="",
-            native_run_id="",
-        )
-    unplanned = replace(base, routing={"source": "inference", "status": "selected"})
-    with pytest.raises(RuntimeError, match="requires one exact parent plan row"):
-        _activate_direct_native_child(
-            SimpleNamespace(),
-            unplanned,
-            parent_session_id="parent-session",
-            parent_trace_id="parent-trace",
-            user_message="Review this patch",
-            host="hermes",
-            worker_id="worker",
-            native_run_id="hermes-subagent:worker",
-        )
 
 
 def test_child_routing_singleflight_cache_and_content_boundary(tmp_path) -> None:
