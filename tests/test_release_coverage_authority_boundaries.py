@@ -542,26 +542,6 @@ def test_mcp_preflight_restoration_failure_preserves_exception_semantics(
             {"session_id": "session", "trace_id": "trace", "slug": " reviewer "},
             "slug",
         ),
-        (
-            mcp_tools._prepare_delegation,
-            {
-                "session_id": "session",
-                "trace_id": "trace",
-                "slug": "reviewer",
-                "worker_id": 7,
-            },
-            "worker_id",
-        ),
-        (
-            mcp_tools._delegate,
-            {"session_id": "session", "trace_id": "trace", "backend": " native "},
-            "backend",
-        ),
-        (
-            mcp_tools._decline_delegation,
-            {"session_id": "session", "trace_id": "trace", "agent": " reviewer "},
-            "agent",
-        ),
     ],
 )
 def test_mcp_handlers_reject_noncanonical_identifiers_before_store_use(

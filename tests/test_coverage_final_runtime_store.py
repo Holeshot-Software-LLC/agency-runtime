@@ -31,7 +31,7 @@ from agency_runtime.core.store import delegation_activation, initialization_lock
 from agency_runtime.core.store import preflight as store_preflight
 from agency_runtime.core.store import roster as store_roster
 from agency_runtime.core.store import sqlite as store_sqlite
-from agency_runtime.server import http, mcp, mcp_tools
+from agency_runtime.server import http, mcp
 
 
 class _Result:
@@ -697,51 +697,6 @@ def test_mcp_disabled_status_fails_enabled_on_control_read_error(
         "updated_at": "1970-01-01T00:00:00Z",
         "source": "fail-enabled",
     }
-
-
-def test_mcp_prepare_delegation_correlation_and_active_turn_errors(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    assert "required" in mcp_tools._prepare_delegation({}, object())["error"]
-    monkeypatch.setattr(mcp_tools, "active_turn_error", lambda *_args: "terminal")
-    result = mcp_tools._prepare_delegation(
-        {"session_id": "session", "trace_id": "trace"},
-        object(),
-    )
-    assert result == {"error": "terminal"}
-
-
-def test_mcp_prepare_delegation_normalizes_native_worker_attribution(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    class Store:
-        def prepare_delegation_activation(self, **kwargs: object) -> dict[str, object]:
-            return kwargs
-
-    monkeypatch.setattr(mcp_tools, "active_turn_error", lambda *_args: "")
-    result = mcp_tools._prepare_delegation(
-        {
-            "session_id": "session",
-            "trace_id": "trace",
-            "slug": "code-reviewer",
-            "work_unit_id": "unit-review",
-            "worker_kind": "codex-native-subagent",
-        },
-        Store(),
-    )
-    assert result["worker_kind"] == "generic-worker"
-
-    rejected = mcp_tools._prepare_delegation(
-        {
-            "session_id": "session",
-            "trace_id": "trace",
-            "slug": "code-reviewer",
-            "work_unit_id": "unit-review",
-            "worker_kind": "claimed-specialist",
-        },
-        Store(),
-    )
-    assert rejected == {"error": "delegated specialist retrieval uses generic-worker attribution"}
 
 
 def test_restricted_control_target_fails_closed_on_token_probe_error(

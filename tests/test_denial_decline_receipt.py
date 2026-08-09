@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 
 from agency_runtime.adapters.hooks import HookBridge
-from agency_runtime.server import mcp_tools
 
 _SESSION = "s" * 32
 _TRACE = "t" * 32
@@ -115,49 +114,6 @@ def test_incomplete_identity_records_nothing(
     assert store.recorded == []
 
 
-def _decline_arguments() -> dict[str, Any]:
-    return {
-        "session_id": _SESSION,
-        "trace_id": _TRACE,
-        "agent": "technical-writer",
-        "work_unit_id": "unit-1",
-        "reason": "parent restating a decline",
-    }
-
-
-def test_parent_decline_after_a_hook_denial_is_reported_as_already_recorded(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """The documented parent flow must not error once the hook closed the unit."""
-
-    monkeypatch.setattr(mcp_tools, "active_turn_error", lambda *_a, **_k: None)
-    row = _suggested_row() | {"status": "skipped", "skip_reason": "denied at PreToolUse"}
-
-    result = mcp_tools._decline_delegation(_decline_arguments(), _StubStore([row]))
-
-    assert result.get("status") == "delegation declined"
-    assert result.get("already_recorded") is True
-    assert result.get("reason") == "denied at PreToolUse"
-    assert "error" not in result
-
-
-def test_already_skipped_unit_still_rejects_a_mismatched_agent(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(mcp_tools, "active_turn_error", lambda *_a, **_k: None)
-    row = _suggested_row() | {"status": "skipped", "recommended_agent": "someone-else"}
-
-    result = mcp_tools._decline_delegation(_decline_arguments(), _StubStore([row]))
-
-    assert result["error"] == "delegation decline agent does not match the durable plan"
-
-
-def test_a_completed_unit_is_still_refused(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Only an existing decline is idempotent; a done unit cannot be declined."""
-
-    monkeypatch.setattr(mcp_tools, "active_turn_error", lambda *_a, **_k: None)
-    row = _suggested_row() | {"status": "completed"}
-
-    result = mcp_tools._decline_delegation(_decline_arguments(), _StubStore([row]))
-
-    assert result["error"] == "delegation work unit is no longer open"
+# The parent-side decline tests that lived here drove `agency.decline_delegation`,
+# retired in eab8c085. The hook-side denial receipt above is unaffected: it is
+# written by PreToolUse, not by a parent tool call.

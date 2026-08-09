@@ -129,7 +129,6 @@ def test_mcp_missing_correlation_and_preflight_error_paths(monkeypatch) -> None:
     ) == {"error": "bad preflight"}
     assert "required" in mcp_tools._load_specialist({"slug": "x"}, store)["error"]
     assert "required" in mcp_tools._record_skill_loaded({"skill_name": "x"}, store)["error"]
-    assert "required" in mcp_tools._delegate({}, store)["error"]
     missing = mcp_tools._finalize({"draft_text": "draft", "session_id": ""}, store)
     assert missing == {
         "action": "continue",
@@ -1582,7 +1581,9 @@ def test_hermes_retry_and_native_child_validation_matrix() -> None:
     assert [name for name, _kwargs in store.events] == ["tool", "started", "ended"]
 
 
-def test_mcp_preflight_host_and_decline_delegation_matrix(monkeypatch) -> None:
+def test_mcp_preflight_rejects_a_nonexecution_host() -> None:
+    # The decline_delegation half of this matrix went with `agency.decline_delegation`
+    # in eab8c085.
     assert (
         "execution host"
         in mcp_tools._preflight(
@@ -1590,93 +1591,6 @@ def test_mcp_preflight_host_and_decline_delegation_matrix(monkeypatch) -> None:
             SimpleNamespace(),
         )["error"]
     )
-
-    assert "required" in mcp_tools._decline_delegation({}, SimpleNamespace())["error"]
-    active_error_store = SimpleNamespace(
-        get_run=lambda _trace: None,
-    )
-    assert (
-        "active turn"
-        in mcp_tools._decline_delegation(
-            {
-                "session_id": "session",
-                "trace_id": "trace",
-                "agent": "reviewer",
-                "reason": "not needed",
-                "work_unit_id": "unit",
-            },
-            active_error_store,
-        )["error"]
-    )
-
-    class Store:
-        def __init__(self, rows: list[dict[str, Any]]) -> None:
-            self.rows = rows
-
-        def get_run(self, _trace: str) -> dict[str, str]:
-            return {
-                "session_id": "session",
-                "status": "active",
-                "preflight_state": "ready",
-            }
-
-        def get_delegations(self, _trace: str) -> list[dict[str, Any]]:
-            return self.rows
-
-    base = {
-        "session_id": "session",
-        "trace_id": "trace",
-        "agent": "reviewer",
-        "reason": "not needed",
-        "work_unit_id": "unit",
-    }
-    store = Store([])
-    assert (
-        "required"
-        in mcp_tools._decline_delegation(
-            {**base, "reason": ""},
-            store,
-        )["error"]
-    )
-    assert (
-        "512"
-        in mcp_tools._decline_delegation(
-            {**base, "reason": "x" * 513},
-            store,
-        )["error"]
-    )
-    assert (
-        "resident"
-        in mcp_tools._decline_delegation(
-            {**base, "agent": "agency-steward"},
-            store,
-        )["error"]
-    )
-    assert "one exact" in mcp_tools._decline_delegation(base, store)["error"]
-
-    row = {
-        "id": "event",
-        "session_id": "session",
-        "work_unit_id": "unit",
-        "status": "completed",
-        "recommended_agent": "reviewer",
-    }
-    store.rows = [row]
-    assert "no longer open" in mcp_tools._decline_delegation(base, store)["error"]
-    row["status"] = "suggested"
-    row["recommended_agent"] = "other"
-    assert "does not match" in mcp_tools._decline_delegation(base, store)["error"]
-    row["recommended_agent"] = "reviewer"
-    monkeypatch.setattr(
-        "agency_runtime.core.delegation.events.mark_delegation_skipped",
-        lambda *_args, **_kwargs: 0,
-    )
-    assert "not recorded" in mcp_tools._decline_delegation(base, store)["error"]
-    monkeypatch.setattr(
-        "agency_runtime.core.delegation.events.mark_delegation_skipped",
-        lambda *_args, **_kwargs: 1,
-    )
-    assert mcp_tools._decline_delegation(base, store)["status"] == "delegation declined"
 
 
 def test_mcp_search_missing_prompt_skill_success_and_unknown_dispatch(monkeypatch) -> None:
