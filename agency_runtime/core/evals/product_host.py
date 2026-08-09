@@ -565,7 +565,6 @@ def execute_product_host(
             evidence=evidence,
             default_profile_scope="isolated-profile",
             mode=normalized_mode,
-            activation_contract="product",
         )
     except Exception as exc:
         return _failed_execution(

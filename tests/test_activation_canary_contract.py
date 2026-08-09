@@ -21,8 +21,6 @@ from agency_runtime.core.selector.cache import clear_cache
 from agency_runtime.core.selector.stickiness import clear_session_routing
 from agency_runtime.core.unit_assignment import (
     MAX_WORK_UNIT_CHARS,
-    build_unit_agent_plan,
-    hydrate_unit_agent_plan,
 )
 
 _CANARY_ENV = {
@@ -257,11 +255,10 @@ def test_activation_canary_uses_inference_owned_selection(
     }
     assert "workforce_unit_descriptors" not in result
 
-    plan = build_unit_agent_plan(result, AgencyConfig().delegation)
-    assert len(plan) == 1
-    assert plan[0]["recommended_agent"] == "code-reviewer"
-    hydrated = hydrate_unit_agent_plan(result, plan)
-    assert hydrated[0]["goal"] == CODEX_ACTIVATION_CANARY_WORK_UNIT
+    # What the canary proves stops here: inference picked the specialist. It
+    # used to go on to build and hydrate a unit-agent plan, but planning work
+    # units is Job B and the card goes to whoever the harness already spawned.
+    assert result["work_units"]["units"] == [CODEX_ACTIVATION_CANARY_WORK_UNIT]
 
 
 def test_existing_store_product_canary_can_hire_an_inference_declared_gap(

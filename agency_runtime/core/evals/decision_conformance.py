@@ -435,32 +435,6 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="isolated-plan-repeats-full-request-per-unit",
-        invariant=(
-            "A bounded isolated delegation plan encodes one shared request prefix rather than "
-            "repeating the complete request in every specialist row."
-        ),
-        source_path="agency_runtime/core/preflight_recipe.py",
-        before=(
-            "    if len(prefix) < 128 or any(\n"
-            "        not goal.startswith(prefix) or len(goal) == len(prefix) for goal in goals\n"
-            "    ):\n"
-            '        return ""\n'
-            "    return prefix"
-        ),
-        after=(
-            "    if len(prefix) < 128 or any(\n"
-            "        not goal.startswith(prefix) or len(goal) == len(prefix) for goal in goals\n"
-            "    ):\n"
-            '        return ""\n'
-            '    return ""'
-        ),
-        test_node=(
-            "tests/test_unit_aware_delegation.py::"
-            "test_isolated_multi_unit_context_encodes_one_shared_request_prefix"
-        ),
-    ),
-    DecisionMutation(
         mutation_id="persistent-host-restores-legacy-context-ceiling",
         invariant=(
             "Persistent native parents may carry the complete bounded specialist team and "
@@ -469,9 +443,11 @@ class _NominationSemantics:""",
         source_path="agency_runtime/core/preflight_recipe.py",
         before="PERSISTENT_HOST_CONTEXT_CHARS = MAX_PREFLIGHT_CONTEXT_CHARS",
         after="PERSISTENT_HOST_CONTEXT_CHARS = 8_192",
+        # Re-anchored: the isolated-delivery test this used to name was deleted
+        # with that mode. The ceiling itself is still live and still covered.
         test_node=(
-            "tests/test_unit_aware_delegation.py::"
-            "test_isolated_multi_unit_context_encodes_one_shared_request_prefix"
+            "tests/test_preflight_bounds.py::"
+            "test_oversized_complete_context_fails_before_ready_is_persisted"
         ),
     ),
     DecisionMutation(
@@ -512,25 +488,6 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_host_hooks.py::"
             "test_codex_rejects_oversized_utf8_model_before_preflight_ready"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="legacy-preflight-replay-uses-current-goal-renderer",
-        invariant=(
-            "A stored legacy recipe reconstructs the exact full-goal rendering governed by "
-            "its recorded context-policy version."
-        ),
-        source_path="agency_runtime/core/preflight_recipe.py",
-        before=(
-            "    shared_goal_prefix = (\n"
-            "        _shared_delegation_goal_prefix(goals) "
-            'if int(context_policy_version) >= 12 else ""\n'
-            "    )"
-        ),
-        after="    shared_goal_prefix = _shared_delegation_goal_prefix(goals)",
-        test_node=(
-            "tests/test_unit_aware_delegation.py::"
-            "test_v11_isolated_context_preserves_full_goal_rows"
         ),
     ),
     DecisionMutation(
@@ -615,23 +572,6 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_activation_canary_contract.py::"
             "test_activation_canary_uses_inference_owned_selection"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="activation-replay-drops-inferred-binding",
-        invariant=(
-            "The content-free activation recipe retains the exact inferred unit binding needed "
-            "for modern plan replay."
-        ),
-        source_path="agency_runtime/core/store/preflight.py",
-        before=(
-            '    activation_canary = str(value.get("source") or "") == '
-            "CODEX_ACTIVATION_CANARY_ROUTE_SOURCE"
-        ),
-        after="    activation_canary = False",
-        test_node=(
-            "tests/test_activation_canary_contract.py::"
-            "test_activation_canary_preflight_replays_one_exact_selected_only_unit"
         ),
     ),
     DecisionMutation(
@@ -811,20 +751,6 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="product-host-restores-code-reviewer-canary-proof",
-        invariant=(
-            "Codex product trials grade the complete inferred unit plan rather than the "
-            "one-unit code-reviewer activation canary."
-        ),
-        source_path="agency_runtime/core/evals/product_host.py",
-        before='            activation_contract="product",',
-        after='            activation_contract="canary",',
-        test_node=(
-            "tests/test_product_host.py::"
-            "test_codex_product_host_uses_unmocked_multi_unit_product_proof"
-        ),
-    ),
-    DecisionMutation(
         mutation_id="product-guidance-restores-parent-plan-refinement",
         invariant=(
             "The parent dispatches every inferred product unit exactly once instead of "
@@ -841,20 +767,6 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="product-proof-allows-parent-product-tools",
-        invariant=(
-            "The product parent coordinates exact children but never performs product work "
-            "through its own non-collaboration tools."
-        ),
-        source_path="agency_runtime/core/canary_proof.py",
-        before='    if counts["unexpected_item_count"] != 0:',
-        after='    if False and counts["unexpected_item_count"] != 0:',
-        test_node=(
-            "tests/test_product_host.py::"
-            "test_product_proof_rejects_parent_side_product_tool_execution"
-        ),
-    ),
-    DecisionMutation(
         mutation_id="codex-host-notice-accepts-arbitrary-errors",
         invariant=(
             "Only exact known Codex non-critical host notices bypass the unexpected-item gate."
@@ -865,25 +777,6 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_codex_activation_canary.py::"
             "test_codex_jsonl_parser_classifies_only_exact_allowlisted_host_notices"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="product-proof-drops-host-notice-projection",
-        invariant=(
-            "Product proof preserves the same validated content-free Codex host notice "
-            "types and count observed by the backend."
-        ),
-        source_path="agency_runtime/core/canary_proof.py",
-        before=(
-            '        "host_notice_types": list(host_notice_types),\n'
-            '        "evidence_source": "persisted_rollout",\n'
-        ),
-        after=(
-            '        "host_notice_types": [],\n        "evidence_source": "persisted_rollout",\n'
-        ),
-        test_node=(
-            "tests/test_product_host.py::"
-            "test_codex_product_host_uses_unmocked_multi_unit_product_proof"
         ),
     ),
     DecisionMutation(
@@ -946,202 +839,6 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_codex_activation_canary.py::"
             "test_product_child_tool_evidence_correlates_nested_tool_and_wrapper_outcome"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="product-host-skips-child-tool-evidence-store-write",
-        invariant=(
-            "Codex product admission writes each validated child tool summary into its "
-            "exact durable worker receipt before reading the activation snapshot."
-        ),
-        source_path="agency_runtime/core/evals/product_host.py",
-        before=(
-            "            tool_evidence_store_failures = _persist_codex_child_tool_evidence(\n"
-            "                store=store,\n"
-            "                result=result,\n"
-            "                parent_session_id=session_id,\n"
-            "            )\n"
-        ),
-        after="            tool_evidence_store_failures = ()\n",
-        test_node=(
-            "tests/test_product_host.py::"
-            "test_codex_product_host_uses_unmocked_multi_unit_product_proof"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="product-proof-allows-invalid-host-notice-projection",
-        invariant=(
-            "Malformed or missing Codex host-notice evidence cannot produce a passing "
-            "product proof."
-        ),
-        source_path="agency_runtime/core/canary_proof.py",
-        before="        and collaboration_projection is None\n",
-        after="        and False\n",
-        test_node=(
-            "tests/test_product_host.py::"
-            "test_product_collaboration_projection_rejects_invalid_host_notice_evidence"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="codex-direct-child-restores-canary-only-delivery",
-        invariant=(
-            "Any exact persisted Codex product row can receive its specialist context; "
-            "direct delivery is not restricted to the fixed activation canary."
-        ),
-        source_path="agency_runtime/adapters/hooks.py",
-        before=(
-            "                    if assignment is None or pending_identity != "
-            "assignment_identity:\n"
-            '                        raise ValueError("pending Codex delivery does not '
-            'match the exact plan")\n'
-            "                    exact_delivery = "
-            "render_codex_direct_native_child_prompt_delivery("
-        ),
-        after=(
-            "                    if assignment is None or pending_identity != "
-            "assignment_identity:\n"
-            '                        raise ValueError("pending Codex delivery does not '
-            'match the exact plan")\n'
-            "                    from agency_runtime.core.activation_canary_contract import (\n"
-            "                        CODEX_ACTIVATION_CANARY_WORK_UNIT,\n"
-            "                    )\n"
-            "                    if assignment.goal_hash != work_unit_goal_hash(\n"
-            "                        CODEX_ACTIVATION_CANARY_WORK_UNIT\n"
-            "                    ):\n"
-            '                        raise ValueError("pending Codex delivery is not the '
-            'activation canary")\n'
-            "                    exact_delivery = "
-            "render_codex_direct_native_child_prompt_delivery("
-        ),
-        test_node=(
-            "tests/test_claude_native_child_hooks.py::"
-            "test_codex_opaque_product_delivery_is_goal_hash_bound_child_context"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="codex-direct-child-drops-goal-hash-binding",
-        invariant=("Direct Codex child context carries the exact persisted work-unit goal hash."),
-        source_path="agency_runtime/adapters/hooks.py",
-        before=(
-            "                    exact_delivery = "
-            "render_codex_direct_native_child_prompt_delivery(\n"
-            '                        str(pending.get("prompt_body") or ""),\n'
-            "                        parent_session_id=session_id,\n"
-            "                        parent_trace_id=trace_id,\n"
-            "                        tool_use_id=assignment.tool_use_id,\n"
-            "                        work_unit_id=assignment.work_unit_id,\n"
-            "                        specialist_slug=assignment.specialist_slug,\n"
-            "                        specialist_version=assignment.specialist_version,\n"
-            "                        specialist_prompt_hash=assignment.specialist_prompt_hash,\n"
-            "                        goal_hash=assignment.goal_hash,\n"
-            "                    )"
-        ),
-        after=(
-            "                    exact_delivery = "
-            "render_codex_direct_native_child_prompt_delivery(\n"
-            '                        str(pending.get("prompt_body") or ""),\n'
-            "                        parent_session_id=session_id,\n"
-            "                        parent_trace_id=trace_id,\n"
-            "                        tool_use_id=assignment.tool_use_id,\n"
-            "                        work_unit_id=assignment.work_unit_id,\n"
-            "                        specialist_slug=assignment.specialist_slug,\n"
-            "                        specialist_version=assignment.specialist_version,\n"
-            "                        specialist_prompt_hash=assignment.specialist_prompt_hash,\n"
-            '                        goal_hash="0" * 64,\n'
-            "                    )"
-        ),
-        test_node=(
-            "tests/test_claude_native_child_hooks.py::"
-            "test_codex_opaque_product_delivery_is_goal_hash_bound_child_context"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="codex-direct-child-puts-execution-before-specialist",
-        invariant=(
-            "The exact accepted Codex work-unit execution contract follows the immutable "
-            "specialist expertise as the newest child instruction."
-        ),
-        source_path="agency_runtime/core/native_child_prompt_delivery.py",
-        before=(
-            '    return f"{_CODEX_DIRECT_SECTION}{marker}\\n{prompt_body}'
-            '{_CODEX_DIRECT_EXECUTION_SUFFIX}"\n'
-        ),
-        after=(
-            '    return f"{_CODEX_DIRECT_SECTION}{marker}\\n'
-            '{_CODEX_DIRECT_EXECUTION_SUFFIX}{prompt_body}"\n'
-        ),
-        test_node=(
-            "tests/test_claude_native_child_hooks.py::"
-            "test_codex_opaque_product_delivery_is_goal_hash_bound_child_context"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="codex-opaque-child-restores-workspace-wide-grant",
-        invariant=(
-            "An ordinary Codex child receives only the path prefixes derived from its "
-            "exact preflight work unit, never an unconditional repository-wide grant."
-        ),
-        source_path="agency_runtime/core/unit_assignment.py",
-        before=(
-            "    path_prefixes = (\n"
-            "        []\n"
-            '        if normalized_scope == "read_only"\n'
-            '        else ["." if resource == "repository-workspace" else resource '
-            "for resource in resources]\n"
-            "    )"
-        ),
-        after=(
-            "    path_prefixes = (\n"
-            "        []\n"
-            '        if normalized_scope == "read_only"\n'
-            '        else ["."]\n'
-            "    )"
-        ),
-        test_node=(
-            "tests/test_codex_activation_canary.py::"
-            "test_codex_preflight_stages_exact_path_for_ordinary_workspace_write"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="codex-path-authority-restores-case-folding",
-        invariant=(
-            "Canonical mutation paths preserve case; a separate folded key owns only "
-            "conservative contention matching."
-        ),
-        source_path="agency_runtime/core/unit_assignment.py",
-        before="    return normalized[:MAX_RESOURCE_CHARS]\n",
-        after="    return normalized.casefold()[:MAX_RESOURCE_CHARS]\n",
-        test_node=(
-            "tests/test_codex_activation_canary.py::"
-            "test_codex_preflight_stages_exact_path_for_ordinary_workspace_write"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="codex-opaque-child-restores-concurrent-unconsumed-grants",
-        invariant=(
-            "Codex opaque launches remain serialized until SubagentStart consumes the "
-            "prior native-hook grant."
-        ),
-        source_path="agency_runtime/core/store/delegation_activation.py",
-        before="    if inflight is not None:\n",
-        after="    if False and inflight is not None:\n",
-        test_node=(
-            "tests/test_codex_activation_canary.py::"
-            "test_codex_opaque_children_serialize_until_subagent_start_consumes_grant"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="codex-plaintext-child-inherits-opaque-serialization",
-        invariant=(
-            "Only token-free opaque Codex grants serialize through child start; "
-            "plaintext token-correlated grants may coexist."
-        ),
-        source_path="agency_runtime/core/store/delegation_activation.py",
-        before="    if planned_scope is None or not opaque_launch:\n",
-        after="    if planned_scope is None:\n",
-        test_node=(
-            "tests/test_codex_activation_canary.py::"
-            "test_codex_plaintext_grants_skip_the_opaque_serialization_slot"
         ),
     ),
     DecisionMutation(
@@ -1280,20 +977,6 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="codex-direct-dispatch-ignores-live-callback-order",
-        invariant=(
-            "When Codex emits PostToolUse before SubagentStart, the later callback claims "
-            "the exact initial-spawn execution dispatch."
-        ),
-        source_path="agency_runtime/adapters/hooks.py",
-        before="                    if delegated_rows:\n",
-        after="                    if False and delegated_rows:\n",
-        test_node=(
-            "tests/test_codex_activation_canary.py::"
-            "test_codex_subagent_start_promotes_earlier_synthetic_spawn_delegation"
-        ),
-    ),
-    DecisionMutation(
         mutation_id="preflight-failure-drops-terminal-receipt",
         invariant=(
             "Every owned terminal preflight failure persists one exact content-free receipt."
@@ -1383,23 +1066,6 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="workforce-goal-drops-verified-mutation-scope",
-        invariant=("The exact decoded child goal carries the verifier-accepted mutation scope."),
-        source_path="agency_runtime/core/workforce/routing_projection.py",
-        before="""                "authority": unit.authority,
-                "mutation_scope": unit.mutation_scope,
-            }
-            descriptors.append(descriptor)""",
-        after="""                "authority": unit.authority,
-                "mutation_scope": "read_only",
-            }
-            descriptors.append(descriptor)""",
-        test_node=(
-            "tests/test_ar214_context_delivery_authority.py::"
-            "test_product_prompt_preserves_exact_paths_through_ready_commit"
-        ),
-    ),
-    DecisionMutation(
         mutation_id="product-write-proof-assigns-read-only-child",
         invariant=("Only a delegated workspace-write child may create the product sentinel."),
         source_path="agency_runtime/core/evals/product_host.py",
@@ -1415,34 +1081,6 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="codex-write-child-accepts-no-patch-receipt",
-        invariant=(
-            "A Codex workspace-write child cannot complete without a successful "
-            "workspace-local patch receipt."
-        ),
-        source_path="agency_runtime/adapters/hooks.py",
-        before='            if mutation_scope == "workspace_write" and not (',
-        after='            if mutation_scope == "read_only" and not (',
-        test_node=(
-            "tests/test_codex_activation_canary.py::"
-            "test_codex_workspace_write_child_requires_patch_receipt_before_success"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="parent-finalizes-incomplete-workspace-write",
-        invariant=(
-            "A parent cannot accept a current workspace-write row whose delegated "
-            "execution has no terminal completion receipt."
-        ),
-        source_path="agency_runtime/core/header/contract.py",
-        before="    if incomplete_workspace_writes:",
-        after="    if False and incomplete_workspace_writes:",
-        test_node=(
-            "tests/test_turn_coverage_complete_header_preflight.py::"
-            "test_completion_policy_rejects_incomplete_workspace_write_delegation"
-        ),
-    ),
-    DecisionMutation(
         mutation_id="product-host-mislabels-hook-bypass-as-attended",
         invariant=(
             "Codex product trials record the supported one-invocation bypass without claiming "
@@ -1454,20 +1092,6 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_product_host.py::"
             "test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
-        ),
-    ),
-    DecisionMutation(
-        mutation_id="codex-delegation-inherits-parent-history",
-        invariant=(
-            "Codex specialist launches exclude parent history while receiving the exact "
-            "hook-injected specialist context."
-        ),
-        source_path="agency_runtime/core/specialist_context.py",
-        before=('                "set `fork_turns` to `none` and set `task_name` to that row\'s "'),
-        after='                "set `task_name` to that row\'s "',
-        test_node=(
-            "tests/test_unit_aware_delegation.py::"
-            "test_isolated_native_hook_receives_exact_unit_agent_plan[codex]"
         ),
     ),
     DecisionMutation(
