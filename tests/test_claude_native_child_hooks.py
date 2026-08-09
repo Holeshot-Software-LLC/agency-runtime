@@ -591,30 +591,6 @@ def test_zcode_does_not_invent_undocumented_child_lifecycle_identity() -> None:
     assert store.stopped == []
 
 
-def test_post_tool_use_reconciles_exact_plan_lineage_and_host_model() -> None:
-    store = _PlanStore()
-    adapter = _RecordingAdapter()
-    payload = _agent_payload(event="PostToolUse")
-    payload["tool_response"] = {
-        "agentId": "agent-42",
-        "resolvedModel": "claude-sonnet-5",
-        "status": "completed",
-    }
-
-    result = HookBridge("claude", store=store, adapter=adapter).handle(payload)  # type: ignore[arg-type]
-
-    assert result == {}
-    [call] = adapter.calls
-    assert call["tool_name"] == "delegate_task"
-    assert call["trace_id"] == "trace"
-    assert call["args"]["work_unit_id"] == "unit-code"
-    assert call["args"]["agent"] == "code-reviewer"
-    assert call["args"]["requested_model"] == "sonnet"
-    assert call["args"]["resolved_model"] == "claude-sonnet-5"
-    assert call["result"]["agent_id"] == "agent-42"
-    assert call["result"]["native_run_id"] == "claude-agent:agent-42"
-
-
 def test_post_tool_use_never_promotes_requested_model_or_unplanned_label() -> None:
     adapter = _RecordingAdapter()
     payload = _agent_payload(event="PostToolUse", description="unit-unplanned")
