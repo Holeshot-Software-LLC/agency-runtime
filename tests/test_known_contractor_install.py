@@ -551,3 +551,117 @@ def test_a_clean_packaged_roster_reports_no_divergence(tmp_path: Path) -> None:
 
     assert result.divergent == ()
     assert result.inspected == len(KNOWN_CONTRACTORS_BY_SLUG)
+    assert store.packaged_workforce_divergence() == ()
+
+
+def test_divergence_can_be_read_without_running_the_repair_pass(tmp_path: Path) -> None:
+    """A review surface must be able to look without repairing.
+
+    ``reconcile_packaged_workforce_contracts`` writes: it re-projects contracts
+    and bumps the roster generation. Showing an operator what diverged must not
+    do either, so the read-only query exists and shares one classification with
+    the repair pass rather than restating the rule.
+    """
+
+    store = Store(tmp_path / "agency.db")
+    install_known_contractors(store)
+    slug = "application-integration-verifier"
+    package = known_contractor_package(slug)
+    worker = store.get_workforce_worker(slug, disabled_agents=())
+    amended_body = str(package.agent["prompt_body"]) + "\n\nAmended locally by an operator."
+    with closing(store._connect()) as conn:
+        conn.execute(
+            "UPDATE agent_versions SET content = ? WHERE id = ?",
+            (amended_body, worker["current_agent_version_id"]),
+        )
+        conn.commit()
+
+    def _generation() -> int:
+        with closing(store._connect()) as conn:
+            row = conn.execute(
+                "SELECT value FROM store_counters WHERE name = 'roster-generation'"
+            ).fetchone()
+        return int(row["value"]) if row is not None else 0
+
+    before = _generation()
+    reported = store.packaged_workforce_divergence()
+    again = store.packaged_workforce_divergence()
+
+    assert [item.agent_slug for item in reported] == [slug]
+    assert reported[0].reason == "revision_modified"
+    assert again == reported, "a pure read must be repeatable"
+    assert _generation() == before, "reading divergence bumped the roster generation"
+
+    # Narrowing to one slug, and to a slug that is clean, both behave.
+    assert store.packaged_workforce_divergence(slug) == reported
+    assert store.packaged_workforce_divergence("selection-safety-critic") == ()
+
+    # The repair pass agrees with the read, because both share one rule.
+    assert store.reconcile_packaged_workforce_contracts().divergent == reported
+
+
+def test_contractor_show_surfaces_divergence_and_names_the_revoke_command(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Rule 6 review: an operator must be able to see the amendment and act on it.
+
+    ``agency contractor show`` and ``agency workforce show`` are the same handler,
+    so the evidence lands on both. Revoking is deliberately NOT a new command --
+    ``agency workforce retire`` already exists with its own confirmation -- so the
+    review surface names it rather than duplicating it.
+    """
+
+    from argparse import Namespace
+
+    from agency_runtime.cli.workforce_commands import WorkforceDependencies, cmd_workforce_show
+
+    store = Store(tmp_path / "agency.db")
+    install_known_contractors(store)
+    slug = "application-integration-verifier"
+    package = known_contractor_package(slug)
+    worker = store.get_workforce_worker(slug, disabled_agents=())
+    with closing(store._connect()) as conn:
+        conn.execute(
+            "UPDATE agent_versions SET content = ? WHERE id = ?",
+            (
+                str(package.agent["prompt_body"]) + "\n\nAmended.",
+                worker["current_agent_version_id"],
+            ),
+        )
+        conn.commit()
+
+    dependencies = WorkforceDependencies(store_factory=lambda: store)
+    code = cmd_workforce_show(
+        Namespace(worker=slug, limit=10, json=False),
+        dependencies=dependencies,
+    )
+
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "packaged-divergence" in out, "the review surface hid an amended worker"
+    assert "revision_modified" in out
+    assert f"agency workforce retire {slug}" in out
+    assert f'--confirm "RETIRE {slug}"' in out
+
+
+def test_contractor_show_stays_quiet_for_an_unamended_worker(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """No divergence, no noise -- and no all-clear claimed either."""
+
+    from argparse import Namespace
+
+    from agency_runtime.cli.workforce_commands import WorkforceDependencies, cmd_workforce_show
+
+    store = Store(tmp_path / "agency.db")
+    install_known_contractors(store)
+
+    code = cmd_workforce_show(
+        Namespace(worker="application-integration-verifier", limit=10, json=False),
+        dependencies=WorkforceDependencies(store_factory=lambda: store),
+    )
+
+    assert code == 0
+    assert "packaged-divergence" not in capsys.readouterr().out

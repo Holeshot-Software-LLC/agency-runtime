@@ -966,6 +966,68 @@ def _packaged_workforce_authorities() -> dict[str, tuple[dict[str, Any], str]]:
     return authorities
 
 
+# One query for both the repair pass and the read-only divergence report, so the
+# population they judge can never drift apart.
+_PACKAGED_WORKFORCE_REVISION_QUERY = (
+    "SELECT worker.*, version.id AS version_id, version.version, "
+    "version.hash AS version_hash, version.content, version.metadata, "
+    "lineage.id AS lineage_id, "
+    "COALESCE(projection.recruitment_contract, "
+    "lineage.recruitment_contract) AS recruitment_contract, "
+    "COALESCE(projection.recruitment_contract_hash, "
+    "lineage.recruitment_contract_hash) AS recruitment_contract_hash "
+    "FROM agent_workers AS worker JOIN agent_versions AS version "
+    "ON version.id = worker.current_agent_version_id "
+    "JOIN agent_version_lineage AS lineage "
+    "ON lineage.worker_id = worker.worker_id "
+    "AND lineage.agent_version_id = worker.current_agent_version_id "
+    "LEFT JOIN agent_recruitment_contract_projections AS projection "
+    "ON projection.id = ("
+    "SELECT candidate.id "
+    "FROM agent_recruitment_contract_projections AS candidate "
+    "WHERE candidate.worker_id = worker.worker_id "
+    "AND candidate.agent_version_id = worker.current_agent_version_id "
+    "ORDER BY candidate.projection_sequence DESC LIMIT 1"
+    ") "
+    "WHERE worker.standing = 'active' ORDER BY worker.agent_slug"
+)
+
+
+def _packaged_divergence(
+    row: Mapping[str, Any],
+    authorities: Mapping[str, Any],
+) -> WorkforceContractDivergence | None:
+    """Classify one active worker against its packaged authority.
+
+    ``None`` means "nothing to report": either the worker is not package-owned at
+    all -- a minted contractor or externally supplied worker, outside this
+    authority by design -- or it is the exact packaged revision.
+
+    This is the single definition of divergence. The repair pass and the
+    read-only query both call it so the two can never drift apart.
+    """
+
+    authority = authorities.get(str(row["agent_slug"]))
+    if authority is None:
+        return None
+    agent, expected_origin = authority
+    actual_origin = str(row["origin"])
+    common = {
+        "agent_slug": str(row["agent_slug"]),
+        "expected_origin": expected_origin,
+        "actual_origin": actual_origin,
+        "expected_version": str(agent.get("version") or ""),
+        "actual_version": str(row["current_version"]),
+    }
+    if actual_origin != expected_origin:
+        return WorkforceContractDivergence(reason="origin_drift", **common)
+    if not _exact_packaged_revision(row, agent):
+        # The amendment case rule 6 cares about: package-owned, but the active
+        # revision is not the packaged one, so repair stops here and says so.
+        return WorkforceContractDivergence(reason="revision_modified", **common)
+    return None
+
+
 def _exact_packaged_revision(row: Mapping[str, Any], agent: Mapping[str, Any]) -> bool:
     """Prove that a stored immutable revision is the exact packaged source."""
 
@@ -998,6 +1060,31 @@ def _workforce_hash_matches_version(stored_hash: str, version_hash: str) -> bool
 class WorkforceStoreMixin:
     """Persist workforce overlays without rewriting governed prompt revisions."""
 
+    def packaged_workforce_divergence(
+        self,
+        agent_slug: str = "",
+    ) -> tuple[WorkforceContractDivergence, ...]:
+        """Report amended package-owned workers without repairing anything.
+
+        The same classification the repair pass uses, exposed as a pure read so a
+        review surface can show an operator what diverged before they decide
+        whether to retire the worker. Passing ``agent_slug`` narrows it to one.
+        """
+
+        authorities = _packaged_workforce_authorities()
+        divergent: list[WorkforceContractDivergence] = []
+        with closing(self._connect()) as conn:
+            rows = conn.execute(
+                _PACKAGED_WORKFORCE_REVISION_QUERY,
+            ).fetchall()
+        for row in rows:
+            if agent_slug and str(row["agent_slug"]) != agent_slug:
+                continue
+            divergence = _packaged_divergence(row, authorities)
+            if divergence is not None:
+                divergent.append(divergence)
+        return tuple(sorted(divergent, key=lambda item: item.agent_slug))
+
     def reconcile_packaged_workforce_contracts(self) -> WorkforceContractReconciliation:
         """Re-project stale derived contracts for exact active packaged revisions.
 
@@ -1012,29 +1099,7 @@ class WorkforceStoreMixin:
         divergent: list[WorkforceContractDivergence] = []
         with closing(self._connect()) as conn:
             conn.execute("BEGIN IMMEDIATE")
-            rows = conn.execute(
-                "SELECT worker.*, version.id AS version_id, version.version, "
-                "version.hash AS version_hash, version.content, version.metadata, "
-                "lineage.id AS lineage_id, "
-                "COALESCE(projection.recruitment_contract, "
-                "lineage.recruitment_contract) AS recruitment_contract, "
-                "COALESCE(projection.recruitment_contract_hash, "
-                "lineage.recruitment_contract_hash) AS recruitment_contract_hash "
-                "FROM agent_workers AS worker JOIN agent_versions AS version "
-                "ON version.id = worker.current_agent_version_id "
-                "JOIN agent_version_lineage AS lineage "
-                "ON lineage.worker_id = worker.worker_id "
-                "AND lineage.agent_version_id = worker.current_agent_version_id "
-                "LEFT JOIN agent_recruitment_contract_projections AS projection "
-                "ON projection.id = ("
-                "SELECT candidate.id "
-                "FROM agent_recruitment_contract_projections AS candidate "
-                "WHERE candidate.worker_id = worker.worker_id "
-                "AND candidate.agent_version_id = worker.current_agent_version_id "
-                "ORDER BY candidate.projection_sequence DESC LIMIT 1"
-                ") "
-                "WHERE worker.standing = 'active' ORDER BY worker.agent_slug"
-            ).fetchall()
+            rows = conn.execute(_PACKAGED_WORKFORCE_REVISION_QUERY).fetchall()
             sequence = int(
                 conn.execute(
                     "SELECT COALESCE(MAX(projection_sequence), 0) "
@@ -1044,39 +1109,12 @@ class WorkforceStoreMixin:
             for row in rows:
                 authority = authorities.get(str(row["agent_slug"]))
                 if authority is None:
-                    # Not package-owned at all -- a minted contractor or an
-                    # externally supplied worker. Outside this authority by
-                    # design, and not a divergence worth reporting.
                     continue
-                agent, expected_origin = authority
-                actual_origin = str(row["origin"])
-                if actual_origin != expected_origin:
-                    divergent.append(
-                        WorkforceContractDivergence(
-                            agent_slug=str(row["agent_slug"]),
-                            reason="origin_drift",
-                            expected_origin=expected_origin,
-                            actual_origin=actual_origin,
-                            expected_version=str(agent.get("version") or ""),
-                            actual_version=str(row["current_version"]),
-                        )
-                    )
+                divergence = _packaged_divergence(row, authorities)
+                if divergence is not None:
+                    divergent.append(divergence)
                     continue
-                if not _exact_packaged_revision(row, agent):
-                    # The amendment case rule 6 cares about: this worker is
-                    # package-owned but its active revision is not the packaged
-                    # one, so repair stops here and says so.
-                    divergent.append(
-                        WorkforceContractDivergence(
-                            agent_slug=str(row["agent_slug"]),
-                            reason="revision_modified",
-                            expected_origin=expected_origin,
-                            actual_origin=actual_origin,
-                            expected_version=str(agent.get("version") or ""),
-                            actual_version=str(row["current_version"]),
-                        )
-                    )
-                    continue
+                agent, _expected_origin = authority
                 inspected += 1
                 current_document = str(row["recruitment_contract"])
                 current_hash = str(row["recruitment_contract_hash"])

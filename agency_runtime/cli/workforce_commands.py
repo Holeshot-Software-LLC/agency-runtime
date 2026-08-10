@@ -93,6 +93,23 @@ def cmd_contractor_list(
     return cmd_workforce_list(args, dependencies=dependencies)
 
 
+def _packaged_divergence_report(store_instance: Any, agent_slug: str) -> list[dict[str, str]]:
+    """Return this worker's packaged divergence, or nothing when unavailable.
+
+    Older or stubbed stores may not expose the reader, and a review surface must
+    still render. An absent report means "not known", never "no divergence", so
+    the caller prints nothing rather than an all-clear it cannot support.
+    """
+
+    reader = getattr(store_instance, "packaged_workforce_divergence", None)
+    if not callable(reader) or not agent_slug:
+        return []
+    try:
+        return [item.to_dict() for item in reader(agent_slug)]
+    except Exception:
+        return []
+
+
 def cmd_workforce_show(
     args: argparse.Namespace,
     *,
@@ -109,6 +126,12 @@ def cmd_workforce_show(
         detail["outcomes"],
         required_successes=config.workforce.auto_promote_successes,
         review_window_days=config.workforce.contractor_review_days,
+    )
+    # Reviewing a worker means seeing whether it still matches what the package
+    # ships. A pure read: reporting a divergence never repairs or reverts it.
+    detail["packaged_divergence"] = _packaged_divergence_report(
+        store_instance,
+        str(detail["worker"].get("agent_slug") or ""),
     )
     if args.json:
         _emit(detail, as_json=True, dependencies=dependencies)
@@ -142,6 +165,21 @@ def cmd_workforce_show(
         print(f"promotion-reason\t{reason}")
     if readiness.get("evidence_rule"):
         print(f"evidence-rule\t{readiness['evidence_rule']}")
+    for divergence in detail["packaged_divergence"]:
+        print(
+            "packaged-divergence\t"
+            f"{divergence['reason']}: "
+            f"origin {divergence['actual_origin']} (packaged {divergence['expected_origin']}), "
+            f"version {divergence['actual_version']} (packaged {divergence['expected_version']})"
+        )
+    if detail["packaged_divergence"]:
+        slug = str(worker.get("agent_slug") or "")
+        print(
+            "packaged-divergence\tthis worker no longer matches the packaged revision and is "
+            "left as-is; retire it with: "
+            f'agency workforce retire {slug} --expected-revision <n> --reason "..." '
+            f'--confirm "RETIRE {slug}"'
+        )
     return 0
 
 
