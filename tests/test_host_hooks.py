@@ -621,11 +621,14 @@ def test_no_turn_id_never_recovers_older_digest_past_newer_terminal_preflight(
         }
     )
 
-    assert stopped != {}
-    assert stopped["continue"] is False
-    assert "could not verify" in stopped["stopReason"]
+    # The invariant this test exists for is the NON-RECOVERY: the older accepted
+    # digest must never be resurrected as the current turn's evidence. That still
+    # holds -- neither run is mutated below. What changed (rule 8) is the reply:
+    # Agency having no correlatable turn no longer withholds the host's answer.
+    assert stopped == {}
     assert store.get_run("prior")["status"] == "completed"
     assert store.get_run("newer")["status"] == newer_status
+    assert store.find_authoritative_trace("session", response_hash=digest) is None
 
 
 @pytest.mark.parametrize("host", ["codex", "claude"])
@@ -1440,7 +1443,14 @@ def test_strongly_preferred_delegation_declines_first_pass_and_replays_terminall
     assert len(adapter.verify_calls) == 1
 
 
-def test_stop_verifier_exception_blocks_instead_of_accepting() -> None:
+def test_stop_verifier_exception_publishes_instead_of_blocking() -> None:
+    """Rule 8: a verifier that cannot run must not cost the host its answer.
+
+    The failure is still recorded -- the turn closes ``verification_failed`` and
+    nothing is finalized -- but Agency being offline is not a finding about the
+    response, so the response publishes.
+    """
+
     class RaisingAdapter(FakeAdapter):
         def evaluate_completion_policy(
             self,
@@ -1463,13 +1473,15 @@ def test_stop_verifier_exception_blocks_instead_of_accepting() -> None:
         }
     )
 
-    assert result["continue"] is False
-    assert "could not verify" in result["stopReason"]
+    assert result == {}
     assert store.finalizations == []
     assert store.run_status["turn-stop"] == "verification_failed"
 
 
-def test_stop_persistence_exception_terminally_stops_verified_response() -> None:
+def test_stop_persistence_exception_publishes_verified_response() -> None:
+    """Rule 8: an unpersistable receipt for an otherwise verified response must
+    not withhold that response. Agency loses its audit row, not the user's turn."""
+
     class FailingStore(FakeStore):
         def record_finalization(self, **kwargs: Any) -> None:
             del kwargs
@@ -1491,8 +1503,7 @@ def test_stop_persistence_exception_terminally_stops_verified_response() -> None
         }
     )
 
-    assert result["continue"] is False
-    assert "could not verify or persist" in result["stopReason"]
+    assert result == {}
 
 
 def test_stop_does_not_consult_legacy_retry_receipts() -> None:
@@ -1523,7 +1534,13 @@ def test_stop_does_not_consult_legacy_retry_receipts() -> None:
     _assert_terminal_invalid(result, "codex")
 
 
-def test_stop_terminal_commit_exception_fails_closed() -> None:
+def test_stop_terminal_commit_exception_publishes_rather_than_blocking() -> None:
+    """Rule 8: Agency failing to persist its own rejection is Agency's problem.
+
+    The verifier still ran exactly once -- the finding is not discarded, it is
+    logged -- but an unrecordable outcome does not withhold the turn.
+    """
+
     class FailingStore(FakeStore):
         def commit_terminal_finalization(self, **_kwargs: Any) -> dict[str, Any]:
             raise OSError("database offline")
@@ -1548,8 +1565,7 @@ def test_stop_terminal_commit_exception_fails_closed() -> None:
         }
     )
 
-    assert result["continue"] is False
-    assert "could not verify or persist" in result["stopReason"]
+    assert result == {}
     assert len(adapter.verify_calls) == 1
 
 
@@ -1589,14 +1605,21 @@ def test_missing_or_blank_stop_response_fails_terminally_without_retry(
     ]
 
 
-def test_zcode_stop_rejection_and_terminal_replay_use_decision_block(
-    tmp_path: Path,
-) -> None:
-    """AR-127: ZCode only recognizes {"decision": "block", ...} on its Stop
-    event. The {"continue": False, "stopReason": ...} lifecycle shape is an
-    unknown field that ZCode silently ignores, collapsing a rejection into a
-    pass-through accept. ZCode must therefore emit decision:block on every
-    rejection path, including terminal replay and verifier-unavailable.
+def test_zcode_unpersistable_stop_publishes_on_every_pass() -> None:
+    """Rule 8 on ZCode's Stop event, including the retry pass.
+
+    This test used to claim it covered AR-127 terminal replay. It never did:
+    ``FakeStore`` cannot persist a rejection, so BOTH passes went through the
+    verification-unavailable path and neither reached the replay branch. The
+    genuine AR-127 coverage -- a real terminal rejection and its exact replay,
+    asserting ``decision: block`` for zcode -- lives in
+    ``test_missing_or_blank_stop_response_fails_terminally_without_retry``,
+    which runs against a real ``Store``.
+
+    What is uniquely worth pinning here is that an unpersistable Stop publishes
+    rather than blocking, on the first pass AND on the ``stop_hook_active``
+    retry, and that it emits the empty envelope -- never ``{"continue": False}``,
+    which ZCode silently ignores anyway (AR-127 in reverse).
     """
     adapter = FakeAdapter()
     adapter.verify_result = {
@@ -1615,10 +1638,7 @@ def test_zcode_stop_rejection_and_terminal_replay_use_decision_block(
             "last_assistant_message": "Draft without the Agency header.",
         }
     )
-    # First terminal rejection: must be decision:block.
-    assert first == {"decision": "block", "reason": first["reason"]}
-    assert "continue" not in first
-    assert "stopReason" not in first
+    assert first == {}
 
     exhausted = bridge.handle(
         {
@@ -1629,11 +1649,7 @@ def test_zcode_stop_rejection_and_terminal_replay_use_decision_block(
             "last_assistant_message": "Still missing the Agency header.",
         }
     )
-    # Exact terminal replay: must ALSO be decision:block, never the
-    # lifecycle shape, or ZCode would silently accept the invalid response.
-    assert exhausted["decision"] == "block"
-    assert "continue" not in exhausted
-    assert "stopReason" not in exhausted
+    assert exhausted == {}
 
 
 def test_claude_session_end_closes_every_open_turn(tmp_path: Path) -> None:
@@ -2050,8 +2066,24 @@ def test_terminal_finalization_is_exactly_replayed_through_stdio(
 
     assert altered.returncode == 0
     assert altered.stderr == ""
-    rejection = json.loads(altered.stdout)
-    assert rejection["continue"] is False
+    replayed = json.loads(altered.stdout)
+    if include_turn_id:
+        # Correlatable, so this is a definite negative: the submitted text is not
+        # the text accepted for this trace. That still refuses, and must -- rule 8
+        # is about Agency's own unavailability, not about suppressing findings.
+        assert replayed["continue"] is False
+    else:
+        # Not correlatable: with no turn_id Agency cannot tell which turn this is.
+        # Withholding the host's answer on Agency's own blindness is the rule-8
+        # drift, so it publishes instead.
+        assert replayed == {}
+    # Either way, the altered text is never recorded as an accepted response.
+    accepted = [
+        row
+        for row in Store(db_path).recent_runtime_activity(limit=10)["finalizations"]
+        if row["action"] == "accept"
+    ]
+    assert len(accepted) == 1
 
 
 def test_agency_hook_claude_records_real_tool_evidence_from_stdin(

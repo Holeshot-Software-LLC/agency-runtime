@@ -258,6 +258,13 @@ def _boundary_failure_result(
     # ZCode only recognizes {"decision": "block", ...}; the lifecycle shape is
     # silently ignored and would collapse this malformed-Stop block into a
     # pass-through accept. See AR-127.
+    #
+    # NOTE (rule 8): this boundary is still fail-closed on purpose, and it is the
+    # last Stop path that can withhold a turn. Unlike the verification failures
+    # above, an unreadable envelope means Agency cannot even tell whether this is
+    # a Stop it owns, so failing open here would make the evidence contract
+    # bypassable by sending a malformed payload. Deliberate open question, not an
+    # oversight -- see the handoff.
     retry = host != "zcode"
     return _completion_rejection(
         _VERIFICATION_UNAVAILABLE,
@@ -2074,7 +2081,9 @@ class HookBridge:
             retry = host_retry
         except Exception:
             self._close_turn(correlation.session_id, trace_id, "verification_failed")
-            return self._reject_completion(_VERIFICATION_UNAVAILABLE, retry=True)
+            return self._publish_unverified(
+                correlation.session_id, trace_id, "terminal_lifecycle_unreadable"
+            )
 
         verification = self._verify_final_response(
             final_response,
@@ -2084,7 +2093,9 @@ class HookBridge:
         )
         if verification.get("verification_unavailable") is True:
             self._close_turn(correlation.session_id, trace_id, "verification_failed")
-            return self._reject_completion(_VERIFICATION_UNAVAILABLE, retry=True)
+            return self._publish_unverified(
+                correlation.session_id, trace_id, "verification_unavailable"
+            )
         if verification.get("action") == "continue":
             return self._handle_terminal_rejection(
                 correlation=correlation,
@@ -2105,7 +2116,9 @@ class HookBridge:
             expected_evidence_revision=verification.get("evidence_revision"),
         )
         if not accepted:
-            return self._reject_completion(_VERIFICATION_UNAVAILABLE, retry=True)
+            return self._publish_unverified(
+                correlation.session_id, trace_id, "terminal_finalization_not_persisted"
+            )
         return {}
 
     def _handle_terminal_rejection(
@@ -2192,7 +2205,7 @@ class HookBridge:
                     "trace_id": trace_id,
                 },
             )
-        return self._reject_completion(_VERIFICATION_UNAVAILABLE, retry=True)
+        return self._publish_unverified(session_id, trace_id, "terminal_rejection_not_persisted")
 
     def _commit_terminal_finalization(
         self,
@@ -2530,6 +2543,31 @@ class HookBridge:
                 "verification_unavailable": True,
             }
         return verification
+
+    def _publish_unverified(self, session_id: str, trace_id: str, cause: str) -> dict[str, Any]:
+        """Let the turn publish when Agency could not verify or persist its evidence.
+
+        Agency failing to check something is not a finding about the response. It
+        is Agency being unavailable, and rule 8 is explicit that Agency gets out of
+        the way rather than withholding the host's answer -- the same reasoning the
+        just-in-time path already applies to a child ("a compatibility check that
+        cannot run must not cost the child its specialists") and that
+        ``_boundary_failure_result`` already applies to every non-Stop event.
+
+        The failure is recorded at error level so it stays diagnosable; what it no
+        longer does is cost the user a completed turn.
+        """
+
+        logger.error(
+            "evidence_unavailable_publishing_anyway",
+            extra={
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "cause": cause,
+                "host": self.host,
+            },
+        )
+        return {}
 
     def _reject_completion(self, reason: str, *, retry: bool) -> dict[str, Any]:
         """Return a host-native fail-closed completion result."""

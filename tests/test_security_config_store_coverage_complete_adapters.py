@@ -354,11 +354,12 @@ def test_hook_bridge_validation_recovery_and_noop_events() -> None:
         )
         == {}
     )
-    rejected = bridge.handle(
+    # Rule 8: this stub store cannot persist the evidence contract, and Agency
+    # being unable to record a turn is not grounds for withholding it.
+    unverifiable = bridge.handle(
         {"hook_event_name": "Stop", "session_id": "session", "last_assistant_message": ""}
     )
-    assert rejected["continue"] is False
-    assert "could not verify or persist" in rejected["stopReason"]
+    assert unverifiable == {}
     assert bridge.handle({"hook_event_name": "SessionStart", "session_id": "session"}) == {}
 
 

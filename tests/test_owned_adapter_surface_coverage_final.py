@@ -963,7 +963,10 @@ def test_hook_post_tool_resident_and_terminal_defensive_matrix(monkeypatch) -> N
     monkeypatch.setattr(bridge, "_exact_terminal_finalization", lambda *_args: None)
     monkeypatch.setattr(bridge, "_is_terminal_turn", lambda *_args: False)
     result = bridge._handle_stop({"last_assistant_message": "draft"})
-    assert result["continue"] is False
+    # Rule 8: unverifiable evidence is Agency's failure, not the response's, so the
+    # turn publishes. The failure is still recorded -- the close below is the part
+    # that must not regress.
+    assert result == {}
     assert closed[-1] == ("session", "trace", "verification_failed")
 
     bridge.store = SimpleNamespace(
