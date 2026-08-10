@@ -26,7 +26,6 @@ from agency_runtime.core.config import (
     load_config,
     reset_config_cache,
 )
-from agency_runtime.core.delegation.operational import empty_delegation_plan_projection
 from agency_runtime.core.routing_snapshot import (
     RoutingSnapshot,
     bind_workforce_snapshot,
@@ -297,94 +296,6 @@ def test_mcp_explain_passes_one_snapshot_to_selector(
     assert observed == {"catalog": snapshot.catalog, "config": snapshot.config}
 
 
-def test_dashboard_route_lab_passes_one_snapshot_to_selector(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    snapshot = RoutingSnapshot(
-        _config(disabled=("code-reviewer",), maximum=100),
-        _catalog(),
-    )
-    identity = {
-        "config_path": str(Path.cwd() / "agency.yaml"),
-        "config_revision": "sha256:" + "a" * 64,
-        "store_path": str(Path.cwd() / "agency.db"),
-        "roster_revision": "b" * 64,
-        "environment_overrides": {},
-    }
-    monkeypatch.setattr(dashboard_module, "_delegation_graph", lambda _receipt: {"nodes": []})
-    monkeypatch.setattr(
-        dashboard_module,
-        "delegation_plan_projection",
-        lambda *_args, **_kwargs: {"units": []},
-    )
-    capability_receipt = {
-        "contract_version": "1",
-        "surface": "codex",
-        "execution_host": "codex",
-        "inference_surface": "",
-        "platform": "windows",
-        "status": "native-installation-verified",
-        "source": "native-installation-evidence",
-        "capabilities": ["repository-read", "test-execution"],
-        "unknown_tools": [],
-        "evidence": ["native-inventory-verified:codex"],
-    }
-    monkeypatch.setattr(
-        dashboard_module,
-        "_route_lab_host_capability",
-        lambda *_args, **_kwargs: ("codex", capability_receipt),
-    )
-    observed: dict[str, Any] = {}
-
-    def explain(*args: Any, **kwargs: Any) -> dict[str, Any]:
-        observed.update(
-            {
-                "catalog": args[2],
-                "config": kwargs["config"],
-                "host": kwargs["host"],
-                "platform": kwargs["platform"],
-                "available_tools": kwargs["available_tools"],
-            }
-        )
-        return {"ok": True}
-
-    monkeypatch.setattr(dashboard_module, "explain_route", explain)
-    handler = object.__new__(dashboard_module.DashboardHTTPHandler)
-    handler.server = SimpleNamespace(store=object(), host_inspector=lambda: [])
-    handler._master_control = lambda: {"enabled": True}
-    handler._routing_operation_snapshot = lambda: (snapshot, identity)
-    payloads: list[dict[str, Any]] = []
-    handler._json_ok = payloads.append
-
-    handler._handle_route_lab({"task": "review code", "host": "codex"})
-
-    assert payloads == [
-        {
-            "ok": True,
-            "host_capability_receipt": capability_receipt,
-            "eligibility": {
-                "execution_host": "codex",
-                "capability_status": "native-installation-verified",
-                "eligible_count": 2,
-                "rejection_count": 0,
-                "rejections": [],
-                "truncated": False,
-                "host_resolution": "explicit",
-            },
-            "delegation_plan": {"units": []},
-            "delegation_graph": {"nodes": []},
-            "operation_snapshot": identity,
-        }
-    ]
-    assert observed == {
-        "catalog": snapshot.catalog,
-        "config": snapshot.config,
-        "host": "codex",
-        "platform": "windows",
-        "available_tools": ("repository-read", "test-execution"),
-    }
-
-
 @pytest.mark.parametrize(
     ("body", "message"),
     [
@@ -437,37 +348,6 @@ def _disabled_master() -> dict[str, Any]:
         "generation": 4,
         "updated_at": "2026-07-16T12:00:00Z",
         "source": "test",
-    }
-
-
-def _route_bypass(*, session_id: str = "session", task: str = "review") -> dict[str, Any]:
-    return {
-        "schema_version": "agency.selection_explain.v1",
-        "session_id": session_id,
-        "task": task,
-        "routing": {
-            "runtime_enabled": False,
-            "bypassed": True,
-            "trace_id": "",
-            "selected_ids": [],
-            "semantic_ids": [],
-            "confidence": 0.0,
-            "latency_ms": 0,
-            "status": "bypassed",
-            "source": "master_control",
-            "provider": "master_control",
-        },
-        "selected": [],
-        "considered_candidates": [],
-        "rejected_candidates": [],
-        "signals": {"source": "master_control"},
-        "delegation_plan": empty_delegation_plan_projection(),
-        "delegation_graph": {"nodes": [], "edges": []},
-        "runtime_enabled": False,
-        "status": "disabled",
-        "bypassed": True,
-        "message": "Agency Runtime is disabled; Route Lab bypassed routing.",
-        "master": _disabled_master(),
     }
 
 

@@ -16,7 +16,6 @@ from agency_runtime.core.agent_activation import (
     normalize_agent_slug,
 )
 from agency_runtime.core.dashboard_runtime import dashboard_api_request
-from agency_runtime.core.delegation.operational import empty_delegation_plan_projection
 from agency_runtime.core.roster.ingress import (
     MAX_LIST_ITEM_BYTES,
     MAX_LIST_ITEMS,
@@ -44,7 +43,6 @@ _ROUTE_BYPASS_FIELDS = frozenset(
         "considered_candidates",
         "rejected_candidates",
         "signals",
-        "delegation_plan",
         "delegation_graph",
         "runtime_enabled",
         "status",
@@ -591,7 +589,6 @@ def broker_explain_selection(
             or routing.get("source") != "master_control"
             or routing.get("provider") != "master_control"
             or response.get("signals") != {"source": "master_control"}
-            or response.get("delegation_plan") != empty_delegation_plan_projection()
             or response.get("delegation_graph") != {"nodes": [], "edges": []}
             or response.get("message") != "Agency Runtime is disabled; Route Lab bypassed routing."
         ):

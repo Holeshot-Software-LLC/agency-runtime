@@ -12,7 +12,6 @@ import pytest
 
 from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core import canary
-from agency_runtime.core.agent_activation import PROTECTED_AGENT_SLUGS
 from agency_runtime.core.canary_backends import (
     _assert_codex_child_activation_is_tool_free,
     _codex_child_execution_projection,
@@ -35,7 +34,6 @@ from agency_runtime.core.codex_child_tool_evidence import (
 )
 from agency_runtime.core.codex_native_plan_scope import deserialize_codex_native_plan_scope
 from agency_runtime.core.config import reset_config_cache
-from agency_runtime.core.delegation.events import mark_delegation_executed
 from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
 from agency_runtime.core.header.contract import finalize_header
 from agency_runtime.core.header.finalize import response_hash
@@ -914,176 +912,6 @@ def _finish_v2_chain_through_hooks(
             },
         ),
     }
-
-
-def _record_complete_v2_chain(
-    store: Store,
-    monkeypatch: pytest.MonkeyPatch,
-    *,
-    task: str,
-    hook_provenance: bool = True,
-    persisted_tool_use_id: str | None = None,
-) -> dict[str, object]:
-    from agency_runtime.core.workforce import inference
-
-    monkeypatch.setattr(
-        inference,
-        "invoke_structured_provider_result",
-        stub_inference_invoker(("code-reviewer",)),
-    )
-    session_id = "codex-canary-session"
-    trace_id = "codex-canary-trace"
-    preflight = run_preflight(
-        store,
-        session_id=session_id,
-        trace_id=trace_id,
-        user_message=task,
-        host="codex",
-        capability_receipt=native_adapter_capability_receipt(
-            "codex",
-            platform="windows" if os.name == "nt" else "linux",
-            session_id=session_id,
-            trace_id=trace_id,
-        ),
-    )
-    slug = next(
-        value for value in preflight.selected_specialists if value not in PROTECTED_AGENT_SLUGS
-    )
-    assert slug == "code-reviewer"
-    assert len(preflight.delegation_plan) == 1
-    plan = preflight.delegation_plan[0]
-    unit = str(plan["work_unit_id"])
-    task_name = codex_task_name_for_work_unit(unit)
-    if hook_provenance and persisted_tool_use_id is None:
-        return _finish_v2_chain_through_hooks(
-            store,
-            session_id=session_id,
-            trace_id=trace_id,
-            slug=slug,
-            unit=unit,
-            task_name=task_name,
-            plan=plan,
-        )
-    tool_use_id = "spawn-tool-use"
-    activation = (
-        _prepare_exact_opaque_activation(
-            store,
-            session_id=session_id,
-            trace_id=trace_id,
-            plan=plan,
-            tool_use_id=persisted_tool_use_id or tool_use_id,
-        )
-        if hook_provenance
-        else store.prepare_delegation_activation(
-            session_id=session_id,
-            trace_id=trace_id,
-            specialist_slug=slug,
-            work_unit_id=unit,
-        )
-    )
-    receiver_id = "019fa500-1111-7222-8333-444455556666"
-    store.record_native_child_started(
-        host="codex",
-        backend="spawn_agent",
-        session_id=session_id,
-        trace_id=trace_id,
-        worker_id=receiver_id,
-        native_run_id=f"codex-agent:{receiver_id}",
-    )
-    consumed = store.consume_delegation_activation(
-        activation_token=str(activation["activation_token"]),
-        session_id=session_id,
-        trace_id=trace_id,
-        specialist_slug=slug,
-        work_unit_id=unit,
-        worker_id=f"task:{task_name}",
-        native_run_id=f"codex-task:{task_name}",
-    )
-    assert (
-        mark_delegation_executed(
-            store,
-            session_id=session_id,
-            trace_id=trace_id,
-            host="codex",
-            backend="spawn_agent",
-            agent=slug,
-            work_unit_id=unit,
-            executed_worker_kind="generic-worker",
-            executed_worker_id=f"task:{task_name}",
-            native_run_id=f"codex-task:{task_name}",
-        )
-        == 1
-    )
-    store.record_native_child_started(
-        host="codex",
-        backend="spawn_agent",
-        session_id=session_id,
-        trace_id=trace_id,
-        work_unit_id=unit,
-        worker_id=receiver_id,
-        native_run_id=f"codex-agent:{receiver_id}",
-    )
-    assert store.claim_codex_native_child_execution(
-        session_id=session_id,
-        trace_id=trace_id,
-        work_unit_id=unit,
-        worker_id=receiver_id,
-        native_run_id=f"codex-agent:{receiver_id}",
-        tool_use_id=tool_use_id,
-    )
-    store.record_native_child_stopped(
-        host="codex",
-        backend="spawn_agent",
-        session_id=session_id,
-        trace_id=trace_id,
-        worker_id=receiver_id,
-        native_run_id=f"codex-agent:{receiver_id}",
-    )
-    completion = store.get_completion_evidence_snapshot(session_id, trace_id)
-    accepted = store.commit_terminal_finalization(
-        session_id=session_id,
-        trace_id=trace_id,
-        host="codex",
-        action="accept",
-        response_hash=response_hash(_valid_header()),
-        status="completed",
-        expected_evidence_revision=completion["evidence_revision"],
-    )
-    assert accepted["authoritative"] is True
-    return {
-        "backend": "codex",
-        "profile_scope": "current-profile",
-        "status": "completed",
-        "exit_code": 0,
-        "output": _valid_header(),
-        "collaboration": _direct_collaboration(
-            receiver_id=receiver_id,
-            work_unit_id=unit,
-            task_name=task_name,
-            goal_hash=str(plan["goal_hash"]),
-            prompt_delivery={
-                "host": "codex",
-                "parent_session_id": session_id,
-                "parent_trace_id": trace_id,
-                "tool_use_id": tool_use_id,
-                "work_unit_id": unit,
-                "specialist_slug": slug,
-                "specialist_version": str(consumed["version"]),
-                "specialist_prompt_hash": str(consumed["prompt_hash"]),
-                "goal_hash": str(plan["goal_hash"]),
-            },
-        ),
-    }
-
-
-
-
-
-
-
-
-
-
 
 
 def _process_result(

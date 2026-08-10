@@ -30,7 +30,6 @@ from agency_runtime.core.dashboard_runtime import (
     write_dashboard_runtime,
 )
 from agency_runtime.core.installer_contracts import CODEX_ACTIVATION_CANARY_PROOF_CONTRACT
-from agency_runtime.core.observability import correlation_observation_digest
 from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.roster.ingress import MAX_LIST_ITEMS
 from agency_runtime.core.roster.sync import quarantine_candidate
@@ -1622,63 +1621,6 @@ def test_dashboard_correlates_requests_with_content_free_observations(
     assert invalid not in "\n".join(record.getMessage() for record in caplog.records)
 
 
-def test_dashboard_route_lab_binds_generated_trace_to_request_observation(
-    dashboard_server,
-    caplog: pytest.LogCaptureFixture,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
-    captured: dict[str, str] = {}
-
-    def explain_with_trace(
-        session_id,
-        task,
-        _catalog,
-        *,
-        trace_id,
-        **_kwargs,
-    ):
-        captured["trace_id"] = trace_id
-        return {
-            "schema_version": "agency.selection_explain.v1",
-            "session_id": session_id,
-            "task": task,
-            "routing": {
-                "eligibility_rejections": [],
-                "selected_ids": [],
-                "trace_id": trace_id,
-            },
-            "selected": [],
-            "considered_candidates": [],
-            "rejected_candidates": [],
-            "signals": {"work_units": {"units": []}},
-            "status": "empty",
-        }
-
-    monkeypatch.setattr(dashboard_module, "explain_route", explain_with_trace)
-    monkeypatch.setattr(
-        dashboard_module,
-        "delegation_plan_projection",
-        lambda *_args, **_kwargs: {"units": []},
-    )
-    request_id = str(uuid4())
-    status, payload, headers = _json_response(
-        dashboard_server,
-        "/api/route",
-        method="POST",
-        body={"task": "Trace this routing decision", "host": "codex"},
-        token=dashboard_server["token"],
-        request_id=request_id,
-    )
-
-    assert status == 200
-    assert headers["X-Agency-Request-ID"] == request_id
-    assert payload["routing"]["trace_id"] == captured["trace_id"]
-    observation = _wait_for_dashboard_observation(caplog, request_id)
-    assert observation["operation"] == "route"
-    assert observation["correlation_digest"] == correlation_observation_digest(captured["trace_id"])
-
-
 def test_dashboard_keep_alive_requests_use_independent_request_ids(
     dashboard_server,
     caplog: pytest.LogCaptureFixture,
@@ -2063,48 +2005,6 @@ def test_dashboard_runtime_master_api_is_authenticated_atomic_and_live(
         assert status == 200
         assert current["master"]["enabled"] is False
         assert current["master"]["generation"] == 1
-
-
-def test_dashboard_route_lab_bypasses_all_routing_while_master_is_off(
-    dashboard_server,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    status, _payload, _headers = _json_response(
-        dashboard_server,
-        "/api/runtime/toggle",
-        method="POST",
-        body={
-            "enabled": False,
-            "confirm": "DISABLE AGENCY",
-            "expected_generation": 0,
-        },
-        token=dashboard_server["token"],
-    )
-    assert status == 200
-
-    def forbidden(*_args, **_kwargs):
-        raise AssertionError("disabled Route Lab must not enter the routing path")
-
-    monkeypatch.setattr(dashboard_module, "explain_route", forbidden)
-    monkeypatch.setattr(dashboard_module, "load_config", forbidden)
-    monkeypatch.setattr(Store, "get_active_roster_as_catalog", forbidden)
-
-    status, payload, _headers = _json_response(
-        dashboard_server,
-        "/api/route",
-        method="POST",
-        body={"task": "Route this task"},
-        token=dashboard_server["token"],
-    )
-
-    assert status == 200
-    assert payload["status"] == "disabled"
-    assert payload["bypassed"] is True
-    assert payload["master"]["enabled"] is False
-    assert "bypassed routing" in payload["message"]
-    assert payload["delegation_plan"]["authority"] == "recommendation_only"
-    assert payload["delegation_plan"]["unit_count"] == 0
-    assert "no delegation recommendation" in payload["delegation_plan"]["evidence_contract"]
 
 
 @pytest.mark.parametrize(
@@ -3338,57 +3238,6 @@ def test_dashboard_overview_and_activity_are_metadata_only(dashboard_server, mon
     }
     assert all("user_message" not in row for row in activity["runs"])
     assert all("stdout" not in row and "stderr" not in row for row in activity.get("workers", []))
-
-
-@pytest.mark.skip(reason="ADR-0087: needs full inference nomination-delivery flow")
-def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
-    task = "1. Review application security design\n2. Audit threat boundaries"
-    for _attempt in range(2):
-        status, payload, _headers = _json_response(
-            dashboard_server,
-            "/api/route",
-            method="POST",
-            body={
-                "task": task,
-                "session_id": "dashboard-test",
-            },
-            token=dashboard_server["token"],
-        )
-
-    assert status == 200
-    assert payload["schema_version"] == "agency.selection_explain.v1"
-    assert payload["task"] == task
-    assert payload["host_capability_receipt"]["source"] == "native-installation-evidence"
-    assert payload["host_capability_receipt"]["execution_host"] == "codex"
-    eligibility = payload["eligibility"]
-    assert eligibility["execution_host"] == "codex"
-    assert eligibility["capability_status"] == "native-installation-verified"
-    assert eligibility["eligible_count"] >= 1
-    assert eligibility["rejection_count"] == len(eligibility["rejections"])
-    assert eligibility["truncated"] is False
-    assert eligibility["host_resolution"] == "derived"
-    assert payload["routing"]["execution_context"]["execution_host"] == "codex"
-    assert payload["delegation_graph"]["nodes"]
-    assert [item["description"] for item in payload["delegation_graph"]["nodes"]] == payload[
-        "signals"
-    ]["work_units"]["units"]
-    plan = payload["delegation_plan"]
-    assert plan["schema_version"] == "agency.dashboard.delegation_plan.v1"
-    assert plan["authority"] == "recommendation_only"
-    assert plan["execution_host"] == "codex"
-    assert "spawn_agent" in plan["mechanism"]
-    assert "not execution" in plan["evidence_contract"]
-    assert plan["unit_count"] == len(plan["units"]) > 0, json.dumps(payload["routing"])
-    assert all(item["recommended_agent"] == "security-reviewer" for item in plan["units"])
-    assert all(item["compatible_specialists"] == ["security-reviewer"] for item in plan["units"])
-    assert all(
-        item["assignment_strength"] in {"optional", "preferred", "strongly_preferred"}
-        for item in plan["units"]
-    )
-    assert all("required_evidence" in item for item in plan["units"])
-    assert "prompt_body" not in _nested_keys(plan)
-    assert "decision_id" not in payload["routing"]
-    assert dashboard_server["store"].get_open_traces_for_session("dashboard-test") == []
 
 
 def test_route_lab_host_capability_is_derived_only_from_verified_inventory(

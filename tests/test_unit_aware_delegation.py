@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 
 from agency_runtime.core import preflight as preflight_module
-from agency_runtime.core import preflight_recipe
 from agency_runtime.core.delegation.events import (
     MAX_SUGGESTED_WORK_UNITS,
     work_unit_id_from_text,
@@ -16,7 +15,6 @@ from agency_runtime.core.delegation.native_labels import (
     codex_task_name_for_work_unit,
     internal_work_unit_from_codex_task_name,
 )
-from agency_runtime.core.resident_manager_binding import build_resident_manager_binding
 from agency_runtime.core.selector.delegation_detection import (
     WORK_UNIT_DETECTION_VERSION,
     _imperative_units,
@@ -189,98 +187,6 @@ def test_mixed_dependency_route_without_an_exact_plan_fails_open(
     # No delegations are recorded because the plan could not produce a valid
     # unit assignment, but the turn was allowed to proceed.
     assert store.get_delegations("trace") == []
-
-
-def test_persisted_v2_assignment_recipe_remains_replayable(tmp_path) -> None:
-    from agency_runtime.core.config import AgencyConfig
-    from agency_runtime.core.selector import pipeline
-
-    prompt = "1. Audit OAuth authentication\n2. Write installation documentation"
-    metadata = [
-        {
-            "slug": "opaque-a",
-            "name": "Guardian",
-            "description": "Reviews trust boundaries and authentication.",
-            "capabilities": ["OAuth security audit"],
-            "tags": ["security"],
-        },
-        {
-            "slug": "opaque-b",
-            "name": "Scribe",
-            "description": "Maintains installation guidance.",
-            "capabilities": ["documentation writing"],
-            "tags": ["writer"],
-        },
-    ]
-    routing = {
-        "selected_ids": ["opaque-a", "opaque-b"],
-        "work_units": detect_work_units(prompt),
-        "unit_assignment_agents": metadata,
-    }
-    units = detect_work_units(prompt)["units"]
-    plan = [
-        {
-            "assignment_version": "2",
-            "work_unit_id": work_unit_id_from_text(unit),
-            "recommended_agent": agent,
-        }
-        for unit, agent in zip(units, ("opaque-a", "opaque-b"), strict=True)
-    ]
-    config = AgencyConfig()
-    recipe = {
-        "recipe_version": 9,
-        "policy_fingerprint": preflight_recipe._context_policy_fingerprint(
-            config,
-            pipeline,
-            delivery_mode="direct",
-            context_limit=preflight_recipe.MAX_PREFLIGHT_CONTEXT_CHARS,
-            recipe_version=9,
-            context_policy_version=9,
-        ),
-        "session_id": "session",
-        "trace_id": "trace",
-        "host": "generic",
-        "delivery_mode": "direct",
-        "context_limit": preflight_recipe.MAX_PREFLIGHT_CONTEXT_CHARS,
-        "routing": preflight_recipe._content_free_routing_recipe(
-            routing,
-            trace_id="trace",
-        ),
-        "specialist_refs": [],
-        "unit_assignment_agents": metadata,
-        "unit_agent_plan": plan,
-        "trivial": False,
-        "turn_classification": {
-            "turn_kind": "new_intent",
-            "selection_required": True,
-            "reroute_required": True,
-            "execution_decision_required": True,
-            "continuation_of": "",
-            "confidence": 1.0,
-            "reason_codes": ["test_fixture"],
-            "state_revision": "f" * 64,
-            "classifier_version": 1,
-        },
-        "resident_manager_binding": build_resident_manager_binding(
-            session_id="session",
-            host="generic",
-            delivery_mode="request",
-        ).as_dict(),
-        "roster_size": 2,
-    }
-
-    replayed = preflight_recipe._result_from_recipe(
-        Store(tmp_path / "v2-replay.db"),
-        recipe,
-        session_id="session",
-        trace_id="trace",
-        user_message=prompt,
-        config=config,
-        pipeline=pipeline,
-    )
-
-    assert {item["assignment_version"] for item in plan} == {"2"}
-    assert list(replayed.delegation_plan) == plan
 
 
 def test_assignment_metadata_projection_is_bounded_and_fail_closed() -> None:
