@@ -351,6 +351,36 @@ def _disabled_master() -> dict[str, Any]:
     }
 
 
+def _route_bypass(*, session_id: str = "session", task: str = "review") -> dict[str, Any]:
+    return {
+        "schema_version": "agency.selection_explain.v1",
+        "session_id": session_id,
+        "task": task,
+        "routing": {
+            "runtime_enabled": False,
+            "bypassed": True,
+            "trace_id": "",
+            "selected_ids": [],
+            "semantic_ids": [],
+            "confidence": 0.0,
+            "latency_ms": 0,
+            "status": "bypassed",
+            "source": "master_control",
+            "provider": "master_control",
+        },
+        "selected": [],
+        "considered_candidates": [],
+        "rejected_candidates": [],
+        "signals": {"source": "master_control"},
+        "delegation_graph": {"nodes": [], "edges": []},
+        "runtime_enabled": False,
+        "status": "disabled",
+        "bypassed": True,
+        "message": "Agency Runtime is disabled; Route Lab bypassed routing.",
+        "master": _disabled_master(),
+    }
+
+
 def _search_bypass(*, query: str = "review") -> dict[str, Any]:
     return {
         "schema_version": "agency.search.v1",

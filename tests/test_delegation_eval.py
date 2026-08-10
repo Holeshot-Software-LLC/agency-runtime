@@ -22,7 +22,6 @@ def test_delegation_eval_harness_passes_core_contracts() -> None:
     assert {
         "detect_numbered_list",
         "detect_status_query_no_delegate",
-        "context_shows_opportunity_without_specialist_match",
         "all_adapters_track_evidence",
         "all_adapters_capture_model_receipts",
     } <= names

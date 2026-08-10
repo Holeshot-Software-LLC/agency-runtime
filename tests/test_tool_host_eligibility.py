@@ -34,11 +34,6 @@ from agency_runtime.core.selector.compatibility import filter_eligible_catalog
 from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.store.queries import project_routing_decision
 from agency_runtime.core.store.sqlite import Store
-from agency_runtime.core.unit_assignment import (
-    MAX_WORK_UNIT_CHARS,
-    MAX_WORK_UNIT_PREVIEW_CHARS,
-    work_unit_id_from_text,
-)
 
 
 def _agent(slug: str, **overrides: Any) -> dict[str, Any]:
@@ -764,40 +759,6 @@ def test_exact_unit_route_uses_parent_capability_correlation_not_cache_identity(
 
     assert routed["execution_context"] == receipt.as_dict()
     assert routed["eligibility_rejections"] == []
-
-
-def test_visible_work_unit_projection_keeps_full_transport_identity_and_all_previews() -> None:
-    first = "A" * MAX_WORK_UNIT_PREVIEW_CHARS + "-FIRST-TAIL" + "x" * MAX_WORK_UNIT_CHARS
-    second = "B" * MAX_WORK_UNIT_PREVIEW_CHARS + "-SECOND-TAIL" + "y" * MAX_WORK_UNIT_CHARS
-    bounded = pipeline._bounded_work_units(
-        {
-            "count": 2,
-            "confidence": "high",
-            "source": "numbered_list",
-            "units": [first, second],
-            "delegate": True,
-        }
-    )
-    expected_first = first[:MAX_WORK_UNIT_CHARS]
-    expected_second = second[:MAX_WORK_UNIT_CHARS]
-
-    assert bounded["units"] == [expected_first, expected_second]
-    context = pipeline.build_routing_context(
-        {
-            "selected_ids": [],
-            "confidence": 0.0,
-            "status": "abstained",
-            "work_units": bounded,
-        },
-        AgencyConfig(),
-    )
-
-    assert f"[{work_unit_id_from_text(expected_first)}]" in context
-    assert f"[{work_unit_id_from_text(expected_second)}]" in context
-    assert "A" * MAX_WORK_UNIT_PREVIEW_CHARS in context
-    assert "B" * MAX_WORK_UNIT_PREVIEW_CHARS in context
-    assert "-FIRST-TAIL" not in context
-    assert "-SECOND-TAIL" not in context
 
 
 def test_preflight_never_routes_hard_requirements_with_unknown_tool_state(

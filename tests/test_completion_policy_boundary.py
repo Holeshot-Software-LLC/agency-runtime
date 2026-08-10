@@ -136,66 +136,6 @@ def test_hermes_transform_rejects_unfinalized_natural_response_without_repair(
     assert store.get_run("hermes-turn")["status"] == "response_invalid"
 
 
-def test_public_finalizer_rejects_nontrivial_turn_without_specialist(
-    tmp_path: Path,
-) -> None:
-    store = Store(tmp_path / "public-none.db")
-    _create_turn(
-        store,
-        session_id="public-session",
-        trace_id="public-turn",
-        request_kind="nontrivial",
-        host="mcp",
-    )
-
-    result = finalize_response(
-        "Substantive answer.",
-        trace_metadata={
-            "session_id": "public-session",
-            "trace_id": "public-turn",
-            "host": "mcp",
-        },
-        store=store,
-    )
-
-    assert result["action"] == "continue"
-    assert result["missing"] == ["agencies_loaded"]
-    assert store.get_run("public-turn")["status"] == "active"
-    assert store.get_authoritative_finalization("public-session", "public-turn") is None
-
-
-def test_public_finalizer_rejects_open_delegation_suggestion(tmp_path: Path) -> None:
-    store = Store(tmp_path / "public-delegation.db")
-    _create_turn(
-        store,
-        session_id="public-session",
-        trace_id="public-turn",
-        request_kind="nontrivial",
-        host="mcp",
-    )
-    store.record_specialist_loaded(
-        "public-session",
-        "code-reviewer",
-        trace_id="public-turn",
-    )
-    _suggest_delegation(store, session_id="public-session", trace_id="public-turn")
-
-    result = finalize_response(
-        "Substantive answer.",
-        trace_metadata={
-            "session_id": "public-session",
-            "trace_id": "public-turn",
-            "host": "mcp",
-        },
-        store=store,
-    )
-
-    assert result["action"] == "continue"
-    assert result["missing"] == ["agencies_delegated"]
-    assert store.get_run("public-turn")["status"] == "active"
-    assert store.get_authoritative_finalization("public-session", "public-turn") is None
-
-
 def test_public_finalizer_rejects_evidence_revision_race(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

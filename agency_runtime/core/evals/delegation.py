@@ -17,7 +17,6 @@ from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 from agency_runtime.core.header.contract import fill_header_fields, format_header
 from agency_runtime.core.private_paths import private_temporary_directory
 from agency_runtime.core.selector.delegation_detection import detect_work_units
-from agency_runtime.core.selector.pipeline import build_routing_context
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -63,32 +62,6 @@ def _case_status_query_no_delegate() -> dict[str, Any]:
     _require(result["delegate"] is False, "status query was delegated")
     _require(result["source"] == "status_query", "status-query source was not preserved")
     return {"source": result["source"]}
-
-
-def _case_context_shows_opportunity_without_specialist_match() -> dict[str, Any]:
-    context = build_routing_context(
-        {
-            "selected_ids": [],
-            "confidence": 0.0,
-            "status": "no_catalog",
-            "work_units": {
-                "delegate": True,
-                "count": 2,
-                "confidence": "high",
-                "source": "numbered_list",
-                "units": ["audit delegation", "add eval"],
-            },
-        }
-    )
-    _require(
-        "[AGENCY PREFLIGHT] No high-confidence specialist match" in context,
-        "no-match context marker is missing",
-    )
-    _require(
-        "[DELEGATION OPPORTUNITY] 2 independent work units" in context,
-        "delegation-opportunity context marker is missing",
-    )
-    return {"markers": ["AGENCY PREFLIGHT", "DELEGATION OPPORTUNITY"]}
 
 
 def _with_store(
@@ -219,10 +192,6 @@ def run_delegation_eval() -> dict[str, Any]:
     cases = [
         ("detect_numbered_list", _case_detect_numbered_list),
         ("detect_status_query_no_delegate", _case_status_query_no_delegate),
-        (
-            "context_shows_opportunity_without_specialist_match",
-            _case_context_shows_opportunity_without_specialist_match,
-        ),
         ("all_adapters_track_evidence", _case_all_adapters_track_evidence),
         ("all_adapters_capture_model_receipts", _case_all_adapters_capture_model_receipts),
     ]

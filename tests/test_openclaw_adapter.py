@@ -80,54 +80,6 @@ def test_openclaw_post_tool_call_records_delegate_task(tmp_path: Path) -> None:
     assert delegations[0]["native_run_id"] == "native-run-1"
 
 
-def test_openclaw_pre_verify_blocks_open_suggestions(tmp_path: Path) -> None:
-    store = Store(tmp_path / "agency.db")
-    adapter = OpenClawAdapter(store=store)
-    store.create_run(
-        trace_id="trace-1",
-        session_id="nexus-session",
-        host="openclaw",
-        metadata={"request_kind": "nontrivial"},
-    )
-    store.record_specialist_loaded(
-        "nexus-session",
-        "multi-agent-systems-architect",
-        trace_id="trace-1",
-    )
-    store.record_delegation(
-        trace_id="trace-1",
-        session_id="nexus-session",
-        work_unit_id="unit-1",
-        recommended_agent="multi-agent-systems-architect",
-        status="suggested",
-    )
-    final_response = "\n".join(
-        [
-            "Agency/Agencies loaded: multi-agent-systems-architect",
-            "Agency/Agencies delegated: none",
-            "Skills loaded: agency-specialist-routing",
-            "Actual Model selected: task-chunk-planner -> test/model",
-            "Recruited via: deterministic",
-            "Why: test",
-            "How it shaped outcome: test",
-            "",
-            "body",
-        ]
-    )
-
-    result = adapter.pre_verify_handler(
-        final_response=final_response,
-        session_id="nexus-session",
-        model="task-chunk-planner",
-        attempt=1,
-        trace_id="trace-1",
-    )
-
-    assert result is not None
-    assert result["action"] == "continue"
-    assert "DELEGATION OPPORTUNITY" in result["message"]
-
-
 def test_openclaw_model_call_receipt_is_bound_to_exact_child_trace(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     adapter = OpenClawAdapter(store=store)

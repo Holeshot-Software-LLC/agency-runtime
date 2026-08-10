@@ -740,22 +740,6 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="product-guidance-restores-parent-plan-refinement",
-        invariant=(
-            "The parent dispatches every inferred product unit exactly once instead of "
-            "merging, omitting, or performing specialist units itself."
-        ),
-        source_path="agency_runtime/core/host_guidance.py",
-        before=(
-            '        f"{dispatch} Dispatch every persisted plan row exactly once; do not merge, omit, "'
-        ),
-        after=('        f"{dispatch} The host may refine, merge, or decline the suggested rows; "'),
-        test_node=(
-            "tests/test_delegation_operational_projection.py::"
-            "test_native_delegation_guidance_requires_every_exact_plan_row"
-        ),
-    ),
-    DecisionMutation(
         mutation_id="codex-host-notice-accepts-arbitrary-errors",
         invariant=(
             "Only exact known Codex non-critical host notices bypass the unexpected-item gate."

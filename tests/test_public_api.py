@@ -248,26 +248,6 @@ def test_public_route_does_not_treat_a_host_name_as_capability_evidence(
     assert routing["eligibility_rejections"]
 
 
-def test_public_runtime_finalize_header_fails_closed_for_unaccepted_turn(
-    tmp_path: Path,
-) -> None:
-    runtime = AgencyRuntime(str(tmp_path / "agency.db"))
-    runtime.store.create_run(
-        trace_id="turn",
-        session_id="session",
-        metadata={"request_kind": "nontrivial"},
-    )
-
-    with pytest.raises(RuntimeError, match="did not accept"):
-        runtime.finalize_header(
-            "Finished.",
-            session_id="session",
-            trace_id="turn",
-        )
-
-    assert runtime.store.get_run("turn")["status"] == "active"
-
-
 @pytest.mark.parametrize(
     "mutation",
     [

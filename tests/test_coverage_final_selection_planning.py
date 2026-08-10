@@ -318,33 +318,6 @@ def test_pipeline_discards_an_exact_but_nonreusable_cache_entry(
     assert result["status"] == "selected"
 
 
-@pytest.mark.parametrize(
-    ("mode", "expected"),
-    [
-        ("observe", "OBSERVE ONLY"),
-        ("strong", "STRONGLY PREFER"),
-    ],
-)
-def test_routing_context_exposes_delegation_policy(mode: str, expected: str) -> None:
-    context = pipeline.build_routing_context(
-        {
-            "selected_ids": ["reviewer"],
-            "confidence": 1.0,
-            "status": "selected",
-            "work_units": {
-                "delegate": True,
-                "count": 2,
-                "units": ["Review API", "Review UI"],
-                "confidence": "high",
-                "source": "numbered",
-            },
-        },
-        _offline_config(delegation=DelegationConfig(mode=mode)),
-    )
-
-    assert expected in context
-
-
 def test_judge_candidate_bounds_cover_zero_duplicate_and_overflow(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

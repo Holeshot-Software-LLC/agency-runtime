@@ -162,5 +162,6 @@ def test_zcode_usersubmit_emits_agency_header_and_routed_team(
         "code-reviewer",
         "ai-generated-code-security-auditor",
     ]
-    # ZCode-correct native-delegation guidance (Agent tool, not spawn_agent).
-    assert "`Agent`" in context, context[:600]
+    # The routing context no longer names a native worker tool. Agency does not
+    # tell the host what to spawn or with which tool -- rule 5.
+    assert "spawn_agent" not in context

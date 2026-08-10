@@ -145,7 +145,9 @@ def test_nontrivial_turn_evidence_is_store_backed_and_still_enforced() -> None:
     )
     assert decision is not None
     assert decision["action"] == "continue"
-    assert "has Agency context" in decision["message"]
+    # The turn is still refused for claiming unrecorded activity. It is no longer
+    # refused merely for reporting "none" when selection found nothing (rule 8).
+    assert "DOES NOT MATCH RECORDED EVIDENCE" in decision["message"]
 
 
 @pytest.mark.parametrize(
