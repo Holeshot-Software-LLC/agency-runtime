@@ -106,7 +106,6 @@ class _ReadyEvidence:
     encoded_recipe: str
     delivery_mode: str
     specialist_refs: list[dict[str, Any]]
-    suggestions: list[dict[str, Any]]
     routing: dict[str, Any]
     model_receipts: list[dict[str, Any]]
     pending_hiring_commits: list[Any]
@@ -603,10 +602,6 @@ def _project_preflight_recipe(
         value.get("unit_assignment_agents", []),
         strict=True,
     )
-    unit_agent_plan = _project_suggestions(
-        value.get("unit_agent_plan", []),
-        recipe_version=recipe_version if isinstance(recipe_version, int) else None,
-    )
     routing = _project_recipe_routing(value.get("routing"), trace_id=trace_id)
     turn_classification = _project_turn_classification(value.get("turn_classification"))
     continuation_guard = _project_continuation_guard(value.get("continuation_guard"))
@@ -629,7 +624,6 @@ def _project_preflight_recipe(
         refs is None
         or selection_refs is None
         or unit_assignment_agents is None
-        or unit_agent_plan is None
         or routing is None
         or isinstance(roster_generation, bool)
         or not isinstance(roster_generation, int)
@@ -658,7 +652,6 @@ def _project_preflight_recipe(
     required_selection_slugs = {
         str(slug) for slug in routing.get("selected_ids", []) if not is_resident_manager_slug(slug)
     }
-    required_selection_slugs.update(item["recommended_agent"] for item in unit_agent_plan)
     if (
         (
             recipe_version >= 10
@@ -692,7 +685,6 @@ def _project_preflight_recipe(
         "specialist_refs": refs,
         "selection_refs": selection_refs,
         "unit_assignment_agents": unit_assignment_agents,
-        "unit_agent_plan": unit_agent_plan,
         "trivial": trivial,
         "roster_size": _bounded_nonnegative_int(value.get("roster_size", 0), maximum=100_000),
         "roster_generation": roster_generation,
@@ -744,21 +736,6 @@ def _preflight_clock(conn: Any, lease_seconds: int | None) -> tuple[str, str]:
         (f"+{effective} seconds",),
     ).fetchone()
     return str(row["now_value"]), str(row["lease_expires_at"])
-
-
-def _project_suggestions(
-    value: object,
-    *,
-    recipe_version: int | None = None,
-) -> list[dict[str, Any]] | None:
-    from agency_runtime.core.unit_assignment import project_unit_agent_plan
-
-    projected = project_unit_agent_plan(
-        value,
-        allow_legacy=recipe_version is None or recipe_version < 11,
-        require_current=recipe_version is not None and recipe_version >= 11,
-    )
-    return projected
 
 
 def _project_routing_evidence(value: object, *, trace_id: str) -> dict[str, Any] | None:
@@ -815,7 +792,6 @@ def _prepare_ready_evidence(
     host: str,
     recipe: Mapping[str, Any],
     routing_evidence: Mapping[str, Any],
-    suggestions: list[dict[str, Any]],
     specialist_refs: list[dict[str, Any]],
 ) -> _ReadyEvidence:
     normalized_session = validate_correlation_id(session_id, field="session_id")
@@ -836,14 +812,6 @@ def _prepare_ready_evidence(
     normalized_host = str(host or "unknown").strip().casefold()[:64] or "unknown"
     if projected_recipe["host"] != normalized_host:
         raise ValueError("preflight ready host does not match its replay recipe")
-    projected_suggestions = _project_suggestions(
-        suggestions,
-        recipe_version=int(projected_recipe["recipe_version"]),
-    )
-    if not isinstance(suggestions, list) or projected_suggestions is None:
-        raise ValueError("preflight suggestions are invalid or unbounded")
-    if projected_recipe["unit_agent_plan"] != projected_suggestions:
-        raise ValueError("preflight unit-agent plan is invalid or mismatched")
     projected_routing = _project_routing_evidence(
         routing_evidence,
         trace_id=normalized_trace,
@@ -861,12 +829,6 @@ def _prepare_ready_evidence(
             raise ValueError("pending hiring commit correlation does not match preflight")
     if projected_recipe["roster_size"] < len(projected_refs):
         raise ValueError("preflight roster size cannot be smaller than selected specialists")
-    work_units = projected_recipe["routing"].get("work_units") or {}
-    if projected_suggestions and (
-        not work_units.get("delegate")
-        or len(projected_suggestions) > int(work_units.get("count") or 0)
-    ):
-        raise ValueError("preflight suggestions do not match work-unit metadata")
     encoded_recipe = json.dumps(projected_recipe, sort_keys=True, separators=(",", ":"))
     if len(encoded_recipe.encode("utf-8")) > _MAX_RECIPE_BYTES:
         raise ValueError("preflight replay recipe exceeds the bounded store limit")
@@ -879,7 +841,6 @@ def _prepare_ready_evidence(
         encoded_recipe=encoded_recipe,
         delivery_mode=str(projected_recipe["delivery_mode"]),
         specialist_refs=projected_refs,
-        suggestions=projected_suggestions,
         routing=projected_routing,
         model_receipts=[
             _normalize_receipt_ingress(
@@ -1206,12 +1167,10 @@ def _continuation_source_snapshot(
     delegation_rows, delegation_digest, pristine = _delegation_component(conn, source_trace_id)
     if not pristine:
         return None
-    plan = recipe.get("unit_agent_plan")
-    if not isinstance(plan, list) or sorted(
-        (item["work_unit_id"], item["recommended_agent"]) for item in plan
-    ) != sorted(
-        (str(row["work_unit_id"]), str(row["recommended_agent"])) for row in delegation_rows
-    ):
+    # A continuation used to be guarded by matching the recipe's unit plan against
+    # its delegation rows. Agency writes neither, so the guard rests on the routing
+    # and specialist evidence below.
+    if delegation_rows:
         return None
     guard = {
         "guard_version": _CONTINUATION_GUARD_VERSION,
@@ -1283,7 +1242,6 @@ def _continuation_guard_matches(
         and recipe.get("specialist_refs") == source_recipe.get("specialist_refs")
         and recipe.get("selection_refs") == source_recipe.get("selection_refs")
         and recipe.get("unit_assignment_agents") == source_recipe.get("unit_assignment_agents")
-        and recipe.get("unit_agent_plan") == source_recipe.get("unit_agent_plan")
     )
 
 
@@ -2075,7 +2033,6 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         recipe: Mapping[str, Any],
         host: str,
         routing_evidence: Mapping[str, Any],
-        suggestions: list[dict[str, Any]],
         specialist_refs: list[dict[str, Any]],
         codex_native_plan_scopes: list[dict[str, Any]] | None = None,
     ) -> dict[str, str]:
@@ -2088,7 +2045,6 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
             host=host,
             recipe=recipe,
             routing_evidence=routing_evidence,
-            suggestions=suggestions,
             specialist_refs=specialist_refs,
         )
         normalized_session = evidence.session_id
@@ -2156,7 +2112,6 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                 conn.commit()
                 return {"outcome": "continuation_guard_conflict"}
             projected_refs = evidence.specialist_refs
-            projected_suggestions = evidence.suggestions
             projected_routing = evidence.routing
             encoded_recipe = evidence.encoded_recipe
             delivery_mode = evidence.delivery_mode
@@ -2248,21 +2203,6 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                         receipt["started_at"] or now_value,
                         receipt["ended_at"] or now_value,
                         receipt["status"],
-                    ),
-                )
-            for suggestion in projected_suggestions:
-                conn.execute(
-                    "INSERT INTO delegation_events "
-                    "(id, trace_id, session_id, host, work_unit_id, recommended_agent, "
-                    "status, backend, skip_reason, error, started_at, completed_at) "
-                    f"VALUES (?, ?, ?, ?, ?, ?, 'suggested', '', '', '', {STORE_CLOCK_SQL}, NULL)",  # nosec B608
-                    (
-                        self._uuid(),
-                        normalized_trace,
-                        normalized_session,
-                        evidence.host,
-                        suggestion["work_unit_id"],
-                        suggestion["recommended_agent"],
                     ),
                 )
             if delivery_mode == "direct":

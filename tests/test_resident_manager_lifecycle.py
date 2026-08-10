@@ -778,7 +778,6 @@ def test_binding_conflict_replans_exactly_once(
         recipe=recipe,  # type: ignore[arg-type]
         host="claude",
         routing_recipe={},
-        suggestions=[],
         specialist_refs=[],
         codex_native_plan_scopes=[],
         user_message="ping",

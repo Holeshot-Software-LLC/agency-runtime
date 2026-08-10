@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import math
 import posixpath
 import re
 from collections.abc import Mapping, Sequence
@@ -1005,128 +1004,6 @@ def _bounded_plan_strings(value: Any, *, digests: bool = False) -> list[str] | N
     return result
 
 
-def project_unit_agent_plan(
-    value: Any,
-    *,
-    allow_legacy: bool = True,
-    require_current: bool = False,
-) -> list[dict[str, Any]] | None:
-    """Validate one bounded durable plan without persisting task content."""
-
-    if not isinstance(value, (list, tuple)) or len(value) > MAX_SUGGESTED_WORK_UNITS:
-        return None
-    result: list[dict[str, Any]] = []
-    versions: set[int] = set()
-    seen: set[str] = set()
-    legacy_fields = {"assignment_version", "work_unit_id", "recommended_agent"}
-    current_fields = {
-        *legacy_fields,
-        "goal_hash",
-        "deliverable_kind",
-        "recommended_agents",
-        "selection_confidence",
-        "rationale_codes",
-        "depends_on",
-        "parallelization",
-        "mutation_scope",
-        "resource_hashes",
-        "required_tools",
-        "required_evidence",
-        "delegation_strength",
-    }
-    for raw in value:
-        if not isinstance(raw, Mapping):
-            return None
-        assignment_text = str(raw.get("assignment_version") or "1").strip()
-        if not assignment_text.isdecimal():
-            return None
-        assignment_version = int(assignment_text)
-        work_unit_id = str(raw.get("work_unit_id") or "").strip().casefold()
-        agent = str(raw.get("recommended_agent") or "").strip().casefold()
-        if (
-            _WORK_UNIT_ID_RE.fullmatch(work_unit_id) is None
-            or not agent
-            or len(agent) > MAX_AGENT_SLUG_CHARS
-            or any(ord(character) < 32 or ord(character) == 127 for character in agent)
-            or is_resident_manager_slug(agent)
-            or work_unit_id in seen
-        ):
-            return None
-        if assignment_version < UNIT_AGENT_ASSIGNMENT_VERSION:
-            if require_current or not allow_legacy or set(raw) - legacy_fields:
-                return None
-            projected = {
-                "assignment_version": str(assignment_version),
-                "work_unit_id": work_unit_id,
-                "recommended_agent": agent,
-            }
-        elif assignment_version == UNIT_AGENT_ASSIGNMENT_VERSION:
-            if set(raw) != current_fields:
-                return None
-            goal_hash = str(raw.get("goal_hash") or "").strip().casefold()
-            deliverable_kind = str(raw.get("deliverable_kind") or "").strip().casefold()
-            recommended_agents = _bounded_plan_strings(raw.get("recommended_agents"))
-            rationale_codes = _bounded_plan_strings(raw.get("rationale_codes"))
-            depends_on = _bounded_work_unit_ids(raw.get("depends_on"), strict=True)
-            resource_hashes = _bounded_plan_strings(raw.get("resource_hashes"), digests=True)
-            required_tools = _bounded_plan_strings(raw.get("required_tools"))
-            required_evidence = _bounded_plan_strings(raw.get("required_evidence"))
-            parallelization = str(raw.get("parallelization") or "").strip().casefold()
-            mutation_scope = str(raw.get("mutation_scope") or "").strip().casefold()
-            strength = str(raw.get("delegation_strength") or "").strip().casefold()
-            confidence = raw.get("selection_confidence")
-            if (
-                _DIGEST_RE.fullmatch(goal_hash) is None
-                or deliverable_kind not in DELIVERABLE_KINDS
-                or recommended_agents is None
-                or not recommended_agents
-                or recommended_agents[0].casefold() != agent
-                or len({item.casefold() for item in recommended_agents}) != len(recommended_agents)
-                or any(len(item) > MAX_AGENT_SLUG_CHARS for item in recommended_agents)
-                or rationale_codes is None
-                or not rationale_codes
-                or any(_RATIONALE_CODE_RE.fullmatch(item) is None for item in rationale_codes)
-                or depends_on is None
-                or work_unit_id in depends_on
-                or parallelization not in PARALLELIZATION_MODES
-                or mutation_scope not in MUTATION_SCOPES
-                or resource_hashes is None
-                or required_tools is None
-                or required_evidence is None
-                or strength not in DELEGATION_STRENGTHS
-                or isinstance(confidence, bool)
-                or not isinstance(confidence, (int, float))
-                or not math.isfinite(float(confidence))
-                or not 0.0 <= float(confidence) <= 1.0
-            ):
-                return None
-            projected = {
-                "assignment_version": str(assignment_version),
-                "work_unit_id": work_unit_id,
-                "goal_hash": goal_hash,
-                "deliverable_kind": deliverable_kind,
-                "recommended_agent": agent,
-                "recommended_agents": [item.casefold() for item in recommended_agents],
-                "selection_confidence": round(float(confidence), 6),
-                "rationale_codes": rationale_codes,
-                "depends_on": depends_on,
-                "parallelization": parallelization,
-                "mutation_scope": mutation_scope,
-                "resource_hashes": resource_hashes,
-                "required_tools": required_tools,
-                "required_evidence": required_evidence,
-                "delegation_strength": strength,
-            }
-        else:
-            return None
-        versions.add(assignment_version)
-        seen.add(work_unit_id)
-        result.append(projected)
-    if len(versions) > 1:
-        return None
-    return result
-
-
 _DELIVERABLE_TEXT = {
     "implementation": "Verified implementation satisfying this work unit.",
     "review": "Prioritized findings with concrete evidence and remediation.",
@@ -1147,7 +1024,6 @@ __all__ = [
     "assignment_agents_from_catalog",
     "native_child_activation_contract",
     "native_child_evidence_requirements",
-    "project_unit_agent_plan",
     "project_unit_assignment_agents",
     "work_unit_goal_hash",
     "work_unit_id_from_text",

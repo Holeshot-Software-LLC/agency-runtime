@@ -1210,7 +1210,6 @@ def test_expired_owner_is_recovered_and_stale_token_cannot_commit_or_fail(
         recipe=ready_recipe,
         host="codex",
         routing_evidence=ready_recipe["routing"],
-        suggestions=ready_recipe["unit_agent_plan"],
         specialist_refs=ready_recipe["specialist_refs"],
     )
     assert stale_commit == {"outcome": "cas_lost"}
@@ -1441,7 +1440,6 @@ def test_failure_first_prevents_late_ready_commit(
         recipe=recipe,
         host="codex",
         routing_evidence=routing_recipe,
-        suggestions=[],
         specialist_refs=[],
     ) == {"outcome": "cas_lost"}
     assert store.get_run("failure-wins")["status"] == "preflight_failed"

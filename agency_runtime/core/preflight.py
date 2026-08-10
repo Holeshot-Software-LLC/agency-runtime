@@ -44,7 +44,6 @@ from agency_runtime.core.preflight_recipe import (
     _read_ready_result,
     _resident_manager_context,
     _result_from_recipe,
-    _suggestion_recipe,
     _verified_work_units,
     preflight_delivery_policy,
 )
@@ -234,22 +233,6 @@ def _stop_child_route_heartbeat(cache_owner: Mapping[str, Any]) -> None:
         thread.join(timeout=1.0)
 
 
-def _suggested_specialist_slugs(suggestions: list[dict[str, Any]]) -> list[str]:
-    """Flatten bounded compatible sets while preserving primary-first order."""
-
-    result: list[str] = []
-    for suggestion in suggestions:
-        raw = suggestion.get("recommended_agents")
-        candidates = raw if isinstance(raw, list) and raw else [suggestion.get("recommended_agent")]
-        for value in candidates:
-            slug = str(value or "").strip()
-            if slug and slug not in result:
-                result.append(slug)
-                if len(result) == 16:
-                    return result
-    return result
-
-
 def _turn_state_for_preflight(
     store: Store,
     *,
@@ -367,7 +350,6 @@ def _selection_refs_for_recipe(
     store: Store,
     catalog: list[dict[str, Any]],
     routing: dict[str, Any],
-    suggestions: list[dict[str, Any]],
     specialist_refs: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """Bind every nonresident selection/assignment to its active revision."""
@@ -375,7 +357,6 @@ def _selection_refs_for_recipe(
     ordered_slugs: list[str] = []
     for raw_slug in [
         *routing.get("selected_ids", []),
-        *_suggested_specialist_slugs(suggestions),
         *(item.get("slug") for item in specialist_refs),
     ]:
         slug = str(raw_slug or "").strip()
@@ -663,7 +644,6 @@ def _resolve_preflight_routing(
             cached["_cached_unit_assignment_agents"] = list(
                 decision.get("unit_assignment_agents", [])
             )
-            cached["_cached_unit_agent_plan"] = list(decision.get("unit_agent_plan", []))
         else:
             cached = decision
         current_hash = sha256(user_message.encode("utf-8", errors="surrogatepass")).hexdigest()
@@ -756,25 +736,17 @@ def _assignment_recipe(
     capability_receipt: HostCapabilityReceipt,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     if routing.get("status") == "child_budget_abstained":
-        return [], []
+        return []
     if "_cached_unit_assignment_agents" in routing:
-        return list(routing["_cached_unit_assignment_agents"]), list(
-            routing.get("_cached_unit_agent_plan", [])
-        )
+        return list(routing["_cached_unit_assignment_agents"])
     if continuation_snapshot is not None:
-        source = continuation_snapshot["recipe"]
-        return list(source.get("unit_assignment_agents", [])), list(
-            source.get("unit_agent_plan", [])
-        )
+        return list(continuation_snapshot["recipe"].get("unit_assignment_agents", []))
     workforce_assignments = routing.get("unit_assignment_agents")
     if isinstance(workforce_assignments, (list, tuple)):
         projected = project_unit_assignment_agents(workforce_assignments, strict=True)
         if projected is None:
             raise RuntimeError("verified workforce assignments are malformed")
-        return projected, _suggestion_recipe(
-            {**routing, "unit_assignment_agents": projected},
-            config.delegation,
-        )
+        return projected
     assignment_agents = assignment_agents_from_catalog(
         catalog,
         routing,
@@ -786,10 +758,7 @@ def _assignment_recipe(
         available_tools=available_tools,
         capability_receipt=capability_receipt,
     )
-    return assignment_agents, _suggestion_recipe(
-        {**routing, "unit_assignment_agents": assignment_agents},
-        config.delegation,
-    )
+    return assignment_agents
 
 
 def _publish_child_routing_bundle(
@@ -798,7 +767,6 @@ def _publish_child_routing_bundle(
     *,
     trace_id: str,
     unit_assignment_agents: list[dict[str, Any]],
-    suggestions: list[dict[str, Any]],
     ttl_seconds: float,
 ) -> None:
     """Publish one complete content-free route and release its singleflight lease."""
@@ -814,7 +782,6 @@ def _publish_child_routing_bundle(
                 "version": _CHILD_ROUTE_BUNDLE_VERSION,
                 "routing": _content_free_routing_recipe(routing, trace_id=trace_id),
                 "unit_assignment_agents": unit_assignment_agents,
-                "unit_agent_plan": suggestions,
             },
             ttl_seconds=ttl_seconds,
         )
@@ -843,7 +810,6 @@ def _recipe_revision_refs(
     store: Store,
     catalog: list[dict[str, Any]],
     routing: dict[str, Any],
-    suggestions: list[dict[str, Any]],
     loaded: Any,
     continuation_snapshot: dict[str, Any] | None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -853,7 +819,6 @@ def _recipe_revision_refs(
             store,
             catalog,
             routing,
-            suggestions,
             specialist_refs,
         )
     source = continuation_snapshot["recipe"]
@@ -999,7 +964,6 @@ def _fail_open_preflight_result(
         ),
         resident_manager_delivery_mode=(getattr(resident_binding, "delivery_mode", "") or ""),
         resident_manager_host_mode=(getattr(resident_binding, "host_mode", "") or ""),
-        delegation_plan=(),
     )
 
 
@@ -1012,7 +976,6 @@ def _mark_ready_with_binding_replan(
     recipe: dict[str, Any],
     host: str,
     routing_recipe: dict[str, Any],
-    suggestions: list[dict[str, Any]],
     specialist_refs: list[dict[str, Any]],
     codex_native_plan_scopes: list[dict[str, Any]],
     user_message: str,
@@ -1028,7 +991,6 @@ def _mark_ready_with_binding_replan(
         "recipe": recipe,
         "host": host,
         "routing_evidence": routing_recipe,
-        "suggestions": suggestions,
         "specialist_refs": specialist_refs,
         "codex_native_plan_scopes": codex_native_plan_scopes,
     }
@@ -1135,7 +1097,7 @@ def _prepare_preflight_evidence(
             child_route_guard.callback(_abort_child_routing_bundle, store, routing)
         if diagnostics is not None:
             diagnostics.enter("assignment")
-        unit_assignment_agents, suggestions = _assignment_recipe(
+        unit_assignment_agents = _assignment_recipe(
             hydration_catalog,
             routing,
             continuation_snapshot,
@@ -1175,7 +1137,6 @@ def _prepare_preflight_evidence(
             hydration_store,
             hydration_catalog,
             routing,
-            suggestions,
             loaded,
             continuation_snapshot,
         )
@@ -1191,7 +1152,6 @@ def _prepare_preflight_evidence(
             "specialist_refs": specialist_refs,
             "selection_refs": selection_refs,
             "unit_assignment_agents": unit_assignment_agents,
-            "unit_agent_plan": suggestions,
             "trivial": not classification.selection_required,
             "turn_classification": classification.as_dict(),
             "resident_manager_binding": resident_binding.as_dict(),
@@ -1219,14 +1179,12 @@ def _prepare_preflight_evidence(
                 routing,
                 trace_id=trace_id,
                 unit_assignment_agents=unit_assignment_agents,
-                suggestions=suggestions,
                 ttl_seconds=config.delegation.child_cache_ttl_seconds,
             )
         child_route_guard.pop_all()
         return (
             recipe,
             routing_recipe,
-            suggestions,
             specialist_refs,
             classification,
             codex_native_plan_scopes,
@@ -1528,7 +1486,6 @@ def run_preflight(
         (
             recipe,
             routing_recipe,
-            suggestions,
             specialist_refs,
             classification,
             codex_native_plan_scopes,
@@ -1546,7 +1503,6 @@ def run_preflight(
             recipe=recipe,
             host=normalized_host,
             routing_recipe=routing_recipe,
-            suggestions=suggestions,
             specialist_refs=specialist_refs,
             codex_native_plan_scopes=codex_native_plan_scopes,
             user_message=user_message,
@@ -1561,7 +1517,6 @@ def run_preflight(
             (
                 recipe,
                 routing_recipe,
-                suggestions,
                 specialist_refs,
                 classification,
                 codex_native_plan_scopes,
@@ -1598,7 +1553,6 @@ def run_preflight(
                 recipe=recipe,
                 host=normalized_host,
                 routing_recipe=routing_recipe,
-                suggestions=suggestions,
                 specialist_refs=specialist_refs,
                 codex_native_plan_scopes=codex_native_plan_scopes,
                 user_message=user_message,

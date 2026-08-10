@@ -214,22 +214,6 @@ def _content_free_routing_recipe(
     return projected
 
 
-def _suggestion_recipe(
-    routing: dict[str, Any],
-    delegation: DelegationConfig | None = None,
-) -> list[dict[str, Any]]:
-    """Return no suggested delegations; Agency does not plan units.
-
-    Deciding which work units exist and who should execute them is Job B. The
-    harness decides what to spawn and Agency staffs whoever exists, so the
-    recipe carries an empty plan and every downstream reader degrades to its
-    no-plan arm.
-    """
-
-    del routing, delegation
-    return []
-
-
 def _shared_delegation_goal_prefix(goals: list[str]) -> str:
     """Return the exact request prefix repeated by typed workforce unit goals."""
 
@@ -247,32 +231,25 @@ def _shared_delegation_goal_prefix(goals: list[str]) -> str:
     return prefix
 
 
-def _continuation_delegation_context(
-    routing: dict[str, Any],
-    *,
-    unit_plan: list[dict[str, Any]],
-) -> str:
-    """Render only durable IDs; native session history owns prior task text."""
+def _continuation_context(routing: dict[str, Any]) -> str:
+    """Explain a reused recipe; the native session history owns prior task text.
+
+    The unit-binding block this used to append was Job B. The rest is not: a
+    continuation recipe genuinely carries no prior prompt, and without this the
+    host would treat the opaque continuation token as the task.
+    """
 
     origin = str(routing.get("origin_trace_id") or "").strip()
-    lines = [
-        "[AGENCY CONTINUATION] This turn reuses a validated immediate-prior routing recipe "
-        f"from trace {origin}.",
-        "The durable recipe intentionally contains no prior task or prompt body. Resolve the "
-        "goal from the native parent session; never use the literal continuation token as a "
-        "worker task. If that native context is unavailable, ask the user to restate instead "
-        "of selecting, judging, or launching duplicate work.",
-    ]
-    if unit_plan:
-        lines.append("Current-turn unit bindings:")
-        lines.extend(
-            f"- work_unit_id={item['work_unit_id']}; "
-            f"recommended_agent={item['recommended_agent']}; "
-            f"recommended_agents={json.dumps(item.get('recommended_agents') or [item['recommended_agent']])}; "
-            f"strength={item.get('delegation_strength', 'preferred')}"
-            for item in unit_plan
-        )
-    return "\n".join(lines)
+    return "\n".join(
+        [
+            "[AGENCY CONTINUATION] This turn reuses a validated immediate-prior routing recipe "
+            f"from trace {origin}.",
+            "The durable recipe intentionally contains no prior task or prompt body. Resolve "
+            "the goal from the native parent session; never use the literal continuation token "
+            "as a worker task. If that native context is unavailable, ask the user to restate "
+            "instead of selecting, judging, or launching duplicate work.",
+        ]
+    )
 
 
 def _continuation_abstention_context() -> str:
@@ -646,7 +623,6 @@ def _replay_routing_from_recipe(
     trace_id: str,
     user_message: str,
     unit_assignment_agents: list[dict[str, Any]],
-    unit_agent_plan: list[dict[str, Any]],
     delegation: DelegationConfig,
 ) -> dict[str, Any]:
     """Restore transient units only for an exact same-message replay."""
@@ -692,7 +668,6 @@ def _result_from_recipe(
     references = recipe.get("specialist_refs")
     selection_refs = recipe.get("selection_refs", [])
     unit_assignment_agents = recipe.get("unit_assignment_agents", [])
-    unit_agent_plan = recipe.get("unit_agent_plan", [])
     delivery_mode = recipe.get("delivery_mode")
     context_limit = recipe.get("context_limit")
     trivial = recipe.get("trivial")
@@ -703,7 +678,6 @@ def _result_from_recipe(
         or not isinstance(references, list)
         or not isinstance(selection_refs, list)
         or not isinstance(unit_assignment_agents, list)
-        or not isinstance(unit_agent_plan, list)
         or delivery_mode != "direct"
         or isinstance(context_limit, bool)
         or not isinstance(context_limit, int)
@@ -775,23 +749,16 @@ def _result_from_recipe(
                 f"selected specialist '{slug}' is disabled; start a fresh Agency preflight"
             )
 
-    continuation_reused = routing.get("continuation_reused") is True
     continuation_abstained = routing.get("continuation_resolution_required") is True
     replay_routing = _replay_routing_from_recipe(
         routing,
         trace_id=trace_id,
         user_message=user_message,
         unit_assignment_agents=unit_assignment_agents,
-        unit_agent_plan=unit_agent_plan,
         delegation=config.delegation,
     )
 
     from agency_runtime.core.specialist_context import rebuild_versioned_specialist_context
-
-    # Stored recipes are surfaced exactly as recorded. There is no live plan to
-    # hydrate them against, and re-deriving task text for a retired plan would
-    # only reconstruct Job B output.
-    public_plan = tuple(unit_agent_plan)
 
     if continuation_abstained:
         selected = rebuild_versioned_specialist_context(
@@ -807,13 +774,10 @@ def _result_from_recipe(
         loaded_slugs = ()
     else:
         routing_context = pipeline.build_routing_context(replay_routing, config)
-        if continuation_reused:
+        if replay_routing.get("continuation_reused") is True:
             routing_context = _combine_context(
                 routing_context,
-                _continuation_delegation_context(
-                    replay_routing,
-                    unit_plan=unit_agent_plan,
-                ),
+                _continuation_context(replay_routing),
                 maximum_chars=context_limit,
             )
         manager_routing_context = _combine_context(
@@ -867,7 +831,6 @@ def _result_from_recipe(
         resident_manager_host_mode=(
             resident_binding.host_mode if resident_binding is not None else ""
         ),
-        delegation_plan=public_plan,
     )
 
 
@@ -981,7 +944,6 @@ class PreflightResult:
     resident_manager_binding: dict[str, Any] | None = None
     resident_manager_delivery_mode: str = ""
     resident_manager_host_mode: str = ""
-    delegation_plan: tuple[dict[str, Any], ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         """Return the stable public projection used by host adapters."""
@@ -1007,5 +969,4 @@ class PreflightResult:
             "resident_manager_binding": self.resident_manager_binding,
             "resident_manager_delivery_mode": self.resident_manager_delivery_mode,
             "resident_manager_host_mode": self.resident_manager_host_mode,
-            "delegation_plan": [dict(item) for item in self.delegation_plan],
         }

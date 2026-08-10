@@ -73,7 +73,6 @@ _EFFECT_TEXT = {
     "disabled_specialist_left_unselected": (
         "a stronger disabled specialist was left out and the enabled fallback was used"
     ),
-    "delegation_plan_prepared": "a delegation plan was prepared",
     "specialist_context_loaded": "selected specialist instructions were loaded for this turn",
     "skill_context_loaded": "selected skill instructions were loaded for this turn",
     "model_receipt_recorded": "the responding model was reconciled from runtime evidence",

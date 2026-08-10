@@ -722,7 +722,6 @@ def test_mark_preflight_ready_handles_compare_and_swap_loss(
         recipe=recipe,
         host="codex",
         routing_evidence=routing,
-        suggestions=[],
         specialist_refs=refs,
     ) == {"outcome": "cas_lost"}
     assert connection.rolled_back is True
@@ -747,7 +746,6 @@ def test_mark_preflight_ready_rejects_a_different_stored_host(tmp_path: Path) ->
         recipe=recipe,
         host="codex",
         routing_evidence=routing,
-        suggestions=[],
         specialist_refs=refs,
     ) == {"outcome": "host_conflict"}
 
@@ -805,7 +803,6 @@ def test_preflight_mutations_rollback_and_close_on_database_failure(
                 recipe=recipe,
                 host="codex",
                 routing_evidence=routing,
-                suggestions=[],
                 specialist_refs=refs,
             )
     assert connection.rolled_back is True
@@ -1001,7 +998,6 @@ def test_ready_evidence_rejects_host_mismatch() -> None:
             host="claude",
             recipe=recipe,
             routing_evidence=routing,
-            suggestions=[],
             specialist_refs=refs,
         )
     with pytest.raises(ValueError, match="unit-agent plan"):
@@ -1012,12 +1008,6 @@ def test_ready_evidence_rejects_host_mismatch() -> None:
             host="codex",
             recipe=recipe,
             routing_evidence=routing,
-            suggestions=[
-                {
-                    "work_unit_id": "unit-0000000000",
-                    "recommended_agent": "agent",
-                }
-            ],
             specialist_refs=refs,
         )
 
@@ -1232,7 +1222,6 @@ def test_begin_and_ready_receipt_reject_invalid_evidence(
         recipe=recipe,
         host="codex",
         routing_evidence=routing,
-        suggestions=[],
         specialist_refs=refs,
     ) == {"outcome": "committed"}
     conn = store._connect()
@@ -1279,6 +1268,5 @@ def test_mark_ready_rolls_back_a_resident_binding_conflict(
         recipe=recipe,
         host="codex",
         routing_evidence=routing,
-        suggestions=[],
         specialist_refs=refs,
     ) == {"outcome": "binding_conflict"}

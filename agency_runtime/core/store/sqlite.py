@@ -1880,11 +1880,6 @@ class Store(
                     (normalized_trace, normalized_session),
                 ).fetchall()
             ]
-            unit_agent_plan = (
-                [dict(row) for row in recipe.get("unit_agent_plan", [])]
-                if recipe is not None
-                else []
-            )
             raw_classification = recipe.get("turn_classification") if recipe is not None else None
             if isinstance(raw_classification, dict):
                 turn_classification = dict(raw_classification)
@@ -1945,7 +1940,6 @@ class Store(
                 "selected_specialists": selected_specialists,
                 "specialist_activations": specialist_activations,
                 "delegations": delegations,
-                "unit_agent_plan": unit_agent_plan,
             }
             conn.commit()
             return snapshot

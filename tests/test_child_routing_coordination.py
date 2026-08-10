@@ -400,7 +400,6 @@ def test_unplanned_child_reuses_inferred_route_and_abstains_when_budget_is_zero(
         first,
         trace_id="child-trace-one",
         unit_assignment_agents=[],
-        suggestions=[],
         ttl_seconds=config.delegation.child_cache_ttl_seconds,
     )
     arguments.update(session_id="child-two", trace_id="child-trace-two")
@@ -524,14 +523,12 @@ def test_cached_child_reuses_complete_multi_unit_assignment_bundle(tmp_path, mon
             }
 
     assignment_agents = [{"slug": "code-reviewer", "work_unit_ids": ["unit-a"]}]
-    plan = [{"work_unit_id": "unit-a", "recommended_agent": "code-reviewer"}]
 
     def assign(*_args, **_kwargs):
         assignment_calls.append("inference")
         return assignment_agents
 
     monkeypatch.setattr("agency_runtime.core.preflight.assignment_agents_from_catalog", assign)
-    monkeypatch.setattr("agency_runtime.core.preflight._suggestion_recipe", lambda *_args: plan)
     config = AgencyConfig(
         providers=(ProviderEntry(name="codex", type="cli", transport="codex"),),
         delegation=DelegationConfig(child_inference_budget=1),
@@ -560,7 +557,7 @@ def test_cached_child_reuses_complete_multi_unit_assignment_bundle(tmp_path, mon
         "parent_trace_id": "parent-trace",
     }
     first, _, _ = _resolve_preflight_routing(**arguments)
-    first_agents, first_plan = _assignment_recipe(
+    first_agents = _assignment_recipe(
         [],
         first,
         None,
@@ -577,13 +574,12 @@ def test_cached_child_reuses_complete_multi_unit_assignment_bundle(tmp_path, mon
         first,
         trace_id="child-trace-one",
         unit_assignment_agents=first_agents,
-        suggestions=first_plan,
         ttl_seconds=config.delegation.child_cache_ttl_seconds,
     )
 
     arguments.update(session_id="child-two", trace_id="child-trace-two")
     cached, _, _ = _resolve_preflight_routing(**arguments)
-    cached_agents, cached_plan = _assignment_recipe(
+    cached_agents = _assignment_recipe(
         [],
         cached,
         None,
@@ -599,7 +595,6 @@ def test_cached_child_reuses_complete_multi_unit_assignment_bundle(tmp_path, mon
     assert route_calls == [message]
     assert assignment_calls == ["inference"]
     assert cached_agents == first_agents == assignment_agents
-    assert cached_plan == first_plan == plan
 
 
 def test_child_store_rejects_invalid_keys_limits_and_documents(tmp_path) -> None:
@@ -986,7 +981,7 @@ def test_child_owner_failure_aborts_and_unconfigured_child_fails_closed() -> Non
 
 
 def test_budget_abstention_never_runs_exact_unit_routing() -> None:
-    agents, plan = _assignment_recipe(
+    agents = _assignment_recipe(
         [],
         {"status": "child_budget_abstained", "work_units": {"delegate": True}},
         None,
@@ -999,7 +994,6 @@ def test_budget_abstention_never_runs_exact_unit_routing() -> None:
         capability_receipt=SimpleNamespace(),
     )
     assert agents == []
-    assert plan == []
 
 
 def test_failed_preflight_validation_aborts_unpublished_child_bundle(tmp_path, monkeypatch) -> None:

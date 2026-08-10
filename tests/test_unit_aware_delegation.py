@@ -377,8 +377,8 @@ def test_preflight_replay_preserves_the_metadata_assignment(
     assert first.context == replay.context
     assert first.routing["unit_assignment_agents"] == replay.routing["unit_assignment_agents"]
     # The assignment metadata is what replay has to preserve. The unit-agent plan
-    # that used to be asserted here is Job B and is no longer produced.
-    assert store.get_completion_evidence_snapshot("session", "trace")["unit_agent_plan"] == []
+    # that used to be asserted here is Job B and no longer exists at all.
+    assert "unit_agent_plan" not in store.get_completion_evidence_snapshot("session", "trace")
 
 
 class _BatchStore:

@@ -28,7 +28,6 @@ from agency_runtime.core.header import contract as header_contract
 from agency_runtime.core.resident_manager_binding import build_resident_manager_binding
 from agency_runtime.core.selector import pipeline, policy
 from agency_runtime.core.store import delegation_activation, initialization_lock, security
-from agency_runtime.core.store import preflight as store_preflight
 from agency_runtime.core.store import roster as store_roster
 from agency_runtime.core.store import sqlite as store_sqlite
 from agency_runtime.server import http, mcp
@@ -511,39 +510,6 @@ def _routing(trace_id: str) -> dict[str, Any]:
             "source": "coverage",
         },
     }
-
-
-def test_store_ready_evidence_rejects_unit_plan_suggestion_mismatch() -> None:
-    routing = _routing("trace")
-    projected = store_preflight._project_routing_evidence(routing, trace_id="trace")
-    assert projected is not None
-    recipe = {
-        "recipe_version": 5,
-        "policy_fingerprint": "c" * 64,
-        "session_id": "session",
-        "trace_id": "trace",
-        "host": "codex",
-        "delivery_mode": "direct",
-        "context_limit": 4096,
-        "routing": projected["decision"],
-        "specialist_refs": [],
-        "unit_assignment_agents": [],
-        "unit_agent_plan": [],
-        "trivial": False,
-        "roster_size": 0,
-    }
-    suggestion = {"work_unit_id": "unit-0000000000", "recommended_agent": "reviewer"}
-    with pytest.raises(ValueError, match="unit-agent plan"):
-        store_preflight._prepare_ready_evidence(
-            session_id="session",
-            trace_id="trace",
-            host="codex",
-            attempt_token="attempt",
-            recipe=recipe,
-            routing_evidence=routing,
-            suggestions=[suggestion],
-            specialist_refs=[],
-        )
 
 
 def test_roster_invalid_prompt_slug_returns_none() -> None:
