@@ -492,3 +492,62 @@ def test_packaged_authority_rejects_tampered_or_unknown_evidence(tmp_path: Path)
             **packaged_hiring_evidence(package),
         )
         store.transition_hiring_case(unknown["id"], status="audited")
+
+
+def test_an_amended_packaged_worker_is_reported_as_divergent_and_left_alone(
+    tmp_path: Path,
+) -> None:
+    """Rule 6: repair must stop at an amendment, and must no longer stop silently.
+
+    ``reconcile_packaged_workforce_contracts`` deliberately refuses to re-project a
+    worker whose active revision is not the packaged one -- overwriting a
+    deliberate amendment would be far worse than leaving it. What was missing is
+    that the refusal produced no evidence at all, so a contractor amending an
+    ``origin=upstream`` worker was invisible.
+    """
+
+    store = Store(tmp_path / "agency.db")
+    install_known_contractors(store)
+    slug = "application-integration-verifier"
+    package = known_contractor_package(slug)
+    worker = store.get_workforce_worker(slug, disabled_agents=())
+    amended_body = str(package.agent["prompt_body"]) + "\n\nAmended locally by an operator."
+
+    with closing(store._connect()) as conn:
+        conn.execute(
+            "UPDATE agent_versions SET content = ? WHERE id = ?",
+            (amended_body, worker["current_agent_version_id"]),
+        )
+        conn.commit()
+
+    result = store.reconcile_packaged_workforce_contracts()
+
+    reported = {item.agent_slug: item for item in result.divergent}
+    assert slug in reported, "an amended packaged worker produced no divergence evidence"
+    assert reported[slug].reason == "revision_modified"
+    assert reported[slug].expected_origin == reported[slug].actual_origin
+    assert reported[slug].to_dict()["agent_slug"] == slug
+
+    # The amendment survives: this surface reports, it never repairs or reverts.
+    with closing(store._connect()) as conn:
+        stored = conn.execute(
+            "SELECT content FROM agent_versions WHERE id = ?",
+            (worker["current_agent_version_id"],),
+        ).fetchone()
+    assert str(stored["content"]) == amended_body
+
+    # And the amended worker is excluded from the repaired population rather than
+    # counted as inspected-and-clean.
+    assert result.inspected == len(KNOWN_CONTRACTORS_BY_SLUG) - 1
+
+
+def test_a_clean_packaged_roster_reports_no_divergence(tmp_path: Path) -> None:
+    """The evidence must stay quiet when nothing has been amended."""
+
+    store = Store(tmp_path / "agency.db")
+    install_known_contractors(store)
+
+    result = store.reconcile_packaged_workforce_contracts()
+
+    assert result.divergent == ()
+    assert result.inspected == len(KNOWN_CONTRACTORS_BY_SLUG)

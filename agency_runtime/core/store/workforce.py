@@ -75,11 +75,41 @@ def _collection_revision(label: str, rows: list[dict[str, Any]]) -> str:
 
 
 @dataclass(frozen=True, slots=True)
+class WorkforceContractDivergence:
+    """One packaged worker whose stored revision is no longer the packaged one.
+
+    Repair authority deliberately stops at these rows, which is correct: the
+    package must never overwrite an amendment somebody made on purpose. What was
+    missing is that stopping was also silent, so a contractor amending an
+    ``origin=upstream`` worker left no trace anywhere. This is the trace, and it
+    is evidence only -- reporting a divergence never repairs or reverts it.
+    """
+
+    agent_slug: str
+    reason: str
+    expected_origin: str
+    actual_origin: str
+    expected_version: str
+    actual_version: str
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "agent_slug": self.agent_slug,
+            "reason": self.reason,
+            "expected_origin": self.expected_origin,
+            "actual_origin": self.actual_origin,
+            "expected_version": self.expected_version,
+            "actual_version": self.actual_version,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class WorkforceContractReconciliation:
     """Result of re-projecting exact package-owned active revisions."""
 
     inspected: int
     updated: int
+    divergent: tuple[WorkforceContractDivergence, ...] = ()
 
 
 def _identity(value: object, *, field: str) -> str:
@@ -589,9 +619,7 @@ def record_native_assignment_outcome(
             (expected["worker_id"],),
         ).fetchone()
         if worker is not None:
-            successes, disabled, review_window_days = _outcome_promotion_policy(
-                store, None, None
-            )
+            successes, disabled, review_window_days = _outcome_promotion_policy(store, None, None)
             _auto_promote_if_ready(
                 conn,
                 worker,
@@ -981,6 +1009,7 @@ class WorkforceStoreMixin:
         authorities = _packaged_workforce_authorities()
         inspected = 0
         updated = 0
+        divergent: list[WorkforceContractDivergence] = []
         with closing(self._connect()) as conn:
             conn.execute("BEGIN IMMEDIATE")
             rows = conn.execute(
@@ -1015,11 +1044,38 @@ class WorkforceStoreMixin:
             for row in rows:
                 authority = authorities.get(str(row["agent_slug"]))
                 if authority is None:
+                    # Not package-owned at all -- a minted contractor or an
+                    # externally supplied worker. Outside this authority by
+                    # design, and not a divergence worth reporting.
                     continue
                 agent, expected_origin = authority
-                if str(row["origin"]) != expected_origin or not _exact_packaged_revision(
-                    row, agent
-                ):
+                actual_origin = str(row["origin"])
+                if actual_origin != expected_origin:
+                    divergent.append(
+                        WorkforceContractDivergence(
+                            agent_slug=str(row["agent_slug"]),
+                            reason="origin_drift",
+                            expected_origin=expected_origin,
+                            actual_origin=actual_origin,
+                            expected_version=str(agent.get("version") or ""),
+                            actual_version=str(row["current_version"]),
+                        )
+                    )
+                    continue
+                if not _exact_packaged_revision(row, agent):
+                    # The amendment case rule 6 cares about: this worker is
+                    # package-owned but its active revision is not the packaged
+                    # one, so repair stops here and says so.
+                    divergent.append(
+                        WorkforceContractDivergence(
+                            agent_slug=str(row["agent_slug"]),
+                            reason="revision_modified",
+                            expected_origin=expected_origin,
+                            actual_origin=actual_origin,
+                            expected_version=str(agent.get("version") or ""),
+                            actual_version=str(row["current_version"]),
+                        )
+                    )
                     continue
                 inspected += 1
                 current_document = str(row["recruitment_contract"])
@@ -1121,7 +1177,11 @@ class WorkforceStoreMixin:
                     "UPDATE store_counters SET value = value + 1 WHERE name = 'roster-generation'"
                 )
             conn.commit()
-        return WorkforceContractReconciliation(inspected=inspected, updated=updated)
+        return WorkforceContractReconciliation(
+            inspected=inspected,
+            updated=updated,
+            divergent=tuple(sorted(divergent, key=lambda item: item.agent_slug)),
+        )
 
     def create_hiring_case(
         self,
