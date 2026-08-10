@@ -9,10 +9,51 @@ from agency_runtime.core.child_delivery_evidence import (
     default_child_artifact_root,
     scan_child_delivery_evidence,
 )
+from agency_runtime.core.host_wiring_drift import host_wiring
 
 from ._common import print_json as _print_json
 
 _HOSTS = ("claude", "codex")
+_WIRING_HOSTS = ("claude",)
+
+
+def cmd_evidence_wiring(args: argparse.Namespace) -> int:
+    """Report whether each host invokes the projection the installer staged.
+
+    `agency status` answers whether the staged artifacts are current, which is a
+    different question and once reported healthy while the host ran code from
+    before the Job B deletion. Exit status is 1 on drift so this is usable as a
+    gate before trusting any live observation.
+    """
+
+    hosts = (args.host,) if getattr(args, "host", None) else _WIRING_HOSTS
+    results = [host_wiring(host) for host in hosts]
+    if getattr(args, "json", False):
+        _print_json(
+            {
+                "hosts": [
+                    {
+                        "host": result.host,
+                        "wired": result.wired,
+                        "reason": result.reason,
+                        "staged_projection": result.staged_projection,
+                        "staged_path": result.staged_path,
+                        "wired_projection": result.wired_projection,
+                        "wired_path": result.wired_path,
+                    }
+                    for result in results
+                ]
+            }
+        )
+    else:
+        for result in results:
+            if result.wired:
+                print(f"{result.host}: wired to {result.staged_projection[:12]} ✅")
+                continue
+            print(f"{result.host}: NOT wired to what was staged — {result.reason}")
+            print(f"  staged: {result.staged_projection[:12] or '(none)'}  {result.staged_path}")
+            print(f"  wired : {result.wired_projection[:12] or '(none)'}  {result.wired_path}")
+    return 0 if all(result.wired for result in results) else 1
 
 
 def cmd_evidence_children(args: argparse.Namespace) -> int:
