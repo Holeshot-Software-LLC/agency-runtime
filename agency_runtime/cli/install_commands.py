@@ -1475,7 +1475,7 @@ def _cli_install_drift_projection() -> dict[str, Any] | None:
         from agency_runtime.core.runtime_staleness import cli_install_drift
 
         drift = cli_install_drift()
-    except Exception:  # noqa: BLE001 - advisory only; never fail a command over it
+    except Exception:
         return None
     if drift is None:
         return None

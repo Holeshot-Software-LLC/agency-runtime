@@ -40,9 +40,7 @@ from agency_runtime.core.host_capabilities import (
     current_host_capability_receipt,
 )
 from agency_runtime.core.host_guidance import (
-    NATIVE_DELEGATION_GUIDANCE,
     SPECIALIST_TOOL_GUIDANCE,
-    WORK_UNIT_CORRELATION_GUIDANCE,
 )
 from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 from agency_runtime.core.selector import policy as policy_module
@@ -76,9 +74,6 @@ from agency_runtime.core.turn_intent import (
     TurnState,
     authoritative_turn_classification,
     classify_turn_intent,
-)
-from agency_runtime.core.unit_assignment import (
-    MAX_WORK_UNIT_PREVIEW_CHARS,
 )
 
 logger = logging.getLogger("agency_runtime.selector.pipeline")
@@ -1594,7 +1589,6 @@ def route(
             project_workforce_routing,
         )
         from agency_runtime.core.workforce.staffing_verifier import StaffingContext
-
         from agency_runtime.core.workspace_stacks import detect_workspace_stacks
 
         staffing_context = StaffingContext(
@@ -1754,39 +1748,9 @@ def build_routing_context(routing: dict[str, Any], config: AgencyConfig | None =
             f"(confidence={confidence:.1f}, source={source}): {agents_list}"
         )
 
-    work_units = _bounded_work_units(routing.get("work_units"))
-    if work_units.get("delegate", False) and work_units.get("count", 1) >= 2:
-        unit_count = work_units["count"]
-        unit_source = work_units.get("source", "unknown")
-        unit_confidence = work_units.get("confidence", "low")
-        units_list = [unit for unit in work_units.get("units", []) if str(unit).strip()]
-
-        delegation_mode = cfg.delegation.mode
-        if delegation_mode == "observe":
-            policy_text = (
-                "OBSERVE ONLY: expose the plan to the native host without an Agency "
-                "delegation correction."
-            )
-        elif delegation_mode == "strong":
-            policy_text = "STRONGLY PREFER native delegation for every eligible row."
-        else:
-            policy_text = "PREFER native delegation according to the bounded plan strength."
-        nudge = (
-            f"\n\n[DELEGATION OPPORTUNITY] {unit_count} independent work units "
-            f"detected (confidence={unit_confidence}, source={unit_source}). "
-            f"{policy_text} {NATIVE_DELEGATION_GUIDANCE} "
-            "Keep the main session available for the user."
-        )
-        if units_list:
-            nudge += "\n  Detected work units:"
-            for i, unit in enumerate(units_list, 1):
-                unit_text = _bounded_signal_text(unit, MAX_WORK_UNIT_CHARS)
-                unit_id = work_unit_id_from_text(unit_text)
-                unit_preview = _bounded_signal_text(unit_text, MAX_WORK_UNIT_PREVIEW_CHARS)
-                nudge += f"\n    {i}. [{unit_id}] {unit_preview}"
-            nudge += f"\n  {WORK_UNIT_CORRELATION_GUIDANCE}"
-        parts.append(nudge)
-
+    # No delegation nudge. Agency does not tell the host what to spawn or how
+    # many workers to run -- the harness owns that decision, and Agency only
+    # staffs whoever exists (rules 5 and 8).
     parts.append(HEADER_INSTRUCTION)
     return "\n".join(parts)[:MAX_ROUTING_CONTEXT_CHARS]
 

@@ -599,12 +599,12 @@ def workforce_index_fingerprint(contracts: Sequence[WorkforceContract]) -> str:
 
 
 __all__ = [
+    "COMPOSITION_RELATIONSHIP_FIELDS",
     "MAX_CONTRACT_BYTES",
     "MAX_OUTCOMES",
     "MAX_TAXONOMY_ITEMS",
     "MAX_TEXT_BYTES",
     "WORKFORCE_CONTRACT_SCHEMA_VERSION",
-    "COMPOSITION_RELATIONSHIP_FIELDS",
     "AuditContract",
     "CompositionContract",
     "WorkforceContract",

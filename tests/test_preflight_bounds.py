@@ -31,7 +31,6 @@ from agency_runtime.core.resident_managers import (
 )
 from agency_runtime.core.selector import pipeline
 from agency_runtime.core.selector.delegation_detection import (
-    MAX_WORK_UNIT_INPUT_CHARS,
     detect_work_units,
 )
 from agency_runtime.core.specialist_context import _prompt_context_lines
@@ -1519,39 +1518,6 @@ def test_detector_does_not_split_a_noun_that_is_also_an_imperative() -> None:
     ]
     assert result["source"] == "sequential_steps"
     assert result["delegate"] is False
-
-
-def test_routing_and_context_enforce_fixed_projections() -> None:
-    raw_message = "x" * (MAX_WORK_UNIT_INPUT_CHARS * 8)
-    routed = pipeline.route("session", raw_message, [])
-    bounded_message = raw_message[: pipeline.MAX_ROUTING_SIGNAL_CHARS]
-
-    assert routed["query_hash"] == hashlib.sha256(bounded_message.encode()).hexdigest()
-
-    hostile = {
-        "selected_ids": [f"agent-{index}-" + "a" * 500 for index in range(100)],
-        "confidence": float("nan"),
-        "status": "status-" + "z" * 10_000,
-        "source": "source-" + "z" * 10_000,
-        "work_units": {
-            "count": 10_000,
-            "confidence": "high-" + "z" * 10_000,
-            "source": "hostile-" + "z" * 10_000,
-            "units": [f"work-item-{index}-" + "w" * 500 for index in range(100)],
-            "delegate": True,
-        },
-    }
-    context = pipeline.build_routing_context(hostile)
-
-    assert len(context) <= pipeline.MAX_ROUTING_CONTEXT_CHARS
-    assert "agent-15" in context
-    assert "agent-16" not in context
-    assert "work-item-15" in context
-    assert "work-item-16" not in context
-    assert (
-        "Treat the current [AGENCY LOADED] capsule as the authoritative specialist context "
-        "for this turn"
-    ) in context
 
 
 class _BatchStore:

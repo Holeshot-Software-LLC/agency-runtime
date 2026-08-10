@@ -11,8 +11,6 @@ from collections.abc import Mapping, Sequence
 from typing import Any, TypedDict
 
 from agency_runtime.core.host_guidance import (
-    NATIVE_DELEGATION_GUIDANCE,
-    native_delegation_instruction,
     specialist_load_guidance,
 )
 from agency_runtime.core.resident_manager_binding import (
@@ -852,77 +850,6 @@ def _noneish_agency_line(value: str) -> bool:
     return text == "none" or text.startswith(("none ", "none-", "none--"))
 
 
-def _non_actionable_delegation_none(value: str) -> bool:
-    """Return True when a none-delegation claim lacks a concrete blocker."""
-
-    text = _clean(value).lower().rstrip(".!")
-    return text in {
-        "none",
-        "none - no delegation executed",
-        "none - delegation suggested but not executed",
-    }
-
-
-def _planned_delegation_strengths(snapshot: Mapping[str, Any]) -> dict[str, str] | None:
-    """Return current-plan strengths, or None for a legacy evidence snapshot."""
-
-    recipe_version = snapshot.get("preflight_recipe_version", 0)
-    if not isinstance(recipe_version, int) or isinstance(recipe_version, bool):
-        return None
-    if recipe_version < 11:
-        return None
-    raw_plan = snapshot.get("unit_agent_plan", [])
-    if not isinstance(raw_plan, list):
-        raise EvidenceCorrelationError("delegation strength plan could not be verified")
-    strengths: dict[str, str] = {}
-    for item in raw_plan:
-        if not isinstance(item, Mapping):
-            raise EvidenceCorrelationError("delegation strength plan could not be verified")
-        work_unit_id = _clean(item.get("work_unit_id"))
-        strength = _clean(item.get("delegation_strength"))
-        if (
-            not work_unit_id
-            or strength not in {"optional", "preferred", "strongly_preferred"}
-            or work_unit_id in strengths
-        ):
-            raise EvidenceCorrelationError("delegation strength plan could not be verified")
-        strengths[work_unit_id] = strength
-    return strengths
-
-
-def _strong_delegation_correction(
-    snapshot: Mapping[str, Any],
-    open_delegations: list[dict[str, Any]],
-) -> CompletionPolicyViolation | None:
-    strengths = _planned_delegation_strengths(snapshot)
-    if strengths is None:
-        return None
-    strong = [
-        row
-        for row in open_delegations
-        if strengths.get(_clean(row.get("work_unit_id"))) == "strongly_preferred"
-    ]
-    if not strong:
-        return None
-    run = snapshot.get("run")
-    host = _clean(run.get("host")) if isinstance(run, Mapping) else ""
-    rows = "; ".join(
-        f"work_unit_id={_clean(row.get('work_unit_id'))}, "
-        f"recommended_agent={_clean(row.get('recommended_agent'))}"
-        for row in strong[:16]
-    )
-    return {
-        "message": (
-            "AGENCY DELEGATION CORRECTION (one pass only): strongly_preferred native "
-            f"work remains unresolved: {rows}. {native_delegation_instruction(host)} "
-            "Delegation is expected to keep the parent responsive. Record either "
-            "authoritative native worker/run evidence or one explicit decline receipt "
-            "for every listed work unit."
-        ),
-        "missing": ["delegation_execution"],
-    }
-
-
 def _incomplete_workspace_write_units(snapshot: Mapping[str, Any]) -> list[str]:
     """Return no unit as blocked: a workspace-write unit never requires a delegation.
 
@@ -1037,13 +964,13 @@ def validate_completion_policy(
 
     parsed = parse_header(response_text)
     loaded = parsed.get("agencies_loaded", "")
-    delegated = parsed.get("agencies_delegated", "")
     try:
         specialists = _dedupe(list(snapshot["specialists"]))
         resident_managers = _dedupe(list(snapshot.get("resident_managers", [])))
         loaded_agents = _dedupe([*resident_managers, *specialists])
-        delegations = [dict(row) for row in snapshot["delegations"]]
-        open_delegations = [row for row in delegations if _clean(row.get("status")) == "suggested"]
+        # Shape is still validated as part of the evidence contract; the rows no
+        # longer gate the response.
+        _ = [dict(row) for row in snapshot["delegations"]]
         selection_required = bool(snapshot["selection_required"])
     except (KeyError, TypeError, ValueError):
         return {
@@ -1057,7 +984,7 @@ def validate_completion_policy(
 
     requires_agency_evidence = bool(
         session_id and (loaded_agents or selection_required or specialists)
-    ) or bool(open_delegations)
+    )
     if requires_agency_evidence and _noneish_agency_line(loaded):
         actual = ", ".join(loaded_agents) if loaded_agents else "the actual loaded specialist"
         run = snapshot.get("run")
@@ -1077,42 +1004,12 @@ def validate_completion_policy(
             "missing": ["agencies_loaded"],
         }
 
-    try:
-        strengths = _planned_delegation_strengths(snapshot)
-        strong_correction = _strong_delegation_correction(snapshot, open_delegations)
-    except EvidenceCorrelationError:
-        return {
-            "message": (
-                "AGENCY EVIDENCE VERIFICATION UNAVAILABLE: Delegation strength evidence "
-                "could not be verified. Do not publish this response; restore the evidence "
-                "store and retry."
-            ),
-            "missing": ["evidence_verification"],
-        }
-    if strong_correction is not None:
-        return strong_correction
-    if strengths is None and open_delegations and _non_actionable_delegation_none(delegated):
-        return {
-            "message": (
-                "DELEGATION OPPORTUNITY WAS DETECTED but agencies_delegated has no "
-                "executed delegation or concrete blocker. Dispatch at least one independent "
-                f"work unit. {NATIVE_DELEGATION_GUIDANCE} Then report the executed "
-                "delegation in the Agency header. If delegation is "
-                "impossible, state the concrete blocker instead of writing bare 'none'."
-            ),
-            "missing": ["agencies_delegated"],
-        }
-
+    # Agency does not decide to spawn, so it cannot withhold a parent's answer
+    # until the parent has delegated. Blocking a turn on unresolved delegation
+    # rows -- and demanding a worker receipt or an explicit decline for each --
+    # is exactly the "you may not answer until you have hired someone and they
+    # have filed paperwork" drift that rule 5 deletes. Rules 5 and 8.
     header_snapshot: Mapping[str, Any] = snapshot
-    if strengths is not None and open_delegations:
-        # Optional and preferred suggestions are planning evidence, not execution.
-        # Keep them in the durable activity stream while excluding them from the
-        # executed-delegation header projection. Strong rows returned above.
-        open_ids = {_clean(row.get("id")) for row in open_delegations}
-        header_snapshot = {
-            **snapshot,
-            "delegations": [row for row in delegations if _clean(row.get("id")) not in open_ids],
-        }
 
     try:
         authoritative = fill_header_fields(

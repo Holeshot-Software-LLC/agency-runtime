@@ -31,12 +31,12 @@ from agency_runtime.core.launcher_bootstrap import (
     prepare_private_package_runtime,
 )
 from agency_runtime.core.openclaw_streaming_policy import retained_backup_status
-from agency_runtime.core.runtime_staleness import record_installed_runtime
 from agency_runtime.core.process_argv import (
     PersistentArtifactIdentity,
     revalidate_persistent_artifacts,
     snapshot_persistent_artifacts,
 )
+from agency_runtime.core.runtime_staleness import record_installed_runtime
 
 
 def _facade():

@@ -12,7 +12,6 @@ from agency_runtime.core.delegation.events import (
 )
 from agency_runtime.core.header.contract import fill_header_fields, format_header
 from agency_runtime.core.selector.delegation_detection import detect_work_units
-from agency_runtime.core.selector.pipeline import build_routing_context
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -50,28 +49,6 @@ def _valid_header(
             "body",
         ]
     )
-
-
-def test_build_routing_context_surfaces_delegation_even_without_specialist_match() -> None:
-    routing = {
-        "selected_ids": [],
-        "confidence": 0.0,
-        "status": "no_catalog",
-        "work_units": {
-            "delegate": True,
-            "count": 2,
-            "confidence": "high",
-            "source": "numbered_list",
-            "units": ["audit the delegation layer", "add eval coverage"],
-        },
-    }
-
-    context = build_routing_context(routing)
-
-    assert "[AGENCY PREFLIGHT] No high-confidence specialist match" in context
-    assert "[DELEGATION OPPORTUNITY] 2 independent work units" in context
-    assert "audit the delegation layer" in context
-    assert f"[{work_unit_id_from_text('audit the delegation layer')}]" in context
 
 
 def test_pre_verify_accepts_trivial_turn_with_no_agency_evidence(tmp_path: Path) -> None:
@@ -564,84 +541,6 @@ def test_pre_verify_accepts_recorded_delegation_blocker(blocker: str, tmp_path: 
     )
 
     assert result is None
-
-
-def test_pre_verify_still_rejects_bare_none_delegated(tmp_path: Path) -> None:
-    store = Store(tmp_path / "agency.db")
-    store.create_run(
-        trace_id="trace-1",
-        session_id="session-1",
-        metadata={"request_kind": "nontrivial"},
-    )
-    store.record_specialist_loaded(
-        "session-1",
-        "multi-agent-systems-architect",
-        trace_id="trace-1",
-    )
-    store.record_delegation(
-        trace_id="trace-1",
-        session_id="session-1",
-        work_unit_id="unit-1",
-        recommended_agent="multi-agent-systems-architect",
-        status="suggested",
-    )
-    adapter = HermesAdapter(store=store)
-
-    result = adapter.pre_verify_handler(
-        _valid_header(
-            delegated="none",
-            store=store,
-            session_id="session-1",
-            trace_id="trace-1",
-        ),
-        session_id="session-1",
-        model="task-chunk-planner",
-        attempt=1,
-        trace_id="trace-1",
-    )
-
-    assert result is not None
-    assert result["action"] == "continue"
-    assert "delegate_task" in result["message"]
-
-
-def test_pre_verify_rejects_generated_no_delegation_explanation(tmp_path: Path) -> None:
-    store = Store(tmp_path / "agency.db")
-    store.create_run(
-        trace_id="trace-1",
-        session_id="session-1",
-        metadata={"request_kind": "nontrivial"},
-    )
-    store.record_specialist_loaded(
-        "session-1",
-        "multi-agent-systems-architect",
-        trace_id="trace-1",
-    )
-    store.record_delegation(
-        trace_id="trace-1",
-        session_id="session-1",
-        work_unit_id="unit-1",
-        recommended_agent="multi-agent-systems-architect",
-        status="suggested",
-    )
-    adapter = HermesAdapter(store=store)
-
-    result = adapter.pre_verify_handler(
-        _valid_header(
-            delegated="none - delegation suggested but not executed",
-            store=store,
-            session_id="session-1",
-            trace_id="trace-1",
-        ),
-        session_id="session-1",
-        model="task-chunk-planner",
-        attempt=1,
-        trace_id="trace-1",
-    )
-
-    assert result is not None
-    assert result["action"] == "continue"
-    assert "concrete blocker" in result["message"]
 
 
 def test_pre_verify_accepts_after_delegate_task_execution(tmp_path: Path) -> None:

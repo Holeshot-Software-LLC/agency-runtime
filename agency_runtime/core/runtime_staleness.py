@@ -55,8 +55,8 @@ from agency_runtime.core.launcher_bootstrap import (
     running_runtime_digest,
     runtime_digest_for_bootstrap,
 )
-from agency_runtime.core.process_argv import agency_bootstrap_path
 from agency_runtime.core.private_paths import private_runtime_directory
+from agency_runtime.core.process_argv import agency_bootstrap_path
 
 _POINTER_NAME = "current.json"
 _POINTER_SCHEMA = "agency-runtime.installed-launcher-runtime"
