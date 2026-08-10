@@ -1487,6 +1487,31 @@ def _register_services(sub: Subparsers, handlers: Handlers) -> None:
     _bind(dashboard, handlers, "cmd_dashboard")
 
 
+def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
+    evidence = sub.add_parser(
+        "evidence",
+        help="Read what a host's own artifacts prove, never what Agency recorded",
+    )
+    evidence_sub = evidence.add_subparsers(dest="evidence_command", required=True)
+    children = evidence_sub.add_parser(
+        "children",
+        help="Show which harness-spawned children provably received a specialist card",
+    )
+    children.add_argument(
+        "--host",
+        choices=("claude", "codex"),
+        default=None,
+        help="Read one host only (default: every host that writes child artifacts)",
+    )
+    children.add_argument(
+        "--root",
+        default=None,
+        help="Read this artifact root instead of the host's own (requires --host)",
+    )
+    children.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(children, handlers, "cmd_evidence_children")
+
+
 def _register_passthrough_commands(sub: Subparsers, handlers: Handlers) -> None:
     codex = sub.add_parser("codex", help="Codex adapter commands")
     codex_sub = codex.add_subparsers(dest="codex_command", required=True)
@@ -1519,6 +1544,7 @@ def build_parser(handlers: Handlers) -> argparse.ArgumentParser:
     _register_workforce(sub, handlers)
     _register_selection(sub, handlers)
     _register_delegation_and_evals(sub, handlers)
+    _register_evidence(sub, handlers)
     _register_database(sub, handlers)
     _register_native_protocols(sub, handlers)
     _register_services(sub, handlers)

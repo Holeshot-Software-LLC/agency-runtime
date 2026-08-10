@@ -115,6 +115,47 @@ def read_bounded_regular_file(
     return payload
 
 
+def read_bounded_regular_file_prefix(
+    path: Path,
+    *,
+    limit: int,
+    label: str = "file",
+) -> bytes:
+    """Read at most *limit* leading bytes of a stable regular file.
+
+    ``read_bounded_regular_file`` refuses a file larger than its limit, which is
+    right when the whole file is the unit of trust. A host transcript is read
+    only for its opening records, so an oversized artifact is ordinary rather
+    than hostile: bound the read instead of rejecting the file.
+    """
+
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+        raise ValueError("file read limit must be a positive integer")
+
+    before = path.lstat()
+    if _is_link_or_reparse(before) or not stat.S_ISREG(before.st_mode):
+        raise UnsafeFileError(f"{label} must be a regular non-link file")
+
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(path, flags)
+    try:
+        opened = os.fstat(descriptor)
+        if _is_link_or_reparse(opened) or not stat.S_ISREG(opened.st_mode):
+            raise UnsafeFileError(f"{label} changed during open")
+        if (
+            before.st_ino
+            and opened.st_ino
+            and (before.st_dev, before.st_ino) != (opened.st_dev, opened.st_ino)
+        ):
+            raise UnsafeFileError(f"{label} changed during open")
+        with os.fdopen(descriptor, "rb") as stream:
+            descriptor = -1
+            return stream.read(limit)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+
+
 def atomic_write_text(path: Path, content: str) -> None:
     """Durably replace a text artifact without exposing a partial final file."""
 

@@ -26,6 +26,7 @@ from . import config_commands as _config
 from . import config_wizard as _wizard
 from . import delegation_commands as _delegation
 from . import eval_commands as _evals
+from . import evidence_commands as _evidence
 from . import install_commands as _install
 from . import parser as _parser
 from . import roster_commands as _roster
@@ -374,6 +375,8 @@ cmd_delegate = _delegation.cmd_delegate
 cmd_codex_exec = _delegation.cmd_codex_exec
 cmd_run = _delegation.cmd_run
 
+cmd_evidence_children = _evidence.cmd_evidence_children
+
 cmd_serve = _services.cmd_serve
 cmd_mcp = _services.cmd_mcp
 cmd_hook = _services.cmd_hook
@@ -428,6 +431,7 @@ _COMMAND_NAMES = (
     "cmd_eval_upstream_selection",
     "cmd_eval_routing",
     "cmd_eval_workforce",
+    "cmd_evidence_children",
     "cmd_explain",
     "cmd_hook",
     "cmd_hiring_approve",
