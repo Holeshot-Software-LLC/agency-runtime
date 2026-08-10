@@ -1,3 +1,14 @@
+---
+title: "Session handoff — rule 4 evidence"
+status: active
+category: documentation
+created: 2026-08-10
+updated: 2026-08-10
+tags: []
+related: []
+supersedes: []
+superseded_by: null
+---
 # Session handoff — rule 4 evidence
 
 Durable engineering state for picking this work up cold. Machine-specific setup (host CLI
