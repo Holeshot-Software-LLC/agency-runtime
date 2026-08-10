@@ -33,6 +33,31 @@ def render_codex_plugin_version(
     return f"{PLUGIN_VERSION}+codex.{bundle_digest(fingerprint_inputs)[:12]}"
 
 
+def render_claude_plugin_version(
+    manifest: Mapping[str, Any],
+    component_files: Mapping[str, str],
+    *,
+    bundle_digest: Callable[[Mapping[str, str]], str],
+) -> str:
+    """Build a deterministic Claude cachebuster from load-bearing content.
+
+    Claude's plugin cache keys on the version string, so a permanently pinned
+    ``0.1.0`` makes both ``claude plugin install`` and ``claude plugin update``
+    no-op against a changed bundle: the host keeps invoking whatever it cached
+    first, and every surface reports success. Codex has derived its version from
+    content since the beginning; this is the same idea, one host later.
+    """
+
+    fingerprint_inputs = dict(component_files)
+    fingerprint_inputs[".claude-plugin/plugin.json"] = json.dumps(
+        manifest,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    return f"{PLUGIN_VERSION}+claude.{bundle_digest(fingerprint_inputs)[:12]}"
+
+
 def build_hermes_bundle(
     plugin_source: str,
     *,
@@ -162,12 +187,12 @@ def build_claude_bundle(
     hooks: Mapping[str, Any],
     mcp: Mapping[str, Any],
     control_skill: str,
+    version_builder: Callable[[Mapping[str, Any], Mapping[str, str]], str],
 ) -> tuple[dict[str, str], str]:
     plugin_prefix = f"plugins/{PLUGIN_ID}"
-    manifest = {
+    manifest: dict[str, Any] = {
         "name": PLUGIN_ID,
         "displayName": "Agency Runtime",
-        "version": PLUGIN_VERSION,
         "description": _DESCRIPTION,
         "author": {"name": "Agency Runtime Contributors"},
         "license": "MIT",
@@ -175,6 +200,15 @@ def build_claude_bundle(
         # load automatically; referencing them here again is a fatal duplicate
         # ("Hook load failed: Duplicate hooks file detected") on Claude >= 2.x.
     }
+    component_files = {
+        f"{plugin_prefix}/hooks/hooks.json": json.dumps(hooks, indent=2) + "\n",
+        f"{plugin_prefix}/.mcp.json": json.dumps(mcp, indent=2) + "\n",
+        f"{plugin_prefix}/skills/agency/SKILL.md": control_skill,
+    }
+    # Version last, over the exact bytes the host will cache, and shared with the
+    # marketplace entry: the two must agree or `plugin install` resolves one
+    # version and caches another.
+    manifest["version"] = version_builder(manifest, component_files)
     marketplace = {
         "name": MARKETPLACE_ID,
         "owner": {"name": "Agency Runtime Contributors"},
@@ -183,16 +217,14 @@ def build_claude_bundle(
                 "name": PLUGIN_ID,
                 "source": f"./plugins/{PLUGIN_ID}",
                 "description": _DESCRIPTION,
-                "version": PLUGIN_VERSION,
+                "version": manifest["version"],
             }
         ],
     }
     files = {
         ".claude-plugin/marketplace.json": json.dumps(marketplace, indent=2) + "\n",
         f"{plugin_prefix}/.claude-plugin/plugin.json": json.dumps(manifest, indent=2) + "\n",
-        f"{plugin_prefix}/hooks/hooks.json": json.dumps(hooks, indent=2) + "\n",
-        f"{plugin_prefix}/.mcp.json": json.dumps(mcp, indent=2) + "\n",
-        f"{plugin_prefix}/skills/agency/SKILL.md": control_skill,
+        **component_files,
     }
     return files, f"{plugin_prefix}/.claude-plugin/plugin.json"
 

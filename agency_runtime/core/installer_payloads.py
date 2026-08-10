@@ -27,6 +27,7 @@ from agency_runtime.core.installer_payload_manifests import (
     build_hermes_bundle,
     build_openclaw_bundle,
     build_zcode_bundle,
+    render_claude_plugin_version,
     render_codex_plugin_version,
 )
 from agency_runtime.core.installer_payload_openclaw import render_openclaw_index
@@ -95,6 +96,10 @@ def _openclaw_index(*args: Any, **kwargs: Any) -> str:
 
 def _codex_plugin_version(*args: Any, **kwargs: Any) -> str:
     return _facade()._codex_plugin_version(*args, **kwargs)
+
+
+def _claude_plugin_version(*args: Any, **kwargs: Any) -> str:
+    return _facade()._claude_plugin_version(*args, **kwargs)
 
 
 def _powershell_literal(value: str) -> str:
@@ -496,6 +501,17 @@ def codex_plugin_version(
     )
 
 
+def claude_plugin_version(
+    manifest: Mapping[str, Any],
+    component_files: Mapping[str, str],
+) -> str:
+    return render_claude_plugin_version(
+        manifest,
+        component_files,
+        bundle_digest=_bundle_digest,
+    )
+
+
 def bundle_files(
     host: str,
     cfg: AgencyConfig | None = None,
@@ -556,4 +572,5 @@ def bundle_files(
         hooks=hooks,
         mcp=mcp,
         control_skill=_agency_control_skill("claude"),
+        version_builder=_claude_plugin_version,
     )

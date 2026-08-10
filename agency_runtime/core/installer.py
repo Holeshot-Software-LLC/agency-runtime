@@ -123,6 +123,7 @@ _zcode_hooks = _payloads.zcode_hooks
 _agency_control_skill = _payloads.agency_control_skill
 _openclaw_index = _payloads.openclaw_index
 _codex_plugin_version = _payloads.codex_plugin_version
+_claude_plugin_version = _payloads.claude_plugin_version
 _bundle_files = _payloads.bundle_files
 _install_codex_global_guidance = _codex_guidance.install_codex_global_guidance
 _plan_codex_global_guidance = _codex_guidance.plan_codex_global_guidance
