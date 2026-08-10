@@ -147,7 +147,10 @@ def test_repo_local_cli_shadow_is_never_executed(
         environ={"PATH": os.pathsep.join((str(tmp_path), _TRUSTED_CLI_DIRECTORY))},
     )
 
-    assert status.reason == "executable not found"
+    # A shadow is refused, not missing. Reporting "not found" for a binary that
+    # is right there sends the reader hunting through PATH; that exact confusion
+    # cost a day when npm's ACLs started refusing both real host CLIs.
+    assert status.reason.startswith("executable unusable")
     assert launched is False
     assert observed_search_paths
     assert str(tmp_path) not in observed_search_paths[0].split(os.pathsep)
@@ -195,7 +198,7 @@ def test_nested_repo_cli_shadows_are_never_executed(
         environ={"PATH": os.pathsep.join((str(shadow_directory), _TRUSTED_CLI_DIRECTORY))},
     )
 
-    assert status.reason == "executable not found"
+    assert status.reason.startswith("executable unusable")
     assert launched is False
     assert observed_search_paths
     assert str(shadow_directory) not in observed_search_paths[0].split(os.pathsep)

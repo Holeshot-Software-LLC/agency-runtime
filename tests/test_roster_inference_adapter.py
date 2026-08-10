@@ -1483,7 +1483,12 @@ def test_cli_transport_inspection_and_generic_schema_failure_branches() -> None:
         "codex",
         resolver=lambda _name: (_ for _ in ()).throw(OSError("missing")),
     )
-    assert resolver_error.reason == "executable not found"
+    # A resolver that fails is a different problem from a binary that is absent,
+    # and the status has to say which.
+    # A resolver that fails is a different problem from a binary that is absent,
+    # and the status must say which without echoing the resolver's own text.
+    assert resolver_error.reason.startswith("executable unusable")
+    assert "missing" not in resolver_error.reason
 
     timed_out = cli_transport.inspect_cli_transport(
         "codex",
