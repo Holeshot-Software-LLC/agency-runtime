@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import io
 import json
-import logging
 import os
 import re
 import subprocess
@@ -27,7 +26,6 @@ from agency_runtime.adapters.hooks import (
 )
 from agency_runtime.core.header.contract import finalize_header
 from agency_runtime.core.header.finalize import finalize_response, response_hash
-from agency_runtime.core.observability import RuntimeBoundary
 from agency_runtime.core.resident_managers import RESIDENT_MANAGER_KERNEL
 from agency_runtime.core.store.sqlite import Store
 
@@ -2346,27 +2344,6 @@ def test_hook_boundary_allows_positively_identified_oversized_non_stop() -> None
 
 
 @pytest.mark.parametrize("host", ["codex", "zcode"])
-def test_hook_boundary_blocks_oversized_native_child_pre_tool_use(host: str) -> None:
-    sink = io.BytesIO()
-
-    assert (
-        run_hook_stdio(
-            host,
-            expected_event="PreToolUse",
-            input_stream=io.BytesIO(b"x" * (MAX_HOOK_INPUT_BYTES + 1)),
-            output_stream=sink,
-        )
-        == 0
-    )
-
-    result = json.loads(sink.getvalue())
-    if host == "zcode":
-        assert result["decision"] == "block"
-    else:
-        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
-
-
-@pytest.mark.parametrize("host", ["codex", "zcode"])
 def test_hook_boundary_blocks_prompt_when_preflight_integrity_fails(
     host: str,
     monkeypatch: pytest.MonkeyPatch,
@@ -2412,134 +2389,6 @@ def test_hook_boundary_blocks_prompt_when_preflight_integrity_fails(
     assert result["decision"] == "block"
     assert "AGENCY PREFLIGHT FAILED" in result["reason"]
     assert "evidence store unavailable" in result["reason"]
-
-
-def test_hook_boundary_blocks_planned_child_when_bridge_fails(
-    monkeypatch: pytest.MonkeyPatch,
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    from agency_runtime.adapters import hooks as hooks_module
-
-    class _FailingBridge:
-        def handle(self, _payload: dict[str, Any]) -> dict[str, Any]:
-            raise OSError("store unavailable")
-
-    monkeypatch.setattr(
-        hooks_module,
-        "HookBridge",
-        lambda *_args, **_kwargs: _FailingBridge(),
-    )
-    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
-    with RuntimeBoundary(surface="store", operation="sqlite.commit"):
-        pass
-    source = io.BytesIO(
-        json.dumps(
-            {
-                "hook_event_name": "PreToolUse",
-                "session_id": "session",
-                "turn_id": "trace",
-                "tool_name": "spawn_agent",
-                "tool_use_id": "tool-use",
-                "tool_input": {
-                    "task_name": "unit_0123456789",
-                    "message": "Review the implementation.",
-                },
-            }
-        ).encode()
-    )
-    sink = io.BytesIO()
-
-    assert (
-        run_hook_stdio(
-            "codex",
-            expected_event="PreToolUse",
-            input_stream=source,
-            output_stream=sink,
-        )
-        == 0
-    )
-
-    result = json.loads(sink.getvalue())
-    assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
-    observations = [
-        json.loads(record.getMessage().split(" ", 1)[1])
-        for record in caplog.records
-        if record.getMessage().startswith("agency_observation ")
-    ]
-    observation = next(
-        item
-        for item in observations
-        if item.get("surface") == "hook" and item.get("operation") == "codex.pretooluse"
-    )
-    assert observation["surface"] == "hook"
-    assert observation["operation"] == "codex.pretooluse"
-    assert observation["outcome"] == "denied"
-    assert observation["reason_code"] == "planned_hook_failure"
-    assert observation["correlation_digest"]
-
-
-def test_hook_observation_classifies_nested_planned_denial(
-    monkeypatch: pytest.MonkeyPatch,
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    from agency_runtime.adapters import hooks as hooks_module
-
-    class _DenyingBridge:
-        def handle(self, _payload: dict[str, Any]) -> dict[str, Any]:
-            return {
-                "hookSpecificOutput": {
-                    "hookEventName": "PreToolUse",
-                    "permissionDecision": "deny",
-                    "permissionDecisionReason": "planned activation unavailable",
-                }
-            }
-
-    monkeypatch.setattr(
-        hooks_module,
-        "HookBridge",
-        lambda *_args, **_kwargs: _DenyingBridge(),
-    )
-    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
-    source = io.BytesIO(
-        json.dumps(
-            {
-                "hook_event_name": "PreToolUse",
-                "session_id": "session",
-                "turn_id": "trace",
-                "tool_name": "collaborationspawn_agent",
-                "tool_use_id": "tool-use",
-                "tool_input": {
-                    "task_name": "unit_0123456789",
-                    "message": "Review the implementation.",
-                },
-            }
-        ).encode()
-    )
-    sink = io.BytesIO()
-
-    assert (
-        run_hook_stdio(
-            "codex",
-            expected_event="PreToolUse",
-            input_stream=source,
-            output_stream=sink,
-        )
-        == 0
-    )
-
-    assert json.loads(sink.getvalue())["hookSpecificOutput"]["permissionDecision"] == "deny"
-    observations = [
-        json.loads(record.getMessage().split(" ", 1)[1])
-        for record in caplog.records
-        if record.getMessage().startswith("agency_observation ")
-    ]
-    observation = next(
-        item
-        for item in observations
-        if item.get("surface") == "hook" and item.get("operation") == "codex.pretooluse"
-    )
-    assert observation["outcome"] == "denied"
-    assert observation["reason_code"] == "planned_hook_denied"
 
 
 def test_expected_stop_discriminator_blocks_when_event_field_is_beyond_input_bound() -> None:

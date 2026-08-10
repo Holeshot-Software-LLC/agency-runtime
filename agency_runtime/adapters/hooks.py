@@ -236,13 +236,11 @@ def _boundary_failure_result(
         )
         return _completion_rejection(message, retry=False)
 
-    if isinstance(payload, dict) and _agency_owned_native_child_pre_tool_use(payload, host):
-        return _pre_tool_use_denial(_VERIFICATION_UNAVAILABLE, host=host)
-    # Installed PreToolUse handlers are matcher-bound to the native child tool.
-    # If the envelope is too large to parse, continuing would bypass the exact
-    # specialist and one-use grant checks for an Agency-planned launch.
+    # A child launch is never denied. There is no plan to verify it against and
+    # no grant to check, so an unreadable payload means Agency does not staff
+    # this child -- not that the harness may not launch it (rules 5 and 8).
     if oversized and expected_event == "PreToolUse":
-        return _pre_tool_use_denial(_VERIFICATION_UNAVAILABLE, host=host)
+        return {}
 
     parsed_stop = isinstance(payload, dict) and payload.get("hook_event_name") == "Stop"
     raw_stop = bool(_STOP_EVENT_DISCRIMINATOR.search(raw_bytes))
@@ -339,33 +337,6 @@ def _first_string(mapping: dict[str, Any], *keys: str) -> str:
         if isinstance(value, str) and value.strip():
             return value.strip()
     return ""
-
-
-def _planned_native_work_unit_id(host: str, payload: dict[str, Any]) -> str:
-    """Return only a canonical Agency-planned native-child label."""
-
-    if payload.get("hook_event_name") != "PreToolUse":
-        return ""
-    tool_name = _optional_string(payload, "tool_name")
-    args = _dict_or_empty(payload.get("tool_input"))
-    if host == "codex":
-        if tool_name not in _CODEX_SPAWN_TOOL_NAMES:
-            return ""
-        return internal_work_unit_from_codex_task_name(args.get("task_name"))
-    if host not in {"claude", "zcode"} or tool_name != _CLAUDE_AGENT_TOOL_NAME:
-        return ""
-    native_label = _first_string(args, "description")
-    return native_label if _PLANNED_NATIVE_WORK_UNIT_PATTERN.fullmatch(native_label) else ""
-
-
-def _agency_owned_native_child_pre_tool_use(payload: dict[str, Any], host: str) -> bool:
-    """Recognize a planned label or an already injected exact-delivery envelope."""
-
-    if _planned_native_work_unit_id(host, payload):
-        return True
-    args = _dict_or_empty(payload.get("tool_input"))
-    task_field = "message" if host == "codex" else "prompt"
-    return parse_native_child_prompt_delivery(args.get(task_field)) is not None
 
 
 def _response_work_unit(response: Any) -> str:
@@ -2752,7 +2723,6 @@ def _run_hook_stdio(
     payload: Any = None
     raw_bytes = b""
     oversized = False
-    planned = False
     diagnostic_event = ""
     try:
         raw = source.read(MAX_HOOK_INPUT_BYTES + 1)
@@ -2776,10 +2746,6 @@ def _run_hook_stdio(
             with suppress(ValueError):
                 correlate_current_observation(correlation_value)
             break
-        planned = bool(
-            _planned_native_work_unit_id(host, payload)
-            or _agency_owned_native_child_pre_tool_use(payload, host)
-        )
         active_store = store
         from agency_runtime.core.codex_activation_verification import (
             is_restricted_codex_activation_canary_environment,
@@ -2804,7 +2770,7 @@ def _run_hook_stdio(
         if blocked:
             mark_current_observation(
                 "denied",
-                "planned_hook_denied" if planned else "hook_denied",
+                "hook_denied",
             )
         elif result:
             mark_current_observation("ok", "hook_response")
@@ -2831,7 +2797,7 @@ def _run_hook_stdio(
         outcome = "response publication blocked" if result else "host operation continues"
         mark_current_observation(
             "denied" if result else "degraded",
-            "planned_hook_failure" if planned else "boundary_failure",
+            "boundary_failure",
         )
         print(f"agency hook {host}: {type(exc).__name__}; {outcome}", file=errors)
     except Exception as exc:  # Defensive boundary around adapters and storage.
@@ -2847,7 +2813,7 @@ def _run_hook_stdio(
         outcome = "response publication blocked" if result else "host operation continues"
         mark_current_observation(
             "denied" if result else "degraded",
-            "planned_hook_failure" if planned else "boundary_failure",
+            "boundary_failure",
         )
         print(
             f"agency hook {host}: {type(exc).__name__}; {outcome}",
