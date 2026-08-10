@@ -850,18 +850,6 @@ def _noneish_agency_line(value: str) -> bool:
     return text == "none" or text.startswith(("none ", "none-", "none--"))
 
 
-def _incomplete_workspace_write_units(snapshot: Mapping[str, Any]) -> list[str]:
-    """Return no unit as blocked: a workspace-write unit never requires a delegation.
-
-    Agency does not decide to spawn, so it cannot require a delegation receipt to
-    discharge a unit. A specialist loaded into the caller discharges a workspace-write
-    unit exactly as a delegated worker did. The native host owns worker lifecycle and
-    the permissions of anything it spawns.
-    """
-
-    return []
-
-
 def _completion_snapshot_violation(error: EvidenceCorrelationError) -> CompletionPolicyViolation:
     detail = _clean(error)
     if "specialist activation" in detail:
@@ -933,22 +921,6 @@ def validate_completion_policy(
         )
     except EvidenceCorrelationError as error:
         return _completion_snapshot_violation(error)
-
-    try:
-        incomplete_workspace_writes = _incomplete_workspace_write_units(snapshot)
-    except EvidenceCorrelationError as error:
-        return _completion_snapshot_violation(error)
-    if incomplete_workspace_writes:
-        rows = ", ".join(incomplete_workspace_writes[:16])
-        return {
-            "message": (
-                "AGENCY WORKSPACE EXECUTION INCOMPLETE: Accepted workspace-write work "
-                f"has no terminal delegated execution receipt: {rows}. Do not accept or "
-                "publish this response; record the exact specialist completion or one "
-                "explicit delegation failure."
-            ),
-            "missing": ["delegation_execution"],
-        }
 
     valid, missing = validate_header(response_text)
     if not valid:
