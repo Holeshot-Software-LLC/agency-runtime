@@ -205,7 +205,6 @@ def _empty_canary_activation_snapshot(
             "routes": route_count,
             "runs": 0,
             "traces": 0,
-            "unit_agent_plan": 0,
             "delegations": 0,
             "activation_grants": 0,
             "activation_consumptions": 0,
@@ -217,7 +216,6 @@ def _empty_canary_activation_snapshot(
         "run": None,
         "route": None,
         "preflight_failure": None,
-        "unit_agent_plan": [],
         "delegations": [],
         "activation_grants": [],
         "activation_consumptions": [],
@@ -1833,8 +1831,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 "routes": 1,
                 "runs": 1,
                 "traces": 1,
-                "unit_agent_plan": 0,
-                "delegations": int(counts["delegations"]),
+                    "delegations": int(counts["delegations"]),
                 "activation_grants": int(counts["activation_grants"]),
                 "activation_consumptions": int(counts["activation_consumptions"]),
                 "worker_runs": int(counts["worker_runs"]),
@@ -1961,14 +1958,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 )
             except Exception:
                 recipe = None
-            unit_agent_plan = (
-                [dict(item) for item in recipe.get("unit_agent_plan", [])]
-                if isinstance(recipe, dict)
-                else []
-            )
-            cardinalities["unit_agent_plan"] = len(unit_agent_plan)
             snapshot.update(
-                unit_agent_plan=unit_agent_plan,
                 delegations=delegations,
                 activation_grants=activation_grants,
                 activation_consumptions=activation_consumptions,

@@ -173,7 +173,6 @@ def _preflight(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
         "trace_id": result.trace_id,
         "loaded_specialists": list(result.loaded_specialists),
         "selected_specialists": list(result.selected_specialists),
-        "delegation_plan": [dict(item) for item in result.delegation_plan],
     }
 
 

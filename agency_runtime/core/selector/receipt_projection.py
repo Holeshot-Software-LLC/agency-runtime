@@ -520,7 +520,6 @@ def _routing_effect_codes(
             codes.append(code)
 
     selected = _ids(routing.get("selected_ids"))
-    work_units = routing.get("work_units")
     append("inference_attempted", routing.get("inference_attempted") is True)
     append("inference_degraded", inference_mode == "degraded")
     append("routing_reused", routing.get("continuation_reused") is True)
@@ -537,10 +536,6 @@ def _routing_effect_codes(
     append(
         "disabled_specialist_left_unselected",
         bool(routing.get("disabled_candidate_shadows")),
-    )
-    append(
-        "delegation_plan_prepared",
-        isinstance(work_units, Mapping) and work_units.get("delegate") is True,
     )
     hiring = _hiring(routing.get("hiring_events"))
     statuses = {item["status"] for item in hiring["events"]}

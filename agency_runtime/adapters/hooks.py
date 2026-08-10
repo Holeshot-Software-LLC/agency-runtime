@@ -861,17 +861,13 @@ class HookBridge:
             for row in snapshot.get("specialist_activations", [])
             if isinstance(row, dict)
         )
+        # A child is identified by the specialist it carries. There is no unit plan
+        # to resolve a label against.
         candidates.update(
-            str(row.get("work_unit_id") or "").strip()
-            for row in snapshot.get("unit_agent_plan", [])
-            if isinstance(row, dict)
+            f"specialist:{str(row.get('slug') or '').strip()}"
+            for row in snapshot.get("selected_specialists", [])
+            if isinstance(row, dict) and str(row.get("slug") or "").strip()
         )
-        if not snapshot.get("unit_agent_plan"):
-            candidates.update(
-                f"specialist:{str(row.get('slug') or '').strip()}"
-                for row in snapshot.get("selected_specialists", [])
-                if isinstance(row, dict) and str(row.get("slug") or "").strip()
-            )
         matches = [
             work_unit_id
             for work_unit_id in candidates
