@@ -1510,6 +1510,18 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     )
     children.add_argument("--json", action="store_true", help="Print JSON")
     _bind(children, handlers, "cmd_evidence_children")
+    wiring = evidence_sub.add_parser(
+        "wiring",
+        help="Check that each host invokes the projection the installer staged",
+    )
+    wiring.add_argument(
+        "--host",
+        choices=("claude",),
+        default=None,
+        help="Check one host only (default: every host with a readable wiring file)",
+    )
+    wiring.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(wiring, handlers, "cmd_evidence_wiring")
 
 
 def _register_passthrough_commands(sub: Subparsers, handlers: Handlers) -> None:
