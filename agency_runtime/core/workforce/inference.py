@@ -521,6 +521,10 @@ class WorkforceRoutingOutcome:
     # response header "Recruited via" line. Distinct from the model-authored
     # "Why" line: this is stamped from how the specialist was actually selected.
     decision_source: str = "none"
+    # Coverage the deterministic plan policy still considers unmet after the
+    # repair loop. Advisory only: a deterministic layer may recall and rank, but
+    # only inference decides, and none of them may reduce a selection to empty.
+    coverage_advisories: tuple[str, ...] = ()
 
     @property
     def accepted(self) -> bool:
