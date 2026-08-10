@@ -201,3 +201,82 @@ def test_a_child_on_an_unopened_trace_is_not_staffed_from_another_turn(
 
     assert _loads(store, unopened) == []
     assert "deny" not in str(result).lower()
+
+
+def _fail_preflight(store: Store, host: str, trace: str) -> None:
+    """Leave one run terminal exactly the way a dead provider leaves it."""
+
+    reservation = store.reserve_session_turn(session_id=SESSION, trace_id=trace, host=host)
+    assert store.abandon_preflight_reservation(
+        session_id=SESSION,
+        trace_id=trace,
+        reservation_token=reservation["reservation_token"],
+        status="preflight_failed",
+    )
+    assert store.get_run(trace)["status"] == "preflight_failed"
+
+
+def test_a_child_is_staffed_even_when_the_parent_turn_failed_preflight(
+    store: Store,
+    host: str,
+) -> None:
+    """Rules 4 and 8: the parent's inference failing must not disarm the child.
+
+    Observed in production 2026-08-10. An unreachable provider CLI made every
+    planner call fail, so every run was written ``preflight_failed``; the parent
+    scope resolver accepted only ``active``/``evidence_only``; and every
+    harness-spawned child therefore launched unstaffed -- indistinguishable from
+    "rule 4 does not work", and the reason it had never once been observed
+    working. A child's cards are chosen by ``pre_narrow`` and
+    ``enforce_compatible_set``, which are deterministic, local and network-free,
+    so a failed planner call is not the child's problem.
+    """
+
+    trace = f"rule4-deadparent-{host}"
+    _fail_preflight(store, host, trace)
+
+    result = _staff(store, host, trace)
+
+    delivered = _delivered(result, host)
+    assert parse_jit_specialist_delivery(delivered) is not None, (
+        "a child was left unstaffed because its parent turn failed preflight"
+    )
+    assert CHILD_TASK in delivered, "the harness's own task must survive verbatim"
+
+    # The audit row is deliberately NOT asserted here, and its absence is correct:
+    # the Store refuses to attach new evidence to a terminal turn ("trace_id
+    # belongs to a terminal turn"), which is an integrity rule worth keeping, and
+    # `_record_jit_specialist_load` is explicitly best-effort -- "the child keeps
+    # its specialist". So a degraded parent yields a staffed child with no
+    # `specialists_loaded` row.
+    #
+    # MEASUREMENT TRAP: in this state rule 4 is provable ONLY from the host's own
+    # artifacts (`agency evidence children`), never from Agency's rows. Reading
+    # the DB here would report "nothing staffed" about a child that was staffed.
+    assert _loads(store, trace) == [], (
+        "a terminal parent unexpectedly accepted new turn evidence; if this now "
+        "passes, the Store invariant changed and the trap note above is stale"
+    )
+
+
+def test_lifecycle_recording_still_requires_a_live_parent(store: Store, host: str) -> None:
+    """The relaxation is opt-in, and only just-in-time staffing opts in.
+
+    Writing a lifecycle audit edge against a turn that has already finished would
+    be wrong, so the default stays strict. This pins the asymmetry so a later
+    tidy-up cannot quietly collapse the two.
+    """
+
+    trace = f"rule4-strictdefault-{host}"
+    _fail_preflight(store, host, trace)
+    bridge = HookBridge(host, store=store)
+    payload = _spawn_payload(host, trace)
+
+    _session, strict_trace, _unit = bridge._native_child_parent_scope(payload)
+    _session, staffing_trace, _unit = bridge._native_child_parent_scope(
+        payload,
+        require_live_parent=False,
+    )
+
+    assert strict_trace == "", "a terminal parent must not satisfy the strict default"
+    assert staffing_trace == trace, "staffing must still resolve its own parent turn"

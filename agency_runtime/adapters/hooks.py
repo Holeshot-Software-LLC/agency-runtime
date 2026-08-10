@@ -686,8 +686,15 @@ class HookBridge:
         work_unit_id = work_unit_id or _response_work_unit(tool_response)
         return HookCorrelation(session_id, turn_id, work_unit_id, model, tool_use_id)
 
-    def _unambiguous_open_trace(self, session_id: str) -> str:
+    def _unambiguous_open_trace(self, session_id: str, *, require_live_parent: bool = True) -> str:
         """Recover one open routed turn when a host omits native turn IDs.
+
+        ``require_live_parent=False`` also accepts a parent turn that already
+        reached a terminal status. Only just-in-time child staffing passes it:
+        a child's cards are chosen by deterministic local code, so a parent whose
+        own inference failed is no reason to send the child out unstaffed. The
+        "exactly one or nothing" rule is unchanged either way -- an ambiguous
+        session still resolves to no trace.
 
         Claude's documented hook envelope does not guarantee a ``turn_id``.
         Falling back to the session ID would merge unrelated turns, while
@@ -724,7 +731,7 @@ class HookBridge:
             open_traces = {
                 str(row.get("trace_id"))
                 for row in session_runs
-                if row.get("status") in {"active", "evidence_only"}
+                if not require_live_parent or row.get("status") in {"active", "evidence_only"}
             }
             return next(iter(open_traces)) if len(open_traces) == 1 else ""
 
@@ -748,7 +755,20 @@ class HookBridge:
     def _native_child_parent_scope(
         self,
         payload: dict[str, Any],
+        *,
+        require_live_parent: bool = True,
     ) -> tuple[str, str, str]:
+        """Resolve the parent turn a native child belongs to.
+
+        The correlation itself is never relaxed: the run must still belong to the
+        same session, so a child can never attach to somebody else's turn. Only
+        the liveness requirement is optional, and only just-in-time staffing turns
+        it off (rules 4 and 8) -- a parent turn that failed its own preflight must
+        not silently cost the child the cards deterministic code already chose for
+        it. Lifecycle recording keeps the strict default, where writing an audit
+        edge against a finished turn would be wrong.
+        """
+
         correlation = self._correlation(payload)
         trace_id = correlation.trace_id
         run_reader = getattr(self.store, "get_run", None)
@@ -757,13 +777,17 @@ class HookBridge:
                 candidate = run_reader(trace_id)
             except Exception:
                 candidate = None
-            if not (
+            correlated = (
                 isinstance(candidate, dict)
                 and candidate.get("session_id") == correlation.session_id
-                and candidate.get("status") in {"active", "evidence_only"}
-            ):
+            )
+            live = correlated and candidate.get("status") in {"active", "evidence_only"}
+            if not (live or (correlated and not require_live_parent)):
                 trace_id = ""
-        trace_id = trace_id or self._unambiguous_open_trace(correlation.session_id)
+        trace_id = trace_id or self._unambiguous_open_trace(
+            correlation.session_id,
+            require_live_parent=require_live_parent,
+        )
         return correlation.session_id, trace_id, correlation.work_unit_id
 
     def _issue_native_child_parent_scope(
@@ -953,7 +977,15 @@ class HookBridge:
         # Claude does not guarantee a turn_id, and _correlation falls back to the
         # tool_use_id. Resolve the parent turn the same way every other native-child
         # path does, so the audit row is never stamped with a tool identity.
-        session_id, trace_id, _work_unit_id = self._native_child_parent_scope(payload)
+        # A child's cards come from deterministic, network-free local code, so the
+        # parent's own routing health is irrelevant to whether they can be chosen.
+        # Requiring a live parent here meant one failed planner call -- a rate
+        # limit, an expired login, an unreachable CLI -- silently took rule 4 down
+        # with it and looked exactly like "staffing is broken" (see the handoff).
+        session_id, trace_id, _work_unit_id = self._native_child_parent_scope(
+            payload,
+            require_live_parent=False,
+        )
         if session_id != correlation.session_id or not trace_id:
             return {}
         catalog_reader = getattr(self.store, "get_active_roster_as_catalog", None)
