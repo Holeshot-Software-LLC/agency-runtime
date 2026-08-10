@@ -75,43 +75,6 @@ def test_pre_verify_accepts_trivial_turn_with_no_agency_evidence(tmp_path: Path)
     assert result is None
 
 
-def test_pre_verify_rejects_nontrivial_turn_with_no_loaded_specialist(
-    monkeypatch, tmp_path: Path
-) -> None:
-    from agency_runtime.core.selector import pipeline
-
-    store = Store(tmp_path / "agency.db")
-    adapter = HermesAdapter(store=store)
-
-    def fake_route(session_id: str, user_message: str, catalog, **kwargs):
-        return {
-            "selected_ids": [],
-            "confidence": 0.0,
-            "status": "no_match",
-            "query_hash": "a" * 64,
-            "context_fingerprint": "b" * 64,
-            "work_units": detect_work_units(user_message),
-        }
-
-    monkeypatch.setattr(pipeline, "route", fake_route)
-    adapter.pre_llm_call_handler(
-        "nontrivial-session",
-        "Please review this implementation",
-        "task-chunk-planner",
-    )
-
-    result = adapter.pre_verify_handler(
-        _valid_header(loaded="none", delegated="none"),
-        session_id="nontrivial-session",
-        model="task-chunk-planner",
-        attempt=1,
-    )
-
-    assert result is not None
-    assert result["action"] == "continue"
-    assert "Agency/Agencies loaded" in result["message"]
-
-
 @pytest.mark.skip(
     reason="ADR-0087: the monkeypatched fake_route returns selected_ids "
     "but the downstream abstention/delivery path clears them without a "

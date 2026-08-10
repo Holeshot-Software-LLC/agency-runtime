@@ -971,7 +971,9 @@ def validate_completion_policy(
         # Shape is still validated as part of the evidence contract; the rows no
         # longer gate the response.
         _ = [dict(row) for row in snapshot["delegations"]]
-        selection_required = bool(snapshot["selection_required"])
+        # Shape still validated; a required selection that found nothing no longer
+        # obliges the header to name a specialist.
+        _ = bool(snapshot["selection_required"])
     except (KeyError, TypeError, ValueError):
         return {
             "message": (
@@ -982,9 +984,11 @@ def validate_completion_policy(
             "missing": ["evidence_verification"],
         }
 
-    requires_agency_evidence = bool(
-        session_id and (loaded_agents or selection_required or specialists)
-    )
+    # Only a header that misreports what actually loaded is invalid. A turn where
+    # selection was required but nothing fit reports "none" truthfully, and
+    # rejecting that would force the model to name a specialist it never got --
+    # Agency blocking a turn for being honest (rule 8).
+    requires_agency_evidence = bool(session_id and (loaded_agents or specialists))
     if requires_agency_evidence and _noneish_agency_line(loaded):
         actual = ", ".join(loaded_agents) if loaded_agents else "the actual loaded specialist"
         run = snapshot.get("run")
