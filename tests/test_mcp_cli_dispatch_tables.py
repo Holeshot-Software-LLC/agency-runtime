@@ -171,7 +171,7 @@ def _process_result(
         ("unsupported", "other", (False, False, False, "unsupported CLI transport")),
         ("bad-timeout", "codex", (False, False, False, "timeout")),
         ("missing", "codex", (False, False, False, "executable not found")),
-        ("resolver-error", "codex", (False, False, False, "executable not found")),
+        ("resolver-error", "codex", (False, False, False, "executable unusable")),
         ("auth-error", "codex", (True, False, False, "status command failed")),
         ("auth-timeout", "claude", (True, False, False, "status timed out")),
         ("auth-missing", "codex", (True, False, False, "session not available")),

@@ -326,12 +326,48 @@ def _display_cli_executable(executable: PreparedProcessArgv | str) -> str:
     )
 
 
-def _resolve_cli_executable(
+@dataclass(frozen=True, slots=True)
+class _ResolvedCLI:
+    """One CLI executable, or the exact reason it is unusable.
+
+    "Not found" and "found but refused" are different problems with different
+    fixes, and collapsing them cost a day: both host CLIs resolve fine on a real
+    box and are then rejected because npm's directory permits cross-account
+    substitution. Reporting that as a missing binary sends the reader hunting
+    through PATH for something that is already there.
+    """
+
+    executable: PreparedProcessArgv | None
+    reason: str
+
+
+def _unusable_executable_reason(error: BaseException) -> str:
+    """Describe why an executable cannot be used, without leaking a stack.
+
+    Classify the cause; never echo the exception's text. A status string is a
+    public surface, and an arbitrary resolver message can carry a private path or
+    an account identifier — `test_cli_transport_status_failure_table` pins that.
+    Classification alone is what fixes the diagnosis: "refused as untrusted"
+    sends the reader to directory permissions, "not found" sends them to PATH,
+    and telling them apart is the whole point. The offending path is still
+    available in `agency status --json` as `inventory_error`.
+    """
+
+    if isinstance(error, FileNotFoundError):
+        return "executable not found"
+    if isinstance(error, PermissionError):
+        return "executable refused as untrusted: its parent namespace permits substitution"
+    if isinstance(error, OSError):
+        return "executable unusable: it could not be resolved or frozen"
+    return f"executable could not be prepared: {type(error).__name__}"
+
+
+def _resolve_cli(
     transport: str,
     resolver: BinaryResolver,
     *,
     environ: Mapping[str, str] | None,
-) -> PreparedProcessArgv | None:
+) -> _ResolvedCLI:
     source = os.environ if environ is None else environ
     current_directory = Path.cwd()
     try:
@@ -351,12 +387,24 @@ def _resolve_cli_executable(
             [resolved],
             resolver=lambda name: shutil.which(name, path=safe_path),
         )
-        return freeze_process_argv(
-            prepared,
-            forbidden_roots=forbidden_roots,
+        return _ResolvedCLI(
+            executable=freeze_process_argv(prepared, forbidden_roots=forbidden_roots),
+            reason="",
         )
-    except Exception:
-        return None
+    except Exception as error:
+        # Broad on purpose: resolution, preparation and freezing each raise their
+        # own types, and every one of them must arrive as a stated reason rather
+        # than a silent None.
+        return _ResolvedCLI(executable=None, reason=_unusable_executable_reason(error))
+
+
+def _resolve_cli_executable(
+    transport: str,
+    resolver: BinaryResolver,
+    *,
+    environ: Mapping[str, str] | None,
+) -> PreparedProcessArgv | None:
+    return _resolve_cli(transport, resolver, environ=environ).executable
 
 
 def _authentication_failure(
@@ -498,16 +546,14 @@ def inspect_cli_transport(
             "CLI inspection timeout is outside the supported range",
         )
     timeout = float(timeout)
-    executable = _resolve_cli_executable(
+    resolved = _resolve_cli(
         normalized,
         resolver,
         environ=environ,
     )
+    executable = resolved.executable
     if not executable:
-        return _unusable_status(
-            normalized,
-            "executable not found",
-        )
+        return _unusable_status(normalized, resolved.reason or "executable not found")
     auth_failure = _authentication_failure(
         normalized,
         executable,
@@ -605,9 +651,10 @@ def _discover_cli_models_uncached(
             transport,
             "account-aware model discovery is not available for this CLI transport",
         )
-    executable = _resolve_cli_executable(transport, resolver, environ=environ)
+    resolved = _resolve_cli(transport, resolver, environ=environ)
+    executable = resolved.executable
     if not executable:
-        return _model_catalog_error(transport, "Codex executable not found")
+        return _model_catalog_error(transport, resolved.reason or "Codex executable not found")
     try:
         with private_temporary_directory(prefix="cli-models") as temporary:
             cwd = str(temporary)
