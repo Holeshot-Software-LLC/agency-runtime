@@ -24,6 +24,12 @@ from tests.runtime_support import trusted_test_interpreter
 
 _WINDOWS_TEMP_ANCHOR_ATTRIBUTE = "_agency_runtime_windows_temp_anchor"
 _WINDOWS_ORIGINAL_TEMPDIR_ATTRIBUTE = "_agency_runtime_windows_original_tempdir"
+_WINDOWS_TEMP_ROOT_ATTRIBUTE = "_agency_runtime_windows_temp_root"
+# Numbered basetemp directories to keep per user root. Two is enough to inspect
+# the last run plus the one before it; pytest's own default of three never
+# applied here because its garbage collection does not survive this suite on
+# Windows (see _prune_pytest_scratch).
+_RETAINED_NUMBERED_DIRS = 2
 _WINDOWS_PYTEST_PATHLIB_MKDIR_ATTRIBUTE = "_agency_runtime_pytest_pathlib_mkdir"
 _WINDOWS_PYTEST_TMPDIR_MKDIR_ATTRIBUTE = "_agency_runtime_pytest_tmpdir_mkdir"
 _WINDOWS_OS_MKDIR_ATTRIBUTE = "_agency_runtime_os_mkdir"
@@ -327,6 +333,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config._inicache["cache_dir"] = str(cache_root)
     config.cache = Cache(cache_root, config, _ispytest=True)
     setattr(config, _WINDOWS_TEMP_ANCHOR_ATTRIBUTE, identity)
+    setattr(config, _WINDOWS_TEMP_ROOT_ATTRIBUTE, temp_root)
     setattr(config, _WINDOWS_ORIGINAL_TEMPDIR_ATTRIBUTE, tempfile.tempdir)
     setattr(config, _WINDOWS_PYTEST_PATHLIB_MKDIR_ATTRIBUTE, original_pathlib_mkdir)
     setattr(config, _WINDOWS_PYTEST_TMPDIR_MKDIR_ATTRIBUTE, original_tmpdir_mkdir)
@@ -335,9 +342,51 @@ def pytest_configure(config: pytest.Config) -> None:
     assert user_root.is_dir()
 
 
+def _prune_pytest_scratch(temp_root: Path) -> None:
+    """Bound the scratch tree this suite leaves behind on Windows.
+
+    Nothing was reclaiming it. ``pytest_unconfigure`` removed only this process's
+    own anchor, and pytest's numbered-directory garbage collection does not
+    survive here: ``pytest_configure`` replaces ``make_numbered_dir``, and its
+    rename-then-delete step keeps losing the race on Windows, which is what the
+    orphaned ``.cleanup-*`` directories are. Left alone since 2026-07-16 it grew
+    to 113,849 directories, slow enough to make filesystem-identity assertions in
+    ``test_build_distributions.py`` fail at random (handoff §7.2).
+
+    Best effort by construction: a scratch sweep must never fail a green run, so
+    every removal is suppressed individually and a directory still held open is
+    simply left for the next run.
+    """
+
+    if not temp_root.is_dir():
+        return
+    with suppress(OSError, PermissionError):
+        for orphan in temp_root.glob(".cleanup-*"):
+            # pytest renames a numbered directory to `.cleanup-*` and then deletes
+            # it. Any of these still present lost that race and own nothing.
+            with suppress(OSError, PermissionError):
+                shutil.rmtree(orphan, ignore_errors=True)
+
+    with suppress(OSError, PermissionError):
+        for user_root in temp_root.glob("pytest-of-*"):
+            if not user_root.is_dir():
+                continue
+            numbered: list[tuple[int, Path]] = []
+            for candidate in user_root.glob("pytest-*"):
+                suffix = candidate.name.rpartition("-")[2]
+                if candidate.is_dir() and suffix.isdigit():
+                    numbered.append((int(suffix), candidate))
+            for _number, stale in sorted(numbered, reverse=True)[_RETAINED_NUMBERED_DIRS:]:
+                with suppress(OSError, PermissionError):
+                    shutil.rmtree(stale, ignore_errors=True)
+
+
 def pytest_unconfigure(config: pytest.Config) -> None:
     """Remove only the exact private anchor created by this pytest process."""
 
+    temp_root = getattr(config, _WINDOWS_TEMP_ROOT_ATTRIBUTE, None)
+    if isinstance(temp_root, Path):
+        _prune_pytest_scratch(temp_root)
     identity = getattr(config, _WINDOWS_TEMP_ANCHOR_ATTRIBUTE, None)
     if not isinstance(identity, PrivateDirectoryIdentity):
         return
