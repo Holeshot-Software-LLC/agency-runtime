@@ -3426,6 +3426,37 @@ the package-owned read-only diagnostic goal needed for Codex replay; it cannot
 select, add, rank, or substitute a worker. Missing or invalid inference fails
 the canary visibly with no deterministic fallback.
 
+### The routing cache has never hit once, and cannot — measured 2026-08-11
+
+**Zero of 200 recorded decisions came from `cache` or `session`; every one is `computed`.** That is
+not a tuning problem, it is structural:
+
+- `_ROUTING_CACHE` (`selector/cache.py:22`, TTL 600 s) and `_SESSION_ROUTING`
+  (`selector/stickiness.py:17`, max age 300 s, 0.6 similarity) are both module-level
+  `OrderedDict`s living in **process memory**.
+- Every hook event is installed as `type: command` launching `python.exe` — verified in the host's
+  own `hooks.json`, all ten events. **A fresh process per event.**
+
+So both caches are constructed empty, populated once, and destroyed microseconds later, on every
+single turn. The only production caller of the routing cache cannot, even in principle, observe a
+hit. `cache_put` runs faithfully every turn and nothing ever reads it back.
+
+**And the test suite proves the cache works.** `evals/benchmarks.py:509` asserts
+`cache_probe["cache_hit"] is True` and passes — because the benchmark warms and probes **in one
+process**. The cache is verified in the one configuration that never occurs in production. Green
+test, dead feature. A textbook instance of the rule that reachability is not evidence of purpose.
+
+**Why this is worth fixing rather than deleting.** Session stickiness targets follow-up turns
+within 300 s at 0.6 similarity — the ordinary shape of a conversation, i.e. the common case, not an
+edge case. At the measured cost of a miss (~2.4 provider calls, floor 8 s each on claude and 26–33 s
+on codex) a working cache removes most of the routing cost from continuation turns.
+
+**The shape of the fix:** back the cache with the store rather than process memory.
+`routing_decisions` already persists `context_fingerprint` and `query_hash` per decision, so most of
+the identity a cross-process lookup needs is already being written every turn — only the normalized
+cache key is absent. Confirm invalidation still keys on roster, policy, config and host before
+reusing anything.
+
 ### Raised 2026-08-11 — two items the vision restatement implies
 
 - **Re-scope the dashboard and the CLI to the vision; anything not part of it goes.** Lucas's call,
