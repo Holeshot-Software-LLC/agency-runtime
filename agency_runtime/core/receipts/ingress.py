@@ -102,6 +102,25 @@ def _fallback_count(value: Any) -> int:
     return min(max(parsed, 0), MAX_RECEIPT_FALLBACKS)
 
 
+def _latency_ms(value: Any) -> int:
+    """Return a bounded non-negative provider-call duration.
+
+    Zero means "not reported", which is how every receipt written before this
+    column existed reads, so a reader must not treat it as an instant call.
+    Bounded by the same day-long ceiling the routing projection uses: a wilder
+    value is a clock or unit bug, and clamping keeps one bad row from moving an
+    aggregate that operators read as the cost of a turn.
+    """
+
+    if isinstance(value, bool):
+        return 0
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return 0
+    return min(max(parsed, 0), 86_400_000)
+
+
 def canonicalize_provider(value: Any) -> str:
     """Return one safe provider token or an empty untrusted value.
 
@@ -184,6 +203,7 @@ def normalize_receipt_ingress(
         "source": source,
         "started_at": _timestamp(values.get("started_at")),
         "ended_at": _timestamp(values.get("ended_at")),
+        "latency_ms": _latency_ms(values.get("latency_ms")),
         "status": status if status in _RECEIPT_STATUSES else "unknown",
     }
 

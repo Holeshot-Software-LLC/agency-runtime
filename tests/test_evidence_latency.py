@@ -175,3 +175,115 @@ def test_an_empty_store_reports_nothing_rather_than_passing(
     assert exit_code == 0
     assert "no routing decision has recorded a latency yet" in output
     assert "✅" not in output
+
+
+def test_an_existing_database_gains_the_latency_column(tmp_path: Path) -> None:
+    """A column in the DDL but not the staleness predicate never lands.
+
+    A database already stamped at the current schema version only migrates when
+    startup calls it stale, and that predicate derives its required columns from
+    MODEL_RECEIPT_MIGRATED_COLUMNS. Declaring the column in the CREATE TABLE
+    alone would leave every existing install stamped current, skip the migration,
+    and fail at query time on exactly the installs that needed it -- while a
+    fresh test database, built from the full DDL, passed.
+    """
+
+    import sqlite3
+
+    from agency_runtime.core.store.schema import MODEL_RECEIPT_MIGRATED_COLUMNS
+    from agency_runtime.core.store.sqlite import _v20_receipt_schema_is_current
+
+    db = tmp_path / "agency.db"
+    Store(str(db))
+
+    for column, _definition in MODEL_RECEIPT_MIGRATED_COLUMNS:
+        conn = sqlite3.connect(db)
+        conn.row_factory = sqlite3.Row
+        try:
+            columns = [
+                row["name"]
+                for row in conn.execute("PRAGMA table_info(model_receipts)")
+                if row["name"] != column
+            ]
+            joined = ", ".join(columns)
+            conn.executescript(
+                "PRAGMA foreign_keys=OFF;\n"
+                "BEGIN;\n"
+                f"CREATE TABLE model_receipts_old AS SELECT {joined} FROM model_receipts;\n"
+                "DROP TABLE model_receipts;\n"
+                "ALTER TABLE model_receipts_old RENAME TO model_receipts;\n"
+                "COMMIT;"
+            )
+            assert not _v20_receipt_schema_is_current(conn), (
+                f"the staleness predicate does not require {column}, so no existing "
+                "database would ever be migrated to add it"
+            )
+        finally:
+            conn.close()
+
+        # Reopening runs the migration that the predicate just demanded.
+        Store(str(db))
+        conn = sqlite3.connect(db)
+        try:
+            present = {row[1] for row in conn.execute("PRAGMA table_info(model_receipts)")}
+        finally:
+            conn.close()
+        assert column in present
+
+
+def test_the_split_is_read_back_from_receipts_not_modelled(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Provider time comes from the calls; Agency's share is the remainder."""
+
+    db = tmp_path / "agency.db"
+    store = Store(str(db))
+    _decision(store, 1, latency_ms=40_000)
+    for _ in range(2):
+        store.record_model_receipt(
+            trace_id=_trace(1),
+            session_id=SESSION,
+            host="claude",
+            resolved_model="sonnet",
+            source="wrapper",
+            latency_ms=15_000,
+            status="success",
+        )
+
+    cmd_evidence_latency(_args(db))
+    payload = json.loads(capsys.readouterr().out)
+
+    split = payload["split"]
+    assert split["decisions"] == 1
+    assert split["calls_per_decision"] == 2.0
+    assert split["provider_ms"]["p50_ms"] == 30_000
+    assert split["agency_ms"]["p50_ms"] == 10_000
+
+
+def test_decisions_whose_receipts_predate_the_column_are_not_blamed_on_agency(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A 0 receipt means unreported, never a free provider call.
+
+    Treating it as zero provider time would attribute an entire turn to Agency's
+    own work and point any optimisation at the wrong place.
+    """
+
+    db = tmp_path / "agency.db"
+    store = Store(str(db))
+    _decision(store, 1, latency_ms=40_000)
+    store.record_model_receipt(
+        trace_id=_trace(1),
+        session_id=SESSION,
+        host="claude",
+        resolved_model="sonnet",
+        source="wrapper",
+        status="success",
+    )
+
+    cmd_evidence_latency(_args(db))
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["split"]["decisions"] == 0
+    assert payload["split"]["unattributed_decisions"] == 1
+    assert payload["split"]["agency_ms"]["p50_ms"] == 0

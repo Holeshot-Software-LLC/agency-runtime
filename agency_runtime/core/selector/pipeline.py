@@ -1142,6 +1142,11 @@ def _record_workforce_model_receipts(
             resolved_model=str(getattr(attempt, "actual_model", "") or ""),
             attempted_fallbacks=fallback_count,
             source="wrapper",
+            # The provider layer already measured this call and the attempt has
+            # carried it all along; dropping it here is what left every receipt
+            # with started_at == ended_at and made the cost of a turn readable
+            # only as one opaque total.
+            latency_ms=int(getattr(attempt, "latency_ms", 0) or 0),
             status=status,
         )
 

@@ -1287,6 +1287,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         source: str = "unknown",
         started_at: str = "",
         ended_at: str = "",
+        latency_ms: int = 0,
         status: str = "success",
     ) -> str:
         """Persist bounded generic telemetry without granting router trust.
@@ -1311,6 +1312,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             source=source,
             started_at=started_at,
             ended_at=ended_at,
+            latency_ms=latency_ms,
             status=status,
         )
 
@@ -1357,9 +1359,9 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 "INSERT INTO model_receipts "
                 "(id, trace_id, session_id, host, requested_model, model_group, "
                 "resolved_provider, resolved_model, api_base, attempted_fallbacks, "
-                "model_id, source, recorded_at, started_at, ended_at, status) "
+                "model_id, source, recorded_at, started_at, ended_at, latency_ms, status) "
                 f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, {STORE_CLOCK_SQL}, "  # nosec B608
-                "?, ?, ?)",
+                "?, ?, ?, ?)",
                 (
                     receipt_id,
                     trace_id,
@@ -1375,6 +1377,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                     normalized["source"],
                     normalized["started_at"] or self._now(),
                     normalized["ended_at"] or self._now(),
+                    normalized["latency_ms"],
                     normalized["status"],
                 ),
             )
@@ -2157,16 +2160,30 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         parameters: list[Any] = []
         source_clause = ""
         if source:
-            source_clause = " AND source = ?"
+            source_clause = " AND d.source = ?"
             parameters.append(source)
         parameters.append(bounded)
         conn = self._connect()
         try:
             rows = conn.execute(
-                "SELECT trace_id, session_id, status, source, provider, "  # nosec B608
-                "latency_ms, confidence, created_at FROM routing_decisions "
-                f"WHERE latency_ms IS NOT NULL AND latency_ms > 0{source_clause} "
-                "ORDER BY created_at DESC, rowid DESC LIMIT ?",
+                # The provider sub-total comes from the receipts for the same
+                # trace, so the split is read back from what was recorded rather
+                # than modelled: whatever the calls did not account for is
+                # Agency's own work, and neither side is inferred from the
+                # other.
+                "SELECT d.trace_id, d.session_id, d.status, d.source, "  # nosec B608
+                "d.provider, d.latency_ms, d.confidence, d.created_at, "
+                "COALESCE(("
+                " SELECT SUM(r.latency_ms) FROM model_receipts AS r"
+                " WHERE r.trace_id = d.trace_id"
+                "), 0) AS provider_ms, "
+                "COALESCE(("
+                " SELECT COUNT(*) FROM model_receipts AS r"
+                " WHERE r.trace_id = d.trace_id"
+                "), 0) AS provider_calls "
+                "FROM routing_decisions AS d "
+                f"WHERE d.latency_ms IS NOT NULL AND d.latency_ms > 0{source_clause} "
+                "ORDER BY d.created_at DESC, d.rowid DESC LIMIT ?",
                 tuple(parameters),
             ).fetchall()
             return [dict(row) for row in rows]

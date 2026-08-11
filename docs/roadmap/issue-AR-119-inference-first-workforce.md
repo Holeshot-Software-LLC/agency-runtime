@@ -3448,11 +3448,17 @@ the canary visibly with no deterministic fallback.
   decision that is ~16 s on claude and ~52–66 s on codex *before* Agency's much larger prompts —
   so provider round-trips plausibly dominate the 88 s, and **the codex transport costs 3–4× the
   claude one for the same role**. Note the provider chain prefers `codex-subscription`.
-  **The fix is small and the parts exist:** thread the attempt's `latency_ms` into the receipt.
-  `model_receipts` has no latency column, so this needs either a schema migration adding one, or a
-  reconstructed span — and a reconstructed span would put a fabricated absolute time in a
-  timestamp column, which is exactly the kind of false precision this project keeps getting caught
-  by. Prefer the migration.
+  **DONE `<pending>` — `model_receipts.latency_ms` now carries the per-call duration**, declared
+  through a single-source `MODEL_RECEIPT_MIGRATED_COLUMNS` tuple used by both the migration and the
+  startup staleness predicate, so an existing database is actually migrated rather than stamped
+  current and left to fail at query time. A duration, not a reconstructed span: writing
+  `ended_at - latency` into a timestamp column would sit a fabricated absolute time next to real
+  ones. `agency evidence latency` now reports the provider/Agency split and calls-per-decision,
+  read back from the receipts rather than modelled. **A `0` receipt means unreported, never a free
+  call** — such decisions are counted as unattributable instead of being blamed on Agency, which is
+  why all 200 existing decisions on this box report `cannot be split`. **Attribution begins at the
+  next `agency install`**: the hooks execute the published projection, so the recording change only
+  takes effect once it is published.
 - **BUILT `3708c96d` — `agency evidence latency`.** Reports min/p50/p95/max overall and per decision
   source, exits 1 when p95 exceeds `--budget-ms` (default the pinned 15000 ms cold control), and
   excludes zero-latency decisions rather than counting them as fast turns — both writers store `0`

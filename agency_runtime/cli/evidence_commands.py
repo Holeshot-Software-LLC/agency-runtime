@@ -168,6 +168,27 @@ def cmd_evidence_latency(args: argparse.Namespace) -> int:
     )
     values = [int(row["latency_ms"]) for row in rows]
     overall = _latency_summary(values)
+    # Only decisions whose calls actually reported a duration can be split.
+    # Receipts written before the latency column existed report 0, and counting
+    # those as "no provider time" would attribute the whole turn to Agency.
+    attributable = [row for row in rows if int(row.get("provider_ms") or 0) > 0]
+    split = {
+        "decisions": len(attributable),
+        "unattributed_decisions": len(rows) - len(attributable),
+        "provider_ms": _latency_summary([int(row["provider_ms"]) for row in attributable]),
+        "agency_ms": _latency_summary(
+            [max(0, int(row["latency_ms"]) - int(row["provider_ms"])) for row in attributable]
+        ),
+        "calls_per_decision": (
+            round(
+                sum(int(row.get("provider_calls") or 0) for row in attributable)
+                / len(attributable),
+                2,
+            )
+            if attributable
+            else 0.0
+        ),
+    }
     buckets: dict[str, list[int]] = {}
     for row in rows:
         buckets.setdefault(str(row["source"] or "unknown"), []).append(int(row["latency_ms"]))
@@ -180,6 +201,7 @@ def cmd_evidence_latency(args: argparse.Namespace) -> int:
                 "budget_ms": budget,
                 "over_budget": over_budget,
                 "overall": overall,
+                "split": split,
                 "by_source": grouped,
                 "slowest": rows[:5] if rows else [],
             }
@@ -200,6 +222,18 @@ def cmd_evidence_latency(args: argparse.Namespace) -> int:
             f"  {name:<32} n={summary['count']:<5} "
             f"p50 {summary['p50_ms']:>7} ms  p95 {summary['p95_ms']:>7} ms  "
             f"max {summary['max_ms']:>7} ms"
+        )
+    if split["decisions"]:
+        print(
+            f"split over {split['decisions']} decisions "
+            f"({split['calls_per_decision']} provider calls each): "
+            f"provider p50 {split['provider_ms']['p50_ms']} ms, "
+            f"Agency p50 {split['agency_ms']['p50_ms']} ms"
+        )
+    if split["unattributed_decisions"]:
+        print(
+            f"  {split['unattributed_decisions']} decision(s) cannot be split — their "
+            "receipts predate the per-call duration and report 0"
         )
     if over_budget:
         print(
