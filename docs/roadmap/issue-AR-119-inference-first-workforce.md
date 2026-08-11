@@ -3656,8 +3656,19 @@ unrelated configuration tests fail against whatever happened to be installed, in
 machine-sensitive failure this repo keeps tripping over. The same command that broke the box now
 refuses with the projection digest, the rejected path, and the remedy.
 
-**Still open:** the rewrite-everything behaviour itself. A patch that touched only the requested
-path would not have written `token_parameter` at all, and the guard would have had nothing to catch.
+**FIXED `da6d66b6` — the cause, not just the damage.** The rewrite does not come from the renderer,
+as first written here; it comes from `configuration_service.py:256`, `document = validate(document)`.
+Validation is a **normalization**: each section validator builds a fresh dict with every field
+materialized to its default, and that document was what reached disk. The write is now expressed
+against the operator's own file, carrying only the paths an operation actually changed; the
+normalized projection still drives change detection and state, so nothing else moves. Narrowing
+returns `None` when it cannot place a change faithfully — a provider secret addresses a list
+element, which a mapping walk cannot reach — and the caller then persists the normalized document
+rather than silently dropping the edit, with the guard above covering that remaining case.
+
+Verified live: `agency config set selector.min_confidence 0.85` now writes that key alone and leaves
+both providers byte-for-byte unchanged. The same command before this change stamped
+`token_parameter` onto both.
 
 ### The kill switch is immediate — verified 2026-08-11
 
