@@ -3624,6 +3624,54 @@ with "operation path is not supported" while `agency config get` happily returne
 operator cannot reach is a setting that does not exist; there is now a test that reaches it through
 the same entry point the documentation names.
 
+### `agency config set` can brick every hook on the box — hit live 2026-08-11
+
+**A config edit took the machine down for roughly an hour of turns.** Every turn failed its Stop
+hook with "could not verify or persist the turn-scoped evidence contract" — a message naming
+neither a field nor a file.
+
+**The mechanism, and it is a product defect rather than a slip.** `agency config set` does not patch
+the targeted path; it rewrites the **whole document through the current renderer**. A CLI newer than
+the last install therefore stamps fields the installed projection has never heard of onto sections
+the operator never touched. Both config validators are strict allowlists, so the projection raises
+`providers.0: contains unsupported fields` — and because hooks parse config on **every event**, one
+unrelated setting stops the entire box.
+
+Concretely: setting an unrelated `selector` flag wrote `token_parameter: ''` onto both providers,
+from the field added in `4d4c5741` hours earlier. The installed projection `bb45af11309a` predates
+it. Setting the flag back to `false` changed nothing, because the rejected thing is the **key**, not
+the value.
+
+**Why nothing caught it.** Every check ran against source, where the field is legitimate and all
+four declarations agree. The install-drift line already knew the CLI and the projection disagreed —
+it prints on every `agency status` — and no config write consulted it. The one authority that could
+answer "will the installed hooks accept this?" was never asked.
+
+**GUARDED.** `installed_config_compatibility` runs the candidate past the installed projection
+before the atomic replace, using the projection's own validator rather than a reimplementation of
+its allowlist — a copy here would be one more thing to drift. It **fails open**: an unfindable or
+unrunnable projection proves nothing and must never block an operator from editing config. It also
+checks **only the file the hooks actually read**; a first cut probed every candidate and made four
+unrelated configuration tests fail against whatever happened to be installed, inventing exactly the
+machine-sensitive failure this repo keeps tripping over. The same command that broke the box now
+refuses with the projection digest, the rejected path, and the remedy.
+
+**Still open:** the rewrite-everything behaviour itself. A patch that touched only the requested
+path would not have written `token_parameter` at all, and the guard would have had nothing to catch.
+
+### The kill switch is immediate — verified 2026-08-11
+
+Questioned during the incident, so it is worth recording as fact rather than belief. `agency off
+--global` takes effect on the **next hook event**, not the next session: each hook is a fresh
+process that re-reads `control.json` through `--runtime-control` before anything else, and
+`adapters/hooks.py:2787` short-circuits to a true pass-through when disabled — explicitly so that a
+malformed Stop envelope cannot reach the fail-closed completion policy while Agency is off. Nothing
+caches the control state across events.
+
+The CLI's "start a fresh host session" line is about *comparing* on/off behaviour: specialist cards
+already injected into a live transcript remain as context. That is text in a conversation, not
+enforcement. A turn already in flight can still fail; the next one is clean.
+
 ### CI on `main` is red, and has been — observed 2026-08-11
 
 Merging #266 surfaced it: **`main` has failed CI on at least its last five commits**, current tip

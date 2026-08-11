@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Any
 
@@ -294,7 +294,15 @@ def restrict_private_directory(path: str | Path) -> None:
 
 
 def _preflight_effective_candidate(path: Path) -> None:
-    """Validate the exact secured candidate with active environment overlays."""
+    """Validate the exact secured candidate with active environment overlays.
+
+    Validating against *this* source is necessary but not sufficient: hooks run
+    the installed projection, not this code, and both config validators are
+    strict allowlists. A CLI newer than the last install therefore writes a
+    document only it can read, and every hook event fails afterwards. The
+    candidate is checked against the installed projection too, before the
+    atomic replace makes it the operator's live config.
+    """
 
     reset_config_cache()
     try:
@@ -302,6 +310,26 @@ def _preflight_effective_candidate(path: Path) -> None:
         _effective_document(path)
     finally:
         reset_config_cache()
+    # Only the file the hooks actually read can break them. A candidate written
+    # anywhere else -- a test fixture, an explicit --config elsewhere -- is not
+    # something the installed projection will ever parse, and checking it would
+    # make every such write depend on whatever happens to be installed on this
+    # machine. The candidate is a temporary file beside its target, so its
+    # parent is the target's directory.
+    with suppress(OSError, ValueError):
+        if path.parent != resolve_config_path(None).parent:
+            return
+
+    # Imported here: the guard reaches into launcher and runtime-staleness
+    # modules that sit close to configuration, and a config write is rare
+    # enough that the import cost never matters.
+    from agency_runtime.core.installed_config_compatibility import (
+        installed_projection_rejection,
+    )
+
+    rejection = installed_projection_rejection(path)
+    if rejection:
+        raise ConfigValidationError(rejection)
 
 
 def _atomic_write_yaml(path: Path, document: Mapping[str, Any]) -> None:
