@@ -2376,15 +2376,21 @@ def test_hook_boundary_allows_positively_identified_oversized_non_stop() -> None
 
 
 @pytest.mark.parametrize("host", ["codex", "zcode"])
-def test_hook_boundary_blocks_prompt_when_preflight_integrity_fails(
+def test_hook_boundary_publishes_prompt_when_preflight_integrity_fails(
     host: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Staffing failures no longer reach this block (ADR-0122 update: a
-    # substantive turn with no accepted specialist fails open with an honest
-    # header). This boundary still blocks for non-staffing integrity failures
-    # raised by the bridge, and now appends the exact cause so the operator can
-    # diagnose it.
+    # Rule 8: Agency never withholds a turn because Agency is unavailable.
+    #
+    # Staffing failures already failed open here (ADR-0122). This pins the other
+    # half -- a store/lifecycle/RuntimeError raised by the bridge -- which used
+    # to deny the prompt outright. Nothing has been verified and rejected at
+    # this point in the turn, so the only thing denying it reports is an Agency
+    # fault, at the cost of the user's turn. It was ALSO what wrote
+    # `preflight_failed` onto the parent run and thereby denied parent scope to
+    # every harness-spawned child of that turn.
+    #
+    # Loud but not fatal: the exact cause must still reach stderr.
     from agency_runtime.adapters import hooks as hooks_module
 
     class _FailingBridge:
@@ -2397,6 +2403,7 @@ def test_hook_boundary_blocks_prompt_when_preflight_integrity_fails(
         lambda *_args, **_kwargs: _FailingBridge(),
     )
     sink = io.BytesIO()
+    errors = io.StringIO()
 
     assert (
         run_hook_stdio(
@@ -2413,14 +2420,22 @@ def test_hook_boundary_blocks_prompt_when_preflight_integrity_fails(
                 ).encode()
             ),
             output_stream=sink,
+            error_stream=errors,
         )
         == 0
     )
 
-    result = json.loads(sink.getvalue())
-    assert result["decision"] == "block"
-    assert "AGENCY PREFLIGHT FAILED" in result["reason"]
-    assert "evidence store unavailable" in result["reason"]
+    # The turn is published: no block, no stopReason, nothing withheld.
+    assert json.loads(sink.getvalue()) == {}
+    # Loud but not fatal -- stderr still names the fault so the operator can
+    # diagnose it (README "fails loudly"); it simply no longer costs the turn.
+    # The exact cause also reaches the structured record, but that is asserted
+    # through the Store-backed `agency evidence rejections` surface rather than
+    # caplog: `install_hook_log_sink` sets `propagate = False` on the package
+    # logger process-wide and never restores it, so log capture here is
+    # order-dependent.
+    assert "host operation continues" in errors.getvalue()
+    assert "RuntimeError" in errors.getvalue()
 
 
 def test_expected_stop_discriminator_blocks_when_event_field_is_beyond_input_bound() -> None:

@@ -437,21 +437,35 @@ def _terminal_turn_status(adapter: Any, session_id: str, trace_id: str) -> str:
     return "" if status in {"", "active"} else status
 
 
-def _revision_or_terminal_failure(
+def _publish_unverified(
     *,
     attempt: int,
     final_response: str,
     trace_id: str,
 ) -> dict[str, Any]:
-    """Stop one unverifiable response without requesting a correction."""
+    """Let the turn publish when Agency could not verify or persist its evidence.
 
-    del attempt
-    return _terminal_rejection_result(
-        status="verification_failed",
-        message=_VERIFICATION_UNAVAILABLE,
-        final_response=final_response,
-        trace_id=trace_id,
-    )
+    Rule 8: Agency never withholds a turn because Agency is unavailable. This
+    used to emit a terminal rejection, which made OpenClaw the one host that
+    still converted Agency's own failure into the user losing a finished
+    response -- the exact drift the native `Stop` path stopped doing, kept alive
+    here because the policy lived in two files (see the handoff's
+    two-sources-of-truth thread).
+
+    Every caller is an unavailability: `runtime_enabled` raised, the trace could
+    not be resolved, correlation was absent, the terminal state or turn status
+    could not be read, or the policy decision could not be evaluated. A verifier
+    that actually evaluated and rejected does NOT come here -- those keep
+    blocking through `_terminal_pre_verify_result`, `_TERMINAL_MISMATCH_MESSAGE`
+    and `_finish_policy_rejection`, because a real finding is Agency working.
+
+    The empty envelope is not a new contract for the external Node consumer:
+    it is the same shape this function's own success path already returns when
+    the terminal state is `completed`.
+    """
+
+    del attempt, final_response, trace_id
+    return {}
 
 
 def _evidence_revision(decision: dict[str, Any]) -> int | None:
@@ -909,7 +923,7 @@ def _handle_pre_verify(
         if not bool(adapter.runtime_enabled()):
             return {"runtimeDisabled": True}
     except Exception:
-        return _revision_or_terminal_failure(
+        return _publish_unverified(
             attempt=attempt,
             final_response=policy_response,
             trace_id=trace_id,
@@ -922,13 +936,13 @@ def _handle_pre_verify(
             final_response=policy_response,
         )
     except Exception:
-        return _revision_or_terminal_failure(
+        return _publish_unverified(
             attempt=attempt,
             final_response=policy_response,
             trace_id=trace_id,
         )
     if not session_id or not effective_trace:
-        return _revision_or_terminal_failure(
+        return _publish_unverified(
             attempt=attempt,
             final_response=policy_response,
             trace_id=effective_trace or trace_id,
@@ -942,7 +956,7 @@ def _handle_pre_verify(
             final_response=policy_response,
         )
     except Exception:
-        return _revision_or_terminal_failure(
+        return _publish_unverified(
             attempt=attempt,
             final_response=policy_response,
             trace_id=effective_trace,
@@ -959,7 +973,7 @@ def _handle_pre_verify(
     try:
         closed_status = _terminal_turn_status(adapter, session_id, effective_trace)
     except Exception:
-        return _revision_or_terminal_failure(
+        return _publish_unverified(
             attempt=attempt,
             final_response=policy_response,
             trace_id=effective_trace,
@@ -981,7 +995,7 @@ def _handle_pre_verify(
         trace_id=effective_trace,
     )
     if decision is None:
-        return _revision_or_terminal_failure(
+        return _publish_unverified(
             attempt=attempt,
             final_response=policy_response,
             trace_id=effective_trace,

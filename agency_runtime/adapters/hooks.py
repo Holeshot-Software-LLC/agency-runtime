@@ -122,11 +122,6 @@ _VERIFICATION_UNAVAILABLE = (
     "Agency Runtime could not verify or persist the turn-scoped evidence contract. "
     "Do not publish this response; restore the evidence store and start a new turn."
 )
-_PREFLIGHT_UNAVAILABLE = (
-    "AGENCY PREFLIGHT FAILED: Agency could not persist the evidence contract for this turn. "
-    "The parent model is not allowed to answer without a verifiable evidence receipt. "
-    "Restore the evidence store or inference provider, then start a new turn."
-)
 _STOP_EVENT_DISCRIMINATOR = re.compile(
     rb'"hook_event_name"\s*:\s*"Stop"',
 )
@@ -218,23 +213,38 @@ def _boundary_failure_result(
     host: str = "",
     reason: str = "",
 ) -> dict[str, Any]:
-    """Block failed preflight, Agency-owned launches, and malformed Stop events."""
+    """Block Agency-owned malformed Stop events; never block a turn Agency cannot check."""
 
     parsed_user_prompt = (
         isinstance(payload, dict) and payload.get("hook_event_name") == "UserPromptSubmit"
     )
     if expected_event == "UserPromptSubmit" or parsed_user_prompt:
-        # Staffing failures no longer reach this branch: a substantive turn with
-        # no accepted specialist fails open with an honest header (ADR-0122
-        # update). This block now fires only for non-staffing integrity failures
-        # (store/lifecycle/RuntimeError). Append the exact recorded cause so the
-        # operator diagnoses the real problem rather than a generic "restore
-        # inference" instruction (README "fails loudly" promise).
-        detail = " ".join(str(reason or "").split())[:180]
-        message = (
-            f"{_PREFLIGHT_UNAVAILABLE} Exact cause: {detail}" if detail else _PREFLIGHT_UNAVAILABLE
+        # Rule 8: Agency never withholds a turn because Agency is unavailable.
+        #
+        # Staffing failures already failed open here (ADR-0122). What was left
+        # was the integrity half -- store/lifecycle/RuntimeError -- which is the
+        # SAME class the Stop path stopped blocking on, just on a different
+        # event: Agency failing to check something is not a finding about the
+        # user's prompt. Nothing has been verified and rejected at this point in
+        # the turn; there is only Agency's own machinery failing, so denying the
+        # prompt costs the user a turn to report an Agency fault.
+        #
+        # This is also what wrote `preflight_failed` onto the parent run, which
+        # then denied the parent scope to every harness-spawned child of that
+        # turn -- one broken store took down staffing for the whole session.
+        #
+        # The failure stays loud without being fatal: `run_hook` marks the
+        # observation `degraded` and prints the exact cause to stderr, and
+        # `agency evidence rejections` lists it under "published anyway".
+        logger.error(
+            "preflight_unavailable_publishing_anyway",
+            extra={
+                "host": host,
+                "cause": " ".join(str(reason or "").split())[:180],
+                "event": "UserPromptSubmit",
+            },
         )
-        return _completion_rejection(message, retry=False)
+        return {}
 
     # A child launch is never denied. There is no plan to verify it against and
     # no grant to check, so an unreadable payload means Agency does not staff

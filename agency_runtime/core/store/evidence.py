@@ -77,6 +77,22 @@ from agency_runtime.core.store.receipt_authority import MODEL_RECEIPT_AUTHORITY_
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
 
 MAX_HOST_CONTROL_GENERATION = (2**63) - 1
+
+# Rule 8, as a data definition rather than a claim about the code.
+#
+# WITHHELD: Agency's verifier evaluated the response and rejected it, or the
+# response did not match the digest bound to an already-terminal trace. These
+# are the only reasons Agency may cost a user a turn, and with a full roster and
+# contractor minting behind it a rejection should be rare enough that each one
+# is worth reading.
+_WITHHELD_RUN_STATUSES = frozenset({"response_invalid", "delegation_declined", "retry_exhausted"})
+# PUBLISHED ANYWAY: Agency could not verify or persist its own evidence, so it
+# got out of the way and the turn went out. Never a finding about the response
+# -- but it means Agency was blind for that turn, so it still has to be visible.
+_PUBLISHED_ANYWAY_RUN_STATUSES = frozenset({"verification_failed", "preflight_failed"})
+
+WITHHELD_RUN_STATUSES = _WITHHELD_RUN_STATUSES
+PUBLISHED_ANYWAY_RUN_STATUSES = _PUBLISHED_ANYWAY_RUN_STATUSES
 _CANARY_ACTIVATION_SNAPSHOT_SCHEMA = "agency.canary-activation-evidence.v1"
 _CANARY_ACTIVATION_MAX_ROWS = 256
 
@@ -2072,6 +2088,46 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 (trace_id,),
             ).fetchone()
             return dict(row) if row else None
+        finally:
+            conn.close()
+
+    def get_withheld_and_published_runs(
+        self,
+        *,
+        host: str = "",
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """Return recently closed turns that Agency either withheld or let pass.
+
+        Rule 8 draws exactly one line: Agency withholds a turn only when its
+        verifier evaluated the response and rejected it, never because Agency
+        itself was unavailable. Both sides of that line close a run with a
+        distinguishable status, so this one read makes the rule auditable after
+        the fact instead of leaving it a claim about the code.
+
+        Read-only, and deliberately not filtered to a session: a withheld turn
+        is rare enough to be worth seeing across the whole store.
+        """
+
+        bounded = max(1, min(int(limit), 500))
+        statuses = sorted(_WITHHELD_RUN_STATUSES | _PUBLISHED_ANYWAY_RUN_STATUSES)
+        placeholders = ",".join("?" for _ in statuses)
+        parameters: list[Any] = list(statuses)
+        host_clause = ""
+        if host:
+            host_clause = " AND host = ?"
+            parameters.append(host)
+        parameters.append(bounded)
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT trace_id, session_id, host, started_at, ended_at, status "  # nosec B608
+                f"FROM runs WHERE status IN ({placeholders}){host_clause} "
+                "ORDER BY COALESCE(ended_at, started_at) DESC, rowid DESC "
+                "LIMIT ?",
+                tuple(parameters),
+            ).fetchall()
+            return [dict(row) for row in rows]
         finally:
             conn.close()
 

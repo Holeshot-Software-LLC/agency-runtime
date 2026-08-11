@@ -269,8 +269,14 @@ It assumes the operating-system account and Python interpreter are trusted.
 - Hermes exposes no permanent host deny result. Its preflight tells the model
   to construct the first visible response through the local `agency.finalize`
   tool; `pre_verify` never requests a second model pass. The
-  `transform_llm_output` replacement runs on every registered-plugin turn, so
-  an unverified draft is not returned even when correlation or storage fails.
+  `transform_llm_output` replacement runs on every registered-plugin turn, so a
+  draft the verifier evaluated and rejected is not returned. A correlation or
+  storage failure is deliberately not treated the same way: when Agency cannot
+  verify or persist at all it returns the draft unchanged, because Agency's own
+  unavailability is not a finding about the response, and withholding a
+  completed turn to report an Agency fault is the failure mode that rule exists
+  to prevent. Operators who need the stricter reading should treat an entry in
+  `agency evidence rejections` under "Agency was blind" as an unverified turn.
   Missing or disabled plugin registration remains outside Runtime's control,
   and a persistence failure deliberately leaves the correlated turn open.
 - A public package signature, provenance attestation, and tagged release do not

@@ -10,6 +10,11 @@ from agency_runtime.core.child_delivery_evidence import (
     scan_child_delivery_evidence,
 )
 from agency_runtime.core.host_wiring_drift import host_wiring
+from agency_runtime.core.store.evidence import (
+    PUBLISHED_ANYWAY_RUN_STATUSES,
+    WITHHELD_RUN_STATUSES,
+)
+from agency_runtime.core.store.sqlite import Store
 
 from ._common import print_json as _print_json
 
@@ -54,6 +59,65 @@ def cmd_evidence_wiring(args: argparse.Namespace) -> int:
             print(f"  staged: {result.staged_projection[:12] or '(none)'}  {result.staged_path}")
             print(f"  wired : {result.wired_projection[:12] or '(none)'}  {result.wired_path}")
     return 0 if all(result.wired for result in results) else 1
+
+
+def cmd_evidence_rejections(args: argparse.Namespace) -> int:
+    """Report every turn Agency withheld, and every turn it published while blind.
+
+    Rule 8 permits exactly one reason to cost a user a turn: Agency's verifier
+    evaluated the response and rejected it. Agency being unable to verify or
+    persist its own evidence is not a finding about the response, and publishes.
+
+    Both outcomes close a run with a distinguishable status, so this makes the
+    rule auditable after the fact rather than a claim about the code -- and it
+    surfaces the rejections themselves, which with a full roster and contractor
+    minting behind selection should be rare enough that each one is worth
+    reading. Exit status is 1 when anything was withheld, so it is usable as a
+    gate.
+    """
+
+    store = Store(getattr(args, "db", None))
+    rows = store.get_withheld_and_published_runs(
+        host=getattr(args, "host", None) or "",
+        limit=getattr(args, "limit", 50) or 50,
+    )
+    withheld = [row for row in rows if row["status"] in WITHHELD_RUN_STATUSES]
+    published = [row for row in rows if row["status"] in PUBLISHED_ANYWAY_RUN_STATUSES]
+    if getattr(args, "json", False):
+        _print_json(
+            {
+                "withheld": withheld,
+                "published_anyway": published,
+                "withheld_statuses": sorted(WITHHELD_RUN_STATUSES),
+                "published_anyway_statuses": sorted(PUBLISHED_ANYWAY_RUN_STATUSES),
+            }
+        )
+        return 1 if withheld else 0
+
+    def _line(row: dict[str, object]) -> str:
+        when = str(row.get("ended_at") or row.get("started_at") or "")[:19] or "-"
+        return (
+            f"  {row['status']!s:<20} {row['host']!s:<8} {when}  trace {str(row['trace_id'])[:12]}"
+        )
+
+    if not withheld:
+        print("withheld by Agency: none ✅")
+    else:
+        print(f"withheld by Agency: {len(withheld)} — the verifier evaluated and rejected")
+        for row in withheld:
+            print(_line(row))
+    if published:
+        # Deliberately not labelled "published": the status records that Agency
+        # was blind for that turn, not what the host did with the response. Runs
+        # closed before the rule-8 fix were denied on exactly this condition, so
+        # calling them published would be a claim this data cannot support.
+        print(
+            f"Agency was blind: {len(published)} — could not verify or persist its "
+            "evidence. Under rule 8 these publish; before the fix they were denied."
+        )
+        for row in published:
+            print(_line(row))
+    return 1 if withheld else 0
 
 
 def cmd_evidence_children(args: argparse.Namespace) -> int:

@@ -1828,3 +1828,66 @@ def test_generated_openclaw_plugin_is_native_openclaw_package(
     assert "} catch {" in code
     assert "spawnSync" not in code
     assert json.dumps(str(private_installer_launcher[0])) in code
+
+
+def test_openclaw_publishes_when_agency_cannot_correlate_but_still_blocks_a_verdict(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Rule 8 and rule 9 in one assertion: same split as the native hosts.
+
+    OpenClaw was the last host that converted Agency's own unavailability into a
+    terminal rejection, because the policy lived in a second copy here rather
+    than being shared with ``adapters/hooks.py``. Nothing pinned that path -- the
+    parity suite pinned ``_revision()`` instead -- so it could regress silently.
+
+    The contrast is the point. Agency being unable to correlate the turn is not
+    a finding about the response and must publish; a verifier that evaluated and
+    rejected is Agency working and must still block.
+    """
+
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "rule8-openclaw.db"))
+    from agency_runtime.adapters.openclaw.node_bridge import handle
+    from agency_runtime.core.store.sqlite import Store
+
+    store = Store(tmp_path / "rule8-openclaw.db")
+    _activate_test_specialist(store)
+    _route_to_test_specialist(monkeypatch, "adapter-test-specialist")
+
+    # Unavailable: no correlation could be established for this turn.
+    unavailable = handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "",
+            "traceId": "",
+            "finalResponse": "A finished answer the user is owed.",
+            "model": "task-general",
+        }
+    )
+
+    assert unavailable == {}
+    assert unavailable.get("terminalRejected") is None
+
+    # Evaluated and rejected: still terminal, on the same host, same action.
+    handle(
+        {
+            "action": "preflight",
+            "sessionId": "verdict-session",
+            "traceId": "verdict-turn",
+            "userMessage": "Review the deployment controls.",
+            "model": "task-general",
+        }
+    )
+    verdict = handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "verdict-session",
+            "traceId": "verdict-turn",
+            "finalResponse": "",
+            "model": "task-general",
+        }
+    )
+
+    assert verdict["terminalRejected"] is True
+    assert verdict["terminalStatus"] == "response_invalid"
+    assert store.get_run("verdict-turn")["status"] == "response_invalid"

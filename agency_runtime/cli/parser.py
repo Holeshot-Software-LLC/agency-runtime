@@ -1510,6 +1510,28 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     )
     children.add_argument("--json", action="store_true", help="Print JSON")
     _bind(children, handlers, "cmd_evidence_children")
+    rejections = evidence_sub.add_parser(
+        "rejections",
+        help="Show every turn Agency withheld, and every turn it published while blind",
+    )
+    rejections.add_argument(
+        "--host",
+        default=None,
+        help="Read one host only (default: every host that closed a turn)",
+    )
+    rejections.add_argument(
+        "--limit",
+        type=int,
+        default=50,
+        help="Most recent N closed turns to read (default: 50, max: 500)",
+    )
+    rejections.add_argument(
+        "--db",
+        default=None,
+        help="Read this evidence store instead of the configured one",
+    )
+    rejections.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(rejections, handlers, "cmd_evidence_rejections")
     wiring = evidence_sub.add_parser(
         "wiring",
         help="Check that each host invokes the projection the installer staged",
