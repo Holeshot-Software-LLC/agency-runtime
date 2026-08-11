@@ -757,6 +757,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6989ecb1` | 2026-08-11 | docs(roadmap): rule 4 on codex measured negative, AR-209 confirmed | null | null |
 | `228c720c` | 2026-08-11 | docs(roadmap): census all 1181 rollouts; encryption is universal | null | null |
 | `2865493d` | 2026-08-11 | fix(codex): let hook-trust inspection actually launch its worker | null | null |
+| `8b92a5b9` | 2026-08-11 | fix(install): record the installed runtime per host, not once per box | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
