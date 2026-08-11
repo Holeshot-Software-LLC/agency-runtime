@@ -147,7 +147,13 @@ def test_incident_contracts_project_their_audited_controlled_capabilities() -> N
         "risk-analysis",
         "review",
     } <= set(commander.capability_ids)
-    assert commander.domains == ("software-engineering",)
+    # 2026-08-11: gained "operations" from its own `operations` category. The
+    # commander was previously indistinguishable from every other engineering
+    # worker on domain, and was selected for a dashboard planning task on the
+    # strength of the verb "come up with a plan" alone. Naming its actual
+    # subject matter is the point; it will now match operations work rather
+    # than any software unit.
+    assert commander.domains == ("software-engineering", "operations")
 
 
 def test_discovery_worker_accepts_analysis_artifacts_from_inference_plans() -> None:

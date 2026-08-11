@@ -3605,7 +3605,36 @@ total, stripped of control characters before the audit surface can print it back
 purged with the rest of the runtime evidence, and unable to fail a turn. The first test asserts the
 default writes nothing at all.
 
-**The root cause the build surfaced, and it is structural.** `project_workforce_unit_descriptors`
+**CORRECTED, and the real cause is narrower — FIXED.** The claim below, that there is no
+subject-matter dimension, was drawn from the *persisted* descriptor, which is a content-free replay
+artifact. The **live** side has domains end to end: `WorkUnit.domains` is **required**
+(`planning_contracts.py:285`), workers declare `domains` (`contract.py:103`), `staffing_verifier.py:349`
+matches them by set intersection, and `comparison.py:80` weights them at 0.20.
+
+The defect was **resolution, not absence**. `_DIVISION_DOMAINS` maps a division to one domain, and a
+division says which part of the *business* a specialist belongs to, not which part of the *system*
+they work on — so all 54 `engineering` workers carried the single domain `software-engineering`.
+On the one dimension meant to separate them, `frontend-developer` and `code-reviewer` were
+identical, across the division holding nearly all real work. That is why a frontend specialist was
+never nominated for a frontend task.
+
+**`_CATEGORY_DOMAINS` promotes categories the roster already declares** into domain identifiers.
+Measured on the shipped roster: **21 distinct domain tuples across the 54 engineering specialists,
+up from 1.** `frontend-developer` → `('software-engineering', 'frontend')`;
+`incident-response-commander` → `('software-engineering', 'operations')`, which is precisely why it
+should not have matched a dashboard planning unit. Strictly additive — contracts only gain domains,
+and the verifier's check is a set intersection — so nothing staffable before became unstaffable, and
+a test asserts it. Another test asserts every promoted category actually appears in the roster; it
+caught `ui-engineering`, which had been lifted from a test fixture and exists nowhere in production.
+
+**Cost, paid deliberately.** The recruiter index grew 263,616 → 264,087 bytes (+471, +0.18%) against
+a 288 KB ceiling. AR-227's exact-size pin is a change detector, and it worked — it stopped the change
+until someone justified it. It now carries that justification, plus a new assertion on **remaining
+headroom**, so the next promotion is measured against the budget that actually constrains the index
+rather than quietly consuming it. Note the index is a roster snapshot, not per-turn prompt content —
+the model receives a bounded candidate subset — so this is a memory cost, not a latency one.
+
+**The earlier, wider claim, kept for the record:** `project_workforce_unit_descriptors`
 (`workforce/routing_projection.py:131`) defines the router's own representation of a work unit, and
 its entire vocabulary is activity: `artifact_kind` ∈ {analysis, architecture-record, documentation,
 implementation-change, plan, review-report, test-code, test-evidence}, `lifecycle_phase` ∈

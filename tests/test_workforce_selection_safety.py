@@ -100,9 +100,21 @@ def test_ar227_complete_recruiter_index_fits_measured_finite_envelope() -> None:
     payload = _snapshot().recruiter_index.encode("utf-8")
     # AR-227: exact-size regression assertion against the measured 278-worker
     # governed index. Update this value only when the reviewed roster changes.
-    assert len(payload) == 263_616
+    #
+    # 2026-08-11, 263_616 -> 264_087 (+471, +0.18%): domain promotion in
+    # contract._CATEGORY_DOMAINS. A division says which part of the business a
+    # specialist belongs to, so all 54 `engineering` workers carried the single
+    # domain `software-engineering` and the recruiter could not tell
+    # frontend-developer from code-reviewer on the one dimension meant to
+    # separate them. That is a change in what the roster means, which is what
+    # this pin exists to make someone justify.
+    assert len(payload) == 264_087
     assert len(payload) <= MAX_RECRUITER_INDEX_BYTES
     assert MAX_RECRUITER_INDEX_BYTES == 288 * 1024
+    # The exact figure above is a change detector; this is the budget. Asserting
+    # the remaining headroom means the next promotion is measured against what
+    # actually constrains the index, instead of quietly consuming it.
+    assert MAX_RECRUITER_INDEX_BYTES - len(payload) >= 24 * 1024
 
 
 def _unit(

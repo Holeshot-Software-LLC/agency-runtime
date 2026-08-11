@@ -62,6 +62,47 @@ _DIVISION_DOMAINS = {
     "testing": "quality-assurance",
 }
 
+# A division says which part of the business a specialist belongs to, not which
+# part of the system they work on. All 54 `engineering` specialists therefore
+# collapse to the single domain `software-engineering`, which makes
+# frontend-developer and code-reviewer identical on the one dimension meant to
+# separate them -- and engineering is where nearly all the work is. Measured
+# 2026-08-11: frontend-developer was staffed on a turn that excluded frontend
+# work and skipped on a turn that was entirely frontend work.
+#
+# Categories already carry that resolution, so these promote the ones a planner
+# can plausibly name for a unit. Every key here appears in the shipped roster;
+# inventing vocabulary neither side emits would add nothing. This is strictly
+# additive -- a contract only ever gains domains -- so no unit that could be
+# staffed before becomes unstaffable, because the verifier's check is a set
+# intersection that can only grow.
+_CATEGORY_DOMAINS: dict[str, str] = {
+    # "accessibility" is deliberately absent: it already promotes to its own
+    # domain above, and an accessibility auditor is not a frontend implementer.
+    "api-design": "backend",
+    "backend-systems": "backend",
+    "cms": "cms",
+    "codebase-discovery": "codebase-discovery",
+    "data-engineering": "data",
+    "data-quality": "data",
+    "databases": "data",
+    "desktop-applications": "desktop",
+    "distributed-systems": "backend",
+    "drupal": "cms",
+    "frontend": "frontend",
+    "infrastructure": "platform",
+    "machine-learning": "machine-learning",
+    "mlops": "machine-learning",
+    "mobile": "mobile",
+    "operations": "operations",
+    "performance": "performance",
+    "pipelines": "data",
+    "platform-engineering": "platform",
+    "reliability": "operations",
+    "web-development": "frontend",
+    "wordpress": "cms",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class CompositionContract:
@@ -302,6 +343,10 @@ def _domains(agent: Mapping[str, Any], division: str) -> tuple[str, ...]:
         and "software-engineering" not in result
     ):
         result.append("software-engineering")
+    for category in sorted(categories):
+        promoted = _CATEGORY_DOMAINS.get(category)
+        if promoted and promoted not in result:
+            result.append(promoted)
     return tuple(result)
 
 
