@@ -753,6 +753,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1a6d3612` | 2026-08-11 | feat(steward): restate the resident kernel as a frame, not a gag order | null | null |
 | `c6666369` | 2026-08-11 | docs(roadmap): restate AR-119 as the vision it was always trying to describe | null | null |
 | `ecfce69b` | 2026-08-11 | docs(roadmap): unblock the codex rule-4 bench and record why it stalled | null | null |
+| `bf2888a9` | 2026-08-11 | docs(roadmap): root-cause codex hook-trust inspection_failed | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
