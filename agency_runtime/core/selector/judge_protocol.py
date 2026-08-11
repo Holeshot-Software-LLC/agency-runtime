@@ -7,6 +7,8 @@ import re
 import urllib.request
 from typing import Any
 
+from agency_runtime.core.model_capabilities import requires_completion_token_parameter
+
 _MAX_CANDIDATE_CARD_BYTES = 4_096
 _CANDIDATE_TEXT_LIMITS: dict[str, int] = {
     # Roster slugs are at most 128 ASCII characters. Preserve the complete
@@ -373,12 +375,18 @@ def encoded_model_payload(
     *,
     model: str,
     use_completion_tokens: bool,
+    token_parameter: str = "",
 ) -> bytes:
     # JSON_LOAD_OWNERSHIP: build_judge_payload generated this internal document
     # immediately before model/provider fields are normalized for transport.
     body_json = json.loads(body)
     body_json["model"] = model
-    if use_completion_tokens and model.lower().startswith("gpt-5"):
+    # `use_completion_tokens` is the transport question -- whether this API has
+    # the two spellings at all. Which one this model wants is decided in one
+    # place for every caller.
+    if use_completion_tokens and requires_completion_token_parameter(
+        model, declared=token_parameter
+    ):
         body_json["max_completion_tokens"] = body_json.pop("max_tokens", 256)
         body_json.pop("temperature", None)
     return json.dumps(body_json).encode("utf-8")
@@ -412,6 +420,7 @@ def build_http_request(
     provider_type: str,
     api_key: str,
     use_completion_tokens: bool,
+    token_parameter: str = "",
 ) -> urllib.request.Request:
     facade = _facade()
     body, path, content_type = facade._build_judge_payload(
@@ -425,6 +434,7 @@ def build_http_request(
         body,
         model=model,
         use_completion_tokens=use_completion_tokens,
+        token_parameter=token_parameter,
     )
     return urllib.request.Request(
         facade._join_api_path(base_url, path),

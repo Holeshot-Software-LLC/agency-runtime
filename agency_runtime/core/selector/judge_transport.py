@@ -138,6 +138,7 @@ def try_http_provider(
         provider_type=provider_type,
         api_key=api_key,
         use_completion_tokens=provider_type in {"openai", "openai-compatible"},
+        token_parameter=provider.token_parameter,
     )
     timeout = facade._bounded_duration(
         provider.timeout if request_timeout is None else request_timeout,

@@ -23,6 +23,7 @@ from agency_runtime.core.config import (
     is_safe_credential_url,
 )
 from agency_runtime.core.http_safety import open_no_redirect
+from agency_runtime.core.model_capabilities import requires_completion_token_parameter
 
 MAX_STRUCTURED_PROMPT_BYTES = 1_280 * 1024
 MAX_STRUCTURED_SCHEMA_BYTES = 64 * 1024
@@ -377,7 +378,7 @@ def _http_payload(
         "stream": False,
         "temperature": 0,
     }
-    if provider.model.casefold().startswith("gpt-5"):
+    if requires_completion_token_parameter(provider.model, declared=provider.token_parameter):
         payload["max_completion_tokens"] = 2048
         payload.pop("temperature", None)
     else:

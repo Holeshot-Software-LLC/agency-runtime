@@ -40,6 +40,7 @@ from agency_runtime.core.filesystem_trust import absolute_path as _absolute_path
 from agency_runtime.core.filesystem_trust import (
     metadata_is_link_or_reparse_point as _metadata_is_link_or_reparse,
 )
+from agency_runtime.core.model_capabilities import TOKEN_PARAMETERS
 from agency_runtime.core.policy.profiles import PROFILES
 
 # ── Config path resolution ────────────────────────────────────
@@ -136,6 +137,10 @@ class ProviderEntry:
     ollama_mode: bool = False
     timeout: float = 15.0
     reasoning_effort: str = ""
+    # Empty means infer from the model name; see core.model_capabilities. Set it
+    # when a model this package has not seen needs the other output-length
+    # parameter, so a model change stays a configuration edit.
+    token_parameter: str = ""
 
     def resolve_api_key(self) -> str:
         """Return the API key: direct value first, then env var."""
@@ -477,6 +482,15 @@ def _normalize_enabled(value: Any) -> str:
 
 
 def _build_provider_entry(raw: dict[str, Any]) -> ProviderEntry:
+    token_parameter = str(raw.get("token_parameter", "")).strip()
+    if token_parameter not in TOKEN_PARAMETERS:
+        # Silently ignoring a typo here would send the wrong output-length
+        # parameter on every call, which surfaces as an opaque provider
+        # rejection rather than as the configuration error it is.
+        raise ValueError(
+            f"providers.token_parameter: must be one of {list(TOKEN_PARAMETERS)}, "
+            f"got {token_parameter!r}"
+        )
     return ProviderEntry(
         name=str(raw.get("name", "")),
         type=str(raw.get("type", "openai-compatible")),
@@ -488,6 +502,7 @@ def _build_provider_entry(raw: dict[str, Any]) -> ProviderEntry:
         ollama_mode=bool(raw.get("ollama_mode", raw.get("type") == "ollama")),
         timeout=float(raw.get("timeout", 15.0)),
         reasoning_effort=str(raw.get("reasoning_effort", "")),
+        token_parameter=token_parameter,
     )
 
 
@@ -1239,6 +1254,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
                 "ollama_mode": p.ollama_mode,
                 "timeout": p.timeout,
                 "reasoning_effort": p.reasoning_effort,
+                "token_parameter": p.token_parameter,
             }
             for p in cfg.providers
         ],

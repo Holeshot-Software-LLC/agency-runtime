@@ -25,6 +25,7 @@ from agency_runtime.core.config import (
 )
 from agency_runtime.core.configuration_contracts import ConfigValidationError
 from agency_runtime.core.display import has_terminal_control
+from agency_runtime.core.model_capabilities import TOKEN_PARAMETERS
 
 _ENV_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _PROVIDER_TYPES = frozenset(
@@ -186,6 +187,7 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
         "ollama_mode",
         "timeout",
         "reasoning_effort",
+        "token_parameter",
     }
     if set(entry) - allowed:
         raise _error(path, "contains unsupported fields")
@@ -217,7 +219,19 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
         )
         .strip()
         .lower(),
+        "token_parameter": _string(
+            entry.get("token_parameter", ""),
+            f"{path}.token_parameter",
+            maximum=32,
+        )
+        .strip()
+        .lower(),
     }
+    if result["token_parameter"] not in TOKEN_PARAMETERS:
+        raise _error(
+            f"{path}.token_parameter",
+            "must be empty or one of " + ", ".join(sorted(filter(None, TOKEN_PARAMETERS))),
+        )
     for field in ("name", "model"):
         if has_terminal_control(result[field]):
             raise _error(f"{path}.{field}", "contains terminal control characters")
@@ -239,6 +253,13 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
                 f"{path}.reasoning_effort",
                 "is supported only for Codex CLI providers and must be one of "
                 + ", ".join(sorted(CODEX_REASONING_EFFORTS)),
+            )
+        if result["token_parameter"]:
+            # A CLI provider never builds an HTTP request body, so this would
+            # silently do nothing at all.
+            raise _error(
+                f"{path}.token_parameter",
+                "is supported only for HTTP providers",
             )
         result["ollama_mode"] = False
     else:
