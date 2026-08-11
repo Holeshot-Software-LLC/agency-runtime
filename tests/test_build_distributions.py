@@ -490,6 +490,49 @@ def test_artifact_contract_rejects_a_wheel_outside_the_host_profile(tmp_path: Pa
         )
 
 
+def test_directory_identity_survives_the_directory_being_written_to(tmp_path: Path) -> None:
+    """A staging directory must not "change identity" by being used.
+
+    Windows sets 0x10000000 on a freshly created directory and clears it
+    permanently once the directory gains its first child; it does not return when
+    that child is removed. Comparing raw `st_file_attributes` therefore failed
+    every check in this module the moment a build wrote anything, which is the
+    single job a release staging directory has. That was the cause of a
+    13-failure cluster carried as un-root-caused for days.
+    """
+
+    identity = subject._directory_identity(tmp_path)
+    assert getattr(os.lstat(tmp_path), "st_file_attributes", 0) & 0x10000000, (
+        "expected a fresh directory to carry the volatile bit; if this platform "
+        "does not set it, this regression test is no longer meaningful here"
+    )
+
+    (tmp_path / "one.whl").write_bytes(b"wheel")
+
+    assert getattr(os.lstat(tmp_path), "st_file_attributes", 0) & 0x10000000 == 0
+    assert subject._directory_identity(tmp_path) == identity
+    subject._require_directory_identity(tmp_path, identity)
+
+
+def test_directory_identity_still_pins_kind_and_exact_object(tmp_path: Path) -> None:
+    """Narrowing the mask must not narrow what identity actually proves."""
+
+    directory = tmp_path / "staging"
+    directory.mkdir()
+    identity = subject._directory_identity(directory)
+
+    assert identity.file_attributes & stat.FILE_ATTRIBUTE_DIRECTORY
+    assert identity.file_attributes & ~subject._IDENTITY_ATTRIBUTE_MASK == 0
+    assert identity.inode > 0
+
+    # A different directory is a different identity, mask or no mask.
+    other = tmp_path / "other"
+    other.mkdir()
+    assert subject._directory_identity(other) != identity
+    with pytest.raises(RuntimeError, match="changed identity"):
+        subject._require_directory_identity(other, identity)
+
+
 def test_artifact_contract_rejects_hardlinks(tmp_path: Path) -> None:
     identity = subject._directory_identity(tmp_path)
     backing = tmp_path.parent / f"{tmp_path.name}-backing"

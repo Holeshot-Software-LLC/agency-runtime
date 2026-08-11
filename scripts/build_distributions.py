@@ -153,6 +153,23 @@ def _is_link_or_reparse_metadata(metadata: os.stat_result) -> bool:
     )
 
 
+# Only the attribute bits that say what kind of object this is. Windows mutates
+# the rest as a side effect of ordinary I/O, and one of them is not incidental at
+# all: a freshly created directory carries 0x10000000, and the OS clears it
+# permanently the moment the directory gains its first child -- it does not come
+# back when that child is removed. Comparing raw attributes therefore made every
+# staging directory "change identity" simply by being written to, which is
+# exactly what a release staging directory exists to do. Measured on this
+# platform in both %TEMP% and a private runtime directory, so it is a Windows
+# behaviour rather than anything about a particular tree.
+#
+# Narrowing the comparison loses nothing: `_directory_identity` independently
+# rejects links and reparse points through `_is_link_or_reparse_metadata` and
+# requires `S_ISDIR` before an identity is ever constructed, and device and inode
+# still pin the exact object.
+_IDENTITY_ATTRIBUTE_MASK = stat.FILE_ATTRIBUTE_DIRECTORY | stat.FILE_ATTRIBUTE_REPARSE_POINT
+
+
 def _directory_identity(path: Path) -> DirectoryIdentity:
     try:
         metadata = os.lstat(path)
@@ -167,7 +184,9 @@ def _directory_identity(path: Path) -> DirectoryIdentity:
         device=int(metadata.st_dev),
         inode=inode,
         mode=int(metadata.st_mode),
-        file_attributes=int(getattr(metadata, "st_file_attributes", 0) or 0),
+        file_attributes=(
+            int(getattr(metadata, "st_file_attributes", 0) or 0) & _IDENTITY_ATTRIBUTE_MASK
+        ),
     )
 
 
