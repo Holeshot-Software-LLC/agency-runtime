@@ -1,6 +1,6 @@
 ---
 title: "AR-253: Dynamic team dispatch on every harness — close the last four gaps"
-status: proposed
+status: open
 category: roadmap
 created: 2026-08-05
 updated: 2026-08-05

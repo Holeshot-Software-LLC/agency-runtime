@@ -28,8 +28,6 @@ def store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         reset_config_cache()
 
 
-
-
 def _keys(value: object) -> set[str]:
     if isinstance(value, dict):
         return {str(key) for key in value} | {
@@ -38,12 +36,6 @@ def _keys(value: object) -> set[str]:
     if isinstance(value, list):
         return {nested for item in value for nested in _keys(item)}
     return set()
-
-
-
-
-
-
 
 
 def test_canary_activation_snapshot_projects_exact_preflight_failure(

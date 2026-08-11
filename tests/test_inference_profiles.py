@@ -21,6 +21,7 @@ import pytest
 
 from agency_runtime.core.config import (
     AgencyConfig,
+    HarnessInferenceConfig,
     InferenceConfig,
     InferenceProfile,
     ProviderEntry,
@@ -616,9 +617,6 @@ def test_legacy_default_config_yaml_loads_with_inference_block() -> None:
 # ── Harness-scoped routing + CLI transport profiles (per-harness configs) ──
 
 
-from agency_runtime.core.config import HarnessInferenceConfig
-
-
 def _harness_config(
     profiles: dict[str, InferenceProfile],
     *,
@@ -678,9 +676,7 @@ def test_cli_claude_profile_never_forwards_thinking() -> None:
     profile = _cli_profile(
         "claude-fast", transport="claude", model="haiku", thinking_level="medium"
     )
-    config = _harness_config(
-        {"claude-fast": profile}, routes={"workforce.planner": "claude-fast"}
-    )
+    config = _harness_config({"claude-fast": profile}, routes={"workforce.planner": "claude-fast"})
     provider = resolve(config, "workforce.planner").provider
 
     assert provider.transport == "claude"
@@ -802,9 +798,7 @@ def test_schema_accepts_cli_transport_and_harness_sections() -> None:
 
     assert validated["profiles"]["claude-fast"]["transport"] == "claude"
     assert validated["harnesses"]["claude"]["default_profile"] == "claude-fast"
-    assert validated["harnesses"]["codex"]["routes"] == {
-        "workforce.recruiter.critic": "codex-fast"
-    }
+    assert validated["harnesses"]["codex"]["routes"] == {"workforce.recruiter.critic": "codex-fast"}
 
 
 def test_schema_rejects_cli_profile_without_transport() -> None:
@@ -871,7 +865,5 @@ def test_schema_rejects_harness_route_to_undefined_profile() -> None:
         }
     }
 
-    with pytest.raises(
-        ConfigValidationError, match=r"inference\.harnesses\.claude\.routes"
-    ):
+    with pytest.raises(ConfigValidationError, match=r"inference\.harnesses\.claude\.routes"):
         validate_config_document(document)

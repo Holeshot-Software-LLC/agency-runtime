@@ -257,5 +257,3 @@ def test_resource_contention_uses_folded_keys_without_rewriting_paths() -> None:
     assert dependencies == {"unit-upper": [], "unit-lower": ["unit-upper"]}
     assert contended == {"unit-upper", "unit-lower"}
     assert unknown_mutation is False
-
-

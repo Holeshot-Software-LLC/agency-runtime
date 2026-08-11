@@ -36,7 +36,9 @@ def test_no_other_site_hardcodes_a_canary_proof_contract_literal() -> None:
     root = Path(__file__).resolve().parent.parent
     owner = root / "agency_runtime" / "core" / "installer_contracts.py"
     offenders: list[str] = []
-    for path in list((root / "agency_runtime").rglob("*.py")) + list((root / "tests").rglob("*.py")):
+    for path in list((root / "agency_runtime").rglob("*.py")) + list(
+        (root / "tests").rglob("*.py")
+    ):
         if path == owner or path == Path(__file__).resolve():
             continue
         text = path.read_text(encoding="utf-8", errors="replace")

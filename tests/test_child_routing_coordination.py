@@ -424,8 +424,6 @@ def test_unplanned_child_reuses_inferred_route_and_abstains_when_budget_is_zero(
     assert abstained["status"] == "child_budget_abstained"
 
 
-
-
 def test_parent_unit_cache_identity_binds_parent_policy_roster_and_workforce() -> None:
     keys: list[str] = []
 

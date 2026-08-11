@@ -262,6 +262,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-249` | [Explain parity (sub-issue 8 of AR-236)](issue-AR-249-explain-parity.md) | done | p1 | operations | [#258](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/258) |
 | `AR-250` | [Upgrade flow parity (sub-issue 9 of AR-236)](issue-AR-250-upgrade-flow-parity.md) | done | p2 | operations | [#259](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/259) |
 | `AR-251` | [CLI presentation richness (sub-issue 10 of AR-236)](issue-AR-251-cli-presentation-richness.md) | done | p2 | operations | [#260](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/260) |
+| `AR-252` | [Record verified acceptance outcomes so automatic promotion can fire](issue-AR-252-record-verified-acceptance-outcomes.md) | open | p2 | workforce | None |
+| `AR-253` | [Dynamic team dispatch on every harness — close the last four gaps](issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | open | p2 | workforce | None |
 
 ## Traceability
 

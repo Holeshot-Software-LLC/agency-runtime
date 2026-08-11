@@ -81,9 +81,7 @@ def test_expiry_is_announced_once_rather_than_accumulating(tmp_path: Path) -> No
     _load(store, "session", "turn-3", "code-reviewer")
 
     # turn-3 hears about turn-2's card only. turn-1's is long gone.
-    assert store.get_expired_specialists_to_announce("session", "turn-3") == [
-        "frontend-developer"
-    ]
+    assert store.get_expired_specialists_to_announce("session", "turn-3") == ["frontend-developer"]
 
 
 def test_first_turn_of_a_session_announces_nothing(tmp_path: Path) -> None:

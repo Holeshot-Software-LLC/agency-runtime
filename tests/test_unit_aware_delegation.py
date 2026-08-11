@@ -419,5 +419,3 @@ def _verified_binding(delivery: str) -> dict[str, Any]:
             }
         ],
     }
-
-

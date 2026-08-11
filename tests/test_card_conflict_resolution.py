@@ -146,7 +146,9 @@ def test_companion_policy_groups_count_as_declared() -> None:
     )
 
     assert frozenset({"implementer", "independent-reviewer"}) in declared
-    assert undeclared_pairs(["implementer", "independent-reviewer"], _CATALOG, declared=declared) == []
+    assert (
+        undeclared_pairs(["implementer", "independent-reviewer"], _CATALOG, declared=declared) == []
+    )
 
 
 def test_a_single_card_is_never_checked() -> None:

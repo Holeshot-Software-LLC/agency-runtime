@@ -60,7 +60,9 @@ def test_legacy_database_gains_launch_model_without_losing_rows() -> None:
 
     columns = [row[1] for row in conn.execute("PRAGMA table_info(delegation_activation_receipts)")]
     assert "launch_model" in columns
-    preserved = conn.execute("SELECT id, launch_model FROM delegation_activation_receipts").fetchone()
+    preserved = conn.execute(
+        "SELECT id, launch_model FROM delegation_activation_receipts"
+    ).fetchone()
     assert preserved["id"] == "i"
     assert preserved["launch_model"] == ""
     conn.close()
@@ -164,5 +166,3 @@ def test_launch_models_are_collected_and_deduped_from_activations() -> None:
 @pytest.mark.parametrize("activations", [None, "", 7, {}])
 def test_non_sequence_activations_yield_no_models(activations: object) -> None:
     assert _specialist_launch_models(activations) == []
-
-

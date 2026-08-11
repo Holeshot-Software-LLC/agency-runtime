@@ -191,10 +191,15 @@ def test_proof_no_longer_demands_a_plan_delegation_or_grant() -> None:
     """
 
     evidence = _evidence()
-    for retired in ("unit_agent_plan", "delegations", "activation_grants",
-                    "activation_consumptions"):
+    for retired in (
+        "unit_agent_plan",
+        "delegations",
+        "activation_grants",
+        "activation_consumptions",
+    ):
         assert retired not in evidence["cardinalities"]
 
-    assert codex_activation_failures(
-        result=_result(), evidence=evidence, response_hash=RESPONSE_HASH
-    ) == ()
+    assert (
+        codex_activation_failures(result=_result(), evidence=evidence, response_hash=RESPONSE_HASH)
+        == ()
+    )

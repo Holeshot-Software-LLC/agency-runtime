@@ -516,5 +516,3 @@ def test_legacy_deliverable_contracts_are_read_only_only() -> None:
 )
 def test_mutation_scope_is_imperative_aware(unit: str, expected: str) -> None:
     assert _mutation_scope(unit) == expected
-
-

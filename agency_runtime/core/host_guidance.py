@@ -5,6 +5,7 @@ SPECIALIST_TOOL_GUIDANCE = (
     "(`agency.search_agents` and `agency.load_specialist` on MCP surfaces)"
 )
 
+
 def specialist_load_guidance(host: object, session_id: str, trace_id: str) -> str:
     """Return the one loading instruction, identical on every host.
 

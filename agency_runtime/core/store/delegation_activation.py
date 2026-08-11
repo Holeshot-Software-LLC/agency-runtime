@@ -289,4 +289,3 @@ class DelegationActivationStoreMixin:
             return validate_correlation_id(rows[0]["tool_use_id"], field="tool_use_id")
         finally:
             conn.close()
-

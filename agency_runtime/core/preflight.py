@@ -272,9 +272,7 @@ def _specialist_hydration_routing(routing: dict[str, Any]) -> dict[str, Any]:
     own compact parent kernel and are never hydrated as ordinary specialists.
     """
 
-    selected = [
-        str(slug).strip() for slug in routing.get("selected_ids", []) if str(slug).strip()
-    ]
+    selected = [str(slug).strip() for slug in routing.get("selected_ids", []) if str(slug).strip()]
     selected = [slug for slug in selected if not is_resident_manager_slug(slug)]
     if selected == routing.get("selected_ids"):
         return routing
@@ -450,8 +448,6 @@ def _ensure_preflight_catalog(
     if ensure_no_match_fallback_roster(store) or contractors_installed:
         return capture_routing_snapshot(store, config)
     return routing_snapshot
-
-
 
 
 def _route_arguments(
@@ -834,10 +830,6 @@ def _recipe_revision_refs(
     return source_specialist_refs, list(source.get("selection_refs", []))
 
 
-
-
-
-
 def _resident_binding_for_preflight(
     store: Store,
     *,
@@ -1015,8 +1007,6 @@ def _mark_ready_with_binding_replan(
         pipeline=pipeline,
     )
     return store.mark_preflight_ready(**arguments)
-
-
 
 
 def _prepare_preflight_evidence(

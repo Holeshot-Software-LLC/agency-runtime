@@ -38,6 +38,19 @@ DECISION_STATUSES = {
 LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 GITHUB_RE = re.compile(r"https?://github\.com/([^/\s]+)/([^/\s)#\"']+)", re.I)
 WORKLOG_LEDGER_PREFIX = "docs(worklog):"
+# Two ledger commits predate enforcement of the narrow worklog exemption and
+# also touched one unrelated doc each. Both are recorded in the Notes section of
+# `docs/worklog/README.md`, which states the resolution explicitly: "Retained
+# as-is; no history rewrite." Rewriting published history to satisfy a linter
+# would be the more destructive fix, so they are grandfathered by exact full
+# SHA. Do not add to this set -- a new violation means the commit should be
+# split before it lands.
+GRANDFATHERED_LEDGER_COMMITS = frozenset(
+    {
+        "0e9410b3e818680d507a639e4b5cf7bef8bce41f",
+        "a1835947d15e089e235081630b5cc070bd7ecff3",
+    }
+)
 LEGAL_PROVENANCE_NAME_EXEMPTIONS = frozenset({"THIRD_PARTY_NOTICES.md"})
 HANDOFF_MAX_BYTES = 12 * 1024
 HANDOFF_MAX_LINES = 180
@@ -512,7 +525,21 @@ def validate_worklog(docs: list[Document], errors: list[str]) -> None:
         if subject.startswith(WORKLOG_LEDGER_PREFIX):
             continue
         expected[short] = (commit_date, subject)
-    found = set(re.findall(r"(?<![0-9a-f])[0-9a-f]{7}(?![0-9a-f])", registry.body))
+    # Read the commit index rows, not the whole body. The previous pattern
+    # demanded exactly seven hex characters, but `git log --format=%h`
+    # auto-widens the abbreviation as history grows and now yields eight here.
+    # The effect was total: every table row became "missing" while the only
+    # matches were the deliberately seven-character SHAs in the Notes prose,
+    # which then reported as "extra". `update_worklog.py` writes `%h` and was
+    # reporting the index current at the same moment -- the two scripts
+    # disagreeing about one file. Anchoring to the row shape keeps this
+    # independent of abbreviation width and immune to prose.
+    found = {
+        match
+        for line in registry.body.splitlines()
+        if line.lstrip().startswith("|")
+        for match in re.findall(r"`([0-9a-f]{7,40})`", line)
+    }
     if set(expected) != found:
         errors.append(
             "docs/worklog/README.md: indexed commits do not match history "
@@ -527,6 +554,8 @@ def validate_worklog(docs: list[Document], errors: list[str]) -> None:
     for line in ledger_output.splitlines():
         commit, subject = line.split("\t", 1)
         if not subject.startswith(WORKLOG_LEDGER_PREFIX):
+            continue
+        if commit in GRANDFATHERED_LEDGER_COMMITS:
             continue
         changed_paths = git(
             "diff-tree", "--root", "--no-commit-id", "--name-only", "-r", commit

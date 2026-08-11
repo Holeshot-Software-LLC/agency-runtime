@@ -1847,7 +1847,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 "routes": 1,
                 "runs": 1,
                 "traces": 1,
-                    "delegations": int(counts["delegations"]),
+                "delegations": int(counts["delegations"]),
                 "activation_grants": int(counts["activation_grants"]),
                 "activation_consumptions": int(counts["activation_consumptions"]),
                 "worker_runs": int(counts["worker_runs"]),

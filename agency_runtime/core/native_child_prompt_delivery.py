@@ -739,11 +739,7 @@ def parse_all_jit_specialist_deliveries(value: object) -> list[JitSpecialistDeli
             continue
         if normalized != metadata:
             continue
-        end = (
-            value.find(_JIT_SECTION, match.end())
-            if index + 1 < len(matches)
-            else len(value)
-        )
+        end = value.find(_JIT_SECTION, match.end()) if index + 1 < len(matches) else len(value)
         prompt_body = value[match.end() : end if end != -1 else len(value)].lstrip("\n")
         if not prompt_body or not content_identity_matches(
             prompt_body,

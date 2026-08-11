@@ -783,7 +783,6 @@ def evaluate_proof(
     evidence: dict[str, Any],
     default_profile_scope: str,
     mode: str = "agency",
-
 ) -> CanaryProof:
     from agency_runtime.core.header.contract import parse_header, validate_header
 

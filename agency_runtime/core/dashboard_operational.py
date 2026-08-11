@@ -73,6 +73,8 @@ def _preflight_inference_applied(record: Mapping[str, Any]) -> bool:
         and str(attempt.get("status") or "").strip().lower() in _SUCCESS_STATES
         for attempt in attempts
     )
+
+
 _SAFE_ACTIVE_FIELDS = (
     "agent_slug",
     "name",

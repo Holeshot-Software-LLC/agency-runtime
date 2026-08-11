@@ -2366,8 +2366,6 @@ def test_reconcile_unit_id_rejects_ambiguous_match() -> None:
 
     from agency_runtime.core.workforce.inference import _reconcile_unit_id
 
-    plan_ids = frozenset(
-        {"unit-discovery-codepath-mapping", "unit-discovery-codepath-analysis"}
-    )
+    plan_ids = frozenset({"unit-discovery-codepath-mapping", "unit-discovery-codepath-analysis"})
     # Both share the same long prefix, so this is ambiguous
     assert _reconcile_unit_id("unit-discovery-code-paths", plan_ids) is None

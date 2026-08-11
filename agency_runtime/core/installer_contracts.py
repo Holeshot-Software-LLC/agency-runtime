@@ -107,6 +107,8 @@ def codex_hook_trust_action(trust_status: object) -> str:
     if str(trust_status or "").strip().casefold() == "disabled":
         return CODEX_HOOKS_DISABLED_ACTION
     return CODEX_HOOK_TRUST_ACTION
+
+
 _OPENCLAW_VERSION = re.compile(
     r"(?<!\d)(?P<year>\d{4})\.(?P<month>\d{1,2})\.(?P<patch>\d{1,9})"
     r"(?P<prerelease>-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?"

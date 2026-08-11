@@ -1039,9 +1039,7 @@ def _activation_verification_result(
         activation = _codex_activation_required()
         activation.update(state="verification_failed", verification=dict(verification))
         invocation = verification.get("invocation")
-        hook_trust = (
-            invocation.get("hook_trust") if isinstance(invocation, Mapping) else None
-        )
+        hook_trust = invocation.get("hook_trust") if isinstance(invocation, Mapping) else None
         if isinstance(hook_trust, Mapping):
             from agency_runtime.core.installer_contracts import codex_hook_trust_action
 
@@ -1256,6 +1254,45 @@ def _run_exact_install_special_mode(
     return None
 
 
+def _restricted_install_failure(
+    exc: Exception,
+    *,
+    message: str,
+    profile_name: str,
+    roster_counts: int | None,
+    json_mode: bool,
+    dependencies: InstallDependencies,
+) -> int:
+    """Report a restricted-token install failure that mutated no native host.
+
+    Both call sites in ``cmd_install`` reported this identically; the only
+    difference is whether roster counts are known (``0``) or indeterminate
+    (``None`` after a partial seed). ``require_restricted_windows_token``
+    re-raises anything that is not a restricted-token failure, so this stays a
+    narrow report rather than a general exception sink.
+    """
+
+    from agency_runtime.core.windows_acl import require_restricted_windows_token
+
+    require_restricted_windows_token(exc)
+    error = safe_display_token(message, limit=500)
+    result = {
+        "ok": False,
+        "complete": False,
+        "profile": profile_name,
+        "roster_added": roster_counts,
+        "roster_upgraded": roster_counts,
+        "hosts": [],
+        "dashboard": None,
+        "error": error,
+    }
+    if json_mode:
+        dependencies.emit_json(result)
+    else:
+        print(f"❌ {error}")
+    return 1
+
+
 def cmd_install(
     args: argparse.Namespace,
     *,
@@ -1317,32 +1354,20 @@ def cmd_install(
     if not dashboard_opted_out and dashboard_service_environment_overrides(cfg):
         dashboard_preflight = plan_dashboard_service(config_path=resolve_config_path())
 
-    from agency_runtime.core.windows_acl import require_restricted_windows_token
-
     try:
         runtime_store = dependencies.store_factory(cfg)
     except Exception as exc:
-        require_restricted_windows_token(exc)
-        error = safe_display_token(
-            "starter roster Store is unavailable from this restricted process; no dashboard "
-            "service or native host mutation was attempted",
-            limit=500,
+        return _restricted_install_failure(
+            exc,
+            message=(
+                "starter roster Store is unavailable from this restricted process; no dashboard "
+                "service or native host mutation was attempted"
+            ),
+            profile_name=profile_name,
+            roster_counts=0,
+            json_mode=json_mode,
+            dependencies=dependencies,
         )
-        result = {
-            "ok": False,
-            "complete": False,
-            "profile": profile_name,
-            "roster_added": 0,
-            "roster_upgraded": 0,
-            "hosts": [],
-            "dashboard": None,
-            "error": error,
-        }
-        if json_mode:
-            dependencies.emit_json(result)
-        else:
-            print(f"❌ {error}")
-        return 1
     try:
         _materialize_install_controls(runtime_store, targets)
         roster_added = seed_starter_roster(runtime_store)
@@ -1350,28 +1375,18 @@ def cmd_install(
         contractors_installed = int(getattr(roster_added, "contractors_installed", 0))
         contractors_existing = int(getattr(roster_added, "contractors_existing", 0))
     except Exception as exc:
-        require_restricted_windows_token(exc)
-        error = safe_display_token(
-            "starter roster initialization was interrupted by the restricted process token; "
-            "roster changes may be partial, but no dashboard service or native host mutation "
-            "was attempted",
-            limit=500,
+        return _restricted_install_failure(
+            exc,
+            message=(
+                "starter roster initialization was interrupted by the restricted process token; "
+                "roster changes may be partial, but no dashboard service or native host mutation "
+                "was attempted"
+            ),
+            profile_name=profile_name,
+            roster_counts=None,
+            json_mode=json_mode,
+            dependencies=dependencies,
         )
-        result = {
-            "ok": False,
-            "complete": False,
-            "profile": profile_name,
-            "roster_added": None,
-            "roster_upgraded": None,
-            "hosts": [],
-            "dashboard": None,
-            "error": error,
-        }
-        if json_mode:
-            dependencies.emit_json(result)
-        else:
-            print(f"❌ {error}")
-        return 1
     host_results = _install_hosts(
         targets,
         cfg,

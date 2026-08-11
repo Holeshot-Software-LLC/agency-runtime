@@ -1,6 +1,6 @@
 ---
 title: "AR-252: Record verified acceptance outcomes so automatic promotion can fire"
-status: proposed
+status: open
 category: roadmap
 created: 2026-08-05
 updated: 2026-08-05

@@ -1727,6 +1727,59 @@ def _amendment_should_fall_through(
         return True
 
 
+def _validated_hiring_evidence(
+    raw: Mapping[str, Any],
+    unit: WorkUnit,
+    contracts: Sequence[WorkforceContract],
+    *,
+    allow_existing_worker_amendment: bool,
+    amend_overlap_threshold: float,
+) -> tuple[Mapping[str, Any], Mapping[str, Any], str, set[str], set[str]]:
+    """Gate the recruiter's evidence before any contract is parsed.
+
+    Raises ``_CandidateValidationFailure`` with the exact allowlisted code, so
+    the order of these checks is the order of precedence between reason codes.
+    Split out of ``_validated_candidate`` purely to keep that function under the
+    complexity limit; the sequence is unchanged.
+    """
+
+    gap = raw.get("gap_evidence")
+    duplicate = raw.get("duplicate_evidence")
+    if not isinstance(gap, Mapping) or not isinstance(duplicate, Mapping):
+        raise _CandidateValidationFailure("hiring_response_invalid")
+    known = {item.agent_id for item in contracts}
+    nearest = gap.get("nearest_workers")
+    nearest_ids = (
+        {str(item.get("agent_id") or "") for item in nearest if isinstance(item, Mapping)}
+        if isinstance(nearest, list)
+        else set()
+    )
+    if not nearest_ids or not nearest_ids <= known:
+        raise _CandidateValidationFailure("nearest_worker_evidence_invalid")
+    action = str(raw.get("action") or "")
+    if decision_failure := _hiring_decision_failure(action, gap.get("gap_proven")):
+        raise _CandidateValidationFailure(decision_failure)
+    if action == "amend" and not allow_existing_worker_amendment:
+        raise _CandidateValidationFailure("task_gap_requires_distinct_specialist")
+    # Amend-first gate (AR-240): when the recruiter proposes an amendment but
+    # the overlap is below threshold or no coherent target exists, fall through
+    # to the standard hire path rather than forcing an incoherent amendment.
+    amendment_fell_through = _amendment_should_fall_through(
+        action, duplicate, allow_existing_worker_amendment, amend_overlap_threshold
+    )
+    if amendment_fell_through:
+        action = "hire"
+    if gap.get("uncovered_work_unit") != unit.unit_id:
+        raise _CandidateValidationFailure("hiring_unit_mismatch")
+    if gap.get("disabled_covering_workers"):
+        raise _CandidateValidationFailure("disabled_worker_covers_gap")
+    if duplicate.get("decision") != action and not (
+        amendment_fell_through and duplicate.get("decision") == "amend"
+    ):
+        raise _CandidateValidationFailure("duplicate_decision_mismatch")
+    return gap, duplicate, action, known, nearest_ids
+
+
 def _validated_candidate(
     raw: Mapping[str, Any],
     unit: WorkUnit,
@@ -1738,44 +1791,19 @@ def _validated_candidate(
     allow_existing_worker_amendment: bool,
     amend_overlap_threshold: float = 0.7,
 ) -> _ValidatedCandidate | ContractorHiringOutcome:
-    gap = raw.get("gap_evidence")
-    duplicate = raw.get("duplicate_evidence")
-
     def failure(code: str) -> ContractorHiringOutcome:
         return ContractorHiringOutcome("abstained", (code,), attempts=(attempt,))
 
-    if not isinstance(gap, Mapping) or not isinstance(duplicate, Mapping):
-        return failure("hiring_response_invalid")
-    known = {item.agent_id for item in contracts}
-    nearest = gap.get("nearest_workers")
-    nearest_ids = (
-        {str(item.get("agent_id") or "") for item in nearest if isinstance(item, Mapping)}
-        if isinstance(nearest, list)
-        else set()
-    )
-    if not nearest_ids or not nearest_ids <= known:
-        return failure("nearest_worker_evidence_invalid")
-    action = str(raw.get("action") or "")
-    if decision_failure := _hiring_decision_failure(action, gap.get("gap_proven")):
-        return failure(decision_failure)
-    if action == "amend" and not allow_existing_worker_amendment:
-        return failure("task_gap_requires_distinct_specialist")
-    # Amend-first gate (AR-240): when the recruiter proposes an amendment but
-    # the overlap is below threshold or no coherent target exists, fall through
-    # to the standard hire path rather than forcing an incoherent amendment.
-    amendment_fell_through = _amendment_should_fall_through(
-        action, duplicate, allow_existing_worker_amendment, amend_overlap_threshold
-    )
-    if amendment_fell_through:
-        action = "hire"
-    if gap.get("uncovered_work_unit") != unit.unit_id:
-        return failure("hiring_unit_mismatch")
-    if gap.get("disabled_covering_workers"):
-        return failure("disabled_worker_covers_gap")
-    if duplicate.get("decision") != action and not (
-        amendment_fell_through and duplicate.get("decision") == "amend"
-    ):
-        return failure("duplicate_decision_mismatch")
+    try:
+        gap, duplicate, action, known, nearest_ids = _validated_hiring_evidence(
+            raw,
+            unit,
+            contracts,
+            allow_existing_worker_amendment=allow_existing_worker_amendment,
+            amend_overlap_threshold=amend_overlap_threshold,
+        )
+    except _CandidateValidationFailure as exc:
+        return failure(exc.reason_code)
     try:
         contract = parse_employment_contract(raw.get("contract"))
     except (TypeError, ValueError):

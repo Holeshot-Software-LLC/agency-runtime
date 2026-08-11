@@ -160,7 +160,11 @@ def _validate_bridge_mcp(plugin_root: Path, *, host: str) -> None:
     mcp = _load_plugin_json(mcp_path, label=f"{host} MCP manifest")
     server = mcp.get("mcpServers", {}).get("agency-runtime", {})
     args = server.get("args")
-    if not isinstance(args, list) or "agency_runtime.server.mcp" not in args or "--stdio" not in args:
+    if (
+        not isinstance(args, list)
+        or "agency_runtime.server.mcp" not in args
+        or "--stdio" not in args
+    ):
         raise RuntimeError(f"{host} bundle has invalid Agency Runtime MCP command")
     if not str(server.get("command") or "").strip():
         raise RuntimeError(f"{host} MCP config lacks an interpreter command")
@@ -535,9 +539,8 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
         raise RuntimeError("Hermes agency mutation command changed persistent state")
     ctx.hooks["post_api_request"](response={}, model="task-general", session_id=f"smoke-{host}")
     plugin_yaml = plugin_path.parent / "plugin.yaml"
-    if (
-        not plugin_yaml.exists()
-        or "mcp_servers: ./.mcp.json" not in plugin_yaml.read_text(encoding="utf-8")
+    if not plugin_yaml.exists() or "mcp_servers: ./.mcp.json" not in plugin_yaml.read_text(
+        encoding="utf-8"
     ):
         raise RuntimeError("Hermes plugin.yaml does not declare its MCP component")
     _validate_bridge_mcp(plugin_path.parent, host=host)
