@@ -3435,6 +3435,13 @@ the canary visibly with no deterministic fallback.
   default for a surface with no vision justification is removal, not migration. Do this against
   [[agency-runtime-founding-vision]] rather than against reachability or usage counts; the code is
   full of dead bodies and traffic is not evidence of purpose.
+- **BUILT `3708c96d` — `agency evidence latency`.** Reports min/p50/p95/max overall and per decision
+  source, exits 1 when p95 exceeds `--budget-ms` (default the pinned 15000 ms cold control), and
+  excludes zero-latency decisions rather than counting them as fast turns — both writers store `0`
+  when no provider call was spent, so including them reports Agency as cheap in proportion to how
+  often it did nothing. First reading: **200 decisions, p50 38.5 s, p95 140.7 s**; the live
+  `computed` path alone is **p50 88.3 s, p95 195.9 s, max 225 s** against a 15 s budget. The
+  original finding follows.
 - **There is no operator surface for Agency's own latency, and the recorded numbers are the reason
   it needs one.** `routing_decisions.latency_ms` is the only stored timing column (318 rows, sole
   timing column in the entire schema). Measured on this box: today's 4 accepted routing decisions

@@ -758,6 +758,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `228c720c` | 2026-08-11 | docs(roadmap): census all 1181 rollouts; encryption is universal | null | null |
 | `2865493d` | 2026-08-11 | fix(codex): let hook-trust inspection actually launch its worker | null | null |
 | `8b92a5b9` | 2026-08-11 | fix(install): record the installed runtime per host, not once per box | null | null |
+| `3708c96d` | 2026-08-11 | feat(evidence): surface what Agency's routing costs a turn | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
