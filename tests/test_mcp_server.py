@@ -648,7 +648,7 @@ def test_mcp_finalize_returns_header_text(tmp_path: Path) -> None:
     assert result["action"] == "accept"
     assert result["missing"] == []
     assert "Agency/Agencies loaded: code-reviewer" in result["text"]
-    assert "parent task: host-selected (not observable to Agency)" in result["text"]
+    assert "Actual Model selected: none observed" in result["text"]
     assert result["text"].endswith("Done.")
     conn = store._connect()
     try:

@@ -250,7 +250,6 @@ def test_header_fill_and_finalization_overwrite_spoofed_evidence(tmp_path: Path)
     )
     assert filled["skills_loaded"] == "repo-audit"
     assert filled["actual_model_selected"] == (
-        "parent task: host-selected (not observable to Agency); "
         "observed execution receipt: [general] task-general -> provider/actual-model (host)"
     )
 
@@ -267,7 +266,7 @@ def test_header_fill_and_finalization_overwrite_spoofed_evidence(tmp_path: Path)
     ) in finalized
     assert "Skills loaded: repo-audit\n" in finalized
     assert (
-        "Actual Model selected: parent task: host-selected (not observable to Agency); "
+        "Actual Model selected: "
         "observed execution receipt: [general] task-general -> provider/actual-model (host)\n"
         in finalized
     )
@@ -308,11 +307,7 @@ def test_pre_verify_rejects_spoofed_evidence_on_later_attempt(tmp_path: Path) ->
     assert "DOES NOT MATCH RECORDED EVIDENCE" in result["message"]
     assert "Agency/Agencies loaded: code-reviewer" in result["message"]
     assert "Skills loaded: repo-audit" in result["message"]
-    assert (
-        "Actual Model selected: parent task: host-selected (not observable to Agency); "
-        "requested execution alias: task-general; "
-        "specialist: no model requested at launch; host default applies" in result["message"]
-    )
+    assert "Actual Model selected: requested execution alias: task-general" in result["message"]
 
 
 def test_pre_verify_accepts_exact_authoritative_evidence_on_later_attempt(tmp_path: Path) -> None:

@@ -109,21 +109,28 @@ def test_startup_predicate_reports_stale_when_a_migrated_column_is_missing(
     conn.close()
 
 
-def test_no_specialist_reports_not_launched() -> None:
+def test_nothing_observed_says_so_instead_of_reciting_constants() -> None:
+    """A segment that cannot vary is not evidence.
+
+    The parent task's model is host-selected and invisible from a hook, so its
+    clause printed the same sentence on every turn forever. Stating it next to
+    measured facts invited the reader to weigh both the same way.
+    """
+
     line = _scoped_model_line(None, "", None, specialist_loaded=False)
 
-    assert "specialist: not launched" in line
+    assert line == "none observed"
+    assert "not observable to Agency" not in line
 
 
-def test_absent_launch_model_names_the_host_default_without_claiming_it() -> None:
-    """The old wording read as a failure; the new one must not overclaim either."""
+def test_a_specialist_that_requested_no_model_contributes_nothing() -> None:
+    """The host resolves it from the agent definition or the session default,
+    and which one is not observable -- so there is nothing to report."""
 
     line = _scoped_model_line(None, "", None, specialist_loaded=True)
 
-    assert "specialist: no model requested at launch; host default applies" in line
-    assert "not evidenced" not in line
-    # The host may resolve from the agent definition instead of the session
-    # model, so the header must not assert inheritance it cannot observe.
+    assert line == "none observed"
+    assert "host default applies" not in line
     assert "inherits" not in line
 
 

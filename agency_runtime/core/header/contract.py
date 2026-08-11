@@ -753,28 +753,29 @@ def _scoped_model_line(
     specialist_loaded: bool,
     launch_models: Sequence[str] = (),
 ) -> str:
-    """Keep parent, workforce-planner, and specialist model identities distinct."""
+    """Report the model identities Agency observed, and only those.
 
-    parent = "parent task: host-selected (not observable to Agency)"
-    if not specialist_loaded:
-        specialist = "specialist: not launched"
-    elif launch_models:
-        specialist = f"specialist: {', '.join(launch_models)} (requested at launch)"
-    else:
-        # The launch named no model, so the host resolved one itself -- from the
-        # agent definition or the session default. Which of those it picked is
-        # not observable from a hook, so claiming either would be a fresh false
-        # statement in place of a merely pessimistic one.
-        specialist = "specialist: no model requested at launch; host default applies"
+    Every segment has to earn its place. The parent task's model is chosen by
+    the host and cannot be seen from a hook, and a specialist launched without
+    an explicit model resolves one the same unobservable way -- so both used to
+    emit a fixed sentence on every turn regardless of what happened. A field
+    that cannot vary carries no information, and printing it beside measured
+    facts invites the reader to weigh all of it the same. What remains is the
+    workforce planner's own receipt and any model a launch actually named.
+    """
+
+    segments: list[str] = []
     if _is_workforce_inference_receipt(receipt, routing_receipt):
-        return (
-            f"{parent}; workforce inference: {_model_line(receipt, requested_model)}; {specialist}"
-        )
-    if receipt is not None:
-        return f"{parent}; observed execution receipt: {_model_line(receipt, requested_model)}"
-    if requested_model:
-        return f"{parent}; requested execution alias: {requested_model}; {specialist}"
-    return f"{parent}; {specialist}"
+        segments.append(f"workforce inference: {_model_line(receipt, requested_model)}")
+    elif receipt is not None:
+        segments.append(f"observed execution receipt: {_model_line(receipt, requested_model)}")
+    elif requested_model:
+        segments.append(f"requested execution alias: {requested_model}")
+    if specialist_loaded and launch_models:
+        segments.append(f"specialist: {', '.join(launch_models)} (requested at launch)")
+    # Never empty: an empty value reads as an unfilled placeholder to the
+    # header validator, which is a different claim than "nothing was observed".
+    return "; ".join(segments) or "none observed"
 
 
 def _delegation_line(delegations: list[dict[str, Any]]) -> str:

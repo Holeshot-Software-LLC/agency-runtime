@@ -612,10 +612,10 @@ def test_ready_receipt_persists_once_and_drives_all_six_header_fields(
     assert "required capabilities" in fields["why"]
     assert "Agency attempted inference" in fields["how_it_shaped_outcome"]
     assert "eligibility exclusions were applied" in fields["how_it_shaped_outcome"]
-    assert fields["actual_model_selected"].startswith(
-        "parent task: host-selected (not observable to Agency); workforce inference:"
-    )
-    assert fields["actual_model_selected"].endswith("specialist: not launched")
+    # The workforce planner's own receipt is the one model identity a hook can
+    # actually observe, so it is the whole line when no launch requested one.
+    assert fields["actual_model_selected"].startswith("workforce inference:")
+    assert "not observable to Agency" not in fields["actual_model_selected"]
 
     first = finalize_header(
         "Body",
