@@ -778,6 +778,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `be246e33` | 2026-08-11 | docs(roadmap): record the CLI half of the vision re-scope | null | null |
 | `5ba6a717` | 2026-08-11 | test(hosts): check rule 9 per capability, not per verb | null | null |
 | `6d77819b` | 2026-08-11 | docs(roadmap): refresh the dashboard parity execution handoff | AR-236 | null |
+| `4484dffd` | 2026-08-11 | feat(dashboard): align operator evidence with staffing vision | AR-236 | null |
 <!-- worklog:end -->
 
 ## Provenance notes
