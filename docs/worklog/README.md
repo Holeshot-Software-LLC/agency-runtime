@@ -759,6 +759,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2865493d` | 2026-08-11 | fix(codex): let hook-trust inspection actually launch its worker | null | null |
 | `8b92a5b9` | 2026-08-11 | fix(install): record the installed runtime per host, not once per box | null | null |
 | `3708c96d` | 2026-08-11 | feat(evidence): surface what Agency's routing costs a turn | null | null |
+| `f0a6e470` | 2026-08-11 | docs(roadmap): locate the routing latency, and why it stops being attributable | null | null |
+| `7d6780bd` | 2026-08-11 | feat(store): record per-call provider latency so the turn cost splits | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
