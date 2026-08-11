@@ -754,6 +754,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c6666369` | 2026-08-11 | docs(roadmap): restate AR-119 as the vision it was always trying to describe | null | null |
 | `ecfce69b` | 2026-08-11 | docs(roadmap): unblock the codex rule-4 bench and record why it stalled | null | null |
 | `bf2888a9` | 2026-08-11 | docs(roadmap): root-cause codex hook-trust inspection_failed | null | null |
+| `6989ecb1` | 2026-08-11 | docs(roadmap): rule 4 on codex measured negative, AR-209 confirmed | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
