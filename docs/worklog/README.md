@@ -764,6 +764,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `57c67047` | 2026-08-11 | docs(roadmap): the routing cache has never hit once, and cannot | null | null |
 | `f1fd9064` | 2026-08-11 | feat(selector): give the routing cache a lifetime the hook model provides | null | null |
 | `9b3a4828` | 2026-08-11 | fix(dashboard): count a routed turn as successful inference | null | null |
+| `db51dab3` | 2026-08-11 | docs(roadmap): audit what a model change actually breaks | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
