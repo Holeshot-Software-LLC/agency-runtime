@@ -20,7 +20,7 @@ const ROUTE_LAB_PLATFORMS = new Set(["windows", "linux"]);
 
 const EVIDENCE_COLUMNS = {
 	specialists: [["slug", "Specialist"], ["session_id", "Session"], ["trace_id", "Trace"], ["state", "Evidence state"], ["loaded_at", "Activated"], ["expired_at", "Expired"]],
-	delegations: [["recommended_agent", "Agent"], ["host", "Host"], ["status", "Status"], ["backend", "Backend"], ["work_unit_id", "Work unit"], ["started_at", "Started"]],
+	delegations: [["recommended_agent", "Agent"], ["host", "Host"], ["status", "Status"], ["backend", "Backend"], ["work_unit_id", "Recorded unit ID"], ["started_at", "Started"]],
 	routing: [["trace_id", "Trace"], ["id", "Decision"], ["status", "Outcome"], ["semantic_status", "Semantic result"], ["source", "Source"], ["selected_ids", "Selected"], ["fallback_applied", "Fallback applied"], ["fallback_companion_ids", "Fallback policy IDs"], ["created_at", "Created"]],
 	receipts: [["requested_model", "Requested"], ["model_group", "LiteLLM router / model group"], ["resolved_provider", "Actual provider"], ["resolved_model", "Actual model"], ["host", "Host"], ["status", "Status"], ["source", "Source"], ["ended_at", "Ended"]],
 	runs: [["trace_id", "Trace"], ["session_id", "Session"], ["host", "Host"], ["status", "Status"], ["started_at", "Started"], ["ended_at", "Ended"]],
@@ -233,6 +233,188 @@ export function createRenderer(core, config, callbacks) {
 		});
 	}
 
+	function formatLatency(value) {
+		const milliseconds = Number(value);
+		if (!Number.isFinite(milliseconds) || milliseconds < 0) return "—";
+		if (milliseconds < 1000) return `${Math.round(milliseconds)} ms`;
+		return `${(milliseconds / 1000).toFixed(milliseconds < 10_000 ? 2 : 1)} s`;
+	}
+
+	function metricEvidenceContext(base) {
+		const errors = state.metricEvidence?.errors || [];
+		return errors.length ? `${base} Last refresh retained prior evidence: ${errors.join(" ")}` : base;
+	}
+
+	function renderSelectionDistribution() {
+		const data = state.selectionDistribution;
+		const chart = byId("selection-chart");
+		const tail = byId("selection-tail-body");
+		chart?.replaceChildren();
+		tail?.replaceChildren();
+		if (!chart || !tail) return;
+		const stateTag = byId("selection-evidence-state");
+		if (!data) {
+			setMetric("selection-metric-decisions", "—");
+			setMetric("selection-metric-distinct", "—");
+			setMetric("selection-metric-roster", "—");
+			setMetric("selection-metric-occurrences", "—");
+			setMetric("selection-metric-concentration", "—");
+			if (stateTag) {
+				stateTag.textContent = state.metricEvidence?.stale ? "UNAVAILABLE" : "LOADING";
+				stateTag.dataset.state = state.metricEvidence?.stale ? "stale" : "unknown";
+			}
+			byId("selection-evidence-context").textContent = metricEvidenceContext(
+				"Selection evidence has not loaded.",
+			);
+			chart.append(div("empty-compact", "No selection-bearing decisions recorded."));
+			tail.append(emptyRow(4, "No bounded long-tail evidence."));
+			return;
+		}
+
+		const decisions = data.decisions_with_selections;
+		setMetric("selection-metric-decisions", decisions);
+		setMetric("selection-metric-distinct", data.distinct_selected_specialists);
+		setMetric("selection-metric-roster", data.active_roster_size);
+		setMetric("selection-metric-occurrences", data.selection_occurrences);
+		setMetric(
+			"selection-metric-concentration",
+			`${(data.top_10_share_of_selection_occurrences * 100).toFixed(1)}%`,
+		);
+		if (stateTag) {
+			stateTag.textContent = state.metricEvidence?.stale
+				? "STALE"
+				: decisions > 0 ? "OBSERVED" : "NO DATA";
+			stateTag.dataset.state = state.metricEvidence?.stale
+				? "stale"
+				: decisions > 0 ? "observed" : "unknown";
+		}
+		const scanState = data.selection_bearing_decision_scan_truncated
+			? `Newest ${data.selection_bearing_decision_scan_limit} selection-bearing decisions; older retained evidence is outside this view.`
+			: `All retained selection-bearing decisions were scanned, up to the ${data.selection_bearing_decision_scan_limit}-decision safety limit.`;
+		byId("selection-evidence-context").textContent = metricEvidenceContext(
+			decisions > 0
+				? `${decisions} decisions contain ${data.selection_occurrences} specialist selections. Current active roster: ${data.active_roster_size}. ${scanState} Per-specialist decision shares are independent and need not sum to 100%.`
+				: `No selection-bearing decisions recorded. Current active roster: ${data.active_roster_size}. ${scanState}`,
+		);
+		if (!decisions) {
+			chart.append(div("empty-compact", "No selection-bearing decisions recorded."));
+		} else {
+			data.top_specialists.slice(0, 15).forEach((row) => {
+				const share = row.share_of_decisions_with_selections * 100;
+				const item = div("selection-bar-row");
+				const label = div("selection-bar-label");
+				label.append(
+					strong("", row.slug),
+					small("", `${row.decisions_containing_specialist} decisions · ${share.toFixed(1)}%`),
+				);
+				const track = div("selection-bar-track");
+				const fill = div("selection-bar-fill");
+				fill.setAttribute("style", `--selection-share:${Math.min(100, share).toFixed(2)}%`);
+				track.append(fill);
+				item.append(label, track);
+				chart.append(item);
+			});
+		}
+		data.top_specialists.slice(10).forEach((row) => {
+			const tr = el("tr");
+			[
+				row.slug,
+				row.decisions_containing_specialist,
+				`${(row.share_of_decisions_with_selections * 100).toFixed(1)}%`,
+				row.selection_occurrences,
+			].forEach((value) => tr.append(el("td", "", value)));
+			tail.append(tr);
+		});
+		if (data.long_tail.specialist_count > 0) {
+			const tr = el("tr", "aggregate-row");
+			[
+				`${data.long_tail.specialist_count} specialists beyond top 50`,
+				data.long_tail.decisions_containing_specialist,
+				`${(data.long_tail.share_of_decisions_with_selections * 100).toFixed(1)}%`,
+				data.long_tail.selection_occurrences,
+			].forEach((value) => tr.append(el("td", "", value)));
+			tail.append(tr);
+		}
+		if (!tail.children.length) tail.append(emptyRow(4, "No specialists outside the top 10."));
+	}
+
+	function renderRoutingLatency() {
+		const data = state.routingLatency;
+		const sourceBody = byId("latency-source-body");
+		const slowestBody = byId("latency-slowest-body");
+		sourceBody?.replaceChildren();
+		slowestBody?.replaceChildren();
+		if (!sourceBody || !slowestBody) return;
+		const budgetTag = byId("latency-budget-state");
+		if (!data) {
+			for (const id of ["latency-metric-p50", "latency-metric-p95", "latency-metric-provider", "latency-metric-agency", "latency-metric-calls"]) {
+				setMetric(id, "—");
+			}
+			if (budgetTag) {
+				budgetTag.textContent = state.metricEvidence?.stale ? "UNAVAILABLE" : "UNKNOWN";
+				budgetTag.dataset.state = state.metricEvidence?.stale ? "stale" : "unknown";
+			}
+			byId("latency-evidence-context").textContent = metricEvidenceContext(
+				"Routing latency evidence has not loaded.",
+			);
+			sourceBody.append(emptyRow(4, "No eligible routing evidence."));
+			slowestBody.append(emptyRow(5, "No eligible routing evidence."));
+			return;
+		}
+
+		const hasEvidence = data.overall.count > 0;
+		setMetric("latency-metric-p50", hasEvidence ? formatLatency(data.overall.p50_ms) : "—");
+		setMetric("latency-metric-p95", hasEvidence ? formatLatency(data.overall.p95_ms) : "—");
+		setMetric("latency-metric-provider", data.split.provider_ms.count
+			? formatLatency(data.split.provider_ms.p50_ms) : "—");
+		setMetric("latency-metric-agency", data.split.agency_ms.count
+			? formatLatency(data.split.agency_ms.p50_ms) : "—");
+		setMetric("latency-metric-calls", data.split.decisions
+			? data.split.calls_per_decision.toFixed(2) : "—");
+		const budgetState = !hasEvidence ? "UNKNOWN" : data.over_budget ? "OVER BUDGET" : "WITHIN BUDGET";
+		if (budgetTag) {
+			budgetTag.textContent = `${state.metricEvidence?.stale ? "STALE · " : ""}${budgetState}`;
+			budgetTag.dataset.state = state.metricEvidence?.stale
+				? "stale" : !hasEvidence ? "unknown" : data.over_budget ? "over" : "within";
+		}
+		const attribution = data.split.unattributed_decisions
+			? `${data.split.unattributed_decisions} decision(s) have incomplete provider timing and are excluded from the provider/Agency split.`
+			: `${data.split.decisions} decision(s) have complete provider timing.`;
+		byId("latency-evidence-context").textContent = metricEvidenceContext(
+			hasEvidence
+				? `Newest ${data.overall.count} positive-latency decisions within a ${data.window.limit}-decision window. p95 is compared with the ${formatLatency(data.budget_ms)} budget; equality passes. ${attribution}`
+				: `No eligible routing evidence. Zero or absent durations are unknown, never fast. Budget: ${formatLatency(data.budget_ms)}.`,
+		);
+		Object.entries(data.by_source).forEach(([source, summary]) => {
+			const tr = el("tr");
+			[source, summary.count, formatLatency(summary.p50_ms), formatLatency(summary.p95_ms)]
+				.forEach((value) => tr.append(el("td", "", value)));
+			sourceBody.append(tr);
+		});
+		if (!sourceBody.children.length) sourceBody.append(emptyRow(4, "No eligible routing evidence."));
+		data.slowest.forEach((row) => {
+			const attributable = Number(row.provider_calls) > 0
+				&& Number(row.provider_unknown_calls || 0) === 0
+				&& Number(row.provider_timed_calls ?? row.provider_calls) === Number(row.provider_calls)
+				&& Number(row.provider_ms) > 0;
+			const tr = el("tr");
+			[
+				row.source || "unknown",
+				formatLatency(row.latency_ms),
+				attributable ? formatLatency(row.provider_ms) : "unknown",
+				attributable ? formatLatency(Math.max(0, row.latency_ms - row.provider_ms)) : "unknown",
+				formatTime(row.created_at),
+			].forEach((value) => tr.append(el("td", "", value)));
+			slowestBody.append(tr);
+		});
+		if (!slowestBody.children.length) slowestBody.append(emptyRow(5, "No eligible routing evidence."));
+	}
+
+	function renderMetricEvidence() {
+		renderSelectionDistribution();
+		renderRoutingLatency();
+	}
+
 	function renderOverview() {
 		const data = state.overview || {};
 		setMetric(
@@ -268,7 +450,7 @@ export function createRenderer(core, config, callbacks) {
 			tbody.append(tr);
 		});
 		state.evidenceKeys.set("overview", nextOverviewKeys);
-		if (!tbody.children.length) tbody.append(emptyRow(5, "No delegation evidence yet."));
+		if (!tbody.children.length) tbody.append(emptyRow(5, "No recorded native-child evidence yet."));
 
 		const hostStack = byId("overview-hosts");
 		hostStack.replaceChildren();
@@ -333,6 +515,7 @@ export function createRenderer(core, config, callbacks) {
 				providerStack.append(row);
 			});
 		}
+		renderMetricEvidence();
 		if (!providerStack.children.length) {
 			providerStack.append(div( "empty-compact", inference?.configured
 				? "Configured inference has no provider-chain projection."
@@ -442,7 +625,7 @@ export function createRenderer(core, config, callbacks) {
 				} else if (status === "verified") {
 					proof.append(
 						strong( "", "Last successful activation proof"),
-						small( "", "Current for the recorded host and install identity; model and delegation settings are not bound."),
+						small( "", "Current for the recorded host and install identity; model and host-native lifecycle settings are not bound."),
 					);
 					appendFacts();
 				} else if (status === "stale") {
@@ -1081,20 +1264,15 @@ export function createRenderer(core, config, callbacks) {
 		const eligibilitySummary = Number.isInteger(eligibility.rejection_count)
 			? `${eligibility.eligible_count || 0} eligible · ${eligibility.rejection_count} rejected${eligibility.truncated ? " · bounded view" : ""}`
 			: "not reported";
-		const workUnits = receipt.signals?.delegation?.work_units?.units
-			|| receipt.signals?.work_units?.units
-			|| receipt.work_units?.units
-			|| [];
 		const blocks = [
 			["Status", receipt.status || receipt.signals?.selection?.status || "unknown"],
-			["Execution host", eligibility.execution_host || hostCapability.execution_host || "unproven"],
+			["Host context", eligibility.execution_host || hostCapability.execution_host || "unproven"],
 			["Host capability evidence", hostCapability.status
 				? `${hostCapability.status} · ${(hostCapability.capabilities || []).length} capabilities`
 				: "unproven"],
 			["Eligibility", eligibilitySummary],
 			["Selected specialists", selected.length ? selected : ["abstained"]],
 			["Policy actions", receipt.signals?.policy?.matched_actions || []],
-			["Work units", workUnits],
 			["Decision source", receipt.signals?.selection?.provider || receipt.provider || "deterministic"],
 			["Inference mode", routing.inference_mode || "not reported"],
 			["Provider calls", providerAttempts.length],
@@ -1169,32 +1347,6 @@ export function createRenderer(core, config, callbacks) {
 			"none: none",
 		));
 		root.append(rejectionBlock);
-		const graph = receipt.delegation_graph || {};
-		const graphNodes = Array.isArray(graph.nodes) ? graph.nodes : [];
-		const graphEdges = Array.isArray(graph.edges) ? graph.edges : [];
-		const graphBlock = div( "receipt-block dependency-graph");
-		graphBlock.append(span( "", "Delegation dependency graph"));
-		if (!graphNodes.length) {
-			graphBlock.append(paragraph( "", "No delegation work units detected."));
-		} else {
-			const nodes = div( "dependency-nodes");
-			graphNodes.forEach((node) => {
-				const item = div( "dependency-node");
-				item.append(strong( "", node.id), small( "", node.description));
-				nodes.append(item);
-			});
-			graphBlock.append(nodes);
-			const edges = div( "dependency-edges");
-			if (graphEdges.length) {
-				graphEdges.forEach((edge) => {
-					edges.append(small( "", `${edge.from} → ${edge.to} · ${edge.reason}`));
-				});
-			} else {
-				edges.append(small( "", "No dependency edges; detected units can run independently."));
-			}
-			graphBlock.append(edges);
-		}
-		root.append(graphBlock);
 		byId("route-status").textContent = String(
 			receipt.status || receipt.signals?.selection?.status || "complete",
 		).toUpperCase();
@@ -1736,6 +1888,7 @@ export function createRenderer(core, config, callbacks) {
 		disposeAnimations,
 		setMetric,
 		renderCharts,
+		renderMetricEvidence,
 		renderOverview,
 		emptyRow,
 		renderHosts,

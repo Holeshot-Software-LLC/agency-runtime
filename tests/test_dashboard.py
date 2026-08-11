@@ -713,8 +713,10 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"runtime off" in script
     assert b"callbacks.toggleHost" in script
     assert b"callbacks.toggleAgent" in script
-    assert b"Delegation dependency graph" in script
-    assert b"receipt.signals?.work_units?.units" in script
+    assert b"Delegation dependency graph" not in script
+    assert b"receipt.signals?.work_units?.units" not in script
+    assert b"/api/evidence/latency?limit=200" in script
+    assert b"/api/evidence/selections" in script
     assert b'["id", "Decision"]' in script
     assert b"hostLocation(host)" in script
     assert b"await refreshRuntimeEvidence()" in script
@@ -1918,6 +1920,111 @@ def test_dashboard_live_snapshot_is_authenticated_stable_and_changes_with_activi
     )
     assert status == 200
     assert changed["revision"] != first["revision"]
+
+
+def test_dashboard_metric_evidence_endpoints_are_authenticated_and_denominator_explicit(
+    dashboard_server,
+) -> None:
+    for path in ("/api/evidence/latency", "/api/evidence/selections"):
+        status, payload, _headers = _json_response(dashboard_server, path)
+        assert status == 401
+        assert payload == {"error": "authentication required"}
+
+    store = dashboard_server["store"]
+    session_id = str(uuid4())
+    for latency_ms, selected_ids in (
+        (12_000, ["security-reviewer"]),
+        (18_000, ["security-reviewer", "software-test-engineer"]),
+    ):
+        store.record_routing_decision(
+            trace_id=str(uuid4()),
+            session_id=session_id,
+            query_hash="a" * 64,
+            context_fingerprint="b" * 64,
+            decision={
+                "status": "accepted",
+                "source": "inference",
+                "selected_ids": selected_ids,
+                "semantic_ids": selected_ids,
+                "confidence": 0.9,
+                "latency_ms": latency_ms,
+                "provider": "test-provider",
+            },
+        )
+
+    status, latency, _headers = _json_response(
+        dashboard_server,
+        "/api/evidence/latency",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert latency["schema_version"] == "agency.dashboard.routing_latency.v1"
+    assert latency["overall"] == {
+        "count": 2,
+        "min_ms": 12_000,
+        "p50_ms": 12_000,
+        "p95_ms": 18_000,
+        "max_ms": 18_000,
+    }
+    assert latency["over_budget"] is True
+    assert latency["budget_ms"] == 15_000
+    assert latency["window"] == {
+        "kind": "most_recent_positive_latency_decisions",
+        "limit": 200,
+        "decision_count": 2,
+    }
+    assert latency["source"] == {
+        "decision_table": "routing_decisions",
+        "decision_duration": "latency_ms",
+        "receipt_table": "model_receipts",
+        "receipt_duration": "latency_ms",
+    }
+    assert latency["split"]["decisions"] == 0
+    assert latency["split"]["unattributed_decisions"] == 2
+    assert "security-reviewer" not in json.dumps(latency)
+
+    status, selections, _headers = _json_response(
+        dashboard_server,
+        "/api/evidence/selections",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert selections["schema_version"] == "agency.dashboard.selection_distribution.v1"
+    assert selections["decisions_with_selections"] == 2
+    assert selections["distinct_selected_specialists"] == 2
+    assert selections["selection_occurrences"] == 3
+    assert selections["active_roster_size"] == 1
+    assert selections["top_specialists"][0] == {
+        "slug": "security-reviewer",
+        "decisions_containing_specialist": 2,
+        "share_of_decisions_with_selections": 1.0,
+        "selection_occurrences": 2,
+        "share_of_selection_occurrences": 2 / 3,
+    }
+    assert selections["source"] == {
+        "decision_table": "routing_decisions",
+        "selection_field": "selected_ids",
+        "roster_measure": "current_enabled_roster",
+    }
+
+
+@pytest.mark.parametrize(
+    ("raw_limit", "expected"),
+    [("0", 1), ("999", 200), ("not-a-number", 200)],
+)
+def test_dashboard_metric_latency_limit_is_bounded(
+    dashboard_server,
+    raw_limit: str,
+    expected: int,
+) -> None:
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        f"/api/evidence/latency?limit={raw_limit}",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert payload["window"]["limit"] == expected
 
 
 def test_dashboard_runtime_master_api_is_authenticated_atomic_and_live(
@@ -3415,56 +3522,6 @@ def test_dashboard_route_lab_rejects_unsupported_or_unproven_host(
 
     assert status == 400
     assert message in payload["error"]
-
-
-@pytest.mark.skip(reason="ADR-0087: needs full inference nomination-delivery flow")
-def test_dashboard_route_lab_uses_authoritative_dependency_graph(dashboard_server):
-    status, payload, _headers = _json_response(
-        dashboard_server,
-        "/api/route",
-        method="POST",
-        body={
-            "task": "1. Implement the API\n2. After the API is complete, test the endpoint",
-            "session_id": "dashboard-graph",
-        },
-        token=dashboard_server["token"],
-    )
-
-    assert status == 200
-    graph = payload["delegation_graph"]
-    assert len(graph["nodes"]) == 4
-    assert {(edge["from"], edge["to"], edge["reason"]) for edge in graph["edges"]} == {
-        (graph["nodes"][0]["id"], graph["nodes"][1]["id"], "explicit depends_on"),
-        (graph["nodes"][1]["id"], graph["nodes"][2]["id"], "explicit depends_on"),
-        (graph["nodes"][1]["id"], graph["nodes"][3]["id"], "explicit depends_on"),
-    }
-
-
-@pytest.mark.skip(reason="ADR-0087: needs full inference nomination-delivery flow")
-def test_dashboard_route_lab_orders_inline_then_sequence(dashboard_server):
-    status, payload, _headers = _json_response(
-        dashboard_server,
-        "/api/route",
-        method="POST",
-        body={
-            "task": "Review the authentication design, then document the deployment workflow.",
-            "session_id": "dashboard-inline-graph",
-        },
-        token=dashboard_server["token"],
-    )
-
-    assert status == 200
-    graph = payload["delegation_graph"]
-    assert len(graph["nodes"]) == 2
-    assert "review-report during review" in graph["nodes"][0]["description"]
-    assert "documentation during documentation" in graph["nodes"][1]["description"]
-    assert graph["edges"] == [
-        {
-            "from": graph["nodes"][0]["id"],
-            "to": graph["nodes"][1]["id"],
-            "reason": "explicit depends_on",
-        }
-    ]
 
 
 def test_dashboard_trim_requires_exact_confirmation(dashboard_server):

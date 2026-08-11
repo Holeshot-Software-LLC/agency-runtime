@@ -27,9 +27,12 @@ export function createDashboard(runtime = globalThis) {
 			const refreshed = await live.refreshAll();
 			if (
 				generation !== state.connection.generation
-				|| state.lifecycle.destroyed
-				|| state.lifecycle.suspended
+					|| state.lifecycle.destroyed
+					|| state.lifecycle.suspended
 			) return false;
+			if (refreshed && state.activeView === "overview") {
+				await live.refreshMetricEvidence();
+			}
 			if (refreshed) core.clearNotice();
 			return refreshed;
 		} catch (error) {
@@ -174,7 +177,9 @@ export function createDashboard(runtime = globalThis) {
 		document.querySelectorAll(".nav-item").forEach((node) => {
 			listen(node, "click", () => {
 				renderer.switchView(node.dataset.view);
-				if (node.dataset.view === "workforce") {
+				if (node.dataset.view === "overview") {
+					void live.refreshMetricEvidence();
+				} else if (node.dataset.view === "workforce") {
 					void live.refreshWorkforce().catch((error) => core.showNotice(error.message, true));
 				}
 			});
@@ -182,7 +187,8 @@ export function createDashboard(runtime = globalThis) {
 		renderer.configureEvidenceTabs();
 		configureOwnerSurface();
 		listen(byId("refresh-button"), "click", async () => {
-			await live.refreshAll();
+			const refreshed = await live.refreshAll();
+			if (refreshed && state.activeView === "overview") await live.refreshMetricEvidence();
 			void live.refreshUpdateStatus();
 		});
 		live.ensureUpdateSurface();

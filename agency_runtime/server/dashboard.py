@@ -88,6 +88,7 @@ from agency_runtime.core.roster.sync import (
     list_source_scans,
 )
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
+from agency_runtime.core.routing_latency import routing_latency_projection
 from agency_runtime.core.routing_snapshot import (
     RoutingSnapshot,
     capture_operational_routing_snapshot,
@@ -1130,6 +1131,8 @@ def _dashboard_observation_operation(method: str, path: str) -> str:
         ("GET", "/api/roster/scans"): "roster_scans",
         ("GET", "/api/roster/sources"): "roster_sources",
         ("GET", "/api/db-stats"): "db_stats",
+        ("GET", "/api/evidence/latency"): "evidence_latency",
+        ("GET", "/api/evidence/selections"): "evidence_selections",
         ("GET", "/api/runtime"): "runtime",
         ("GET", "/api/snapshots"): "snapshots",
         ("GET", "/api/update"): "update",
@@ -1190,75 +1193,6 @@ def _dashboard_promotion_projection(
         required_successes=required_successes,
         review_window_days=review_window_days,
     )
-
-
-def _delegation_graph(receipt: dict[str, Any]) -> dict[str, Any]:
-    """Build the same dependency graph used by delegation lifecycle dispatch."""
-    from agency_runtime.core.delegation.lifecycle import (
-        build_dependency_graph,
-        normalize_work_units,
-    )
-
-    routing = receipt.get("routing")
-    routing = routing if isinstance(routing, dict) else {}
-    work_units = receipt.get("signals", {}).get("work_units", {}).get("units", [])
-    bindings = routing.get("workforce_unit_bindings")
-    plan = routing.get("workforce_plan")
-    if (
-        isinstance(bindings, list)
-        and bindings
-        and len(bindings) == len(work_units)
-        and all(isinstance(item, dict) for item in bindings)
-    ):
-        graph_units = [
-            {
-                "id": binding.get("work_unit_id"),
-                "description": description,
-                "depends_on": binding.get("depends_on", []),
-            }
-            for binding, description in zip(bindings, work_units, strict=True)
-        ]
-    elif (
-        isinstance(plan, dict)
-        and isinstance(plan.get("units"), Sequence)
-        and not isinstance(plan.get("units"), (str, bytes, bytearray))
-        and len(plan["units"]) == len(work_units)
-        and all(isinstance(item, dict) for item in plan["units"])
-    ):
-        planned_units = plan["units"]
-        normalized_goals = normalize_work_units(work_units)
-        source_to_graph = {
-            str(item.get("unit_id") or ""): unit.id
-            for item, unit in zip(planned_units, normalized_goals, strict=True)
-        }
-        graph_units = [
-            {
-                "id": unit.id,
-                "description": unit.description,
-                "depends_on": [
-                    source_to_graph[source]
-                    for source in item.get("depends_on", [])
-                    if source in source_to_graph
-                ],
-            }
-            for item, unit in zip(planned_units, normalized_goals, strict=True)
-        ]
-    else:
-        graph_units = work_units
-    units = normalize_work_units(graph_units)
-    graph = build_dependency_graph(units)
-    return {
-        "nodes": [{"id": unit.id, "description": unit.description} for unit in units],
-        "edges": [
-            {
-                "from": source,
-                "to": target,
-                "reason": graph.reasons.get((source, target), "dependency"),
-            }
-            for source in sorted(graph.edges)
-            for target in sorted(graph.edges[source])
-        ],
-    }
 
 
 class DashboardHTTPHandler(AgencyHTTPHandler):
@@ -1418,6 +1352,8 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "/api/roster/scans": self._handle_roster_scans,
                 "/api/roster/sources": self._handle_roster_sources,
                 "/api/db-stats": self._handle_db_stats,
+                "/api/evidence/latency": self._handle_evidence_latency,
+                "/api/evidence/selections": self._handle_evidence_selections,
                 "/api/agents/lookup": self._handle_agent_lookup,
                 "/api/activity": self._handle_activity,
                 "/api/control": self._handle_control,
@@ -1725,6 +1661,56 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "capture_content": cfg.observability.capture_content,
                 "counts": stats["tables"],
                 "master": self._master_control(),
+                "service_binding": binding,
+                **_store_response_identity(state, binding),
+            }
+        )
+
+    def _handle_evidence_latency(self) -> None:
+        """Return the CLI-equivalent routing-cost projection off the live poll."""
+
+        state = read_config_state(self.config_path)
+        binding = _store_service_binding(self.store, state)
+        limit = _bounded_query_limit(self.path, default=200)
+        projection = routing_latency_projection(
+            self.store.get_routing_latencies(limit=limit),
+        )
+        self._json_ok(
+            {
+                "schema_version": "agency.dashboard.routing_latency.v1",
+                "sampled_at": _utc_now(),
+                "window": {
+                    "kind": "most_recent_positive_latency_decisions",
+                    "limit": limit,
+                    "decision_count": projection["overall"]["count"],
+                },
+                "source": {
+                    "decision_table": "routing_decisions",
+                    "decision_duration": "latency_ms",
+                    "receipt_table": "model_receipts",
+                    "receipt_duration": "latency_ms",
+                },
+                **projection,
+                "service_binding": binding,
+                **_store_response_identity(state, binding),
+            }
+        )
+
+    def _handle_evidence_selections(self) -> None:
+        """Return bounded retained selection frequency with explicit denominators."""
+
+        state = read_config_state(self.config_path)
+        binding = _store_service_binding(self.store, state)
+        self._json_ok(
+            {
+                "schema_version": "agency.dashboard.selection_distribution.v1",
+                "sampled_at": _utc_now(),
+                "source": {
+                    "decision_table": "routing_decisions",
+                    "selection_field": "selected_ids",
+                    "roster_measure": "current_enabled_roster",
+                },
+                **self.store.specialist_selection_distribution(),
                 "service_binding": binding,
                 **_store_response_identity(state, binding),
             }
@@ -2628,7 +2614,6 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                     "considered_candidates": [],
                     "rejected_candidates": [],
                     "signals": {"source": "master_control"},
-                    "delegation_graph": {"nodes": [], "edges": []},
                     "runtime_enabled": False,
                     "status": "disabled",
                     "bypassed": True,
@@ -2677,7 +2662,6 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             **eligibility,
             "host_resolution": "explicit" if requested_host is not None else "derived",
         }
-        receipt["delegation_graph"] = _delegation_graph(receipt)
         receipt["operation_snapshot"] = identity
         self._json_ok(receipt)
 

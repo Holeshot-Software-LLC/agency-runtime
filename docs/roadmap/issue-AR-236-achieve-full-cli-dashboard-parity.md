@@ -75,6 +75,33 @@ prioritized roadmap. The headline:
   `confirmation-modal`) is the canonical pattern for destructive
   operations, replacing a `--yes` flag.
 
+## Implementation checkpoint — 2026-08-11
+
+The first vision-alignment slice is implemented locally on
+`codex/dashboard-vision-parity` and awaiting the remaining bounded review and
+verification work. It deliberately does not claim umbrella parity:
+
+- [x] Rewrite README behavior around inference staffing, host-owned execution,
+      request-scoped specialist cards, fail-open routing, and observable proof.
+- [x] Remove retired delegation-preference and confidence-bypass settings from
+      the dashboard while retaining compatibility parsing.
+- [x] Remove Route Lab's retired delegation/dependency graph and correct
+      master, settings, overview, and evidence language.
+- [x] Share routing-latency aggregation between CLI and dashboard; add a
+      bounded authenticated endpoint and Overview projection.
+- [x] Compute specialist-selection distribution from the Store and render
+      explicit decision/occurrence denominators, top-ten concentration, and a
+      bounded long tail.
+- [ ] Finish the vision keep-list audit for frontend-unreachable endpoints.
+- [ ] Add dashboard children, rejections, and wiring evidence where the
+      keep-list confirms an owner-facing need.
+- [ ] Complete real-browser visual/accessibility QA, the named fast spine, and
+      final bounded review after rebasing the latest `origin/main`.
+
+Exact implementation details, test results, conflict warnings, authorization
+boundaries, and restart commands live in the
+[active recovery capsule](handoffs/issue-AR-236.md).
+
 ## Approach
 
 Address the gap list as 10 focused sub-issues, each a separate PR that

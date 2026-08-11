@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import math
 from pathlib import Path
 
 from agency_runtime.core.child_delivery_evidence import (
@@ -12,6 +11,10 @@ from agency_runtime.core.child_delivery_evidence import (
 )
 from agency_runtime.core.config import load_config
 from agency_runtime.core.host_wiring_drift import host_wiring
+from agency_runtime.core.routing_latency import (
+    DEFAULT_ROUTING_LATENCY_BUDGET_MS,
+    routing_latency_projection,
+)
 from agency_runtime.core.store.evidence import (
     PUBLISHED_ANYWAY_RUN_STATUSES,
     WITHHELD_RUN_STATUSES,
@@ -122,26 +125,6 @@ def cmd_evidence_rejections(args: argparse.Namespace) -> int:
     return 1 if withheld else 0
 
 
-def _percentile(ordered: list[int], percentile: float) -> int:
-    """Return the nearest-rank percentile of an already-sorted list."""
-
-    if not ordered:
-        return 0
-    rank = max(1, math.ceil(percentile / 100 * len(ordered)))
-    return ordered[min(len(ordered), rank) - 1]
-
-
-def _latency_summary(values: list[int]) -> dict[str, int]:
-    ordered = sorted(values)
-    return {
-        "count": len(ordered),
-        "min_ms": ordered[0] if ordered else 0,
-        "p50_ms": _percentile(ordered, 50),
-        "p95_ms": _percentile(ordered, 95),
-        "max_ms": ordered[-1] if ordered else 0,
-    }
-
-
 def cmd_evidence_latency(args: argparse.Namespace) -> int:
     """Report what Agency's own routing actually costs a turn.
 
@@ -162,54 +145,25 @@ def cmd_evidence_latency(args: argparse.Namespace) -> int:
     nothing.
     """
 
-    budget = int(getattr(args, "budget_ms", 15000) or 15000)
+    budget = int(
+        getattr(args, "budget_ms", DEFAULT_ROUTING_LATENCY_BUDGET_MS)
+        or DEFAULT_ROUTING_LATENCY_BUDGET_MS
+    )
     rows = Store(getattr(args, "db", None)).get_routing_latencies(
         source=getattr(args, "source", None) or "",
         limit=getattr(args, "limit", 200) or 200,
     )
-    values = [int(row["latency_ms"]) for row in rows]
-    overall = _latency_summary(values)
-    # Only decisions whose calls actually reported a duration can be split.
-    # Receipts written before the latency column existed report 0, and counting
-    # those as "no provider time" would attribute the whole turn to Agency.
-    attributable = [row for row in rows if int(row.get("provider_ms") or 0) > 0]
-    split = {
-        "decisions": len(attributable),
-        "unattributed_decisions": len(rows) - len(attributable),
-        "provider_ms": _latency_summary([int(row["provider_ms"]) for row in attributable]),
-        "agency_ms": _latency_summary(
-            [max(0, int(row["latency_ms"]) - int(row["provider_ms"])) for row in attributable]
-        ),
-        "calls_per_decision": (
-            round(
-                sum(int(row.get("provider_calls") or 0) for row in attributable)
-                / len(attributable),
-                2,
-            )
-            if attributable
-            else 0.0
-        ),
-    }
-    buckets: dict[str, list[int]] = {}
-    for row in rows:
-        buckets.setdefault(str(row["source"] or "unknown"), []).append(int(row["latency_ms"]))
-    grouped = {name: _latency_summary(bucket) for name, bucket in sorted(buckets.items())}
-    over_budget = bool(values) and overall["p95_ms"] > budget
+    projection = routing_latency_projection(rows, budget_ms=budget)
+    overall = projection["overall"]
+    split = projection["split"]
+    grouped = projection["by_source"]
+    over_budget = projection["over_budget"]
 
     if getattr(args, "json", False):
-        _print_json(
-            {
-                "budget_ms": budget,
-                "over_budget": over_budget,
-                "overall": overall,
-                "split": split,
-                "by_source": grouped,
-                "slowest": rows[:5] if rows else [],
-            }
-        )
+        _print_json(projection)
         return 1 if over_budget else 0
 
-    if not values:
+    if not overall["count"]:
         print("no routing decision has recorded a latency yet")
         return 0
     print(

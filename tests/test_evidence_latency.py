@@ -15,10 +15,12 @@ from pathlib import Path
 
 import pytest
 
-from agency_runtime.cli.evidence_commands import (
-    _latency_summary,
-    _percentile,
-    cmd_evidence_latency,
+from agency_runtime.cli.evidence_commands import cmd_evidence_latency
+from agency_runtime.core.routing_latency import (
+    DEFAULT_ROUTING_LATENCY_BUDGET_MS,
+    latency_summary,
+    nearest_rank_percentile,
+    routing_latency_projection,
 )
 from agency_runtime.core.store.sqlite import Store
 
@@ -80,17 +82,67 @@ def _args(db: Path, **overrides: object) -> argparse.Namespace:
 def test_percentile_uses_nearest_rank(values: list[int], percentile: int, expected: int) -> None:
     # Nearest-rank never interpolates a latency that was never observed, which
     # matters when the whole point is the tail an operator actually felt.
-    assert _percentile(sorted(values), percentile) == expected
+    assert nearest_rank_percentile(sorted(values), percentile) == expected
 
 
 def test_summary_of_nothing_is_zero_not_an_error() -> None:
-    assert _latency_summary([]) == {
+    assert latency_summary([]) == {
         "count": 0,
         "min_ms": 0,
         "p50_ms": 0,
         "p95_ms": 0,
         "max_ms": 0,
     }
+
+
+def test_shared_projection_preserves_operator_latency_semantics() -> None:
+    rows = [
+        {"latency_ms": 0, "provider_ms": 0, "provider_calls": 0, "source": "computed"},
+        {"latency_ms": -1, "provider_ms": 0, "provider_calls": 0, "source": "computed"},
+        {"latency_ms": 10_000, "provider_ms": 7_000, "provider_calls": 2, "source": "cache"},
+        {"latency_ms": 15_000, "provider_ms": 0, "provider_calls": 1, "source": "computed"},
+    ]
+
+    projection = routing_latency_projection(rows)
+
+    assert projection["budget_ms"] == DEFAULT_ROUTING_LATENCY_BUDGET_MS
+    assert projection["overall"] == {
+        "count": 2,
+        "min_ms": 10_000,
+        "p50_ms": 10_000,
+        "p95_ms": 15_000,
+        "max_ms": 15_000,
+    }
+    assert projection["over_budget"] is False
+    assert projection["by_source"] == {
+        "cache": {
+            "count": 1,
+            "min_ms": 10_000,
+            "p50_ms": 10_000,
+            "p95_ms": 10_000,
+            "max_ms": 10_000,
+        },
+        "computed": {
+            "count": 1,
+            "min_ms": 15_000,
+            "p50_ms": 15_000,
+            "p95_ms": 15_000,
+            "max_ms": 15_000,
+        },
+    }
+    assert projection["split"]["decisions"] == 1
+    assert projection["split"]["unattributed_decisions"] == 1
+    assert projection["split"]["provider_ms"]["p50_ms"] == 7_000
+    assert projection["split"]["agency_ms"]["p50_ms"] == 3_000
+    assert projection["split"]["calls_per_decision"] == 2.0
+    assert projection["slowest"] == [rows[3], rows[2]]
+
+
+def test_shared_projection_fails_only_when_p95_exceeds_budget() -> None:
+    rows = [{"latency_ms": 15_001, "provider_ms": 1, "provider_calls": 1, "source": "computed"}]
+
+    assert routing_latency_projection(rows)["over_budget"] is True
+    assert routing_latency_projection(rows, budget_ms=15_001)["over_budget"] is False
 
 
 def test_zero_latency_decisions_are_not_counted_as_fast_turns(
@@ -286,4 +338,32 @@ def test_decisions_whose_receipts_predate_the_column_are_not_blamed_on_agency(
 
     assert payload["split"]["decisions"] == 0
     assert payload["split"]["unattributed_decisions"] == 1
+    assert payload["split"]["agency_ms"]["p50_ms"] == 0
+
+
+def test_mixed_timed_and_legacy_receipts_remain_unattributed(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """One timed call cannot make an unknown sibling call attributable."""
+
+    db = tmp_path / "agency.db"
+    store = Store(str(db))
+    _decision(store, 1, latency_ms=40_000)
+    for latency_ms in (0, 15_000):
+        store.record_model_receipt(
+            trace_id=_trace(1),
+            session_id=SESSION,
+            host="claude",
+            resolved_model="sonnet",
+            source="wrapper",
+            latency_ms=latency_ms,
+            status="success",
+        )
+
+    cmd_evidence_latency(_args(db))
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["split"]["decisions"] == 0
+    assert payload["split"]["unattributed_decisions"] == 1
+    assert payload["split"]["provider_ms"]["p50_ms"] == 0
     assert payload["split"]["agency_ms"]["p50_ms"] == 0

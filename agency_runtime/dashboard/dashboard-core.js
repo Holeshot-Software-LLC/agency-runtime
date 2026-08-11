@@ -42,6 +42,13 @@ export function createState() {
 		token: "",
 		master: null,
 		overview: null,
+		routingLatency: null,
+		selectionDistribution: null,
+		metricEvidence: {
+			stale: false,
+			errors: [],
+			sampledAt: null,
+		},
 		activity: {},
 		activityCollections: {},
 		hosts: [],
@@ -125,6 +132,7 @@ export function createState() {
 			workforce: { controller: null, generation: 0 },
 			workerDetail: { controller: null, generation: 0 },
 			hiringEvidence: { controller: null, generation: 0 },
+			metrics: { controller: null, generation: 0 },
 		},
 		remediationExtent: {
 			pending: false,

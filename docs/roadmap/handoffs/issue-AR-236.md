@@ -8,173 +8,164 @@ tags: [handoff, cli, dashboard, parity, latency, observability, recovery]
 related:
   - docs/roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
-  - docs/analysis/2026-08-04-cli-dashboard-parity.md
   - README.md
-  - agency_runtime/cli/evidence_commands.py
-  - agency_runtime/core/store/evidence.py
+  - agency_runtime/core/routing_latency.py
+  - agency_runtime/core/selection_distribution.py
   - agency_runtime/server/dashboard.py
-  - agency_runtime/dashboard/index.html
+  - agency_runtime/dashboard/dashboard-live.js
+  - agency_runtime/dashboard/dashboard-render.js
+  - tests/test_evidence_latency.py
+  - tests/test_specialist_selection_distribution.py
+  - tests/dashboard_ui.test.mjs
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-236
 branch: codex/dashboard-vision-parity
-evidence_commit: 10093a1e0202119102de4b7b5a753988969d429f
-minimum_ledger_commit: 10093a1e0202119102de4b7b5a753988969d429f
+evidence_commit: 6d77819b5a326ee50536997bacc05bdbb26802be
+minimum_ledger_commit: 9c02271e763debe2c62e2621a8708cd8cef3ff9e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245
 ---
 
 # AR-236 active recovery capsule
 
-Bounded restart state for the approved CLI/dashboard vision-parity package.
-The canonical issue owns acceptance; this capsule owns the next execution.
+Restart state for the approved dashboard vision-parity package. The canonical
+issue owns acceptance; this capsule owns the next bounded execution slice.
 
 ## checkpoint
 
-- Owner approved local implementation and README correction on 2026-08-11.
-  No GitHub issue, PR, push, or hosted workflow was authorized.
-- Branch `codex/dashboard-vision-parity` was created from refreshed
-  `origin/main`. It was fast-forwarded again to `10093a1e` after another
-  worktree appended to AR-119. Product code is untouched; end telemetry reports
-  25.4 percent remaining, so this local recovery checkpoint is required.
+- This checkpoint contains the README rewrite, dead-setting and stale graph
+  removal, shared routing-latency evidence, and specialist-selection
+  distribution evidence. AR-236 remains open.
+- Agency now describes its supported contract as inference-based staffing and
+  request-scoped specialist-card delivery. The native host owns execution and
+  child lifecycle; Agency records only evidence it can actually observe.
+- At capture, before the new substantive/ledger pair, the branch was two
+  commits ahead of and six behind `origin/main`. Do not push or resume editing
+  before fetching and rebasing the clean checkpoint.
 - AR-119 and `docs/worklog/README.md` are active cross-worktree conflict
-  hotspots. Preserve their user-authored additions; fetch and rebase before any
-  eventual push.
-- The approved package is deletion-led: derive a keep-list from current vision,
-  remove active UI for retired Job B behavior, then add evidence that answers
-  current operator questions.
+  points. Preserve the additions from `origin/main`; never reconstruct them
+  from this capsule.
+- Local implementation was authorized. Push, PR, tracker mutation, hosted
+  workflow, installation, trust changes, and release actions were not.
 
 ## completed-evidence
 
-- Current contract: inference selects and staffs specialists; the native host
-  alone decides whether and what to spawn. Agency must not author a host
-  execution plan, tell the host to delegate, or block the parent until it does.
-  AR-119 lines 54-65 explicitly retire product trials, `unit_agent_plan`, and
-  isolated delivery. Commits `b456d0c1`, `7de64fe8`, `441b8850`, `40c608dc`,
-  and `d9f6e6be` removed that machinery.
-- README is stale at its opening explanation and ELI5 step 7: it still says
-  every substantive unit is delegated and an undispatchable unit stops the
-  turn. Rewrite it to describe staffing-only decomposition, host-owned
-  execution, request-scoped cards, fail-open behavior, and host-written proof.
-- Definitely dead dashboard controls: `delegation.mode`,
-  `preferred_min_units`, `strongly_preferred_min_units`, and
-  `strongly_preferred_min_confidence`. Their only behavior helper,
-  `_delegation_strength`, has no production caller. Remove the four UI inputs.
-  Keep legacy config parsing/fingerprinting for now so existing files do not
-  break; full field deletion needs an explicit migration/version decision.
-- Live controls that must stay: `child_inference_budget`,
-  `child_inference_concurrency`, and `child_cache_ttl_seconds`. Preflight and
-  the Store enforce them for host-spawned child routing. Relabel “unplanned
-  child” as “native-child routing.”
-- Live staffing bounds that must stay: `workforce.max_work_units`,
-  `max_selected_per_unit`, `max_selected_total`, confidence, and margin. They
-  bound inference staffing, not host execution. Relabel them as staffing units
-  and workers per staffing unit.
-- Audit `judge.confidence_bypass_threshold` before keeping it visible. Static
-  search found config/wizard/doctor/tests but no current selection consumer.
-  Do not delete compatibility plumbing on that fact alone.
-- Route Lab still builds and renders `delegation_graph`, says units can run
-  independently, and prompts for independent work units. Delete the graph
-  projection and renderer; reword remaining unit display as staffing
-  decomposition. “Execution host” should become target/compatibility host.
-- Master/on-off copy incorrectly claims Agency starts or stops delegation.
-  Replace it with routing, specialist-card injection, and evidence collection;
-  native host spawning continues when Agency is bypassed.
-- Overview SQLite delegation rows are useful history but not Rule-4 proof.
-  Label them recorded native-child events. A separate projection must count
-  only host-artifact-proven staffed children.
-- New latency source is complete: decision duration is
-  `routing_decisions.latency_ms`; per-call duration is
-  `model_receipts.latency_ms`; `Store.get_routing_latencies()` already returns
-  provider totals and call counts. CLI aggregation currently lives in
-  `cli/evidence_commands.py` and must move to shared core code.
-- Latency semantics are fixed: nearest-rank p50/p95, default 15000 ms budget,
-  exclude non-positive decisions, equality passes, receipt total zero means
-  unattributed legacy evidence, and group computed/cache sources separately.
-- Owner requested a specialist-selection concentration chart after observing
-  202 decisions across 39 selected specialists, with `code-reviewer` in over
-  72 percent of decisions and the top ten holding 82 percent of selection
-  occurrences. Treat those numbers as a prompt, not checked-in truth; compute
-  the dashboard values from the active Store.
-- Selection chart contract: horizontal top-specialist bars using decisions
-  containing each specialist; show count plus percent of decisions. Separately
-  show total decisions, distinct selected specialists, current active-roster
-  size, total selection occurrences, and top-ten occurrence concentration.
-  One decision may contain several specialists, so these denominators must be
-  explicit and bars need not sum to 100 percent. Include a bounded long tail.
-- Server-only parity endpoints with no frontend caller are roster diff/scans/
-  sources, DB stats, workforce duplicates, and policy. Do not surface them just
-  because AR-236 once listed them. Classify each against the vision keep-list;
-  expose kept owner capabilities and delete redundant/dead routes.
-- Vision-critical CLI evidence missing from the dashboard includes `evidence
-  children`, `evidence rejections`, `evidence latency`, and `evidence wiring`.
+- README opening, architecture, behavior, host matrix, dashboard description,
+  and ELI5 material now describe staffing-only inference, host-owned execution,
+  fail-open behavior, and host-written proof. The bundled roster count is 263.
+- Dashboard settings no longer expose retired delegation mode/preference/
+  confidence fields or the unused judge confidence-bypass threshold. Legacy
+  config parsing and fingerprint fields remain for compatibility.
+- Route Lab no longer builds or renders `delegation_graph`; retired dependency
+  graph/work-unit UI and CSS are gone. Master, paused, overview, evidence, and
+  settings copy distinguish Agency staffing from native-child activity.
+- Live child safeguards (`child_inference_budget`, concurrency, and cache TTL)
+  and workforce staffing bounds remain, with labels matching their current
+  purpose. Historical API/data field names named `delegations` remain where
+  changing them would be a compatibility migration.
+- `core/routing_latency.py` is the shared projection for CLI and dashboard.
+  It uses nearest-rank p50/p95, a default 15,000 ms budget, excludes
+  non-positive decisions, treats p95 equality as within budget, orders the
+  slowest observations descending, and separates computed/cache sources.
+- Provider-versus-Agency attribution is emitted only when every provider call
+  has positive timed evidence. Mixed legacy/current receipts expose explicit
+  unknown-call counts instead of inventing a split.
+- Authenticated `GET /api/evidence/latency` returns bounded v1 evidence. The
+  Overview panel shows count, p50, p95, max, budget status, attribution, source
+  rows, slowest observations, and a truthful unknown state.
+- `core/selection_distribution.py` and its Store query project the newest
+  10,000 selection-bearing decisions. Authenticated
+  `GET /api/evidence/selections` returns explicit decision and occurrence
+  denominators, current active-roster size, top-ten occurrence concentration,
+  bounded top specialists, long tail, scan limit, and truncation state.
+- Overview renders selection summaries and horizontal bars from Store data.
+  The owner-provided 202/39/72%/82% observation inspired the chart but is not
+  hardcoded. Long-tail decision count is the unique count of decisions with at
+  least one tail specialist.
+- Both evidence requests use one dedicated Overview request scope after
+  initial/manual refresh and on entering Overview. They stay out of `/api/live`
+  and the 2.5-second poll; partial failures retain last-good data and show stale
+  state. Responses are schema-validated and view-generation guarded.
 
 ## exact-blocker
 
-- Product code/tests remain untouched. Metadata and policy checks pass;
-  `verify_docs.py` has 11 inherited worklog/history errors on refreshed main.
-- Tracker #245 may not match the locally reopened issue. External tracker
-  mutation remains unauthorized; report the mismatch rather than hiding it.
-- Installed hooks were reported stale during analysis. Do not judge new
-  per-call attribution from live data until an explicitly approved install
-  refresh and fresh decisions exist.
-- Full removal of legacy config fields is not safe in the UI slice: existing
-  configs and the context-policy fingerprint still carry them.
+- The vision keep-list audit of frontend-unreachable server endpoints is not
+  complete. Do not add panels solely because an endpoint exists.
+- CLI evidence for children, rejections, and wiring still lacks equivalent
+  dashboard presentation. This slice added latency and selections only.
+- No real-browser visual/accessibility QA has been performed on the new
+  Overview panels. The named fast Python production spine and two final review
+  passes have not run.
+- Documentation metadata and policy-availability checks pass. `update_worklog`
+  reports the baseline index as stale, and `verify_docs.py` repeats the same 11
+  inherited worklog/history errors recorded at the prior checkpoint: seven
+  index mismatch/inaccuracy errors and four ledger-path violations.
+- The full warning-strict corpus, coverage shards, compatibility matrix, live
+  install canary, and hosted workflows were not requested and did not run.
+- Tracker #245 may not reflect the locally reopened scope. External tracker
+  mutation remains unauthorized.
 
 ## same-task-continuity
 
-Continue AR-236 in this branch. Re-read this capsule, current AR-236, README,
-and latest AR-119; do not replay the stale August plan.
+Continue AR-236 on this branch. Start by reading this capsule and the canonical
+issue, then fetch/rebase `origin/main` before changing files. Resolve AR-119 and
+worklog conflicts in favor of refreshed main plus this checkpoint's exact row.
 
 ## next-bounded-work-package
 
-1. Fetch/rebase the latest `origin/main`; inspect AR-119 and worklog conflicts.
-2. Rewrite README opening, “How it works,” and dashboard description to current
-   host-owned execution and evidence semantics.
-3. Remove the four dead delegation-preference UI controls; relabel live child
-   and staffing limits; confirm whether confidence-bypass is another dead UI.
-4. Delete dashboard `delegation_graph`; correct Route Lab, master toggle,
-   paused banner, and overview evidence labels. Preserve historical rows.
-5. Extract a shared latency projection and add authenticated
-   `GET /api/evidence/latency`. Do not add it to the 2.5-second `/api/live` poll;
-   load on view/full refresh or a slower control cadence.
-6. Add a shared selection-distribution projection and authenticated endpoint.
-   Render the top bars, concentration metrics, and bounded long tail with exact
-   denominators. Add children/rejections/wiring evidence in the same Assurance
-   area only if the slice remains bounded.
-7. Evaluate every frontend-unreachable endpoint against the vision keep-list.
-8. Run focused Python and Node tests, the named fast spine, docs checks,
-   telemetry, and two independent review passes. Create substantive and
-   `docs(worklog):` ledger commits locally. Do not push without authorization.
+1. Confirm the worktree is clean, fetch, and rebase onto `origin/main`; rerun
+   the focused tests if conflicts touch product code or tests.
+2. Run a real-browser visual/accessibility pass on Overview latency and
+   selection evidence: populated, empty, partial-failure, narrow viewport, and
+   navigation/refresh cases.
+3. Classify every frontend-unreachable dashboard endpoint against the current
+   vision. Record keep/delete/defer with owner question and source of truth.
+4. Add children, rejections, and wiring dashboard evidence only if the keep-list
+   confirms them and the next slice remains bounded.
+5. Run the named fast spine, docs gates, `git diff --check`, and at most two
+   independent reviews. Fix only findings that invalidate this outcome.
+6. Update this capsule and canonical issue, then create the next local
+   substantive/ledger pair. Do not push without separate authorization.
 
 ## verification
 
 ~~~text
-python scripts/context_handoff_status.py --json --threshold 50
+# Passed at this checkpoint:
+uvx ruff check <changed Python files>
+uvx ruff format --check <changed Python files>
+python -m pytest tests/test_evidence_latency.py \
+  tests/test_specialist_selection_distribution.py tests/test_dashboard.py \
+  -k "latency or selection_distribution or metric_evidence or route_lab" -q
+# 36 passed, 129 deselected
+node --check agency_runtime/dashboard/{app,dashboard-live,dashboard-render,charts}.js
+node tests/dashboard_ui.test.mjs
+# 112 passed, 0 failed
 python scripts/docs_metadata.py --check
+# checked 674 Markdown documents
 python scripts/update_policy_availability.py --check
-python scripts/update_worklog.py --check
-python scripts/verify_docs.py
-ruff check agency_runtime tests scripts
-ruff format --check agency_runtime tests scripts
-python -m pytest tests/test_evidence_latency.py tests/test_dashboard.py \
-  tests/test_dashboard_auth_boundary_regression.py \
-  tests/test_dashboard_transaction_refactors.py -q -W error
-node --test tests/dashboard_ui.test.mjs
-# Then run the AGENTS.md named fast Python production spine.
+# passed
 git diff --check
+# passed (line-ending normalization warnings only)
+
+# Baseline documentation failures, to re-evaluate after rebase:
+python scripts/update_worklog.py --check
+# worklog index is stale
+python scripts/verify_docs.py
+# same 11 inherited worklog/history errors as the prior checkpoint
+
+# Still required after the rebase/final bounded slice:
+# Then run the AGENTS.md named fast Python production spine.
+node --test tests/dashboard_ui.test.mjs
 ~~~
 
 ## constraints
 
-- Preserve user work and historical evidence; no AR-119/worklog reconstruction.
-- No push, PR, tracker mutation, hosted workflow, install, trust change, release,
-  or publication without separate authorization.
-- Use shared core projections so CLI and dashboard cannot drift on metric math.
-- Keep latency/selection reads authenticated, bounded, metadata-only, and off
-  the hot live poll. Empty evidence is unknown/no observations, never green.
-- Do not confuse roster `context_mode=isolated_only` or resident-manager
-  delivery states with the retired isolated product-delivery mode.
-- Keep this capsule below 12 KiB and 180 lines; replace its bounded projection
-  rather than appending a transcript.
+- Preserve user work, historical subjects, AR-119 additions, and Store evidence.
+- Use shared core projections so CLI and dashboard metric math cannot drift.
+- Keep evidence authenticated, bounded, metadata-only, and off the hot poll.
+  Empty evidence is unknown/no observations, never healthy or zero latency.
+- Do not infer native-child execution from staffing selections or historical
+  `delegations` rows; use host-authored artifacts when execution proof matters.
+- Keep this capsule below 12 KiB and 180 lines; replace it rather than append.

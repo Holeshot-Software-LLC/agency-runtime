@@ -20,6 +20,101 @@ const UPDATE_STATUS_FLAGS = new Map([
 const RELEASE_VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:(?:a|b|rc)(?:0|[1-9]\d*))?$/;
 const UPDATE_REF_PATTERN = /^[0-9A-Za-z][0-9A-Za-z._+/-]{0,127}$/;
 const FULL_SHA_PATTERN = /^[0-9a-f]{40}$/;
+const METRIC_SLUG_PATTERN = /^[a-z0-9][a-z0-9._-]{1,127}$/;
+
+function nonnegativeInteger(value) {
+	return Number.isInteger(value) && value >= 0;
+}
+
+function finiteShare(value) {
+	return Number.isFinite(value) && value >= 0 && value <= 1;
+}
+
+function latencySummaryIsValid(summary) {
+	return isRecord(summary)
+		&& ["count", "min_ms", "p50_ms", "p95_ms", "max_ms"]
+			.every((field) => nonnegativeInteger(summary[field]));
+}
+
+export function validateRoutingLatencyPayload(payload) {
+	if (
+		!isRecord(payload)
+		|| payload.schema_version !== "agency.dashboard.routing_latency.v1"
+		|| !safeUpdateText(payload.sampled_at, 64)
+		|| !nonnegativeInteger(payload.budget_ms)
+		|| payload.budget_ms === 0
+		|| typeof payload.over_budget !== "boolean"
+		|| !latencySummaryIsValid(payload.overall)
+		|| payload.over_budget !== (
+			payload.overall.count > 0 && payload.overall.p95_ms > payload.budget_ms
+		)
+		|| !isRecord(payload.window)
+		|| payload.window.kind !== "most_recent_positive_latency_decisions"
+		|| !Number.isInteger(payload.window.limit)
+		|| payload.window.limit < 1
+		|| payload.window.limit > 200
+		|| payload.window.decision_count !== payload.overall.count
+		|| !isRecord(payload.split)
+		|| !nonnegativeInteger(payload.split.decisions)
+		|| !nonnegativeInteger(payload.split.unattributed_decisions)
+		|| payload.split.decisions + payload.split.unattributed_decisions !== payload.overall.count
+		|| !latencySummaryIsValid(payload.split.provider_ms)
+		|| !latencySummaryIsValid(payload.split.agency_ms)
+		|| !Number.isFinite(payload.split.calls_per_decision)
+		|| payload.split.calls_per_decision < 0
+		|| !isRecord(payload.by_source)
+		|| Object.values(payload.by_source).some((summary) => !latencySummaryIsValid(summary))
+		|| !Array.isArray(payload.slowest)
+		|| payload.slowest.length > 5
+		|| payload.slowest.some((row) => !isRecord(row) || !Number.isInteger(row.latency_ms) || row.latency_ms <= 0)
+	) throw new Error("Agency routing-latency evidence is invalid.");
+	return payload;
+}
+
+export function validateSelectionDistributionPayload(payload) {
+	const countFields = [
+		"decisions_with_selections",
+		"distinct_selected_specialists",
+		"selection_occurrences",
+		"active_roster_size",
+		"top_10_selection_occurrences",
+		"selection_bearing_decision_scan_limit",
+	];
+	if (
+		!isRecord(payload)
+		|| payload.schema_version !== "agency.dashboard.selection_distribution.v1"
+		|| !safeUpdateText(payload.sampled_at, 64)
+		|| countFields.some((field) => !nonnegativeInteger(payload[field]))
+		|| payload.selection_bearing_decision_scan_limit < 1
+		|| typeof payload.selection_bearing_decision_scan_truncated !== "boolean"
+		|| !finiteShare(payload.top_10_share_of_selection_occurrences)
+		|| !Array.isArray(payload.top_specialists)
+		|| payload.top_specialists.length > 50
+		|| !isRecord(payload.long_tail)
+	) throw new Error("Agency specialist-selection evidence is invalid.");
+	const seen = new Set();
+	for (const row of payload.top_specialists) {
+		if (
+			!isRecord(row)
+			|| typeof row.slug !== "string"
+			|| !METRIC_SLUG_PATTERN.test(row.slug)
+			|| seen.has(row.slug)
+			|| !nonnegativeInteger(row.decisions_containing_specialist)
+			|| !nonnegativeInteger(row.selection_occurrences)
+			|| !finiteShare(row.share_of_decisions_with_selections)
+			|| !finiteShare(row.share_of_selection_occurrences)
+		) throw new Error("Agency specialist-selection evidence is invalid.");
+		seen.add(row.slug);
+	}
+	if (
+		!nonnegativeInteger(payload.long_tail.specialist_count)
+		|| !nonnegativeInteger(payload.long_tail.decisions_containing_specialist)
+		|| !nonnegativeInteger(payload.long_tail.selection_occurrences)
+		|| !finiteShare(payload.long_tail.share_of_decisions_with_selections)
+		|| !finiteShare(payload.long_tail.share_of_selection_occurrences)
+	) throw new Error("Agency specialist-selection evidence is invalid.");
+	return payload;
+}
 
 function safeUpdateText(value, limit) {
 	return typeof value === "string" && value.length > 0 && value.length <= limit
@@ -213,7 +308,7 @@ export function createLiveController(core, config, renderer) {
 			byId("master-summary").textContent = !known
 				? "Loading Agency master state."
 				: enabled
-					? "Agency routing, delegation, and evidence shaping are active."
+					? "Agency staffing selection, request-scoped card injection, and evidence capture are active."
 					: "Agency is bypassed. Dashboard status and configuration remain available.";
 		}
 		if (byId("runtime-paused-banner")) {
@@ -606,6 +701,52 @@ export function createLiveController(core, config, renderer) {
 		state.activityCollections = payload.activity_collections || {};
 		if (render) renderPreservingInteraction(renderer.renderActiveView);
 		return true;
+	}
+
+	async function fetchMetricEvidence(signal) {
+		const settled = await Promise.allSettled([
+			api("/api/evidence/latency?limit=200", { signal }),
+			api("/api/evidence/selections", { signal }),
+		]);
+		const snapshot = { latency: null, selections: null, errors: [] };
+		for (const [index, result] of settled.entries()) {
+			if (result.status === "rejected") {
+				if (result.reason?.name === "AbortError" || terminalLiveFailure(result.reason)) {
+					throw result.reason;
+				}
+				snapshot.errors.push(withRequestId(
+					result.reason?.message || "Metric evidence refresh failed.",
+					result.reason?.requestId,
+				));
+				continue;
+			}
+			try {
+				if (index === 0) snapshot.latency = validateRoutingLatencyPayload(result.value);
+				else snapshot.selections = validateSelectionDistributionPayload(result.value);
+			} catch (error) {
+				snapshot.errors.push(error.message);
+			}
+		}
+		return snapshot;
+	}
+
+	function applyMetricEvidence(snapshot, { render = true } = {}) {
+		if (!isRecord(snapshot) || !Array.isArray(snapshot.errors)) {
+			throw new Error("Dashboard metric evidence is invalid.");
+		}
+		if (snapshot.latency) state.routingLatency = snapshot.latency;
+		if (snapshot.selections) state.selectionDistribution = snapshot.selections;
+		state.metricEvidence = {
+			stale: snapshot.errors.length > 0,
+			errors: snapshot.errors.map(String),
+			sampledAt: snapshot.selections?.sampled_at
+				|| snapshot.latency?.sampled_at
+				|| state.metricEvidence.sampledAt,
+		};
+		if (render && state.activeView === "overview") {
+			renderPreservingInteraction(renderer.renderMetricEvidence);
+		}
+		return snapshot.latency !== null || snapshot.selections !== null;
 	}
 
 	function terminalLiveFailure(error) {
@@ -1465,6 +1606,27 @@ export function createLiveController(core, config, renderer) {
 		}
 	}
 
+	async function refreshMetricEvidence() {
+		if (state.activeView !== "overview" || lifecycleInactive()) return false;
+		const request = beginViewRequest("metrics");
+		try {
+			const snapshot = await fetchMetricEvidence(request.controller.signal);
+			if (!viewRequestIsCurrent("metrics", request) || state.activeView !== "overview") {
+				return false;
+			}
+			return applyMetricEvidence(snapshot);
+		} catch (error) {
+			if (error?.name !== "AbortError" && viewRequestIsCurrent("metrics", request)) {
+				if (terminalLiveFailure(error)) handleLiveFailure(error);
+				else showNotice(error.message, true);
+			}
+			return false;
+		} finally {
+			finishViewRequest("metrics", request);
+			if (!lifecycleInactive()) scheduleControlRefresh();
+		}
+	}
+
 	async function refreshRuntimeEvidence() {
 		cancelLiveRequest();
 		try {
@@ -1656,6 +1818,8 @@ export function createLiveController(core, config, renderer) {
 		scheduleLive,
 		fetchLiveSnapshot,
 		applyLiveSnapshot,
+		fetchMetricEvidence,
+		applyMetricEvidence,
 		terminalLiveFailure,
 		handleLiveFailure,
 		runLivePoll,
@@ -1681,6 +1845,7 @@ export function createLiveController(core, config, renderer) {
 		clearRosterSearch,
 		refreshControlPlane,
 		refreshAll,
+		refreshMetricEvidence,
 		refreshRuntimeEvidence,
 		loadHiringEvidence,
 		refreshWorkforce,

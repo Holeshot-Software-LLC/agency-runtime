@@ -322,8 +322,8 @@ export function createActionController(core, config, renderer, live) {
 		const accepted = await requestConfirmation(
 			expected,
 			enabled
-				? "This resumes Agency routing, delegation, and evidence shaping for every host."
-				: "This bypasses Agency routing, delegation, hooks, and evidence shaping for every host. Dashboard configuration remains available.",
+				? "This resumes Agency staffing selection, request-scoped card injection, and evidence capture. Native hosts still own spawning and execution."
+				: "This bypasses Agency staffing selection, card injection, hooks, and evidence capture. Native hosts still own spawning and execution; dashboard configuration remains available.",
 		);
 		if (state.lifecycle.destroyed || state.lifecycle.suspended) return;
 		if (!accepted) return showNotice("Agency master action cancelled.", true);

@@ -110,6 +110,82 @@ function controlSnapshot({
   };
 }
 
+function routingLatencyPayload(overrides = {}) {
+  return {
+    schema_version: "agency.dashboard.routing_latency.v1",
+    sampled_at: "2026-08-11T12:00:00+00:00",
+    window: {
+      kind: "most_recent_positive_latency_decisions",
+      limit: 200,
+      decision_count: 2,
+    },
+    source: {
+      decision_table: "routing_decisions",
+      decision_duration: "latency_ms",
+      receipt_table: "model_receipts",
+      receipt_duration: "latency_ms",
+    },
+    budget_ms: 15_000,
+    over_budget: true,
+    overall: { count: 2, min_ms: 12_000, p50_ms: 12_000, p95_ms: 18_000, max_ms: 18_000 },
+    split: {
+      decisions: 1,
+      unattributed_decisions: 1,
+      provider_ms: { count: 1, min_ms: 7_000, p50_ms: 7_000, p95_ms: 7_000, max_ms: 7_000 },
+      agency_ms: { count: 1, min_ms: 5_000, p50_ms: 5_000, p95_ms: 5_000, max_ms: 5_000 },
+      calls_per_decision: 2,
+    },
+    by_source: {
+      computed: { count: 2, min_ms: 12_000, p50_ms: 12_000, p95_ms: 18_000, max_ms: 18_000 },
+    },
+    slowest: [{
+      created_at: "2026-08-11T11:59:00+00:00",
+      latency_ms: 18_000,
+      provider_calls: 0,
+      provider_ms: 0,
+      provider_timed_calls: 0,
+      provider_unknown_calls: 0,
+      source: "computed",
+    }],
+    ...overrides,
+  };
+}
+
+function selectionDistributionPayload(overrides = {}) {
+  return {
+    schema_version: "agency.dashboard.selection_distribution.v1",
+    sampled_at: "2026-08-11T12:00:01+00:00",
+    source: {
+      decision_table: "routing_decisions",
+      selection_field: "selected_ids",
+      roster_measure: "current_enabled_roster",
+    },
+    decisions_with_selections: 202,
+    distinct_selected_specialists: 39,
+    selection_occurrences: 222,
+    active_roster_size: 263,
+    top_10_selection_occurrences: 182,
+    top_10_share_of_selection_occurrences: 182 / 222,
+    top_specialists: [{
+      slug: "code-reviewer",
+      decisions_containing_specialist: 146,
+      share_of_decisions_with_selections: 146 / 202,
+      selection_occurrences: 146,
+      share_of_selection_occurrences: 146 / 222,
+    }],
+    long_tail: {
+      specialist_count: 0,
+      decisions_containing_specialist: 0,
+      share_of_decisions_with_selections: 0,
+      selection_occurrences: 0,
+      share_of_selection_occurrences: 0,
+    },
+    selection_bearing_decision_scan_limit: 10_000,
+    selection_bearing_decision_scan_truncated: false,
+    ...overrides,
+  };
+}
+
 function emptyRosterPage(
   revision = "test-roster-revision",
   configRevision = "test-config-revision",
@@ -2169,7 +2245,7 @@ test("renderActivityChart draws bounded series with readable axes and focusable 
   assert.equal(buckets.length, 4);
   assert.equal(root.dataset.routes, "2");
   assert.equal(root.dataset.delegations, "1");
-  assert.match(summary.textContent, /2 observed routes · 1 delegations/i);
+  assert.match(summary.textContent, /2 observed routes · 1 recorded child events/i);
   const nodes = descendants(root);
   const axisLabels = nodes.filter((node) => node.attributes?.get("class")?.includes("axis-label"));
   assert.ok(axisLabels.some((node) => node.textContent === "0"));
@@ -2657,6 +2733,115 @@ test("app UI honors reduced motion, canonical CSS, and live toggle semantics", (
   assert.equal(toggle.getAttribute("aria-pressed"), "true");
   assert.equal(toggle.checked, true);
   assert.equal(harness.timers.tasks.get(harness.api.state.live.timer).delay, 0);
+});
+
+test("overview metric evidence renders explicit selection denominators and latency attribution", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    if (path === "/api/evidence/latency?limit=200") {
+      return jsonResponse(200, routingLatencyPayload());
+    }
+    if (path === "/api/evidence/selections") {
+      return jsonResponse(200, selectionDistributionPayload());
+    }
+    throw new Error(`unexpected metric request: ${path}`);
+  });
+
+  assert.equal(await harness.api.refreshMetricEvidence(), true);
+  assert.deepEqual(calls, [
+    "/api/evidence/latency?limit=200",
+    "/api/evidence/selections",
+  ]);
+  assert.equal(harness.api.state.routingLatency.overall.p95_ms, 18_000);
+  assert.equal(harness.api.state.selectionDistribution.decisions_with_selections, 202);
+  assert.equal(harness.node("latency-budget-state").textContent, "OVER BUDGET");
+  assert.equal(harness.node("latency-metric-p95").textContent, "18.0 s");
+  assert.equal(harness.node("latency-metric-provider").textContent, "7.00 s");
+  assert.match(harness.node("latency-evidence-context").textContent, /equality passes/i);
+  assert.equal(harness.node("selection-metric-decisions").textContent, "202");
+  assert.equal(harness.node("selection-metric-roster").textContent, "263");
+  assert.match(harness.node("selection-evidence-context").textContent, /need not sum to 100%/i);
+  assert.ok(
+    descendants(harness.node("selection-chart"))
+      .some((node) => node.textContent === "code-reviewer"),
+  );
+});
+
+test("overview metric evidence keeps last-good data on partial failure and stays view scoped", async () => {
+  let failLatency = false;
+  let calls = 0;
+  const harness = createAppHarness(async (path) => {
+    calls += 1;
+    if (path === "/api/evidence/latency?limit=200") {
+      return failLatency
+        ? jsonResponse(503, { error: "latency unavailable" })
+        : jsonResponse(200, routingLatencyPayload());
+    }
+    if (path === "/api/evidence/selections") {
+      return jsonResponse(200, selectionDistributionPayload());
+    }
+    throw new Error(`unexpected metric request: ${path}`);
+  });
+
+  await harness.api.refreshMetricEvidence();
+  const lastGoodLatency = harness.api.state.routingLatency;
+  failLatency = true;
+  await harness.api.refreshMetricEvidence();
+
+  assert.equal(harness.api.state.routingLatency, lastGoodLatency);
+  assert.equal(harness.api.state.metricEvidence.stale, true);
+  assert.equal(harness.api.state.metricEvidence.errors.length, 1);
+  assert.match(harness.node("latency-budget-state").textContent, /^STALE · OVER BUDGET$/);
+  assert.match(harness.node("latency-evidence-context").textContent, /retained prior evidence/i);
+  const callsBeforeInactiveView = calls;
+  harness.api.state.activeView = "routing";
+  assert.equal(await harness.api.refreshMetricEvidence(), false);
+  assert.equal(calls, callsBeforeInactiveView);
+});
+
+test("overview metric evidence treats empty observations as unknown rather than healthy", async () => {
+  const emptySummary = { count: 0, min_ms: 0, p50_ms: 0, p95_ms: 0, max_ms: 0 };
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/latency?limit=200") {
+      return jsonResponse(200, routingLatencyPayload({
+        window: {
+          kind: "most_recent_positive_latency_decisions",
+          limit: 200,
+          decision_count: 0,
+        },
+        over_budget: false,
+        overall: emptySummary,
+        split: {
+          decisions: 0,
+          unattributed_decisions: 0,
+          provider_ms: emptySummary,
+          agency_ms: emptySummary,
+          calls_per_decision: 0,
+        },
+        by_source: {},
+        slowest: [],
+      }));
+    }
+    if (path === "/api/evidence/selections") {
+      return jsonResponse(200, selectionDistributionPayload({
+        decisions_with_selections: 0,
+        distinct_selected_specialists: 0,
+        selection_occurrences: 0,
+        top_10_selection_occurrences: 0,
+        top_10_share_of_selection_occurrences: 0,
+        top_specialists: [],
+      }));
+    }
+    throw new Error(`unexpected metric request: ${path}`);
+  });
+
+  await harness.api.refreshMetricEvidence();
+  assert.equal(harness.node("latency-budget-state").textContent, "UNKNOWN");
+  assert.equal(harness.node("latency-budget-state").dataset.state, "unknown");
+  assert.match(harness.node("latency-evidence-context").textContent, /no eligible routing evidence/i);
+  assert.equal(harness.node("selection-evidence-state").textContent, "NO DATA");
+  assert.match(harness.node("selection-evidence-context").textContent, /no selection-bearing decisions/i);
 });
 
 test("app.js live snapshots are single-flight", async () => {
@@ -3725,7 +3910,7 @@ test("app.js reconnects from stored credentials and surfaces missing tokens", as
   assert.match(missing.node("notice").textContent, /no active access token/i);
 });
 
-test("app.js renders independent graphs and roster control refreshes", () => {
+test("app.js omits retired dependency graphs and renders roster control refreshes", () => {
   const harness = createAppHarness(() => {
     throw new Error("render-only test does not fetch");
   });
@@ -3736,9 +3921,10 @@ test("app.js renders independent graphs and roster control refreshes", () => {
     },
     selected: [],
   });
-  assert.ok(
+  assert.equal(
     descendants(harness.node("route-result"))
-      .some((node) => /run independently/i.test(node.textContent)),
+      .some((node) => /dependency graph|run independently|work units/i.test(node.textContent)),
+    false,
   );
 
   harness.api.state.activeView = "roster";
@@ -4060,10 +4246,10 @@ test("app.js covers sparse receipts and live snapshots", () => {
     throw new Error("this test does not fetch");
   });
   harness.api.renderReceipt({ delegation_graph: {} });
-  assert.match(
+  assert.equal(
     descendants(harness.node("route-result"))
-      .find((node) => /no delegation work units/i.test(node.textContent)).textContent,
-    /no delegation work units/i,
+      .some((node) => /delegation work units|dependency graph/i.test(node.textContent)),
+    false,
   );
   harness.api.renderReceipt({
     signals: { delegation: {}, work_units: {} },
@@ -4071,12 +4257,13 @@ test("app.js covers sparse receipts and live snapshots", () => {
   });
   assert.equal(harness.node("route-status").textContent, "COMPLETE");
   harness.api.renderReceipt({
-    signals: { delegation: { work_units: { units: [{ id: "first-path" }] } } },
-  });
-  assert.ok(
-    descendants(harness.node("route-result"))
-      .some((node) => node.textContent.includes("first-path")),
-  );
+		signals: { delegation: { work_units: { units: [{ id: "first-path" }] } } },
+	});
+	assert.equal(
+		descendants(harness.node("route-result"))
+			.some((node) => node.textContent.includes("first-path")),
+		false,
+	);
 
   harness.api.state.activeView = "routing";
   assert.equal(harness.api.applyLiveSnapshot({ schema_version: 1 }), true);
