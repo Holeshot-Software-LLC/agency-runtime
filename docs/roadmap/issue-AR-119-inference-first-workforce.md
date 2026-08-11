@@ -3471,6 +3471,32 @@ the identity a cross-process lookup needs is already being written every turn �
 cache key is absent. Confirm invalidation still keys on roster, policy, config and host before
 reusing anything.
 
+### `inference: unknown` on a healthy box — found and fixed at install 2026-08-11
+
+**Installing the latency and cache work flipped the status line from `operational` to `unknown`,
+and the install was not the cause — it only made an existing defect visible.**
+`dashboard_operational._SUCCESS_STATES` did not contain `"accepted"`, which is precisely what the
+semantic router writes for a healthy turn: **every** routing row in the live store carries it
+(`pipeline.py:922` gates acceptance on it, `workforce/inference.py:531` and
+`staffing_verifier.py:127` read it as success, and `workforce/promotion.py:9` already lists it in
+its own `_SUCCESS_OUTCOMES`). Two success vocabularies, disagreeing — the recurring two-sources
+shape.
+
+With `accepted` in neither the success nor the failure set, state fell through to `unknown`. The
+panel therefore reported **`operational` only when the newest record was a preflight failure that
+had inference applied**, and `unknown` when the newest record was a turn that routed correctly.
+Exactly backwards: a successful turn downgraded the panel, and a failure upgraded it. The install
+merely wrote a fresh accepted routing row, which pushed the older preflight receipt out of newest
+position and exposed it.
+
+**Why it survived.** The existing test reached `operational` through `"inferred"`
+(`test_dashboard_operational.py:564`) — a status nothing in production persists. Synthetic value,
+green test, broken panel; the same failure mode as the cache above, one section up.
+
+**Fixed** — `accepted` added to the vocabulary, with a test that asserts the status the router
+really writes and that fails without the fix. Live box now reads
+`inference: operational; 2 provider entries; eligible-turn inference required`.
+
 ### Raised 2026-08-11 — two items the vision restatement implies
 
 - **Re-scope the dashboard and the CLI to the vision; anything not part of it goes.** Lucas's call,
