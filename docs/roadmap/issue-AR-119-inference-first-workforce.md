@@ -3538,6 +3538,32 @@ defaults are proxy aliases, so a rename there needs matching aliases on the prox
 provider entry rather than a substring of its name, and give it a test fed from
 `config_defaults.yaml` so a default we ship can never disagree with a branch we take.
 
+### The planner staffs work the message assigned to someone else — observed 2026-08-11
+
+Lucas's message was *"yes, i have codex in a worktree doing the ui dashboard stuff, you continue with
+that"*. Routing staffed **frontend-developer**, among others, for a turn whose actual work was a
+Python provider-configuration change — and whose only mention of UI was a clause naming work
+explicitly being done **elsewhere, by someone else**. His read: "so selection isnt great."
+
+**The mechanism.** The planner decomposes a message into work units and staffs each one. The only
+message-level controls over that decomposition are about *splitting* —
+`workforce/inference.py:73` (`_EXPLICIT_SINGLE_WORK_UNIT`) and `:78` (`_EXPLICIT_NO_SPLIT`) — and
+both ask "how many units?", never "whose unit is this?". So a noun phrase anywhere in the message is
+eligible to become work for this turn regardless of who the sentence assigns it to. Attribution
+("codex is doing X") and its close relative negation ("don't touch X") are both invisible.
+
+**Why this is the expensive kind of wrong.** It is not a near-miss on a ranking. The clause that
+produced the specialist was the clause telling Agency to *stay away* from that surface, so the
+router read an exclusion as a request. And it is not rare phrasing — delegating one surface while
+directing another is ordinary once more than one agent is working a repo, which is now the normal
+case here.
+
+**Shape of the fix, unbuilt.** Work-unit extraction needs a notion of the addressee. The planner
+already receives the raw message; what it lacks is an instruction to attribute each candidate unit
+to *this* turn or to another actor, and to drop the ones that are not this turn's. Worth measuring
+first on recorded decisions — how many staffed units trace to a clause about someone else's work —
+before deciding whether this is a prompt change or a decomposition-contract change.
+
 ### CI on `main` is red, and has been — observed 2026-08-11
 
 Merging #266 surfaced it: **`main` has failed CI on at least its last five commits**, current tip

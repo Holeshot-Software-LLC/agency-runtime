@@ -765,6 +765,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f1fd9064` | 2026-08-11 | feat(selector): give the routing cache a lifetime the hook model provides | null | null |
 | `9b3a4828` | 2026-08-11 | fix(dashboard): count a routed turn as successful inference | null | null |
 | `db51dab3` | 2026-08-11 | docs(roadmap): audit what a model change actually breaks | null | null |
+| `4d4c5741` | 2026-08-11 | fix(inference): decide the token parameter once, from the provider | null | null |
+| `05bc4583` | 2026-08-11 | fix(header): report only model identities Agency observed | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
