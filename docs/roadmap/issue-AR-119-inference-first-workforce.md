@@ -3435,6 +3435,24 @@ the canary visibly with no deterministic fallback.
   default for a surface with no vision justification is removal, not migration. Do this against
   [[agency-runtime-founding-vision]] rather than against reachability or usage counts; the code is
   full of dead bodies and traffic is not evidence of purpose.
+- **Where the latency goes, measured 2026-08-11 — and why the store cannot finish the answer.**
+  A routing decision makes **~2.4 provider calls** (433 receipts across 196 traces). Per-call
+  duration *is* measured — `StructuredProviderResult.latency_ms` at the provider layer, carried
+  onto the workforce attempt (`inference.py:433`, populated at `:809`) — and then **discarded**:
+  `_record_workforce_model_receipts` (`selector/pipeline.py:1116`) writes each receipt without
+  `started_at`/`ended_at`, which `record_model_receipt` accepts and defaults to the record instant.
+  Result: **427 of 433 receipts have `started_at == ended_at`**, and the stored decision blob keeps
+  only the single total. The cost is unattributable by omission at one call site, not by design.
+  **Direct floor measurement instead** (trivial one-word prompt, same processes the CLI transport
+  spawns): `claude -p` **7.6 s / 8.0 s**; `codex exec` **33.1 s / 25.8 s**. At ~2 calls per
+  decision that is ~16 s on claude and ~52–66 s on codex *before* Agency's much larger prompts —
+  so provider round-trips plausibly dominate the 88 s, and **the codex transport costs 3–4× the
+  claude one for the same role**. Note the provider chain prefers `codex-subscription`.
+  **The fix is small and the parts exist:** thread the attempt's `latency_ms` into the receipt.
+  `model_receipts` has no latency column, so this needs either a schema migration adding one, or a
+  reconstructed span — and a reconstructed span would put a fabricated absolute time in a
+  timestamp column, which is exactly the kind of false precision this project keeps getting caught
+  by. Prefer the migration.
 - **BUILT `3708c96d` — `agency evidence latency`.** Reports min/p50/p95/max overall and per decision
   source, exits 1 when p95 exceeds `--budget-ms` (default the pinned 15000 ms cold control), and
   excludes zero-latency decisions rather than counting them as fast turns — both writers store `0`
