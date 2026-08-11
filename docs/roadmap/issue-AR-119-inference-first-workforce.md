@@ -3538,31 +3538,64 @@ defaults are proxy aliases, so a rename there needs matching aliases on the prox
 provider entry rather than a substring of its name, and give it a test fed from
 `config_defaults.yaml` so a default we ship can never disagree with a branch we take.
 
-### The planner staffs work the message assigned to someone else — observed 2026-08-11
+### Selection does not track the domain of the work — measured 2026-08-11
 
-Lucas's message was *"yes, i have codex in a worktree doing the ui dashboard stuff, you continue with
-that"*. Routing staffed **frontend-developer**, among others, for a turn whose actual work was a
-Python provider-configuration change — and whose only mention of UI was a clause naming work
-explicitly being done **elsewhere, by someone else**. His read: "so selection isnt great."
+Two turns nine minutes apart, on one box, settle this better than any argument.
 
-**The mechanism.** The planner decomposes a message into work units and staffs each one. The only
-message-level controls over that decomposition are about *splitting* —
-`workforce/inference.py:73` (`_EXPLICIT_SINGLE_WORK_UNIT`) and `:78` (`_EXPLICIT_NO_SPLIT`) — and
-both ask "how many units?", never "whose unit is this?". So a noun phrase anywhere in the message is
-eligible to become work for this turn regardless of who the sentence assigns it to. Attribution
-("codex is doing X") and its close relative negation ("don't touch X") are both invisible.
+| time | the actual work | `frontend-developer` staffed? |
+|---|---|---|
+| 21:07 / 21:08 | Python provider-config change; message said *"i have codex in a worktree doing the ui dashboard stuff, **you continue with that**"* | **yes** |
+| 21:16 | *"analyze what needs to be added/removed from **dashboard**, come up with a plan"* | **no** — `incident-response-commander` instead |
 
-**Why this is the expensive kind of wrong.** It is not a near-miss on a ranking. The clause that
-produced the specialist was the clause telling Agency to *stay away* from that surface, so the
-router read an exclusion as a request. And it is not rare phrasing — delegating one surface while
-directing another is ordinary once more than one agent is working a repo, which is now the normal
-case here.
+**Those two 21:0x decisions are two of only three times `frontend-developer` has ever been selected
+across 202 recorded decisions.** It fired on the turn that told Agency to stay off the dashboard,
+and stayed silent on the turn that was entirely about the dashboard. Anti-correlated with the
+domain, not merely imprecise about it.
 
-**Shape of the fix, unbuilt.** Work-unit extraction needs a notion of the addressee. The planner
-already receives the raw message; what it lacks is an instruction to attribute each candidate unit
-to *this* turn or to another actor, and to drop the ones that are not this turn's. Worth measuring
-first on recorded decisions — how many staffed units trace to a clause about someone else's work —
-before deciding whether this is a prompt change or a decomposition-contract change.
+**An earlier draft of this entry blamed attribution** — that a clause naming someone else's work
+("codex is doing X") becomes staffable because the only message-level controls over decomposition,
+`workforce/inference.py:73` and `:78`, ask *how many* work units there are and never *whose* they
+are. That is real and still worth fixing, but it cannot be the whole story: attribution explains a
+false positive on turn A and says nothing about the miss on turn B, where the work was
+unambiguously this turn's. Recording the incomplete diagnosis here rather than quietly replacing it,
+because the second observation is what disproved the first.
+
+**Eligibility does not excuse turn B.** `frontend-developer` lists `analysis` among its task types
+and carries `authority: modify`, so an analyze-and-plan task was well within its contract. It is
+also the roster's only frontend specialist. `incident-response-commander` was selected instead:
+`authority: plan`, task types including `planning` — a match on the verb *"come up with a plan"*
+while being a production-incident specialist with no dashboard relevance. Its seven prior selections
+all sit beside `sre-site-reliability-engineer`, `devops-automator`, `it-service-manager`; genuinely
+incident-shaped contexts. Turn B is the odd one out.
+
+**The distribution says the same thing at scale.** Across 202 accepted decisions, mean 2.4
+specialists each:
+
+- **39 distinct specialists have ever been selected**, out of ~282 offered as candidates. Roughly
+  86% of the roster has never once been chosen.
+- **`code-reviewer` appears in 72.3%** of all decisions. A specialist chosen for nearly three turns
+  in four is not a decision, it is a default.
+- The top ten account for **82% of all selections**: `code-reviewer`, `codebase-onboarding-engineer`,
+  `software-test-engineer`, `test-results-analyzer`, `minimal-change-engineer`, `technical-writer`,
+  `application-integration-verifier`, `python-application-engineer`, `software-architect`,
+  `typescript-application-engineer`.
+
+Every one of those is an *activity* — review it, onboard on it, test it, write it up. Almost none
+is a *domain*. The selector looks like it is keyed on the shape of the activity a message describes
+and largely blind to the subject matter, which explains both observations at once: turn A's
+dashboard nouns reached an implementer because the actual work was under-specified by a
+back-reference ("continue with that"), and turn B's "come up with a plan" reached a planning
+specialist without the dashboard ever constraining which one.
+
+**Lucas's read, and it matches the data:** inference should establish the request's *intent* first,
+then staff against it — rather than mapping surface features straight onto specialists.
+
+**Before building.** The store is content-free by design — `routing_decisions` keeps
+`source_message_hash` and `query_hash`, never message text — so wording cannot be correlated with
+selections after the fact. Any evaluation of an intent-first change needs a labelled corpus built
+deliberately, or instrumentation captured at decision time under an explicit retention decision.
+That constraint is itself a finding: **we cannot currently audit selection quality from the
+evidence we keep.**
 
 ### CI on `main` is red, and has been — observed 2026-08-11
 
