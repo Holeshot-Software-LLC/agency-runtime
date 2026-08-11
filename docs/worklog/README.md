@@ -748,6 +748,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `00e15c7d` | 2026-08-11 | fix(ci): clear the three layers blocking a green quality job | null | null |
 | `448fd641` | 2026-08-11 | fix(ci): green the fast production spine | null | null |
 | `a2634886` | 2026-08-11 | fix(conformance): make three curated mutations actually prove their invariants | null | null |
+| `c47b06e6` | 2026-08-11 | fix(preflight): stop the current resident kernel failing its own projection | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
