@@ -204,15 +204,23 @@ def complete_update(
     project: Callable[[Path, dict[str, Any], bytes], ConfigState],
     changed_restart_paths: Callable[[set[str]], tuple[str, ...]],
     force_write: bool = False,
+    persist_document: Mapping[str, Any] | None = None,
 ) -> ConfigUpdateResult:
-    """Persist when necessary and project the committed transaction result."""
+    """Persist when necessary and project the committed transaction result.
+
+    ``document`` is the normalized projection and stays the basis for change
+    detection. ``persist_document``, when given, is what actually reaches disk:
+    the same edit expressed against the operator's own file, without the
+    defaults normalization would otherwise materialize into sections nobody
+    touched. State is projected from a re-read either way.
+    """
 
     if document == original and not force_write:
         changed.clear()
         saved_document = original
         saved_raw = original_raw
     else:
-        atomic_write(target, document)
+        atomic_write(target, document if persist_document is None else persist_document)
         reset_cache()
         saved_document, saved_raw = read_document(target)
     state = project(target, saved_document, saved_raw)
@@ -240,6 +248,9 @@ def apply_config_operations(
         tuple[dict[str, Any], set[str], bool],
     ],
     complete: Callable[..., ConfigUpdateResult],
+    narrow: Callable[
+        [Mapping[str, Any], Mapping[str, Any], set[str]], dict[str, Any] | None
+    ],
     locked_precondition: Callable[[], None] | None = None,
 ) -> ConfigUpdateResult:
     """Apply a typed operation batch as one locked, atomic transaction."""
@@ -253,6 +264,8 @@ def apply_config_operations(
         document, raw = read_document(target)
         if revision(raw) != expected_revision:
             raise ConfigConflictError("configuration changed; refresh before saving")
+        # Kept before validation, which normalizes every default into place.
+        pristine = copy.deepcopy(document)
         document = validate(document)
         if locked_precondition is not None:
             locked_precondition()
@@ -265,6 +278,7 @@ def apply_config_operations(
             document=document,
             changed=changed,
             policy_enforced=policy_enforced,
+            persist_document=narrow(pristine, document, changed),
         )
 
 

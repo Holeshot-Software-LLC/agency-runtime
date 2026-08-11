@@ -176,6 +176,7 @@ def _complete_update(
     changed: set[str],
     policy_enforced: bool,
     force_write: bool = False,
+    persist_document: Mapping[str, Any] | None = None,
 ) -> ConfigUpdateResult:
     return _service.complete_update(
         target,
@@ -185,6 +186,7 @@ def _complete_update(
         changed=changed,
         policy_enforced=policy_enforced,
         force_write=force_write,
+        persist_document=persist_document,
         atomic_write=_atomic_write_yaml,
         reset_cache=reset_config_cache,
         read_document=_read_document,
@@ -214,6 +216,7 @@ def apply_config_operations(
         validate=validate_config_document,
         apply=_patch.apply_operations,
         complete=_complete_update,
+        narrow=_patch.narrowed_document,
         locked_precondition=locked_precondition,
     )
 

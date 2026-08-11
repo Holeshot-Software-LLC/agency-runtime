@@ -31,6 +31,77 @@ class _Completed:
         self.stderr = stderr
 
 
+def test_an_unrelated_setting_does_not_rewrite_the_providers() -> None:
+    """The cause behind the guard: validation normalizes, and the write persisted it.
+
+    Setting a `selector` flag stamped `token_parameter` onto both providers,
+    because validation returns every default materialized rather than merely
+    checking. The narrow write carries only the paths an operation touched.
+    """
+
+    from agency_runtime.core.configuration_patch import narrowed_document
+
+    pristine = {
+        "providers": [{"name": "codex-subscription", "type": "cli", "model": "gpt-5.6-terra"}],
+        "profile": "yolo",
+    }
+    normalized_and_patched = {
+        "providers": [
+            {
+                "name": "codex-subscription",
+                "type": "cli",
+                "model": "gpt-5.6-terra",
+                "token_parameter": "",
+                "reasoning_effort": "",
+            }
+        ],
+        "profile": "yolo",
+        "selector": {"record_routing_intent": True},
+    }
+
+    persisted = narrowed_document(
+        pristine, normalized_and_patched, {"selector.record_routing_intent"}
+    )
+
+    assert persisted is not None
+    assert persisted["selector"] == {"record_routing_intent": True}
+    # The whole point: providers are byte-for-byte what the operator had.
+    assert persisted["providers"] == pristine["providers"]
+    assert "token_parameter" not in str(persisted)
+
+
+def test_narrowing_refuses_rather_than_dropping_a_change_it_cannot_place() -> None:
+    """A provider secret addresses a list element, which a mapping walk cannot reach.
+
+    Returning a partial document there would silently discard the edit, so the
+    caller is told to persist the fully normalized document instead.
+    """
+
+    from agency_runtime.core.configuration_patch import narrowed_document
+
+    assert (
+        narrowed_document(
+            {"providers": [{"name": "p"}]},
+            {"providers": [{"name": "p", "api_key": "secret"}]},
+            {"providers.0.api_key"},
+        )
+        is None
+    )
+
+
+def test_an_edit_that_really_is_about_providers_still_writes_them() -> None:
+    from agency_runtime.core.configuration_patch import narrowed_document
+
+    persisted = narrowed_document(
+        {"providers": [{"name": "old"}], "profile": "yolo"},
+        {"providers": [{"name": "new"}], "profile": "yolo"},
+        {"providers"},
+    )
+
+    assert persisted is not None
+    assert persisted["providers"] == [{"name": "new"}]
+
+
 def test_no_installed_projection_is_not_a_rejection(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

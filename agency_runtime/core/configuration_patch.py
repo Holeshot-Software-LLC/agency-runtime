@@ -226,6 +226,49 @@ def _nested_set(document: dict[str, Any], path: str, value: Any) -> None:
     target[parts[-1]] = value
 
 
+_UNRESOLVED = object()
+
+
+def _nested_lookup(document: Any, path: str) -> Any:
+    """Resolve a dotted path, or ``_UNRESOLVED`` if it is not a plain mapping walk."""
+
+    current = document
+    for part in path.split("."):
+        if not isinstance(current, Mapping) or part not in current:
+            return _UNRESOLVED
+        current = current[part]
+    return current
+
+
+def narrowed_document(
+    pristine: Mapping[str, Any],
+    patched: Mapping[str, Any],
+    changed: set[str],
+) -> dict[str, Any] | None:
+    """Return ``pristine`` carrying only ``changed`` paths from ``patched``.
+
+    Validation is not a check but a normalization: it returns a document with
+    every field materialized to its default, so persisting it rewrites sections
+    the operator never touched. When the CLI is newer than the installed
+    projection those defaults include fields the installed hooks reject, and
+    since hooks parse config on every event, editing one unrelated setting
+    stops the whole box -- observed 2026-08-11, when setting a `selector` flag
+    wrote `token_parameter` onto both providers.
+
+    Returns ``None`` when narrowing cannot be done faithfully -- a path through
+    a list, such as a provider secret -- so the caller persists the fully
+    normalized document rather than silently dropping the change.
+    """
+
+    result = copy.deepcopy(dict(pristine))
+    for path in sorted(changed):
+        value = _nested_lookup(patched, path)
+        if value is _UNRESOLVED:
+            return None
+        _nested_set(result, path, copy.deepcopy(value))
+    return result
+
+
 def _apply_provider_list(document: dict[str, Any], providers: list[dict[str, Any]]) -> None:
     existing = document.get("providers")
     secrets_by_name: dict[str, str] = {}
