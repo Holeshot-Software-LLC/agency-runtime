@@ -741,6 +741,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9d7ddb27` | 2026-08-10 | feat(workforce): report when a packaged worker has been amended | null | null |
 | `e1c26510` | 2026-08-10 | feat(workforce): show packaged divergence when reviewing a worker | null | null |
 | `49b6a6be` | 2026-08-10 | test(scratch): reclaim the Windows pytest scratch tree after every run | null | null |
+| `c0adbb8b` | 2026-08-10 | docs(scratch): retract the claim that tree size caused the identity failures | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
