@@ -350,8 +350,13 @@ def _prune_pytest_scratch(temp_root: Path) -> None:
     survive here: ``pytest_configure`` replaces ``make_numbered_dir``, and its
     rename-then-delete step keeps losing the race on Windows, which is what the
     orphaned ``.cleanup-*`` directories are. Left alone since 2026-07-16 it grew
-    to 113,849 directories, slow enough to make filesystem-identity assertions in
-    ``test_build_distributions.py`` fail at random (handoff §7.2).
+    to 113,849 directories.
+
+    The justification is unbounded growth and the run time it costs, nothing
+    more. An earlier version of this docstring also blamed the tree size for the
+    intermittent directory-identity failures in ``test_build_distributions.py``;
+    that was a hypothesis, and it was wrong -- those 13 still fail on a freshly
+    emptied tree. Their cause is still open (handoff §7.2).
 
     Best effort by construction: a scratch sweep must never fail a green run, so
     every removal is suppressed individually and a directory still held open is
