@@ -769,6 +769,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `05bc4583` | 2026-08-11 | fix(header): report only model identities Agency observed | null | null |
 | `10093a1e` | 2026-08-11 | docs(roadmap): selection tracks activity, not domain | null | null |
 | `5cea1a4d` | 2026-08-11 | feat(evidence): make selection auditable, by explicit opt-in | null | null |
+| `abb300a8` | 2026-08-11 | fix(config): let an operator actually set the retention flag | null | null |
+| `eb532ff2` | 2026-08-11 | fix(config): refuse a config the installed hooks cannot read | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
