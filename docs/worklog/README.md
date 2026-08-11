@@ -777,6 +777,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c0e42931` | 2026-08-11 | refactor(cli)!: cut the CLI back to what the vision asks for | null | null |
 | `be246e33` | 2026-08-11 | docs(roadmap): record the CLI half of the vision re-scope | null | null |
 | `5ba6a717` | 2026-08-11 | test(hosts): check rule 9 per capability, not per verb | null | null |
+| `6d77819b` | 2026-08-11 | docs(roadmap): refresh the dashboard parity execution handoff | AR-236 | null |
 <!-- worklog:end -->
 
 ## Provenance notes
