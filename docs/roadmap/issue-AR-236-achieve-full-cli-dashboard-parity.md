@@ -1,12 +1,14 @@
 ---
 title: "AR-236: Achieve full CLI and dashboard functional and presentational parity"
-status: done
+status: open
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-11
 tags: [cli, dashboard, parity, ops, observability, analysis]
 related:
   - docs/analysis/2026-08-04-cli-dashboard-parity.md
+  - docs/roadmap/handoffs/issue-AR-236.md
+  - README.md
   - docs/roadmap/issue-AR-123-workforce-cli-and-dashboard.md
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
@@ -31,6 +33,18 @@ blocks: []
 ---
 
 # AR-236: Achieve full CLI and dashboard functional and presentational parity
+
+> **RESTATED 2026-08-11.** The August 4 inventory and ten-subissue plan below
+> are retained as provenance, not as the current product contract. The vision
+> subsequently retired Agency-authored host execution planning, mandatory
+> delegation guidance, `unit_agent_plan`, and isolated delivery. Parity now
+> means that every *vision-supported owner capability* has coherent CLI and
+> dashboard projections; it does not mean copying developer, protocol, host
+> lifecycle, or attended terminal commands into the browser. The first move is
+> deletion or relabeling of UI that describes retired behavior, followed by
+> source-backed latency, host-written child evidence, and selection-distribution
+> observability. The current execution plan and exact restart state live in the
+> [active recovery capsule](handoffs/issue-AR-236.md).
 
 ## Problem
 
