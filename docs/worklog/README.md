@@ -773,6 +773,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `eb532ff2` | 2026-08-11 | fix(config): refuse a config the installed hooks cannot read | null | null |
 | `da6d66b6` | 2026-08-11 | fix(config): write only the paths an operation changed | null | null |
 | `ff986eff` | 2026-08-11 | fix(workforce): give domain enough resolution to separate engineers | null | null |
+| `b7d78832` | 2026-08-11 | fix(store): let `agency db trim` reach the routing_intent table | null | null |
+| `c0e42931` | 2026-08-11 | refactor(cli)!: cut the CLI back to what the vision asks for | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

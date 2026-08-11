@@ -3737,6 +3737,26 @@ tests instead.
   default for a surface with no vision justification is removal, not migration. Do this against
   [[agency-runtime-founding-vision]] rather than against reachability or usage counts; the code is
   full of dead bodies and traffic is not evidence of purpose.
+  **CLI half DONE `c0e42931`** — keep-list with the rule behind each survivor in
+  `docs/analysis/2026-08-11-cli-vision-keep-list.md`. Removed `agency delegate` (the last live
+  surface of Job B: it picked a backend, spawned it, and waited — rule 5 says Agency never decides
+  to spawn; the 2026-08-09 deletion took Job B out of the hook path and nothing in that pass walked
+  the CLI), `agency run` (arbitrary command execution, no vision anchor, on a binary installed into
+  five hosts), and `agency codex exec` (a per-host branch with no parity twin). Renamed
+  `agency eval delegation` → `agency eval host-parity`: that suite never spawned anything, it
+  proves all five adapters record identical evidence for the same turn, which is rule 9 and rule 5
+  done correctly — the name read as the opposite of what it does. Golden parser manifest 109 → 106
+  paths. **`core/delegation/` was left alone on purpose**: `run_bounded_process` is the installer's
+  and canary's subprocess primitive, `suggested_delegations` is on the live hook path, and
+  `lifecycle_git.run_git` belongs to the update service — the package name is a historical
+  accident, not a statement of contents. The Job B machinery still exported from its `__init__`
+  (`delegate_with_lifecycle`, `dispatch_work_units`, `provision_worktrees`, `DependencyGraph`,
+  ~3,400 lines) is the natural next package, deferred only because `server/dashboard.py` imports
+  `delegation.lifecycle` and Codex is in that file now. **Dashboard half still open (Codex).**
+  Three parity gaps the re-scope surfaced but did not fix: `agency serve` is an HTTP control plane
+  no host consumes; `agency smoke` overlaps `doctor` + `host-canary` + `evidence wiring`; and
+  `agency hook` accepts only `codex`, `claude`, `zcode` — hermes and openclaw cannot be hooked from
+  the CLI at all, which under rule 9 is a gap, not a trade-off.
 - **Where the latency goes, measured 2026-08-11 — and why the store cannot finish the answer.**
   A routing decision makes **~2.4 provider calls** (433 receipts across 196 traces). Per-call
   duration *is* measured — `StructuredProviderResult.latency_ms` at the provider layer, carried

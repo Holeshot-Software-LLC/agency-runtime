@@ -161,7 +161,7 @@ ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 python -m pytest tests -q -W error -p no:cacheprovider -m performance
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
-agency eval delegation --json
+agency eval host-parity --json
 agency eval routing --json --no-details
 agency eval decision-conformance --repository . --json
 agency eval full-roster --json --no-details
