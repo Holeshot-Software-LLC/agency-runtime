@@ -751,6 +751,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c47b06e6` | 2026-08-11 | fix(preflight): stop the current resident kernel failing its own projection | null | null |
 | `01bd5d04` | 2026-08-11 | docs(roadmap): retire the product-trial direction as superseded by the vision | null | null |
 | `1a6d3612` | 2026-08-11 | feat(steward): restate the resident kernel as a frame, not a gag order | null | null |
+| `c6666369` | 2026-08-11 | docs(roadmap): restate AR-119 as the vision it was always trying to describe | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
