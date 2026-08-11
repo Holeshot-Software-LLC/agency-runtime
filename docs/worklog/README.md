@@ -746,6 +746,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `20737a7a` | 2026-08-10 | test(release): pin the path-to-handle identity assumption | null | null |
 | `c850fe9b` | 2026-08-11 | fix(rule8): stop Agency withholding a turn because Agency is unavailable | null | null |
 | `00e15c7d` | 2026-08-11 | fix(ci): clear the three layers blocking a green quality job | null | null |
+| `448fd641` | 2026-08-11 | fix(ci): green the fast production spine | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
