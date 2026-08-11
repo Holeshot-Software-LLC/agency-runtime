@@ -72,6 +72,8 @@ _MAX_RECIPE_BYTES = 48_000
 _MAX_RECIPE_NODES = 2_048
 _CONTINUATION_GUARD_VERSION = 1
 _MAX_SELECTION_REFS = 16
+# A bound, not the roster size. See `_project_resident_manager_kernel`.
+_MAX_RESIDENT_MANAGER_KERNEL_SLUGS = 8
 _TURN_KINDS = frozenset(
     {
         "acknowledgement",
@@ -557,7 +559,16 @@ def _project_resident_manager_kernel(value: object) -> dict[str, Any] | None:
         or not 1 <= version <= 1_000
         or _DIGEST_PATTERN.fullmatch(content_hash) is None
         or not isinstance(raw_slugs, list)
-        or len(raw_slugs) != 2
+        # Bound the shape; do NOT pin the count. This read `!= 2`, a literal
+        # left over from the two-manager era, so once RESIDENT_MANAGER_SLUGS
+        # became the single `agency-steward` the CURRENT canonical kernel
+        # reference could no longer project at all -- every v7 recipe carrying
+        # it was rejected. Deriving the count from RESIDENT_MANAGER_SLUGS would
+        # trade one stale literal for a stricter bug: this projects recorded
+        # historical identities too, and those legitimately carry the counts of
+        # their own era. Currency is `is_current_resident_manager_kernel_reference`'s
+        # job, and it alone should decide it.
+        or not 1 <= len(raw_slugs) <= _MAX_RESIDENT_MANAGER_KERNEL_SLUGS
     ):
         return None
     slugs = [str(slug or "").strip().casefold()[:128] for slug in raw_slugs]

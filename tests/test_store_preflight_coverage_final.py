@@ -13,7 +13,10 @@ from agency_runtime.core.resident_manager_binding import (
     build_resident_control_epoch,
     build_resident_manager_binding,
 )
-from agency_runtime.core.resident_managers import RESIDENT_MANAGER_KERNEL_REFERENCE
+from agency_runtime.core.resident_managers import (
+    RESIDENT_MANAGER_KERNEL_REFERENCE,
+    RESIDENT_MANAGER_SLUGS,
+)
 from agency_runtime.core.store import preflight as store_preflight
 from agency_runtime.core.store.sqlite import Store
 
@@ -59,7 +62,10 @@ def _ready_payload(
         "session_id": session_id,
         "trace_id": trace_id,
         "host": "codex",
-        "delivery_mode": "isolated",
+        # `isolated` was deleted with its enforcement in d9f6e6be; `direct` is
+        # the only mode `_project_preflight_recipe` accepts, and anything else
+        # projects to None and reports as a mismatched replay recipe.
+        "delivery_mode": "direct",
         "context_limit": 4_096,
         "routing": projected["decision"],
         "specialist_refs": specialist_refs,
@@ -102,7 +108,7 @@ def test_preflight_projection_rejects_malformed_metadata_and_scalars() -> None:
     )
 
 
-def test_specialist_and_suggestion_projections_reject_every_invalid_shape() -> None:
+def test_specialist_ref_projections_reject_every_invalid_shape() -> None:
     max_refs = store_preflight.MAX_DURABLE_SPECIALIST_REFERENCES
     assert store_preflight._project_specialist_refs({}) is None
     assert store_preflight._project_specialist_refs([{}] * (max_refs + 1)) is None
@@ -167,34 +173,25 @@ def test_specialist_and_suggestion_projections_reject_every_invalid_shape() -> N
         )
         is None
     )
+    # A resident manager is never a durable specialist reference. The slug is
+    # taken from RESIDENT_MANAGER_SLUGS rather than hardcoded: this assertion
+    # used `agents-orchestrator`, which stopped being a resident manager when
+    # that role was removed, so the branch it was written to cover was silently
+    # no longer exercised.
+    assert RESIDENT_MANAGER_SLUGS
     assert (
         store_preflight._project_specialist_refs(
-            [{"slug": "agents-orchestrator", "version": "1", "hash": "opaque"}]
+            [{"slug": RESIDENT_MANAGER_SLUGS[0], "version": "1", "hash": "opaque"}]
         )
         is None
     )
 
-    assert store_preflight._project_suggestions({}) is None
-    assert store_preflight._project_suggestions([{}] * 17) is None
-    assert store_preflight._project_suggestions(["unit"]) is None
-    invalid = [{"work_unit_id": "bad", "recommended_agent": "agent"}]
-    assert store_preflight._project_suggestions(invalid) is None
-    duplicate = [
-        {"work_unit_id": "unit-0000000000", "recommended_agent": "agent"},
-        {"work_unit_id": "unit-0000000000", "recommended_agent": "agent"},
-    ]
-    assert store_preflight._project_suggestions(duplicate) is None
-    assert (
-        store_preflight._project_suggestions(
-            [
-                {
-                    "work_unit_id": "unit-0000000000",
-                    "recommended_agent": "chief-of-staff",
-                }
-            ]
-        )
-        is None
-    )
+    # The suggestion half of this test exercised `_project_suggestions`, which
+    # 40c608dc deleted along with the rest of the unit_agent_plan plumbing.
+    # There is no surviving behaviour to assert, so it is gone rather than
+    # rewritten -- keeping it would only re-test a function that no longer
+    # exists.
+    assert not hasattr(store_preflight, "_project_suggestions")
 
 
 def test_recipe_projection_and_decode_fail_closed() -> None:
@@ -269,11 +266,16 @@ def test_recipe_projection_requires_exact_v7_resident_kernel_and_rejects_legacy_
         is not None
     )
 
+    # The slug case was `list(reversed(...))`, which distinguishes nothing once
+    # RESIDENT_MANAGER_SLUGS holds a single entry -- reversing one element
+    # returns an identical, entirely valid reference. Substituting a foreign
+    # slug keeps the branch meaningful at any roster size.
     for invalid in (
         None,
         {**reference, "version": 999},
         {**reference, "content_hash": _DIGEST_B},
-        {**reference, "slugs": list(reversed(reference["slugs"]))},
+        {**reference, "slugs": ["not-a-resident-manager"]},
+        {**reference, "slugs": [*reference["slugs"], "not-a-resident-manager"]},
     ):
         assert (
             store_preflight._project_preflight_recipe(
@@ -316,7 +318,6 @@ def test_ready_evidence_validation_rejects_mismatches(
         "host": "codex",
         "recipe": recipe,
         "routing_evidence": routing,
-        "suggestions": [],
         "specialist_refs": refs,
     }
     with pytest.raises(ValueError, match="attempt_token"):
@@ -327,8 +328,6 @@ def test_ready_evidence_validation_rejects_mismatches(
         store_preflight._prepare_ready_evidence(
             **{**common, "recipe": {**recipe, "specialist_refs": [{"slug": ""}]}}
         )
-    with pytest.raises(ValueError, match="suggestions are invalid"):
-        store_preflight._prepare_ready_evidence(**{**common, "suggestions": ()})
     with pytest.raises(ValueError, match="routing evidence"):
         store_preflight._prepare_ready_evidence(
             **{**common, "routing_evidence": {"query_hash": "bad"}}
@@ -349,15 +348,10 @@ def test_ready_evidence_validation_rejects_mismatches(
                 "specialist_refs": [ref],
             }
         )
-    suggestion = {"work_unit_id": "unit-0000000000", "recommended_agent": "agent"}
-    with pytest.raises(ValueError, match="work-unit metadata"):
-        store_preflight._prepare_ready_evidence(
-            **{
-                **common,
-                "recipe": {**recipe, "unit_agent_plan": [suggestion]},
-                "suggestions": [suggestion],
-            }
-        )
+    # The `suggestions are invalid` and `work-unit metadata` rejections were
+    # deleted with the unit_agent_plan plumbing in 40c608dc: `suggestions` is no
+    # longer a parameter and `_project_suggestions` no longer exists, so neither
+    # branch survives to be covered.
 
     monkeypatch.setattr(store_preflight, "_MAX_RECIPE_BYTES", 1)
     with pytest.raises(ValueError, match="bounded store limit"):
@@ -563,7 +557,6 @@ def test_observe_fail_abandon_and_ready_replay_edges(tmp_path: Path) -> None:
         "recipe": recipe,
         "host": "codex",
         "routing_evidence": routing,
-        "suggestions": [],
         "specialist_refs": refs,
     }
     assert store.mark_preflight_ready(**kwargs) == {"outcome": "committed"}
@@ -630,7 +623,6 @@ def test_mark_preflight_ready_atomically_commits_projected_provider_receipts(
         "recipe": {**recipe, "routing": routing_recipe},
         "host": "codex",
         "routing_evidence": routing_recipe,
-        "suggestions": [],
         "specialist_refs": refs,
     }
     assert store.mark_preflight_ready(**kwargs) == {"outcome": "committed"}
@@ -1000,16 +992,10 @@ def test_ready_evidence_rejects_host_mismatch() -> None:
             routing_evidence=routing,
             specialist_refs=refs,
         )
-    with pytest.raises(ValueError, match="unit-agent plan"):
-        store_preflight._prepare_ready_evidence(
-            session_id="session",
-            trace_id="turn",
-            attempt_token="attempt",
-            host="codex",
-            recipe=recipe,
-            routing_evidence=routing,
-            specialist_refs=refs,
-        )
+    # The `unit-agent plan` rejection went with the unit_agent_plan plumbing in
+    # 40c608dc. The matching host case above is the surviving branch; a second
+    # call with a valid host now simply succeeds, so asserting it raises tested
+    # nothing that still exists.
 
 
 class _RowsResult:
