@@ -1455,6 +1455,27 @@ CREATE TABLE IF NOT EXISTS agent_performance_events (
     FOREIGN KEY (worker_id) REFERENCES agent_workers(worker_id)
 );
 
+-- Cross-process routing reuse.
+--
+-- The in-memory routing cache cannot hit in production: every hook event runs
+-- as its own short-lived process, so the module-level dict is constructed
+-- empty and destroyed on every turn.  This table is the same cache with a
+-- lifetime the hook model actually provides.
+--
+-- Payload is restricted to the routing fields already allowlisted for
+-- persistence.  The live routing dict also carries work-unit text and unit
+-- descriptors, which the decision projection deliberately drops; a cache is
+-- not a reason to widen what the store retains.  Anything a reuse needs but
+-- cannot be persisted -- the compatibility receipt above all -- is recomputed
+-- from the live catalog on read, which is deterministic and local.
+CREATE TABLE IF NOT EXISTS routing_cache (
+    cache_key TEXT PRIMARY KEY,
+    context_fingerprint TEXT NOT NULL DEFAULT '',
+    source_message_hash TEXT NOT NULL DEFAULT '',
+    routing TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 -- Schema version
 CREATE TABLE IF NOT EXISTS schema_version (
     version INTEGER PRIMARY KEY

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import sqlite3
+from collections.abc import Mapping
 from hashlib import sha256
 from typing import Any
 
@@ -73,10 +75,17 @@ from agency_runtime.core.store.projections import (
     project_run_metadata,
     redact_sensitive_text,
 )
+from agency_runtime.core.store.queries import _ROUTING_DECISION_FIELDS
 from agency_runtime.core.store.receipt_authority import MODEL_RECEIPT_AUTHORITY_ORDER_SQL
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
 
 MAX_HOST_CONTROL_GENERATION = (2**63) - 1
+# A routing payload is ids, hashes, flags and small numbers; anything larger is
+# carrying something it should not be.
+_ROUTING_CACHE_MAX_BYTES = 16 * 1024
+# The same instant format STORE_CLOCK_SQL writes, shifted by a bound modifier,
+# so an age comparison is between two identically shaped strings.
+STORE_CLOCK_CUTOFF_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW', ?)"
 
 # Rule 8, as a data definition rather than a claim about the code.
 #
@@ -2187,6 +2196,110 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 tuple(parameters),
             ).fetchall()
             return [dict(row) for row in rows]
+        finally:
+            conn.close()
+
+    def get_cached_routing(
+        self,
+        cache_key: str,
+        *,
+        max_age_seconds: float = 600.0,
+    ) -> dict[str, Any] | None:
+        """Return a still-fresh persisted routing decision, or None.
+
+        The in-memory cache this backs cannot hit in production -- each hook
+        event is its own process -- so without a persisted copy every turn pays
+        full routing.  Freshness is enforced here rather than at the call site
+        so a stale row can never be served by a caller that forgot to check.
+        """
+
+        key = str(cache_key or "").strip()
+        if not key:
+            return None
+        conn = self._connect()
+        try:
+            # The cutoff must be rendered in the same format the rows were
+            # written in. DATETIME() yields "2026-08-11 19:33:02" while
+            # STORE_CLOCK_SQL writes "2026-08-11T19:33:02.999000+00:00", and
+            # 'T' sorts above ' ', so comparing across the two formats silently
+            # accepts every row and the expiry does nothing at all.
+            row = conn.execute(
+                "SELECT routing, created_at FROM routing_cache WHERE cache_key = ? "  # nosec B608
+                f"AND created_at >= {STORE_CLOCK_CUTOFF_SQL}",
+                (key, f"-{max(0.0, float(max_age_seconds))} seconds"),
+            ).fetchone()
+        except sqlite3.Error:
+            return None
+        finally:
+            conn.close()
+        if row is None:
+            return None
+        try:
+            value = safe_load_bounded_json(
+                str(row["routing"]),
+                maximum_bytes=_ROUTING_CACHE_MAX_BYTES,
+                maximum_depth=6,
+                maximum_nodes=512,
+            )
+        except (ValueError, TypeError):
+            return None
+        return value if isinstance(value, dict) else None
+
+    def put_cached_routing(
+        self,
+        cache_key: str,
+        routing: Mapping[str, Any],
+        *,
+        context_fingerprint: str = "",
+        max_entries: int = 512,
+    ) -> bool:
+        """Persist one routing decision for reuse by a later hook process.
+
+        Only fields already allowlisted for persistence are written.  The live
+        routing dict also carries work-unit text and unit descriptors that the
+        decision projection deliberately drops, and a cache is not a reason to
+        widen what the store retains -- so what cannot be persisted is left out
+        and recomputed from the live catalog when the entry is reused.
+        """
+
+        key = str(cache_key or "").strip()
+        if not key or not isinstance(routing, Mapping):
+            return False
+        payload = {field: routing[field] for field in _ROUTING_DECISION_FIELDS if field in routing}
+        if not payload.get("selected_ids"):
+            return False
+        encoded = json.dumps(payload, sort_keys=True, default=str)
+        if len(encoded.encode("utf-8")) > _ROUTING_CACHE_MAX_BYTES:
+            return False
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            conn.execute(
+                "INSERT INTO routing_cache "
+                "(cache_key, context_fingerprint, source_message_hash, routing, created_at) "
+                f"VALUES (?, ?, ?, ?, {STORE_CLOCK_SQL}) "  # nosec B608
+                "ON CONFLICT(cache_key) DO UPDATE SET "
+                "context_fingerprint = excluded.context_fingerprint, "
+                "source_message_hash = excluded.source_message_hash, "
+                "routing = excluded.routing, created_at = excluded.created_at",
+                (
+                    key,
+                    str(context_fingerprint or ""),
+                    str(routing.get("source_message_hash") or ""),
+                    encoded,
+                ),
+            )
+            conn.execute(
+                "DELETE FROM routing_cache WHERE cache_key NOT IN ("
+                "SELECT cache_key FROM routing_cache ORDER BY created_at DESC, rowid DESC LIMIT ?"
+                ")",
+                (max(1, int(max_entries)),),
+            )
+            conn.commit()
+            return True
+        except sqlite3.Error:
+            conn.rollback()
+            return False
         finally:
             conn.close()
 

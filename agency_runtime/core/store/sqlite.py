@@ -449,6 +449,15 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
             "activation_receipt_id",
         },
         "model_receipts": {name for name, _ in MODEL_RECEIPT_MIGRATED_COLUMNS},
+        # A table absent entirely reports no columns, so listing it here is what
+        # makes an existing database migrate to create it.
+        "routing_cache": {
+            "cache_key",
+            "context_fingerprint",
+            "source_message_hash",
+            "routing",
+            "created_at",
+        },
         "specialists_loaded": {"activation_receipt_id"},
         "finalization_events": {"policy_response_hash"},
         "host_controls": {"generation"},

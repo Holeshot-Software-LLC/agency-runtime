@@ -15,6 +15,7 @@ import re
 import uuid
 import warnings
 from collections.abc import Mapping
+from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
@@ -1089,10 +1090,16 @@ def _apply_compatible_selection(
     return routing
 
 
-def _remember_routing(routing: dict[str, Any], request: _RouteRequest) -> None:
+def _remember_routing(
+    routing: dict[str, Any],
+    request: _RouteRequest,
+    *,
+    store: Store | None = None,
+) -> None:
     if not routing.get("selected_ids"):
         return
     cache_put(request.cache_key, routing)
+    _persist_routing_for_reuse(routing, request, store=store)
     if routing.get("fallback_applied"):
         return
     session_put(
@@ -1101,6 +1108,78 @@ def _remember_routing(routing: dict[str, Any], request: _RouteRequest) -> None:
         routing,
         context_fingerprint=request.context_fingerprint,
     )
+
+
+def _persist_routing_for_reuse(
+    routing: dict[str, Any],
+    request: _RouteRequest,
+    *,
+    store: Store | None,
+) -> None:
+    """Persist a decision so the next hook process can reuse it.
+
+    The in-memory cache above cannot survive: each hook event is its own
+    process, so it is populated and destroyed on the same turn and has never
+    once been read back. Persisting is what gives it the lifetime the hook
+    model actually provides.
+
+    Advisory, exactly like the in-memory cache: a failure here costs a later
+    turn some latency and must never fail the turn that produced the decision.
+    """
+
+    recorder = getattr(store, "put_cached_routing", None)
+    if not callable(recorder):
+        return
+    with suppress(Exception):
+        recorder(
+            request.cache_key,
+            routing,
+            context_fingerprint=request.context_fingerprint,
+        )
+
+
+def _reusable_routing(
+    request: _RouteRequest,
+    *,
+    store: Store | None,
+    fresh_selection_required: bool,
+) -> dict[str, Any] | None:
+    """Return a reusable decision from memory, then from the store.
+
+    Memory first because it is free when it happens to be warm -- a CLI or a
+    test running several routes in one process. The store is what makes reuse
+    possible at all under hooks, where every event is its own process.
+    """
+
+    if fresh_selection_required:
+        return None
+    return cache_get(request.cache_key) or _reusable_persisted_routing(request, store=store)
+
+
+def _reusable_persisted_routing(
+    request: _RouteRequest,
+    *,
+    store: Store | None,
+) -> dict[str, Any] | None:
+    """Return a persisted decision for this exact request, or None.
+
+    Only the persistable subset of a routing decision is stored, so the entry
+    deliberately arrives without its compatibility receipt. That is what sends
+    it through the ordinary reuse path, which revalidates every selected id
+    against the live catalog and recomputes compatibility locally -- the same
+    checks a same-process cache hit already had to pass.
+    """
+
+    reader = getattr(store, "get_cached_routing", None)
+    if not callable(reader):
+        return None
+    try:
+        cached = reader(request.cache_key)
+    except Exception:
+        return None
+    if not isinstance(cached, dict):
+        return None
+    return dict(cached)
 
 
 def _requires_fresh_selection(classification: TurnClassification) -> bool:
@@ -1532,7 +1611,11 @@ def route(
             trace_id=trace_id,
         )
     fresh_selection_required = _requires_fresh_selection(classification)
-    cached = None if fresh_selection_required else cache_get(request.cache_key)
+    cached = _reusable_routing(
+        request,
+        store=evidence_store,
+        fresh_selection_required=fresh_selection_required,
+    )
     exact = _exact_cached_routing(cached, request)
     signals: _RouteSignals | None = None
     if exact is not None:
@@ -1548,7 +1631,7 @@ def route(
         exact = _reuse_routing(exact, request, signals)
         if exact is not None:
             if not preflight_atomic:
-                _remember_routing(exact, request)
+                _remember_routing(exact, request, store=evidence_store)
             return _finalize_classified_request(
                 exact,
                 request,
@@ -1673,7 +1756,7 @@ def route(
             routing["hiring_event"] = hiring_events[0]
         routing = _attach_workforce_signals(routing, request, signals)
         if not preflight_atomic:
-            _remember_routing(routing, request)
+            _remember_routing(routing, request, store=evidence_store)
         return _finalize_classified_request(
             routing,
             request,
@@ -1694,7 +1777,7 @@ def route(
     )
     routing = _merge_computed_routing(routing, request, signals)
     if not preflight_atomic:
-        _remember_routing(routing, request)
+        _remember_routing(routing, request, store=evidence_store)
     return _finalize_classified_request(
         routing,
         request,
