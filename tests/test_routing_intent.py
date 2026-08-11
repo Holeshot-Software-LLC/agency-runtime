@@ -275,3 +275,21 @@ def test_the_setting_round_trips_through_its_own_validator() -> None:
 def test_the_validator_refuses_a_non_boolean_setting() -> None:
     with pytest.raises(ConfigValidationError, match="record_routing_intent"):
         _validate_selector({"record_routing_intent": "yes please"})
+
+
+def test_the_setting_is_reachable_from_the_command_that_documents_it() -> None:
+    """`agency config set` keeps a fourth, independent list of settable paths.
+
+    The dataclass, the renderer and the schema validator all knew this field
+    while `config set` did not, so the exact command the empty audit surface
+    prints -- `agency config set selector.record_routing_intent true` -- failed
+    with "operation path is not supported". A setting an operator cannot reach
+    is a setting that does not exist.
+    """
+
+    from agency_runtime.core.configuration_patch import _set_validator
+
+    assert _set_validator("selector.record_routing_intent", True) is True
+    assert _set_validator("selector.record_routing_intent", False) is False
+    with pytest.raises(ConfigValidationError):
+        _set_validator("selector.record_routing_intent", "yes please")

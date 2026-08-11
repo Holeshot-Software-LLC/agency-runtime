@@ -3597,6 +3597,33 @@ deliberately, or instrumentation captured at decision time under an explicit ret
 That constraint is itself a finding: **we cannot currently audit selection quality from the
 evidence we keep.**
 
+**BUILT `5cea1a4d` — `routing_intent`, on Lucas's explicit retention decision.** Retains the
+planner's own work-unit text beside the specialists that decision produced; `agency evidence intent`
+prints one against the other. Because this inverts the content-free posture every other routing
+table holds, it is **off unless `selector.record_routing_intent` is set** — bounded per unit and in
+total, stripped of control characters before the audit surface can print it back to a terminal,
+purged with the rest of the runtime evidence, and unable to fail a turn. The first test asserts the
+default writes nothing at all.
+
+**The root cause the build surfaced, and it is structural.** `project_workforce_unit_descriptors`
+(`workforce/routing_projection.py:131`) defines the router's own representation of a work unit, and
+its entire vocabulary is activity: `artifact_kind` ∈ {analysis, architecture-record, documentation,
+implementation-change, plan, review-report, test-code, test-evidence}, `lifecycle_phase` ∈
+{coordination, discovery, documentation, design, implementation, planning, release, review,
+testing}, `authority` ∈ {advise, plan, modify, review}. **There is no subject-matter dimension at
+all.** A work unit literally cannot express "this is about the dashboard". So selection is not
+merely under-weighting domain — the intermediate representation it staffs from cannot carry domain,
+which is exactly what the 72.3% `code-reviewer` rate and the 39-of-282 tail look like from the
+outside. An intent-first change has to widen this vocabulary, not just reword a prompt.
+
+**Four declarations of one field, again.** Adding `selector.record_routing_intent` required the
+dataclass, the renderer, `configuration_schema`'s strict allowlist, **and**
+`configuration_patch._SET_VALIDATORS`. Missing the fourth meant `agency config set
+selector.record_routing_intent true` — the exact command the empty audit surface prints — failed
+with "operation path is not supported" while `agency config get` happily returned it. A setting an
+operator cannot reach is a setting that does not exist; there is now a test that reaches it through
+the same entry point the documentation names.
+
 ### CI on `main` is red, and has been — observed 2026-08-11
 
 Merging #266 surfaced it: **`main` has failed CI on at least its last five commits**, current tip

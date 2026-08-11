@@ -767,6 +767,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `db51dab3` | 2026-08-11 | docs(roadmap): audit what a model change actually breaks | null | null |
 | `4d4c5741` | 2026-08-11 | fix(inference): decide the token parameter once, from the provider | null | null |
 | `05bc4583` | 2026-08-11 | fix(header): report only model identities Agency observed | null | null |
+| `10093a1e` | 2026-08-11 | docs(roadmap): selection tracks activity, not domain | null | null |
+| `5cea1a4d` | 2026-08-11 | feat(evidence): make selection auditable, by explicit opt-in | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
