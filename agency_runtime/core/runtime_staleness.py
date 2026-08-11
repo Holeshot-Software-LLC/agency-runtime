@@ -43,6 +43,7 @@ import json
 import os
 import re
 import stat
+from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -59,6 +60,7 @@ from agency_runtime.core.private_paths import private_runtime_directory
 from agency_runtime.core.process_argv import agency_bootstrap_path
 
 _POINTER_NAME = "current.json"
+_HOST_POINTER_PREFIX = "current-"
 _POINTER_SCHEMA = "agency-runtime.installed-launcher-runtime"
 _POINTER_SCHEMA_VERSION = 1
 _MAX_POINTER_BYTES = 4096
@@ -86,7 +88,27 @@ class RuntimeStaleness:
 
 
 def _pointer_path() -> Path:
+    """Return the legacy single-host pointer, still read and never written."""
+
     return private_runtime_directory("launchers") / _POINTER_NAME
+
+
+def _host_pointer_path(host: str) -> Path:
+    """Return the pointer for one host.
+
+    One pointer per host, rather than one shared pointer carrying whichever
+    host installed last.  The shared pointer could not represent a box with
+    more than one installed host: recording a Codex install silenced a genuine
+    Claude staleness warning, and not recording it made ``agency status``
+    report Codex as stale immediately after a successful Codex install -- while
+    naming ``--agent claude`` in the remedy, because that is whose digest it
+    was carrying.
+
+    ``host`` is constrained by :data:`_HOST_PATTERN` before it reaches here, so
+    it cannot escape this directory.
+    """
+
+    return private_runtime_directory("launchers") / f"{_HOST_POINTER_PREFIX}{host}.json"
 
 
 def _validated_digest(value: object) -> str:
@@ -133,13 +155,14 @@ def record_installed_runtime(bootstrap_path: str | Path, *, host: str = "") -> s
     digest = runtime_digest_for_bootstrap(bootstrap_path)
     if not digest:
         return ""
+    recorded_host = _validated_host(host)
     payload = (
         json.dumps(
             {
                 "schema": _POINTER_SCHEMA,
                 "schema_version": _POINTER_SCHEMA_VERSION,
                 "runtime_digest": digest,
-                "host": _validated_host(host),
+                "host": recorded_host,
                 "source_root": _running_package_root(),
             },
             ensure_ascii=False,
@@ -148,7 +171,10 @@ def record_installed_runtime(bootstrap_path: str | Path, *, host: str = "") -> s
         ).encode("utf-8")
         + b"\n"
     )
-    target = _pointer_path()
+    # A named host owns its own pointer; only an unattributable install still
+    # writes the shared one, so one host's install can never overwrite -- or
+    # answer for -- another's.
+    target = _host_pointer_path(recorded_host) if recorded_host else _pointer_path()
     staging = target.with_name(f".{_POINTER_NAME}.{os.getpid()}")
     descriptor = os.open(
         staging,
@@ -179,12 +205,12 @@ def _remove_staging(path: Path) -> None:
         os.unlink(path)
 
 
-def _pointer_document() -> dict[str, Any]:
+def _pointer_document(path: Path | None = None) -> dict[str, Any]:
     """Return the validated pointer document, or an empty mapping."""
 
     try:
         payload = read_bounded_regular_file(
-            _pointer_path(),
+            _pointer_path() if path is None else path,
             limit=_MAX_POINTER_BYTES,
             label="installed runtime pointer",
         )
@@ -208,27 +234,70 @@ def _pointer_document() -> dict[str, Any]:
     return value
 
 
-def installed_runtime_pointer() -> tuple[str, str]:
-    """Return the (digest, host) the last install published, or ("", "")."""
+def _resolved_pointer(host: str = "") -> dict[str, Any]:
+    """Return the pointer document that speaks for ``host``.
 
-    value = _pointer_document()
+    The host's own record wins.  The legacy shared record is consulted only
+    when it names that same host, because a pointer written by a Claude install
+    says nothing about Codex -- reading it as though it did is the defect this
+    replaces.  An unhosted query still reads the shared record, which is what a
+    pre-existing installation looks like before its first per-host install.
+    """
+
+    wanted = _validated_host(host)
+    if wanted:
+        value = _pointer_document(_host_pointer_path(wanted))
+        if value:
+            return value
+        legacy = _pointer_document()
+        return legacy if _validated_host(legacy.get("host")) == wanted else {}
+    # No host named. The legacy record answers if there is one; otherwise a
+    # single recorded host is unambiguous. Several are not, and guessing is
+    # precisely the failure being removed, so say nothing.
+    if legacy := _pointer_document():
+        return legacy
+    recorded = _recorded_hosts()
+    return _pointer_document(_host_pointer_path(recorded[0])) if len(recorded) == 1 else {}
+
+
+def installed_runtime_pointer(host: str = "") -> tuple[str, str]:
+    """Return the (digest, host) last published for ``host``, or ("", "")."""
+
+    value = _resolved_pointer(host)
     if not value:
         return "", ""
     return _validated_digest(value.get("runtime_digest")), _validated_host(value.get("host"))
+
+
+def _recorded_hosts() -> tuple[str, ...]:
+    """Return every host with a recorded pointer, including the legacy one."""
+
+    hosts: set[str] = set()
+    with suppress(OSError):
+        for entry in private_runtime_directory("launchers").iterdir():
+            name = entry.name
+            if not name.startswith(_HOST_POINTER_PREFIX) or not name.endswith(".json"):
+                continue
+            host = _validated_host(name[len(_HOST_POINTER_PREFIX) : -len(".json")])
+            if host:
+                hosts.add(host)
+    if legacy := _validated_host(_pointer_document().get("host")):
+        hosts.add(legacy)
+    return tuple(sorted(hosts))
 
 
 def runtime_staleness(*, host: str = "") -> RuntimeStaleness | None:
     """Return drift between the running and last-installed runtime, else None.
 
     Silent None means "no drift is provable": either this process is not
-    running a projection at all, or no install pointer has been recorded yet.
-    Both are ordinary states and must not produce a warning.
+    running a projection at all, or no install pointer has been recorded for
+    this host yet.  Both are ordinary states and must not produce a warning.
     """
 
     running = running_runtime_digest()
     if not running:
         return None
-    installed, pointer_host = installed_runtime_pointer()
+    installed, pointer_host = installed_runtime_pointer(host)
     if not installed or installed == running:
         return None
     return RuntimeStaleness(
@@ -299,21 +368,69 @@ def cli_install_drift() -> InstallDrift | None:
     predates source-root recording and cannot be attributed to an environment.
     """
 
+    reports = cli_install_drift_reports()
+    return reports[0] if reports else None
+
+
+def cli_install_drift_reports() -> tuple[InstallDrift, ...]:
+    """Return one drift report per recorded host, newest-installed last.
+
+    Every installed host is answered separately.  A single report could only
+    ever describe one host, so on a box with several it had to either speak for
+    a host it had no record of or stay silent about one it did -- which is how
+    a current Codex install kept reading as stale under Claude's digest.
+    """
+
     if running_runtime_digest():
-        return None
-    pointer = _pointer_document()
-    installed = _validated_digest(pointer.get("runtime_digest"))
-    if not installed:
-        return None
+        return ()
     package_root = _running_package_root()
     if not package_root:
+        return ()
+
+    # Planning the projection hashes the whole distribution closure, so it is
+    # computed at most once and only when a host actually needs comparing. A
+    # foreign package is decided by recorded root alone and must never reach
+    # it: cross-environment digests cannot agree, so comparing them would
+    # report drift forever.
+    cached: list[str] = []
+
+    def _source_digest() -> str:
+        if not cached:
+            cached.append(source_runtime_drift(agency_bootstrap_path()))
+        return cached[0]
+
+    reports = [
+        report
+        for host in _recorded_hosts()
+        if (
+            report := _host_install_drift(
+                host,
+                package_root=package_root,
+                source_digest=_source_digest,
+            )
+        )
+        is not None
+    ]
+    return tuple(reports)
+
+
+def _host_install_drift(
+    host: str,
+    *,
+    package_root: str,
+    source_digest: Callable[[], str],
+) -> InstallDrift | None:
+    """Return why one host's installed hooks do not match this CLI, else None."""
+
+    pointer = _resolved_pointer(host)
+    installed = _validated_digest(pointer.get("runtime_digest"))
+    if not installed:
         return None
     installed_root = str(pointer.get("source_root") or "")
     # A pointer written before source roots were recorded cannot be attributed
     # to an environment, so no comparison it supports is trustworthy.
     if not installed_root:
         return None
-    host = _validated_host(pointer.get("host"))
     if not _same_package_root(package_root, installed_root):
         return InstallDrift(
             source_digest="",
@@ -322,7 +439,7 @@ def cli_install_drift() -> InstallDrift | None:
             installed_source_root=installed_root,
             host=host,
         )
-    digest = source_runtime_drift(agency_bootstrap_path())
+    digest = source_digest()
     if not digest or digest == installed:
         return None
     return InstallDrift(
@@ -354,6 +471,7 @@ __all__ = [
     "InstallDrift",
     "RuntimeStaleness",
     "cli_install_drift",
+    "cli_install_drift_reports",
     "installed_runtime_pointer",
     "record_installed_runtime",
     "runtime_staleness",

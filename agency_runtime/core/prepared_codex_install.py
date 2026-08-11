@@ -19,7 +19,7 @@ import sqlite3
 import stat
 import time
 from collections.abc import Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -1453,6 +1453,28 @@ def _confirm_noop_under_lock(
         return _success_result(current, no_op=True)
 
 
+def _record_published_runtime(
+    launcher_identities: Sequence[PersistentArtifactIdentity],
+) -> None:
+    """Record which projection this refresh published, for drift reports.
+
+    Advisory only: the pointer is read to warn that a hook runs an older
+    projection, never to choose what one executes, so a failed write must not
+    fail an otherwise complete install.
+
+    This path publishes a runtime but used to record nothing, while the pointer
+    it omitted was shared with every other host.  ``agency status`` therefore
+    kept reporting Codex as behind after a fully successful Codex install --
+    quoting whichever digest the last generic install had left there, and
+    naming that host in the remedy.
+    """
+
+    from agency_runtime.core.runtime_staleness import record_installed_runtime
+
+    with suppress(IndexError, OSError, ValueError):
+        record_installed_runtime(launcher_identities[1].lexical_path, host=_HOST)
+
+
 def refresh_existing_codex_adapter(
     cfg: AgencyConfig | None = None,
     *,
@@ -1588,6 +1610,7 @@ def refresh_existing_codex_adapter(
                 message="published Codex candidate changed before success",
             )
             revalidate_persistent_artifacts(launcher_identities)
+            _record_published_runtime(launcher_identities)
             return _success_result(
                 prepared,
                 no_op=False,
