@@ -65,6 +65,7 @@ _ERROR_CODES = frozenset(
         "inspection_timed_out",
         "response_scope_invalid",
         "worker_input_invalid",
+        "worker_projection_unavailable",
     }
 )
 
@@ -652,6 +653,46 @@ def _validated_inspection_target(
     return resolved_cwd, timeout_value
 
 
+def _trusted_worker_argv() -> list[str]:
+    """Return the worker argv built from artifacts the trust guard accepts.
+
+    The inspector spawns a child interpreter, and ``freeze_process_argv``
+    refuses any launch artifact another OS account could rewrite.  A CLI run
+    from a source checkout offers exactly two of those -- the virtual
+    environment's interpreter and the checkout's own ``_bootstrap.py`` -- so an
+    argv built from ``sys.executable`` could never be frozen.  Every inspection
+    failed as ``inspection_failed`` while Codex itself was healthy, and because
+    that surfaced as ``observed=0 missing=8`` it read as *the hooks are not
+    trusted*, which is a different and much worse claim.
+
+    Launch the published private projection instead: the same artifacts the
+    installed hooks already execute, under a directory no other account can
+    write.  Nothing is published here -- an absent projection is reported, not
+    created, because inspection must stay read-only.
+    """
+
+    from agency_runtime.core.launcher_bootstrap import (
+        persistent_python_executable,
+        plan_private_package_runtime,
+        running_runtime_digest,
+        verify_private_package_runtime,
+    )
+    from agency_runtime.core.process_argv import agency_bootstrap_path, isolated_python_argv
+
+    module_argv = ("agency_runtime.core.codex_hook_trust", "--worker")
+    if running_runtime_digest():
+        # Already executing a published projection: these artifacts are the
+        # attested ones, and planning again would only re-derive them.
+        return isolated_python_argv(sys.executable, *module_argv)
+    plan = plan_private_package_runtime(agency_bootstrap_path())
+    verify_private_package_runtime(plan.bootstrap_path)
+    return isolated_python_argv(
+        persistent_python_executable(),
+        *module_argv,
+        bootstrap_path=plan.bootstrap_path,
+    )
+
+
 def inspect_codex_hook_trust(
     cwd: Path,
     *,
@@ -694,29 +735,33 @@ def inspect_codex_hook_trust(
     )
     if len(input_text.encode("utf-8")) > _MAX_WORKER_PAYLOAD_BYTES:
         raise ValueError("worker payload exceeds the safety limit")
-    worker_values = isolated_python_argv(
-        sys.executable,
-        "agency_runtime.core.codex_hook_trust",
-        "--worker",
-    )
+    process_runner = runner or run_bounded_process
+    if runner is None:
+        try:
+            worker_values = _trusted_worker_argv()
+        except (OSError, TypeError, ValueError):
+            # No published projection to launch, so trust cannot be read. Say
+            # that, distinctly: reporting "inspection_failed" here is what let
+            # an unlaunchable inspector be misread as untrusted hooks.
+            return _base_report(len(expected_events), error="worker_projection_unavailable")
+    else:
+        # Injected runners never spawn, so no artifact needs to survive the
+        # trust guard and the package's own bootstrap is the honest thing to
+        # describe for that test/embedding seam.
+        worker_values = isolated_python_argv(
+            sys.executable,
+            "agency_runtime.core.codex_hook_trust",
+            "--worker",
+        )
     worker_argv = PreparedProcessArgv(
         worker_values,
         artifact_paths=(worker_values[0], worker_values[3]),
     )
-    process_runner = runner or run_bounded_process
     if runner is None:
         try:
-            # This argv is executed immediately by the current process,
-            # exactly like the CLI transports — not stored for later
-            # execution — so the persistent-artifact namespace contract does
-            # not apply. That contract's ACL assertion rejects every
-            # user-writable interpreter location (uv tool environments,
-            # venvs), which made the inspection fail as "inspection_failed"
-            # on ordinary installations while the codex protocol itself was
-            # healthy. argv[0] is sys.executable (the interpreter already
-            # running this code), so repository forbidden roots add nothing
-            # here. Injected runners never spawn, so freezing is skipped for
-            # that test/embedding seam.
+            # Both artifacts now come from the published projection or from an
+            # already-frozen hook process, so repository forbidden roots add
+            # nothing: neither can resolve inside the checkout by construction.
             worker_argv = freeze_process_argv(worker_argv, forbidden_roots=())
         except (OSError, TypeError, ValueError):
             return _base_report(len(expected_events), error="inspection_failed")

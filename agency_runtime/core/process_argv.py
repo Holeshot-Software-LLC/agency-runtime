@@ -957,14 +957,22 @@ def isolated_python_argv(
     python_executable: str | Path,
     module: str,
     *arguments: str,
+    bootstrap_path: str | Path | None = None,
 ) -> list[str]:
-    """Build an isolated argv bound to this installed Agency package root."""
+    """Build an isolated argv bound to this installed Agency package root.
+
+    ``bootstrap_path`` substitutes an already attested bootstrap -- the
+    published private projection -- for the package-owned one.  Callers that
+    spawn through :func:`freeze_process_argv` need it: the guard refuses any
+    launch artifact another OS account could rewrite, and a package running
+    from a source checkout is exactly that.
+    """
 
     return [
         absolute_executable_path(python_executable),
         "-I",
         "-S",
-        agency_bootstrap_path(),
+        agency_bootstrap_path() if bootstrap_path is None else str(Path(bootstrap_path)),
         module,
         *arguments,
     ]
