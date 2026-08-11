@@ -1,6 +1,6 @@
 ---
 title: "AR-220: Make product gap hiring evidence converge"
-status: in_progress
+status: wont_do
 category: roadmap
 created: 2026-08-01
 updated: 2026-08-01

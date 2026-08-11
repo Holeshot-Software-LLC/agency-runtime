@@ -1,6 +1,6 @@
 ---
 title: "AR-219: Preserve exact multi-unit Codex product execution evidence"
-status: in_progress
+status: wont_do
 category: roadmap
 created: 2026-08-01
 updated: 2026-08-01

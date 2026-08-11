@@ -1,6 +1,6 @@
 ---
 title: "AR-221: Preserve Codex product execution boundaries"
-status: in_progress
+status: wont_do
 category: roadmap
 created: 2026-08-01
 updated: 2026-08-01

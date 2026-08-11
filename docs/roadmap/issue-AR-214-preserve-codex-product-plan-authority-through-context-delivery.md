@@ -1,6 +1,6 @@
 ---
 title: "AR-214: Preserve Codex product plan authority through context delivery"
-status: in_progress
+status: wont_do
 category: roadmap
 created: 2026-07-31
 updated: 2026-08-01
