@@ -520,6 +520,25 @@ def test_preflight_persists_trivial_kind_and_bounds_parent_context(
     assert result.selected_specialists == ()
 
 
+def test_persistent_host_ceiling_is_the_general_preflight_ceiling() -> None:
+    """A persistent parent carries the complete team, not a legacy smaller cap.
+
+    The neighbouring ceiling tests all express their sizes as
+    ``PERSISTENT_HOST_CONTEXT_CHARS + 1``, so they stay self-consistent no
+    matter what that constant becomes and can never detect a regression in the
+    constant itself -- a curated mutation lowering it to 8_192 survived every
+    one of them. The invariant is the equality, so the equality is what has to
+    be asserted.
+    """
+
+    from agency_runtime.core.preflight_recipe import (
+        MAX_PREFLIGHT_CONTEXT_CHARS,
+        PERSISTENT_HOST_CONTEXT_CHARS,
+    )
+
+    assert PERSISTENT_HOST_CONTEXT_CHARS == MAX_PREFLIGHT_CONTEXT_CHARS
+
+
 def test_oversized_complete_context_fails_before_ready_is_persisted(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

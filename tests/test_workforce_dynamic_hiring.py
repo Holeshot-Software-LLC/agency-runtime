@@ -1683,6 +1683,39 @@ def test_workspace_unit_overrides_model_external_mutation_claim(tmp_path: Path) 
     assert outcome.hiring_case["human_approval_required"] is False
 
 
+def test_external_write_unit_overrides_an_understated_model_claim(tmp_path: Path) -> None:
+    """The unit's `mutation_scope` is authoritative in BOTH directions.
+
+    `test_workspace_unit_overrides_model_external_mutation_claim` covers a model
+    that overstates authority, and its expected value is `False` -- which is
+    exactly what a mutation hardcoding `external_mutation=False` produces, so it
+    passes either way. Nothing covered the understating direction, and the
+    curated mutation for this invariant survived the entire hiring suite.
+
+    Here the work unit is `external_write` while the model claims otherwise; the
+    unit must win, or an external-mutation contractor slips through
+    reviewer-gating on the model's say-so.
+    """
+
+    store = Store(tmp_path / "agency.db")
+    external_unit = replace(_unit(), mutation_scope="external_write")
+
+    outcome = hire_contractor_for_gap(
+        "Publish the quantum compiler build artifacts to the external registry.",
+        external_unit,
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_invoker(
+            _hiring_response(external_mutation=False),
+            {"approved": True, "reason_codes": []},
+        ),
+    )
+
+    assert outcome.contract is not None
+    assert outcome.contract.external_mutation is True
+
+
 def test_hired_contractor_is_restaffed_without_repeating_inference(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     implementation = _unit()

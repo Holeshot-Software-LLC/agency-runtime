@@ -443,11 +443,15 @@ class _NominationSemantics:""",
         source_path="agency_runtime/core/preflight_recipe.py",
         before="PERSISTENT_HOST_CONTEXT_CHARS = MAX_PREFLIGHT_CONTEXT_CHARS",
         after="PERSISTENT_HOST_CONTEXT_CHARS = 8_192",
-        # Re-anchored: the isolated-delivery test this used to name was deleted
-        # with that mode. The ceiling itself is still live and still covered.
+        # Re-anchored twice. The isolated-delivery test this originally named
+        # was deleted with that mode; the first re-anchor picked a ceiling test
+        # that expresses its sizes as `PERSISTENT_HOST_CONTEXT_CHARS + 1` and
+        # therefore stays self-consistent for ANY value of the constant -- it
+        # could never kill this mutation, and did not. Now anchored to the
+        # equality itself, which is the invariant.
         test_node=(
             "tests/test_preflight_bounds.py::"
-            "test_oversized_complete_context_fails_before_ready_is_persisted"
+            "test_persistent_host_ceiling_is_the_general_preflight_ceiling"
         ),
     ),
     DecisionMutation(
@@ -1103,7 +1107,15 @@ class _NominationSemantics:""",
         before=(
             "        if not hireable or workforce_changes >= config.workforce.max_hires_per_turn:"
         ),
-        after=("if not hireable or len(attempted_units) >= config.workforce.max_hires_per_turn:"),
+        # The eight-space indent is load-bearing: `before` is an indented
+        # statement, so an unindented `after` yields an IndentationError, the
+        # named test cannot be collected, and the mutation reports
+        # `invalid_test_result` rather than killed or survived. It read as an
+        # eval failure while proving nothing about the invariant.
+        after=(
+            "        if not hireable or len(attempted_units) >= "
+            "config.workforce.max_hires_per_turn:"
+        ),
         test_node=(
             "tests/test_workforce_dynamic_hiring.py::"
             "test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful"
@@ -1147,9 +1159,15 @@ class _NominationSemantics:""",
         source_path="agency_runtime/core/workforce/hiring.py",
         before='        external_mutation=unit.mutation_scope == "external_write",',
         after="        external_mutation=False,",
+        # Re-anchored: the previous node asserted only hire status and never
+        # inspected `external_mutation`, so this mutation survived the whole
+        # hiring suite. The neighbouring `workspace_unit_overrides...` test
+        # cannot kill it either -- it expects `False`, which is exactly what
+        # hardcoding `external_mutation=False` produces. Only the understating
+        # direction distinguishes them.
         test_node=(
             "tests/test_workforce_dynamic_hiring.py::"
-            "test_deferred_external_hire_reports_class_without_committing"
+            "test_external_write_unit_overrides_an_understated_model_claim"
         ),
     ),
     DecisionMutation(
