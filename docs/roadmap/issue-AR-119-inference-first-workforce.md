@@ -3451,7 +3451,21 @@ within 300 s at 0.6 similarity — the ordinary shape of a conversation, i.e. th
 edge case. At the measured cost of a miss (~2.4 provider calls, floor 8 s each on claude and 26–33 s
 on codex) a working cache removes most of the routing cost from continuation turns.
 
-**The shape of the fix:** back the cache with the store rather than process memory.
+**BUILT `f1fd9064` — `routing_cache`.** Persists a decision across processes, keyed and expired the
+same way. It stores **only fields already allowlisted for persistence** (`_ROUTING_DECISION_FIELDS`,
+bounded at 16 KB): the live routing dict also carries work-unit text and unit descriptors the
+decision projection deliberately drops, and a cache is not a reason to widen what the store retains.
+The compatibility receipt is therefore absent **by construction**, which is the point — its absence
+sends a reused entry through the ordinary reuse path, revalidating every selected id against the
+live catalog and recomputing compatibility locally. A persisted receipt would let a later process
+accept a selection without rechecking it, the one way this cache could change which specialists a
+turn gets. Reuse stays advisory: a store failure costs a later turn latency, never the turn that
+produced the decision. **One bug caught by its own test:** expiry first compared against
+`DATETIME('NOW', …)`, which yields `2026-08-11 19:33:02` while rows are written as
+`2026-08-11T19:33:02.999000+00:00` — `'T'` sorts above `' '`, so every row passed and nothing ever
+expired. Now compares in the written format.
+
+**The original shape of the fix:** back the cache with the store rather than process memory.
 `routing_decisions` already persists `context_fingerprint` and `query_hash` per decision, so most of
 the identity a cross-process lookup needs is already being written every turn — only the normalized
 cache key is absent. Confirm invalidation still keys on roster, policy, config and host before

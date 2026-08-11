@@ -761,6 +761,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3708c96d` | 2026-08-11 | feat(evidence): surface what Agency's routing costs a turn | null | null |
 | `f0a6e470` | 2026-08-11 | docs(roadmap): locate the routing latency, and why it stops being attributable | null | null |
 | `7d6780bd` | 2026-08-11 | feat(store): record per-call provider latency so the turn cost splits | null | null |
+| `57c67047` | 2026-08-11 | docs(roadmap): the routing cache has never hit once, and cannot | null | null |
+| `f1fd9064` | 2026-08-11 | feat(selector): give the routing cache a lifetime the hook model provides | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
