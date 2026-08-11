@@ -3426,6 +3426,25 @@ the package-owned read-only diagnostic goal needed for Codex replay; it cannot
 select, add, rank, or substitute a worker. Missing or invalid inference fails
 the canary visibly with no deterministic fallback.
 
+### Raised 2026-08-11 — two items the vision restatement implies
+
+- **Re-scope the dashboard and the CLI to the vision; anything not part of it goes.** Lucas's call,
+  made after the AR-119 restatement: both surfaces accumulated against the retired product-trial
+  contract, so a large part of each is now answering questions the vision does not ask. Treat this
+  as deletion work with an explicit keep-list derived from the vision, not as a refactor — the
+  default for a surface with no vision justification is removal, not migration. Do this against
+  [[agency-runtime-founding-vision]] rather than against reachability or usage counts; the code is
+  full of dead bodies and traffic is not evidence of purpose.
+- **There is no operator surface for Agency's own latency, and the recorded numbers are the reason
+  it needs one.** `routing_decisions.latency_ms` is the only stored timing column (318 rows, sole
+  timing column in the entire schema). Measured on this box: today's 4 accepted routing decisions
+  ran **min 26.8 s, p50 32.6 s, p95 43.3 s**; all-time `computed` averages **47.8 s** with a
+  **225 s** maximum. The pinned control elsewhere in this document is a **15000 ms cold** budget,
+  so live parent-turn routing is running roughly 2–3× over it and nothing surfaces that to an
+  operator. `agency eval routing` runs latency gates and the benchmarks compute p95, but neither
+  answers "what is Agency costing my turns right now". A read-only surface over the column already
+  being written is a small piece of work and should precede any latency tuning.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
