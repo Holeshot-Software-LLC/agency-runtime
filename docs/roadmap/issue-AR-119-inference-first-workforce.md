@@ -3497,6 +3497,63 @@ green test, broken panel; the same failure mode as the cache above, one section 
 really writes and that fails without the fix. Live box now reads
 `inference: operational; 2 provider entries; eligible-turn inference required`.
 
+### What breaks when the model changes — audited 2026-08-11
+
+Prompted by the luna→terra bump. **The bump did not cause the codex failure, and did not help.**
+`provider_response_contract_invalid` appears against `gpt-5.6-luna` on 2026-08-01, 08-02 (twice) and
+08-03, well before terra. `codex exec --model gpt-5.6-terra` answers normally, so the model resolves
+— what fails is the planner's *response* contract (`workforce/inference.py:878`), which fires when
+the parser rejects the returned document. One repair retry with validation feedback, then the turn
+fails. That path is coupled to model **behaviour**, not to its name, so a swap can change how often
+it trips but no rename will fix it.
+
+**Two places are coupled to the model's name, both by string prefix:**
+
+- `structured_provider.py:380` — `provider.model.casefold().startswith("gpt-5")` selects
+  `max_completion_tokens` and drops `temperature`; otherwise `max_tokens`.
+- `judge_protocol.py:381` — `model.lower().startswith("gpt-5")`, same swap.
+
+**They are already out of step with what we ship.** `config_defaults.yaml:103` sets
+`model: gpt5.6-luna` — no hyphen after `gpt` — so `"gpt5.6-luna".startswith("gpt-5")` is **False**,
+while the operator config on this box says `gpt-5.6-terra` and is **True**. Two boxes naming the
+same family differently get different request bodies. The default path survives only because it
+points at a LiteLLM proxy that normalizes the parameters; a direct OpenAI-compatible endpoint would
+be sent the wrong pair.
+
+**And the test cannot catch it:** `test_roster_inference_adapter.py:960` exercises the branch with
+`model="gpt-5.6"`, a spelling nothing ships, while `test_inference_profiles.py:614` separately pins
+the real default as `gpt5.6-luna`. Both green, neither crossing. Third instance today of the same
+failure mode — after the routing cache verified only in-process, and `_SUCCESS_STATES` verified
+through a status nothing persists.
+
+**What is safe.** Model names flow through the CLI transport untouched (`cli_transport.py:973`
+passes `--model` straight through). `model_requirements` on specialists is descriptive metadata in
+the semantic projection, never a code gate, so a new model cannot make specialists unselectable.
+`detect.py:307-331` holds stale suggestions (`gpt-5.4`, `gpt-5.5`) but only as fallbacks when
+discovery fails, and `_preferred_model` degrades rather than rejecting. Thinking level is a separate
+profile field, never appended to a model name — the `-low`/`-medium`/`-high` suffixes in the litellm
+defaults are proxy aliases, so a rename there needs matching aliases on the proxy, not code changes.
+
+**The fix, when wanted:** replace both prefix tests with one capability predicate keyed off the
+provider entry rather than a substring of its name, and give it a test fed from
+`config_defaults.yaml` so a default we ship can never disagree with a branch we take.
+
+### CI on `main` is red, and has been — observed 2026-08-11
+
+Merging #266 surfaced it: **`main` has failed CI on at least its last five commits**, current tip
+included, on one gate — `92.64%` dashboard **function** coverage against a `93%` threshold. All 109
+dashboard UI tests pass; only the threshold fails, and the numbers are byte-identical on `main` and
+on the branch, which touched no JavaScript at all. Everything downstream (`security`,
+`artifact-parity`, `performance`, `windows-portability-contract`) then reports `skipped`, so a
+single 0.36-point shortfall reads as five failed gates.
+
+The shortfall is concentrated: `app.js` at **60.47%** functions, against 94–100% everywhere else.
+**This likely resolves itself through the re-scope below rather than through new tests** — uncovered
+functions in a surface we are about to cut are the cheapest possible thing to delete, and writing
+tests for them first would be work aimed at code that should not survive. Worth confirming which
+`app.js` functions are uncovered before choosing; if any are load-bearing for the vision, they need
+tests instead.
+
 ### Raised 2026-08-11 — two items the vision restatement implies
 
 - **Re-scope the dashboard and the CLI to the vision; anything not part of it goes.** Lucas's call,
