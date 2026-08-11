@@ -738,6 +738,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `94610d27` | 2026-08-10 | feat(hooks): stop withholding a turn Agency could not verify | null | null |
 | `6e1b28ac` | 2026-08-10 | feat(hooks): staff a harness child even when the parent turn failed preflight | null | null |
 | `04db68ae` | 2026-08-10 | docs(threat-model): record that Agency's own unavailability no longer blocks | null | null |
+| `9d7ddb27` | 2026-08-10 | feat(workforce): report when a packaged worker has been amended | null | null |
+| `e1c26510` | 2026-08-10 | feat(workforce): show packaged divergence when reviewing a worker | null | null |
+| `49b6a6be` | 2026-08-10 | test(scratch): reclaim the Windows pytest scratch tree after every run | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
