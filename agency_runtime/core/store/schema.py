@@ -1476,6 +1476,34 @@ CREATE TABLE IF NOT EXISTS routing_cache (
     created_at TEXT NOT NULL
 );
 
+-- Opt-in audit trail for selection quality.
+--
+-- Every other routing table is content-free on purpose, and that is exactly
+-- why selection quality could not be audited: the store keeps
+-- source_message_hash and query_hash but never what was asked, so "did this
+-- turn get the right specialists?" is unanswerable after the fact.  Measured
+-- 2026-08-11, frontend-developer was staffed on a turn that excluded frontend
+-- work and skipped on a turn that was entirely frontend work -- a finding that
+-- only existed because two humans remembered the prompts.
+--
+-- This table therefore holds retained content and is the one place that does.
+-- It is written only when selector.record_routing_intent is enabled, never by
+-- default, is bounded per row and in total, and is purged with the rest of the
+-- runtime evidence.  work_units text is what the planner derived from the
+-- message, not the message itself.
+CREATE TABLE IF NOT EXISTS routing_intent (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trace_id TEXT NOT NULL DEFAULT '',
+    session_id TEXT NOT NULL DEFAULT '',
+    query_hash TEXT NOT NULL DEFAULT '',
+    context_fingerprint TEXT NOT NULL DEFAULT '',
+    units TEXT NOT NULL DEFAULT '[]',
+    descriptors TEXT NOT NULL DEFAULT '[]',
+    selected_ids TEXT NOT NULL DEFAULT '[]',
+    source TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+);
+
 -- Schema version
 CREATE TABLE IF NOT EXISTS schema_version (
     version INTEGER PRIMARY KEY
@@ -1901,6 +1929,10 @@ RUNTIME_TABLE_TIMESTAMPS: dict[str, str] = {
         "COALESCE((SELECT activity.last_activity_at FROM runs AS activity "
         "WHERE activity.trace_id = routing_decisions.trace_id), '')"
     ),
+    "routing_intent": (
+        "COALESCE((SELECT activity.last_activity_at FROM runs AS activity "
+        "WHERE activity.trace_id = routing_intent.trace_id), routing_intent.created_at)"
+    ),
     "child_routing_cache": "child_routing_cache.created_at",
     "child_routing_usage": "child_routing_usage.updated_at",
     "child_routing_leases": "child_routing_leases.created_at",
@@ -1923,6 +1955,7 @@ RUNTIME_DELETE_ORDER: tuple[str, ...] = (
     "child_routing_leases",
     "child_routing_cache",
     "child_routing_usage",
+    "routing_intent",
     "routing_decisions",
     "finalization_events",
     "runs",

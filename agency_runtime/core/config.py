@@ -216,6 +216,11 @@ class SelectorConfig:
     # Deprecated compatibility field. Turn classification is state-aware and
     # never uses character count as an authority boundary.
     trivial_msg_threshold: int = 0
+    # Retain the planner's work-unit text beside each decision so selection
+    # quality can be audited afterwards. Off by default: every other routing
+    # table is content-free, and turning that around is an operator's choice to
+    # make deliberately, not a default to inherit.
+    record_routing_intent: bool = False
 
 
 DELEGATION_MODES = frozenset({"observe", "prefer", "strong"})
@@ -676,6 +681,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             min_confidence=float(selector_raw.get("min_confidence", 0.8)),
             max_user_msg_len=int(selector_raw.get("max_user_msg_len", 4000)),
             trivial_msg_threshold=int(selector_raw.get("trivial_msg_threshold", 0)),
+            record_routing_intent=bool(selector_raw.get("record_routing_intent", False)),
         ),
         delegation=DelegationConfig(
             mode=str(delegation_raw.get("mode", "prefer")).strip().casefold(),
@@ -1262,6 +1268,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "min_confidence": cfg.selector.min_confidence,
             "max_user_msg_len": cfg.selector.max_user_msg_len,
             "trivial_msg_threshold": cfg.selector.trivial_msg_threshold,
+            "record_routing_intent": cfg.selector.record_routing_intent,
         },
         "delegation": {
             "mode": cfg.delegation.mode,

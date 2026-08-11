@@ -363,7 +363,12 @@ def _validate_ollama(value: Any) -> dict[str, Any]:
 
 def _validate_selector(value: Any) -> dict[str, Any]:
     section = _mapping(value, "selector")
-    allowed = {"min_confidence", "max_user_msg_len", "trivial_msg_threshold"}
+    allowed = {
+        "min_confidence",
+        "max_user_msg_len",
+        "trivial_msg_threshold",
+        "record_routing_intent",
+    }
     if set(section) - allowed:
         raise _error("selector", "contains unsupported fields")
     validators: dict[str, Callable[[Any], Any]] = {
@@ -375,6 +380,9 @@ def _validate_selector(value: Any) -> dict[str, Any]:
         ),
         "trivial_msg_threshold": lambda item: _integer(
             item, "selector.trivial_msg_threshold", minimum=0, maximum=10_000
+        ),
+        "record_routing_intent": lambda item: _boolean(
+            item, "selector.record_routing_intent"
         ),
     }
     return {name: validators[name](item) for name, item in section.items()}

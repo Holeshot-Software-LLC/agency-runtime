@@ -377,6 +377,7 @@ cmd_run = _delegation.cmd_run
 
 cmd_evidence_children = _evidence.cmd_evidence_children
 cmd_evidence_latency = _evidence.cmd_evidence_latency
+cmd_evidence_intent = _evidence.cmd_evidence_intent
 cmd_evidence_rejections = _evidence.cmd_evidence_rejections
 cmd_evidence_wiring = _evidence.cmd_evidence_wiring
 
@@ -435,6 +436,7 @@ _COMMAND_NAMES = (
     "cmd_eval_routing",
     "cmd_eval_workforce",
     "cmd_evidence_children",
+    "cmd_evidence_intent",
     "cmd_evidence_latency",
     "cmd_evidence_rejections",
     "cmd_evidence_wiring",

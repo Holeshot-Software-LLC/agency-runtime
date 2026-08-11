@@ -10,6 +10,7 @@ from agency_runtime.core.child_delivery_evidence import (
     default_child_artifact_root,
     scan_child_delivery_evidence,
 )
+from agency_runtime.core.config import load_config
 from agency_runtime.core.host_wiring_drift import host_wiring
 from agency_runtime.core.store.evidence import (
     PUBLISHED_ANYWAY_RUN_STATUSES,
@@ -243,6 +244,58 @@ def cmd_evidence_latency(args: argparse.Namespace) -> int:
     else:
         print(f"✅ p95 within the {budget} ms budget")
     return 1 if over_budget else 0
+
+
+def cmd_evidence_intent(args: argparse.Namespace) -> int:
+    """Show what each turn was understood to be, beside who was staffed for it.
+
+    Selection quality had no audit surface at all: the store keeps
+    ``source_message_hash`` and ``query_hash`` but never what was asked, so
+    "were these the right specialists?" could only be answered by someone who
+    happened to remember the prompt. This prints the planner's own work-unit
+    text next to the specialists that decision produced, which is the
+    comparison an audit actually needs.
+
+    Retention is off unless ``selector.record_routing_intent`` is enabled, so
+    an empty table has two very different causes and this says which.
+    """
+
+    store = Store(getattr(args, "db", None))
+    rows = store.get_routing_intents(limit=getattr(args, "limit", 20) or 20)
+    wanted = str(getattr(args, "specialist", None) or "").strip()
+    if wanted:
+        rows = [row for row in rows if wanted in (row.get("selected_ids") or [])]
+
+    if getattr(args, "json", False):
+        _print_json({"retained": len(rows), "decisions": rows})
+        return 0
+
+    if not rows:
+        enabled = bool(getattr(load_config().selector, "record_routing_intent", False))
+        if enabled:
+            print("intent retention is on, but no decision has been recorded yet")
+        else:
+            print(
+                "no retained intent — selection cannot be audited until retention is on.\n"
+                "  Enable it with: agency config set selector.record_routing_intent true\n"
+                "  This is the one routing table that keeps content derived from your "
+                "prompts; every other one stores only hashes."
+            )
+        return 0
+
+    print(f"retained intent for {len(rows)} decision(s), newest first")
+    for row in rows:
+        selected = row.get("selected_ids") or []
+        print(f"\n{row.get('created_at', '')}  [{row.get('source') or 'unknown'}]")
+        print(f"  staffed: {', '.join(selected) if selected else 'nobody'}")
+        units = row.get("units") or []
+        if not units:
+            print("  understood as: (no work-unit text recorded)")
+            continue
+        print("  understood as:")
+        for ordinal, unit in enumerate(units, start=1):
+            print(f"    {ordinal}. {unit}")
+    return 0
 
 
 def cmd_evidence_children(args: argparse.Namespace) -> int:

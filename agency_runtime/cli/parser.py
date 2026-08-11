@@ -1560,6 +1560,28 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     )
     latency.add_argument("--json", action="store_true", help="Print JSON")
     _bind(latency, handlers, "cmd_evidence_latency")
+    intent = evidence_sub.add_parser(
+        "intent",
+        help="Audit what each turn was understood to be, against who was staffed",
+    )
+    intent.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        help="Most recent N retained decisions (default: 20, max: 500)",
+    )
+    intent.add_argument(
+        "--specialist",
+        default=None,
+        help="Show only turns that staffed this specialist",
+    )
+    intent.add_argument(
+        "--db",
+        default=None,
+        help="Read this evidence store instead of the configured one",
+    )
+    intent.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(intent, handlers, "cmd_evidence_intent")
     wiring = evidence_sub.add_parser(
         "wiring",
         help="Check that each host invokes the projection the installer staged",

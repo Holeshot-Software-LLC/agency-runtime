@@ -83,9 +83,34 @@ MAX_HOST_CONTROL_GENERATION = (2**63) - 1
 # A routing payload is ids, hashes, flags and small numbers; anything larger is
 # carrying something it should not be.
 _ROUTING_CACHE_MAX_BYTES = 16 * 1024
+# Retained intent is the one place the store keeps content, so it is bounded
+# twice: per unit, so no single work unit can carry a pasted file, and in total,
+# so an audit trail cannot grow into a transcript of everything ever asked.
+_ROUTING_INTENT_MAX_UNITS = 16
+_ROUTING_INTENT_MAX_UNIT_CHARS = 512
+_ROUTING_INTENT_MAX_BYTES = 32 * 1024
+_ROUTING_INTENT_MAX_ROWS = 2_000
 # The same instant format STORE_CLOCK_SQL writes, shifted by a bound modifier,
 # so an age comparison is between two identically shaped strings.
 STORE_CLOCK_CUTOFF_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW', ?)"
+
+
+def _bounded_intent_units(value: object) -> list[str]:
+    """Bound and de-control the planner's work-unit text before it is retained."""
+
+    if not isinstance(value, (list, tuple)):
+        return []
+    units: list[str] = []
+    for item in value[:_ROUTING_INTENT_MAX_UNITS]:
+        if not isinstance(item, str):
+            continue
+        # Control characters would let retained text rewrite an operator's
+        # terminal when the audit surface prints it back.
+        cleaned = " ".join(item.split())
+        cleaned = "".join(ch for ch in cleaned if ch.isprintable())
+        if cleaned:
+            units.append(cleaned[:_ROUTING_INTENT_MAX_UNIT_CHARS])
+    return units
 
 # Rule 8, as a data definition rather than a claim about the code.
 #
@@ -2302,6 +2327,107 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             return False
         finally:
             conn.close()
+
+    def record_routing_intent(
+        self,
+        routing: Mapping[str, Any],
+        *,
+        trace_id: str = "",
+        session_id: str = "",
+        max_entries: int = _ROUTING_INTENT_MAX_ROWS,
+    ) -> bool:
+        """Retain what the planner understood the request to be, for auditing.
+
+        This is the one routing table that keeps content, and it exists because
+        the others do not: with only ``source_message_hash`` and ``query_hash``
+        persisted, no one can ask afterwards whether a turn was staffed
+        sensibly.  Callers must gate this on ``selector.record_routing_intent``;
+        the store does not enable retention on its own.
+
+        Work-unit text is the planner's own restatement of the request, not the
+        raw message, and it is bounded per unit and in total so one enormous
+        prompt cannot turn the operator's database into a transcript.
+        """
+
+        if not isinstance(routing, Mapping):
+            return False
+        work_units = routing.get("work_units")
+        units_value = work_units.get("units") if isinstance(work_units, Mapping) else None
+        units = _bounded_intent_units(units_value)
+        selected = [
+            str(item)[:128]
+            for item in (routing.get("selected_ids") or [])
+            if isinstance(item, str) and item.strip()
+        ][:32]
+        if not units and not selected:
+            return False
+        descriptors = routing.get("workforce_unit_descriptors")
+        encoded_units = json.dumps(units, sort_keys=True, default=str)
+        encoded_descriptors = json.dumps(
+            descriptors if isinstance(descriptors, list) else [], sort_keys=True, default=str
+        )
+        if (
+            len(encoded_units.encode("utf-8")) + len(encoded_descriptors.encode("utf-8"))
+            > _ROUTING_INTENT_MAX_BYTES
+        ):
+            return False
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            conn.execute(
+                "INSERT INTO routing_intent "
+                "(trace_id, session_id, query_hash, context_fingerprint, units, "
+                "descriptors, selected_ids, source, created_at) "
+                f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, {STORE_CLOCK_SQL})",  # nosec B608
+                (
+                    str(trace_id or routing.get("trace_id") or ""),
+                    str(session_id or ""),
+                    str(routing.get("query_hash") or ""),
+                    str(routing.get("context_fingerprint") or ""),
+                    encoded_units,
+                    encoded_descriptors,
+                    json.dumps(selected, default=str),
+                    str(routing.get("source") or ""),
+                ),
+            )
+            conn.execute(
+                "DELETE FROM routing_intent WHERE id NOT IN ("
+                "SELECT id FROM routing_intent ORDER BY id DESC LIMIT ?)",
+                (max(1, int(max_entries)),),
+            )
+            conn.commit()
+            return True
+        except sqlite3.Error:
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def get_routing_intents(self, *, limit: int = 50) -> list[dict[str, Any]]:
+        """Return recent retained intents, newest first, for the audit surface."""
+
+        bounded = max(1, min(int(limit), 500))
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT trace_id, query_hash, units, descriptors, selected_ids, source, "
+                "created_at FROM routing_intent ORDER BY id DESC LIMIT ?",
+                (bounded,),
+            ).fetchall()
+        except sqlite3.Error:
+            return []
+        finally:
+            conn.close()
+        result: list[dict[str, Any]] = []
+        for row in rows:
+            item = dict(row)
+            for field in ("units", "descriptors", "selected_ids"):
+                try:
+                    item[field] = json.loads(item.get(field) or "[]")
+                except (TypeError, ValueError):
+                    item[field] = []
+            result.append(item)
+        return result
 
     def get_open_traces_for_session(self, session_id: str) -> list[str]:
         """Return deterministic, non-terminal turn traces for a session."""

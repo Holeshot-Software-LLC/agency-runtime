@@ -298,6 +298,7 @@ def _finalize_decision(
     context_fingerprint: str,
     store: Store | None,
     trace_id: str | None,
+    record_intent: bool = False,
 ) -> dict[str, Any]:
     """Attach per-request identity and optionally persist a safe projection."""
     decision_trace_id = trace_id or str(uuid.uuid4())
@@ -316,6 +317,18 @@ def _finalize_decision(
             )
         except Exception as exc:  # routing must survive an observability outage
             logger.warning("failed to persist routing decision: %s", type(exc).__name__)
+        if record_intent:
+            # Retention is the operator's explicit choice, and auditing is never
+            # worth failing a turn for -- so this follows the decision write and
+            # swallows its own failure exactly as that one does.
+            try:
+                store.record_routing_intent(
+                    routing,
+                    trace_id=decision_trace_id,
+                    session_id=session_id,
+                )
+            except Exception as exc:
+                logger.warning("failed to retain routing intent: %s", type(exc).__name__)
     return routing
 
 
@@ -593,6 +606,9 @@ def _finalize_request(
         context_fingerprint=request.context_fingerprint,
         store=store,
         trace_id=trace_id,
+        record_intent=bool(
+            getattr(getattr(request.config, "selector", None), "record_routing_intent", False)
+        ),
     )
 
 
