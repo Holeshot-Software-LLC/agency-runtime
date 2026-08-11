@@ -490,6 +490,43 @@ def test_artifact_contract_rejects_a_wheel_outside_the_host_profile(tmp_path: Pa
         )
 
 
+def test_file_identity_agrees_between_a_path_and_its_open_handle(tmp_path: Path) -> None:
+    """Pin the assumption `_metadata_identity` is built on.
+
+    It seals an `lstat` of a path against an `fstat` of the handle opened from it,
+    so the two must report identical fields. They already disagree on one: CPython
+    derives execute bits from an `.exe` suffix for `lstat` but `fstat` has no path,
+    which is why the mode is normalised. Nothing guarantees `st_file_attributes`
+    will not drift the same way, and if it ever does the failure surfaces as an
+    opaque "changed before hashing" on a release build.
+
+    Deliberately NOT masked: unlike the directory case, no attribute bit here is
+    volatile -- ARCHIVE is set at creation and stays. Masking would only stop a
+    file flipping to READONLY mid-verification from being caught, on the exact
+    path whose job is noticing a swapped file.
+    """
+
+    for name in ("plain.txt", "thing.exe"):
+        target = tmp_path / name
+        target.write_bytes(b"payload")
+        from_path = os.lstat(target)
+        descriptor = os.open(target, os.O_RDONLY | int(getattr(os, "O_BINARY", 0)))
+        try:
+            from_handle = os.fstat(descriptor)
+            os.read(descriptor, 1)
+            after_read = os.fstat(descriptor)
+        finally:
+            os.close(descriptor)
+
+        assert subject._metadata_identity(from_path) == subject._metadata_identity(from_handle), (
+            f"lstat and fstat disagree for {name}; _metadata_identity needs a new "
+            "normalisation the way it already normalises mode"
+        )
+        assert subject._metadata_identity(after_read) == subject._metadata_identity(from_handle), (
+            "reading a file changed its sealed identity"
+        )
+
+
 def test_directory_identity_survives_the_directory_being_written_to(tmp_path: Path) -> None:
     """A staging directory must not "change identity" by being used.
 
