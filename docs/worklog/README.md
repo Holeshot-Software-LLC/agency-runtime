@@ -743,6 +743,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `49b6a6be` | 2026-08-10 | test(scratch): reclaim the Windows pytest scratch tree after every run | null | null |
 | `c0adbb8b` | 2026-08-10 | docs(scratch): retract the claim that tree size caused the identity failures | null | null |
 | `71833c5c` | 2026-08-10 | fix(release): stop a staging directory losing its identity by being used | null | null |
+| `20737a7a` | 2026-08-10 | test(release): pin the path-to-handle identity assumption | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
