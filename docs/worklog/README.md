@@ -747,6 +747,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c850fe9b` | 2026-08-11 | fix(rule8): stop Agency withholding a turn because Agency is unavailable | null | null |
 | `00e15c7d` | 2026-08-11 | fix(ci): clear the three layers blocking a green quality job | null | null |
 | `448fd641` | 2026-08-11 | fix(ci): green the fast production spine | null | null |
+| `a2634886` | 2026-08-11 | fix(conformance): make three curated mutations actually prove their invariants | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
