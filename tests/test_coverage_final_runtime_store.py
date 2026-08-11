@@ -23,7 +23,7 @@ from agency_runtime.core import (
     specialist_context,
 )
 from agency_runtime.core.config import AgencyConfig
-from agency_runtime.core.evals import delegation as delegation_eval
+from agency_runtime.core.evals import host_parity as host_parity_eval
 from agency_runtime.core.header import contract as header_contract
 from agency_runtime.core.resident_manager_binding import build_resident_manager_binding
 from agency_runtime.core.selector import pipeline, policy
@@ -162,7 +162,9 @@ def _metadata(*, mode: int, inode: int = 7, device: int = 3, links: int = 1) -> 
     )
 
 
-def test_delegation_eval_rejects_a_missing_adapter_receipt(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_host_parity_eval_rejects_a_missing_adapter_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     class FakeStore:
         def __init__(self, _path: Path) -> None:
             pass
@@ -175,12 +177,12 @@ def test_delegation_eval_rejects_a_missing_adapter_receipt(monkeypatch: pytest.M
         host_name="missing-host",
         post_api_request_handler=lambda **_kwargs: None,
     )
-    monkeypatch.setattr(delegation_eval, "Store", FakeStore)
-    monkeypatch.setattr(delegation_eval, "_make_adapter", lambda *_args: adapter)
-    monkeypatch.setattr(delegation_eval, "_create_eval_turn", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(host_parity_eval, "Store", FakeStore)
+    monkeypatch.setattr(host_parity_eval, "_make_adapter", lambda *_args: adapter)
+    monkeypatch.setattr(host_parity_eval, "_create_eval_turn", lambda *_args, **_kwargs: None)
 
     with pytest.raises(AssertionError, match="model receipt is missing"):
-        delegation_eval._case_all_adapters_capture_model_receipts()
+        host_parity_eval._case_all_adapters_capture_model_receipts()
 
 
 def _activation_snapshot() -> dict[str, Any]:

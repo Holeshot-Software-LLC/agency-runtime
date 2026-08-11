@@ -51,9 +51,7 @@ def _projection_site_packages(digest: str) -> Path | None:
         return None
     with suppress(OSError, ValueError):
         candidate = (
-            private_runtime_directory("launchers")
-            / f"runtime-sha256-{digest}"
-            / "site-packages"
+            private_runtime_directory("launchers") / f"runtime-sha256-{digest}" / "site-packages"
         )
         if candidate.is_dir():
             return candidate

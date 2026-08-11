@@ -112,6 +112,7 @@ def _bounded_intent_units(value: object) -> list[str]:
             units.append(cleaned[:_ROUTING_INTENT_MAX_UNIT_CHARS])
     return units
 
+
 # Rule 8, as a data definition rather than a claim about the code.
 #
 # WITHHELD: Agency's verifier evaluated the response and rejected it, or the

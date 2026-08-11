@@ -216,7 +216,7 @@ def test_an_existing_database_gains_the_table(tmp_path: Path) -> None:
 def test_the_empty_surface_distinguishes_off_from_quiet(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """"Nothing here" has two causes and an operator needs to know which."""
+    """ "Nothing here" has two causes and an operator needs to know which."""
 
     db = tmp_path / "agency.db"
     Store(str(db))

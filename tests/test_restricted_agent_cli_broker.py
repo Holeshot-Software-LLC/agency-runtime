@@ -14,7 +14,6 @@ import pytest
 from agency_runtime.cli import agent_control_broker as broker
 from agency_runtime.cli import (
     config_commands,
-    delegation_commands,
     install_commands,
     roster_commands,
 )
@@ -1151,49 +1150,6 @@ def test_default_agent_activation_reads_but_cannot_write_through_restricted_brok
     )
     with pytest.raises(RuntimeError, match="restricted model-facing process"):
         roster_commands._set_agent_enabled("alpha-reviewer", enabled=False)
-
-
-def test_restricted_delegation_store_returns_controlled_error_without_execution(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from agency_runtime.core.delegation import backends
-
-    emitted: list[dict[str, Any]] = []
-    executions: list[str] = []
-
-    class Candidate:
-        def __init__(self, **_kwargs: Any) -> None:
-            pass
-
-        def execute(self, *_args: Any, **_kwargs: Any) -> dict[str, Any]:
-            executions.append("executed")
-            return {"status": "completed", "exit_code": 0}
-
-    monkeypatch.setattr(runtime_control, "master_enabled", lambda: True)
-    monkeypatch.setattr(backends, "CodexExecBackend", Candidate)
-    monkeypatch.setattr(delegation_commands, "_store", _raise_restricted)
-    monkeypatch.setattr(delegation_commands, "_print_json", emitted.append)
-    args = Namespace(
-        agent="code-reviewer",
-        backend="codex",
-        command=None,
-        json=True,
-        task="review this change",
-        timeout=30.0,
-    )
-
-    assert delegation_commands.cmd_delegate(args) == 2
-    assert executions == []
-    assert emitted == [
-        {
-            "status": "error",
-            "error": (
-                "delegation evidence Store is unavailable from this restricted process; "
-                "execution was not started and is never proxied through the dashboard"
-            ),
-            "exit_code": 2,
-        }
-    ]
 
 
 @pytest.mark.parametrize("failure_stage", ["store", "seed"])

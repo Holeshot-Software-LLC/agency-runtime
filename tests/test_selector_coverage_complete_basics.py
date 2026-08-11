@@ -12,8 +12,8 @@ import pytest
 
 from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig, SelectorConfig
 from agency_runtime.core.evals import benchmarks
-from agency_runtime.core.evals import delegation as delegation_eval
 from agency_runtime.core.evals import full_roster as full_roster_eval
+from agency_runtime.core.evals import host_parity as host_parity_eval
 from agency_runtime.core.evals import routing as routing_eval
 from agency_runtime.core.selector import (
     cache,
@@ -560,7 +560,7 @@ def test_eval_helpers_fail_closed_without_running_wall_clock_gates(
         benchmarks.generated_catalog(-1)
     assert benchmarks._percentile([], 0.95) == 0.0
 
-    failed = delegation_eval._run_case(
+    failed = host_parity_eval._run_case(
         "assertion",
         lambda: (_ for _ in ()).throw(AssertionError("contract failed")),
     )

@@ -24,7 +24,6 @@ from agency_runtime.core.selector.policy import load_policy
 from . import _common
 from . import config_commands as _config
 from . import config_wizard as _wizard
-from . import delegation_commands as _delegation
 from . import eval_commands as _evals
 from . import evidence_commands as _evidence
 from . import install_commands as _install
@@ -302,7 +301,7 @@ _search = _roster._search
 cmd_search = _roster.cmd_search
 cmd_route = _roster.cmd_route
 cmd_explain = _roster.cmd_explain
-cmd_eval_delegation = _roster.cmd_eval_delegation
+cmd_eval_host_parity = _roster.cmd_eval_host_parity
 cmd_eval_routing = _roster.cmd_eval_routing
 cmd_eval_compare = _evals.cmd_eval_compare
 cmd_eval_decision_conformance = _evals.cmd_eval_decision_conformance
@@ -369,12 +368,6 @@ def cmd_policy(args: argparse.Namespace) -> int:
     return _roster.cmd_policy(args, dependencies=dependencies)
 
 
-_run_command = _delegation._run_command
-_emit_delegate_result = _delegation._emit_delegate_result
-cmd_delegate = _delegation.cmd_delegate
-cmd_codex_exec = _delegation.cmd_codex_exec
-cmd_run = _delegation.cmd_run
-
 cmd_evidence_children = _evidence.cmd_evidence_children
 cmd_evidence_latency = _evidence.cmd_evidence_latency
 cmd_evidence_intent = _evidence.cmd_evidence_intent
@@ -407,7 +400,6 @@ _COMMAND_NAMES = (
     "cmd_agent_disable",
     "cmd_agent_enable",
     "cmd_agents_list",
-    "cmd_codex_exec",
     "cmd_config_get",
     "cmd_config_path",
     "cmd_config_provider_list",
@@ -424,15 +416,14 @@ _COMMAND_NAMES = (
     "cmd_dashboard_service",
     "cmd_db_stats",
     "cmd_db_trim",
-    "cmd_delegate",
     "cmd_doctor",
     "cmd_eval_compare",
     "cmd_eval_decision_conformance",
-    "cmd_eval_delegation",
     "cmd_eval_full_roster",
     "cmd_eval_product",
     "cmd_eval_upstream_architecture",
     "cmd_eval_upstream_selection",
+    "cmd_eval_host_parity",
     "cmd_eval_routing",
     "cmd_eval_workforce",
     "cmd_evidence_children",
@@ -467,7 +458,6 @@ _COMMAND_NAMES = (
     "cmd_roster_candidate_reject",
     "cmd_roster_candidate_compare",
     "cmd_route",
-    "cmd_run",
     "cmd_search",
     "cmd_serve",
     "cmd_smoke",

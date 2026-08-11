@@ -1,7 +1,10 @@
-"""Deterministic delegation evaluation harness.
+"""Deterministic host-parity evaluation harness.
 
-This suite checks the observable contract for delegation without calling an LLM
-or spawning real workers. It is intended for `agency eval delegation` and CI.
+Rule 9 says a capability that exists on one host and not another is incomplete.
+This suite proves the observable contract holds identically on all five adapters
+without calling an LLM: each records the skills and specialists a turn loaded,
+each records a delegation the *host itself* chose to make, and each captures a
+model receipt. It never spawns a worker — Agency does not decide to spawn.
 """
 
 from __future__ import annotations
@@ -67,7 +70,7 @@ def _case_status_query_no_delegate() -> dict[str, Any]:
 def _with_store(
     fn: Callable[[Store, HermesAdapter], dict[str, Any] | None],
 ) -> dict[str, Any] | None:
-    with private_temporary_directory(prefix="delegation-eval") as tmpdir:
+    with private_temporary_directory(prefix="host-parity-eval") as tmpdir:
         store = Store(tmpdir / "agency.db")
         adapter = HermesAdapter(store=store)
         return fn(store, adapter)
@@ -90,9 +93,9 @@ def _create_eval_turn(
         trace_id=trace_id,
         session_id="eval-session",
         host=host,
-        user_message="synthetic delegation evaluation",
+        user_message="synthetic host-parity evaluation",
         metadata={
-            "source": "delegation-eval",
+            "source": "host-parity-eval",
             "request_kind": "nontrivial",
         },
     )
@@ -107,7 +110,7 @@ def _case_all_adapters_track_evidence() -> dict[str, Any]:
         ClaudeAdapter,
         GenericAdapter,
     ):
-        with private_temporary_directory(prefix="delegation-eval") as tmpdir:
+        with private_temporary_directory(prefix="host-parity-eval") as tmpdir:
             store = Store(tmpdir / "agency.db")
             adapter = _make_adapter(adapter_cls, store)
             trace_id = f"eval-{adapter.host_name}"
@@ -163,7 +166,7 @@ def _case_all_adapters_capture_model_receipts() -> dict[str, Any]:
         ClaudeAdapter,
         GenericAdapter,
     ):
-        with private_temporary_directory(prefix="delegation-eval") as tmpdir:
+        with private_temporary_directory(prefix="host-parity-eval") as tmpdir:
             store = Store(tmpdir / "agency.db")
             adapter = _make_adapter(adapter_cls, store)
             trace_id = f"eval-model-{adapter.host_name}"
@@ -187,8 +190,8 @@ def _case_all_adapters_capture_model_receipts() -> dict[str, Any]:
     return {"hosts": hosts}
 
 
-def run_delegation_eval() -> dict[str, Any]:
-    """Run the deterministic delegation eval suite."""
+def run_host_parity_eval() -> dict[str, Any]:
+    """Run the deterministic host-parity eval suite."""
     cases = [
         ("detect_numbered_list", _case_detect_numbered_list),
         ("detect_status_query_no_delegate", _case_status_query_no_delegate),
@@ -198,7 +201,7 @@ def run_delegation_eval() -> dict[str, Any]:
     results = [_run_case(name, fn) for name, fn in cases]
     passed = sum(1 for case in results if case["passed"])
     return {
-        "suite": "delegation",
+        "suite": "host-parity",
         "passed": passed == len(results),
         "passed_count": passed,
         "failed_count": len(results) - passed,
@@ -206,4 +209,4 @@ def run_delegation_eval() -> dict[str, Any]:
     }
 
 
-__all__ = ["run_delegation_eval"]
+__all__ = ["run_host_parity_eval"]

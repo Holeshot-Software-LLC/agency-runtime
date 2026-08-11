@@ -37,7 +37,7 @@ def test_smoke_all_hosts_ignores_cached_real_store_path(
     monkeypatch.setattr(smoke, "_smoke_generated_plugin", inspect_isolated_host)
     monkeypatch.setattr(
         smoke,
-        "run_delegation_eval",
+        "run_host_parity_eval",
         lambda: {"passed": True, "passed_count": 1, "failed_count": 0},
     )
     try:

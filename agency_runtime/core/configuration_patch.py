@@ -89,9 +89,7 @@ _SET_VALIDATORS = {
     "selector.trivial_msg_threshold": lambda item: _integer(
         item, "selector.trivial_msg_threshold", minimum=0, maximum=10_000
     ),
-    "selector.record_routing_intent": lambda item: _boolean(
-        item, "selector.record_routing_intent"
-    ),
+    "selector.record_routing_intent": lambda item: _boolean(item, "selector.record_routing_intent"),
     "delegation.mode": lambda item: _choice(
         item,
         "delegation.mode",
