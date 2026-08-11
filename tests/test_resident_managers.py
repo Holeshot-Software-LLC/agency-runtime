@@ -74,7 +74,7 @@ class _BoundaryStore:
 
 
 def test_resident_kernel_is_compact_versioned_and_content_addressed() -> None:
-    assert RESIDENT_MANAGER_KERNEL_VERSION == 3
+    assert RESIDENT_MANAGER_KERNEL_VERSION == 4
     assert len(RESIDENT_MANAGER_KERNEL) <= MAX_RESIDENT_MANAGER_KERNEL_CHARS
     assert (
         hashlib.sha256(RESIDENT_MANAGER_KERNEL.encode("utf-8")).hexdigest()
@@ -84,11 +84,22 @@ def test_resident_kernel_is_compact_versioned_and_content_addressed() -> None:
     assert RESIDENT_MANAGER_KERNEL_REFERENCE.content_hash == RESIDENT_MANAGER_KERNEL_HASH
     assert RESIDENT_MANAGER_KERNEL_REFERENCE.slugs == RESIDENT_MANAGER_SLUGS
     assert not hasattr(RESIDENT_MANAGER_KERNEL_REFERENCE, "content")
-    assert "Agency Steward owns the requested outcome" in RESIDENT_MANAGER_KERNEL
-    assert "recorded inference\nstaffing" in RESIDENT_MANAGER_KERNEL
-    assert "selects, ranks, hires" in RESIDENT_MANAGER_KERNEL
-    assert "native host alone owns worker lifecycle" in RESIDENT_MANAGER_KERNEL
-    assert "parent-only" in RESIDENT_MANAGER_KERNEL
+    # v4 restated the frame positively. v3 was almost entirely prohibitions --
+    # "never answers the domain request" alongside a loaded card telling the
+    # same worker it IS the expert -- so the kernel could read as a gag order
+    # and contradict the card. These pin the guarantees, not the prose.
+    assert "You own the requested outcome" in RESIDENT_MANAGER_KERNEL
+    assert "recorded inference staffing" in RESIDENT_MANAGER_KERNEL
+    assert "select, rank, hire" in RESIDENT_MANAGER_KERNEL
+    assert "alone owns worker lifecycle" in RESIDENT_MANAGER_KERNEL
+    assert "Never load this frame as a\nspecialist" in RESIDENT_MANAGER_KERNEL
+    # The two guarantees v4 adds, both load-bearing and easy to lose in a later
+    # trim. Without the first the kernel can be read as withholding a turn,
+    # which rule 8 forbids. Without the second it can be read as discouraging
+    # delegation -- which would suppress the very harness-spawned children that
+    # rule 4 exists to staff, and override the host's sole right to decide.
+    assert "never withholds\nyour answer" in RESIDENT_MANAGER_KERNEL
+    assert "Cards never change whether you delegate" in RESIDENT_MANAGER_KERNEL
 
 
 def test_resident_kernel_import_fails_when_the_budget_is_exceeded(
