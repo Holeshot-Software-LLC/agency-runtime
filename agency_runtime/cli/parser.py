@@ -1532,6 +1532,34 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     )
     rejections.add_argument("--json", action="store_true", help="Print JSON")
     _bind(rejections, handlers, "cmd_evidence_rejections")
+    latency = evidence_sub.add_parser(
+        "latency",
+        help="Show what Agency's own routing costs a turn, against a budget",
+    )
+    latency.add_argument(
+        "--source",
+        default=None,
+        help="Read one decision source only (default: every source)",
+    )
+    latency.add_argument(
+        "--limit",
+        type=int,
+        default=200,
+        help="Most recent N decisions with a recorded latency (default: 200, max: 1000)",
+    )
+    latency.add_argument(
+        "--budget-ms",
+        type=int,
+        default=15000,
+        help="p95 budget in milliseconds; exit 1 when exceeded (default: 15000)",
+    )
+    latency.add_argument(
+        "--db",
+        default=None,
+        help="Read this evidence store instead of the configured one",
+    )
+    latency.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(latency, handlers, "cmd_evidence_latency")
     wiring = evidence_sub.add_parser(
         "wiring",
         help="Check that each host invokes the projection the installer staged",

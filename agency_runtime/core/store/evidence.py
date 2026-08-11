@@ -2131,6 +2131,48 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         finally:
             conn.close()
 
+    def get_routing_latencies(
+        self,
+        *,
+        source: str = "",
+        limit: int = 200,
+    ) -> list[dict[str, Any]]:
+        """Return recent routing decisions with a recorded latency.
+
+        ``routing_decisions.latency_ms`` is the only timing column in the whole
+        schema, and nothing surfaced it, so what Agency costs a turn was
+        unanswerable without opening the database by hand.
+
+        Zero is excluded, not counted as a fast turn.  Both writers store ``0``
+        rather than NULL when no provider call was spent -- an abstained turn,
+        or a contract check that never routed -- so including them would report
+        Agency as cheap in exact proportion to how often it did nothing.  On
+        this store that alone moved p50 by tens of seconds.
+
+        Read-only, newest first, and not filtered to a session: the question is
+        what Agency costs in general, not what it cost once.
+        """
+
+        bounded = max(1, min(int(limit), 1000))
+        parameters: list[Any] = []
+        source_clause = ""
+        if source:
+            source_clause = " AND source = ?"
+            parameters.append(source)
+        parameters.append(bounded)
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT trace_id, session_id, status, source, provider, "  # nosec B608
+                "latency_ms, confidence, created_at FROM routing_decisions "
+                f"WHERE latency_ms IS NOT NULL AND latency_ms > 0{source_clause} "
+                "ORDER BY created_at DESC, rowid DESC LIMIT ?",
+                tuple(parameters),
+            ).fetchall()
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
+
     def get_open_traces_for_session(self, session_id: str) -> list[str]:
         """Return deterministic, non-terminal turn traces for a session."""
         if not session_id:
