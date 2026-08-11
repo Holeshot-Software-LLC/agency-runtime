@@ -51,13 +51,39 @@ blocks: [AR-178, AR-200, AR-201]
 
 ## Problem
 
-Agency can route audited specialists, but it does not yet prove that every new
-intent and every native work unit is performed with the best compatible
-specialist rather than an untyped generic worker. Recruitment metadata, typed
-planning, exact-version activation, native delegation, contractor hiring,
-latency, and outcome evidence are not yet one coherent system. Complete
-one-shot applications are tracked by AR-178 as a deferred post-production
-evaluation; they do not block AR-119, AR-125, production GO, or release.
+> **RESTATED 2026-08-11.** Everything below the Approach heading is retained as
+> provenance and is no longer the contract. This issue was written around
+> "every native work unit is performed by the best compatible specialist" and
+> closed on five per-host *product trials* — Agency authoring a multi-unit plan,
+> staffing a team against it, executing it, and being graded on the result.
+> That direction is retired: AR-214, AR-219, AR-220 and AR-221 are closed as
+> superseded, Job B is deleted, and `unit_agent_plan` and the isolated delivery
+> mode went with it (`40c608dc`, `d9f6e6be`). **Do not restore the work-unit
+> execution framing from the history below.**
+
+**What is actually wanted: prove the nine vision rules on every supported host,
+using evidence the host itself wrote.**
+
+Seven rules are done and evidenced. Rule 4 — harness-spawned children receive
+specialist cards, plural — was proven in production for the first time on
+2026-08-11: one child, three cards, `correlated=true`, the `jit:v5` envelope
+present in record 0 of the child's own transcript before it first spoke. Rule 8
+was settled the same day and is now auditable rather than asserted.
+
+What remains is rule 4 on the other hosts, and therefore rule 9. Measured
+2026-08-11 with `agency evidence children`:
+
+| host | children provably staffed | blocker |
+|---|---|---|
+| claude | **1** (6 legacy) | none — proven |
+| codex | **0** (11 legacy) | hooks never trusted in a Codex TUI; AR-209's encrypted `PreToolUse` payload |
+| zcode | not measured | host emits no `SubagentStart`/`SubagentStop` |
+| openclaw | not measured | not installed on the development box |
+| hermes | not measured | not installed on the development box |
+
+Codex is the sharp case: the host demonstrably spawns children — eleven legacy
+artifacts prove it — and not one carried a card. That is the differentiator
+silently absent on a supported host.
 
 ## Current state
 
@@ -3466,6 +3492,28 @@ out upstream arms remain invalid, never losses.
 > banner, but ZCode native children are host-limited (ZCode emits no
 > `SubagentStart`/`SubagentStop`), so governed native-child self-routing is a
 > follow-up gated on host support.
+
+**Superseded 2026-08-11.** The gate list below the horizontal rule is the
+retired product-trial contract, kept for provenance. The live acceptance is
+this: **each rule is closed by evidence the host itself wrote, never by an
+Agency row.** A `specialists_loaded` row proves only that Agency tried — it is
+written by the same code under test, and during degraded parent inference it is
+not written at all even when delivery succeeded. That trap produced years of
+false negatives on rule 4; `agency evidence children` exists to avoid it.
+
+- [x] Rules 1, 2, 3, 5, 6, 7 hold, each with a landed commit.
+- [x] Rule 4 on **claude** — child `ad68a49ad2297ebd2`, three cards, `legacy=false`, `correlated=true`, envelope in record 0 (2026-08-11).
+- [x] Rule 8 — Agency never withholds a turn because Agency is unavailable; the verifier's definite negative and the malformed-`Stop` forgery guard are deliberate and stay.
+- [x] Rule 8 is auditable, not asserted: `agency evidence rejections` partitions closed runs into withheld versus Agency-was-blind and exits non-zero when anything was withheld.
+- [ ] Rule 4 on **codex**: at least one child with a non-empty card list and `correlated=true`. Needs hook trust in a fresh Codex TUI, and AR-209 if the encrypted `PreToolUse` payload blocks correlation.
+- [ ] Rule 4 on **zcode**, or an explicit recorded finding that the host cannot support it (it emits no `SubagentStart`/`SubagentStop`).
+- [ ] Rule 4 on **openclaw** and **hermes**, on a machine where they are installed.
+- [ ] Rule 9: the rule-8 split behaves identically on all five hosts. Proven in code for openclaw; unverified live, because the Node-side consumer is external to this repo and the host is not installed here.
+- [ ] `agency evidence children` reports zero uncorrelated staffed children on every host that has any.
+
+---
+
+*Retired product-trial gates, provenance only:*
 
 - [ ] AR-120 through AR-125 are complete and tracker-evidenced.
 - [ ] Every new intent is planned or explicitly classified as a continuation, and every Agency-assigned native child consumes the exact specialist recipe and one-use activation receipt.
