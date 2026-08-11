@@ -53,7 +53,11 @@ _FAILURE_STATES = frozenset(
         "timeout",
     }
 )
-_SUCCESS_STATES = frozenset({"applied", "completed", "inferred", "ok", "success"})
+# "accepted" is what the semantic router actually writes for a healthy turn --
+# every routing row on a working box carries it. Omitting it reported a box
+# whose last turn routed correctly as "unknown", and reached "operational" only
+# when the newest record was a preflight failure that had inference applied.
+_SUCCESS_STATES = frozenset({"accepted", "applied", "completed", "inferred", "ok", "success"})
 
 
 def _preflight_inference_applied(record: Mapping[str, Any]) -> bool:

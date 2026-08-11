@@ -7,19 +7,27 @@ import queue
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
+from agency_runtime.core import launcher_bootstrap
 from agency_runtime.core.codex_hook_trust import (
     _AGENCY_CODEX_PLUGIN_ID,
     _await_response,
     _project_hooks_response,
     _run_worker,
+    _trusted_worker_argv,
     inspect_codex_hook_trust,
     sanitize_codex_hook_trust_report,
 )
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
+from agency_runtime.core.process_argv import (
+    absolute_executable_path,
+    agency_bootstrap_path,
+    isolated_python_argv,
+)
 
 
 def _events() -> tuple[str, ...]:
@@ -337,3 +345,71 @@ def test_interactive_worker_completes_initialize_and_hooks_list(tmp_path: Path) 
 def test_inspector_rejects_unbounded_timeouts(tmp_path: Path, timeout: object) -> None:
     with pytest.raises(ValueError, match="timeout"):
         inspect_codex_hook_trust(tmp_path, timeout=timeout)  # type: ignore[arg-type]
+
+
+def test_worker_argv_launches_the_published_projection_not_the_checkout(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A checkout-run CLI must not build its worker from checkout artifacts.
+
+    Both the virtual environment's interpreter and the checkout's own
+    ``_bootstrap.py`` are cross-account writable, so an argv naming either can
+    never be frozen. Regressing this makes every inspection fail while Codex
+    itself is healthy.
+    """
+
+    published = tmp_path / "launchers" / "runtime-sha256-abc" / "site-packages"
+    bootstrap = published / "agency_runtime" / "_bootstrap.py"
+    bootstrap.parent.mkdir(parents=True)
+    bootstrap.write_text("# published", encoding="utf-8")
+
+    plan = SimpleNamespace(bootstrap_path=str(bootstrap))
+    monkeypatch.setattr(launcher_bootstrap, "running_runtime_digest", lambda: "")
+    monkeypatch.setattr(launcher_bootstrap, "plan_private_package_runtime", lambda _: plan)
+    monkeypatch.setattr(launcher_bootstrap, "verify_private_package_runtime", lambda _: "abc")
+    monkeypatch.setattr(
+        launcher_bootstrap, "persistent_python_executable", lambda: sys._base_executable
+    )
+
+    argv = _trusted_worker_argv()
+
+    assert argv[3] == str(bootstrap)
+    assert argv[3] != agency_bootstrap_path()
+    assert argv[0] == absolute_executable_path(sys._base_executable)
+    assert argv[1:3] == ["-I", "-S"]
+    assert argv[4:] == ["agency_runtime.core.codex_hook_trust", "--worker"]
+
+
+def test_absent_projection_is_not_reported_as_a_trust_failure(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """An unlaunchable inspector must never read as `the hooks are untrusted`.
+
+    `inspection_failed` with `observed=0 missing=8` was indistinguishable from
+    a real negative and cost a full measurement attempt.
+    """
+
+    def _unavailable(_: object) -> str:
+        raise FileNotFoundError("persistent executable artifact is unavailable")
+
+    monkeypatch.setattr(launcher_bootstrap, "running_runtime_digest", lambda: "")
+    monkeypatch.setattr(launcher_bootstrap, "verify_private_package_runtime", _unavailable)
+
+    report = inspect_codex_hook_trust(tmp_path, timeout=5.0)
+
+    assert report["error"] == "worker_projection_unavailable"
+    assert report["error"] != "inspection_failed"
+    assert report["status"] == "error"
+    assert report["observed_count"] == 0
+    assert sanitize_codex_hook_trust_report(report)["error"] == "worker_projection_unavailable"
+
+
+def test_isolated_python_argv_bootstrap_override_is_opt_in() -> None:
+    default = isolated_python_argv(sys._base_executable, "agency_runtime.cli")
+    overridden = isolated_python_argv(
+        sys._base_executable, "agency_runtime.cli", bootstrap_path="C:/published/_bootstrap.py"
+    )
+
+    assert default[3] == agency_bootstrap_path()
+    assert overridden[3] == str(Path("C:/published/_bootstrap.py"))
+    assert default[:3] == overridden[:3]

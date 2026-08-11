@@ -24,11 +24,16 @@ def _projection_bootstrap(digest: str) -> str:
 
 @pytest.fixture
 def pointer_root(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
-    """Redirect the advisory pointer away from the operator's real runtime."""
+    """Redirect the advisory pointers away from the operator's real runtime.
 
-    target = tmp_path / "current.json"
-    monkeypatch.setattr(runtime_staleness, "_pointer_path", lambda: target)
-    return target
+    The whole launcher directory moves, not just the legacy file, because
+    pointers are now per host and are discovered by scanning that directory.
+    """
+
+    launchers = tmp_path / "launchers"
+    launchers.mkdir()
+    monkeypatch.setattr(runtime_staleness, "private_runtime_directory", lambda _: launchers)
+    return launchers / "current.json"
 
 
 def test_projection_digest_is_read_from_the_directory_name() -> None:
@@ -311,6 +316,119 @@ def test_recorded_pointer_carries_the_running_package_root(
         host="claude",
     )
 
-    stored = json.loads(pointer_root.read_text(encoding="utf-8"))
+    stored = json.loads((pointer_root.parent / "current-claude.json").read_text(encoding="utf-8"))
     assert stored["source_root"] == _CHECKOUT_ROOT
     assert stored["runtime_digest"] == _DIGEST_A
+    # A named host must not write the shared pointer, or one host's install
+    # would keep answering for another's.
+    assert not pointer_root.exists()
+
+
+def test_one_hosts_install_never_answers_for_another(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+    in_checkout: None,
+) -> None:
+    """The exact defect: codex current, claude behind, on the same box.
+
+    A single shared pointer could not express this. It reported codex as stale
+    under claude's digest -- and named `--agent claude` as the remedy, because
+    that is whose record it was carrying -- immediately after a fully
+    successful codex install.
+    """
+
+    runtime_staleness.record_installed_runtime(_projection_bootstrap(_DIGEST_A), host="claude")
+    runtime_staleness.record_installed_runtime(_projection_bootstrap(_DIGEST_B), host="codex")
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_B)
+
+    reports = runtime_staleness.cli_install_drift_reports()
+
+    assert [report.host for report in reports] == ["claude"]
+    assert reports[0].installed_digest == _DIGEST_A
+    assert "--agent claude" in reports[0].message
+    assert runtime_staleness.installed_runtime_pointer("codex") == (_DIGEST_B, "codex")
+    assert runtime_staleness.installed_runtime_pointer("claude") == (_DIGEST_A, "claude")
+
+
+def test_every_stale_host_is_reported_not_just_the_first(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+    in_checkout: None,
+) -> None:
+    runtime_staleness.record_installed_runtime(_projection_bootstrap(_DIGEST_A), host="claude")
+    runtime_staleness.record_installed_runtime(_projection_bootstrap(_DIGEST_A), host="codex")
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_B)
+
+    reports = runtime_staleness.cli_install_drift_reports()
+
+    assert sorted(report.host for report in reports) == ["claude", "codex"]
+    # The single-report accessor stays a view onto the first of several, never
+    # a claim that it is the only one.
+    assert runtime_staleness.cli_install_drift() == reports[0]
+
+
+def test_a_hook_compares_against_its_own_hosts_pointer(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+) -> None:
+    """A claude hook must not be judged by whatever host installed last."""
+
+    runtime_staleness.record_installed_runtime(_projection_bootstrap(_DIGEST_A), host="claude")
+    runtime_staleness.record_installed_runtime(_projection_bootstrap(_DIGEST_B), host="codex")
+    monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: _DIGEST_A)
+
+    assert runtime_staleness.runtime_staleness(host="claude") is None
+
+    codex_drift = runtime_staleness.runtime_staleness(host="codex")
+
+    assert codex_drift is not None
+    assert codex_drift.installed_digest == _DIGEST_B
+    assert "--agent codex" in codex_drift.message
+
+
+def test_a_legacy_pointer_still_answers_for_the_host_it_named(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+    in_checkout: None,
+) -> None:
+    """Existing installations must not silently lose their recorded state."""
+
+    _record(pointer_root, _DIGEST_A, _CHECKOUT_ROOT, host="claude")
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", lambda _path: _DIGEST_B)
+
+    assert runtime_staleness.installed_runtime_pointer("claude") == (_DIGEST_A, "claude")
+    # ...and says nothing about a host it never described.
+    assert runtime_staleness.installed_runtime_pointer("codex") == ("", "")
+    assert [report.host for report in runtime_staleness.cli_install_drift_reports()] == ["claude"]
+
+
+def test_a_per_host_record_supersedes_the_legacy_one(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+    in_checkout: None,
+) -> None:
+    _record(pointer_root, _DIGEST_A, _CHECKOUT_ROOT, host="claude")
+    runtime_staleness.record_installed_runtime(_projection_bootstrap(_DIGEST_B), host="claude")
+
+    assert runtime_staleness.installed_runtime_pointer("claude") == (_DIGEST_B, "claude")
+    assert len(runtime_staleness.cli_install_drift_reports()) <= 1
+
+
+def test_a_foreign_package_is_never_digest_compared_for_any_host(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+    in_checkout: None,
+) -> None:
+    """Planning hashes the whole closure; a foreign root must short-circuit."""
+
+    _record(pointer_root, _DIGEST_A, _TOOL_ROOT, host="hermes")
+
+    def _unreachable(_path: object) -> str:
+        raise AssertionError("a foreign package must not be digest-compared")
+
+    monkeypatch.setattr(runtime_staleness, "source_runtime_drift", _unreachable)
+
+    reports = runtime_staleness.cli_install_drift_reports()
+
+    assert [report.host for report in reports] == ["hermes"]
+    assert reports[0].foreign_package is True

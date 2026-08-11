@@ -66,6 +66,23 @@ DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS: tuple[tuple[str, str], ...] = (
     ("launch_model", "TEXT NOT NULL DEFAULT ''"),
 )
 
+# Columns an already-created model receipts table gains by migration, declared
+# the same single-source way and for the same reason as the tuple above.
+#
+# ``latency_ms`` is how long the provider call took.  The value was always
+# measured -- ``StructuredProviderResult.latency_ms`` -- and then dropped on the
+# floor, because the receipt had nowhere to put it and the two timestamp columns
+# were both stamped at record time.  427 of 433 receipts on the first box to be
+# checked had ``started_at == ended_at``, so "what does Agency cost a turn"
+# could be answered only in total, never per call.
+#
+# Deliberately a duration rather than a reconstructed span: writing
+# ``ended_at - latency`` into a timestamp column would put a fabricated absolute
+# time next to real ones.
+MODEL_RECEIPT_MIGRATED_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("latency_ms", "INTEGER NOT NULL DEFAULT 0"),
+)
+
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_worker_runs_native_scope "
@@ -892,6 +909,7 @@ CREATE TABLE IF NOT EXISTS model_receipts (
     recorded_at TEXT NOT NULL DEFAULT '',
     started_at TEXT,
     ended_at TEXT,
+    latency_ms INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'unknown',
     FOREIGN KEY (trace_id) REFERENCES runs(trace_id)
 );
@@ -1435,6 +1453,27 @@ CREATE TABLE IF NOT EXISTS agent_performance_events (
     created_at TEXT NOT NULL,
     CHECK (score IS NULL OR (score >= 0.0 AND score <= 1.0)),
     FOREIGN KEY (worker_id) REFERENCES agent_workers(worker_id)
+);
+
+-- Cross-process routing reuse.
+--
+-- The in-memory routing cache cannot hit in production: every hook event runs
+-- as its own short-lived process, so the module-level dict is constructed
+-- empty and destroyed on every turn.  This table is the same cache with a
+-- lifetime the hook model actually provides.
+--
+-- Payload is restricted to the routing fields already allowlisted for
+-- persistence.  The live routing dict also carries work-unit text and unit
+-- descriptors, which the decision projection deliberately drops; a cache is
+-- not a reason to widen what the store retains.  Anything a reuse needs but
+-- cannot be persisted -- the compatibility receipt above all -- is recomputed
+-- from the live catalog on read, which is deterministic and local.
+CREATE TABLE IF NOT EXISTS routing_cache (
+    cache_key TEXT PRIMARY KEY,
+    context_fingerprint TEXT NOT NULL DEFAULT '',
+    source_message_hash TEXT NOT NULL DEFAULT '',
+    routing TEXT NOT NULL,
+    created_at TEXT NOT NULL
 );
 
 -- Schema version
@@ -4799,6 +4838,8 @@ def migrate_schema(
         "session_digest",
         "TEXT NOT NULL DEFAULT ''",
     )
+    for column, definition in MODEL_RECEIPT_MIGRATED_COLUMNS:
+        ensure_column(conn, "model_receipts", column, definition)
     ensure_column(
         conn,
         "trace_tombstones",

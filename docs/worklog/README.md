@@ -752,6 +752,18 @@ This registry connects repository history to the roadmap and to optional detail 
 | `01bd5d04` | 2026-08-11 | docs(roadmap): retire the product-trial direction as superseded by the vision | null | null |
 | `1a6d3612` | 2026-08-11 | feat(steward): restate the resident kernel as a frame, not a gag order | null | null |
 | `c6666369` | 2026-08-11 | docs(roadmap): restate AR-119 as the vision it was always trying to describe | null | null |
+| `ecfce69b` | 2026-08-11 | docs(roadmap): unblock the codex rule-4 bench and record why it stalled | null | null |
+| `bf2888a9` | 2026-08-11 | docs(roadmap): root-cause codex hook-trust inspection_failed | null | null |
+| `6989ecb1` | 2026-08-11 | docs(roadmap): rule 4 on codex measured negative, AR-209 confirmed | null | null |
+| `228c720c` | 2026-08-11 | docs(roadmap): census all 1181 rollouts; encryption is universal | null | null |
+| `2865493d` | 2026-08-11 | fix(codex): let hook-trust inspection actually launch its worker | null | null |
+| `8b92a5b9` | 2026-08-11 | fix(install): record the installed runtime per host, not once per box | null | null |
+| `3708c96d` | 2026-08-11 | feat(evidence): surface what Agency's routing costs a turn | null | null |
+| `f0a6e470` | 2026-08-11 | docs(roadmap): locate the routing latency, and why it stops being attributable | null | null |
+| `7d6780bd` | 2026-08-11 | feat(store): record per-call provider latency so the turn cost splits | null | null |
+| `57c67047` | 2026-08-11 | docs(roadmap): the routing cache has never hit once, and cannot | null | null |
+| `f1fd9064` | 2026-08-11 | feat(selector): give the routing cache a lifetime the hook model provides | null | null |
+| `9b3a4828` | 2026-08-11 | fix(dashboard): count a routed turn as successful inference | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

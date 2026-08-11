@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 from pathlib import Path
 
 from agency_runtime.core.child_delivery_evidence import (
@@ -118,6 +119,130 @@ def cmd_evidence_rejections(args: argparse.Namespace) -> int:
         for row in published:
             print(_line(row))
     return 1 if withheld else 0
+
+
+def _percentile(ordered: list[int], percentile: float) -> int:
+    """Return the nearest-rank percentile of an already-sorted list."""
+
+    if not ordered:
+        return 0
+    rank = max(1, math.ceil(percentile / 100 * len(ordered)))
+    return ordered[min(len(ordered), rank) - 1]
+
+
+def _latency_summary(values: list[int]) -> dict[str, int]:
+    ordered = sorted(values)
+    return {
+        "count": len(ordered),
+        "min_ms": ordered[0] if ordered else 0,
+        "p50_ms": _percentile(ordered, 50),
+        "p95_ms": _percentile(ordered, 95),
+        "max_ms": ordered[-1] if ordered else 0,
+    }
+
+
+def cmd_evidence_latency(args: argparse.Namespace) -> int:
+    """Report what Agency's own routing actually costs a turn.
+
+    ``routing_decisions.latency_ms`` is the only timing column in the schema
+    and nothing read it, so the cost of an eligible turn was invisible unless
+    someone opened the database by hand. `agency eval routing` gates latency
+    and the benchmarks score it, but both answer "did a fixture pass", not
+    "what is this box paying right now".
+
+    Reports the percentiles rather than a mean, because the mean of a
+    provider-call distribution hides exactly the tail an operator feels. Exit
+    status is 1 when p95 exceeds the budget, so this is usable as a gate; the
+    default matches the pinned cold control rather than being invented here.
+
+    Decisions recorded at zero are excluded rather than counted as fast turns.
+    Both writers store 0 when no provider call was spent, so including them
+    would report Agency as cheap in exact proportion to how often it did
+    nothing.
+    """
+
+    budget = int(getattr(args, "budget_ms", 15000) or 15000)
+    rows = Store(getattr(args, "db", None)).get_routing_latencies(
+        source=getattr(args, "source", None) or "",
+        limit=getattr(args, "limit", 200) or 200,
+    )
+    values = [int(row["latency_ms"]) for row in rows]
+    overall = _latency_summary(values)
+    # Only decisions whose calls actually reported a duration can be split.
+    # Receipts written before the latency column existed report 0, and counting
+    # those as "no provider time" would attribute the whole turn to Agency.
+    attributable = [row for row in rows if int(row.get("provider_ms") or 0) > 0]
+    split = {
+        "decisions": len(attributable),
+        "unattributed_decisions": len(rows) - len(attributable),
+        "provider_ms": _latency_summary([int(row["provider_ms"]) for row in attributable]),
+        "agency_ms": _latency_summary(
+            [max(0, int(row["latency_ms"]) - int(row["provider_ms"])) for row in attributable]
+        ),
+        "calls_per_decision": (
+            round(
+                sum(int(row.get("provider_calls") or 0) for row in attributable)
+                / len(attributable),
+                2,
+            )
+            if attributable
+            else 0.0
+        ),
+    }
+    buckets: dict[str, list[int]] = {}
+    for row in rows:
+        buckets.setdefault(str(row["source"] or "unknown"), []).append(int(row["latency_ms"]))
+    grouped = {name: _latency_summary(bucket) for name, bucket in sorted(buckets.items())}
+    over_budget = bool(values) and overall["p95_ms"] > budget
+
+    if getattr(args, "json", False):
+        _print_json(
+            {
+                "budget_ms": budget,
+                "over_budget": over_budget,
+                "overall": overall,
+                "split": split,
+                "by_source": grouped,
+                "slowest": rows[:5] if rows else [],
+            }
+        )
+        return 1 if over_budget else 0
+
+    if not values:
+        print("no routing decision has recorded a latency yet")
+        return 0
+    print(
+        f"routing latency over {overall['count']} decisions "
+        f"(budget p95 {budget} ms): "
+        f"min {overall['min_ms']} ms, p50 {overall['p50_ms']} ms, "
+        f"p95 {overall['p95_ms']} ms, max {overall['max_ms']} ms"
+    )
+    for name, summary in grouped.items():
+        print(
+            f"  {name:<32} n={summary['count']:<5} "
+            f"p50 {summary['p50_ms']:>7} ms  p95 {summary['p95_ms']:>7} ms  "
+            f"max {summary['max_ms']:>7} ms"
+        )
+    if split["decisions"]:
+        print(
+            f"split over {split['decisions']} decisions "
+            f"({split['calls_per_decision']} provider calls each): "
+            f"provider p50 {split['provider_ms']['p50_ms']} ms, "
+            f"Agency p50 {split['agency_ms']['p50_ms']} ms"
+        )
+    if split["unattributed_decisions"]:
+        print(
+            f"  {split['unattributed_decisions']} decision(s) cannot be split — their "
+            "receipts predate the per-call duration and report 0"
+        )
+    if over_budget:
+        print(
+            f"❌ p95 {overall['p95_ms']} ms exceeds the {budget} ms budget — "
+            "Agency is the slow part of an eligible turn"
+        )
+    else:
+        print(f"✅ p95 within the {budget} ms budget")
+    return 1 if over_budget else 0
 
 
 def cmd_evidence_children(args: argparse.Namespace) -> int:

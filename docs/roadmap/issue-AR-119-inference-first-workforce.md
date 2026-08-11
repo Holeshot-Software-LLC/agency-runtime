@@ -3426,6 +3426,127 @@ the package-owned read-only diagnostic goal needed for Codex replay; it cannot
 select, add, rank, or substitute a worker. Missing or invalid inference fails
 the canary visibly with no deterministic fallback.
 
+### The routing cache has never hit once, and cannot — measured 2026-08-11
+
+**Zero of 200 recorded decisions came from `cache` or `session`; every one is `computed`.** That is
+not a tuning problem, it is structural:
+
+- `_ROUTING_CACHE` (`selector/cache.py:22`, TTL 600 s) and `_SESSION_ROUTING`
+  (`selector/stickiness.py:17`, max age 300 s, 0.6 similarity) are both module-level
+  `OrderedDict`s living in **process memory**.
+- Every hook event is installed as `type: command` launching `python.exe` — verified in the host's
+  own `hooks.json`, all ten events. **A fresh process per event.**
+
+So both caches are constructed empty, populated once, and destroyed microseconds later, on every
+single turn. The only production caller of the routing cache cannot, even in principle, observe a
+hit. `cache_put` runs faithfully every turn and nothing ever reads it back.
+
+**And the test suite proves the cache works.** `evals/benchmarks.py:509` asserts
+`cache_probe["cache_hit"] is True` and passes — because the benchmark warms and probes **in one
+process**. The cache is verified in the one configuration that never occurs in production. Green
+test, dead feature. A textbook instance of the rule that reachability is not evidence of purpose.
+
+**Why this is worth fixing rather than deleting.** Session stickiness targets follow-up turns
+within 300 s at 0.6 similarity — the ordinary shape of a conversation, i.e. the common case, not an
+edge case. At the measured cost of a miss (~2.4 provider calls, floor 8 s each on claude and 26–33 s
+on codex) a working cache removes most of the routing cost from continuation turns.
+
+**BUILT `f1fd9064` — `routing_cache`.** Persists a decision across processes, keyed and expired the
+same way. It stores **only fields already allowlisted for persistence** (`_ROUTING_DECISION_FIELDS`,
+bounded at 16 KB): the live routing dict also carries work-unit text and unit descriptors the
+decision projection deliberately drops, and a cache is not a reason to widen what the store retains.
+The compatibility receipt is therefore absent **by construction**, which is the point — its absence
+sends a reused entry through the ordinary reuse path, revalidating every selected id against the
+live catalog and recomputing compatibility locally. A persisted receipt would let a later process
+accept a selection without rechecking it, the one way this cache could change which specialists a
+turn gets. Reuse stays advisory: a store failure costs a later turn latency, never the turn that
+produced the decision. **One bug caught by its own test:** expiry first compared against
+`DATETIME('NOW', …)`, which yields `2026-08-11 19:33:02` while rows are written as
+`2026-08-11T19:33:02.999000+00:00` — `'T'` sorts above `' '`, so every row passed and nothing ever
+expired. Now compares in the written format.
+
+**The original shape of the fix:** back the cache with the store rather than process memory.
+`routing_decisions` already persists `context_fingerprint` and `query_hash` per decision, so most of
+the identity a cross-process lookup needs is already being written every turn — only the normalized
+cache key is absent. Confirm invalidation still keys on roster, policy, config and host before
+reusing anything.
+
+### `inference: unknown` on a healthy box — found and fixed at install 2026-08-11
+
+**Installing the latency and cache work flipped the status line from `operational` to `unknown`,
+and the install was not the cause — it only made an existing defect visible.**
+`dashboard_operational._SUCCESS_STATES` did not contain `"accepted"`, which is precisely what the
+semantic router writes for a healthy turn: **every** routing row in the live store carries it
+(`pipeline.py:922` gates acceptance on it, `workforce/inference.py:531` and
+`staffing_verifier.py:127` read it as success, and `workforce/promotion.py:9` already lists it in
+its own `_SUCCESS_OUTCOMES`). Two success vocabularies, disagreeing — the recurring two-sources
+shape.
+
+With `accepted` in neither the success nor the failure set, state fell through to `unknown`. The
+panel therefore reported **`operational` only when the newest record was a preflight failure that
+had inference applied**, and `unknown` when the newest record was a turn that routed correctly.
+Exactly backwards: a successful turn downgraded the panel, and a failure upgraded it. The install
+merely wrote a fresh accepted routing row, which pushed the older preflight receipt out of newest
+position and exposed it.
+
+**Why it survived.** The existing test reached `operational` through `"inferred"`
+(`test_dashboard_operational.py:564`) — a status nothing in production persists. Synthetic value,
+green test, broken panel; the same failure mode as the cache above, one section up.
+
+**Fixed** — `accepted` added to the vocabulary, with a test that asserts the status the router
+really writes and that fails without the fix. Live box now reads
+`inference: operational; 2 provider entries; eligible-turn inference required`.
+
+### Raised 2026-08-11 — two items the vision restatement implies
+
+- **Re-scope the dashboard and the CLI to the vision; anything not part of it goes.** Lucas's call,
+  made after the AR-119 restatement: both surfaces accumulated against the retired product-trial
+  contract, so a large part of each is now answering questions the vision does not ask. Treat this
+  as deletion work with an explicit keep-list derived from the vision, not as a refactor — the
+  default for a surface with no vision justification is removal, not migration. Do this against
+  [[agency-runtime-founding-vision]] rather than against reachability or usage counts; the code is
+  full of dead bodies and traffic is not evidence of purpose.
+- **Where the latency goes, measured 2026-08-11 — and why the store cannot finish the answer.**
+  A routing decision makes **~2.4 provider calls** (433 receipts across 196 traces). Per-call
+  duration *is* measured — `StructuredProviderResult.latency_ms` at the provider layer, carried
+  onto the workforce attempt (`inference.py:433`, populated at `:809`) — and then **discarded**:
+  `_record_workforce_model_receipts` (`selector/pipeline.py:1116`) writes each receipt without
+  `started_at`/`ended_at`, which `record_model_receipt` accepts and defaults to the record instant.
+  Result: **427 of 433 receipts have `started_at == ended_at`**, and the stored decision blob keeps
+  only the single total. The cost is unattributable by omission at one call site, not by design.
+  **Direct floor measurement instead** (trivial one-word prompt, same processes the CLI transport
+  spawns): `claude -p` **7.6 s / 8.0 s**; `codex exec` **33.1 s / 25.8 s**. At ~2 calls per
+  decision that is ~16 s on claude and ~52–66 s on codex *before* Agency's much larger prompts —
+  so provider round-trips plausibly dominate the 88 s, and **the codex transport costs 3–4× the
+  claude one for the same role**. Note the provider chain prefers `codex-subscription`.
+  **DONE `<pending>` — `model_receipts.latency_ms` now carries the per-call duration**, declared
+  through a single-source `MODEL_RECEIPT_MIGRATED_COLUMNS` tuple used by both the migration and the
+  startup staleness predicate, so an existing database is actually migrated rather than stamped
+  current and left to fail at query time. A duration, not a reconstructed span: writing
+  `ended_at - latency` into a timestamp column would sit a fabricated absolute time next to real
+  ones. `agency evidence latency` now reports the provider/Agency split and calls-per-decision,
+  read back from the receipts rather than modelled. **A `0` receipt means unreported, never a free
+  call** — such decisions are counted as unattributable instead of being blamed on Agency, which is
+  why all 200 existing decisions on this box report `cannot be split`. **Attribution begins at the
+  next `agency install`**: the hooks execute the published projection, so the recording change only
+  takes effect once it is published.
+- **BUILT `3708c96d` — `agency evidence latency`.** Reports min/p50/p95/max overall and per decision
+  source, exits 1 when p95 exceeds `--budget-ms` (default the pinned 15000 ms cold control), and
+  excludes zero-latency decisions rather than counting them as fast turns — both writers store `0`
+  when no provider call was spent, so including them reports Agency as cheap in proportion to how
+  often it did nothing. First reading: **200 decisions, p50 38.5 s, p95 140.7 s**; the live
+  `computed` path alone is **p50 88.3 s, p95 195.9 s, max 225 s** against a 15 s budget. The
+  original finding follows.
+- **There is no operator surface for Agency's own latency, and the recorded numbers are the reason
+  it needs one.** `routing_decisions.latency_ms` is the only stored timing column (318 rows, sole
+  timing column in the entire schema). Measured on this box: today's 4 accepted routing decisions
+  ran **min 26.8 s, p50 32.6 s, p95 43.3 s**; all-time `computed` averages **47.8 s** with a
+  **225 s** maximum. The pinned control elsewhere in this document is a **15000 ms cold** budget,
+  so live parent-turn routing is running roughly 2–3× over it and nothing surfaces that to an
+  operator. `agency eval routing` runs latency gates and the benchmarks compute p95, but neither
+  answers "what is Agency costing my turns right now". A read-only surface over the column already
+  being written is a small piece of work and should precede any latency tuning.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -3502,10 +3623,21 @@ not written at all even when delivery succeeded. That trap produced years of
 false negatives on rule 4; `agency evidence children` exists to avoid it.
 
 - [x] Rules 1, 2, 3, 5, 6, 7 hold, each with a landed commit.
-- [x] Rule 4 on **claude** — child `ad68a49ad2297ebd2`, three cards, `legacy=false`, `correlated=true`, envelope in record 0 (2026-08-11).
+- [x] Rule 4 on **claude** — child `ad68a49ad2297ebd2`, three cards, `legacy=false`, `correlated=true`, envelope in record 0 (2026-08-11). **Re-proven the same day on the refreshed adapter** (`cae7ca576462`, installed 18:46Z) through a fresh headless `claude -p` session with Agency enabled before session start: child `a9c6ab358c1e5ebc6`, parent `91e03ac9-c1ec-40f1-b8a8-eaf6dc853c65`, `legacy=false`, `correlated=true`, cards `python-cli-architecture-specialist, agency-model-explainer, software-architect`. Provably staffed count 1 → 2. **Confirmed a third time in an attended interactive session** (not headless): child `a41e5c325024bb208`, `legacy=false`, `correlated=true`, same three cards, count 2 → 3. It required **no re-trust** after the republish, unlike codex — the two hosts do not gate hook execution the same way, which is worth remembering before reading a codex trust state as a general fact.
 - [x] Rule 8 — Agency never withholds a turn because Agency is unavailable; the verifier's definite negative and the malformed-`Stop` forgery guard are deliberate and stay.
 - [x] Rule 8 is auditable, not asserted: `agency evidence rejections` partitions closed runs into withheld versus Agency-was-blind and exits non-zero when anything was withheld.
-- [ ] Rule 4 on **codex**: at least one child with a non-empty card list and `correlated=true`. Needs hook trust in a fresh Codex TUI, and AR-209 if the encrypted `PreToolUse` payload blocks correlation.
+- [ ] Rule 4 on **codex**: **MEASURED 2026-08-11 — negative, and the cause is now confirmed in the host's own artifacts rather than suspected.** A valid bench finally ran: install current, hook trust granted, Agency on before session start, codex `active`, exactly one child. Parent `019ff1e8-e0fe-7fe0-b8ba-57de219228c6`, child `019ff1e9-defe-77c2-8bd1-9d503f1670b6`. The child is real and correlatable — record 0 is `session_meta` carrying `payload.source.subagent.thread_spawn.parent_thread_id` = the parent. Agency's hooks fired (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`×2, `Stop`) and the parent turn recruited `agency-steward` + `codebase-onboarding-engineer` via inference. But `agency-native-child-jit` appears **0 times** across both artifacts, and `agency evidence children --host codex` is unchanged at 0 staffed / 11 legacy.
+  **AR-209 is confirmed, and sharpened.** Parent record 16 is `function_call name=spawn_agent namespace=collaboration` with exactly three arguments — `task_name` (`find_cli_install_drift`, plaintext), `fork_turns` (`all`, plaintext), and `message`, which is a **396-char Fernet token** (`gAAAAA…`). Agency is not blind to the launch: `PreToolUse` fired and the call is visible. The defect is narrower than "Agency may be unable to correlate the launch" — Agency **sees** the spawn but the only argument that could carry a specialist card is encrypted, so there is nothing to rewrite. Any fix must come from the host surface, not from Agency.
+  Two secondary findings from the same run: `SubagentStart`/`SubagentStop` did **not** fire for this spawn despite being among the eight trusted events; and the parent reported `delegated: none - executed worker has no validated Agency specialist`, which is the honest downstream consequence.
+  **Cross-surface re-check, 2026-08-11 — the caveat is now closed for two of three surfaces by census, not by sampling.** All 1181 rollouts under `~/.codex/sessions` were scanned for `spawn_agent`: **274 calls, 274 with an encrypted `message`, 0 plaintext**, spanning 8 CLI versions (`0.144.0-alpha.4` → `0.147.0`) and every surface with any spawn history — `Codex Desktop/vscode` (the GUI: 159 spawns across 5 versions), `Codex Desktop/exec` (1), `Codex Desktop/subagent` (37 nested), `codex_exec/exec` (76 across 3 versions), `codex_exec/subagent` (1). The argument shape varies (`message,task_name`; `fork_turns,message,task_name`; `fork_turns,message,reasoning_effort,task_name`) but **no variant has ever exposed a plaintext context field**. This is not version-specific, surface-specific, or recent.
+  **Independent confirmation from the same census:** `agency-native-child-jit` appears in only 5 of 1181 rollouts, and **all 5 are this bench document's own text being read** — 3 are shell-read `custom_tool_call_output`, 2 are `{"subagent":{"other":"guardian"}}` reviewer sessions quoting the transcript. Agency has never delivered a JIT envelope into any codex session on this box, on any surface.
+  **TUI gap CLOSED 2026-08-11 by direct measurement — all three surfaces now agree.** An attended interactive `codex-tui` session with hook trust freshly granted and Agency on before session start spawned exactly one child: parent `019ff24f-5ebd-7af0-a456-5b33a566b151`, child `019ff250-6243-7261-a7bd-366714f530ad`, linked by `thread_spawn.parent_thread_id`. The spawn is `spawn_agent` / `collaboration` with the same three arguments and a **504-char encrypted `message`**; `agency-native-child-jit` appears **0** times; `agency evidence children --host codex` unchanged at 0 staffed / 11 legacy. TUI, GUI and exec are now measured and identical. Nothing about rule 4 on codex is unmeasured any more.
+  **One new detail worth carrying into the fix design:** the parent set `task_name` to `codebase_onboarding_engineer` — it named the child after the specialist it had loaded. The intent to staff was present and the parent knew the slug; only the delivery channel was closed. `task_name` is also proof the host *does* expose plaintext arguments, so the ask upstream is concrete rather than speculative: an owner-supplied plaintext context field alongside the encrypted one. `task_name` itself is not a candidate — it is model-authored, unvalidated, and carries no prompt hash.
+- [ ] *(superseded context for the line above)* The 2026-08-11 first attempt stopped before spawning a child, correctly, but on a false reading; the bench is now unblocked. The prescribed `agency install --agent codex --verify-activation` form is verification-only — `cmd_install` dispatches it before any install work — and the real shape, `agency install --agent codex --no-dashboard`, additionally requires global and codex runtime **on** as preconditions. Run in that order the refresh committed: plugin `352838f1948f` → `e6a092ee419a`, and the codex target's launcher record now binds the required projection `7013411cf205`. **The `runtime:` drift line in `agency status` is not evidence about codex** — the installed-runtime pointer is a single global file written only by the generic install path, so it still reports `5b17b2253b5d` and still names `--agent claude` after a fully successful codex install; read `~/.agency-runtime/marketplaces/codex/.agency-runtime-launcher.json` instead. What remains is hook trust on the new bundle, `--verify-activation`, and one child in a fresh session. Baseline re-measured after the install is unchanged at 0 staffed / 11 legacy. AR-209 remains the next suspect only if that valid bench reaches child launch and the encrypted `PreToolUse` payload blocks correlation.
+- [x] **FIXED `8b92a5b9`** — the installed-runtime pointer is now per host (`current-<host>.json`), and the prepared Codex refresh records what it publishes. A named host never writes the shared file, so one host's install cannot answer for another's; the legacy shared pointer is still read but only for the host it actually named, so existing installations lose nothing. `runtime_staleness(host=…)` resolves that host's own record, `cli_install_drift_reports()` returns one report per stale host, and `agency status` prints a host-tagged line each (`status --json` gains `runtime_drift_hosts`, keeps `runtime_drift`). The source digest is computed lazily so a foreign recorded root is still decided by root alone and never digest-compared. Verified live: codex current and silent, claude correctly reported behind and correctly named. 6 new tests including the exact defect; `test_host_hooks.py` re-measured against a clean HEAD worktree at 9 failed / 82 passed before and after, identical names. The original diagnosis follows.
+  Per-host installed-runtime pointer. `record_installed_runtime` is called only from `installer_orchestration.py:555`; `prepared_codex_install.py` publishes a runtime but never records one, and the pointer is single-valued, so a codex install cannot be represented without silencing genuine claude staleness. Measured 2026-08-11 — this is a bounded package, not a one-line fix.
+- [x] **FIXED `2865493d`** — Codex hook-trust inspection can now launch its worker. It builds the argv from the published private projection (`persistent_python_executable()` + the projection's `_bootstrap.py`) instead of `sys.executable` + the checkout's bootstrap, so `freeze_process_argv` accepts it. The guard is unchanged — this satisfies it rather than relaxing it — and the inspector still publishes nothing: an absent projection reports the new distinct `worker_projection_unavailable` instead of `inspection_failed`, so an unlaunchable inspector can never again be misread as untrusted hooks. `isolated_python_argv` gained an opt-in `bootstrap_path` override to keep the argv shape defined once. Verified live on this box: `observed 0 → 8`, `missing 8 → 0`, error cleared; the reading became `modified` on all 8 (republishing the adapter changes the hook commands, so a prior trust grant no longer matches — a true finding, not an error). 3 tests pin it; 310 tests green across the touched suites. The original diagnosis follows.
+  Codex hook-trust inspection cannot run from a checkout, so `--verify-activation` can never pass there. `inspect_codex_hook_trust` builds its worker argv from `sys.executable` and `agency_bootstrap_path()` and then freezes it; `_assert_executable_artifact_trusted` refuses both as cross-account writable, and the library flattens the `PermissionError` into `error=inspection_failed` with `observed=0 missing=8`. Reproduced directly 2026-08-11. **`inspection_failed` is not evidence about trust in either direction**, and the in-code comment at `codex_hook_trust.py:713-720` claiming `forbidden_roots=()` already fixed this is wrong — that argument only governs the repository-root check, not the ACL assertion. The launcher path picks a trusted interpreter via `persistent_python_executable()` (`sys._base_executable`); the inspector does not. Substituting it clears artifact 0 (verified) but not artifact 1, so the real fix runs the worker from the published `~/.agency-runtime/launchers/runtime-sha256-<digest>/` projection instead of the live checkout. Do not weaken the guard. This gates the activation *attestation*, not the rule-4 measurement.
 - [ ] Rule 4 on **zcode**, or an explicit recorded finding that the host cannot support it (it emits no `SubagentStart`/`SubagentStop`).
 - [ ] Rule 4 on **openclaw** and **hermes**, on a machine where they are installed.
 - [ ] Rule 9: the rule-8 split behaves identically on all five hosts. Proven in code for openclaw; unverified live, because the Node-side consumer is external to this repo and the host is not installed here.

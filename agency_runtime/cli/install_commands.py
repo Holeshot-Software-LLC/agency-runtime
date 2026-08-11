@@ -1486,23 +1486,36 @@ def _cli_install_drift_projection() -> dict[str, Any] | None:
     the comparison must still deliver everything else it was asked for.
     """
 
-    try:
-        from agency_runtime.core.runtime_staleness import cli_install_drift
+    reports = _cli_install_drift_projections()
+    return reports[0] if reports else None
 
-        drift = cli_install_drift()
+
+def _cli_install_drift_projections() -> list[dict[str, Any]]:
+    """Project every host's install drift, newest-installed last.
+
+    One entry per stale host: a single report cannot describe a box where one
+    host is current and another is behind, and collapsing them is what let a
+    current Codex install be reported as stale under Claude's digest.
+    """
+
+    try:
+        from agency_runtime.core.runtime_staleness import cli_install_drift_reports
+
+        reports = cli_install_drift_reports()
     except Exception:
-        return None
-    if drift is None:
-        return None
-    return {
-        "source_digest": drift.source_digest,
-        "installed_digest": drift.installed_digest,
-        "package_root": drift.package_root,
-        "installed_source_root": drift.installed_source_root,
-        "foreign_package": drift.foreign_package,
-        "host": drift.host,
-        "message": drift.message,
-    }
+        return []
+    return [
+        {
+            "source_digest": drift.source_digest,
+            "installed_digest": drift.installed_digest,
+            "package_root": drift.package_root,
+            "installed_source_root": drift.installed_source_root,
+            "foreign_package": drift.foreign_package,
+            "host": drift.host,
+            "message": drift.message,
+        }
+        for drift in reports
+    ]
 
 
 def _print_install_result(host: str, result: dict[str, Any]) -> None:
@@ -2066,13 +2079,15 @@ def cmd_status(
             else:
                 print(f"❌ {message}")
             return 1
-    drift = _cli_install_drift_projection()
+    drifts = _cli_install_drift_projections()
+    drift = drifts[0] if drifts else None
     payload = {
         "master": master,
         "master_transport": master_transport,
         "hosts": statuses,
         "inference": inference,
         "runtime_drift": drift,
+        "runtime_drift_hosts": drifts,
     }
     if getattr(args, "json", False):
         dependencies.emit_json(payload)
@@ -2082,9 +2097,10 @@ def cmd_status(
         f"global: {global_state}; generation {master.get('generation', 0)}; "
         f"source {master.get('source', 'unknown')}"
     )
-    if drift is not None:
-        print(f"runtime: {drift['message']}")
-        print(f"  This CLI runs from: {drift['package_root']}")
+    for report in drifts:
+        print(f"runtime [{report['host'] or 'unattributed'}]: {report['message']}")
+    if drifts:
+        print(f"  This CLI runs from: {drifts[0]['package_root']}")
     print(
         f"inference: {inference['state']}; {len(inference['provider_chain'])} provider entries; "
         f"eligible-turn inference "

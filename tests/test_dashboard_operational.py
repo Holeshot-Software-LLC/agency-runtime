@@ -566,6 +566,37 @@ def test_inference_projection_distinguishes_optional_local_and_required_inferenc
     assert operational["state"] == "operational"
 
 
+def test_a_routed_turn_reports_operational_not_unknown():
+    """The status the router really writes must be a success state.
+
+    Every routing row in a live store carries "accepted"; the assertion above
+    reaches "operational" through "inferred", which nothing persists. With
+    "accepted" missing from the vocabulary a box whose last turn routed
+    correctly read `inference: unknown`, and read `operational` only when the
+    newest record was a preflight failure -- exactly backwards.
+    """
+
+    config = replace(
+        AgencyConfig(),
+        providers=(
+            ProviderEntry(
+                name="required-local",
+                type="ollama",
+                model="required-model",
+                base_url="http://127.0.0.1:11434",
+            ),
+        ),
+        ollama=OllamaConfig(enabled=False),
+    )
+
+    snapshot = inference_operational_snapshot(
+        config,
+        {"routing": [{"semantic_status": "accepted", "status": "accepted"}], "receipts": []},
+    )
+
+    assert snapshot["state"] == "operational"
+
+
 @pytest.mark.parametrize("limit", [0, True, 26])
 def test_inference_failure_limit_is_strict(limit):
     with pytest.raises(ValueError, match="between 1"):
