@@ -302,9 +302,18 @@ def test_openclaw_bridge_normalizes_invalid_attempt_without_crashing(
     assert "closed" not in observed
 
 
-def test_openclaw_pre_verify_exception_is_terminal_without_revision(
+def test_openclaw_pre_verify_exception_publishes_without_revision(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Rule 8 on OpenClaw: a dead store is not a finding about the response.
+
+    This drove Agency's own adapter to raise ``OSError("database offline")`` and
+    then asserted the *user's* finished turn was withheld -- the native twins of
+    this test were re-pointed when the `Stop` path was fixed, and OpenClaw kept
+    the old policy only because it holds a second copy of it. Still never
+    requests a revision; it simply no longer costs the turn.
+    """
+
     from agency_runtime.adapters.openclaw import node_bridge
 
     class AdapterStub:
@@ -325,11 +334,9 @@ def test_openclaw_pre_verify_exception_is_terminal_without_revision(
         }
     )
 
-    assert result["action"] == "terminal"
-    assert result["terminalRejected"] is True
-    assert result["terminalStatus"] == "verification_failed"
+    assert result == {}
     assert "revisionId" not in result
-    assert "VERIFICATION UNAVAILABLE" in result["message"]
+    assert result.get("terminalRejected") is None
 
 
 def test_openclaw_pre_verify_store_construction_failure_is_terminal(
@@ -359,10 +366,26 @@ def test_openclaw_pre_verify_store_construction_failure_is_terminal(
     assert "VERIFICATION UNAVAILABLE" in result["message"]
 
 
-def test_openclaw_enabled_accept_requires_evidence_revision(
+def test_openclaw_enabled_accept_without_evidence_revision_publishes_and_leaves_the_turn_open(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """An accept Agency could not bind to a revision is unavailability, not a verdict.
+
+    The verifier said *accept*; what is missing is Agency's own evidence
+    revision, so under rule 8 the turn publishes. This reaches
+    ``_publish_unverified`` through ``_evaluate_pre_verify_policy`` returning
+    ``None`` (node_bridge.py: ``if _evidence_revision(value) is None``) -- which
+    means it never exercised the accept branch's own ``_revision()`` despite the
+    name it used to carry.
+
+    This is also exact parity with the native host, which already publishes in
+    this case: ``hooks.py`` returns the ``verification_unavailable`` sentinel
+    when a non-``runtime_disabled`` verification carries no valid revision.
+
+    Nothing is committed and the turn is deliberately left open.
+    """
+
     from agency_runtime.adapters.openclaw import node_bridge
 
     store = Store(tmp_path / "missing-revision.db")
@@ -401,9 +424,8 @@ def test_openclaw_enabled_accept_requires_evidence_revision(
         }
     )
 
-    assert result["action"] == "terminal"
-    assert result["terminalRejected"] is True
-    assert result["terminalStatus"] == "verification_failed"
+    assert result == {}
+    assert result.get("terminalRejected") is None
     assert store.get_run("turn")["status"] == "active"
     assert store.get_authoritative_finalization("session", "turn") is None
 

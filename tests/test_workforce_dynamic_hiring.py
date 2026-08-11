@@ -1106,7 +1106,10 @@ def test_deferred_hire_commits_only_with_the_preflight_ready_cas(tmp_path: Path)
         "session_id": "session",
         "trace_id": "deferred-hire",
         "host": "codex",
-        "delivery_mode": "isolated",
+        # `isolated` was deleted with its enforcement in d9f6e6be; `direct` is
+        # the only mode `_project_preflight_recipe` accepts, and anything else
+        # projects to None and reports as a mismatched replay recipe.
+        "delivery_mode": "direct",
         "context_limit": 4_096,
         "routing": projected["decision"],
         "specialist_refs": [],
@@ -1121,7 +1124,6 @@ def test_deferred_hire_commits_only_with_the_preflight_ready_cas(tmp_path: Path)
         "recipe": recipe,
         "host": "codex",
         "routing_evidence": routing_recipe,
-        "suggestions": [],
         "specialist_refs": [],
     }
     assert store.mark_preflight_ready(

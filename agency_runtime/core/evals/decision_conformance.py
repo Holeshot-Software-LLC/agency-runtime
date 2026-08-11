@@ -1230,11 +1230,11 @@ class _NominationSemantics:""",
         source_path="agency_runtime/core/workforce/hiring.py",
         before=(
             '    if action == "amend" and not allow_existing_worker_amendment:\n'
-            '        return failure("task_gap_requires_distinct_specialist")'
+            '        raise _CandidateValidationFailure("task_gap_requires_distinct_specialist")'
         ),
         after=(
             '    if False and action == "amend" and not allow_existing_worker_amendment:\n'
-            '        return failure("task_gap_requires_distinct_specialist")'
+            '        raise _CandidateValidationFailure("task_gap_requires_distinct_specialist")'
         ),
         test_node=(
             "tests/test_workforce_dynamic_hiring.py::"
@@ -1265,8 +1265,22 @@ class _NominationSemantics:""",
         mutation_id="contractor-diagnostics-collapse",
         invariant="Post-parse contractor failures retain their content-free validation stage.",
         source_path="agency_runtime/core/workforce/hiring.py",
-        before="        return failure(exc.reason_code)",
-        after='        return failure("contract_invalid:candidate")',
+        # Anchored through the `_candidate_documents` call so it names the
+        # POST-PARSE failure specifically: the pre-contract evidence gate now
+        # reports through the same exception, so a bare one-line anchor matches
+        # twice and silently stops identifying a unique mutation site.
+        before=(
+            "            store=store,\n"
+            "        )\n"
+            "    except _CandidateValidationFailure as exc:\n"
+            "        return failure(exc.reason_code)"
+        ),
+        after=(
+            "            store=store,\n"
+            "        )\n"
+            "    except _CandidateValidationFailure as exc:\n"
+            '        return failure("contract_invalid:candidate")'
+        ),
         test_node=(
             "tests/test_workforce_dynamic_hiring.py::"
             "test_hire_reports_content_free_employment_revalidation_stage"
