@@ -813,6 +813,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cfa67e4b` | 2026-08-12 | docs(roadmap): reframe dashboard parity after Job B | null | null |
 | `d9458890` | 2026-08-12 | feat(dashboard): align owner UI with post-Job-B vision | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 | `6ce0c37f` | 2026-08-12 | fix(dashboard): enforce truthful evidence parity | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
+| `15911085` | 2026-08-12 | docs(roadmap): record post-Job-B dashboard verification | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
