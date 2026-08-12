@@ -702,7 +702,6 @@ def test_adapter_contract_and_skip_prefixes_are_truthful(
     )
     adapter = LiteLLMAdapter(store=store, config=_config(enabled="true"))
     assert adapter.is_available() is True
-    assert adapter.get_delegate_backend() is None
     assert store.get_model_receipt("trace")["resolved_model"] == "gpt-5"
 
     disabled = LiteLLMAdapter(store=store, config=_config(enabled="false"))

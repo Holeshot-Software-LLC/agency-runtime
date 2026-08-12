@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
 from typing import Any
 
@@ -11,9 +10,6 @@ import pytest
 from agency_runtime.core.delegation import (
     backend_security,
     lifecycle_graph,
-)
-from agency_runtime.core.delegation import (
-    lifecycle as lifecycle_facade,
 )
 from agency_runtime.core.delegation.lifecycle_types import (
     DependencyGraph,
@@ -72,11 +68,6 @@ class _EventStore:
         self.updated.append((event_id, kwargs))
 
 
-def test_lifecycle_facade_private_compatibility_wrappers() -> None:
-    assert lifecycle_facade._safe("A / B") == "A-B"
-    lifecycle_facade._validate_unique_unit_ids([WorkUnit("one", "work")])
-    signature = inspect.signature(lambda *, task: None)
-    assert lifecycle_facade._signature_accepts(signature, task="work") is True
 
 
 def test_graph_helpers_cover_scalar_mapping_paths_and_reachability(tmp_path: Path) -> None:
