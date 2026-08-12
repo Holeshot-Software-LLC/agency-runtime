@@ -372,7 +372,6 @@ def _route_bypass(*, session_id: str = "session", task: str = "review") -> dict[
         "considered_candidates": [],
         "rejected_candidates": [],
         "signals": {"source": "master_control"},
-        "delegation_graph": {"nodes": [], "edges": []},
         "runtime_enabled": False,
         "status": "disabled",
         "bypassed": True,
@@ -438,6 +437,7 @@ def test_broker_accepts_canonical_master_bypass_receipts(
 
     assert path is None
     assert route == _route_bypass()
+    assert "delegation_graph" not in route
     assert search_path is None
     assert agents == []
 

@@ -363,7 +363,7 @@ export function validateRoutingLatencyPayload(payload) {
 		|| !nonnegativeInteger(payload.split.unattributed_decisions)
 		|| payload.split.decisions + payload.split.unattributed_decisions !== payload.overall.count
 		|| !latencySummaryIsValid(payload.split.provider_ms)
-		|| !latencySummaryIsValid(payload.split.agency_ms)
+		|| !latencySummaryIsValid(payload.split.derived_routing_remainder_ms)
 		|| !Number.isFinite(payload.split.calls_per_decision)
 		|| payload.split.calls_per_decision < 0
 		|| !isRecord(payload.by_source)

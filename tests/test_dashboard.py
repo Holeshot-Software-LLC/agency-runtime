@@ -1989,6 +1989,8 @@ def test_dashboard_metric_evidence_endpoints_are_authenticated_and_denominator_e
     }
     assert latency["split"]["decisions"] == 0
     assert latency["split"]["unattributed_decisions"] == 2
+    assert latency["split"]["derived_routing_remainder_ms"]["count"] == 0
+    assert "agency_ms" not in latency["split"]
     assert "security-reviewer" not in json.dumps(latency)
 
     status, selections, _headers = _json_response(
@@ -2723,7 +2725,7 @@ def test_exact_lookup_preserves_maximum_unicode_selector_metadata(
         assert agent["capabilities"] == capabilities
 
 
-def test_roster_broker_endpoints_fail_closed_when_store_restart_is_required(
+def test_store_bound_dashboard_endpoints_fail_closed_when_store_restart_is_required(
     dashboard_server,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -2760,10 +2762,22 @@ def test_roster_broker_endpoints_fail_closed_when_store_restart_is_required(
         "store_restart_required": True,
     }
 
+    def fail_metric_read(*_args, **_kwargs):
+        raise AssertionError("stale Store metric evidence must not be read")
+
+    monkeypatch.setattr(dashboard_server["store"], "get_routing_latencies", fail_metric_read)
+    monkeypatch.setattr(
+        dashboard_server["store"],
+        "specialist_selection_distribution",
+        fail_metric_read,
+    )
+
     requests = [
         ("/api/roster?limit=1&projection=activation", "GET", None),
         ("/api/agents/lookup?slug=security-reviewer", "GET", None),
         ("/api/hosts", "GET", None),
+        ("/api/evidence/latency", "GET", None),
+        ("/api/evidence/selections", "GET", None),
         (
             "/api/agents/toggle",
             "POST",

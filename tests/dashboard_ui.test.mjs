@@ -132,7 +132,7 @@ function routingLatencyPayload(overrides = {}) {
       decisions: 1,
       unattributed_decisions: 1,
       provider_ms: { count: 1, min_ms: 7_000, p50_ms: 7_000, p95_ms: 7_000, max_ms: 7_000 },
-      agency_ms: { count: 1, min_ms: 5_000, p50_ms: 5_000, p95_ms: 5_000, max_ms: 5_000 },
+      derived_routing_remainder_ms: { count: 1, min_ms: 5_000, p50_ms: 5_000, p95_ms: 5_000, max_ms: 5_000 },
       calls_per_decision: 2,
     },
     by_source: {
@@ -3197,7 +3197,7 @@ test("overview metric evidence treats empty observations as unknown rather than 
           decisions: 0,
           unattributed_decisions: 0,
           provider_ms: emptySummary,
-          agency_ms: emptySummary,
+          derived_routing_remainder_ms: emptySummary,
           calls_per_decision: 0,
         },
         by_source: {},
@@ -3254,6 +3254,26 @@ test("metric evidence rejects inconsistent projections and malformed apply snaps
   );
 });
 
+test("routing latency rejects the retired causal remainder field", async () => {
+  const legacyLatency = routingLatencyPayload();
+  legacyLatency.split.agency_ms = legacyLatency.split.derived_routing_remainder_ms;
+  delete legacyLatency.split.derived_routing_remainder_ms;
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/latency?limit=200") {
+      return jsonResponse(200, legacyLatency);
+    }
+    if (path === "/api/evidence/selections") {
+      return jsonResponse(200, selectionDistributionPayload());
+    }
+    throw new Error(`unexpected legacy-metric request: ${path}`);
+  });
+
+  const snapshot = await harness.api.fetchMetricEvidence();
+  assert.equal(snapshot.latency, null);
+  assert.ok(snapshot.selections);
+  assert.match(snapshot.errors.latency, /routing-latency evidence is invalid/i);
+});
+
 test("metric evidence renders bounded selection tails and equality-at-budget latency", async () => {
   const ranked = Array.from({ length: 12 }, (_, index) => ({
     slug: `specialist-${index + 1}`,
@@ -3283,11 +3303,19 @@ test("metric evidence renders bounded selection tails and equality-at-budget lat
           decisions: 1,
           unattributed_decisions: 0,
           provider_ms: { count: 1, min_ms: 9_000, p50_ms: 9_000, p95_ms: 9_000, max_ms: 9_000 },
-          agency_ms: { count: 1, min_ms: 6_000, p50_ms: 6_000, p95_ms: 6_000, max_ms: 6_000 },
+          derived_routing_remainder_ms: { count: 1, min_ms: 6_000, p50_ms: 6_000, p95_ms: 6_000, max_ms: 6_000 },
           calls_per_decision: 1,
         },
         by_source: {},
-        slowest: [],
+        slowest: [{
+          source: "computed",
+          latency_ms: 15_000,
+          provider_ms: 18_000,
+          provider_calls: 1,
+          provider_timed_calls: 1,
+          provider_unknown_calls: 0,
+          created_at: "2026-08-12T00:00:00Z",
+        }],
       }));
     }
     if (path === "/api/evidence/selections") {
@@ -3320,13 +3348,15 @@ test("metric evidence renders bounded selection tails and equality-at-budget lat
   assert.match(aggregateTailText, /beyond top 50/i);
   assert.match(harness.node("selection-evidence-context").textContent, /older retained evidence/i);
   assert.equal(harness.node("latency-budget-state").textContent, "WITHIN BUDGET");
-  assert.match(harness.node("latency-evidence-context").textContent, /complete provider timing/i);
-  for (const id of ["latency-source-body", "latency-slowest-body"]) {
-    const emptyEvidenceText = descendants(harness.node(id))
-      .map((node) => node.textContent)
-      .join(" ");
-    assert.match(emptyEvidenceText, /No eligible routing evidence/i);
-  }
+  assert.match(harness.node("latency-evidence-context").textContent, /recorded total minus provider time/i);
+  const emptySourceText = descendants(harness.node("latency-source-body"))
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.match(emptySourceText, /No eligible routing evidence/i);
+  const slowestText = descendants(harness.node("latency-slowest-body"))
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.equal((slowestText.match(/unknown/g) || []).length, 2);
 });
 
 test("Vision Evidence validators reject inconsistent bounded projections", () => {

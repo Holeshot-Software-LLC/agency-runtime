@@ -430,8 +430,8 @@ export function createRenderer(core, config, callbacks) {
 		setMetric("latency-metric-p95", hasEvidence ? formatLatency(data.overall.p95_ms) : "—");
 		setMetric("latency-metric-provider", data.split.provider_ms.count
 			? formatLatency(data.split.provider_ms.p50_ms) : "—");
-		setMetric("latency-metric-agency", data.split.agency_ms.count
-			? formatLatency(data.split.agency_ms.p50_ms) : "—");
+		setMetric("latency-metric-agency", data.split.derived_routing_remainder_ms.count
+			? formatLatency(data.split.derived_routing_remainder_ms.p50_ms) : "—");
 		setMetric("latency-metric-calls", data.split.decisions
 			? data.split.calls_per_decision.toFixed(2) : "—");
 		const budgetState = !hasEvidence ? "UNKNOWN" : data.over_budget ? "OVER BUDGET" : "WITHIN BUDGET";
@@ -441,8 +441,8 @@ export function createRenderer(core, config, callbacks) {
 				? "stale" : !hasEvidence ? "unknown" : data.over_budget ? "over" : "within";
 		}
 		const attribution = data.split.unattributed_decisions
-			? `${data.split.unattributed_decisions} decision(s) have incomplete provider timing and are excluded from the provider/Agency split.`
-			: `${data.split.decisions} decision(s) have complete provider timing.`;
+			? `${data.split.unattributed_decisions} decision(s) have incomplete or inconsistent provider timing and are excluded from the provider/remainder breakdown.`
+			: `${data.split.decisions} decision(s) have complete provider timing; the displayed routing remainder is recorded total minus provider time.`;
 		byId("latency-evidence-context").textContent = metricEvidenceContext("latency",
 			hasEvidence
 				? `Newest ${data.overall.count} positive-latency decisions within a ${data.window.limit}-decision window. p95 is compared with the ${formatLatency(data.budget_ms)} budget; equality passes. ${attribution}`
@@ -459,7 +459,8 @@ export function createRenderer(core, config, callbacks) {
 			const attributable = Number(row.provider_calls) > 0
 				&& Number(row.provider_unknown_calls || 0) === 0
 				&& Number(row.provider_timed_calls ?? row.provider_calls) === Number(row.provider_calls)
-				&& Number(row.provider_ms) > 0;
+				&& Number(row.provider_ms) > 0
+				&& Number(row.provider_ms) <= Number(row.latency_ms);
 			const tr = el("tr");
 			[
 				row.source || "unknown",

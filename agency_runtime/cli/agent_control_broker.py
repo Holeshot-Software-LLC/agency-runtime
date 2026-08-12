@@ -43,7 +43,6 @@ _ROUTE_BYPASS_FIELDS = frozenset(
         "considered_candidates",
         "rejected_candidates",
         "signals",
-        "delegation_graph",
         "runtime_enabled",
         "status",
         "bypassed",
@@ -589,7 +588,6 @@ def broker_explain_selection(
             or routing.get("source") != "master_control"
             or routing.get("provider") != "master_control"
             or response.get("signals") != {"source": "master_control"}
-            or response.get("delegation_graph") != {"nodes": [], "edges": []}
             or response.get("message") != "Agency Runtime is disabled; Route Lab bypassed routing."
         ):
             raise ValueError("dashboard routing bypass response is inconsistent")

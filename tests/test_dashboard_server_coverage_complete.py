@@ -359,58 +359,6 @@ def test_dashboard_collection_cursors_are_canonical_and_fail_closed() -> None:
             dashboard._decode_collection_cursor(value, kind=kind, fields=2)
 
 
-def test_dashboard_delegation_graph_preserves_each_governed_dependency_source() -> None:
-    bound = dashboard._delegation_graph(
-        {
-            "signals": {"work_units": {"units": ["first", "second"]}},
-            "routing": {
-                "workforce_unit_bindings": [
-                    {"work_unit_id": "bound-1", "depends_on": []},
-                    {"work_unit_id": "bound-2", "depends_on": ["bound-1"]},
-                ]
-            },
-        }
-    )
-    assert bound == {
-        "nodes": [
-            {"id": "bound-1", "description": "first"},
-            {"id": "bound-2", "description": "second"},
-        ],
-        "edges": [{"from": "bound-1", "to": "bound-2", "reason": "explicit depends_on"}],
-    }
-
-    planned = dashboard._delegation_graph(
-        {
-            "signals": {"work_units": {"units": ["first", "second"]}},
-            "routing": {
-                "workforce_plan": {
-                    "units": [
-                        {"unit_id": "source-1", "depends_on": []},
-                        {"unit_id": "source-2", "depends_on": ["source-1", "missing"]},
-                    ]
-                }
-            },
-        }
-    )
-    assert [item["description"] for item in planned["nodes"]] == ["first", "second"]
-    assert planned["edges"] == [
-        {
-            "from": planned["nodes"][0]["id"],
-            "to": planned["nodes"][1]["id"],
-            "reason": "explicit depends_on",
-        }
-    ]
-
-    fallback = dashboard._delegation_graph(
-        {
-            "signals": {"work_units": {"units": ["first", "second"]}},
-            "routing": None,
-        }
-    )
-    assert [item["description"] for item in fallback["nodes"]] == ["first", "second"]
-    assert fallback["edges"] == []
-
-
 def test_dashboard_activity_collection_returns_a_stripped_keyset_page(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

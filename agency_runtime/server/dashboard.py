@@ -1733,7 +1733,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         """Return the CLI-equivalent routing-cost projection off the live poll."""
 
         state = read_config_state(self.config_path)
-        binding = _store_service_binding(self.store, state)
+        binding = _require_store_service_binding(self.store, state)
         limit = _bounded_query_limit(self.path, default=200)
         projection = routing_latency_projection(
             self.store.get_routing_latencies(limit=limit),
@@ -1763,7 +1763,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         """Return bounded retained selection frequency with explicit denominators."""
 
         state = read_config_state(self.config_path)
-        binding = _store_service_binding(self.store, state)
+        binding = _require_store_service_binding(self.store, state)
         self._json_ok(
             {
                 "schema_version": "agency.dashboard.selection_distribution.v1",

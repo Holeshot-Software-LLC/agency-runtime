@@ -1516,7 +1516,7 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     _bind(rejections, handlers, "cmd_evidence_rejections")
     latency = evidence_sub.add_parser(
         "latency",
-        help="Show what Agency's own routing costs a turn, against a budget",
+        help="Show recorded routing durations against a p95 budget",
     )
     latency.add_argument(
         "--source",
@@ -1542,6 +1542,17 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     )
     latency.add_argument("--json", action="store_true", help="Print JSON")
     _bind(latency, handlers, "cmd_evidence_latency")
+    selections = evidence_sub.add_parser(
+        "selections",
+        help="Show bounded specialist-selection frequency with explicit denominators",
+    )
+    selections.add_argument(
+        "--db",
+        default=None,
+        help="Read this evidence store instead of the configured one",
+    )
+    selections.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(selections, handlers, "cmd_evidence_selections")
     intent = evidence_sub.add_parser(
         "intent",
         help="Audit what each turn was understood to be, against who was staffed",

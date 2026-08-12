@@ -139,13 +139,13 @@ def cmd_evidence_rejections(args: argparse.Namespace) -> int:
 
 
 def cmd_evidence_latency(args: argparse.Namespace) -> int:
-    """Report what Agency's own routing actually costs a turn.
+    """Report persisted routing durations against a p95 budget.
 
     ``routing_decisions.latency_ms`` is the only timing column in the schema
-    and nothing read it, so the cost of an eligible turn was invisible unless
+    and nothing read it, so observed routing duration was invisible unless
     someone opened the database by hand. `agency eval routing` gates latency
     and the benchmarks score it, but both answer "did a fixture pass", not
-    "what is this box paying right now".
+    "what routing durations has this box recorded".
 
     Reports the percentiles rather than a mean, because the mean of a
     provider-call distribution hides exactly the tail an operator feels. Exit
@@ -154,8 +154,8 @@ def cmd_evidence_latency(args: argparse.Namespace) -> int:
 
     Decisions recorded at zero are excluded rather than counted as fast turns.
     Both writers store 0 when no provider call was spent, so including them
-    would report Agency as cheap in exact proportion to how often it did
-    nothing.
+    would lower the recorded routing summary in exact proportion to how often
+    no provider call was made.
     """
 
     budget = int(
@@ -193,24 +193,93 @@ def cmd_evidence_latency(args: argparse.Namespace) -> int:
         )
     if split["decisions"]:
         print(
-            f"split over {split['decisions']} decisions "
+            f"timing breakdown over {split['decisions']} decisions "
             f"({split['calls_per_decision']} provider calls each): "
             f"provider p50 {split['provider_ms']['p50_ms']} ms, "
-            f"Agency p50 {split['agency_ms']['p50_ms']} ms"
+            "derived routing remainder p50 "
+            f"{split['derived_routing_remainder_ms']['p50_ms']} ms "
+            "(recorded total minus timed provider receipts)"
         )
     if split["unattributed_decisions"]:
         print(
-            f"  {split['unattributed_decisions']} decision(s) cannot be split — their "
-            "receipts predate the per-call duration and report 0"
+            f"  {split['unattributed_decisions']} decision(s) cannot be broken down — "
+            "provider timing is incomplete or inconsistent with the recorded total"
         )
     if over_budget:
-        print(
-            f"❌ p95 {overall['p95_ms']} ms exceeds the {budget} ms budget — "
-            "Agency is the slow part of an eligible turn"
-        )
+        print(f"❌ measured routing p95 {overall['p95_ms']} ms exceeds the {budget} ms budget")
     else:
         print(f"✅ p95 within the {budget} ms budget")
     return 1 if over_budget else 0
+
+
+def cmd_evidence_selections(args: argparse.Namespace) -> int:
+    """Report bounded specialist-selection frequency with explicit denominators.
+
+    This is the terminal projection of the same retained routing decisions used
+    by the dashboard's concentration chart. Decision share answers how often a
+    specialist appeared in a selection-bearing decision. Occurrence share uses
+    every selected specialist as its denominator. The current active roster is
+    context only; it is not a historical selection denominator.
+    """
+
+    projection = Store(getattr(args, "db", None)).specialist_selection_distribution()
+    if getattr(args, "json", False):
+        _print_json(projection)
+        return 0
+
+    decisions = int(projection["decisions_with_selections"])
+    occurrences = int(projection["selection_occurrences"])
+    distinct = int(projection["distinct_selected_specialists"])
+    roster_size = int(projection["active_roster_size"])
+    scan_limit = int(projection["selection_bearing_decision_scan_limit"])
+    print(
+        f"specialist selection distribution: {decisions} selection-bearing decisions; "
+        f"{occurrences} selection occurrences; {distinct} distinct selected specialists"
+    )
+    print(
+        f"current active roster: {roster_size} "
+        "(context only; not a historical selection denominator)"
+    )
+    print(
+        f"top-10 concentration: {projection['top_10_selection_occurrences']} of "
+        f"{occurrences} selection occurrences "
+        f"({float(projection['top_10_share_of_selection_occurrences']):.1%})"
+    )
+    if projection["selection_bearing_decision_scan_truncated"]:
+        print(
+            f"window: newest {scan_limit} selection-bearing decisions; "
+            "older retained evidence is outside this view"
+        )
+    else:
+        print(
+            f"window: all retained selection-bearing decisions scanned (safety limit {scan_limit})"
+        )
+    if not decisions:
+        print("no per-specialist selection shares are available; this is not a health claim")
+        return 0
+
+    for row in projection["top_specialists"]:
+        print(
+            f"  {row['slug']}: {row['decisions_containing_specialist']} decisions "
+            f"({float(row['share_of_decisions_with_selections']):.1%} of "
+            "selection-bearing decisions); "
+            f"{row['selection_occurrences']} selection occurrences "
+            f"({float(row['share_of_selection_occurrences']):.1%} of all "
+            "selection occurrences)"
+        )
+    long_tail = projection["long_tail"]
+    if long_tail["specialist_count"]:
+        count = int(long_tail["specialist_count"])
+        print(
+            f"  beyond top 50 ({count} specialist{'s' if count != 1 else ''}): "
+            f"{long_tail['decisions_containing_specialist']} decisions "
+            f"({float(long_tail['share_of_decisions_with_selections']):.1%} of "
+            "selection-bearing decisions); "
+            f"{long_tail['selection_occurrences']} selection occurrences "
+            f"({float(long_tail['share_of_selection_occurrences']):.1%} of all "
+            "selection occurrences)"
+        )
+    return 0
 
 
 def cmd_evidence_intent(args: argparse.Namespace) -> int:

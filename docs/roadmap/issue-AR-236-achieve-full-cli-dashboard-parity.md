@@ -110,30 +110,36 @@ The post-Job-B classification is now explicit:
 - [x] Render observed execution identity instead of a recommendation and use
       neutral delegation-event-row wording for the unfiltered historical
       source.
-- [ ] Remove broker/test/docstring residues that still require the retired
+- [x] Remove broker/test/docstring residues that still require the retired
       delegation graph, and make latency wording evidence-bounded rather than
       causal.
-- [ ] Fail latency and selection metric reads closed while the configured Store
+- [x] Fail latency and selection metric reads closed while the configured Store
       requires a service restart; old-Store data must not render as fresh.
-- [ ] Keep the requested specialist concentration chart, but keep umbrella
-      parity open until the shared projection has a CLI view or acceptance is
-      explicitly narrowed.
+- [x] Keep the requested specialist concentration chart and add the matching
+      `agency evidence selections` CLI projection over the same bounded Store
+      result.
 
 Global consolidation review, aggregate promotion queues, and further CLI
 hiring efficiency/filter work are deferred to bounded follow-ups. The existing
 duplicates endpoint is not UI-ready: nonempty comparison dataclasses are not
 JSON serializable and its copy does not match the actual fixed thresholds.
 
-The post-Job-B dashboard truth package is now locally complete. It removes the
+The post-Job-B dashboard truth package and its bounded supporting contracts are
+now locally complete. The UI removes the
 invalid and unenforced settings, adds the four live workforce controls, aligns
 the visible staffing limit with inference's maximum of 16, fixes first-request
 hiring filters and independent source state, requires an explicit bounded
 approver identity, and renders only fully correlated execution identity.
-Dashboard charts, tables, and the README now describe the unfiltered historical
+Dashboard charts, tables, and the README describe the unfiltered historical
 source as delegation-event rows rather than asserting native-child execution.
-The exact UI gate passes 132 tests at 96.75% line, 86.39% branch, and 95.45%
-function coverage. Independent review has no remaining High or Medium finding;
-browser QA and the supporting server-contract package remain open.
+The supporting slice retires the final graph requirements, fails metric reads
+closed on Store drift, gives specialist distribution a matching CLI view, and
+names the machine-readable latency subtraction
+`derived_routing_remainder_ms`. The dashboard truth coverage gate passed 132
+tests at 96.75% line, 86.39% branch, and 95.45% function coverage; the final
+contract rerun passes 133 UI tests and 178 focused latency/API tests. Independent
+review has no unresolved High or Medium finding; post-Job-B browser QA and the
+named fast spine remain open.
 
 Earlier browser evidence remains useful regression context: 202
 selection-bearing decisions, 39 distinct specialists, 491 occurrences, 82.3%

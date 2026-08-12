@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import argparse
+import json
 from pathlib import Path
 
+import pytest
+
+from agency_runtime.cli.evidence_commands import cmd_evidence_selections
 from agency_runtime.core.selection_distribution import specialist_selection_distribution
 from agency_runtime.core.store.sqlite import Store
 
@@ -28,6 +33,10 @@ def _record(store: Store, index: int, selected_ids: list[str]) -> None:
             "confidence": 0.9,
         },
     )
+
+
+def _args(db: Path, *, json_output: bool) -> argparse.Namespace:
+    return argparse.Namespace(db=str(db), json=json_output)
 
 
 def test_distribution_keeps_decision_and_occurrence_denominators_distinct() -> None:
@@ -147,3 +156,76 @@ def test_store_distribution_reads_all_retained_routing_decisions(tmp_path: Path)
             "share_of_selection_occurrences": 0.0,
         },
     }
+
+
+def test_cli_json_is_the_exact_shared_store_projection(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    db = tmp_path / "agency.db"
+    store = Store(db)
+    _record(store, 1, ["alpha", "beta"])
+    _record(store, 2, ["alpha"])
+    expected = store.specialist_selection_distribution()
+
+    assert cmd_evidence_selections(_args(db, json_output=True)) == 0
+
+    assert json.loads(capsys.readouterr().out) == expected
+
+
+def test_cli_text_names_denominators_roster_context_and_scan_bound(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    db = tmp_path / "agency.db"
+    store = Store(db)
+    _record(store, 1, ["alpha", "beta"])
+    _record(store, 2, ["alpha"])
+
+    assert cmd_evidence_selections(_args(db, json_output=False)) == 0
+
+    output = capsys.readouterr().out
+    assert (
+        "2 selection-bearing decisions; 3 selection occurrences; 2 distinct selected specialists"
+    ) in output
+    assert (
+        "current active roster: 0 (context only; not a historical selection denominator)" in output
+    )
+    assert "top-10 concentration: 3 of 3 selection occurrences (100.0%)" in output
+    assert "all retained selection-bearing decisions scanned (safety limit 10000)" in output
+    assert (
+        "alpha: 2 decisions (100.0% of selection-bearing decisions); "
+        "2 selection occurrences (66.7% of all selection occurrences)"
+    ) in output
+
+
+def test_cli_empty_text_is_neutral_no_data_evidence(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    db = tmp_path / "agency.db"
+    Store(db)
+
+    assert cmd_evidence_selections(_args(db, json_output=False)) == 0
+
+    output = capsys.readouterr().out
+    assert "0 selection-bearing decisions; 0 selection occurrences" in output
+    assert "no per-specialist selection shares are available; this is not a health claim" in output
+    assert "✅" not in output
+
+
+def test_cli_text_bounds_rows_and_reports_the_aggregated_long_tail(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    db = tmp_path / "agency.db"
+    store = Store(db)
+    for index in range(51):
+        _record(store, index, [f"specialist-{index:03d}"])
+
+    assert cmd_evidence_selections(_args(db, json_output=False)) == 0
+
+    output = capsys.readouterr().out
+    assert "specialist-049:" in output
+    assert "specialist-050:" not in output
+    assert "beyond top 50 (1 specialist):" in output

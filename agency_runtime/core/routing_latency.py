@@ -38,10 +38,11 @@ def routing_latency_projection(
 ) -> dict[str, Any]:
     """Project recorded routing costs without turning absent work into fast work.
 
-    A nonpositive decision latency means routing did not spend provider time and
-    is excluded. Provider/Agency attribution is available only when the stored
-    receipts report a positive provider subtotal; older zero-duration receipts
-    are unknown, not free provider calls.
+    A nonpositive decision latency is not eligible recorded timing and is
+    excluded. A provider/remainder breakdown is available only when the
+    stored receipts report a positive provider subtotal that fits within the
+    recorded routing duration; older zero-duration receipts are unknown, not
+    free provider calls. The remainder is derived, not an independent timer.
     """
 
     budget = int(budget_ms or DEFAULT_ROUTING_LATENCY_BUDGET_MS)
@@ -58,13 +59,14 @@ def routing_latency_projection(
             and provider_timed_calls == provider_calls
             and int(row.get("provider_unknown_calls") or 0) == 0
             and int(row.get("provider_ms") or 0) > 0
+            and int(row.get("provider_ms") or 0) <= int(row["latency_ms"])
         ):
             attributable.append(row)
     split = {
         "decisions": len(attributable),
         "unattributed_decisions": len(recorded) - len(attributable),
         "provider_ms": latency_summary([int(row["provider_ms"]) for row in attributable]),
-        "agency_ms": latency_summary(
+        "derived_routing_remainder_ms": latency_summary(
             [max(0, int(row["latency_ms"]) - int(row["provider_ms"])) for row in attributable]
         ),
         "calls_per_decision": (

@@ -19,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-236
 branch: codex/dashboard-vision-parity
-evidence_commit: cfa67e4b0a912e24e748d885985467dddb8e4c84
-minimum_ledger_commit: b1d2958a284b06cc182ed065798cc591207666b4
+evidence_commit: d94588906dfefe23d869eff19621d2c213f89de0
+minimum_ledger_commit: 8d1a12132447730d2a674a98a025de8bacb7fac8
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245
 ---
@@ -44,9 +44,10 @@ this capsule owns the next bounded package.
   final vision. Prefer dashboard-only fixes, but a narrowly evidenced core,
   Store, CLI, adapter, or server correction is allowed when final `main`
   contradicts the vision or cannot support a truthful UI.
-- The bounded dashboard truth package is implemented and verified in this
-  checkpoint. It changes dashboard assets, UI tests, and user-facing README
-  copy only; no core, Store, CLI, adapter, or dashboard-server code changed.
+- The dashboard truth package is clean at `d9458890` / `8d1a1213`. The next
+  supporting-contract slice is locally complete and verified: it changes only
+  the smallest shared projection, CLI, broker, server, and test contracts that
+  a truthful dashboard or matching CLI projection requires.
 
 ## completed-evidence
 
@@ -55,19 +56,23 @@ this capsule owns the next bounded package.
   wording. Job B strengthens those deletions.
 - Keep child inference budget, concurrency, and cache controls: they still
   bound host-started child routing in preflight.
-- Shared latency evidence uses positive persisted durations, explicit
-  attribution limits, nearest-rank p50/p95, and the pinned 15,000 ms budget.
+- Shared latency evidence uses positive persisted durations, explicit timing
+  limits, nearest-rank p50/p95, and the pinned 15,000 ms budget. Provider time
+  comes from complete same-trace receipts; the remainder is explicitly derived
+  as total minus provider time and is never labelled Agency timing.
 - Shared specialist-distribution evidence uses decision and occurrence
   denominators, a 10,000-decision scan bound, active-roster context, top-ten
-  concentration, and a bounded long tail. The owner observation is not
+  concentration, and a bounded long tail. Dashboard and `agency evidence
+  selections` now project the same Store result; no owner observation is
   hardcoded.
 - Child delivery remains host-written, hash-verified evidence; staffing rows
   are not delivery proof. Rule-8 remains Store evidence about Agency
   withholding/blindness, never host publication proof. Wiring remains exact
   measured state with unsupported hosts explicitly not measured.
 - Evidence requests are authenticated, view-scoped, source-separated, and off
-  the hot poll. Empty, stale, and unavailable states are distinct and retain
-  only source-specific last-good data.
+  the hot poll. Metric reads fail 409 before touching a process-frozen Store
+  after DB-path drift. Empty, stale, and unavailable states are distinct and
+  retain only source-specific last-good data.
 - Settings no longer expose four invalid flat workforce model paths or the
   unenforced task/day hire caps. Four live workforce-change, warning, repair,
   and amend-overlap controls replace them, and the staffing-need limit now
@@ -79,6 +84,8 @@ this capsule owns the next bounded package.
 - Delegation-event rows show a child only when kind, worker ID, and native run
   ID are all observed. Recommendations and migrated partial rows never become
   executor identity; chart, table, and README copy stay source-neutral.
+- Disabled broker explain, routing snapshots, lifecycle copy, and tests no
+  longer require the retired delegation graph. The graph was not restored.
 - Pre-Job-B browser QA covered populated, empty, partial-failure, cadence,
   accessibility, and 1440/1024/390 widths. Those results describe the rebased
   code but must be rerun after the post-Job-B rework.
@@ -101,14 +108,9 @@ Completed in the dashboard truth package:
 
 Rework before merge:
 
-- replace latency causality claims with measured over-budget wording;
-- make latency and selection endpoints require the active Store binding, so a
-  configured DB-path change cannot present the process-frozen old Store as a
-  fresh sample;
-- remove broker/tests/docstring residues that still require the retired
-  delegation graph. Do not restore the graph;
-- retain the selection chart, but keep umbrella parity open until the shared
-  projection has a CLI view or the owner narrows that acceptance.
+- rerun populated and fresh-empty real-browser QA after the post-Job-B changes;
+- run the named fast spine and refresh `main` before the PR decision;
+- keep umbrella parity open for the broader historical sub-issues below.
 
 Drop or defer:
 
@@ -121,13 +123,9 @@ Drop or defer:
 
 ## exact-blocker
 
-- A disabled broker explain currently still
-  requires `delegation_graph` although the valid dashboard response removed it.
-- Latency and selection handlers currently return an informational Store
-  binding and keep reading the old process Store after a configured path
-  change; their existing per-source stale states require a fail-closed 409.
-- The post-Job-B browser QA and named fast spine have not yet run. PR #270's
-  historical checks are not evidence for this newly reframed package.
+- The post-Job-B real-browser QA and named fast spine have not yet run.
+- PR #270 still points at the pre-rebase draft head; its historical checks are
+  not evidence for this newly reframed package.
 
 ## same-task-continuity
 
@@ -137,11 +135,10 @@ decision. Continue in this worktree.
 
 ## next-bounded-work-package
 
-1. Create the dashboard truth package's substantive and ledger checkpoint.
-2. Refresh main, then repair only the proven graph and active-Store-binding
-   supporting contracts; do not revive Job B or broaden into owner diagnostics.
-3. Re-evaluate specialist-distribution CLI parity, then run focused Python,
-   populated/empty browser QA, and the named fast spine before any PR update.
+1. Create the supporting-contract substantive and ledger checkpoint.
+2. Refresh `main`, then run populated and fresh-empty real-browser QA.
+3. Run the named fast spine, refresh `main` again, and update draft PR #270 only
+   if the bounded package remains green and vision-aligned.
 
 ## verification
 
@@ -152,7 +149,9 @@ node --test --experimental-test-coverage ...  # 132 passed
 # coverage: 96.75% lines, 86.39% branches, 95.45% functions
 node --check <seven dashboard modules and UI test>  # passed
 git diff --check  # passed
-independent review  # no remaining High/Medium findings
+focused latency/API/parser/graph tests  # 207 passed; final latency/API rerun 178 passed
+node tests/dashboard_ui.test.mjs  # 133 passed after contract rename
+independent review  # machine and visible attribution findings resolved
 ~~~
 
 ## constraints
