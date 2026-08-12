@@ -516,7 +516,7 @@ not stable internal identifiers.
 | [AR-249](issue-AR-249-explain-parity.md) | sub-issue 8 of AR-236; route lab already provides explain parity via `POST /api/route`; no new code needed | None |
 | [AR-250](issue-AR-250-upgrade-flow-parity.md) | sub-issue 9 of AR-236; `GET /api/update` surfaces snapshot; multi-step plan/run flow deferred | None |
 | [AR-251](issue-AR-251-cli-presentation-richness.md) | planning pair; sub-issue 10 of AR-236; `--card` on workforce list; ADR-0154 | [ADR-0154](../decisions/0154-plain-text-cli-cards-over-rich-dependency.md) |
-| [AR-254](issue-AR-254-reconcile-canonical-worklog-history.md) | `8d9e505`, `d6169e6`; canonical index and exact historical exceptions pass locally; PR #270 hosted rerun pending | None |
+| [AR-254](issue-AR-254-reconcile-canonical-worklog-history.md) | `8d9e505`, `d6169e6`, `1694c32`, `b040980`; canonical index, exact historical exceptions, and clone-independent IDs pass locally; PR #270 rerun pending | None |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
