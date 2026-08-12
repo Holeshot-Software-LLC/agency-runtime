@@ -202,6 +202,19 @@ def _json_response(*args, **kwargs) -> tuple[int, dict, dict[str, str]]:
     return status, json.loads(raw), headers
 
 
+def _config_snapshot(server: dict) -> dict[str, object]:
+    """Read the server-bound config directly for POST precondition fixtures.
+
+    The dashboard deliberately has no GET config surface. Mutation tests still
+    need a current compare-and-swap revision, so they obtain it from the same
+    immutable local config identity used to construct the test server.
+    """
+
+    state = dashboard_module.read_config_state(server["store"].config_path)
+    binding = dashboard_module._store_service_binding(server["store"], state)
+    return dashboard_module._config_payload(state, service_binding=binding)
+
+
 def _wait_for_dashboard_observation(
     caplog: pytest.LogCaptureFixture,
     request_id: str,
@@ -638,12 +651,7 @@ def test_agent_toggle_semantic_noop_preserves_persisted_config(
         )
     reset_config_cache()
     before_raw = config_path.read_bytes() if config_path.exists() else None
-    status, initial, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
-    assert status == 200
+    initial = _config_snapshot(dashboard_server)
 
     status, payload, _headers = _json_response(
         dashboard_server,
@@ -713,8 +721,10 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"runtime off" in script
     assert b"callbacks.toggleHost" in script
     assert b"callbacks.toggleAgent" in script
-    assert b"Delegation dependency graph" in script
-    assert b"receipt.signals?.work_units?.units" in script
+    assert b"Delegation dependency graph" not in script
+    assert b"receipt.signals?.work_units?.units" not in script
+    assert b"/api/evidence/latency?limit=200" in script
+    assert b"/api/evidence/selections" in script
     assert b'["id", "Decision"]' in script
     assert b"hostLocation(host)" in script
     assert b"await refreshRuntimeEvidence()" in script
@@ -1460,7 +1470,7 @@ def test_dashboard_javascript_parses_when_node_is_available() -> None:
 
 
 def test_dashboard_api_requires_per_launch_token(dashboard_server):
-    status, payload, _headers = _json_response(dashboard_server, "/api/overview")
+    status, payload, _headers = _json_response(dashboard_server, "/api/live")
 
     assert status == 401
     assert payload == {"error": "authentication required"}
@@ -1645,7 +1655,7 @@ def test_dashboard_keep_alive_requests_use_independent_request_ids(
         for expected_request_id in request_ids:
             connection.request(
                 "GET",
-                "/api/overview",
+                "/api/live",
                 headers={"Authorization": f"Bearer {dashboard_server['token']}"},
             )
             response = connection.getresponse()
@@ -1670,7 +1680,7 @@ def test_dashboard_keep_alive_requests_use_independent_request_ids(
     dashboard_observations = [
         item
         for item in observations
-        if item["surface"] == "dashboard" and item["operation"] == "overview"
+        if item["surface"] == "dashboard" and item["operation"] == "live"
     ]
     assert [item["request_id"] for item in dashboard_observations] == list(request_ids)
     for request_id in request_ids:
@@ -1920,6 +1930,276 @@ def test_dashboard_live_snapshot_is_authenticated_stable_and_changes_with_activi
     assert changed["revision"] != first["revision"]
 
 
+def test_dashboard_metric_evidence_endpoints_are_authenticated_and_denominator_explicit(
+    dashboard_server,
+) -> None:
+    for path in ("/api/evidence/latency", "/api/evidence/selections"):
+        status, payload, _headers = _json_response(dashboard_server, path)
+        assert status == 401
+        assert payload == {"error": "authentication required"}
+
+    store = dashboard_server["store"]
+    session_id = str(uuid4())
+    for latency_ms, selected_ids in (
+        (12_000, ["security-reviewer"]),
+        (18_000, ["security-reviewer", "software-test-engineer"]),
+    ):
+        store.record_routing_decision(
+            trace_id=str(uuid4()),
+            session_id=session_id,
+            query_hash="a" * 64,
+            context_fingerprint="b" * 64,
+            decision={
+                "status": "accepted",
+                "source": "inference",
+                "selected_ids": selected_ids,
+                "semantic_ids": selected_ids,
+                "confidence": 0.9,
+                "latency_ms": latency_ms,
+                "provider": "test-provider",
+            },
+        )
+
+    status, latency, _headers = _json_response(
+        dashboard_server,
+        "/api/evidence/latency",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert latency["schema_version"] == "agency.dashboard.routing_latency.v1"
+    assert latency["overall"] == {
+        "count": 2,
+        "min_ms": 12_000,
+        "p50_ms": 12_000,
+        "p95_ms": 18_000,
+        "max_ms": 18_000,
+    }
+    assert latency["over_budget"] is True
+    assert latency["budget_ms"] == 15_000
+    assert latency["window"] == {
+        "kind": "most_recent_positive_latency_decisions",
+        "limit": 200,
+        "decision_count": 2,
+    }
+    assert latency["source"] == {
+        "decision_table": "routing_decisions",
+        "decision_duration": "latency_ms",
+        "receipt_table": "model_receipts",
+        "receipt_duration": "latency_ms",
+    }
+    assert latency["split"]["decisions"] == 0
+    assert latency["split"]["unattributed_decisions"] == 2
+    assert latency["split"]["derived_routing_remainder_ms"]["count"] == 0
+    assert "agency_ms" not in latency["split"]
+    assert "security-reviewer" not in json.dumps(latency)
+
+    status, selections, _headers = _json_response(
+        dashboard_server,
+        "/api/evidence/selections",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert selections["schema_version"] == "agency.dashboard.selection_distribution.v1"
+    assert selections["decisions_with_selections"] == 2
+    assert selections["distinct_selected_specialists"] == 2
+    assert selections["selection_occurrences"] == 3
+    assert selections["active_roster_size"] == 1
+    assert selections["top_specialists"][0] == {
+        "slug": "security-reviewer",
+        "decisions_containing_specialist": 2,
+        "share_of_decisions_with_selections": 1.0,
+        "selection_occurrences": 2,
+        "share_of_selection_occurrences": 2 / 3,
+    }
+    assert selections["source"] == {
+        "decision_table": "routing_decisions",
+        "selection_field": "selected_ids",
+        "roster_measure": "current_enabled_roster",
+    }
+
+
+def test_dashboard_operator_evidence_endpoints_are_owner_only(
+    dashboard_server,
+) -> None:
+    paths = (
+        "/api/evidence/children",
+        "/api/evidence/rejections",
+        "/api/evidence/wiring",
+    )
+    for path in paths:
+        status, payload, _headers = _json_response(dashboard_server, path)
+        assert status == 401
+        assert payload == {"error": "authentication required"}
+
+        status, payload, _headers = _json_response(
+            dashboard_server,
+            path,
+            token=dashboard_server["broker_token"],
+        )
+        assert status == 401
+        assert payload == {"error": "authentication required"}
+
+
+def test_dashboard_child_evidence_contract_is_bounded_and_absence_is_only_no_proof(
+    dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        dashboard_module,
+        "default_child_artifact_root",
+        lambda host: tmp_path / f"absent-{host}",
+    )
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/evidence/children?host=claude&limit=1",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert payload["schema_version"] == "agency.dashboard.child_delivery.v1"
+    assert payload["source"] == {
+        "authority": "host_written_child_artifacts",
+        "artifact_hosts": ["claude", "codex"],
+        "agency_store_consulted": False,
+        "evidence_meaning": "hash_verified_specialist_cards_in_child_input_before_first_speech",
+    }
+    assert payload["window"] == {
+        "kind": "newest_verified_child_delivery_evidence",
+        "hosts": ["claude"],
+        "detail_limit": 1,
+    }
+    assert payload["bounds"]["detail_limit"] == 1
+    assert payload["hosts"] == [
+        {
+            "host": "claude",
+            "root": str(tmp_path / "absent-claude"),
+            "root_present": False,
+            "artifact_candidates": 0,
+            "artifact_candidate_count_complete": True,
+            "artifacts_scanned": 0,
+            "artifact_scan_truncated": False,
+            "filesystem_entries_visited": 0,
+            "evidence_count": 0,
+            "staffed_children": 0,
+            "correlated_staffed_children": 0,
+            "uncorrelated_staffed_children": 0,
+            "legacy_deliveries": 0,
+            "detail_limit": 1,
+            "detail_truncated": False,
+            "children": [],
+        }
+    ]
+
+
+def test_dashboard_rule8_evidence_uses_canonical_blind_partition(
+    dashboard_server,
+) -> None:
+    store = dashboard_server["store"]
+    session_id = str(uuid4())
+    for status_name in ("response_invalid", "preflight_failed"):
+        trace_id = str(uuid4())
+        store.create_run(trace_id=trace_id, session_id=session_id, host="claude")
+        assert store.close_turn_evidence(session_id, trace_id, status=status_name) == 1
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/evidence/rejections?host=claude&limit=2",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert payload["schema_version"] == "agency.dashboard.rule8_evidence.v1"
+    assert payload["source"] == {
+        "authority": "agency_store",
+        "table": "runs",
+        "field": "status",
+        "host_execution_proof": False,
+    }
+    assert payload["window"] == {
+        "kind": "most_recent_matching_exceptional_runs",
+        "host": "claude",
+        "limit": 2,
+        "returned": 2,
+    }
+    assert payload["counts"] == {
+        "matching_exceptional_runs": 2,
+        "withheld": 1,
+        "agency_blind": 1,
+    }
+    assert [row["status"] for row in payload["withheld"]] == ["response_invalid"]
+    assert [row["status"] for row in payload["agency_blind"]] == ["preflight_failed"]
+    assert "published_anyway" not in payload
+
+
+def test_dashboard_wiring_contract_marks_unsupported_hosts_not_measured(
+    dashboard_server,
+) -> None:
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/evidence/wiring?host=codex",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert payload["schema_version"] == "agency.dashboard.host_wiring.v1"
+    assert payload["source"] == {
+        "authority": "trusted_staged_and_host_cache_files",
+        "measured_hosts": ["claude"],
+        "live_canary": False,
+    }
+    assert payload["window"] == {"kind": "current_wiring_files", "hosts": ["codex"]}
+    assert payload["hosts"][0]["measurement_status"] == "not_measured"
+    assert payload["hosts"][0]["status"] == "not_measured"
+    assert payload["hosts"][0]["reason_code"] == "host_not_measured"
+    assert "unwired" not in payload["hosts"][0]["reason"]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/evidence/children?root=C:%5Cattacker",
+        "/api/evidence/children?host=claude&host=codex",
+        "/api/evidence/children?limit=201",
+        "/api/evidence/rejections?db=C:%5Cattacker",
+        "/api/evidence/rejections?limit=501",
+        "/api/evidence/wiring?limit=1",
+        "/api/evidence/wiring?host=attacker",
+    ],
+)
+def test_dashboard_operator_evidence_queries_reject_overrides_and_unbounded_values(
+    dashboard_server,
+    path: str,
+) -> None:
+    status, _payload, _headers = _json_response(
+        dashboard_server,
+        path,
+        token=dashboard_server["token"],
+    )
+
+    assert status == 400
+
+
+@pytest.mark.parametrize(
+    ("raw_limit", "expected"),
+    [("0", 1), ("999", 200), ("not-a-number", 200)],
+)
+def test_dashboard_metric_latency_limit_is_bounded(
+    dashboard_server,
+    raw_limit: str,
+    expected: int,
+) -> None:
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        f"/api/evidence/latency?limit={raw_limit}",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert payload["window"]["limit"] == expected
+
+
 def test_dashboard_runtime_master_api_is_authenticated_atomic_and_live(
     dashboard_server,
 ) -> None:
@@ -1996,7 +2276,7 @@ def test_dashboard_runtime_master_api_is_authenticated_atomic_and_live(
     assert status == 409
     assert "expected 0, found 1" in stale["error"]
 
-    for path in ("/api/live", "/api/overview", "/api/hosts"):
+    for path in ("/api/live", "/api/hosts"):
         status, current, _headers = _json_response(
             dashboard_server,
             path,
@@ -2151,7 +2431,7 @@ def test_dashboard_live_snapshot_reads_activity_once(
 def test_dashboard_rejects_cross_origin_request(dashboard_server):
     status, payload, _headers = _json_response(
         dashboard_server,
-        "/api/overview",
+        "/api/live",
         token=dashboard_server["token"],
         origin="https://attacker.example",
     )
@@ -2445,16 +2725,11 @@ def test_exact_lookup_preserves_maximum_unicode_selector_metadata(
         assert agent["capabilities"] == capabilities
 
 
-def test_roster_broker_endpoints_fail_closed_when_store_restart_is_required(
+def test_store_bound_dashboard_endpoints_fail_closed_when_store_restart_is_required(
     dashboard_server,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    status, config, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
-    assert status == 200
+    config = _config_snapshot(dashboard_server)
     replacement = dashboard_server["home"] / "replacement.db"
     status, saved, _headers = _json_response(
         dashboard_server,
@@ -2480,22 +2755,29 @@ def test_roster_broker_endpoints_fail_closed_when_store_restart_is_required(
     from agency_runtime.core.config import reset_config_cache
 
     reset_config_cache()
-    status, refreshed, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
-    assert status == 200
+    refreshed = _config_snapshot(dashboard_server)
     assert refreshed["service_binding"] == {
         "store_path": str(dashboard_server["store"].db_path),
         "desired_store_path": str(replacement),
         "store_restart_required": True,
     }
 
+    def fail_metric_read(*_args, **_kwargs):
+        raise AssertionError("stale Store metric evidence must not be read")
+
+    monkeypatch.setattr(dashboard_server["store"], "get_routing_latencies", fail_metric_read)
+    monkeypatch.setattr(
+        dashboard_server["store"],
+        "specialist_selection_distribution",
+        fail_metric_read,
+    )
+
     requests = [
         ("/api/roster?limit=1&projection=activation", "GET", None),
         ("/api/agents/lookup?slug=security-reviewer", "GET", None),
         ("/api/hosts", "GET", None),
+        ("/api/evidence/latency", "GET", None),
+        ("/api/evidence/selections", "GET", None),
         (
             "/api/agents/toggle",
             "POST",
@@ -2629,12 +2911,7 @@ def test_dashboard_exact_lookup_reaches_and_toggles_agent_beyond_first_thousand(
     assert lookup["total_count"] == 1002
     assert lookup["filter_slug"] == "agent-1000"
 
-    status, config, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
-    assert status == 200
+    config = _config_snapshot(dashboard_server)
     status, toggled, _headers = _json_response(
         dashboard_server,
         "/api/agents/toggle",
@@ -2724,27 +3001,20 @@ def test_dashboard_exact_lookup_treats_imported_manager_as_optional(dashboard_se
     assert payload["agents"][0]["protected"] is False
 
 
-def test_dashboard_config_get_reports_redacted_revision_and_target(dashboard_server):
+@pytest.mark.parametrize("path", ["/api/config", "/api/overview"])
+def test_stale_dashboard_get_routes_are_removed(dashboard_server, path: str) -> None:
     status, payload, _headers = _json_response(
         dashboard_server,
-        "/api/config",
+        path,
         token=dashboard_server["token"],
     )
 
-    assert status == 200
-    assert payload["revision"].startswith("sha256:")
-    assert payload["path"].endswith("missing.yaml")
-    assert payload["effective"]["dashboard"]["port"] == 7810
-    assert payload["environment_overrides"]["judge.timeout"] == "AGENCY_JUDGE_TIMEOUT"
-    assert all(isinstance(value, bool) for value in payload["secret_presence"].values())
+    assert status == 404
+    assert payload == {"error": f"unknown path: {path}"}
 
 
 def test_dashboard_agent_toggle_is_authenticated_reversible_and_protected(dashboard_server):
-    status, initial, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
+    initial = _config_snapshot(dashboard_server)
     request = {
         "slug": "security-reviewer",
         "enabled": False,
@@ -2862,11 +3132,7 @@ def test_dashboard_agent_toggle_is_authenticated_reversible_and_protected(dashbo
 
 
 def test_dashboard_config_write_requires_confirmation_and_is_atomic(dashboard_server):
-    status, initial, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
+    initial = _config_snapshot(dashboard_server)
     body = {
         "expected_revision": initial["revision"],
         "operations": [
@@ -2905,7 +3171,7 @@ def test_dashboard_config_write_requires_confirmation_and_is_atomic(dashboard_se
     }
 
 
-def test_concurrent_dashboards_keep_custom_config_reads_isolated(
+def test_concurrent_dashboards_keep_custom_store_evidence_identities_isolated(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -2947,7 +3213,7 @@ def test_concurrent_dashboards_keep_custom_config_reads_isolated(
             token = str(client["token"])
             status, payload, _headers = _json_response(
                 client,
-                "/api/config",
+                "/api/evidence/rejections?limit=1",
                 token=token,
             )
             return status, payload
@@ -2956,9 +3222,10 @@ def test_concurrent_dashboards_keep_custom_config_reads_isolated(
             results = list(executor.map(read, range(2)))
 
         assert [status for status, _payload in results] == [200, 200]
-        assert [
-            payload["effective"]["observability"]["retention_days"] for _status, payload in results
-        ] == [41, 42]
+        assert [Path(payload["config_path"]) for _status, payload in results] == [
+            path.resolve() for path in paths
+        ]
+        assert len({payload["config_revision"] for _status, payload in results}) == 2
         assert [yaml.safe_load(path.read_text(encoding="utf-8")) for path in paths] == [
             {"observability": {"retention_days": 41}},
             {"observability": {"retention_days": 42}},
@@ -3004,11 +3271,7 @@ def test_dashboard_server_rejects_a_store_without_config_identity(tmp_path: Path
 
 
 def test_dashboard_config_stale_revision_returns_conflict(dashboard_server):
-    status, initial, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
+    initial = _config_snapshot(dashboard_server)
     body = {
         "expected_revision": initial["revision"],
         "operations": [{"op": "set", "path": "dashboard.port", "value": 8123}],
@@ -3037,11 +3300,7 @@ def test_dashboard_config_stale_revision_returns_conflict(dashboard_server):
 
 
 def test_dashboard_config_secret_is_write_only(dashboard_server):
-    status, initial, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
+    initial = _config_snapshot(dashboard_server)
     secret = "dashboard-secret-value"
     status, payload, _headers = _json_response(
         dashboard_server,
@@ -3071,12 +3330,7 @@ def test_dashboard_config_secret_is_write_only(dashboard_server):
 def test_dashboard_server_host_loads_and_saves_through_shared_boundary(
     dashboard_server,
 ):
-    status, initial, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
-    assert status == 200
+    initial = _config_snapshot(dashboard_server)
     assert initial["effective"]["server"]["host"] == "127.0.0.1"
 
     secret = "server-host-redaction-sentinel"
@@ -3122,12 +3376,7 @@ def test_dashboard_server_host_loads_and_saves_through_shared_boundary(
     assert saved["effective"]["judge"]["api_key"] == "***REDACTED***"
     assert secret not in json.dumps(saved)
 
-    status, reloaded, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
-    assert status == 200
+    reloaded = _config_snapshot(dashboard_server)
     assert reloaded["effective"]["server"]["host"] == "localhost"
     assert reloaded["persisted"]["server"]["host"] == "localhost"
     assert reloaded["effective"]["judge"]["api_key"] == "***REDACTED***"
@@ -3135,12 +3384,7 @@ def test_dashboard_server_host_loads_and_saves_through_shared_boundary(
 
 
 def test_dashboard_server_host_rejects_non_loopback_binding(dashboard_server):
-    status, initial, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
-    assert status == 200
+    initial = _config_snapshot(dashboard_server)
 
     status, payload, _headers = _json_response(
         dashboard_server,
@@ -3177,11 +3421,7 @@ def test_dashboard_config_sensitive_policy_changes_require_specific_phrase(
     value,
     required,
 ):
-    status, initial, _headers = _json_response(
-        dashboard_server,
-        "/api/config",
-        token=dashboard_server["token"],
-    )
+    initial = _config_snapshot(dashboard_server)
     status, payload, _headers = _json_response(
         dashboard_server,
         "/api/config",
@@ -3198,7 +3438,7 @@ def test_dashboard_config_sensitive_policy_changes_require_specific_phrase(
     assert payload == {"error": f"missing confirmation phrase: {required}"}
 
 
-def test_dashboard_overview_and_activity_are_metadata_only(dashboard_server, monkeypatch):
+def test_dashboard_live_and_activity_are_metadata_only(dashboard_server, monkeypatch):
     dashboard_server["store"].record_specialist_loaded(
         "session-dashboard",
         "security-reviewer",
@@ -3206,19 +3446,17 @@ def test_dashboard_overview_and_activity_are_metadata_only(dashboard_server, mon
     )
 
     def fail_if_materialized(*_args, **_kwargs):
-        raise AssertionError("overview must not materialize roster rows")
+        raise AssertionError("live must not materialize roster rows")
 
     monkeypatch.setattr(dashboard_server["store"], "get_active_roster", fail_if_materialized)
-    status, overview, _headers = _json_response(
+    status, live, _headers = _json_response(
         dashboard_server,
-        "/api/overview",
+        "/api/live",
         token=dashboard_server["token"],
     )
     assert status == 200
+    overview = live["overview"]
     assert overview["status"] == "ok"
-    assert overview["roster_count"] == 1
-    assert overview["capture_content"] is False
-    assert overview["retention_days"] == 30
 
     status, activity, _headers = _json_response(
         dashboard_server,
@@ -3402,9 +3640,14 @@ def test_route_lab_eligibility_projection_is_bounded_and_content_safe() -> None:
 )
 def test_dashboard_route_lab_rejects_unsupported_or_unproven_host(
     dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
     host: str,
     message: str,
 ) -> None:
+    def fail_snapshot(_handler):
+        raise AssertionError("invalid host must fail before routing catalog capture")
+
+    monkeypatch.setattr(DashboardHTTPHandler, "_routing_operation_snapshot", fail_snapshot)
     status, payload, _headers = _json_response(
         dashboard_server,
         "/api/route",
@@ -3417,54 +3660,77 @@ def test_dashboard_route_lab_rejects_unsupported_or_unproven_host(
     assert message in payload["error"]
 
 
-@pytest.mark.skip(reason="ADR-0087: needs full inference nomination-delivery flow")
-def test_dashboard_route_lab_uses_authoritative_dependency_graph(dashboard_server):
+def test_dashboard_route_lab_checks_store_binding_before_catalog_capture(
+    dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_snapshot(_handler):
+        raise AssertionError("stale service must fail before routing catalog capture")
+
+    monkeypatch.setattr(DashboardHTTPHandler, "_routing_operation_snapshot", fail_snapshot)
+    monkeypatch.setattr(
+        dashboard_module,
+        "_store_service_binding",
+        lambda _store, _state: {
+            "store_path": "active.db",
+            "desired_store_path": "replacement.db",
+            "store_restart_required": True,
+        },
+    )
+
     status, payload, _headers = _json_response(
         dashboard_server,
         "/api/route",
         method="POST",
-        body={
-            "task": "1. Implement the API\n2. After the API is complete, test the endpoint",
-            "session_id": "dashboard-graph",
-        },
+        body={"task": "review this design", "host": "codex"},
         token=dashboard_server["token"],
     )
 
+    assert status == 409
+    assert payload["restart_required"] is True
+
+
+def test_dashboard_route_lab_master_disabled_bypasses_preflight_and_catalog(
+    dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    status, _payload, _headers = _json_response(
+        dashboard_server,
+        "/api/runtime/toggle",
+        method="POST",
+        body={
+            "enabled": False,
+            "confirm": "DISABLE AGENCY",
+            "expected_generation": 0,
+        },
+        token=dashboard_server["token"],
+    )
     assert status == 200
-    graph = payload["delegation_graph"]
-    assert len(graph["nodes"]) == 4
-    assert {(edge["from"], edge["to"], edge["reason"]) for edge in graph["edges"]} == {
-        (graph["nodes"][0]["id"], graph["nodes"][1]["id"], "explicit depends_on"),
-        (graph["nodes"][1]["id"], graph["nodes"][2]["id"], "explicit depends_on"),
-        (graph["nodes"][1]["id"], graph["nodes"][3]["id"], "explicit depends_on"),
-    }
 
+    monkeypatch.setattr(
+        DashboardHTTPHandler,
+        "_routing_operation_snapshot",
+        lambda _handler: (_ for _ in ()).throw(AssertionError("catalog must be bypassed")),
+    )
+    monkeypatch.setattr(
+        dashboard_module,
+        "_route_lab_host_capability",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("host inspection must be bypassed")
+        ),
+    )
 
-@pytest.mark.skip(reason="ADR-0087: needs full inference nomination-delivery flow")
-def test_dashboard_route_lab_orders_inline_then_sequence(dashboard_server):
     status, payload, _headers = _json_response(
         dashboard_server,
         "/api/route",
         method="POST",
-        body={
-            "task": "Review the authentication design, then document the deployment workflow.",
-            "session_id": "dashboard-inline-graph",
-        },
+        body={"task": "review this design", "host": "attacker"},
         token=dashboard_server["token"],
     )
 
     assert status == 200
-    graph = payload["delegation_graph"]
-    assert len(graph["nodes"]) == 2
-    assert "review-report during review" in graph["nodes"][0]["description"]
-    assert "documentation during documentation" in graph["nodes"][1]["description"]
-    assert graph["edges"] == [
-        {
-            "from": graph["nodes"][0]["id"],
-            "to": graph["nodes"][1]["id"],
-            "reason": "explicit depends_on",
-        }
-    ]
+    assert payload["status"] == "disabled"
+    assert payload["bypassed"] is True
 
 
 def test_dashboard_trim_requires_exact_confirmation(dashboard_server):
@@ -4163,7 +4429,7 @@ def test_dashboard_serves_authenticated_requests_on_ipv6_loopback(tmp_path: Path
     try:
         connection.request(
             "GET",
-            "/api/overview",
+            "/api/health",
             headers={
                 "Authorization": "Bearer ipv6-token",
                 "Host": f"[::1]:{server.server_address[1]}",
@@ -4178,7 +4444,7 @@ def test_dashboard_serves_authenticated_requests_on_ipv6_loopback(tmp_path: Path
         thread.join(timeout=2)
 
     assert response.status == 200
-    assert payload["status"] == "ok"
+    assert payload == {"status": "ok"}
 
 
 @pytest.mark.parametrize(

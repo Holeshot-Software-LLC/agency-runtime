@@ -8,15 +8,19 @@ child merely read back later.
 
 from __future__ import annotations
 
+import argparse
 import json
+import os
 from pathlib import Path
 
 import pytest
 
+from agency_runtime.cli.evidence_commands import cmd_evidence_children
 from agency_runtime.core import child_delivery_evidence as subject
 from agency_runtime.core.child_delivery_evidence import (
     MAX_LAUNCH_PREFIX_BYTES,
     child_delivery_evidence,
+    child_delivery_projection,
     claude_child_delivery_evidence,
     codex_child_delivery_evidence,
     scan_child_delivery_evidence,
@@ -348,6 +352,85 @@ def test_scanning_a_root_reads_every_child_the_host_wrote(
 
     assert len(findings) == 2
     assert all(finding.staffed for finding in findings)
+
+
+def test_projection_counts_the_window_and_returns_bounded_newest_proof(
+    tmp_path: Path,
+    private_root: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(subject, "MAX_CHILD_ARTIFACTS", 2)
+    artifacts: list[Path] = []
+    for index in range(3):
+        record = _claude_record(_envelope(f"Audit schema {index}."))
+        record["agentId"] = f"child-{index}"
+        artifact = _write_jsonl(
+            tmp_path / "proj" / PARENT_SESSION / "subagents" / f"agent-child-{index}.jsonl",
+            [record],
+        )
+        os.utime(artifact, (1_700_000_000 + index, 1_700_000_000 + index))
+        artifacts.append(artifact)
+
+    projection = child_delivery_projection(tmp_path, host="claude", limit=1)
+
+    assert projection["root_present"] is True
+    assert projection["artifact_candidates"] == 3
+    assert projection["artifact_candidate_count_complete"] is True
+    assert projection["artifacts_scanned"] == 2
+    assert projection["artifact_scan_truncated"] is True
+    assert projection["filesystem_entries_visited"] <= subject.MAX_CHILD_FILESYSTEM_ENTRIES
+    assert projection["evidence_count"] == 2
+    assert projection["staffed_children"] == 2
+    assert projection["correlated_staffed_children"] == 2
+    assert projection["uncorrelated_staffed_children"] == 0
+    assert projection["detail_limit"] == 1
+    assert projection["detail_truncated"] is True
+    assert projection["children"][0]["child_id"] == "child-2"
+    assert projection["children"][0]["artifact"] == str(artifacts[2])
+
+
+def test_host_tree_visits_are_bounded_and_candidate_count_is_a_lower_bound(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(subject, "MAX_CHILD_FILESYSTEM_ENTRIES", 3)
+    for index in range(8):
+        (tmp_path / f"project-{index}").mkdir()
+
+    projection = child_delivery_projection(tmp_path, host="claude", limit=50)
+
+    assert projection["filesystem_entries_visited"] == 3
+    assert projection["artifact_candidates"] == 0
+    assert projection["artifact_candidate_count_complete"] is False
+    assert projection["artifact_scan_truncated"] is True
+
+
+def test_empty_projection_means_no_verified_proof_not_no_children(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    _claude_artifact(tmp_path, [_claude_record("ordinary child prompt")])
+
+    projection = child_delivery_projection(tmp_path, host="claude", limit=50)
+
+    assert projection["artifact_candidates"] == 1
+    assert projection["artifact_candidate_count_complete"] is True
+    assert projection["artifacts_scanned"] == 1
+    assert projection["evidence_count"] == 0
+    assert projection["children"] == []
+
+
+@pytest.mark.parametrize("limit", [0, 201, True])
+def test_projection_rejects_an_unbounded_detail_limit(tmp_path: Path, limit: object) -> None:
+    with pytest.raises(ValueError, match="between 1 and 200"):
+        child_delivery_projection(tmp_path, host="claude", limit=limit)  # type: ignore[arg-type]
+
+
+def test_cli_handler_does_not_turn_zero_detail_limit_into_the_default(tmp_path: Path) -> None:
+    args = argparse.Namespace(host="claude", root=str(tmp_path), limit=0, json=True)
+
+    with pytest.raises(ValueError, match="between 1 and 200"):
+        cmd_evidence_children(args)
 
 
 def test_a_directory_other_accounts_can_write_is_refused(

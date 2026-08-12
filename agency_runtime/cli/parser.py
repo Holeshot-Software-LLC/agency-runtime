@@ -6,11 +6,14 @@ import argparse
 from collections.abc import Callable, Mapping
 
 from agency_runtime import __version__
+from agency_runtime.core.child_delivery_evidence import MAX_CHILD_DETAIL_RESULTS
 from agency_runtime.core.evals.product_scenarios import PRODUCT_SCENARIOS_BY_ID
 from agency_runtime.core.evals.upstream_selection import CASES as UPSTREAM_SELECTION_CASES
 from agency_runtime.core.evals.workforce_selection import CASES
+from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.installer_contracts import HOSTS
 from agency_runtime.core.policy.profiles import PROFILES
+from agency_runtime.core.rule8_evidence import MAX_RULE8_EVIDENCE_ROWS
 from agency_runtime.core.runtime_control_command import parse_runtime_control_command
 
 CommandHandler = Callable[[argparse.Namespace], int]
@@ -1460,7 +1463,7 @@ def _register_services(sub: Subparsers, handlers: Handlers) -> None:
 def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     evidence = sub.add_parser(
         "evidence",
-        help="Read what a host's own artifacts prove, never what Agency recorded",
+        help="Read source-labelled evidence from host artifacts or Agency's Store",
     )
     evidence_sub = evidence.add_subparsers(dest="evidence_command", required=True)
     children = evidence_sub.add_parser(
@@ -1478,22 +1481,31 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
         default=None,
         help="Read this artifact root instead of the host's own (requires --host)",
     )
+    children.add_argument(
+        "--limit",
+        type=_positive_int,
+        default=50,
+        help=(f"Newest verified details per host (default: 50, max: {MAX_CHILD_DETAIL_RESULTS})"),
+    )
     children.add_argument("--json", action="store_true", help="Print JSON")
     _bind(children, handlers, "cmd_evidence_children")
     rejections = evidence_sub.add_parser(
         "rejections",
-        help="Show every turn Agency withheld, and every turn it published while blind",
+        help="Partition recent exceptional runs into withheld and Agency-blind",
     )
     rejections.add_argument(
         "--host",
+        choices=EXECUTION_HOSTS,
         default=None,
         help="Read one host only (default: every host that closed a turn)",
     )
     rejections.add_argument(
         "--limit",
-        type=int,
+        type=_positive_int,
         default=50,
-        help="Most recent N closed turns to read (default: 50, max: 500)",
+        help=(
+            f"Most recent N matching exceptional runs (default: 50, max: {MAX_RULE8_EVIDENCE_ROWS})"
+        ),
     )
     rejections.add_argument(
         "--db",
@@ -1504,7 +1516,7 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     _bind(rejections, handlers, "cmd_evidence_rejections")
     latency = evidence_sub.add_parser(
         "latency",
-        help="Show what Agency's own routing costs a turn, against a budget",
+        help="Show recorded routing durations against a p95 budget",
     )
     latency.add_argument(
         "--source",
@@ -1530,6 +1542,17 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     )
     latency.add_argument("--json", action="store_true", help="Print JSON")
     _bind(latency, handlers, "cmd_evidence_latency")
+    selections = evidence_sub.add_parser(
+        "selections",
+        help="Show bounded specialist-selection frequency with explicit denominators",
+    )
+    selections.add_argument(
+        "--db",
+        default=None,
+        help="Read this evidence store instead of the configured one",
+    )
+    selections.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(selections, handlers, "cmd_evidence_selections")
     intent = evidence_sub.add_parser(
         "intent",
         help="Audit what each turn was understood to be, against who was staffed",
@@ -1558,9 +1581,9 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     )
     wiring.add_argument(
         "--host",
-        choices=("claude",),
+        choices=tuple(HOSTS),
         default=None,
-        help="Check one host only (default: every host with a readable wiring file)",
+        help="Check one host only (unsupported measurements report not_measured)",
     )
     wiring.add_argument("--json", action="store_true", help="Print JSON")
     _bind(wiring, handlers, "cmd_evidence_wiring")

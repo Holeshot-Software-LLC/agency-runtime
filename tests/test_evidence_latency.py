@@ -1,10 +1,9 @@
-"""What does Agency's own routing cost a turn?
+"""What recorded routing duration does an eligible turn add?
 
-`routing_decisions.latency_ms` was the only timing column in the schema and
-nothing read it, so the cost of an eligible turn was invisible unless someone
-opened the database by hand. These tests pin the two things that decide whether
-the number means anything: which rows are counted, and where the budget line
-falls.
+`routing_decisions.latency_ms` was not exposed to operators, so the duration of
+an eligible turn was invisible unless someone opened the database by hand.
+These tests pin which rows are counted, where the budget line falls, and when
+receipt timing supports a provider/remainder breakdown.
 """
 
 from __future__ import annotations
@@ -15,10 +14,12 @@ from pathlib import Path
 
 import pytest
 
-from agency_runtime.cli.evidence_commands import (
-    _latency_summary,
-    _percentile,
-    cmd_evidence_latency,
+from agency_runtime.cli.evidence_commands import cmd_evidence_latency
+from agency_runtime.core.routing_latency import (
+    DEFAULT_ROUTING_LATENCY_BUDGET_MS,
+    latency_summary,
+    nearest_rank_percentile,
+    routing_latency_projection,
 )
 from agency_runtime.core.store.sqlite import Store
 
@@ -80,11 +81,11 @@ def _args(db: Path, **overrides: object) -> argparse.Namespace:
 def test_percentile_uses_nearest_rank(values: list[int], percentile: int, expected: int) -> None:
     # Nearest-rank never interpolates a latency that was never observed, which
     # matters when the whole point is the tail an operator actually felt.
-    assert _percentile(sorted(values), percentile) == expected
+    assert nearest_rank_percentile(sorted(values), percentile) == expected
 
 
 def test_summary_of_nothing_is_zero_not_an_error() -> None:
-    assert _latency_summary([]) == {
+    assert latency_summary([]) == {
         "count": 0,
         "min_ms": 0,
         "p50_ms": 0,
@@ -93,15 +94,79 @@ def test_summary_of_nothing_is_zero_not_an_error() -> None:
     }
 
 
+def test_shared_projection_preserves_operator_latency_semantics() -> None:
+    rows = [
+        {"latency_ms": 0, "provider_ms": 0, "provider_calls": 0, "source": "computed"},
+        {"latency_ms": -1, "provider_ms": 0, "provider_calls": 0, "source": "computed"},
+        {"latency_ms": 10_000, "provider_ms": 7_000, "provider_calls": 2, "source": "cache"},
+        {"latency_ms": 15_000, "provider_ms": 0, "provider_calls": 1, "source": "computed"},
+    ]
+
+    projection = routing_latency_projection(rows)
+
+    assert projection["budget_ms"] == DEFAULT_ROUTING_LATENCY_BUDGET_MS
+    assert projection["overall"] == {
+        "count": 2,
+        "min_ms": 10_000,
+        "p50_ms": 10_000,
+        "p95_ms": 15_000,
+        "max_ms": 15_000,
+    }
+    assert projection["over_budget"] is False
+    assert projection["by_source"] == {
+        "cache": {
+            "count": 1,
+            "min_ms": 10_000,
+            "p50_ms": 10_000,
+            "p95_ms": 10_000,
+            "max_ms": 10_000,
+        },
+        "computed": {
+            "count": 1,
+            "min_ms": 15_000,
+            "p50_ms": 15_000,
+            "p95_ms": 15_000,
+            "max_ms": 15_000,
+        },
+    }
+    assert projection["split"]["decisions"] == 1
+    assert projection["split"]["unattributed_decisions"] == 1
+    assert projection["split"]["provider_ms"]["p50_ms"] == 7_000
+    assert projection["split"]["derived_routing_remainder_ms"]["p50_ms"] == 3_000
+    assert "agency_ms" not in projection["split"]
+    assert projection["split"]["calls_per_decision"] == 2.0
+    assert projection["slowest"] == [rows[3], rows[2]]
+
+
+def test_shared_projection_fails_only_when_p95_exceeds_budget() -> None:
+    rows = [{"latency_ms": 15_001, "provider_ms": 1, "provider_calls": 1, "source": "computed"}]
+
+    assert routing_latency_projection(rows)["over_budget"] is True
+    assert routing_latency_projection(rows, budget_ms=15_001)["over_budget"] is False
+
+
+def test_same_trace_provider_time_above_routing_duration_is_unattributed() -> None:
+    row = {
+        "latency_ms": 10_000,
+        "provider_ms": 12_000,
+        "provider_calls": 2,
+        "provider_timed_calls": 2,
+        "provider_unknown_calls": 0,
+        "source": "computed",
+    }
+
+    projection = routing_latency_projection([row])
+
+    assert projection["split"]["decisions"] == 0
+    assert projection["split"]["unattributed_decisions"] == 1
+    assert projection["split"]["provider_ms"]["count"] == 0
+    assert projection["split"]["derived_routing_remainder_ms"]["count"] == 0
+
+
 def test_zero_latency_decisions_are_not_counted_as_fast_turns(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Both writers store 0 when no provider call was spent.
-
-    Counting those would report Agency as cheap in exact proportion to how
-    often it did nothing -- the one way this surface could lie in the
-    reassuring direction.
-    """
+    """A stored 0 is ineligible timing and must not become a fast sample."""
 
     db = tmp_path / "agency.db"
     store = Store(str(db))
@@ -177,6 +242,46 @@ def test_an_empty_store_reports_nothing_rather_than_passing(
     assert "✅" not in output
 
 
+def test_over_budget_text_reports_only_the_measured_routing_latency(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    db = tmp_path / "agency.db"
+    store = Store(str(db))
+    _decision(store, 1, latency_ms=20_000)
+
+    assert cmd_evidence_latency(_args(db, json=False)) == 1
+
+    output = capsys.readouterr().out
+    assert "measured routing p95 20000 ms exceeds the 15000 ms budget" in output
+    assert "Agency is the slow part" not in output
+
+
+def test_text_labels_the_routing_remainder_as_derived(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    db = tmp_path / "agency.db"
+    store = Store(str(db))
+    _decision(store, 1, latency_ms=10_000)
+    store.record_model_receipt(
+        trace_id=_trace(1),
+        session_id=SESSION,
+        host="claude",
+        resolved_model="sonnet",
+        source="wrapper",
+        latency_ms=7_000,
+        status="success",
+    )
+
+    assert cmd_evidence_latency(_args(db, json=False)) == 0
+
+    output = capsys.readouterr().out
+    assert "derived routing remainder p50 3000 ms" in output
+    assert "recorded total minus timed provider receipts" in output
+    assert "Agency p50" not in output
+
+
 def test_an_existing_database_gains_the_latency_column(tmp_path: Path) -> None:
     """A column in the DDL but not the staleness predicate never lands.
 
@@ -231,10 +336,10 @@ def test_an_existing_database_gains_the_latency_column(tmp_path: Path) -> None:
         assert column in present
 
 
-def test_the_split_is_read_back_from_receipts_not_modelled(
+def test_the_provider_breakdown_and_derived_remainder_are_read_from_receipts(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Provider time comes from the calls; Agency's share is the remainder."""
+    """Provider time is recorded; the routing remainder is derived from it."""
 
     db = tmp_path / "agency.db"
     store = Store(str(db))
@@ -257,16 +362,16 @@ def test_the_split_is_read_back_from_receipts_not_modelled(
     assert split["decisions"] == 1
     assert split["calls_per_decision"] == 2.0
     assert split["provider_ms"]["p50_ms"] == 30_000
-    assert split["agency_ms"]["p50_ms"] == 10_000
+    assert split["derived_routing_remainder_ms"]["p50_ms"] == 10_000
 
 
-def test_decisions_whose_receipts_predate_the_column_are_not_blamed_on_agency(
+def test_legacy_zero_duration_receipts_do_not_create_a_fabricated_remainder(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """A 0 receipt means unreported, never a free provider call.
 
-    Treating it as zero provider time would attribute an entire turn to Agency's
-    own work and point any optimisation at the wrong place.
+    Treating it as zero provider time would fabricate a full routing remainder
+    and point any optimisation at the wrong place.
     """
 
     db = tmp_path / "agency.db"
@@ -286,4 +391,32 @@ def test_decisions_whose_receipts_predate_the_column_are_not_blamed_on_agency(
 
     assert payload["split"]["decisions"] == 0
     assert payload["split"]["unattributed_decisions"] == 1
-    assert payload["split"]["agency_ms"]["p50_ms"] == 0
+    assert payload["split"]["derived_routing_remainder_ms"]["p50_ms"] == 0
+
+
+def test_mixed_timed_and_legacy_receipts_remain_unattributed(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """One timed call cannot make an unknown sibling call attributable."""
+
+    db = tmp_path / "agency.db"
+    store = Store(str(db))
+    _decision(store, 1, latency_ms=40_000)
+    for latency_ms in (0, 15_000):
+        store.record_model_receipt(
+            trace_id=_trace(1),
+            session_id=SESSION,
+            host="claude",
+            resolved_model="sonnet",
+            source="wrapper",
+            latency_ms=latency_ms,
+            status="success",
+        )
+
+    cmd_evidence_latency(_args(db))
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["split"]["decisions"] == 0
+    assert payload["split"]["unattributed_decisions"] == 1
+    assert payload["split"]["provider_ms"]["p50_ms"] == 0
+    assert payload["split"]["derived_routing_remainder_ms"]["p50_ms"] == 0

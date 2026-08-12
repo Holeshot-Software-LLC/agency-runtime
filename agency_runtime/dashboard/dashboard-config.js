@@ -264,42 +264,6 @@ export function createConfigController(core) {
 		});
 	}
 
-	async function loadWorkforceModels({ refresh = false } = {}) {
-		const providerName = byId("config-workforce-provider")?.value.trim() || "";
-		const providers = configuredProviders();
-		const provider = providers.find(
-			(item) => String(item.name || "").toLowerCase() === providerName.toLowerCase(),
-		) || (!providerName ? providers[0] : null);
-		const options = byId("workforce-model-options");
-		const status = byId("workforce-model-status");
-		if (!options || !status) return false;
-		options.replaceChildren();
-		if (!provider) {
-			status.textContent = "Choose a configured provider to discover models.";
-			return false;
-		}
-		const type = String(provider.type || "").toLowerCase();
-		const transport = String(provider.transport || "").toLowerCase();
-		if (type !== "cli" || !["codex", "claude"].includes(transport)) {
-			status.textContent = type === "litellm"
-				? "Enter the LiteLLM router or model-group alias in any stage model field."
-				: "This provider uses manually entered model names.";
-			return false;
-		}
-		status.textContent = `Discovering ${transport} account models…`;
-		try {
-			const { catalog, models } = await discoverModels(transport, refresh);
-			appendModelOptions(options, models);
-			status.textContent = models.length
-				? `${models.length} account model${models.length === 1 ? "" : "s"} available for every workforce stage.`
-				: catalog?.error || `No visible ${transport} models were found.`;
-			return models.length > 0;
-		} catch (error) {
-			status.textContent = error.message || "Model discovery failed.";
-			return false;
-		}
-	}
-
 	function providerBuilderDraft() {
 		const name = byId("provider-builder-name")?.value.trim() || "";
 		const type = byId("provider-builder-type")?.value.trim() || "";
@@ -580,7 +544,6 @@ export function createConfigController(core) {
 		appendSecretOperation,
 		syncProviderSecretOptions,
 		syncWorkforceProviderOptions,
-		loadWorkforceModels,
 		providerBuilderDraft,
 		syncProviderTimeoutRecommendation,
 		syncProviderReasoningEffortOptions,

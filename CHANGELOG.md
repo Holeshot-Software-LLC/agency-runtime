@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-02
+updated: 2026-08-11
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -28,6 +28,12 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- The dashboard now exposes bounded routing-latency, specialist-selection,
+  host-written child-delivery, Rule-8 exception, and staged-versus-wired host
+  evidence. Latency, child, Rule-8, and wiring math share the CLI projections;
+  the selection chart is computed directly from retained Store decisions.
+  Panels name their authority and window, keep unknown distinct from healthy,
+  report dedicated freshness, and retain last-good data on optional failures.
 - `agency eval decision-conformance` proves a green focused baseline and then
   kills curated online-inference, role-ordering, contractor-boundary, and
   diagnostic-collapse mutations in owner-private disposable copies. It never
@@ -36,6 +42,11 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- Dashboard copy and controls now match Agency's staffing-only contract:
+  retired delegation preferences, confidence bypasses, and dependency-planning
+  UI are gone. The superseded read-only `/api/overview` and GET `/api/config`
+  aliases are removed; atomic `/api/live` and `/api/control` remain canonical,
+  and POST `/api/config` is unchanged.
 - Codex installation now manages one bounded, marked block in the active global
   `AGENTS.override.md` or `AGENTS.md`. The block is the durable owner request to
   dispatch only inference-accepted Agency plan rows; isolated product trials

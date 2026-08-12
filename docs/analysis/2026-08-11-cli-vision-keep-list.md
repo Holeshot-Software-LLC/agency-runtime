@@ -1,3 +1,19 @@
+---
+title: "CLI re-scope keep-list derived from the founding vision"
+status: active
+category: analysis
+created: 2026-08-11
+updated: 2026-08-11
+tags: [cli, vision, parity, scope, delegation]
+related:
+  - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md
+  - agency_runtime/cli/parser.py
+supersedes: []
+superseded_by: null
+type: analysis
+---
+
 # CLI re-scope: the keep-list, derived from the founding vision
 
 Date: 2026-08-11. Companion to the dashboard re-scope (Codex, separate worktree).

@@ -1,12 +1,15 @@
 ---
 title: "AR-236: Achieve full CLI and dashboard functional and presentational parity"
-status: done
+status: open
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-11
 tags: [cli, dashboard, parity, ops, observability, analysis]
 related:
   - docs/analysis/2026-08-04-cli-dashboard-parity.md
+  - docs/analysis/2026-08-11-cli-vision-keep-list.md
+  - docs/roadmap/handoffs/issue-AR-236.md
+  - README.md
   - docs/roadmap/issue-AR-123-workforce-cli-and-dashboard.md
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
@@ -26,11 +29,26 @@ epic: operations
 issue_id: AR-236
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245"
-depends_on: []
+depends_on:
+  - AR-254
 blocks: []
 ---
 
 # AR-236: Achieve full CLI and dashboard functional and presentational parity
+
+> **RESTATED 2026-08-12.** The August 4 inventory and ten-subissue plan below
+> are retained as provenance, not as the current product contract. The vision
+> subsequently retired Agency-authored host execution planning, mandatory
+> delegation guidance, `unit_agent_plan`, and isolated delivery. Parity now
+> means that every *vision-supported owner capability* has coherent CLI and
+> dashboard projections; it does not mean copying developer, protocol, host
+> lifecycle, or attended terminal commands into the browser. The first move is
+> deletion or relabeling of UI that describes retired behavior, followed by
+> source-backed latency, host-written child evidence, and selection-distribution
+> observability. Dashboard synchronization is the objective, not an absolute
+> file boundary: a minimal supporting-contract fix is allowed only when final
+> `main` cannot support a truthful UI. The current execution plan lives in the
+> [active recovery capsule](handoffs/issue-AR-236.md).
 
 ## Problem
 
@@ -60,6 +78,100 @@ prioritized roadmap. The headline:
 - Phrase-typed confirmation (matching the dashboard's
   `confirmation-modal`) is the canonical pattern for destructive
   operations, replacing a `--yes` flag.
+
+## Implementation checkpoint — 2026-08-12
+
+Job B is complete on `main` at `c7cf1d96` through PRs
+[#271](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/271) and
+[#273](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/273).
+Agency no longer drives a host CLI, plans work units, provisions worktrees,
+dispatches workers, or owns a worker-pool ledger. The native host alone decides
+whether to spawn and execute. The AR-236 branch rebased cleanly onto that final
+contract; PR [#270](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/270)
+remains draft while every inherited change is re-evaluated.
+
+The post-Job-B classification is now explicit:
+
+- [x] Retain removal of delegation preference/mode/confidence controls, judge
+      bypass, and Route Lab work-unit/dependency graphs.
+- [x] Retain source-backed latency, specialist-distribution, child-delivery,
+      Rule-8, and wiring evidence with explicit bounds, denominators, source
+      authority, freshness, and neutral empty states.
+- [x] Retain native-host ownership copy and the live child inference budget,
+      concurrency, and cache controls used for host-started child routing.
+- [x] Remove invalid flat `workforce.*_model` controls and their private model
+      discovery UI; keep provider-builder discovery and label
+      `workforce.provider` as a fallback.
+- [x] Remove unenforced `max_hires_per_task/day` controls and add the live
+      `max_hires_per_turn`, `daily_hire_alert_threshold`,
+      `hiring_repair_budget`, and `amend_overlap_threshold` controls.
+- [x] Fix hiring apply/clear, type filtering, per-source stale/unavailable
+      state, and explicit approver audit identity.
+- [x] Render observed execution identity instead of a recommendation and use
+      neutral delegation-event-row wording for the unfiltered historical
+      source.
+- [x] Remove broker/test/docstring residues that still require the retired
+      delegation graph, and make latency wording evidence-bounded rather than
+      causal.
+- [x] Fail latency and selection metric reads closed while the configured Store
+      requires a service restart; old-Store data must not render as fresh.
+- [x] Keep the requested specialist concentration chart and add the matching
+      `agency evidence selections` CLI projection over the same bounded Store
+      result.
+
+Global consolidation review, aggregate promotion queues, and further CLI
+hiring efficiency/filter work are deferred to bounded follow-ups. The existing
+duplicates endpoint is not UI-ready: nonempty comparison dataclasses are not
+JSON serializable and its copy does not match the actual fixed thresholds.
+
+The post-Job-B dashboard truth package and its bounded supporting contracts are
+now locally complete. The UI removes the
+invalid and unenforced settings, adds the four live workforce controls, aligns
+the visible staffing limit with inference's maximum of 16, fixes first-request
+hiring filters and independent source state, requires an explicit bounded
+approver identity, and renders only fully correlated execution identity.
+Dashboard charts, tables, and the README describe the unfiltered historical
+source as delegation-event rows rather than asserting native-child execution.
+The supporting slice retires the final graph requirements, fails metric reads
+closed on Store drift, gives specialist distribution a matching CLI view, and
+names the machine-readable latency subtraction
+`derived_routing_remainder_ms`. The dashboard truth coverage gate passed 132
+tests at 96.75% line, 86.39% branch, and 95.45% function coverage; the final
+contract rerun passes 133 UI tests and 178 focused latency/API tests. Independent
+review has no unresolved High or Medium finding.
+
+Post-Job-B browser verification is current. The production CLI served bounded
+populated and fresh-empty Stores through the real dashboard and evidence
+projections; isolated host homes produced honest zero-card, missing, and
+not-measured host evidence rather than fabricated positives. The populated
+fixture rendered 20 selection-bearing decisions, 13 distinct specialists, 35
+occurrences, 91.4% top-ten concentration, correlated execution identity, and
+the derived latency remainder. The empty fixture rendered neutral `NO DATA`,
+`UNKNOWN`, and current-empty states. Console/CSP checks and 1440, 1024, and 390
+pixel layouts passed. A 91-row path-only handler trace proved all five evidence
+sources stay off the hot poll, refresh by active view, and put no bearer token,
+authorization text, query, fragment, retired endpoint, or graph in the log.
+
+The exact named fast Python spine passed 668 tests with 6 skips under `-W
+error`; all 133 dashboard tests, all routing-eval gates, documentation/static
+checks, and full Ruff checks passed. Decision conformance retains one inherited
+Windows evaluator-environment failure: its forced venv Python is rejected by
+the executable-parent namespace policy for the OpenClaw package test. That
+focused test passes with `AGENCY_CI_PYTHON` unset, and the complete diagnostic
+surface is identical to `origin/main`. Exact restart state and package
+boundaries live in the
+[active recovery capsule](handoffs/issue-AR-236.md).
+
+Hosted run `31578291258` then passed the full automatic PR surface: the named
+spine, all 83 decision-conformance mutations, dashboard coverage, canonical
+documentation history, dependency and source audits, performance, Windows
+3.11-3.13 portability, Windows/Ubuntu review builds, artifact assembly, and the
+aggregate gate. The branch remains a bounded AR-236 slice; this evidence does
+not complete the unchecked historical umbrella acceptances below.
+
+Tracker issue #245 is currently closed despite this canonical umbrella
+remaining open. It must be reopened before PR #270 merges; no product or
+evidence result authorizes silently collapsing the unchecked acceptances.
 
 ## Approach
 

@@ -42,6 +42,25 @@ export function createState() {
 		token: "",
 		master: null,
 		overview: null,
+		routingLatency: null,
+		selectionDistribution: null,
+		metricEvidence: {
+			sources: {
+				latency: { stale: false, unavailable: false, error: "", sampledAt: null },
+				selections: { stale: false, unavailable: false, error: "", sampledAt: null },
+			},
+		},
+		visionEvidence: {
+			children: null,
+			rejections: null,
+			wiring: null,
+			loaded: false,
+			sources: {
+				children: { stale: false, unavailable: false, error: "", sampledAt: null },
+				rejections: { stale: false, unavailable: false, error: "", sampledAt: null },
+				wiring: { stale: false, unavailable: false, error: "", sampledAt: null },
+			},
+		},
 		activity: {},
 		activityCollections: {},
 		hosts: [],
@@ -57,6 +76,18 @@ export function createState() {
 		workforcePage: null,
 		hiring: [],
 		hiringPage: null,
+		workforceSources: {
+			workforce: {
+				status: "not_loaded",
+				error: "",
+				lastGoodAt: null,
+			},
+			hiring: {
+				status: "not_loaded",
+				error: "",
+				lastGoodAt: null,
+			},
+		},
 		hiringEvidence: null,
 		hiringEvidenceLoadingCaseId: "",
 		hiringFilters: {},
@@ -123,8 +154,11 @@ export function createState() {
 			operationalRoster: { controller: null, generation: 0 },
 			remediation: { controller: null, generation: 0 },
 			workforce: { controller: null, generation: 0 },
+			hiring: { controller: null, generation: 0 },
 			workerDetail: { controller: null, generation: 0 },
 			hiringEvidence: { controller: null, generation: 0 },
+			metrics: { controller: null, generation: 0 },
+			visionEvidence: { controller: null, generation: 0 },
 		},
 		remediationExtent: {
 			pending: false,

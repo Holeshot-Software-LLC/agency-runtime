@@ -259,6 +259,44 @@ def test_the_surface_filters_by_specialist(
     assert "fix the provider token parameter" not in out
 
 
+def test_runtime_trim_preserves_intent_for_an_open_trace(tmp_path: Path) -> None:
+    store = Store(str(tmp_path / "agency.db"))
+    store.create_run(trace_id="trace-open", session_id="session-open")
+    store.record_routing_intent(
+        _routing(),
+        trace_id="trace-open",
+        session_id="session-open",
+    )
+
+    report = store.trim_runtime_tables(keep_last=0, vacuum=False)
+
+    assert report["tables"]["routing_intent"]["deleted"] == 0
+    assert [row["trace_id"] for row in store.get_routing_intents()] == ["trace-open"]
+
+
+def test_retained_intent_prevents_its_terminal_run_from_becoming_orphaned(
+    tmp_path: Path,
+) -> None:
+    store = Store(str(tmp_path / "agency.db"))
+    for suffix in ("old", "new"):
+        trace_id = f"trace-{suffix}"
+        session_id = f"session-{suffix}"
+        store.create_run(trace_id=trace_id, session_id=session_id)
+        assert store.close_turn_evidence(session_id, trace_id) == 1
+    store.record_routing_intent(
+        _routing(),
+        trace_id="trace-old",
+        session_id="session-old",
+    )
+
+    report = store.trim_runtime_tables(keep_last=1, vacuum=False)
+
+    assert report["tables"]["routing_intent"]["deleted"] == 0
+    assert report["tables"]["runs"]["deleted"] == 0
+    assert store.get_run("trace-old") is not None
+    assert store.get_run("trace-new") is not None
+
+
 def test_the_setting_round_trips_through_its_own_validator() -> None:
     """Renderer and schema are separate declarations; they must agree."""
 

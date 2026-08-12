@@ -27,10 +27,14 @@ export function createDashboard(runtime = globalThis) {
 			const refreshed = await live.refreshAll();
 			if (
 				generation !== state.connection.generation
-				|| state.lifecycle.destroyed
-				|| state.lifecycle.suspended
+					|| state.lifecycle.destroyed
+					|| state.lifecycle.suspended
 			) return false;
 			if (refreshed) core.clearNotice();
+			if (refreshed && state.activeView === "overview") await live.refreshMetricEvidence();
+			else if (refreshed && state.activeView === "evidence") {
+				await live.refreshVisionEvidence();
+			}
 			return refreshed;
 		} catch (error) {
 			if (generation !== state.connection.generation || state.lifecycle.destroyed) return false;
@@ -173,8 +177,17 @@ export function createDashboard(runtime = globalThis) {
 		state.lifecycle.bound = true;
 		document.querySelectorAll(".nav-item").forEach((node) => {
 			listen(node, "click", () => {
+				const previousView = state.activeView;
+				if (previousView === "evidence" && node.dataset.view !== "evidence") {
+					live.cancelVisionEvidenceRequest();
+				}
 				renderer.switchView(node.dataset.view);
-				if (node.dataset.view === "workforce") {
+				if (state.full.inFlight) return;
+				if (node.dataset.view === "overview") {
+					void live.refreshMetricEvidence();
+				} else if (node.dataset.view === "evidence") {
+					void live.refreshVisionEvidence();
+				} else if (node.dataset.view === "workforce") {
 					void live.refreshWorkforce().catch((error) => core.showNotice(error.message, true));
 				}
 			});
@@ -182,8 +195,15 @@ export function createDashboard(runtime = globalThis) {
 		renderer.configureEvidenceTabs();
 		configureOwnerSurface();
 		listen(byId("refresh-button"), "click", async () => {
-			await live.refreshAll();
+			const refreshed = await live.refreshAll();
+			if (refreshed && state.activeView === "overview") await live.refreshMetricEvidence();
+			else if (refreshed && state.activeView === "evidence") {
+				await live.refreshVisionEvidence({ force: true });
+			}
 			void live.refreshUpdateStatus();
+		});
+		listen(byId("vision-evidence-refresh"), "click", () => {
+			void live.refreshVisionEvidence({ force: true });
 		});
 		live.ensureUpdateSurface();
 		listen(byId("update-copy-button"), "click", () => copyAttendedCommand(
@@ -281,16 +301,6 @@ export function createDashboard(runtime = globalThis) {
 		if (providerModelSelect) listen(providerModelSelect, "change", config.syncProviderModelInput);
 		if (providerModelRefresh) {
 			listen(providerModelRefresh, "click", () => { void config.loadProviderModels({ refresh: true }); });
-		}
-		const workforceProvider = byId("config-workforce-provider");
-		const workforceModelRefresh = byId("workforce-model-refresh");
-		if (workforceProvider) {
-			listen(workforceProvider, "change", () => { void config.loadWorkforceModels(); });
-		}
-		if (workforceModelRefresh) {
-			listen(workforceModelRefresh, "click", () => {
-				void config.loadWorkforceModels({ refresh: true });
-			});
 		}
 		const providerRemove = byId("provider-builder-remove");
 		if (providerRemove) {

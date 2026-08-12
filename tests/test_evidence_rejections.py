@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from agency_runtime.cli.evidence_commands import cmd_evidence_rejections
+from agency_runtime.core.rule8_evidence import rule8_evidence_projection
 from agency_runtime.core.store.evidence import (
     PUBLISHED_ANYWAY_RUN_STATUSES,
     WITHHELD_RUN_STATUSES,
@@ -65,7 +66,20 @@ def test_a_verifier_rejection_is_withheld_and_gates_nonzero(
 
     payload = json.loads(capsys.readouterr().out)
     assert [row["status"] for row in payload["withheld"]] == ["response_invalid"]
+    assert payload["agency_blind"] == []
     assert payload["published_anyway"] == []
+    assert payload["compatibility_aliases"]["published_anyway"].startswith("agency_blind")
+    assert payload["window"] == {
+        "kind": "most_recent_matching_exceptional_runs",
+        "host": None,
+        "limit": 50,
+        "returned": 1,
+    }
+    assert payload["counts"] == {
+        "matching_exceptional_runs": 1,
+        "withheld": 1,
+        "agency_blind": 0,
+    }
     # Usable as a gate: a withheld turn is the exceptional outcome.
     assert exit_code == 1
 
@@ -86,6 +100,10 @@ def test_agency_being_blind_is_never_counted_as_a_rejection(
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["withheld"] == []
+    assert {row["status"] for row in payload["agency_blind"]} == {
+        "preflight_failed",
+        "verification_failed",
+    }
     assert {row["status"] for row in payload["published_anyway"]} == {
         "preflight_failed",
         "verification_failed",
@@ -122,6 +140,16 @@ def test_host_filter_reads_one_host_only(
     assert [row["host"] for row in payload["withheld"]] == ["codex"]
 
 
+def test_host_filter_rejects_a_typo_instead_of_reporting_a_green_empty_window(
+    tmp_path: Path,
+) -> None:
+    db_path = tmp_path / "hosts.db"
+    with pytest.raises(ValueError, match="host is unsupported"):
+        cmd_evidence_rejections(_args(db_path, host="cladue"))
+
+    assert not db_path.exists()
+
+
 def test_the_limit_is_bounded_rather_than_trusted(tmp_path: Path) -> None:
     # The store read is operator-facing, so an absurd limit must not become an
     # unbounded query.
@@ -131,6 +159,15 @@ def test_the_limit_is_bounded_rather_than_trusted(tmp_path: Path) -> None:
     assert store.get_withheld_and_published_runs(limit=10**9)
     assert store.get_withheld_and_published_runs(limit=0)
     assert store.get_withheld_and_published_runs(limit=-5)
+
+
+@pytest.mark.parametrize("limit", [0, 501, True])
+def test_cli_handler_does_not_turn_an_invalid_falsey_limit_into_the_default(
+    tmp_path: Path,
+    limit: object,
+) -> None:
+    with pytest.raises(ValueError, match="between 1 and 500"):
+        cmd_evidence_rejections(_args(tmp_path / "invalid-limit.db", limit=limit))
 
 
 def test_text_output_does_not_claim_blind_turns_were_published(
@@ -147,4 +184,33 @@ def test_text_output_does_not_claim_blind_turns_were_published(
     out = capsys.readouterr().out
     assert "withheld by Agency: none" in out
     assert "Agency was blind" in out
-    assert "before the fix they were denied" in out
+    assert "do not prove what the host did" in out
+    assert "historical rows can predate that rule" in out
+    assert "these publish" not in out
+
+
+def test_empty_text_output_is_neutral_bounded_evidence_not_a_health_pass(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert cmd_evidence_rejections(_args(tmp_path / "empty.db", json=False)) == 0
+
+    out = capsys.readouterr().out
+    assert "no matching exceptional statuses" in out
+    assert "retained bounded window" in out
+    assert "not a health claim" in out
+    assert "✅" not in out
+
+
+def test_shared_projection_refuses_a_non_exceptional_status() -> None:
+    with pytest.raises(ValueError, match="non-exceptional"):
+        rule8_evidence_projection(
+            [{"status": "completed", "trace_id": _trace(9)}],
+            limit=50,
+        )
+
+
+@pytest.mark.parametrize("limit", [0, 501, True])
+def test_shared_projection_rejects_an_unbounded_window(limit: object) -> None:
+    with pytest.raises(ValueError, match="between 1 and 500"):
+        rule8_evidence_projection([], limit=limit)  # type: ignore[arg-type]

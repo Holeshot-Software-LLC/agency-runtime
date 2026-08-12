@@ -2135,13 +2135,15 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         host: str = "",
         limit: int = 50,
     ) -> list[dict[str, Any]]:
-        """Return recently closed turns that Agency either withheld or let pass.
+        """Return recently closed turns that Agency withheld or observed while blind.
 
         Rule 8 draws exactly one line: Agency withholds a turn only when its
         verifier evaluated the response and rejected it, never because Agency
         itself was unavailable. Both sides of that line close a run with a
-        distinguishable status, so this one read makes the rule auditable after
-        the fact instead of leaving it a claim about the code.
+        distinguishable status, so this one read makes Agency's outcome
+        auditable after the fact instead of leaving it a claim about the code.
+        A blind status alone does not prove what the host did with the response;
+        historical rows can predate the pass-through rule.
 
         Read-only, and deliberately not filtered to a session: a withheld turn
         is rare enough to be worth seeing across the whole store.
@@ -2177,18 +2179,18 @@ class EvidenceStoreMixin(PreflightStoreMixin):
     ) -> list[dict[str, Any]]:
         """Return recent routing decisions with a recorded latency.
 
-        ``routing_decisions.latency_ms`` is the only timing column in the whole
-        schema, and nothing surfaced it, so what Agency costs a turn was
+        ``routing_decisions.latency_ms`` is the persisted routing duration.
+        Nothing previously surfaced it, so recorded routing cost was
         unanswerable without opening the database by hand.
 
         Zero is excluded, not counted as a fast turn.  Both writers store ``0``
         rather than NULL when no provider call was spent -- an abstained turn,
         or a contract check that never routed -- so including them would report
-        Agency as cheap in exact proportion to how often it did nothing.  On
+        routing as cheap in exact proportion to how often it did nothing.  On
         this store that alone moved p50 by tens of seconds.
 
         Read-only, newest first, and not filtered to a session: the question is
-        what Agency costs in general, not what it cost once.
+        what recorded routing costs in general, not what it cost once.
         """
 
         bounded = max(1, min(int(limit), 1000))
@@ -2201,11 +2203,11 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         conn = self._connect()
         try:
             rows = conn.execute(
-                # The provider sub-total comes from the receipts for the same
-                # trace, so the split is read back from what was recorded rather
-                # than modelled: whatever the calls did not account for is
-                # Agency's own work, and neither side is inferred from the
-                # other.
+                # The provider subtotal comes from timed receipts on the same
+                # trace. The shared projection treats it as attributable only
+                # when every same-trace receipt is timed and the subtotal does
+                # not exceed the persisted routing duration; the remainder is
+                # derived and must never be presented as independent timing.
                 "SELECT d.trace_id, d.session_id, d.status, d.source, "  # nosec B608
                 "d.provider, d.latency_ms, d.confidence, d.created_at, "
                 "COALESCE(("
@@ -2215,7 +2217,15 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 "COALESCE(("
                 " SELECT COUNT(*) FROM model_receipts AS r"
                 " WHERE r.trace_id = d.trace_id"
-                "), 0) AS provider_calls "
+                "), 0) AS provider_calls, "
+                "COALESCE(("
+                " SELECT SUM(CASE WHEN r.latency_ms > 0 THEN 1 ELSE 0 END)"
+                " FROM model_receipts AS r WHERE r.trace_id = d.trace_id"
+                "), 0) AS provider_timed_calls, "
+                "COALESCE(("
+                " SELECT SUM(CASE WHEN r.latency_ms <= 0 THEN 1 ELSE 0 END)"
+                " FROM model_receipts AS r WHERE r.trace_id = d.trace_id"
+                "), 0) AS provider_unknown_calls "
                 "FROM routing_decisions AS d "
                 f"WHERE d.latency_ms IS NOT NULL AND d.latency_ms > 0{source_clause} "
                 "ORDER BY d.created_at DESC, d.rowid DESC LIMIT ?",

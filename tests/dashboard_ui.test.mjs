@@ -110,6 +110,237 @@ function controlSnapshot({
   };
 }
 
+function routingLatencyPayload(overrides = {}) {
+  return {
+    schema_version: "agency.dashboard.routing_latency.v1",
+    sampled_at: "2026-08-11T12:00:00+00:00",
+    window: {
+      kind: "most_recent_positive_latency_decisions",
+      limit: 200,
+      decision_count: 2,
+    },
+    source: {
+      decision_table: "routing_decisions",
+      decision_duration: "latency_ms",
+      receipt_table: "model_receipts",
+      receipt_duration: "latency_ms",
+    },
+    budget_ms: 15_000,
+    over_budget: true,
+    overall: { count: 2, min_ms: 12_000, p50_ms: 12_000, p95_ms: 18_000, max_ms: 18_000 },
+    split: {
+      decisions: 1,
+      unattributed_decisions: 1,
+      provider_ms: { count: 1, min_ms: 7_000, p50_ms: 7_000, p95_ms: 7_000, max_ms: 7_000 },
+      derived_routing_remainder_ms: { count: 1, min_ms: 5_000, p50_ms: 5_000, p95_ms: 5_000, max_ms: 5_000 },
+      calls_per_decision: 2,
+    },
+    by_source: {
+      computed: { count: 2, min_ms: 12_000, p50_ms: 12_000, p95_ms: 18_000, max_ms: 18_000 },
+    },
+    slowest: [{
+      created_at: "2026-08-11T11:59:00+00:00",
+      latency_ms: 18_000,
+      provider_calls: 0,
+      provider_ms: 0,
+      provider_timed_calls: 0,
+      provider_unknown_calls: 0,
+      source: "computed",
+    }],
+    ...overrides,
+  };
+}
+
+function selectionDistributionPayload(overrides = {}) {
+  return {
+    schema_version: "agency.dashboard.selection_distribution.v1",
+    sampled_at: "2026-08-11T12:00:01+00:00",
+    source: {
+      decision_table: "routing_decisions",
+      selection_field: "selected_ids",
+      roster_measure: "current_enabled_roster",
+    },
+    decisions_with_selections: 202,
+    distinct_selected_specialists: 39,
+    selection_occurrences: 222,
+    active_roster_size: 263,
+    top_10_selection_occurrences: 182,
+    top_10_share_of_selection_occurrences: 182 / 222,
+    top_specialists: [{
+      slug: "code-reviewer",
+      decisions_containing_specialist: 146,
+      share_of_decisions_with_selections: 146 / 202,
+      selection_occurrences: 146,
+      share_of_selection_occurrences: 146 / 222,
+    }],
+    long_tail: {
+      specialist_count: 0,
+      decisions_containing_specialist: 0,
+      share_of_decisions_with_selections: 0,
+      selection_occurrences: 0,
+      share_of_selection_occurrences: 0,
+    },
+    selection_bearing_decision_scan_limit: 10_000,
+    selection_bearing_decision_scan_truncated: false,
+    ...overrides,
+  };
+}
+
+function childDeliveryPayload(overrides = {}) {
+  return {
+    schema_version: "agency.dashboard.child_delivery.v1",
+    sampled_at: "2026-08-11T12:00:02+00:00",
+    source: {
+      authority: "host_written_child_artifacts",
+      artifact_hosts: ["claude", "codex"],
+      agency_store_consulted: false,
+      evidence_meaning: "hash_verified_specialist_cards_in_child_input_before_first_speech",
+    },
+    window: {
+      kind: "newest_verified_child_delivery_evidence",
+      hosts: ["claude", "codex"],
+      detail_limit: 50,
+    },
+    bounds: {
+      artifact_scan_limit_per_host: 4096,
+      filesystem_visit_limit_per_host: 16_384,
+      artifact_prefix_bytes: 524_288,
+      artifact_record_limit: 64,
+      detail_limit: 50,
+    },
+    hosts: [{
+      host: "claude",
+      root: "C:\\Users\\owner\\.claude\\projects",
+      root_present: true,
+      artifact_candidates: 1,
+      artifact_candidate_count_complete: true,
+      artifacts_scanned: 1,
+      artifact_scan_truncated: false,
+      filesystem_entries_visited: 4,
+      evidence_count: 1,
+      staffed_children: 1,
+      correlated_staffed_children: 1,
+      uncorrelated_staffed_children: 0,
+      legacy_deliveries: 0,
+      detail_limit: 50,
+      detail_truncated: false,
+      children: [{
+        child_id: "child-1",
+        artifact: "C:\\Users\\owner\\.claude\\projects\\child-1.jsonl",
+        parent_id: "parent-1",
+        envelope_parent_id: "parent-1",
+        correlated: true,
+        legacy: false,
+        cards: [{
+          slug: "code-reviewer",
+          version: "1",
+          prompt_hash: "a".repeat(64),
+        }],
+      }],
+    }, {
+      host: "codex",
+      root: "C:\\Users\\owner\\.codex\\sessions",
+      root_present: true,
+      artifact_candidates: 0,
+      artifact_candidate_count_complete: true,
+      artifacts_scanned: 0,
+      artifact_scan_truncated: false,
+      filesystem_entries_visited: 3,
+      evidence_count: 0,
+      staffed_children: 0,
+      correlated_staffed_children: 0,
+      uncorrelated_staffed_children: 0,
+      legacy_deliveries: 0,
+      detail_limit: 50,
+      detail_truncated: false,
+      children: [],
+    }],
+    ...overrides,
+  };
+}
+
+function rule8EvidencePayload(overrides = {}) {
+  return {
+    schema_version: "agency.dashboard.rule8_evidence.v1",
+    sampled_at: "2026-08-11T12:00:03+00:00",
+    source: {
+      authority: "agency_store",
+      table: "runs",
+      field: "status",
+      host_execution_proof: false,
+    },
+    window: {
+      kind: "most_recent_matching_exceptional_runs",
+      host: null,
+      limit: 50,
+      returned: 2,
+    },
+    counts: { matching_exceptional_runs: 2, withheld: 1, agency_blind: 1 },
+    withheld_statuses: ["delegation_declined", "response_invalid", "retry_exhausted"],
+    agency_blind_statuses: ["preflight_failed", "verification_failed"],
+    withheld: [{
+      trace_id: "trace-withheld",
+      session_id: "session-1",
+      host: "claude",
+      started_at: "2026-08-11T11:58:00+00:00",
+      ended_at: "2026-08-11T11:59:00+00:00",
+      status: "response_invalid",
+    }],
+    agency_blind: [{
+      trace_id: "trace-blind",
+      session_id: "session-2",
+      host: "codex",
+      started_at: "2026-08-11T11:56:00+00:00",
+      ended_at: "2026-08-11T11:57:00+00:00",
+      status: "preflight_failed",
+    }],
+    service_binding: { status: "bound" },
+    ...overrides,
+  };
+}
+
+function wiringEvidencePayload(overrides = {}) {
+  return {
+    schema_version: "agency.dashboard.host_wiring.v1",
+    sampled_at: "2026-08-11T12:00:04+00:00",
+    source: {
+      authority: "trusted_staged_and_host_cache_files",
+      measured_hosts: ["claude"],
+      live_canary: false,
+    },
+    window: { kind: "current_wiring_files", hosts: ["claude", "codex"] },
+    bounds: { file_prefix_bytes: 524_288 },
+    hosts: [{
+      host: "claude",
+      measurement_status: "measured",
+      status: "wired",
+      wired: true,
+      reason_code: "wired",
+      reason: "",
+      staged_state: "observed",
+      staged_projection: "a".repeat(64),
+      staged_path: "C:\\Users\\owner\\.agency-runtime\\hooks.json",
+      wired_state: "observed",
+      wired_projection: "a".repeat(64),
+      wired_path: "C:\\Users\\owner\\.claude\\plugins\\hooks.json",
+    }, {
+      host: "codex",
+      measurement_status: "not_measured",
+      status: "not_measured",
+      wired: false,
+      reason_code: "host_not_measured",
+      reason: "this host's wiring location is not measured",
+      staged_state: "not_measured",
+      staged_projection: "",
+      staged_path: "",
+      wired_state: "not_measured",
+      wired_projection: "",
+      wired_path: "",
+    }],
+    ...overrides,
+  };
+}
+
 function emptyRosterPage(
   revision = "test-roster-revision",
   configRevision = "test-config-revision",
@@ -205,6 +436,27 @@ function fullHiringCase(id, marker = id) {
     duplicate_evidence: { marker: `${marker}-duplicate` },
     gap_evidence: { marker: `${marker}-gap` },
     model_evidence: { marker: `${marker}-model` },
+  };
+}
+
+function workforceCollection(workers = [], overrides = {}) {
+  return {
+    collection_revision: "workforce-collection-v1",
+    counts: {},
+    next_cursor: null,
+    truncated: false,
+    workers,
+    ...overrides,
+  };
+}
+
+function hiringCollection(hiringCases = [], overrides = {}) {
+  return {
+    collection_revision: "hiring-collection-v1",
+    hiring_cases: hiringCases,
+    next_cursor: null,
+    truncated: false,
+    ...overrides,
   };
 }
 
@@ -800,16 +1052,11 @@ test("provider builder recommends subscription-safe timeouts without overwriting
   assert.equal(timeout.value, "30");
 });
 
-test("workforce settings discover account models and expose configured providers", async () => {
-  const calls = [];
-  const harness = createAppHarness(async (path) => {
-    calls.push(path);
-    return jsonResponse(200, {
-      models: [
-        { slug: "gpt-cheap", display_name: "Cheap", description: "Low cost" },
-        { slug: "gpt-frontier", display_name: "Frontier", description: "Deep work" },
-      ],
-    });
+test("workforce fallback provider exposes configured providers without model discovery", () => {
+  let calls = 0;
+  const harness = createAppHarness(async () => {
+    calls += 1;
+    throw new Error("workforce fallback-provider synchronization must not fetch");
   });
   harness.node("config-providers").value = JSON.stringify([
     { name: "codex-subscription", type: "cli", transport: "codex" },
@@ -821,54 +1068,8 @@ test("workforce settings discover account models and expose configured providers
     harness.node("workforce-provider-options").options.map((option) => option.value),
     ["codex-subscription", "task-router"],
   );
-
-  harness.node("config-workforce-provider").value = "codex-subscription";
-  assert.equal(await harness.api.loadWorkforceModels({ refresh: true }), true);
-  assert.equal(calls[0], "/api/providers/models?transport=codex&refresh=true");
-  assert.deepEqual(
-    harness.node("workforce-model-options").options.map((option) => option.value),
-    ["gpt-cheap", "gpt-frontier"],
-  );
-  assert.equal(harness.node("workforce-model-options").options[0].title, "Low cost");
-  assert.match(harness.node("workforce-model-status").textContent, /2 account models/);
-
-  harness.node("config-workforce-provider").value = "task-router";
-  assert.equal(await harness.api.loadWorkforceModels(), false);
-  assert.match(harness.node("workforce-model-status").textContent, /router or model-group alias/i);
-});
-
-test("workforce model discovery handles defaults, empty catalogs, and failures", async () => {
-  const defaultProvider = createAppHarness(async () => jsonResponse(200, {
-    models: [{ slug: "claude-fast" }],
-  }));
-  defaultProvider.node("config-providers").value = JSON.stringify([
-    { name: "claude-subscription", type: "cli", transport: "claude" },
-  ]);
-  assert.equal(await defaultProvider.api.loadWorkforceModels(), true);
-  assert.equal(defaultProvider.node("workforce-model-options").options[0].value, "claude-fast");
-
-  const empty = createAppHarness(async () => jsonResponse(200, { models: [], error: "No models" }));
-  empty.node("config-providers").value = JSON.stringify([
-    { name: "codex-subscription", type: "cli", transport: "codex" },
-  ]);
-  assert.equal(await empty.api.loadWorkforceModels(), false);
-  assert.equal(empty.node("workforce-model-status").textContent, "No models");
-
-  const failed = createAppHarness(async () => { throw new Error("catalog unavailable"); });
-  failed.node("config-providers").value = JSON.stringify([
-    { name: "codex-subscription", type: "cli", transport: "codex" },
-  ]);
-  assert.equal(await failed.api.loadWorkforceModels(), false);
-  assert.equal(
-    failed.node("workforce-model-status").textContent,
-    "catalog unavailable. Request ID 00000000-0000-4000-8000-000000000001.",
-  );
-
-  const unknown = createAppHarness(() => { throw new Error("no fetch expected"); });
-  unknown.node("config-providers").value = "not-json";
-  unknown.node("config-workforce-provider").value = "missing";
-  assert.equal(await unknown.api.loadWorkforceModels(), false);
-  assert.match(unknown.node("workforce-model-status").textContent, /Choose a configured provider/i);
+  assert.equal(calls, 0);
+  assert.equal(typeof harness.api.loadWorkforceModels, "undefined");
 });
 
 test("workforce detail renders comparison, promotion, prompt, history, and state-safe actions", () => {
@@ -1265,6 +1466,118 @@ test("hiring evidence controls retain one delegated listener across repeated ren
   assert.ok(controls.every((control) => !control.listeners.has("click")));
 });
 
+test("hiring filters apply on the first request, preserve type while paging, and clear directly", async () => {
+  const calls = [];
+  const cursor = encodedCursor("hiring.v1", "2026-07-26T12:00:00Z", "case-filtered-1");
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    const url = new URL(path, "http://dashboard.test");
+    if (url.searchParams.has("after")) {
+      return jsonResponse(200, hiringCollection(
+        [hiringCaseSummary("case-filtered-2", { case_type: "amend", risk_tier: "high" })],
+        { collection_revision: "filtered-v1" },
+      ));
+    }
+    if (url.searchParams.get("status") === "proposed") {
+      return jsonResponse(200, hiringCollection(
+        [hiringCaseSummary("case-filtered-1", { case_type: "amend", risk_tier: "high" })],
+        {
+          collection_revision: "filtered-v1",
+          next_cursor: cursor,
+          truncated: true,
+        },
+      ));
+    }
+    return jsonResponse(200, hiringCollection([], { collection_revision: "unfiltered-v1" }));
+  });
+  harness.api.state.activeView = "workforce";
+  harness.node("hiring-filter-status").value = "proposed";
+  harness.node("hiring-filter-type").value = "amend";
+  harness.node("hiring-filter-risk").value = "high";
+  let prevented = false;
+
+  assert.equal(await harness.api.applyHiringFilters({
+    preventDefault() { prevented = true; },
+  }), true);
+  assert.equal(prevented, true);
+  const first = new URL(calls[0], "http://dashboard.test").searchParams;
+  assert.deepEqual(Object.fromEntries(first), {
+    limit: "200",
+    risk_tier: "high",
+    status: "proposed",
+    type: "amend",
+  });
+  const continuation = new URL(calls[1], "http://dashboard.test").searchParams;
+  assert.equal(continuation.get("status"), "proposed");
+  assert.equal(continuation.get("type"), "amend");
+  assert.equal(continuation.get("risk_tier"), "high");
+  assert.equal(continuation.get("after"), cursor);
+  assert.deepEqual(harness.api.state.hiringFilters, {
+    status: "proposed",
+    type: "amend",
+    risk_tier: "high",
+  });
+  assert.deepEqual(
+    harness.api.state.hiring.map((item) => item.id),
+    ["case-filtered-1", "case-filtered-2"],
+  );
+
+  assert.equal(await harness.api.clearHiringFilters(), true);
+  assert.equal(calls[2], "/api/hiring?limit=200");
+  assert.equal(harness.node("hiring-filter-status").value, "");
+  assert.equal(harness.node("hiring-filter-type").value, "");
+  assert.equal(harness.node("hiring-filter-risk").value, "");
+  assert.deepEqual(harness.api.state.hiringFilters, {});
+});
+
+test("aborted hiring filter intents restore only the still-current committed state", async () => {
+  const abortableHarness = () => {
+    const requests = [];
+    const harness = createAppHarness((_path, options) => {
+      const pending = deferred();
+      requests.push({ pending, signal: options.signal });
+      options.signal.addEventListener("abort", () => {
+        pending.reject(new DOMException("Hiring filter request aborted", "AbortError"));
+      }, { once: true });
+      return pending.promise;
+    });
+    harness.api.state.activeView = "workforce";
+    harness.api.state.hiringFilters = { status: "proposed" };
+    return { harness, requests };
+  };
+
+  const globalAbort = abortableHarness();
+  globalAbort.harness.node("hiring-filter-status").value = "approved";
+  globalAbort.harness.node("hiring-filter-type").value = "hire";
+  const abandoned = globalAbort.harness.api.applyHiringFilters();
+  const replacement = globalAbort.harness.api.beginViewRequest("operationalRoster");
+  assert.equal(globalAbort.requests[0].signal.aborted, true);
+  assert.equal(await abandoned, false);
+  assert.equal(globalAbort.harness.node("hiring-filter-status").value, "proposed");
+  assert.equal(globalAbort.harness.node("hiring-filter-type").value, "");
+  globalAbort.harness.api.finishViewRequest("operationalRoster", replacement);
+
+  const superseded = abortableHarness();
+  superseded.harness.node("hiring-filter-status").value = "approved";
+  const older = superseded.harness.api.applyHiringFilters();
+  superseded.harness.node("hiring-filter-status").value = "rejected";
+  superseded.harness.node("hiring-filter-type").value = "amend";
+  const newer = superseded.harness.api.applyHiringFilters();
+  await Promise.resolve();
+  assert.equal(superseded.requests[0].signal.aborted, true);
+  assert.equal(superseded.harness.node("hiring-filter-status").value, "rejected");
+  assert.equal(superseded.harness.node("hiring-filter-type").value, "amend");
+  superseded.requests[1].pending.resolve(jsonResponse(200, hiringCollection([
+    hiringCaseSummary("newer-filter-case", { case_type: "amend", status: "rejected" }),
+  ])));
+  assert.equal(await older, false);
+  assert.equal(await newer, true);
+  assert.deepEqual(superseded.harness.api.state.hiringFilters, {
+    status: "rejected",
+    type: "amend",
+  });
+});
+
 test("destroy aborts an exact hiring load and removes its delegated listener", async () => {
   const pending = deferred();
   let requestSignal;
@@ -1560,6 +1873,36 @@ test("app.js config controls normalize typed values and preserve dirty edits on 
     true,
   );
   assert.equal(harness.api.state.config.revision, "forced");
+});
+
+test("live workforce change controls stay typed and bounded", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("typed workforce settings do not fetch");
+  });
+  const controls = [
+    ["config-workforce-hires-turn", "workforce.max_hires_per_turn", "integer", "1", "256", "17", 17],
+    ["config-workforce-daily-alert", "workforce.daily_hire_alert_threshold", "integer", "0", "10000", "42", 42],
+    ["config-workforce-repair-budget", "workforce.hiring_repair_budget", "integer", "0", "8", "3", 3],
+    ["config-workforce-amend-overlap", "workforce.amend_overlap_threshold", "number", "0", "1", "0.73", 0.73],
+  ];
+
+  for (const [id, path, valueType, minimum, maximum, value, expected] of controls) {
+    const tag = INDEX_SOURCE.match(new RegExp(`<input id="${id}"[^>]*>`))?.[0] || "";
+    assert.match(tag, new RegExp(`data-config-path="${path.replaceAll(".", "\\.")}"`));
+    assert.match(tag, new RegExp(`data-value-type="${valueType}"`));
+    assert.match(tag, /type="number"/);
+    assert.match(tag, new RegExp(`min="${minimum}"`));
+    assert.match(tag, new RegExp(`max="${maximum}"`));
+    const control = new FakeNode(id);
+    control.dataset.valueType = valueType;
+    control.labels = [{ textContent: id }];
+    control.value = value;
+    assert.equal(harness.api.readConfigControl(control), expected);
+  }
+  const overlapTag = INDEX_SOURCE.match(
+    /<input id="config-workforce-amend-overlap"[^>]*>/,
+  )?.[0] || "";
+  assert.match(overlapTag, /step="0\.01"/);
 });
 
 test("config snapshots keep effective privacy and retention summaries current", () => {
@@ -1901,7 +2244,6 @@ test("Route Lab renders authoritative host evidence and bounded eligibility reje
     throw new Error("receipt rendering does not fetch");
   });
   harness.api.renderReceipt({
-    delegation_graph: { edges: [], nodes: [] },
     eligibility: {
       capability_status: "native-installation-verified",
       eligible_count: 17,
@@ -1966,7 +2308,6 @@ test("Route Lab renders authoritative host evidence and bounded eligibility reje
   assert.equal(harness.node("route-status").textContent, "ABSTAINED");
 
   harness.api.renderReceipt({
-    delegation_graph: { edges: [], nodes: [] },
     eligibility: {
       eligible_count: 0,
       execution_host: "codex",
@@ -2169,7 +2510,7 @@ test("renderActivityChart draws bounded series with readable axes and focusable 
   assert.equal(buckets.length, 4);
   assert.equal(root.dataset.routes, "2");
   assert.equal(root.dataset.delegations, "1");
-  assert.match(summary.textContent, /2 observed routes · 1 delegations/i);
+  assert.match(summary.textContent, /2 observed routes · 1 delegation-event rows/i);
   const nodes = descendants(root);
   const axisLabels = nodes.filter((node) => node.attributes?.get("class")?.includes("axis-label"));
   assert.ok(axisLabels.some((node) => node.textContent === "0"));
@@ -2227,8 +2568,8 @@ test("pure chart helpers preserve hostile labels as inert input data", () => {
   const activity = {
     routing: [{ created_at: isoBefore(1_000), selected_ids: [hostile] }],
     delegations: [
-      { started_at: isoBefore(1_000), recommended_agent: hostile },
-      { started_at: isoBefore(1_000), status: hostile, recommended_agent: hostile },
+      { started_at: isoBefore(1_000), executed_worker_id: hostile },
+      { started_at: isoBefore(1_000), status: hostile, executed_worker_id: hostile },
     ],
   };
   const before = structuredClone(activity);
@@ -2302,7 +2643,8 @@ test("app.js renders hostile runtime labels as inert text across dashboard surfa
       backend: hostile,
       host: hostile,
       id: "delegation-1",
-      recommended_agent: hostile,
+      executed_worker_id: hostile,
+      recommended_agent: "must-not-render-as-executor",
       started_at: "not-a-time",
       status: hostile,
     }],
@@ -2320,10 +2662,6 @@ test("app.js renders hostile runtime labels as inert text across dashboard surfa
   harness.api.renderHosts();
   harness.api.renderEvidence("routing");
   harness.api.renderReceipt({
-    delegation_graph: {
-      edges: [{ from: "one", reason: hostile, to: "two" }],
-      nodes: [{ description: hostile, id: "one" }, { description: "safe", id: "two" }],
-    },
     selected: [{ slug: hostile }],
     signals: { policy: { matched_actions: [hostile] } },
     status: hostile,
@@ -2341,6 +2679,69 @@ test("app.js renders hostile runtime labels as inert text across dashboard surfa
     assert.ok(descendants(root).every((node) => node.innerHTML === undefined));
   }
   assert.equal(harness.context.compromised, undefined);
+});
+
+test("delegation-event rows render only observed execution identity", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("execution-identity rendering does not fetch");
+  });
+  harness.api.state.overview = {
+    capture_content: false,
+    recent: { delegations: 3, routing: 0 },
+    retention_days: 30,
+    status: "ok",
+  };
+  harness.api.state.activity = {
+    delegations: [{
+      backend: "native-task",
+      executed_worker_id: "code-reviewer",
+      executed_worker_kind: "specialist",
+      host: "codex",
+      id: "observed-event",
+      native_run_id: "native-42",
+      recommended_agent: "wrong-recommendation",
+      started_at: isoBefore(1_000),
+      status: "completed",
+      work_unit_id: "recorded-unit",
+    }, {
+      backend: "legacy-tool",
+      host: "claude",
+      id: "recommendation-only-event",
+      recommended_agent: "recommendation-only",
+      started_at: isoBefore(2_000),
+      status: "unknown",
+    }, {
+      backend: "legacy-tool",
+      executed_worker_kind: "legacy-unverified-worker",
+      host: "claude",
+      id: "legacy-kind-only-event",
+      recommended_agent: "legacy-recommendation",
+      started_at: isoBefore(3_000),
+      status: "completed",
+    }],
+  };
+
+  harness.api.renderOverview();
+  const overviewText = descendants(harness.node("overview-delegations"))
+    .map((node) => node.textContent)
+    .join("\n");
+  assert.match(overviewText, /specialist · code-reviewer · run native-42/);
+  assert.match(overviewText, /Not observed/);
+  assert.doesNotMatch(overviewText, /wrong-recommendation|recommendation-only|legacy-recommendation|legacy-unverified-worker/);
+
+  harness.api.renderEvidence("delegations");
+  assert.deepEqual(
+    harness.node("evidence-head").children[0].children.map((node) => node.textContent),
+    ["Observed child", "Host", "Event state", "Host tool", "Recorded correlation ID", "Observed"],
+  );
+  const evidenceText = descendants(harness.node("evidence-body"))
+    .map((node) => node.textContent)
+    .join("\n");
+  assert.match(evidenceText, /specialist · code-reviewer · run native-42/);
+  assert.match(evidenceText, /Not observed/);
+  assert.doesNotMatch(evidenceText, /wrong-recommendation|recommendation-only|legacy-recommendation|legacy-unverified-worker/);
+  assert.match(harness.node("evidence-caption").textContent, /delegation-event row evidence/i);
+  assert.match(harness.node("evidence-context").textContent, /recommendation is never presented as the executor/i);
 });
 
 test("app.js roster and empty evidence renderers expose actionable, scoped controls", async () => {
@@ -2392,7 +2793,7 @@ test("app.js roster and empty evidence renderers expose actionable, scoped contr
   assert.equal(harness.node("evidence-head").children[0].children[0].getAttribute("scope"), "col");
   assert.match(
     harness.node("evidence-body").children[0].children[0].textContent,
-    /no delegation evidence/i,
+    /no delegation-event row evidence/i,
   );
 });
 
@@ -2657,6 +3058,749 @@ test("app UI honors reduced motion, canonical CSS, and live toggle semantics", (
   assert.equal(toggle.getAttribute("aria-pressed"), "true");
   assert.equal(toggle.checked, true);
   assert.equal(harness.timers.tasks.get(harness.api.state.live.timer).delay, 0);
+});
+
+test("overview metric evidence renders explicit selection denominators and latency attribution", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    if (path === "/api/evidence/latency?limit=200") {
+      return jsonResponse(200, routingLatencyPayload());
+    }
+    if (path === "/api/evidence/selections") {
+      return jsonResponse(200, selectionDistributionPayload());
+    }
+    throw new Error(`unexpected metric request: ${path}`);
+  });
+
+  assert.equal(await harness.api.refreshMetricEvidence(), true);
+  assert.deepEqual(calls, [
+    "/api/evidence/latency?limit=200",
+    "/api/evidence/selections",
+  ]);
+  assert.equal(harness.api.state.routingLatency.overall.p95_ms, 18_000);
+  assert.equal(harness.api.state.selectionDistribution.decisions_with_selections, 202);
+  assert.equal(harness.node("latency-budget-state").textContent, "OVER BUDGET");
+  assert.equal(harness.node("latency-metric-p95").textContent, "18.0 s");
+  assert.equal(harness.node("latency-metric-provider").textContent, "7.00 s");
+  assert.match(harness.node("latency-evidence-context").textContent, /equality passes/i);
+  assert.equal(harness.node("selection-metric-decisions").textContent, "202");
+  assert.equal(harness.node("selection-metric-roster").textContent, "263");
+  assert.match(harness.node("selection-evidence-context").textContent, /need not sum to 100%/i);
+  assert.ok(
+    descendants(harness.node("selection-chart"))
+      .some((node) => node.textContent === "code-reviewer"),
+  );
+});
+
+test("overview metric evidence keeps last-good data on partial failure and stays view scoped", async () => {
+  let failLatency = false;
+  let failSelections = false;
+  let calls = 0;
+  const harness = createAppHarness(async (path) => {
+    calls += 1;
+    if (path === "/api/evidence/latency?limit=200") {
+      return failLatency
+        ? jsonResponse(503, { error: "latency unavailable" })
+        : jsonResponse(200, routingLatencyPayload());
+    }
+    if (path === "/api/evidence/selections") {
+      return failSelections
+        ? jsonResponse(503, { error: "selection evidence unavailable" })
+        : jsonResponse(200, selectionDistributionPayload());
+    }
+    throw new Error(`unexpected metric request: ${path}`);
+  });
+
+  await harness.api.refreshMetricEvidence();
+  const lastGoodLatency = harness.api.state.routingLatency;
+  failLatency = true;
+  await harness.api.refreshMetricEvidence();
+
+  assert.equal(harness.api.state.routingLatency, lastGoodLatency);
+  assert.equal(harness.api.state.metricEvidence.sources.latency.stale, true);
+  assert.equal(harness.api.state.metricEvidence.sources.latency.unavailable, false);
+  assert.match(harness.api.state.metricEvidence.sources.latency.error, /latency unavailable/i);
+  assert.equal(harness.api.state.metricEvidence.sources.selections.stale, false);
+  assert.match(harness.node("latency-budget-state").textContent, /^STALE · OVER BUDGET$/);
+  assert.match(harness.node("latency-evidence-context").textContent, /retained prior evidence/i);
+
+  const lastGoodSelections = harness.api.state.selectionDistribution;
+  failLatency = false;
+  failSelections = true;
+  await harness.api.refreshMetricEvidence();
+  assert.equal(harness.api.state.selectionDistribution, lastGoodSelections);
+  assert.equal(harness.api.state.metricEvidence.sources.selections.stale, true);
+  assert.equal(harness.api.state.metricEvidence.sources.selections.unavailable, false);
+  assert.match(
+    harness.api.state.metricEvidence.sources.selections.error,
+    /selection evidence unavailable/i,
+  );
+  assert.equal(harness.node("selection-evidence-state").textContent, "STALE");
+  assert.match(harness.node("selection-evidence-context").textContent, /retained prior evidence/i);
+  const callsBeforeInactiveView = calls;
+  harness.api.state.activeView = "routing";
+  assert.equal(await harness.api.refreshMetricEvidence(), false);
+  assert.equal(calls, callsBeforeInactiveView);
+});
+
+test("overview metric evidence distinguishes first-load unavailability for either source", async () => {
+  for (const failedSource of ["latency", "selections"]) {
+    const harness = createAppHarness(async (path) => {
+      if (path === "/api/evidence/latency?limit=200") {
+        return failedSource === "latency"
+          ? jsonResponse(503, { error: "latency first-load failure" })
+          : jsonResponse(200, routingLatencyPayload());
+      }
+      if (path === "/api/evidence/selections") {
+        return failedSource === "selections"
+          ? jsonResponse(503, { error: "selection first-load failure" })
+          : jsonResponse(200, selectionDistributionPayload());
+      }
+      throw new Error(`unexpected metric request: ${path}`);
+    });
+
+    assert.equal(await harness.api.refreshMetricEvidence(), true);
+    const failed = harness.api.state.metricEvidence.sources[failedSource];
+    const current = harness.api.state.metricEvidence.sources[
+      failedSource === "latency" ? "selections" : "latency"
+    ];
+    assert.equal(failed.stale, false);
+    assert.equal(failed.unavailable, true);
+    assert.equal(failed.sampledAt, null);
+    assert.equal(current.stale, false);
+    assert.equal(current.unavailable, false);
+    assert.ok(current.sampledAt);
+    const failedTag = harness.node(
+      failedSource === "latency" ? "latency-budget-state" : "selection-evidence-state",
+    );
+    assert.equal(failedTag.textContent, "UNAVAILABLE");
+    assert.equal(failedTag.dataset.state, "unavailable");
+    assert.match(harness.node("metric-evidence-status").textContent, /unavailable/);
+    assert.ok(harness.node("metric-evidence-status").textContent.length < 120);
+  }
+});
+
+test("overview metric evidence treats empty observations as unknown rather than healthy", async () => {
+  const emptySummary = { count: 0, min_ms: 0, p50_ms: 0, p95_ms: 0, max_ms: 0 };
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/latency?limit=200") {
+      return jsonResponse(200, routingLatencyPayload({
+        window: {
+          kind: "most_recent_positive_latency_decisions",
+          limit: 200,
+          decision_count: 0,
+        },
+        over_budget: false,
+        overall: emptySummary,
+        split: {
+          decisions: 0,
+          unattributed_decisions: 0,
+          provider_ms: emptySummary,
+          derived_routing_remainder_ms: emptySummary,
+          calls_per_decision: 0,
+        },
+        by_source: {},
+        slowest: [],
+      }));
+    }
+    if (path === "/api/evidence/selections") {
+      return jsonResponse(200, selectionDistributionPayload({
+        decisions_with_selections: 0,
+        distinct_selected_specialists: 0,
+        selection_occurrences: 0,
+        top_10_selection_occurrences: 0,
+        top_10_share_of_selection_occurrences: 0,
+        top_specialists: [],
+      }));
+    }
+    throw new Error(`unexpected metric request: ${path}`);
+  });
+
+  await harness.api.refreshMetricEvidence();
+  assert.equal(harness.node("latency-budget-state").textContent, "UNKNOWN");
+  assert.equal(harness.node("latency-budget-state").dataset.state, "unknown");
+  assert.match(harness.node("latency-evidence-context").textContent, /no eligible routing evidence/i);
+  assert.equal(harness.node("selection-evidence-state").textContent, "NO DATA");
+  assert.match(harness.node("selection-evidence-context").textContent, /no selection-bearing decisions/i);
+});
+
+test("metric evidence rejects inconsistent projections and malformed apply snapshots", async () => {
+  const duplicate = selectionDistributionPayload().top_specialists[0];
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/latency?limit=200") {
+      return jsonResponse(200, routingLatencyPayload({ over_budget: false }));
+    }
+    if (path === "/api/evidence/selections") {
+      return jsonResponse(200, selectionDistributionPayload({
+        top_specialists: [duplicate, { ...duplicate }],
+      }));
+    }
+    throw new Error(`unexpected invalid-metric request: ${path}`);
+  });
+
+  const snapshot = await harness.api.fetchMetricEvidence();
+  assert.equal(snapshot.latency, null);
+  assert.equal(snapshot.selections, null);
+  assert.match(snapshot.errors.latency, /routing-latency evidence is invalid/i);
+  assert.match(snapshot.errors.selections, /specialist-selection evidence is invalid/i);
+  assert.throws(
+    () => harness.api.applyMetricEvidence(null),
+    /dashboard metric evidence is invalid/i,
+  );
+  assert.throws(
+    () => harness.api.applyMetricEvidence({ errors: null }),
+    /dashboard metric evidence is invalid/i,
+  );
+});
+
+test("routing latency rejects the retired causal remainder field", async () => {
+  const legacyLatency = routingLatencyPayload();
+  legacyLatency.split.agency_ms = legacyLatency.split.derived_routing_remainder_ms;
+  delete legacyLatency.split.derived_routing_remainder_ms;
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/latency?limit=200") {
+      return jsonResponse(200, legacyLatency);
+    }
+    if (path === "/api/evidence/selections") {
+      return jsonResponse(200, selectionDistributionPayload());
+    }
+    throw new Error(`unexpected legacy-metric request: ${path}`);
+  });
+
+  const snapshot = await harness.api.fetchMetricEvidence();
+  assert.equal(snapshot.latency, null);
+  assert.ok(snapshot.selections);
+  assert.match(snapshot.errors.latency, /routing-latency evidence is invalid/i);
+});
+
+test("metric evidence renders bounded selection tails and equality-at-budget latency", async () => {
+  const ranked = Array.from({ length: 12 }, (_, index) => ({
+    slug: `specialist-${index + 1}`,
+    decisions_containing_specialist: 12 - index,
+    selection_occurrences: 12 - index,
+    share_of_decisions_with_selections: (12 - index) / 20,
+    share_of_selection_occurrences: (12 - index) / 100,
+  }));
+  const exactBudgetSummary = {
+    count: 1,
+    min_ms: 15_000,
+    p50_ms: 15_000,
+    p95_ms: 15_000,
+    max_ms: 15_000,
+  };
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/latency?limit=200") {
+      return jsonResponse(200, routingLatencyPayload({
+        window: {
+          kind: "most_recent_positive_latency_decisions",
+          limit: 200,
+          decision_count: 1,
+        },
+        over_budget: false,
+        overall: exactBudgetSummary,
+        split: {
+          decisions: 1,
+          unattributed_decisions: 0,
+          provider_ms: { count: 1, min_ms: 9_000, p50_ms: 9_000, p95_ms: 9_000, max_ms: 9_000 },
+          derived_routing_remainder_ms: { count: 1, min_ms: 6_000, p50_ms: 6_000, p95_ms: 6_000, max_ms: 6_000 },
+          calls_per_decision: 1,
+        },
+        by_source: {},
+        slowest: [{
+          source: "computed",
+          latency_ms: 15_000,
+          provider_ms: 18_000,
+          provider_calls: 1,
+          provider_timed_calls: 1,
+          provider_unknown_calls: 0,
+          created_at: "2026-08-12T00:00:00Z",
+        }],
+      }));
+    }
+    if (path === "/api/evidence/selections") {
+      return jsonResponse(200, selectionDistributionPayload({
+        decisions_with_selections: 20,
+        distinct_selected_specialists: 15,
+        selection_occurrences: 100,
+        top_10_selection_occurrences: 80,
+        top_10_share_of_selection_occurrences: 0.8,
+        top_specialists: ranked,
+        long_tail: {
+          specialist_count: 3,
+          decisions_containing_specialist: 2,
+          share_of_decisions_with_selections: 0.1,
+          selection_occurrences: 3,
+          share_of_selection_occurrences: 0.03,
+        },
+        selection_bearing_decision_scan_limit: 20,
+        selection_bearing_decision_scan_truncated: true,
+      }));
+    }
+    throw new Error(`unexpected bounded-metric request: ${path}`);
+  });
+
+  assert.equal(await harness.api.refreshMetricEvidence(), true);
+  assert.equal(harness.node("selection-tail-body").children.length, 3);
+  const aggregateTailText = descendants(harness.node("selection-tail-body").children[2])
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.match(aggregateTailText, /beyond top 50/i);
+  assert.match(harness.node("selection-evidence-context").textContent, /older retained evidence/i);
+  assert.equal(harness.node("latency-budget-state").textContent, "WITHIN BUDGET");
+  assert.match(harness.node("latency-evidence-context").textContent, /recorded total minus provider time/i);
+  const emptySourceText = descendants(harness.node("latency-source-body"))
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.match(emptySourceText, /No eligible routing evidence/i);
+  const slowestText = descendants(harness.node("latency-slowest-body"))
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.equal((slowestText.match(/unknown/g) || []).length, 2);
+});
+
+test("Vision Evidence validators reject inconsistent bounded projections", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("validator tests do not fetch");
+  });
+  const clone = (value) => JSON.parse(JSON.stringify(value));
+
+  assert.doesNotThrow(() => harness.api.validateChildDeliveryPayload(childDeliveryPayload()));
+  const maximumTeam = childDeliveryPayload();
+  maximumTeam.hosts[0].children[0].cards = Array.from({ length: 256 }, (_, index) => ({
+    slug: `specialist-${index}`,
+    version: "1",
+    prompt_hash: "a".repeat(64),
+  }));
+  assert.doesNotThrow(() => harness.api.validateChildDeliveryPayload(maximumTeam));
+  const impossibleChildCount = clone(childDeliveryPayload());
+  impossibleChildCount.hosts[0].evidence_count = 2;
+  assert.throws(
+    () => harness.api.validateChildDeliveryPayload(impossibleChildCount),
+    /child-delivery evidence is invalid/i,
+  );
+  const inconsistentChildTruncation = clone(childDeliveryPayload());
+  inconsistentChildTruncation.hosts[0].detail_truncated = true;
+  assert.throws(
+    () => harness.api.validateChildDeliveryPayload(inconsistentChildTruncation),
+    /child-delivery evidence is invalid/i,
+  );
+
+  assert.doesNotThrow(() => harness.api.validateRule8EvidencePayload(rule8EvidencePayload()));
+  const historicalHost = clone(rule8EvidencePayload());
+  historicalHost.withheld[0].host = "legacy-custom-host";
+  assert.doesNotThrow(() => harness.api.validateRule8EvidencePayload(historicalHost));
+  const invalidWindowHost = clone(rule8EvidencePayload());
+  invalidWindowHost.window.host = "legacy-custom-host";
+  assert.throws(
+    () => harness.api.validateRule8EvidencePayload(invalidWindowHost),
+    /Rule-8 evidence is invalid/i,
+  );
+  const filteredWindow = clone(rule8EvidencePayload());
+  filteredWindow.window.host = "claude";
+  filteredWindow.agency_blind[0].host = "claude";
+  assert.doesNotThrow(() => harness.api.validateRule8EvidencePayload(filteredWindow));
+  filteredWindow.agency_blind[0].host = "historical-other-host";
+  assert.throws(
+    () => harness.api.validateRule8EvidencePayload(filteredWindow),
+    /Rule-8 evidence is invalid/i,
+  );
+  const wrongPartition = clone(rule8EvidencePayload());
+  wrongPartition.withheld_statuses = ["response_invalid"];
+  assert.throws(
+    () => harness.api.validateRule8EvidencePayload(wrongPartition),
+    /Rule-8 evidence is invalid/i,
+  );
+
+  assert.doesNotThrow(() => harness.api.validateHostWiringPayload(wiringEvidencePayload()));
+  const malformedDigest = clone(wiringEvidencePayload());
+  malformedDigest.hosts[0].wired_projection = "short";
+  assert.throws(
+    () => harness.api.validateHostWiringPayload(malformedDigest),
+    /host-wiring evidence is invalid/i,
+  );
+  const inconsistentWiredFlag = clone(wiringEvidencePayload());
+  inconsistentWiredFlag.hosts[0].wired = false;
+  assert.throws(
+    () => harness.api.validateHostWiringPayload(inconsistentWiredFlag),
+    /host-wiring evidence is invalid/i,
+  );
+});
+
+test("Vision Evidence renders three source contracts with accessible bounded freshness", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    if (path === "/api/evidence/children") return jsonResponse(200, childDeliveryPayload());
+    if (path === "/api/evidence/rejections") return jsonResponse(200, rule8EvidencePayload());
+    if (path === "/api/evidence/wiring") return jsonResponse(200, wiringEvidencePayload());
+    throw new Error(`unexpected Vision Evidence request: ${path}`);
+  });
+  harness.api.configureOwnerSurface();
+  harness.api.state.activeView = "evidence";
+
+  assert.equal(await harness.api.refreshVisionEvidence(), true);
+  assert.deepEqual(calls, [
+    "/api/evidence/children",
+    "/api/evidence/rejections",
+    "/api/evidence/wiring",
+  ]);
+  assert.equal(harness.api.state.visionEvidence.loaded, true);
+  assert.equal(harness.node("vision-children-state").textContent, "OBSERVED");
+  assert.equal(harness.node("vision-rule8-state").textContent, "OBSERVED");
+  assert.equal(harness.node("vision-wiring-state").textContent, "OBSERVED");
+  assert.equal(
+    harness.api.state.visionEvidence.sources.children.sampledAt,
+    "2026-08-11T12:00:02+00:00",
+  );
+  assert.equal(
+    harness.api.state.visionEvidence.sources.rejections.sampledAt,
+    "2026-08-11T12:00:03+00:00",
+  );
+  assert.equal(
+    harness.api.state.visionEvidence.sources.wiring.sampledAt,
+    "2026-08-11T12:00:04+00:00",
+  );
+  assert.match(harness.node("vision-children-freshness").textContent, /^Source sampled /);
+  assert.match(harness.node("vision-rule8-freshness").textContent, /^Source sampled /);
+  assert.match(harness.node("vision-wiring-freshness").textContent, /^Source sampled /);
+  assert.match(harness.node("vision-children-bounds").textContent, /16384 host-tree entries/i);
+  assert.match(harness.node("vision-rule8-source").textContent, /not host execution or publication proof/i);
+  const childItems = harness.node("vision-children-list").children;
+  assert.ok(childItems.length > 0);
+  assert.ok(childItems.every((item) => item.getAttribute("role") === "listitem"));
+  const wiringText = descendants(harness.node("vision-wiring-list"))
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.match(wiringText, /aaaaaaaaaaaa…/);
+  assert.doesNotMatch(wiringText, /a{64}/);
+  assert.doesNotMatch(wiringText, /not installed/i);
+
+  harness.api.state.selectionDistribution = selectionDistributionPayload();
+  harness.api.state.routingLatency = routingLatencyPayload();
+  harness.api.state.metricEvidence.sources.selections.sampledAt = "2026-08-11T12:00:01+00:00";
+  harness.api.state.metricEvidence.sources.latency.sampledAt = "2026-08-11T12:00:00+00:00";
+  harness.api.renderMetricEvidence();
+  const selectionRows = harness.node("selection-chart").children;
+  assert.ok(selectionRows.every((row) => row.getAttribute("role") === "listitem"));
+  const barTrack = descendants(harness.node("selection-chart"))
+    .find((node) => node.className === "selection-bar-track");
+  assert.equal(barTrack.getAttribute("aria-hidden"), "true");
+  assert.equal(barTrack.getAttribute("max"), "100");
+  assert.equal(barTrack.getAttribute("value"), (146 / 202 * 100).toFixed(2));
+  assert.equal(barTrack.getAttribute("style"), null);
+  const selectionRenderer = RENDER_SOURCE.slice(
+    RENDER_SOURCE.indexOf("function renderSelectionDistribution"),
+    RENDER_SOURCE.indexOf("function renderRoutingLatency"),
+  );
+  assert.doesNotMatch(selectionRenderer, /setAttribute\("style"|\.style\./);
+  assert.doesNotMatch(selectionRenderer, /selection-bar-fill/);
+  assert.match(
+    harness.node("metric-evidence-freshness").textContent,
+    /Selection source sampled .* latency source sampled /,
+  );
+
+  assert.match(INDEX_SOURCE, /id="selection-chart"[^>]*role="list"/);
+  assert.ok(INDEX_SOURCE.indexOf("vision-evidence-title") < INDEX_SOURCE.indexOf("AUTHORITATIVE EVENTS"));
+  assert.match(INDEX_SOURCE, /id="vision-evidence-refresh"[^>]*>Refresh proof</);
+  assert.match(APP_CSS_SOURCE, /\.vision-evidence-grid\{[^}]*grid-template-columns:repeat\(3/);
+  assert.match(APP_CSS_SOURCE, /@media\(max-width:900px\)\{\.vision-evidence-grid\{grid-template-columns:1fr/);
+  assert.match(
+    APP_CSS_SOURCE,
+    /\.vision-proof-row>\*,\.vision-proof-detail>\*,\.vision-proof-heading>\*\{[^}]*overflow-wrap:anywhere/,
+  );
+  assert.match(
+    INDEX_SOURCE,
+    /<span id="metric-evidence-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true">/,
+  );
+  assert.match(
+    INDEX_SOURCE,
+    /<span id="vision-evidence-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true">/,
+  );
+  for (const id of ["metric-evidence-status", "vision-evidence-status"]) {
+    const region = harness.node(id);
+    assert.ok(region.textContent.length < 140);
+  }
+  assert.equal(
+    harness.node("metric-evidence-status").textContent,
+    "Decision evidence: selection current; latency current.",
+  );
+  assert.equal(
+    harness.node("vision-evidence-status").textContent,
+    "Vision evidence: child delivery current; Rule 8 current; host wiring current.",
+  );
+});
+
+test("Vision Evidence marks an initial source failure unavailable without stale evidence", async () => {
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/children") {
+      return jsonResponse(503, { error: "child proof unavailable" });
+    }
+    if (path === "/api/evidence/rejections") return jsonResponse(200, rule8EvidencePayload());
+    if (path === "/api/evidence/wiring") return jsonResponse(200, wiringEvidencePayload());
+    throw new Error(`unexpected Vision Evidence request: ${path}`);
+  });
+  harness.api.configureOwnerSurface();
+  harness.api.state.activeView = "evidence";
+
+  assert.equal(await harness.api.refreshVisionEvidence(), true);
+  const source = harness.api.state.visionEvidence.sources.children;
+  assert.equal(source.stale, false);
+  assert.equal(source.unavailable, true);
+  assert.equal(source.sampledAt, null);
+  assert.equal(harness.node("vision-children-state").textContent, "UNAVAILABLE");
+  assert.equal(harness.node("vision-children-state").dataset.state, "unavailable");
+  assert.match(harness.node("vision-children-freshness").textContent, /No validated source sample/);
+  assert.equal(
+    harness.node("vision-evidence-status").textContent,
+    "Vision evidence: child delivery unavailable; Rule 8 current; host wiring current.",
+  );
+});
+
+test("Vision Evidence empty states preserve bounded unknown semantics", async () => {
+  const children = childDeliveryPayload();
+  children.hosts = children.hosts.map((host) => ({
+    ...host,
+    artifact_candidates: 0,
+    artifacts_scanned: 0,
+    artifact_scan_truncated: false,
+    evidence_count: 0,
+    staffed_children: 0,
+    correlated_staffed_children: 0,
+    uncorrelated_staffed_children: 0,
+    legacy_deliveries: 0,
+    detail_truncated: false,
+    children: [],
+  }));
+  const rejections = rule8EvidencePayload({
+    window: {
+      kind: "most_recent_matching_exceptional_runs",
+      host: null,
+      limit: 50,
+      returned: 0,
+    },
+    counts: { matching_exceptional_runs: 0, withheld: 0, agency_blind: 0 },
+    withheld: [],
+    agency_blind: [],
+  });
+  const wiring = wiringEvidencePayload();
+  wiring.hosts[0] = {
+    ...wiring.hosts[0],
+    status: "unavailable",
+    wired: false,
+    reason_code: "wired_missing",
+    reason: "no wired hook command was observed at the measured location",
+    wired_state: "missing",
+    wired_projection: "",
+    wired_path: "",
+  };
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/children") return jsonResponse(200, children);
+    if (path === "/api/evidence/rejections") return jsonResponse(200, rejections);
+    if (path === "/api/evidence/wiring") return jsonResponse(200, wiring);
+    throw new Error(`unexpected empty-evidence request: ${path}`);
+  });
+  harness.api.state.activeView = "evidence";
+  await harness.api.refreshVisionEvidence();
+
+  const childText = descendants(harness.node("vision-children-list"))
+    .map((node) => node.textContent).join(" ");
+  const rule8Text = descendants(harness.node("vision-rule8-list"))
+    .map((node) => node.textContent).join(" ");
+  const wiringText = descendants(harness.node("vision-wiring-list"))
+    .map((node) => node.textContent).join(" ");
+  assert.match(childText, /does not mean no children were started/i);
+  assert.match(rule8Text, /This is not a health claim/i);
+  assert.doesNotMatch(rule8Text, /healthy/i);
+  assert.match(wiringText, /UNKNOWN/);
+  assert.match(wiringText, /wiring state remains unknown/i);
+  assert.doesNotMatch(wiringText, /not installed/i);
+});
+
+test("Vision Evidence retains last-good data only for a failed source", async () => {
+  let failChildren = false;
+  let generation = 0;
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/children") {
+      return failChildren
+        ? jsonResponse(503, { error: "child proof unavailable" })
+        : jsonResponse(200, childDeliveryPayload());
+    }
+    if (path === "/api/evidence/rejections") {
+      return jsonResponse(200, rule8EvidencePayload({
+        sampled_at: `2026-08-11T12:01:0${generation}+00:00`,
+      }));
+    }
+    if (path === "/api/evidence/wiring") {
+      return jsonResponse(200, wiringEvidencePayload({
+        sampled_at: `2026-08-11T12:02:0${generation}+00:00`,
+      }));
+    }
+    throw new Error(`unexpected partial-evidence request: ${path}`);
+  });
+  harness.api.state.activeView = "evidence";
+  await harness.api.refreshVisionEvidence();
+  const children = harness.api.state.visionEvidence.children;
+  const rejections = harness.api.state.visionEvidence.rejections;
+  const wiring = harness.api.state.visionEvidence.wiring;
+  const childSample = harness.api.state.visionEvidence.sources.children.sampledAt;
+
+  failChildren = true;
+  generation = 1;
+  assert.equal(await harness.api.refreshVisionEvidence({ force: true }), true);
+  assert.equal(harness.api.state.visionEvidence.children, children);
+  assert.notEqual(harness.api.state.visionEvidence.rejections, rejections);
+  assert.notEqual(harness.api.state.visionEvidence.wiring, wiring);
+  assert.equal(harness.api.state.visionEvidence.sources.children.sampledAt, childSample);
+  assert.equal(harness.api.state.visionEvidence.sources.children.stale, true);
+  assert.match(harness.api.state.visionEvidence.sources.children.error, /child proof unavailable/i);
+  assert.equal(harness.api.state.visionEvidence.sources.rejections.stale, false);
+  assert.equal(harness.api.state.visionEvidence.sources.wiring.stale, false);
+  assert.equal(harness.node("vision-children-state").textContent, "STALE");
+  assert.match(harness.node("vision-children-freshness").textContent, /Last-good source sample/);
+});
+
+test("Vision Evidence request generations reject races and navigation restores busy state", async () => {
+  const pending = [
+    [deferred(), deferred(), deferred()],
+    [deferred(), deferred(), deferred()],
+    [deferred(), deferred(), deferred()],
+  ];
+  const calls = [];
+  const harness = createAppHarness((path, options) => {
+    const batch = Math.floor(calls.length / 3);
+    const slot = calls.length % 3;
+    calls.push({ path, signal: options.signal });
+    return pending[batch][slot].promise;
+  });
+  harness.api.state.activeView = "evidence";
+  const first = harness.api.refreshVisionEvidence();
+  await Promise.resolve();
+  const second = harness.api.refreshVisionEvidence({ force: true });
+  await Promise.resolve();
+  assert.ok(calls.slice(0, 3).every((call) => call.signal.aborted));
+  [childDeliveryPayload({ sampled_at: "2026-08-11T12:10:00+00:00" }),
+    rule8EvidencePayload({ sampled_at: "2026-08-11T12:10:01+00:00" }),
+    wiringEvidencePayload({ sampled_at: "2026-08-11T12:10:02+00:00" })]
+    .forEach((payload, index) => pending[1][index].resolve(jsonResponse(200, payload)));
+  assert.equal(await second, true);
+  pending[0][0].resolve(jsonResponse(200, childDeliveryPayload()));
+  pending[0][1].resolve(jsonResponse(200, rule8EvidencePayload()));
+  pending[0][2].resolve(jsonResponse(200, wiringEvidencePayload()));
+  assert.equal(await first, false);
+  assert.equal(
+    harness.api.state.visionEvidence.sources.children.sampledAt,
+    "2026-08-11T12:10:00+00:00",
+  );
+
+  const leaving = harness.api.refreshVisionEvidence({ force: true });
+  await Promise.resolve();
+  assert.equal(harness.node("vision-evidence-refresh").disabled, true);
+  assert.equal(harness.node("vision-evidence-refresh").getAttribute("aria-busy"), "true");
+  assert.equal(harness.api.cancelVisionEvidenceRequest(), true);
+  harness.api.state.activeView = "routing";
+  assert.ok(calls.slice(6, 9).every((call) => call.signal.aborted));
+  assert.equal(harness.node("vision-evidence-refresh").disabled, false);
+  assert.equal(harness.node("vision-evidence-refresh").getAttribute("aria-busy"), null);
+  pending[2][0].resolve(jsonResponse(200, childDeliveryPayload()));
+  pending[2][1].resolve(jsonResponse(200, rule8EvidencePayload()));
+  pending[2][2].resolve(jsonResponse(200, wiringEvidencePayload()));
+  assert.equal(await leaving, false);
+});
+
+test("Vision Evidence never joins the live poll", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    if (path === "/api/live?limit=100") {
+      return jsonResponse(200, {
+        schema_version: 1,
+        revision: "evidence-live-only",
+        sampled_at: "2026-08-11T12:20:00+00:00",
+      });
+    }
+    throw new Error(`hot poll reached non-live endpoint: ${path}`);
+  });
+  harness.api.state.activeView = "evidence";
+  await harness.api.runLivePoll();
+  assert.deepEqual(calls, ["/api/live?limit=100"]);
+  const liveFunction = LIVE_SOURCE.slice(
+    LIVE_SOURCE.indexOf("async function fetchLiveSnapshot"),
+    LIVE_SOURCE.indexOf("function applyLiveSnapshot"),
+  );
+  assert.doesNotMatch(liveFunction, /\/api\/evidence\/(children|rejections|wiring)/);
+});
+
+test("Evidence navigation waits for full refresh, loads once, and forced controls refetch", async () => {
+  const initialLive = deferred();
+  const initialControl = deferred();
+  const calls = [];
+  let liveCalls = 0;
+  let controlCalls = 0;
+  const harness = createAppHarness(async (path, options) => {
+    calls.push({ path, signal: options?.signal });
+    if (path === "/api/live?limit=100") {
+      liveCalls += 1;
+      return liveCalls === 1
+        ? initialLive.promise
+        : jsonResponse(200, { schema_version: 1, revision: `manual-${liveCalls}` });
+    }
+    if (path === "/api/control") {
+      controlCalls += 1;
+      return controlCalls === 1 ? initialControl.promise : jsonResponse(200, controlSnapshot());
+    }
+    if (path === "/api/evidence/children") return jsonResponse(200, childDeliveryPayload());
+    if (path === "/api/evidence/rejections") return jsonResponse(200, rule8EvidencePayload());
+    if (path === "/api/evidence/wiring") return jsonResponse(200, wiringEvidencePayload());
+    if (path.startsWith("/api/update/status")) return jsonResponse(503, { error: "offline" });
+    throw new Error(`unexpected navigation/full-refresh path: ${path}`);
+  });
+  harness.sessionValues.set("agency-dashboard-token", "session-token");
+  const overviewNav = new FakeNode("nav-overview");
+  overviewNav.classList.add("active");
+  overviewNav.dataset.view = "overview";
+  const evidenceNav = new FakeNode("nav-evidence");
+  evidenceNav.dataset.view = "evidence";
+  const routingNav = new FakeNode("nav-routing");
+  routingNav.dataset.view = "routing";
+  const overviewPanel = new FakeNode("view-overview");
+  overviewPanel.dataset.viewPanel = "overview";
+  const evidencePanel = new FakeNode("view-evidence");
+  evidencePanel.dataset.viewPanel = "evidence";
+  const routingPanel = new FakeNode("view-routing");
+  routingPanel.dataset.viewPanel = "routing";
+  harness.select(".nav-item", [overviewNav, evidenceNav, routingNav]);
+  harness.select(".nav-item.active", [overviewNav]);
+  harness.select(".view", [overviewPanel, evidencePanel, routingPanel]);
+  harness.api.bindEvents();
+
+  const connected = harness.api.connectFromLocation();
+  await Promise.resolve();
+  evidenceNav.listeners.get("click")[0]();
+  assert.equal(harness.api.state.activeView, "evidence");
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 0);
+  assert.ok(calls.slice(0, 2).every((call) => !call.signal.aborted));
+  initialLive.resolve(jsonResponse(200, { schema_version: 1, revision: "initial" }));
+  initialControl.resolve(jsonResponse(200, controlSnapshot()));
+  assert.equal(await connected, true);
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 3);
+
+  routingNav.listeners.get("click")[0]();
+  evidenceNav.listeners.get("click")[0]();
+  await Promise.resolve();
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 3);
+
+  harness.node("vision-evidence-refresh").listeners.get("click")[0]();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 6);
+
+  await harness.node("refresh-button").listeners.get("click")[0]();
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 9);
+
+  routingNav.listeners.get("click")[0]();
+  harness.node("vision-evidence-refresh").listeners.get("click")[0]();
+  await harness.node("refresh-button").listeners.get("click")[0]();
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 9);
 });
 
 test("app.js live snapshots are single-flight", async () => {
@@ -3358,7 +4502,6 @@ test("app.js executes bound navigation, provider, workforce, hash, and startup c
   workforceNav.listeners.get("click")[0]();
   harness.node("provider-builder-type").listeners.get("change")[0]();
   harness.node("provider-builder-transport").listeners.get("change")[0]();
-  harness.node("workforce-model-refresh").listeners.get("click")[0]();
   harness.windowListeners.get("hashchange")[0]();
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));
@@ -3725,20 +4868,71 @@ test("app.js reconnects from stored credentials and surfaces missing tokens", as
   assert.match(missing.node("notice").textContent, /no active access token/i);
 });
 
-test("app.js renders independent graphs and roster control refreshes", () => {
+test("a secondary evidence 401 remains visible after the primary connection succeeds", async (testContext) => {
+  for (const activeView of ["overview", "evidence"]) {
+    await testContext.test(activeView, async () => {
+      const calls = [];
+      const harness = createAppHarness(async (path) => {
+        calls.push(path);
+        if (path === "/api/live?limit=100") {
+          return jsonResponse(200, {
+            activity: {},
+            overview: { status: "ok" },
+            revision: `connected-${activeView}`,
+            schema_version: 1,
+          });
+        }
+        if (path === "/api/control") {
+          return jsonResponse(200, controlSnapshot({
+            config: { effective: {}, revision: `config-${activeView}` },
+          }));
+        }
+        if (path === "/api/evidence/latency?limit=200") {
+          return jsonResponse(401, { error: "metric token expired" });
+        }
+        if (path === "/api/evidence/selections") {
+          return jsonResponse(200, selectionDistributionPayload());
+        }
+        if (path === "/api/evidence/children") {
+          return jsonResponse(401, { error: "Vision token expired" });
+        }
+        if (path === "/api/evidence/rejections") {
+          return jsonResponse(200, rule8EvidencePayload());
+        }
+        if (path === "/api/evidence/wiring") {
+          return jsonResponse(200, wiringEvidencePayload());
+        }
+        throw new Error(`unexpected secondary-auth path: ${path}`);
+      });
+      harness.sessionValues.set("agency-dashboard-token", "stored-token");
+      harness.api.state.activeView = activeView;
+      harness.api.showNotice("Connecting");
+
+      assert.equal(await harness.api.connectFromLocation(), true);
+      assert.equal(harness.api.state.live.terminal, true);
+      assert.equal(harness.node("connection-label").textContent, "Token expired");
+      assert.equal(harness.node("notice").hidden, false);
+      assert.match(harness.node("notice").textContent, /token expired/i);
+      assert.match(
+        harness.node("notice").textContent,
+        /Request ID 00000000-0000-4000-8000-000000000001/,
+      );
+      assert.ok(calls.some((path) => path.startsWith("/api/evidence/")));
+    });
+  }
+});
+
+test("app.js omits retired dependency graphs and renders roster control refreshes", () => {
   const harness = createAppHarness(() => {
     throw new Error("render-only test does not fetch");
   });
   harness.api.renderReceipt({
-    delegation_graph: {
-      edges: [],
-      nodes: [{ description: "Review auth", id: "unit-1" }],
-    },
     selected: [],
   });
-  assert.ok(
+  assert.equal(
     descendants(harness.node("route-result"))
-      .some((node) => /run independently/i.test(node.textContent)),
+      .some((node) => /dependency graph|run independently|work units/i.test(node.textContent)),
+    false,
   );
 
   harness.api.state.activeView = "roster";
@@ -3951,7 +5145,7 @@ test("app.js renders sparse and changing runtime evidence defensively", () => {
   assert.ok(harness.node("overview-delegations").children[0].classList.contains("is-new"));
   assert.ok(
     descendants(harness.node("overview-delegations"))
-      .some((node) => node.textContent === "unassigned"),
+      .some((node) => node.textContent === "Not observed"),
   );
 
   harness.api.state.hosts = [
@@ -4059,11 +5253,11 @@ test("app.js covers sparse receipts and live snapshots", () => {
   const harness = createAppHarness(() => {
     throw new Error("this test does not fetch");
   });
-  harness.api.renderReceipt({ delegation_graph: {} });
-  assert.match(
+  harness.api.renderReceipt({});
+  assert.equal(
     descendants(harness.node("route-result"))
-      .find((node) => /no delegation work units/i.test(node.textContent)).textContent,
-    /no delegation work units/i,
+      .some((node) => /delegation work units|dependency graph/i.test(node.textContent)),
+    false,
   );
   harness.api.renderReceipt({
     signals: { delegation: {}, work_units: {} },
@@ -4071,12 +5265,13 @@ test("app.js covers sparse receipts and live snapshots", () => {
   });
   assert.equal(harness.node("route-status").textContent, "COMPLETE");
   harness.api.renderReceipt({
-    signals: { delegation: { work_units: { units: [{ id: "first-path" }] } } },
-  });
-  assert.ok(
-    descendants(harness.node("route-result"))
-      .some((node) => node.textContent.includes("first-path")),
-  );
+		signals: { delegation: { work_units: { units: [{ id: "first-path" }] } } },
+	});
+	assert.equal(
+		descendants(harness.node("route-result"))
+			.some((node) => node.textContent.includes("first-path")),
+		false,
+	);
 
   harness.api.state.activeView = "routing";
   assert.equal(harness.api.applyLiveSnapshot({ schema_version: 1 }), true);
@@ -4591,27 +5786,134 @@ test("collection completion fails closed on missing initial cursor or revision",
     revisionField: "collection_revision",
   });
   assert.deepEqual(completedHiring.hiring_cases.map((item) => item.id), ["case-1", "case-2"]);
+});
 
-  const lastGood = createAppHarness(async (path) => jsonResponse(200, path.startsWith("/api/workforce")
-    ? {
-        collection_revision: "revision-bad",
-        next_cursor: null,
-        truncated: false,
-        workers: "not-an-array",
+test("workforce and hiring retain last-good data independently", async () => {
+  let mode = "baseline";
+  const workforceFails = createAppHarness(async (path) => {
+    if (path.startsWith("/api/workforce")) {
+      if (mode === "workforce-fails") {
+        return jsonResponse(200, workforceCollection([], { workers: "not-an-array" }));
       }
-    : {
-        collection_revision: "revision-hiring",
-        hiring_cases: [],
-        next_cursor: null,
-        truncated: false,
-      }));
-  lastGood.api.state.workforce = [{ agent_slug: "last-good-worker" }];
-  lastGood.api.state.workforceCounts = { employee: 1 };
-  lastGood.api.state.hiring = [{ id: "last-good-case" }];
-  assert.equal(await lastGood.api.refreshWorkforce(), false);
-  assert.deepEqual(lastGood.api.state.workforce, [{ agent_slug: "last-good-worker" }]);
-  assert.deepEqual(lastGood.api.state.workforceCounts, { employee: 1 });
-  assert.deepEqual(lastGood.api.state.hiring, [{ id: "last-good-case" }]);
+      return jsonResponse(200, workforceCollection(
+        [{ agent_slug: "last-good-worker", state: "employee" }],
+        { counts: { employee: 1 } },
+      ));
+    }
+    return jsonResponse(200, hiringCollection([
+      hiringCaseSummary(mode === "baseline" ? "last-good-case" : "new-hiring-case"),
+    ]));
+  });
+  workforceFails.api.state.activeView = "workforce";
+  assert.equal(await workforceFails.api.refreshWorkforce(), true);
+  const workforceSampledAt = workforceFails.api.state.workforceSources.workforce.lastGoodAt;
+  mode = "workforce-fails";
+  assert.equal(await workforceFails.api.refreshWorkforce(), true);
+  assert.deepEqual(
+    workforceFails.api.state.workforce.map((worker) => worker.agent_slug),
+    ["last-good-worker"],
+  );
+  assert.deepEqual(workforceFails.api.state.workforceCounts, { employee: 1 });
+  assert.deepEqual(
+    workforceFails.api.state.hiring.map((item) => item.id),
+    ["new-hiring-case"],
+  );
+  assert.deepEqual(workforceFails.api.state.workforceSources.workforce, {
+    status: "stale",
+    error: "The workers collection returned invalid items.",
+    lastGoodAt: workforceSampledAt,
+  });
+  assert.equal(workforceFails.api.state.workforceSources.hiring.status, "current");
+  assert.match(workforceFails.node("workforce-count").textContent, /STALE/);
+  assert.match(
+    descendants(workforceFails.node("workforce-grid")).map((node) => node.textContent).join(" "),
+    /retaining the last-good sample/i,
+  );
+  assert.match(workforceFails.node("hiring-count").textContent, /CURRENT/);
+
+  mode = "baseline";
+  const hiringFails = createAppHarness(async (path) => {
+    if (path.startsWith("/api/workforce")) {
+      return jsonResponse(200, workforceCollection([
+        { agent_slug: mode === "baseline" ? "baseline-worker" : "new-workforce-worker" },
+      ]));
+    }
+    if (mode === "hiring-fails") {
+      return jsonResponse(200, hiringCollection([], { hiring_cases: "not-an-array" }));
+    }
+    return jsonResponse(200, hiringCollection([hiringCaseSummary("last-good-hiring")]));
+  });
+  hiringFails.api.state.activeView = "workforce";
+  assert.equal(await hiringFails.api.refreshWorkforce(), true);
+  const hiringSampledAt = hiringFails.api.state.workforceSources.hiring.lastGoodAt;
+  mode = "hiring-fails";
+  assert.equal(await hiringFails.api.refreshWorkforce(), true);
+  assert.deepEqual(
+    hiringFails.api.state.workforce.map((worker) => worker.agent_slug),
+    ["new-workforce-worker"],
+  );
+  assert.deepEqual(hiringFails.api.state.hiring.map((item) => item.id), ["last-good-hiring"]);
+  assert.equal(hiringFails.api.state.workforceSources.workforce.status, "current");
+  assert.deepEqual(hiringFails.api.state.workforceSources.hiring, {
+    status: "stale",
+    error: "The hiring_cases collection returned invalid items.",
+    lastGoodAt: hiringSampledAt,
+  });
+  assert.match(hiringFails.node("hiring-count").textContent, /STALE/);
+  assert.match(hiringFails.node("hiring-page-status").textContent, /retaining the last-good sample/i);
+});
+
+test("first-load source failures stay unavailable while validated empty peers stay current", async () => {
+  const invalidWorkforce = createAppHarness(async (path) => jsonResponse(
+    200,
+    path.startsWith("/api/workforce")
+      ? workforceCollection([], { workers: "not-an-array" })
+      : hiringCollection([]),
+  ));
+  invalidWorkforce.api.state.activeView = "workforce";
+  assert.equal(await invalidWorkforce.api.refreshWorkforce(), true);
+  assert.equal(invalidWorkforce.api.state.workforceSources.workforce.status, "unavailable");
+  assert.equal(invalidWorkforce.api.state.workforceSources.hiring.status, "current");
+  assert.match(invalidWorkforce.node("workforce-count").textContent, /UNAVAILABLE/);
+  assert.match(
+    descendants(invalidWorkforce.node("workforce-grid"))
+      .map((node) => node.textContent).join(" "),
+    /unavailable; no validated sample/i,
+  );
+  assert.match(
+    descendants(invalidWorkforce.node("hiring-list"))
+      .map((node) => node.textContent).join(" "),
+    /No hiring cases match the committed source filters/i,
+  );
+
+  const invalidHiring = createAppHarness(async (path) => jsonResponse(
+    200,
+    path.startsWith("/api/workforce")
+      ? workforceCollection([])
+      : hiringCollection([], { hiring_cases: "not-an-array" }),
+  ));
+  invalidHiring.api.state.activeView = "workforce";
+  assert.equal(await invalidHiring.api.refreshWorkforce(), true);
+  assert.equal(invalidHiring.api.state.workforceSources.workforce.status, "current");
+  assert.equal(invalidHiring.api.state.workforceSources.hiring.status, "unavailable");
+  assert.match(
+    descendants(invalidHiring.node("workforce-grid"))
+      .map((node) => node.textContent).join(" "),
+    /No governed workers are installed yet/i,
+  );
+  assert.match(invalidHiring.node("hiring-count").textContent, /UNAVAILABLE/);
+  assert.match(invalidHiring.node("hiring-page-status").textContent, /no validated sample/i);
+
+  const emptyCurrent = createAppHarness(async (path) => jsonResponse(
+    200,
+    path.startsWith("/api/workforce") ? workforceCollection([]) : hiringCollection([]),
+  ));
+  emptyCurrent.api.state.activeView = "workforce";
+  assert.equal(await emptyCurrent.api.refreshWorkforce(), true);
+  assert.equal(emptyCurrent.api.state.workforceSources.workforce.status, "current");
+  assert.equal(emptyCurrent.api.state.workforceSources.hiring.status, "current");
+  assert.match(emptyCurrent.node("workforce-count").textContent, /CURRENT/);
+  assert.match(emptyCurrent.node("hiring-count").textContent, /CURRENT/);
 });
 
 test("roster paging rejects activation-policy changes under a stable Store generation", async () => {
@@ -5786,16 +7088,42 @@ test("operational dashboard markup and accessibility policies stay discoverable"
     "inference-state", "provider-failures", "roster-operations-form",
     "roster-filter-division", "roster-filter-capability", "roster-filter-authority",
     "roster-filter-host", "roster-filter-platform", "roster-filter-tool",
-    "review-list", "upstream-status",
+    "review-list", "upstream-status", "hiring-filter-type",
+    "hiring-approver-identity", "hiring-approver-help",
   ]) assert.match(INDEX_SOURCE, new RegExp(`id="${id}"`));
   for (const path of [
     "workforce.mode", "workforce.provider",
     "workforce.max_work_units", "workforce.max_selected_per_unit",
-    "workforce.max_selected_total", "workforce.max_hires_per_task",
-    "workforce.max_hires_per_day", "workforce.auto_promote_successes",
+    "workforce.max_selected_total", "workforce.max_hires_per_turn",
+    "workforce.daily_hire_alert_threshold", "workforce.hiring_repair_budget",
+    "workforce.amend_overlap_threshold", "workforce.auto_promote_successes",
   ]) assert.match(INDEX_SOURCE, new RegExp(`data-config-path="${path.replaceAll(".", "\\.")}"`));
-  assert.match(INDEX_SOURCE, /id="workforce-model-refresh"/);
-  assert.match(INDEX_SOURCE, /id="workforce-model-status"[^>]*aria-live="polite"/);
+  for (const retiredPath of [
+    "workforce.planner_model", "workforce.recruiter_model",
+    "workforce.hiring_model", "workforce.critic_model",
+    "workforce.max_hires_per_task", "workforce.max_hires_per_day",
+  ]) assert.doesNotMatch(
+    INDEX_SOURCE,
+    new RegExp(`data-config-path="${retiredPath.replaceAll(".", "\\.")}"`),
+  );
+  for (const retiredId of [
+    "workforce-model-options", "workforce-model-refresh", "workforce-model-status",
+  ]) assert.doesNotMatch(INDEX_SOURCE, new RegExp(`id="${retiredId}"`));
+  assert.match(INDEX_SOURCE, /<label for="config-workforce-provider">Fallback provider<\/label>/);
+  assert.match(
+    INDEX_SOURCE,
+    /id="config-workforce-max-units"[^>]*min="1"[^>]*max="16"/,
+  );
+  assert.match(INDEX_SOURCE, /Inference accepts at most 16 staffing needs per request/i);
+  assert.match(INDEX_SOURCE, /INFERENCE \+ VERIFICATION/);
+  assert.doesNotMatch(INDEX_SOURCE, /DETERMINISTIC \+ JUDGE/);
+  assert.match(INDEX_SOURCE, /bounded delegation-event rows/i);
+  assert.doesNotMatch(INDEX_SOURCE, /recorded host-native child events|recorded native-child/i);
+  assert.match(
+    INDEX_SOURCE,
+    /id="hiring-approver-identity"[^>]*maxlength="128"[^>]*aria-describedby="hiring-approver-help"/,
+  );
+  assert.match(INDEX_SOURCE, /Dashboard authentication proves authority, not human identity/i);
   assert.match(APP_CSS_SOURCE, /\.roster-filter-grid/);
   assert.match(APP_CSS_SOURCE, /\.review-card/);
   assert.match(APP_CSS_SOURCE, /\.remediation-card/);
@@ -6046,6 +7374,7 @@ test("owner dashboard controls dispatch confirmed revision-bound mutations", asy
     "SUSPEND typescript-application-engineer",
   );
 
+  harness.node("hiring-approver-identity").value = "  Lucas Owner  ";
   await acceptOwnerConfirmation(
     harness,
     harness.api.hiringApprove("hiring-owner-1"),
@@ -6111,10 +7440,30 @@ test("owner dashboard controls dispatch confirmed revision-bound mutations", asy
     worker: "typescript-application-engineer",
   });
   assert.deepEqual(bodies["/api/hiring/approve"], {
-    approved_by: "dashboard-owner",
+    approved_by: "Lucas Owner",
     case_id: "hiring-owner-1",
     confirm: "APPROVE hiring-owner-1",
   });
+});
+
+test("hiring approval rejects missing or oversized audit identity before confirmation or POST", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    return jsonResponse(200, { ok: true });
+  });
+  harness.node("hiring-approver-identity").value = " \t\n ";
+
+  assert.equal(await harness.api.hiringApprove("case-needs-owner"), undefined);
+  assert.equal(harness.api.state.confirmation, null);
+  assert.deepEqual(calls, []);
+  assert.match(harness.node("notice").textContent, /approver audit identity/i);
+
+  harness.node("hiring-approver-identity").value = "é".repeat(65);
+  assert.equal(await harness.api.hiringApprove("case-needs-owner"), undefined);
+  assert.equal(harness.api.state.confirmation, null);
+  assert.deepEqual(calls, []);
+  assert.match(harness.node("notice").textContent, /valid approver audit identity/i);
 });
 
 test("authenticated dashboard exposes the owner control surface and mutation request client", () => {

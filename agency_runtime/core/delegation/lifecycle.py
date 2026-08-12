@@ -2,12 +2,12 @@
 
 What remains of the delegation lifecycle after Job B was deleted. Agency does not
 plan work, provision worktrees, dispatch workers, or aggregate their results --
-rule 5 says the native host alone decides whether to spawn. Two callers still
-need to turn a turn's declared work units into a stable, ordered graph:
-`core/evals/routing.py` and the operations dashboard.
+rule 5 says the native host alone decides whether to spawn. Only
+`core/evals/routing.py` still turns declared work units into a stable, ordered
+graph.
 
 Both functions are thin passes to `lifecycle_graph`, which is where the real
-logic lives. This module stays as the import surface those callers already name.
+logic lives. This module stays as the import surface the evaluator already names.
 """
 
 from __future__ import annotations

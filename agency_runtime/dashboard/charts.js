@@ -151,14 +151,14 @@
 		const minutes = Math.round(
 			(buckets.length * (buckets[0].endMs - buckets[0].startMs)) / 60000,
 		);
-		const summary = `${routes} observed routes · ${delegations} delegations · last ${minutes} minutes`;
+		const summary = `${routes} observed routes · ${delegations} delegation-event rows · last ${minutes} minutes`;
 		if (summaryRoot) summaryRoot.textContent = summary;
 
 		const documentRef = chartDocument(root);
 		if (!root || !documentRef) return buckets;
 		const svg = accessibleSvg(
 			documentRef,
-			"Observed routing and delegation activity",
+			"Observed routing and delegation-event row activity",
 			`${summary}. Counts reflect the bounded metadata returned by the local runtime.`,
 			"0 0 720 240",
 			summaryRoot?.id || "",
@@ -251,9 +251,9 @@
 				r: 2.4,
 				tabindex: 0,
 				role: "img",
-				"aria-label": `${buckets[index].delegations} delegations in this minute`,
+				"aria-label": `${buckets[index].delegations} delegation-event rows in this minute`,
 			});
-			circle.append(svgNode(documentRef, "title", {}, `${buckets[index].delegations} delegations`));
+			circle.append(svgNode(documentRef, "title", {}, `${buckets[index].delegations} delegation-event rows`));
 			svg.append(circle);
 		});
 
@@ -274,15 +274,15 @@
 
 	function renderOutcomeChart(root, summaryRoot, activity) {
 		const counts = outcomeCounts(activity);
-		const summary = `${counts.total} observed delegations · ${counts.success} completed · ${counts.failed} failed · ${counts.skipped} skipped · ${counts.unknown} unknown`;
+		const summary = `${counts.total} delegation-event rows · ${counts.success} completed · ${counts.failed} failed · ${counts.skipped} skipped · ${counts.unknown} unknown`;
 		if (summaryRoot) summaryRoot.textContent = summary;
 
 		const documentRef = chartDocument(root);
 		if (!root || !documentRef) return counts;
 		const svg = accessibleSvg(
 			documentRef,
-			"Observed delegation outcomes",
-			`${summary}. Outcomes describe bounded stored delegation evidence.`,
+			"Delegation-event row states",
+			`${summary}. States describe bounded delegation-event rows and do not prove child execution.`,
 			"0 0 240 240",
 			summaryRoot?.id || "",
 		);

@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-08-05
+updated: 2026-08-11
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
@@ -29,25 +29,26 @@ superseded_by: null
 
 <h1 align="center">Agency Runtime</h1>
 
-<p align="center">Give your coding agent a bench of 278 audited specialists — without bloating every conversation into a giant prompt.</p>
+<p align="center">Give your coding agent a bench of 263 audited specialists — without bloating every conversation into a giant prompt.</p>
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"/></a>
   <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-blue.svg"/>
-  <img alt="Specialists" src="https://img.shields.io/badge/specialists-278-6366f1.svg"/>
+  <img alt="Specialists" src="https://img.shields.io/badge/specialists-263-6366f1.svg"/>
   <img alt="Hosts" src="https://img.shields.io/badge/hosts-5-38bdf8.svg"/>
   <img alt="Status: prerelease" src="https://img.shields.io/badge/status-prerelease-orange.svg"/>
   <img alt="Platforms" src="https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg"/>
 </p>
 
-For each request, Agency Runtime asks inference who should own the work as if
-the specialist pool were unlimited, then **staffs the nearest faithful roster
-specialist for every unit** — imperfect fit is recorded honestly on the
-response receipt, never used as a reason to leave good candidates unstaffed.
-When no specialist is semantically faithful at all, Agency designs, audits,
-and hires a narrow contractor for the gap. Each chosen specialist's
-instructions apply only inside its exact child task and then leave the active
-context — your main agent stays small.
+For each request, Agency Runtime uses inference to decompose the staffing need
+and identify the expertise an exacting owner would want from an unlimited
+specialist pool. It then selects faithful audited specialists or, for a real
+gap, designs, audits, and hires a narrow contractor. This is a staffing
+decision, not an execution plan: the native host alone decides whether to
+spawn children, what they do, and how it completes the request. When a host
+does start a child, Agency can attach request-scoped specialist cards and
+correlate the host's own evidence. The cards leave the active context with the
+request, so your main agent stays small.
 
 > **Doctrine note (2026-08-05).** Earlier revisions treated any near-match as
 > a mandatory gap and let deterministic coverage checks veto inference-chosen
@@ -60,23 +61,24 @@ context — your main agent stays small.
 
 **You get:**
 
-- 🔭 **Ideal-specialist-first selection** — inference decomposes the ask, defines
-  who an exacting owner would want for each unit from an open-ended role pool,
-  then either reuses a faithful roster match or declares a real gap.
+- 🔭 **Inference-owned staffing** — inference decomposes the ask into bounded
+  staffing needs, defines the ideal expertise from an open-ended role pool, and
+  then either reuses a faithful roster match or declares a real gap. It does
+  not tell the host what child tasks to create or in which order to run them.
 - 🚨 **Fails honestly, never locks you out** — deterministic code can recall and
   validate candidates, but it never chooses a specialist. A substantive turn
   without a valid inference decision selects nobody, reports the exact cause
-  (recruiter abstention, plan-policy veto, provider failure), and lets the host
+  (recruiter abstention, safety rejection, provider failure), and lets the host
   answer as a generalist with a `Recruited via: none` header rather than
   blocking you out of the agent.
-- 🧬 **Specialists bind into subagents** — when your host spins up a child, the
-  exact audited specialist is injected for that one task with a one-use
-  activation receipt.
+- 🧬 **Request-scoped specialist cards** — when a supported host starts a
+  child, Agency can bind audited specialist cards to that host-owned child for
+  the request and record the resulting host-written evidence.
 - 🧑‍💼 **Hires contractors on real gaps** — if no specialist fits, Agency
   compiles, audits, and admits a least-privilege task specialist in the same
   turn; it does not stretch a near-match into a generalist.
-- 📊 **Local dashboard + CLI** — live routing activity, model receipts,
-  workforce lifecycle, and on/off controls.
+- 📊 **Local dashboard + CLI** — staffing decisions, model receipts,
+  workforce lifecycle, bounded delegation-event rows, and owner controls.
 - 🪟 **Windows and Linux**, five native hosts.
 
 > Agency Runtime is prerelease software. Install it from this repository; no
@@ -110,33 +112,37 @@ specialists that your main agent recruits per turn.
 ## 🧒 How it works (ELI5)
 
 Imagine your main agent can staff from an unlimited catalog of possible roles,
-with 278 audited specialists already on payroll.
+with 263 audited specialists already on payroll.
 
 1. You ask the main agent for something.
 2. Agency classifies the turn — new task, follow-up, approval, control command,
    or ordinary conversation.
-3. It **plans** the work into typed units (no agent names yet) and describes
-   the ideal owner for each unit from the open-ended pool.
+3. It builds a bounded **staffing decomposition**: the intended outcome,
+   artifact, lifecycle, domain, stack, capabilities, and authority needed for
+   the request. This identifies expertise; it is not a plan telling the host
+   which children to start or how to execute them.
 4. It **recalls** a bounded, coverage-first sample of enabled specialists that
    could plausibly fit (typed contract fields: artifact, lifecycle, domain,
-   stack, capability, authority — up to 24 candidates per unit, including
+   stack, capability, authority — up to 24 candidates per staffing need, including
    untyped wildcard workers). Recall lists unapproved workers with their
    ineligibility flagged; approval is hard-enforced later, at verification,
    where an unapproved worker can never execute.
-5. The **recruiter** uses inference to staff the nearest faithful roster
-   specialists — staff-first: imperfect typed coverage annotates the receipt
-   rather than blocking the pick. A gap is declared only when no supplied
-   specialist is semantically appropriate, and a gap hires. If inference is
-   unavailable or invalid, the turn fails open: no specialist is selected, the
-   exact cause is reported, and the host answers as a generalist with a
-   `Recruited via: none` header so you are never locked out of the agent.
-6. If two specialists would conflict, Agency separates their work instead of
-   putting both in one prompt.
-7. Every substantive work unit is delegated through the host's native subagent
-   mechanism with its exact specialist bound in. The parent coordinates those
-   workers but never substitutes for one; an undispatchable unit stops the turn
-   with an explicit decline instead of becoming generalist work.
-8. Agency records what really loaded, delegated, hired, and the model evidence.
+5. The **recruiter** uses inference to staff faithful roster specialists —
+   staff-first: imperfect typed coverage annotates the receipt rather than
+   blocking the pick. A gap is declared only when no supplied specialist is
+   semantically appropriate, and a gap hires. If inference is unavailable or
+   invalid, the turn fails open: no specialist is selected, the exact cause is
+   reported, and the host can answer as a generalist with a `Recruited via:
+   none` header.
+6. Compatibility rules keep conflicting specialists and unsafe authority or
+   context combinations out of the same staffing set.
+7. The **host owns execution**. It may use its native child mechanism or
+   continue without spawning; Agency neither requires dispatch nor blocks the
+   parent waiting for it. For a host-started child, supported integrations bind
+   the request's specialist card(s) and correlate the child identity.
+8. Agency records the staffing decision and model evidence; child-start and
+   card-delivery proof come from host-written events, not from a planned
+   delegation claim.
 9. The response shows that evidence in a compact header. On the next request,
    specialists return to the pool.
 
@@ -149,18 +155,18 @@ their audited activation contracts fit.
 ```mermaid
 flowchart LR
     U["Your request"] --> T["Classify turn"]
-    T --> P["Plan typed work units"]
-    P --> I["Infer ideal specialist from open-ended pool"]
+    T --> P["Infer staffing decomposition"]
+    P --> I["Infer ideal expertise from open-ended pool"]
     I --> R["Recall typed roster matches"]
     R --> D{"Inference decision valid?"}
     D -- yes --> RC["Accept faithful match / declare gap"]
     D -- no --> DF["Fail open: generalist + Recruited via: none"]
     RC --> G{"Real gap?"}
     G -- yes --> H["Hire contractor"]
-    G -- no --> V["Verify team"]
+    G -- no --> V["Validate staffing set"]
     H --> V
-    V --> ND["Delegate via native subagent (exact specialist bound)"]
-    ND --> E
+    V --> C["Create request-scoped specialist cards"]
+    C --> E["Host chooses execution and writes child evidence"]
     E --> HDR["Response header (Recruited via: ...)"]
     HDR --> POOL["Specialists return to the pool"]
 ```
@@ -169,117 +175,83 @@ flowchart LR
 
 ## 🔌 Supported hosts
 
-| Host | Integration | Native delegation primitive | Specialist injection | Canary |
+| Host | Integration | Host-native child primitive | Request-scoped card delivery | Canary |
 |---|---|---|---|---|
-| **Codex** | Hooks + MCP + controls | `spawn_agent` → `followup_task` | Activation context + one-use execution envelope | ✅ |
-| **Claude Code** | Hooks + MCP + controls | `Agent` | Hook envelope (PreToolUse bind → one-use receipt) | ✅ |
-| **ZCode** | Hooks + controls | `Agent` (Claude-like) | Hook envelope (PreToolUse bind → one-use receipt) | planned |
-| **Hermes** | Python plugin + MCP | `delegate_task` | MCP-plugin context framing | ✅ |
-| **OpenClaw** | JavaScript plugin | `sessions_spawn` | MCP-plugin context framing | ✅ |
+| **Codex** | Hooks + MCP + controls | `spawn_agent` | Card-delivery evidence when hooks and host artifacts prove it | ✅ |
+| **Claude Code** | Hooks + MCP + controls | `Agent` | Hook-bound specialist cards | ✅ |
+| **ZCode** | Hooks + controls | `Agent` (Claude-like) | Hook-bound cards; child lifecycle evidence is limited | planned |
+| **Hermes** | Python plugin + MCP | `delegate_task` | MCP/plugin specialist-card framing | ✅ |
+| **OpenClaw** | JavaScript plugin | `sessions_spawn` | MCP/plugin specialist-card framing | ✅ |
 
 All hosts have deterministic Windows and Linux contract coverage. **Live status
 is reported separately** — a copied plugin directory is never proof a host loaded
 it. Run `agency doctor --json` to see what is installed and verified.
 
-> **ZCode note:** ZCode reuses the Claude hook model and `Agent`-tool primitive,
-> so it's first-class for main-session routing and native delegation. Specialist
-> binding, activation, and delegation recording work through `PreToolUse` and
-> `PostToolUse` on the `Agent` tool. ZCode does not emit
-> `SubagentStart`/`SubagentStop`, so the supplementary child-identity context and
-> stop lifecycle recording available on Claude/Codex are not produced; the core
-> delegation lifecycle is functional without them.
+> **ZCode note:** ZCode reuses the Claude hook model and `Agent` tool for
+> host-owned child work. It does not emit `SubagentStart`/`SubagentStop`, so the
+> child-identity and stop evidence available on Claude/Codex is not available
+> there. That limits what Agency can prove; it does not authorize Agency to
+> schedule or dispatch a child.
 
 ---
 
-## 🧬 How a specialist gets into a subagent
+## 🧬 How request-scoped specialist cards reach host-started children
 
-Your host keeps its own scheduler. Agency doesn't replace it — it binds the exact
-audited specialist into the child for that one task. There are two mechanisms:
+Your host keeps its own scheduler. Agency does not produce a child-execution
+plan, ask the host to dispatch one, or wait for a dispatch before allowing the
+parent to continue. It supplies a staffing decision for the request. If the
+host independently starts a child, a supported integration may attach one or
+more exact-version specialist cards to that host-owned child.
 
-### Hook hosts (Codex, Claude Code, ZCode)
-
-When the host invokes its native delegation tool (`spawn_agent` / `Agent`), a
-`PreToolUse` hook resolves the one persisted assignment for that child, verifies
-the host-visible assignment matches the plan, and binds the specialist's exact
-versioned prompt. Claude Code and ZCode receive a v1 envelope in the rewritten
-task. Codex keeps collaboration messages encrypted at the parent hook and
-rollout boundary, so Agency never pretends that ciphertext is the plaintext
-assignment. It preserves the ciphertext and requires the unencrypted native
-task label or canonical child path to resolve exactly one persisted row.
-Preflight privately stages that row's exact canonical write paths while
-plaintext is still available; only a genuinely repository-wide row receives
-`.`. `SubagentStart` then consumes the one-use activation receipt against the
-observed child identity and injects a token-free direct delivery (v4) carrying
-that row's immutable specialist prompt, its content-free goal hash, and the
-execution contract for the same turn.
-
-The specialist executes in that initial child turn — Codex delegation is a
-single direct spawn. The injected guidance explicitly forbids `send_message`,
-`followup_task`, spawn retries, and child reuse; the one-use Store claim makes
-any of them fail closed rather than double-dispatch. (An older two-turn
-topology — activation-only first turn, then one goal-hash-bound
-`[AGENCY EXACT TASK EXECUTION v1]` envelope through `followup_task` — remains
-an accepted *alternate proof shape* in canary and rollout verification for
-sessions recorded under it, but it is no longer the prescribed flow.) Outbound
-hook payloads are byte-budgeted at 64 KiB and inbound events at 1 MiB; both
-directions fail closed on overflow rather than silently truncating.
+For hook hosts (Codex, Claude Code, ZCode), the integration observes the host's
+native child-tool lifecycle and binds the card only when its own correlation
+checks succeed. For MCP/plugin hosts (Hermes, OpenClaw), the host bridge frames
+the cards and emits native-child lifecycle events. The card is request-scoped:
+it is not a standing worker prompt, a child-task instruction, or permission for
+Agency to run a second dispatch.
 
 ```mermaid
 sequenceDiagram
     participant Host
-    participant Hook as Agency PreToolUse hook
+    participant Agency
     participant Store as Evidence store
-    participant Child as Native child
-    Host->>Hook: invoke spawn_agent / Agent (goal)
-    Hook->>Store: resolve assignment + exact private path scope
-    Store-->>Hook: exact specialist + version + one-use grant
-    alt plaintext Agent task
-        Hook-->>Host: allow + rewritten v1 specialist envelope
-    else opaque Codex message
-        Hook-->>Host: allow unchanged ciphertext after exact label binding
-        Host->>Hook: PostToolUse (spawn acknowledged)
-        Host->>Hook: SubagentStart (observed child identity)
-        Hook->>Store: consume the only unconsumed grant
-        Hook-->>Child: token-free v4 direct delivery (specialist + goal hash + execution contract)
+    participant Child as Host-started child
+    Host->>Agency: request reaches preflight
+    Agency->>Store: record staffing decision and card identity
+    Host->>Host: choose whether and how to execute
+    opt Host starts a child and correlation succeeds
+        Host->>Agency: native child lifecycle event
+        Agency->>Child: request-scoped specialist card(s)
+        Host->>Store: child/card evidence
     end
-    Host->>Child: execute the authorized specialist turn
-    Child-->>Host: result
-    Host->>Hook: SubagentStop (matching parent/child ciphertext + causal turn)
+    Host->>Agency: natural response / finalization evidence
 ```
 
-Codex does not currently expose the decrypted spawn assignment or an
-authenticated digest to either relevant hook. The exact plan label, byte-equal
-parent and child ciphertext, isolated workspace, goal-hash-bound direct
-delivery, one-use Store consumption, and the causal child turn form the
-observable binding; Agency rejects missing or ambiguous rows rather than
-falling back to an untyped worker. Current Codex opaque children are scheduled
-one at a time because the host does not expose enough authenticated task
-identity to correlate multiple grants awaiting `SubagentStart`.
-
-### MCP-plugin hosts (Hermes, OpenClaw)
-
-These hosts deliver the specialist as prompt-context framing through a subprocess
-backend (`delegate_task` / `sessions_spawn`), and record child lifecycle via
-explicit `native_child_started` / `native_child_ended` bridge actions.
+Only host-written, correlated artifacts establish that a child was staffed.
+An Agency staffing decision, a selected roster card, or a generic child event
+alone is not proof of execution. If evidence is missing or cannot be correlated,
+Agency reports that limitation rather than inventing a dispatch or a successful
+specialist run.
 
 ---
 
 ## 🧑‍💼 Recruiter, gaps, and contractor hiring
 
-Selection is inference-owned:
+Selection is inference-owned; host execution is not:
 
-1. **Plan** — one compact inference call decomposes the ask into typed work units
-   (outcome, artifact, lifecycle, domain, stack, capabilities, authority,
-   dependencies).
+1. **Decompose for staffing** — one compact inference call describes the typed
+   staffing needs for the ask (outcome, artifact, lifecycle, domain, stack,
+   capabilities, authority). It does not create a host execution sequence.
 2. **Define the ideal** — inference asks who an exacting owner would want for
-   each unit if the possible-role pool were unlimited. The parent model is
+   each staffing need if the possible-role pool were unlimited. The parent model is
    structurally excluded (it has no roster identity a nomination can name);
    the recruiter and critic are instructed never to stretch a generalist into
    the role, though that half is a prompt rule, not a deterministic gate.
 3. **Recall** — deterministic typed recall returns a bounded, coverage-first
    sample of plausibly relevant audited workers without ranking or choosing
    them; an empty result remains valid.
-4. **Recruit** — the recruiter explicitly decides `staff` or `gap` per unit and
+4. **Recruit** — the recruiter explicitly decides `staff` or `gap` per staffing
+   need and
    classifies only faithful roster candidates as `required`, `acceptable`, or
    `forbidden`. Staff-first: any faithful candidate staffs; a gap is reserved
    for genuinely missing specialties and may contain no roster candidate at
@@ -361,14 +333,14 @@ roster.)*
 Stack detection is evidence, not a selector: deterministic code reports what
 the repository proves, and inference still owns the pick.
 
-**One ask → a governed multi-specialist team (sequential units):**
+**One ask → a governed multi-specialist staffing set:**
 
-| Ask | Recruited via | Team decomposition |
+| Ask | Recruited via | Staffing view — not a host execution sequence |
 |---|---|---|
 | "Review this code for correctness and security" | inference | `code-reviewer` + `ai-generated-code-security-auditor` |
-| "Design a Git branching strategy" | inference | discovery → design → implement → review → test, incl. `git-workflow-master` |
+| "Design a Git branching strategy" | inference | `git-workflow-master` plus any independently selected supporting expertise |
 | "Build a FluxUI dashboard" | inference | `senior-developer` (owns FluxUI/Livewire/Laravel) |
-| "Investigate and contain this production incident" | inference | discovery → analysis → recovery plan → operations |
+| "Investigate and contain this production incident" | inference | incident-analysis, recovery-planning, and operations expertise as justified by the ask |
 
 **No provider configured, or no valid inference response?** Agency selects no
 specialist, reports the exact cause, and lets the host answer as a generalist
@@ -549,12 +521,12 @@ read-only. See
 
 For Codex, installation also adds one bounded Agency-managed block to the
 active global `~/.codex/AGENTS.override.md` when that file is nonempty, or to
-`~/.codex/AGENTS.md` otherwise. This is the durable owner request that lets an
-ordinary prompt dispatch every inference-accepted `[AGENCY DELEGATION PLAN]`
-row without adding "use subagents" to the prompt. It never selects or names a
-specialist, never changes repository `AGENTS.md` files, preserves all owner
-content outside its markers, and is idempotent. Codex uninstall removes only
-that managed block. See
+`~/.codex/AGENTS.md` otherwise. It supplies the host integration's specialist
+card and evidence-correlation guidance; it does not ask Codex to decompose a
+request into child work, schedule children, or dispatch an inference-authored
+plan. It never selects or names a specialist, never changes repository
+`AGENTS.md` files, preserves all owner content outside its markers, and is
+idempotent. Codex uninstall removes only that managed block. See
 [ADR-0138](docs/decisions/0138-request-automatic-codex-delegation-through-managed-global-guidance.md).
 
 Release artifacts remain canonical and reject executable names or structurally
@@ -598,7 +570,7 @@ agency install --autonomous --verify-activation --json
 Autonomous mode may use the harness's supported noninteractive hook-trust bypass
 for that exact invocation. It records `trust_mode=autonomous_bypass` and never
 claims the hooks were trusted. Both modes must still prove hook start, route,
-exact specialist injection, native child execution, and finalization before
+correlated specialist-card delivery, host-native child lifecycle, and finalization before
 reporting runtime readiness.
 
 The intended post-gate install and rollback commands include ZCode:
@@ -720,10 +692,18 @@ reversible roster specialists.
 ## 📊 Operations dashboard
 
 The optional local dashboard is selected by default during installation and can
-be excluded with `--no-dashboard`. It shows live routing, delegation, provider
-health, model receipts, host status, roster and workforce evidence, recent
-turns, cached/background update status, and the same supported configuration
-and runtime controls as the owner CLI.
+be excluded with `--no-dashboard`. It shows staffing decisions, provider and
+model receipts, host compatibility/status, roster and workforce evidence,
+bounded delegation-event rows, routing latency, specialist-selection
+frequency, recent turns, cached/background update status, and the supported
+owner configuration and runtime controls available in the browser. Its
+Evidence view keeps three authorities separate: host-written artifacts can
+prove card delivery, Store statuses can show Rule-8 exceptions without proving
+what a host did, and trusted staged/cache files can show measured wiring drift
+without a live canary. It is an observatory and owner control plane, not a
+child-execution scheduler. Delegation-event rows may include legacy or
+recommendation-only records; the dashboard shows an observed child only when
+execution correlation exists, and no such row proves specialist-card delivery.
 
 `agency dashboard service open` is an owner convenience operation: it ensures
 an Agency-owned service is installed and running before opening its loopback
@@ -757,6 +737,11 @@ be model-authored. The header is a compact projection of correlated Store
 evidence, not independent proof. A missing, malformed, corrected, or
 evidence-mismatched header makes the turn fail; successful product evidence
 requires correction count zero.
+
+`Agency/Agencies delegated` is a historical, host-observed native-child event
+projection. It does not mean Agency instructed the host to dispatch a child or
+prove that a selected card was delivered; those claims require the separately
+correlated host artifact.
 
 Agency constructs that header before the first visible response. Native Codex
 receives exact Store-backed snapshots at preflight and after recorded tool or

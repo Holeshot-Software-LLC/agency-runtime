@@ -108,6 +108,7 @@ from agency_runtime.core.store.security import (
     storage_file_is_trusted,
     storage_parent_is_trusted,
 )
+from agency_runtime.core.store.selection_distribution import SelectionDistributionStoreMixin
 from agency_runtime.core.store.trace_identity import (
     correlation_digest,
     ensure_correlation_key_integrity,
@@ -777,6 +778,7 @@ class Store(
     DelegationActivationStoreMixin,
     NativeChildStoreMixin,
     EvidenceStoreMixin,
+    SelectionDistributionStoreMixin,
     MaintenanceStoreMixin,
     RosterStoreMixin,
     WorkforceStoreMixin,

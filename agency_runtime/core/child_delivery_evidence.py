@@ -22,8 +22,11 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
+from fnmatch import fnmatchcase
+from heapq import heappush, heapreplace
 from pathlib import Path
 from typing import Any, Final
 
@@ -44,6 +47,8 @@ from agency_runtime.core.store.security import (
 MAX_LAUNCH_PREFIX_BYTES: Final[int] = 512 * 1024
 MAX_LAUNCH_RECORDS: Final[int] = 64
 MAX_CHILD_ARTIFACTS: Final[int] = 4096
+MAX_CHILD_FILESYSTEM_ENTRIES: Final[int] = 16_384
+MAX_CHILD_DETAIL_RESULTS: Final[int] = 200
 
 _CLAUDE_CHILD_GLOB: Final[str] = "*/*/subagents/**/agent-*.jsonl"
 _CODEX_CHILD_GLOB: Final[str] = "*/*/*/rollout-*.jsonl"
@@ -84,6 +89,21 @@ class ChildDeliveryEvidence:
         """Whether this child provably received at least one just-in-time card."""
 
         return bool(self.cards)
+
+
+@dataclass(frozen=True, slots=True)
+class ChildArtifactScan:
+    """Bounded newest candidates plus truthful host-tree traversal metadata."""
+
+    root_present: bool
+    candidate_count: int
+    candidate_count_complete: bool
+    filesystem_entries_visited: int
+    artifacts: tuple[Path, ...]
+
+    @property
+    def truncated(self) -> bool:
+        return not self.candidate_count_complete or self.candidate_count > len(self.artifacts)
 
 
 def _trusted_launch_prefix(path: Path, *, label: str) -> str | None:
@@ -298,28 +318,105 @@ def default_child_artifact_root(host: str) -> Path:
     raise ValueError("child delivery evidence host is unsupported")
 
 
-def _bounded_matches(root: Path, pattern: str) -> list[Path]:
-    if not root.is_dir():
-        return []
-    matches: list[Path] = []
-    for candidate in root.glob(pattern):
-        if len(matches) >= MAX_CHILD_ARTIFACTS:
-            break
-        if candidate.is_file():
-            matches.append(candidate)
-    return sorted(matches)
+def _artifact_path_matches(host: str, parts: tuple[str, ...]) -> bool:
+    """Whether one relative path has the host's child-artifact shape."""
+
+    if host == "claude":
+        return (
+            len(parts) >= 4 and parts[2] == "subagents" and fnmatchcase(parts[-1], "agent-*.jsonl")
+        )
+    return len(parts) == 4 and fnmatchcase(parts[-1], "rollout-*.jsonl")
+
+
+def _artifact_directory_can_match(host: str, parts: tuple[str, ...]) -> bool:
+    """Prune traversal to directories that can satisfy the host layout."""
+
+    if host == "claude":
+        if len(parts) <= 2:
+            return True
+        return parts[2] == "subagents"
+    return len(parts) < 4
+
+
+def _bounded_matches(root: Path, host: str) -> ChildArtifactScan:
+    """Return newest candidates from one strictly bounded host-tree visit.
+
+    ``Path.glob`` is lazy but can still recursively enumerate and ``stat`` an
+    unbounded host history before returning. This walker counts every directory
+    entry it examines and stops at ``MAX_CHILD_FILESYSTEM_ENTRIES``. It keeps
+    only the newest ``MAX_CHILD_ARTIFACTS`` candidates while continuing the
+    bounded visit, so a later, newer artifact can still replace an older one.
+    When the visit stops early, ``candidate_count`` is explicitly a lower bound.
+    """
+
+    try:
+        root_present = root.is_dir()
+    except OSError:
+        root_present = False
+    if not root_present:
+        return ChildArtifactScan(False, 0, True, 0, ())
+    newest: list[tuple[int, str]] = []
+    candidate_count = 0
+    entries_visited = 0
+    candidate_count_complete = True
+    pending: list[tuple[Path, tuple[str, ...]]] = [(root, ())]
+    stop = False
+    while pending and not stop:
+        directory, prefix = pending.pop()
+        try:
+            entries = os.scandir(directory)
+        except OSError:
+            candidate_count_complete = False
+            continue
+        with entries:
+            for entry in entries:
+                if entries_visited >= MAX_CHILD_FILESYSTEM_ENTRIES:
+                    candidate_count_complete = False
+                    stop = True
+                    break
+                entries_visited += 1
+                parts = (*prefix, entry.name)
+                try:
+                    if entry.is_dir(follow_symlinks=False):
+                        if _artifact_directory_can_match(host, parts):
+                            pending.append((Path(entry.path), parts))
+                        continue
+                    if not _artifact_path_matches(host, parts) or not entry.is_file(
+                        follow_symlinks=False
+                    ):
+                        continue
+                    metadata = entry.stat(follow_symlinks=False)
+                except OSError:
+                    candidate_count_complete = False
+                    continue
+                if not stat.S_ISREG(metadata.st_mode):
+                    continue
+                candidate_count += 1
+                item = (int(metadata.st_mtime_ns), str(entry.path))
+                if len(newest) < MAX_CHILD_ARTIFACTS:
+                    heappush(newest, item)
+                elif item > newest[0]:
+                    heapreplace(newest, item)
+    artifacts = tuple(Path(path) for _mtime, path in sorted(newest, reverse=True))
+    return ChildArtifactScan(
+        True,
+        candidate_count,
+        candidate_count_complete,
+        entries_visited,
+        artifacts,
+    )
 
 
 def claude_child_artifacts(projects_root: Path) -> list[Path]:
     """Every Claude sub-agent transcript under one projects root."""
 
-    return _bounded_matches(Path(projects_root), _CLAUDE_CHILD_GLOB)
+    return list(_bounded_matches(Path(projects_root), "claude").artifacts)
 
 
 def codex_child_artifacts(sessions_root: Path) -> list[Path]:
     """Every Codex rollout under one date-partitioned sessions root."""
 
-    return _bounded_matches(Path(sessions_root), _CODEX_CHILD_GLOB)
+    return list(_bounded_matches(Path(sessions_root), "codex").artifacts)
 
 
 def child_delivery_evidence(path: Path, *, host: str) -> ChildDeliveryEvidence | None:
@@ -336,32 +433,112 @@ def child_delivery_evidence(path: Path, *, host: str) -> ChildDeliveryEvidence |
 def scan_child_delivery_evidence(root: Path, *, host: str) -> list[ChildDeliveryEvidence]:
     """Read every child artifact one host wrote beneath *root*."""
 
-    normalized = str(host or "").strip().casefold()
-    if normalized == "claude":
-        artifacts = claude_child_artifacts(Path(root))
-    elif normalized == "codex":
-        artifacts = codex_child_artifacts(Path(root))
-    else:
-        raise ValueError("child delivery evidence host is unsupported")
+    scan = scan_child_artifacts(root, host=host)
     findings = []
-    for artifact in artifacts:
-        evidence = child_delivery_evidence(artifact, host=normalized)
+    for artifact in scan.artifacts:
+        evidence = child_delivery_evidence(artifact, host=host)
         if evidence is not None:
             findings.append(evidence)
     return findings
 
 
+def scan_child_artifacts(root: Path, *, host: str) -> ChildArtifactScan:
+    """Return one host's bounded newest candidate window without reading bodies."""
+
+    normalized = str(host or "").strip().casefold()
+    if normalized == "claude":
+        return _bounded_matches(Path(root), "claude")
+    elif normalized == "codex":
+        return _bounded_matches(Path(root), "codex")
+    else:
+        raise ValueError("child delivery evidence host is unsupported")
+
+
+def child_delivery_projection(
+    root: Path,
+    *,
+    host: str,
+    limit: int = 50,
+) -> dict[str, Any]:
+    """Project bounded, newest independent child-delivery proof for one host.
+
+    An empty ``children`` list means no verified card-delivery proof was found
+    in the bounded artifact window. It never means the host spawned no children.
+    """
+
+    normalized = str(host or "").strip().casefold()
+    if (
+        isinstance(limit, bool)
+        or not isinstance(limit, int)
+        or not 1 <= limit <= MAX_CHILD_DETAIL_RESULTS
+    ):
+        raise ValueError(
+            f"child evidence detail limit must be between 1 and {MAX_CHILD_DETAIL_RESULTS}"
+        )
+    scan = scan_child_artifacts(Path(root), host=normalized)
+    findings: list[ChildDeliveryEvidence] = []
+    for artifact in scan.artifacts:
+        evidence = child_delivery_evidence(artifact, host=normalized)
+        if evidence is not None:
+            findings.append(evidence)
+    staffed = [finding for finding in findings if finding.staffed]
+    details = findings[:limit]
+    return {
+        "host": normalized,
+        "root": str(root),
+        "root_present": scan.root_present,
+        "artifact_candidates": scan.candidate_count,
+        "artifact_candidate_count_complete": scan.candidate_count_complete,
+        "artifacts_scanned": len(scan.artifacts),
+        "artifact_scan_truncated": scan.truncated,
+        "filesystem_entries_visited": scan.filesystem_entries_visited,
+        "evidence_count": len(findings),
+        "staffed_children": len(staffed),
+        "correlated_staffed_children": sum(1 for item in staffed if item.correlated),
+        "uncorrelated_staffed_children": sum(1 for item in staffed if not item.correlated),
+        "legacy_deliveries": sum(
+            1 for item in findings if item.legacy_delivery and not item.staffed
+        ),
+        "detail_limit": limit,
+        "detail_truncated": len(findings) > limit,
+        "children": [
+            {
+                "child_id": finding.child_id,
+                "artifact": finding.artifact,
+                "parent_id": finding.host_parent_id,
+                "envelope_parent_id": finding.envelope_parent_id,
+                "correlated": finding.correlated,
+                "legacy": finding.legacy_delivery,
+                "cards": [
+                    {
+                        "slug": card.specialist_slug,
+                        "version": card.specialist_version,
+                        "prompt_hash": card.specialist_prompt_hash,
+                    }
+                    for card in finding.cards
+                ],
+            }
+            for finding in details
+        ],
+    }
+
+
 __all__ = [
     "MAX_CHILD_ARTIFACTS",
+    "MAX_CHILD_DETAIL_RESULTS",
+    "MAX_CHILD_FILESYSTEM_ENTRIES",
     "MAX_LAUNCH_PREFIX_BYTES",
     "MAX_LAUNCH_RECORDS",
+    "ChildArtifactScan",
     "ChildDeliveryEvidence",
     "DeliveredCard",
     "child_delivery_evidence",
+    "child_delivery_projection",
     "claude_child_artifacts",
     "claude_child_delivery_evidence",
     "codex_child_artifacts",
     "codex_child_delivery_evidence",
     "default_child_artifact_root",
+    "scan_child_artifacts",
     "scan_child_delivery_evidence",
 ]

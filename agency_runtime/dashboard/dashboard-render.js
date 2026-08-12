@@ -20,13 +20,28 @@ const ROUTE_LAB_PLATFORMS = new Set(["windows", "linux"]);
 
 const EVIDENCE_COLUMNS = {
 	specialists: [["slug", "Specialist"], ["session_id", "Session"], ["trace_id", "Trace"], ["state", "Evidence state"], ["loaded_at", "Activated"], ["expired_at", "Expired"]],
-	delegations: [["recommended_agent", "Agent"], ["host", "Host"], ["status", "Status"], ["backend", "Backend"], ["work_unit_id", "Work unit"], ["started_at", "Started"]],
+	delegations: [["observed_child", "Observed child"], ["host", "Host"], ["status", "Event state"], ["backend", "Host tool"], ["work_unit_id", "Recorded correlation ID"], ["started_at", "Observed"]],
 	routing: [["trace_id", "Trace"], ["id", "Decision"], ["status", "Outcome"], ["semantic_status", "Semantic result"], ["source", "Source"], ["selected_ids", "Selected"], ["fallback_applied", "Fallback applied"], ["fallback_companion_ids", "Fallback policy IDs"], ["created_at", "Created"]],
 	receipts: [["requested_model", "Requested"], ["model_group", "LiteLLM router / model group"], ["resolved_provider", "Actual provider"], ["resolved_model", "Actual model"], ["host", "Host"], ["status", "Status"], ["source", "Source"], ["ended_at", "Ended"]],
 	runs: [["trace_id", "Trace"], ["session_id", "Session"], ["host", "Host"], ["status", "Status"], ["started_at", "Started"], ["ended_at", "Ended"]],
 	preflight_failures: [["trace_id", "Trace"], ["host", "Host"], ["stage", "Failed stage"], ["reason_code", "Reason"], ["invariant_code", "Invariant"], ["exception_category", "Category"], ["recorded_at", "Recorded"]],
 	finalizations: [["trace_id", "Trace"], ["host", "Host"], ["action", "Action"], ["missing", "Missing"], ["created_at", "Created"]],
 };
+
+function observedChildIdentity(row) {
+	if (!isRecord(row)) return "No correlated child identity";
+	const kind = typeof row.executed_worker_kind === "string"
+		? row.executed_worker_kind.trim()
+		: "";
+	const workerId = typeof row.executed_worker_id === "string"
+		? row.executed_worker_id.trim()
+		: "";
+	const nativeRunId = typeof row.native_run_id === "string"
+		? row.native_run_id.trim()
+		: "";
+	if (!kind || !workerId || !nativeRunId) return "Not observed";
+	return `${kind} · ${workerId} · run ${nativeRunId}`;
+}
 
 function routeLabTokensAreValid(values, { allowed = null, limit = ROUTE_LAB_CAPABILITY_LIMIT } = {}) {
 	if (!Array.isArray(values) || values.length > limit) return false;
@@ -150,6 +165,34 @@ export function createRenderer(core, config, callbacks) {
 		if (previous !== undefined && previous !== rendered) markUpdated(node);
 	}
 
+	function collectionSourceState(name) {
+		const source = state.workforceSources?.[name];
+		const status = ["not_loaded", "current", "stale", "unavailable"].includes(source?.status)
+			? source.status
+			: "not_loaded";
+		return {
+			status,
+			error: typeof source?.error === "string" ? source.error : "",
+			lastGoodAt: source?.lastGoodAt || null,
+		};
+	}
+
+	function collectionSourceLabel(source) {
+		return source.status.replaceAll("_", " ").toUpperCase();
+	}
+
+	function collectionSourceSummary(source, label) {
+		const sampled = source.lastGoodAt ? ` from ${formatTime(source.lastGoodAt)}` : "";
+		if (source.status === "current") return `${label} source current${sampled}.`;
+		if (source.status === "stale") {
+			return `${label} source stale; retaining the last-good sample${sampled}.${source.error ? ` ${source.error}` : ""}`;
+		}
+		if (source.status === "unavailable") {
+			return `${label} source unavailable; no validated sample.${source.error ? ` ${source.error}` : ""}`;
+		}
+		return `${label} source has not loaded.`;
+	}
+
 	function renderCharts() {
 		const charts = runtime.AgencyCharts;
 		if (!charts) return;
@@ -233,6 +276,235 @@ export function createRenderer(core, config, callbacks) {
 		});
 	}
 
+	function formatLatency(value) {
+		const milliseconds = Number(value);
+		if (!Number.isFinite(milliseconds) || milliseconds < 0) return "—";
+		if (milliseconds < 1000) return `${Math.round(milliseconds)} ms`;
+		return `${(milliseconds / 1000).toFixed(milliseconds < 10_000 ? 2 : 1)} s`;
+	}
+
+	function metricSourceMetadata(name) {
+		return state.metricEvidence?.sources?.[name]
+			|| { stale: false, unavailable: false, error: "", sampledAt: null };
+	}
+
+	function metricEvidenceContext(name, base) {
+		const metadata = metricSourceMetadata(name);
+		if (metadata.stale) {
+			return `${base} Last refresh retained prior evidence: ${metadata.error || "source unavailable"}`;
+		}
+		if (metadata.unavailable) {
+			return `${base} No validated source sample is available: ${metadata.error || "source unavailable"}`;
+		}
+		return base;
+	}
+
+	function renderSelectionDistribution() {
+		const data = state.selectionDistribution;
+		const chart = byId("selection-chart");
+		const tail = byId("selection-tail-body");
+		chart?.replaceChildren();
+		tail?.replaceChildren();
+		if (!chart || !tail) return;
+		const stateTag = byId("selection-evidence-state");
+		const sourceMetadata = metricSourceMetadata("selections");
+		if (!data) {
+			setMetric("selection-metric-decisions", "—");
+			setMetric("selection-metric-distinct", "—");
+			setMetric("selection-metric-roster", "—");
+			setMetric("selection-metric-occurrences", "—");
+			setMetric("selection-metric-concentration", "—");
+			if (stateTag) {
+				stateTag.textContent = sourceMetadata.unavailable ? "UNAVAILABLE" : "LOADING";
+				stateTag.dataset.state = sourceMetadata.unavailable ? "unavailable" : "unknown";
+			}
+			byId("selection-evidence-context").textContent = metricEvidenceContext("selections",
+				"Selection evidence has not loaded.",
+			);
+			const empty = div("empty-compact", "No selection-bearing decisions recorded.");
+			empty.setAttribute("role", "listitem");
+			chart.append(empty);
+			tail.append(emptyRow(4, "No bounded long-tail evidence."));
+			return;
+		}
+
+		const decisions = data.decisions_with_selections;
+		setMetric("selection-metric-decisions", decisions);
+		setMetric("selection-metric-distinct", data.distinct_selected_specialists);
+		setMetric("selection-metric-roster", data.active_roster_size);
+		setMetric("selection-metric-occurrences", data.selection_occurrences);
+		setMetric(
+			"selection-metric-concentration",
+			`${(data.top_10_share_of_selection_occurrences * 100).toFixed(1)}%`,
+		);
+		if (stateTag) {
+			stateTag.textContent = sourceMetadata.stale
+				? "STALE"
+				: decisions > 0 ? "OBSERVED" : "NO DATA";
+			stateTag.dataset.state = sourceMetadata.stale
+				? "stale"
+				: decisions > 0 ? "observed" : "unknown";
+		}
+		const scanState = data.selection_bearing_decision_scan_truncated
+			? `Newest ${data.selection_bearing_decision_scan_limit} selection-bearing decisions; older retained evidence is outside this view.`
+			: `All retained selection-bearing decisions were scanned, up to the ${data.selection_bearing_decision_scan_limit}-decision safety limit.`;
+		byId("selection-evidence-context").textContent = metricEvidenceContext("selections",
+			decisions > 0
+				? `${decisions} decisions contain ${data.selection_occurrences} specialist selections. Current active roster: ${data.active_roster_size}. ${scanState} Per-specialist decision shares are independent and need not sum to 100%.`
+				: `No selection-bearing decisions recorded. Current active roster: ${data.active_roster_size}. ${scanState}`,
+		);
+		if (!decisions) {
+			const empty = div("empty-compact", "No selection-bearing decisions recorded.");
+			empty.setAttribute("role", "listitem");
+			chart.append(empty);
+		} else {
+			data.top_specialists.slice(0, 15).forEach((row) => {
+				const share = row.share_of_decisions_with_selections * 100;
+				const item = div("selection-bar-row");
+				item.setAttribute("role", "listitem");
+				const label = div("selection-bar-label");
+				label.append(
+					strong("", row.slug),
+					small("", `${row.decisions_containing_specialist} decisions · ${share.toFixed(1)}%`),
+				);
+				const track = el("progress", "selection-bar-track");
+				track.setAttribute("aria-hidden", "true");
+				track.max = 100;
+				track.value = Math.max(0, Math.min(100, share));
+				track.setAttribute("max", "100");
+				track.setAttribute("value", track.value.toFixed(2));
+				item.append(label, track);
+				chart.append(item);
+			});
+		}
+		data.top_specialists.slice(10).forEach((row) => {
+			const tr = el("tr");
+			[
+				row.slug,
+				row.decisions_containing_specialist,
+				`${(row.share_of_decisions_with_selections * 100).toFixed(1)}%`,
+				row.selection_occurrences,
+			].forEach((value) => tr.append(el("td", "", value)));
+			tail.append(tr);
+		});
+		if (data.long_tail.specialist_count > 0) {
+			const tr = el("tr", "aggregate-row");
+			[
+				`${data.long_tail.specialist_count} specialists beyond top 50`,
+				data.long_tail.decisions_containing_specialist,
+				`${(data.long_tail.share_of_decisions_with_selections * 100).toFixed(1)}%`,
+				data.long_tail.selection_occurrences,
+			].forEach((value) => tr.append(el("td", "", value)));
+			tail.append(tr);
+		}
+		if (!tail.children.length) tail.append(emptyRow(4, "No specialists outside the top 10."));
+	}
+
+	function renderRoutingLatency() {
+		const data = state.routingLatency;
+		const sourceBody = byId("latency-source-body");
+		const slowestBody = byId("latency-slowest-body");
+		sourceBody?.replaceChildren();
+		slowestBody?.replaceChildren();
+		if (!sourceBody || !slowestBody) return;
+		const budgetTag = byId("latency-budget-state");
+		const sourceMetadata = metricSourceMetadata("latency");
+		if (!data) {
+			for (const id of ["latency-metric-p50", "latency-metric-p95", "latency-metric-provider", "latency-metric-agency", "latency-metric-calls"]) {
+				setMetric(id, "—");
+			}
+			if (budgetTag) {
+				budgetTag.textContent = sourceMetadata.unavailable ? "UNAVAILABLE" : "UNKNOWN";
+				budgetTag.dataset.state = sourceMetadata.unavailable ? "unavailable" : "unknown";
+			}
+			byId("latency-evidence-context").textContent = metricEvidenceContext("latency",
+				"Routing latency evidence has not loaded.",
+			);
+			sourceBody.append(emptyRow(4, "No eligible routing evidence."));
+			slowestBody.append(emptyRow(5, "No eligible routing evidence."));
+			return;
+		}
+
+		const hasEvidence = data.overall.count > 0;
+		setMetric("latency-metric-p50", hasEvidence ? formatLatency(data.overall.p50_ms) : "—");
+		setMetric("latency-metric-p95", hasEvidence ? formatLatency(data.overall.p95_ms) : "—");
+		setMetric("latency-metric-provider", data.split.provider_ms.count
+			? formatLatency(data.split.provider_ms.p50_ms) : "—");
+		setMetric("latency-metric-agency", data.split.derived_routing_remainder_ms.count
+			? formatLatency(data.split.derived_routing_remainder_ms.p50_ms) : "—");
+		setMetric("latency-metric-calls", data.split.decisions
+			? data.split.calls_per_decision.toFixed(2) : "—");
+		const budgetState = !hasEvidence ? "UNKNOWN" : data.over_budget ? "OVER BUDGET" : "WITHIN BUDGET";
+		if (budgetTag) {
+			budgetTag.textContent = `${sourceMetadata.stale ? "STALE · " : ""}${budgetState}`;
+			budgetTag.dataset.state = sourceMetadata.stale
+				? "stale" : !hasEvidence ? "unknown" : data.over_budget ? "over" : "within";
+		}
+		const attribution = data.split.unattributed_decisions
+			? `${data.split.unattributed_decisions} decision(s) have incomplete or inconsistent provider timing and are excluded from the provider/remainder breakdown.`
+			: `${data.split.decisions} decision(s) have complete provider timing; the displayed routing remainder is recorded total minus provider time.`;
+		byId("latency-evidence-context").textContent = metricEvidenceContext("latency",
+			hasEvidence
+				? `Newest ${data.overall.count} positive-latency decisions within a ${data.window.limit}-decision window. p95 is compared with the ${formatLatency(data.budget_ms)} budget; equality passes. ${attribution}`
+				: `No eligible routing evidence. Zero or absent durations are unknown, never fast. Budget: ${formatLatency(data.budget_ms)}.`,
+		);
+		Object.entries(data.by_source).forEach(([source, summary]) => {
+			const tr = el("tr");
+			[source, summary.count, formatLatency(summary.p50_ms), formatLatency(summary.p95_ms)]
+				.forEach((value) => tr.append(el("td", "", value)));
+			sourceBody.append(tr);
+		});
+		if (!sourceBody.children.length) sourceBody.append(emptyRow(4, "No eligible routing evidence."));
+		data.slowest.forEach((row) => {
+			const attributable = Number(row.provider_calls) > 0
+				&& Number(row.provider_unknown_calls || 0) === 0
+				&& Number(row.provider_timed_calls ?? row.provider_calls) === Number(row.provider_calls)
+				&& Number(row.provider_ms) > 0
+				&& Number(row.provider_ms) <= Number(row.latency_ms);
+			const tr = el("tr");
+			[
+				row.source || "unknown",
+				formatLatency(row.latency_ms),
+				attributable ? formatLatency(row.provider_ms) : "unknown",
+				attributable ? formatLatency(Math.max(0, row.latency_ms - row.provider_ms)) : "unknown",
+				formatTime(row.created_at),
+			].forEach((value) => tr.append(el("td", "", value)));
+			slowestBody.append(tr);
+		});
+		if (!slowestBody.children.length) slowestBody.append(emptyRow(5, "No eligible routing evidence."));
+	}
+
+	function renderMetricEvidence() {
+		renderSelectionDistribution();
+		renderRoutingLatency();
+		const freshness = byId("metric-evidence-freshness");
+		if (freshness) {
+			const sourceLine = (name, label) => {
+				const metadata = metricSourceMetadata(name);
+				if (metadata.stale && metadata.sampledAt) {
+					return `${label} last-good sample ${formatTime(metadata.sampledAt)}; refresh failed`;
+				}
+				if (metadata.unavailable) return `${label} unavailable; no validated sample`;
+				if (metadata.sampledAt) return `${label} source sampled ${formatTime(metadata.sampledAt)}`;
+				return `${label} source not loaded`;
+			};
+			const message = `${sourceLine("selections", "Selection")}; ${sourceLine("latency", "latency")}.`;
+			if (freshness.textContent !== message) freshness.textContent = message;
+		}
+		const status = byId("metric-evidence-status");
+		if (status) {
+			const sourceState = (name) => {
+				const metadata = metricSourceMetadata(name);
+				if (metadata.stale) return "stale";
+				if (metadata.unavailable) return "unavailable";
+				if (metadata.sampledAt) return "current";
+				return "not loaded";
+			};
+			const message = `Decision evidence: selection ${sourceState("selections")}; latency ${sourceState("latency")}.`;
+			if (status.textContent !== message) status.textContent = message;
+		}
+	}
+
 	function renderOverview() {
 		const data = state.overview || {};
 		setMetric(
@@ -257,7 +529,7 @@ export function createRenderer(core, config, callbacks) {
 			const key = evidenceRowKey(row, index);
 			nextOverviewKeys.add(key);
 			if (previousOverviewKeys.size && !previousOverviewKeys.has(key)) tr.classList.add("is-new");
-			[row.recommended_agent || "unassigned", row.host || "unknown"].forEach((value) => {
+			[observedChildIdentity(row), row.host || "unknown"].forEach((value) => {
 				tr.append(el("td", "", value));
 			});
 			const status = span( `status ${row.status || ""}`, row.status || "unknown");
@@ -268,7 +540,7 @@ export function createRenderer(core, config, callbacks) {
 			tbody.append(tr);
 		});
 		state.evidenceKeys.set("overview", nextOverviewKeys);
-		if (!tbody.children.length) tbody.append(emptyRow(5, "No delegation evidence yet."));
+		if (!tbody.children.length) tbody.append(emptyRow(5, "No delegation-event rows observed yet."));
 
 		const hostStack = byId("overview-hosts");
 		hostStack.replaceChildren();
@@ -333,6 +605,7 @@ export function createRenderer(core, config, callbacks) {
 				providerStack.append(row);
 			});
 		}
+		renderMetricEvidence();
 		if (!providerStack.children.length) {
 			providerStack.append(div( "empty-compact", inference?.configured
 				? "Configured inference has no provider-chain projection."
@@ -442,7 +715,7 @@ export function createRenderer(core, config, callbacks) {
 				} else if (status === "verified") {
 					proof.append(
 						strong( "", "Last successful activation proof"),
-						small( "", "Current for the recorded host and install identity; model and delegation settings are not bound."),
+						small( "", "Current for the recorded host and install identity; model and host-native lifecycle settings are not bound."),
 					);
 					appendFacts();
 				} else if (status === "stale") {
@@ -993,7 +1266,225 @@ export function createRenderer(core, config, callbacks) {
 		renderReviewQueue();
 	}
 
+	function renderVisionSourceState(name, data) {
+		const metadata = state.visionEvidence?.sources?.[name] || {};
+		const unavailable = metadata.unavailable || (metadata.stale && !data);
+		const tagId = name === "rejections" ? "vision-rule8-state" : `vision-${name}-state`;
+		const tag = byId(tagId);
+		if (tag) {
+			tag.textContent = unavailable ? "UNAVAILABLE"
+				: metadata.stale ? "STALE" : data ? "OBSERVED" : "NOT LOADED";
+			tag.dataset.state = unavailable
+				? "unavailable" : metadata.stale ? "stale" : data ? "observed" : "unknown";
+		}
+		const freshnessId = name === "rejections"
+			? "vision-rule8-freshness"
+			: `vision-${name}-freshness`;
+		const freshness = byId(freshnessId);
+		if (freshness) {
+			if (unavailable) {
+				freshness.textContent = `No validated source sample is available. Refresh failed: ${metadata.error || "source unavailable"}`;
+			} else if (metadata.stale && data) {
+				freshness.textContent = `Last-good source sample ${formatTime(metadata.sampledAt)}. Refresh failed: ${metadata.error || "source unavailable"}`;
+			} else if (metadata.sampledAt) {
+				freshness.textContent = `Source sampled ${formatTime(metadata.sampledAt)}.`;
+			} else {
+				freshness.textContent = "This proof source has not been loaded; the live-sync timestamp does not apply.";
+			}
+		}
+	}
+
+	function renderChildDeliveryEvidence() {
+		const data = state.visionEvidence?.children;
+		renderVisionSourceState("children", data);
+		const source = byId("vision-children-source");
+		const bounds = byId("vision-children-bounds");
+		const summary = byId("vision-children-summary");
+		const list = byId("vision-children-list");
+		if (!source || !bounds || !summary || !list) return;
+		list.replaceChildren();
+		source.textContent = data
+			? "Source: hash-verified specialist cards in host-written Claude and Codex child artifacts. Agency Store staffing rows are not consulted."
+			: "Source: host-written Claude and Codex child artifacts; Agency Store staffing rows are not a substitute.";
+		if (!data) {
+			bounds.textContent = "Bounded artifact scan details will appear after this source loads.";
+			summary.textContent = "No validated child-delivery proof sample is available.";
+			const empty = div("empty-compact", "Child-delivery proof has not loaded.");
+			empty.setAttribute("role", "listitem");
+			list.append(empty);
+			return;
+		}
+		const totals = data.hosts.reduce((result, host) => ({
+			candidates: result.candidates + host.artifact_candidates,
+			scanned: result.scanned + host.artifacts_scanned,
+			evidence: result.evidence + host.evidence_count,
+			staffed: result.staffed + host.staffed_children,
+			correlated: result.correlated + host.correlated_staffed_children,
+			uncorrelated: result.uncorrelated + host.uncorrelated_staffed_children,
+			legacy: result.legacy + host.legacy_deliveries,
+			visits: result.visits + host.filesystem_entries_visited,
+			incomplete: result.incomplete || !host.artifact_candidate_count_complete,
+		}), { candidates: 0, scanned: 0, evidence: 0, staffed: 0, correlated: 0, uncorrelated: 0, legacy: 0, visits: 0, incomplete: false });
+		bounds.textContent = `Bounds: at most ${data.bounds.filesystem_visit_limit_per_host} host-tree entries and ${data.bounds.artifact_scan_limit_per_host} artifact bodies per host; ${formatBytes(data.bounds.artifact_prefix_bytes)} prefix and ${data.bounds.artifact_record_limit} records per artifact; ${data.bounds.detail_limit} detail rows per host. Visited ${totals.visits} entries and scanned ${totals.scanned} of ${totals.candidates}${totals.incomplete ? "+" : ""} observed candidates in this sample${totals.incomplete ? "; candidate counts are lower bounds where traversal stopped" : ""}.`;
+		summary.textContent = `${totals.staffed} children contain verified specialist cards (${totals.correlated} parent-correlated, ${totals.uncorrelated} uncorrelated); ${totals.legacy} legacy delivery markers contain no specialist card proof.`;
+		data.hosts.forEach((host) => {
+			const row = el("article", "vision-proof-row");
+			row.setAttribute("role", "listitem");
+			row.append(
+				strong("", host.host),
+				small("", `${host.artifacts_scanned} of ${host.artifact_candidates}${host.artifact_candidate_count_complete ? "" : "+"} observed candidates scanned · ${host.filesystem_entries_visited} host-tree entries visited${host.artifact_scan_truncated ? " · traversal or body bound reached" : ""}`),
+				small("", `${host.staffed_children} verified staffed children · ${host.evidence_count} delivery findings${host.detail_truncated ? " · details truncated" : ""}`),
+				small("vision-proof-path", `Artifact root (${host.root_present ? "present" : "not observed"}): ${host.root}`),
+			);
+			host.children.forEach((child) => {
+				const detail = div("vision-proof-detail");
+				const cardSummary = child.cards.length
+					? child.cards.map((card) => `${card.slug}@${card.version}`).join(", ")
+					: "legacy delivery marker; no verified specialist cards";
+				detail.append(
+					strong("", child.child_id),
+					small("", `${child.correlated ? "parent-correlated" : "not parent-correlated"} · ${cardSummary}`),
+					small("vision-proof-path", child.artifact),
+				);
+				row.append(detail);
+			});
+			list.append(row);
+		});
+		if (totals.staffed === 0) {
+			const empty = div(
+				"empty-compact vision-proof-caveat",
+				"No verified specialist-card delivery evidence was found in the bounded artifact scan. This does not mean no children were started.",
+			);
+			empty.setAttribute("role", "listitem");
+			list.append(empty);
+		}
+	}
+
+	function rule8RunRow(row, label) {
+		const item = el("article", "vision-proof-row");
+		item.setAttribute("role", "listitem");
+		item.append(
+			strong("", `${label} · ${row.status}`),
+			small("", `Host ${row.host || "unknown"} · ended ${formatTime(row.ended_at || row.started_at)}`),
+			small("", `Trace ${row.trace_id || "unavailable"} · session ${row.session_id || "unavailable"}`),
+		);
+		return item;
+	}
+
+	function renderRule8Evidence() {
+		const data = state.visionEvidence?.rejections;
+		renderVisionSourceState("rejections", data);
+		const source = byId("vision-rule8-source");
+		const bounds = byId("vision-rule8-bounds");
+		const summary = byId("vision-rule8-summary");
+		const list = byId("vision-rule8-list");
+		if (!source || !bounds || !summary || !list) return;
+		list.replaceChildren();
+		source.textContent = "Source: Agency Store runs.status. These rows distinguish Agency-withheld responses from Agency-blind failures; they are not host execution or publication proof.";
+		if (!data) {
+			bounds.textContent = "The bounded exceptional-run window will appear after this source loads.";
+			summary.textContent = "No validated Rule-8 evidence sample is available.";
+			const empty = div("empty-compact", "Rule-8 evidence has not loaded.");
+			empty.setAttribute("role", "listitem");
+			list.append(empty);
+			return;
+		}
+		bounds.textContent = `Bounds: newest ${data.window.limit} matching exceptional runs${data.window.host ? ` for ${data.window.host}` : " across all hosts"}; ${data.window.returned} returned.`;
+		summary.textContent = `${data.counts.withheld} withheld by Agency · ${data.counts.agency_blind} Agency-blind failures · ${data.counts.matching_exceptional_runs} total matching statuses.`;
+		data.withheld.forEach((row) => list.append(rule8RunRow(row, "Withheld by Agency")));
+		data.agency_blind.forEach((row) => list.append(
+			rule8RunRow(row, "Agency blind; publication not inferred"),
+		));
+		if (data.counts.matching_exceptional_runs === 0) {
+			const empty = div(
+				"empty-compact vision-proof-caveat",
+				"No matching exceptional statuses were found in the bounded window. This is not a health claim.",
+			);
+			empty.setAttribute("role", "listitem");
+			list.append(empty);
+		}
+	}
+
+	function wiringOutcome(host) {
+		if (host.status === "wired") {
+			return ["WIRED", "Trusted staged and wired projection hashes match."];
+		}
+		if (host.status === "drift") {
+			return ["DRIFT", `Measured staged and wired projections differ (${host.reason_code}).`];
+		}
+		if (host.status === "not_measured") {
+			return ["UNKNOWN", "This host's wiring location is not measured; its wiring state remains unknown."];
+		}
+		return ["UNKNOWN", `The bounded trusted-file measurement could not establish both projections (${host.reason_code}); wiring state remains unknown.`];
+	}
+
+	function projectionDigest(value) {
+		return value ? `${value.slice(0, 12)}…` : "projection unknown";
+	}
+
+	function renderWiringEvidence() {
+		const data = state.visionEvidence?.wiring;
+		renderVisionSourceState("wiring", data);
+		const source = byId("vision-wiring-source");
+		const bounds = byId("vision-wiring-bounds");
+		const summary = byId("vision-wiring-summary");
+		const list = byId("vision-wiring-list");
+		if (!source || !bounds || !summary || !list) return;
+		list.replaceChildren();
+		source.textContent = data
+			? `Source: trusted staged and host-cache wiring files. Measured hosts: ${data.source.measured_hosts.join(", ") || "none"}. This is not a live canary.`
+			: "Source: trusted staged and host-cache wiring files; this is not a live canary.";
+		if (!data) {
+			bounds.textContent = "Trusted-file read bounds will appear after this source loads.";
+			summary.textContent = "No validated host-wiring proof sample is available.";
+			const empty = div("empty-compact", "Host-wiring proof has not loaded.");
+			empty.setAttribute("role", "listitem");
+			list.append(empty);
+			return;
+		}
+		const measured = data.hosts.filter((host) => host.measurement_status === "measured").length;
+		const wired = data.hosts.filter((host) => host.status === "wired").length;
+		const drift = data.hosts.filter((host) => host.status === "drift").length;
+		bounds.textContent = `Bounds: current wiring files for ${data.window.hosts.length} hosts; at most ${formatBytes(data.bounds.file_prefix_bytes)} read per trusted file.`;
+		summary.textContent = `${measured} measured · ${wired} wired · ${drift} drift · ${data.hosts.length - wired - drift} unknown or not measured.`;
+		data.hosts.forEach((host) => {
+			const [label, explanation] = wiringOutcome(host);
+			const row = el("article", "vision-proof-row");
+			row.setAttribute("role", "listitem");
+			const heading = div("vision-proof-heading");
+			heading.append(strong("", host.host), span(`status wiring-${host.status}`, label));
+			row.append(
+				heading,
+				small("", explanation),
+				small("vision-proof-path", `Staged: ${host.staged_state} · ${projectionDigest(host.staged_projection)} · ${host.staged_path || "path unavailable"}`),
+				small("vision-proof-path", `Wired: ${host.wired_state} · ${projectionDigest(host.wired_projection)} · ${host.wired_path || "path unavailable"}`),
+			);
+			list.append(row);
+		});
+	}
+
+	function renderVisionEvidence() {
+		renderChildDeliveryEvidence();
+		renderRule8Evidence();
+		renderWiringEvidence();
+		const status = byId("vision-evidence-status");
+		if (status) {
+			const sourceState = (name) => {
+				const metadata = state.visionEvidence?.sources?.[name] || {};
+				if (metadata.stale && state.visionEvidence?.[name]) return "stale";
+				if (metadata.unavailable || (state.visionEvidence?.loaded && !state.visionEvidence?.[name])) {
+					return "unavailable";
+				}
+				if (state.visionEvidence?.[name]) return "current";
+				return "not loaded";
+			};
+			const message = `Vision evidence: child delivery ${sourceState("children")}; Rule 8 ${sourceState("rejections")}; host wiring ${sourceState("wiring")}.`;
+			if (status.textContent !== message) status.textContent = message;
+		}
+	}
+
 	function renderEvidence(kind = "specialists") {
+		renderVisionEvidence();
 		const columns = EVIDENCE_COLUMNS[kind];
 		const label = kind.endsWith("s") ? kind.slice(0, -1) : kind;
 		const head = byId("evidence-head");
@@ -1004,6 +1495,8 @@ export function createRenderer(core, config, callbacks) {
 		if (caption) {
 			caption.textContent = kind === "specialists"
 				? "Specialist activation evidence by current-turn and historical state"
+				: kind === "delegations"
+					? "Recorded delegation-event row evidence"
 				: `${label[0].toUpperCase()}${label.slice(1)} runtime evidence`;
 		}
 		const context = byId("evidence-context");
@@ -1020,7 +1513,9 @@ export function createRenderer(core, config, callbacks) {
 		if (kind === "specialists") {
 			const current = rows.filter((row) => row.state === "current").length;
 			const historical = rows.length - current;
-			contextMessage = `${pageSummary}. ${current} current-turn activation${current === 1 ? "" : "s"} · ${historical} historical activation${historical === 1 ? "" : "s"}. Current-turn rows are unexpired and trace-correlated; historical rows remain as immutable audit evidence.`;
+			contextMessage = `${pageSummary}. ${current} current-turn activation${current === 1 ? "" : "s"} · ${historical} historical activation${historical === 1 ? "" : "s"}. Current-turn rows are unexpired and trace-correlated; historical rows remain as immutable audit evidence. Agency Store activation rows are not independent proof that a specialist card reached a child or that child execution completed.`;
+		} else if (kind === "delegations") {
+			contextMessage = `${pageSummary}. These are bounded delegation-event row projections. Observed-child identity comes only from recorded execution correlation; a staffing recommendation is never presented as the executor. Rows do not independently prove specialist-card delivery or child completion.`;
 		} else {
 			contextMessage = `${pageSummary}. Bounded metadata-only runtime evidence; payload content and worker output are not included.`;
 		}
@@ -1040,7 +1535,9 @@ export function createRenderer(core, config, callbacks) {
 			nextKeys.add(key);
 			if (previousKeys.size && !previousKeys.has(key)) tr.classList.add("is-new");
 			columns.forEach(([columnKey]) => {
-				let value = row[columnKey];
+				let value = columnKey === "observed_child"
+					? observedChildIdentity(row)
+					: row[columnKey];
 				if (Array.isArray(value)) value = value.join(", ") || "—";
 				if (columnKey.endsWith("_at") || columnKey === "created_at") value = formatTime(value);
 				if (columnKey === "fallback_applied") value = value === true ? "Yes" : "No";
@@ -1057,7 +1554,11 @@ export function createRenderer(core, config, callbacks) {
 		});
 		state.evidenceKeys.set(kind, nextKeys);
 		if (!body.children.length) {
-			const emptyLabel = kind === "specialists" ? "specialist activation" : label;
+			const emptyLabel = kind === "specialists"
+				? "specialist activation"
+				: kind === "delegations"
+					? "delegation-event row"
+					: label;
 			body.append(emptyRow(columns.length, `No ${emptyLabel} evidence yet.`));
 		}
 	}
@@ -1081,20 +1582,15 @@ export function createRenderer(core, config, callbacks) {
 		const eligibilitySummary = Number.isInteger(eligibility.rejection_count)
 			? `${eligibility.eligible_count || 0} eligible · ${eligibility.rejection_count} rejected${eligibility.truncated ? " · bounded view" : ""}`
 			: "not reported";
-		const workUnits = receipt.signals?.delegation?.work_units?.units
-			|| receipt.signals?.work_units?.units
-			|| receipt.work_units?.units
-			|| [];
 		const blocks = [
 			["Status", receipt.status || receipt.signals?.selection?.status || "unknown"],
-			["Execution host", eligibility.execution_host || hostCapability.execution_host || "unproven"],
+			["Host context", eligibility.execution_host || hostCapability.execution_host || "unproven"],
 			["Host capability evidence", hostCapability.status
 				? `${hostCapability.status} · ${(hostCapability.capabilities || []).length} capabilities`
 				: "unproven"],
 			["Eligibility", eligibilitySummary],
 			["Selected specialists", selected.length ? selected : ["abstained"]],
 			["Policy actions", receipt.signals?.policy?.matched_actions || []],
-			["Work units", workUnits],
 			["Decision source", receipt.signals?.selection?.provider || receipt.provider || "deterministic"],
 			["Inference mode", routing.inference_mode || "not reported"],
 			["Provider calls", providerAttempts.length],
@@ -1169,32 +1665,6 @@ export function createRenderer(core, config, callbacks) {
 			"none: none",
 		));
 		root.append(rejectionBlock);
-		const graph = receipt.delegation_graph || {};
-		const graphNodes = Array.isArray(graph.nodes) ? graph.nodes : [];
-		const graphEdges = Array.isArray(graph.edges) ? graph.edges : [];
-		const graphBlock = div( "receipt-block dependency-graph");
-		graphBlock.append(span( "", "Delegation dependency graph"));
-		if (!graphNodes.length) {
-			graphBlock.append(paragraph( "", "No delegation work units detected."));
-		} else {
-			const nodes = div( "dependency-nodes");
-			graphNodes.forEach((node) => {
-				const item = div( "dependency-node");
-				item.append(strong( "", node.id), small( "", node.description));
-				nodes.append(item);
-			});
-			graphBlock.append(nodes);
-			const edges = div( "dependency-edges");
-			if (graphEdges.length) {
-				graphEdges.forEach((edge) => {
-					edges.append(small( "", `${edge.from} → ${edge.to} · ${edge.reason}`));
-				});
-			} else {
-				edges.append(small( "", "No dependency edges; detected units can run independently."));
-			}
-			graphBlock.append(edges);
-		}
-		root.append(graphBlock);
 		byId("route-status").textContent = String(
 			receipt.status || receipt.signals?.selection?.status || "complete",
 		).toUpperCase();
@@ -1465,6 +1935,7 @@ export function createRenderer(core, config, callbacks) {
 
 	function renderWorkforce() {
 		const workers = Array.isArray(state.workforce) ? state.workforce : [];
+		const workforceSource = collectionSourceState("workforce");
 		const counts = state.workforceCounts || {};
 		setMetric("workforce-employees", counts.employee || 0);
 		setMetric("workforce-contractors", counts.contractor || 0);
@@ -1481,12 +1952,22 @@ export function createRenderer(core, config, callbacks) {
 			: workforceFiltered;
 		setMetric(
 			"workforce-count",
-			`${workers.length} shown · ${workforceFiltered} filtered · ${workforceTotal} total`,
+			`${workers.length} shown · ${workforceFiltered} filtered · ${workforceTotal} total · ${collectionSourceLabel(workforceSource)}`,
 		);
 		const grid = byId("workforce-grid");
 		if (grid) {
 			grid.replaceChildren();
-			if (!workers.length) grid.append(div( "empty-state", "No governed workers are installed yet."));
+			if (workforceSource.status === "stale") {
+				grid.append(div("empty-compact", collectionSourceSummary(workforceSource, "Workforce")));
+			}
+			if (!workers.length) {
+				const emptyMessage = workforceSource.status === "current"
+					? "No governed workers are installed yet."
+					: workforceSource.status === "stale"
+						? "The retained last-good workforce sample contains no governed workers."
+						: collectionSourceSummary(workforceSource, "Workforce");
+				grid.append(div("empty-state", emptyMessage));
+			}
 			workers.forEach((worker) => {
 				const card = el("button", `workforce-card state-${worker.state || "unknown"}`);
 				card.type = "button";
@@ -1506,6 +1987,7 @@ export function createRenderer(core, config, callbacks) {
 			});
 		}
 		const hiring = Array.isArray(state.hiring) ? state.hiring : [];
+		const hiringSource = collectionSourceState("hiring");
 		const hiringPage = state.hiringPage || {};
 		const hiringFiltered = Number.isInteger(hiringPage.filtered_count)
 			? hiringPage.filtered_count
@@ -1520,17 +2002,22 @@ export function createRenderer(core, config, callbacks) {
 				.map(([key, value]) => `${key}=${value}`)
 				.join(", ")
 			: "";
-		const hiringCountLabel = hiringFilterSummary
+		const hiringCollectionLabel = hiringFilterSummary
 			? `${hiring.length} shown · ${hiringFiltered} filtered · ${hiringTotal} total · ${hiringFilterSummary}`
 			: `${hiring.length} shown · ${hiringFiltered} filtered · ${hiringTotal} total`;
-		setMetric("hiring-count", hiringCountLabel);
+		setMetric(
+			"hiring-count",
+			`${hiringCollectionLabel} · ${collectionSourceLabel(hiringSource)}`,
+		);
 		const hiringPageStatus = byId("hiring-page-status");
 		if (hiringPageStatus) {
-			if (hiringActiveFilterCount) {
+			const sourceNeedsAttention = hiringSource.status !== "current";
+			if (hiringActiveFilterCount || sourceNeedsAttention) {
 				hiringPageStatus.hidden = false;
-				hiringPageStatus.textContent = (
-					`Filter active: ${hiringFilterSummary}.`
-				);
+				hiringPageStatus.textContent = [
+					sourceNeedsAttention ? collectionSourceSummary(hiringSource, "Hiring") : "",
+					hiringActiveFilterCount ? `Filter active: ${hiringFilterSummary}.` : "",
+				].filter(Boolean).join(" ");
 			} else {
 				hiringPageStatus.hidden = true;
 				hiringPageStatus.textContent = "";
@@ -1539,7 +2026,14 @@ export function createRenderer(core, config, callbacks) {
 		const hiringList = byId("hiring-list");
 		if (hiringList) {
 			hiringList.replaceChildren();
-			if (!hiring.length) hiringList.append(div( "empty-state", "No hiring cases have been recorded."));
+			if (!hiring.length) {
+				const emptyMessage = hiringSource.status === "current"
+					? "No hiring cases match the committed source filters."
+					: hiringSource.status === "stale"
+						? "The retained last-good hiring sample contains no matching cases."
+						: collectionSourceSummary(hiringSource, "Hiring");
+				hiringList.append(div("empty-state", emptyMessage));
+			}
 			hiring.forEach((item) => {
 				const caseId = typeof item?.id === "string" ? item.id : "";
 				const exactEvidence = hiringEvidenceIsComplete(state.hiringEvidence, caseId)
@@ -1559,7 +2053,7 @@ export function createRenderer(core, config, callbacks) {
 					el(
 						"small",
 						"",
-						`Case ${caseId || "unavailable"} · Risk: ${item.risk_tier || "standard"} · work unit ${item.work_unit_id || "—"}`,
+						`Case ${caseId || "unavailable"} · Risk: ${item.risk_tier || "standard"} · staffing need ${item.work_unit_id || "—"}`,
 					),
 					el(
 						"small",
@@ -1736,6 +2230,7 @@ export function createRenderer(core, config, callbacks) {
 		disposeAnimations,
 		setMetric,
 		renderCharts,
+		renderMetricEvidence,
 		renderOverview,
 		emptyRow,
 		renderHosts,
@@ -1743,6 +2238,7 @@ export function createRenderer(core, config, callbacks) {
 		renderRoster,
 		renderWorkforce,
 		renderWorkerDetail,
+		renderVisionEvidence,
 		renderEvidence,
 		renderReceipt,
 		renderActiveView,

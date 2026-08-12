@@ -9,13 +9,18 @@ import subprocess
 from datetime import date
 from pathlib import Path
 
+if __package__:
+    from .worklog_history import stable_short_shas
+else:
+    from worklog_history import stable_short_shas
+
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "docs" / "worklog" / "README.md"
 START = "<!-- worklog:start -->"
 END = "<!-- worklog:end -->"
 LEDGER_PREFIX = "docs(worklog):"
 ROW_RE = re.compile(
-    r"^\| `(?P<sha>[0-9a-f]{7})` \| .*? \| (?P<issue>[^|]+?) \| "
+    r"^\| `(?P<sha>[0-9a-f]{8})` \| .*? \| (?P<issue>[^|]+?) \| "
     r"(?P<detail>[^|]+?) \|$"
 )
 
@@ -27,20 +32,25 @@ def git_log() -> list[tuple[str, str, str]]:
             "log",
             "--reverse",
             "--date=short",
-            "--format=%h%x1f%ad%x1f%s",
+            "--format=%H%x1f%ad%x1f%s",
         ],
         cwd=ROOT,
         check=True,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
-    commits: list[tuple[str, str, str]] = []
+    history: list[tuple[str, str, str]] = []
     for line in result.stdout.splitlines():
-        short, commit_date, subject = line.split("\x1f", 2)
+        full_sha, commit_date, subject = line.split("\x1f", 2)
         if subject.startswith(LEDGER_PREFIX):
             continue
-        commits.append((short, commit_date, subject))
-    return commits
+        history.append((full_sha, commit_date, subject))
+    shortened = stable_short_shas(item[0] for item in history)
+    return [
+        (short, commit_date, subject)
+        for short, (_, commit_date, subject) in zip(shortened, history, strict=True)
+    ]
 
 
 def existing_annotations(text: str) -> dict[str, tuple[str, str]]:

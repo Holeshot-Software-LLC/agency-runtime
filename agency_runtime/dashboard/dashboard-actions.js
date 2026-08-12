@@ -322,8 +322,8 @@ export function createActionController(core, config, renderer, live) {
 		const accepted = await requestConfirmation(
 			expected,
 			enabled
-				? "This resumes Agency routing, delegation, and evidence shaping for every host."
-				: "This bypasses Agency routing, delegation, hooks, and evidence shaping for every host. Dashboard configuration remains available.",
+				? "This resumes Agency staffing selection, request-scoped card injection, and evidence capture. Native hosts still own spawning and execution."
+				: "This bypasses Agency staffing selection, card injection, hooks, and evidence capture. Native hosts still own spawning and execution; dashboard configuration remains available.",
 		);
 		if (state.lifecycle.destroyed || state.lifecycle.suspended) return;
 		if (!accepted) return showNotice("Agency master action cancelled.", true);
@@ -434,10 +434,24 @@ export function createActionController(core, config, renderer, live) {
 
 	async function hiringApprove(caseId) {
 		if (serviceControlBlocked()) return;
+		const approvedBy = String(byId("hiring-approver-identity")?.value || "").trim();
+		if (!approvedBy) {
+			return showNotice(
+				"Enter the approver audit identity before approving this case.",
+				true,
+			);
+		}
+		if (
+			approvedBy.length > 128
+			|| new TextEncoder().encode(approvedBy).byteLength > 128
+			|| /[\u0000-\u001f\u007f]/.test(approvedBy)
+		) {
+			return showNotice("Enter a valid approver audit identity.", true);
+		}
 		const confirm = `APPROVE ${caseId}`;
 		const accepted = await requestConfirmation(
 			confirm,
-			"This records explicit owner approval for a high-risk proposed hire.",
+			`This records explicit owner approval by ${approvedBy} for a high-risk proposed hire.`,
 		);
 		if (state.lifecycle.destroyed || state.lifecycle.suspended) return;
 		if (!accepted) return showNotice("Hiring approval cancelled.", true);
@@ -447,7 +461,7 @@ export function createActionController(core, config, renderer, live) {
 				method: "POST",
 				body: JSON.stringify({
 					case_id: caseId,
-					approved_by: "dashboard-owner",
+					approved_by: approvedBy,
 					confirm,
 				}),
 				signal: controller.signal,

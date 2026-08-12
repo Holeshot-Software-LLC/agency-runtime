@@ -1,20 +1,28 @@
-"""Read-only evidence commands: what a host's own artifacts prove."""
+"""Read-only, source-labelled evidence from host artifacts or Agency's Store."""
 
 from __future__ import annotations
 
 import argparse
-import math
 from pathlib import Path
 
 from agency_runtime.core.child_delivery_evidence import (
+    MAX_CHILD_ARTIFACTS,
+    MAX_CHILD_FILESYSTEM_ENTRIES,
+    MAX_LAUNCH_PREFIX_BYTES,
+    MAX_LAUNCH_RECORDS,
+    child_delivery_projection,
     default_child_artifact_root,
-    scan_child_delivery_evidence,
 )
 from agency_runtime.core.config import load_config
+from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.host_wiring_drift import host_wiring
-from agency_runtime.core.store.evidence import (
-    PUBLISHED_ANYWAY_RUN_STATUSES,
-    WITHHELD_RUN_STATUSES,
+from agency_runtime.core.routing_latency import (
+    DEFAULT_ROUTING_LATENCY_BUDGET_MS,
+    routing_latency_projection,
+)
+from agency_runtime.core.rule8_evidence import (
+    bounded_rule8_limit,
+    rule8_evidence_projection,
 )
 from agency_runtime.core.store.sqlite import Store
 
@@ -36,39 +44,30 @@ def cmd_evidence_wiring(args: argparse.Namespace) -> int:
     hosts = (args.host,) if getattr(args, "host", None) else _WIRING_HOSTS
     results = [host_wiring(host) for host in hosts]
     if getattr(args, "json", False):
-        _print_json(
-            {
-                "hosts": [
-                    {
-                        "host": result.host,
-                        "wired": result.wired,
-                        "reason": result.reason,
-                        "staged_projection": result.staged_projection,
-                        "staged_path": result.staged_path,
-                        "wired_projection": result.wired_projection,
-                        "wired_path": result.wired_path,
-                    }
-                    for result in results
-                ]
-            }
-        )
+        _print_json({"hosts": [result.as_dict() for result in results]})
     else:
         for result in results:
             if result.wired:
                 print(f"{result.host}: wired to {result.staged_projection[:12]} ✅")
                 continue
-            print(f"{result.host}: NOT wired to what was staged — {result.reason}")
+            if result.status == "not_measured":
+                print(f"{result.host}: wiring not measured — {result.reason}")
+                continue
+            label = "DRIFT" if result.status == "drift" else "wiring unavailable"
+            print(f"{result.host}: {label} — {result.reason}")
             print(f"  staged: {result.staged_projection[:12] or '(none)'}  {result.staged_path}")
             print(f"  wired : {result.wired_projection[:12] or '(none)'}  {result.wired_path}")
     return 0 if all(result.wired for result in results) else 1
 
 
 def cmd_evidence_rejections(args: argparse.Namespace) -> int:
-    """Report every turn Agency withheld, and every turn it published while blind.
+    """Report the bounded exceptional-run window on each side of Rule 8.
 
     Rule 8 permits exactly one reason to cost a user a turn: Agency's verifier
     evaluated the response and rejected it. Agency being unable to verify or
-    persist its own evidence is not a finding about the response, and publishes.
+    persist its own evidence is not a finding about the response. Rule 8 now
+    requires pass-through, but the stored status alone does not prove what a
+    historical host did with the turn.
 
     Both outcomes close a run with a distinguishable status, so this makes the
     rule auditable after the fact rather than a claim about the code -- and it
@@ -78,20 +77,34 @@ def cmd_evidence_rejections(args: argparse.Namespace) -> int:
     gate.
     """
 
+    host = str(getattr(args, "host", None) or "").strip().casefold()
+    if host and host not in EXECUTION_HOSTS:
+        raise ValueError("Rule-8 evidence host is unsupported")
+    raw_limit = getattr(args, "limit", None)
+    limit = bounded_rule8_limit(50 if raw_limit is None else raw_limit)
     store = Store(getattr(args, "db", None))
     rows = store.get_withheld_and_published_runs(
-        host=getattr(args, "host", None) or "",
-        limit=getattr(args, "limit", 50) or 50,
+        host=host,
+        limit=limit,
     )
-    withheld = [row for row in rows if row["status"] in WITHHELD_RUN_STATUSES]
-    published = [row for row in rows if row["status"] in PUBLISHED_ANYWAY_RUN_STATUSES]
+    projection = rule8_evidence_projection(rows, host=host, limit=limit)
+    withheld = projection["withheld"]
+    agency_blind = projection["agency_blind"]
     if getattr(args, "json", False):
         _print_json(
             {
-                "withheld": withheld,
-                "published_anyway": published,
-                "withheld_statuses": sorted(WITHHELD_RUN_STATUSES),
-                "published_anyway_statuses": sorted(PUBLISHED_ANYWAY_RUN_STATUSES),
+                **projection,
+                # Compatibility only. The canonical name is ``agency_blind``:
+                # these statuses do not prove what a historical host did with
+                # the turn, despite the legacy key's stronger wording.
+                "published_anyway": agency_blind,
+                "published_anyway_statuses": projection["agency_blind_statuses"],
+                "compatibility_aliases": {
+                    "published_anyway": (
+                        "agency_blind; legacy key name does not prove host publication"
+                    ),
+                    "published_anyway_statuses": "agency_blind_statuses",
+                },
             }
         )
         return 1 if withheld else 0
@@ -102,54 +115,37 @@ def cmd_evidence_rejections(args: argparse.Namespace) -> int:
             f"  {row['status']!s:<20} {row['host']!s:<8} {when}  trace {str(row['trace_id'])[:12]}"
         )
 
+    if not withheld and not agency_blind:
+        print(
+            f"no matching exceptional statuses in this retained bounded window "
+            f"(limit {limit}{f', host {host}' if host else ''}); this is not a health claim"
+        )
+        return 0
     if not withheld:
-        print("withheld by Agency: none ✅")
+        print("withheld by Agency: none in this retained bounded window")
     else:
         print(f"withheld by Agency: {len(withheld)} — the verifier evaluated and rejected")
         for row in withheld:
             print(_line(row))
-    if published:
-        # Deliberately not labelled "published": the status records that Agency
-        # was blind for that turn, not what the host did with the response. Runs
-        # closed before the rule-8 fix were denied on exactly this condition, so
-        # calling them published would be a claim this data cannot support.
+    if agency_blind:
         print(
-            f"Agency was blind: {len(published)} — could not verify or persist its "
-            "evidence. Under rule 8 these publish; before the fix they were denied."
+            f"Agency was blind: {len(agency_blind)} — could not verify or persist its "
+            "evidence. Rule 8 requires pass-through, but these rows alone do not prove "
+            "what the host did; historical rows can predate that rule."
         )
-        for row in published:
+        for row in agency_blind:
             print(_line(row))
     return 1 if withheld else 0
 
 
-def _percentile(ordered: list[int], percentile: float) -> int:
-    """Return the nearest-rank percentile of an already-sorted list."""
-
-    if not ordered:
-        return 0
-    rank = max(1, math.ceil(percentile / 100 * len(ordered)))
-    return ordered[min(len(ordered), rank) - 1]
-
-
-def _latency_summary(values: list[int]) -> dict[str, int]:
-    ordered = sorted(values)
-    return {
-        "count": len(ordered),
-        "min_ms": ordered[0] if ordered else 0,
-        "p50_ms": _percentile(ordered, 50),
-        "p95_ms": _percentile(ordered, 95),
-        "max_ms": ordered[-1] if ordered else 0,
-    }
-
-
 def cmd_evidence_latency(args: argparse.Namespace) -> int:
-    """Report what Agency's own routing actually costs a turn.
+    """Report persisted routing durations against a p95 budget.
 
     ``routing_decisions.latency_ms`` is the only timing column in the schema
-    and nothing read it, so the cost of an eligible turn was invisible unless
+    and nothing read it, so observed routing duration was invisible unless
     someone opened the database by hand. `agency eval routing` gates latency
     and the benchmarks score it, but both answer "did a fixture pass", not
-    "what is this box paying right now".
+    "what routing durations has this box recorded".
 
     Reports the percentiles rather than a mean, because the mean of a
     provider-call distribution hides exactly the tail an operator feels. Exit
@@ -158,58 +154,29 @@ def cmd_evidence_latency(args: argparse.Namespace) -> int:
 
     Decisions recorded at zero are excluded rather than counted as fast turns.
     Both writers store 0 when no provider call was spent, so including them
-    would report Agency as cheap in exact proportion to how often it did
-    nothing.
+    would lower the recorded routing summary in exact proportion to how often
+    no provider call was made.
     """
 
-    budget = int(getattr(args, "budget_ms", 15000) or 15000)
+    budget = int(
+        getattr(args, "budget_ms", DEFAULT_ROUTING_LATENCY_BUDGET_MS)
+        or DEFAULT_ROUTING_LATENCY_BUDGET_MS
+    )
     rows = Store(getattr(args, "db", None)).get_routing_latencies(
         source=getattr(args, "source", None) or "",
         limit=getattr(args, "limit", 200) or 200,
     )
-    values = [int(row["latency_ms"]) for row in rows]
-    overall = _latency_summary(values)
-    # Only decisions whose calls actually reported a duration can be split.
-    # Receipts written before the latency column existed report 0, and counting
-    # those as "no provider time" would attribute the whole turn to Agency.
-    attributable = [row for row in rows if int(row.get("provider_ms") or 0) > 0]
-    split = {
-        "decisions": len(attributable),
-        "unattributed_decisions": len(rows) - len(attributable),
-        "provider_ms": _latency_summary([int(row["provider_ms"]) for row in attributable]),
-        "agency_ms": _latency_summary(
-            [max(0, int(row["latency_ms"]) - int(row["provider_ms"])) for row in attributable]
-        ),
-        "calls_per_decision": (
-            round(
-                sum(int(row.get("provider_calls") or 0) for row in attributable)
-                / len(attributable),
-                2,
-            )
-            if attributable
-            else 0.0
-        ),
-    }
-    buckets: dict[str, list[int]] = {}
-    for row in rows:
-        buckets.setdefault(str(row["source"] or "unknown"), []).append(int(row["latency_ms"]))
-    grouped = {name: _latency_summary(bucket) for name, bucket in sorted(buckets.items())}
-    over_budget = bool(values) and overall["p95_ms"] > budget
+    projection = routing_latency_projection(rows, budget_ms=budget)
+    overall = projection["overall"]
+    split = projection["split"]
+    grouped = projection["by_source"]
+    over_budget = projection["over_budget"]
 
     if getattr(args, "json", False):
-        _print_json(
-            {
-                "budget_ms": budget,
-                "over_budget": over_budget,
-                "overall": overall,
-                "split": split,
-                "by_source": grouped,
-                "slowest": rows[:5] if rows else [],
-            }
-        )
+        _print_json(projection)
         return 1 if over_budget else 0
 
-    if not values:
+    if not overall["count"]:
         print("no routing decision has recorded a latency yet")
         return 0
     print(
@@ -226,24 +193,93 @@ def cmd_evidence_latency(args: argparse.Namespace) -> int:
         )
     if split["decisions"]:
         print(
-            f"split over {split['decisions']} decisions "
+            f"timing breakdown over {split['decisions']} decisions "
             f"({split['calls_per_decision']} provider calls each): "
             f"provider p50 {split['provider_ms']['p50_ms']} ms, "
-            f"Agency p50 {split['agency_ms']['p50_ms']} ms"
+            "derived routing remainder p50 "
+            f"{split['derived_routing_remainder_ms']['p50_ms']} ms "
+            "(recorded total minus timed provider receipts)"
         )
     if split["unattributed_decisions"]:
         print(
-            f"  {split['unattributed_decisions']} decision(s) cannot be split — their "
-            "receipts predate the per-call duration and report 0"
+            f"  {split['unattributed_decisions']} decision(s) cannot be broken down — "
+            "provider timing is incomplete or inconsistent with the recorded total"
         )
     if over_budget:
-        print(
-            f"❌ p95 {overall['p95_ms']} ms exceeds the {budget} ms budget — "
-            "Agency is the slow part of an eligible turn"
-        )
+        print(f"❌ measured routing p95 {overall['p95_ms']} ms exceeds the {budget} ms budget")
     else:
         print(f"✅ p95 within the {budget} ms budget")
     return 1 if over_budget else 0
+
+
+def cmd_evidence_selections(args: argparse.Namespace) -> int:
+    """Report bounded specialist-selection frequency with explicit denominators.
+
+    This is the terminal projection of the same retained routing decisions used
+    by the dashboard's concentration chart. Decision share answers how often a
+    specialist appeared in a selection-bearing decision. Occurrence share uses
+    every selected specialist as its denominator. The current active roster is
+    context only; it is not a historical selection denominator.
+    """
+
+    projection = Store(getattr(args, "db", None)).specialist_selection_distribution()
+    if getattr(args, "json", False):
+        _print_json(projection)
+        return 0
+
+    decisions = int(projection["decisions_with_selections"])
+    occurrences = int(projection["selection_occurrences"])
+    distinct = int(projection["distinct_selected_specialists"])
+    roster_size = int(projection["active_roster_size"])
+    scan_limit = int(projection["selection_bearing_decision_scan_limit"])
+    print(
+        f"specialist selection distribution: {decisions} selection-bearing decisions; "
+        f"{occurrences} selection occurrences; {distinct} distinct selected specialists"
+    )
+    print(
+        f"current active roster: {roster_size} "
+        "(context only; not a historical selection denominator)"
+    )
+    print(
+        f"top-10 concentration: {projection['top_10_selection_occurrences']} of "
+        f"{occurrences} selection occurrences "
+        f"({float(projection['top_10_share_of_selection_occurrences']):.1%})"
+    )
+    if projection["selection_bearing_decision_scan_truncated"]:
+        print(
+            f"window: newest {scan_limit} selection-bearing decisions; "
+            "older retained evidence is outside this view"
+        )
+    else:
+        print(
+            f"window: all retained selection-bearing decisions scanned (safety limit {scan_limit})"
+        )
+    if not decisions:
+        print("no per-specialist selection shares are available; this is not a health claim")
+        return 0
+
+    for row in projection["top_specialists"]:
+        print(
+            f"  {row['slug']}: {row['decisions_containing_specialist']} decisions "
+            f"({float(row['share_of_decisions_with_selections']):.1%} of "
+            "selection-bearing decisions); "
+            f"{row['selection_occurrences']} selection occurrences "
+            f"({float(row['share_of_selection_occurrences']):.1%} of all "
+            "selection occurrences)"
+        )
+    long_tail = projection["long_tail"]
+    if long_tail["specialist_count"]:
+        count = int(long_tail["specialist_count"])
+        print(
+            f"  beyond top 50 ({count} specialist{'s' if count != 1 else ''}): "
+            f"{long_tail['decisions_containing_specialist']} decisions "
+            f"({float(long_tail['share_of_decisions_with_selections']):.1%} of "
+            "selection-bearing decisions); "
+            f"{long_tail['selection_occurrences']} selection occurrences "
+            f"({float(long_tail['share_of_selection_occurrences']):.1%} of all "
+            "selection occurrences)"
+        )
+    return 0
 
 
 def cmd_evidence_intent(args: argparse.Namespace) -> int:
@@ -308,51 +344,48 @@ def cmd_evidence_children(args: argparse.Namespace) -> int:
 
     hosts = (args.host,) if getattr(args, "host", None) else _HOSTS
     override = getattr(args, "root", None)
+    raw_limit = getattr(args, "limit", None)
+    limit = 50 if raw_limit is None else raw_limit
     if override and len(hosts) != 1:
         raise ValueError("--root applies to exactly one --host")
     results = []
     for host in hosts:
         root = Path(override) if override else default_child_artifact_root(host)
-        findings = scan_child_delivery_evidence(root, host=host) if root.is_dir() else []
-        results.append(
+        results.append(child_delivery_projection(root, host=host, limit=limit))
+    if getattr(args, "json", False):
+        _print_json(
             {
-                "host": host,
-                "root": str(root),
-                "root_present": root.is_dir(),
-                "staffed_children": sum(1 for finding in findings if finding.staffed),
-                "legacy_deliveries": sum(
-                    1 for finding in findings if finding.legacy_delivery and not finding.staffed
-                ),
-                "children": [
-                    {
-                        "child_id": finding.child_id,
-                        "artifact": finding.artifact,
-                        "parent_id": finding.host_parent_id,
-                        "correlated": finding.correlated,
-                        "legacy": finding.legacy_delivery,
-                        "cards": [
-                            {
-                                "slug": card.specialist_slug,
-                                "version": card.specialist_version,
-                                "prompt_hash": card.specialist_prompt_hash,
-                            }
-                            for card in finding.cards
-                        ],
-                    }
-                    for finding in findings
-                ],
+                "window": {
+                    "kind": "newest_verified_child_delivery_evidence",
+                    "hosts": list(hosts),
+                    "detail_limit": limit,
+                },
+                "bounds": {
+                    "artifact_scan_limit_per_host": MAX_CHILD_ARTIFACTS,
+                    "filesystem_visit_limit_per_host": MAX_CHILD_FILESYSTEM_ENTRIES,
+                    "artifact_prefix_bytes": MAX_LAUNCH_PREFIX_BYTES,
+                    "artifact_record_limit": MAX_LAUNCH_RECORDS,
+                    "detail_limit": limit,
+                },
+                "hosts": results,
             }
         )
-    if getattr(args, "json", False):
-        _print_json({"hosts": results})
         return 0
     for result in results:
         if not result["root_present"]:
-            print(f"{result['host']}: no artifacts at {result['root']}")
+            print(f"{result['host']}: artifact root is absent at {result['root']}")
+            continue
+        if not result["evidence_count"]:
+            print(
+                f"{result['host']}: no verified card-delivery proof found in "
+                f"{result['artifacts_scanned']} bounded artifact candidate(s); this does "
+                "not prove that no children ran"
+            )
             continue
         print(
             f"{result['host']}: {result['staffed_children']} children provably staffed "
-            f"({result['legacy_deliveries']} legacy) under {result['root']}"
+            f"({result['legacy_deliveries']} legacy-only; "
+            f"{result['uncorrelated_staffed_children']} uncorrelated) under {result['root']}"
         )
         for child in result["children"]:
             slugs = ", ".join(card["slug"] for card in child["cards"]) or "-"

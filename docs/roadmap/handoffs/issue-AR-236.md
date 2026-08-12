@@ -3,174 +3,170 @@ title: "AR-236 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
-tags: [handoff, cli, dashboard, parity, operations, recovery]
+updated: 2026-08-12
+tags: [handoff, cli, dashboard, parity, latency, observability, recovery]
 related:
   - docs/roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md
-  - docs/analysis/2026-08-04-cli-dashboard-parity.md
-  - docs/roadmap/issue-AR-123-workforce-cli-and-dashboard.md
-  - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
-  - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
-  - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
-  - agency_runtime/cli/parser.py
-  - agency_runtime/cli/main.py
+  - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/analysis/2026-08-11-cli-vision-keep-list.md
+  - README.md
+  - agency_runtime/dashboard/dashboard-live.js
   - agency_runtime/dashboard/dashboard-render.js
-  - agency_runtime/dashboard/dashboard-actions.js
-  - agency_runtime/server/http.py
-  - agency_runtime/core/dashboard_operational.py
+  - agency_runtime/server/dashboard.py
+  - tests/dashboard_ui.test.mjs
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-236
-branch: main
-evidence_commit: 74a24d08ab5991080487de4c55773c54d3bc59ee
-minimum_ledger_commit: 74a24d08ab5991080487de4c55773c54d3bc59ee
+branch: codex/dashboard-vision-parity
+evidence_commit: 1c03a40bf7f5fa4453b702d2260867d14536f0e7
+minimum_ledger_commit: eccde8b7f8651840397cd68c593000cf4ba72b93
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245
 ---
 
 # AR-236 active recovery capsule
 
-Bounded current-state projection for the CLI/dashboard parity task.
-The [canonical issue](../issue-AR-236-achieve-full-cli-dashboard-parity.md)
-owns the full acceptance history; the
-[parity analysis](../../analysis/2026-08-04-cli-dashboard-parity.md) owns
-the gap inventory.
+Restart state for the dashboard vision-parity work after the owner corrected
+the scope boundary and Job B finished. The canonical issue owns acceptance;
+this capsule owns the next bounded package.
 
 ## checkpoint
 
-- Planning pair exists in the working tree: the AR-236 issue, the
-  parity analysis, the AR-236 capsule, the registry updates, and the
-  AR-235 reciprocal `related` link. Branch `main` resolves to commit
-  `74a24d0` (the AR-235 worklog reconciliation). No AR-236
-  substantive code, test, or config change has landed yet.
-- Tracker is live: [issue #245](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245)
-  carries the full AR-236 body and matches the local planning record.
-- The analysis doc identified 10 sub-issues, prioritized by impact ×
-  cost. The first three (hiring list/show, promotion readiness,
-  duplicates/consolidate) are the highest-impact lowest-cost wins.
-- Two untracked helper files remain in the working tree:
-  `scripts/strip-frontmatter.ps1` and
-  `scripts/strip-frontmatter-235.ps1` (one-shot PowerShell helpers
-  used during AR-235 setup). They are unrelated to AR-236 and
-  should be cleaned up at the operator's convenience.
-- Slice 1 of AR-235 (per-stage inference profile schema + route
-  resolution) appears to have been implemented in another session
-  context: 486 lines of code changes across 6 files plus a new
-  `agency_runtime/core/inference_profiles.py` are uncommitted in
-  the working tree. These are NOT part of AR-236; they are an
-  AR-235 deliverable awaiting their own commit set, validation,
-  and PR.
+- PRs #271 and #273 completed Job B on `main` at `c7cf1d96`: Agency no
+  longer drives host CLIs, plans work units, provisions worktrees, dispatches
+  workers, or records a worker-pool ledger. Native hosts alone spawn and run.
+- `codex/dashboard-vision-parity` rebased cleanly onto that commit. Its 21
+  commits were rewritten; the clean post-Job-B recovery pair is
+  `cfa67e4b` / `b1d2958a`. PR #270 remains draft and must not be merged as an
+  inherited bundle merely because its earlier checks passed.
+- The owner clarified the objective: keep the dashboard synchronized with the
+  final vision. Prefer dashboard-only fixes, but a narrowly evidenced core,
+  Store, CLI, adapter, or server correction is allowed when final `main`
+  contradicts the vision or cannot support a truthful UI.
+- The dashboard truth package is clean at `d9458890` / `8d1a1213`; the minimal
+  supporting-contract slice is clean at `6ce0c37f` / `419a888c`. Both were
+  independently reviewed with no unresolved High or Medium finding.
+- Browser/fast-spine evidence is clean at `15911085` / `3fc50c89`. The
+  platform-independent worklog repair is clean at `1c03a40b` / `eccde8b7`.
 
 ## completed-evidence
 
-- The full CLI surface is documented from
-  `agency_runtime/cli/parser.py` (13 command groups) and
-  `agency_runtime/cli/main.py` plus 9 handler modules. 50+ top-level
-  commands with subcommand trees.
-- The full dashboard surface is documented from
-  `agency_runtime/dashboard/index.html` (6 view panels, 3 modals),
-  `dashboard-render.js` (render functions per view), and
-  `dashboard-actions.js` (9 API endpoints the dashboard actually
-  calls).
-- The 10-item gap list is captured in the analysis doc with
-  per-item priority, cost, and recommended first slice.
-- The user's three open questions are answered and recorded in the
-  issue's "Current state" section: eval is dev-only, "pretty CLI"
-  is `rich`-style cards, phrase-typed confirmation is the canonical
-  destructive-op pattern.
-- AR-235 and AR-236 are now reciprocally linked: AR-236's gap
-  list includes a duplicate-detection sub-issue that consumes
-  AR-235's `amend_overlap_threshold`; AR-235's planning record
-  links to AR-236 as a peer concern.
+- The branch already removes delegation preference/mode/confidence controls,
+  judge bypass, Route Lab work-unit/dependency graphs, and Agency-execution
+  wording. Job B strengthens those deletions.
+- Keep child inference budget, concurrency, and cache controls: they still
+  bound host-started child routing in preflight.
+- Shared latency evidence uses positive persisted durations, explicit timing
+  limits, nearest-rank p50/p95, and the pinned 15,000 ms budget. Provider time
+  comes from complete same-trace receipts; the remainder is explicitly derived
+  as total minus provider time and is never labelled Agency timing.
+- Shared specialist-distribution evidence uses decision and occurrence
+  denominators, a 10,000-decision scan bound, active-roster context, top-ten
+  concentration, and a bounded long tail. Dashboard and `agency evidence
+  selections` now project the same Store result; no owner observation is
+  hardcoded.
+- Child delivery remains host-written, hash-verified evidence; staffing rows
+  are not delivery proof. Rule-8 remains Store evidence about Agency
+  withholding/blindness, never host publication proof. Wiring remains exact
+  measured state with unsupported hosts explicitly not measured.
+- Evidence requests are authenticated, view-scoped, source-separated, and off
+  the hot poll. Metric reads fail 409 before touching a process-frozen Store
+  after DB-path drift. Empty, stale, and unavailable states are distinct and
+  retain only source-specific last-good data.
+- Settings no longer expose four invalid flat workforce model paths or the
+  unenforced task/day hire caps. Four live workforce-change, warning, repair,
+  and amend-overlap controls replace them, and the staffing-need limit now
+  matches inference's hard maximum of 16.
+- Hiring filters use status, type, and risk on the first request and preserve
+  them while paging. Workforce and hiring refresh independently, and approval
+  records an explicit 128-byte owner audit identity instead of a fabricated
+  `dashboard-owner` value.
+- Delegation-event rows show a child only when kind, worker ID, and native run
+  ID are all observed. Recommendations and migrated partial rows never become
+  executor identity; chart, table, and README copy stay source-neutral.
+- Disabled broker explain, routing snapshots, lifecycle copy, and tests no
+  longer require the retired delegation graph. The graph was not restored.
+- Post-Job-B real-browser QA used the production CLI and real dashboard,
+  Store, child-artifact, Rule-8, and wiring projections. The bounded populated
+  Store fixture rendered 20 selection-bearing decisions, 13 distinct
+  specialists, 35 occurrences, 91.4% top-ten concentration, correlated child
+  identities only, and evidence-bounded latency attribution. No positive host
+  proof was fabricated: isolated host homes produced zero verified cards,
+  missing Claude wiring, and explicit not-measured states for other hosts.
+- A fresh Store rendered selection `NO DATA`, latency `UNKNOWN`, current-empty
+  workforce/hiring, zero-proof child caveats, Rule-8's non-health claim, and
+  unknown wiring. Console/CSP checks were clean and 1440x900, 1024x768, and
+  390x844 layouts had no document overflow.
+- Path-only instrumentation around the real handlers proved metrics load once
+  on Overview, proof sources load once on first Evidence entry, hot polling
+  refetches none of the five, revisits reuse proof samples, and manual/global
+  refreshes stay view-scoped. Ninety-one API log rows contained no token,
+  authorization text, query, fragment, retired endpoint, or graph request.
+
+## post-job-b-classification
+
+- Retain latency, specialist distribution, child proof, Rule-8, wiring, native-
+  host copy, live child-routing bounds, provider discovery, worker readiness,
+  closest-worker detail, and the retired GET/config/graph removals.
+- The truth package completes dead/live settings, hiring filters and paging,
+  independent source state, approver identity, correlated execution identity,
+  neutral event copy, browser QA, the fast spine, and routing/static gates.
+- Drop all Agency work-unit planning/execution UI and stale workforce-only model
+  helpers. Defer global consolidation review, aggregate promotion queues, and
+  CLI hiring efficiency/filter work to bounded follow-ups. Keep AR-236 open.
 
 ## exact-blocker
 
-- The planning pair is uncommitted. Per AGENTS.md "A commit cannot
-  contain its own SHA," the worklog ledger commit records the
-  substantive commit, not itself.
-- No sub-issue work has started. The user authorized the planning
-  pair; sub-issue work awaits greenlight per sub-issue.
-- Sub-issue 9 (Upgrade) is substantial and may warrant its own AR
-  with dedicated scoping; do not bundle it with a smaller
-  sub-issue's PR.
-- Sub-issue 10 (CLI presentation richness) requires a presentation
-  library decision (likely `rich`); an ADR is needed before
-  implementation begins.
-- The uncommitted AR-235 slice 1 code in the working tree is not
-  AR-236 scope. It needs its own commit set, validation, and PR
-  against the AR-235 plan, not this one.
-- Tracker creation/closure for any sibling "pending authorization"
-  AR remains blocked on operator authorization.
-- No automatic CI ran for this planning work. Exhaustive coverage,
-  the four-shard 97% coverage gate, and the six-interpreter
-  compatibility matrix are `workflow_dispatch`-only and were not
-  requested.
-- The 3 pre-existing `verify_docs.py` worklog errors
-  (`e87747d` missing, `4928a87` encoding) are not introduced by
-  AR-236 and are out of scope here.
+- No bounded implementation or evidence blocker remains. Live tracker #245 is
+  closed while canonical AR-236 remains open with unchecked acceptances. The
+  attempted reopen was rejected by the outward-mutation approval boundary; do
+  not merge until the owner explicitly authorizes reopening #245.
+- Local Windows decision conformance has an inherited evaluator-environment
+  failure; hosted Linux killed all 83 mutations on the same branch head.
 
 ## same-task-continuity
 
-Context thresholds never create, transfer, pause, or stop this
-task. Continue the same persistent goal from the planning pair
-through normal compaction. Subsequent sub-issues await explicit
-user greenlight per sub-issue.
+After every compaction, reread this capsule, the canonical AR-236 issue, and
+`git status` before acting. Refresh `origin/main` before each package and merge
+decision. Continue in this worktree.
 
 ## next-bounded-work-package
 
-1. Commit the planning pair (AR-236 issue, parity analysis,
-   AR-236 capsule, registry updates, AR-235 reciprocal `related`
-   link) as one substantive commit.
-2. Commit the worklog update + registry backref as the matching
-   `docs(worklog):` ledger commit.
-3. Push the pair to `origin/main`; verify the registry still
-   resolves; `gh issue view 245` to confirm tracker parity.
-4. Pause for user greenlight before opening sub-issue 1
-   (Hiring list / show). The proposed sub-issue order is
-   listed in the analysis doc §"Top-priority gaps."
-5. After the planning pair is pushed, address the uncommitted
-   AR-235 slice 1 code separately — its own commit set,
-   validation, and PR.
+1. Push this final hosted-verification checkpoint and require fresh green checks.
+2. With explicit outward-mutation approval, reopen #245; refresh `main`, mark
+   PR #270 ready, and merge only if the delta is unchanged.
+3. Close completed AR-254 tracker #272 after merge; keep AR-236 open for its
+   explicitly deferred historical sub-issues.
 
 ## verification
 
 ~~~text
-python scripts/docs_metadata.py --check
-python scripts/verify_docs.py
-ruff check agency_runtime tests scripts
-ruff format --check agency_runtime tests scripts
-gh issue view 245 --repo Holeshot-Software-LLC/agency-runtime --json state,labels
-git diff --check
-# After commit + push:
-python scripts/update_worklog.py --check
-# After sub-issue 1 lands, add the relevant fast spine
-# (test_workforce_dynamic_hiring, test_workforce_hiring_contract,
-# test_workforce_selection_safety, test_workforce_promotion,
-# test_routing_correctness) to the validation list.
+git rebase origin/main  # clean; 21 commits replayed onto c7cf1d96
+node tests/dashboard_ui.test.mjs  # 132 passed
+node --test --experimental-test-coverage ...  # 132 passed
+# coverage: 96.75% lines, 86.39% branches, 95.45% functions
+node --check <seven dashboard modules and UI test>  # passed
+git diff --check  # passed
+focused latency/API/parser/graph tests  # 207 passed; final latency/API rerun 178 passed
+node tests/dashboard_ui.test.mjs  # 133 passed after contract rename
+independent review  # machine and visible attribution findings resolved
+production-CLI browser QA  # populated + fresh-empty; 1440/1024/390; console/CSP clean
+path-only real-handler cadence  # 91 safe rows; view-scoped evidence; no hot-poll refetch
+named fast Python spine -q -W error  # 668 passed, 6 skipped
+agency eval routing --json --no-details  # all gates passed; p95 4.957 ms
+docs metadata/policy/worklog/verify_docs + full Ruff  # passed
+agency eval decision-conformance  # inherited Windows launcher_identity baseline failure
+hosted run 31578291258  # all automatic gates passed, including 83 mutations and Windows builds
 ~~~
 
 ## constraints
 
-- No push, PR, hosted dispatch, publication, tracker mutation,
-  tag, release, trust-store action, or repository setting
-  change without authorization.
-- Do not start sub-issue work without explicit user greenlight.
-- Preserve the 12 KiB / 180-line hard cap. If the next
-  sub-issue's state does not fit, archive this capsule under
-  `docs/roadmap/handoffs/archive/` and start a fresh one with
-  a new SHA pair, per AGENTS.md.
-- Keep AR-236 in `open` until every acceptance item has current
-  evidence. Do not mark it `done` on the strength of the
-  planning pair alone.
-- Do not delete or rewrite any planning artifacts (AR-236 file,
-  analysis doc, registry rows, this capsule) without first
-  moving them to `archive/`. The historical record is the
-  source of truth.
-- Do not introduce live-evaluation admission or modify
-  `hard_checkpoint_percent`. The fixed 50% threshold is the
-  only field accepted by the capsule schema.
-- Sub-issue 10 requires an ADR for the presentation library
-  decision before implementation begins.
-- Sub-issue 9 (Upgrade) is substantial; do not bundle it with
-  smaller sub-issues.
+- Vision first, reachability second. Delete unsupported surface even if it
+  still runs; preserve differently shaped host mechanisms when they provide
+  the same required boundary.
+- Never infer child delivery, host publication, execution identity, health, or
+  causal latency attribution from an adjacent Agency row.
+- Preserve Job B, refreshed main, AR-119 evidence, historical subjects, exact
+  metric denominators, source freshness, bounds, and neutral empty states.
+- Keep this capsule below 12 KiB and 180 lines; replace rather than append.

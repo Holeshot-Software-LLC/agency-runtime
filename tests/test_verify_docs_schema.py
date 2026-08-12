@@ -9,7 +9,8 @@ from typing import Any
 
 import pytest
 
-from scripts import verify_docs
+from scripts import update_worklog, verify_docs
+from scripts.worklog_history import stable_short_shas
 
 
 def _base_meta(**overrides: Any) -> dict[str, object]:
@@ -545,3 +546,71 @@ def test_legacy_source_names_remain_forbidden_outside_legal_notice(
         "README.md: contains legacy sibling repository name",
         "README.md: contains legacy sibling owner",
     ]
+
+
+def test_worklog_grandfathering_is_exact_and_future_mixed_ledgers_fail(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    grandfathered = next(iter(verify_docs.GRANDFATHERED_LEDGER_COMMITS))
+    future_mixed = "f" * 40
+
+    def fake_git(*args: str) -> str:
+        if args[0] == "log" and "--reverse" in args:
+            return ""
+        if args[0] == "log":
+            return "\n".join(
+                [
+                    f"{grandfathered}\tdocs(worklog): historical exception",
+                    f"{future_mixed}\tdocs(worklog): future mixed ledger",
+                ]
+            )
+        assert args[0] == "diff-tree"
+        assert args[-1] == future_mixed
+        return "docs/worklog/README.md\ndocs/roadmap/issue-AR-999-example.md"
+
+    monkeypatch.setattr(verify_docs, "git", fake_git)
+    registry = _document(_base_meta(), relative="docs/worklog/README.md")
+    errors: list[str] = []
+
+    verify_docs.validate_worklog([registry], errors)
+
+    assert errors == [
+        "worklog ledger commit fffffff changes disallowed paths: "
+        "docs/roadmap/issue-AR-999-example.md"
+    ]
+
+
+def test_worklog_short_shas_are_clone_independent_and_collision_checked() -> None:
+    assert stable_short_shas(["a" * 40, "b" * 40]) == ["a" * 8, "b" * 8]
+    with pytest.raises(ValueError, match="prefix collision"):
+        stable_short_shas(["12345678" + "a" * 32, "12345678" + "b" * 32])
+    with pytest.raises(ValueError, match="full lowercase Git SHAs"):
+        stable_short_shas(["abc1234"])
+
+
+def test_documentation_git_subjects_are_decoded_as_utf8(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: list[dict[str, object]] = []
+
+    def fake_run(*args: object, **kwargs: object) -> object:
+        captured.append(kwargs)
+        return type(
+            "Completed",
+            (),
+            {
+                "stdout": (
+                    f"{'a' * 40}\x1f2026-08-04\x1fAR-233: Architecture fixes — honest headers\n"
+                )
+            },
+        )()
+
+    monkeypatch.setattr(update_worklog.subprocess, "run", fake_run)
+
+    assert update_worklog.git_log() == [
+        ("aaaaaaaa", "2026-08-04", "AR-233: Architecture fixes — honest headers")
+    ]
+    assert verify_docs.git("log") == (
+        f"{'a' * 40}\x1f2026-08-04\x1fAR-233: Architecture fixes — honest headers"
+    )
+    assert [invocation["encoding"] for invocation in captured] == ["utf-8", "utf-8"]

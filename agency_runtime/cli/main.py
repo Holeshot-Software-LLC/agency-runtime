@@ -372,6 +372,7 @@ cmd_evidence_children = _evidence.cmd_evidence_children
 cmd_evidence_latency = _evidence.cmd_evidence_latency
 cmd_evidence_intent = _evidence.cmd_evidence_intent
 cmd_evidence_rejections = _evidence.cmd_evidence_rejections
+cmd_evidence_selections = _evidence.cmd_evidence_selections
 cmd_evidence_wiring = _evidence.cmd_evidence_wiring
 
 cmd_serve = _services.cmd_serve
@@ -430,6 +431,7 @@ _COMMAND_NAMES = (
     "cmd_evidence_intent",
     "cmd_evidence_latency",
     "cmd_evidence_rejections",
+    "cmd_evidence_selections",
     "cmd_evidence_wiring",
     "cmd_explain",
     "cmd_hook",
