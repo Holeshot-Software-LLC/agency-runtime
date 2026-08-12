@@ -32,9 +32,6 @@ class HermesAdapter(BaseAdapter):
 
         return "hermes" in detect_installed_agents()
 
-    def get_delegate_backend(self) -> str | None:
-        return "delegate_task"
-
     # BaseAdapter.post_api_request_handler records the canonical host receipt
     # for all host adapters, including honest unavailable receipts when the
     # hook lacks model telemetry.

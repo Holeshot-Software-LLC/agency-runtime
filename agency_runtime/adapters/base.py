@@ -416,11 +416,6 @@ class BaseAdapter(ABC):
         """Check if this adapter's runtime is installed and available."""
         ...
 
-    @abstractmethod
-    def get_delegate_backend(self) -> str | None:
-        """Return the delegate backend name this adapter provides, or None."""
-        ...
-
     def apply_finalization(
         self,
         draft_text: str,

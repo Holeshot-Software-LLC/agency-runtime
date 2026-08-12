@@ -174,9 +174,6 @@ class LiteLLMAdapter(BaseAdapter):
         base_url = self._base_url or config.adapters.litellm.base_url
         return litellm_health_check(base_url, config)
 
-    def get_delegate_backend(self) -> str | None:
-        return None
-
     def extract_receipt_from_headers(
         self,
         headers: dict[str, str],

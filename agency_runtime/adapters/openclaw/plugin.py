@@ -26,9 +26,6 @@ class OpenClawAdapter(BaseAdapter):
 
         return "openclaw" in detect_installed_agents()
 
-    def get_delegate_backend(self) -> str | None:
-        return "sessions_spawn"
-
     def on_message_received(
         self,
         session_id: str,

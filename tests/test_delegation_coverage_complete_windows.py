@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from agency_runtime.core.delegation import backend_windows
+from agency_runtime.core import owned_process_windows as backend_windows
 
 
 class _Function:
