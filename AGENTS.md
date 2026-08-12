@@ -69,6 +69,21 @@ Obtain any authorization required for an outward-facing tracker write. Lack of
 authorization is a visible blocker to report, not permission to omit the local
 record or pretend tracker parity.
 
+### Branches and worktrees
+
+Never commit directly to `main`. Work on a branch in its own git worktree, open
+a pull request, and merge that. This holds for every change, including one-line
+documentation edits.
+
+Two reasons, and the second is the one that bites: a pull request is where the
+reasoning for a change survives review, and more than one agent is usually
+working this repository at once. Committing into a shared checkout moves the
+branch under whoever else is standing in it, and staging whole files in a tree
+you do not exclusively own sweeps up another worker's in-flight hunks.
+
+Leave uncommitted work you did not create exactly where you found it. Before
+`git add` on a shared path, check whether the change is yours.
+
 ### Commits and worklogs
 
 Every substantive commit must have one exact row in
