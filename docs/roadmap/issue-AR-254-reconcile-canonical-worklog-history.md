@@ -61,6 +61,8 @@ safe. Future mixed ledger commits must still fail.
 
 ## Implementation checkpoint
 
-Commit `8d9e5058` rebuilds the canonical index, records the four published
-violations, and adds a regression proving any non-grandfathered mixed ledger
-still fails. Documentation verification and 142 focused tests pass locally.
+Commit `8d9e5058` rebuilds the canonical index and records the four published
+violations. Hosted Linux then exposed clone-dependent `%h` abbreviation width;
+`1694c326` derives collision-checked eight-character IDs from full SHAs and
+proves invalid, colliding, and mixed-ledger cases. Documentation verification
+and 143 focused tests pass locally.

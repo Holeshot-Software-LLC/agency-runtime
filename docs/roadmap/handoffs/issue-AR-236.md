@@ -126,7 +126,9 @@ issue owns acceptance; this capsule owns the next bounded execution slice.
   only canonical documentation history failed. AR-254 commit `8d9e5058`
   rebuilds 772 worklog rows and exact-SHA-grandfathers four immutable mixed
   ledgers while keeping future enforcement strict. Docs and 142 focused tests
-  pass locally; push and hosted rerun remain.
+  pass locally. The hosted clone exposed environment-dependent `%h` width;
+  `1694c326` now derives collision-checked eight-character IDs from full SHAs.
+  The exact docs checks and 143 focused tests pass; push and rerun remain.
 - Hosted CodeQL/dependency review passed. Manual exhaustive lanes remain skipped.
 - Tracker #245 may not yet reflect the reopened umbrella and later UI scope.
 
