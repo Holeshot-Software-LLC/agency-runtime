@@ -1,4 +1,4 @@
-"""Private-directory portability for the deterministic delegation eval store."""
+"""Private-directory portability for the deterministic host-parity eval store."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from agency_runtime.core.evals import delegation
+from agency_runtime.core.evals import host_parity
 from tests.runtime_support import ensure_private_test_directory
 
 
@@ -36,20 +36,20 @@ def test_eval_store_uses_private_allocator_and_cleans_up(
 ) -> None:
     observed: list[str] = []
     monkeypatch.setattr(
-        delegation,
+        host_parity,
         "private_temporary_directory",
         _private_eval_allocator(tmp_path, observed),
     )
 
     def inspect(store, adapter):
         assert adapter.store is store
-        assert store.db_path.parent.name == "delegation-eval-1"
+        assert store.db_path.parent.name == "host-parity-eval-1"
         assert store.database_stats()["tables"]["runs"] == 0
         return {"private": True}
 
-    assert delegation._with_store(inspect) == {"private": True}
-    assert observed == ["delegation-eval"]
-    assert not (tmp_path / "delegation-eval-1").exists()
+    assert host_parity._with_store(inspect) == {"private": True}
+    assert observed == ["host-parity-eval"]
+    assert not (tmp_path / "host-parity-eval-1").exists()
 
 
 def test_eval_store_cleanup_preserves_callback_failure(
@@ -58,7 +58,7 @@ def test_eval_store_cleanup_preserves_callback_failure(
 ) -> None:
     observed: list[str] = []
     monkeypatch.setattr(
-        delegation,
+        host_parity,
         "private_temporary_directory",
         _private_eval_allocator(tmp_path, observed),
     )
@@ -67,7 +67,7 @@ def test_eval_store_cleanup_preserves_callback_failure(
         raise RuntimeError("expected")
 
     with pytest.raises(RuntimeError, match="expected"):
-        delegation._with_store(fail)
+        host_parity._with_store(fail)
 
-    assert observed == ["delegation-eval"]
-    assert not (tmp_path / "delegation-eval-1").exists()
+    assert observed == ["host-parity-eval"]
+    assert not (tmp_path / "host-parity-eval-1").exists()

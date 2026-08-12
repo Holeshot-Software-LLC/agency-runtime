@@ -723,9 +723,9 @@ def test_route_empty_selected_companion_and_json(monkeypatch, capsys):
     ("command", "module_name", "function_name", "report"),
     [
         (
-            subject.cmd_eval_delegation,
-            "agency_runtime.core.evals.delegation",
-            "run_delegation_eval",
+            subject.cmd_eval_host_parity,
+            "agency_runtime.core.evals.host_parity",
+            "run_host_parity_eval",
             {
                 "passed": False,
                 "passed_count": 1,
@@ -784,7 +784,7 @@ def test_eval_and_smoke_human_and_json(
     import importlib
 
     module = importlib.import_module(module_name)
-    if function_name == "run_delegation_eval":
+    if function_name == "run_host_parity_eval":
         monkeypatch.setattr(module, function_name, lambda: report)
     else:
         monkeypatch.setattr(module, function_name, lambda **_kwargs: report)

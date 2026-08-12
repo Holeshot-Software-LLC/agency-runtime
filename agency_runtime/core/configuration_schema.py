@@ -381,9 +381,7 @@ def _validate_selector(value: Any) -> dict[str, Any]:
         "trivial_msg_threshold": lambda item: _integer(
             item, "selector.trivial_msg_threshold", minimum=0, maximum=10_000
         ),
-        "record_routing_intent": lambda item: _boolean(
-            item, "selector.record_routing_intent"
-        ),
+        "record_routing_intent": lambda item: _boolean(item, "selector.record_routing_intent"),
     }
     return {name: validators[name](item) for name, item in section.items()}
 

@@ -11,15 +11,12 @@ from agency_runtime.cli import (
     _common,
     config_commands,
     config_wizard,
-    delegation_commands,
     install_commands,
     roster_commands,
     service_commands,
 )
 from agency_runtime.cli import main as cli
 from agency_runtime.cli import parser as cli_parser
-from agency_runtime.core.delegation import backends as backend_module
-from agency_runtime.core.delegation.backend_contracts import BackendError
 from agency_runtime.core.detect import ProviderDetection
 
 
@@ -58,55 +55,6 @@ def test_small_helper_branch_edges(monkeypatch, capsys):
         == 0
     )
     assert "running" in capsys.readouterr().out
-
-
-def test_delegate_preserves_nonempty_backend_error_result(monkeypatch):
-    run = {"id": "run", "session_id": "", "status": "evidence_only"}
-
-    def record_delegation(**kwargs):
-        run["session_id"] = kwargs["session_id"]
-        return "event"
-
-    def complete_run(_run_id, status="completed"):
-        run["status"] = status
-
-    store = SimpleNamespace(
-        record_delegation=record_delegation,
-        update_delegation=lambda *_a, **_kw: None,
-        get_run=lambda _trace_id: dict(run),
-        complete_run=complete_run,
-    )
-    expected = {
-        "backend": "codex",
-        "status": "unavailable",
-        "exit_code": 11,
-        "error": "configured result",
-    }
-
-    class Candidate:
-        name = "codex"
-
-        def is_available(self):
-            return True
-
-        def delegate(self, **_kwargs):
-            raise BackendError("outer", result=expected)
-
-    emitted = []
-    monkeypatch.setattr(backend_module, "CodexExecBackend", lambda **_kw: Candidate())
-    monkeypatch.setattr(delegation_commands, "_store", lambda: store)
-    monkeypatch.setattr(delegation_commands, "_print_json", emitted.append)
-    args = SimpleNamespace(
-        agent=None,
-        backend="codex",
-        command=None,
-        json=True,
-        task="task",
-        timeout=None,
-        workdir=None,
-    )
-    assert delegation_commands.cmd_delegate(args) == 11
-    assert emitted[-1]["error"] == "configured result"
 
 
 def test_config_and_sync_remaining_paths(monkeypatch, capsys):

@@ -453,7 +453,7 @@ def test_run_smoke_empty_hosts_and_failure_accounting(monkeypatch: pytest.Monkey
     monkeypatch.setattr(smoke, "detect_installed_agents", lambda: [])
     monkeypatch.setattr(
         smoke,
-        "run_delegation_eval",
+        "run_host_parity_eval",
         lambda: {"passed": False, "passed_count": 1, "failed_count": 2},
     )
     report = smoke.run_smoke()
@@ -483,7 +483,7 @@ def test_run_smoke_uses_active_roster_and_records_plugin_failure(
     monkeypatch.setattr(smoke, "detect_installed_agents", lambda: ["hermes"])
     monkeypatch.setattr(
         smoke,
-        "run_delegation_eval",
+        "run_host_parity_eval",
         lambda: {"passed": True, "passed_count": 3, "failed_count": 0},
     )
     monkeypatch.setattr(
@@ -508,7 +508,7 @@ def test_run_smoke_reuses_one_attested_launcher_across_hosts(
     monkeypatch.setattr(smoke, "HOSTS", {"codex": object(), "hermes": object()})
     monkeypatch.setattr(
         smoke,
-        "run_delegation_eval",
+        "run_host_parity_eval",
         lambda: {"passed": True, "passed_count": 3, "failed_count": 0},
     )
 

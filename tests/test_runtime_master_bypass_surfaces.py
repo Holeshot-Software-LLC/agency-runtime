@@ -969,27 +969,6 @@ def test_cli_status_passes_brokered_master_state_to_host_inspection(
     ]
 
 
-def test_cli_delegate_bypasses_before_backend_or_store_construction(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    import agency_runtime.cli.delegation_commands as delegation_commands
-
-    emitted: list[dict[str, Any]] = []
-    _set_master(monkeypatch, False)
-    monkeypatch.setattr(delegation_commands, "_store", _unexpected)
-    monkeypatch.setattr(delegation_commands, "_print_json", emitted.append)
-
-    assert delegation_commands.cmd_delegate(Namespace(json=True)) == 0
-    assert emitted == [
-        {
-            "status": "bypassed",
-            "runtime_enabled": False,
-            "bypassed": True,
-            "exit_code": 0,
-        }
-    ]
-
-
 def test_command_backend_bypasses_before_task_argv_temp_or_process_work(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

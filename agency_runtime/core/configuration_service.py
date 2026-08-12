@@ -248,9 +248,7 @@ def apply_config_operations(
         tuple[dict[str, Any], set[str], bool],
     ],
     complete: Callable[..., ConfigUpdateResult],
-    narrow: Callable[
-        [Mapping[str, Any], Mapping[str, Any], set[str]], dict[str, Any] | None
-    ],
+    narrow: Callable[[Mapping[str, Any], Mapping[str, Any], set[str]], dict[str, Any] | None],
     locked_precondition: Callable[[], None] | None = None,
 ) -> ConfigUpdateResult:
     """Apply a typed operation batch as one locked, atomic transaction."""

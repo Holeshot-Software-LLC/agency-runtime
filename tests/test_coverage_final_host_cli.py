@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import io
 import json
 import stat
@@ -21,7 +20,7 @@ from agency_runtime.adapters.hermes import bridge as hermes_bridge
 from agency_runtime.adapters.litellm import callback as litellm_callback
 from agency_runtime.adapters.litellm import request_context
 from agency_runtime.adapters.openclaw import node_bridge
-from agency_runtime.cli import _common, delegation_commands, install_commands, service_commands
+from agency_runtime.cli import install_commands
 from agency_runtime.core import (
     bounded_io,
     configuration_identity,
@@ -383,40 +382,6 @@ def test_litellm_lazy_store_master_off_and_request_context(monkeypatch) -> None:
     assert request_context._strip_completion_context(
         "[AGENCY PREFLIGHT] Specialist routing suggestion no complete header"
     ).endswith("no complete header")
-
-
-def test_small_cli_store_delegation_and_service_branches(monkeypatch, capsys) -> None:
-    cfg = config_module.AgencyConfig(
-        store=config_module.StoreConfig("runtime.db"),
-        config_path="",
-    )
-    created: list[tuple[Any, Any]] = []
-    monkeypatch.setattr(
-        _common,
-        "Store",
-        lambda path=None, config_path=None: created.append((path, config_path)) or object(),
-    )
-    _common.store(cfg)
-    assert created == [(Path("runtime.db"), None)]
-    _common.store(replace(cfg, config_path="agency.yaml"))
-    assert created[-1] == (Path("runtime.db"), "agency.yaml")
-
-    result = {"bypassed": True, "exit_code": 0}
-    assert delegation_commands._emit_delegate_result(argparse.Namespace(json=False), result) == 0
-    assert "globally disabled" in capsys.readouterr().out
-
-    stores: list[tuple[Any, Any]] = []
-    monkeypatch.setattr(
-        service_commands,
-        "Store",
-        lambda db=None, config_path=None: stores.append((db, config_path)) or object(),
-    )
-    assert service_commands._configured_store(argparse.Namespace(db=None, config=None)) is None
-    assert (
-        service_commands._configured_store(argparse.Namespace(db="db", config="config")) is not None
-    )
-    assert service_commands._configured_store(argparse.Namespace(db="db", config=None)) is not None
-    assert stores == [("db", "config"), ("db", None)]
 
 
 def test_install_control_rendering_and_failure_paths(monkeypatch, capsys) -> None:

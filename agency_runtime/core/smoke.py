@@ -1,7 +1,7 @@
 """Deterministic Agency Runtime smoke checks.
 
 The smoke suite intentionally avoids network calls and live host mutation. It
-verifies the local SQLite store, delegation eval contract, and generated host
+verifies the local SQLite store, host-parity eval contract, and generated host
 plugin templates in a temporary HOME.
 """
 
@@ -20,7 +20,7 @@ from typing import Any
 
 from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import safe_load_bounded_json
-from agency_runtime.core.evals.delegation import run_delegation_eval
+from agency_runtime.core.evals.host_parity import run_host_parity_eval
 from agency_runtime.core.installer import (
     HOSTS,
     detect_installed_agents,
@@ -625,8 +625,8 @@ def run_smoke(*, all_hosts: bool = False, host: str | None = None) -> dict[str, 
 
                 checks.append(_check("routing_roster_available", _active_or_starter_roster))
 
-                def _delegation_eval() -> dict[str, Any]:
-                    report = run_delegation_eval()
+                def _host_parity_eval() -> dict[str, Any]:
+                    report = run_host_parity_eval()
                     if not report["passed"]:
                         failures = [
                             f"{case.get('name')}: {case.get('error')}"
@@ -634,7 +634,7 @@ def run_smoke(*, all_hosts: bool = False, host: str | None = None) -> dict[str, 
                             if not case.get("passed")
                         ]
                         raise RuntimeError(
-                            f"delegation eval failed: {report['failed_count']} failed; "
+                            f"host-parity eval failed: {report['failed_count']} failed; "
                             + "; ".join(failures[:3])
                         )
                     return {
@@ -642,7 +642,7 @@ def run_smoke(*, all_hosts: bool = False, host: str | None = None) -> dict[str, 
                         "failed_count": report["failed_count"],
                     }
 
-                checks.append(_check("delegation_eval", _delegation_eval))
+                checks.append(_check("host_parity_eval", _host_parity_eval))
 
                 if not hosts:
                     checks.append(

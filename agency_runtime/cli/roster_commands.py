@@ -1561,16 +1561,17 @@ def cmd_policy(
     return 0 if validation["valid"] else 1
 
 
-def cmd_eval_delegation(args: argparse.Namespace) -> int:
-    from agency_runtime.core.evals.delegation import run_delegation_eval
+def cmd_eval_host_parity(args: argparse.Namespace) -> int:
+    from agency_runtime.core.evals.host_parity import run_host_parity_eval
 
-    report = run_delegation_eval()
+    report = run_host_parity_eval()
     if args.json:
         _print_json(report)
     else:
         status = "passed" if report["passed"] else "failed"
         print(
-            f"delegation eval {status}: {report['passed_count']} passed, {report['failed_count']} failed"
+            f"host-parity eval {status}: "
+            f"{report['passed_count']} passed, {report['failed_count']} failed"
         )
         for case in report["cases"]:
             marker = "ok" if case["passed"] else "FAIL"

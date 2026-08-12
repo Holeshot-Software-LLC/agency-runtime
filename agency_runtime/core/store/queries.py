@@ -271,6 +271,10 @@ _OPEN_TRACE_RETENTION_GUARDS: Mapping[str, str] = {
         "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = finalization_events.trace_id "
         "AND runs.status IN ('active', 'evidence_only'))"
     ),
+    "routing_intent": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = routing_intent.trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
     "routing_decisions": (
         "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = routing_decisions.trace_id "
         "AND runs.status IN ('active', 'evidence_only'))"

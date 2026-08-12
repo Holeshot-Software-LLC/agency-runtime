@@ -1068,49 +1068,19 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
 
 
 def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
-    delegate = sub.add_parser("delegate", help="Delegate a task to a backend")
-    delegate.add_argument(
-        "--backend",
-        choices=["codex", "claude", "hermes", "openclaw", "generic"],
-        default="generic",
-        help="Execution backend",
-    )
-    delegate.add_argument("--agent", default="", help="Selected specialist slug or identifier")
-    delegate.add_argument("--task", required=True, help="Bounded task description")
-    delegate.add_argument(
-        "--workdir",
-        default=None,
-        help="Existing working directory for the delegated host",
-    )
-    delegate.add_argument(
-        "--timeout",
-        type=float,
-        default=None,
-        help="Stop waiting after N seconds and mark the delegation skipped",
-    )
-    delegate.add_argument(
-        "--json", action="store_true", help="Print machine-readable delegation result"
-    )
-    delegate.add_argument(
-        "--command",
-        nargs=argparse.REMAINDER,
-        default=[],
-        help="Explicit argv for the generic backend; place this option last",
-    )
-    _bind(delegate, handlers, "cmd_delegate")
-
     eval_p = sub.add_parser("eval", help="Run deterministic eval suites")
     eval_sub = eval_p.add_subparsers(dest="eval_command", required=True)
-    eval_delegation = eval_sub.add_parser(
-        "delegation", help="Run delegation lifecycle/evidence evals"
+    eval_host_parity = eval_sub.add_parser(
+        "host-parity",
+        help="Prove every adapter records the same evidence for an identical turn",
     )
-    eval_delegation.add_argument(
+    eval_host_parity.add_argument(
         "--json", action="store_true", help="Print machine-readable results"
     )
-    _bind(eval_delegation, handlers, "cmd_eval_delegation")
+    _bind(eval_host_parity, handlers, "cmd_eval_host_parity")
     eval_routing = eval_sub.add_parser(
         "routing",
-        help="Run versioned routing, policy, delegation, and latency gates",
+        help="Run versioned routing and latency gates",
     )
     eval_routing.add_argument("--json", action="store_true", help="Print machine-readable results")
     eval_routing.add_argument(
@@ -1596,18 +1566,6 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     _bind(wiring, handlers, "cmd_evidence_wiring")
 
 
-def _register_passthrough_commands(sub: Subparsers, handlers: Handlers) -> None:
-    codex = sub.add_parser("codex", help="Codex adapter commands")
-    codex_sub = codex.add_subparsers(dest="codex_command", required=True)
-    codex_exec = codex_sub.add_parser("exec", help="Run codex exec")
-    codex_exec.add_argument("args", nargs=argparse.REMAINDER, help="Arguments passed to codex exec")
-    _bind(codex_exec, handlers, "cmd_codex_exec")
-
-    run = sub.add_parser("run", help="Run an arbitrary command")
-    run.add_argument("args", nargs=argparse.REMAINDER, help="Command and arguments to execute")
-    _bind(run, handlers, "cmd_run")
-
-
 def build_parser(handlers: Handlers) -> argparse.ArgumentParser:
     """Build the command tree with callbacks supplied by the public facade."""
     parser = argparse.ArgumentParser(prog="agency", description="Agency Runtime Control Plane")
@@ -1632,5 +1590,4 @@ def build_parser(handlers: Handlers) -> argparse.ArgumentParser:
     _register_database(sub, handlers)
     _register_native_protocols(sub, handlers)
     _register_services(sub, handlers)
-    _register_passthrough_commands(sub, handlers)
     return parser
