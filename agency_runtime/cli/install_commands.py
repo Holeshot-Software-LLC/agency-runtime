@@ -1293,6 +1293,36 @@ def _restricted_install_failure(
     return 1
 
 
+def _operator_policy_refusal(
+    cfg: AgencyConfig,
+    *,
+    json_mode: bool,
+    dependencies: InstallDependencies,
+) -> int | None:
+    """Refuse to install against house rules that will never be applied.
+
+    Nobody need be watching for this to be the right place. Install is where the
+    operator's decision is expressed -- the config templated into the image -- and
+    its exit code is what a provisioning step reads. Refusing here turns a silently
+    dropped guardrail into a container that fails to provision, which an
+    orchestrator can see. Every later read stays lenient on purpose: a running
+    container must not stop answering over a typo in a string.
+
+    Strict where the config is chosen, lenient where it is merely read. The failure
+    an operator can act on is the one at provisioning time, not the one buried in a
+    running fleet.
+    """
+
+    if not cfg.operator_policy_error:
+        return None
+    message = f"operator_policy cannot be applied: {cfg.operator_policy_error}"
+    if json_mode:
+        dependencies.emit_json({"status": "error", "error": message, "exit_code": 2})
+    else:
+        print(f"Install refused: {message}")
+    return 2
+
+
 def cmd_install(
     args: argparse.Namespace,
     *,
@@ -1309,6 +1339,9 @@ def cmd_install(
     if special_result is not None:
         return special_result
     cfg = dependencies.load_config()
+    refusal = _operator_policy_refusal(cfg, json_mode=json_mode, dependencies=dependencies)
+    if refusal is not None:
+        return refusal
     from agency_runtime.core.canary import run_canary
     from agency_runtime.core.dashboard_service import (
         install_dashboard_service,

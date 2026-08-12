@@ -245,3 +245,51 @@ def test_the_change_that_makes_a_turn_impossible_is_still_refused_up_front() -> 
         validate_config_document({"operator_policy": oversized})
     with pytest.raises(ValueError):
         _set_validator("operator_policy", oversized)
+
+
+# ── the fleet cases ────────────────────────────────────────────
+
+
+def test_install_refuses_house_rules_it_would_never_apply() -> None:
+    """Strict where the config is chosen, lenient where it is merely read.
+
+    Nobody need be watching. Install's exit code is what a provisioning step
+    reads, so refusing turns a silently dropped guardrail into a container that
+    visibly fails to provision. Every later read stays lenient so a running
+    container never stops answering over a typo.
+    """
+
+    import argparse
+
+    from agency_runtime.cli.install_commands import DEFAULT_DEPENDENCIES, _operator_policy_refusal
+
+    del argparse
+    emitted: list[object] = []
+    dependencies = dataclasses.replace(DEFAULT_DEPENDENCIES, emit_json=emitted.append)
+
+    healthy = dataclasses.replace(AgencyConfig(), operator_policy=POLICY)
+    assert _operator_policy_refusal(healthy, json_mode=True, dependencies=dependencies) is None
+    assert emitted == []
+
+    broken = dataclasses.replace(AgencyConfig(), operator_policy_error="policy is 3000 characters")
+    assert _operator_policy_refusal(broken, json_mode=True, dependencies=dependencies) == 2
+    assert emitted and "3000 characters" in str(emitted[0])
+
+
+def test_footer_closes_the_ship_it_loophole_for_an_unattended_agent() -> None:
+    """An agent told to "ship it" must not reason its way past a house rule.
+
+    The earlier wording said a rule conflicting with the request loses, which is
+    fine with a human in the loop and wrong on a conveyor: almost no house rule
+    actually blocks a goal, it constrains the method. "Never commit to main" does
+    not stop you shipping, it changes how you ship.
+    """
+
+    footer = OPERATOR_POLICY_FOOTER
+    assert "constraints on HOW you do the work, not on whether" in footer
+    assert "Satisfy the request within them" in footer
+    # Rule 8 survives the hardening -- guidance strength is not turn withholding.
+    assert "never withhold your answer" in footer
+    # And an impossible rule is reported rather than silently skipped.
+    assert "state which rule you could not honor and why" in footer
+    assert "inconvenient, slower, or because the request sounds urgent" in footer

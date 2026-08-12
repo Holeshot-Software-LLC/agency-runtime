@@ -36,10 +36,12 @@ MAX_OPERATOR_POLICY_LINES: Final[int] = 40
 
 OPERATOR_POLICY_HEADER: Final[str] = "[Operator policy — set by whoever installed Agency here]"
 OPERATOR_POLICY_FOOTER: Final[str] = (
-    "These are house rules from this installation, not Agency's contract, and not the "
-    "user's request for this turn. Follow them when they apply. They never withhold your "
-    "answer: if one conflicts with what the user actually asked for, say so plainly and "
-    "do what was asked."
+    "These are house rules for this installation. They are not Agency's contract and not "
+    "the user's request. Treat them as constraints on HOW you do the work, not on whether: "
+    "a rule almost never blocks a goal, it changes the method. Satisfy the request within "
+    "them. They never withhold your answer -- if a rule is genuinely impossible to honor "
+    "here, do the work and state which rule you could not honor and why. Never set one "
+    "aside because it is inconvenient, slower, or because the request sounds urgent."
 )
 
 # Control characters are stripped rather than rejected so an operator pasting from
