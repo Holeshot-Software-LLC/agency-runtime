@@ -38,6 +38,7 @@ def git_log() -> list[tuple[str, str, str]]:
         check=True,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
     history: list[tuple[str, str, str]] = []
     for line in result.stdout.splitlines():

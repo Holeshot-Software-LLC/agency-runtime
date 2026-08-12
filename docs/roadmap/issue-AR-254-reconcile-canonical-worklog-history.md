@@ -34,15 +34,18 @@ correct.
 
 ## Current state
 
-The deterministic generator and exact immutable-history exceptions pass on the
-pre-Job-B branch. Rebasing PR #270 onto merged PRs #271 and #273 rewrote 21
-branch commits and added seven canonical commits, so the checked-in table is
-again stale until regenerated. This is expected generated-history drift, not a
-new exception or permission to weaken future enforcement.
+The deterministic generator and exact immutable-history exceptions pass after
+the Job B rebase. The first fresh hosted run then exposed a second platform
+dependency: Python decoded Git's UTF-8 subject stream with the Windows cp1252
+default, so two em dashes were checked in as mojibake and Linux regenerated the
+faithful subjects. This is a generator boundary bug, not a historical exception
+or permission to weaken future enforcement.
 
 ## Approach
 
 - Rebuild the worklog from full Git history with the canonical generator.
+- Decode Git's subject stream explicitly as UTF-8 in both the generator and
+  validator on every platform.
 - Record the four immutable violations in provenance and grandfather only their
   exact full SHAs.
 - Keep the allowed-path rule unchanged for every other commit.
@@ -59,6 +62,7 @@ new exception or permission to weaken future enforcement.
 - [x] Only the four named published commits bypass the ledger-path rule.
 - [x] A new mixed `docs(worklog):` commit still fails verification.
 - [x] `scripts/update_worklog.py --check` and `scripts/verify_docs.py` pass.
+- [x] Non-ASCII Git subjects have one platform-independent UTF-8 projection.
 - [ ] The PR #270 automatic gate reaches a green aggregate.
 
 ## Implementation checkpoint
@@ -68,5 +72,8 @@ published violations. Hosted Linux then exposed clone-dependent `%h`
 abbreviation width; rebased commit `a78653ce` derives collision-checked
 eight-character IDs from full SHAs and proves invalid, colliding, and
 mixed-ledger cases. Documentation verification and 143 focused tests passed
-before the Job B rebase. The post-rebase AR-236 recovery checkpoint regenerates
-the table against `c7cf1d96` and reruns the same exact checks.
+before the Job B rebase. The post-rebase recovery regenerated the table against
+`c7cf1d96`; hosted run `31576910979` then passed product, mutation, and dashboard
+gates before rejecting the two cp1252-decoded subjects. The UTF-8 generator and
+validator subprocess contracts plus focused regression close that platform gap
+without changing any historical subject.
