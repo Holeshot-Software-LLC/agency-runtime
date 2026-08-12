@@ -216,7 +216,7 @@ def build_judge_prompt(
     catalog_lines = [_candidate_card_json(agent) for agent in prompted]
     catalog_text = "\n".join(catalog_lines)
     # This is a bounded model prompt, not a database statement.
-    return (
+    prompt = (
         f"Task: {task_description}\n\n"  # nosec B608
         f"Select zero to {max_sel} specialists from these {len(prompted)} "
         "candidates. Choose the smallest sufficient compatible set. Do not combine "
@@ -228,6 +228,12 @@ def build_judge_prompt(
         f"Candidate cards (one JSON object per line):\n{catalog_text}\n\n"
         f'Return: {{"selected_ids": ["id1"], "confidence": 0.9}}'
     )
+    if (
+        isinstance(candidates, facade._CompleteCandidateUniverse)
+        and len(prompt.encode("utf-8")) > facade._MAX_COMPLETE_CANDIDATE_PROMPT_BYTES
+    ):
+        raise ValueError("complete candidate universe exceeds the judge prompt byte budget")
+    return prompt
 
 
 def response_content(
@@ -335,7 +341,13 @@ def validated_decision(
     candidates: list[dict[str, Any]],
     max_sel: int,
 ) -> tuple[list[str], float] | None:
-    """Validate one provider decision against the exact prompted catalog."""
+    """Validate one provider decision without repairing its staffing choice.
+
+    The provider is the only selection authority.  Validation may reject an
+    unknown, duplicate, malformed, or over-budget result, but it must not turn
+    that result into a different team by filtering, de-duplicating, coercing,
+    or truncating it.
+    """
     if parsed is None:
         return None
     selected = parsed.get("selected_ids") or parsed.get("selected") or []
@@ -343,11 +355,16 @@ def validated_decision(
         return None
     facade = _facade()
     known_ids = {facade._agent_id(agent) for agent in candidates}
-    valid_selected = list(dict.fromkeys(str(item) for item in selected if str(item) in known_ids))
-    confidence = facade._bounded_confidence(parsed.get("confidence"))
-    if confidence is None or (selected and not valid_selected):
+    if (
+        len(selected) > max_sel
+        or any(not isinstance(item, str) or item not in known_ids for item in selected)
+        or len(set(selected)) != len(selected)
+    ):
         return None
-    return valid_selected[:max_sel], confidence
+    confidence = facade._bounded_confidence(parsed.get("confidence"))
+    if confidence is None:
+        return None
+    return list(selected), confidence
 
 
 def applied_result(

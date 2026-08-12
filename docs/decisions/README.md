@@ -124,6 +124,7 @@ Status meanings:
 | [ADR-0093](0093-atomic-finalization-evidence-batches.md) | Commit one finalization evidence batch atomically | Accepted |
 | [ADR-0120](0120-construct-first-pass-evidence-headers.md) | Construct evidence headers before first publication | Accepted |
 | [ADR-0156](0156-host-artifacts-prove-native-child-delivery.md) | Use host-authored artifacts as native-child delivery proof | Accepted |
+| [ADR-0158](0158-collect-child-canary-proof-inside-disposable-host-profiles.md) | Collect child-canary proof inside disposable host profiles | Accepted |
 
 ## State and roster governance
 

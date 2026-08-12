@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/canary_proof.py
   - agency_runtime/core/child_delivery_evidence.py

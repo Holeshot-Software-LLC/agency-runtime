@@ -6,13 +6,13 @@ from hashlib import sha256
 from threading import Lock
 from typing import Any
 
-from agency_runtime.adapters.hooks import HookBridge
+from agency_runtime.adapters import hooks as hooks_module
+from agency_runtime.adapters.hooks import MAX_CONTEXT_CHARS, MAX_HOOK_OUTPUT_BYTES, HookBridge
 from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
 from agency_runtime.core.native_child_prompt_delivery import (
-    parse_jit_specialist_delivery,
-    parse_native_child_prompt_delivery,
     render_codex_native_child_execution_message,
 )
+from agency_runtime.core.native_child_staffing import NativeChildStaffingResult
 from agency_runtime.core.unit_assignment import work_unit_goal_hash
 
 
@@ -347,6 +347,135 @@ def test_pre_tool_use_fails_closed_for_unplanned_or_ambiguous_work() -> None:
     assert ambiguous_store.snapshot_reads == []
 
 
+def test_plaintext_staffing_validates_the_exact_returned_hook_bytes_before_success(
+    monkeypatch: Any,
+) -> None:
+    store = _PlanStore()
+    observed: dict[str, Any] = {}
+
+    def staff(*_args: Any, **kwargs: Any) -> NativeChildStaffingResult:
+        rewritten = 'Review "exact" \\ escaping.\n[AGENCY INFERENCE TEAM v6]'
+        validator = kwargs["delivery_validator"]
+        observed["accepted"] = validator(rewritten)
+        observed["prospective"] = hooks_module._encoded_hook_output(
+            hooks_module._native_child_staffing_response(
+                _agent_payload()["tool_input"],
+                task_field="prompt",
+                rewritten_task=rewritten,
+            )
+        )
+        return NativeChildStaffingResult(
+            staffed=True,
+            reason_code="staffed",
+            rewritten_task=rewritten,
+        )
+
+    monkeypatch.setattr(
+        HookBridge,
+        "_native_child_staffing_parent",
+        lambda _self, _payload, _args: (
+            hooks_module.HookCorrelation(
+                "claude-session",
+                "trace",
+                "",
+                "",
+                "toolu-code",
+            ),
+            "trace",
+        ),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_install_identity.current_runtime_managed_host_install_identity",
+        lambda _host: object(),
+    )
+    monkeypatch.setattr("agency_runtime.core.native_child_staffing.staff_native_child", staff)
+
+    response = HookBridge("claude", store=store).handle(_agent_payload())  # type: ignore[arg-type]
+    returned = hooks_module._encoded_hook_output(response)
+
+    assert observed["accepted"] is True
+    assert returned == observed["prospective"]
+    assert returned is not None and len(returned) <= MAX_HOOK_OUTPUT_BYTES
+
+
+def test_escaping_heavy_hook_response_is_rejected_before_staffing_can_persist(
+    monkeypatch: Any,
+) -> None:
+    store = _PlanStore()
+    observed: dict[str, Any] = {}
+
+    def staff(*_args: Any, **kwargs: Any) -> NativeChildStaffingResult:
+        rewritten = ('"\\\n' * 15_000) + "tail"
+        observed["raw_chars"] = len(rewritten)
+        observed["accepted"] = kwargs["delivery_validator"](rewritten)
+        return NativeChildStaffingResult(
+            staffed=bool(observed["accepted"]),
+            reason_code=("staffed" if observed["accepted"] else "validation_failed"),
+            rewritten_task=rewritten,
+        )
+
+    monkeypatch.setattr(
+        HookBridge,
+        "_native_child_staffing_parent",
+        lambda _self, _payload, _args: (
+            hooks_module.HookCorrelation(
+                "claude-session",
+                "trace",
+                "",
+                "",
+                "toolu-code",
+            ),
+            "trace",
+        ),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_install_identity.current_runtime_managed_host_install_identity",
+        lambda _host: object(),
+    )
+    monkeypatch.setattr("agency_runtime.core.native_child_staffing.staff_native_child", staff)
+
+    response = HookBridge("claude", store=store).handle(_agent_payload())  # type: ignore[arg-type]
+
+    assert observed["raw_chars"] < MAX_CONTEXT_CHARS
+    assert observed["accepted"] is False
+    assert response == {}
+
+
+def test_unserializable_host_input_never_enters_staffing_or_persistence(
+    monkeypatch: Any,
+) -> None:
+    store = _PlanStore()
+    called = False
+
+    def staff(*_args: Any, **_kwargs: Any) -> NativeChildStaffingResult:
+        nonlocal called
+        called = True
+        raise AssertionError("staffing must not run")
+
+    monkeypatch.setattr(
+        HookBridge,
+        "_native_child_staffing_parent",
+        lambda _self, _payload, _args: (
+            hooks_module.HookCorrelation(
+                "claude-session",
+                "trace",
+                "",
+                "",
+                "toolu-code",
+            ),
+            "trace",
+        ),
+    )
+    monkeypatch.setattr("agency_runtime.core.native_child_staffing.staff_native_child", staff)
+    payload = _agent_payload()
+    payload["tool_input"]["unserializable"] = float("nan")
+
+    response = HookBridge("claude", store=store).handle(payload)  # type: ignore[arg-type]
+
+    assert response == {}
+    assert called is False
+
+
 def test_codex_v1_spawn_leaves_ambiguous_goal_hash_to_native_scheduler() -> None:
     store = _PlanStore()
     store.goals["unit-security"] = store.goals["unit-code"]
@@ -402,12 +531,11 @@ def test_subagent_start_injects_only_current_child_lineage() -> None:
     assert 'native_run_id="claude-agent:agent-42"' in context
     assert "code-reviewer" not in context
     assert "activation_token" not in context
-    assert 'session_id="claude-child:agent-42"' in context
-    assert 'parent_scope_token="parent-scope-0"' in context
-    assert "parent_session_id or parent_trace_id" in context
-    assert "parent budget, cache, and singleflight" in context
-    assert store.parent_scopes[0]["parent_session_id"] == "claude-session"
-    assert store.parent_scopes[0]["parent_trace_id"] == "trace"
+    assert "host-owned launch prompt" in context
+    assert "does not ask the child to repair staffing" in context
+    assert "agency.preflight" not in context
+    assert "parent_scope_token" not in context
+    assert store.parent_scopes == []
 
 
 def test_subagent_start_omits_both_parent_ids_when_trace_is_ambiguous() -> None:
@@ -423,10 +551,10 @@ def test_subagent_start_omits_both_parent_ids_when_trace_is_ambiguous() -> None:
         context = HookBridge(host, store=store).handle(payload)["hookSpecificOutput"][
             "additionalContext"
         ]
-        assert "parent-scope receipt is unavailable" in context
         assert "parent_session_id=" not in context
         assert "parent_trace_id=" not in context
         assert "parent_scope_token=" not in context
+        assert "agency.preflight" not in context
 
 
 def test_subagent_stop_does_not_guess_parent_work_unit_correlation() -> None:
@@ -444,7 +572,7 @@ def test_subagent_stop_does_not_guess_parent_work_unit_correlation() -> None:
     assert store.snapshot_reads == []
 
 
-def test_codex_subagent_lifecycle_injects_exact_identity_and_child_owned_fallback() -> None:
+def test_codex_subagent_lifecycle_reports_opaque_unstaffed_identity() -> None:
     class LifecycleStore(_PlanStore):
         def __init__(self) -> None:
             super().__init__()
@@ -471,10 +599,12 @@ def test_codex_subagent_lifecycle_injects_exact_identity_and_child_owned_fallbac
     context = start["hookSpecificOutput"]["additionalContext"]
     assert 'worker_id="agent-42"' in context
     assert 'native_run_id="codex-agent:agent-42"' in context
-    assert "complete delegated assignment" in context
-    assert 'session_id="codex-child:agent-42"' in context
-    assert 'parent_scope_token="parent-scope-0"' in context
+    assert "did not expose this child's decrypted inter-agent assignment" in context
+    assert "proceed with its native child unstaffed" in context
+    assert "agency.preflight" not in context
+    assert "parent_scope_token" not in context
     assert "does not load, select, or inherit" in context
+    assert store.parent_scopes == []
     assert store.started == [
         {
             "host": "codex",
@@ -619,134 +749,3 @@ def test_post_tool_use_without_an_exact_open_turn_records_nothing() -> None:
 
     assert result == {}
     assert adapter.calls == []
-
-
-class _JitRosterStore:
-    """Only what just-in-time staffing reads: an open trace and a versioned roster."""
-
-    def __init__(self) -> None:
-        self.prompt = "You are the exact database tuning specialist for slow SQL queries."
-        self.hash = sha256(self.prompt.encode()).hexdigest()
-        self.loaded: list[tuple[str, str, str]] = []
-
-    def get_open_traces_for_session(self, _session_id: str) -> list[str]:
-        return ["trace"]
-
-    def get_run(self, trace_id: str) -> dict[str, Any] | None:
-        # Only the real routed turn exists; a tool identity must not resolve to a run.
-        if trace_id != "trace":
-            return None
-        return {"session_id": "session", "trace_id": "trace", "status": "active"}
-
-    def get_completion_evidence_snapshot(self, session_id: str, trace_id: str) -> dict[str, Any]:
-        return {
-            "session_id": session_id,
-            "trace_id": trace_id,
-            "status": "active",
-            "delivery_mode": "direct",
-            "selected_specialists": [],
-            "unit_agent_plan": [],
-        }
-
-    def get_active_roster_as_catalog(self) -> list[dict[str, Any]]:
-        return [
-            {
-                "slug": "database-optimizer",
-                "agent_slug": "database-optimizer",
-                "version": "v1",
-                "hash": self.hash,
-                "description": "Tunes slow SQL queries, indexes, and query plans",
-                "capabilities": ["sql", "index", "query", "database"],
-            }
-        ]
-
-    def get_versioned_specialist_prompt(
-        self,
-        slug: str,
-        version: str,
-        content_hash: str,
-        *,
-        max_chars: int,
-    ) -> dict[str, Any] | None:
-        if slug != "database-optimizer" or version != "v1" or content_hash != self.hash:
-            return None
-        return {
-            "slug": slug,
-            "version": version,
-            "hash": content_hash,
-            "prompt_body": self.prompt[:max_chars],
-            "prompt_truncated": len(self.prompt) > max_chars,
-        }
-
-    def record_specialist_loaded(
-        self,
-        session_id: str,
-        agent_slug: str,
-        *,
-        trace_id: str = "",
-    ) -> None:
-        self.loaded.append((session_id, agent_slug, trace_id))
-
-
-def _unplanned_child_payload(prompt: str) -> dict[str, Any]:
-    # No ``description`` means no plan row can match, which is exactly how a child the
-    # host spawned on its own initiative arrives.
-    return {
-        "hook_event_name": "PreToolUse",
-        "session_id": "session",
-        "tool_use_id": "tool-1",
-        "tool_name": "Agent",
-        "tool_input": {"prompt": prompt},
-    }
-
-
-def test_host_initiated_child_is_staffed_just_in_time_without_a_grant() -> None:
-    store = _JitRosterStore()
-    task = "Speed up the slow SQL query and add an index."
-
-    result = HookBridge("claude", store=store).handle(_unplanned_child_payload(task))
-
-    delivered = result["hookSpecificOutput"]["updatedInput"]["prompt"]
-    assert result["hookSpecificOutput"]["permissionDecision"] == "allow"
-    assert "[AGENCY JIT SPECIALIST v5]" in delivered
-    assert store.prompt in delivered
-    # Staffed but not accounted: no grant is issued, so no delegation obligation is
-    # created that the parent's turn would then have to finalize against.
-    assert "activation_token" not in delivered
-    assert parse_native_child_prompt_delivery(delivered) is None
-    delivery = parse_jit_specialist_delivery(delivered)
-    assert delivery is not None
-    assert delivery.specialist_slug == "database-optimizer"
-    assert delivery.specialist_version == "v1"
-    assert delivery.original_task == task
-    assert store.loaded == [("session", "database-optimizer", "trace")]
-
-
-def test_host_initiated_child_runs_unstaffed_when_no_specialist_fits() -> None:
-    class _EmptyRoster(_JitRosterStore):
-        def get_active_roster_as_catalog(self) -> list[dict[str, Any]]:
-            return []
-
-    store = _EmptyRoster()
-
-    result = HookBridge("claude", store=store).handle(
-        _unplanned_child_payload("Speed up the slow SQL query.")
-    )
-
-    # Abstaining must never block the child the host chose to spawn.
-    assert result == {}
-    assert store.loaded == []
-
-
-def test_just_in_time_staffing_is_never_reapplied_to_an_already_staffed_task() -> None:
-    store = _JitRosterStore()
-    bridge = HookBridge("claude", store=store)
-    task = "Speed up the slow SQL query and add an index."
-
-    delivered = bridge.handle(_unplanned_child_payload(task))["hookSpecificOutput"]["updatedInput"][
-        "prompt"
-    ]
-    again = bridge.handle(_unplanned_child_payload(delivered))
-
-    assert again == {}
-    assert store.loaded == [("session", "database-optimizer", "trace")]

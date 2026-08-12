@@ -1,355 +1,411 @@
-"""Just-in-time staffing must behave identically on every hook-model host.
+"""Host-boundary contracts for inference-owned native-child staffing.
 
-Host parity is the product claim, not a trade-off: a child the host spawned on its
-own initiative gets a specialist on codex, claude and zcode alike.  These tests
-exist because the capability was previously proven only on claude, which left the
-other two hosts free to regress silently while still looking covered.
+Claude and ZCode expose a synchronous plaintext ``Agent`` launch and can carry
+one atomic v6 inference team. Codex 0.147 exposes only an encrypted initial
+inter-agent assignment at its spawn hook, so it must fail open unstaffed until
+the host supplies a trusted plaintext or authenticated-decision surface.
 
-openclaw and hermes are deliberately absent.  ``HookBridge`` cannot be constructed
-for them at all -- they have no PreToolUse-equivalent interception point where a
-child's launch input can still be rewritten -- so parity for those hosts is an
-adapter-protocol question, not a hook-gating one.
+These tests cover adapter wiring. The selector, atomic envelope, Store decision,
+and host-artifact authority each have their own adversarial suites.
 """
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from typing import Any
 
 import pytest
 
-from agency_runtime.adapters.hooks import _JIT_STAFFING_MAX_CARDS as JIT_STAFFING_MAX_CARDS
 from agency_runtime.adapters.hooks import HookBridge
-from agency_runtime.core.native_child_prompt_delivery import (
-    parse_all_jit_specialist_deliveries,
-    parse_jit_specialist_delivery,
-    parse_native_child_prompt_delivery,
+from agency_runtime.core import (
+    native_child_install_identity,
+    native_child_prompt_delivery,
+    native_child_staffing,
 )
+from agency_runtime.core.native_child_install_identity import NativeChildInstallIdentity
+from agency_runtime.core.native_child_staffing import NativeChildStaffingResult
 
-# Each hook-model host, with the exact spawn tool and task field it actually uses.
-_HOSTS = (
-    pytest.param("claude", "Agent", "prompt", id="claude"),
-    pytest.param("zcode", "Agent", "prompt", id="zcode"),
-    pytest.param("codex", "functions.collaboration.spawn_agent", "message", id="codex"),
-)
-
-_TASK = "Speed up the slow SQL query and add an index."
+_TASK = "Add an indexed query endpoint and cover it with tests."
 
 
-class _JitRosterStore:
-    """Only what just-in-time staffing reads: an open trace and a versioned roster."""
+class _LiveParentStore:
+    def __init__(self, *, status: str = "active") -> None:
+        self.status = status
+        self.load_attempts: list[tuple[Any, ...]] = []
+        self.native_decisions: dict[str, dict[str, Any]] = {}
 
-    def __init__(self) -> None:
-        self.prompt = "You are the exact database tuning specialist for slow SQL queries."
-        self.hash = sha256(self.prompt.encode()).hexdigest()
-        self.loaded: list[tuple[str, str, str]] = []
-
-    def get_open_traces_for_session(self, _session_id: str) -> list[str]:
-        return ["trace"]
-
-    def get_run(self, trace_id: str) -> dict[str, Any] | None:
-        # Only the real routed turn exists; a tool identity must not resolve to a run.
-        if trace_id != "trace":
+    def get_run(self, trace_id: str) -> dict[str, str] | None:
+        if trace_id != "parent-trace":
             return None
-        return {"session_id": "session", "trace_id": "trace", "status": "active"}
-
-    def get_completion_evidence_snapshot(self, session_id: str, trace_id: str) -> dict[str, Any]:
         return {
-            "session_id": session_id,
             "trace_id": trace_id,
-            "status": "active",
-            "delivery_mode": "direct",
-            "selected_specialists": [],
-            "unit_agent_plan": [],
+            "session_id": "parent-session",
+            "host": "claude",
+            "status": self.status,
         }
 
-    def get_active_roster_as_catalog(self) -> list[dict[str, Any]]:
-        return [
-            {
-                "slug": "database-optimizer",
-                "agent_slug": "database-optimizer",
-                "version": "v1",
-                "hash": self.hash,
-                "description": "Tunes slow SQL queries, indexes, and query plans",
-                "capabilities": ["sql", "index", "query", "database"],
-            }
-        ]
+    def get_open_traces_for_session(self, session_id: str) -> list[str]:
+        return ["parent-trace"] if session_id == "parent-session" else []
 
-    def get_versioned_specialist_prompt(
-        self,
-        slug: str,
-        version: str,
-        content_hash: str,
-        *,
-        max_chars: int,
-    ) -> dict[str, Any] | None:
-        if slug != "database-optimizer" or version != "v1" or content_hash != self.hash:
-            return None
-        return {
-            "slug": slug,
-            "version": version,
-            "hash": content_hash,
-            "prompt_body": self.prompt[:max_chars],
-            "prompt_truncated": len(self.prompt) > max_chars,
-        }
+    def record_specialist_loaded(self, *args: Any, **kwargs: Any) -> None:
+        self.load_attempts.append((*args, kwargs))
 
-    def record_specialist_loaded(
-        self,
-        session_id: str,
-        agent_slug: str,
-        *,
-        trace_id: str = "",
-    ) -> None:
-        self.loaded.append((session_id, agent_slug, trace_id))
+    def get_native_child_staffing_decision(self, decision_id: str) -> dict[str, Any] | None:
+        decision = self.native_decisions.get(decision_id)
+        return None if decision is None else dict(decision)
 
 
-def _unplanned_child_payload(tool_name: str, task_field: str, task: str) -> dict[str, Any]:
-    # No planned native label means no plan row can match, which is exactly how a
-    # child the host spawned on its own initiative arrives.
+def _install(host: str) -> NativeChildInstallIdentity:
+    return NativeChildInstallIdentity(
+        host=host,
+        plugin_version="test",
+        install_id="install-one",
+        bundle_digest="b" * 64,
+        running_runtime_digest="c" * 64,
+        candidate_digest="c" * 64,
+    )
+
+
+def _payload(
+    host: str,
+    *,
+    task: str = _TASK,
+    turn_id: str = "parent-trace",
+    task_name: str = "apparently-valid-specialist-label",
+) -> dict[str, Any]:
+    field = "prompt" if host in {"claude", "zcode"} else "message"
+    tool = "Agent" if host in {"claude", "zcode"} else "functions.collaboration.spawn_agent"
+    tool_input = {field: task, "task_name": task_name, "description": "child task"}
+    if host in {"claude", "zcode"}:
+        tool_input.update({"subagent_type": "Explore", "model": "sonnet"})
     return {
         "hook_event_name": "PreToolUse",
-        "session_id": "session",
-        "tool_use_id": "tool-1",
-        "tool_name": tool_name,
-        "tool_input": {task_field: task},
+        "session_id": "parent-session",
+        "turn_id": turn_id,
+        "tool_use_id": "launch-one",
+        "tool_name": tool,
+        "tool_input": tool_input,
     }
 
 
-@pytest.mark.parametrize(("host", "tool_name", "task_field"), _HOSTS)
-def test_host_initiated_child_is_staffed_just_in_time_on_every_host(
-    host: str,
-    tool_name: str,
-    task_field: str,
-) -> None:
-    store = _JitRosterStore()
-
-    result = HookBridge(host, store=store).handle(
-        _unplanned_child_payload(tool_name, task_field, _TASK)
+def _retry_delivery(
+    *,
+    host: str = "claude",
+    parent_session_id: str = "parent-session",
+    parent_trace_id: str = "parent-trace",
+    launch_id: str = "launch-one",
+    decision_id: str = "decision-one",
+    expires_delta: int = 60,
+) -> tuple[str, dict[str, Any]]:
+    issued = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(seconds=1)
+    expires = issued + timedelta(seconds=expires_delta)
+    prompt = "Exact specialist prompt."
+    card = native_child_prompt_delivery.InferenceTeamCard(
+        specialist_slug="code-reviewer",
+        specialist_version="revision-one",
+        specialist_prompt_hash=sha256(prompt.encode()).hexdigest(),
+        prompt_body=prompt,
     )
-
-    delivered = result["hookSpecificOutput"]["updatedInput"][task_field]
-    assert result["hookSpecificOutput"]["permissionDecision"] == "allow"
-    assert "[AGENCY JIT SPECIALIST v5]" in delivered
-    assert store.prompt in delivered
-    # Staffed but not accounted: no grant is issued, so the parent's turn gains no
-    # delegation obligation it would then have to finalize against.
-    assert "activation_token" not in delivered
-    assert parse_native_child_prompt_delivery(delivered) is None
-    delivery = parse_jit_specialist_delivery(delivered)
-    assert delivery is not None
-    assert delivery.host == host
-    assert delivery.specialist_slug == "database-optimizer"
-    assert delivery.specialist_version == "v1"
-    assert delivery.original_task == _TASK
-    # The audit row carries the parent trace, never the tool identity.
-    assert store.loaded == [("session", "database-optimizer", "trace")]
-
-
-@pytest.mark.parametrize(("host", "tool_name", "task_field"), _HOSTS)
-def test_host_initiated_child_runs_unstaffed_when_no_specialist_fits_on_every_host(
-    host: str,
-    tool_name: str,
-    task_field: str,
-) -> None:
-    class _EmptyRoster(_JitRosterStore):
-        def get_active_roster_as_catalog(self) -> list[dict[str, Any]]:
-            return []
-
-    store = _EmptyRoster()
-
-    result = HookBridge(host, store=store).handle(
-        _unplanned_child_payload(tool_name, task_field, _TASK)
+    rendered = native_child_prompt_delivery.render_inference_team_delivery(
+        _TASK,
+        (card,),
+        host=host,
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        launch_id=launch_id,
+        decision_id=decision_id,
+        provider_receipt_digest="d" * 64,
+        candidate_digest="c" * 64,
+        install_id="install-one",
+        bundle_digest="b" * 64,
+        runtime_digest="c" * 64,
+        issued_at=issued.isoformat().replace("+00:00", "Z"),
+        expires_at=expires.isoformat().replace("+00:00", "Z"),
+        nonce="nonce-one",
+        binding_kind="launch_id",
+        binding_id=launch_id,
     )
+    parsed = native_child_prompt_delivery.parse_inference_team_delivery(rendered)
+    assert parsed is not None
+    expected = {
+        "decision_id": parsed.decision_id,
+        "host": parsed.host,
+        "parent_session_id": parsed.parent_session_id,
+        "parent_trace_id": parsed.parent_trace_id,
+        "launch_id": parsed.launch_id,
+        "provider_receipt_digest": parsed.provider_receipt_digest,
+        "task_sha256": parsed.task_sha256,
+        "team_digest": parsed.team_digest,
+        "candidate_digest": parsed.candidate_digest,
+        "runtime_digest": parsed.runtime_digest,
+        "install_id": parsed.install_id,
+        "bundle_digest": parsed.bundle_digest,
+        "issued_at": parsed.issued_at,
+        "expires_at": parsed.expires_at,
+        "nonce": parsed.nonce,
+        "binding_kind": parsed.binding_kind,
+        "binding_id": parsed.binding_id,
+        "cards": [
+            {
+                "specialist_slug": item.specialist_slug,
+                "specialist_version": item.specialist_version,
+                "specialist_prompt_hash": item.specialist_prompt_hash,
+                "body_character_length": item.body_character_length,
+            }
+            for item in parsed.cards
+        ],
+    }
+    return rendered, expected
 
-    # Abstaining must never block the child the host chose to spawn.
-    assert result == {}
-    assert store.loaded == []
 
-
-@pytest.mark.parametrize(("host", "tool_name", "task_field"), _HOSTS)
-def test_just_in_time_staffing_is_never_reapplied_on_every_host(
+@pytest.mark.parametrize("host", ["claude", "zcode"])
+def test_plaintext_hosts_forward_one_exact_inference_team_without_self_attesting_loads(
+    monkeypatch: pytest.MonkeyPatch,
     host: str,
-    tool_name: str,
-    task_field: str,
 ) -> None:
-    store = _JitRosterStore()
-    bridge = HookBridge(host, store=store)
+    store = _LiveParentStore()
+    calls: list[dict[str, Any]] = []
 
-    delivered = bridge.handle(_unplanned_child_payload(tool_name, task_field, _TASK))[
-        "hookSpecificOutput"
-    ]["updatedInput"][task_field]
-    again = bridge.handle(_unplanned_child_payload(tool_name, task_field, delivered))
-
-    assert again == {}
-    assert store.loaded == [("session", "database-optimizer", "trace")]
-
-
-def test_opaque_codex_child_runs_unstaffed_rather_than_blocked() -> None:
-    """An encrypted Codex spawn message has no rewritable surface.
-
-    This is the one irreducible parity gap: Agency cannot append a specialist to
-    ciphertext it cannot read.  The required behaviour is therefore fail-open --
-    the child runs exactly as it otherwise would, with no specialist and no denial.
-    """
-
-    store = _JitRosterStore()
-
-    result = HookBridge("codex", store=store).handle(
-        _unplanned_child_payload(
-            "functions.collaboration.spawn_agent",
-            "message",
-            "gAAAAA" + "a" * 40,
+    def staff(_store: object, **kwargs: Any) -> NativeChildStaffingResult:
+        calls.append(kwargs)
+        rewritten = kwargs["task"] + "\n\n[atomic inference team]"
+        return NativeChildStaffingResult(
+            staffed=True,
+            reason_code="staffed",
+            rewritten_task=rewritten,
+            context_segment="\n\n[atomic inference team]",
+            decision_id="decision-one",
+            selected_ids=("beta-reviewer", "alpha-reviewer"),
         )
+
+    monkeypatch.setattr(native_child_staffing, "staff_native_child", staff)
+    monkeypatch.setattr(
+        native_child_install_identity,
+        "current_managed_host_install_identity",
+        lambda actual_host: _install(actual_host),
+    )
+
+    result = HookBridge(host, store=store).handle(_payload(host))  # type: ignore[arg-type]
+
+    output = result["hookSpecificOutput"]
+    field = "prompt"
+    assert output["hookEventName"] == "PreToolUse"
+    assert output["permissionDecision"] == "allow"
+    assert output["updatedInput"][field] == _TASK + "\n\n[atomic inference team]"
+    assert output["updatedInput"]["description"] == "child task"
+    assert len(calls) == 1
+    call = calls[0]
+    assert call["host"] == host
+    assert call["task"] == _TASK
+    assert call["parent_session_id"] == "parent-session"
+    assert call["parent_trace_id"] == "parent-trace"
+    assert call["launch_id"] == "launch-one"
+    assert call["binding_kind"] == "launch_id"
+    assert call["binding_id"] == "launch-one"
+    assert isinstance(call["install_identity"], NativeChildInstallIdentity)
+    assert store.load_attempts == []
+
+
+@pytest.mark.parametrize("message", ["gAAAAA" + "a" * 80, "plaintext-looking assignment"])
+def test_codex_opaque_or_unauthenticated_assignment_never_invokes_inference(
+    monkeypatch: pytest.MonkeyPatch,
+    message: str,
+) -> None:
+    store = _LiveParentStore()
+    failures: list[dict[str, Any]] = []
+
+    def forbidden(*_args: Any, **_kwargs: Any) -> NativeChildStaffingResult:
+        raise AssertionError("Codex opaque assignment reached inference")
+
+    def record(_store: object, **kwargs: Any) -> str:
+        failures.append(kwargs)
+        return "diagnostic-one"
+
+    monkeypatch.setattr(native_child_staffing, "staff_native_child", forbidden)
+    monkeypatch.setattr(native_child_staffing, "record_native_child_staffing_failure", record)
+
+    result = HookBridge("codex", store=store).handle(  # type: ignore[arg-type]
+        _payload("codex", task=message, task_name="database-optimizer")
     )
 
     assert result == {}
-    assert store.loaded == []
+    assert len(failures) == 1
+    assert failures[0]["task"] == message
+    assert failures[0]["reason_code"] == "unsupported_opaque_interagent_channel"
+    assert failures[0]["parent_trace_id"] == "parent-trace"
+    assert store.load_attempts == []
 
 
-def test_openclaw_and_hermes_have_no_hook_model_to_staff_through() -> None:
-    """Pin the reason those hosts are absent above, so the gap stays visible.
-
-    If either host ever gains a PreToolUse-equivalent, this test fails and forces
-    the parity question to be answered deliberately rather than by omission.
-    """
-
-    for host in ("openclaw", "hermes"):
-        with pytest.raises(ValueError, match="unsupported hook host"):
-            HookBridge(host, store=_JitRosterStore())
-
-
-class _PluralRosterStore(_JitRosterStore):
-    """Three specialists that all fit one multi-part assignment."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.bodies = {
-            "database-optimizer": self.prompt,
-            "backend-architect": "You are the exact backend API design specialist.",
-            "test-writer": "You are the exact automated test authoring specialist.",
-        }
-        self.hashes = {
-            slug: sha256(body.encode()).hexdigest() for slug, body in self.bodies.items()
-        }
-
-    def get_active_roster_as_catalog(self) -> list[dict[str, Any]]:
-        return [
-            {
-                "slug": "database-optimizer",
-                "agent_slug": "database-optimizer",
-                "version": "v1",
-                "hash": self.hashes["database-optimizer"],
-                "description": "Tunes slow SQL queries, indexes, and query plans",
-                "capabilities": ["sql", "index", "query", "database"],
-            },
-            {
-                "slug": "backend-architect",
-                "agent_slug": "backend-architect",
-                "version": "v1",
-                "hash": self.hashes["backend-architect"],
-                "description": "Designs backend API endpoints and service boundaries",
-                "capabilities": ["api", "endpoint", "backend", "query"],
-            },
-            {
-                "slug": "test-writer",
-                "agent_slug": "test-writer",
-                "version": "v1",
-                "hash": self.hashes["test-writer"],
-                "description": "Writes automated tests for new endpoints and queries",
-                "capabilities": ["test", "endpoint", "query", "index"],
-            },
-        ]
-
-    def get_versioned_specialist_prompt(
-        self,
-        slug: str,
-        version: str,
-        content_hash: str,
-        *,
-        max_chars: int,
-    ) -> dict[str, Any] | None:
-        body = self.bodies.get(slug)
-        if body is None or version != "v1" or content_hash != self.hashes[slug]:
-            return None
-        return {
-            "slug": slug,
-            "version": version,
-            "hash": content_hash,
-            "prompt_body": body[:max_chars],
-            "prompt_truncated": len(body) > max_chars,
-        }
-
-
-_PLURAL_TASK = "Add an indexed query endpoint and cover it with tests."
-
-
-@pytest.mark.parametrize(("host", "tool_name", "task_field"), _HOSTS)
-def test_a_host_initiated_child_is_handed_cards_plural(
-    host: str,
-    tool_name: str,
-    task_field: str,
+@pytest.mark.parametrize("invalid_turn", ["missing-trace", "parent-trace"])
+def test_invalid_or_terminal_explicit_parent_never_falls_back_to_another_trace(
+    monkeypatch: pytest.MonkeyPatch,
+    invalid_turn: str,
 ) -> None:
-    """Rule 4 says harness-spawned children get cards -- plural, not one."""
+    store = _LiveParentStore(status="completed" if invalid_turn == "parent-trace" else "active")
+    called = False
 
-    store = _PluralRosterStore()
+    def forbidden(*_args: Any, **_kwargs: Any) -> NativeChildStaffingResult:
+        nonlocal called
+        called = True
+        raise AssertionError("invalid parent reached staffing")
 
-    result = HookBridge(host, store=store).handle(
-        _unplanned_child_payload(tool_name, task_field, _PLURAL_TASK)
+    monkeypatch.setattr(native_child_staffing, "staff_native_child", forbidden)
+
+    result = HookBridge("claude", store=store).handle(_payload("claude", turn_id=invalid_turn))  # type: ignore[arg-type]
+
+    assert result == {}
+    assert called is False
+
+
+def test_valid_v6_retry_is_idempotent_and_never_restaffed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _LiveParentStore()
+    rendered, expected = _retry_delivery()
+    store.native_decisions["decision-one"] = expected
+    monkeypatch.setattr(
+        native_child_staffing,
+        "staff_native_child",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("restaffed")),
+    )
+    monkeypatch.setattr(
+        native_child_install_identity,
+        "current_managed_host_install_identity",
+        lambda actual_host: _install(actual_host),
     )
 
-    delivered = result["hookSpecificOutput"]["updatedInput"][task_field]
-    deliveries = parse_all_jit_specialist_deliveries(delivered)
-    assert len(deliveries) > 1, "a child that needs several specialists must get several"
-    assert len(deliveries) <= JIT_STAFFING_MAX_CARDS
-    # Every card is independently verifiable against its own pinned version.
-    for delivery in deliveries:
-        assert delivery.host == host
-        assert delivery.prompt_body == store.bodies[delivery.specialist_slug]
-        assert delivery.specialist_prompt_hash == store.hashes[delivery.specialist_slug]
-    # The host's own task survives intact underneath every card.
-    assert {delivery.original_task for delivery in deliveries} == {_PLURAL_TASK}
-
-
-def test_every_delivered_card_is_recorded_as_loaded() -> None:
-    """Staffed but not accounted still means each card is auditable."""
-
-    store = _PluralRosterStore()
-
-    result = HookBridge("claude", store=store).handle(
-        _unplanned_child_payload("Agent", "prompt", _PLURAL_TASK)
+    assert (
+        HookBridge("claude", store=store).handle(  # type: ignore[arg-type]
+            _payload("claude", task=rendered)
+        )
+        == {}
     )
 
-    delivered = result["hookSpecificOutput"]["updatedInput"]["prompt"]
-    staffed = {d.specialist_slug for d in parse_all_jit_specialist_deliveries(delivered)}
-    recorded = {slug for _session, slug, _trace in store.loaded}
-    assert recorded == staffed
-    assert all(trace == "trace" for _session, _slug, trace in store.loaded)
 
-
-def test_plural_staffing_stays_idempotent() -> None:
-    """Re-staffing an already multi-carded child must add nothing."""
-
-    store = _PluralRosterStore()
-    bridge = HookBridge("claude", store=store)
-
-    delivered = bridge.handle(_unplanned_child_payload("Agent", "prompt", _PLURAL_TASK))[
-        "hookSpecificOutput"
-    ]["updatedInput"]["prompt"]
-    first = list(store.loaded)
-    again = bridge.handle(_unplanned_child_payload("Agent", "prompt", delivered))
-
-    assert again == {}
-    assert store.loaded == first
-
-
-def test_a_child_whose_roster_offers_one_fit_still_gets_exactly_one() -> None:
-    """Plural is a ceiling, not a quota: never pad a team to reach it."""
-
-    store = _JitRosterStore()
-
-    result = HookBridge("claude", store=store).handle(
-        _unplanned_child_payload("Agent", "prompt", _TASK)
+@pytest.mark.parametrize(
+    ("overrides", "expires_delta", "persist_decision"),
+    [
+        ({"parent_session_id": "foreign-session"}, 60, True),
+        ({"parent_trace_id": "foreign-trace"}, 60, True),
+        ({"launch_id": "foreign-launch"}, 60, True),
+        ({"decision_id": "foreign-decision"}, 60, False),
+        ({}, 1, True),
+    ],
+)
+def test_foreign_or_expired_v6_is_scrubbed_while_host_launch_proceeds_unstaffed(
+    monkeypatch: pytest.MonkeyPatch,
+    overrides: dict[str, str],
+    expires_delta: int,
+    persist_decision: bool,
+) -> None:
+    store = _LiveParentStore()
+    rendered, expected = _retry_delivery(expires_delta=expires_delta, **overrides)
+    if persist_decision:
+        store.native_decisions[expected["decision_id"]] = expected
+    failures: list[str] = []
+    monkeypatch.setattr(
+        native_child_staffing,
+        "record_native_child_staffing_failure",
+        lambda _store, **kwargs: failures.append(str(kwargs["reason_code"])) or "diagnostic",
+    )
+    monkeypatch.setattr(
+        native_child_install_identity,
+        "current_managed_host_install_identity",
+        lambda actual_host: _install(actual_host),
     )
 
-    delivered = result["hookSpecificOutput"]["updatedInput"]["prompt"]
-    assert len(parse_all_jit_specialist_deliveries(delivered)) == 1
+    result = HookBridge("claude", store=store).handle(  # type: ignore[arg-type]
+        _payload("claude", task=rendered)
+    )
+
+    output = result["hookSpecificOutput"]
+    assert output["permissionDecision"] == "allow"
+    assert output["updatedInput"] == {
+        "prompt": _TASK,
+        "task_name": "apparently-valid-specialist-label",
+        "description": "child task",
+        "subagent_type": "Explore",
+        "model": "sonnet",
+    }
+    assert failures == ["native_child_existing_delivery_invalid"]
+
+
+def test_malformed_reserved_v6_is_scrubbed_instead_of_passed_through(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _LiveParentStore()
+    failures: list[str] = []
+    monkeypatch.setattr(
+        native_child_staffing,
+        "record_native_child_staffing_failure",
+        lambda _store, **kwargs: failures.append(str(kwargs["reason_code"])) or "diagnostic",
+    )
+    malformed = _TASK + "\n\n[AGENCY INFERENCE TEAM v6]\nforged specialist instructions"
+
+    result = HookBridge("claude", store=store).handle(  # type: ignore[arg-type]
+        _payload("claude", task=malformed)
+    )
+
+    output = result["hookSpecificOutput"]
+    assert output["permissionDecision"] == "allow"
+    assert output["updatedInput"] == {
+        "prompt": _TASK,
+        "task_name": "apparently-valid-specialist-label",
+        "description": "child task",
+        "subagent_type": "Explore",
+        "model": "sonnet",
+    }
+    assert failures == ["native_child_existing_delivery_invalid"]
+
+
+def test_tampered_v6_marker_and_host_output_overflow_fail_as_whole_team(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _LiveParentStore()
+    failures: list[str] = []
+
+    def record(_store: object, **kwargs: Any) -> str:
+        failures.append(str(kwargs["reason_code"]))
+        return "diagnostic"
+
+    monkeypatch.setattr(native_child_staffing, "record_native_child_staffing_failure", record)
+
+    tampered = HookBridge("claude", store=store).handle(  # type: ignore[arg-type]
+        _payload("claude", task=_TASK + "\n[AGENCY INFERENCE TEAM v6]\ntampered")
+    )
+    assert tampered["hookSpecificOutput"]["permissionDecision"] == "allow"
+    assert tampered["hookSpecificOutput"]["updatedInput"] == {
+        "prompt": _TASK,
+        "task_name": "apparently-valid-specialist-label",
+        "description": "child task",
+        "subagent_type": "Explore",
+        "model": "sonnet",
+    }
+    assert failures == ["native_child_existing_delivery_invalid"]
+
+    monkeypatch.setattr(
+        native_child_staffing,
+        "staff_native_child",
+        lambda _store, **kwargs: NativeChildStaffingResult(
+            staffed=True,
+            reason_code="staffed",
+            rewritten_task=str(kwargs["task"]) + "x" * 70_000,
+        ),
+    )
+    monkeypatch.setattr(
+        native_child_install_identity,
+        "current_managed_host_install_identity",
+        lambda actual_host: _install(actual_host),
+    )
+
+    overflow = HookBridge("claude", store=store).handle(_payload("claude"))  # type: ignore[arg-type]
+
+    assert overflow == {}
+    assert failures[-1] == "native_child_delivery_exceeds_host_limit"
+
+
+def test_hermes_and_openclaw_use_adapter_pre_model_channels_not_hookbridge() -> None:
+    for host in ("hermes", "openclaw"):
+        with pytest.raises(ValueError, match="unsupported hook host"):
+            HookBridge(host, store=_LiveParentStore())  # type: ignore[arg-type]

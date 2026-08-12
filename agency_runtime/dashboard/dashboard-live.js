@@ -76,33 +76,113 @@ function childEvidenceCardIsValid(card) {
 		&& SHA256_PATTERN.test(card.prompt_hash);
 }
 
+function childEvidenceDiagnosticCardIsValid(card) {
+	return childEvidenceCardIsValid(card)
+		&& (card.body_character_length === null || (
+			Number.isSafeInteger(card.body_character_length)
+			&& card.body_character_length >= 0
+			&& card.body_character_length <= 524288
+		));
+}
+
+function childEvidenceCardsMatch(cards, diagnosticCards) {
+	return cards.length === diagnosticCards.length
+		&& cards.every((card, index) => {
+			const diagnostic = diagnosticCards[index];
+			return card.slug === diagnostic.slug
+				&& card.version === diagnostic.version
+				&& card.prompt_hash === diagnostic.prompt_hash;
+		});
+}
+
 function childEvidenceRowIsValid(row) {
-	return isRecord(row)
-		&& boundedText(row.child_id, 512)
-		&& boundedText(row.artifact, 4096)
-		&& boundedText(row.parent_id, 512, { empty: true })
-		&& boundedText(row.envelope_parent_id, 512, { empty: true })
-		&& typeof row.correlated === "boolean"
-		&& row.correlated === (Boolean(row.parent_id) && row.parent_id === row.envelope_parent_id)
-		&& typeof row.legacy === "boolean"
-		&& Array.isArray(row.cards)
-		&& row.cards.length <= 256
-		&& (row.cards.length > 0 || row.legacy)
-		&& row.cards.every(childEvidenceCardIsValid);
+	if (
+		!isRecord(row)
+		|| !boundedText(row.child_id, 512)
+		|| !boundedText(row.artifact, 4096)
+		|| !boundedText(row.parent_id, 512, { empty: true })
+		|| !boundedText(row.envelope_parent_id, 512, { empty: true })
+		|| typeof row.correlated !== "boolean"
+		|| row.correlated !== (Boolean(row.parent_id) && row.parent_id === row.envelope_parent_id)
+		|| typeof row.legacy !== "boolean"
+		|| typeof row.v6 !== "boolean"
+		|| typeof row.verified_delivery !== "boolean"
+		|| row.pre_speech !== true
+		|| !boundedText(row.verification_reason, 128)
+		|| !/^[a-z0-9_]+$/.test(row.verification_reason)
+		|| typeof row.artifact_digest !== "string"
+		|| !SHA256_PATTERN.test(row.artifact_digest)
+		|| !Array.isArray(row.cards)
+		|| row.cards.length > 256
+		|| !row.cards.every(childEvidenceCardIsValid)
+		|| !Array.isArray(row.diagnostic_cards)
+		|| row.diagnostic_cards.length > 256
+		|| !row.diagnostic_cards.every(childEvidenceDiagnosticCardIsValid)
+	) return false;
+
+	if (row.v6) {
+		const identityValid = boundedText(row.decision_id, 512)
+			&& typeof row.team_digest === "string"
+			&& SHA256_PATTERN.test(row.team_digest)
+			&& typeof row.candidate_digest === "string"
+			&& SHA256_PATTERN.test(row.candidate_digest)
+			&& typeof row.runtime_digest === "string"
+			&& SHA256_PATTERN.test(row.runtime_digest)
+			&& boundedText(row.install_id, 512)
+			&& typeof row.bundle_digest === "string"
+			&& SHA256_PATTERN.test(row.bundle_digest)
+			&& row.diagnostic_cards.length > 0;
+		if (!identityValid || row.legacy) return false;
+		if (row.verified_delivery) {
+			return row.correlated
+				&& row.candidate_digest === row.runtime_digest
+				&& row.verification_reason === "verified_existing_receipt"
+				&& row.cards.length > 0
+				&& childEvidenceCardsMatch(row.cards, row.diagnostic_cards);
+		}
+		return row.cards.length === 0
+			&& !["verified", "verified_existing_receipt"].includes(row.verification_reason);
+	}
+
+	return row.legacy
+		&& !row.verified_delivery
+		&& row.verification_reason === "legacy_delivery_non_authoritative"
+		&& row.cards.length === 0
+		&& row.decision_id === ""
+		&& row.team_digest === ""
+		&& row.candidate_digest === ""
+		&& row.runtime_digest === ""
+		&& row.install_id === ""
+		&& row.bundle_digest === "";
+}
+
+function childEvidenceStoreBindingIsValid(payload) {
+	const binding = payload.service_binding;
+	return isRecord(binding)
+		&& boundedText(payload.config_path, 4096)
+		&& boundedText(payload.config_revision, 256)
+		&& isRecord(payload.environment_overrides)
+		&& boundedText(binding.store_path, 4096)
+		&& boundedText(binding.desired_store_path, 4096)
+		&& binding.store_restart_required === false
+		&& payload.store_path === binding.store_path
+		&& payload.desired_store_path === binding.desired_store_path
+		&& payload.store_restart_required === binding.store_restart_required;
 }
 
 export function validateChildDeliveryPayload(payload) {
 	if (
 		!isRecord(payload)
-		|| payload.schema_version !== "agency.dashboard.child_delivery.v1"
+		|| payload.schema_version !== "agency.dashboard.child_delivery.v2"
 		|| !safeUpdateText(payload.sampled_at, 64)
 		|| !isRecord(payload.source)
-		|| payload.source.authority !== "host_written_child_artifacts"
+		|| payload.source.authority !== "host_written_artifacts_with_bound_verification_receipts"
 		|| !boundedStringList(payload.source.artifact_hosts, { allowed: CHILD_EVIDENCE_HOSTS })
 		|| payload.source.artifact_hosts.length !== CHILD_EVIDENCE_HOSTS.size
-		|| payload.source.agency_store_consulted !== false
+		|| payload.source.agency_store_consulted !== true
+		|| payload.source.store_role !== "read_only_decision_and_verification_receipt_projection"
 		|| payload.source.evidence_meaning
-			!== "hash_verified_specialist_cards_in_child_input_before_first_speech"
+			!== "host_artifact_delivery_correlated_to_exact_inference_decision_and_receipt"
 		|| !isRecord(payload.window)
 		|| payload.window.kind !== "newest_verified_child_delivery_evidence"
 		|| !boundedStringList(payload.window.hosts, { allowed: CHILD_EVIDENCE_HOSTS })
@@ -118,13 +198,17 @@ export function validateChildDeliveryPayload(payload) {
 		|| payload.bounds.detail_limit !== payload.window.detail_limit
 		|| !Array.isArray(payload.hosts)
 		|| payload.hosts.length !== payload.window.hosts.length
+		|| !childEvidenceStoreBindingIsValid(payload)
 	) throw new Error("Agency child-delivery evidence is invalid.");
 
 	const expectedHosts = new Set(payload.window.hosts);
 	const seenHosts = new Set();
 	for (const host of payload.hosts) {
-		const visibleStaffed = Array.isArray(host?.children)
-			? host.children.filter((row) => Array.isArray(row?.cards) && row.cards.length > 0).length
+		const visibleVerified = Array.isArray(host?.children)
+			? host.children.filter((row) => row?.verified_delivery === true).length
+			: 0;
+		const visibleUnverified = Array.isArray(host?.children)
+			? host.children.filter((row) => row?.verified_delivery === false).length
 			: 0;
 		const visibleLegacy = Array.isArray(host?.children)
 			? host.children.filter((row) => row?.legacy === true && row?.cards?.length === 0).length
@@ -137,6 +221,8 @@ export function validateChildDeliveryPayload(payload) {
 			"correlated_staffed_children",
 			"uncorrelated_staffed_children",
 			"legacy_deliveries",
+			"verified_deliveries",
+			"unverified_deliveries",
 			"detail_limit",
 		];
 		if (
@@ -161,7 +247,10 @@ export function validateChildDeliveryPayload(payload) {
 			|| host.staffed_children !== (
 				host.correlated_staffed_children + host.uncorrelated_staffed_children
 			)
-			|| host.staffed_children + host.legacy_deliveries !== host.evidence_count
+			|| host.uncorrelated_staffed_children !== 0
+			|| host.staffed_children !== host.verified_deliveries
+			|| host.verified_deliveries + host.unverified_deliveries !== host.evidence_count
+			|| host.legacy_deliveries > host.unverified_deliveries
 			|| typeof host.artifact_scan_truncated !== "boolean"
 			|| host.artifact_scan_truncated !== (
 				!host.artifact_candidate_count_complete
@@ -172,10 +261,12 @@ export function validateChildDeliveryPayload(payload) {
 			|| !Array.isArray(host.children)
 			|| host.children.length !== Math.min(host.evidence_count, host.detail_limit)
 			|| host.children.some((row) => !childEvidenceRowIsValid(row))
-			|| visibleStaffed > host.staffed_children
+			|| visibleVerified > host.verified_deliveries
+			|| visibleUnverified > host.unverified_deliveries
 			|| visibleLegacy > host.legacy_deliveries
 			|| (!host.detail_truncated && (
-				visibleStaffed !== host.staffed_children
+				visibleVerified !== host.verified_deliveries
+				|| visibleUnverified !== host.unverified_deliveries
 				|| visibleLegacy !== host.legacy_deliveries
 			))
 		) throw new Error("Agency child-delivery evidence is invalid.");

@@ -45,7 +45,12 @@ _MAX_JUDGE_RESPONSE_BYTES = 256 * 1024
 _MAX_PROVIDER_ATTEMPTS = MAX_PROVIDER_CHAIN_ENTRIES
 _MAX_JUDGE_DEADLINE_SECONDS = 60.0
 _MAX_JUDGE_CANDIDATES = 20
+_MAX_COMPLETE_CANDIDATE_PROMPT_BYTES = 1_280 * 1024
 _MAX_SELECTED = 50
+
+
+class _CompleteCandidateUniverse(list[dict[str, Any]]):
+    """Mark an exact candidate universe that must never be narrowed."""
 
 
 def _agent_id(agent: dict[str, Any]) -> str:
@@ -57,7 +62,10 @@ def _judge_candidates(
     candidates: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """Return only identified candidates that can actually appear in a prompt."""
-    return [candidate for candidate in candidates if _agent_id(candidate)][:_MAX_JUDGE_CANDIDATES]
+    identified = [candidate for candidate in candidates if _agent_id(candidate)]
+    if isinstance(candidates, _CompleteCandidateUniverse):
+        return _CompleteCandidateUniverse(identified)
+    return identified[:_MAX_JUDGE_CANDIDATES]
 
 
 def _validated_max_selected(value: Any) -> int:
@@ -197,6 +205,26 @@ def _with_retrieval_evidence(
     return enriched
 
 
+def _with_complete_universe_evidence(
+    result: dict[str, Any],
+    *,
+    candidate_count: int,
+) -> dict[str, Any]:
+    """Attach proof that every supplied hard-eligible card reached inference."""
+
+    enriched = dict(result)
+    enriched["retrieval"] = {
+        "mode": "complete-candidate-universe",
+        "full_roster_count": candidate_count,
+        "candidate_union_count": candidate_count,
+        "lexical_count": 0,
+        "semantic_count": 0,
+        "hard_negative_count": 0,
+        "candidate_rows_complete": True,
+    }
+    return enriched
+
+
 # Protocol compatibility surface.  Sibling modules resolve dependencies back
 # through this facade so existing monkeypatches remain effective.
 _read_json_object = _protocol.read_json_object
@@ -278,6 +306,7 @@ def query_judge(
     config: AgencyConfig | None = None,
     judge_config: JudgeConfig | None = None,
     max_selected: int | None = None,
+    candidate_scope: str = "retrieved",
 ) -> dict[str, Any]:
     """Query inference providers and fail closed when none returns a decision.
 
@@ -287,40 +316,85 @@ def query_judge(
     """
     if not isinstance(task_description, str):
         raise TypeError("task_description must be a string")
+    if candidate_scope not in {"retrieved", "complete"}:
+        raise ValueError("candidate_scope must be 'retrieved' or 'complete'")
     cfg = config or load_config()
     jc = judge_config or cfg.judge
     max_sel = _validated_max_selected(jc.max_selected if max_selected is None else max_selected)
     state = _AttemptState.begin(jc.timeout)
     result = _empty_judge_result()
     configured_inference = inference_is_configured(cfg, jc)
-    retrieval = retrieve_candidate_union(
-        affirmative_intent(task_description),
-        catalog,
-        lexical_retriever=pre_narrow,
+    complete_universe = candidate_scope == "complete"
+    retrieval = (
+        None
+        if complete_universe
+        else retrieve_candidate_union(
+            affirmative_intent(task_description),
+            catalog,
+            lexical_retriever=pre_narrow,
+        )
     )
 
     def finish(value: dict[str, Any]) -> dict[str, Any]:
+        if complete_universe:
+            return _with_complete_universe_evidence(value, candidate_count=len(catalog))
+        assert retrieval is not None
         return _with_retrieval_evidence(value, retrieval)
 
     if not catalog:
-        return _with_inference_evidence(
-            {
-                **result,
-                "status": "inference_invalid" if configured_inference else "inference_unavailable",
-                "source": "inference_failure",
-                "error": "agent catalog not loaded",
-            },
-            state,
-            configured=configured_inference,
-            mode="invalid" if configured_inference else "unavailable",
+        return finish(
+            _with_inference_evidence(
+                {
+                    **result,
+                    "status": (
+                        "inference_invalid" if configured_inference else "inference_unavailable"
+                    ),
+                    "source": "inference_failure",
+                    "error": "agent catalog not loaded",
+                },
+                state,
+                configured=configured_inference,
+                mode="invalid" if configured_inference else "unavailable",
+            )
         )
 
-    # Lexical narrowing cannot infer negation.  Exclude high-confidence opt-out
-    # clauses from scoring while retaining the complete task for the judge.
-    candidates = list(retrieval.candidates)
-    scores = list(retrieval.scores)
-    candidate_count = len(candidates)
-    top_score = scores[0] if scores else 0.0
+    if complete_universe:
+        identities = [_agent_id(candidate) for candidate in catalog]
+        if any(not identity for identity in identities) or len(set(identities)) != len(identities):
+            return finish(
+                _inference_failure_result(
+                    state,
+                    len(catalog),
+                    0.0,
+                    configured=configured_inference,
+                    detail="complete candidate universe has invalid or duplicate identities",
+                )
+            )
+        candidates = _CompleteCandidateUniverse(catalog)
+        candidate_count = len(candidates)
+        top_score = 0.0
+        try:
+            # Preflight the shared transport before any provider attempt.  An
+            # over-budget exact universe fails open; it is never truncated.
+            _build_judge_prompt(task_description, candidates, max_sel)
+        except (TypeError, UnicodeError, ValueError):
+            return finish(
+                _inference_failure_result(
+                    state,
+                    candidate_count,
+                    top_score,
+                    configured=configured_inference,
+                    detail="complete candidate universe exceeds bounded inference transport",
+                )
+            )
+    else:
+        assert retrieval is not None
+        # Lexical narrowing cannot infer negation.  Exclude high-confidence opt-out
+        # clauses from scoring while retaining the complete task for the judge.
+        candidates = list(retrieval.candidates)
+        scores = list(retrieval.scores)
+        candidate_count = len(candidates)
+        top_score = scores[0] if scores else 0.0
 
     provider_result = _try_provider_chain(
         state,

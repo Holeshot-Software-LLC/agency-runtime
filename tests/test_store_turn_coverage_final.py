@@ -199,12 +199,18 @@ def test_routing_projection_bounds_invalid_scalars_and_all_sources() -> None:
     assert queries._bounded_routing_count(object()) == 0
     assert queries._project_routing_field("provider", " provider ") == "provider"
     assert queries._project_routing_field("trace_id", " turn ") == "turn"
+    assert (
+        queries._project_routing_field("native_child_delivery", {"schema": "invalid"})
+        is queries._OMIT_ROUTING_FIELD
+    )
     assert queries._project_routing_field("unknown", "value") is queries._OMIT_ROUTING_FIELD
 
     for decision, expected in (
         ({"cache_hit": True}, "cache"),
         ({"session_reused": True}, "session"),
         ({"source": "policy_fallback"}, "policy_fallback"),
+        ({"source": "native_child_inference"}, "native_child_inference"),
+        ({"source": "native_child_inference_failure"}, "native_child_inference_failure"),
         ({}, "computed"),
     ):
         _safe, _work_units, source = queries.project_routing_decision(decision)

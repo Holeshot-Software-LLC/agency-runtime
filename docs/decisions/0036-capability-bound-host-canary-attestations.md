@@ -14,6 +14,7 @@ related:
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0028-host-support-maturity-and-reversible-install.md
   - docs/decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md
+  - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

@@ -79,18 +79,54 @@ def test_validated_decision_rejects_malformed_and_unknown_selections() -> None:
         is None
     )
 
+    assert (
+        judge._validated_decision(
+            {
+                "selected_ids": [
+                    "security-reviewer",
+                    "security-reviewer",
+                    "code-reviewer",
+                ],
+                "confidence": 5,
+            },
+            CATALOG,
+            1,
+        )
+        is None
+    )
+
+    assert (
+        judge._validated_decision(
+            {
+                "selected_ids": ["security-reviewer", "code-reviewer"],
+                "confidence": 1,
+            },
+            CATALOG,
+            1,
+        )
+        is None
+    )
+
+    assert (
+        judge._validated_decision(
+            {
+                "selected_ids": ["security-reviewer", "unknown"],
+                "confidence": 1,
+            },
+            CATALOG,
+            2,
+        )
+        is None
+    )
+
     assert judge._validated_decision(
         {
-            "selected_ids": [
-                "security-reviewer",
-                "security-reviewer",
-                "code-reviewer",
-            ],
+            "selected_ids": ["code-reviewer", "security-reviewer"],
             "confidence": 5,
         },
         CATALOG,
-        1,
-    ) == (["security-reviewer"], 1.0)
+        2,
+    ) == (["code-reviewer", "security-reviewer"], 1.0)
 
     assert judge._validated_decision(
         {"selected_ids": [], "confidence": 0.91},

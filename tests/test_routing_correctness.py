@@ -591,6 +591,63 @@ def test_provider_cannot_select_candidate_omitted_from_bounded_prompt(
     assert f"agent-{judge_module._MAX_JUDGE_CANDIDATES:02d}" not in result["selected_ids"]
 
 
+def test_complete_candidate_scope_keeps_low_rank_card_beyond_twenty_inference_selectable(
+    monkeypatch,
+) -> None:
+    target = f"agent-{judge_module._MAX_JUDGE_CANDIDATES + 4:02d}"
+    catalog = [
+        {
+            "slug": f"agent-{index:02d}",
+            "name": f"Agent {index:02d}",
+            "description": (
+                "Reviews authentication security"
+                if index < judge_module._MAX_JUDGE_CANDIDATES
+                else "Low deterministic-rank unrelated metadata"
+            ),
+        }
+        for index in range(judge_module._MAX_JUDGE_CANDIDATES + 5)
+    ]
+    provider = ProviderEntry(
+        name="judge",
+        model="judge-model",
+        base_url="https://judge.invalid",
+        api_key="key",
+    )
+    prompted_slugs: list[str] = []
+
+    def respond(request, **_kwargs):
+        body = json.loads(request.data)
+        prompt = body["messages"][1]["content"]
+        candidate_block = prompt.split(
+            "Candidate cards (one JSON object per line):\n",
+            1,
+        )[1].split("\n\nReturn:", 1)[0]
+        prompted_slugs.extend(json.loads(line)["slug"] for line in candidate_block.splitlines())
+        return _Response([target], 0.91)
+
+    monkeypatch.setattr(judge_module, "open_no_redirect", respond)
+
+    result = query_judge(
+        "review authentication security",
+        catalog,
+        config=_offline_config(providers=(provider,)),
+        candidate_scope="complete",
+    )
+
+    assert result["status"] == "applied"
+    assert result["selected_ids"] == [target]
+    assert prompted_slugs == [item["slug"] for item in catalog]
+    assert result["retrieval"] == {
+        "mode": "complete-candidate-universe",
+        "full_roster_count": len(catalog),
+        "candidate_union_count": len(catalog),
+        "lexical_count": 0,
+        "semantic_count": 0,
+        "hard_negative_count": 0,
+        "candidate_rows_complete": True,
+    }
+
+
 def test_malformed_provider_content_fails_without_a_fallback_team(monkeypatch) -> None:
     provider = ProviderEntry(
         name="judge",

@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.agent_activation import normalize_agent_slug
+from agency_runtime.core.child_delivery_evidence import (
+    _consume_verified_host_child_delivery,
+    _VerifiedHostChildDelivery,
+)
 from agency_runtime.core.codex_child_tool_evidence import (
     normalize_codex_child_tool_evidence,
 )
@@ -16,6 +23,9 @@ from agency_runtime.core.installer_contracts import (
     CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
 )
 from agency_runtime.core.private_paths import private_temporary_directory
+from agency_runtime.core.roster.revisions import content_digest_identity
+from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
+from agency_runtime.core.store.version_identity import normalize_version_identity
 
 CANARY_INVOCATION_FAILURE_REASONS = frozenset(
     {
@@ -31,6 +41,92 @@ CANARY_INVOCATION_FAILURE_REASONS = frozenset(
         "codex_exec_timed_out",
     }
 )
+
+_HOST_CHILD_DELIVERY_SCHEMA = "agency.host-child-delivery-proof.v1"
+_HOST_CHILD_DELIVERY_FIELDS = frozenset(
+    {
+        "schema",
+        "verified_delivery",
+        "host",
+        "parent_session_id",
+        "parent_trace_id",
+        "launch_id",
+        "child_id",
+        "pre_speech",
+        "cards",
+        "artifact_digest",
+        "decision_id",
+        "provider_receipt_digest",
+        "task_sha256",
+        "team_digest",
+        "candidate_digest",
+        "runtime_digest",
+        "install_id",
+        "bundle_digest",
+        "issued_at",
+        "expires_at",
+        "nonce",
+        "binding_kind",
+        "binding_id",
+    }
+)
+_HOST_CHILD_CARD_FIELDS = frozenset(
+    {
+        "specialist_slug",
+        "specialist_version",
+        "specialist_prompt_hash",
+        "body_character_length",
+    }
+)
+_NATIVE_CHILD_DELIVERY_RECEIPT_FIELDS = frozenset(
+    {
+        "decision_id",
+        "nonce",
+        "artifact_digest",
+        "host",
+        "parent_session_id",
+        "parent_trace_id",
+        "launch_id",
+        "binding_kind",
+        "binding_id",
+        "child_id",
+        "verified_at",
+        "verified_delivery",
+    }
+)
+_NATIVE_CHILD_ROUTE_FIELDS = frozenset(
+    {
+        "decision_id",
+        "trace_id",
+        "session_id",
+        "query_hash",
+        "context_fingerprint",
+        "created_at",
+        "schema",
+        "host",
+        "parent_session_id",
+        "parent_trace_id",
+        "launch_id",
+        "binding_kind",
+        "binding_id",
+        "provider_attempts",
+        "provider_receipt_digest",
+        "task_sha256",
+        "team_digest",
+        "candidate_digest",
+        "runtime_digest",
+        "install_id",
+        "bundle_digest",
+        "issued_at",
+        "expires_at",
+        "nonce",
+        "cards",
+    }
+)
+_LOWER_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_MAX_CODEX_HOST_CHILD_CARDS = 3
+_MAX_CODEX_HOST_IDENTITY_CHARS = 256
+_MAX_CODEX_CARD_IDENTITY_CHARS = 128
 
 
 def _facade():
@@ -180,6 +276,7 @@ class LivePreparation:
 class InvocationOutcome:
     result: dict[str, Any] | None
     evidence: dict[str, Any] | None
+    host_child_delivery: _VerifiedHostChildDelivery | None = None
     error: str | None = None
 
 
@@ -225,7 +322,9 @@ def assess_readiness(
     if not native.get("install_id") or not native.get("bundle_digest"):
         unmet.append("managed bundle identity not proven")
     if host not in facade.SAFE_CANARY_HOSTS:
-        unmet.append("host has no proven read-only, no-tools noninteractive canary mode")
+        unmet.append(
+            "host has no proven read-only, bounded native-child noninteractive canary mode"
+        )
     if control.get("enabled") is not True:
         unmet.append("Agency Runtime soft control is disabled or unverified")
     return ReadinessAssessment(
@@ -359,19 +458,28 @@ def invoke_and_collect_evidence(
             error="safe canary invocation prerequisites are incomplete",
         )
     result: dict[str, Any] | None = None
+    host_child_delivery: _VerifiedHostChildDelivery | None = None
     invocation_error: str | None = None
+    facade = _facade()
     try:
         with private_temporary_directory(prefix="canary") as workdir:
-            result = preparation.backend.execute(
-                task=prompt,
-                workdir=str(workdir),
-                check=False,
-            )
+            if host == "claude" and type(preparation.backend) is facade._SafeClaudeCanaryBackend:
+                result, host_child_delivery = preparation.backend.execute_with_host_delivery(
+                    task=prompt,
+                    workdir=str(workdir),
+                    store=preparation.store,
+                    check=False,
+                )
+            else:
+                result = preparation.backend.execute(
+                    task=prompt,
+                    workdir=str(workdir),
+                    check=False,
+                )
             if not isinstance(result, dict):
                 raise RuntimeError("canary backend returned an invalid result")
     except Exception:
         invocation_error = "safe host invocation failed before evidence could be evaluated"
-    facade = _facade()
     if mode == "agency" and host == "codex":
         try:
             exact = preparation.store.get_canary_activation_snapshot(
@@ -384,13 +492,19 @@ def invoke_and_collect_evidence(
                 evidence=None,
                 error="exact activation evidence could not be read after host invocation",
             )
-        return InvocationOutcome(result=result, evidence=exact, error=invocation_error)
+        return InvocationOutcome(
+            result=result,
+            evidence=exact,
+            host_child_delivery=host_child_delivery,
+            error=invocation_error,
+        )
     try:
         after = preparation.store.recent_runtime_activity(limit=200)
     except Exception:
         return InvocationOutcome(
             result=result,
             evidence=None,
+            host_child_delivery=host_child_delivery,
             error="runtime evidence could not be read after host invocation",
         )
     return InvocationOutcome(
@@ -400,6 +514,7 @@ def invoke_and_collect_evidence(
             host,
             expected_query_hash=expected_query_hash,
         ),
+        host_child_delivery=host_child_delivery,
         error=invocation_error,
     )
 
@@ -529,7 +644,6 @@ def _codex_receipt_link_failures(
     evidence: Mapping[str, Any],
     run: Mapping[str, Any],
     worker: Mapping[str, Any],
-    specialist_load: Mapping[str, Any],
     finalization: Mapping[str, Any],
     receiver_id: str,
     response_hash: str,
@@ -537,8 +651,6 @@ def _codex_receipt_link_failures(
     """Validate reciprocal Store links after the JSONL receiver alias is known."""
 
     failures: list[str] = []
-    session_id = str(evidence.get("session_id") or "")
-    trace_id = str(evidence.get("trace_id") or "")
     receiver_identity = (receiver_id, f"codex-agent:{receiver_id}")
     if (
         worker.get("worker_id") != receiver_identity[0]
@@ -549,14 +661,6 @@ def _codex_receipt_link_failures(
         or not worker.get("ended_at")
     ):
         failures.append("SubagentStart and SubagentStop did not prove the Codex child lifecycle")
-    # The card has to have landed inside this exact turn. There is no grant to
-    # tie it back to, so the correlation is the load's own session and trace.
-    if (
-        specialist_load.get("session_id") not in {None, session_id}
-        or specialist_load.get("trace_id") not in {None, trace_id}
-        or not str(specialist_load.get("agent_slug") or "")
-    ):
-        failures.append("the specialist load did not belong to the exact canary turn")
     if (
         run.get("status") != "completed"
         or not run.get("ended_at")
@@ -569,6 +673,401 @@ def _codex_receipt_link_failures(
             "the returned response was not the exact authoritative accepted finalization"
         )
     return tuple(failures)
+
+
+def _bounded_identity(value: object, *, maximum: int) -> str | None:
+    """Return one nonempty, whitespace-stable bounded identity."""
+
+    if not isinstance(value, str) or not value or value != value.strip() or not value.isprintable():
+        return None
+    try:
+        if len(value.encode("utf-8")) > maximum:
+            return None
+    except UnicodeEncodeError:
+        return None
+    return value
+
+
+def _sha256_identity(value: object) -> str | None:
+    """Return one canonical lowercase SHA-256 identity."""
+
+    if not isinstance(value, str) or _LOWER_SHA256.fullmatch(value) is None:
+        return None
+    return value
+
+
+def _utc_timestamp(value: object) -> datetime | None:
+    """Parse one canonical UTC timestamp carried by the verified envelope."""
+
+    if not isinstance(value, str) or not value.endswith("Z"):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError:
+        return None
+    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(None):
+        return None
+    timespec = "microseconds" if parsed.microsecond else "seconds"
+    canonical = parsed.isoformat(timespec=timespec).replace("+00:00", "Z")
+    return parsed if value == canonical else None
+
+
+def _ordered_route_slugs(route: Mapping[str, Any]) -> tuple[str, ...] | None:
+    """Return the inference-owned route order without repairing malformed rows."""
+
+    ordered: list[str] = []
+    for field in ("selected_ids", "companion_ids"):
+        values = route.get(field)
+        if not isinstance(values, list):
+            return None
+        for value in values:
+            slug = _bounded_identity(value, maximum=_MAX_CODEX_CARD_IDENTITY_CHARS)
+            if slug is None or slug in ordered:
+                return None
+            ordered.append(slug)
+    return tuple(ordered) if ordered else None
+
+
+def _native_child_route_projection_is_valid(route: Mapping[str, Any]) -> bool:
+    """Revalidate one Store-projected inference route without trusting shape alone."""
+
+    from agency_runtime.core.native_child_decision import (
+        project_native_child_staffing_decision,
+    )
+
+    payload = {
+        field: route.get(field)
+        for field in _NATIVE_CHILD_ROUTE_FIELDS
+        if field
+        not in {
+            "decision_id",
+            "trace_id",
+            "session_id",
+            "query_hash",
+            "context_fingerprint",
+            "created_at",
+        }
+    }
+    projected = project_native_child_staffing_decision(payload)
+    return bool(
+        projected is not None
+        and payload == projected
+        and _bounded_identity(route.get("decision_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS)
+        is not None
+        and _sha256_identity(route.get("context_fingerprint")) is not None
+        and route.get("query_hash") == projected.get("task_sha256")
+        and _bounded_identity(route.get("created_at"), maximum=128) is not None
+    )
+
+
+def _normalized_host_child_cards(value: object) -> list[dict[str, Any]] | None:
+    """Validate the exact ordered generalized host-proof card descriptors."""
+
+    if (
+        not isinstance(value, list)
+        or not 1 <= len(value) <= _MAX_CODEX_HOST_CHILD_CARDS
+        or any(not isinstance(card, Mapping) for card in value)
+    ):
+        return None
+    normalized: list[dict[str, Any]] = []
+    for card in value:
+        assert isinstance(card, Mapping)
+        if set(card) != _HOST_CHILD_CARD_FIELDS:
+            return None
+        slug = _bounded_identity(
+            card.get("specialist_slug"), maximum=_MAX_CODEX_CARD_IDENTITY_CHARS
+        )
+        version = _bounded_identity(
+            card.get("specialist_version"), maximum=_MAX_CODEX_CARD_IDENTITY_CHARS
+        )
+        prompt_hash = _sha256_identity(card.get("specialist_prompt_hash"))
+        body_length = card.get("body_character_length")
+        try:
+            valid = bool(
+                slug is not None
+                and normalize_agent_slug(slug) == slug
+                and version is not None
+                and normalize_version_identity(version) == version
+                and prompt_hash is not None
+                and content_digest_identity(prompt_hash) == prompt_hash
+                and type(body_length) is int
+                and 1 <= body_length <= MAX_SPECIALIST_PROMPT_CHARS
+            )
+        except (TypeError, UnicodeEncodeError, ValueError):
+            valid = False
+        if not valid:
+            return None
+        normalized.append(
+            {
+                "specialist_slug": slug,
+                "specialist_version": version,
+                "specialist_prompt_hash": prompt_hash,
+                "body_character_length": body_length,
+            }
+        )
+    return normalized
+
+
+def _claude_host_child_delivery_failures(
+    *,
+    proof: Mapping[str, Any] | None,
+    evidence: Mapping[str, Any],
+) -> tuple[str, ...]:
+    """Validate the collector-minted Claude proof against the exact canary turn."""
+
+    if not isinstance(proof, Mapping):
+        return ("verified host-authored Claude child card delivery was not proven",)
+    if set(proof) != _HOST_CHILD_DELIVERY_FIELDS:
+        return ("host-authored Claude child delivery proof had an invalid contract",)
+    if (
+        proof.get("schema") != _HOST_CHILD_DELIVERY_SCHEMA
+        or proof.get("verified_delivery") is not True
+        or proof.get("host") != "claude"
+        or proof.get("pre_speech") is not True
+    ):
+        return ("host-authored Claude child delivery proof was not verified",)
+    cards = _normalized_host_child_cards(proof.get("cards"))
+    if cards is None:
+        return ("host-authored Claude child delivery did not contain a bounded card team",)
+    slugs = tuple(card["specialist_slug"] for card in cards)
+    routed = evidence.get("routed_specialists")
+    expected = evidence.get("expected_specialist")
+    if (
+        not isinstance(routed, list)
+        or any(not isinstance(value, str) for value in routed)
+        or len(routed) != len(slugs)
+        or set(routed) != set(slugs)
+        or expected not in slugs
+    ):
+        return (
+            "the inference-owned Claude canary route did not match the exact host child card team",
+        )
+    parent_trace_id = _bounded_identity(
+        proof.get("parent_trace_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS
+    )
+    accepted = evidence.get("accepted_trace_ids")
+    correlated = evidence.get("correlated_trace_ids")
+    if (
+        parent_trace_id is None
+        or not isinstance(accepted, list)
+        or not isinstance(correlated, list)
+        or parent_trace_id not in accepted
+        or parent_trace_id not in correlated
+    ):
+        return ("host-authored Claude child delivery did not match the accepted canary turn",)
+    team_digest = hashlib.sha256(
+        json.dumps(
+            cards,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    issued_at = _utc_timestamp(proof.get("issued_at"))
+    expires_at = _utc_timestamp(proof.get("expires_at"))
+    binding_kind = proof.get("binding_kind")
+    binding_id = proof.get("binding_id")
+    child_id = _bounded_identity(proof.get("child_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS)
+    launch_id = _bounded_identity(proof.get("launch_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS)
+    if (
+        _bounded_identity(proof.get("parent_session_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS)
+        is None
+        or child_id is None
+        or launch_id is None
+        or _bounded_identity(proof.get("decision_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS)
+        is None
+        or _sha256_identity(proof.get("provider_receipt_digest")) is None
+        or _sha256_identity(proof.get("task_sha256")) is None
+        or proof.get("team_digest") != team_digest
+        or _sha256_identity(proof.get("candidate_digest")) is None
+        or proof.get("candidate_digest") != proof.get("runtime_digest")
+        or _bounded_identity(proof.get("install_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS)
+        is None
+        or _sha256_identity(proof.get("bundle_digest")) is None
+        or _sha256_identity(proof.get("artifact_digest")) is None
+        or _bounded_identity(proof.get("nonce"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS) is None
+        or issued_at is None
+        or expires_at is None
+        or expires_at <= issued_at
+        or binding_kind not in {"child_id", "launch_id"}
+        or binding_id != (child_id if binding_kind == "child_id" else launch_id)
+    ):
+        return ("host-authored Claude child delivery identity bindings were invalid",)
+    return ()
+
+
+def _codex_host_child_delivery_failures(
+    *,
+    evidence: Mapping[str, Any],
+    host_child_delivery: Mapping[str, Any] | None,
+    parent_route: Mapping[str, Any],
+    spawn: Mapping[str, Any],
+    receiver_id: str,
+) -> tuple[str, ...]:
+    """Validate the sole authority that a card reached one Codex child.
+
+    The mapping is a projection from a bounded verifier of the host-written
+    child rollout. It is deliberately separate from Store specialist-load rows,
+    stdout, and collaboration item projections, all of which Agency or the
+    canary harness can originate.
+    """
+
+    proof = host_child_delivery
+    native_route = evidence.get("native_child_route")
+    receipt = evidence.get("native_child_delivery")
+    if not all(isinstance(item, Mapping) for item in (proof, native_route, receipt)):
+        return ("verified host-authored Codex child card delivery was not proven",)
+    assert isinstance(proof, Mapping)
+    assert isinstance(native_route, Mapping)
+    assert isinstance(receipt, Mapping)
+    if (
+        set(proof) != _HOST_CHILD_DELIVERY_FIELDS
+        or set(native_route) != _NATIVE_CHILD_ROUTE_FIELDS
+        or set(receipt) != _NATIVE_CHILD_DELIVERY_RECEIPT_FIELDS
+    ):
+        return ("host-authored Codex child delivery proof had an invalid contract",)
+    if (
+        proof.get("schema") != _HOST_CHILD_DELIVERY_SCHEMA
+        or proof.get("verified_delivery") is not True
+        or proof.get("host") != "codex"
+        or proof.get("pre_speech") is not True
+        or receipt.get("verified_delivery") is not True
+        or receipt.get("host") != "codex"
+    ):
+        return ("host-authored Codex child delivery proof was not verified",)
+
+    if not _native_child_route_projection_is_valid(native_route):
+        return ("the inference-owned Codex child route was invalid",)
+
+    parent_session_id = _bounded_identity(
+        proof.get("parent_session_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS
+    )
+    child_id = _bounded_identity(proof.get("child_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS)
+    parent_trace_id = _bounded_identity(
+        proof.get("parent_trace_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS
+    )
+    launch_id = _bounded_identity(proof.get("launch_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS)
+    decision_id = _bounded_identity(
+        proof.get("decision_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS
+    )
+    nonce = _bounded_identity(proof.get("nonce"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS)
+    artifact_digest = _sha256_identity(proof.get("artifact_digest"))
+    if (
+        parent_session_id is None
+        or parent_trace_id is None
+        or child_id is None
+        or parent_session_id != str(spawn.get("sender_thread_id") or "")
+        or parent_session_id != evidence.get("session_id")
+        or parent_session_id != parent_route.get("session_id")
+        or parent_session_id != native_route.get("session_id")
+        or parent_session_id != native_route.get("parent_session_id")
+        or parent_trace_id != evidence.get("trace_id")
+        or parent_trace_id != parent_route.get("trace_id")
+        or parent_trace_id != native_route.get("trace_id")
+        or parent_trace_id != native_route.get("parent_trace_id")
+        or child_id != receiver_id
+    ):
+        return ("host-authored Codex child delivery did not match the exact parent and child",)
+    if launch_id is None or decision_id is None or nonce is None or artifact_digest is None:
+        return ("host-authored Codex child delivery identity bindings were invalid",)
+
+    receipt_bindings = {
+        "parent_session_id": parent_session_id,
+        "parent_trace_id": parent_trace_id,
+        "launch_id": launch_id,
+        "child_id": child_id,
+        "decision_id": decision_id,
+        "nonce": nonce,
+        "artifact_digest": artifact_digest,
+    }
+    if (
+        any(receipt.get(field) != value for field, value in receipt_bindings.items())
+        or receipt.get("launch_id") != native_route.get("launch_id")
+        or receipt.get("decision_id") != native_route.get("decision_id")
+        or receipt.get("nonce") != native_route.get("nonce")
+        or _bounded_identity(receipt.get("verified_at"), maximum=128) is None
+    ):
+        return ("host-authored Codex child proof and receipt bindings did not match",)
+
+    binding_kind = proof.get("binding_kind")
+    binding_id = proof.get("binding_id")
+    if (
+        binding_kind not in {"child_id", "launch_id"}
+        or binding_id != (child_id if binding_kind == "child_id" else launch_id)
+        or receipt.get("binding_kind") != binding_kind
+        or receipt.get("binding_id") != binding_id
+        or native_route.get("binding_kind") != binding_kind
+        or native_route.get("binding_id") != binding_id
+    ):
+        return ("host-authored Codex child delivery correlation bindings were invalid",)
+
+    cards = proof.get("cards")
+    normalized_cards = _normalized_host_child_cards(cards)
+    if normalized_cards is None:
+        return ("host-authored Codex child delivery did not contain a bounded card team",)
+
+    if native_route.get("cards") != normalized_cards:
+        return ("host-authored Codex child delivery did not match the exact ordered route",)
+
+    parent_route_slugs = _ordered_route_slugs(parent_route)
+    native_route_slugs = tuple(card["specialist_slug"] for card in normalized_cards)
+    if parent_route_slugs is None or parent_route_slugs != native_route_slugs:
+        return (
+            "the inference-owned parent route did not match the exact ordered "
+            "native child card team",
+        )
+
+    team_digest = hashlib.sha256(
+        json.dumps(
+            normalized_cards,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    issued_at = _utc_timestamp(proof.get("issued_at"))
+    expires_at = _utc_timestamp(proof.get("expires_at"))
+    candidate_digest = _sha256_identity(proof.get("candidate_digest"))
+    runtime_digest = _sha256_identity(proof.get("runtime_digest"))
+    route_bound_fields = {
+        "host",
+        "parent_session_id",
+        "parent_trace_id",
+        "launch_id",
+        "decision_id",
+        "provider_receipt_digest",
+        "task_sha256",
+        "team_digest",
+        "candidate_digest",
+        "runtime_digest",
+        "install_id",
+        "bundle_digest",
+        "issued_at",
+        "expires_at",
+        "nonce",
+        "binding_kind",
+        "binding_id",
+    }
+    if (
+        any(proof.get(field) != native_route.get(field) for field in route_bound_fields)
+        or decision_id != receipt.get("decision_id")
+        or _sha256_identity(proof.get("provider_receipt_digest")) is None
+        or _sha256_identity(proof.get("task_sha256")) is None
+        or proof.get("team_digest") != team_digest
+        or candidate_digest is None
+        or runtime_digest is None
+        or candidate_digest != runtime_digest
+        or _bounded_identity(proof.get("install_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS)
+        is None
+        or _sha256_identity(proof.get("bundle_digest")) is None
+        or issued_at is None
+        or expires_at is None
+        or expires_at <= issued_at
+    ):
+        return ("host-authored Codex child delivery identity bindings were invalid",)
+    return ()
 
 
 def _codex_accepted_finalization(evidence: Mapping[str, Any]) -> Mapping[str, Any] | None:
@@ -590,6 +1089,7 @@ def codex_activation_failures(
     result: Mapping[str, Any],
     evidence: Mapping[str, Any],
     response_hash: str,
+    host_child_delivery: Mapping[str, Any] | None = None,
 ) -> tuple[str, ...]:
     """Require one complete Codex activation graph, including the JSONL UUID alias."""
 
@@ -599,17 +1099,16 @@ def codex_activation_failures(
     if evidence.get("proven") is not True:
         reason = str(evidence.get("reason") or "not_proven")
         return (f"exact Codex activation evidence was not proven ({reason})",)
-    # What this proves is card delivery: the harness spawned a child on its own
-    # initiative, Agency handed it a specialist, and the load was recorded. The
-    # plan, delegation row, one-use grant and consumption receipt this used to
-    # demand were Job B and no longer exist.
+    # Store rows prove the non-card activation graph. Card delivery itself is
+    # established separately from a verified host-written child artifact below.
     cardinalities = evidence.get("cardinalities")
     expected_cardinalities = {
         "routes": 1,
+        "native_child_routes": 1,
+        "native_child_deliveries": 1,
         "runs": 1,
         "traces": 1,
         "worker_runs": 1,
-        "specialist_loads": 1,
     }
     if (
         not isinstance(cardinalities, Mapping)
@@ -623,7 +1122,6 @@ def codex_activation_failures(
     run = evidence.get("run") if isinstance(evidence.get("run"), Mapping) else None
     route = evidence.get("route") if isinstance(evidence.get("route"), Mapping) else None
     worker = _single_mapping(evidence, "worker_runs")
-    specialist_load = _single_mapping(evidence, "specialist_loads")
     finalization = _codex_accepted_finalization(evidence)
     if any(
         item is None
@@ -631,30 +1129,29 @@ def codex_activation_failures(
             run,
             route,
             worker,
-            specialist_load,
             finalization,
         )
     ):
         failures.append("Codex canary evidence graph was incomplete")
         return tuple(failures)
 
-    specialist_slug = str(specialist_load.get("agent_slug") or "")
-    selected = {
-        str(value)
-        for field in ("selected_ids", "companion_ids")
-        for value in (route.get(field) if isinstance(route.get(field), list) else [])
-    }
-    if (
-        specialist_slug != "code-reviewer"
-        or selected != {"code-reviewer"}
-        or route.get("query_hash") != evidence.get("query_hash")
-    ):
+    selected = _ordered_route_slugs(route)
+    if selected != ("code-reviewer",) or route.get("query_hash") != evidence.get("query_hash"):
         failures.append("the sole routed canary unit was not the expected code-reviewer")
 
     spawn, receiver_id, collaboration_failures = _codex_collaboration_chain(result)
     failures.extend(collaboration_failures)
     if spawn is None or not receiver_id:
         return tuple(failures)
+    failures.extend(
+        _codex_host_child_delivery_failures(
+            evidence=evidence,
+            host_child_delivery=host_child_delivery,
+            parent_route=route,
+            spawn=spawn,
+            receiver_id=receiver_id,
+        )
+    )
     # The JSONL assignment envelope, the native task label and the execution
     # dispatch receipt all described a planned unit. There is no plan to name,
     # so what the transcript has to show is simply that Codex spawned one child
@@ -664,7 +1161,6 @@ def codex_activation_failures(
             evidence=evidence,
             run=run,
             worker=worker,
-            specialist_load=specialist_load,
             finalization=finalization,
             receiver_id=receiver_id,
             response_hash=response_hash,
@@ -783,6 +1279,7 @@ def evaluate_proof(
     evidence: dict[str, Any],
     default_profile_scope: str,
     mode: str = "agency",
+    host_child_delivery: _VerifiedHostChildDelivery | None = None,
 ) -> CanaryProof:
     from agency_runtime.core.header.contract import parse_header, validate_header
 
@@ -795,6 +1292,7 @@ def evaluate_proof(
     isolated_plugin = (
         result.get("isolated_plugin") if isinstance(result.get("isolated_plugin"), dict) else None
     )
+    host_child_delivery_projection = _consume_verified_host_child_delivery(host_child_delivery)
     plugin_invoked = bool(evidence.get("correlated_trace_ids"))
     activation_failures: tuple[str, ...] | None = None
     if mode == "agency" and host == "codex":
@@ -804,8 +1302,18 @@ def evaluate_proof(
             response_hash=hashlib.sha256(
                 response.encode("utf-8", errors="surrogatepass")
             ).hexdigest(),
+            host_child_delivery=host_child_delivery_projection,
         )
         plugin_invoked = evidence.get("proven") is True
+    elif mode == "agency" and host == "claude":
+        # The independently parsed, collector-sealed host artifact is Claude's
+        # activation authority. A Store ``specialist_loaded`` row is only a
+        # diagnostic projection and must not be required to make (or allowed to
+        # replace) this proof.
+        activation_failures = _claude_host_child_delivery_failures(
+            proof=host_child_delivery_projection,
+            evidence=evidence,
+        )
     if mode == "native-only":
         profile_proven = bool(
             result_scope == "isolated-profile"
@@ -857,6 +1365,8 @@ def evaluate_proof(
         ),
         "collaboration": collaboration_projection,
     }
+    if host_child_delivery_projection is not None:
+        invocation["host_child_delivery"] = host_child_delivery_projection
     if mode == "agency" and host == "codex":
         cardinalities = evidence.get("cardinalities")
         finalization_count = (

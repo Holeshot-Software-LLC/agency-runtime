@@ -130,6 +130,7 @@ WITHHELD_RUN_STATUSES = _WITHHELD_RUN_STATUSES
 PUBLISHED_ANYWAY_RUN_STATUSES = _PUBLISHED_ANYWAY_RUN_STATUSES
 _CANARY_ACTIVATION_SNAPSHOT_SCHEMA = "agency.canary-activation-evidence.v1"
 _CANARY_ACTIVATION_MAX_ROWS = 256
+MAX_NATIVE_CHILD_DELIVERY_VERIFICATION_ROWS = 4_096
 
 
 class HostControlConflictError(RuntimeError):
@@ -182,6 +183,135 @@ def _project_canary_strings(
             return None
         result.append(item)
     return result
+
+
+def _project_native_child_staffing_row(
+    row: sqlite3.Row,
+    *,
+    decision_id: str,
+) -> dict[str, Any] | None:
+    """Resolve one exact inference decision from its bounded route projection."""
+
+    try:
+        decision = safe_load_bounded_json(
+            str(row["decision"] or ""),
+            maximum_bytes=64 * 1024,
+            maximum_depth=8,
+            maximum_nodes=1_024,
+        )
+    except (TypeError, ValueError):
+        return None
+    if not isinstance(decision, Mapping):
+        return None
+    from agency_runtime.core.native_child_decision import (
+        project_native_child_staffing_decision,
+    )
+
+    expected = project_native_child_staffing_decision(decision.get("native_child_delivery"))
+    selected = _project_canary_strings(row["selected_ids"], maximum_chars=256)
+    semantic = _project_canary_strings(row["semantic_ids"], maximum_chars=256)
+    companions = _project_canary_strings(row["companion_ids"], maximum_chars=256)
+    expected_slugs = (
+        [str(card["specialist_slug"]) for card in expected["cards"]] if expected is not None else []
+    )
+    context_fingerprint = str(row["context_fingerprint"] or "")
+    if (
+        expected is None
+        or row["id"] != decision_id
+        or row["status"] != "applied"
+        or row["source"] != "native_child_inference"
+        or row["session_id"] != expected["parent_session_id"]
+        or row["trace_id"] != expected["parent_trace_id"]
+        or row["query_hash"] != expected["task_sha256"]
+        or content_digest_identity(context_fingerprint) != context_fingerprint
+        or selected != expected_slugs
+        or semantic != expected_slugs
+        or companions != []
+        or decision.get("status") != "applied"
+        or decision.get("source") != "native_child_inference"
+        or decision.get("selected_ids") != expected_slugs
+        or decision.get("semantic_ids") != expected_slugs
+        or decision.get("companion_ids") not in (None, [])
+        or decision.get("available_companion_ids") not in (None, [])
+    ):
+        return None
+    return {
+        "decision_id": decision_id,
+        "trace_id": str(row["trace_id"]),
+        "session_id": str(row["session_id"]),
+        "query_hash": str(row["query_hash"]),
+        "context_fingerprint": context_fingerprint,
+        "created_at": str(row["created_at"]),
+        **expected,
+    }
+
+
+def _bounded_canary_native_child_join(
+    conn: Any,
+    *,
+    host: str,
+    session_id: str,
+    trace_id: str,
+) -> tuple[int, int, dict[str, Any] | None, dict[str, Any] | None, dict[str, Any] | None]:
+    """Project one inference route and its diagnostic delivery receipt.
+
+    Store rows cannot prove what a host-authored child artifact contained or
+    whether delivery happened before child speech.  The fifth return value is
+    therefore always ``None``; only an independently parsed host artifact may
+    supply ``host_child_delivery`` to the canary validator.  Both candidate
+    windows remain bounded at one row beyond the canary limit so ambiguity
+    cannot turn into an unbounded snapshot.
+    """
+
+    route_rows = conn.execute(
+        "SELECT id, trace_id, session_id, query_hash, context_fingerprint, "
+        "status, source, selected_ids, semantic_ids, companion_ids, decision, created_at "
+        "FROM routing_decisions WHERE session_id = ? AND trace_id = ? "
+        "AND source = 'native_child_inference' ORDER BY created_at, rowid "
+        "LIMIT ?",
+        (session_id, trace_id, _CANARY_ACTIVATION_MAX_ROWS + 1),
+    ).fetchall()
+    delivery_rows = conn.execute(
+        "SELECT delivery.decision_id, delivery.nonce, delivery.artifact_digest, "
+        "delivery.host, delivery.parent_session_id, delivery.parent_trace_id, "
+        "delivery.launch_id, delivery.binding_kind, delivery.binding_id, "
+        "delivery.child_id, delivery.verified_at "
+        "FROM native_child_delivery_verifications AS delivery "
+        "JOIN routing_decisions AS route ON route.id = delivery.decision_id "
+        "WHERE route.session_id = ? AND route.trace_id = ? "
+        "AND delivery.parent_session_id = route.session_id "
+        "AND delivery.parent_trace_id = route.trace_id AND delivery.host = ? "
+        "ORDER BY delivery.verified_at, delivery.rowid LIMIT ?",
+        (session_id, trace_id, host, _CANARY_ACTIVATION_MAX_ROWS + 1),
+    ).fetchall()
+    route_count = len(route_rows)
+    delivery_count = len(delivery_rows)
+    if route_count != 1 or delivery_count != 1:
+        return route_count, delivery_count, None, None, None
+
+    route = _project_native_child_staffing_row(
+        route_rows[0],
+        decision_id=str(route_rows[0]["id"] or ""),
+    )
+    receipt = {**dict(delivery_rows[0]), "verified_delivery": True}
+    if route is None:
+        return route_count, delivery_count, None, None, None
+    receipt_matches = (
+        receipt["decision_id"] == route["decision_id"]
+        and receipt["host"] == route["host"] == host
+        and receipt["parent_session_id"] == route["parent_session_id"] == session_id
+        and receipt["parent_trace_id"] == route["parent_trace_id"] == trace_id
+        and receipt["launch_id"] == route["launch_id"]
+        and receipt["binding_kind"] == route["binding_kind"]
+        and receipt["binding_id"] == route["binding_id"]
+        and receipt["nonce"] == route["nonce"]
+        and content_digest_identity(str(receipt["artifact_digest"] or ""))
+        == receipt["artifact_digest"]
+    )
+    if not receipt_matches:
+        return route_count, delivery_count, None, None, None
+
+    return route_count, delivery_count, route, receipt, None
 
 
 def _project_canary_work_units(value: object) -> dict[str, Any] | None:
@@ -254,6 +384,8 @@ def _empty_canary_activation_snapshot(
         "trace_id": "",
         "cardinalities": {
             "routes": route_count,
+            "native_child_routes": 0,
+            "native_child_deliveries": 0,
             "runs": 0,
             "traces": 0,
             "delegations": 0,
@@ -266,6 +398,9 @@ def _empty_canary_activation_snapshot(
         },
         "run": None,
         "route": None,
+        "native_child_route": None,
+        "native_child_delivery": None,
+        "host_child_delivery": None,
         "preflight_failure": None,
         "delegations": [],
         "activation_grants": [],
@@ -1691,6 +1826,279 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         finally:
             conn.close()
 
+    def get_native_child_staffing_decision(self, decision_id: str) -> dict[str, Any] | None:
+        """Return one exact Agency decision expected by host-artifact verification.
+
+        This row proves inference selection and immutable bindings only.  It is
+        never delivery evidence: callers must independently read a native host
+        artifact and match every returned field before claiming Rule 4.
+        """
+
+        normalized_id = validate_correlation_id(decision_id, field="decision_id")
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT id, trace_id, session_id, query_hash, context_fingerprint, "
+                "status, source, selected_ids, semantic_ids, companion_ids, decision, "
+                "created_at FROM routing_decisions WHERE id = ?",
+                (normalized_id,),
+            ).fetchone()
+        finally:
+            conn.close()
+        if row is None:
+            return None
+        return _project_native_child_staffing_row(row, decision_id=normalized_id)
+
+    def get_native_child_delivery_verification(
+        self,
+        decision_id: str,
+    ) -> dict[str, Any] | None:
+        """Return one immutable, content-free host-artifact verification receipt."""
+
+        normalized_id = validate_correlation_id(decision_id, field="decision_id")
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT decision_id, nonce, artifact_digest, host, parent_session_id, "
+                "parent_trace_id, launch_id, binding_kind, binding_id, child_id, verified_at "
+                "FROM native_child_delivery_verifications WHERE decision_id = ?",
+                (normalized_id,),
+            ).fetchone()
+        finally:
+            conn.close()
+        return None if row is None else {**dict(row), "verified_delivery": True}
+
+    def list_native_child_delivery_verifications(
+        self,
+        *,
+        host: str | None = None,
+        limit: int = 200,
+    ) -> list[dict[str, Any]]:
+        """Return a bounded newest-first window of immutable delivery receipts."""
+
+        if type(limit) is not int or not 1 <= limit <= MAX_NATIVE_CHILD_DELIVERY_VERIFICATION_ROWS:
+            raise ValueError(
+                "native child delivery verification limit must be between 1 and "
+                f"{MAX_NATIVE_CHILD_DELIVERY_VERIFICATION_ROWS}"
+            )
+        normalized_host: str | None = None
+        if host is not None:
+            normalized_host = validate_correlation_id(host, field="host").casefold()
+            if normalized_host not in EXECUTION_HOSTS:
+                raise ValueError("host must identify a supported execution host")
+        conn = self._connect()
+        try:
+            fields = (
+                "decision_id, nonce, artifact_digest, host, parent_session_id, "
+                "parent_trace_id, launch_id, binding_kind, binding_id, child_id, verified_at "
+            )
+            rows = (
+                conn.execute(
+                    "SELECT " + fields + "FROM native_child_delivery_verifications "
+                    "ORDER BY verified_at DESC, rowid DESC LIMIT ?",
+                    (limit,),
+                ).fetchall()
+                if normalized_host is None
+                else conn.execute(
+                    "SELECT " + fields + "FROM native_child_delivery_verifications WHERE host = ? "
+                    "ORDER BY verified_at DESC, rowid DESC LIMIT ?",
+                    (normalized_host, limit),
+                ).fetchall()
+            )
+        finally:
+            conn.close()
+        return [{**dict(row), "verified_delivery": True} for row in rows]
+
+    def _record_native_child_delivery_verification(
+        self,
+        *,
+        decision_id: str,
+        nonce: str,
+        artifact_digest: str,
+        host: str,
+        parent_session_id: str,
+        parent_trace_id: str,
+        launch_id: str,
+        binding_kind: str,
+        binding_id: str,
+        child_id: str,
+        cards: object,
+    ) -> dict[str, Any]:
+        """Atomically consume one independently parsed native-host proof.
+
+        The caller must first establish the host-specific pre-speech artifact
+        contract. This method never accepts that conclusion as a boolean. It
+        only revalidates exact durable inference identity and enforces one-use.
+        It is deliberately private; the public minting path is the independent
+        host-artifact verifier in ``child_delivery_evidence``.
+        """
+
+        normalized_id = validate_correlation_id(decision_id, field="decision_id")
+        normalized_nonce = validate_correlation_id(nonce, field="nonce")
+        supplied_artifact = validate_correlation_id(
+            artifact_digest,
+            field="artifact_digest",
+        )
+        normalized_artifact = content_digest_identity(supplied_artifact)
+        if normalized_artifact is None or normalized_artifact != supplied_artifact:
+            raise ValueError("artifact_digest must be a lowercase SHA-256 digest")
+        normalized_host = validate_correlation_id(host, field="host").casefold()
+        if normalized_host not in EXECUTION_HOSTS:
+            raise ValueError("host must identify a supported execution host")
+        normalized_session = validate_correlation_id(
+            parent_session_id,
+            field="parent_session_id",
+        )
+        normalized_trace = validate_correlation_id(
+            parent_trace_id,
+            field="parent_trace_id",
+        )
+        normalized_launch = validate_correlation_id(launch_id, field="launch_id")
+        normalized_kind = validate_correlation_id(binding_kind, field="binding_kind")
+        normalized_binding = validate_correlation_id(binding_id, field="binding_id")
+        normalized_child = validate_correlation_id(child_id, field="child_id")
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT route.id, route.trace_id, route.session_id, route.query_hash, "
+                "route.context_fingerprint, route.status, route.source, route.selected_ids, "
+                "route.semantic_ids, route.companion_ids, route.decision, route.created_at, "
+                "run.host AS run_host, run.status AS run_status, run.ended_at AS run_ended_at, "
+                "run.terminal_finalization_id AS run_terminal_finalization_id, "
+                "finalization.id AS finalization_id, "
+                "finalization.created_at AS finalization_created_at "
+                "FROM routing_decisions AS route JOIN runs AS run "
+                "ON run.trace_id = route.trace_id AND run.session_id = route.session_id "
+                "LEFT JOIN finalization_events AS finalization "
+                "ON finalization.id = run.terminal_finalization_id "
+                "AND finalization.trace_id = run.trace_id "
+                "WHERE route.id = ?",
+                (normalized_id,),
+            ).fetchone()
+            expected = (
+                None
+                if row is None
+                else _project_native_child_staffing_row(row, decision_id=normalized_id)
+            )
+            run_is_open = bool(
+                row is not None
+                and row["run_status"] in {"active", "evidence_only"}
+                and row["run_ended_at"] is None
+                and row["run_terminal_finalization_id"] is None
+            )
+            run_is_closed = bool(
+                row is not None
+                and row["run_status"] not in {"active", "evidence_only", "retention_expired"}
+                and row["run_ended_at"] is not None
+                and row["created_at"] <= row["run_ended_at"]
+                and (
+                    (row["run_terminal_finalization_id"] is None and row["finalization_id"] is None)
+                    or (
+                        row["finalization_id"] == row["run_terminal_finalization_id"]
+                        and row["finalization_created_at"] is not None
+                        and row["created_at"] <= row["finalization_created_at"]
+                    )
+                )
+            )
+            if (
+                expected is None
+                or row is None
+                or not (run_is_open or run_is_closed)
+                or str(row["run_host"] or "").casefold() != normalized_host
+                or expected["host"] != normalized_host
+                or expected["parent_session_id"] != normalized_session
+                or expected["parent_trace_id"] != normalized_trace
+                or expected["launch_id"] != normalized_launch
+                or expected["binding_kind"] != normalized_kind
+                or expected["binding_id"] != normalized_binding
+                or expected["nonce"] != normalized_nonce
+            ):
+                raise ValueError("native child delivery verification identity does not match")
+            from agency_runtime.core.native_child_decision import (
+                project_native_child_staffing_decision,
+            )
+
+            decision_payload = {
+                key: value
+                for key, value in expected.items()
+                if key
+                not in {
+                    "decision_id",
+                    "trace_id",
+                    "session_id",
+                    "query_hash",
+                    "context_fingerprint",
+                    "created_at",
+                }
+            }
+            observed_cards = project_native_child_staffing_decision(
+                {**decision_payload, "cards": cards}
+            )
+            if observed_cards is None or observed_cards["cards"] != expected["cards"]:
+                raise ValueError("native child delivery card identity does not match")
+            if normalized_kind == "child_id":
+                if normalized_binding != normalized_child:
+                    raise ValueError("native child delivery child binding does not match")
+            elif normalized_kind == "launch_id":
+                if normalized_binding != normalized_launch:
+                    raise ValueError("native child delivery launch binding does not match")
+                host_launch = conn.execute(
+                    "SELECT 1 FROM worker_runs WHERE host = ? AND session_id = ? "
+                    "AND trace_id = ? AND worker_id = ? AND execution_tool_use_id = ? "
+                    "AND execution_dispatched_at IS NOT NULL LIMIT 1",
+                    (
+                        normalized_host,
+                        normalized_session,
+                        normalized_trace,
+                        normalized_child,
+                        normalized_launch,
+                    ),
+                ).fetchone()
+                if host_launch is None:
+                    raise ValueError("native child delivery host launch binding is unavailable")
+            else:
+                raise ValueError("native child delivery binding kind is unsupported")
+            conn.execute(
+                "INSERT INTO native_child_delivery_verifications "
+                "(decision_id, nonce, artifact_digest, host, parent_session_id, "
+                "parent_trace_id, launch_id, binding_kind, binding_id, child_id, verified_at) "
+                f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, {STORE_CLOCK_SQL})",  # nosec B608
+                (
+                    normalized_id,
+                    normalized_nonce,
+                    normalized_artifact,
+                    normalized_host,
+                    normalized_session,
+                    normalized_trace,
+                    normalized_launch,
+                    normalized_kind,
+                    normalized_binding,
+                    normalized_child,
+                ),
+            )
+            stored = conn.execute(
+                "SELECT decision_id, nonce, artifact_digest, host, parent_session_id, "
+                "parent_trace_id, launch_id, binding_kind, binding_id, child_id, verified_at "
+                "FROM native_child_delivery_verifications WHERE decision_id = ?",
+                (normalized_id,),
+            ).fetchone()
+            if stored is None:
+                raise RuntimeError("native child delivery verification postcondition failed")
+            conn.commit()
+            return {**dict(stored), "verified_delivery": True}
+        except sqlite3.IntegrityError as exc:
+            conn.rollback()
+            raise ValueError(
+                "native child delivery verification proof was already consumed"
+            ) from exc
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def get_canary_activation_snapshot(
         self,
         *,
@@ -1866,6 +2274,19 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 "created_at": str(row["route_created_at"] or ""),
             }
 
+            (
+                native_child_route_count,
+                native_child_delivery_count,
+                native_child_route,
+                native_child_delivery,
+                host_child_delivery,
+            ) = _bounded_canary_native_child_join(
+                conn,
+                host=normalized_host,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+            )
+
             counts = conn.execute(
                 "SELECT "
                 "(SELECT COUNT(*) FROM delegation_events WHERE trace_id = ?) "
@@ -1883,6 +2304,8 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             ).fetchone()
             cardinalities = {
                 "routes": 1,
+                "native_child_routes": native_child_route_count,
+                "native_child_deliveries": native_child_delivery_count,
                 "runs": 1,
                 "traces": 1,
                 "delegations": int(counts["delegations"]),
@@ -1905,11 +2328,16 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 cardinalities=cardinalities,
                 run=run,
                 route=route,
+                native_child_route=native_child_route,
+                native_child_delivery=native_child_delivery,
+                host_child_delivery=host_child_delivery,
                 hook_diagnostic=hook_diagnostic,
             )
             if any(
                 cardinalities[name] > _CANARY_ACTIVATION_MAX_ROWS
                 for name in (
+                    "native_child_routes",
+                    "native_child_deliveries",
                     "delegations",
                     "activation_grants",
                     "activation_consumptions",

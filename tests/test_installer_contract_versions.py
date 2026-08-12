@@ -19,10 +19,9 @@ from agency_runtime.core.installer_contracts import (
 
 
 def test_codex_canary_proof_contract_versions_are_exact() -> None:
-    # v3 attests card delivery to a harness-spawned child. v2 attested the
-    # plan -> delegation -> grant -> consumption chain, which no longer exists;
-    # accepting a v2 attestation would claim proof of something retired.
-    assert CODEX_ACTIVATION_CANARY_PROOF_CONTRACT == "agency.codex-activation-canary.v3"
+    # v4 requires a verified host-written child artifact. v3 trusted the Store
+    # specialist-load row, which Agency itself writes, so it is intentionally stale.
+    assert CODEX_ACTIVATION_CANARY_PROOF_CONTRACT == "agency.codex-activation-canary.v4"
     assert CODEX_AUTOMATION_CANARY_PROOF_CONTRACT == "agency.codex-automation-canary.v1"
     assert {
         CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,

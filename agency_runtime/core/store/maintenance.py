@@ -9,6 +9,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.agent_activation import normalize_disabled_agents
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.store.queries import (
     DASHBOARD_ACTIVITY_QUERIES,
@@ -78,6 +79,45 @@ def _activity_cursor_time(name: str, row: Mapping[str, Any]) -> str:
 # turn. Open graphs become retention candidates only after a full day without
 # any store write, in addition to the operator's policy cutoff.
 _STALE_OPEN_MIN_INACTIVITY_SECONDS = 24 * 60 * 60
+
+
+def _activation_policy_identity(value: object, *, field: str) -> tuple[str, ...]:
+    """Return one secret-free canonical disabled-agent policy identity."""
+
+    if isinstance(value, (str, bytes, bytearray, Mapping)):
+        raise ValueError(f"{field} must be a collection of agent slugs")
+    try:
+        items = list(value)  # type: ignore[arg-type]
+        return normalize_disabled_agents(items)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field} must be a canonical disabled-agent policy") from exc
+
+
+def _require_activation_policy(
+    store: Any,
+    expected: tuple[str, ...],
+) -> None:
+    """Compare live Store-bound hard eligibility to one frozen route input."""
+
+    getter = getattr(store, "get_disabled_agent_slugs", None)
+    if not callable(getter):
+        raise RuntimeError("live activation policy authority is unavailable")
+    try:
+        current = _activation_policy_identity(getter(), field="live disabled agents")
+    except Exception as exc:
+        raise RuntimeError("live activation policy authority is unavailable") from exc
+    if current != expected:
+        raise ValueError("activation policy changed before routing decision persistence")
+
+
+def _expected_roster_generation(value: object) -> int | None:
+    """Validate one optional roster-generation transaction guard."""
+
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError("expected_roster_generation must be a non-negative integer")
+    return value
 
 
 class MaintenanceStoreMixin:
@@ -362,8 +402,21 @@ class MaintenanceStoreMixin:
         query_hash: str,
         context_fingerprint: str,
         decision: dict[str, Any],
+        decision_id: str | None = None,
+        require_open_run: bool = False,
+        expected_roster_generation: int | None = None,
+        expected_disabled_agents: tuple[str, ...] | None = None,
     ) -> str:
-        """Persist one metadata-only authoritative routing projection."""
+        """Persist one metadata-only authoritative routing projection.
+
+        Callers that must bind a prospective artifact to the route may propose
+        its exact ID before rendering.  Native-child callers may additionally
+        require the parent, roster generation, and Store-bound activation
+        policy to remain exact inside this same write transaction.  The native
+        child service holds the Store-bound configuration read lock before
+        entering this method, preserving config-lock then SQLite-lock ordering.
+        Defaults preserve the general routing behavior.
+        """
         normalized_trace = validate_correlation_id(trace_id, field="trace_id")
         normalized_session = validate_correlation_id(session_id, field="session_id")
         normalized_query_hash = str(query_hash or "").strip()
@@ -378,16 +431,53 @@ class MaintenanceStoreMixin:
                 raise ValueError(f"{label} must be a lowercase SHA-256 digest")
         if not isinstance(decision, Mapping):
             raise ValueError("routing decision must be a mapping")
+        if type(require_open_run) is not bool:
+            raise TypeError("require_open_run must be a boolean")
+        expected_generation = _expected_roster_generation(expected_roster_generation)
+        expected_activation_policy = (
+            None
+            if expected_disabled_agents is None
+            else _activation_policy_identity(
+                expected_disabled_agents,
+                field="expected_disabled_agents",
+            )
+        )
         safe_decision, safe_work_units, source = project_routing_decision(decision)
-        event_id = self._uuid()
+        if decision_id is None:
+            event_id = self._uuid()
+        else:
+            event_id = validate_correlation_id(decision_id, field="decision_id")
+            if event_id != decision_id:
+                raise ValueError("decision_id must already be canonical")
         conn = self._connect()
         try:
             conn.execute("BEGIN IMMEDIATE")
-            self._ensure_run(
-                conn,
-                trace_id=normalized_trace,
-                session_id=normalized_session,
-            )
+            if require_open_run:
+                self._require_open_run(
+                    conn,
+                    trace_id=normalized_trace,
+                    session_id=normalized_session,
+                )
+            else:
+                self._ensure_run(
+                    conn,
+                    trace_id=normalized_trace,
+                    session_id=normalized_session,
+                )
+            if expected_generation is not None:
+                generation = conn.execute(
+                    "SELECT value FROM store_counters WHERE name = 'roster-generation'"
+                ).fetchone()
+                if generation is None:
+                    raise RuntimeError("roster generation counter is unavailable")
+                try:
+                    current_generation = int(generation["value"])
+                except (TypeError, ValueError, OverflowError) as exc:
+                    raise RuntimeError("roster generation counter is invalid") from exc
+                if current_generation != expected_generation:
+                    raise ValueError("roster changed before routing decision persistence")
+            if expected_activation_policy is not None:
+                _require_activation_policy(self, expected_activation_policy)
             conn.execute(
                 "INSERT INTO routing_decisions "
                 "(id, trace_id, session_id, query_hash, context_fingerprint, status, source, "
@@ -413,6 +503,8 @@ class MaintenanceStoreMixin:
                     json.dumps(safe_decision, sort_keys=True, default=str),
                 ),
             )
+            if expected_activation_policy is not None:
+                _require_activation_policy(self, expected_activation_policy)
             conn.commit()
             return event_id
         except Exception:

@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from agency_runtime.core import canary
+from agency_runtime.core import canary, canary_backends
 from agency_runtime.core.bounded_io import FileSizeLimitError
 from agency_runtime.core.selector.policy import detect_actions, load_bundled_policy
 
@@ -202,13 +202,52 @@ def test_agency_canary_explicitly_requests_one_whole_unit_subagent() -> None:
     assert "user explicitly requested exactly one sub-agent" in (
         canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     )
-    assert "wait_agent exactly once" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
+    assert "call wait_agent once" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     assert "fork_turns set to none" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
-    assert "never retry spawn_agent or wait_agent" in (
+    assert "never retry any collaboration call" in (
         canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     )
-    assert "if spawn_agent fails, do not call wait_agent" in (
+    assert "if the spawn fails or the wait times out" in (
         canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
+    )
+    assert "do not call followup_task" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
+
+
+def test_codex_canary_diagnostic_uses_direct_spawn_and_one_wait_contract() -> None:
+    counts = {
+        "spawn_count": 1,
+        "followup_count": 0,
+        "wait_count": 1,
+        "tool_output_count": 2,
+        "child_start_count": 1,
+        "child_interaction_count": 0,
+    }
+
+    assert (
+        canary_backends._codex_collaboration_diagnostic_reason(
+            counts,
+            rollout_contract="canary",
+        )
+        == "native_collaboration_topology_invalid"
+    )
+
+    counts["followup_count"] = 1
+    assert (
+        canary_backends._codex_collaboration_diagnostic_reason(
+            counts,
+            rollout_contract="canary",
+        )
+        == "parent_followup_ambiguous"
+    )
+
+    counts["followup_count"] = 0
+    counts["wait_count"] = 2
+    assert (
+        canary_backends._codex_collaboration_diagnostic_reason(
+            counts,
+            rollout_contract="canary",
+        )
+        == "parent_wait_ambiguous"
     )
 
 
@@ -331,7 +370,10 @@ def test_nonisolated_readiness_reports_registration_enablement_and_control(
     )
     assert "Agency Runtime plugin registration not proven" in assessment.unmet
     assert "native plugin enablement not proven" in assessment.unmet
-    assert "host has no proven read-only, no-tools noninteractive canary mode" in assessment.unmet
+    assert (
+        "host has no proven read-only, bounded native-child noninteractive canary mode"
+        in assessment.unmet
+    )
 
 
 def test_readiness_reports_disabled_soft_control(

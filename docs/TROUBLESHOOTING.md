@@ -499,8 +499,8 @@ agency host-canary <host>
 ```
 
 It lists every unmet prerequisite. Hermes and OpenClaw currently reject live
-execution because a proven read-only, no-tools noninteractive mode is not
-available. Codex and Claude require the exact
+execution because a proven read-only, bounded native-child noninteractive mode
+is not available. Codex and Claude require the exact
 `RUN LIVE <host> CANARY` confirmation before invoking the host.
 
 For an Agency-off comparison, leave the plugin installed, run

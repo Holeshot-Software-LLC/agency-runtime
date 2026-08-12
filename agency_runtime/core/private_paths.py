@@ -81,6 +81,33 @@ class PrivateDirectoryCleanupError(RuntimeError):
     """Raised when an Agency-owned private directory cannot be removed safely."""
 
 
+_PRIVATE_TEMPORARY_LEASE_SEAL = object()
+
+
+@dataclass(frozen=True, slots=True)
+class _PrivateTemporaryDirectoryLease:
+    """Opaque live authority for one Agency-allocated temporary directory."""
+
+    path: Path
+    identity: PrivateDirectoryIdentity
+    _seal: object
+
+    def __post_init__(self) -> None:
+        if self._seal is not _PRIVATE_TEMPORARY_LEASE_SEAL:
+            raise TypeError("private temporary leases are allocator-owned")
+
+
+def _private_temporary_lease_is_current(value: object) -> bool:
+    """Return whether one exact opaque lease still names its live directory."""
+
+    return bool(
+        type(value) is _PrivateTemporaryDirectoryLease
+        and value._seal is _PRIVATE_TEMPORARY_LEASE_SEAL
+        and value.path == value.identity.path
+        and _identity_is_current(value.identity)
+    )
+
+
 def _register_host_authority(identity: PrivateDirectoryIdentity) -> None:
     with _HOST_AUTHORITIES_LOCK:
         _HOST_AUTHORITIES[_absolute(identity.path)] = identity
@@ -975,12 +1002,12 @@ def remove_private_directory(identity: PrivateDirectoryIdentity) -> None:
 
 
 @contextmanager
-def private_temporary_directory(
+def _private_temporary_directory_lease(
     *,
     prefix: str,
     category: str = "ephemeral",
-) -> Iterator[Path]:
-    """Yield an unpredictable owner-private directory outside ambient temp."""
+) -> Iterator[_PrivateTemporaryDirectoryLease]:
+    """Yield one opaque live lease for an Agency-allocated temporary root."""
 
     try:
         root = private_runtime_directory(category)
@@ -991,7 +1018,11 @@ def private_temporary_directory(
         identity = allocate_host_private_directory(prefix=prefix)
     body_error: BaseException | None = None
     try:
-        yield identity.path
+        yield _PrivateTemporaryDirectoryLease(
+            path=identity.path,
+            identity=identity,
+            _seal=_PRIVATE_TEMPORARY_LEASE_SEAL,
+        )
     except BaseException as exc:
         body_error = exc
         raise
@@ -1007,6 +1038,18 @@ def private_temporary_directory(
                 raise PrivateDirectoryCleanupError(
                     "Agency Runtime private temporary cleanup failed"
                 ) from cleanup_error
+
+
+@contextmanager
+def private_temporary_directory(
+    *,
+    prefix: str,
+    category: str = "ephemeral",
+) -> Iterator[Path]:
+    """Yield an unpredictable owner-private directory outside ambient temp."""
+
+    with _private_temporary_directory_lease(prefix=prefix, category=category) as lease:
+        yield lease.path
 
 
 __all__ = [

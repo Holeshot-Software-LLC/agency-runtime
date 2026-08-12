@@ -33,6 +33,7 @@ from agency_runtime.core.bounded_io import (
     read_bounded_regular_file,  # noqa: F401 - monkeypatch compatibility
 )
 from agency_runtime.core.bounded_json import safe_load_bounded_json
+from agency_runtime.core.child_delivery_evidence import _discard_verified_host_child_delivery
 from agency_runtime.core.host_control import SUPPORTED_HOSTS
 from agency_runtime.core.installer import (
     PLUGIN_VERSION,  # noqa: F401 - compatibility dependency resolved by canary_proof
@@ -626,6 +627,7 @@ def run_canary(
         mode=mode,
     )
     if outcome.error:
+        _discard_verified_host_child_delivery(outcome.host_child_delivery)
         _report_failed_canary_invocation(
             report,
             host=host,
@@ -635,6 +637,7 @@ def run_canary(
         )
         return report
     if outcome.result is None or outcome.evidence is None:
+        _discard_verified_host_child_delivery(outcome.host_child_delivery)
         report["unmet_prerequisites"].append(
             "safe host invocation returned incomplete evidence state"
         )
@@ -645,6 +648,7 @@ def run_canary(
         read_failure=("authoritative Agency master control could not be re-read after invocation"),
         drift_failure="Agency master control changed during the canary invocation",
     ):
+        _discard_verified_host_child_delivery(outcome.host_child_delivery)
         _terminate_failed_canary_runs(
             report,
             host=host,
@@ -658,6 +662,7 @@ def run_canary(
         evidence=outcome.evidence,
         default_profile_scope=assessment.profile_scope,
         mode=mode,
+        host_child_delivery=outcome.host_child_delivery,
     )
     report.update(
         {
