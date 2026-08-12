@@ -815,6 +815,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6ce0c37f` | 2026-08-12 | fix(dashboard): enforce truthful evidence parity | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 | `15911085` | 2026-08-12 | docs(roadmap): record post-Job-B dashboard verification | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 | `1c03a40b` | 2026-08-12 | fix(docs): decode worklog history as UTF-8 | [AR-254](../roadmap/issue-AR-254-reconcile-canonical-worklog-history.md) | null |
+| `9ac9d295` | 2026-08-12 | docs(roadmap): checkpoint green dashboard gates | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
