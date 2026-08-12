@@ -818,6 +818,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9ac9d295` | 2026-08-12 | docs(roadmap): checkpoint green dashboard gates | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 | `e392c040` | 2026-08-12 | Merge pull request #270 from Holeshot-Software-LLC/codex/dashboard-vision-parity | null | null |
 | `64705f1b` | 2026-08-12 | docs(roadmap): put nine-rule mitigations on the P0 path | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `b2e728b1` | 2026-08-12 | AR-256: enforce the nine-rule completion contract | [AR-256](../roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
