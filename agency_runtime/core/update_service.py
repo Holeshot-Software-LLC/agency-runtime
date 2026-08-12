@@ -204,7 +204,7 @@ def _find_source_repository() -> Path | None:
 
 def _run_read_only_git(repository: Path, arguments: list[str]) -> subprocess.CompletedProcess[str]:
     try:
-        from agency_runtime.core.delegation.lifecycle_git import run_git
+        from agency_runtime.core.git_runner import run_git
 
         return run_git(repository, arguments, timeout=5)
     except (OSError, PermissionError, RuntimeError, TypeError, ValueError) as exc:

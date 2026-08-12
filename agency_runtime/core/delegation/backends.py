@@ -20,23 +20,12 @@ from typing import Any
 from agency_runtime.core import owned_process as _process
 from agency_runtime.core.delegation import backend_process_compat as _compat
 from agency_runtime.core.delegation import backend_security as _security
-from agency_runtime.core.delegation.backend_command import CommandBackend
 from agency_runtime.core.delegation.backend_contracts import (
     BackendError,
     BackendExecutionError,
     BackendProtocolError,
-    BackendRegistry,
     BackendTimeoutError,
     BackendUnavailableError,
-    DelegateBackend,
-)
-from agency_runtime.core.delegation.backend_hosts import (
-    ClaudeExecBackend,
-    CodexExecBackend,
-    GenericCLIBackend,
-    HermesDelegateBackend,
-    OpenClawAgentBackend,
-    OpenClawSessionsBackend,
 )
 from agency_runtime.core.owned_process import (
     DEFAULT_MAX_INPUT_BYTES,
@@ -366,54 +355,15 @@ def _compatibility_seams_modified(
     )
 
 
-DEFAULT_REGISTRY = BackendRegistry(
-    [
-        HermesDelegateBackend(),
-        OpenClawSessionsBackend(),
-        CodexExecBackend(),
-        ClaudeExecBackend(),
-        GenericCLIBackend(),
-    ]
-)
-
-
-def register_backend(backend: DelegateBackend) -> DelegateBackend:
-    """Register a backend in the process-wide default registry."""
-
-    return DEFAULT_REGISTRY.register(backend)
-
-
-def get_delegate_func(
-    *,
-    preferred: str | None = None,
-    registry: BackendRegistry | None = None,
-):
-    """Return a lifecycle-compatible delegate callable from a registry."""
-
-    return (registry or DEFAULT_REGISTRY).delegate_func(preferred=preferred)
-
-
 __all__ = [
     "DEFAULT_MAX_INPUT_BYTES",
-    "DEFAULT_REGISTRY",
     "BackendError",
     "BackendExecutionError",
     "BackendProtocolError",
-    "BackendRegistry",
     "BackendTimeoutError",
     "BackendUnavailableError",
     "BoundedBinaryProcessResult",
     "BoundedProcessResult",
-    "ClaudeExecBackend",
-    "CodexExecBackend",
-    "CommandBackend",
-    "DelegateBackend",
-    "GenericCLIBackend",
-    "HermesDelegateBackend",
-    "OpenClawAgentBackend",
-    "OpenClawSessionsBackend",
-    "get_delegate_func",
-    "register_backend",
     "run_bounded_binary_process",
     "run_bounded_process",
 ]

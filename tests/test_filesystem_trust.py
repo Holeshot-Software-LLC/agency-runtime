@@ -19,7 +19,6 @@ from agency_runtime.core import (
     private_paths,
     runtime_control,
 )
-from agency_runtime.core.delegation import lifecycle_git
 from agency_runtime.core.filesystem_trust import (
     absolute_path,
     metadata_is_link_or_reparse_point,
@@ -94,7 +93,6 @@ def test_identity_and_absolute_call_sites_keep_canonical_monkeypatch_seams() -> 
     assert runtime_control._same_file is same_file_identity
     assert path_authority._absolute is absolute_path
     assert private_paths._absolute is absolute_path
-    assert lifecycle_git._absolute is absolute_path
 
 
 def test_path_classifier_wrapper_delegates_through_patchable_alias(

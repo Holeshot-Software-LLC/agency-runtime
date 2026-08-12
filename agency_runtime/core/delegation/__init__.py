@@ -1,72 +1,36 @@
-"""Delegation lifecycle, ledger, and backend registry for agency-runtime."""
+"""Bounded process execution and work-unit ordering.
+
+The package name is historical. Job B -- Agency planning work units, spawning
+workers, provisioning worktrees, and demanding receipts -- was deleted across
+2026-08-09 and 2026-08-11; rule 5 says the native host alone decides whether to
+spawn. What is left is infrastructure that happened to be written here:
+
+* `backends.run_bounded_process` -- the hardened subprocess primitive the
+  installer, the host canary, and the Codex hook-trust inspector all use.
+* `events` -- work-unit observation on the live hook path.
+* `native_labels` -- Codex task-name correlation.
+* `lifecycle` / `lifecycle_graph` -- normalizing and ordering a turn's declared
+  work units, for the routing eval and the dashboard.
+
+Nothing here executes an agent.
+"""
 
 from agency_runtime.core.delegation.backends import (
-    DEFAULT_REGISTRY,
-    BackendError,
-    BackendExecutionError,
-    BackendProtocolError,
-    BackendRegistry,
-    BackendTimeoutError,
-    BackendUnavailableError,
-    ClaudeExecBackend,
-    CodexExecBackend,
-    CommandBackend,
-    DelegateBackend,
-    GenericCLIBackend,
-    HermesDelegateBackend,
-    OpenClawAgentBackend,
-    OpenClawSessionsBackend,
-    get_delegate_func,
-    register_backend,
+    BoundedProcessResult,
+    run_bounded_process,
 )
-from agency_runtime.core.delegation.ledger import DelegationLedger, DelegationLedgerEntry
 from agency_runtime.core.delegation.lifecycle import (
-    DEFAULT_MAX_WORKERS,
-    DEFAULT_WORKTREE_ROOT,
     DependencyGraph,
-    LifecycleResult,
-    WorktreeInfo,
     WorkUnit,
-    aggregate_results,
     build_dependency_graph,
-    cleanup_worktrees,
-    delegate_with_lifecycle,
-    dispatch_work_units,
     normalize_work_units,
-    provision_worktrees,
 )
 
 __all__ = [
-    "DEFAULT_MAX_WORKERS",
-    "DEFAULT_REGISTRY",
-    "DEFAULT_WORKTREE_ROOT",
-    "BackendError",
-    "BackendExecutionError",
-    "BackendProtocolError",
-    "BackendRegistry",
-    "BackendTimeoutError",
-    "BackendUnavailableError",
-    "ClaudeExecBackend",
-    "CodexExecBackend",
-    "CommandBackend",
-    "DelegateBackend",
-    "DelegationLedger",
-    "DelegationLedgerEntry",
+    "BoundedProcessResult",
     "DependencyGraph",
-    "GenericCLIBackend",
-    "HermesDelegateBackend",
-    "LifecycleResult",
-    "OpenClawAgentBackend",
-    "OpenClawSessionsBackend",
     "WorkUnit",
-    "WorktreeInfo",
-    "aggregate_results",
     "build_dependency_graph",
-    "cleanup_worktrees",
-    "delegate_with_lifecycle",
-    "dispatch_work_units",
-    "get_delegate_func",
     "normalize_work_units",
-    "provision_worktrees",
-    "register_backend",
+    "run_bounded_process",
 ]
