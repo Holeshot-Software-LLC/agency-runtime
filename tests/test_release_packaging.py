@@ -305,10 +305,11 @@ def test_release_resources_are_addressable() -> None:
     # grew ~25%). The original 256 KiB budget no longer accommodates the full
     # unmodified JS (required for 100% V8 branch coverage) plus minified CSS/HTML.
     # AR-188 adds the authenticated update projection and attended-command banner;
-    # the later README-reality work adds traceable product proof projections. Keep
-    # that production behavior readable and branch-testable while retaining a
-    # narrow aggregate ceiling above the currently audited 296,619-byte payload.
-    assert dashboard_bytes < 300 * 1024, "dashboard assets exceeded the 300 KiB budget"
+    # the later README-reality work adds traceable product proof projections. AR-236
+    # adds source-separated selection, latency, child-delivery, Rule-8, and wiring
+    # evidence. Keep that production behavior readable and branch-testable while
+    # retaining a narrow ceiling above the audited 355,184-byte payload.
+    assert dashboard_bytes < 360 * 1024, "dashboard assets exceeded the 360 KiB budget"
 
 
 def test_release_metadata_is_single_source_and_cross_platform() -> None:
