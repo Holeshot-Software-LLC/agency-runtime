@@ -1,6 +1,6 @@
 ---
 title: "AR-254: Reconcile canonical worklog history after merged ledger violations"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-11
 updated: 2026-08-12
@@ -63,7 +63,7 @@ or permission to weaken future enforcement.
 - [x] A new mixed `docs(worklog):` commit still fails verification.
 - [x] `scripts/update_worklog.py --check` and `scripts/verify_docs.py` pass.
 - [x] Non-ASCII Git subjects have one platform-independent UTF-8 projection.
-- [ ] The PR #270 automatic gate reaches a green aggregate.
+- [x] The PR #270 automatic gate reaches a green aggregate.
 
 ## Implementation checkpoint
 
@@ -77,3 +77,6 @@ before the Job B rebase. The post-rebase recovery regenerated the table against
 gates before rejecting the two cp1252-decoded subjects. The UTF-8 generator and
 validator subprocess contracts plus focused regression close that platform gap
 without changing any historical subject.
+
+Hosted run `31578291258` passed canonical-history verification and the final
+automatic aggregate on PR #270. AR-254 is complete; AR-236 remains open.

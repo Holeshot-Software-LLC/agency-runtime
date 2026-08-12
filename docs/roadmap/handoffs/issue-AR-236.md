@@ -19,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-236
 branch: codex/dashboard-vision-parity
-evidence_commit: 6ce0c37ff84beaca244d436aa389eb5579d5c05b
-minimum_ledger_commit: 419a888c10837f309122200ea34baec22dc79166
+evidence_commit: 1c03a40bf7f5fa4453b702d2260867d14536f0e7
+minimum_ledger_commit: eccde8b7f8651840397cd68c593000cf4ba72b93
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245
 ---
@@ -47,6 +47,8 @@ this capsule owns the next bounded package.
 - The dashboard truth package is clean at `d9458890` / `8d1a1213`; the minimal
   supporting-contract slice is clean at `6ce0c37f` / `419a888c`. Both were
   independently reviewed with no unresolved High or Medium finding.
+- Browser/fast-spine evidence is clean at `15911085` / `3fc50c89`. The
+  platform-independent worklog repair is clean at `1c03a40b` / `eccde8b7`.
 
 ## completed-evidence
 
@@ -116,12 +118,12 @@ this capsule owns the next bounded package.
 
 ## exact-blocker
 
-- PR #270 still points at the pre-rebase draft head; its historical checks are
-  not evidence for this newly reframed package.
-- Decision conformance reaches the same inherited Windows evaluator baseline
-  failure as `origin/main`: its forced venv Python fails executable-parent
-  namespace trust for one OpenClaw test. The focused test passes when
-  `AGENCY_CI_PYTHON` is unset; all relevant files are identical to `main`.
+- No bounded implementation or evidence blocker remains. Live tracker #245 is
+  closed while canonical AR-236 remains open with unchecked acceptances. The
+  attempted reopen was rejected by the outward-mutation approval boundary; do
+  not merge until the owner explicitly authorizes reopening #245.
+- Local Windows decision conformance has an inherited evaluator-environment
+  failure; hosted Linux killed all 83 mutations on the same branch head.
 
 ## same-task-continuity
 
@@ -131,11 +133,11 @@ decision. Continue in this worktree.
 
 ## next-bounded-work-package
 
-1. Record this post-browser, post-fast-spine recovery checkpoint.
-2. Refresh `main`, force-with-lease the rebased branch, and update draft PR
-   #270 only if the vision-aligned delta remains unchanged.
-3. Inspect fresh hosted checks, merge only when current evidence is green, and
-   keep umbrella AR-236 open for its explicitly deferred historical sub-issues.
+1. Push this final hosted-verification checkpoint and require fresh green checks.
+2. With explicit outward-mutation approval, reopen #245; refresh `main`, mark
+   PR #270 ready, and merge only if the delta is unchanged.
+3. Close completed AR-254 tracker #272 after merge; keep AR-236 open for its
+   explicitly deferred historical sub-issues.
 
 ## verification
 
@@ -155,6 +157,7 @@ named fast Python spine -q -W error  # 668 passed, 6 skipped
 agency eval routing --json --no-details  # all gates passed; p95 4.957 ms
 docs metadata/policy/worklog/verify_docs + full Ruff  # passed
 agency eval decision-conformance  # inherited Windows launcher_identity baseline failure
+hosted run 31578291258  # all automatic gates passed, including 83 mutations and Windows builds
 ~~~
 
 ## constraints

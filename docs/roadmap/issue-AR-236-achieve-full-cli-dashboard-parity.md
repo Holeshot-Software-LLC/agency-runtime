@@ -162,6 +162,17 @@ surface is identical to `origin/main`. Exact restart state and package
 boundaries live in the
 [active recovery capsule](handoffs/issue-AR-236.md).
 
+Hosted run `31578291258` then passed the full automatic PR surface: the named
+spine, all 83 decision-conformance mutations, dashboard coverage, canonical
+documentation history, dependency and source audits, performance, Windows
+3.11-3.13 portability, Windows/Ubuntu review builds, artifact assembly, and the
+aggregate gate. The branch remains a bounded AR-236 slice; this evidence does
+not complete the unchecked historical umbrella acceptances below.
+
+Tracker issue #245 is currently closed despite this canonical umbrella
+remaining open. It must be reopened before PR #270 merges; no product or
+evidence result authorizes silently collapsing the unchecked acceptances.
+
 ## Approach
 
 Address the gap list as 10 focused sub-issues, each a separate PR that
