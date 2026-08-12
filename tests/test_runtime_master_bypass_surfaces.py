@@ -967,7 +967,3 @@ def test_cli_status_passes_brokered_master_state_to_host_inspection(
             "inference": inference,
         }
     ]
-
-
-
-

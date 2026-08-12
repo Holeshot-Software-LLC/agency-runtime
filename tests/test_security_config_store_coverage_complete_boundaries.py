@@ -667,7 +667,6 @@ def test_cli_adapter_wrappers_cover_availability_prompts_and_preflight(
     assert codex.run_preflight("s", "complex") is None
 
 
-
 def test_plugin_import_surfaces_and_store_reports() -> None:
     plugin = importlib.import_module("agency_runtime.adapters.generic.plugin")
     assert plugin.GenericAdapter is generic_wrapper.GenericAdapter

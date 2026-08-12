@@ -68,8 +68,6 @@ class _EventStore:
         self.updated.append((event_id, kwargs))
 
 
-
-
 def test_graph_helpers_cover_scalar_mapping_paths_and_reachability(tmp_path: Path) -> None:
     class _OrderedSet(set[str]):
         def __iter__(self):
