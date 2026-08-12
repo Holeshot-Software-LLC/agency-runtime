@@ -30,10 +30,11 @@ export function createDashboard(runtime = globalThis) {
 					|| state.lifecycle.destroyed
 					|| state.lifecycle.suspended
 			) return false;
-			if (refreshed && state.activeView === "overview") {
-				await live.refreshMetricEvidence();
-			}
 			if (refreshed) core.clearNotice();
+			if (refreshed && state.activeView === "overview") await live.refreshMetricEvidence();
+			else if (refreshed && state.activeView === "evidence") {
+				await live.refreshVisionEvidence();
+			}
 			return refreshed;
 		} catch (error) {
 			if (generation !== state.connection.generation || state.lifecycle.destroyed) return false;
@@ -176,9 +177,16 @@ export function createDashboard(runtime = globalThis) {
 		state.lifecycle.bound = true;
 		document.querySelectorAll(".nav-item").forEach((node) => {
 			listen(node, "click", () => {
+				const previousView = state.activeView;
+				if (previousView === "evidence" && node.dataset.view !== "evidence") {
+					live.cancelVisionEvidenceRequest();
+				}
 				renderer.switchView(node.dataset.view);
+				if (state.full.inFlight) return;
 				if (node.dataset.view === "overview") {
 					void live.refreshMetricEvidence();
+				} else if (node.dataset.view === "evidence") {
+					void live.refreshVisionEvidence();
 				} else if (node.dataset.view === "workforce") {
 					void live.refreshWorkforce().catch((error) => core.showNotice(error.message, true));
 				}
@@ -189,7 +197,13 @@ export function createDashboard(runtime = globalThis) {
 		listen(byId("refresh-button"), "click", async () => {
 			const refreshed = await live.refreshAll();
 			if (refreshed && state.activeView === "overview") await live.refreshMetricEvidence();
+			else if (refreshed && state.activeView === "evidence") {
+				await live.refreshVisionEvidence({ force: true });
+			}
 			void live.refreshUpdateStatus();
+		});
+		listen(byId("vision-evidence-refresh"), "click", () => {
+			void live.refreshVisionEvidence({ force: true });
 		});
 		live.ensureUpdateSurface();
 		listen(byId("update-copy-button"), "click", () => copyAttendedCommand(

@@ -240,9 +240,20 @@ export function createRenderer(core, config, callbacks) {
 		return `${(milliseconds / 1000).toFixed(milliseconds < 10_000 ? 2 : 1)} s`;
 	}
 
-	function metricEvidenceContext(base) {
-		const errors = state.metricEvidence?.errors || [];
-		return errors.length ? `${base} Last refresh retained prior evidence: ${errors.join(" ")}` : base;
+	function metricSourceMetadata(name) {
+		return state.metricEvidence?.sources?.[name]
+			|| { stale: false, unavailable: false, error: "", sampledAt: null };
+	}
+
+	function metricEvidenceContext(name, base) {
+		const metadata = metricSourceMetadata(name);
+		if (metadata.stale) {
+			return `${base} Last refresh retained prior evidence: ${metadata.error || "source unavailable"}`;
+		}
+		if (metadata.unavailable) {
+			return `${base} No validated source sample is available: ${metadata.error || "source unavailable"}`;
+		}
+		return base;
 	}
 
 	function renderSelectionDistribution() {
@@ -253,6 +264,7 @@ export function createRenderer(core, config, callbacks) {
 		tail?.replaceChildren();
 		if (!chart || !tail) return;
 		const stateTag = byId("selection-evidence-state");
+		const sourceMetadata = metricSourceMetadata("selections");
 		if (!data) {
 			setMetric("selection-metric-decisions", "—");
 			setMetric("selection-metric-distinct", "—");
@@ -260,13 +272,15 @@ export function createRenderer(core, config, callbacks) {
 			setMetric("selection-metric-occurrences", "—");
 			setMetric("selection-metric-concentration", "—");
 			if (stateTag) {
-				stateTag.textContent = state.metricEvidence?.stale ? "UNAVAILABLE" : "LOADING";
-				stateTag.dataset.state = state.metricEvidence?.stale ? "stale" : "unknown";
+				stateTag.textContent = sourceMetadata.unavailable ? "UNAVAILABLE" : "LOADING";
+				stateTag.dataset.state = sourceMetadata.unavailable ? "unavailable" : "unknown";
 			}
-			byId("selection-evidence-context").textContent = metricEvidenceContext(
+			byId("selection-evidence-context").textContent = metricEvidenceContext("selections",
 				"Selection evidence has not loaded.",
 			);
-			chart.append(div("empty-compact", "No selection-bearing decisions recorded."));
+			const empty = div("empty-compact", "No selection-bearing decisions recorded.");
+			empty.setAttribute("role", "listitem");
+			chart.append(empty);
 			tail.append(emptyRow(4, "No bounded long-tail evidence."));
 			return;
 		}
@@ -281,36 +295,41 @@ export function createRenderer(core, config, callbacks) {
 			`${(data.top_10_share_of_selection_occurrences * 100).toFixed(1)}%`,
 		);
 		if (stateTag) {
-			stateTag.textContent = state.metricEvidence?.stale
+			stateTag.textContent = sourceMetadata.stale
 				? "STALE"
 				: decisions > 0 ? "OBSERVED" : "NO DATA";
-			stateTag.dataset.state = state.metricEvidence?.stale
+			stateTag.dataset.state = sourceMetadata.stale
 				? "stale"
 				: decisions > 0 ? "observed" : "unknown";
 		}
 		const scanState = data.selection_bearing_decision_scan_truncated
 			? `Newest ${data.selection_bearing_decision_scan_limit} selection-bearing decisions; older retained evidence is outside this view.`
 			: `All retained selection-bearing decisions were scanned, up to the ${data.selection_bearing_decision_scan_limit}-decision safety limit.`;
-		byId("selection-evidence-context").textContent = metricEvidenceContext(
+		byId("selection-evidence-context").textContent = metricEvidenceContext("selections",
 			decisions > 0
 				? `${decisions} decisions contain ${data.selection_occurrences} specialist selections. Current active roster: ${data.active_roster_size}. ${scanState} Per-specialist decision shares are independent and need not sum to 100%.`
 				: `No selection-bearing decisions recorded. Current active roster: ${data.active_roster_size}. ${scanState}`,
 		);
 		if (!decisions) {
-			chart.append(div("empty-compact", "No selection-bearing decisions recorded."));
+			const empty = div("empty-compact", "No selection-bearing decisions recorded.");
+			empty.setAttribute("role", "listitem");
+			chart.append(empty);
 		} else {
 			data.top_specialists.slice(0, 15).forEach((row) => {
 				const share = row.share_of_decisions_with_selections * 100;
 				const item = div("selection-bar-row");
+				item.setAttribute("role", "listitem");
 				const label = div("selection-bar-label");
 				label.append(
 					strong("", row.slug),
 					small("", `${row.decisions_containing_specialist} decisions · ${share.toFixed(1)}%`),
 				);
-				const track = div("selection-bar-track");
-				const fill = div("selection-bar-fill");
-				fill.setAttribute("style", `--selection-share:${Math.min(100, share).toFixed(2)}%`);
-				track.append(fill);
+				const track = el("progress", "selection-bar-track");
+				track.setAttribute("aria-hidden", "true");
+				track.max = 100;
+				track.value = Math.max(0, Math.min(100, share));
+				track.setAttribute("max", "100");
+				track.setAttribute("value", track.value.toFixed(2));
 				item.append(label, track);
 				chart.append(item);
 			});
@@ -346,15 +365,16 @@ export function createRenderer(core, config, callbacks) {
 		slowestBody?.replaceChildren();
 		if (!sourceBody || !slowestBody) return;
 		const budgetTag = byId("latency-budget-state");
+		const sourceMetadata = metricSourceMetadata("latency");
 		if (!data) {
 			for (const id of ["latency-metric-p50", "latency-metric-p95", "latency-metric-provider", "latency-metric-agency", "latency-metric-calls"]) {
 				setMetric(id, "—");
 			}
 			if (budgetTag) {
-				budgetTag.textContent = state.metricEvidence?.stale ? "UNAVAILABLE" : "UNKNOWN";
-				budgetTag.dataset.state = state.metricEvidence?.stale ? "stale" : "unknown";
+				budgetTag.textContent = sourceMetadata.unavailable ? "UNAVAILABLE" : "UNKNOWN";
+				budgetTag.dataset.state = sourceMetadata.unavailable ? "unavailable" : "unknown";
 			}
-			byId("latency-evidence-context").textContent = metricEvidenceContext(
+			byId("latency-evidence-context").textContent = metricEvidenceContext("latency",
 				"Routing latency evidence has not loaded.",
 			);
 			sourceBody.append(emptyRow(4, "No eligible routing evidence."));
@@ -373,14 +393,14 @@ export function createRenderer(core, config, callbacks) {
 			? data.split.calls_per_decision.toFixed(2) : "—");
 		const budgetState = !hasEvidence ? "UNKNOWN" : data.over_budget ? "OVER BUDGET" : "WITHIN BUDGET";
 		if (budgetTag) {
-			budgetTag.textContent = `${state.metricEvidence?.stale ? "STALE · " : ""}${budgetState}`;
-			budgetTag.dataset.state = state.metricEvidence?.stale
+			budgetTag.textContent = `${sourceMetadata.stale ? "STALE · " : ""}${budgetState}`;
+			budgetTag.dataset.state = sourceMetadata.stale
 				? "stale" : !hasEvidence ? "unknown" : data.over_budget ? "over" : "within";
 		}
 		const attribution = data.split.unattributed_decisions
 			? `${data.split.unattributed_decisions} decision(s) have incomplete provider timing and are excluded from the provider/Agency split.`
 			: `${data.split.decisions} decision(s) have complete provider timing.`;
-		byId("latency-evidence-context").textContent = metricEvidenceContext(
+		byId("latency-evidence-context").textContent = metricEvidenceContext("latency",
 			hasEvidence
 				? `Newest ${data.overall.count} positive-latency decisions within a ${data.window.limit}-decision window. p95 is compared with the ${formatLatency(data.budget_ms)} budget; equality passes. ${attribution}`
 				: `No eligible routing evidence. Zero or absent durations are unknown, never fast. Budget: ${formatLatency(data.budget_ms)}.`,
@@ -413,6 +433,32 @@ export function createRenderer(core, config, callbacks) {
 	function renderMetricEvidence() {
 		renderSelectionDistribution();
 		renderRoutingLatency();
+		const freshness = byId("metric-evidence-freshness");
+		if (freshness) {
+			const sourceLine = (name, label) => {
+				const metadata = metricSourceMetadata(name);
+				if (metadata.stale && metadata.sampledAt) {
+					return `${label} last-good sample ${formatTime(metadata.sampledAt)}; refresh failed`;
+				}
+				if (metadata.unavailable) return `${label} unavailable; no validated sample`;
+				if (metadata.sampledAt) return `${label} source sampled ${formatTime(metadata.sampledAt)}`;
+				return `${label} source not loaded`;
+			};
+			const message = `${sourceLine("selections", "Selection")}; ${sourceLine("latency", "latency")}.`;
+			if (freshness.textContent !== message) freshness.textContent = message;
+		}
+		const status = byId("metric-evidence-status");
+		if (status) {
+			const sourceState = (name) => {
+				const metadata = metricSourceMetadata(name);
+				if (metadata.stale) return "stale";
+				if (metadata.unavailable) return "unavailable";
+				if (metadata.sampledAt) return "current";
+				return "not loaded";
+			};
+			const message = `Decision evidence: selection ${sourceState("selections")}; latency ${sourceState("latency")}.`;
+			if (status.textContent !== message) status.textContent = message;
+		}
 	}
 
 	function renderOverview() {
@@ -1176,7 +1222,225 @@ export function createRenderer(core, config, callbacks) {
 		renderReviewQueue();
 	}
 
+	function renderVisionSourceState(name, data) {
+		const metadata = state.visionEvidence?.sources?.[name] || {};
+		const unavailable = metadata.unavailable || (metadata.stale && !data);
+		const tagId = name === "rejections" ? "vision-rule8-state" : `vision-${name}-state`;
+		const tag = byId(tagId);
+		if (tag) {
+			tag.textContent = unavailable ? "UNAVAILABLE"
+				: metadata.stale ? "STALE" : data ? "OBSERVED" : "NOT LOADED";
+			tag.dataset.state = unavailable
+				? "unavailable" : metadata.stale ? "stale" : data ? "observed" : "unknown";
+		}
+		const freshnessId = name === "rejections"
+			? "vision-rule8-freshness"
+			: `vision-${name}-freshness`;
+		const freshness = byId(freshnessId);
+		if (freshness) {
+			if (unavailable) {
+				freshness.textContent = `No validated source sample is available. Refresh failed: ${metadata.error || "source unavailable"}`;
+			} else if (metadata.stale && data) {
+				freshness.textContent = `Last-good source sample ${formatTime(metadata.sampledAt)}. Refresh failed: ${metadata.error || "source unavailable"}`;
+			} else if (metadata.sampledAt) {
+				freshness.textContent = `Source sampled ${formatTime(metadata.sampledAt)}.`;
+			} else {
+				freshness.textContent = "This proof source has not been loaded; the live-sync timestamp does not apply.";
+			}
+		}
+	}
+
+	function renderChildDeliveryEvidence() {
+		const data = state.visionEvidence?.children;
+		renderVisionSourceState("children", data);
+		const source = byId("vision-children-source");
+		const bounds = byId("vision-children-bounds");
+		const summary = byId("vision-children-summary");
+		const list = byId("vision-children-list");
+		if (!source || !bounds || !summary || !list) return;
+		list.replaceChildren();
+		source.textContent = data
+			? "Source: hash-verified specialist cards in host-written Claude and Codex child artifacts. Agency Store staffing rows are not consulted."
+			: "Source: host-written Claude and Codex child artifacts; Agency Store staffing rows are not a substitute.";
+		if (!data) {
+			bounds.textContent = "Bounded artifact scan details will appear after this source loads.";
+			summary.textContent = "No validated child-delivery proof sample is available.";
+			const empty = div("empty-compact", "Child-delivery proof has not loaded.");
+			empty.setAttribute("role", "listitem");
+			list.append(empty);
+			return;
+		}
+		const totals = data.hosts.reduce((result, host) => ({
+			candidates: result.candidates + host.artifact_candidates,
+			scanned: result.scanned + host.artifacts_scanned,
+			evidence: result.evidence + host.evidence_count,
+			staffed: result.staffed + host.staffed_children,
+			correlated: result.correlated + host.correlated_staffed_children,
+			uncorrelated: result.uncorrelated + host.uncorrelated_staffed_children,
+			legacy: result.legacy + host.legacy_deliveries,
+			visits: result.visits + host.filesystem_entries_visited,
+			incomplete: result.incomplete || !host.artifact_candidate_count_complete,
+		}), { candidates: 0, scanned: 0, evidence: 0, staffed: 0, correlated: 0, uncorrelated: 0, legacy: 0, visits: 0, incomplete: false });
+		bounds.textContent = `Bounds: at most ${data.bounds.filesystem_visit_limit_per_host} host-tree entries and ${data.bounds.artifact_scan_limit_per_host} artifact bodies per host; ${formatBytes(data.bounds.artifact_prefix_bytes)} prefix and ${data.bounds.artifact_record_limit} records per artifact; ${data.bounds.detail_limit} detail rows per host. Visited ${totals.visits} entries and scanned ${totals.scanned} of ${totals.candidates}${totals.incomplete ? "+" : ""} observed candidates in this sample${totals.incomplete ? "; candidate counts are lower bounds where traversal stopped" : ""}.`;
+		summary.textContent = `${totals.staffed} children contain verified specialist cards (${totals.correlated} parent-correlated, ${totals.uncorrelated} uncorrelated); ${totals.legacy} legacy delivery markers contain no specialist card proof.`;
+		data.hosts.forEach((host) => {
+			const row = el("article", "vision-proof-row");
+			row.setAttribute("role", "listitem");
+			row.append(
+				strong("", host.host),
+				small("", `${host.artifacts_scanned} of ${host.artifact_candidates}${host.artifact_candidate_count_complete ? "" : "+"} observed candidates scanned · ${host.filesystem_entries_visited} host-tree entries visited${host.artifact_scan_truncated ? " · traversal or body bound reached" : ""}`),
+				small("", `${host.staffed_children} verified staffed children · ${host.evidence_count} delivery findings${host.detail_truncated ? " · details truncated" : ""}`),
+				small("vision-proof-path", `Artifact root (${host.root_present ? "present" : "not observed"}): ${host.root}`),
+			);
+			host.children.forEach((child) => {
+				const detail = div("vision-proof-detail");
+				const cardSummary = child.cards.length
+					? child.cards.map((card) => `${card.slug}@${card.version}`).join(", ")
+					: "legacy delivery marker; no verified specialist cards";
+				detail.append(
+					strong("", child.child_id),
+					small("", `${child.correlated ? "parent-correlated" : "not parent-correlated"} · ${cardSummary}`),
+					small("vision-proof-path", child.artifact),
+				);
+				row.append(detail);
+			});
+			list.append(row);
+		});
+		if (totals.staffed === 0) {
+			const empty = div(
+				"empty-compact vision-proof-caveat",
+				"No verified specialist-card delivery evidence was found in the bounded artifact scan. This does not mean no children were started.",
+			);
+			empty.setAttribute("role", "listitem");
+			list.append(empty);
+		}
+	}
+
+	function rule8RunRow(row, label) {
+		const item = el("article", "vision-proof-row");
+		item.setAttribute("role", "listitem");
+		item.append(
+			strong("", `${label} · ${row.status}`),
+			small("", `Host ${row.host || "unknown"} · ended ${formatTime(row.ended_at || row.started_at)}`),
+			small("", `Trace ${row.trace_id || "unavailable"} · session ${row.session_id || "unavailable"}`),
+		);
+		return item;
+	}
+
+	function renderRule8Evidence() {
+		const data = state.visionEvidence?.rejections;
+		renderVisionSourceState("rejections", data);
+		const source = byId("vision-rule8-source");
+		const bounds = byId("vision-rule8-bounds");
+		const summary = byId("vision-rule8-summary");
+		const list = byId("vision-rule8-list");
+		if (!source || !bounds || !summary || !list) return;
+		list.replaceChildren();
+		source.textContent = "Source: Agency Store runs.status. These rows distinguish Agency-withheld responses from Agency-blind failures; they are not host execution or publication proof.";
+		if (!data) {
+			bounds.textContent = "The bounded exceptional-run window will appear after this source loads.";
+			summary.textContent = "No validated Rule-8 evidence sample is available.";
+			const empty = div("empty-compact", "Rule-8 evidence has not loaded.");
+			empty.setAttribute("role", "listitem");
+			list.append(empty);
+			return;
+		}
+		bounds.textContent = `Bounds: newest ${data.window.limit} matching exceptional runs${data.window.host ? ` for ${data.window.host}` : " across all hosts"}; ${data.window.returned} returned.`;
+		summary.textContent = `${data.counts.withheld} withheld by Agency · ${data.counts.agency_blind} Agency-blind failures · ${data.counts.matching_exceptional_runs} total matching statuses.`;
+		data.withheld.forEach((row) => list.append(rule8RunRow(row, "Withheld by Agency")));
+		data.agency_blind.forEach((row) => list.append(
+			rule8RunRow(row, "Agency blind; publication not inferred"),
+		));
+		if (data.counts.matching_exceptional_runs === 0) {
+			const empty = div(
+				"empty-compact vision-proof-caveat",
+				"No matching exceptional statuses were found in the bounded window. This is not a health claim.",
+			);
+			empty.setAttribute("role", "listitem");
+			list.append(empty);
+		}
+	}
+
+	function wiringOutcome(host) {
+		if (host.status === "wired") {
+			return ["WIRED", "Trusted staged and wired projection hashes match."];
+		}
+		if (host.status === "drift") {
+			return ["DRIFT", `Measured staged and wired projections differ (${host.reason_code}).`];
+		}
+		if (host.status === "not_measured") {
+			return ["UNKNOWN", "This host's wiring location is not measured; its wiring state remains unknown."];
+		}
+		return ["UNKNOWN", `The bounded trusted-file measurement could not establish both projections (${host.reason_code}); wiring state remains unknown.`];
+	}
+
+	function projectionDigest(value) {
+		return value ? `${value.slice(0, 12)}…` : "projection unknown";
+	}
+
+	function renderWiringEvidence() {
+		const data = state.visionEvidence?.wiring;
+		renderVisionSourceState("wiring", data);
+		const source = byId("vision-wiring-source");
+		const bounds = byId("vision-wiring-bounds");
+		const summary = byId("vision-wiring-summary");
+		const list = byId("vision-wiring-list");
+		if (!source || !bounds || !summary || !list) return;
+		list.replaceChildren();
+		source.textContent = data
+			? `Source: trusted staged and host-cache wiring files. Measured hosts: ${data.source.measured_hosts.join(", ") || "none"}. This is not a live canary.`
+			: "Source: trusted staged and host-cache wiring files; this is not a live canary.";
+		if (!data) {
+			bounds.textContent = "Trusted-file read bounds will appear after this source loads.";
+			summary.textContent = "No validated host-wiring proof sample is available.";
+			const empty = div("empty-compact", "Host-wiring proof has not loaded.");
+			empty.setAttribute("role", "listitem");
+			list.append(empty);
+			return;
+		}
+		const measured = data.hosts.filter((host) => host.measurement_status === "measured").length;
+		const wired = data.hosts.filter((host) => host.status === "wired").length;
+		const drift = data.hosts.filter((host) => host.status === "drift").length;
+		bounds.textContent = `Bounds: current wiring files for ${data.window.hosts.length} hosts; at most ${formatBytes(data.bounds.file_prefix_bytes)} read per trusted file.`;
+		summary.textContent = `${measured} measured · ${wired} wired · ${drift} drift · ${data.hosts.length - wired - drift} unknown or not measured.`;
+		data.hosts.forEach((host) => {
+			const [label, explanation] = wiringOutcome(host);
+			const row = el("article", "vision-proof-row");
+			row.setAttribute("role", "listitem");
+			const heading = div("vision-proof-heading");
+			heading.append(strong("", host.host), span(`status wiring-${host.status}`, label));
+			row.append(
+				heading,
+				small("", explanation),
+				small("vision-proof-path", `Staged: ${host.staged_state} · ${projectionDigest(host.staged_projection)} · ${host.staged_path || "path unavailable"}`),
+				small("vision-proof-path", `Wired: ${host.wired_state} · ${projectionDigest(host.wired_projection)} · ${host.wired_path || "path unavailable"}`),
+			);
+			list.append(row);
+		});
+	}
+
+	function renderVisionEvidence() {
+		renderChildDeliveryEvidence();
+		renderRule8Evidence();
+		renderWiringEvidence();
+		const status = byId("vision-evidence-status");
+		if (status) {
+			const sourceState = (name) => {
+				const metadata = state.visionEvidence?.sources?.[name] || {};
+				if (metadata.stale && state.visionEvidence?.[name]) return "stale";
+				if (metadata.unavailable || (state.visionEvidence?.loaded && !state.visionEvidence?.[name])) {
+					return "unavailable";
+				}
+				if (state.visionEvidence?.[name]) return "current";
+				return "not loaded";
+			};
+			const message = `Vision evidence: child delivery ${sourceState("children")}; Rule 8 ${sourceState("rejections")}; host wiring ${sourceState("wiring")}.`;
+			if (status.textContent !== message) status.textContent = message;
+		}
+	}
+
 	function renderEvidence(kind = "specialists") {
+		renderVisionEvidence();
 		const columns = EVIDENCE_COLUMNS[kind];
 		const label = kind.endsWith("s") ? kind.slice(0, -1) : kind;
 		const head = byId("evidence-head");
@@ -1203,7 +1467,9 @@ export function createRenderer(core, config, callbacks) {
 		if (kind === "specialists") {
 			const current = rows.filter((row) => row.state === "current").length;
 			const historical = rows.length - current;
-			contextMessage = `${pageSummary}. ${current} current-turn activation${current === 1 ? "" : "s"} · ${historical} historical activation${historical === 1 ? "" : "s"}. Current-turn rows are unexpired and trace-correlated; historical rows remain as immutable audit evidence.`;
+			contextMessage = `${pageSummary}. ${current} current-turn activation${current === 1 ? "" : "s"} · ${historical} historical activation${historical === 1 ? "" : "s"}. Current-turn rows are unexpired and trace-correlated; historical rows remain as immutable audit evidence. Agency Store activation rows are not independent proof that a specialist card reached a child or that child execution completed.`;
+		} else if (kind === "delegations") {
+			contextMessage = `${pageSummary}. Recorded host-event projections are bounded metadata; they do not independently prove specialist-card delivery or child completion.`;
 		} else {
 			contextMessage = `${pageSummary}. Bounded metadata-only runtime evidence; payload content and worker output are not included.`;
 		}
@@ -1896,6 +2162,7 @@ export function createRenderer(core, config, callbacks) {
 		renderRoster,
 		renderWorkforce,
 		renderWorkerDetail,
+		renderVisionEvidence,
 		renderEvidence,
 		renderReceipt,
 		renderActiveView,

@@ -45,9 +45,21 @@ export function createState() {
 		routingLatency: null,
 		selectionDistribution: null,
 		metricEvidence: {
-			stale: false,
-			errors: [],
-			sampledAt: null,
+			sources: {
+				latency: { stale: false, unavailable: false, error: "", sampledAt: null },
+				selections: { stale: false, unavailable: false, error: "", sampledAt: null },
+			},
+		},
+		visionEvidence: {
+			children: null,
+			rejections: null,
+			wiring: null,
+			loaded: false,
+			sources: {
+				children: { stale: false, unavailable: false, error: "", sampledAt: null },
+				rejections: { stale: false, unavailable: false, error: "", sampledAt: null },
+				wiring: { stale: false, unavailable: false, error: "", sampledAt: null },
+			},
 		},
 		activity: {},
 		activityCollections: {},
@@ -133,6 +145,7 @@ export function createState() {
 			workerDetail: { controller: null, generation: 0 },
 			hiringEvidence: { controller: null, generation: 0 },
 			metrics: { controller: null, generation: 0 },
+			visionEvidence: { controller: null, generation: 0 },
 		},
 		remediationExtent: {
 			pending: false,

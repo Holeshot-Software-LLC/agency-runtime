@@ -542,6 +542,8 @@ def retention_predicates(
                 "WHERE finalization_events.trace_id = runs.trace_id)",
                 "NOT EXISTS (SELECT 1 FROM routing_decisions "
                 "WHERE routing_decisions.trace_id = runs.trace_id)",
+                "NOT EXISTS (SELECT 1 FROM routing_intent "
+                "WHERE routing_intent.trace_id = runs.trace_id)",
                 "NOT EXISTS (SELECT 1 FROM agent_performance_events "
                 "WHERE agent_performance_events.trace_id = runs.trace_id)",
                 "NOT EXISTS (SELECT 1 FROM native_child_parent_scopes "

@@ -21,6 +21,24 @@ const RELEASE_VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)
 const UPDATE_REF_PATTERN = /^[0-9A-Za-z][0-9A-Za-z._+/-]{0,127}$/;
 const FULL_SHA_PATTERN = /^[0-9a-f]{40}$/;
 const METRIC_SLUG_PATTERN = /^[a-z0-9][a-z0-9._-]{1,127}$/;
+const EVIDENCE_HOSTS = new Set(["claude", "codex", "openclaw", "hermes", "zcode"]);
+const CHILD_EVIDENCE_HOSTS = new Set(["claude", "codex"]);
+const SHA256_PATTERN = /^[0-9a-f]{64}$/;
+const WITHHELD_RULE8_STATUSES = new Set([
+	"response_invalid",
+	"delegation_declined",
+	"retry_exhausted",
+]);
+const AGENCY_BLIND_RULE8_STATUSES = new Set(["verification_failed", "preflight_failed"]);
+const WIRING_FILE_STATES = new Set([
+	"observed",
+	"missing",
+	"untrusted",
+	"unreadable",
+	"projection_missing",
+	"ambiguous",
+	"not_measured",
+]);
 
 function nonnegativeInteger(value) {
 	return Number.isInteger(value) && value >= 0;
@@ -28,6 +46,292 @@ function nonnegativeInteger(value) {
 
 function finiteShare(value) {
 	return Number.isFinite(value) && value >= 0 && value <= 1;
+}
+
+function boundedText(value, limit, { empty = false } = {}) {
+	return typeof value === "string"
+		&& value.length <= limit
+		&& (empty || value.length > 0)
+		&& !/[\u0000-\u001f\u007f]/.test(value);
+}
+
+function boundedStringList(values, { allowed = null, limit = 32 } = {}) {
+	if (!Array.isArray(values) || values.length > limit) return false;
+	const seen = new Set();
+	return values.every((value) => {
+		if (!boundedText(value, 128) || seen.has(value) || (allowed && !allowed.has(value))) {
+			return false;
+		}
+		seen.add(value);
+		return true;
+	});
+}
+
+function childEvidenceCardIsValid(card) {
+	return isRecord(card)
+		&& typeof card.slug === "string"
+		&& METRIC_SLUG_PATTERN.test(card.slug)
+		&& boundedText(card.version, 128)
+		&& typeof card.prompt_hash === "string"
+		&& SHA256_PATTERN.test(card.prompt_hash);
+}
+
+function childEvidenceRowIsValid(row) {
+	return isRecord(row)
+		&& boundedText(row.child_id, 512)
+		&& boundedText(row.artifact, 4096)
+		&& boundedText(row.parent_id, 512, { empty: true })
+		&& boundedText(row.envelope_parent_id, 512, { empty: true })
+		&& typeof row.correlated === "boolean"
+		&& row.correlated === (Boolean(row.parent_id) && row.parent_id === row.envelope_parent_id)
+		&& typeof row.legacy === "boolean"
+		&& Array.isArray(row.cards)
+		&& row.cards.length <= 256
+		&& (row.cards.length > 0 || row.legacy)
+		&& row.cards.every(childEvidenceCardIsValid);
+}
+
+export function validateChildDeliveryPayload(payload) {
+	if (
+		!isRecord(payload)
+		|| payload.schema_version !== "agency.dashboard.child_delivery.v1"
+		|| !safeUpdateText(payload.sampled_at, 64)
+		|| !isRecord(payload.source)
+		|| payload.source.authority !== "host_written_child_artifacts"
+		|| !boundedStringList(payload.source.artifact_hosts, { allowed: CHILD_EVIDENCE_HOSTS })
+		|| payload.source.artifact_hosts.length !== CHILD_EVIDENCE_HOSTS.size
+		|| payload.source.agency_store_consulted !== false
+		|| payload.source.evidence_meaning
+			!== "hash_verified_specialist_cards_in_child_input_before_first_speech"
+		|| !isRecord(payload.window)
+		|| payload.window.kind !== "newest_verified_child_delivery_evidence"
+		|| !boundedStringList(payload.window.hosts, { allowed: CHILD_EVIDENCE_HOSTS })
+		|| payload.window.hosts.length < 1
+		|| !Number.isInteger(payload.window.detail_limit)
+		|| payload.window.detail_limit < 1
+		|| payload.window.detail_limit > 200
+		|| !isRecord(payload.bounds)
+		|| payload.bounds.artifact_scan_limit_per_host !== 4096
+		|| payload.bounds.filesystem_visit_limit_per_host !== 16384
+		|| payload.bounds.artifact_prefix_bytes !== 524288
+		|| payload.bounds.artifact_record_limit !== 64
+		|| payload.bounds.detail_limit !== payload.window.detail_limit
+		|| !Array.isArray(payload.hosts)
+		|| payload.hosts.length !== payload.window.hosts.length
+	) throw new Error("Agency child-delivery evidence is invalid.");
+
+	const expectedHosts = new Set(payload.window.hosts);
+	const seenHosts = new Set();
+	for (const host of payload.hosts) {
+		const visibleStaffed = Array.isArray(host?.children)
+			? host.children.filter((row) => Array.isArray(row?.cards) && row.cards.length > 0).length
+			: 0;
+		const visibleLegacy = Array.isArray(host?.children)
+			? host.children.filter((row) => row?.legacy === true && row?.cards?.length === 0).length
+			: 0;
+		const countFields = [
+			"artifact_candidates",
+			"artifacts_scanned",
+			"evidence_count",
+			"staffed_children",
+			"correlated_staffed_children",
+			"uncorrelated_staffed_children",
+			"legacy_deliveries",
+			"detail_limit",
+		];
+		if (
+			!isRecord(host)
+			|| !expectedHosts.has(host.host)
+			|| seenHosts.has(host.host)
+			|| !boundedText(host.root, 4096)
+			|| typeof host.root_present !== "boolean"
+			|| countFields.some((field) => !nonnegativeInteger(host[field]))
+			|| typeof host.artifact_candidate_count_complete !== "boolean"
+			|| !nonnegativeInteger(host.filesystem_entries_visited)
+			|| host.filesystem_entries_visited > payload.bounds.filesystem_visit_limit_per_host
+			|| host.artifacts_scanned > payload.bounds.artifact_scan_limit_per_host
+			|| host.artifacts_scanned > host.artifact_candidates
+			|| host.evidence_count > host.artifacts_scanned
+			|| (!host.root_present && (
+				host.artifact_candidates !== 0
+				|| host.artifacts_scanned !== 0
+				|| host.evidence_count !== 0
+			))
+			|| host.detail_limit !== payload.window.detail_limit
+			|| host.staffed_children !== (
+				host.correlated_staffed_children + host.uncorrelated_staffed_children
+			)
+			|| host.staffed_children + host.legacy_deliveries !== host.evidence_count
+			|| typeof host.artifact_scan_truncated !== "boolean"
+			|| host.artifact_scan_truncated !== (
+				!host.artifact_candidate_count_complete
+				|| host.artifact_candidates > host.artifacts_scanned
+			)
+			|| typeof host.detail_truncated !== "boolean"
+			|| host.detail_truncated !== (host.evidence_count > host.detail_limit)
+			|| !Array.isArray(host.children)
+			|| host.children.length !== Math.min(host.evidence_count, host.detail_limit)
+			|| host.children.some((row) => !childEvidenceRowIsValid(row))
+			|| visibleStaffed > host.staffed_children
+			|| visibleLegacy > host.legacy_deliveries
+			|| (!host.detail_truncated && (
+				visibleStaffed !== host.staffed_children
+				|| visibleLegacy !== host.legacy_deliveries
+			))
+		) throw new Error("Agency child-delivery evidence is invalid.");
+		seenHosts.add(host.host);
+	}
+	if (seenHosts.size !== expectedHosts.size) {
+		throw new Error("Agency child-delivery evidence is invalid.");
+	}
+	return payload;
+}
+
+function rule8RunIsValid(row, statuses) {
+	if (!isRecord(row) || !statuses.has(row.status)) return false;
+	for (const field of ["trace_id", "session_id", "host", "started_at", "ended_at"]) {
+		if (!boundedText(row[field], field.endsWith("_at") ? 64 : 512, { empty: true })) return false;
+	}
+	return boundedText(row.host, 128, { empty: true });
+}
+
+export function validateRule8EvidencePayload(payload) {
+	if (
+		!isRecord(payload)
+		|| payload.schema_version !== "agency.dashboard.rule8_evidence.v1"
+		|| !safeUpdateText(payload.sampled_at, 64)
+		|| !isRecord(payload.source)
+		|| payload.source.authority !== "agency_store"
+		|| payload.source.table !== "runs"
+		|| payload.source.field !== "status"
+		|| payload.source.host_execution_proof !== false
+		|| !isRecord(payload.window)
+		|| payload.window.kind !== "most_recent_matching_exceptional_runs"
+		|| (payload.window.host !== null && !EVIDENCE_HOSTS.has(payload.window.host))
+		|| !Number.isInteger(payload.window.limit)
+		|| payload.window.limit < 1
+		|| payload.window.limit > 500
+		|| !nonnegativeInteger(payload.window.returned)
+		|| !isRecord(payload.counts)
+		|| !nonnegativeInteger(payload.counts.matching_exceptional_runs)
+		|| !nonnegativeInteger(payload.counts.withheld)
+		|| !nonnegativeInteger(payload.counts.agency_blind)
+		|| !boundedStringList(payload.withheld_statuses)
+		|| !boundedStringList(payload.agency_blind_statuses)
+		|| !Array.isArray(payload.withheld)
+		|| !Array.isArray(payload.agency_blind)
+		|| !isRecord(payload.service_binding)
+	) throw new Error("Agency Rule-8 evidence is invalid.");
+	const withheldStatuses = new Set(payload.withheld_statuses);
+	const blindStatuses = new Set(payload.agency_blind_statuses);
+	if (
+		withheldStatuses.size !== WITHHELD_RULE8_STATUSES.size
+		|| [...WITHHELD_RULE8_STATUSES].some((status) => !withheldStatuses.has(status))
+		|| blindStatuses.size !== AGENCY_BLIND_RULE8_STATUSES.size
+		|| [...AGENCY_BLIND_RULE8_STATUSES].some((status) => !blindStatuses.has(status))
+		|| payload.withheld.length !== payload.counts.withheld
+		|| payload.agency_blind.length !== payload.counts.agency_blind
+		|| payload.window.returned !== payload.counts.matching_exceptional_runs
+		|| payload.window.returned !== payload.withheld.length + payload.agency_blind.length
+		|| payload.window.returned > payload.window.limit
+		|| payload.withheld.some((row) => !rule8RunIsValid(row, withheldStatuses))
+		|| payload.agency_blind.some((row) => !rule8RunIsValid(row, blindStatuses))
+		|| (payload.window.host !== null && [
+			...payload.withheld,
+			...payload.agency_blind,
+		].some((row) => row.host !== payload.window.host))
+	) throw new Error("Agency Rule-8 evidence is invalid.");
+	return payload;
+}
+
+function wiringObservationIsValid(state, projection, path) {
+	return WIRING_FILE_STATES.has(state)
+		&& (state === "observed" ? SHA256_PATTERN.test(projection) : projection === "")
+		&& boundedText(path, 4096, { empty: state === "missing" || state === "not_measured" })
+		&& (state !== "not_measured" || path === "");
+}
+
+function wiringRelationshipIsValid(host) {
+	if (host.wired !== (host.status === "wired")) return false;
+	if (host.measurement_status === "not_measured") {
+		return host.status === "not_measured"
+			&& host.reason_code === "host_not_measured"
+			&& host.staged_state === "not_measured"
+			&& host.wired_state === "not_measured"
+			&& host.staged_projection === ""
+			&& host.wired_projection === ""
+			&& host.staged_path === ""
+			&& host.wired_path === ""
+			&& host.reason.length > 0;
+	}
+	if (host.staged_state === "not_measured" || host.wired_state === "not_measured") return false;
+	if (host.staged_state !== "observed") {
+		return host.status === "unavailable"
+			&& host.reason_code === `staged_${host.staged_state}`
+			&& host.reason.length > 0;
+	}
+	if (host.wired_state !== "observed") {
+		return host.status === "unavailable"
+			&& host.reason_code === `wired_${host.wired_state}`
+			&& host.reason.length > 0;
+	}
+	if (host.staged_projection === host.wired_projection) {
+		return host.status === "wired" && host.reason_code === "wired" && host.reason === "";
+	}
+	return host.status === "drift"
+		&& host.reason_code === "projection_mismatch"
+		&& host.reason.length > 0;
+}
+
+export function validateHostWiringPayload(payload) {
+	if (
+		!isRecord(payload)
+		|| payload.schema_version !== "agency.dashboard.host_wiring.v1"
+		|| !safeUpdateText(payload.sampled_at, 64)
+		|| !isRecord(payload.source)
+		|| payload.source.authority !== "trusted_staged_and_host_cache_files"
+		|| !boundedStringList(payload.source.measured_hosts, { allowed: EVIDENCE_HOSTS })
+		|| payload.source.measured_hosts.length !== 1
+		|| payload.source.measured_hosts[0] !== "claude"
+		|| payload.source.live_canary !== false
+		|| !isRecord(payload.window)
+		|| payload.window.kind !== "current_wiring_files"
+		|| !boundedStringList(payload.window.hosts, { allowed: EVIDENCE_HOSTS })
+		|| payload.window.hosts.length < 1
+		|| !isRecord(payload.bounds)
+		|| payload.bounds.file_prefix_bytes !== 524288
+		|| !Array.isArray(payload.hosts)
+		|| payload.hosts.length !== payload.window.hosts.length
+	) throw new Error("Agency host-wiring evidence is invalid.");
+	const measured = new Set(payload.source.measured_hosts);
+	const expected = new Set(payload.window.hosts);
+	const seen = new Set();
+	for (const host of payload.hosts) {
+		const measuredRow = host?.measurement_status === "measured";
+		const statusAllowed = measuredRow
+			? ["wired", "drift", "unavailable"].includes(host.status)
+			: host?.measurement_status === "not_measured" && host.status === "not_measured";
+		if (
+			!isRecord(host)
+			|| !expected.has(host.host)
+			|| seen.has(host.host)
+			|| measured.has(host.host) !== measuredRow
+			|| !statusAllowed
+			|| typeof host.wired !== "boolean"
+			|| !boundedText(host.reason_code, 128)
+			|| !boundedText(host.reason, 512, { empty: true })
+			|| !wiringObservationIsValid(
+				host.staged_state,
+				host.staged_projection,
+				host.staged_path,
+			)
+			|| !wiringObservationIsValid(host.wired_state, host.wired_projection, host.wired_path)
+			|| !wiringRelationshipIsValid(host)
+		) throw new Error("Agency host-wiring evidence is invalid.");
+		seen.add(host.host);
+	}
+	if (seen.size !== expected.size) throw new Error("Agency host-wiring evidence is invalid.");
+	return payload;
 }
 
 function latencySummaryIsValid(summary) {
@@ -544,6 +848,14 @@ export function createLiveController(core, config, renderer) {
 		});
 	}
 
+	function clearVisionEvidenceBusyState() {
+		const button = byId("vision-evidence-refresh");
+		if (!button) return;
+		button.disabled = false;
+		if (typeof button.removeAttribute === "function") button.removeAttribute("aria-busy");
+		else button.setAttribute?.("aria-busy", "false");
+	}
+
 	function abortViewRequests() {
 		Object.values(state.requests).forEach((request) => {
 			request.generation += 1;
@@ -552,6 +864,21 @@ export function createLiveController(core, config, renderer) {
 		});
 		clearRemediationBusyState();
 		clearHiringEvidenceBusyState();
+		clearVisionEvidenceBusyState();
+	}
+
+	function cancelVisionEvidenceRequest() {
+		const request = state.requests.visionEvidence;
+		if (!request) return false;
+		request.generation += 1;
+		const controller = request.controller;
+		request.controller = null;
+		controller?.abort();
+		clearVisionEvidenceBusyState();
+		if (controller && !Object.values(state.requests).some((item) => item.controller)) {
+			scheduleControlRefresh(0);
+		}
+		return Boolean(controller);
 	}
 
 	function beginViewRequest(name) {
@@ -708,45 +1035,135 @@ export function createLiveController(core, config, renderer) {
 			api("/api/evidence/latency?limit=200", { signal }),
 			api("/api/evidence/selections", { signal }),
 		]);
-		const snapshot = { latency: null, selections: null, errors: [] };
+		const snapshot = {
+			latency: null,
+			selections: null,
+			errors: { latency: "", selections: "" },
+		};
 		for (const [index, result] of settled.entries()) {
+			const name = index === 0 ? "latency" : "selections";
 			if (result.status === "rejected") {
 				if (result.reason?.name === "AbortError" || terminalLiveFailure(result.reason)) {
 					throw result.reason;
 				}
-				snapshot.errors.push(withRequestId(
+				snapshot.errors[name] = withRequestId(
 					result.reason?.message || "Metric evidence refresh failed.",
 					result.reason?.requestId,
-				));
+				);
 				continue;
 			}
 			try {
 				if (index === 0) snapshot.latency = validateRoutingLatencyPayload(result.value);
 				else snapshot.selections = validateSelectionDistributionPayload(result.value);
 			} catch (error) {
-				snapshot.errors.push(error.message);
+				snapshot.errors[name] = String(error?.message || "Metric evidence is invalid.");
 			}
 		}
 		return snapshot;
 	}
 
 	function applyMetricEvidence(snapshot, { render = true } = {}) {
-		if (!isRecord(snapshot) || !Array.isArray(snapshot.errors)) {
+		if (!isRecord(snapshot) || !isRecord(snapshot.errors)) {
 			throw new Error("Dashboard metric evidence is invalid.");
 		}
-		if (snapshot.latency) state.routingLatency = snapshot.latency;
-		if (snapshot.selections) state.selectionDistribution = snapshot.selections;
-		state.metricEvidence = {
-			stale: snapshot.errors.length > 0,
-			errors: snapshot.errors.map(String),
-			sampledAt: snapshot.selections?.sampled_at
-				|| snapshot.latency?.sampled_at
-				|| state.metricEvidence.sampledAt,
-		};
+		for (const name of ["latency", "selections"]) {
+			const value = snapshot[name];
+			if (value) {
+				if (name === "latency") state.routingLatency = value;
+				else state.selectionDistribution = value;
+				state.metricEvidence.sources[name] = {
+					stale: false,
+					unavailable: false,
+					error: "",
+					sampledAt: value.sampled_at,
+				};
+			} else {
+				const hasLastGood = name === "latency"
+					? Boolean(state.routingLatency)
+					: Boolean(state.selectionDistribution);
+				state.metricEvidence.sources[name] = {
+					...state.metricEvidence.sources[name],
+					stale: hasLastGood,
+					unavailable: !hasLastGood,
+					error: typeof snapshot.errors[name] === "string"
+						? snapshot.errors[name]
+						: "Metric evidence refresh failed.",
+				};
+			}
+		}
 		if (render && state.activeView === "overview") {
 			renderPreservingInteraction(renderer.renderMetricEvidence);
 		}
 		return snapshot.latency !== null || snapshot.selections !== null;
+	}
+
+	async function fetchVisionEvidence(signal) {
+		const sources = [
+			["children", "/api/evidence/children", validateChildDeliveryPayload],
+			["rejections", "/api/evidence/rejections", validateRule8EvidencePayload],
+			["wiring", "/api/evidence/wiring", validateHostWiringPayload],
+		];
+		const settled = await Promise.allSettled(
+			sources.map(([, path]) => api(path, { signal })),
+		);
+		const snapshot = {
+			children: null,
+			rejections: null,
+			wiring: null,
+			errors: { children: "", rejections: "", wiring: "" },
+		};
+		for (const [index, result] of settled.entries()) {
+			const [name, , validate] = sources[index];
+			if (result.status === "rejected") {
+				if (result.reason?.name === "AbortError" || terminalLiveFailure(result.reason)) {
+					throw result.reason;
+				}
+				snapshot.errors[name] = withRequestId(
+					result.reason?.message || `The ${name} proof source could not refresh.`,
+					result.reason?.requestId,
+				);
+				continue;
+			}
+			try {
+				snapshot[name] = validate(result.value);
+			} catch (error) {
+				snapshot.errors[name] = String(error?.message || `The ${name} proof source is invalid.`);
+			}
+		}
+		return snapshot;
+	}
+
+	function applyVisionEvidence(snapshot, { render = true } = {}) {
+		if (!isRecord(snapshot) || !isRecord(snapshot.errors)) {
+			throw new Error("Dashboard vision evidence is invalid.");
+		}
+		let updated = false;
+		for (const name of ["children", "rejections", "wiring"]) {
+			const error = typeof snapshot.errors[name] === "string" ? snapshot.errors[name] : "";
+			if (snapshot[name]) {
+				state.visionEvidence[name] = snapshot[name];
+				state.visionEvidence.sources[name] = {
+					stale: false,
+					unavailable: false,
+					error: "",
+					sampledAt: snapshot[name].sampled_at,
+				};
+				updated = true;
+			} else {
+				const hasLastGood = Boolean(state.visionEvidence[name]);
+				state.visionEvidence.sources[name] = {
+					...state.visionEvidence.sources[name],
+					stale: hasLastGood,
+					unavailable: !hasLastGood,
+					error: error || `The ${name} proof source could not refresh.`,
+				};
+			}
+		}
+		state.visionEvidence.loaded = true;
+		if (render && state.activeView === "evidence") {
+			renderPreservingInteraction(renderer.renderVisionEvidence);
+		}
+		return updated;
 	}
 
 	function terminalLiveFailure(error) {
@@ -1627,6 +2044,43 @@ export function createLiveController(core, config, renderer) {
 		}
 	}
 
+	async function refreshVisionEvidence({ force = false } = {}) {
+		if (state.activeView !== "evidence" || lifecycleInactive()) return false;
+		if (state.visionEvidence.loaded && !force) {
+			renderPreservingInteraction(renderer.renderVisionEvidence);
+			return true;
+		}
+		if (state.requests.visionEvidence.controller && !force) return false;
+		if (state.full.inFlight) return false;
+		const request = beginViewRequest("visionEvidence");
+		const refreshButton = byId("vision-evidence-refresh");
+		if (refreshButton) {
+			refreshButton.disabled = true;
+			refreshButton.setAttribute("aria-busy", "true");
+		}
+		try {
+			const snapshot = await fetchVisionEvidence(request.controller.signal);
+			if (
+				!viewRequestIsCurrent("visionEvidence", request)
+				|| state.activeView !== "evidence"
+			) return false;
+			return applyVisionEvidence(snapshot);
+		} catch (error) {
+			if (error?.name !== "AbortError" && viewRequestIsCurrent("visionEvidence", request)) {
+				if (terminalLiveFailure(error)) handleLiveFailure(error);
+				else showNotice(error.message, true);
+			}
+			return false;
+		} finally {
+			const finished = finishViewRequest("visionEvidence", request);
+			if (finished && refreshButton && !lifecycleInactive()) {
+				refreshButton.disabled = false;
+				refreshButton.removeAttribute("aria-busy");
+			}
+			if (!lifecycleInactive()) scheduleControlRefresh();
+		}
+	}
+
 	async function refreshRuntimeEvidence() {
 		cancelLiveRequest();
 		try {
@@ -1809,6 +2263,7 @@ export function createLiveController(core, config, renderer) {
 		cancelFullRefresh,
 		cancelMutationRequests,
 		cancelViewRequests,
+		cancelVisionEvidenceRequest,
 		pauseForMutation,
 		resumeAfterMutation,
 		beginMutation,
@@ -1820,6 +2275,11 @@ export function createLiveController(core, config, renderer) {
 		applyLiveSnapshot,
 		fetchMetricEvidence,
 		applyMetricEvidence,
+		validateChildDeliveryPayload,
+		validateRule8EvidencePayload,
+		validateHostWiringPayload,
+		fetchVisionEvidence,
+		applyVisionEvidence,
 		terminalLiveFailure,
 		handleLiveFailure,
 		runLivePoll,
@@ -1846,6 +2306,7 @@ export function createLiveController(core, config, renderer) {
 		refreshControlPlane,
 		refreshAll,
 		refreshMetricEvidence,
+		refreshVisionEvidence,
 		refreshRuntimeEvidence,
 		loadHiringEvidence,
 		refreshWorkforce,

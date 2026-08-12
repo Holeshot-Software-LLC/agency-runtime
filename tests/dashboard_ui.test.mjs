@@ -186,6 +186,161 @@ function selectionDistributionPayload(overrides = {}) {
   };
 }
 
+function childDeliveryPayload(overrides = {}) {
+  return {
+    schema_version: "agency.dashboard.child_delivery.v1",
+    sampled_at: "2026-08-11T12:00:02+00:00",
+    source: {
+      authority: "host_written_child_artifacts",
+      artifact_hosts: ["claude", "codex"],
+      agency_store_consulted: false,
+      evidence_meaning: "hash_verified_specialist_cards_in_child_input_before_first_speech",
+    },
+    window: {
+      kind: "newest_verified_child_delivery_evidence",
+      hosts: ["claude", "codex"],
+      detail_limit: 50,
+    },
+    bounds: {
+      artifact_scan_limit_per_host: 4096,
+      filesystem_visit_limit_per_host: 16_384,
+      artifact_prefix_bytes: 524_288,
+      artifact_record_limit: 64,
+      detail_limit: 50,
+    },
+    hosts: [{
+      host: "claude",
+      root: "C:\\Users\\owner\\.claude\\projects",
+      root_present: true,
+      artifact_candidates: 1,
+      artifact_candidate_count_complete: true,
+      artifacts_scanned: 1,
+      artifact_scan_truncated: false,
+      filesystem_entries_visited: 4,
+      evidence_count: 1,
+      staffed_children: 1,
+      correlated_staffed_children: 1,
+      uncorrelated_staffed_children: 0,
+      legacy_deliveries: 0,
+      detail_limit: 50,
+      detail_truncated: false,
+      children: [{
+        child_id: "child-1",
+        artifact: "C:\\Users\\owner\\.claude\\projects\\child-1.jsonl",
+        parent_id: "parent-1",
+        envelope_parent_id: "parent-1",
+        correlated: true,
+        legacy: false,
+        cards: [{
+          slug: "code-reviewer",
+          version: "1",
+          prompt_hash: "a".repeat(64),
+        }],
+      }],
+    }, {
+      host: "codex",
+      root: "C:\\Users\\owner\\.codex\\sessions",
+      root_present: true,
+      artifact_candidates: 0,
+      artifact_candidate_count_complete: true,
+      artifacts_scanned: 0,
+      artifact_scan_truncated: false,
+      filesystem_entries_visited: 3,
+      evidence_count: 0,
+      staffed_children: 0,
+      correlated_staffed_children: 0,
+      uncorrelated_staffed_children: 0,
+      legacy_deliveries: 0,
+      detail_limit: 50,
+      detail_truncated: false,
+      children: [],
+    }],
+    ...overrides,
+  };
+}
+
+function rule8EvidencePayload(overrides = {}) {
+  return {
+    schema_version: "agency.dashboard.rule8_evidence.v1",
+    sampled_at: "2026-08-11T12:00:03+00:00",
+    source: {
+      authority: "agency_store",
+      table: "runs",
+      field: "status",
+      host_execution_proof: false,
+    },
+    window: {
+      kind: "most_recent_matching_exceptional_runs",
+      host: null,
+      limit: 50,
+      returned: 2,
+    },
+    counts: { matching_exceptional_runs: 2, withheld: 1, agency_blind: 1 },
+    withheld_statuses: ["delegation_declined", "response_invalid", "retry_exhausted"],
+    agency_blind_statuses: ["preflight_failed", "verification_failed"],
+    withheld: [{
+      trace_id: "trace-withheld",
+      session_id: "session-1",
+      host: "claude",
+      started_at: "2026-08-11T11:58:00+00:00",
+      ended_at: "2026-08-11T11:59:00+00:00",
+      status: "response_invalid",
+    }],
+    agency_blind: [{
+      trace_id: "trace-blind",
+      session_id: "session-2",
+      host: "codex",
+      started_at: "2026-08-11T11:56:00+00:00",
+      ended_at: "2026-08-11T11:57:00+00:00",
+      status: "preflight_failed",
+    }],
+    service_binding: { status: "bound" },
+    ...overrides,
+  };
+}
+
+function wiringEvidencePayload(overrides = {}) {
+  return {
+    schema_version: "agency.dashboard.host_wiring.v1",
+    sampled_at: "2026-08-11T12:00:04+00:00",
+    source: {
+      authority: "trusted_staged_and_host_cache_files",
+      measured_hosts: ["claude"],
+      live_canary: false,
+    },
+    window: { kind: "current_wiring_files", hosts: ["claude", "codex"] },
+    bounds: { file_prefix_bytes: 524_288 },
+    hosts: [{
+      host: "claude",
+      measurement_status: "measured",
+      status: "wired",
+      wired: true,
+      reason_code: "wired",
+      reason: "",
+      staged_state: "observed",
+      staged_projection: "a".repeat(64),
+      staged_path: "C:\\Users\\owner\\.agency-runtime\\hooks.json",
+      wired_state: "observed",
+      wired_projection: "a".repeat(64),
+      wired_path: "C:\\Users\\owner\\.claude\\plugins\\hooks.json",
+    }, {
+      host: "codex",
+      measurement_status: "not_measured",
+      status: "not_measured",
+      wired: false,
+      reason_code: "host_not_measured",
+      reason: "this host's wiring location is not measured",
+      staged_state: "not_measured",
+      staged_projection: "",
+      staged_path: "",
+      wired_state: "not_measured",
+      wired_projection: "",
+      wired_path: "",
+    }],
+    ...overrides,
+  };
+}
+
 function emptyRosterPage(
   revision = "test-roster-revision",
   configRevision = "test-config-revision",
@@ -2770,6 +2925,7 @@ test("overview metric evidence renders explicit selection denominators and laten
 
 test("overview metric evidence keeps last-good data on partial failure and stays view scoped", async () => {
   let failLatency = false;
+  let failSelections = false;
   let calls = 0;
   const harness = createAppHarness(async (path) => {
     calls += 1;
@@ -2779,7 +2935,9 @@ test("overview metric evidence keeps last-good data on partial failure and stays
         : jsonResponse(200, routingLatencyPayload());
     }
     if (path === "/api/evidence/selections") {
-      return jsonResponse(200, selectionDistributionPayload());
+      return failSelections
+        ? jsonResponse(503, { error: "selection evidence unavailable" })
+        : jsonResponse(200, selectionDistributionPayload());
     }
     throw new Error(`unexpected metric request: ${path}`);
   });
@@ -2790,14 +2948,67 @@ test("overview metric evidence keeps last-good data on partial failure and stays
   await harness.api.refreshMetricEvidence();
 
   assert.equal(harness.api.state.routingLatency, lastGoodLatency);
-  assert.equal(harness.api.state.metricEvidence.stale, true);
-  assert.equal(harness.api.state.metricEvidence.errors.length, 1);
+  assert.equal(harness.api.state.metricEvidence.sources.latency.stale, true);
+  assert.equal(harness.api.state.metricEvidence.sources.latency.unavailable, false);
+  assert.match(harness.api.state.metricEvidence.sources.latency.error, /latency unavailable/i);
+  assert.equal(harness.api.state.metricEvidence.sources.selections.stale, false);
   assert.match(harness.node("latency-budget-state").textContent, /^STALE · OVER BUDGET$/);
   assert.match(harness.node("latency-evidence-context").textContent, /retained prior evidence/i);
+
+  const lastGoodSelections = harness.api.state.selectionDistribution;
+  failLatency = false;
+  failSelections = true;
+  await harness.api.refreshMetricEvidence();
+  assert.equal(harness.api.state.selectionDistribution, lastGoodSelections);
+  assert.equal(harness.api.state.metricEvidence.sources.selections.stale, true);
+  assert.equal(harness.api.state.metricEvidence.sources.selections.unavailable, false);
+  assert.match(
+    harness.api.state.metricEvidence.sources.selections.error,
+    /selection evidence unavailable/i,
+  );
+  assert.equal(harness.node("selection-evidence-state").textContent, "STALE");
+  assert.match(harness.node("selection-evidence-context").textContent, /retained prior evidence/i);
   const callsBeforeInactiveView = calls;
   harness.api.state.activeView = "routing";
   assert.equal(await harness.api.refreshMetricEvidence(), false);
   assert.equal(calls, callsBeforeInactiveView);
+});
+
+test("overview metric evidence distinguishes first-load unavailability for either source", async () => {
+  for (const failedSource of ["latency", "selections"]) {
+    const harness = createAppHarness(async (path) => {
+      if (path === "/api/evidence/latency?limit=200") {
+        return failedSource === "latency"
+          ? jsonResponse(503, { error: "latency first-load failure" })
+          : jsonResponse(200, routingLatencyPayload());
+      }
+      if (path === "/api/evidence/selections") {
+        return failedSource === "selections"
+          ? jsonResponse(503, { error: "selection first-load failure" })
+          : jsonResponse(200, selectionDistributionPayload());
+      }
+      throw new Error(`unexpected metric request: ${path}`);
+    });
+
+    assert.equal(await harness.api.refreshMetricEvidence(), true);
+    const failed = harness.api.state.metricEvidence.sources[failedSource];
+    const current = harness.api.state.metricEvidence.sources[
+      failedSource === "latency" ? "selections" : "latency"
+    ];
+    assert.equal(failed.stale, false);
+    assert.equal(failed.unavailable, true);
+    assert.equal(failed.sampledAt, null);
+    assert.equal(current.stale, false);
+    assert.equal(current.unavailable, false);
+    assert.ok(current.sampledAt);
+    const failedTag = harness.node(
+      failedSource === "latency" ? "latency-budget-state" : "selection-evidence-state",
+    );
+    assert.equal(failedTag.textContent, "UNAVAILABLE");
+    assert.equal(failedTag.dataset.state, "unavailable");
+    assert.match(harness.node("metric-evidence-status").textContent, /unavailable/);
+    assert.ok(harness.node("metric-evidence-status").textContent.length < 120);
+  }
 });
 
 test("overview metric evidence treats empty observations as unknown rather than healthy", async () => {
@@ -2842,6 +3053,450 @@ test("overview metric evidence treats empty observations as unknown rather than 
   assert.match(harness.node("latency-evidence-context").textContent, /no eligible routing evidence/i);
   assert.equal(harness.node("selection-evidence-state").textContent, "NO DATA");
   assert.match(harness.node("selection-evidence-context").textContent, /no selection-bearing decisions/i);
+});
+
+test("Vision Evidence validators reject inconsistent bounded projections", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("validator tests do not fetch");
+  });
+  const clone = (value) => JSON.parse(JSON.stringify(value));
+
+  assert.doesNotThrow(() => harness.api.validateChildDeliveryPayload(childDeliveryPayload()));
+  const maximumTeam = childDeliveryPayload();
+  maximumTeam.hosts[0].children[0].cards = Array.from({ length: 256 }, (_, index) => ({
+    slug: `specialist-${index}`,
+    version: "1",
+    prompt_hash: "a".repeat(64),
+  }));
+  assert.doesNotThrow(() => harness.api.validateChildDeliveryPayload(maximumTeam));
+  const impossibleChildCount = clone(childDeliveryPayload());
+  impossibleChildCount.hosts[0].evidence_count = 2;
+  assert.throws(
+    () => harness.api.validateChildDeliveryPayload(impossibleChildCount),
+    /child-delivery evidence is invalid/i,
+  );
+  const inconsistentChildTruncation = clone(childDeliveryPayload());
+  inconsistentChildTruncation.hosts[0].detail_truncated = true;
+  assert.throws(
+    () => harness.api.validateChildDeliveryPayload(inconsistentChildTruncation),
+    /child-delivery evidence is invalid/i,
+  );
+
+  assert.doesNotThrow(() => harness.api.validateRule8EvidencePayload(rule8EvidencePayload()));
+  const historicalHost = clone(rule8EvidencePayload());
+  historicalHost.withheld[0].host = "legacy-custom-host";
+  assert.doesNotThrow(() => harness.api.validateRule8EvidencePayload(historicalHost));
+  const invalidWindowHost = clone(rule8EvidencePayload());
+  invalidWindowHost.window.host = "legacy-custom-host";
+  assert.throws(
+    () => harness.api.validateRule8EvidencePayload(invalidWindowHost),
+    /Rule-8 evidence is invalid/i,
+  );
+  const filteredWindow = clone(rule8EvidencePayload());
+  filteredWindow.window.host = "claude";
+  filteredWindow.agency_blind[0].host = "claude";
+  assert.doesNotThrow(() => harness.api.validateRule8EvidencePayload(filteredWindow));
+  filteredWindow.agency_blind[0].host = "historical-other-host";
+  assert.throws(
+    () => harness.api.validateRule8EvidencePayload(filteredWindow),
+    /Rule-8 evidence is invalid/i,
+  );
+  const wrongPartition = clone(rule8EvidencePayload());
+  wrongPartition.withheld_statuses = ["response_invalid"];
+  assert.throws(
+    () => harness.api.validateRule8EvidencePayload(wrongPartition),
+    /Rule-8 evidence is invalid/i,
+  );
+
+  assert.doesNotThrow(() => harness.api.validateHostWiringPayload(wiringEvidencePayload()));
+  const malformedDigest = clone(wiringEvidencePayload());
+  malformedDigest.hosts[0].wired_projection = "short";
+  assert.throws(
+    () => harness.api.validateHostWiringPayload(malformedDigest),
+    /host-wiring evidence is invalid/i,
+  );
+  const inconsistentWiredFlag = clone(wiringEvidencePayload());
+  inconsistentWiredFlag.hosts[0].wired = false;
+  assert.throws(
+    () => harness.api.validateHostWiringPayload(inconsistentWiredFlag),
+    /host-wiring evidence is invalid/i,
+  );
+});
+
+test("Vision Evidence renders three source contracts with accessible bounded freshness", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    if (path === "/api/evidence/children") return jsonResponse(200, childDeliveryPayload());
+    if (path === "/api/evidence/rejections") return jsonResponse(200, rule8EvidencePayload());
+    if (path === "/api/evidence/wiring") return jsonResponse(200, wiringEvidencePayload());
+    throw new Error(`unexpected Vision Evidence request: ${path}`);
+  });
+  harness.api.configureOwnerSurface();
+  harness.api.state.activeView = "evidence";
+
+  assert.equal(await harness.api.refreshVisionEvidence(), true);
+  assert.deepEqual(calls, [
+    "/api/evidence/children",
+    "/api/evidence/rejections",
+    "/api/evidence/wiring",
+  ]);
+  assert.equal(harness.api.state.visionEvidence.loaded, true);
+  assert.equal(harness.node("vision-children-state").textContent, "OBSERVED");
+  assert.equal(harness.node("vision-rule8-state").textContent, "OBSERVED");
+  assert.equal(harness.node("vision-wiring-state").textContent, "OBSERVED");
+  assert.equal(
+    harness.api.state.visionEvidence.sources.children.sampledAt,
+    "2026-08-11T12:00:02+00:00",
+  );
+  assert.equal(
+    harness.api.state.visionEvidence.sources.rejections.sampledAt,
+    "2026-08-11T12:00:03+00:00",
+  );
+  assert.equal(
+    harness.api.state.visionEvidence.sources.wiring.sampledAt,
+    "2026-08-11T12:00:04+00:00",
+  );
+  assert.match(harness.node("vision-children-freshness").textContent, /^Source sampled /);
+  assert.match(harness.node("vision-rule8-freshness").textContent, /^Source sampled /);
+  assert.match(harness.node("vision-wiring-freshness").textContent, /^Source sampled /);
+  assert.match(harness.node("vision-children-bounds").textContent, /16384 host-tree entries/i);
+  assert.match(harness.node("vision-rule8-source").textContent, /not host execution or publication proof/i);
+  const childItems = harness.node("vision-children-list").children;
+  assert.ok(childItems.length > 0);
+  assert.ok(childItems.every((item) => item.getAttribute("role") === "listitem"));
+  const wiringText = descendants(harness.node("vision-wiring-list"))
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.match(wiringText, /aaaaaaaaaaaa…/);
+  assert.doesNotMatch(wiringText, /a{64}/);
+  assert.doesNotMatch(wiringText, /not installed/i);
+
+  harness.api.state.selectionDistribution = selectionDistributionPayload();
+  harness.api.state.routingLatency = routingLatencyPayload();
+  harness.api.state.metricEvidence.sources.selections.sampledAt = "2026-08-11T12:00:01+00:00";
+  harness.api.state.metricEvidence.sources.latency.sampledAt = "2026-08-11T12:00:00+00:00";
+  harness.api.renderMetricEvidence();
+  const selectionRows = harness.node("selection-chart").children;
+  assert.ok(selectionRows.every((row) => row.getAttribute("role") === "listitem"));
+  const barTrack = descendants(harness.node("selection-chart"))
+    .find((node) => node.className === "selection-bar-track");
+  assert.equal(barTrack.getAttribute("aria-hidden"), "true");
+  assert.equal(barTrack.getAttribute("max"), "100");
+  assert.equal(barTrack.getAttribute("value"), (146 / 202 * 100).toFixed(2));
+  assert.equal(barTrack.getAttribute("style"), null);
+  const selectionRenderer = RENDER_SOURCE.slice(
+    RENDER_SOURCE.indexOf("function renderSelectionDistribution"),
+    RENDER_SOURCE.indexOf("function renderRoutingLatency"),
+  );
+  assert.doesNotMatch(selectionRenderer, /setAttribute\("style"|\.style\./);
+  assert.doesNotMatch(selectionRenderer, /selection-bar-fill/);
+  assert.match(
+    harness.node("metric-evidence-freshness").textContent,
+    /Selection source sampled .* latency source sampled /,
+  );
+
+  assert.match(INDEX_SOURCE, /id="selection-chart"[^>]*role="list"/);
+  assert.ok(INDEX_SOURCE.indexOf("vision-evidence-title") < INDEX_SOURCE.indexOf("AUTHORITATIVE EVENTS"));
+  assert.match(INDEX_SOURCE, /id="vision-evidence-refresh"[^>]*>Refresh proof</);
+  assert.match(APP_CSS_SOURCE, /\.vision-evidence-grid\{[^}]*grid-template-columns:repeat\(3/);
+  assert.match(APP_CSS_SOURCE, /@media\(max-width:900px\)\{\.vision-evidence-grid\{grid-template-columns:1fr/);
+  assert.match(
+    APP_CSS_SOURCE,
+    /\.vision-proof-row>\*,\.vision-proof-detail>\*,\.vision-proof-heading>\*\{[^}]*overflow-wrap:anywhere/,
+  );
+  assert.match(
+    INDEX_SOURCE,
+    /<span id="metric-evidence-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true">/,
+  );
+  assert.match(
+    INDEX_SOURCE,
+    /<span id="vision-evidence-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true">/,
+  );
+  for (const id of ["metric-evidence-status", "vision-evidence-status"]) {
+    const region = harness.node(id);
+    assert.ok(region.textContent.length < 140);
+  }
+  assert.equal(
+    harness.node("metric-evidence-status").textContent,
+    "Decision evidence: selection current; latency current.",
+  );
+  assert.equal(
+    harness.node("vision-evidence-status").textContent,
+    "Vision evidence: child delivery current; Rule 8 current; host wiring current.",
+  );
+});
+
+test("Vision Evidence marks an initial source failure unavailable without stale evidence", async () => {
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/children") {
+      return jsonResponse(503, { error: "child proof unavailable" });
+    }
+    if (path === "/api/evidence/rejections") return jsonResponse(200, rule8EvidencePayload());
+    if (path === "/api/evidence/wiring") return jsonResponse(200, wiringEvidencePayload());
+    throw new Error(`unexpected Vision Evidence request: ${path}`);
+  });
+  harness.api.configureOwnerSurface();
+  harness.api.state.activeView = "evidence";
+
+  assert.equal(await harness.api.refreshVisionEvidence(), true);
+  const source = harness.api.state.visionEvidence.sources.children;
+  assert.equal(source.stale, false);
+  assert.equal(source.unavailable, true);
+  assert.equal(source.sampledAt, null);
+  assert.equal(harness.node("vision-children-state").textContent, "UNAVAILABLE");
+  assert.equal(harness.node("vision-children-state").dataset.state, "unavailable");
+  assert.match(harness.node("vision-children-freshness").textContent, /No validated source sample/);
+  assert.equal(
+    harness.node("vision-evidence-status").textContent,
+    "Vision evidence: child delivery unavailable; Rule 8 current; host wiring current.",
+  );
+});
+
+test("Vision Evidence empty states preserve bounded unknown semantics", async () => {
+  const children = childDeliveryPayload();
+  children.hosts = children.hosts.map((host) => ({
+    ...host,
+    artifact_candidates: 0,
+    artifacts_scanned: 0,
+    artifact_scan_truncated: false,
+    evidence_count: 0,
+    staffed_children: 0,
+    correlated_staffed_children: 0,
+    uncorrelated_staffed_children: 0,
+    legacy_deliveries: 0,
+    detail_truncated: false,
+    children: [],
+  }));
+  const rejections = rule8EvidencePayload({
+    window: {
+      kind: "most_recent_matching_exceptional_runs",
+      host: null,
+      limit: 50,
+      returned: 0,
+    },
+    counts: { matching_exceptional_runs: 0, withheld: 0, agency_blind: 0 },
+    withheld: [],
+    agency_blind: [],
+  });
+  const wiring = wiringEvidencePayload();
+  wiring.hosts[0] = {
+    ...wiring.hosts[0],
+    status: "unavailable",
+    wired: false,
+    reason_code: "wired_missing",
+    reason: "no wired hook command was observed at the measured location",
+    wired_state: "missing",
+    wired_projection: "",
+    wired_path: "",
+  };
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/children") return jsonResponse(200, children);
+    if (path === "/api/evidence/rejections") return jsonResponse(200, rejections);
+    if (path === "/api/evidence/wiring") return jsonResponse(200, wiring);
+    throw new Error(`unexpected empty-evidence request: ${path}`);
+  });
+  harness.api.state.activeView = "evidence";
+  await harness.api.refreshVisionEvidence();
+
+  const childText = descendants(harness.node("vision-children-list"))
+    .map((node) => node.textContent).join(" ");
+  const rule8Text = descendants(harness.node("vision-rule8-list"))
+    .map((node) => node.textContent).join(" ");
+  const wiringText = descendants(harness.node("vision-wiring-list"))
+    .map((node) => node.textContent).join(" ");
+  assert.match(childText, /does not mean no children were started/i);
+  assert.match(rule8Text, /This is not a health claim/i);
+  assert.doesNotMatch(rule8Text, /healthy/i);
+  assert.match(wiringText, /UNKNOWN/);
+  assert.match(wiringText, /wiring state remains unknown/i);
+  assert.doesNotMatch(wiringText, /not installed/i);
+});
+
+test("Vision Evidence retains last-good data only for a failed source", async () => {
+  let failChildren = false;
+  let generation = 0;
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/children") {
+      return failChildren
+        ? jsonResponse(503, { error: "child proof unavailable" })
+        : jsonResponse(200, childDeliveryPayload());
+    }
+    if (path === "/api/evidence/rejections") {
+      return jsonResponse(200, rule8EvidencePayload({
+        sampled_at: `2026-08-11T12:01:0${generation}+00:00`,
+      }));
+    }
+    if (path === "/api/evidence/wiring") {
+      return jsonResponse(200, wiringEvidencePayload({
+        sampled_at: `2026-08-11T12:02:0${generation}+00:00`,
+      }));
+    }
+    throw new Error(`unexpected partial-evidence request: ${path}`);
+  });
+  harness.api.state.activeView = "evidence";
+  await harness.api.refreshVisionEvidence();
+  const children = harness.api.state.visionEvidence.children;
+  const rejections = harness.api.state.visionEvidence.rejections;
+  const wiring = harness.api.state.visionEvidence.wiring;
+  const childSample = harness.api.state.visionEvidence.sources.children.sampledAt;
+
+  failChildren = true;
+  generation = 1;
+  assert.equal(await harness.api.refreshVisionEvidence({ force: true }), true);
+  assert.equal(harness.api.state.visionEvidence.children, children);
+  assert.notEqual(harness.api.state.visionEvidence.rejections, rejections);
+  assert.notEqual(harness.api.state.visionEvidence.wiring, wiring);
+  assert.equal(harness.api.state.visionEvidence.sources.children.sampledAt, childSample);
+  assert.equal(harness.api.state.visionEvidence.sources.children.stale, true);
+  assert.match(harness.api.state.visionEvidence.sources.children.error, /child proof unavailable/i);
+  assert.equal(harness.api.state.visionEvidence.sources.rejections.stale, false);
+  assert.equal(harness.api.state.visionEvidence.sources.wiring.stale, false);
+  assert.equal(harness.node("vision-children-state").textContent, "STALE");
+  assert.match(harness.node("vision-children-freshness").textContent, /Last-good source sample/);
+});
+
+test("Vision Evidence request generations reject races and navigation restores busy state", async () => {
+  const pending = [
+    [deferred(), deferred(), deferred()],
+    [deferred(), deferred(), deferred()],
+    [deferred(), deferred(), deferred()],
+  ];
+  const calls = [];
+  const harness = createAppHarness((path, options) => {
+    const batch = Math.floor(calls.length / 3);
+    const slot = calls.length % 3;
+    calls.push({ path, signal: options.signal });
+    return pending[batch][slot].promise;
+  });
+  harness.api.state.activeView = "evidence";
+  const first = harness.api.refreshVisionEvidence();
+  await Promise.resolve();
+  const second = harness.api.refreshVisionEvidence({ force: true });
+  await Promise.resolve();
+  assert.ok(calls.slice(0, 3).every((call) => call.signal.aborted));
+  [childDeliveryPayload({ sampled_at: "2026-08-11T12:10:00+00:00" }),
+    rule8EvidencePayload({ sampled_at: "2026-08-11T12:10:01+00:00" }),
+    wiringEvidencePayload({ sampled_at: "2026-08-11T12:10:02+00:00" })]
+    .forEach((payload, index) => pending[1][index].resolve(jsonResponse(200, payload)));
+  assert.equal(await second, true);
+  pending[0][0].resolve(jsonResponse(200, childDeliveryPayload()));
+  pending[0][1].resolve(jsonResponse(200, rule8EvidencePayload()));
+  pending[0][2].resolve(jsonResponse(200, wiringEvidencePayload()));
+  assert.equal(await first, false);
+  assert.equal(
+    harness.api.state.visionEvidence.sources.children.sampledAt,
+    "2026-08-11T12:10:00+00:00",
+  );
+
+  const leaving = harness.api.refreshVisionEvidence({ force: true });
+  await Promise.resolve();
+  assert.equal(harness.node("vision-evidence-refresh").disabled, true);
+  assert.equal(harness.node("vision-evidence-refresh").getAttribute("aria-busy"), "true");
+  assert.equal(harness.api.cancelVisionEvidenceRequest(), true);
+  harness.api.state.activeView = "routing";
+  assert.ok(calls.slice(6, 9).every((call) => call.signal.aborted));
+  assert.equal(harness.node("vision-evidence-refresh").disabled, false);
+  assert.equal(harness.node("vision-evidence-refresh").getAttribute("aria-busy"), null);
+  pending[2][0].resolve(jsonResponse(200, childDeliveryPayload()));
+  pending[2][1].resolve(jsonResponse(200, rule8EvidencePayload()));
+  pending[2][2].resolve(jsonResponse(200, wiringEvidencePayload()));
+  assert.equal(await leaving, false);
+});
+
+test("Vision Evidence never joins the live poll", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    if (path === "/api/live?limit=100") {
+      return jsonResponse(200, {
+        schema_version: 1,
+        revision: "evidence-live-only",
+        sampled_at: "2026-08-11T12:20:00+00:00",
+      });
+    }
+    throw new Error(`hot poll reached non-live endpoint: ${path}`);
+  });
+  harness.api.state.activeView = "evidence";
+  await harness.api.runLivePoll();
+  assert.deepEqual(calls, ["/api/live?limit=100"]);
+  const liveFunction = LIVE_SOURCE.slice(
+    LIVE_SOURCE.indexOf("async function fetchLiveSnapshot"),
+    LIVE_SOURCE.indexOf("function applyLiveSnapshot"),
+  );
+  assert.doesNotMatch(liveFunction, /\/api\/evidence\/(children|rejections|wiring)/);
+});
+
+test("Evidence navigation waits for full refresh, loads once, and forced controls refetch", async () => {
+  const initialLive = deferred();
+  const initialControl = deferred();
+  const calls = [];
+  let liveCalls = 0;
+  let controlCalls = 0;
+  const harness = createAppHarness(async (path, options) => {
+    calls.push({ path, signal: options?.signal });
+    if (path === "/api/live?limit=100") {
+      liveCalls += 1;
+      return liveCalls === 1
+        ? initialLive.promise
+        : jsonResponse(200, { schema_version: 1, revision: `manual-${liveCalls}` });
+    }
+    if (path === "/api/control") {
+      controlCalls += 1;
+      return controlCalls === 1 ? initialControl.promise : jsonResponse(200, controlSnapshot());
+    }
+    if (path === "/api/evidence/children") return jsonResponse(200, childDeliveryPayload());
+    if (path === "/api/evidence/rejections") return jsonResponse(200, rule8EvidencePayload());
+    if (path === "/api/evidence/wiring") return jsonResponse(200, wiringEvidencePayload());
+    if (path.startsWith("/api/update/status")) return jsonResponse(503, { error: "offline" });
+    throw new Error(`unexpected navigation/full-refresh path: ${path}`);
+  });
+  harness.sessionValues.set("agency-dashboard-token", "session-token");
+  const overviewNav = new FakeNode("nav-overview");
+  overviewNav.classList.add("active");
+  overviewNav.dataset.view = "overview";
+  const evidenceNav = new FakeNode("nav-evidence");
+  evidenceNav.dataset.view = "evidence";
+  const routingNav = new FakeNode("nav-routing");
+  routingNav.dataset.view = "routing";
+  const overviewPanel = new FakeNode("view-overview");
+  overviewPanel.dataset.viewPanel = "overview";
+  const evidencePanel = new FakeNode("view-evidence");
+  evidencePanel.dataset.viewPanel = "evidence";
+  const routingPanel = new FakeNode("view-routing");
+  routingPanel.dataset.viewPanel = "routing";
+  harness.select(".nav-item", [overviewNav, evidenceNav, routingNav]);
+  harness.select(".nav-item.active", [overviewNav]);
+  harness.select(".view", [overviewPanel, evidencePanel, routingPanel]);
+  harness.api.bindEvents();
+
+  const connected = harness.api.connectFromLocation();
+  await Promise.resolve();
+  evidenceNav.listeners.get("click")[0]();
+  assert.equal(harness.api.state.activeView, "evidence");
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 0);
+  assert.ok(calls.slice(0, 2).every((call) => !call.signal.aborted));
+  initialLive.resolve(jsonResponse(200, { schema_version: 1, revision: "initial" }));
+  initialControl.resolve(jsonResponse(200, controlSnapshot()));
+  assert.equal(await connected, true);
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 3);
+
+  routingNav.listeners.get("click")[0]();
+  evidenceNav.listeners.get("click")[0]();
+  await Promise.resolve();
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 3);
+
+  harness.node("vision-evidence-refresh").listeners.get("click")[0]();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 6);
+
+  await harness.node("refresh-button").listeners.get("click")[0]();
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 9);
+
+  routingNav.listeners.get("click")[0]();
+  harness.node("vision-evidence-refresh").listeners.get("click")[0]();
+  await harness.node("refresh-button").listeners.get("click")[0]();
+  assert.equal(calls.filter((call) => call.path.startsWith("/api/evidence/")).length, 9);
 });
 
 test("app.js live snapshots are single-flight", async () => {
@@ -3908,6 +4563,60 @@ test("app.js reconnects from stored credentials and surfaces missing tokens", as
   assert.equal(calls, 0);
   assert.equal(missing.node("connection-label").textContent, "Token required");
   assert.match(missing.node("notice").textContent, /no active access token/i);
+});
+
+test("a secondary evidence 401 remains visible after the primary connection succeeds", async (testContext) => {
+  for (const activeView of ["overview", "evidence"]) {
+    await testContext.test(activeView, async () => {
+      const calls = [];
+      const harness = createAppHarness(async (path) => {
+        calls.push(path);
+        if (path === "/api/live?limit=100") {
+          return jsonResponse(200, {
+            activity: {},
+            overview: { status: "ok" },
+            revision: `connected-${activeView}`,
+            schema_version: 1,
+          });
+        }
+        if (path === "/api/control") {
+          return jsonResponse(200, controlSnapshot({
+            config: { effective: {}, revision: `config-${activeView}` },
+          }));
+        }
+        if (path === "/api/evidence/latency?limit=200") {
+          return jsonResponse(401, { error: "metric token expired" });
+        }
+        if (path === "/api/evidence/selections") {
+          return jsonResponse(200, selectionDistributionPayload());
+        }
+        if (path === "/api/evidence/children") {
+          return jsonResponse(401, { error: "Vision token expired" });
+        }
+        if (path === "/api/evidence/rejections") {
+          return jsonResponse(200, rule8EvidencePayload());
+        }
+        if (path === "/api/evidence/wiring") {
+          return jsonResponse(200, wiringEvidencePayload());
+        }
+        throw new Error(`unexpected secondary-auth path: ${path}`);
+      });
+      harness.sessionValues.set("agency-dashboard-token", "stored-token");
+      harness.api.state.activeView = activeView;
+      harness.api.showNotice("Connecting");
+
+      assert.equal(await harness.api.connectFromLocation(), true);
+      assert.equal(harness.api.state.live.terminal, true);
+      assert.equal(harness.node("connection-label").textContent, "Token expired");
+      assert.equal(harness.node("notice").hidden, false);
+      assert.match(harness.node("notice").textContent, /token expired/i);
+      assert.match(
+        harness.node("notice").textContent,
+        /Request ID 00000000-0000-4000-8000-000000000001/,
+      );
+      assert.ok(calls.some((path) => path.startsWith("/api/evidence/")));
+    });
+  }
 });
 
 test("app.js omits retired dependency graphs and renders roster control refreshes", () => {

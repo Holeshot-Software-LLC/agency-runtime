@@ -104,9 +104,9 @@ def test_dashboard_get_maps_expected_configuration_failures(
     status: HTTPStatus,
 ) -> None:
     handler = object.__new__(dashboard.DashboardHTTPHandler)
-    handler.path = "/api/config"
+    handler.path = "/api/policy"
     handler._authorise_api_request = lambda **_kwargs: True
-    handler._handle_config = lambda: (_ for _ in ()).throw(error)
+    handler._handle_policy = lambda: (_ for _ in ()).throw(error)
     responses: list[tuple[HTTPStatus, str]] = []
     handler._json_error = lambda response_status, message: responses.append(
         (response_status, message)

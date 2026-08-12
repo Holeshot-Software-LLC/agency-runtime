@@ -1,4 +1,4 @@
-"""Read-only evidence commands: what a host's own artifacts prove."""
+"""Read-only, source-labelled evidence from host artifacts or Agency's Store."""
 
 from __future__ import annotations
 
@@ -6,18 +6,23 @@ import argparse
 from pathlib import Path
 
 from agency_runtime.core.child_delivery_evidence import (
+    MAX_CHILD_ARTIFACTS,
+    MAX_CHILD_FILESYSTEM_ENTRIES,
+    MAX_LAUNCH_PREFIX_BYTES,
+    MAX_LAUNCH_RECORDS,
+    child_delivery_projection,
     default_child_artifact_root,
-    scan_child_delivery_evidence,
 )
 from agency_runtime.core.config import load_config
+from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.host_wiring_drift import host_wiring
 from agency_runtime.core.routing_latency import (
     DEFAULT_ROUTING_LATENCY_BUDGET_MS,
     routing_latency_projection,
 )
-from agency_runtime.core.store.evidence import (
-    PUBLISHED_ANYWAY_RUN_STATUSES,
-    WITHHELD_RUN_STATUSES,
+from agency_runtime.core.rule8_evidence import (
+    bounded_rule8_limit,
+    rule8_evidence_projection,
 )
 from agency_runtime.core.store.sqlite import Store
 
@@ -39,39 +44,30 @@ def cmd_evidence_wiring(args: argparse.Namespace) -> int:
     hosts = (args.host,) if getattr(args, "host", None) else _WIRING_HOSTS
     results = [host_wiring(host) for host in hosts]
     if getattr(args, "json", False):
-        _print_json(
-            {
-                "hosts": [
-                    {
-                        "host": result.host,
-                        "wired": result.wired,
-                        "reason": result.reason,
-                        "staged_projection": result.staged_projection,
-                        "staged_path": result.staged_path,
-                        "wired_projection": result.wired_projection,
-                        "wired_path": result.wired_path,
-                    }
-                    for result in results
-                ]
-            }
-        )
+        _print_json({"hosts": [result.as_dict() for result in results]})
     else:
         for result in results:
             if result.wired:
                 print(f"{result.host}: wired to {result.staged_projection[:12]} ✅")
                 continue
-            print(f"{result.host}: NOT wired to what was staged — {result.reason}")
+            if result.status == "not_measured":
+                print(f"{result.host}: wiring not measured — {result.reason}")
+                continue
+            label = "DRIFT" if result.status == "drift" else "wiring unavailable"
+            print(f"{result.host}: {label} — {result.reason}")
             print(f"  staged: {result.staged_projection[:12] or '(none)'}  {result.staged_path}")
             print(f"  wired : {result.wired_projection[:12] or '(none)'}  {result.wired_path}")
     return 0 if all(result.wired for result in results) else 1
 
 
 def cmd_evidence_rejections(args: argparse.Namespace) -> int:
-    """Report every turn Agency withheld, and every turn it published while blind.
+    """Report the bounded exceptional-run window on each side of Rule 8.
 
     Rule 8 permits exactly one reason to cost a user a turn: Agency's verifier
     evaluated the response and rejected it. Agency being unable to verify or
-    persist its own evidence is not a finding about the response, and publishes.
+    persist its own evidence is not a finding about the response. Rule 8 now
+    requires pass-through, but the stored status alone does not prove what a
+    historical host did with the turn.
 
     Both outcomes close a run with a distinguishable status, so this makes the
     rule auditable after the fact rather than a claim about the code -- and it
@@ -81,20 +77,34 @@ def cmd_evidence_rejections(args: argparse.Namespace) -> int:
     gate.
     """
 
+    host = str(getattr(args, "host", None) or "").strip().casefold()
+    if host and host not in EXECUTION_HOSTS:
+        raise ValueError("Rule-8 evidence host is unsupported")
+    raw_limit = getattr(args, "limit", None)
+    limit = bounded_rule8_limit(50 if raw_limit is None else raw_limit)
     store = Store(getattr(args, "db", None))
     rows = store.get_withheld_and_published_runs(
-        host=getattr(args, "host", None) or "",
-        limit=getattr(args, "limit", 50) or 50,
+        host=host,
+        limit=limit,
     )
-    withheld = [row for row in rows if row["status"] in WITHHELD_RUN_STATUSES]
-    published = [row for row in rows if row["status"] in PUBLISHED_ANYWAY_RUN_STATUSES]
+    projection = rule8_evidence_projection(rows, host=host, limit=limit)
+    withheld = projection["withheld"]
+    agency_blind = projection["agency_blind"]
     if getattr(args, "json", False):
         _print_json(
             {
-                "withheld": withheld,
-                "published_anyway": published,
-                "withheld_statuses": sorted(WITHHELD_RUN_STATUSES),
-                "published_anyway_statuses": sorted(PUBLISHED_ANYWAY_RUN_STATUSES),
+                **projection,
+                # Compatibility only. The canonical name is ``agency_blind``:
+                # these statuses do not prove what a historical host did with
+                # the turn, despite the legacy key's stronger wording.
+                "published_anyway": agency_blind,
+                "published_anyway_statuses": projection["agency_blind_statuses"],
+                "compatibility_aliases": {
+                    "published_anyway": (
+                        "agency_blind; legacy key name does not prove host publication"
+                    ),
+                    "published_anyway_statuses": "agency_blind_statuses",
+                },
             }
         )
         return 1 if withheld else 0
@@ -105,22 +115,25 @@ def cmd_evidence_rejections(args: argparse.Namespace) -> int:
             f"  {row['status']!s:<20} {row['host']!s:<8} {when}  trace {str(row['trace_id'])[:12]}"
         )
 
+    if not withheld and not agency_blind:
+        print(
+            f"no matching exceptional statuses in this retained bounded window "
+            f"(limit {limit}{f', host {host}' if host else ''}); this is not a health claim"
+        )
+        return 0
     if not withheld:
-        print("withheld by Agency: none ✅")
+        print("withheld by Agency: none in this retained bounded window")
     else:
         print(f"withheld by Agency: {len(withheld)} — the verifier evaluated and rejected")
         for row in withheld:
             print(_line(row))
-    if published:
-        # Deliberately not labelled "published": the status records that Agency
-        # was blind for that turn, not what the host did with the response. Runs
-        # closed before the rule-8 fix were denied on exactly this condition, so
-        # calling them published would be a claim this data cannot support.
+    if agency_blind:
         print(
-            f"Agency was blind: {len(published)} — could not verify or persist its "
-            "evidence. Under rule 8 these publish; before the fix they were denied."
+            f"Agency was blind: {len(agency_blind)} — could not verify or persist its "
+            "evidence. Rule 8 requires pass-through, but these rows alone do not prove "
+            "what the host did; historical rows can predate that rule."
         )
-        for row in published:
+        for row in agency_blind:
             print(_line(row))
     return 1 if withheld else 0
 
@@ -262,51 +275,48 @@ def cmd_evidence_children(args: argparse.Namespace) -> int:
 
     hosts = (args.host,) if getattr(args, "host", None) else _HOSTS
     override = getattr(args, "root", None)
+    raw_limit = getattr(args, "limit", None)
+    limit = 50 if raw_limit is None else raw_limit
     if override and len(hosts) != 1:
         raise ValueError("--root applies to exactly one --host")
     results = []
     for host in hosts:
         root = Path(override) if override else default_child_artifact_root(host)
-        findings = scan_child_delivery_evidence(root, host=host) if root.is_dir() else []
-        results.append(
+        results.append(child_delivery_projection(root, host=host, limit=limit))
+    if getattr(args, "json", False):
+        _print_json(
             {
-                "host": host,
-                "root": str(root),
-                "root_present": root.is_dir(),
-                "staffed_children": sum(1 for finding in findings if finding.staffed),
-                "legacy_deliveries": sum(
-                    1 for finding in findings if finding.legacy_delivery and not finding.staffed
-                ),
-                "children": [
-                    {
-                        "child_id": finding.child_id,
-                        "artifact": finding.artifact,
-                        "parent_id": finding.host_parent_id,
-                        "correlated": finding.correlated,
-                        "legacy": finding.legacy_delivery,
-                        "cards": [
-                            {
-                                "slug": card.specialist_slug,
-                                "version": card.specialist_version,
-                                "prompt_hash": card.specialist_prompt_hash,
-                            }
-                            for card in finding.cards
-                        ],
-                    }
-                    for finding in findings
-                ],
+                "window": {
+                    "kind": "newest_verified_child_delivery_evidence",
+                    "hosts": list(hosts),
+                    "detail_limit": limit,
+                },
+                "bounds": {
+                    "artifact_scan_limit_per_host": MAX_CHILD_ARTIFACTS,
+                    "filesystem_visit_limit_per_host": MAX_CHILD_FILESYSTEM_ENTRIES,
+                    "artifact_prefix_bytes": MAX_LAUNCH_PREFIX_BYTES,
+                    "artifact_record_limit": MAX_LAUNCH_RECORDS,
+                    "detail_limit": limit,
+                },
+                "hosts": results,
             }
         )
-    if getattr(args, "json", False):
-        _print_json({"hosts": results})
         return 0
     for result in results:
         if not result["root_present"]:
-            print(f"{result['host']}: no artifacts at {result['root']}")
+            print(f"{result['host']}: artifact root is absent at {result['root']}")
+            continue
+        if not result["evidence_count"]:
+            print(
+                f"{result['host']}: no verified card-delivery proof found in "
+                f"{result['artifacts_scanned']} bounded artifact candidate(s); this does "
+                "not prove that no children ran"
+            )
             continue
         print(
             f"{result['host']}: {result['staffed_children']} children provably staffed "
-            f"({result['legacy_deliveries']} legacy) under {result['root']}"
+            f"({result['legacy_deliveries']} legacy-only; "
+            f"{result['uncorrelated_staffed_children']} uncorrelated) under {result['root']}"
         )
         for child in result["children"]:
             slugs = ", ".join(card["slug"] for card in child["cards"]) or "-"

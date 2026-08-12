@@ -2135,13 +2135,15 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         host: str = "",
         limit: int = 50,
     ) -> list[dict[str, Any]]:
-        """Return recently closed turns that Agency either withheld or let pass.
+        """Return recently closed turns that Agency withheld or observed while blind.
 
         Rule 8 draws exactly one line: Agency withholds a turn only when its
         verifier evaluated the response and rejected it, never because Agency
         itself was unavailable. Both sides of that line close a run with a
-        distinguishable status, so this one read makes the rule auditable after
-        the fact instead of leaving it a claim about the code.
+        distinguishable status, so this one read makes Agency's outcome
+        auditable after the fact instead of leaving it a claim about the code.
+        A blind status alone does not prove what the host did with the response;
+        historical rows can predate the pass-through rule.
 
         Read-only, and deliberately not filtered to a session: a withheld turn
         is rare enough to be worth seeing across the whole store.

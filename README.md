@@ -694,11 +694,15 @@ reversible roster specialists.
 The optional local dashboard is selected by default during installation and can
 be excluded with `--no-dashboard`. It shows staffing decisions, provider and
 model receipts, host compatibility/status, roster and workforce evidence,
-recorded native-child events, recent turns, cached/background update status,
-and the same supported configuration and runtime controls as the owner CLI.
-It is an observatory and owner control plane, not a child-execution scheduler:
-native-child rows remain historical host evidence, and a row alone does not
-prove a specialist card was delivered.
+recorded native-child events, routing latency, specialist-selection frequency,
+recent turns, cached/background update status, and the same supported
+configuration and runtime controls as the owner CLI. Its Evidence view keeps
+three authorities separate: host-written artifacts can prove card delivery,
+Store statuses can show Rule-8 exceptions without proving what a host did, and
+trusted staged/cache files can show measured wiring drift without a live
+canary. It is an observatory and owner control plane, not a child-execution
+scheduler: native-child rows remain historical host evidence, and a row alone
+does not prove a specialist card was delivered.
 
 `agency dashboard service open` is an owner convenience operation: it ensures
 an Agency-owned service is installed and running before opening its loopback

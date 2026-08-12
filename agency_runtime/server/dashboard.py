@@ -30,6 +30,15 @@ from agency_runtime.core.agent_activation import (
     updated_disabled_agents,
 )
 from agency_runtime.core.bounded_json import safe_load_bounded_json
+from agency_runtime.core.child_delivery_evidence import (
+    MAX_CHILD_ARTIFACTS,
+    MAX_CHILD_DETAIL_RESULTS,
+    MAX_CHILD_FILESYSTEM_ENTRIES,
+    MAX_LAUNCH_PREFIX_BYTES,
+    MAX_LAUNCH_RECORDS,
+    child_delivery_projection,
+    default_child_artifact_root,
+)
 from agency_runtime.core.cli_transport import discover_cli_models
 from agency_runtime.core.config import load_config
 from agency_runtime.core.configuration import (
@@ -68,6 +77,7 @@ from agency_runtime.core.host_capabilities import (
     project_host_capability_receipt,
 )
 from agency_runtime.core.host_control import HostControlConflictError
+from agency_runtime.core.host_wiring_drift import MAX_WIRING_FILE_BYTES, host_wiring
 from agency_runtime.core.observability import (
     RuntimeBoundary,
     correlate_current_observation,
@@ -92,6 +102,10 @@ from agency_runtime.core.routing_latency import routing_latency_projection
 from agency_runtime.core.routing_snapshot import (
     RoutingSnapshot,
     capture_operational_routing_snapshot,
+)
+from agency_runtime.core.rule8_evidence import (
+    MAX_RULE8_EVIDENCE_ROWS,
+    rule8_evidence_projection,
 )
 from agency_runtime.core.runtime_control import (
     RuntimeControlConflictError,
@@ -164,6 +178,7 @@ _ROUTE_LAB_REJECTION_TEXT_BYTES = 256
 _DASHBOARD_COLLECTION_PAGE_MAX = 200
 _CONTROL_SNAPSHOT_CAPTURE_ATTEMPTS = 3
 MAX_WORKFORCE_DETAIL_RESPONSE_BYTES = 2 * 1024 * 1024
+MAX_EVIDENCE_RESPONSE_BYTES = 2 * 1024 * 1024
 _COLLECTION_CURSOR_RE = re.compile(r"[A-Za-z0-9_-]{1,1024}\Z")
 
 
@@ -436,6 +451,19 @@ def _strict_query_limit(
     if not 1 <= parsed <= maximum:
         raise ValueError(f"{label} must be between 1 and {maximum}")
     return parsed
+
+
+def _strict_evidence_host(
+    values: Mapping[str, str],
+    *,
+    allowed: Sequence[str],
+) -> str:
+    """Return one canonical evidence host or the empty all-host filter."""
+
+    raw = values.get("host", "")
+    if raw and (raw != raw.strip().casefold() or raw not in allowed):
+        raise ValueError(f"evidence host must be one of: {', '.join(allowed)}")
+    return raw
 
 
 def _roster_operations_query(
@@ -1114,14 +1142,12 @@ def _dashboard_observation_operation(method: str, path: str) -> str:
     known = {
         ("GET", "/api/activity"): "activity",
         ("GET", "/api/agents/lookup"): "agent_lookup",
-        ("GET", "/api/config"): "config",
         ("GET", "/api/control"): "control",
         ("GET", "/api/health"): "health",
         ("GET", "/api/hiring"): "hiring",
         ("GET", "/api/hosts"): "hosts",
         ("GET", "/api/inference"): "inference",
         ("GET", "/api/live"): "live",
-        ("GET", "/api/overview"): "overview",
         ("GET", "/api/policy"): "policy",
         ("GET", "/api/providers/models"): "provider_models",
         ("GET", "/api/roster"): "roster",
@@ -1132,7 +1158,10 @@ def _dashboard_observation_operation(method: str, path: str) -> str:
         ("GET", "/api/roster/sources"): "roster_sources",
         ("GET", "/api/db-stats"): "db_stats",
         ("GET", "/api/evidence/latency"): "evidence_latency",
+        ("GET", "/api/evidence/children"): "evidence_children",
+        ("GET", "/api/evidence/rejections"): "evidence_rejections",
         ("GET", "/api/evidence/selections"): "evidence_selections",
+        ("GET", "/api/evidence/wiring"): "evidence_wiring",
         ("GET", "/api/runtime"): "runtime",
         ("GET", "/api/snapshots"): "snapshots",
         ("GET", "/api/update"): "update",
@@ -1344,7 +1373,6 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         try:
             handler = {
                 "/api/live": self._handle_live,
-                "/api/overview": self._handle_overview,
                 "/api/roster": self._handle_roster,
                 "/api/roster/operations": self._handle_roster_operations,
                 "/api/roster/reviews": self._handle_roster_reviews,
@@ -1352,8 +1380,11 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "/api/roster/scans": self._handle_roster_scans,
                 "/api/roster/sources": self._handle_roster_sources,
                 "/api/db-stats": self._handle_db_stats,
+                "/api/evidence/children": self._handle_evidence_children,
                 "/api/evidence/latency": self._handle_evidence_latency,
+                "/api/evidence/rejections": self._handle_evidence_rejections,
                 "/api/evidence/selections": self._handle_evidence_selections,
+                "/api/evidence/wiring": self._handle_evidence_wiring,
                 "/api/agents/lookup": self._handle_agent_lookup,
                 "/api/activity": self._handle_activity,
                 "/api/control": self._handle_control,
@@ -1365,7 +1396,6 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "/api/runtime": lambda: self._json_ok(
                     {"master": self._master_control(use_cache=False)}
                 ),
-                "/api/config": self._handle_config,
                 "/api/providers/models": self._handle_provider_models,
                 "/api/health": lambda: self._json_ok({"status": "ok"}),
                 "/api/snapshots": self._handle_snapshots,
@@ -1645,25 +1675,58 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         else:
             mark_current_observation("ok", "completed", only_if_unset=True)
 
-    def _handle_overview(self) -> None:
-        stats = self.store.database_stats()
-        activity_snapshot = self.store.dashboard_activity_snapshot(limit=200)
-        activity = _dashboard_activity(activity_snapshot["activity"])
-        cfg = load_config(self.config_path)
-        state = read_config_state(self.config_path)
-        binding = _store_service_binding(self.store, state)
-        self._json_ok(
-            {
-                **_live_overview(activity, stats),
-                "inference": inference_operational_snapshot(cfg, activity),
-                "roster_count": self.store.count_enabled_roster(),
-                "retention_days": cfg.observability.retention_days,
-                "capture_content": cfg.observability.capture_content,
-                "counts": stats["tables"],
-                "master": self._master_control(),
-                "service_binding": binding,
-                **_store_response_identity(state, binding),
-            }
+    def _handle_evidence_children(self) -> None:
+        """Return bounded host-written proof, not Agency staffing attempts."""
+
+        values = _single_query_values(
+            self.path,
+            allowed=frozenset({"host", "limit"}),
+            maximum_fields=2,
+        )
+        host = _strict_evidence_host(values, allowed=("claude", "codex"))
+        limit = _strict_query_limit(
+            values,
+            default=50,
+            maximum=MAX_CHILD_DETAIL_RESULTS,
+            label="child evidence detail limit",
+        )
+        hosts = (host,) if host else ("claude", "codex")
+        payload = {
+            "schema_version": "agency.dashboard.child_delivery.v1",
+            "sampled_at": _utc_now(),
+            "source": {
+                "authority": "host_written_child_artifacts",
+                "artifact_hosts": ["claude", "codex"],
+                "agency_store_consulted": False,
+                "evidence_meaning": (
+                    "hash_verified_specialist_cards_in_child_input_before_first_speech"
+                ),
+            },
+            "window": {
+                "kind": "newest_verified_child_delivery_evidence",
+                "hosts": list(hosts),
+                "detail_limit": limit,
+            },
+            "bounds": {
+                "artifact_scan_limit_per_host": MAX_CHILD_ARTIFACTS,
+                "filesystem_visit_limit_per_host": MAX_CHILD_FILESYSTEM_ENTRIES,
+                "artifact_prefix_bytes": MAX_LAUNCH_PREFIX_BYTES,
+                "artifact_record_limit": MAX_LAUNCH_RECORDS,
+                "detail_limit": limit,
+            },
+            "hosts": [
+                child_delivery_projection(
+                    default_child_artifact_root(item),
+                    host=item,
+                    limit=limit,
+                )
+                for item in hosts
+            ],
+        }
+        self._send_json(
+            HTTPStatus.OK,
+            payload,
+            maximum_bytes=MAX_EVIDENCE_RESPONSE_BYTES,
         )
 
     def _handle_evidence_latency(self) -> None:
@@ -1714,6 +1777,73 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "service_binding": binding,
                 **_store_response_identity(state, binding),
             }
+        )
+
+    def _handle_evidence_rejections(self) -> None:
+        """Return the exact bounded partition of recent Rule-8 exceptions."""
+
+        values = _single_query_values(
+            self.path,
+            allowed=frozenset({"host", "limit"}),
+            maximum_fields=2,
+        )
+        host = _strict_evidence_host(values, allowed=EXECUTION_HOSTS)
+        limit = _strict_query_limit(
+            values,
+            default=50,
+            maximum=MAX_RULE8_EVIDENCE_ROWS,
+            label="Rule-8 evidence limit",
+        )
+        state = read_config_state(self.config_path)
+        binding = _require_store_service_binding(self.store, state)
+        rows = self.store.get_withheld_and_published_runs(host=host, limit=limit)
+        payload = {
+            "schema_version": "agency.dashboard.rule8_evidence.v1",
+            "sampled_at": _utc_now(),
+            "source": {
+                "authority": "agency_store",
+                "table": "runs",
+                "field": "status",
+                "host_execution_proof": False,
+            },
+            **rule8_evidence_projection(rows, host=host, limit=limit),
+            "service_binding": binding,
+            **_store_response_identity(state, binding),
+        }
+        self._send_json(
+            HTTPStatus.OK,
+            payload,
+            maximum_bytes=MAX_EVIDENCE_RESPONSE_BYTES,
+        )
+
+    def _handle_evidence_wiring(self) -> None:
+        """Return measured wiring and explicit not-measured host entries."""
+
+        values = _single_query_values(
+            self.path,
+            allowed=frozenset({"host"}),
+            maximum_fields=1,
+        )
+        host = _strict_evidence_host(values, allowed=EXECUTION_HOSTS)
+        hosts = (host,) if host else EXECUTION_HOSTS
+        self._send_json(
+            HTTPStatus.OK,
+            {
+                "schema_version": "agency.dashboard.host_wiring.v1",
+                "sampled_at": _utc_now(),
+                "source": {
+                    "authority": "trusted_staged_and_host_cache_files",
+                    "measured_hosts": ["claude"],
+                    "live_canary": False,
+                },
+                "window": {
+                    "kind": "current_wiring_files",
+                    "hosts": list(hosts),
+                },
+                "bounds": {"file_prefix_bytes": MAX_WIRING_FILE_BYTES},
+                "hosts": [host_wiring(item).as_dict() for item in hosts],
+            },
+            maximum_bytes=MAX_EVIDENCE_RESPONSE_BYTES,
         )
 
     def _handle_live(self) -> None:
@@ -2389,15 +2519,6 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             }
         )
 
-    def _handle_config(self) -> None:
-        state = read_config_state(self.config_path)
-        self._json_ok(
-            _config_payload(
-                state,
-                service_binding=_store_service_binding(self.store, state),
-            )
-        )
-
     def _handle_provider_models(self) -> None:
         query = parse_qs(urlparse(self.path).query, keep_blank_values=False)
         transport = str((query.get("transport") or ["codex"])[0]).strip().casefold()
@@ -2622,8 +2743,18 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 }
             )
             return
-        snapshot, identity = self._routing_operation_snapshot()
-        if len(task) > snapshot.config.selector.max_user_msg_len:
+        # Prove this process still owns the configured Store before inspecting
+        # the requested execution host. Both checks are intentionally ahead of
+        # the full routing-catalog capture: malformed or unavailable hosts must
+        # not pay the expensive snapshot cost, while a stale service still gets
+        # the same restart-required 409 as every Store-bound operation.
+        with config_read_lock(self.config_path):
+            state = read_config_state(self.config_path)
+            _require_store_service_binding(self.store, state)
+            config = load_config(self.config_path)
+            if resolve_config_path(config.config_path) != self.config_path:
+                raise ConfigurationError("routing configuration identity is invalid")
+        if len(task) > config.selector.max_user_msg_len:
             raise ValueError("task exceeds the configured maximum length")
         requested_host = body.get("host")
         execution_host, capability_receipt = _route_lab_host_capability(
@@ -2632,6 +2763,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             requested_host=requested_host,
             global_enabled=True,
         )
+        snapshot, identity = self._routing_operation_snapshot()
         trace_id = str(uuid4())
         correlate_current_observation(trace_id)
         receipt = explain_route(
