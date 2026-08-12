@@ -799,6 +799,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3a63590e` | 2026-08-11 | docs(roadmap): checkpoint AR-236 CI budget repair | null | null |
 | `8a5c2de2` | 2026-08-11 | test(dashboard): cover AR-236 evidence boundaries | null | null |
 | `e70f521d` | 2026-08-11 | docs(roadmap): checkpoint AR-236 coverage repair | null | null |
+| `8d9e5058` | 2026-08-11 | fix(docs): reconcile canonical worklog history | null | null |
+| `d6169e63` | 2026-08-11 | docs(roadmap): checkpoint AR-254 history repair | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
