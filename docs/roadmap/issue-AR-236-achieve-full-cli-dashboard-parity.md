@@ -80,7 +80,8 @@ prioritized roadmap. The headline:
 
 The bounded vision-alignment slice is implemented locally on
 `codex/dashboard-vision-parity`, rebased onto the companion CLI re-scope, and
-focused-verification clean. It deliberately does not claim umbrella parity:
+current-code browser and fast-verification complete. It deliberately does not
+claim umbrella parity:
 
 - [x] Rewrite README behavior around inference staffing, host-owned execution,
       request-scoped specialist cards, fail-open routing, and observable proof.
@@ -103,8 +104,20 @@ focused-verification clean. It deliberately does not claim umbrella parity:
       lifecycle graph survives while historical host-event evidence remains.
 - [x] Complete two bounded reviews and focused verification: 278 Python tests,
       124 dashboard tests, targeted Ruff lint/format, and diff checks pass.
-- [ ] Complete current-code real-browser populated/empty/partial/responsive/
-      refresh-cadence QA, the named fast spine, and the final recovery ledger.
+- [x] Complete current-code real-browser populated/empty/partial/responsive/
+      refresh-cadence QA and execute the named fast spine. The Python spine is
+      668 passed/6 skipped, dashboard UI is 124/124, and routing is 39/39. The
+      decision-conformance baseline has an inherited `origin/main` virtualenv-
+      trust incompatibility before mutations; the focused node passes directly
+      on both trees and fails identically only inside the evaluator.
+
+The populated browser projection matches the owner observation without
+hardcoding it: 202 selection-bearing decisions, 39 distinct specialists, 491
+occurrences, 82.3% top-ten concentration, and `code-reviewer` in 146 decisions
+(72.3%). Empty evidence stays unknown rather than healthy; a wiring-only failure
+retains only that source's last-good state; and all five evidence endpoints stay
+off the hot poll. The tested 1440, 1024, and 390 pixel layouts do not overflow.
+All disposable browser fixtures, processes, and token-bearing logs were removed.
 
 Exact implementation details, test results, conflict warnings, authorization
 boundaries, and restart commands live in the

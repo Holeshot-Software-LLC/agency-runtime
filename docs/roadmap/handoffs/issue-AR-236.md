@@ -22,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-236
 branch: codex/dashboard-vision-parity
-evidence_commit: 0596fd69dae319d61481a26ea5ea77cc342c37aa
-minimum_ledger_commit: be7d44b3dd7bbcc88b474df54023fb2bcd41852a
+evidence_commit: 3ee585fedd98b9aa0d7f49e3c240685a11288b28
+minimum_ledger_commit: 6256035aca2e554d7109e39480ab6629ba523190
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245
 ---
@@ -35,11 +35,12 @@ issue owns acceptance; this capsule owns the next bounded execution slice.
 
 ## checkpoint
 
-- AR-236 remains open. Product commit `0596fd69` is focused-verification clean;
-  current-code browser QA and the named fast spine remain.
-- The branch was rebased onto `b7832a03`, which merged the companion CLI
-  vision re-scope. The four earlier AR-236 commits are now `29c3ce92`,
-  `84e6a7d0`, `748490f4`, and `be7d44b3`.
+- AR-236 remains open. Product commit `3ee585fe` is current-code browser and
+  fast-verification complete for this bounded vision-alignment slice. Later
+  owner UI slices from the endpoint keep-list still belong to the umbrella.
+- The branch is rebased onto `9c4112c3`, preserving the companion CLI re-scope
+  and later operator-policy changes. The four earlier AR-236 commits are now
+  `50fe3e07`, `f4f35509`, `ebcc2eb9`, and `b448d637`.
 - The rebase preserved the new CLI keep-list, AR-119 notes, worklog rows, host
   parity tests, and routing-intent declaration repair. AR-236 adds the missing
   retained-run orphan guard without duplicating the refreshed declaration.
@@ -85,6 +86,29 @@ issue owns acceptance; this capsule owns the next bounded execution slice.
 - Selection bars are semantic list items with CSP-safe native `<progress>`
   visuals. Dedicated concise live regions announce metric/Vision completion;
   dynamic proof text wraps at narrow widths.
+- A source-only real-browser pass proved the populated Store projection: 202
+  selection-bearing decisions, 39 distinct specialists, 491 occurrences, a
+  263-role active roster, 82.3% top-ten concentration, and `code-reviewer` at
+  146 decisions/72.3%. Latency rendered p50 15.9 s, p95 25.9 s, provider p50
+  9.54 s, Agency p50 6.36 s, and 1.00 calls/decision as over budget.
+- Empty-browser evidence stayed neutral: selection was `NO DATA`, latency was
+  `UNKNOWN` with dashes, child proof stated that no observed cards does not
+  mean no children, Rule 8 said no matches is not a health claim, and all wiring
+  outcomes remained unknown without install-history inference.
+- An injected wiring-only failure made only wiring `STALE`, retained its five
+  last-good rows, and left child delivery and Rule 8 `OBSERVED`; removing the
+  sentinel restored all three sources. The clean populated/empty runs had no
+  console errors, and recovery added none after the deliberate HTTP 400.
+- At 1440x900, 1024x768, and 390x844 the document had no horizontal overflow;
+  dynamic proof paths and selection rows did not clip. The chart is an
+  accessible list with 15 list items and aria-hidden native progress visuals.
+- Request logging proved latency/selections load once on initial Overview while
+  Vision stays unloaded; hot polling did not refetch any of the five evidence
+  endpoints. Evidence entry, proof refresh, Overview reentry, and global refresh
+  changed only their intended source counts. Every log row was token-free.
+- Four verified QA Python processes and four disposable fixture roots were
+  removed, including the token-bearing stdout; no AR-236 process or temp root
+  remains.
 - Endpoint keep-list: retain activity, roster diff/scans/sources, DB stats, and
   duplicate review for later owner UI slices; preserve hosts/inference/runtime/
   health/policy/search as service contracts; do not add panels merely because a
@@ -92,60 +116,56 @@ issue owns acceptance; this capsule owns the next bounded execution slice.
 
 ## exact-blocker
 
-- Context telemetry was 21.6% remaining. Product commit `0596fd69` freezes the
-  verified slice; this recovery/ledger pair completes the required clean local
-  checkpoint before another live browser evaluation.
-- An earlier source-browser pass proved populated metrics, responsive layout,
-  populated/partial Vision states, and clean console before the final review
-  fixes. It is useful discovery, not current-code acceptance. The current build
-  still needs populated, empty, partial, narrow, accessibility, and request-
-  cadence browser proof.
-- The named fast Python spine, final docs gates, routing/decision evals, and QA
-  fixture cleanup remain. Exhaustive coverage/compatibility and hosted workflows
-  are not ordinary gates and are unauthorized.
+- This bounded slice has no known product blocker. AR-236 stays open because the
+  keep-list reserves activity, roster diff/scans/sources, DB stats, and duplicate
+  review for later owner UI decisions; service-only routes remain non-UI.
+- Decision conformance could not enter its mutation phase: its baseline forces
+  `AGENCY_CI_PYTHON` to the existing main-worktree virtualenv, whose parent
+  namespace the executable trust policy correctly rejects. The focused failing
+  test passes directly on both this branch and `origin/main`, then fails with the
+  same `launcher_identity` error inside the evaluator on both. Relevant source
+  is identical, so this is an inherited evaluator/environment incompatibility,
+  not an AR-236 regression. Source stayed unchanged; 83 mutations ran zero.
 - Metadata and policy checks pass. Refreshed main leaves `update_worklog.py`
-  stale and `verify_docs.py` at 12 inherited history errors: one index-set
-  mismatch covering seven main commits, seven inaccurate rows for those same
-  commits, and four pre-existing ledger-path violations. No AR-236 row fails.
+  stale and `verify_docs.py` at 18 inherited history errors: one index-set
+  mismatch covering 13 main commits, 13 inaccurate rows for those same commits,
+  and four pre-existing ledger-path violations. No AR-236 row fails.
+- Exhaustive coverage/compatibility and hosted workflows were not run; they are
+  not ordinary gates and remain unauthorized.
 - Tracker #245 may not reflect this locally reopened scope. External changes
   remain unauthorized.
 
 ## same-task-continuity
 
-After every compaction, reread this capsule, the canonical AR-236 issue, and
-`git status` before acting. Continue in this worktree; do not restart the audit.
+After every compaction, reread this capsule, the canonical AR-236 issue, and `git status` before acting. Continue in this worktree; do not restart the audit.
 
 ## next-bounded-work-package
 
-1. Drop only the verified AR-236 rebase stash, never the unrelated main-worktree
-   stash. Recheck telemetry immediately before source-dashboard browser QA.
-2. Use the approved private temp fixture, never expose the token, and do not
-   touch the installed service.
-3. Prove populated, empty, partial-failure, responsive, accessibility, and
-   request cadence. Metrics and Vision must remain off the 2.5-second hot poll.
-4. Remove the temp harness/fixtures, run the named fast spine and docs gates,
-   then update this capsule and canonical issue with exact evidence.
-5. Create the final local recovery/ledger pair. Do not push; check with the
-   owner before any PR or integration step.
+1. Before editing, reread this capsule and fetch/rebase `origin/main`; the owner has active companion worktrees and may add more scope.
+2. Ask the owner which later owner-facing keep-list slice should run next: activity, roster diff/scans/sources, DB stats, or duplicate review.
+3. Re-audit that slice against the current CLI vision before adding UI; do not turn service contracts into panels merely because routes exist.
+4. Preserve the evidence boundaries and rerun only proportionate focused checks
+   plus the named fast spine at the next hard checkpoint.
+5. Do not push or open a PR. Check with the owner first and account for their
+   other worktree changes before any integration step.
 
 ## verification
 
 ~~~text
-# Rebased focused product proof:
-python -m pytest tests/test_child_delivery_evidence.py \
-  tests/test_evidence_rejections.py tests/test_host_wiring_drift.py \
-  tests/test_cli_parser_contract.py tests/test_dashboard.py \
-  tests/test_routing_intent.py tests/test_coverage_closure_delegation_targets.py \
-  tests/test_runtime_table_declarations.py tests/test_host_boundary_parity.py -q
-# 278 passed
-node --check agency_runtime/dashboard/{app,dashboard-core,dashboard-live,dashboard-render}.js
-node tests/dashboard_ui.test.mjs
-# 124 passed
-uvx ruff check <changed Python files>
-uvx ruff format --check <changed Python files>
-# passed
-git diff --check
-# passed
+Post-rebase focused product pytest: 278; new-base policy pytest: 26.
+Post-rebase warning-strict Python spine: 668 passed, 6 skipped, 0 failed.
+node --test tests/dashboard_ui.test.mjs  # 124 passed, 0 failed
+python -m agency_runtime.cli eval routing --json --no-details  # 39/39
+python -m agency_runtime.cli eval decision-conformance --repository . --json
+# Inherited launcher_identity baseline failure; 0/83 mutations executed.
+# Direct focused node: branch 1 passed; origin/main 1 passed.
+uvx ruff check agency_runtime tests scripts  # passed
+uvx ruff format --check agency_runtime tests scripts  # 651 files
+python scripts/docs_metadata.py --check  # 675 files
+python scripts/update_policy_availability.py --check  # passed
+python scripts/update_worklog.py --check  # inherited stale index
+python scripts/verify_docs.py  # 18 inherited main-history errors
+git diff --check  # passed
 ~~~
 
 ## constraints
