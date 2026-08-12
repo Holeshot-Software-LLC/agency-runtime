@@ -641,21 +641,11 @@ def test_cli_adapter_wrappers_cover_availability_prompts_and_preflight(
     monkeypatch.setattr(claude_wrapper.shutil, "which", lambda _name: "claude")
     monkeypatch.setattr(codex_wrapper.shutil, "which", lambda _name: "codex")
     monkeypatch.setattr(generic_wrapper.shutil, "which", lambda _name: "generic")
-    monkeypatch.setattr(claude_wrapper, "ClaudeExecBackend", _BackendStub)
-    monkeypatch.setattr(codex_wrapper, "CodexExecBackend", _BackendStub)
-    monkeypatch.setattr(generic_wrapper, "GenericCLIBackend", _BackendStub)
-
     claude = claude_wrapper.ClaudeAdapter(store=store)  # type: ignore[arg-type]
     codex = codex_wrapper.CodexAdapter(store=store)  # type: ignore[arg-type]
     generic = generic_wrapper.GenericAdapter(store=store, cli_cmd="generic")  # type: ignore[arg-type]
     assert claude.is_available() and codex.is_available() and generic.is_available()
-    assert claude.get_delegate_backend() == "claude_exec"
-    assert codex.get_delegate_backend() == "codex_exec"
-    assert generic.get_delegate_backend() == "generic_command"
     assert generic_wrapper.GenericAdapter(store=store).is_available() is False  # type: ignore[arg-type]
-    assert claude.exec("task", str(tmp_path), "specialist")["status"] == "ok"
-    assert codex.exec("task", str(tmp_path), "specialist")["status"] == "ok"
-    assert generic.exec("task", ["--safe"], str(tmp_path))["status"] == "ok"
 
     monkeypatch.setattr(
         codex,
@@ -676,10 +666,6 @@ def test_cli_adapter_wrappers_cover_availability_prompts_and_preflight(
     )
     assert codex.run_preflight("s", "complex") is None
 
-    _BackendStub.result = {"status": "unavailable"}
-    assert claude.exec("task", str(tmp_path))["status"] == "unavailable"
-    _BackendStub.result = {"status": "ok"}
-
 
 def test_plugin_import_surfaces_and_store_reports() -> None:
     plugin = importlib.import_module("agency_runtime.adapters.generic.plugin")
@@ -690,8 +676,6 @@ def test_plugin_import_surfaces_and_store_reports() -> None:
         OpenClawAdapter(store=store),  # type: ignore[arg-type]
     ):
         assert adapter.store is store
-    assert HermesAdapter(store=store).get_delegate_backend() == "delegate_task"  # type: ignore[arg-type]
-    assert OpenClawAdapter(store=store).get_delegate_backend() == "sessions_spawn"  # type: ignore[arg-type]
     openclaw = OpenClawAdapter(store=store)  # type: ignore[arg-type]
     openclaw.apply_finalization = lambda *_args, **_kwargs: "final"  # type: ignore[method-assign]
     assert openclaw.on_response_finalizing("draft") == "final"

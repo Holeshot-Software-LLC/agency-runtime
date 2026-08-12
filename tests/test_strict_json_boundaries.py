@@ -16,7 +16,6 @@ from agency_runtime.cli.config_wizard import (
 )
 from agency_runtime.core import canary, detect, doctor, smoke
 from agency_runtime.core.cli_transport import _parse_claude, _parse_codex
-from agency_runtime.core.delegation.backend_command import CommandBackend
 from agency_runtime.core.installer_contracts import NativeCommandResult
 from agency_runtime.core.installer_native import _json_output
 from agency_runtime.core.selector import judge
@@ -110,31 +109,6 @@ def test_cli_judges_enforce_output_size_limit() -> None:
 )
 def test_tool_result_json_fails_closed(payload: str) -> None:
     assert _tool_failure_reason(payload) == "tool call returned invalid structured output"
-
-
-@pytest.mark.parametrize(
-    "payload",
-    ['{"ok":true,"ok":false}', '{"ok":NaN}'],
-)
-def test_command_backend_rejects_ambiguous_json(payload: str) -> None:
-    backend = CommandBackend(command=("unused",), output_format="json")
-
-    with pytest.raises(ValueError, match="invalid bounded JSON output"):
-        backend.parse_stdout(payload)
-
-
-def test_command_backend_enforces_caller_output_limit() -> None:
-    backend = CommandBackend(command=("unused",), output_format="json", max_output_chars=8)
-
-    with pytest.raises(ValueError, match="configured limit"):
-        backend.parse_stdout('{"value":1}')
-
-
-def test_command_backend_rejects_ambiguous_jsonl_line() -> None:
-    backend = CommandBackend(command=("unused",), output_format="jsonl")
-
-    with pytest.raises(ValueError, match="line 2"):
-        backend.parse_stdout('{"ok":true}\n{"ok":true,"ok":false}')
 
 
 @pytest.mark.parametrize(

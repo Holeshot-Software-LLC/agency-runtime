@@ -22,8 +22,6 @@ from agency_runtime.core.config import (
     ObservabilityConfig,
     _apply_env_overrides,
 )
-from agency_runtime.core.delegation.backend_command import _raise_or_result
-from agency_runtime.core.delegation.backend_contracts import BackendExecutionError
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.roster.ingress import (
     RosterSyncError,
@@ -326,16 +324,6 @@ def test_canary_backend_never_uses_cwd_as_an_implicit_managed_target(
             native=None,
             resolver=lambda _host: host,
         )
-
-
-def test_backend_error_check_seam_returns_or_raises_exact_result() -> None:
-    result = {"status": "failed", "exit_code": 7}
-    error = BackendExecutionError("failed", result=result)
-
-    assert _raise_or_result(error, check=False) is error.result
-    with pytest.raises(BackendExecutionError) as raised:
-        _raise_or_result(error, check=True)
-    assert raised.value is error
 
 
 @pytest.mark.parametrize(

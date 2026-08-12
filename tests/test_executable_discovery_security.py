@@ -11,8 +11,9 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core import git_runner as lifecycle_git
 from agency_runtime.core import process_argv
-from agency_runtime.core.delegation import backends, lifecycle_git
+from agency_runtime.core.delegation import backends
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.process_argv import (
     freeze_process_argv,

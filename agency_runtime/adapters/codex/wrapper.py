@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import shutil
+from typing import Any
 
 from agency_runtime.adapters.base import BaseAdapter
 from agency_runtime.core.store.sqlite import Store
@@ -27,3 +28,17 @@ class CodexAdapter(BaseAdapter):
     def is_available(self) -> bool:
         """Check if codex CLI is installed."""
         return bool(shutil.which(self.codex_cmd))
+
+    def run_preflight(
+        self,
+        session_id: str,
+        user_message: str,
+        *,
+        trace_id: str = "",
+    ) -> dict[str, Any] | None:
+        """Run the shared, trace-scoped selector preflight before Codex."""
+        return self.build_preflight_context(
+            session_id,
+            user_message,
+            trace_id=trace_id,
+        )

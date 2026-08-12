@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import os
-import subprocess
 from pathlib import Path
-from typing import Any
 
 import pytest
 
-from agency_runtime.core.delegation import backend_command
 from agency_runtime.core.installer import _command_environment
 from agency_runtime.core.process_environment import least_privilege_subprocess_environment
 
@@ -118,43 +115,3 @@ def test_installer_environment_omits_unrelated_credentials_and_host_roots(
     assert "AWS_SECRET_ACCESS_KEY" not in child
     assert "CLAUDE_CONFIG_DIR" not in child
     assert "HERMES_HOME" not in child
-
-
-def test_delegated_process_receives_private_general_home_and_selected_auth_root(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    repository = tmp_path / "repository"
-    repository.mkdir()
-    safe_bin = tmp_path / "safe-bin"
-    safe_bin.mkdir()
-    codex_home = tmp_path / "codex-auth"
-    monkeypatch.setenv("CODEX_HOME", str(codex_home))
-    monkeypatch.setenv("OPENAI_API_KEY", "must-not-reach-child")
-    observed: dict[str, Any] = {}
-
-    def run(argv: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
-        observed.update(kwargs["env"])
-        private_home = Path(observed["HOME"])
-        assert private_home.is_dir()
-        assert observed["USERPROFILE"] == str(private_home)
-        return subprocess.CompletedProcess(argv, 0, stdout="done", stderr="")
-
-    monkeypatch.setattr(backend_command, "_run_owned_process", run)
-    result = backend_command._run_backend_process(
-        backend_name="codex",
-        extra_env={"PATH": str(safe_bin)},
-        argv=["tool"],
-        cwd=str(repository),
-        stdout=None,
-        stderr=None,
-        timeout=1,
-        input_text=None,
-        forbidden_roots=(repository,),
-    )
-
-    assert result.returncode == 0
-    assert observed["CODEX_HOME"] == str(codex_home)
-    assert observed["PATH"] == str(safe_bin.resolve())
-    assert "OPENAI_API_KEY" not in observed
-    assert not Path(observed["HOME"]).exists()

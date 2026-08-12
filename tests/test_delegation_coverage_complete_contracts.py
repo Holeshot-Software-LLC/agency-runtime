@@ -2,32 +2,17 @@
 
 from __future__ import annotations
 
-import inspect
-import json
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
 from agency_runtime.core.delegation import (
-    backend_hosts,
     backend_security,
-    backends,
     lifecycle_graph,
-    lifecycle_orchestration,
 )
-from agency_runtime.core.delegation import (
-    lifecycle as lifecycle_facade,
-)
-from agency_runtime.core.delegation.backend_contracts import (
-    BackendRegistry,
-    BackendUnavailableError,
-)
-from agency_runtime.core.delegation.ledger import DelegationLedger
 from agency_runtime.core.delegation.lifecycle_types import (
     DependencyGraph,
-    WorktreeInfo,
     WorkUnit,
 )
 
@@ -46,110 +31,6 @@ class _RegistryBackend:
         return {"backend": self.name, **kwargs}
 
 
-def test_backend_registry_unregisters_duplicates_and_builds_delegate_callable() -> None:
-    first = _RegistryBackend("same")
-    second = _RegistryBackend("same")
-    selected = _RegistryBackend("selected", available=True)
-    registry = BackendRegistry([first, second, selected])
-
-    registry.unregister("same")
-    delegate = registry.delegate_func(preferred="selected")
-
-    assert [backend.name for backend in registry.available_backends()] == ["selected"]
-    assert delegate(task="work") == {"backend": "selected", "task": "work"}
-    assert delegate.backend_name == "selected"
-
-
-def test_backend_registry_unavailable_diagnostics_cover_all_provider_shapes() -> None:
-    reason = _RegistryBackend("reason")
-    reason.availability = lambda: {"reason": "binary missing"}  # type: ignore[attr-defined]
-    broken = _RegistryBackend("broken")
-
-    def fail_availability() -> dict[str, str]:
-        raise OSError("probe failed")
-
-    broken.availability = fail_availability  # type: ignore[attr-defined]
-    plain = _RegistryBackend("plain")
-
-    with pytest.raises(BackendUnavailableError) as captured:
-        BackendRegistry([reason, broken, plain]).select_backend()
-
-    message = str(captured.value)
-    assert "reason: binary missing" in message
-    assert "broken: availability check failed (OSError)" in message
-    assert "plain: unavailable" in message
-
-
-@pytest.mark.parametrize(
-    ("call", "message"),
-    [
-        (lambda: backend_hosts.HermesDelegateBackend().parse_stdout("  "), "no final"),
-        (
-            lambda: backend_hosts.OpenClawSessionsBackend(agent_id=" ").build_command("x"),
-            "agent_id",
-        ),
-        (
-            lambda: backend_hosts.OpenClawSessionsBackend(agent_id="bad\x00id").build_command("x"),
-            "agent_id",
-        ),
-        (
-            lambda: backend_hosts.OpenClawSessionsBackend().parse_stdout("[]"),
-            "must be an object",
-        ),
-        (
-            lambda: backend_hosts.CodexExecBackend().parse_stdout(
-                json.dumps({"type": "turn.failed"})
-            ),
-            "failure event",
-        ),
-        (
-            lambda: backend_hosts.CodexExecBackend().parse_stdout(
-                json.dumps({"type": "item.completed", "item": {}})
-            ),
-            "without turn.completed",
-        ),
-        (
-            lambda: backend_hosts.ClaudeExecBackend().parse_stdout("[]"),
-            "must be an object",
-        ),
-        (
-            lambda: backend_hosts.ClaudeExecBackend().parse_stdout(
-                json.dumps({"subtype": "still-running", "result": "text"})
-            ),
-            "non-terminal subtype",
-        ),
-    ],
-)
-def test_host_backends_reject_ambiguous_or_nonterminal_output(call, message: str) -> None:
-    with pytest.raises(ValueError, match=message):
-        call()
-
-
-def test_codex_parser_ignores_non_message_events_before_terminal_message() -> None:
-    stream = "\n".join(
-        json.dumps(event)
-        for event in (
-            42,
-            {"type": "status"},
-            {"type": "turn.completed"},
-            {"type": "item.completed", "item": 42},
-            {
-                "type": "item.completed",
-                "item": {"type": "agent_message", "text": " "},
-            },
-            {
-                "type": "item.completed",
-                "item": {"type": "agent_message", "text": "done"},
-            },
-        )
-    )
-
-    output, metadata = backend_hosts.CodexExecBackend().parse_stdout(stream)
-
-    assert output == "done"
-    assert len(metadata["events"]) == 6
-
-
 def test_security_redaction_and_specialist_validation_cover_container_edges() -> None:
     assert backend_security.sensitive_variants(["", "secret"]) == ("secret",)
     assert backend_security.redact_value(("secret", {"secret": "ok"}), ("secret",)) == (
@@ -165,33 +46,6 @@ def test_security_redaction_and_specialist_validation_cover_container_edges() ->
         backend_security.specialist_prompt(
             "task", "a" * (backend_security.MAX_SPECIALIST_CHARS + 1)
         )
-
-
-def test_backends_facade_quiesces_posix_descendants_and_public_registry(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    process = SimpleNamespace()
-    state = backends._OwnedProcessState(argv=["tool"], process=process)
-    terminated: list[tuple[Any, Any]] = []
-    monkeypatch.setattr(backends, "_posix_process_group_active", lambda _process: True)
-    monkeypatch.setattr(backends, "_is_windows", lambda: False)
-    monkeypatch.setattr(backends, "_join_owned_process_io", lambda *_args: None)
-    monkeypatch.setattr(backends, "_windows_job_has_active_processes", lambda _job: False)
-    monkeypatch.setattr(
-        backends,
-        "_terminate_owned_process_tree",
-        lambda proc, windows_job=None: terminated.append((proc, windows_job)),
-    )
-
-    backends._quiesce_owned_process(state)
-
-    assert terminated == [(process, None), (process, None)]
-
-    registry = BackendRegistry()
-    monkeypatch.setattr(backends, "DEFAULT_REGISTRY", registry)
-    backend = _RegistryBackend("public", available=True)
-    assert backends.register_backend(backend) is backend
-    assert backends.get_delegate_func()(task="x")["backend"] == "public"
 
 
 class _EventStore:
@@ -212,60 +66,6 @@ class _EventStore:
 
     def update_delegation(self, event_id: str, **kwargs: Any) -> None:
         self.updated.append((event_id, kwargs))
-
-
-def test_ledger_record_and_hydration_preserve_storage_contract() -> None:
-    store = _EventStore(
-        [
-            {
-                "id": "event-existing",
-                "work_unit_id": "unit-existing",
-                "recommended_agent": "reviewer",
-                "status": "completed",
-                "backend": "codex",
-                "skip_reason": "",
-                "error": "",
-            }
-        ]
-    )
-    ledger = DelegationLedger(store, trace_id="trace", session_id="session", host="host")  # type: ignore[arg-type]
-
-    entry = ledger.record(
-        {
-            "work_unit_id": "unit-new",
-            "status": "skipped",
-            "backend": "claude",
-            "recommended_agent": "writer",
-            "skip_reason": "busy",
-        }
-    )
-    hydrated = DelegationLedger.from_store(  # type: ignore[arg-type]
-        store, "trace", session_id="session", host="host"
-    )
-
-    assert entry.id == "unit-new"
-    assert entry.skip_reason == "busy"
-    assert hydrated.entries[0].event_id == "event-existing"
-    assert hydrated.as_dict()["work_units"][0]["id"] == "unit-existing"
-
-
-def test_ledger_updates_existing_suggestion_backend_and_rejects_partial_success() -> None:
-    ledger = DelegationLedger(trace_id="trace")
-    original = ledger.suggest("unit", recommended_agent="reviewer")
-
-    updated = ledger.suggest("unit", backend="codex")
-
-    assert updated is original
-    assert updated.backend == "codex"
-    with pytest.raises(ValueError, match="backend, executed_worker_kind"):
-        ledger.update("other-unit", status="completed")
-
-
-def test_lifecycle_facade_private_compatibility_wrappers() -> None:
-    assert lifecycle_facade._safe("A / B") == "A-B"
-    lifecycle_facade._validate_unique_unit_ids([WorkUnit("one", "work")])
-    signature = inspect.signature(lambda *, task: None)
-    assert lifecycle_facade._signature_accepts(signature, task="work") is True
 
 
 def test_graph_helpers_cover_scalar_mapping_paths_and_reachability(tmp_path: Path) -> None:
@@ -555,79 +355,3 @@ def test_graph_does_not_reverse_explicit_dependency_for_shared_file(tmp_path: Pa
     graph = lifecycle_graph.build_dependency_graph(units)
 
     assert graph.edges == {"consumer": set(), "producer": {"consumer"}}
-
-
-def test_orchestration_failure_helpers_preserve_worktrees_and_ledger(tmp_path: Path) -> None:
-    unit = WorkUnit("unit", "work", repo_path=tmp_path)
-    with pytest.raises(ValueError, match="require a repository"):
-        lifecycle_orchestration._failed_provisioning_info(
-            WorkUnit("missing", "work"), tmp_path, "failure"
-        )
-
-    info = WorktreeInfo(
-        "unit",
-        tmp_path,
-        tmp_path / "worktree",
-        "branch",
-        "main",
-        "a" * 40,
-        created=True,
-    )
-    ledger = DelegationLedger(trace_id="trace")
-
-    result = lifecycle_orchestration.delegate_with_lifecycle(
-        [unit],
-        tmp_path,
-        None,
-        delegate_func=None,
-        worktree_root=tmp_path / "roots",
-        merge_back=True,
-        ledger=ledger,
-        max_workers=1,
-        missing=object(),
-        normalize_func=lambda *_args, **_kwargs: [unit],
-        graph_func=lambda _units: DependencyGraph(edges={"unit": set()}),
-        provision_func=lambda *_args, **_kwargs: {"unit": info},
-        dispatch_func=lambda *_args, **_kwargs: (_ for _ in ()).throw(
-            RuntimeError("dispatch exploded")
-        ),
-        cleanup_func=lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("cleanup exploded")),
-        aggregate_func=lambda *_args, **_kwargs: "summary",
-        result_completed_func=lambda _result: False,
-    )
-
-    assert result.batches == [["unit"]]
-    assert result.dispatch_results == {}
-    assert result.cleanup_results["unit"]["preserved"] is True
-    assert result.errors == [
-        "dispatch failed: dispatch exploded",
-        "worktree cleanup failed: OSError: cleanup exploded",
-    ]
-    assert ledger.entries[0].status == "failed"
-
-
-def test_orchestration_dispatch_failure_without_ledger_or_graph_edges(tmp_path: Path) -> None:
-    unit = WorkUnit("unit", "work", repo_path=tmp_path)
-    result = lifecycle_orchestration.delegate_with_lifecycle(
-        [unit],
-        tmp_path,
-        None,
-        delegate_func=None,
-        worktree_root=tmp_path / "roots",
-        merge_back=False,
-        ledger=None,
-        max_workers=1,
-        missing=object(),
-        normalize_func=lambda *_args, **_kwargs: [unit],
-        graph_func=lambda _units: DependencyGraph(),
-        provision_func=lambda *_args, **_kwargs: {},
-        dispatch_func=lambda *_args, **_kwargs: (_ for _ in ()).throw(
-            RuntimeError("dispatch exploded")
-        ),
-        cleanup_func=lambda *_args, **_kwargs: {},
-        aggregate_func=lambda *_args, **_kwargs: "summary",
-        result_completed_func=lambda _result: False,
-    )
-
-    assert result.batches == []
-    assert result.errors == ["dispatch failed: dispatch exploded"]

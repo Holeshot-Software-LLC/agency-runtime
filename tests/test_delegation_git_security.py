@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from agency_runtime.core.delegation import lifecycle_git
+from agency_runtime.core import git_runner as lifecycle_git
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 
 
