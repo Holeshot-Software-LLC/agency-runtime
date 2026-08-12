@@ -3,7 +3,7 @@ title: "Freeze every launch-critical executable identity before process creation
 status: accepted
 category: decisions
 created: 2026-07-16
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [security, processes, executables, delegation, portability]
 related:
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md
   - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
   - docs/roadmap/issue-AR-187-isolate-native-host-lifecycle-cwd.md
+  - docs/roadmap/issue-AR-257-separate-decision-conformance-fixture-launcher.md
   - docs/decisions/0038-refuse-executable-git-configuration-during-delegation.md
   - docs/decisions/0040-preserve-environment-owned-python-launchers.md
   - docs/decisions/0073-own-subprocess-trees-atomically.md

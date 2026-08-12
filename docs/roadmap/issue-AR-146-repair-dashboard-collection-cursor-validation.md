@@ -3,7 +3,7 @@ title: "AR-146: Repair dashboard collection cursor validation"
 status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [dashboard, pagination, traceability, correctness]
 related:
   - docs/roadmap/issue-AR-137-complete-dashboard-collections.md
@@ -48,12 +48,12 @@ AR-137 defines complete dashboard collection and keyset semantics.
 
 ## Acceptance
 
-- Every generated cursor decodes with its exact collection kind and arity.
-- Malformed, wrong-kind, wrong-arity, empty, and non-string cursor values fail
+- [x] Every generated cursor decodes with its exact collection kind and arity.
+- [x] Malformed, wrong-kind, wrong-arity, empty, and non-string cursor values fail
   closed.
-- `/api/activity` passes decoded keyset fields to the Store and returns a
+- [x] `/api/activity` passes decoded keyset fields to the Store and returns a
   decodable next cursor.
-- Cursor payloads remain bounded, opaque, and free of sensitive content.
+- [x] Cursor payloads remain bounded, opaque, and free of sensitive content.
 
 ## Implementation evidence
 

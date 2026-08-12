@@ -3,7 +3,7 @@ title: "AR-241: Hiring cap removal and dashboard visibility (slice 5 of AR-235)"
 status: done
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [workforce, hiring, observability, sub-issue]
 related:
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
@@ -70,10 +70,10 @@ guard against runaway.
 
 ## Acceptance
 
-- [ ] `max_hires_per_task` and `max_hires_per_day` no longer reject
+- [x] `max_hires_per_task` and `max_hires_per_day` no longer reject
       hiring in the runtime path.
-- [ ] `max_hires_per_turn: 16` and `daily_hire_alert_threshold: 50` are
+- [x] `max_hires_per_turn: 16` and `daily_hire_alert_threshold: 50` are
       added as soft bounds.
-- [ ] The daily cumulative is still recorded for dashboard visibility.
-- [ ] Focused tests cover: cap removal (no rejection), soft-warning
+- [x] The daily cumulative is still recorded for dashboard visibility.
+- [x] Focused tests cover: cap removal (no rejection), soft-warning
       behavior.

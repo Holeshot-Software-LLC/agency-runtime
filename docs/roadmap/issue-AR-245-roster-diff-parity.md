@@ -3,7 +3,7 @@ title: "AR-245: Roster diff parity (sub-issue 4 of AR-236)"
 status: done
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [cli, dashboard, parity, roster, sub-issue]
 related:
   - docs/roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md
@@ -36,4 +36,4 @@ returns the same payload as the CLI.
 
 ## Acceptance
 
-- [ ] `GET /api/roster/diff` returns the roster diff matching the CLI output.
+- [x] `GET /api/roster/diff` returns the roster diff matching the CLI output.

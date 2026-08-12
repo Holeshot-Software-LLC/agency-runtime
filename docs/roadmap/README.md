@@ -5,7 +5,10 @@ category: roadmap
 created: 2026-07-10
 updated: 2026-08-12
 tags: [planning, tracker]
-related: []
+related:
+  - docs/roadmap/AR-119-founding-vision.md
+  - docs/roadmap/AR-119-rule-host-evidence-matrix.md
+  - docs/roadmap/AR-256-done-acceptance-reconciliation.md
 supersedes: []
 superseded_by: null
 ---
@@ -132,19 +135,19 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-112` | [Rewrite the README for public users](issue-AR-112-public-user-readme.md) | done | p1 | documentation | [#117](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/117) |
 | `AR-113` | [Isolate wall-clock performance gates from the compatibility matrix](issue-AR-113-isolate-performance-gates.md) | done | p0 | testing | [#119](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/119) |
 | `AR-114` | [Make Codex hook activation part of installation](issue-AR-114-guided-codex-hook-activation.md) | done | p0 | host-integrations | [#123](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/123) |
-| `AR-115` | [Make live routing and Agency headers trustworthy](issue-AR-115-live-routing-trust.md) | done | p0 | routing | [#127](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/127) |
+| `AR-115` | [Make live routing and Agency headers trustworthy](issue-AR-115-live-routing-trust.md) | open | p0 | routing | [#127](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/127) |
 | `AR-116` | [Bound native-child routing and add account-aware model selection](issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | done | p0 | routing | [#128](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/128) |
 | `AR-117` | [Parallelize PR verification without weakening coverage](issue-AR-117-parallelize-pr-verification.md) | done | p1 | testing | [#130](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/130) |
 | `AR-118` | [Reconcile native-child activation evidence](issue-AR-118-reconcile-native-child-activation-evidence.md) | done | p0 | routing | [#131](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/131) |
 | `AR-119` | [Implement inference-first real-time workforce and contractor lifecycle](issue-AR-119-inference-first-workforce.md) | in_progress | p0 | routing | [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132) |
-| `AR-120` | [Normalize and audit the complete workforce recruitment index](issue-AR-120-normalized-workforce-recruitment-index.md) | done | p0 | routing | [#133](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/133) |
+| `AR-120` | [Normalize and audit the complete workforce recruitment index](issue-AR-120-normalized-workforce-recruitment-index.md) | open | p0 | routing | [#133](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/133) |
 | `AR-121` | [Implement inference-first planning and deterministic staffing](issue-AR-121-inference-planning-and-staffing.md) | done | p0 | routing | [#134](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/134) |
 | `AR-122` | [Implement governed contractor hiring and workforce lifecycle](issue-AR-122-contractor-hiring-and-lifecycle.md) | done | p0 | roster-governance | [#135](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/135) |
 | `AR-123` | [Add complete workforce CLI and live dashboard operations](issue-AR-123-workforce-cli-and-dashboard.md) | done | p0 | dashboard | [#136](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/136) |
 | `AR-124` | [Integrate lifecycle assurance, native delegation, and provider evidence](issue-AR-124-lifecycle-assurance-and-native-delegation.md) | done | p0 | routing | [#137](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/137) |
 | `AR-125` | [Prove workforce selection, host portability, and Agency-on/off value](issue-AR-125-workforce-and-one-shot-evaluation.md) | open | p0 | testing | [#138](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/138) |
 | `AR-126` | [Keep context checkpoints in the current task](issue-AR-126-bounded-idempotent-context-handoffs.md) | done | p0 | documentation | [#139](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/139) |
-| `AR-127` | [Make ZCode Stop rejections actually block](issue-AR-127-zcode-stop-rejection-shape.md) | done | p0 | host-integrations | [#151](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/151) |
+| `AR-127` | [Make ZCode Stop rejections actually block](issue-AR-127-zcode-stop-rejection-shape.md) | open | p0 | host-integrations | [#151](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/151) |
 | `AR-128` | [Seal model-facing control authority](issue-AR-128-seal-model-facing-control-authority.md) | done | p0 | security | pending authorization |
 | `AR-129` | [Isolate subprocess environments](issue-AR-129-isolate-subprocess-environments.md) | open | p0 | security | pending authorization |
 | `AR-130` | [Revalidate Store trust at authoritative boundaries](issue-AR-130-revalidate-store-trust.md) | open | p0 | security | pending authorization |
@@ -246,9 +249,9 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-226` | [Repair automatic pull-request verification](issue-AR-226-repair-automatic-pr-verification.md) | done | p0 | release | tracker creation pending authorization |
 | `AR-227` | [Expand the specialist roster](issue-AR-227-expand-specialist-roster.md) | done | p1 | roster-governance | [PR #236](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/236) |
 | `AR-228` | [Fail open with an honest header when no specialist is selected](issue-AR-228-eliminate-deterministic-staffing-authority.md) | done | p0 | routing | [PR #237](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/237) |
-| `AR-235` | [Make gap contractor hiring autonomous with isolated security review and amend-first staffing](issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | done | p0 | routing | [#244](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/244) |
+| `AR-235` | [Make gap contractor hiring autonomous with isolated security review and amend-first staffing](issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md) | open | p0 | routing | [#244](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/244) |
 | `AR-236` | [Achieve full CLI and dashboard functional and presentational parity](issue-AR-236-achieve-full-cli-dashboard-parity.md) | open | p0 | operations | [#245](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245) |
-| `AR-237` | [Hiring list and show parity (sub-issue 1 of AR-236)](issue-AR-237-hiring-list-and-show-parity.md) | done | p0 | operations | [#246](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/246) |
+| `AR-237` | [Hiring list and show parity (sub-issue 1 of AR-236)](issue-AR-237-hiring-list-and-show-parity.md) | open | p0 | operations | [#246](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/246) |
 | `AR-238` | [Isolated security review with bounded repair (slices 2-3 of AR-235)](issue-AR-238-isolated-security-review-with-bounded-repair.md) | done | p0 | routing | [#248](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/248) |
 | `AR-240` | [Amend-first staffing default (slice 4 of AR-235)](issue-AR-240-amend-first-staffing-default.md) | done | p0 | routing | [#249](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/249) |
 | `AR-241` | [Hiring cap removal and dashboard visibility (slice 5 of AR-235)](issue-AR-241-cap-removal-and-dashboard-visibility.md) | done | p0 | routing | [#250](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/250) |
@@ -260,13 +263,14 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-247` | [Roster sources parity (sub-issue 6 of AR-236)](issue-AR-247-roster-sources-parity.md) | done | p1 | operations | [#256](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/256) |
 | `AR-248` | [Doctor and DB stats parity (sub-issue 7 of AR-236)](issue-AR-248-doctor-db-stats-parity.md) | done | p2 | operations | [#257](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/257) |
 | `AR-249` | [Explain parity (sub-issue 8 of AR-236)](issue-AR-249-explain-parity.md) | done | p1 | operations | [#258](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/258) |
-| `AR-250` | [Upgrade flow parity (sub-issue 9 of AR-236)](issue-AR-250-upgrade-flow-parity.md) | done | p2 | operations | [#259](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/259) |
-| `AR-251` | [CLI presentation richness (sub-issue 10 of AR-236)](issue-AR-251-cli-presentation-richness.md) | done | p2 | operations | [#260](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/260) |
+| `AR-250` | [Upgrade flow parity (sub-issue 9 of AR-236)](issue-AR-250-upgrade-flow-parity.md) | open | p2 | operations | [#259](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/259) |
+| `AR-251` | [CLI presentation richness (sub-issue 10 of AR-236)](issue-AR-251-cli-presentation-richness.md) | open | p2 | operations | [#260](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/260) |
 | `AR-252` | [Record host-evidenced, independently verified outcomes for automatic promotion](issue-AR-252-record-verified-acceptance-outcomes.md) | open | p0 | workforce | None (tracker creation pending authorization) |
 | `AR-253` | [Prove staffing latency, rate, and cross-host parity](issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | open | p0 | workforce | None (tracker creation pending authorization) |
 | `AR-254` | [Reconcile canonical worklog history after merged ledger violations](issue-AR-254-reconcile-canonical-worklog-history.md) | done | p0 | documentation | [#272](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/272) |
 | `AR-255` | [Make native child staffing inference-owned and host-proven](issue-AR-255-inference-owned-host-proven-child-staffing.md) | open | p0 | routing | None (tracker creation pending authorization) |
-| `AR-256` | [Establish the canonical nine-rule completion contract](issue-AR-256-canonical-nine-rule-completion-contract.md) | open | p0 | documentation | None (tracker creation pending authorization) |
+| `AR-256` | [Establish the canonical nine-rule completion contract](issue-AR-256-canonical-nine-rule-completion-contract.md) | in_progress | p0 | documentation | None (tracker creation pending authorization) |
+| `AR-257` | [Separate decision-conformance runner and trusted fixture launcher](issue-AR-257-separate-decision-conformance-fixture-launcher.md) | in_progress | p0 | testing | None (tracker creation pending authorization) |
 
 ## Traceability
 
@@ -522,7 +526,8 @@ not stable internal identifiers.
 | [AR-253](issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | `64705f1`; planning only; multi-card staffing, latency, accepted-outcome, promotion, and five-host parity proof is open and blocks AR-119 | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0132](../decisions/0132-fund-one-repair-per-workforce-inference-stage.md), [ADR-0153](../decisions/0153-adopt-per-stage-inference-profile-routes.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0157](../decisions/0157-automatically-promote-host-verified-contractors.md) |
 | [AR-254](issue-AR-254-reconcile-canonical-worklog-history.md) | `d1f8ed2`, `b980e60`, `a78653c`, `a45422d`, `1c03a40`, `9ac9d29`; canonical index, exact historical exceptions, clone-independent IDs, platform-independent UTF-8 subjects, and hosted aggregate verification complete | None |
 | [AR-255](issue-AR-255-inference-owned-host-proven-child-staffing.md) | `64705f1`; planning only; inference and host-evidence authority repair is open | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md) |
-| [AR-256](issue-AR-256-canonical-nine-rule-completion-contract.md) | `64705f1`; planning only; canonical completion and status reconciliation is open | [ADR-0025](../decisions/0025-self-contained-linked-documentation.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0157](../decisions/0157-automatically-promote-host-verified-contractors.md) |
+| [AR-256](issue-AR-256-canonical-nine-rule-completion-contract.md) | `64705f1`; canonical matrix, status reconciliation, and verifier enforcement are implemented locally; clean checkpoint pending | [ADR-0025](../decisions/0025-self-contained-linked-documentation.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0157](../decisions/0157-automatically-promote-host-verified-contractors.md) |
+| [AR-257](issue-AR-257-separate-decision-conformance-fixture-launcher.md) | implementation local; final independent runner/fixture API baseline passed, 83/83 curated mutations killed, zero survived/invalid, `source_unchanged=true`; clean checkpoint pending | [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
@@ -604,17 +609,22 @@ not stable internal identifiers.
 - `AR-07` is complete at the source-readiness boundary. All dependencies and
   tracker items are closed. Public tagging and package publication remain a
   separate authorization-gated release action.
-- The isolated Windows Codex 0.144.1 canary proves routing, evidence, and header
-  finalization only in its private profile. It does not establish durable
-  real-profile `/hooks` trust or Linux Codex maturity; absent Claude Code,
-  Hermes, and OpenClaw installations remain contract-only.
+- Historical product trials and isolated canaries remain prior-candidate
+  evidence, not current nine-rule completion. The authoritative AR-119 matrix
+  records Claude Rule 4 exact-candidate installed/live state as unproven despite
+  three historical host artifacts. Codex Rule 4 is negative in current source,
+  but its prior-candidate TUI/Desktop/exec observations do not establish the
+  exact candidate's installed/live state. ZCode/Hermes/OpenClaw remain unproven,
+  and cross-host parity is negative. No host's result substitutes for another's.
 
 ## Status conventions
 
 - `open`: accepted into the roadmap but not complete.
 - `in_progress`: implementation is underway and has an active owner.
 - `blocked`: progress depends on an unresolved prerequisite.
-- `done`: acceptance criteria are satisfied, even if tracker synchronization is waiting for approval.
+- `done`: every Acceptance task is checked against cited evidence, or the issue
+  has an exact code-bound historical exception whose entire surface was
+  superseded. Tracker synchronization may still be waiting for approval.
 - `wont_do`: deliberately declined, with the reason retained in the issue document.
 
 ## Tracker synchronization

@@ -1,9 +1,9 @@
 ---
 title: "AR-115: Make live routing and Agency headers trustworthy"
-status: done
+status: open
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-08-12
 tags: [routing, headers, delegation, dashboard, testing]
 related:
   - README.md
@@ -82,3 +82,9 @@ quantitative routing gates.
 - [ ] Both configured-inference and no-inference installed cases pass the forbidden-specialist assertions.
 - [x] Dashboard and public documentation explain the live test workflow.
 - [ ] Full repository, hosted CI, merge, reinstall, and Codex smoke gates pass.
+
+## AR-256 status correction (2026-08-12)
+
+Reopened because no later record proves the prompt-specific installed matrix in
+both configured-inference and no-inference modes. Historical implementation and
+merge evidence does not satisfy the three remaining live acceptance gates.

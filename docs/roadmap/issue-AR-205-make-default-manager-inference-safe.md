@@ -3,7 +3,7 @@ title: "AR-205: Make the default manager inference-safe"
 status: done
 category: roadmap
 created: 2026-07-30
-updated: 2026-07-31
+updated: 2026-08-12
 tags: [product, routing, managers, inference, roster]
 related:
   - README.md
@@ -220,4 +220,7 @@ the exact installed product proof and final README-story acceptance.
   and never selects a merely least-wrong generalist.
 - [x] Focused tests, the named fast spine, and all curated decision mutations
   pass.
-- [ ] The exact installed product trial passes with zero response corrections.
+- [x] The exact installed product trial passes with zero response corrections.
+
+The later exact AR-204 candidate and product artifact at `71faad8` supply this
+formerly missing installed proof.

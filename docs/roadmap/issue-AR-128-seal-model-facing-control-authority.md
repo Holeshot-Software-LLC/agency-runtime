@@ -3,7 +3,7 @@ title: "AR-128: Seal model-facing control authority"
 status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-08-12
 tags: [security, operations, dashboard, mcp, controls]
 related:
   - docs/THREAT_MODEL.md
@@ -55,13 +55,18 @@ mutation decisions while retaining their useful read-only brokerage controls.
 
 ## Acceptance
 
-- Model-facing broker tokens cannot reach any mutating route.
-- MCP exposes no host, agent, or runtime mutation tool.
-- No dashboard bearer can mutate; future positive CLI mutations remain
+- [x] Model-facing broker tokens cannot reach any mutating route.
+- [x] MCP exposes no host, agent, or runtime mutation tool.
+- [x] No dashboard bearer can mutate; future positive CLI mutations remain
   generation checked behind genuine operator presence.
-- Every Store-backed broker response proves active path, desired path, and
+- [x] Every Store-backed broker response proves active path, desired path, and
   `store_restart_required=false`.
-- Adversarial protocol tests cover every formerly reachable mutation.
+- [x] Adversarial protocol tests cover every formerly reachable mutation.
+
+These checks preserve the 2026-07-25 contract as historical evidence. ADR-0117
+later superseded the no-dashboard-bearer clause by recognizing the owner
+dashboard bearer as equivalent owner authority while keeping hook, MCP, and
+broker credentials read-only.
 
 ## Implementation evidence
 

@@ -3,7 +3,7 @@ title: "AR-133: Make finalization evidence atomic, complete, and bounded"
 status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [evidence, sqlite, http, mcp, transactions]
 related:
   - docs/THREAT_MODEL.md
@@ -53,12 +53,12 @@ checks at connection entry.
 
 ## Acceptance
 
-- A failed finalization request persists no partial evidence.
-- Valid maximum-size batches use one connection and one transaction.
-- All execution identity fields are strictly typed and bounded.
-- Host and actual model derive from installed context and durable receipts.
-- Replay, conflict, interruption, and concurrent-finalization tests pass.
-- HTTP and MCP return stable sanitized client errors for invalid batches.
+- [x] A failed finalization request persists no partial evidence.
+- [x] Valid maximum-size batches use one connection and one transaction.
+- [x] All execution identity fields are strictly typed and bounded.
+- [x] Host and actual model derive from installed context and durable receipts.
+- [x] Replay, conflict, interruption, and concurrent-finalization tests pass.
+- [x] HTTP and MCP return stable sanitized client errors for invalid batches.
 
 ## Implementation evidence
 

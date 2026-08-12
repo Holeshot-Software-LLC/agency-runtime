@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from agency_runtime.core.filesystem_trust import metadata_is_link_or_reparse_point
+from agency_runtime.core.launcher_bootstrap import persistent_python_executable
 from agency_runtime.core.private_paths import private_temporary_directory
 from agency_runtime.core.process_environment import least_privilege_subprocess_environment
 
@@ -1444,7 +1445,7 @@ class _NominationSemantics:""",
     ),
 )
 
-PytestRunner = Callable[[Path, Sequence[str], str, float, Path], _PytestRun]
+PytestRunner = Callable[[Path, Sequence[str], str, str, float, Path], _PytestRun]
 
 
 def _normalized_node(value: str) -> str:
@@ -1462,10 +1463,17 @@ def _failed_nodes(output: str) -> tuple[str, ...]:
     return tuple(nodes)
 
 
+def _resolve_fixture_python_executable(requested: str | Path | None = None) -> str:
+    """Resolve one trusted persistent launcher without consulting the test runner."""
+
+    return persistent_python_executable(requested)
+
+
 def _run_pytest(
     checkout: Path,
     test_nodes: Sequence[str],
     python_executable: str,
+    fixture_python_executable: str,
     timeout_seconds: float,
     source_root: Path,
 ) -> _PytestRun:
@@ -1482,7 +1490,7 @@ def _run_pytest(
         current_directory=checkout,
         forbidden_roots=(source_root,),
         extra_env={
-            "AGENCY_CI_PYTHON": python_executable,
+            "AGENCY_CI_PYTHON": fixture_python_executable,
             "AGENCY_DECISION_CONFORMANCE": "1",
             "PYTHONIOENCODING": "utf-8",
             "PYTHONPATH": str(checkout),
@@ -1539,6 +1547,7 @@ def _run_baseline(
     checkout: Path,
     test_nodes: Sequence[str],
     python_executable: str,
+    fixture_python_executable: str,
     timeout_seconds: float,
     source_root: Path,
     *,
@@ -1552,6 +1561,7 @@ def _run_baseline(
             checkout,
             (test_node,),
             python_executable,
+            fixture_python_executable,
             timeout_seconds,
             source_root,
         )
@@ -1711,6 +1721,7 @@ def _mutation_result(
     checkout: Path,
     *,
     python_executable: str,
+    fixture_python_executable: str,
     timeout_seconds: float,
     source_root: Path,
     pytest_runner: PytestRunner,
@@ -1735,6 +1746,7 @@ def _mutation_result(
         checkout,
         (mutation.test_node,),
         python_executable,
+        fixture_python_executable,
         timeout_seconds,
         source_root,
     )
@@ -1769,6 +1781,7 @@ def run_decision_conformance_eval(
     *,
     mutations: Sequence[DecisionMutation] = MUTATIONS,
     python_executable: str | None = None,
+    fixture_python_executable: str | Path | None = None,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     pytest_runner: PytestRunner = _run_pytest,
 ) -> dict[str, Any]:
@@ -1780,6 +1793,7 @@ def run_decision_conformance_eval(
         raise ValueError("decision-conformance timeout must be from 1 through 300 seconds")
     source_root = _validate_repository(Path(repository), mutations)
     interpreter = str(Path(python_executable or sys.executable).resolve(strict=True))
+    fixture_interpreter = _resolve_fixture_python_executable(fixture_python_executable)
     before = _fingerprints(source_root, mutations)
     baseline_nodes = tuple(dict.fromkeys(mutation.test_node for mutation in mutations))
     mutation_results: list[dict[str, Any]] = []
@@ -1791,6 +1805,7 @@ def run_decision_conformance_eval(
             baseline_copy,
             baseline_nodes,
             interpreter,
+            fixture_interpreter,
             float(timeout_seconds),
             source_root,
             pytest_runner=pytest_runner,
@@ -1805,6 +1820,7 @@ def run_decision_conformance_eval(
                         mutation,
                         mutation_copy,
                         python_executable=interpreter,
+                        fixture_python_executable=fixture_interpreter,
                         timeout_seconds=float(timeout_seconds),
                         source_root=source_root,
                         pytest_runner=pytest_runner,

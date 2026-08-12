@@ -3,7 +3,7 @@ title: "AR-224: Simplify Agency evidence header"
 status: done
 category: roadmap
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-12
 tags: [enhancement, product, header, evidence, usability]
 related:
   - README.md
@@ -58,9 +58,9 @@ execution evidence. Simplification must not obscure its execution failure.
 
 ## Acceptance
 
-- [ ] `Why` and `How it shaped outcome` are absent from the canonical header.
-- [ ] Every producer and consumer accepts the same reduced schema on the first
+- [x] `Why` and `How it shaped outcome` are absent from the canonical header.
+- [x] Every producer and consumer accepts the same reduced schema on the first
   response without a repair loop.
-- [ ] The remaining fields still match Store and host evidence exactly.
-- [ ] Focused hook, canary, dashboard, documentation, lint, and format checks
+- [x] The remaining fields still match Store and host evidence exactly.
+- [x] Focused hook, canary, dashboard, documentation, lint, and format checks
   pass.

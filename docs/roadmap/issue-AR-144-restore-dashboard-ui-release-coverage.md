@@ -3,7 +3,7 @@ title: "AR-144: Restore dashboard UI release coverage gate"
 status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [dashboard, ui, testing, coverage, release]
 related:
   - tests/dashboard_ui.test.mjs
@@ -51,12 +51,12 @@ checklist owns the fixed coverage floors.
 
 ## Acceptance
 
-- The exact dashboard release-coverage command exits successfully.
-- Line coverage is at least 95 percent, branch coverage at least 90 percent,
+- [x] The exact dashboard release-coverage command exits successfully.
+- [x] Line coverage is at least 95 percent, branch coverage at least 90 percent,
   and function coverage at least 96 percent.
-- Navigation, startup, provider, workforce, Route Lab, worker-detail, and
+- [x] Navigation, startup, provider, workforce, Route Lab, worker-detail, and
   notice-expiry callbacks have behavioral assertions.
-- Coverage thresholds and production behavior are unchanged.
+- [x] Coverage thresholds and production behavior are unchanged.
 
 ## Implementation evidence
 

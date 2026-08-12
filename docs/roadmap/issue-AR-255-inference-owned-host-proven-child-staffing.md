@@ -44,9 +44,11 @@ requires an integrity-bound channel, not a waiver or a relabeled Agency receipt.
 
 ## Current state
 
-Claude has one host-transcript Rule-4 proof. Codex has eleven legacy child
-artifacts but zero card-bearing children in current TUI, Desktop, and exec
-measurements. ZCode, Hermes, and OpenClaw are not yet measured.
+Claude has three prior-candidate host-transcript Rule-4 artifacts; none binds
+the exact candidate, whose installed/live layers remain unproven. Codex has
+eleven legacy child artifacts but zero card-bearing children in prior-candidate
+TUI, Desktop, and exec measurements. ZCode, Hermes, and OpenClaw are not yet
+measured against the exact candidate.
 
 ## Approach
 
@@ -84,5 +86,6 @@ live-proves that channel.
 - [ ] The Codex channel binds the inference decision, parent/child correlation,
       card hashes, and install identity; focused spoof, replay, stale, and
       opaque-label adversarial tests pass.
-- [ ] Claude remains green and the current host-evidence projection rejects
-      Store-only delivery claims.
+- [ ] Claude's three prior-candidate artifacts remain valid historical
+      evidence, an exact-candidate host artifact turns its installed/live
+      layers green, and the current projection rejects Store-only claims.

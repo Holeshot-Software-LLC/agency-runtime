@@ -3,7 +3,7 @@ title: "AR-134: Enforce SQLite currentness and retention invariants"
 status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [sqlite, schema, migrations, integrity, retention]
 related:
   - agency_runtime/core/store/schema.py
@@ -55,12 +55,12 @@ proof required by it.
 
 ## Acceptance
 
-- Fresh and upgraded databases accept canonical ZCode activation receipts.
-- Missing or altered critical triggers, indexes, constraints, or host domains
+- [x] Fresh and upgraded databases accept canonical ZCode activation receipts.
+- [x] Missing or altered critical triggers, indexes, constraints, or host domains
   make currentness fail.
-- Migration preserves existing evidence and is idempotent.
-- Boolean domains reject values outside zero and one.
-- Delete behavior matches one documented, tested retention contract.
+- [x] Migration preserves existing evidence and is idempotent.
+- [x] Boolean domains reject values outside zero and one.
+- [x] Delete behavior matches one documented, tested retention contract.
 
 ## Implementation evidence
 

@@ -41,8 +41,10 @@ whether accepted outcomes drive the same automatic-promotion behavior.
 
 Current computed routing is far outside the pinned 15,000 ms cold budget: the
 AR-119 evidence reports roughly 2.4 provider calls per decision, p50 88.3 s,
-and p95 195.9 s. Claude has one positive Rule-4 artifact; Codex is measured
-negative across TUI, Desktop, and exec; ZCode, Hermes, and OpenClaw are unproven.
+and p95 195.9 s. Claude has three positive prior-candidate Rule-4 artifacts;
+Codex has prior-candidate negative observations across TUI, Desktop, and exec
+and a current source negative. Neither host has exact-candidate installed/live
+proof; ZCode, Hermes, and OpenClaw are unproven.
 
 ## Current state
 

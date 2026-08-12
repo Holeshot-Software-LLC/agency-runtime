@@ -3,7 +3,7 @@ title: "AR-216: Preserve required files in every product scenario scope"
 status: done
 category: roadmap
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-12
 tags: [bug, product, evaluation, delegation, scope]
 related:
   - README.md
@@ -65,8 +65,8 @@ authority.
 
 ## Acceptance
 
-- [ ] Explicit Required files survive the bounded resource ceiling.
-- [ ] API routes, HTTP verbs, and prose actions are not admitted as paths.
-- [ ] All six product scenarios have exact scope fixtures.
-- [ ] Existing traversal, absolute-path, and `python-cli-service` behavior stay
+- [x] Explicit Required files survive the bounded resource ceiling.
+- [x] API routes, HTTP verbs, and prose actions are not admitted as paths.
+- [x] All six product scenarios have exact scope fixtures.
+- [x] Existing traversal, absolute-path, and `python-cli-service` behavior stay
   green.

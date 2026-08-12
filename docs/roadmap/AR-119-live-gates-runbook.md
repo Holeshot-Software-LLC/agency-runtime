@@ -1,23 +1,35 @@
 ---
-title: "AR-119/AR-125 live-gates runbook"
-status: active
+title: "Historical AR-119/AR-125 live-gates runbook"
+status: draft
 category: roadmap
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-08-12
 tags: [roadmap, evaluation, live-gates, canary, AR-119, AR-125]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
   - docs/roadmap/AR-119-acceptance-evidence.md
+  - docs/roadmap/AR-119-rule-host-evidence-matrix.md
+  - docs/roadmap/handoffs/issue-AR-119.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/handoffs/issue-AR-119.md
 type: roadmap
 ---
 
-# AR-119 / AR-125 live-gates runbook
+# Historical AR-119 / AR-125 live-gates runbook
+
+This procedure preserves the 2026-07-25 deterministic-floor, planned-unit, and
+activation-receipt evaluation contract. It is not current closure authority.
+Use the [founding vision](AR-119-founding-vision.md), the
+[rule/host matrix](AR-119-rule-host-evidence-matrix.md), and the
+[active capsule](handoffs/issue-AR-119.md). In particular, unavailable hosts
+remain unproven, host-authored artifacts—not activation receipts—prove card
+delivery, and AR-119 cannot close from the four historical gates below.
+
+## Historical procedure (superseded)
 
 The deterministic acceptance for AR-119 and AR-125 is met and merged (`c6bc953`):
 inference-first selection, the offline typed-recall floor, the stamped

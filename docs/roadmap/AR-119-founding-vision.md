@@ -8,6 +8,7 @@ tags: [vision, workforce, inference, native-child, hosts, contractors]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/handoffs/issue-AR-119.md
+  - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
@@ -15,6 +16,8 @@ related:
 supersedes: []
 superseded_by: null
 type: roadmap
+ar119_authority: vision-wording
+canonical_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
 ---
 
 # AR-119 founding nine-rule vision
@@ -33,8 +36,8 @@ the confirmed rule semantics are preserved.
   `41f69274f3796126f11ea0c7b46bff9e2065bf960ab269076dde36f8ce1ec10e`
 - Repository canonical block: UTF-8 with LF line endings, from the canonical
   card-metaphor heading up to but excluding the differentiator heading
-- Repository canonical-block SHA-256:
-  `8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50`
+- Repository canonical-block SHA-256: the machine-checked
+  `canonical_block_sha256` front-matter field
 
 The source digest identifies the owner-confirmed source used for this import.
 The repository block is authoritative here and neutralizes only personal and

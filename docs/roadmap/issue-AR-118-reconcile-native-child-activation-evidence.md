@@ -3,7 +3,7 @@ title: "AR-118: Reconcile native-child activation evidence"
 status: done
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-08-12
 tags: [delegation, activation, correlation, hooks, evidence]
 related:
   - agency_runtime/core/store/delegation_activation.py
@@ -61,4 +61,8 @@ reconciliation.
 - [x] Conflicting lineage without a consumed receipt remains rejected.
 - [x] Both event orderings have regression coverage.
 - [x] Finalization accepts the reproduced turn without an activation retry.
-- [ ] The exact installed artifact passes the flow in a genuinely new Codex task.
+- [x] The exact installed artifact passes the flow in a genuinely new Codex task.
+
+AR-204's later exact installed Codex run supplies the previously missing live
+evidence. This records historical activation behavior, not current Rule-4
+delivery authority.

@@ -3,7 +3,7 @@ title: "AR-247: Roster sources parity (sub-issue 6 of AR-236)"
 status: done
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [cli, dashboard, parity, roster, sources, sub-issue]
 related:
   - docs/roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md
@@ -33,4 +33,4 @@ Add `GET /api/roster/sources` endpoint that calls `list_agent_sources`.
 
 ## Acceptance
 
-- [ ] `GET /api/roster/sources` returns configured sources matching the CLI.
+- [x] `GET /api/roster/sources` returns configured sources matching the CLI.

@@ -3,7 +3,7 @@ title: "AR-243: Workforce promotion readiness parity (sub-issue 2 of AR-236)"
 status: done
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [cli, dashboard, parity, workforce, promotion, sub-issue]
 related:
   - docs/roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md
@@ -55,7 +55,7 @@ readiness fields the dashboard renders:
 
 ## Acceptance
 
-- [ ] The CLI `workforce show` text mode prints `verified`, `required`,
+- [x] The CLI `workforce show` text mode prints `verified`, `required`,
       `remaining`, `automatic`, review-window state, reasons, and
       evidence rule — matching the dashboard's promotion readiness card.
-- [ ] JSON mode is unchanged (already emits the full projection).
+- [x] JSON mode is unchanged (already emits the full projection).

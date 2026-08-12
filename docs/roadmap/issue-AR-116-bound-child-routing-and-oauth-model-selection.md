@@ -3,7 +3,7 @@ title: "AR-116: Bound native-child routing and add account-aware model selection
 status: done
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-08-12
 tags: [routing, delegation, providers, dashboard, cli]
 related:
   - README.md
@@ -67,5 +67,9 @@ inference authoritative for specialist selections.
 - [x] Codex account-visible models are available from the CLI and dashboard.
 - [x] The guided CLI offers discovered subscription models and a manual fallback.
 - [x] LiteLLM router aliases remain first-class manual configuration values.
-- [ ] Consumed child activation and parent delegation evidence reconcile without a Stop-hook retry loop.
-- [ ] Full repository, hosted CI, merge, reinstall, and live Codex smoke gates pass.
+- [x] Consumed child activation and parent delegation evidence reconcile without a Stop-hook retry loop.
+- [x] Full repository, hosted CI, merge, reinstall, and live Codex smoke gates pass.
+
+The two formerly stale boxes are reconciled by AR-204's later exact installed
+Codex product proof. This acceptance records the historical transport only; it
+does not satisfy the current host-artifact Rule-4 contract.

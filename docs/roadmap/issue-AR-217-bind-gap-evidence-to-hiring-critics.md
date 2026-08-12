@@ -3,7 +3,7 @@ title: "AR-217: Bind independent gap evidence into contractor critiques"
 status: done
 category: roadmap
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-12
 tags: [bug, product, inference, hiring, contractor, evidence]
 related:
   - README.md
@@ -106,6 +106,6 @@ letting deterministic code design or select the contractor.
   terminal and mutation-free.
 - [x] Raw user instructions are not promoted into critic system authority.
 - [x] The named local production spine passes on one exact reviewed head.
-- [ ] One next exact build passes autonomous activation and at most one fresh
+- [x] One next exact build passes autonomous activation and at most one fresh
   product trial with specialist delegation, workspace write, a first-pass
   valid header, zero corrections, and independent artifact checks.

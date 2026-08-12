@@ -3,7 +3,7 @@ title: "AR-218: Fund one bounded repair per workforce inference stage"
 status: done
 category: roadmap
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-12
 tags: [bug, product, inference, workforce, configuration, budgets]
 related:
   - README.md
@@ -138,6 +138,6 @@ repair fast default without weakening either stage's bounded correction rule.
 - [x] Generated host timeouts derive from the effective four-call budget.
 - [x] Focused verification, two bounded review passes, and the named local fast
   gate pass on one exact head.
-- [ ] One exact merged build passes autonomous activation and at most one fresh
+- [x] One exact merged build passes autonomous activation and at most one fresh
   README product trial with specialist delegation, workspace write, a valid
   first header, zero corrections, and independent artifact checks.

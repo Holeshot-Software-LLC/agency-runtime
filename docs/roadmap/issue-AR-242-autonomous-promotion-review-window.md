@@ -67,13 +67,17 @@ assignments is a known-good asset that does not need a human in the loop.
 
 ## Acceptance
 
-- [ ] `auto_promote_successes: 3` and `contractor_review_days: 7` are the
+- [x] `auto_promote_successes: 3` and `contractor_review_days: 7` are the
       new defaults.
-- [ ] A contractor with 3 verified successes is auto-promoted when past the
+- [x] A contractor with 3 verified successes is auto-promoted when past the
       review window.
-- [ ] A contractor within the review window is not auto-promoted even with
+- [x] A contractor within the review window is not auto-promoted even with
       3 verified successes; the readiness projection shows
       `in_review_window: true`.
-- [ ] The review window is computed per-contractor from `created_at`.
-- [ ] Focused tests cover: auto-promote past window, suppression within
-      window, release after expiry.
+- [x] The review window is computed per-contractor from `created_at`.
+- [x] Focused tests cover: auto-promote past window, suppression within
+  window, release after expiry.
+
+These checks prove the policy implementation and simulation only. AR-252
+remains P0 because production outcomes do not yet provide the independent,
+host-backed acceptance evidence needed to trigger automatic promotion live.

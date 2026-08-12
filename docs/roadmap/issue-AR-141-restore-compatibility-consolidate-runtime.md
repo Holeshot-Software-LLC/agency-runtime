@@ -3,7 +3,7 @@ title: "AR-141: Restore compatibility and consolidate runtime duplication"
 status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [maintenance, compatibility, refactoring, dead-code, duplication]
 related:
   - CHANGELOG.md
@@ -55,16 +55,16 @@ Complete P0 behavioral fixes before mechanical consolidation.
 
 ## Acceptance
 
-- Public compatibility policy and deprecation window are documented and tested.
-- One canonical agent identity precedence is used everywhere.
-- Filesystem trust and lexical path primitives have one owner; domain wrappers
+- [x] Public compatibility policy and deprecation window are documented and tested.
+- [x] One canonical agent identity precedence is used everywhere.
+- [x] Filesystem trust and lexical path primitives have one owner; domain wrappers
   retain only their additional validation and error contracts.
-- Persisted and externally supplied JSON uses one bounded parser owner, with an
+- [x] Persisted and externally supplied JSON uses one bounded parser owner, with an
   exact test-enforced allowlist for dependency-isolated generated shims.
-- Routing/roster digest, workforce snapshot, and hook child-identity protocols
+- [x] Routing/roster digest, workforce snapshot, and hook child-identity protocols
   have one canonical owner without changing serialized bytes or host scheduling.
-- Dead-code removals have repository-wide call-graph and behavior evidence.
-- Refactors preserve coverage, routing outcomes, and release artifacts.
+- [x] Dead-code removals have repository-wide call-graph and behavior evidence.
+- [x] Refactors preserve coverage, routing outcomes, and release artifacts.
 
 ## Implementation evidence
 

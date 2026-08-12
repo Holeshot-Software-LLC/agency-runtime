@@ -3,7 +3,7 @@ title: "Release Checklist"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-29
+updated: 2026-08-12
 tags: [release, verification]
 related:
   - CHANGELOG.md
@@ -14,22 +14,26 @@ related:
   - docs/THREAT_MODEL.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/decisions/0053-durable-fail-enabled-master-control.md
-  - docs/decisions/0054-unit-aware-assignment-and-event-driven-dag.md
   - docs/decisions/0055-freeze-executable-identity-before-launch.md
   - docs/decisions/0064-classify-turn-intent-from-durable-state.md
   - docs/decisions/0065-keep-compact-resident-manager-kernel.md
   - docs/decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md
-  - docs/decisions/0067-require-configured-inference-for-selection.md
-  - docs/decisions/0068-select-compatible-specialist-closures-per-unit.md
   - docs/decisions/0069-enforce-conflicts-before-prompt-composition.md
-  - docs/decisions/0070-run-child-specific-agency-activation.md
-  - docs/decisions/0071-bound-native-delegation-correction.md
   - docs/decisions/0073-own-subprocess-trees-atomically.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
+  - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - docs/roadmap/AR-119-founding-vision.md
+  - docs/roadmap/AR-119-rule-host-evidence-matrix.md
+  - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
+  - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
+  - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
@@ -66,17 +70,30 @@ or adding an index-install claim.
 
 ## 2. Truthful support matrix
 
-- [ ] README host claims separate deterministic contract coverage from live
+- [ ] README host claims separate contract and simulation coverage from live
       discovery, registration, enablement, loading, and canary evidence.
+- [ ] The canonical AR-119 matrix records every Rule 1–8 cell as `proven` for
+      Codex, Claude Code, ZCode, Hermes, and OpenClaw on the exact candidate;
+      Rule 9 is then proven from that complete five-host set. An unavailable
+      host remains `unproven` and cannot be waived, removed, or marked
+      not-applicable while it is supported.
+- [ ] Each of the five hosts has a current native Rule-4 canary in which the
+      host starts the child and the host-authored artifact contains multiple
+      compatible, inference-chosen card hashes before first child speech.
+      Agency Store rows, model prose, registration, simulation, and generic
+      child evidence cannot originate or substitute for that proof.
+- [ ] The exact candidate repairs and then re-proves Codex Rule 4 in TUI,
+      Desktop, and exec. The recorded 2026-08-11 result is negative on all three
+      surfaces; it is a blocker, not evidence inherited by a later candidate.
 - [ ] Every host called `runtime-verified` has a dated reproducible native
       canary on each operating system claimed by the release.
     - When claiming Agency-on/native-only comparison behavior, run both explicit
       host-canary modes against the same installed artifact. Require the global
       master state to match each mode, zero Agency evidence in native-only mode,
       no native-only attestation, and guaranteed restoration of Agency-on state.
-- [ ] Codex, Claude Code, Hermes, and OpenClaw install, disable, enable, rollback,
-      preflight, evidence, and finalization paths have been exercised for the v1
-      matrix or clearly marked below that maturity.
+- [ ] Codex, Claude Code, ZCode, Hermes, and OpenClaw install, disable, enable,
+      rollback, preflight, evidence, and finalization paths have been exercised
+      for the v1 matrix or clearly marked below that maturity.
 - [ ] Codex generated-bundle smoke proves the expected 8 hook events,
       commands, and timeout schema; native inventory proves plugin registration
       and enablement. Exact existing-install refresh through
@@ -104,9 +121,10 @@ or adding an index-install claim.
 - [ ] LiteLLM success, failure, retry, alias, router-group, provider, and actual
       model evidence reconcile without one terminal state suppressing another.
 - [ ] OpenClaw rejects unaudited versions before mutation, applies final-only
-      config transactionally, and proves exact-payload one-use dispatch sealing
-      in the generated-plugin harness. Registration-only inspection is not
-      promoted to live delivery proof.
+      config transactionally, and produces a host-authored current-candidate
+      child artifact containing the inference-chosen card hashes before first
+      speech. Registration-only inspection and generated-plugin simulation are
+      not promoted to live delivery proof.
 - [ ] Dashboard, MCP, generated-host, and restricted-broker surfaces are
       read-only; every former mutation endpoint rejects both bearer roles before
       dispatch and the shipped browser contains no mutation client or control.
@@ -130,15 +148,17 @@ or adding an index-install claim.
       invariants without exposing a positive unauthorized path.
 - [ ] Generic CLI behavior is tested with an explicit argv command; an
       unconfigured backend remains unavailable.
-- [ ] Each native child receives a fresh bounded Agency preflight for its exact
-      assignment through the host's official lifecycle. Parent specialists and
-      the resident steward do not leak into children as ordinary worker prompts,
-      and absent live hosts remain labelled contract-only.
+- [ ] Agency never decides to spawn or supplies a child-execution plan. When the
+      native host independently starts a child, that child receives the exact
+      inference-chosen request-scoped card set through the host's official
+      lifecycle. Multiple compatible cards are supported; parent specialists
+      and the resident steward do not leak as ordinary worker prompts.
 - [ ] Clean wheel and source-archive installs on Windows and Linux run the
-      Agency runtime/dashboard selection regression against the complete roster:
-      `multi-agent-systems-architect` is the only result, ambiguous input
-      abstains, and clinical, geography, translation, and generic operations
-      specialists remain forbidden.
+      Agency runtime/dashboard recall regression against the complete roster:
+      `multi-agent-systems-architect` is recalled for its exact contract,
+      ambiguous input is labelled unresolved, and clinical, geography,
+      translation, and generic operations specialists remain forbidden. This
+      offline contract never claims to select or recommend a specialist.
 
 Record dated live evidence in the release notes without committing secrets or
 machine-specific credential paths.
@@ -195,11 +215,27 @@ agency eval compare --input path/to/paired-observations.jsonl
       parent-only, hash-bound, and restored once after compaction without
       accumulating complete prompt bodies. It cannot select or perform domain
       work; imported managers remain optional workers.
-- [ ] For a novel-domain unit with zero relevant roster cards, inference records
-      an explicit empty-ranked gap, hiring materializes a narrow contractor, and
-      same-turn restaffing selects that contractor. A failed route fails open
-      (ADR-0152): no specialist is selected, the exact cause is reported, and the
-      host answers as a generalist with a `Recruited via: none` header.
+- [ ] For a novel-domain staffing need with zero relevant roster cards,
+      inference declares the gap, hiring materializes and independently audits
+      a narrow contractor, and the same inference-owned turn selects that
+      contractor. Deterministic code may recall and validate but cannot select,
+      replace, erase, or invent a specialist or contractor.
+- [ ] No configured provider, provider exhaustion, or an invalid inference
+      response means Agency supplies no specialist card or contractor; it
+      records the exact cause and the native host proceeds as a generalist with
+      a `Recruited via: none` header. Only a verifier's definite negative and
+      the malformed-`Stop` forgery boundary may deliberately withhold.
+- [ ] Rule 8 is live-proven on all five hosts: Agency unavailability never
+      suppresses the host's natural response, and `agency evidence rejections`
+      correctly separates a deliberate rejection from Agency being blind.
+- [ ] Automatic contractor promotion is live-proven on the exact candidate:
+      three independently accepted successes after the seven-day review window
+      trigger promotion without an operator action, using producer and distinct
+      verifier host artifacts. Missing host-backed acceptance leaves promotion
+      dormant and blocks AR-119 and release completion.
+- [ ] The exact candidate passes the unchanged 15,000 ms cold staffing gate;
+      latency repair does not weaken inference-only selection, host-owned spawn,
+      Rule-4 artifact authority, Rule-8 fail-open behavior, or promotion proof.
 - [ ] `agency eval full-roster` proves every approved enabled routing card
       participates in lexical and semantic retrieval, candidate recall is
       `1.0`, identity-free target recall@10 is at least `0.99`, and the checked-in
@@ -208,26 +244,26 @@ agency eval compare --input path/to/paired-observations.jsonl
       incapable of establishing task quality or superiority.
 - [ ] Every configured inference provider path is exercised. Selection-requiring
       turns cannot bypass inference through lexical confidence; chain exhaustion
-      is visibly degraded and cannot be reported as inferred. No-provider
-      deterministic mode remains explicitly distinguishable.
+      is visibly degraded, supplies no card, and cannot be reported as inferred.
 - [ ] Compatible-set tests cover requirements, hard and soft conflicts,
       authority, context mode, independence, host, platform, tools, permissions,
       resource overlap, implementer/reviewer isolation, and calibrated no-match.
 - [ ] Cache/stickiness tests prove roster, configuration, and policy isolation.
 - [ ] Concurrent routing and evidence tests show no cross-request contamination.
-- [ ] Delegation DAG tests cover failed prerequisites, missing results, duplicate
-      work units, unit-specific specialist assignment, immediate successor
-      release, independent concurrency, recursive failure skips, and successful
-      worktree merging.
+- [ ] Native-child tests cover host-owned spawn origin, exact inference-decision
+      binding, multiple compatible cards, child-identity correlation, duplicate
+      lifecycle events, nested host-spawned children, and missing or malformed
+      host artifacts without introducing an Agency scheduler or execution DAG.
 - [ ] A real restricted-Windows canary proves root and nested Codex scratch,
       child `TEMP`/`TMP`, Store descendants, Git worktree creation, read-only Git
       cleanup, identity-swap rollback, and exact removal without repo fallback.
 - [ ] Evidence tests reject failed, stale, ambiguous, and spoofed claims.
-- [ ] Selection remains distinct from execution: only native-started isolated
-      units require exact one-use activation plus reciprocal worker/run evidence;
-      direct loads, explicit declines, skips (including a bounded reason for a
-      host-merged unit), and bounded retry exhaustion close without fabricated
-      activation or delegation.
+- [ ] Selection remains distinct from execution: inference chooses the card set,
+      while only the native host chooses whether and how to spawn. A native
+      child is counted as staffed only from its host-authored artifact containing
+      exact card hashes before first speech; direct parent loads, unstaffed
+      host continuations, and bounded retry exhaustion close without fabricated
+      child delivery or delegation.
 - [ ] Stop/finalization tests prove current-turn correlation, monotonic terminal
       closure, at most one strongly-preferred correction, revalidation on retry,
       fresh-turn recovery, and no terminal-trace reuse loop.
@@ -539,10 +575,16 @@ rollback, owned host uninstall, dashboard/model-facing mutation, and generic
 positive controls remain unavailable. The paired portable/`win_amd64` artifact
 set must reject executable and disguised PE payloads in both profiles.
 
-Normal-profile Codex readiness still requires user-owned terminal-TUI `/hooks`
-review and a new session. AR-119 and AR-125 still require a benchmark-valid
-completed outcome corpus and current-artifact host/OS evidence; absent Claude
-Code, Hermes, OpenClaw, ZCode, and Linux canaries remain contract-only.
+AR-119's canonical matrix currently records Claude Rule 4 as exact-candidate
+unproven despite three prior-candidate live artifacts. Codex Rule 4 is negative
+in current source because the adapter cannot carry cards through the encrypted
+context channel, while its prior-candidate TUI, Desktop, and exec observations
+do not establish the exact candidate's installed/live state. ZCode, Hermes,
+and OpenClaw remain unproven. That evidence is not release-ready. AR-119 and
+AR-125 also still
+require a benchmark-valid completed outcome corpus and current-artifact host/OS
+evidence. The automatic three-success/seven-day contractor path remains dormant
+without host-backed accepted outcomes and is on the release critical path.
 
 AR-128 through AR-161 items with pending mappings require authorized
 same-repository tracker synchronization.

@@ -58,15 +58,18 @@ this is the single current bootstrap projection.
 
 ## completed-evidence
 
-- Seven of nine rules are conceptually landed. This is not a completion
-  percentage: cross-host live evidence and the dependent Rule 9 parity gate
-  remain open.
-- Claude Rule 4 is live-proven: one host-spawned child received three cards;
-  its own transcript contains the correlated `jit:v5` envelope before first
-  speech. Agency Store rows were not used as the proof authority.
-- Codex is measured negative in TUI, Desktop, and exec: eleven legacy native
-  child artifacts exist, but no measured child received a card. ZCode, Hermes,
-  and OpenClaw remain unmeasured.
+- The canonical matrix has no current `proven` top-level cell. Its current
+  source negatives are Rule 1 on Claude/Codex/ZCode, Rule 4 on Codex, and Rule
+  8 on Hermes/OpenClaw; every host also has unproven exact-candidate installed
+  and live layers. This is an evidence state, not a completion percentage.
+- Claude has three prior-candidate Rule-4 host artifacts containing multiple
+  exact cards before first speech. None binds the matrix's exact candidate, so
+  current installed/live state is unproven; Agency Store rows remain
+  non-authoritative.
+- Codex has prior-candidate negative observations in TUI, Desktop, and exec,
+  while current source still cannot use the encrypted context channel. Those
+  observations do not bind the exact candidate, so its installed/live layers
+  are unproven. ZCode, Hermes, and OpenClaw remain unproven.
 - ADR-0118 already requires inference-owned staffing and forbids a deterministic
   offline selector. `child_delivery_evidence.py` already states that only the
   host artifact proves delivery.

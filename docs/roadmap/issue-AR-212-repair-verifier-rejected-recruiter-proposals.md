@@ -3,7 +3,7 @@ title: "AR-212: Repair verifier-rejected recruiter proposals once"
 status: done
 category: roadmap
 created: 2026-07-31
-updated: 2026-08-01
+updated: 2026-08-12
 tags: [product, inference, recruitment, reliability, diagnostics]
 related:
   - README.md
@@ -145,5 +145,8 @@ acceptance.
 - [x] The named local gate passes before review and merge.
 - [x] One new exact build passes supported-bypass activation and consumes at
   most one governed product trial without correction or rerun.
-- [ ] AR-214 proves exact Codex context delivery, specialist delegation, and
-  workspace write on a fresh build.
+- [x] A later exact product proof records Codex context delivery, specialist
+  delegation, and workspace write on a fresh build.
+
+Provenance correction: AR-214 did not close this gate. AR-204's later exact
+installed product run is the evidence used by AR-256.

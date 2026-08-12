@@ -36,8 +36,10 @@ that card in the child context. Treating that row as delivery proof makes the
 producer attest to its own success.
 
 Claude and Codex write durable transcripts that show the child's received
-context. Claude has proven delivery through such an artifact; Codex has proven
-real child creation while showing no delivered card. ZCode, Hermes, and OpenClaw
+context. Prior-candidate Claude artifacts show delivery, while prior-candidate
+Codex artifacts show real child creation with no delivered card. Those
+observations established the evidence boundary but do not establish the
+matrix's exact-candidate installed/live state. ZCode, Hermes, and OpenClaw
 remain unproven and must expose equivalent host-authored artifacts before their
 Rule-4 claims can turn green.
 
