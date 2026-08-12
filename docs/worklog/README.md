@@ -811,6 +811,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a78653ce` | 2026-08-11 | fix(docs): make worklog IDs clone independent | null | null |
 | `a45422d1` | 2026-08-11 | docs(roadmap): checkpoint deterministic worklog IDs | null | null |
 | `cfa67e4b` | 2026-08-12 | docs(roadmap): reframe dashboard parity after Job B | null | null |
+| `d9458890` | 2026-08-12 | feat(dashboard): align owner UI with post-Job-B vision | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
