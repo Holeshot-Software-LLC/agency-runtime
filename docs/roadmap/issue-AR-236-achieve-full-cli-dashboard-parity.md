@@ -36,7 +36,7 @@ blocks: []
 
 # AR-236: Achieve full CLI and dashboard functional and presentational parity
 
-> **RESTATED 2026-08-11.** The August 4 inventory and ten-subissue plan below
+> **RESTATED 2026-08-12.** The August 4 inventory and ten-subissue plan below
 > are retained as provenance, not as the current product contract. The vision
 > subsequently retired Agency-authored host execution planning, mandatory
 > delegation guidance, `unit_agent_plan`, and isolated delivery. Parity now
@@ -45,7 +45,9 @@ blocks: []
 > lifecycle, or attended terminal commands into the browser. The first move is
 > deletion or relabeling of UI that describes retired behavior, followed by
 > source-backed latency, host-written child evidence, and selection-distribution
-> observability. The current execution plan and exact restart state live in the
+> observability. Dashboard synchronization is the objective, not an absolute
+> file boundary: a minimal supporting-contract fix is allowed only when final
+> `main` cannot support a truthful UI. The current execution plan lives in the
 > [active recovery capsule](handoffs/issue-AR-236.md).
 
 ## Problem
@@ -77,64 +79,57 @@ prioritized roadmap. The headline:
   `confirmation-modal`) is the canonical pattern for destructive
   operations, replacing a `--yes` flag.
 
-## Implementation checkpoint — 2026-08-11
+## Implementation checkpoint — 2026-08-12
 
-The bounded vision-alignment slice is implemented locally on
-`codex/dashboard-vision-parity`, rebased onto the companion CLI re-scope, and
-current-code browser and fast-verification complete. It deliberately does not
-claim umbrella parity:
+Job B is complete on `main` at `c7cf1d96` through PRs
+[#271](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/271) and
+[#273](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/273).
+Agency no longer drives a host CLI, plans work units, provisions worktrees,
+dispatches workers, or owns a worker-pool ledger. The native host alone decides
+whether to spawn and execute. The AR-236 branch rebased cleanly onto that final
+contract; PR [#270](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/270)
+remains draft while every inherited change is re-evaluated.
 
-- [x] Rewrite README behavior around inference staffing, host-owned execution,
-      request-scoped specialist cards, fail-open routing, and observable proof.
-- [x] Remove retired delegation-preference and confidence-bypass settings from
-      the dashboard while retaining compatibility parsing.
-- [x] Remove Route Lab's retired delegation/dependency graph and correct
-      master, settings, overview, and evidence language.
-- [x] Share routing-latency aggregation between CLI and dashboard; add a
-      bounded authenticated endpoint and Overview projection.
-- [x] Compute specialist-selection distribution from the Store and render
-      explicit decision/occurrence denominators, top-ten concentration, and a
-      bounded long tail.
-- [x] Finish the vision keep-list audit for frontend-unreachable endpoints;
-      remove GET `/api/overview` and GET `/api/config`, preserve POST config,
-      and record explicit later-UI versus service-contract keep sets.
-- [x] Add dashboard children, rejections, and wiring evidence where the
-      keep-list confirms an owner-facing need.
-- [x] Rebase onto the CLI vision keep-list that removes `delegate`, `run`, and
-      `codex exec`; confirm no corresponding dashboard execution action or
-      lifecycle graph survives while historical host-event evidence remains.
-- [x] Complete two bounded reviews and focused verification: 278 Python tests,
-      124 dashboard tests, targeted Ruff lint/format, and diff checks pass.
-- [x] Complete current-code real-browser populated/empty/partial/responsive/
-      refresh-cadence QA and execute the named fast spine. The Python spine is
-      668 passed/6 skipped, dashboard UI is 124/124, and routing is 39/39. The
-      decision-conformance baseline has an inherited `origin/main` virtualenv-
-      trust incompatibility before mutations; the focused node passes directly
-      on both trees and fails identically only inside the evaluator.
+The post-Job-B classification is now explicit:
 
-The populated browser projection matches the owner observation without
-hardcoding it: 202 selection-bearing decisions, 39 distinct specialists, 491
-occurrences, 82.3% top-ten concentration, and `code-reviewer` in 146 decisions
-(72.3%). Empty evidence stays unknown rather than healthy; a wiring-only failure
-retains only that source's last-good state; and all five evidence endpoints stay
-off the hot poll. The tested 1440, 1024, and 390 pixel layouts do not overflow.
-All disposable browser fixtures, processes, and token-bearing logs were removed.
+- [x] Retain removal of delegation preference/mode/confidence controls, judge
+      bypass, and Route Lab work-unit/dependency graphs.
+- [x] Retain source-backed latency, specialist-distribution, child-delivery,
+      Rule-8, and wiring evidence with explicit bounds, denominators, source
+      authority, freshness, and neutral empty states.
+- [x] Retain native-host ownership copy and the live child inference budget,
+      concurrency, and cache controls used for host-started child routing.
+- [ ] Remove invalid flat `workforce.*_model` controls and their private model
+      discovery UI; keep provider-builder discovery and label
+      `workforce.provider` as a fallback.
+- [ ] Remove unenforced `max_hires_per_task/day` controls and add the live
+      `max_hires_per_turn`, `daily_hire_alert_threshold`,
+      `hiring_repair_budget`, and `amend_overlap_threshold` controls.
+- [ ] Fix hiring apply/clear, type filtering, per-source stale/unavailable
+      state, and explicit approver audit identity.
+- [ ] Render observed execution identity instead of a recommendation and use
+      neutral delegation-event-row wording for the unfiltered historical
+      source.
+- [ ] Remove broker/test/docstring residues that still require the retired
+      delegation graph, and make latency wording evidence-bounded rather than
+      causal.
+- [ ] Fail latency and selection metric reads closed while the configured Store
+      requires a service restart; old-Store data must not render as fresh.
+- [ ] Keep the requested specialist concentration chart, but keep umbrella
+      parity open until the shared projection has a CLI view or acceptance is
+      explicitly narrowed.
 
-PR [#270](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/270)
-is open for this bounded slice. Its first hosted static lane found that the new
-source-separated evidence raised the audited dashboard asset payload from
-298,409 to 355,184 bytes beyond the prior 300 KiB packaging guard. The guard is
-now documented and narrowly rebudgeted to 360 KiB; the exact 161-test workflow
-contract passes locally in `634170c2` pending the hosted rerun.
+Global consolidation review, aggregate promotion queues, and further CLI
+hiring efficiency/filter work are deferred to bounded follow-ups. The existing
+duplicates endpoint is not UI-ready: nonempty comparison dataclasses are not
+JSON serializable and its copy does not match the actual fixed thresholds.
 
-The rerun cleared that packaging gate, the fast Python spine, and decision
-mutations. Its 124 dashboard tests all passed, but branch coverage was 85.88%
-against 86%. Two focused evidence edge-case tests now make the exact hosted
-command pass 126/126 at 96.12% lines, 86.18% branches, and 94.00% functions,
-in `8a5c2de2`, pending one more hosted run.
-
-Exact implementation details, test results, conflict warnings, authorization
-boundaries, and restart commands live in the
+Earlier browser evidence remains useful regression context: 202
+selection-bearing decisions, 39 distinct specialists, 491 occurrences, 82.3%
+top-ten concentration, `code-reviewer` in 146 decisions, source-separated
+empty/stale behavior, token-free request cadence, and responsive layouts. It
+must be rerun after the post-Job-B changes before any merge claim. Exact restart
+state and package boundaries live in the
 [active recovery capsule](handoffs/issue-AR-236.md).
 
 ## Approach

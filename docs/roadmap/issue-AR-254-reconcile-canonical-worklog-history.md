@@ -3,7 +3,7 @@ title: "AR-254: Reconcile canonical worklog history after merged ledger violatio
 status: in_progress
 category: roadmap
 created: 2026-08-11
-updated: 2026-08-11
+updated: 2026-08-12
 tags: [documentation, governance, ci, worklog, history]
 related:
   - docs/roadmap/handoffs/issue-AR-236.md
@@ -26,17 +26,19 @@ blocks:
 
 ## Problem
 
-Canonical `main` contains 13 commits missing from the generated worklog and
-four published `docs(worklog):` commits that also changed the AR-119 roadmap
-record. The automatic PR gate checks full canonical history, so every later PR
-fails documentation verification even when its own ledger is correct.
+Canonical history originally contained 13 commits missing from the generated
+worklog and four published `docs(worklog):` commits that also changed the
+AR-119 roadmap record. The automatic PR gate checks full canonical history, so
+every later PR failed documentation verification even when its own ledger was
+correct.
 
 ## Current state
 
-`scripts/update_worklog.py --check` reports a stale index. After rebuilding the
-index, `scripts/verify_docs.py` rejects published commits `56e7dee0`,
-`410c1d1d`, `66f62b90`, and `d38e08b5`. Rewriting those shared commits is not
-safe. Future mixed ledger commits must still fail.
+The deterministic generator and exact immutable-history exceptions pass on the
+pre-Job-B branch. Rebasing PR #270 onto merged PRs #271 and #273 rewrote 21
+branch commits and added seven canonical commits, so the checked-in table is
+again stale until regenerated. This is expected generated-history drift, not a
+new exception or permission to weaken future enforcement.
 
 ## Approach
 
@@ -61,8 +63,10 @@ safe. Future mixed ledger commits must still fail.
 
 ## Implementation checkpoint
 
-Commit `8d9e5058` rebuilds the canonical index and records the four published
-violations. Hosted Linux then exposed clone-dependent `%h` abbreviation width;
-`1694c326` derives collision-checked eight-character IDs from full SHAs and
-proves invalid, colliding, and mixed-ledger cases. Documentation verification
-and 143 focused tests pass locally.
+Rebased commit `d1f8ed28` rebuilds the canonical index and records the four
+published violations. Hosted Linux then exposed clone-dependent `%h`
+abbreviation width; rebased commit `a78653ce` derives collision-checked
+eight-character IDs from full SHAs and proves invalid, colliding, and
+mixed-ledger cases. Documentation verification and 143 focused tests passed
+before the Job B rebase. The post-rebase AR-236 recovery checkpoint regenerates
+the table against `c7cf1d96` and reruns the same exact checks.

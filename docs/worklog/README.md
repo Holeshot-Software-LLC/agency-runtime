@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-11
+updated: 2026-08-12
 tags: []
 related: []
 supersedes: []
@@ -788,21 +788,28 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5c046fbf` | 2026-08-11 | feat(config): give the operator a policy channel of their own | null | null |
 | `28a9a0d1` | 2026-08-11 | fix(config): a context budget must never be able to withhold a turn | null | null |
 | `8aa8861d` | 2026-08-11 | feat(install): refuse house rules that would never be applied, and harden the footer | null | null |
+| `d5aafc86` | 2026-08-11 | refactor(adapters): drop the surface that let Agency drive a host CLI | null | null |
+| `ec135b43` | 2026-08-11 | test(portability): name the real Windows containment module | null | null |
 | `f6313749` | 2026-08-11 | Merge pull request #268 from Holeshot-Software-LLC/work/worktree-branching-rule | null | null |
 | `9c4112c3` | 2026-08-11 | Merge pull request #269 from Holeshot-Software-LLC/work/operator-policy | null | null |
-| `50fe3e07` | 2026-08-11 | docs(roadmap): refresh the dashboard parity execution handoff | null | null |
-| `ebcc2eb9` | 2026-08-11 | feat(dashboard): align operator evidence with staffing vision | null | null |
-| `3ee585fe` | 2026-08-11 | feat(dashboard): add bounded vision evidence parity | null | null |
-| `45b6efe7` | 2026-08-11 | docs(roadmap): checkpoint AR-236 vision evidence | null | null |
-| `3a3bbb64` | 2026-08-11 | docs(roadmap): record AR-236 browser verification | null | null |
-| `634170c2` | 2026-08-11 | test(release): budget AR-236 dashboard evidence | null | null |
-| `3a63590e` | 2026-08-11 | docs(roadmap): checkpoint AR-236 CI budget repair | null | null |
-| `8a5c2de2` | 2026-08-11 | test(dashboard): cover AR-236 evidence boundaries | null | null |
-| `e70f521d` | 2026-08-11 | docs(roadmap): checkpoint AR-236 coverage repair | null | null |
-| `8d9e5058` | 2026-08-11 | fix(docs): reconcile canonical worklog history | null | null |
-| `d6169e63` | 2026-08-11 | docs(roadmap): checkpoint AR-254 history repair | null | null |
-| `1694c326` | 2026-08-11 | fix(docs): make worklog IDs clone independent | null | null |
-| `b0409803` | 2026-08-11 | docs(roadmap): checkpoint deterministic worklog IDs | null | null |
+| `fb34191f` | 2026-08-11 | refactor(delegation)!: delete the work-unit planner, worker pool, and ledger | null | null |
+| `b785e42b` | 2026-08-12 | fix(adapters): restore run_preflight, and retire tests of deleted behaviour | null | null |
+| `202a7d5a` | 2026-08-12 | style: apply ruff format after the test retirements | null | null |
+| `92e4e076` | 2026-08-12 | Merge pull request #271 from Holeshot-Software-LLC/work/delegation-jobb-prune | null | null |
+| `c7cf1d96` | 2026-08-12 | Merge pull request #273 from Holeshot-Software-LLC/work/delegation-jobb-prune-2 | null | null |
+| `c8038785` | 2026-08-11 | docs(roadmap): refresh the dashboard parity execution handoff | null | null |
+| `e69574f1` | 2026-08-11 | feat(dashboard): align operator evidence with staffing vision | null | null |
+| `cf2639a5` | 2026-08-11 | feat(dashboard): add bounded vision evidence parity | null | null |
+| `de7d72ab` | 2026-08-11 | docs(roadmap): checkpoint AR-236 vision evidence | null | null |
+| `99345651` | 2026-08-11 | docs(roadmap): record AR-236 browser verification | null | null |
+| `7b3c382a` | 2026-08-11 | test(release): budget AR-236 dashboard evidence | null | null |
+| `4822f9b3` | 2026-08-11 | docs(roadmap): checkpoint AR-236 CI budget repair | null | null |
+| `61a89828` | 2026-08-11 | test(dashboard): cover AR-236 evidence boundaries | null | null |
+| `6213cb1e` | 2026-08-11 | docs(roadmap): checkpoint AR-236 coverage repair | null | null |
+| `d1f8ed28` | 2026-08-11 | fix(docs): reconcile canonical worklog history | null | null |
+| `b980e608` | 2026-08-11 | docs(roadmap): checkpoint AR-254 history repair | null | null |
+| `a78653ce` | 2026-08-11 | fix(docs): make worklog IDs clone independent | null | null |
+| `a45422d1` | 2026-08-11 | docs(roadmap): checkpoint deterministic worklog IDs | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
