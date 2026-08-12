@@ -119,6 +119,13 @@ retains only that source's last-good state; and all five evidence endpoints stay
 off the hot poll. The tested 1440, 1024, and 390 pixel layouts do not overflow.
 All disposable browser fixtures, processes, and token-bearing logs were removed.
 
+PR [#270](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/270)
+is open for this bounded slice. Its first hosted static lane found that the new
+source-separated evidence raised the audited dashboard asset payload from
+298,409 to 355,184 bytes beyond the prior 300 KiB packaging guard. The guard is
+now documented and narrowly rebudgeted to 360 KiB; the exact 161-test workflow
+contract passes locally in `634170c2` pending the hosted rerun.
+
 Exact implementation details, test results, conflict warnings, authorization
 boundaries, and restart commands live in the
 [active recovery capsule](handoffs/issue-AR-236.md).

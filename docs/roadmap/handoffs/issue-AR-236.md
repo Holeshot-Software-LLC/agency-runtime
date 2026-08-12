@@ -35,19 +35,18 @@ issue owns acceptance; this capsule owns the next bounded execution slice.
 
 ## checkpoint
 
-- AR-236 remains open. Product commit `3ee585fe` is current-code browser and
-  fast-verification complete for this bounded vision-alignment slice. Later
-  owner UI slices from the endpoint keep-list still belong to the umbrella.
+- AR-236 remains open. PR #270 carries product commit `3ee585fe`; current-code
+  browser and fast verification are complete for that bounded slice. Its first
+  static CI run found only the release asset ceiling addressed below.
 - The branch is rebased onto `9c4112c3`, preserving the companion CLI re-scope
   and later operator-policy changes. The four earlier AR-236 commits are now
   `50fe3e07`, `f4f35509`, `ebcc2eb9`, and `b448d637`.
 - The rebase preserved the new CLI keep-list, AR-119 notes, worklog rows, host
   parity tests, and routing-intent declaration repair. AR-236 adds the missing
   retained-run orphan guard without duplicating the refreshed declaration.
-- Local implementation and commits are authorized. Push, PR, tracker mutation,
-  hosted workflows, installation, trust, and release actions are not. The owner
-  explicitly requires a fresh check-in before any PR because other worktrees are
-  active.
+- The owner subsequently authorized completing the open handoff work plus
+  pushing, opening, and merging green PRs/worktrees to main while unattended.
+  Check refreshed main before every checkpoint because another agent is active.
 
 ## completed-evidence
 
@@ -109,16 +108,17 @@ issue owns acceptance; this capsule owns the next bounded execution slice.
 - Four verified QA Python processes and four disposable fixture roots were
   removed, including the token-bearing stdout; no AR-236 process or temp root
   remains.
-- Endpoint keep-list: retain activity, roster diff/scans/sources, DB stats, and
-  duplicate review for later owner UI slices; preserve hosts/inference/runtime/
-  health/policy/search as service contracts; do not add panels merely because a
-  route exists.
+- Endpoint keep-list: retain activity, roster scans/sources, DB stats, and
+  duplicate review for later owner UI slices. Do not wire roster diff until its
+  mutating GET/full-manifest leak is replaced by explicit owner mutation plus a
+  redacted read projection. Preserve service routes without gratuitous panels.
 
 ## exact-blocker
 
-- This bounded slice has no known product blocker. AR-236 stays open because the
-  keep-list reserves activity, roster diff/scans/sources, DB stats, and duplicate
-  review for later owner UI decisions; service-only routes remain non-UI.
+- PR #270's first hosted static lane failed because AR-236 grew the audited
+  dashboard assets from 298,409 to 355,184 bytes beyond a 300 KiB guard. A
+  documented 360 KiB ceiling in `634170c2` passes the exact 161-test workflow
+  contract locally; push and hosted rerun remain for this checkpoint.
 - Decision conformance could not enter its mutation phase: its baseline forces
   `AGENCY_CI_PYTHON` to the existing main-worktree virtualenv, whose parent
   namespace the executable trust policy correctly rejects. The focused failing
@@ -130,10 +130,9 @@ issue owns acceptance; this capsule owns the next bounded execution slice.
   stale and `verify_docs.py` at 18 inherited history errors: one index-set
   mismatch covering 13 main commits, 13 inaccurate rows for those same commits,
   and four pre-existing ledger-path violations. No AR-236 row fails.
-- Exhaustive coverage/compatibility and hosted workflows were not run; they are
-  not ordinary gates and remain unauthorized.
-- Tracker #245 may not reflect this locally reopened scope. External changes
-  remain unauthorized.
+- Hosted CodeQL and dependency review passed. Coverage/compatibility lanes were
+  skipped after the static failure; they remain manual, non-ordinary gates.
+- Tracker #245 may not yet reflect the reopened umbrella and later UI scope.
 
 ## same-task-continuity
 
@@ -141,19 +140,19 @@ After every compaction, reread this capsule, the canonical AR-236 issue, and `gi
 
 ## next-bounded-work-package
 
-1. Before editing, reread this capsule and fetch/rebase `origin/main`; the owner has active companion worktrees and may add more scope.
-2. Ask the owner which later owner-facing keep-list slice should run next: activity, roster diff/scans/sources, DB stats, or duplicate review.
-3. Re-audit that slice against the current CLI vision before adding UI; do not turn service contracts into panels merely because routes exist.
-4. Preserve the evidence boundaries and rerun only proportionate focused checks
-   plus the named fast spine at the next hard checkpoint.
-5. Do not push or open a PR. Check with the owner first and account for their
-   other worktree changes before any integration step.
+1. Fetch/rebase `origin/main`; another agent may add or reframe dashboard scope.
+2. Commit and push the asset-budget fix, rerun PR #270 CI, and merge only green.
+3. Consolidate the active roster/workforce/ops audits into bounded owner-visible
+   packages; repair unsafe contracts before adding any UI.
+4. Preserve evidence boundaries, checkpoint each package in this capsule, and
+   run proportionate focused/browser checks plus the named fast spine.
 
 ## verification
 
 ~~~text
 Post-rebase focused product pytest: 278; new-base policy pytest: 26.
 Post-rebase warning-strict Python spine: 668 passed, 6 skipped, 0 failed.
+Hosted-failure contract reproduction after budget fix: 161 passed.
 node --test tests/dashboard_ui.test.mjs  # 124 passed, 0 failed
 python -m agency_runtime.cli eval routing --json --no-details  # 39/39
 python -m agency_runtime.cli eval decision-conformance --repository . --json
