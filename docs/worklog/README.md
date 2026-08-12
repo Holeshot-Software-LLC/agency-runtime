@@ -810,6 +810,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b980e608` | 2026-08-11 | docs(roadmap): checkpoint AR-254 history repair | null | null |
 | `a78653ce` | 2026-08-11 | fix(docs): make worklog IDs clone independent | null | null |
 | `a45422d1` | 2026-08-11 | docs(roadmap): checkpoint deterministic worklog IDs | null | null |
+| `cfa67e4b` | 2026-08-12 | docs(roadmap): reframe dashboard parity after Job B | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
