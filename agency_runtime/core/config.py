@@ -41,6 +41,7 @@ from agency_runtime.core.filesystem_trust import (
     metadata_is_link_or_reparse_point as _metadata_is_link_or_reparse,
 )
 from agency_runtime.core.model_capabilities import TOKEN_PARAMETERS
+from agency_runtime.core.operator_policy import normalized_operator_policy
 from agency_runtime.core.policy.profiles import PROFILES
 
 # ── Config path resolution ────────────────────────────────────
@@ -425,6 +426,10 @@ class AgencyConfig:
     adapters: AdaptersConfig = field(default_factory=AdaptersConfig)
     profile: str = "standard"
     companion_policy_path: str | None = None
+    # House rules from whoever installed Agency here, injected every turn beside
+    # the resident-steward kernel and hashed separately from it. Empty by default:
+    # Agency ships no opinion about anyone's conventions.
+    operator_policy: str = ""
     config_path: str = ""  # where this config was loaded from
 
 
@@ -739,6 +744,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
         adapters=_build_adapters(adapters_raw),
         profile=str(raw.get("profile", "standard")),
         companion_policy_path=raw.get("companion_policy_path"),
+        operator_policy=normalized_operator_policy(raw.get("operator_policy")),
         config_path=config_path,
     )
 
@@ -1358,5 +1364,6 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
         },
         "profile": cfg.profile,
         "companion_policy_path": cfg.companion_policy_path,
+        "operator_policy": cfg.operator_policy,
     }
     return yaml.dump(data, default_flow_style=False, sort_keys=False)

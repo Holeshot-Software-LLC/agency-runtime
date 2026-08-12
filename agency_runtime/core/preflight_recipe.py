@@ -15,6 +15,7 @@ from agency_runtime.core.agent_activation import agent_is_enabled
 from agency_runtime.core.bounded_values import bounded_unique_strings
 from agency_runtime.core.config import AgencyConfig, DelegationConfig
 from agency_runtime.core.host_capabilities import project_host_capability_receipt
+from agency_runtime.core.operator_policy import render_operator_policy
 from agency_runtime.core.preflight_versions import (
     PREFLIGHT_CONTEXT_POLICY_VERSION,
     PREFLIGHT_REPLAY_RECIPE_VERSION,
@@ -732,6 +733,14 @@ def _result_from_recipe(
         )
         if resident_binding is not None
         else (RESIDENT_MANAGER_KERNEL if resident_managers else "")
+    )
+    # Operator house rules follow Agency's own frame, never precede it. If the
+    # context budget forces a cut, the product contract is what survives — and the
+    # rendered block already tells its reader that it yields to the user's request.
+    resident_context = _combine_context(
+        resident_context,
+        render_operator_policy(config.operator_policy),
+        maximum_chars=context_limit,
     )
 
     disabled = frozenset(config.agents.disabled)

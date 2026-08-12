@@ -884,6 +884,7 @@ _TOP_LEVEL_VALIDATORS: dict[str, Callable[[Any], Any]] = {
         if item is None
         else _string(item, "companion_policy_path", allow_empty=False, maximum=4096)
     ),
+    "operator_policy": lambda item: _operator_policy(item),
 }
 
 
@@ -897,3 +898,24 @@ def validate_config_document(document: Mapping[str, Any]) -> dict[str, Any]:
     return {
         name: _TOP_LEVEL_VALIDATORS[name](copy.deepcopy(value)) for name, value in document.items()
     }
+
+
+def _operator_policy(item: Any) -> str:
+    """Validate operator house rules through their one owning normalizer.
+
+    Delegating to `normalized_operator_policy` keeps the budget, the control-character
+    rules, and the error text in a single place: a second spelling here is exactly how
+    a config field ends up accepted by one path and rejected by another.
+    """
+
+    from agency_runtime.core.operator_policy import (
+        OperatorPolicyError,
+        normalized_operator_policy,
+    )
+
+    if item is None:
+        return ""
+    try:
+        return normalized_operator_policy(item)
+    except OperatorPolicyError as exc:
+        raise ValueError(str(exc)) from exc
