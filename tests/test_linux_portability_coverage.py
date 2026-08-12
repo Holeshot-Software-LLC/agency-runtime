@@ -29,8 +29,9 @@ from agency_runtime.core import (
 )
 from agency_runtime.core import configuration_persistence as persistence
 from agency_runtime.core import dashboard_service_manifest as manifest
+from agency_runtime.core import owned_process_windows as backend_windows
 from agency_runtime.core.config import AgencyConfig
-from agency_runtime.core.delegation import backend_process, backend_windows, backends
+from agency_runtime.core.delegation import backend_process, backends
 from agency_runtime.core.roster import ingress
 from agency_runtime.core.store import security
 from agency_runtime.core.store import sqlite as sqlite_store
