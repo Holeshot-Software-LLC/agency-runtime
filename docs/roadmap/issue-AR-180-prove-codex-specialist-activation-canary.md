@@ -3,13 +3,14 @@ title: "AR-180: Prove Codex specialist activation in the live canary"
 status: open
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-30
+updated: 2026-08-12
 tags: [codex, canary, activation, delegation, production-readiness]
 related:
   - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
   - docs/roadmap/issue-AR-114-guided-codex-hook-activation.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
@@ -19,6 +20,7 @@ related:
   - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - agency_runtime/core/canary.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/canary_proof.py
@@ -33,11 +35,19 @@ epic: host-integrations
 issue_id: AR-180
 priority: p0
 tracker_url: null
-depends_on: [AR-143, AR-182, AR-185, AR-191, AR-192, AR-195]
-blocks: [AR-119]
+depends_on: [AR-143, AR-182, AR-185, AR-191, AR-192, AR-195, AR-255]
+blocks: [AR-119, AR-252, AR-253]
 ---
 
 # AR-180: Prove Codex specialist activation in the live canary
+
+> **RESTATED 2026-08-12.** The historical canary narrative below records useful
+> Codex trust and lifecycle investigations, but its Job B work units, one-use
+> grants, Store-only load proof, and response header are not current success
+> authority. AR-255 builds an inference-bound channel and host-artifact proof;
+> AR-180 exact-installs that implementation and live-proves one real Codex child
+> on TUI, Desktop, and exec. Only the Approach and Acceptance sections as
+> amended below govern closure.
 
 ## Problem
 
@@ -209,18 +219,19 @@ adapters over the same behavioral proof.
 ## Approach
 
 Define a time-bounded Codex activation probe whose requested work has one safe
-isolated unit and one eligible specialist selected by configured inference.
-Require the inferred decision and its provider receipts before narrowing that
-same worker to the closed diagnostic execution boundary. Prove first that the
+isolated unit and a compatible multi-card team selected by configured inference.
+Require the inferred decision and its provider receipts before narrowing those
+same cards to the closed diagnostic execution boundary. Prove first that the
 non-interactive Codex surface exposes the required native delegation tool.
 The user-level probe must explicitly request exactly one sub-agent for the
 whole unit so the canary remains compatible with Codex's native delegation
 policy; indivisibility constrains fanout rather than prohibiting delegation.
-Then require exactly one child launch, exact work-unit correlation, pre-LLM
-specialist delivery, one-use activation consumption, child completion, parent
-finalization, and a valid response header. Reject absent tools, topology drift,
-extra children, timeouts, unconsumed grants, parent-only prompt loading, and
-uncorrelated evidence. Keep shell, filesystem writes, and external services
+Then require exactly one child launch and a host-written child artifact that
+contains the exact inference-selected card hashes before first child speech.
+Correlate parent, child, install, channel, and inference decision without Job B
+work units or one-use grants. Reject absent tools, topology drift, extra
+children, timeouts, parent-only prompt loading, replay, and uncorrelated or
+Agency-only evidence. Keep shell, filesystem writes, and external services
 disabled. Run the same proof through either attended native trust or the
 explicit per-invocation autonomous bypass without conflating the two.
 
@@ -235,18 +246,21 @@ instead of weakening the evidence gate.
 
 ## Acceptance
 
-- [x] Configured inference selects exactly one expected specialist for the
-  bounded canary unit, with provider and inferred-decision receipts; no
-  deterministic fallback may choose or substitute that specialist.
+- [x] The historical bounded control proved configured inference could select
+  exactly one expected specialist with provider and inferred-decision receipts;
+  no deterministic fallback chose or substituted it.
 - [ ] Current-profile Codex exposes and invokes the supported native child tool
   through attended trust or the explicit autonomous bypass, without shell
   access, file writes, or external services.
-- [ ] PreToolUse, SubagentStart, PostToolUse, SubagentStop, and Stop evidence is
-  correlated to one session, trace, work unit, child, and install identity.
-- [ ] The expected specialist prompt is delivered only to the child and its
-  one-use activation grant is consumed exactly once.
-- [ ] Child completion and parent finalization are accepted, the Agency header
-  is valid, and the installation-bound current-profile attestation persists.
+- [ ] TUI, Desktop, and exec each produce a host-written child artifact bound to
+      the exact parent, child, install, inference decision, and card hashes.
+- [ ] The expected specialist cards appear before the child's first speech and
+      only in the child context; Store rows and response prose cannot pass.
+- [ ] At least one Codex child receives two or more compatible cards selected by
+      the same valid inference decision; one child must not be confused with one
+      card.
+- [ ] Child completion and parent finalization are accepted and the
+      installation-bound current-profile attestation persists.
 - [x] Missing tools, extra delegation, timeout, drift, replay, or incomplete
   evidence fails and closes only the exact canary run.
 - [x] Focused tests cover positive, unavailable-tool, timeout, and correlation-

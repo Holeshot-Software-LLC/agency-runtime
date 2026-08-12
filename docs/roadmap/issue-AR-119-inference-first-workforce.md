@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-30
+updated: 2026-08-12
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance, multi-harness]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -15,6 +15,9 @@ related:
   - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - docs/roadmap/AR-119-founding-vision.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -26,6 +29,10 @@ related:
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
+  - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
+  - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
+  - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
@@ -43,7 +50,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-179, AR-180, AR-185, AR-190, AR-228]
+depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256]
 blocks: [AR-178, AR-200, AR-201]
 ---
 
@@ -64,19 +71,21 @@ blocks: [AR-178, AR-200, AR-201]
 **What is actually wanted: prove the nine vision rules on every supported host,
 using evidence the host itself wrote.**
 
-Seven rules are done and evidenced. Rule 4 — harness-spawned children receive
+Seven rules are conceptually landed. Rule 4 — harness-spawned children receive
 specialist cards, plural — was proven in production for the first time on
 2026-08-11: one child, three cards, `correlated=true`, the `jit:v5` envelope
 present in record 0 of the child's own transcript before it first spoke. Rule 8
 was settled the same day and is now auditable rather than asserted.
 
-What remains is rule 4 on the other hosts, and therefore rule 9. Measured
-2026-08-11 with `agency evidence children`:
+That 7/9 count is not a completion percentage. Cross-host proof, selection and
+evidence authority, latency, automatic contractor promotion, and canonical
+status reconciliation remain P0 closure gates. Measured 2026-08-11 with
+`agency evidence children`:
 
 | host | children provably staffed | blocker |
 |---|---|---|
 | claude | **1** (6 legacy) | none — proven |
-| codex | **0** (11 legacy) | hooks never trusted in a Codex TUI; AR-209's encrypted `PreToolUse` payload |
+| codex | **0** (11 legacy) | measured negative in TUI, Desktop, and exec; the native spawn payload is opaque to the current JIT path |
 | zcode | not measured | host emits no `SubagentStart`/`SubagentStop` |
 | openclaw | not measured | not installed on the development box |
 | hermes | not measured | not installed on the development box |
@@ -88,9 +97,10 @@ silently absent on a supported host.
 ## Current state
 
 The audited roster, turn-scoped activation, resident managers, native-child
-receipts, provider evidence, CLI, and dashboard provide a strong base. The
-complete contract and completion gates are authoritative in tracker issue
-[#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132).
+receipts, provider evidence, CLI, and dashboard provide a strong base. Tracker
+issue [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
+mirrors the umbrella state. Repository-local AR-119, AR-256, and their evidence
+records are the completion authority.
 AR-120 through AR-125 divide implementation into independently verifiable
 slices without narrowing that umbrella contract.
 
@@ -112,22 +122,15 @@ capabilities against an immutable versioned projection of the entire workforce;
 and give the native host exact specialist recipes without replacing its
 scheduler.
 
-> **ADR-0087 plus its ADR-0088 offline amendment govern this approach.**
-> Inference is the sole
-> specialist decider when a provider is configured: plan the intent, run
-> broad typed recall (zero false negatives), then let inference pick the best
-> eligible specialist per unit, declare a real gap, or hire a governed
-> contractor on the gap. Deterministic code is **recall plus validation only**
-> — it never selects the best specialist and never overrides the model's
-> eligible required nomination with role anchors. When no provider is
-> configured, ADR-0088 now permits a clearly stamped deterministic typed-recall
-> floor for obvious safe matches and otherwise abstains. The earlier wording
-> below ("verify staffing
-> deterministically", "high-margin complete local result needs no recruiter
-> call") predates ADR-0087 and is retained for provenance; the deterministic
-> decider it implied was removed from the configured-inference path. See
-> [ADR-0087](../decisions/0087-inference-decides-from-a-relevance-shortlist.md)
-> and [ADR-0088](../decisions/0088-deterministic-typed-recall-offline-floor.md).
+> **ADR-0118 governs the current approach and supersedes the ADR-0088 offline
+> amendment.** Every substantive specialist or contractor choice requires a
+> validated inference decision. Deterministic code may recall candidates and
+> enforce hard eligibility, compatibility, budgets, and evidence correlation;
+> it may never select, rank, replace, or invent the team. No valid inference
+> means Agency supplies no specialist, card, activation, or hire and emits an
+> honest diagnostic; the native host remains free to proceed unstaffed.
+> Conflicting historical wording below is provenance, not an authorized
+> fallback.
 
 A high-margin complete local result needs no recruiter call. Balanced and strict
 modes may ask inference to resolve an ambiguous bounded shortlist, but the model
@@ -135,6 +138,13 @@ cannot nominate outside the runtime-supplied cards or override eligibility and
 composition policy. Every accepted Agency work unit must prove that the
 performing parent or child consumed its exact-version activation receipt. Parent
 plans are reused by children so native fan-out does not multiply inference calls.
+
+> **Superseded current-contract note (2026-08-12).** The paragraph immediately
+> above is historical Job B/offline-floor behavior. Under ADR-0118 and the
+> restatement, there is no deterministic specialist choice, parent dispatch
+> plan, Agency work unit, or one-use activation receipt. The native host owns
+> spawning; Agency may only deliver cards chosen by valid inference, or deliver
+> none and let the host proceed unstaffed with an honest diagnostic.
 
 Treat routing speed as a product contract: the common path uses one compact
 intent-planning call followed by local whole-roster recall, warm continuations
@@ -158,6 +168,11 @@ Before first activation, a contractor must pass the same contract compilation,
 capability indexing, audit, version, conflict, eligibility, activation, and
 receipt path as an employee. Probation restricts authority and reuse; it never
 bypasses workforce governance.
+
+> **Superseded promotion note (2026-08-12).** Operator-controlled promotion is
+> historical. ADR-0157 makes the default three-success/seven-day automatic path
+> part of AR-119; AR-252 must supply and live-prove its host-backed acceptance
+> evidence before the umbrella closes.
 
 Prove value with paired Agency-on and Agency-off trials using the same ask,
 host, model, configuration, and evaluator. An Agency-on trial without accepted

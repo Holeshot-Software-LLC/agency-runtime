@@ -3,160 +3,164 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-07-28
-tags: [handoff, routing, workforce, evaluation, recovery, production-readiness]
+updated: 2026-08-12
+tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
-  - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
-  - docs/decisions/0102-defer-one-shot-application-evaluation.md
-  - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
-  - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
-  - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
-  - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
-  - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
-  - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
-  - docs/decisions/0077-prove-codex-activation-behaviorally.md
-  - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
-  - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
-  - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
-  - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
-  - docs/roadmap/issue-AR-187-isolate-native-host-lifecycle-cwd.md
-  - docs/decisions/0106-isolate-native-host-lifecycle-working-directories.md
-  - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
-  - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
-  - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
-  - docs/worklog/2026-07-28-380f899-bind-codex-v2-native-evidence.md
+  - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
+  - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
+  - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
+  - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
+  - docs/roadmap/AR-119-founding-vision.md
+  - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - docs/roadmap/AR-119-acceptance-evidence.md
+  - docs/NORTH_STAR_ACCEPTANCE.md
+  - docs/SESSION_HANDOFF.md
+  - docs/THREAT_MODEL.md
+  - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: main
-evidence_commit: 380f8992fb1d728026be82673bb966a43c148b97
-minimum_ledger_commit: 9a5b37c6862461b445b7380e451ee9578438fb7b
+branch: codex/ar119-vision-mitigation-handoff
+evidence_commit: e392c040c967a65822b0615101d581c7b978983f
+minimum_ledger_commit: 6f4e6b64448d62f6c2aeadd7ecef236e71f9b8f1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
 
 # AR-119 active recovery capsule
 
-Bounded current-state projection for the same persistent production-readiness
-task. The [canonical issue](../issue-AR-119-inference-first-workforce.md) owns
-the full acceptance history.
+Bounded next-session mitigation plan for the nine-rule vision. The
+[canonical issue](../issue-AR-119-inference-first-workforce.md) retains history;
+this is the single current bootstrap projection.
 
 ## checkpoint
 
-- Latest clean pushed recovery pair is AR-191 `380f899`/`9a5b37c`; branch
-  `main` and `origin/main` resolve to that checkpoint, and the package plus
-  Codex bundle were refreshed from it.
-- The in-progress AR-192 package adds a bounded read-only Codex `hooks/list`
-  preflight before model-backed current-profile activation verification.
-  Seventy focused tests and two independent reviews close its scoped source
-  findings; the named production spine and all routine gates pass.
-- User draft `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged
-  and excluded from every commit.
-- Installed plugin `0.1.0+codex.9e970ea1b470`, bundle
-  `355bdf7f...b517cb12`, install ID
-  `f2aad1f0-03bb-4afd-8cc9-6e94dd8eff08`, has all eight hooks enabled but
-  authoritatively classified `modified`. No exhaustive workflow or hosted
-  Action ran.
+- PR #270 merged to `main` as `e392c040` on 2026-08-12. Its PR gates were
+  green. The post-merge push failed only because the merge commit was missing
+  from the worklog; local ledger-only commit `6f4e6b64` repairs that row.
+- This branch records the owner decisions: Codex remains supported; specialist
+  and contractor choice is inference-only; only host-written artifacts prove
+  child card delivery; latency must improve without weakening those controls;
+  canonical drift must be reconciled; automatic contractor promotion is P0 and
+  blocks AR-119.
+- AR-255 and AR-256 are the new P0 repair records. AR-252 and AR-253 are
+  restated for the current host-spawned/JIT architecture and elevated to P0.
+  Tracker creation for all four remains pending explicit authorization.
+- The complete owner-confirmed nine rules are now repository-local in
+  `docs/roadmap/AR-119-founding-vision.md`; do not reconstruct them from issue
+  fragments or external session memory.
 
 ## completed-evidence
 
-- Deep security, optimization, traceability, and UI review is complete. No open
-  Critical or High source finding remains; repaired lower findings have
-  cross-layer regressions. The complete warning-strict corpus remains historical
-  evidence only and is no longer a routine local/automatic gate.
-- Exhaustive coverage and six-version compatibility are manual-only
-  `workflow_dispatch` work. They do not run on PR/push and will not be run
-  locally unless the owner explicitly asks. No hosted Actions ran here.
-- A packaged dashboard authenticated and rendered all seven views and six
-  evidence tabs. Desktop 1440x900 and mobile 390x844 had no horizontal overflow;
-  Settings showed effective `delegation.mode=prefer`; request IDs correlated
-  header-to-body; console warnings/errors were empty. The listener is stopped.
-- The named fast spine passes 536 tests with 5 platform skips; all 109 dashboard
-  tests and every routing/delegation evaluation gate pass. Exhaustive coverage
-  and six-version compatibility now run only on explicit `workflow_dispatch`.
-- One-shot application evaluation is deferred to post-production AR-178 and is
-  not an AR-119/125 release gate.
-- AR-180/185 isolate one nonce-bound `code-reviewer` activation measurement,
-  require the existing Store, suppress roster reconciliation and hiring, and
-  bind success to fresh routing, child lifecycle, finalization, header, model,
-  and install evidence. Ordinary requests remain inference-governed.
-- AR-191's exact V1/V2 matcher, lifecycle claim, parent-trace recovery, replay
-  binding, rooted result path, and truthful projection passed the named fast
-  spine plus focused adversarial review before pair `380f899`/`9a5b37c` was
-  pushed and installed.
-- Two post-install current-profile attempts created zero Agency Store rows and
-  no activation attestation. Fresh `hooks/list` calls for both relevant working
-  directories returned the same eight enabled, `modified` Agency hooks. Stored
-  trust hashes belonged to the pre-refresh definitions, proving a stale TUI
-  approval rather than a lease, Store, or working-directory failure.
-- Codex's hash invalidation is the intended security behavior. Agency's missing
-  authoritative preflight caused the avoidable model-backed delay; AR-192 owns
-  that fail-fast repair and does not write trust state or use the bypass.
-- AR-192 passes 70 focused tests, the 536-test named production spine with 5
-  platform skips, 109 dashboard tests, documentation checks, lint/format, and
-  the routing evaluation. Independent security and cross-layer reviews report
-  no remaining scoped Critical, High, or Medium blocker.
+- Seven of nine rules are conceptually landed. This is not a completion
+  percentage: cross-host live evidence and the dependent Rule 9 parity gate
+  remain open.
+- Claude Rule 4 is live-proven: one host-spawned child received three cards;
+  its own transcript contains the correlated `jit:v5` envelope before first
+  speech. Agency Store rows were not used as the proof authority.
+- Codex is measured negative in TUI, Desktop, and exec: eleven legacy native
+  child artifacts exist, but no measured child received a card. ZCode, Hermes,
+  and OpenClaw remain unmeasured.
+- ADR-0118 already requires inference-owned staffing and forbids a deterministic
+  offline selector. `child_delivery_evidence.py` already states that only the
+  host artifact proves delivery.
+- The latest recorded baseline (2026-08-11, `agency evidence latency`) covers
+  200 decisions; 196 traces carry 433 receipts (~2.4 calls each). Its computed
+  path reports p50 88.3 s and p95 195.9 s against the unchanged 15 s control.
+  Remeasure an exact installed candidate before optimization.
+- AR-242 implemented the three-success/seven-day promotion policy, but live
+  native outcomes remain assignments without independently verified acceptance,
+  so automatic promotion cannot fire from production work.
 
 ## exact-blocker
 
-- AR-192 still needs a clean substantive/ledger pair, push, and exact install.
-  Then one fresh TUI must approve the settled definitions; `hooks/list` must
-  report 8/8 trusted before one bounded current-profile canary. No stale or
-  isolated attestation may satisfy that recheck.
-- AR-161 needs owner publisher identity, authorized legal/license disposition,
-  protected signing/timestamp service, signed-delivery verification, and an
-  attended Windows Hello success-and-denial canary. The remote session cannot
-  supply human presence or invent publisher authority.
-- Automatic CI excludes exhaustive suites by design. They are optional,
-  operator-requested diagnostics rather than a local completion requirement.
-- `main` has neither authorized branch protection nor a repository ruleset.
-  Applying required contexts is an outward setting change owned by AR-159.
-- Installed-host canaries other than the bounded Codex recheck remain separate
-  release evidence and are not inferred from deterministic host discovery.
-- AR-119/125 still require a benchmark-valid complete outcome corpus. Malformed,
-  timed-out, no-response, and unknown upstream arms remain invalid, never losses.
-- Tracker creation/closure for authorization-pending AR items and other writes
-  remain pending owner authorization.
-- No stable Agency Runtime release exists; stable discovery remains unavailable.
+1. **AR-256 — canonical authority.** Publish one nine-rule/host matrix;
+   reconcile stale deterministic-selection, planned-child, Job B, and status
+   claims; enforce evidence-backed `done` acceptance.
+2. **AR-255 — selection and evidence authority.** Remove deterministic JIT
+   worker choice and fail-open compatibility selection. Carry an exact inference
+   decision to spawn. Make host-written child artifacts the only green proof;
+   Store `specialist_load` rows remain diagnostic.
+3. **AR-180 — Codex support.** Exact-install AR-255's integrity-bound delivery
+   channel and prove real children, including a multi-card child, in TUI,
+   Desktop, and exec. Do not waive or downgrade Codex.
+4. **AR-252 — automatic contractor critical path.** From host-backed producer
+   and independent-verifier artifacts, record accepted outcomes and prove that
+   three successes after the review window trigger automatic promotion. This
+   P0 directly blocks AR-119.
+5. **AR-253 — latency, staffing rate, and host parity.** Add the fixed
+   `agency eval staffing` manifest; measure the successful recruiter decision
+   separately from bounded planner/repair attempts and restore the 15 s cold
+   gate; obtain current multi-card Rule-4 and automatic-promotion evidence on
+   every supported host.
+6. **AR-125 — value.** Run the matched Agency-on/off corpus only after valid
+   candidate identity and provider contracts hold. Malformed or timed-out arms
+   are invalid, never upstream losses.
+7. Rule 9 cannot close until the same authority and behavior are live-proven on
+   Claude, Codex, ZCode, Hermes, and OpenClaw, with unavailable hosts visibly
+   unproven.
 
 ## same-task-continuity
 
-Context thresholds never create, transfer, pause, or stop this task. Continue
-the same persistent goal from the clean pair through normal compaction.
+Start the new session from this file and the repository-local founding vision,
+then read AR-119, AR-255, AR-256, AR-180, AR-252, AR-253, AR-125, and ADR-0118.
+Confirm `git status`, branch, HEAD, and worklog parity before editing. Preserve
+unrelated work and continue from the clean substantive/ledger pair; do not
+reconstruct Job B from historical text.
 
 ## next-bounded-work-package
 
-1. Commit the verified AR-192 substantive/ledger recovery pair.
-2. Push and install that exact checkpoint, close pre-install Codex TUIs, approve
-   once from a fresh TUI, and require an authoritative 8/8 trusted inspection.
-3. Run one bounded current-profile activation verification and report the exact
-   scoped demo verdict. Do not dispatch exhaustive or hosted diagnostics.
+1. Execute AR-256 phase 1 as one documentation-governance package. Starting
+   from `docs/roadmap/AR-119-founding-vision.md`, create the authoritative
+   rule/host evidence matrix, mark contradictions, and add both the vision-
+   digest and `done`-acceptance verifiers with explicit historical exceptions
+   rather than rewriting history.
+2. Reconcile current north-star/session/threat statements, run documentation
+   verification, and create the package's substantive/ledger pair. Then replace
+   this capsule with the next bounded package; do not begin AR-255 in the same
+   package.
 
 ## verification
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
-python -m pytest tests/test_codex_hook_trust.py tests/test_codex_activation_canary.py tests/test_host_canary.py -q -W error
+python scripts/docs_metadata.py --check
+python scripts/update_policy_availability.py --check
+python scripts/update_worklog.py --check
 python scripts/verify_docs.py
+python -m pytest tests/test_verify_docs_schema.py -q -W error
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
+node --test tests/dashboard_ui.test.mjs
+agency eval routing --json --no-details
+agency eval decision-conformance --repository . --json
 git diff --check
-# Optional only when the owner explicitly requests exhaustive diagnostics:
-python -m pytest tests -q -W error
 ~~~
+
+Also run the named fast Python production spine exactly as listed in
+`AGENTS.md` before the package checkpoint.
 
 ## constraints
 
-- Telemetry immediately before every live evaluation, benchmark corpus, or
-  attended canary; create/reuse a clean checkpoint when at or below 50 percent.
-- Preserve fixed 15,000 ms cold and one-call fast AR-119 controls. Never weaken
-  coverage, parser, authority, timing, artifact, or asset thresholds after data.
-- Do not claim Agency superiority, activation, specialist loading, model
-  receipt, delegation, contractor hire, or host canary without exact evidence.
-- Do not alter unknown/unattested paths or the user draft.
-- No push, PR, hosted dispatch, publication, tracker mutation, tag, release,
-  trust-store action, or repository setting change without authorization.
+- Codex remains a supported host; an opaque payload is an engineering blocker,
+  not permission to remove support or accept weaker evidence.
+- Inference is the only specialist or contractor chooser. Deterministic code may
+  recall, filter hard-ineligible candidates, validate, budget, and correlate.
+- Only a host-written artifact containing exact card hashes before first child
+  speech proves Rule 4. Agency rows and model prose are diagnostics only.
+- Keep the 15,000 ms cold control fixed. Count the single successful recruiter
+  decision separately from ADR-0132's planner/recruiter repair attempts. Never
+  trade authority, safety, or evidence for latency.
+- Automatic promotion is on the AR-119 critical path. Do not close the umbrella
+  with the production acceptance path dormant.
+- Do not claim Agency superiority until a valid matched corpus proves it.
+- Do not restore Job B, plan-row dispatch, work units, grants, or consumed
+  receipts as the delivery transport.
+- No push, PR, tracker creation/closure, hosted dispatch, install, trust action,
+  publication, tag, release, or repository-setting change without authorization.

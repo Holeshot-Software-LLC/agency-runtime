@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-31
+updated: 2026-08-12
 tags: [planning, tracker]
 related: []
 supersedes: []
@@ -262,9 +262,11 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-249` | [Explain parity (sub-issue 8 of AR-236)](issue-AR-249-explain-parity.md) | done | p1 | operations | [#258](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/258) |
 | `AR-250` | [Upgrade flow parity (sub-issue 9 of AR-236)](issue-AR-250-upgrade-flow-parity.md) | done | p2 | operations | [#259](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/259) |
 | `AR-251` | [CLI presentation richness (sub-issue 10 of AR-236)](issue-AR-251-cli-presentation-richness.md) | done | p2 | operations | [#260](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/260) |
-| `AR-252` | [Record verified acceptance outcomes so automatic promotion can fire](issue-AR-252-record-verified-acceptance-outcomes.md) | open | p2 | workforce | None |
-| `AR-253` | [Dynamic team dispatch on every harness — close the last four gaps](issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | open | p2 | workforce | None |
+| `AR-252` | [Record host-evidenced, independently verified outcomes for automatic promotion](issue-AR-252-record-verified-acceptance-outcomes.md) | open | p0 | workforce | None (tracker creation pending authorization) |
+| `AR-253` | [Prove staffing latency, rate, and cross-host parity](issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | open | p0 | workforce | None (tracker creation pending authorization) |
 | `AR-254` | [Reconcile canonical worklog history after merged ledger violations](issue-AR-254-reconcile-canonical-worklog-history.md) | done | p0 | documentation | [#272](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/272) |
+| `AR-255` | [Make native child staffing inference-owned and host-proven](issue-AR-255-inference-owned-host-proven-child-staffing.md) | open | p0 | routing | None (tracker creation pending authorization) |
+| `AR-256` | [Establish the canonical nine-rule completion contract](issue-AR-256-canonical-nine-rule-completion-contract.md) | open | p0 | documentation | None (tracker creation pending authorization) |
 
 ## Traceability
 
@@ -451,7 +453,7 @@ not stable internal identifiers.
 | [AR-177](issue-AR-177-make-exhaustive-python-ci-manual.md) | `60543e1`; hosted measurement and tracker creation pending authorization | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md), [ADR-0100](../decisions/0100-short-circuit-trusted-docs-only-pull-requests.md), [ADR-0101](../decisions/0101-run-exhaustive-python-verification-on-demand.md) |
 | [AR-178](issue-AR-178-evaluate-one-shot-applications-post-production.md) | `6cb8406`; deferred post-production evaluation | [ADR-0102](../decisions/0102-defer-one-shot-application-evaluation.md) |
 | [AR-179](issue-AR-179-fail-named-regulated-assurance-gaps-closed.md) | `c2ebfc6`, `99b51bd` | [ADR-0103](../decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md) |
-| [AR-180](issue-AR-180-prove-codex-specialist-activation-canary.md) | `cb06c73`, `77ec4f6`, `54d82a9`, `23dd496`, `5d39042`, `9c7a3d3`, `8f4c3b7`, `8fdc186`, `55a03e1`, `29fd9a9`; packaged candidate verified, isolated planner boundary retained, attended live graph pending | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md), [ADR-0104](../decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md) |
+| [AR-180](issue-AR-180-prove-codex-specialist-activation-canary.md) | `cb06c73`, `77ec4f6`, `54d82a9`, `23dd496`, `5d39042`, `9c7a3d3`, `8f4c3b7`, `8fdc186`, `55a03e1`, `29fd9a9`; packaged candidate verified, isolated planner boundary retained, attended live graph pending | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md), [ADR-0104](../decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md), [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md) |
 | [AR-181](issue-AR-181-bound-all-host-smoke-launcher-preparation.md) | `c625bc7`; exact fresh-wheel recheck and tracker creation pending authorization | None; bounded smoke optimization preserves existing launcher trust contracts |
 | [AR-182](issue-AR-182-bind-codex-hook-trust-inventory.md) | `4e39d4c`; tracker creation pending authorization | None; exact generated inventory ownership only |
 | [AR-183](issue-AR-183-normalize-private-posix-wheel-modes.md) | `d07f4d8`; restrictive-umask Linux and merged-set proof pending; tracker creation pending authorization | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
@@ -506,7 +508,7 @@ not stable internal identifiers.
 | [AR-238](issue-AR-238-isolated-security-review-with-bounded-repair.md) | `a331630`, `b5bd549`; slices 2-3 of AR-235; isolated `security_review` stage + bounded `safety_repair` loop; marker classes preserved as reviewer hints; reviewer is the gate | [ADR-0153](../decisions/0153-adopt-per-stage-inference-profile-routes.md) |
 | [AR-240](issue-AR-240-amend-first-staffing-default.md) | `0b6c059`; slice 4 of AR-235; amend-first default + `amend_overlap_threshold` gate; below-threshold fallthrough to hire | None |
 | [AR-241](issue-AR-241-cap-removal-and-dashboard-visibility.md) | `e750593`; slice 5 of AR-235; removes hard per-task/per-day caps; adds `max_hires_per_turn` + `daily_hire_alert_threshold` soft bounds; daily count in critic_evidence | None |
-| [AR-242](issue-AR-242-autonomous-promotion-review-window.md) | `f85074f`; slice 6 of AR-235; `auto_promote_successes: 3` + `contractor_review_days: 7`; review-window suppression in promotion_readiness; CLI + dashboard projections pass the window | None |
+| [AR-242](issue-AR-242-autonomous-promotion-review-window.md) | `f85074f`; slice 6 of AR-235; `auto_promote_successes: 3` + `contractor_review_days: 7`; review-window suppression in promotion_readiness; CLI + dashboard projections pass the window | [ADR-0157](../decisions/0157-automatically-promote-host-verified-contractors.md) |
 | [AR-243](issue-AR-243-workforce-promotion-readiness-parity.md) | `bdc24be`; sub-issue 2 of AR-236; CLI workforce show prints full promotion readiness fields matching the dashboard card | None |
 | [AR-244](issue-AR-244-workforce-duplicates-consolidate-parity.md) | `b4f7a2b`; sub-issue 3 of AR-236; `GET /api/workforce/duplicates` endpoint mirroring CLI `workforce consolidate`; dashboard test expectations updated for AR-242 defaults and AR-235 slice 1 inference block | None |
 | [AR-245](issue-AR-245-roster-diff-parity.md) | planning pair; sub-issue 4 of AR-236; `GET /api/roster/diff` endpoint | None |
@@ -516,7 +518,11 @@ not stable internal identifiers.
 | [AR-249](issue-AR-249-explain-parity.md) | sub-issue 8 of AR-236; route lab already provides explain parity via `POST /api/route`; no new code needed | None |
 | [AR-250](issue-AR-250-upgrade-flow-parity.md) | sub-issue 9 of AR-236; `GET /api/update` surfaces snapshot; multi-step plan/run flow deferred | None |
 | [AR-251](issue-AR-251-cli-presentation-richness.md) | planning pair; sub-issue 10 of AR-236; `--card` on workforce list; ADR-0154 | [ADR-0154](../decisions/0154-plain-text-cli-cards-over-rich-dependency.md) |
+| [AR-252](issue-AR-252-record-verified-acceptance-outcomes.md) | planning only; host-evidenced, independently verified automatic-promotion path is open and blocks AR-119 | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0157](../decisions/0157-automatically-promote-host-verified-contractors.md) |
+| [AR-253](issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | planning only; multi-card staffing, latency, accepted-outcome, promotion, and five-host parity proof is open and blocks AR-119 | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0132](../decisions/0132-fund-one-repair-per-workforce-inference-stage.md), [ADR-0153](../decisions/0153-adopt-per-stage-inference-profile-routes.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0157](../decisions/0157-automatically-promote-host-verified-contractors.md) |
 | [AR-254](issue-AR-254-reconcile-canonical-worklog-history.md) | `d1f8ed2`, `b980e60`, `a78653c`, `a45422d`, `1c03a40`, `9ac9d29`; canonical index, exact historical exceptions, clone-independent IDs, platform-independent UTF-8 subjects, and hosted aggregate verification complete | None |
+| [AR-255](issue-AR-255-inference-owned-host-proven-child-staffing.md) | planning only; inference and host-evidence authority repair is open | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md) |
+| [AR-256](issue-AR-256-canonical-nine-rule-completion-contract.md) | planning only; canonical completion and status reconciliation is open | [ADR-0025](../decisions/0025-self-contained-linked-documentation.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0157](../decisions/0157-automatically-promote-host-verified-contractors.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
