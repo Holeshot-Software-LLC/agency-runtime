@@ -618,7 +618,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `21c0aaa8` | 2026-08-04 | AR-230: Close completed issues and stale PR (#239) | null | null |
 | `def4f8bf` | 2026-08-04 | AR-231: Resource-file filtering, multi-host upgrade, ZCode delegation note, close AR-210 (#240) | null | null |
 | `7c33b35f` | 2026-08-04 | AR-232: Remove MAX_PLAN_LIST_ITEMS cap that truncated resource scopes (#241) | null | null |
-| `4928a873` | 2026-08-04 | AR-233: Architecture fixes â€” honest headers, wildcard distinction, strict default, metrics (#242) | null | null |
+| `4928a873` | 2026-08-04 | AR-233: Architecture fixes — honest headers, wildcard distinction, strict default, metrics (#242) | null | null |
 | `f6e65ea2` | 2026-08-04 | AR-234: Drop round-trip evidence fields from recruiter schema (#243) | null | null |
 | `e87747d8` | 2026-08-04 | docs: commit analysis handoffs and uv.lock | null | null |
 | `c1fbfbe2` | 2026-08-04 | docs(roadmap): AR-235 plan autonomous gap hiring with isolated security review and amend-first staffing | null | null |
@@ -670,7 +670,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `99e27dab` | 2026-08-05 | fix(claude-hooks): deliver the response header on Claude turns | null | null |
 | `4e55f77a` | 2026-08-05 | fix(staffing): stop treating missing stack enrichment as proof of a gap | null | null |
 | `5783bdfe` | 2026-08-05 | feat(staffing): adopt the staff-first doctrine | null | null |
-| `79295735` | 2026-08-05 | docs(roadmap): AR-253 â€” dynamic team dispatch on every harness | null | null |
+| `79295735` | 2026-08-05 | docs(roadmap): AR-253 — dynamic team dispatch on every harness | null | null |
 | `80b91d46` | 2026-08-05 | fix(codex-trust): inspect real hook state and match remediation to it | null | null |
 | `334ddddb` | 2026-08-05 | fix(codex-trust): stop overclaiming settled trust in the disabled action | null | null |
 | `bb8aab89` | 2026-08-06 | fix(hiring): reject relationship targets unknown to the roster | null | null |
@@ -814,6 +814,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d9458890` | 2026-08-12 | feat(dashboard): align owner UI with post-Job-B vision | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 | `6ce0c37f` | 2026-08-12 | fix(dashboard): enforce truthful evidence parity | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 | `15911085` | 2026-08-12 | docs(roadmap): record post-Job-B dashboard verification | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
+| `1c03a40b` | 2026-08-12 | fix(docs): decode worklog history as UTF-8 | [AR-254](../roadmap/issue-AR-254-reconcile-canonical-worklog-history.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
