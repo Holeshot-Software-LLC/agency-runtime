@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 
 from scripts import verify_docs
+from scripts.worklog_history import stable_short_shas
 
 
 def _base_meta(**overrides: Any) -> dict[str, object]:
@@ -577,3 +578,11 @@ def test_worklog_grandfathering_is_exact_and_future_mixed_ledgers_fail(
         "worklog ledger commit fffffff changes disallowed paths: "
         "docs/roadmap/issue-AR-999-example.md"
     ]
+
+
+def test_worklog_short_shas_are_clone_independent_and_collision_checked() -> None:
+    assert stable_short_shas(["a" * 40, "b" * 40]) == ["a" * 8, "b" * 8]
+    with pytest.raises(ValueError, match="prefix collision"):
+        stable_short_shas(["12345678" + "a" * 32, "12345678" + "b" * 32])
+    with pytest.raises(ValueError, match="full lowercase Git SHAs"):
+        stable_short_shas(["abc1234"])

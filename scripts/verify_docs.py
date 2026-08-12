@@ -14,6 +14,11 @@ from urllib.parse import unquote, urlparse
 
 import yaml
 
+if __package__:
+    from .worklog_history import stable_short_shas
+else:
+    from worklog_history import stable_short_shas
+
 ROOT = Path(__file__).resolve().parents[1]
 CORE_FIELDS = {
     "title",
@@ -523,22 +528,23 @@ def validate_worklog(docs: list[Document], errors: list[str]) -> None:
     if not registry:
         errors.append("docs/worklog/README.md: missing worklog registry")
         return
-    output = git("log", "--reverse", "--date=short", "--format=%h%x09%ad%x09%s")
-    expected: dict[str, tuple[str, str]] = {}
+    output = git("log", "--reverse", "--date=short", "--format=%H%x09%ad%x09%s")
+    history: list[tuple[str, str, str]] = []
     for line in output.splitlines():
-        short, commit_date, subject = line.split("\t", 2)
-        if subject.startswith(WORKLOG_LEDGER_PREFIX):
-            continue
+        full_sha, commit_date, subject = line.split("\t", 2)
+        if not subject.startswith(WORKLOG_LEDGER_PREFIX):
+            history.append((full_sha, commit_date, subject))
+    try:
+        shortened = stable_short_shas(item[0] for item in history)
+    except ValueError as exc:
+        errors.append(f"docs/worklog/README.md: {exc}")
+        return
+    expected: dict[str, tuple[str, str]] = {}
+    for short, (_, commit_date, subject) in zip(shortened, history, strict=True):
         expected[short] = (commit_date, subject)
-    # Read the commit index rows, not the whole body. The previous pattern
-    # demanded exactly seven hex characters, but `git log --format=%h`
-    # auto-widens the abbreviation as history grows and now yields eight here.
-    # The effect was total: every table row became "missing" while the only
-    # matches were the deliberately seven-character SHAs in the Notes prose,
-    # which then reported as "extra". `update_worklog.py` writes `%h` and was
-    # reporting the index current at the same moment -- the two scripts
-    # disagreeing about one file. Anchoring to the row shape keeps this
-    # independent of abbreviation width and immune to prose.
+    # Read commit index rows, not provenance prose. Both worklog tools derive a
+    # fixed collision-checked prefix from full history SHAs, so clone-local
+    # object databases cannot change the generated width.
     found = {
         match
         for line in registry.body.splitlines()
