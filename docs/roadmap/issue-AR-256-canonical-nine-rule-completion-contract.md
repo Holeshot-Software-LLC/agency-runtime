@@ -1,6 +1,6 @@
 ---
 title: "AR-256: Establish the canonical nine-rule completion contract"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-12
 updated: 2026-08-12
@@ -84,7 +84,7 @@ substantive/ledger checkpoint before AR-255 begins.
 - [x] Documentation verification recomputes the canonical vision block defined
       in `AR-119-founding-vision.md` and rejects any mismatch with its recorded
       SHA-256 provenance.
-- [ ] The AR-119 capsule remains the single bounded recovery entry and names
+- [x] The AR-119 capsule remains the single bounded recovery entry and names
       one next package, exact blockers, and a clean recovery pair.
 - [x] AR-119's closure contract requires strict documentation and tracker
       parity; authorization-pending tracker mappings remain visibly unresolved

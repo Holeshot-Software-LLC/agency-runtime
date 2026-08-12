@@ -1,6 +1,6 @@
 ---
 title: "AR-257: Separate decision-conformance runner and trusted fixture launcher"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-12
 updated: 2026-08-12
@@ -81,6 +81,6 @@ install or trust a projection.
       before any private copy or pytest launch.
 - [x] The focused decision-conformance tests and the full curated 83-mutation
       gate pass with `source_unchanged=true`.
-- [ ] Local documentation, worklog, and roadmap traceability agree; tracker
+- [x] Local documentation, worklog, and roadmap traceability agree; tracker
       creation remains explicitly authorization-pending and is not represented
       as present.
