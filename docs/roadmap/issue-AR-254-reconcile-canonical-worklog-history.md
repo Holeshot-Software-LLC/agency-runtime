@@ -58,3 +58,9 @@ safe. Future mixed ledger commits must still fail.
 - [x] A new mixed `docs(worklog):` commit still fails verification.
 - [x] `scripts/update_worklog.py --check` and `scripts/verify_docs.py` pass.
 - [ ] The PR #270 automatic gate reaches a green aggregate.
+
+## Implementation checkpoint
+
+Commit `8d9e5058` rebuilds the canonical index, records the four published
+violations, and adds a regression proving any non-grandfathered mixed ledger
+still fails. Documentation verification and 142 focused tests pass locally.

@@ -121,19 +121,13 @@ issue owns acceptance; this capsule owns the next bounded execution slice.
   contract locally and the hosted workflow-contract step.
 - The hosted rerun passed the Python spine and all mutations; 124/124 dashboard
   tests passed but coverage was 85.88% against 86%. Commit `8a5c2de2` now passes
-  126/126 at 96.12% lines, 86.18% branches, and 94.00% functions; rerun remains.
-- Decision conformance could not enter its mutation phase: its baseline forces
-  `AGENCY_CI_PYTHON` to the existing main-worktree virtualenv, whose parent
-  namespace the executable trust policy correctly rejects. The focused failing
-  test passes directly on both this branch and `origin/main`, then fails with the
-  same `launcher_identity` error inside the evaluator on both. Relevant source
-  is identical, so this is an inherited evaluator/environment incompatibility,
-  not an AR-236 regression. Source stayed unchanged; 83 mutations ran zero.
-- Metadata and policy checks pass. Refreshed main leaves `update_worklog.py`
-  stale and `verify_docs.py` at 18 inherited history errors: one index-set
-  mismatch covering 13 main commits, 13 inaccurate rows for those same commits,
-  and four pre-existing ledger-path violations. No AR-236 row fails.
-- Hosted CodeQL and dependency review passed. Manual exhaustive lanes remain skipped.
+  126/126 at 96.12% lines, 86.18% branches, and 94.00% functions.
+- That run then passed the exact dashboard gate and all 83 decision mutations;
+  only canonical documentation history failed. AR-254 commit `8d9e5058`
+  rebuilds 772 worklog rows and exact-SHA-grandfathers four immutable mixed
+  ledgers while keeping future enforcement strict. Docs and 142 focused tests
+  pass locally; push and hosted rerun remain.
+- Hosted CodeQL/dependency review passed. Manual exhaustive lanes remain skipped.
 - Tracker #245 may not yet reflect the reopened umbrella and later UI scope.
 
 ## same-task-continuity
@@ -143,7 +137,7 @@ After every compaction, reread this capsule, the canonical AR-236 issue, and `gi
 ## next-bounded-work-package
 
 1. Fetch/rebase `origin/main`; another agent may add or reframe dashboard scope.
-2. Commit and push the asset-budget fix, rerun PR #270 CI, and merge only green.
+2. Push AR-254, rerun PR #270 CI, and merge only when the aggregate is green.
 3. Consolidate the active roster/workforce/ops audits into bounded owner-visible
    packages; repair unsafe contracts before adding any UI.
 4. Preserve evidence boundaries, checkpoint each package in this capsule, and
@@ -155,17 +149,15 @@ After every compaction, reread this capsule, the canonical AR-236 issue, and `gi
 Post-rebase focused product pytest: 278; new-base policy pytest: 26.
 Post-rebase warning-strict Python spine: 668 passed, 6 skipped, 0 failed.
 Hosted-failure contract reproduction after budget fix: 161 passed.
-node --test tests/dashboard_ui.test.mjs  # 124 passed, 0 failed
+Exact dashboard coverage gate: 126 passed; 96.12/86.18/94.00 percent.
 python -m agency_runtime.cli eval routing --json --no-details  # 39/39
-python -m agency_runtime.cli eval decision-conformance --repository . --json
-# Inherited launcher_identity baseline failure; 0/83 mutations executed.
-# Direct focused node: branch 1 passed; origin/main 1 passed.
+Hosted decision conformance: 83/83 mutations killed.
 uvx ruff check agency_runtime tests scripts  # passed
 uvx ruff format --check agency_runtime tests scripts  # 651 files
-python scripts/docs_metadata.py --check  # 675 files
+python scripts/docs_metadata.py --check  # 676 files
 python scripts/update_policy_availability.py --check  # passed
-python scripts/update_worklog.py --check  # inherited stale index
-python scripts/verify_docs.py  # 18 inherited main-history errors
+python scripts/update_worklog.py --check  # 772 commits; passed
+python scripts/verify_docs.py  # 676 files; passed
 git diff --check  # passed
 ~~~
 
