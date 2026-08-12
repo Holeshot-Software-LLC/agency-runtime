@@ -7,6 +7,7 @@ updated: 2026-08-11
 tags: [cli, dashboard, parity, ops, observability, analysis]
 related:
   - docs/analysis/2026-08-04-cli-dashboard-parity.md
+  - docs/analysis/2026-08-11-cli-vision-keep-list.md
   - docs/roadmap/handoffs/issue-AR-236.md
   - README.md
   - docs/roadmap/issue-AR-123-workforce-cli-and-dashboard.md
@@ -77,9 +78,9 @@ prioritized roadmap. The headline:
 
 ## Implementation checkpoint — 2026-08-11
 
-The first vision-alignment slice is implemented locally on
-`codex/dashboard-vision-parity` and awaiting the remaining bounded review and
-verification work. It deliberately does not claim umbrella parity:
+The bounded vision-alignment slice is implemented locally on
+`codex/dashboard-vision-parity`, rebased onto the companion CLI re-scope, and
+focused-verification clean. It deliberately does not claim umbrella parity:
 
 - [x] Rewrite README behavior around inference staffing, host-owned execution,
       request-scoped specialist cards, fail-open routing, and observable proof.
@@ -92,11 +93,18 @@ verification work. It deliberately does not claim umbrella parity:
 - [x] Compute specialist-selection distribution from the Store and render
       explicit decision/occurrence denominators, top-ten concentration, and a
       bounded long tail.
-- [ ] Finish the vision keep-list audit for frontend-unreachable endpoints.
-- [ ] Add dashboard children, rejections, and wiring evidence where the
+- [x] Finish the vision keep-list audit for frontend-unreachable endpoints;
+      remove GET `/api/overview` and GET `/api/config`, preserve POST config,
+      and record explicit later-UI versus service-contract keep sets.
+- [x] Add dashboard children, rejections, and wiring evidence where the
       keep-list confirms an owner-facing need.
-- [ ] Complete real-browser visual/accessibility QA, the named fast spine, and
-      final bounded review after rebasing the latest `origin/main`.
+- [x] Rebase onto the CLI vision keep-list that removes `delegate`, `run`, and
+      `codex exec`; confirm no corresponding dashboard execution action or
+      lifecycle graph survives while historical host-event evidence remains.
+- [x] Complete two bounded reviews and focused verification: 278 Python tests,
+      124 dashboard tests, targeted Ruff lint/format, and diff checks pass.
+- [ ] Complete current-code real-browser populated/empty/partial/responsive/
+      refresh-cadence QA, the named fast spine, and the final recovery ledger.
 
 Exact implementation details, test results, conflict warnings, authorization
 boundaries, and restart commands live in the

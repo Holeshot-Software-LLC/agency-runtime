@@ -22,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-236
 branch: codex/dashboard-vision-parity
-evidence_commit: 6d77819b5a326ee50536997bacc05bdbb26802be
-minimum_ledger_commit: 9c02271e763debe2c62e2621a8708cd8cef3ff9e
+evidence_commit: 0596fd69dae319d61481a26ea5ea77cc342c37aa
+minimum_ledger_commit: be7d44b3dd7bbcc88b474df54023fb2bcd41852a
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245
 ---
@@ -35,137 +35,125 @@ issue owns acceptance; this capsule owns the next bounded execution slice.
 
 ## checkpoint
 
-- This checkpoint contains the README rewrite, dead-setting and stale graph
-  removal, shared routing-latency evidence, and specialist-selection
-  distribution evidence. AR-236 remains open.
-- Agency now describes its supported contract as inference-based staffing and
-  request-scoped specialist-card delivery. The native host owns execution and
-  child lifecycle; Agency records only evidence it can actually observe.
-- At capture, before the new substantive/ledger pair, the branch was two
-  commits ahead of and six behind `origin/main`. Do not push or resume editing
-  before fetching and rebasing the clean checkpoint.
-- AR-119 and `docs/worklog/README.md` are active cross-worktree conflict
-  points. Preserve the additions from `origin/main`; never reconstruct them
-  from this capsule.
-- Local implementation was authorized. Push, PR, tracker mutation, hosted
-  workflow, installation, trust changes, and release actions were not.
+- AR-236 remains open. Product commit `0596fd69` is focused-verification clean;
+  current-code browser QA and the named fast spine remain.
+- The branch was rebased onto `b7832a03`, which merged the companion CLI
+  vision re-scope. The four earlier AR-236 commits are now `29c3ce92`,
+  `84e6a7d0`, `748490f4`, and `be7d44b3`.
+- The rebase preserved the new CLI keep-list, AR-119 notes, worklog rows, host
+  parity tests, and routing-intent declaration repair. AR-236 adds the missing
+  retained-run orphan guard without duplicating the refreshed declaration.
+- Local implementation and commits are authorized. Push, PR, tracker mutation,
+  hosted workflows, installation, trust, and release actions are not. The owner
+  explicitly requires a fresh check-in before any PR because other worktrees are
+  active.
 
 ## completed-evidence
 
-- README opening, architecture, behavior, host matrix, dashboard description,
-  and ELI5 material now describe staffing-only inference, host-owned execution,
-  fail-open behavior, and host-written proof. The bundled roster count is 263.
-- Dashboard settings no longer expose retired delegation mode/preference/
-  confidence fields or the unused judge confidence-bypass threshold. Legacy
-  config parsing and fingerprint fields remain for compatibility.
-- Route Lab no longer builds or renders `delegation_graph`; retired dependency
-  graph/work-unit UI and CSS are gone. Master, paused, overview, evidence, and
-  settings copy distinguish Agency staffing from native-child activity.
-- Live child safeguards (`child_inference_budget`, concurrency, and cache TTL)
-  and workforce staffing bounds remain, with labels matching their current
-  purpose. Historical API/data field names named `delegations` remain where
-  changing them would be a compatibility migration.
-- `core/routing_latency.py` is the shared projection for CLI and dashboard.
-  It uses nearest-rank p50/p95, a default 15,000 ms budget, excludes
-  non-positive decisions, treats p95 equality as within budget, orders the
-  slowest observations descending, and separates computed/cache sources.
-- Provider-versus-Agency attribution is emitted only when every provider call
-  has positive timed evidence. Mixed legacy/current receipts expose explicit
-  unknown-call counts instead of inventing a split.
-- Authenticated `GET /api/evidence/latency` returns bounded v1 evidence. The
-  Overview panel shows count, p50, p95, max, budget status, attribution, source
-  rows, slowest observations, and a truthful unknown state.
-- `core/selection_distribution.py` and its Store query project the newest
-  10,000 selection-bearing decisions. Authenticated
-  `GET /api/evidence/selections` returns explicit decision and occurrence
-  denominators, current active-roster size, top-ten occurrence concentration,
-  bounded top specialists, long tail, scan limit, and truncation state.
-- Overview renders selection summaries and horizontal bars from Store data.
-  The owner-provided 202/39/72%/82% observation inspired the chart but is not
-  hardcoded. Long-tail decision count is the unique count of decisions with at
-  least one tail specialist.
-- Both evidence requests use one dedicated Overview request scope after
-  initial/manual refresh and on entering Overview. They stay out of `/api/live`
-  and the 2.5-second poll; partial failures retain last-good data and show stale
-  state. Responses are schema-validated and view-generation guarded.
+- README and dashboard copy now describe inference staffing, host-owned child
+  execution, request-scoped card delivery, fail-open routing, and observable
+  proof. The bundled roster count is 263.
+- Retired delegation preference/mode/confidence settings, judge bypass, Route
+  Lab dependency graph, work-unit planning UI, and the dashboard lifecycle
+  import are gone. Compatibility-only config/data names remain internal.
+- The companion CLI re-scope removed `delegate`, `run`, and `codex exec`; no
+  corresponding dashboard execution control remains. Historical host-native
+  child-event evidence remains because it observes rule-5 host behavior.
+- Shared CLI/dashboard latency evidence uses positive persisted durations,
+  nearest-rank p50/p95, a 15,000 ms budget, and attribution only when every
+  provider call is timed. Empty or mixed evidence stays unknown.
+- Store-backed specialist-selection evidence uses explicit decision and
+  occurrence denominators, a 10,000-decision scan bound, active-roster context,
+  top-ten concentration, bounded top rows, and a truthful long tail. The owner's
+  202/39/72%/82% observation inspired the chart but is never hardcoded.
+- Shared child proof scans only Claude/Codex host artifacts, follows no links,
+  reads at most 4,096 bodies, visits at most 16,384 filesystem entries, reports
+  incomplete candidate counts as lower bounds, and verifies card hashes before
+  claiming delivery.
+- Rule-8 evidence partitions bounded Store statuses into verifier-withheld and
+  Agency-blind. It never infers host publication; CLI legacy aliases say so.
+  Empty output is neutral, and invalid host/limit input fails before Store open.
+- Wiring evidence resolves Claude's exact trusted `installed_plugins.json`
+  binding rather than the newest cache mtime. Other hosts are explicitly
+  `not_measured`; unavailable files never imply not-installed history.
+- Owner-only `/api/evidence/{children,rejections,wiring}` endpoints are bounded
+  and off `/api/live`. GET `/api/overview` and GET `/api/config` are removed;
+  POST config stays. Route Lab rejects bad host/Store state before catalog work.
+- Overview and Vision Evidence requests are view-scoped. Each source owns its
+  fresh/stale/unavailable state and last-good data. Responses are schema and
+  generation guarded; secondary 401 notices survive initial connection.
+- Selection bars are semantic list items with CSP-safe native `<progress>`
+  visuals. Dedicated concise live regions announce metric/Vision completion;
+  dynamic proof text wraps at narrow widths.
+- Endpoint keep-list: retain activity, roster diff/scans/sources, DB stats, and
+  duplicate review for later owner UI slices; preserve hosts/inference/runtime/
+  health/policy/search as service contracts; do not add panels merely because a
+  route exists.
 
 ## exact-blocker
 
-- The vision keep-list audit of frontend-unreachable server endpoints is not
-  complete. Do not add panels solely because an endpoint exists.
-- CLI evidence for children, rejections, and wiring still lacks equivalent
-  dashboard presentation. This slice added latency and selections only.
-- No real-browser visual/accessibility QA has been performed on the new
-  Overview panels. The named fast Python production spine and two final review
-  passes have not run.
-- Documentation metadata and policy-availability checks pass. `update_worklog`
-  reports the baseline index as stale, and `verify_docs.py` repeats the same 11
-  inherited worklog/history errors recorded at the prior checkpoint: seven
-  index mismatch/inaccuracy errors and four ledger-path violations.
-- The full warning-strict corpus, coverage shards, compatibility matrix, live
-  install canary, and hosted workflows were not requested and did not run.
-- Tracker #245 may not reflect the locally reopened scope. External tracker
-  mutation remains unauthorized.
+- Context telemetry was 21.6% remaining. Product commit `0596fd69` freezes the
+  verified slice; this recovery/ledger pair completes the required clean local
+  checkpoint before another live browser evaluation.
+- An earlier source-browser pass proved populated metrics, responsive layout,
+  populated/partial Vision states, and clean console before the final review
+  fixes. It is useful discovery, not current-code acceptance. The current build
+  still needs populated, empty, partial, narrow, accessibility, and request-
+  cadence browser proof.
+- The named fast Python spine, final docs gates, routing/decision evals, and QA
+  fixture cleanup remain. Exhaustive coverage/compatibility and hosted workflows
+  are not ordinary gates and are unauthorized.
+- Metadata and policy checks pass. Refreshed main leaves `update_worklog.py`
+  stale and `verify_docs.py` at 12 inherited history errors: one index-set
+  mismatch covering seven main commits, seven inaccurate rows for those same
+  commits, and four pre-existing ledger-path violations. No AR-236 row fails.
+- Tracker #245 may not reflect this locally reopened scope. External changes
+  remain unauthorized.
 
 ## same-task-continuity
 
-Continue AR-236 on this branch. Start by reading this capsule and the canonical
-issue, then fetch/rebase `origin/main` before changing files. Resolve AR-119 and
-worklog conflicts in favor of refreshed main plus this checkpoint's exact row.
+After every compaction, reread this capsule, the canonical AR-236 issue, and
+`git status` before acting. Continue in this worktree; do not restart the audit.
 
 ## next-bounded-work-package
 
-1. Confirm the worktree is clean, fetch, and rebase onto `origin/main`; rerun
-   the focused tests if conflicts touch product code or tests.
-2. Run a real-browser visual/accessibility pass on Overview latency and
-   selection evidence: populated, empty, partial-failure, narrow viewport, and
-   navigation/refresh cases.
-3. Classify every frontend-unreachable dashboard endpoint against the current
-   vision. Record keep/delete/defer with owner question and source of truth.
-4. Add children, rejections, and wiring dashboard evidence only if the keep-list
-   confirms them and the next slice remains bounded.
-5. Run the named fast spine, docs gates, `git diff --check`, and at most two
-   independent reviews. Fix only findings that invalidate this outcome.
-6. Update this capsule and canonical issue, then create the next local
-   substantive/ledger pair. Do not push without separate authorization.
+1. Drop only the verified AR-236 rebase stash, never the unrelated main-worktree
+   stash. Recheck telemetry immediately before source-dashboard browser QA.
+2. Use the approved private temp fixture, never expose the token, and do not
+   touch the installed service.
+3. Prove populated, empty, partial-failure, responsive, accessibility, and
+   request cadence. Metrics and Vision must remain off the 2.5-second hot poll.
+4. Remove the temp harness/fixtures, run the named fast spine and docs gates,
+   then update this capsule and canonical issue with exact evidence.
+5. Create the final local recovery/ledger pair. Do not push; check with the
+   owner before any PR or integration step.
 
 ## verification
 
 ~~~text
-# Passed at this checkpoint:
+# Rebased focused product proof:
+python -m pytest tests/test_child_delivery_evidence.py \
+  tests/test_evidence_rejections.py tests/test_host_wiring_drift.py \
+  tests/test_cli_parser_contract.py tests/test_dashboard.py \
+  tests/test_routing_intent.py tests/test_coverage_closure_delegation_targets.py \
+  tests/test_runtime_table_declarations.py tests/test_host_boundary_parity.py -q
+# 278 passed
+node --check agency_runtime/dashboard/{app,dashboard-core,dashboard-live,dashboard-render}.js
+node tests/dashboard_ui.test.mjs
+# 124 passed
 uvx ruff check <changed Python files>
 uvx ruff format --check <changed Python files>
-python -m pytest tests/test_evidence_latency.py \
-  tests/test_specialist_selection_distribution.py tests/test_dashboard.py \
-  -k "latency or selection_distribution or metric_evidence or route_lab" -q
-# 36 passed, 129 deselected
-node --check agency_runtime/dashboard/{app,dashboard-live,dashboard-render,charts}.js
-node tests/dashboard_ui.test.mjs
-# 112 passed, 0 failed
-python scripts/docs_metadata.py --check
-# checked 674 Markdown documents
-python scripts/update_policy_availability.py --check
 # passed
 git diff --check
-# passed (line-ending normalization warnings only)
-
-# Baseline documentation failures, to re-evaluate after rebase:
-python scripts/update_worklog.py --check
-# worklog index is stale
-python scripts/verify_docs.py
-# same 11 inherited worklog/history errors as the prior checkpoint
-
-# Still required after the rebase/final bounded slice:
-# Then run the AGENTS.md named fast Python production spine.
-node --test tests/dashboard_ui.test.mjs
+# passed
 ~~~
 
 ## constraints
 
-- Preserve user work, historical subjects, AR-119 additions, and Store evidence.
-- Use shared core projections so CLI and dashboard metric math cannot drift.
-- Keep evidence authenticated, bounded, metadata-only, and off the hot poll.
-  Empty evidence is unknown/no observations, never healthy or zero latency.
-- Do not infer native-child execution from staffing selections or historical
-  `delegations` rows; use host-authored artifacts when execution proof matters.
+- Preserve refreshed main, historical subjects, AR-119, and Store evidence.
+- Use shared projections so CLI and dashboard evidence math cannot drift.
+- Evidence stays authenticated, bounded, metadata-only, source-labelled, and
+  off the hot poll. Empty means no observation, never healthy.
+- Staffing selections and historical `delegations` rows are not child-delivery
+  proof; only hash-verified host artifacts prove pre-speech card delivery.
 - Keep this capsule below 12 KiB and 180 lines; replace it rather than append.
