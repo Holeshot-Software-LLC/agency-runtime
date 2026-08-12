@@ -94,9 +94,27 @@ not a CLI command points at it.
 - **`agency smoke`** — deterministic local checks. Overlaps `doctor` + `host-canary` +
   `evidence wiring`. A dev tool, not a product surface; harmless, but it is the kind of thing
   that accretes.
-- **`agency hook` accepts only `codex`, `claude`, `zcode`** (`cli/parser.py`). Hermes and
-  OpenClaw cannot be hooked from the CLI at all. Under rule 9 that is a parity gap, not a
-  trade-off — noted here because the re-scope surfaced it, not because this pass fixed it.
+- ~~**`agency hook` accepts only `codex`, `claude`, `zcode`.**~~ **Retracted — measured, and it
+  is not a gap.** Hermes and OpenClaw reach Agency through `adapters.hermes.bridge` and
+  `adapters.openclaw.node_bridge`, invoked by their own plugin systems
+  (`installer_payload_hermes.py:24`, `installer_payload_openclaw.py:26`); the `agency hook` verb
+  exists for the three hosts whose native mechanism is "exec this command with JSON on stdin".
+  The verb differs because the harness differs. Coverage does not.
+
+  This entry was originally written the wrong way round — a rule 9 violation inferred from a
+  parser `choices` list without checking whether the capability existed by another route, which
+  is the exact error [[vision-first-not-code-first]] describes. Building the "fix" would have
+  added an `agency hook hermes` verb nothing invokes: the same dead surface this pass deleted.
+
+  What was actually missing is now in `tests/test_host_boundary_parity.py`: parity was tested
+  per host, never *across* hosts, so a host could silently lose a boundary with every test still
+  green. It declares the boundaries the vision needs — prompt observed, child started, child
+  finished, tool observed, turn finalized, session started — maps each to the events that reach
+  it on each host, and asserts both that every host covers every boundary and that every claimed
+  event is actually present in that host's shipped artifact. The real finding it encodes:
+  **ZCode has no `SubagentStart`** — native children arrive through the Agent tool, so its
+  `PreToolUse` is matched on `Agent` and that *is* its child-start boundary. Rule 4 holds on all
+  five, by three different mechanisms.
 
 ## Effect
 

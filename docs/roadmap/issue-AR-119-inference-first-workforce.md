@@ -3754,9 +3754,15 @@ tests instead.
   ~3,400 lines) is the natural next package, deferred only because `server/dashboard.py` imports
   `delegation.lifecycle` and Codex is in that file now. **Dashboard half still open (Codex).**
   Three parity gaps the re-scope surfaced but did not fix: `agency serve` is an HTTP control plane
-  no host consumes; `agency smoke` overlaps `doctor` + `host-canary` + `evidence wiring`; and
-  `agency hook` accepts only `codex`, `claude`, `zcode` — hermes and openclaw cannot be hooked from
-  the CLI at all, which under rule 9 is a gap, not a trade-off.
+  no host consumes; `agency smoke` overlaps `doctor` + `host-canary` + `evidence wiring`; and one
+  **retracted**: `agency hook` accepting only `codex`, `claude`, `zcode` is not a rule 9 gap —
+  hermes and openclaw reach Agency through `adapters.hermes.bridge` and
+  `adapters.openclaw.node_bridge`, invoked by their own plugin systems, so the verb differs
+  because the harness does while coverage does not. That claim was inferred from a parser
+  `choices` list without checking for the capability by another route. The genuine gap it
+  uncovered — parity tested per host but never *across* hosts — is closed by
+  `tests/test_host_boundary_parity.py`, which also records that **ZCode has no `SubagentStart`**
+  and reaches rule 4 through `PreToolUse` matched on `Agent`.
 - **Where the latency goes, measured 2026-08-11 — and why the store cannot finish the answer.**
   A routing decision makes **~2.4 provider calls** (433 receipts across 196 traces). Per-call
   duration *is* measured — `StructuredProviderResult.latency_ms` at the provider layer, carried
