@@ -782,6 +782,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3ee585fe` | 2026-08-11 | feat(dashboard): add bounded vision evidence parity | AR-236 | null |
 | `45b6efe7` | 2026-08-11 | docs(roadmap): checkpoint AR-236 vision evidence | AR-236 | null |
 | `3a3bbb64` | 2026-08-11 | docs(roadmap): record AR-236 browser verification | AR-236 | null |
+| `634170c2` | 2026-08-11 | test(release): budget AR-236 dashboard evidence | AR-236 | null |
+| `3a63590e` | 2026-08-11 | docs(roadmap): checkpoint AR-236 CI budget repair | AR-236 | null |
 <!-- worklog:end -->
 
 ## Provenance notes
