@@ -117,6 +117,28 @@ def normalized_operator_policy(value: object) -> str:
     return stripped
 
 
+def loaded_operator_policy(value: object) -> tuple[str, str]:
+    """Return (policy, problem) for the *load* path, which must never raise.
+
+    The strict normalizer belongs on the paths where an operator is making a
+    change and can act on the error: `agency config set` and document validation.
+    Loading is different. A config file that is already on disk gets read on every
+    turn on every host, so raising here turns one over-long house rule into a
+    total outage — Agency withholding turns because Agency is misconfigured, which
+    rule 8 exists to forbid. A house rule that does not fit is not a reason to
+    stop answering.
+
+    So the policy is dropped and the reason is carried alongside it, where
+    `agency doctor` can report it rather than leaving an operator to wonder why
+    their policy silently stopped applying.
+    """
+
+    try:
+        return normalized_operator_policy(value), ""
+    except OperatorPolicyError as exc:
+        return "", str(exc)
+
+
 def render_operator_policy(policy: str) -> str:
     """Render the injected block, or "" when there is no policy to inject.
 
@@ -152,6 +174,7 @@ __all__ = [
     "OPERATOR_POLICY_HEADER",
     "OperatorPolicyError",
     "OperatorPolicyReference",
+    "loaded_operator_policy",
     "normalized_operator_policy",
     "operator_policy_reference",
     "render_operator_policy",

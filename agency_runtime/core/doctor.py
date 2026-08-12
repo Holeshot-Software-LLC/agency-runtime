@@ -236,7 +236,26 @@ def _config_checks(cfg: AgencyConfig) -> list[CheckResult]:
         "pass" if cfg.profile in PROFILES else "fail",
         f"Profile: {cfg.profile}" if cfg.profile in PROFILES else f"Unknown profile: {cfg.profile}",
     )
-    return [config_file, profile]
+    checks = [config_file, profile]
+    # A policy dropped at load time is invisible by design -- the turn still runs.
+    # Doctor is where an operator finds out their house rules stopped applying.
+    if cfg.operator_policy_error:
+        checks.append(
+            CheckResult(
+                "operator_policy",
+                "warn",
+                f"Operator policy is not being applied: {cfg.operator_policy_error}",
+            )
+        )
+    elif cfg.operator_policy:
+        checks.append(
+            CheckResult(
+                "operator_policy",
+                "pass",
+                f"Operator policy: {len(cfg.operator_policy)} characters, applied every turn",
+            )
+        )
+    return checks
 
 
 def _read_database_state(

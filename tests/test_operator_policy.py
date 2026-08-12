@@ -191,3 +191,57 @@ def test_unset_policy_adds_nothing_at_all_to_a_turn() -> None:
     context = _context_for("")
     assert OPERATOR_POLICY_HEADER not in context
     assert OPERATOR_POLICY_FOOTER not in context
+
+
+# ── a bad policy must never take a host down ───────────────────
+
+
+def test_loading_an_over_budget_policy_drops_it_instead_of_failing_the_turn() -> None:
+    """Rule 8, applied to Agency's own configuration.
+
+    The strict normalizer belongs where an operator is making a change and can act
+    on the error. A config file already on disk is read on every turn on every
+    host, so raising there turns one over-long house rule into a total outage --
+    Agency withholding turns because Agency is misconfigured. A house rule that
+    does not fit is not a reason to stop answering.
+    """
+
+    import yaml
+
+    from agency_runtime.core.config import _dict_to_config
+
+    oversized = "x" * (MAX_OPERATOR_POLICY_CHARS + 1)
+    config = _dict_to_config(yaml.safe_load("operator_policy: '" + oversized + "'"))
+
+    assert config.operator_policy == ""
+    assert str(MAX_OPERATOR_POLICY_CHARS) in config.operator_policy_error
+
+
+def test_a_dropped_policy_is_reported_rather_than_vanishing() -> None:
+    """Dropping quietly is right for the turn and wrong for the operator."""
+
+    from agency_runtime.core.doctor import _config_checks
+
+    healthy = dataclasses.replace(AgencyConfig(), operator_policy=POLICY)
+    names = {check.name: check for check in _config_checks(healthy)}
+    assert names["operator_policy"].status == "pass"
+
+    broken = dataclasses.replace(
+        AgencyConfig(), operator_policy="", operator_policy_error="too long"
+    )
+    reported = {check.name: check for check in _config_checks(broken)}
+    assert reported["operator_policy"].status == "warn"
+    assert "not being applied" in reported["operator_policy"].message
+
+    silent = {check.name for check in _config_checks(AgencyConfig())}
+    assert "operator_policy" not in silent
+
+
+def test_the_change_that_makes_a_turn_impossible_is_still_refused_up_front() -> None:
+    """Leniency is only for load. The paths an operator drives stay strict."""
+
+    oversized = "x" * (MAX_OPERATOR_POLICY_CHARS + 1)
+    with pytest.raises(ValueError):
+        validate_config_document({"operator_policy": oversized})
+    with pytest.raises(ValueError):
+        _set_validator("operator_policy", oversized)
