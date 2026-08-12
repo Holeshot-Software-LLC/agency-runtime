@@ -777,10 +777,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c0e42931` | 2026-08-11 | refactor(cli)!: cut the CLI back to what the vision asks for | null | null |
 | `be246e33` | 2026-08-11 | docs(roadmap): record the CLI half of the vision re-scope | null | null |
 | `5ba6a717` | 2026-08-11 | test(hosts): check rule 9 per capability, not per verb | null | null |
-| `29c3ce92` | 2026-08-11 | docs(roadmap): refresh the dashboard parity execution handoff | AR-236 | null |
-| `748490f4` | 2026-08-11 | feat(dashboard): align operator evidence with staffing vision | AR-236 | null |
-| `0596fd69` | 2026-08-11 | feat(dashboard): add bounded vision evidence parity | AR-236 | null |
-| `ddda0a1a` | 2026-08-11 | docs(roadmap): checkpoint AR-236 vision evidence | AR-236 | null |
+| `50fe3e07` | 2026-08-11 | docs(roadmap): refresh the dashboard parity execution handoff | AR-236 | null |
+| `ebcc2eb9` | 2026-08-11 | feat(dashboard): align operator evidence with staffing vision | AR-236 | null |
+| `3ee585fe` | 2026-08-11 | feat(dashboard): add bounded vision evidence parity | AR-236 | null |
+| `45b6efe7` | 2026-08-11 | docs(roadmap): checkpoint AR-236 vision evidence | AR-236 | null |
+| `3a3bbb64` | 2026-08-11 | docs(roadmap): record AR-236 browser verification | AR-236 | null |
 <!-- worklog:end -->
 
 ## Provenance notes
