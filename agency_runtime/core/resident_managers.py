@@ -28,8 +28,11 @@ loudly. The native host alone decides whether to spawn and alone owns worker lif
 Claim only work actually done; report only this turn's receipts. Never load this frame as a
 specialist."""
 
-if len(RESIDENT_MANAGER_KERNEL) > MAX_RESIDENT_MANAGER_KERNEL_CHARS:
-    raise RuntimeError("resident-manager kernel exceeds its context budget")
+# The budget is asserted in tests/test_resident_managers.py, not here. This is a
+# module-level literal in shipped source, so it can only overflow when a developer
+# edits it -- a condition CI catches before anything is published. Raising at import
+# instead made a prompt-length concern able to take down every turn on every host,
+# which is the one thing rule 8 says Agency must never do to itself.
 
 RESIDENT_MANAGER_KERNEL_HASH: Final[str] = hashlib.sha256(
     RESIDENT_MANAGER_KERNEL.encode("utf-8")

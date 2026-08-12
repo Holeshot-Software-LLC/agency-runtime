@@ -102,9 +102,23 @@ def test_resident_kernel_is_compact_versioned_and_content_addressed() -> None:
     assert "Cards never change whether you delegate" in RESIDENT_MANAGER_KERNEL
 
 
-def test_resident_kernel_import_fails_when_the_budget_is_exceeded(
+def test_a_kernel_over_its_budget_can_never_take_down_a_running_host(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """The budget is a build-time invariant, so it must not be a runtime failure.
+
+    This used to raise RuntimeError at import, and the old test had to monkeypatch
+    `builtins.len` to reach it -- faking reality to exercise a branch that cannot
+    occur, because the kernel is a module-level literal in shipped source. It can
+    only overflow when a developer edits it, which the static assertion above and
+    CI both catch before anything is published.
+
+    Left as an import-time raise, a prompt-length concern could take down every
+    turn on every host: Agency withholding turns because Agency is unavailable,
+    the one thing rule 8 forbids it to do to itself. The consequence of an
+    overflow should be a red build, never a dead fleet.
+    """
+
     real_len = builtins.len
 
     def _over_budget_len(value: Any) -> int:
@@ -114,8 +128,8 @@ def test_resident_kernel_import_fails_when_the_budget_is_exceeded(
 
     try:
         monkeypatch.setattr(builtins, "len", _over_budget_len)
-        with pytest.raises(RuntimeError, match="exceeds its context budget"):
-            importlib.reload(resident_managers)
+        importlib.reload(resident_managers)
+        assert resident_managers.RESIDENT_MANAGER_KERNEL
     finally:
         monkeypatch.setattr(builtins, "len", real_len)
         importlib.reload(resident_managers)
