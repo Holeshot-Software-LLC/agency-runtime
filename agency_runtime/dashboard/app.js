@@ -302,16 +302,6 @@ export function createDashboard(runtime = globalThis) {
 		if (providerModelRefresh) {
 			listen(providerModelRefresh, "click", () => { void config.loadProviderModels({ refresh: true }); });
 		}
-		const workforceProvider = byId("config-workforce-provider");
-		const workforceModelRefresh = byId("workforce-model-refresh");
-		if (workforceProvider) {
-			listen(workforceProvider, "change", () => { void config.loadWorkforceModels(); });
-		}
-		if (workforceModelRefresh) {
-			listen(workforceModelRefresh, "click", () => {
-				void config.loadWorkforceModels({ refresh: true });
-			});
-		}
 		const providerRemove = byId("provider-builder-remove");
 		if (providerRemove) {
 			listen(providerRemove, "click", () => {

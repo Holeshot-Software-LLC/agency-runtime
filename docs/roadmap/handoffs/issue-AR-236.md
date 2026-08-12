@@ -19,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-236
 branch: codex/dashboard-vision-parity
-evidence_commit: a78653cefa4b606d2fa048972459cc45040733e7
-minimum_ledger_commit: da4ea3a4591eb0b0bbba75876719c780d3cf7687
+evidence_commit: cfa67e4b0a912e24e748d885985467dddb8e4c84
+minimum_ledger_commit: b1d2958a284b06cc182ed065798cc591207666b4
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245
 ---
@@ -37,15 +37,16 @@ this capsule owns the next bounded package.
   longer drives host CLIs, plans work units, provisions worktrees, dispatches
   workers, or records a worker-pool ledger. Native hosts alone spawn and run.
 - `codex/dashboard-vision-parity` rebased cleanly onto that commit. Its 21
-  commits were rewritten; current HEAD before this recovery update is
-  `da4ea3a4`. PR #270 remains draft and must not be merged as an inherited
-  bundle merely because its earlier checks passed.
+  commits were rewritten; the clean post-Job-B recovery pair is
+  `cfa67e4b` / `b1d2958a`. PR #270 remains draft and must not be merged as an
+  inherited bundle merely because its earlier checks passed.
 - The owner clarified the objective: keep the dashboard synchronized with the
   final vision. Prefer dashboard-only fixes, but a narrowly evidenced core,
   Store, CLI, adapter, or server correction is allowed when final `main`
   contradicts the vision or cannot support a truthful UI.
-- Context telemetry reported 37.2 percent remaining, so this clean recovery
-  pair is required before product edits and later live browser work.
+- The bounded dashboard truth package is implemented and verified in this
+  checkpoint. It changes dashboard assets, UI tests, and user-facing README
+  copy only; no core, Store, CLI, adapter, or dashboard-server code changed.
 
 ## completed-evidence
 
@@ -67,6 +68,17 @@ this capsule owns the next bounded package.
 - Evidence requests are authenticated, view-scoped, source-separated, and off
   the hot poll. Empty, stale, and unavailable states are distinct and retain
   only source-specific last-good data.
+- Settings no longer expose four invalid flat workforce model paths or the
+  unenforced task/day hire caps. Four live workforce-change, warning, repair,
+  and amend-overlap controls replace them, and the staffing-need limit now
+  matches inference's hard maximum of 16.
+- Hiring filters use status, type, and risk on the first request and preserve
+  them while paging. Workforce and hiring refresh independently, and approval
+  records an explicit 128-byte owner audit identity instead of a fabricated
+  `dashboard-owner` value.
+- Delegation-event rows show a child only when kind, worker ID, and native run
+  ID are all observed. Recommendations and migrated partial rows never become
+  executor identity; chart, table, and README copy stay source-neutral.
 - Pre-Job-B browser QA covered populated, empty, partial-failure, cadence,
   accessibility, and 1440/1024/390 widths. Those results describe the rebased
   code but must be rerun after the post-Job-B rework.
@@ -81,21 +93,14 @@ Retain:
 - native-host ownership copy, staffing/specialist terminology, provider-builder
   model discovery, per-worker promotion readiness, and closest-worker detail.
 
+Completed in the dashboard truth package:
+
+- dead/live workforce settings, fallback-provider and Route Lab labels;
+- hiring filter, paging, source-state, and approver-identity correctness;
+- correlated execution identity and neutral delegation-event-row copy.
+
 Rework before merge:
 
-- remove invalid `workforce.*_model` controls and their private discovery UI;
-  remove unenforced `max_hires_per_task/day` controls; add the live
-  `max_hires_per_turn`, `daily_hire_alert_threshold`,
-  `hiring_repair_budget`, and `amend_overlap_threshold` controls;
-- label `workforce.provider` as a fallback, and change Route Lab from
-  `DETERMINISTIC + JUDGE` to `INFERENCE + VERIFICATION`;
-- fix hiring apply/clear using the submitted filter on the first request, add
-  the existing API's type filter, separate workforce and hiring source state,
-  and collect explicit approver audit identity instead of
-  `dashboard-owner`;
-- render observed execution identity, not `recommended_agent`, and call the
-  unfiltered historical source delegation-event rows rather than claiming
-  every row is a native-child execution;
 - replace latency causality claims with measured over-budget wording;
 - make latency and selection endpoints require the active Store binding, so a
   configured DB-path change cannot present the process-frozen old Store as a
@@ -103,9 +108,7 @@ Rework before merge:
 - remove broker/tests/docstring residues that still require the retired
   delegation graph. Do not restore the graph;
 - retain the selection chart, but keep umbrella parity open until the shared
-  projection has a CLI view or the owner narrows that acceptance;
-- regenerate the worklog after the rebase and refresh AR-254 against the new
-  canonical history.
+  projection has a CLI view or the owner narrows that acceptance.
 
 Drop or defer:
 
@@ -118,18 +121,13 @@ Drop or defer:
 
 ## exact-blocker
 
-- The rebase rewrote 21 branch commits and introduced seven Job B commits from
-  main. `update_worklog.py --check` and `verify_docs.py` correctly report stale
-  and inaccurate rows until the canonical generator is rerun and this recovery
-  pair is recorded.
-- No textual conflict occurred, but graph requirements and generated history
-  are semantic integration points. A disabled broker explain currently still
+- A disabled broker explain currently still
   requires `delegation_graph` although the valid dashboard response removed it.
 - Latency and selection handlers currently return an informational Store
   binding and keep reading the old process Store after a configured path
   change; their existing per-source stale states require a fail-closed 409.
-- PR #270's previous hosted static run failed; its historical passing focused
-  evidence is not permission to merge the post-rebase, newly reframed branch.
+- The post-Job-B browser QA and named fast spine have not yet run. PR #270's
+  historical checks are not evidence for this newly reframed package.
 
 ## same-task-continuity
 
@@ -139,25 +137,22 @@ decision. Continue in this worktree.
 
 ## next-bounded-work-package
 
-1. Regenerate and verify the canonical worklog; commit this post-Job-B recovery
-   update and its ledger as a clean hard checkpoint.
-2. Implement one dashboard truth package: dead/live settings, hiring filters
-   and source state, approver identity, observed activity identity, and neutral
-   source copy. Use dashboard files and UI tests only.
-3. Independently review that package, run focused UI/config checks, update this
-   capsule, and create its substantive/ledger checkpoint.
-4. Then re-evaluate the retained evidence/server/CLI delta, repair only proven
-   graph/parity/copy defects, and rerun focused Python, browser QA, and the named
-   fast spine.
+1. Create the dashboard truth package's substantive and ledger checkpoint.
+2. Refresh main, then repair only the proven graph and active-Store-binding
+   supporting contracts; do not revive Job B or broaden into owner diagnostics.
+3. Re-evaluate specialist-distribution CLI parity, then run focused Python,
+   populated/empty browser QA, and the named fast spine before any PR update.
 
 ## verification
 
 ~~~text
 git rebase origin/main  # clean; 21 commits replayed onto c7cf1d96
-git diff --check  # passed immediately after rebase
-context_handoff_status.py  # 37.2 percent remaining; checkpoint required
-update_worklog.py --check  # expected stale after rewritten/new history
-verify_docs.py  # expected 21 worklog/history errors before regeneration
+node tests/dashboard_ui.test.mjs  # 132 passed
+node --test --experimental-test-coverage ...  # 132 passed
+# coverage: 96.75% lines, 86.39% branches, 95.45% functions
+node --check <seven dashboard modules and UI test>  # passed
+git diff --check  # passed
+independent review  # no remaining High/Medium findings
 ~~~
 
 ## constraints

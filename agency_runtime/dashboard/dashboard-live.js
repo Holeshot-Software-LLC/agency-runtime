@@ -1409,46 +1409,100 @@ export function createLiveController(core, config, renderer) {
 		return { ...withSnapshots, reviews };
 	}
 
-	async function fetchWorkforceCollections(signal) {
-		const [workforceFirst, hiringFirst] = await Promise.all([
-			api("/api/workforce?limit=200", { signal }),
-			api(buildHiringPath(state.hiringFilters, { limit: 200 }), { signal }),
+	async function fetchWorkforceCollection(signal) {
+		const basePath = "/api/workforce?limit=200";
+		const first = await api(basePath, { signal });
+		return completeCollection(first, {
+			basePath,
+			itemField: "workers",
+			revisionField: "collection_revision",
+			signal,
+		});
+	}
+
+	async function fetchHiringCollection(filters, signal) {
+		const basePath = buildHiringPath(filters, { limit: 200 });
+		const first = await api(basePath, { signal });
+		return completeCollection(first, {
+			basePath,
+			itemField: "hiring_cases",
+			revisionField: "collection_revision",
+			signal,
+			cursorContract: "encoded",
+			cursorKind: "hiring.v1",
+		});
+	}
+
+	async function fetchCollectionSources(sources) {
+		const settled = await Promise.allSettled(sources.map(([, fetch]) => fetch()));
+		const snapshot = {
+			attempted: sources.map(([name]) => name),
+			errors: {},
+			sampledAt: {},
+		};
+		for (const [index, result] of settled.entries()) {
+			const [name] = sources[index];
+			if (result.status === "rejected") {
+				if (result.reason?.name === "AbortError" || terminalLiveFailure(result.reason)) {
+					throw result.reason;
+				}
+				snapshot[name] = null;
+				snapshot.errors[name] = withRequestId(
+					result.reason?.message || `The ${name} source could not refresh.`,
+					result.reason?.requestId,
+				);
+				continue;
+			}
+			snapshot[name] = result.value;
+			snapshot.errors[name] = "";
+			snapshot.sampledAt[name] = new Date().toISOString();
+		}
+		return snapshot;
+	}
+
+	function fetchWorkforceSources(signal, { hiringFilters = state.hiringFilters } = {}) {
+		return fetchCollectionSources([
+			["workforce", () => fetchWorkforceCollection(signal)],
+			["hiring", () => fetchHiringCollection(hiringFilters, signal)],
 		]);
-		const [workforce, hiring] = await Promise.all([
-			completeCollection(workforceFirst, {
-				basePath: "/api/workforce?limit=200",
-				itemField: "workers",
-				revisionField: "collection_revision",
-				signal,
-			}),
-			completeCollection(hiringFirst, {
-				basePath: buildHiringPath(state.hiringFilters, { limit: 200 }),
-				itemField: "hiring_cases",
-				revisionField: "collection_revision",
-				signal,
-				cursorContract: "encoded",
-				cursorKind: "hiring.v1",
-			}),
+	}
+
+	function fetchHiringSource(filters, signal) {
+		return fetchCollectionSources([
+			["hiring", () => fetchHiringCollection(filters, signal)],
 		]);
-		return { workforce, hiring };
 	}
 
 	function buildHiringPath(filters, { limit = 200 } = {}) {
 		const search = new URLSearchParams();
 		search.set("limit", String(limit));
 		const status = String(filters?.status || "").trim();
+		const caseType = String(filters?.type || "").trim();
 		const riskTier = String(filters?.risk_tier || "").trim();
 		if (status) search.set("status", status);
+		if (caseType) search.set("type", caseType);
 		if (riskTier) search.set("risk_tier", riskTier);
 		return `/api/hiring?${search.toString()}`;
 	}
 
 	function hiringFilterValues() {
-		const fields = ["status", "risk_tier"];
+		const fields = ["status", "type", "risk_tier"];
 		return Object.fromEntries(fields.flatMap((field) => {
-			const value = String(byId(`hiring-filter-${field === "risk_tier" ? "risk" : field}`)?.value || "").trim();
+			const controlName = field === "risk_tier" ? "risk" : field;
+			const value = String(byId(`hiring-filter-${controlName}`)?.value || "").trim();
 			return value ? [[field, value]] : [];
 		}));
+	}
+
+	function syncHiringFilterControls(filters = {}) {
+		for (const [field, controlName] of [
+			["status", "status"],
+			["type", "type"],
+			["risk_tier", "risk"],
+		]) {
+			const control = byId(`hiring-filter-${controlName}`);
+			if (control) control.value = String(filters[field] || "");
+		}
 	}
 
 	function applyRosterPage(payload = {}) {
@@ -1618,26 +1672,40 @@ export function createLiveController(core, config, renderer) {
 		const filters = hiringFilterValues();
 		state.hiringFilterIntentGeneration += 1;
 		const intentGeneration = state.hiringFilterIntentGeneration;
-		const request = beginViewRequest("workforce");
+		const request = beginViewRequest("hiring");
 		try {
-			const collections = await fetchWorkforceCollections(request.controller.signal);
-			if (!viewRequestIsCurrent("workforce", request)) return false;
+			const snapshot = await fetchHiringSource(filters, request.controller.signal);
+			if (!viewRequestIsCurrent("hiring", request)) return false;
 			if (intentGeneration !== state.hiringFilterIntentGeneration) return false;
-			state.hiringFilters = filters;
-			commitWorkforceCollections(collections, { render: true });
-			return true;
+			const updated = applyWorkforceSources(snapshot, {
+				hiringFilters: filters,
+				render: true,
+			});
+			if (!updated) {
+				syncHiringFilterControls(state.hiringFilters);
+				const message = snapshot.errors.hiring || "The hiring source could not refresh.";
+				showNotice(message, true);
+			}
+			return updated;
 		} catch (error) {
-			if (error?.name !== "AbortError" && viewRequestIsCurrent("workforce", request)) {
-				showNotice(error.message, true);
+			if (
+				error?.name === "AbortError"
+				&& intentGeneration === state.hiringFilterIntentGeneration
+			) {
+				syncHiringFilterControls(state.hiringFilters);
+			} else if (viewRequestIsCurrent("hiring", request)) {
+				if (terminalLiveFailure(error)) handleLiveFailure(error);
+				else showNotice(error.message, true);
+				syncHiringFilterControls(state.hiringFilters);
 			}
 			return false;
 		} finally {
-			finishViewRequest("workforce", request);
+			finishViewRequest("hiring", request);
 		}
 	}
 
 	function clearHiringFilters() {
-		["status", "risk"]
+		["status", "type", "risk"]
 			.forEach((field) => {
 				const control = byId(`hiring-filter-${field}`);
 				if (control) control.value = "";
@@ -1922,10 +1990,10 @@ export function createLiveController(core, config, renderer) {
 		state.control.controller = controller;
 		state.control.inFlight = true;
 		try {
-			const [snapshot, workforce] = await Promise.all([
+			const [snapshot, workforceSources] = await Promise.all([
 				fetchControlSnapshot(controller.signal),
 				state.activeView === "workforce"
-					? fetchWorkforceCollections(controller.signal)
+					? fetchWorkforceSources(controller.signal)
 					: Promise.resolve(null),
 			]);
 			if (
@@ -1935,7 +2003,7 @@ export function createLiveController(core, config, renderer) {
 				|| state.lifecycle.suspended
 			) return;
 			applyControlSnapshot(snapshot, { render: false });
-			if (workforce) commitWorkforceCollections(workforce, { render: false });
+			if (workforceSources) applyWorkforceSources(workforceSources, { render: false });
 			renderPreservingInteraction(renderer.renderActiveControlView);
 		} catch (error) {
 			if (
@@ -1968,11 +2036,11 @@ export function createLiveController(core, config, renderer) {
 		cancelLiveRequest();
 		cancelControlRequest();
 		try {
-			const [live, control, workforce] = await Promise.all([
+			const [live, control, workforceSources] = await Promise.all([
 				api("/api/live?limit=100", { signal: controller.signal }),
 				fetchControlSnapshot(controller.signal),
 				state.activeView === "workforce"
-					? fetchWorkforceCollections(controller.signal)
+					? fetchWorkforceSources(controller.signal)
 					: Promise.resolve(null),
 			]);
 			if (
@@ -1982,7 +2050,7 @@ export function createLiveController(core, config, renderer) {
 				|| state.lifecycle.suspended
 			) return false;
 			applyControlSnapshot(control, { render: false });
-			if (workforce) commitWorkforceCollections(workforce, { render: false });
+			if (workforceSources) applyWorkforceSources(workforceSources, { render: false });
 			const effective = control.config.effective || control.config.config || {};
 			state.overview = {
 				...(state.overview || {}),
@@ -2177,24 +2245,30 @@ export function createLiveController(core, config, renderer) {
 	async function refreshWorkforce({ signal } = {}) {
 		if (signal) {
 			const commitGeneration = state.commit.generation;
-			const collections = await fetchWorkforceCollections(signal);
+			const snapshot = await fetchWorkforceSources(signal);
 			if (
 				signal.aborted
 				|| state.commit.generation !== commitGeneration
 				|| lifecycleInactive()
 			) return false;
-			commitWorkforceCollections(collections, { render: true });
-			return true;
+			return applyWorkforceSources(snapshot, { render: true });
 		}
 		const request = beginViewRequest("workforce");
 		try {
-			const collections = await fetchWorkforceCollections(request.controller.signal);
+			const snapshot = await fetchWorkforceSources(request.controller.signal);
 			if (!viewRequestIsCurrent("workforce", request)) return false;
-			commitWorkforceCollections(collections, { render: true });
-			return true;
+			const updated = applyWorkforceSources(snapshot, { render: true });
+			if (!updated) {
+				const messages = snapshot.attempted
+					.map((name) => snapshot.errors[name])
+					.filter(Boolean);
+				showNotice(messages.join(" ") || "Workforce sources could not refresh.", true);
+			}
+			return updated;
 		} catch (error) {
 			if (error?.name !== "AbortError" && viewRequestIsCurrent("workforce", request)) {
-				showNotice(error.message, true);
+				if (terminalLiveFailure(error)) handleLiveFailure(error);
+				else showNotice(error.message, true);
 			}
 			return false;
 		} finally {
@@ -2202,17 +2276,68 @@ export function createLiveController(core, config, renderer) {
 		}
 	}
 
-	function commitWorkforceCollections({ workforce, hiring }, { render = true } = {}) {
-		state.workforce = Array.isArray(workforce?.workers) ? workforce.workers : [];
-		state.workforceCounts = workforce?.counts || {};
-		const { workers: _workers, ...workforcePage } = workforce || {};
+	function commitWorkforceSource(workforce) {
+		if (!isRecord(workforce) || !Array.isArray(workforce.workers)) {
+			throw new Error("The workforce source returned an invalid collection.");
+		}
+		state.workforce = workforce.workers;
+		state.workforceCounts = isRecord(workforce.counts) ? workforce.counts : {};
+		const { workers: _workers, ...workforcePage } = workforce;
 		state.workforcePage = workforcePage;
-		state.hiring = Array.isArray(hiring?.hiring_cases) ? hiring.hiring_cases : [];
-		const { hiring_cases: _cases, ...hiringPage } = hiring || {};
+	}
+
+	function commitHiringSource(hiring, filters) {
+		if (!isRecord(hiring) || !Array.isArray(hiring.hiring_cases)) {
+			throw new Error("The hiring source returned an invalid collection.");
+		}
+		state.hiring = hiring.hiring_cases;
+		const { hiring_cases: _cases, ...hiringPage } = hiring;
 		state.hiringPage = hiringPage;
+		state.hiringFilters = { ...filters };
+	}
+
+	function markWorkforceSourceFailure(name, error) {
+		const current = state.workforceSources[name];
+		if (!current) throw new Error(`Unknown workforce source: ${name}`);
+		state.workforceSources[name] = {
+			...current,
+			status: current.lastGoodAt ? "stale" : "unavailable",
+			error: String(error || `The ${name} source could not refresh.`),
+		};
+	}
+
+	function applyWorkforceSources(snapshot, {
+		hiringFilters = state.hiringFilters,
+		render = true,
+	} = {}) {
+		if (
+			!isRecord(snapshot)
+			|| !Array.isArray(snapshot.attempted)
+			|| !isRecord(snapshot.errors)
+			|| !isRecord(snapshot.sampledAt)
+		) throw new Error("Dashboard workforce source snapshot is invalid.");
+		let updated = false;
+		for (const name of snapshot.attempted) {
+			if (!Object.hasOwn(state.workforceSources, name)) {
+				throw new Error(`Unknown workforce source: ${name}`);
+			}
+			if (snapshot[name]) {
+				if (name === "workforce") commitWorkforceSource(snapshot.workforce);
+				else commitHiringSource(snapshot.hiring, hiringFilters);
+				state.workforceSources[name] = {
+					status: "current",
+					error: "",
+					lastGoodAt: snapshot.sampledAt[name] || new Date().toISOString(),
+				};
+				updated = true;
+			} else {
+				markWorkforceSourceFailure(name, snapshot.errors[name]);
+			}
+		}
 		if (render && state.activeView === "workforce") {
 			renderPreservingInteraction(renderer.renderWorkforce);
 		}
+		return updated;
 	}
 
 	async function reconcileRuntimeEvidence(successMessage) {
@@ -2291,6 +2416,11 @@ export function createLiveController(core, config, renderer) {
 		applyRosterPage,
 		validateExactRosterLookup,
 		applyGovernanceSnapshot,
+		fetchWorkforceSources,
+		fetchHiringSource,
+		buildHiringPath,
+		hiringFilterValues,
+		applyWorkforceSources,
 		operationalFilterValues,
 		operationalRosterPath,
 		applyOperationalFilters,

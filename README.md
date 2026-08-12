@@ -78,7 +78,7 @@ request, so your main agent stays small.
   compiles, audits, and admits a least-privilege task specialist in the same
   turn; it does not stretch a near-match into a generalist.
 - 📊 **Local dashboard + CLI** — staffing decisions, model receipts,
-  workforce lifecycle, recorded native-child events, and owner controls.
+  workforce lifecycle, bounded delegation-event rows, and owner controls.
 - 🪟 **Windows and Linux**, five native hosts.
 
 > Agency Runtime is prerelease software. Install it from this repository; no
@@ -694,15 +694,16 @@ reversible roster specialists.
 The optional local dashboard is selected by default during installation and can
 be excluded with `--no-dashboard`. It shows staffing decisions, provider and
 model receipts, host compatibility/status, roster and workforce evidence,
-recorded native-child events, routing latency, specialist-selection frequency,
-recent turns, cached/background update status, and the same supported
-configuration and runtime controls as the owner CLI. Its Evidence view keeps
-three authorities separate: host-written artifacts can prove card delivery,
-Store statuses can show Rule-8 exceptions without proving what a host did, and
-trusted staged/cache files can show measured wiring drift without a live
-canary. It is an observatory and owner control plane, not a child-execution
-scheduler: native-child rows remain historical host evidence, and a row alone
-does not prove a specialist card was delivered.
+bounded delegation-event rows, routing latency, specialist-selection
+frequency, recent turns, cached/background update status, and the supported
+owner configuration and runtime controls available in the browser. Its
+Evidence view keeps three authorities separate: host-written artifacts can
+prove card delivery, Store statuses can show Rule-8 exceptions without proving
+what a host did, and trusted staged/cache files can show measured wiring drift
+without a live canary. It is an observatory and owner control plane, not a
+child-execution scheduler. Delegation-event rows may include legacy or
+recommendation-only records; the dashboard shows an observed child only when
+execution correlation exists, and no such row proves specialist-card delivery.
 
 `agency dashboard service open` is an owner convenience operation: it ensures
 an Agency-owned service is installed and running before opening its loopback

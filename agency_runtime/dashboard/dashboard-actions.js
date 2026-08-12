@@ -434,10 +434,24 @@ export function createActionController(core, config, renderer, live) {
 
 	async function hiringApprove(caseId) {
 		if (serviceControlBlocked()) return;
+		const approvedBy = String(byId("hiring-approver-identity")?.value || "").trim();
+		if (!approvedBy) {
+			return showNotice(
+				"Enter the approver audit identity before approving this case.",
+				true,
+			);
+		}
+		if (
+			approvedBy.length > 128
+			|| new TextEncoder().encode(approvedBy).byteLength > 128
+			|| /[\u0000-\u001f\u007f]/.test(approvedBy)
+		) {
+			return showNotice("Enter a valid approver audit identity.", true);
+		}
 		const confirm = `APPROVE ${caseId}`;
 		const accepted = await requestConfirmation(
 			confirm,
-			"This records explicit owner approval for a high-risk proposed hire.",
+			`This records explicit owner approval by ${approvedBy} for a high-risk proposed hire.`,
 		);
 		if (state.lifecycle.destroyed || state.lifecycle.suspended) return;
 		if (!accepted) return showNotice("Hiring approval cancelled.", true);
@@ -447,7 +461,7 @@ export function createActionController(core, config, renderer, live) {
 				method: "POST",
 				body: JSON.stringify({
 					case_id: caseId,
-					approved_by: "dashboard-owner",
+					approved_by: approvedBy,
 					confirm,
 				}),
 				signal: controller.signal,

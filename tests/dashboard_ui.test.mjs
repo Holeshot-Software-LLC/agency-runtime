@@ -439,6 +439,27 @@ function fullHiringCase(id, marker = id) {
   };
 }
 
+function workforceCollection(workers = [], overrides = {}) {
+  return {
+    collection_revision: "workforce-collection-v1",
+    counts: {},
+    next_cursor: null,
+    truncated: false,
+    workers,
+    ...overrides,
+  };
+}
+
+function hiringCollection(hiringCases = [], overrides = {}) {
+  return {
+    collection_revision: "hiring-collection-v1",
+    hiring_cases: hiringCases,
+    next_cursor: null,
+    truncated: false,
+    ...overrides,
+  };
+}
+
 class FakeClassList {
   constructor() {
     this.values = new Set();
@@ -1031,16 +1052,11 @@ test("provider builder recommends subscription-safe timeouts without overwriting
   assert.equal(timeout.value, "30");
 });
 
-test("workforce settings discover account models and expose configured providers", async () => {
-  const calls = [];
-  const harness = createAppHarness(async (path) => {
-    calls.push(path);
-    return jsonResponse(200, {
-      models: [
-        { slug: "gpt-cheap", display_name: "Cheap", description: "Low cost" },
-        { slug: "gpt-frontier", display_name: "Frontier", description: "Deep work" },
-      ],
-    });
+test("workforce fallback provider exposes configured providers without model discovery", () => {
+  let calls = 0;
+  const harness = createAppHarness(async () => {
+    calls += 1;
+    throw new Error("workforce fallback-provider synchronization must not fetch");
   });
   harness.node("config-providers").value = JSON.stringify([
     { name: "codex-subscription", type: "cli", transport: "codex" },
@@ -1052,54 +1068,8 @@ test("workforce settings discover account models and expose configured providers
     harness.node("workforce-provider-options").options.map((option) => option.value),
     ["codex-subscription", "task-router"],
   );
-
-  harness.node("config-workforce-provider").value = "codex-subscription";
-  assert.equal(await harness.api.loadWorkforceModels({ refresh: true }), true);
-  assert.equal(calls[0], "/api/providers/models?transport=codex&refresh=true");
-  assert.deepEqual(
-    harness.node("workforce-model-options").options.map((option) => option.value),
-    ["gpt-cheap", "gpt-frontier"],
-  );
-  assert.equal(harness.node("workforce-model-options").options[0].title, "Low cost");
-  assert.match(harness.node("workforce-model-status").textContent, /2 account models/);
-
-  harness.node("config-workforce-provider").value = "task-router";
-  assert.equal(await harness.api.loadWorkforceModels(), false);
-  assert.match(harness.node("workforce-model-status").textContent, /router or model-group alias/i);
-});
-
-test("workforce model discovery handles defaults, empty catalogs, and failures", async () => {
-  const defaultProvider = createAppHarness(async () => jsonResponse(200, {
-    models: [{ slug: "claude-fast" }],
-  }));
-  defaultProvider.node("config-providers").value = JSON.stringify([
-    { name: "claude-subscription", type: "cli", transport: "claude" },
-  ]);
-  assert.equal(await defaultProvider.api.loadWorkforceModels(), true);
-  assert.equal(defaultProvider.node("workforce-model-options").options[0].value, "claude-fast");
-
-  const empty = createAppHarness(async () => jsonResponse(200, { models: [], error: "No models" }));
-  empty.node("config-providers").value = JSON.stringify([
-    { name: "codex-subscription", type: "cli", transport: "codex" },
-  ]);
-  assert.equal(await empty.api.loadWorkforceModels(), false);
-  assert.equal(empty.node("workforce-model-status").textContent, "No models");
-
-  const failed = createAppHarness(async () => { throw new Error("catalog unavailable"); });
-  failed.node("config-providers").value = JSON.stringify([
-    { name: "codex-subscription", type: "cli", transport: "codex" },
-  ]);
-  assert.equal(await failed.api.loadWorkforceModels(), false);
-  assert.equal(
-    failed.node("workforce-model-status").textContent,
-    "catalog unavailable. Request ID 00000000-0000-4000-8000-000000000001.",
-  );
-
-  const unknown = createAppHarness(() => { throw new Error("no fetch expected"); });
-  unknown.node("config-providers").value = "not-json";
-  unknown.node("config-workforce-provider").value = "missing";
-  assert.equal(await unknown.api.loadWorkforceModels(), false);
-  assert.match(unknown.node("workforce-model-status").textContent, /Choose a configured provider/i);
+  assert.equal(calls, 0);
+  assert.equal(typeof harness.api.loadWorkforceModels, "undefined");
 });
 
 test("workforce detail renders comparison, promotion, prompt, history, and state-safe actions", () => {
@@ -1496,6 +1466,118 @@ test("hiring evidence controls retain one delegated listener across repeated ren
   assert.ok(controls.every((control) => !control.listeners.has("click")));
 });
 
+test("hiring filters apply on the first request, preserve type while paging, and clear directly", async () => {
+  const calls = [];
+  const cursor = encodedCursor("hiring.v1", "2026-07-26T12:00:00Z", "case-filtered-1");
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    const url = new URL(path, "http://dashboard.test");
+    if (url.searchParams.has("after")) {
+      return jsonResponse(200, hiringCollection(
+        [hiringCaseSummary("case-filtered-2", { case_type: "amend", risk_tier: "high" })],
+        { collection_revision: "filtered-v1" },
+      ));
+    }
+    if (url.searchParams.get("status") === "proposed") {
+      return jsonResponse(200, hiringCollection(
+        [hiringCaseSummary("case-filtered-1", { case_type: "amend", risk_tier: "high" })],
+        {
+          collection_revision: "filtered-v1",
+          next_cursor: cursor,
+          truncated: true,
+        },
+      ));
+    }
+    return jsonResponse(200, hiringCollection([], { collection_revision: "unfiltered-v1" }));
+  });
+  harness.api.state.activeView = "workforce";
+  harness.node("hiring-filter-status").value = "proposed";
+  harness.node("hiring-filter-type").value = "amend";
+  harness.node("hiring-filter-risk").value = "high";
+  let prevented = false;
+
+  assert.equal(await harness.api.applyHiringFilters({
+    preventDefault() { prevented = true; },
+  }), true);
+  assert.equal(prevented, true);
+  const first = new URL(calls[0], "http://dashboard.test").searchParams;
+  assert.deepEqual(Object.fromEntries(first), {
+    limit: "200",
+    risk_tier: "high",
+    status: "proposed",
+    type: "amend",
+  });
+  const continuation = new URL(calls[1], "http://dashboard.test").searchParams;
+  assert.equal(continuation.get("status"), "proposed");
+  assert.equal(continuation.get("type"), "amend");
+  assert.equal(continuation.get("risk_tier"), "high");
+  assert.equal(continuation.get("after"), cursor);
+  assert.deepEqual(harness.api.state.hiringFilters, {
+    status: "proposed",
+    type: "amend",
+    risk_tier: "high",
+  });
+  assert.deepEqual(
+    harness.api.state.hiring.map((item) => item.id),
+    ["case-filtered-1", "case-filtered-2"],
+  );
+
+  assert.equal(await harness.api.clearHiringFilters(), true);
+  assert.equal(calls[2], "/api/hiring?limit=200");
+  assert.equal(harness.node("hiring-filter-status").value, "");
+  assert.equal(harness.node("hiring-filter-type").value, "");
+  assert.equal(harness.node("hiring-filter-risk").value, "");
+  assert.deepEqual(harness.api.state.hiringFilters, {});
+});
+
+test("aborted hiring filter intents restore only the still-current committed state", async () => {
+  const abortableHarness = () => {
+    const requests = [];
+    const harness = createAppHarness((_path, options) => {
+      const pending = deferred();
+      requests.push({ pending, signal: options.signal });
+      options.signal.addEventListener("abort", () => {
+        pending.reject(new DOMException("Hiring filter request aborted", "AbortError"));
+      }, { once: true });
+      return pending.promise;
+    });
+    harness.api.state.activeView = "workforce";
+    harness.api.state.hiringFilters = { status: "proposed" };
+    return { harness, requests };
+  };
+
+  const globalAbort = abortableHarness();
+  globalAbort.harness.node("hiring-filter-status").value = "approved";
+  globalAbort.harness.node("hiring-filter-type").value = "hire";
+  const abandoned = globalAbort.harness.api.applyHiringFilters();
+  const replacement = globalAbort.harness.api.beginViewRequest("operationalRoster");
+  assert.equal(globalAbort.requests[0].signal.aborted, true);
+  assert.equal(await abandoned, false);
+  assert.equal(globalAbort.harness.node("hiring-filter-status").value, "proposed");
+  assert.equal(globalAbort.harness.node("hiring-filter-type").value, "");
+  globalAbort.harness.api.finishViewRequest("operationalRoster", replacement);
+
+  const superseded = abortableHarness();
+  superseded.harness.node("hiring-filter-status").value = "approved";
+  const older = superseded.harness.api.applyHiringFilters();
+  superseded.harness.node("hiring-filter-status").value = "rejected";
+  superseded.harness.node("hiring-filter-type").value = "amend";
+  const newer = superseded.harness.api.applyHiringFilters();
+  await Promise.resolve();
+  assert.equal(superseded.requests[0].signal.aborted, true);
+  assert.equal(superseded.harness.node("hiring-filter-status").value, "rejected");
+  assert.equal(superseded.harness.node("hiring-filter-type").value, "amend");
+  superseded.requests[1].pending.resolve(jsonResponse(200, hiringCollection([
+    hiringCaseSummary("newer-filter-case", { case_type: "amend", status: "rejected" }),
+  ])));
+  assert.equal(await older, false);
+  assert.equal(await newer, true);
+  assert.deepEqual(superseded.harness.api.state.hiringFilters, {
+    status: "rejected",
+    type: "amend",
+  });
+});
+
 test("destroy aborts an exact hiring load and removes its delegated listener", async () => {
   const pending = deferred();
   let requestSignal;
@@ -1791,6 +1873,36 @@ test("app.js config controls normalize typed values and preserve dirty edits on 
     true,
   );
   assert.equal(harness.api.state.config.revision, "forced");
+});
+
+test("live workforce change controls stay typed and bounded", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("typed workforce settings do not fetch");
+  });
+  const controls = [
+    ["config-workforce-hires-turn", "workforce.max_hires_per_turn", "integer", "1", "256", "17", 17],
+    ["config-workforce-daily-alert", "workforce.daily_hire_alert_threshold", "integer", "0", "10000", "42", 42],
+    ["config-workforce-repair-budget", "workforce.hiring_repair_budget", "integer", "0", "8", "3", 3],
+    ["config-workforce-amend-overlap", "workforce.amend_overlap_threshold", "number", "0", "1", "0.73", 0.73],
+  ];
+
+  for (const [id, path, valueType, minimum, maximum, value, expected] of controls) {
+    const tag = INDEX_SOURCE.match(new RegExp(`<input id="${id}"[^>]*>`))?.[0] || "";
+    assert.match(tag, new RegExp(`data-config-path="${path.replaceAll(".", "\\.")}"`));
+    assert.match(tag, new RegExp(`data-value-type="${valueType}"`));
+    assert.match(tag, /type="number"/);
+    assert.match(tag, new RegExp(`min="${minimum}"`));
+    assert.match(tag, new RegExp(`max="${maximum}"`));
+    const control = new FakeNode(id);
+    control.dataset.valueType = valueType;
+    control.labels = [{ textContent: id }];
+    control.value = value;
+    assert.equal(harness.api.readConfigControl(control), expected);
+  }
+  const overlapTag = INDEX_SOURCE.match(
+    /<input id="config-workforce-amend-overlap"[^>]*>/,
+  )?.[0] || "";
+  assert.match(overlapTag, /step="0\.01"/);
 });
 
 test("config snapshots keep effective privacy and retention summaries current", () => {
@@ -2132,7 +2244,6 @@ test("Route Lab renders authoritative host evidence and bounded eligibility reje
     throw new Error("receipt rendering does not fetch");
   });
   harness.api.renderReceipt({
-    delegation_graph: { edges: [], nodes: [] },
     eligibility: {
       capability_status: "native-installation-verified",
       eligible_count: 17,
@@ -2197,7 +2308,6 @@ test("Route Lab renders authoritative host evidence and bounded eligibility reje
   assert.equal(harness.node("route-status").textContent, "ABSTAINED");
 
   harness.api.renderReceipt({
-    delegation_graph: { edges: [], nodes: [] },
     eligibility: {
       eligible_count: 0,
       execution_host: "codex",
@@ -2400,7 +2510,7 @@ test("renderActivityChart draws bounded series with readable axes and focusable 
   assert.equal(buckets.length, 4);
   assert.equal(root.dataset.routes, "2");
   assert.equal(root.dataset.delegations, "1");
-  assert.match(summary.textContent, /2 observed routes · 1 recorded child events/i);
+  assert.match(summary.textContent, /2 observed routes · 1 delegation-event rows/i);
   const nodes = descendants(root);
   const axisLabels = nodes.filter((node) => node.attributes?.get("class")?.includes("axis-label"));
   assert.ok(axisLabels.some((node) => node.textContent === "0"));
@@ -2458,8 +2568,8 @@ test("pure chart helpers preserve hostile labels as inert input data", () => {
   const activity = {
     routing: [{ created_at: isoBefore(1_000), selected_ids: [hostile] }],
     delegations: [
-      { started_at: isoBefore(1_000), recommended_agent: hostile },
-      { started_at: isoBefore(1_000), status: hostile, recommended_agent: hostile },
+      { started_at: isoBefore(1_000), executed_worker_id: hostile },
+      { started_at: isoBefore(1_000), status: hostile, executed_worker_id: hostile },
     ],
   };
   const before = structuredClone(activity);
@@ -2533,7 +2643,8 @@ test("app.js renders hostile runtime labels as inert text across dashboard surfa
       backend: hostile,
       host: hostile,
       id: "delegation-1",
-      recommended_agent: hostile,
+      executed_worker_id: hostile,
+      recommended_agent: "must-not-render-as-executor",
       started_at: "not-a-time",
       status: hostile,
     }],
@@ -2551,10 +2662,6 @@ test("app.js renders hostile runtime labels as inert text across dashboard surfa
   harness.api.renderHosts();
   harness.api.renderEvidence("routing");
   harness.api.renderReceipt({
-    delegation_graph: {
-      edges: [{ from: "one", reason: hostile, to: "two" }],
-      nodes: [{ description: hostile, id: "one" }, { description: "safe", id: "two" }],
-    },
     selected: [{ slug: hostile }],
     signals: { policy: { matched_actions: [hostile] } },
     status: hostile,
@@ -2572,6 +2679,69 @@ test("app.js renders hostile runtime labels as inert text across dashboard surfa
     assert.ok(descendants(root).every((node) => node.innerHTML === undefined));
   }
   assert.equal(harness.context.compromised, undefined);
+});
+
+test("delegation-event rows render only observed execution identity", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("execution-identity rendering does not fetch");
+  });
+  harness.api.state.overview = {
+    capture_content: false,
+    recent: { delegations: 3, routing: 0 },
+    retention_days: 30,
+    status: "ok",
+  };
+  harness.api.state.activity = {
+    delegations: [{
+      backend: "native-task",
+      executed_worker_id: "code-reviewer",
+      executed_worker_kind: "specialist",
+      host: "codex",
+      id: "observed-event",
+      native_run_id: "native-42",
+      recommended_agent: "wrong-recommendation",
+      started_at: isoBefore(1_000),
+      status: "completed",
+      work_unit_id: "recorded-unit",
+    }, {
+      backend: "legacy-tool",
+      host: "claude",
+      id: "recommendation-only-event",
+      recommended_agent: "recommendation-only",
+      started_at: isoBefore(2_000),
+      status: "unknown",
+    }, {
+      backend: "legacy-tool",
+      executed_worker_kind: "legacy-unverified-worker",
+      host: "claude",
+      id: "legacy-kind-only-event",
+      recommended_agent: "legacy-recommendation",
+      started_at: isoBefore(3_000),
+      status: "completed",
+    }],
+  };
+
+  harness.api.renderOverview();
+  const overviewText = descendants(harness.node("overview-delegations"))
+    .map((node) => node.textContent)
+    .join("\n");
+  assert.match(overviewText, /specialist · code-reviewer · run native-42/);
+  assert.match(overviewText, /Not observed/);
+  assert.doesNotMatch(overviewText, /wrong-recommendation|recommendation-only|legacy-recommendation|legacy-unverified-worker/);
+
+  harness.api.renderEvidence("delegations");
+  assert.deepEqual(
+    harness.node("evidence-head").children[0].children.map((node) => node.textContent),
+    ["Observed child", "Host", "Event state", "Host tool", "Recorded correlation ID", "Observed"],
+  );
+  const evidenceText = descendants(harness.node("evidence-body"))
+    .map((node) => node.textContent)
+    .join("\n");
+  assert.match(evidenceText, /specialist · code-reviewer · run native-42/);
+  assert.match(evidenceText, /Not observed/);
+  assert.doesNotMatch(evidenceText, /wrong-recommendation|recommendation-only|legacy-recommendation|legacy-unverified-worker/);
+  assert.match(harness.node("evidence-caption").textContent, /delegation-event row evidence/i);
+  assert.match(harness.node("evidence-context").textContent, /recommendation is never presented as the executor/i);
 });
 
 test("app.js roster and empty evidence renderers expose actionable, scoped controls", async () => {
@@ -2623,7 +2793,7 @@ test("app.js roster and empty evidence renderers expose actionable, scoped contr
   assert.equal(harness.node("evidence-head").children[0].children[0].getAttribute("scope"), "col");
   assert.match(
     harness.node("evidence-body").children[0].children[0].textContent,
-    /no delegation evidence/i,
+    /no delegation-event row evidence/i,
   );
 });
 
@@ -4302,7 +4472,6 @@ test("app.js executes bound navigation, provider, workforce, hash, and startup c
   workforceNav.listeners.get("click")[0]();
   harness.node("provider-builder-type").listeners.get("change")[0]();
   harness.node("provider-builder-transport").listeners.get("change")[0]();
-  harness.node("workforce-model-refresh").listeners.get("click")[0]();
   harness.windowListeners.get("hashchange")[0]();
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));
@@ -4728,10 +4897,6 @@ test("app.js omits retired dependency graphs and renders roster control refreshe
     throw new Error("render-only test does not fetch");
   });
   harness.api.renderReceipt({
-    delegation_graph: {
-      edges: [],
-      nodes: [{ description: "Review auth", id: "unit-1" }],
-    },
     selected: [],
   });
   assert.equal(
@@ -4950,7 +5115,7 @@ test("app.js renders sparse and changing runtime evidence defensively", () => {
   assert.ok(harness.node("overview-delegations").children[0].classList.contains("is-new"));
   assert.ok(
     descendants(harness.node("overview-delegations"))
-      .some((node) => node.textContent === "unassigned"),
+      .some((node) => node.textContent === "Not observed"),
   );
 
   harness.api.state.hosts = [
@@ -5058,7 +5223,7 @@ test("app.js covers sparse receipts and live snapshots", () => {
   const harness = createAppHarness(() => {
     throw new Error("this test does not fetch");
   });
-  harness.api.renderReceipt({ delegation_graph: {} });
+  harness.api.renderReceipt({});
   assert.equal(
     descendants(harness.node("route-result"))
       .some((node) => /delegation work units|dependency graph/i.test(node.textContent)),
@@ -5591,27 +5756,134 @@ test("collection completion fails closed on missing initial cursor or revision",
     revisionField: "collection_revision",
   });
   assert.deepEqual(completedHiring.hiring_cases.map((item) => item.id), ["case-1", "case-2"]);
+});
 
-  const lastGood = createAppHarness(async (path) => jsonResponse(200, path.startsWith("/api/workforce")
-    ? {
-        collection_revision: "revision-bad",
-        next_cursor: null,
-        truncated: false,
-        workers: "not-an-array",
+test("workforce and hiring retain last-good data independently", async () => {
+  let mode = "baseline";
+  const workforceFails = createAppHarness(async (path) => {
+    if (path.startsWith("/api/workforce")) {
+      if (mode === "workforce-fails") {
+        return jsonResponse(200, workforceCollection([], { workers: "not-an-array" }));
       }
-    : {
-        collection_revision: "revision-hiring",
-        hiring_cases: [],
-        next_cursor: null,
-        truncated: false,
-      }));
-  lastGood.api.state.workforce = [{ agent_slug: "last-good-worker" }];
-  lastGood.api.state.workforceCounts = { employee: 1 };
-  lastGood.api.state.hiring = [{ id: "last-good-case" }];
-  assert.equal(await lastGood.api.refreshWorkforce(), false);
-  assert.deepEqual(lastGood.api.state.workforce, [{ agent_slug: "last-good-worker" }]);
-  assert.deepEqual(lastGood.api.state.workforceCounts, { employee: 1 });
-  assert.deepEqual(lastGood.api.state.hiring, [{ id: "last-good-case" }]);
+      return jsonResponse(200, workforceCollection(
+        [{ agent_slug: "last-good-worker", state: "employee" }],
+        { counts: { employee: 1 } },
+      ));
+    }
+    return jsonResponse(200, hiringCollection([
+      hiringCaseSummary(mode === "baseline" ? "last-good-case" : "new-hiring-case"),
+    ]));
+  });
+  workforceFails.api.state.activeView = "workforce";
+  assert.equal(await workforceFails.api.refreshWorkforce(), true);
+  const workforceSampledAt = workforceFails.api.state.workforceSources.workforce.lastGoodAt;
+  mode = "workforce-fails";
+  assert.equal(await workforceFails.api.refreshWorkforce(), true);
+  assert.deepEqual(
+    workforceFails.api.state.workforce.map((worker) => worker.agent_slug),
+    ["last-good-worker"],
+  );
+  assert.deepEqual(workforceFails.api.state.workforceCounts, { employee: 1 });
+  assert.deepEqual(
+    workforceFails.api.state.hiring.map((item) => item.id),
+    ["new-hiring-case"],
+  );
+  assert.deepEqual(workforceFails.api.state.workforceSources.workforce, {
+    status: "stale",
+    error: "The workers collection returned invalid items.",
+    lastGoodAt: workforceSampledAt,
+  });
+  assert.equal(workforceFails.api.state.workforceSources.hiring.status, "current");
+  assert.match(workforceFails.node("workforce-count").textContent, /STALE/);
+  assert.match(
+    descendants(workforceFails.node("workforce-grid")).map((node) => node.textContent).join(" "),
+    /retaining the last-good sample/i,
+  );
+  assert.match(workforceFails.node("hiring-count").textContent, /CURRENT/);
+
+  mode = "baseline";
+  const hiringFails = createAppHarness(async (path) => {
+    if (path.startsWith("/api/workforce")) {
+      return jsonResponse(200, workforceCollection([
+        { agent_slug: mode === "baseline" ? "baseline-worker" : "new-workforce-worker" },
+      ]));
+    }
+    if (mode === "hiring-fails") {
+      return jsonResponse(200, hiringCollection([], { hiring_cases: "not-an-array" }));
+    }
+    return jsonResponse(200, hiringCollection([hiringCaseSummary("last-good-hiring")]));
+  });
+  hiringFails.api.state.activeView = "workforce";
+  assert.equal(await hiringFails.api.refreshWorkforce(), true);
+  const hiringSampledAt = hiringFails.api.state.workforceSources.hiring.lastGoodAt;
+  mode = "hiring-fails";
+  assert.equal(await hiringFails.api.refreshWorkforce(), true);
+  assert.deepEqual(
+    hiringFails.api.state.workforce.map((worker) => worker.agent_slug),
+    ["new-workforce-worker"],
+  );
+  assert.deepEqual(hiringFails.api.state.hiring.map((item) => item.id), ["last-good-hiring"]);
+  assert.equal(hiringFails.api.state.workforceSources.workforce.status, "current");
+  assert.deepEqual(hiringFails.api.state.workforceSources.hiring, {
+    status: "stale",
+    error: "The hiring_cases collection returned invalid items.",
+    lastGoodAt: hiringSampledAt,
+  });
+  assert.match(hiringFails.node("hiring-count").textContent, /STALE/);
+  assert.match(hiringFails.node("hiring-page-status").textContent, /retaining the last-good sample/i);
+});
+
+test("first-load source failures stay unavailable while validated empty peers stay current", async () => {
+  const invalidWorkforce = createAppHarness(async (path) => jsonResponse(
+    200,
+    path.startsWith("/api/workforce")
+      ? workforceCollection([], { workers: "not-an-array" })
+      : hiringCollection([]),
+  ));
+  invalidWorkforce.api.state.activeView = "workforce";
+  assert.equal(await invalidWorkforce.api.refreshWorkforce(), true);
+  assert.equal(invalidWorkforce.api.state.workforceSources.workforce.status, "unavailable");
+  assert.equal(invalidWorkforce.api.state.workforceSources.hiring.status, "current");
+  assert.match(invalidWorkforce.node("workforce-count").textContent, /UNAVAILABLE/);
+  assert.match(
+    descendants(invalidWorkforce.node("workforce-grid"))
+      .map((node) => node.textContent).join(" "),
+    /unavailable; no validated sample/i,
+  );
+  assert.match(
+    descendants(invalidWorkforce.node("hiring-list"))
+      .map((node) => node.textContent).join(" "),
+    /No hiring cases match the committed source filters/i,
+  );
+
+  const invalidHiring = createAppHarness(async (path) => jsonResponse(
+    200,
+    path.startsWith("/api/workforce")
+      ? workforceCollection([])
+      : hiringCollection([], { hiring_cases: "not-an-array" }),
+  ));
+  invalidHiring.api.state.activeView = "workforce";
+  assert.equal(await invalidHiring.api.refreshWorkforce(), true);
+  assert.equal(invalidHiring.api.state.workforceSources.workforce.status, "current");
+  assert.equal(invalidHiring.api.state.workforceSources.hiring.status, "unavailable");
+  assert.match(
+    descendants(invalidHiring.node("workforce-grid"))
+      .map((node) => node.textContent).join(" "),
+    /No governed workers are installed yet/i,
+  );
+  assert.match(invalidHiring.node("hiring-count").textContent, /UNAVAILABLE/);
+  assert.match(invalidHiring.node("hiring-page-status").textContent, /no validated sample/i);
+
+  const emptyCurrent = createAppHarness(async (path) => jsonResponse(
+    200,
+    path.startsWith("/api/workforce") ? workforceCollection([]) : hiringCollection([]),
+  ));
+  emptyCurrent.api.state.activeView = "workforce";
+  assert.equal(await emptyCurrent.api.refreshWorkforce(), true);
+  assert.equal(emptyCurrent.api.state.workforceSources.workforce.status, "current");
+  assert.equal(emptyCurrent.api.state.workforceSources.hiring.status, "current");
+  assert.match(emptyCurrent.node("workforce-count").textContent, /CURRENT/);
+  assert.match(emptyCurrent.node("hiring-count").textContent, /CURRENT/);
 });
 
 test("roster paging rejects activation-policy changes under a stable Store generation", async () => {
@@ -6786,16 +7058,42 @@ test("operational dashboard markup and accessibility policies stay discoverable"
     "inference-state", "provider-failures", "roster-operations-form",
     "roster-filter-division", "roster-filter-capability", "roster-filter-authority",
     "roster-filter-host", "roster-filter-platform", "roster-filter-tool",
-    "review-list", "upstream-status",
+    "review-list", "upstream-status", "hiring-filter-type",
+    "hiring-approver-identity", "hiring-approver-help",
   ]) assert.match(INDEX_SOURCE, new RegExp(`id="${id}"`));
   for (const path of [
     "workforce.mode", "workforce.provider",
     "workforce.max_work_units", "workforce.max_selected_per_unit",
-    "workforce.max_selected_total", "workforce.max_hires_per_task",
-    "workforce.max_hires_per_day", "workforce.auto_promote_successes",
+    "workforce.max_selected_total", "workforce.max_hires_per_turn",
+    "workforce.daily_hire_alert_threshold", "workforce.hiring_repair_budget",
+    "workforce.amend_overlap_threshold", "workforce.auto_promote_successes",
   ]) assert.match(INDEX_SOURCE, new RegExp(`data-config-path="${path.replaceAll(".", "\\.")}"`));
-  assert.match(INDEX_SOURCE, /id="workforce-model-refresh"/);
-  assert.match(INDEX_SOURCE, /id="workforce-model-status"[^>]*aria-live="polite"/);
+  for (const retiredPath of [
+    "workforce.planner_model", "workforce.recruiter_model",
+    "workforce.hiring_model", "workforce.critic_model",
+    "workforce.max_hires_per_task", "workforce.max_hires_per_day",
+  ]) assert.doesNotMatch(
+    INDEX_SOURCE,
+    new RegExp(`data-config-path="${retiredPath.replaceAll(".", "\\.")}"`),
+  );
+  for (const retiredId of [
+    "workforce-model-options", "workforce-model-refresh", "workforce-model-status",
+  ]) assert.doesNotMatch(INDEX_SOURCE, new RegExp(`id="${retiredId}"`));
+  assert.match(INDEX_SOURCE, /<label for="config-workforce-provider">Fallback provider<\/label>/);
+  assert.match(
+    INDEX_SOURCE,
+    /id="config-workforce-max-units"[^>]*min="1"[^>]*max="16"/,
+  );
+  assert.match(INDEX_SOURCE, /Inference accepts at most 16 staffing needs per request/i);
+  assert.match(INDEX_SOURCE, /INFERENCE \+ VERIFICATION/);
+  assert.doesNotMatch(INDEX_SOURCE, /DETERMINISTIC \+ JUDGE/);
+  assert.match(INDEX_SOURCE, /bounded delegation-event rows/i);
+  assert.doesNotMatch(INDEX_SOURCE, /recorded host-native child events|recorded native-child/i);
+  assert.match(
+    INDEX_SOURCE,
+    /id="hiring-approver-identity"[^>]*maxlength="128"[^>]*aria-describedby="hiring-approver-help"/,
+  );
+  assert.match(INDEX_SOURCE, /Dashboard authentication proves authority, not human identity/i);
   assert.match(APP_CSS_SOURCE, /\.roster-filter-grid/);
   assert.match(APP_CSS_SOURCE, /\.review-card/);
   assert.match(APP_CSS_SOURCE, /\.remediation-card/);
@@ -7046,6 +7344,7 @@ test("owner dashboard controls dispatch confirmed revision-bound mutations", asy
     "SUSPEND typescript-application-engineer",
   );
 
+  harness.node("hiring-approver-identity").value = "  Lucas Owner  ";
   await acceptOwnerConfirmation(
     harness,
     harness.api.hiringApprove("hiring-owner-1"),
@@ -7111,10 +7410,30 @@ test("owner dashboard controls dispatch confirmed revision-bound mutations", asy
     worker: "typescript-application-engineer",
   });
   assert.deepEqual(bodies["/api/hiring/approve"], {
-    approved_by: "dashboard-owner",
+    approved_by: "Lucas Owner",
     case_id: "hiring-owner-1",
     confirm: "APPROVE hiring-owner-1",
   });
+});
+
+test("hiring approval rejects missing or oversized audit identity before confirmation or POST", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    return jsonResponse(200, { ok: true });
+  });
+  harness.node("hiring-approver-identity").value = " \t\n ";
+
+  assert.equal(await harness.api.hiringApprove("case-needs-owner"), undefined);
+  assert.equal(harness.api.state.confirmation, null);
+  assert.deepEqual(calls, []);
+  assert.match(harness.node("notice").textContent, /approver audit identity/i);
+
+  harness.node("hiring-approver-identity").value = "é".repeat(65);
+  assert.equal(await harness.api.hiringApprove("case-needs-owner"), undefined);
+  assert.equal(harness.api.state.confirmation, null);
+  assert.deepEqual(calls, []);
+  assert.match(harness.node("notice").textContent, /valid approver audit identity/i);
 });
 
 test("authenticated dashboard exposes the owner control surface and mutation request client", () => {

@@ -99,15 +99,15 @@ The post-Job-B classification is now explicit:
       authority, freshness, and neutral empty states.
 - [x] Retain native-host ownership copy and the live child inference budget,
       concurrency, and cache controls used for host-started child routing.
-- [ ] Remove invalid flat `workforce.*_model` controls and their private model
+- [x] Remove invalid flat `workforce.*_model` controls and their private model
       discovery UI; keep provider-builder discovery and label
       `workforce.provider` as a fallback.
-- [ ] Remove unenforced `max_hires_per_task/day` controls and add the live
+- [x] Remove unenforced `max_hires_per_task/day` controls and add the live
       `max_hires_per_turn`, `daily_hire_alert_threshold`,
       `hiring_repair_budget`, and `amend_overlap_threshold` controls.
-- [ ] Fix hiring apply/clear, type filtering, per-source stale/unavailable
+- [x] Fix hiring apply/clear, type filtering, per-source stale/unavailable
       state, and explicit approver audit identity.
-- [ ] Render observed execution identity instead of a recommendation and use
+- [x] Render observed execution identity instead of a recommendation and use
       neutral delegation-event-row wording for the unfiltered historical
       source.
 - [ ] Remove broker/test/docstring residues that still require the retired
@@ -123,6 +123,17 @@ Global consolidation review, aggregate promotion queues, and further CLI
 hiring efficiency/filter work are deferred to bounded follow-ups. The existing
 duplicates endpoint is not UI-ready: nonempty comparison dataclasses are not
 JSON serializable and its copy does not match the actual fixed thresholds.
+
+The post-Job-B dashboard truth package is now locally complete. It removes the
+invalid and unenforced settings, adds the four live workforce controls, aligns
+the visible staffing limit with inference's maximum of 16, fixes first-request
+hiring filters and independent source state, requires an explicit bounded
+approver identity, and renders only fully correlated execution identity.
+Dashboard charts, tables, and the README now describe the unfiltered historical
+source as delegation-event rows rather than asserting native-child execution.
+The exact UI gate passes 132 tests at 96.75% line, 86.39% branch, and 95.45%
+function coverage. Independent review has no remaining High or Medium finding;
+browser QA and the supporting server-contract package remain open.
 
 Earlier browser evidence remains useful regression context: 202
 selection-bearing decisions, 39 distinct specialists, 491 occurrences, 82.3%
