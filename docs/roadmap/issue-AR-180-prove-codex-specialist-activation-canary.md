@@ -21,6 +21,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - agency_runtime/core/canary.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/canary_proof.py
@@ -44,10 +45,12 @@ blocks: [AR-119, AR-252, AR-253]
 > **RESTATED 2026-08-12.** The historical canary narrative below records useful
 > Codex trust and lifecycle investigations, but its Job B work units, one-use
 > grants, Store-only load proof, and response header are not current success
-> authority. AR-255 builds an inference-bound channel and host-artifact proof;
-> AR-180 exact-installs that implementation and live-proves one real Codex child
-> on TUI, Desktop, and exec. Only the Approach and Acceptance sections as
-> amended below govern closure.
+> authority. AR-255 builds inference-owned staffing and sealed host-artifact
+> proof, but Codex 0.147 still exposes only an opaque assignment and therefore
+> proceeds unstaffed. AR-180 establishes whether a supported authenticated
+> channel exists, then exact-installs and live-proves one real Codex child on
+> TUI, Desktop, and exec. Only the Approach and Acceptance sections as amended
+> below govern closure.
 
 ## Problem
 

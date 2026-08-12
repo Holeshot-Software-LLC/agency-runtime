@@ -19,6 +19,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - docs/roadmap/AR-119-acceptance-evidence.md
   - docs/NORTH_STAR_ACCEPTANCE.md
   - docs/SESSION_HANDOFF.md
@@ -29,8 +30,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: b2e728b1facb7d770b4cf2b083ac03de3b1edfc0
-minimum_ledger_commit: d1f1c6ec584ce9b1fd44e92b548d15c048e31343
+evidence_commit: 7e1b3603e69d04531d9d606fa8f5501946e89fb1
+minimum_ledger_commit: fb650b04c26d82f406621808f1cbb0f36c6256ec
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -43,50 +44,55 @@ must be loaded first after any compaction or session restart.
 
 ## checkpoint
 
-- AR-256 and its required AR-257 gate repair are locally complete. Substantive
-  commit `b2e728b1` publishes the canonical rule/host matrix, reconciles current
-  doctrine and statuses, enforces completion evidence, and separates the
-  decision-conformance runner from its trusted fixture launcher. Ledger commit
-  `d1f1c6ec` records that package and its roadmap traceability.
-- Two independent review cycles found and then verified fixes for false-green
-  matrix semantics, fenced/HTML authority, hidden task markers, candidate
-  ancestry, per-layer evidence laundering, and alternate-runner reuse. The
-  final bounded review found no remaining Critical or High false-green path.
+- The current clean recovery pair is AR-255 runtime `7e1b3603` and ledger
+  `fb650b04` on `codex/ar119-vision-mitigation-handoff`.
+- AR-255 is still open. Its first five acceptance gates are checkpointed;
+  Codex's integrity-bound child channel and exact-candidate Claude
+  Installed/Live proof remain open.
+- Matrix candidate `7e1b3603` has no proven top-level cell. Rule 1 source and
+  simulation are repaired on all five adapters; Claude Rule 4 source and
+  simulation are proven; Codex Rule 4 remains negative. Every Installed and
+  Live layer remains unproven.
 - Tracker creation for AR-255 through AR-257 and tracker synchronization for
   locally reopened historical issues remain pending explicit authorization.
   No missing tracker write is represented as complete.
 
 ## completed-evidence
 
-- `AR-119-founding-vision.md` is the one wording authority;
-  `AR-119-rule-host-evidence-matrix.md` is the one completion authority. The
-  canonical block digest is machine-checked and the matrix binds exact candidate
-  `b79a4138`, all 45 rule/host cells, and 18 asserted layer records.
-- The matrix has no current `proven` top-level cell. Source negatives remain
-  Rule 1 on Claude/Codex/ZCode, Rule 4 on Codex, and Rule 8 on Hermes/OpenClaw;
-  exact-candidate installed/live layers remain unproven on every host.
-- Claude's three Rule-4 host artifacts and Codex's TUI/Desktop/exec negatives
-  are retained only as prior-candidate context. Host-neutral tests do not green
-  host-specific simulation cells. Store rows remain diagnostics, never Rule-4
-  proof.
-- Done-status drift is fail-closed: evidence-backed historical gates are
-  checked, unsupported records are reopened, and AR-161 is the sole digest- and
-  provenance-bound retired exception.
-- Final verification: 84 focused verifier/conformance tests passed; the named
-  fast spine passed 671 with 6 skipped; dashboard UI passed 133/133; routing
-  evaluation passed; decision conformance passed its baseline and killed 83/83
-  mutations with zero survived/invalid and `source_unchanged=true`; docs passed
-  for 684 files; full Ruff and diff checks passed.
+- `AR-119-founding-vision.md` is the sole wording authority and the matrix is
+  the sole completion authority. Candidate `7e1b3603` preserves all 45 cells
+  without converting implementation or simulation into host proof.
+- AR-255 now uses complete-universe inference, exact ordered multi-card v6
+  delivery, install/config/roster fences, fail-open diagnostics, and sealed
+  one-use delivery proof. Store-only state and caller mappings are diagnostic.
+- SafeClaude allocates a live private lease, brackets the real process with a
+  one-use invocation window, and collects one canonical current artifact before
+  profile cleanup. Codex 0.147 remains unstaffed with
+  `unsupported_opaque_interagent_channel`.
+- Final focused verification passed 229 tests with 1 skipped. The named fast
+  Python spine passed 673 with 6 skipped; dashboard UI passed 134; docs passed
+  for 685 Markdown files. Full Ruff lint/format, metadata, policy, worklog, and
+  whitespace checks passed.
+- Checkout routing evaluation passed every gate. Decision conformance passed
+  its baseline, killed 83/83 mutations with zero survived or invalid, and
+  reported `source_unchanged=true`.
+- Two independent adversarial passes drove origin, capability, install-home,
+  caller-root, and replay repairs. The final reattack found no unresolved
+  Critical or High issue; its child-evidence suite passed 54 tests.
+- Claude's three earlier Rule-4 artifacts and Codex's earlier TUI/Desktop/exec
+  negatives remain prior-candidate context. No real Claude or Codex executable
+  was invoked for this checkpoint, so every Installed and Live layer is still
+  unproven.
 
 ## exact-blocker
 
-1. **AR-255 — selection and evidence authority.** Remove deterministic JIT
-   worker choice and compatibility substitution. Carry only a validated
-   inference decision to a host-owned spawn, and require native host artifacts
-   for delivery proof. Store projections remain diagnostic.
-2. **AR-180 — Codex support.** Exact-install AR-255's integrity-bound channel
-   and live-prove card-bearing, multi-card children in TUI, Desktop, and exec.
-   The opaque encrypted context is a blocker, not a support waiver.
+1. **AR-180 — Codex support.** Codex 0.147 exposes no plaintext or authenticated
+   initial inter-agent assignment before first child speech. Keep the host
+   supported and fail open unstaffed until Codex exposes that boundary; AR-180
+   exact-installs and live-proves it in TUI, Desktop, and exec when available.
+2. **AR-255 — exact host proof.** Build and verify candidate `7e1b3603`, then
+   obtain one current Claude artifact through the real executable. The passing
+   fake-runner integration is simulation, not Installed or Live authority.
 3. **AR-252 — automatic contractor critical path.** Record host-backed producer
    outcomes plus a distinct inference-selected verifier verdict; prove three
    accepted outcomes after seven days trigger automatic promotion.
@@ -103,21 +109,22 @@ must be loaded first after any compaction or session restart.
 
 ## same-task-continuity
 
-After compaction, load this file and `AR-119-founding-vision.md` first. Then read
-AR-119, AR-255, ADR-0118, and ADR-0156 before changing runtime behavior. Confirm
-branch, HEAD, status, and worklog parity. Continue from `b2e728b1` / `d1f1c6ec`;
-do not reconstruct retired Job B, plan-row, work-unit, grant, or consumed-receipt
-transport from historical sections.
+After restart or compaction, load this file and `AR-119-founding-vision.md`
+first. Then read AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158.
+Confirm branch, runtime `7e1b3603`, ledger `fb650b04`, status, and worklog
+parity. Do not reconstruct retired Job B, plan-row, work-unit, grant, or
+consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-Execute AR-255 as the one next package. Replace deterministic JIT selection and
-compatibility substitution with a validated inference-owned multi-card decision
-that fails open unstaffed when absent or invalid. Bind decision identity, parent
-and child correlation, exact card hashes, and install identity to the host-owned
-delivery channel. Reject replay, stale, unbound, encrypted-but-opaque, and
-Agency-authored evidence. Keep Codex supported; AR-180 owns exact installation
-and live TUI/Desktop/exec proof after this implementation checkpoint.
+Start AR-180 with a read-only exact-host capability preflight: identify the
+current Codex executable/version and determine whether any authenticated
+pre-speech child assignment is available. Keep Codex unstaffed while the
+channel is opaque. An exact candidate build, install, trust change, or live
+Claude/Codex canary requires explicit authorization. If authorized and the
+channel exists, verify/install `7e1b3603`, obtain one real Claude artifact, and
+run bounded Codex TUI, Desktop, and exec proof. Then continue AR-252, AR-253,
+AR-125, and derived Rule 9 in dependency order.
 
 ## verification
 
@@ -136,9 +143,9 @@ agency eval decision-conformance --repository . --json
 git diff --check
 ~~~
 
-Run AR-255-focused tests and the named fast Python production spine before its
-checkpoint. A checkout-local evaluator is authoritative until the installed
-0.1.0 CLI is refreshed under explicit install authorization.
+Run focused tests and the named fast Python production spine before each
+checkpoint. A checkout-local evaluator is authoritative until an exact artifact
+is refreshed under explicit install authorization.
 
 ## constraints
 
@@ -148,6 +155,9 @@ checkpoint. A checkout-local evaluator is authoritative until the installed
   recall, filter hard-ineligible candidates, validate, budget, and correlate.
 - Only a host-written artifact with exact card hashes before first child speech
   proves Rule 4. Agency rows and model prose are diagnostics.
+- Same-process private reflection and same-account transcript plus Store
+  forgery are threat-model exclusions; do not describe the lease as protection
+  from code already executing as the owner inside Agency.
 - Keep the 15,000 ms cold control fixed; do not trade authority, safety, or
   evidence for latency.
 - Automatic promotion remains on the AR-119 critical path.

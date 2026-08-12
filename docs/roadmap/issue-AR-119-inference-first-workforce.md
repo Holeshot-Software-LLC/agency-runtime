@@ -17,6 +17,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/AR-119-acceptance-evidence.md
@@ -109,8 +110,16 @@ unavailable.
 ## Current state
 
 The audited roster, inference receipts, request-scoped cards, resident managers,
-native lifecycle telemetry, CLI, and dashboard provide a strong base. Tracker
-issue [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
+native lifecycle telemetry, CLI, and dashboard provide a strong base. Runtime
+candidate `7e1b3603` removes the current Rule-1 source negative: native child
+staffing now preserves one complete inference-selected team or proceeds
+unstaffed. Its sealed in-lifetime Claude collector advances Rule 4 only through
+implementation and simulation. No exact-candidate Installed or Live layer is
+proven, and no top-level matrix cell is green. Codex Rule 4 remains current
+source- and simulation-negative because version 0.147 exposes only an opaque,
+unauthenticated assignment channel.
+
+Tracker issue [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
 mirrors the umbrella state. Repository-local AR-119, AR-256, and their evidence
 records provide durable history. The founding vision defines the rules, the
 rule/host matrix owns completion status, and the active capsule owns recovery.
@@ -3886,21 +3895,21 @@ tests instead.
 
 ### Next bounded work package
 
-Complete only AR-141's security- and protocol-sensitive consolidation where
-focused tests can prove unchanged authority, then freeze one final candidate.
-Run the named fast production spine, UI coverage, docs/static/routing gates,
-build one exact private Windows wheel/sdist, verify and install it in a fresh
-environment, repeat packaged and all-host smoke, and perform installed
-desktop/mobile dashboard QA. Do not run the complete corpus, coverage shards,
-compatibility matrix, hosted workflow, or another live Codex canary without the
-required explicit request or exact post-refresh hook-trust state change. Keep
-the 15000 ms cold and one-call fast matched controls fixed; malformed or timed-
-out upstream arms remain invalid, never losses.
+Continue with the remaining AR-255/AR-180 host boundary. Establish the exact
+Codex executable/version and whether it exposes an authenticated pre-speech
+child assignment; keep the current adapter explicitly unstaffed while it is
+opaque. With explicit install/trust/live authorization, build and verify the
+exact `7e1b3603` candidate, obtain one current Claude host artifact, and run the
+bounded Codex TUI, Desktop, and exec measurements only if the required channel
+exists. Do not reinterpret simulation as installed/live proof or weaken the
+Store-independent artifact gate. After that boundary, continue AR-252,
+AR-253, AR-125, and derived Rule 9 in dependency order.
 
 ### Context checkpoint constraints
 
-- Continue on `main` from the current local recovery checkpoint; do not reset,
-  discard, or silently rewrite the accumulated AR-119 work.
+- Continue on `codex/ar119-vision-mitigation-handoff` from the current local
+  recovery checkpoint; do not reset, discard, or silently rewrite the
+  accumulated AR-119 work.
 - Keep tracker issue #132 open and do not claim the north-star goal complete.
 - Do not push or trigger hosted GitHub Actions during intermediate packages;
   the user requested one consolidated hosted verification near the end.

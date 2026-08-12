@@ -12,6 +12,8 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
+  - docs/THREAT_MODEL.md
+  - SECURITY.md
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/canary_proof.py
   - agency_runtime/core/child_delivery_evidence.py
@@ -62,8 +64,9 @@ once.
 Caller-selected roots remain diagnostic and read-only. No CLI or dashboard
 operation may mint a delivery receipt, and Store-only state cannot create the
 capability. Missing, ambiguous, stale, replayed, noncanonical, or unsupported
-artifacts fail the canary open as unstaffed. Codex remains explicitly
-unsupported while its inter-agent assignment is opaque.
+artifacts fail the canary open as unstaffed. Codex card delivery through the
+current opaque channel remains unsupported; Codex remains a supported host and
+proceeds unstaffed.
 
 This decision narrows ADR-0036's no-tools and nonpersistent clauses only for a
 bounded Rule-4 child-delivery measurement. ADR-0036's confirmation, isolation,
@@ -80,6 +83,10 @@ in force.
   can certify delivery alone.
 - A host without an attributable pre-speech artifact remains supported but
   unproven and unstaffed for Rule 4.
+- Same-process private reflection and same-account transcript plus Store
+  forgery remain outside the sandbox boundary documented by the threat model;
+  this lease is invocation scoping, not protection from code already executing
+  as the owner inside the Agency process.
 
 ## Alternatives
 
@@ -96,6 +103,6 @@ in force.
 
 ## Provenance
 
-AR-255 records the source checkpoint and adversarial verification. AR-180 owns
-exact-install and live host proof; simulation does not upgrade installed or
-live matrix layers.
+AR-255 runtime `7e1b3603` and ledger `fb650b04` record the source checkpoint
+and adversarial verification. AR-180 owns exact-install and live host proof;
+simulation does not upgrade installed or live matrix layers.
