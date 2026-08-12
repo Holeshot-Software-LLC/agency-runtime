@@ -126,6 +126,12 @@ source-separated evidence raised the audited dashboard asset payload from
 now documented and narrowly rebudgeted to 360 KiB; the exact 161-test workflow
 contract passes locally in `634170c2` pending the hosted rerun.
 
+The rerun cleared that packaging gate, the fast Python spine, and decision
+mutations. Its 124 dashboard tests all passed, but branch coverage was 85.88%
+against 86%. Two focused evidence edge-case tests now make the exact hosted
+command pass 126/126 at 96.12% lines, 86.18% branches, and 94.00% functions,
+in `8a5c2de2`, pending one more hosted run.
+
 Exact implementation details, test results, conflict warnings, authorization
 boundaries, and restart commands live in the
 [active recovery capsule](handoffs/issue-AR-236.md).

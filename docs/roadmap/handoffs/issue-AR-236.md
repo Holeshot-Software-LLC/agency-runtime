@@ -118,7 +118,10 @@ issue owns acceptance; this capsule owns the next bounded execution slice.
 - PR #270's first hosted static lane failed because AR-236 grew the audited
   dashboard assets from 298,409 to 355,184 bytes beyond a 300 KiB guard. A
   documented 360 KiB ceiling in `634170c2` passes the exact 161-test workflow
-  contract locally; push and hosted rerun remain for this checkpoint.
+  contract locally and the hosted workflow-contract step.
+- The hosted rerun passed the Python spine and all mutations; 124/124 dashboard
+  tests passed but coverage was 85.88% against 86%. Commit `8a5c2de2` now passes
+  126/126 at 96.12% lines, 86.18% branches, and 94.00% functions; rerun remains.
 - Decision conformance could not enter its mutation phase: its baseline forces
   `AGENCY_CI_PYTHON` to the existing main-worktree virtualenv, whose parent
   namespace the executable trust policy correctly rejects. The focused failing
@@ -130,8 +133,7 @@ issue owns acceptance; this capsule owns the next bounded execution slice.
   stale and `verify_docs.py` at 18 inherited history errors: one index-set
   mismatch covering 13 main commits, 13 inaccurate rows for those same commits,
   and four pre-existing ledger-path violations. No AR-236 row fails.
-- Hosted CodeQL and dependency review passed. Coverage/compatibility lanes were
-  skipped after the static failure; they remain manual, non-ordinary gates.
+- Hosted CodeQL and dependency review passed. Manual exhaustive lanes remain skipped.
 - Tracker #245 may not yet reflect the reopened umbrella and later UI scope.
 
 ## same-task-continuity
