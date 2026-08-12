@@ -545,3 +545,35 @@ def test_legacy_source_names_remain_forbidden_outside_legal_notice(
         "README.md: contains legacy sibling repository name",
         "README.md: contains legacy sibling owner",
     ]
+
+
+def test_worklog_grandfathering_is_exact_and_future_mixed_ledgers_fail(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    grandfathered = next(iter(verify_docs.GRANDFATHERED_LEDGER_COMMITS))
+    future_mixed = "f" * 40
+
+    def fake_git(*args: str) -> str:
+        if args[0] == "log" and "--reverse" in args:
+            return ""
+        if args[0] == "log":
+            return "\n".join(
+                [
+                    f"{grandfathered}\tdocs(worklog): historical exception",
+                    f"{future_mixed}\tdocs(worklog): future mixed ledger",
+                ]
+            )
+        assert args[0] == "diff-tree"
+        assert args[-1] == future_mixed
+        return "docs/worklog/README.md\ndocs/roadmap/issue-AR-999-example.md"
+
+    monkeypatch.setattr(verify_docs, "git", fake_git)
+    registry = _document(_base_meta(), relative="docs/worklog/README.md")
+    errors: list[str] = []
+
+    verify_docs.validate_worklog([registry], errors)
+
+    assert errors == [
+        "worklog ledger commit fffffff changes disallowed paths: "
+        "docs/roadmap/issue-AR-999-example.md"
+    ]

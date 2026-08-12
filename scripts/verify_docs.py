@@ -38,17 +38,22 @@ DECISION_STATUSES = {
 LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 GITHUB_RE = re.compile(r"https?://github\.com/([^/\s]+)/([^/\s)#\"']+)", re.I)
 WORKLOG_LEDGER_PREFIX = "docs(worklog):"
-# Two ledger commits predate enforcement of the narrow worklog exemption and
-# also touched one unrelated doc each. Both are recorded in the Notes section of
+# Published ledger commits that predate or violated enforcement of the narrow
+# worklog exemption also touched one unrelated doc each. They are recorded in
+# the Notes section of
 # `docs/worklog/README.md`, which states the resolution explicitly: "Retained
 # as-is; no history rewrite." Rewriting published history to satisfy a linter
 # would be the more destructive fix, so they are grandfathered by exact full
-# SHA. Do not add to this set -- a new violation means the commit should be
-# split before it lands.
+# SHA. A new violation must be split before it lands; this set changes only to
+# preserve already-shared immutable history through an explicit governed repair.
 GRANDFATHERED_LEDGER_COMMITS = frozenset(
     {
         "0e9410b3e818680d507a639e4b5cf7bef8bce41f",
         "a1835947d15e089e235081630b5cc070bd7ecff3",
+        "56e7dee0e1b239b585f2f1d5a82cd02eafddceaf",
+        "410c1d1d4bbe56857417539344a4e9e027d02b5a",
+        "66f62b900031ea19140d7195ed44c2052bf13949",
+        "d38e08b50176bb8d859d7a1ea80010fb148a47a0",
     }
 )
 LEGAL_PROVENANCE_NAME_EXEMPTIONS = frozenset({"THIRD_PARTY_NOTICES.md"})

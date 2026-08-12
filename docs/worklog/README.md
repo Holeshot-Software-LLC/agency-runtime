@@ -758,34 +758,47 @@ This registry connects repository history to the roadmap and to optional detail 
 | `228c720c` | 2026-08-11 | docs(roadmap): census all 1181 rollouts; encryption is universal | null | null |
 | `2865493d` | 2026-08-11 | fix(codex): let hook-trust inspection actually launch its worker | null | null |
 | `8b92a5b9` | 2026-08-11 | fix(install): record the installed runtime per host, not once per box | null | null |
+| `541b2a68` | 2026-08-11 | docs(roadmap): re-prove rule 4 on claude against the refreshed adapter | null | null |
+| `17982654` | 2026-08-11 | docs(roadmap): close the codex TUI gap; claude confirmed interactively | null | null |
+| `782bff48` | 2026-08-11 | docs(roadmap): record the surface re-scope and the latency blind spot | null | null |
 | `3708c96d` | 2026-08-11 | feat(evidence): surface what Agency's routing costs a turn | null | null |
 | `f0a6e470` | 2026-08-11 | docs(roadmap): locate the routing latency, and why it stops being attributable | null | null |
 | `7d6780bd` | 2026-08-11 | feat(store): record per-call provider latency so the turn cost splits | null | null |
 | `57c67047` | 2026-08-11 | docs(roadmap): the routing cache has never hit once, and cannot | null | null |
 | `f1fd9064` | 2026-08-11 | feat(selector): give the routing cache a lifetime the hook model provides | null | null |
 | `9b3a4828` | 2026-08-11 | fix(dashboard): count a routed turn as successful inference | null | null |
+| `eac5df8e` | 2026-08-11 | Merge pull request #266 from Holeshot-Software-LLC/work/rule4-latency-and-cache | null | null |
 | `db51dab3` | 2026-08-11 | docs(roadmap): audit what a model change actually breaks | null | null |
 | `4d4c5741` | 2026-08-11 | fix(inference): decide the token parameter once, from the provider | null | null |
 | `05bc4583` | 2026-08-11 | fix(header): report only model identities Agency observed | null | null |
+| `ccf36517` | 2026-08-11 | docs(roadmap): the planner staffs work assigned to someone else | null | null |
 | `10093a1e` | 2026-08-11 | docs(roadmap): selection tracks activity, not domain | null | null |
 | `5cea1a4d` | 2026-08-11 | feat(evidence): make selection auditable, by explicit opt-in | null | null |
 | `abb300a8` | 2026-08-11 | fix(config): let an operator actually set the retention flag | null | null |
 | `eb532ff2` | 2026-08-11 | fix(config): refuse a config the installed hooks cannot read | null | null |
 | `da6d66b6` | 2026-08-11 | fix(config): write only the paths an operation changed | null | null |
+| `ebc741e8` | 2026-08-11 | docs(roadmap): the config rewrite came from validation, not the renderer | null | null |
 | `ff986eff` | 2026-08-11 | fix(workforce): give domain enough resolution to separate engineers | null | null |
 | `b7d78832` | 2026-08-11 | fix(store): let `agency db trim` reach the routing_intent table | null | null |
 | `c0e42931` | 2026-08-11 | refactor(cli)!: cut the CLI back to what the vision asks for | null | null |
 | `be246e33` | 2026-08-11 | docs(roadmap): record the CLI half of the vision re-scope | null | null |
 | `5ba6a717` | 2026-08-11 | test(hosts): check rule 9 per capability, not per verb | null | null |
-| `50fe3e07` | 2026-08-11 | docs(roadmap): refresh the dashboard parity execution handoff | AR-236 | null |
-| `ebcc2eb9` | 2026-08-11 | feat(dashboard): align operator evidence with staffing vision | AR-236 | null |
-| `3ee585fe` | 2026-08-11 | feat(dashboard): add bounded vision evidence parity | AR-236 | null |
-| `45b6efe7` | 2026-08-11 | docs(roadmap): checkpoint AR-236 vision evidence | AR-236 | null |
-| `3a3bbb64` | 2026-08-11 | docs(roadmap): record AR-236 browser verification | AR-236 | null |
-| `634170c2` | 2026-08-11 | test(release): budget AR-236 dashboard evidence | AR-236 | null |
-| `3a63590e` | 2026-08-11 | docs(roadmap): checkpoint AR-236 CI budget repair | AR-236 | null |
-| `8a5c2de2` | 2026-08-11 | test(dashboard): cover AR-236 evidence boundaries | AR-236 | null |
-| `e70f521d` | 2026-08-11 | docs(roadmap): checkpoint AR-236 coverage repair | AR-236 | null |
+| `b7832a03` | 2026-08-11 | Merge pull request #267 from Holeshot-Software-LLC/cli-vision-rescope | null | null |
+| `a34aac87` | 2026-08-11 | docs(agents): require a worktree, a branch, and a PR | null | null |
+| `5c046fbf` | 2026-08-11 | feat(config): give the operator a policy channel of their own | null | null |
+| `28a9a0d1` | 2026-08-11 | fix(config): a context budget must never be able to withhold a turn | null | null |
+| `8aa8861d` | 2026-08-11 | feat(install): refuse house rules that would never be applied, and harden the footer | null | null |
+| `f6313749` | 2026-08-11 | Merge pull request #268 from Holeshot-Software-LLC/work/worktree-branching-rule | null | null |
+| `9c4112c3` | 2026-08-11 | Merge pull request #269 from Holeshot-Software-LLC/work/operator-policy | null | null |
+| `50fe3e07` | 2026-08-11 | docs(roadmap): refresh the dashboard parity execution handoff | null | null |
+| `ebcc2eb9` | 2026-08-11 | feat(dashboard): align operator evidence with staffing vision | null | null |
+| `3ee585fe` | 2026-08-11 | feat(dashboard): add bounded vision evidence parity | null | null |
+| `45b6efe7` | 2026-08-11 | docs(roadmap): checkpoint AR-236 vision evidence | null | null |
+| `3a3bbb64` | 2026-08-11 | docs(roadmap): record AR-236 browser verification | null | null |
+| `634170c2` | 2026-08-11 | test(release): budget AR-236 dashboard evidence | null | null |
+| `3a63590e` | 2026-08-11 | docs(roadmap): checkpoint AR-236 CI budget repair | null | null |
+| `8a5c2de2` | 2026-08-11 | test(dashboard): cover AR-236 evidence boundaries | null | null |
+| `e70f521d` | 2026-08-11 | docs(roadmap): checkpoint AR-236 coverage repair | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
@@ -793,3 +806,4 @@ This registry connects repository history to the roadmap and to optional detail 
 - `2434f30` contains the name `Hermes` in its historical subject. The subject is retained exactly as committed for faithful provenance; the name does not create an active cross-repository link or dependency.
 - `8f6d320` records a handoff document that was later removed. The subject remains part of the immutable commit record; no deleted document was restored for this worklog.
 - `a183594` is a `docs(worklog):` ledger commit that also updated `docs/roadmap/handoffs/issue-AR-235.md`. The worklog-ledger exemption allows only `docs/worklog/**` and the reciprocal roadmap README cell. The capsule refresh should have been a separate `docs(roadmap):` commit. Retained as-is; no history rewrite.
+- `56e7dee`, `410c1d1`, `66f62b9`, and `d38e08b` are published `docs(worklog):` commits that also updated `docs/roadmap/issue-AR-119-inference-first-workforce.md`. The mixed commits violate the narrow ledger exemption, but rewriting shared history would be destructive. AR-254 records their exact-SHA grandfathering; future mixed ledger commits still fail.
