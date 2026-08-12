@@ -19,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-236
 branch: codex/dashboard-vision-parity
-evidence_commit: d94588906dfefe23d869eff19621d2c213f89de0
-minimum_ledger_commit: 8d1a12132447730d2a674a98a025de8bacb7fac8
+evidence_commit: 6ce0c37ff84beaca244d436aa389eb5579d5c05b
+minimum_ledger_commit: 419a888c10837f309122200ea34baec22dc79166
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245
 ---
@@ -44,10 +44,9 @@ this capsule owns the next bounded package.
   final vision. Prefer dashboard-only fixes, but a narrowly evidenced core,
   Store, CLI, adapter, or server correction is allowed when final `main`
   contradicts the vision or cannot support a truthful UI.
-- The dashboard truth package is clean at `d9458890` / `8d1a1213`. The next
-  supporting-contract slice is locally complete and verified: it changes only
-  the smallest shared projection, CLI, broker, server, and test contracts that
-  a truthful dashboard or matching CLI projection requires.
+- The dashboard truth package is clean at `d9458890` / `8d1a1213`; the minimal
+  supporting-contract slice is clean at `6ce0c37f` / `419a888c`. Both were
+  independently reviewed with no unresolved High or Medium finding.
 
 ## completed-evidence
 
@@ -86,46 +85,43 @@ this capsule owns the next bounded package.
   executor identity; chart, table, and README copy stay source-neutral.
 - Disabled broker explain, routing snapshots, lifecycle copy, and tests no
   longer require the retired delegation graph. The graph was not restored.
-- Pre-Job-B browser QA covered populated, empty, partial-failure, cadence,
-  accessibility, and 1440/1024/390 widths. Those results describe the rebased
-  code but must be rerun after the post-Job-B rework.
+- Post-Job-B real-browser QA used the production CLI and real dashboard,
+  Store, child-artifact, Rule-8, and wiring projections. The bounded populated
+  Store fixture rendered 20 selection-bearing decisions, 13 distinct
+  specialists, 35 occurrences, 91.4% top-ten concentration, correlated child
+  identities only, and evidence-bounded latency attribution. No positive host
+  proof was fabricated: isolated host homes produced zero verified cards,
+  missing Claude wiring, and explicit not-measured states for other hosts.
+- A fresh Store rendered selection `NO DATA`, latency `UNKNOWN`, current-empty
+  workforce/hiring, zero-proof child caveats, Rule-8's non-health claim, and
+  unknown wiring. Console/CSP checks were clean and 1440x900, 1024x768, and
+  390x844 layouts had no document overflow.
+- Path-only instrumentation around the real handlers proved metrics load once
+  on Overview, proof sources load once on first Evidence entry, hot polling
+  refetches none of the five, revisits reuse proof samples, and manual/global
+  refreshes stay view-scoped. Ninety-one API log rows contained no token,
+  authorization text, query, fragment, retired endpoint, or graph request.
 
 ## post-job-b-classification
 
-Retain:
-
-- latency, specialist distribution, child proof, Rule-8, wiring, the
-  routing-intent retention guard, and removal of GET `/api/overview`, GET
-  `/api/config`, and Route Lab delegation graphs;
-- native-host ownership copy, staffing/specialist terminology, provider-builder
-  model discovery, per-worker promotion readiness, and closest-worker detail.
-
-Completed in the dashboard truth package:
-
-- dead/live workforce settings, fallback-provider and Route Lab labels;
-- hiring filter, paging, source-state, and approver-identity correctness;
-- correlated execution identity and neutral delegation-event-row copy.
-
-Rework before merge:
-
-- rerun populated and fresh-empty real-browser QA after the post-Job-B changes;
-- run the named fast spine and refresh `main` before the PR decision;
-- keep umbrella parity open for the broader historical sub-issues below.
-
-Drop or defer:
-
-- drop all Agency work-unit planning/execution UI and the stale workforce-only
-  model helpers; do not add another readiness or per-worker duplicate panel;
-- defer global consolidation review until `/api/workforce/duplicates` returns
-  serialized, source-labelled rows with its real threshold contract;
-- defer aggregate promotion queues and CLI hiring-list efficiency/filter work
-  to their own bounded packages.
+- Retain latency, specialist distribution, child proof, Rule-8, wiring, native-
+  host copy, live child-routing bounds, provider discovery, worker readiness,
+  closest-worker detail, and the retired GET/config/graph removals.
+- The truth package completes dead/live settings, hiring filters and paging,
+  independent source state, approver identity, correlated execution identity,
+  neutral event copy, browser QA, the fast spine, and routing/static gates.
+- Drop all Agency work-unit planning/execution UI and stale workforce-only model
+  helpers. Defer global consolidation review, aggregate promotion queues, and
+  CLI hiring efficiency/filter work to bounded follow-ups. Keep AR-236 open.
 
 ## exact-blocker
 
-- The post-Job-B real-browser QA and named fast spine have not yet run.
 - PR #270 still points at the pre-rebase draft head; its historical checks are
   not evidence for this newly reframed package.
+- Decision conformance reaches the same inherited Windows evaluator baseline
+  failure as `origin/main`: its forced venv Python fails executable-parent
+  namespace trust for one OpenClaw test. The focused test passes when
+  `AGENCY_CI_PYTHON` is unset; all relevant files are identical to `main`.
 
 ## same-task-continuity
 
@@ -135,10 +131,11 @@ decision. Continue in this worktree.
 
 ## next-bounded-work-package
 
-1. Create the supporting-contract substantive and ledger checkpoint.
-2. Refresh `main`, then run populated and fresh-empty real-browser QA.
-3. Run the named fast spine, refresh `main` again, and update draft PR #270 only
-   if the bounded package remains green and vision-aligned.
+1. Record this post-browser, post-fast-spine recovery checkpoint.
+2. Refresh `main`, force-with-lease the rebased branch, and update draft PR
+   #270 only if the vision-aligned delta remains unchanged.
+3. Inspect fresh hosted checks, merge only when current evidence is green, and
+   keep umbrella AR-236 open for its explicitly deferred historical sub-issues.
 
 ## verification
 
@@ -152,6 +149,12 @@ git diff --check  # passed
 focused latency/API/parser/graph tests  # 207 passed; final latency/API rerun 178 passed
 node tests/dashboard_ui.test.mjs  # 133 passed after contract rename
 independent review  # machine and visible attribution findings resolved
+production-CLI browser QA  # populated + fresh-empty; 1440/1024/390; console/CSP clean
+path-only real-handler cadence  # 91 safe rows; view-scoped evidence; no hot-poll refetch
+named fast Python spine -q -W error  # 668 passed, 6 skipped
+agency eval routing --json --no-details  # all gates passed; p95 4.957 ms
+docs metadata/policy/worklog/verify_docs + full Ruff  # passed
+agency eval decision-conformance  # inherited Windows launcher_identity baseline failure
 ~~~
 
 ## constraints

@@ -138,15 +138,28 @@ names the machine-readable latency subtraction
 `derived_routing_remainder_ms`. The dashboard truth coverage gate passed 132
 tests at 96.75% line, 86.39% branch, and 95.45% function coverage; the final
 contract rerun passes 133 UI tests and 178 focused latency/API tests. Independent
-review has no unresolved High or Medium finding; post-Job-B browser QA and the
-named fast spine remain open.
+review has no unresolved High or Medium finding.
 
-Earlier browser evidence remains useful regression context: 202
-selection-bearing decisions, 39 distinct specialists, 491 occurrences, 82.3%
-top-ten concentration, `code-reviewer` in 146 decisions, source-separated
-empty/stale behavior, token-free request cadence, and responsive layouts. It
-must be rerun after the post-Job-B changes before any merge claim. Exact restart
-state and package boundaries live in the
+Post-Job-B browser verification is current. The production CLI served bounded
+populated and fresh-empty Stores through the real dashboard and evidence
+projections; isolated host homes produced honest zero-card, missing, and
+not-measured host evidence rather than fabricated positives. The populated
+fixture rendered 20 selection-bearing decisions, 13 distinct specialists, 35
+occurrences, 91.4% top-ten concentration, correlated execution identity, and
+the derived latency remainder. The empty fixture rendered neutral `NO DATA`,
+`UNKNOWN`, and current-empty states. Console/CSP checks and 1440, 1024, and 390
+pixel layouts passed. A 91-row path-only handler trace proved all five evidence
+sources stay off the hot poll, refresh by active view, and put no bearer token,
+authorization text, query, fragment, retired endpoint, or graph in the log.
+
+The exact named fast Python spine passed 668 tests with 6 skips under `-W
+error`; all 133 dashboard tests, all routing-eval gates, documentation/static
+checks, and full Ruff checks passed. Decision conformance retains one inherited
+Windows evaluator-environment failure: its forced venv Python is rejected by
+the executable-parent namespace policy for the OpenClaw package test. That
+focused test passes with `AGENCY_CI_PYTHON` unset, and the complete diagnostic
+surface is identical to `origin/main`. Exact restart state and package
+boundaries live in the
 [active recovery capsule](handoffs/issue-AR-236.md).
 
 ## Approach
