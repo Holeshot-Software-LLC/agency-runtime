@@ -855,6 +855,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ebfdeab5` | 2026-08-13 | docs(roadmap): record rule 5 simulation and codex/zcode simulation parity | null | null |
 | `be18a9b0` | 2026-08-13 | test(rules): close the last three simulation gaps | null | null |
 | `f90995c1` | 2026-08-13 | docs(roadmap): record complete simulation parity at candidate be18a9b0 | null | null |
+| `cec10b02` | 2026-08-13 | docs(roadmap): scope the installed-projection reconciliation as AR-258 | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
