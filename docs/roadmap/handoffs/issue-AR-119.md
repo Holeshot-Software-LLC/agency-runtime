@@ -32,7 +32,7 @@ type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
 evidence_commit: 211563c799e167bee03bfd0fa60e3f2ca6cc9195
-minimum_ledger_commit: ee8db873e8c2e981f9f083d6e8862296ed782cb5
+minimum_ledger_commit: ee82c602f2dc2d5e9632fc91b6dc071b50dc7541
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -46,8 +46,8 @@ must be loaded first after any compaction or session restart.
 ## checkpoint
 
 - The current source pair is Codex runtime `211563c7` and ledger `ee8db873`;
-  cross-file CLI history is `45b21cdc`/`01730614`, reviewed documentation is
-  `e051dcc0`/`d9d5e9cc`, and preflight design is `ccb1802c`/`a7e8cf54`.
+  Desktop documentation is `1a6e4887`/`ee82c602`, cross-file CLI history is
+  `45b21cdc`/`01730614`, and preflight design is `ccb1802c`/`a7e8cf54`.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
   exact-candidate Claude Installed/Live proof remains open.
 - ADR-0159 now binds exact CLI 0.147 and separately pinned Desktop alpha to a
@@ -91,7 +91,9 @@ must be loaded first after any compaction or session restart.
   reported no finding at any severity.
 - Candidate `45b21cdc` retains the historical 131/131 decision-conformance
   result. For `211563c7`, dashboard UI passed 134/134, routing passed every
-  threshold, and Ruff lint/format passed; the expanded evaluator remains pending.
+  threshold, and Ruff lint/format passed. Its expanded evaluator started from
+  clean `ee82c602` but was stopped at the owner's request before producing a
+  result; it remains pending, with no pass or failure inferred.
 - Claude's earlier Rule-4 artifacts and Codex's prior TUI/Desktop/exec negatives
   remain prior-candidate context. No Agency canary, live rewrite, real Claude
   invocation, or exact-candidate Installed/Live proof ran.
@@ -122,15 +124,15 @@ must be loaded first after any compaction or session restart.
 
 After restart or compaction, load this file and `AR-119-founding-vision.md`
 first. Then read AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158.
-Confirm branch, runtime `211563c7`, ledger `ee8db873`, status, and worklog
+Confirm branch, runtime `211563c7`, minimum ledger `ee82c602`, status, and worklog
 parity. Do not reconstruct retired Job B, plan-row, work-unit, grant, or
 consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-Search and sample read-only exec depth-two/deeper ancestry, if the host emits
-one, before separately pinning it. Then request explicit authorization for exact
-install, trust, and live proof. Continue AR-252, AR-253, AR-125, and Rule 9.
+First rerun `agency eval decision-conformance --repository . --json` to obtain
+the missing current-candidate result. Then search read-only for exec depth-two
+ancestry before requesting authorization for install, trust, and live proof.
 
 ## verification
 
