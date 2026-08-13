@@ -3908,10 +3908,11 @@ passed 365 focused tests, the 673-test fast spine with 6 skips, and a scoped
 independent reviewer passed 200 tests, killed the same 19/19 mutations, and
 reported no finding at any severity. This advances only Codex Rule-4
 Implementation and Simulation. The 134-test dashboard suite, routing evaluation,
-Ruff, format, and documentation/schema gates pass; only the current complete
-decision-conformance evaluator remains pending. Desktop alpha, exec depth-two/
-deeper, Installed, and Live remain unproven; no install, trust, or canary action
-occurred.
+Ruff, format, and documentation/schema gates pass. The complete current
+decision-conformance evaluator exited zero in 883.1 seconds: its baseline passed
+in 169,548 ms, all 131/131 mutations were killed, zero survived or were invalid,
+and `source_unchanged=true`. Desktop alpha, exec depth-two/deeper, Installed,
+and Live remain unproven; no install, trust, or canary action occurred.
 
 ### Still required before AR-119 can close
 

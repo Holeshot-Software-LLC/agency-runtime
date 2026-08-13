@@ -155,7 +155,9 @@ scoped mutation run killed 19/19 mutations with a green baseline and
 `source_unchanged=true`; an independent reviewer passed 200 tests, killed the
 same 19/19 mutations, and reported no finding at any severity. These results
 advance only Codex Rule-4 Implementation and Simulation. The 134-test dashboard
-suite, routing evaluation, Ruff, format, and documentation/schema gates pass;
-only the current complete decision-conformance evaluator remains pending.
+suite, routing evaluation, Ruff, format, and documentation/schema gates pass.
+The complete current decision-conformance evaluator then exited zero in 883.1
+seconds: its baseline passed in 169,548 ms, all 131/131 mutations were killed,
+zero survived or were invalid, and `source_unchanged=true`.
 Desktop alpha, unobserved exec depth-two/deeper ancestry, and all Installed and
 Live proof remain unproven.

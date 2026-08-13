@@ -276,8 +276,10 @@ mutation run with a green baseline and unchanged source. The independent
 reviewer passed 200 tests, killed 19/19 mutations, and found no issue at any
 severity. Codex Rule-4 Implementation and Simulation are proven. The 134-test
 dashboard suite, routing evaluation, Ruff, format, and documentation/schema
-gates pass; only the current complete decision-conformance evaluator remains
-pending. Exact installation and host child artifacts remain later gates.
+gates pass. The complete current decision-conformance evaluator exited zero in
+883.1 seconds: its baseline passed in 169,548 ms, all 131/131 mutations were
+killed, zero survived or were invalid, and `source_unchanged=true`. Exact
+installation and host child artifacts remain later gates.
 ADR-0159 keeps rewrite authorization separate from delivery-proof authority.
 Desktop `0.147.0-alpha.6.6` is deliberately outside that exact CLI pin: its
 observed legacy history and `Codex Desktop` lineage require a separate bounded

@@ -32,7 +32,7 @@ type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
 evidence_commit: 45b21cdcdbaac789bda58d31653179fc1a9f5c65
-minimum_ledger_commit: 01730614d328e97e8db740cf715122bfb575f435
+minimum_ledger_commit: d9d5e9cc68bd98ee20fda5b4b55f011ae4d2bce4
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -46,7 +46,8 @@ must be loaded first after any compaction or session restart.
 ## checkpoint
 
 - The current source pair is Codex runtime `45b21cdc` and ledger `01730614`;
-  the reviewed preflight design remains `ccb1802c`/`a7e8cf54`.
+  reviewed documentation is `e051dcc0`/`d9d5e9cc`, and the preflight design
+  remains `ccb1802c`/`a7e8cf54`.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
   exact-candidate Claude Installed/Live proof remains open.
 - The AR-180 read-only exact-host preflight is complete. ADR-0159 now binds the
@@ -85,8 +86,10 @@ must be loaded first after any compaction or session restart.
   zero survived/invalid with `source_unchanged=true`.
 - The exact-current adversarial review found no finding at any severity; it
   independently passed 200 tests and killed the same 19/19 mutations. Dashboard
-  134/134, routing, Ruff, format, and documentation/schema gates pass; only the
-  current complete decision-conformance evaluator remains pending.
+  134/134, routing, Ruff, format, and documentation/schema gates pass.
+- The complete decision-conformance evaluator exited zero in 883.1 seconds:
+  baseline passed in 169,548 ms, all 131/131 mutations were killed, zero
+  survived or were invalid, and `source_unchanged=true`.
 - Claude's three earlier Rule-4 artifacts and Codex's earlier TUI/Desktop/exec
   negatives remain prior-candidate context. A routine real Codex TUI child was
   observed in preflight; no Agency canary, real Claude invocation, or exact-

@@ -138,9 +138,10 @@ ADR-0159 governs this authorization boundary and its fail-open behavior.
   fast spine with 6 skips, and 19/19 scoped mutations with a green baseline and
   unchanged source. The independent reviewer passed 200 tests, killed 19/19,
   and found no issue at any severity. The 134-test dashboard suite, routing,
-  Ruff, format, and documentation/schema gates pass; only the current complete
-  decision-conformance evaluator remains pending. Installed and Live layers do
-  not advance.
+  Ruff, format, and documentation/schema gates pass. The complete current
+  decision-conformance evaluator exited zero in 883.1 seconds: baseline passed
+  in 169,548 ms, all 131/131 mutations were killed, zero survived or were
+  invalid, and `source_unchanged=true`. Installed and Live layers do not advance.
 
 ## Acceptance
 

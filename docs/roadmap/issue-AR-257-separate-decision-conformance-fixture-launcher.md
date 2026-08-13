@@ -3,7 +3,7 @@ title: "AR-257: Separate decision-conformance runner and trusted fixture launche
 status: done
 category: roadmap
 created: 2026-08-12
-updated: 2026-08-12
+updated: 2026-08-13
 tags: [testing, security, decision-conformance, windows, critical-path]
 related:
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
@@ -68,6 +68,11 @@ explicit validation, and fail-before-copy behavior. The globally installed
 `agency.exe` is an older 0.1.0 projection and remains an environment/tooling
 mismatch; verification invokes the current checkout directly and does not
 install or trust a projection.
+
+Candidate `45b21cdc` completed the expanded current evaluator on 2026-08-13.
+It exited zero in 883.1 seconds: baseline passed in 169,548 ms, all 131/131
+mutations were killed, zero survived or were invalid, and
+`source_unchanged=true`.
 
 ## Acceptance
 
