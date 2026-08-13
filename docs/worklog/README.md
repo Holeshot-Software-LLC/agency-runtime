@@ -830,6 +830,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3a66ee80` | 2026-08-13 | docs(roadmap): record Codex attestation review findings | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
 | `2fe5e9ec` | 2026-08-13 | fix(codex): bind spawn ancestry transactionally | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
 | `9557521e` | 2026-08-13 | docs(roadmap): checkpoint Codex ancestry repair | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `e8b60f64` | 2026-08-13 | fix(codex): seal exact spawn outcomes | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
