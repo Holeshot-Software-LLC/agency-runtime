@@ -835,6 +835,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `45b21cdc` | 2026-08-13 | fix(codex): authenticate cross-file spawn ancestry | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
 | `e051dcc0` | 2026-08-13 | docs(roadmap): checkpoint cross-file Codex ancestry | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
 | `922442e0` | 2026-08-13 | docs(roadmap): record complete Codex conformance proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `211563c7` | 2026-08-13 | fix(codex): authenticate Desktop alpha ancestry | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
