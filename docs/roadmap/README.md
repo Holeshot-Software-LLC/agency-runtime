@@ -271,6 +271,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-255` | [Make native child staffing inference-owned and host-proven](issue-AR-255-inference-owned-host-proven-child-staffing.md) | open | p0 | routing | None (tracker creation pending authorization) |
 | `AR-256` | [Establish the canonical nine-rule completion contract](issue-AR-256-canonical-nine-rule-completion-contract.md) | done | p0 | documentation | None (tracker creation pending authorization) |
 | `AR-257` | [Separate decision-conformance runner and trusted fixture launcher](issue-AR-257-separate-decision-conformance-fixture-launcher.md) | done | p0 | testing | None (tracker creation pending authorization) |
+| `AR-258` | [Reconcile the installed projection before any host proof](issue-AR-258-reconcile-the-installed-projection.md) | open | p0 | install | None (tracker creation pending authorization) |
 
 ## Traceability
 
