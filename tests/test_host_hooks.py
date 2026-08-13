@@ -2342,7 +2342,7 @@ def test_hook_boundary_allows_positively_identified_oversized_non_stop() -> None
     assert "host operation continues" in errors.getvalue()
 
 
-@pytest.mark.parametrize("host", ["codex", "zcode"])
+@pytest.mark.parametrize("host", ["codex", "zcode", "claude"])
 def test_hook_boundary_publishes_prompt_when_preflight_integrity_fails(
     host: str,
     monkeypatch: pytest.MonkeyPatch,
