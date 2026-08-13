@@ -527,7 +527,7 @@ not stable internal identifiers.
 | [AR-254](issue-AR-254-reconcile-canonical-worklog-history.md) | `d1f8ed2`, `b980e60`, `a78653c`, `a45422d`, `1c03a40`, `9ac9d29`; canonical index, exact historical exceptions, clone-independent IDs, platform-independent UTF-8 subjects, and hosted aggregate verification complete | None |
 | [AR-255](issue-AR-255-inference-owned-host-proven-child-staffing.md) | `7e1b360`, `7f637cb`, `ccb1802c`, `966845cc`, `81f7d411`, `3a66ee80`, `2fe5e9ec`, `9557521e`, `e8b60f64`, `9b2065e1`, `45b21cdc`, `e051dcc0`, `922442e0`, `211563c7`; inference-owned staffing, sealed Claude proof, and Codex exact-0.147 CLI plus Desktop-alpha source/simulation recorded; exec depth-two/deeper and installed/live proof remain open | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0158](../decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md), [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
 | [AR-256](issue-AR-256-canonical-nine-rule-completion-contract.md) | `64705f1`, `b2e728b1`, `4acd4951`; canonical matrix, status reconciliation, verifier enforcement, and recovery checkpoint complete | [ADR-0025](../decisions/0025-self-contained-linked-documentation.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0157](../decisions/0157-automatically-promote-host-verified-contractors.md) |
-| [AR-257](issue-AR-257-separate-decision-conformance-fixture-launcher.md) | `b2e728b1`, `4acd4951`, `e8b60f64`, `9b2065e1`, `45b21cdc`, `e051dcc0`, `922442e0`, `211563c7`; prior full 112/112 run remains historical; current complete baseline passed in 169,548 ms, 131/131 mutations killed, zero survived/invalid, `source_unchanged=true` | [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
+| [AR-257](issue-AR-257-separate-decision-conformance-fixture-launcher.md) | `b2e728b1`, `4acd4951`, `e8b60f64`, `9b2065e1`, `45b21cdc`, `e051dcc0`, `922442e0`, `211563c7`; prior full 112/112 run remains historical; candidate `45b21cdc` passed the expanded baseline in 169,548 ms and killed 131/131 mutations with zero survived/invalid and `source_unchanged=true`; the expanded evaluator is pending for `211563c7` | [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
@@ -613,9 +613,9 @@ not stable internal identifiers.
   evidence, not current nine-rule completion. The authoritative AR-119 matrix
   records Claude Rule 4 exact-candidate installed/live state as unproven despite
   three historical host artifacts. Codex's reviewed source candidate now covers
-  exact CLI `0.147.0` TUI compatibility, but Desktop alpha, exec depth-two/deeper,
-  and exact-candidate installed/live proof remain open; prior TUI/Desktop/exec
-  observations cannot fill those gaps.
+  exact CLI `0.147.0` and separately pinned Desktop `0.147.0-alpha.6.6`
+  compatibility. Exec depth-two/deeper and exact-candidate installed/live proof
+  remain open; prior TUI/Desktop/exec observations cannot fill those gaps.
   ZCode/Hermes/OpenClaw remain unproven, and parity is incomplete. No host's
   result substitutes for another's.
 

@@ -59,14 +59,12 @@ replays cannot mint that capability.
 Implementation and simulation are proven, not installed or live behavior. The
 SafeClaude integration uses a test-managed install and fake process runner.
 Claude's three prior-candidate artifacts remain historical context only.
-Candidate `45b21cdc` correctly leaves the active unmarked Sol/TUI call unstaffed,
-binds separate root and thread identities for observed exact-0.147 CLI TUI and
-exec ancestry, and rolls final-validation failure back before route commit. Its
-v2 attestation also resolves, seals, causally joins, and revalidates authentic
-one-record TUI ancestry across unique canonical parent/root rollouts. Scoped
-tests, mutations, and independent reattack pass, so Codex Rule-4 Implementation
-and Simulation are proven. AR-180 still owns Desktop-alpha support; exec depth-
-two/deeper is unobserved and must remain fail open. Exact-install and live proof
+Candidate `211563c7` correctly leaves unmarked calls unstaffed, preserves the
+exact CLI `0.147.0` TUI/exec profiles, and adds a separate sealed Desktop
+`0.147.0-alpha.6.6` profile for its observed root/depth-one/depth-two V2
+ancestry. Scoped tests, mutations, authentic probes, and independent reattack
+pass, so Codex Rule-4 Implementation and Simulation are proven. Exec depth-two/
+deeper is unobserved and must remain fail open. Exact-install and live proof
 remain open.
 
 ## Approach
@@ -142,6 +140,26 @@ ADR-0159 governs this authorization boundary and its fail-open behavior.
   decision-conformance evaluator exited zero in 883.1 seconds: baseline passed
   in 169,548 ms, all 131/131 mutations were killed, zero survived or were
   invalid, and `source_unchanged=true`. Installed and Live layers do not advance.
+- Desktop hardening `211563c7` and ledger `ee8db873` add the sealed v3 profile
+  pinned only to runtime `0.147.0-alpha.6.6`; the CLI profiles are unchanged.
+  Desktop accepts one exact root and only 13 atomic observed depth-one/depth-two
+  child tuples, rejecting eight tested unobserved cross-products. It requires
+  V2 lineage, canonical owner files, both depth-two causal edges, adjacent direct event and
+  output, sealed copied history/files/profile/currentness, the 64 MiB aggregate
+  external bound, and the exact empty marker on the current call. Disabled
+  guardians, greater depth, mixed profiles, and drift fail open unstaffed.
+  Focused provenance/hook verification passed 288/288, focused plus the anchor
+  passed 289/289, and the fast spine passed 673 with 6 skips. The Desktop
+  baseline passed and killed 20/20 mutations with zero survived or invalid and
+  `source_unchanged=true`; independent verification reproduced those results
+  and found no issue at any severity. A content-safe authentic probe resolved
+  52/52 V2 chains (47 depth one, 5 depth two), with maximum external ancestry
+  32,650,955 bytes and maximum resolver time 2.765 seconds. All 65 observed
+  Desktop calls were encrypted and unmarked, so State, Installed, and Live do
+  not advance. For `211563c7`, dashboard UI passed 134/134, routing passed every
+  threshold, and Ruff lint/format passed. The expanded decision-conformance
+  evaluator remains pending; the 131/131 result above remains candidate-
+  `45b21cdc` history.
 
 ## Acceptance
 

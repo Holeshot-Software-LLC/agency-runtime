@@ -31,8 +31,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: 45b21cdcdbaac789bda58d31653179fc1a9f5c65
-minimum_ledger_commit: d9d5e9cc68bd98ee20fda5b4b55f011ae4d2bce4
+evidence_commit: 211563c799e167bee03bfd0fa60e3f2ca6cc9195
+minimum_ledger_commit: ee8db873e8c2e981f9f083d6e8862296ed782cb5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -45,16 +45,15 @@ must be loaded first after any compaction or session restart.
 
 ## checkpoint
 
-- The current source pair is Codex runtime `45b21cdc` and ledger `01730614`;
-  reviewed documentation is `e051dcc0`/`d9d5e9cc`, and the preflight design
-  remains `ccb1802c`/`a7e8cf54`.
+- The current source pair is Codex runtime `211563c7` and ledger `ee8db873`;
+  cross-file CLI history is `45b21cdc`/`01730614`, reviewed documentation is
+  `e051dcc0`/`d9d5e9cc`, and preflight design is `ccb1802c`/`a7e8cf54`.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
   exact-candidate Claude Installed/Live proof remains open.
-- The AR-180 read-only exact-host preflight is complete. ADR-0159 now binds the
-  exact CLI 0.147 plaintext path to a v2 sealed in-file or cross-file transcript
-  attestation; the current Sol/TUI spawn omitted the marker and remains safely
-  unstaffed.
-- Matrix candidate `45b21cdc` has no proven top-level cell. Rule 1 source and
+- ADR-0159 now binds exact CLI 0.147 and separately pinned Desktop alpha to a
+  sealed v3 attestation. Current Sol/TUI and all 65 observed Desktop calls
+  omitted the marker and remain safely unstaffed.
+- Matrix candidate `211563c7` has no proven top-level cell. Rule 1 source and
   simulation are repaired on all five adapters; Claude and Codex Rule 4
   Implementation/Simulation are proven. Every Installed/Live layer is unproven.
 - Tracker creation for AR-255 through AR-257 and tracker synchronization for
@@ -64,43 +63,44 @@ must be loaded first after any compaction or session restart.
 ## completed-evidence
 
 - `AR-119-founding-vision.md` is the sole wording authority and the matrix is
-  the sole completion authority. Candidate `45b21cdc` preserves all 45 cells
+  the sole completion authority. Candidate `211563c7` preserves all 45 cells
   without converting implementation or simulation into host proof.
 - AR-255 now uses complete-universe inference, exact ordered multi-card v6
   delivery, install/config/roster fences, fail-open diagnostics, and sealed
   one-use delivery proof. Store-only state and caller mappings are diagnostic.
-- SafeClaude retains its in-lifetime collector. Codex candidate `45b21cdc`
-  binds exact 0.147 CLI in-file ancestry plus authentic one-record TUI ancestry
-  across unique bounded canonical parent/root rollouts. It seals complete
-  prefixes and every causal edge, enforces independent offsets and a 64 MiB
-  aggregate external limit, and rolls final-attestation failure back safely.
+- SafeClaude retains its in-lifetime collector. Codex candidate `211563c7`
+  preserves the exact CLI 0.147 profiles and adds a separate Desktop
+  `0.147.0-alpha.6.6` profile. Its atomic policy accepts one exact root and only
+  13 observed depth-one/depth-two V2 child tuples, rejecting eight unobserved
+  cross-products.
+  Disabled guardians and exec depth-two/deeper remain unsupported.
+- Desktop seals the canonical owner and both depth-two edges, exact adjacent
+  direct event/output evidence, copied history, files, profile, currentness,
+  independent offsets, and the 64 MiB aggregate external limit.
 - Exact preflight inventory: PATH TUI/exec Codex `0.147.0`, native SHA-256
   `935A1911...2AD9D`; Desktop `26.803.10989.0` with runtime
   `0.147.0-alpha.6.6`, native SHA-256 `59295889...69B3`. The observed Sol/TUI
   call omitted `encrypted_function_args` and carried a `gAAAAA...` message.
-- The authentic cross-file census resolves 11/11 chains: depth-one sparse 1,
-  depth-one inherited 7, depth-two sparse 1, and depth-two inherited 2. Maximum
-  external ancestry is 48,678,898 bytes; maximum resolver time is 3.809 seconds.
-- Parent verification passed 365 focused tests and the 673-test fast spine with
-  6 skips. Its scoped baseline passed, killed 19/19 mutations, and reported
-  zero survived/invalid with `source_unchanged=true`.
-- The exact-current adversarial review found no finding at any severity; it
-  independently passed 200 tests and killed the same 19/19 mutations. Dashboard
-  134/134, routing, Ruff, format, and documentation/schema gates pass.
-- The complete decision-conformance evaluator exited zero in 883.1 seconds:
-  baseline passed in 169,548 ms, all 131/131 mutations were killed, zero
-  survived or were invalid, and `source_unchanged=true`.
-- Claude's three earlier Rule-4 artifacts and Codex's earlier TUI/Desktop/exec
-  negatives remain prior-candidate context. A routine real Codex TUI child was
-  observed in preflight; no Agency canary, real Claude invocation, or exact-
-  candidate Installed/Live proof ran, so those layers remain unproven.
+- The authentic CLI cross-file census remains 11/11. The content-safe Desktop
+  probe resolves 52/52 V2 chains (47 depth one, 5 depth two); maximum external
+  ancestry is 32,650,955 bytes and maximum resolver time is 2.765 seconds.
+- Desktop verification passed 288/288 focused provenance/hook tests, 289/289
+  focused plus anchor, and the 673-test fast spine with 6 skips. Its green
+  baseline killed 20/20 scoped mutations with zero survived/invalid and
+  `source_unchanged=true`; independent verification reproduced the result and
+  reported no finding at any severity.
+- Candidate `45b21cdc` retains the historical 131/131 decision-conformance
+  result. For `211563c7`, dashboard UI passed 134/134, routing passed every
+  threshold, and Ruff lint/format passed; the expanded evaluator remains pending.
+- Claude's earlier Rule-4 artifacts and Codex's prior TUI/Desktop/exec negatives
+  remain prior-candidate context. No Agency canary, live rewrite, real Claude
+  invocation, or exact-candidate Installed/Live proof ran.
 
 ## exact-blocker
 
-1. **AR-180 — Codex support.** Candidate `45b21cdc` proves exact CLI 0.147
-   in-file and authentic one-record TUI cross-file Implementation/Simulation.
-   Separately pin Desktop `0.147.0-alpha.6.6`. Exec depth-two/deeper is
-   unobserved; obtain a read-only real-host sample before any separate pin.
+1. **AR-180 — Codex support.** Candidate `211563c7` proves exact CLI 0.147 and
+   Desktop `0.147.0-alpha.6.6` Implementation/Simulation. Exec depth-two/deeper
+   is unobserved; obtain a read-only real-host sample before any separate pin.
 2. **AR-255 — exact host proof.** After those support gaps close, obtain explicit
    authorization before exact install or live proof, including one current
    Claude artifact. Passing fake-runner integration is simulation only.
@@ -122,16 +122,15 @@ must be loaded first after any compaction or session restart.
 
 After restart or compaction, load this file and `AR-119-founding-vision.md`
 first. Then read AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158.
-Confirm branch, runtime `45b21cdc`, ledger `01730614`, status, and worklog
+Confirm branch, runtime `211563c7`, ledger `ee8db873`, status, and worklog
 parity. Do not reconstruct retired Job B, plan-row, work-unit, grant, or
 consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-Separately pin and adversarially review the observed Desktop-alpha schema and
-ancestry. Then obtain a read-only exec depth-two sample, if the host emits one,
-before separately pinning it or requesting install/trust/live authorization.
-Continue AR-252, AR-253, AR-125, and derived Rule 9 afterward.
+Search and sample read-only exec depth-two/deeper ancestry, if the host emits
+one, before separately pinning it. Then request explicit authorization for exact
+install, trust, and live proof. Continue AR-252, AR-253, AR-125, and Rule 9.
 
 ## verification
 
@@ -164,7 +163,7 @@ is refreshed under explicit install authorization.
   proves Rule 4. Agency rows and model prose are diagnostics.
 - A plaintext-looking Codex tool argument is not proof. The current authorization
   call must contain the explicit empty host marker; only exact ancestor causal
-  calls may omit it under the pinned v2 schema.
+  calls may omit it under the sealed v3 profile.
 - Same-process private reflection and same-account transcript plus Store
   forgery are threat-model exclusions; do not describe the lease as protection
   from code already executing as the owner inside Agency.

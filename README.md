@@ -192,7 +192,7 @@ flowchart LR
 
 | Host | Integration | Host-native child primitive | Rule-4 exact-candidate state |
 |---|---|---|---|
-| **Codex** | Hooks + MCP + controls | `spawn_agent` | **unproven**: exact-0.147 CLI source and simulation cover in-file plus authentic one-record TUI cross-file ancestry; Desktop alpha, unobserved exec depth-two/deeper, and exact-candidate installed/live artifacts remain open |
+| **Codex** | Hooks + MCP + controls | `spawn_agent` | **unproven**: exact CLI `0.147.0` and separately pinned Desktop `0.147.0-alpha.6.6` source/simulation cover their observed root, depth-one, and supported depth-two V2 ancestry; exec depth-two/deeper and exact-candidate Installed/Live artifacts remain open |
 | **Claude Code** | Hooks + MCP + controls | `Agent` | **unproven**: three host-authored prior-candidate artifacts contain cards before speech, but none binds the exact candidate |
 | **ZCode** | Hooks + controls | `Agent` (Claude-like) | **unproven** |
 | **Hermes** | Python plugin + MCP | `delegate_task` | **unproven** |

@@ -69,10 +69,11 @@ explicit validation, and fail-before-copy behavior. The globally installed
 mismatch; verification invokes the current checkout directly and does not
 install or trust a projection.
 
-Candidate `45b21cdc` completed the expanded current evaluator on 2026-08-13.
-It exited zero in 883.1 seconds: baseline passed in 169,548 ms, all 131/131
-mutations were killed, zero survived or were invalid, and
-`source_unchanged=true`.
+Candidate `45b21cdc` completed its expanded evaluator on 2026-08-13. It exited
+zero in 883.1 seconds: baseline passed in 169,548 ms, all 131/131 mutations were
+killed, zero survived or were invalid, and `source_unchanged=true`. That result
+remains candidate-scoped history; the expanded evaluator is pending for current
+candidate `211563c7`.
 
 ## Acceptance
 

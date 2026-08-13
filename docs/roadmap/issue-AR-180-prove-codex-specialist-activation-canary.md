@@ -54,9 +54,9 @@ blocks: [AR-119, AR-252, AR-253]
 > shapes, including authentic one-record TUI forks whose canonical parent/root
 > ancestry is sealed across files. Exec depth-two/deeper is unobserved and
 > unsupported pending a real-host sample. Desktop runtime
-> `0.147.0-alpha.6.6` has a materially different lineage and remains unsupported
-> until its schema and ancestry receive a separate exact pin; it cannot enter a
-> live proof by broadening the CLI pin. Only the Approach and Acceptance sections
+> `0.147.0-alpha.6.6` now has a separate sealed v3 profile for its exact observed
+> V2 lineage; the CLI profiles remain unchanged. That source/simulation proof is
+> not a live rewrite or child artifact. Only the Approach and Acceptance sections
 > as amended below govern closure.
 
 ## Problem
@@ -276,14 +276,40 @@ mutation run with a green baseline and unchanged source. The independent
 reviewer passed 200 tests, killed 19/19 mutations, and found no issue at any
 severity. Codex Rule-4 Implementation and Simulation are proven. The 134-test
 dashboard suite, routing evaluation, Ruff, format, and documentation/schema
-gates pass. The complete current decision-conformance evaluator exited zero in
-883.1 seconds: its baseline passed in 169,548 ms, all 131/131 mutations were
+gates passed for that candidate. Its decision-conformance evaluator exited zero
+in 883.1 seconds: its baseline passed in 169,548 ms, all 131/131 mutations were
 killed, zero survived or were invalid, and `source_unchanged=true`. Exact
 installation and host child artifacts remain later gates.
 ADR-0159 keeps rewrite authorization separate from delivery-proof authority.
 Desktop `0.147.0-alpha.6.6` is deliberately outside that exact CLI pin: its
 observed legacy history and `Codex Desktop` lineage require a separate bounded
 schema/ancestry authority before any Desktop install or live artifact can count.
+
+Candidate `211563c7` and ledger `ee8db873` supply that separate sealed v3
+Desktop profile without changing the exact CLI `0.147.0` profiles. Desktop
+requires one exact root; depth-one/depth-two V2 child ancestry must match one of
+13 atomic observed tuples. Eight tested but unobserved cross-products, disabled
+guardians, greater depth, mixed profiles, or drift fail open unstaffed. Canonical
+owner files, both
+depth-two edges, exact adjacent call/direct-event/output records, copied history,
+file/profile/currentness seals, and the 64 MiB aggregate external bound are
+mandatory. The current authorization call still requires the exact empty marker;
+ancestor calls may use only the ordinary exact schema or that schema plus the
+exact empty marker.
+
+Focused provenance/hook verification passed 288/288, focused plus the anchor
+passed 289/289, and the named fast spine passed 673 with 6 skips. The Desktop
+baseline passed and killed 20/20 scoped mutations with zero survived or invalid
+and `source_unchanged=true`; independent verification reproduced the result and
+reported no finding at any severity. A content-safe probe resolved 52/52
+authentic V2 Desktop chains (47 depth one, 5 depth two), with maximum external
+ancestry 32,650,955 bytes and maximum resolver time 2.765 seconds. All 65
+observed Desktop calls were encrypted and unmarked, so no live rewrite or child
+was proved. Rule-4 Implementation and Simulation remain proven; State,
+Installed, and Live remain unproven. For `211563c7`, dashboard UI passed 134/134,
+routing passed every threshold, and Ruff lint/format passed. The expanded
+decision-conformance evaluator remains pending; the 131/131 result above remains
+candidate-`45b21cdc` history.
 
 ## Approach
 
@@ -331,10 +357,11 @@ instead of weakening the evidence gate.
 - [ ] Supported TUI and exec shapes each produce a host-written child artifact
       bound to the exact parent, child, install, inference decision, and card
       hashes.
-- [ ] Desktop's `0.147.0-alpha.6.6` schema and ancestry are separately observed,
-      exactly pinned, and adversarially reviewed before Desktop produces the
-      equivalent host-written child artifact; widening the CLI version predicate
-      alone cannot satisfy this gate.
+- [x] Desktop's `0.147.0-alpha.6.6` schema and ancestry are separately observed,
+      exactly pinned, and adversarially reviewed without widening the CLI
+      version predicate.
+- [ ] Desktop produces the equivalent host-written child artifact bound to the
+      exact candidate, installation, inference decision, and card hashes.
 - [ ] The expected specialist cards appear before the child's first speech and
       only in the child context; Store rows and response prose cannot pass.
 - [ ] At least one Codex child receives two or more compatible cards selected by

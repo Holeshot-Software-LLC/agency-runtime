@@ -77,14 +77,17 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
-- Codex 0.147 plaintext collaboration support is now guarded by a sealed
-  exact-call host-rollout attestation, exact response schema, atomic replay
-  protection, and retry-safe transactional validation. Exact CLI `0.147.0`
-  support now resolves, seals, and revalidates authentic one-record TUI fork
-  ancestry across unique canonical parent/root rollouts, including both
-  depth-two causal edges. The scoped 19-mutation gate and independent
-  adversarial review pass. Desktop alpha, unobserved exec depth-two/deeper, and
-  all Installed or Live Codex proof remain unsupported or unproven.
+- Codex plaintext collaboration support now uses a sealed v3 attestation with
+  separate exact profiles for CLI `0.147.0` and Desktop
+  `0.147.0-alpha.6.6`. The unchanged CLI profile and the Desktop profile bind
+  canonical lineage, causal ancestry, currentness, and the explicit empty
+  marker on the current call; Desktop accepts one exact root plus only 13
+  observed depth-one/depth-two V2 child tuple families and rejects eight
+  unobserved cross-products. The authentic Desktop probe resolved 52/52 chains
+  and the scoped 20-mutation gate
+  plus independent adversarial review passed. All 65 observed Desktop calls
+  were encrypted and unmarked, so exec depth-two/deeper remains unsupported and
+  no Installed or Live Codex proof advances.
 - Codex product child diagnostics now classify nested `apply_patch`,
   `shell_command`, and other calls inside current `functions.exec` wrappers,
   plus fixed wrapper outcomes. The Store persists only bounded counts, keeps

@@ -26,7 +26,7 @@ superseded_by: null
 type: roadmap
 ar119_authority: completion-evidence
 vision_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
-candidate_commit: 45b21cdcdbaac789bda58d31653179fc1a9f5c65
+candidate_commit: 211563c799e167bee03bfd0fa60e3f2ca6cc9195
 evidence_cutoff: 2026-08-13
 ---
 
@@ -47,31 +47,32 @@ candidate context but cannot make a current installed/live layer green or red.
 Although the schema reserves `not-applicable`, none of the nine rules is
 optional on a supported host.
 
-Candidate `45b21cdc` retains AR-255 native-child inference authority and
-Claude's in-lifetime collector. Its v2 exact-CLI-`0.147.0` Codex attestor covers
-both fully materialized ancestry and authentic one-record TUI forks. Cross-file
-forks require unique canonical parent/root rollouts found through a bounded UTC
-date plus-or-minus-one search, independent file offsets, exact causal joins at
-every edge, sealed record and prefix identities, and a 64 MiB aggregate external
-ancestry bound. Final validation still rolls the route back transactionally.
-This is source and simulation evidence, not an installed or live host artifact.
-Every Installed and Live layer therefore remains unproven.
+Candidate `211563c7` retains AR-255 native-child inference authority, Claude's
+in-lifetime collector, and the exact CLI `0.147.0` TUI/exec profiles. Its sealed
+v3 Codex attestor adds a separate Desktop `0.147.0-alpha.6.6` profile chosen only
+from exact transcript metadata. Desktop accepts root and 13 observed depth-one/
+depth-two V2 child tuple families, rejects eight unobserved cross-products and
+disabled guardians, and seals canonical ownership, both depth-two edges, direct
+start/output evidence, copied history, files, profile, and currentness. All
+external ancestry remains bounded to 64 MiB, and final validation still rolls
+the route back transactionally. This is source and simulation evidence, not an
+installed or live host artifact. Every Installed and Live layer therefore
+remains unproven.
 
-The 2026-08-12 AR-180 preflight found a conditional host-marked plaintext path
-in Codex 0.147, but the current Sol/TUI spawn omitted its explicit marker and
-delivered ciphertext. Candidate `45b21cdc` resolves the authentic census 11/11
-across depth-one sparse/inherited and depth-two sparse/inherited TUI variants;
-the largest sample sealed 48,678,898 external bytes and resolved in 3.809
-seconds. It passes 365 focused tests, the 673-test fast spine with 6 skips, and
-the scoped 19/19 mutation set with a green baseline and unchanged source. The
-independent reviewer passed 200 tests, killed the same 19/19 mutations, and
-reported no finding at any severity. Codex R4 Implementation and Simulation
-are therefore proven. The 134-test dashboard suite, routing evaluation, Ruff,
-format, and documentation/schema gates pass. The complete current decision-
-conformance evaluator exited zero in 883.1 seconds: its baseline passed in
-169,548 ms, all 131/131 mutations were killed, zero survived or were invalid,
-and `source_unchanged=true`. Desktop alpha and unobserved exec depth-two/deeper
-ancestry remain unsupported; no Installed or Live layer advances.
+The current Sol/TUI spawn and all 65 observed Desktop calls omitted the explicit
+empty marker and delivered encrypted content. The inherited CLI census remains
+11/11. A content-safe probe of the new Desktop profile resolved all 52 authentic
+V2 chains (47 depth one, 5 depth two), with a maximum 32,650,955 external bytes
+and 2.765 seconds. Focused provenance/hook verification passed 288/288, the
+focused-plus-anchor gate passed 289/289, and the named fast spine passed 673 with
+6 skips. The scoped Desktop baseline passed and killed 20/20 mutations with
+zero survived or invalid and `source_unchanged=true`; an independent run
+reproduced those results and reported no finding at any severity. Codex R4
+Implementation and Simulation are therefore proven. The complete 131/131
+decision-conformance result remains evidence for candidate `45b21cdc`; the
+expanded evaluator remains pending for `211563c7`. Its dashboard UI suite passed
+134/134, routing passed every threshold, and Ruff lint/format passed. Exec depth-
+two/deeper remains unsupported, and no Installed or Live layer advances.
 
 ## Canonical matrix
 
@@ -93,7 +94,7 @@ ancestry remain unsupported; no Installed or Live layer advances.
 | R3 | hermes | unproven | unproven | unproven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Multi-card behavior is unmeasured |
 | R3 | openclaw | unproven | unproven | unproven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Multi-card behavior is unmeasured |
 | R4 | claude | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | in-lifetime SafeClaude collector with real HookBridge lifecycle | 2026-08-12 | `tests/test_host_canary.py:805-1055` | Test-managed install and fake process runner are simulation only; prior-candidate live artifacts do not green this candidate |
-| R4 | codex | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | reviewed v2 exact-0.147 CLI in-file and one-record TUI cross-file ancestry | 2026-08-13 | `agency_runtime/core/codex_spawn_provenance.py`, `tests/test_codex_spawn_provenance.py` | Source/simulation cover the 11/11 authentic TUI census; Desktop alpha, exec depth-two/deeper, and exact-candidate host artifacts remain open |
+| R4 | codex | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | reviewed sealed v3 exact CLI `0.147.0` and Desktop `0.147.0-alpha.6.6` profiles | 2026-08-13 | `agency_runtime/core/codex_spawn_provenance.py`, `tests/test_codex_spawn_provenance.py` | Source/simulation cover the CLI 11/11 TUI census and Desktop 52/52 V2 census; exec depth-two/deeper and exact-candidate host artifacts remain open |
 | R4 | zcode | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | exact inference team reaches the ZCode child boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` | Simulation exists but no exact-candidate native child artifact |
 | R4 | hermes | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | none | unobserved | `docs/roadmap/issue-AR-119-inference-first-workforce.md#historical-acceptance-record-superseded` | Host is unavailable on the evidence machine |
 | R4 | openclaw | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | none | unobserved | `docs/roadmap/issue-AR-119-inference-first-workforce.md#historical-acceptance-record-superseded` | Host is unavailable on the evidence machine |
@@ -117,11 +118,11 @@ ancestry remain unsupported; no Installed or Live layer advances.
 | R8 | zcode | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[zcode]` | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` | No live host publication artifact |
 | R8 | hermes | negative | negative | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | bridge exception path replaces output with block response | 2026-08-12 | `agency_runtime/adapters/hermes/bridge.py:269-318` | Current source withholds when Agency is unavailable; no separate simulation proof is claimed |
 | R8 | openclaw | negative | negative | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | bridge failure cancels host output | 2026-08-12 | `agency_runtime/adapters/openclaw/node_bridge.py:790-903` | Current source withholds when Agency is unavailable; no separate simulation proof is claimed |
-| R9 | claude | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 45b21cdc | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but multiple rules and every installed/live layer remain unproven |
-| R9 | codex | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 45b21cdc | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 4 source/simulation are proven, but other rules and installed/live parity remain unproven |
-| R9 | zcode | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 45b21cdc | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but missing rule and live evidence prevents parity |
-| R9 | hermes | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 45b21cdc | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
-| R9 | openclaw | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 45b21cdc | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
+| R9 | claude | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 211563c7 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but multiple rules and every installed/live layer remain unproven |
+| R9 | codex | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 211563c7 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 4 source/simulation are proven, but other rules and installed/live parity remain unproven |
+| R9 | zcode | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 211563c7 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but missing rule and live evidence prevents parity |
+| R9 | hermes | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 211563c7 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
+| R9 | openclaw | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 211563c7 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
 
 ## Layer evidence
 
@@ -144,8 +145,8 @@ satisfy a layer.
 | R1 | openclaw | Simulation | proven | test | shared adapter preserves the exact OpenClaw inference result | 2026-08-12 | `tests/test_native_child_adapter_staffing.py:39-95` |
 | R4 | claude | Implementation | proven | source | sealed in-lifetime collector binds one current host artifact to one invocation | 2026-08-12 | `agency_runtime/core/child_delivery_evidence.py:1484-1665` |
 | R4 | claude | Simulation | proven | test | SafeClaude collects a real-shape HookBridge artifact before profile cleanup | 2026-08-12 | `tests/test_host_canary.py:805-1055` |
-| R4 | codex | Implementation | proven | source | v2 attestation seals exact CLI 0.147 in-file or unique canonical cross-file ancestry and both depth-two causal edges | 2026-08-13 | `agency_runtime/core/codex_spawn_provenance.py:1157-1515` |
-| R4 | codex | Simulation | proven | test | cross-file lineage, causal, currentness, bound, and replay fixtures pass for the supported TUI variants | 2026-08-13 | `tests/test_codex_spawn_provenance.py:622-1429` |
+| R4 | codex | Implementation | proven | source | sealed v3 attestation preserves exact CLI profiles and adds the atomic 13-family Desktop profile with exact causal/output/currentness binding | 2026-08-13 | `agency_runtime/core/codex_spawn_provenance.py:245-3525` |
+| R4 | codex | Simulation | proven | test | exact CLI and Desktop lineage, causal, profile, currentness, bound, and replay fixtures pass for every supported variant | 2026-08-13 | `tests/test_codex_spawn_provenance.py:776-1835` |
 | R4 | zcode | Implementation | proven | source | host-started plaintext child receives the exact inference team | 2026-08-12 | `agency_runtime/adapters/hooks.py:1088-1256` |
 | R4 | zcode | Simulation | proven | test | exact inference team reaches the ZCode child boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` |
 | R6 | claude | Implementation | proven | source | inference gap hiring, critic audit, enablement, and activation path | 2026-08-12 | `agency_runtime/core/workforce/hiring.py:1863-1940` |
@@ -164,7 +165,7 @@ satisfy a layer.
 ## Cross-cutting completion gates
 
 - **Inference authority:** implementation and simulation are proven on all five
-  host adapters at `45b21cdc`; installed and live card-hash joins remain
+  host adapters at `211563c7`; installed and live card-hash joins remain
   unproven everywhere.
 - **Automatic contractor promotion:** implementation and simulation exist, but
   installed and live proof is unproven on all five hosts. AR-252 remains P0 and

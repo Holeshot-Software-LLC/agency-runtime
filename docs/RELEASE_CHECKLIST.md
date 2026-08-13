@@ -577,11 +577,13 @@ set must reject executable and disguised PE payloads in both profiles.
 
 AR-119's canonical matrix currently records Claude Rule 4 as exact-candidate
 unproven despite three prior-candidate live artifacts. Codex has a repaired
-conditional plaintext source candidate whose exact CLI `0.147.0` in-file and
-authentic one-record TUI cross-file ancestry pass scoped local verification and
-independent adversarial review, while encrypted calls remain unstaffed. Codex
-Rule 4 Implementation and Simulation are proven; Desktop alpha, unobserved exec
-depth-two/deeper, and exact-candidate Installed/Live state remain unproven.
+conditional plaintext source candidate with separate exact CLI `0.147.0` and
+Desktop `0.147.0-alpha.6.6` profiles. Their supported ancestry passes scoped
+local verification and independent adversarial review, while encrypted calls
+remain unstaffed; all 65 observed Desktop calls were encrypted and unmarked.
+Codex Rule 4 Implementation and Simulation are proven;
+unobserved exec depth-two/deeper and exact-candidate Installed/Live state remain
+unproven.
 ZCode, Hermes, and OpenClaw remain unproven. That evidence is not release-ready.
 AR-119 and AR-125 also still
 require a benchmark-valid completed outcome corpus and current-artifact host/OS

@@ -30,10 +30,11 @@ deciders: [lkrammes]
 
 ## Context
 
-Codex 0.147 supports two MultiAgentV2 delivery modes. A collaboration function
-call whose host response item contains explicit `encrypted_function_args: []`
-is delivered as plaintext; a call without that exact marker remains encrypted.
-The current Sol/TUI observation used the encrypted path.
+Codex CLI `0.147.0` and Desktop runtime `0.147.0-alpha.6.6` support two
+MultiAgentV2 delivery modes. A collaboration function call whose host response
+item contains explicit `encrypted_function_args: []` is delivered as plaintext;
+a call without that exact marker remains encrypted. The current Sol/TUI
+observation and all 65 observed Desktop calls used the encrypted path.
 
 Codex `PreToolUse` exposes the transcript path, session, turn, tool-call ID, and
 parsed arguments and can replace local function-tool arguments. It does not
@@ -50,9 +51,11 @@ generic JSONL trust grant.
 ## Decision
 
 Agency may rewrite a Codex native-child `spawn_agent` message only after a
-sealed in-process attestation proves one exact host-persisted plaintext call.
-The first supported capability version is exact Codex CLI `0.147.0`; every
-unknown version or schema fails open unstaffed.
+sealed in-process v3 attestation proves one exact host-persisted plaintext call.
+The attestation seals one atomic `profile_id` chosen only from exact transcript
+metadata. The existing CLI TUI/exec profiles remain pinned to `0.147.0`; a
+separate Desktop profile is pinned only to `0.147.0-alpha.6.6`. Every unknown
+version, mixed profile, or schema fails open unstaffed.
 
 The attestor accepts only the canonical active transcript beneath the private
 Codex sessions root. It rejects relative or caller-selected roots, links,
@@ -73,19 +76,34 @@ recorded UTC offset independently. Every external descriptor, complete scanned
 prefix, metadata record, causal record, and identity join is sealed and later
 revalidated; all external ancestry together is capped at 64 MiB.
 
-An accepted cross-file edge requires the exact parent `spawn_agent` call and
-its exact adjacent `SubAgentActivity(started)` completion record. TUI depth two
-must prove both root-to-parent and parent-to-child edges. Ancestor causal calls
-accept only the observed ordinary response-item schema or that exact schema
-plus `encrypted_function_args: []`; this optional historical marker does not
-authorize the current rewrite. The current authorization call still requires
+The Desktop profile accepts only root plus observed depth-one and depth-two V2
+structured-child ancestry under exact `vscode`/`legacy`/`Codex Desktop`
+lineage. Disabled guardians, `subagent.other`, greater depth, and mixed CLI/
+Desktop metadata are rejected. The first metadata record owns a canonical file;
+later exact-known Desktop metadata can corroborate history but never become
+authority, and every consumed copy, record, prefix, file, and profile is sealed.
+Root dynamic tools and the exact two/three-key Git families are independently
+required. Each child's dynamic-tools presence, Git-branch presence, inheritance,
+leading-prefix count, causal fork form, filename residual, and parent inheritance
+must match one of 13 observed atomic tuples. Eight tested but unobserved cross-
+products are deliberately outside the allowlist.
+
+An accepted CLI cross-file edge requires the exact parent `spawn_agent` call
+and its exact adjacent `SubAgentActivity(started)` completion record. A Desktop
+edge requires the exact adjacent call, direct started event, and compact
+`function_call_output`, including exact IDs, path, fork semantics, and temporal
+ordering. Every supported depth-two form proves both root-to-parent and parent-
+to-child edges. Ancestor causal calls accept only the observed ordinary
+response-item schema or that exact schema plus `encrypted_function_args: []`;
+this optional historical marker does not authorize the current rewrite. The
+current authorization call still requires
 exactly one `response_item.function_call` using namespace `collaboration`, name
 `spawn_agent`, the hook's turn and call IDs, arguments exactly equal to the
 complete hook input, and `encrypted_function_args` present as exactly an empty
 list. Null, missing, nonempty, ambiguous, stale, completed, replayed, or
-unsupported ancestry is unstaffed. V1 receives no implicit exception. Desktop
-`0.147.0-alpha.6.6` and exec depth-two/deeper remain unsupported until each
-receives a separate observed exact-schema decision.
+unsupported ancestry is unstaffed. V1 receives no implicit exception. Exec
+depth-two/deeper remains unsupported until it receives a separate observed
+exact-schema decision.
 
 Attestation returns only sealed, content-free identities and digests. Agency
 revalidates the exact file and records during delivery validation and as the
@@ -107,9 +125,9 @@ claims additionally bind the exact Codex executable and Agency candidate.
 - A marked plaintext call can use the existing inference-owned multi-card
   staffing path without trusting a model-authored label or message.
 - Codex transcript or version drift becomes an explicit compatibility failure
-  and requires a reviewed capability update. The exact CLI `0.147.0` pin now
-  includes observed authentic one-record TUI fork prefixes; it does not widen
-  to Desktop alpha or unobserved exec depth-two/deeper ancestry.
+  and requires a reviewed capability update. The exact CLI `0.147.0` profiles
+  remain unchanged; Desktop alpha uses its own exact profile rather than a
+  widened CLI predicate. Exec depth-two/deeper remains outside both profiles.
 - The new scanner and one-use transaction need focused spoof, replay, path,
   schema, size, concurrency, and TOCTOU tests before installation.
 - Source and simulation can advance independently; neither changes an Installed
@@ -145,7 +163,7 @@ paths and UUID domains, duplicate item identity, exact persisted success
 projection, and retry-safe post-commit cleanup. Its 112-mutation verifier, named
 fast spine, and independent adversarial review pass.
 
-Candidate `45b21cdc` and ledger `01730614` add the v2 cross-file attestation for
+Candidate `45b21cdc` and ledger `01730614` added the v2 cross-file attestation for
 authentic one-record TUI forks. The observed census resolved 11/11 canonical
 chains: one depth-one sparse, seven depth-one inherited, one depth-two sparse,
 and two depth-two inherited. The largest accepted sample sealed 48,678,898
@@ -154,10 +172,23 @@ focused warning-strict tests and the 673-test fast spine with 6 skips. Its
 scoped mutation run killed 19/19 mutations with a green baseline and
 `source_unchanged=true`; an independent reviewer passed 200 tests, killed the
 same 19/19 mutations, and reported no finding at any severity. These results
-advance only Codex Rule-4 Implementation and Simulation. The 134-test dashboard
-suite, routing evaluation, Ruff, format, and documentation/schema gates pass.
-The complete current decision-conformance evaluator then exited zero in 883.1
-seconds: its baseline passed in 169,548 ms, all 131/131 mutations were killed,
-zero survived or were invalid, and `source_unchanged=true`.
-Desktop alpha, unobserved exec depth-two/deeper ancestry, and all Installed and
-Live proof remain unproven.
+advanced only Codex Rule-4 Implementation and Simulation. The 134-test dashboard
+suite, routing evaluation, Ruff, format, and documentation/schema gates passed
+for that candidate. Its complete decision-conformance evaluator exited zero in
+883.1 seconds: the baseline passed in 169,548 ms, all 131/131 mutations were
+killed, zero survived or were invalid, and `source_unchanged=true`.
+
+Candidate `211563c7` and ledger `ee8db873` add the sealed v3 Desktop profile.
+Focused provenance/hook verification passed 288/288, the focused-plus-anchor
+gate passed 289/289, and the named fast spine passed 673 with 6 skips. The scoped
+Desktop baseline passed and killed 20/20 mutations with zero survived or invalid
+and `source_unchanged=true`; an independent run reproduced those results and
+reported no finding at any severity. A content-safe probe resolved all 52
+authentic V2 Desktop chains (47 depth one, 5 depth two), with a maximum
+32,650,955 external bytes and 2.765 seconds. All 65 observed Desktop calls were
+encrypted and unmarked, so these results advance only Codex Rule-4
+Implementation and Simulation. For `211563c7`, the dashboard UI suite passed
+134/134, routing passed every threshold, and Ruff lint/format passed. The
+expanded decision-conformance evaluator remains pending; the prior 131/131
+result remains candidate-`45b21cdc` history. Exec depth-two/deeper ancestry and
+all Installed and Live proof remain unproven.

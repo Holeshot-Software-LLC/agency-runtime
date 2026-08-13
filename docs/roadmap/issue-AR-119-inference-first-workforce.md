@@ -89,14 +89,15 @@ artifacts contain exact card identities before the child first spoke. None is
 bound to the matrix's exact candidate, so Claude's current installed/live layers
 remain unproven. Codex now has a repaired conditional plaintext source path;
 exact CLI `0.147.0` in-file and authentic one-record TUI cross-file ancestry pass
-source, simulation, and independent review. Desktop alpha and unobserved exec
-depth-two/deeper remain unsupported, and prior-candidate live negatives do not
-establish exact-candidate installed/live state:
+source, simulation, and independent review. A separate sealed v3 profile now
+does the same for observed Desktop `0.147.0-alpha.6.6` root/depth-one/depth-two
+V2 ancestry. Exec depth-two/deeper remains unsupported, and prior-candidate live
+negatives do not establish exact-candidate installed/live state:
 
 | host | children provably staffed | blocker |
 |---|---|---|
 | claude | **0 exact-candidate proofs** (3 prior-candidate, 6 legacy) | exact-candidate install/live canary is absent; Rule 1 and parity remain negative |
-| codex | **0 exact-candidate proofs** (prior-candidate negatives, 11 legacy) | Desktop alpha and unobserved exec depth-two/deeper remain unsupported; exact-candidate install/live canary is absent |
+| codex | **0 exact-candidate proofs** (prior-candidate negatives, 11 legacy) | CLI and Desktop-alpha source/simulation are proven; exec depth-two/deeper remains unsupported and the exact-candidate install/live canary is absent |
 | zcode | not measured | host emits no `SubagentStart`/`SubagentStop` |
 | openclaw | not measured | not installed on the development box |
 | hermes | not measured | not installed on the development box |
@@ -104,9 +105,10 @@ establish exact-candidate installed/live state:
 Codex is the sharp case: the host demonstrably spawns children — eleven legacy
 artifacts prove it — and no prior-candidate measured child carried a card. The
 current adapter leaves encrypted calls untouched and conditionally staffs only
-an authenticated marked call. Exact CLI `0.147.0` source and simulation now cover
-the authentic 11/11 one-record TUI census; exact-candidate installed/live state
-remains unproven. ZCode, Hermes, and OpenClaw are not waived.
+an authenticated marked call. Exact CLI `0.147.0` source/simulation covers the
+authentic 11/11 one-record TUI census; the separate Desktop-alpha profile covers
+the authentic 52/52 V2 census. Exact-candidate installed/live state remains
+unproven. ZCode, Hermes, and OpenClaw are not waived.
 Hermes and OpenClaw also have a current source-level Rule-8 negative because
 their bridge failure paths withhold the host response when Agency is
 unavailable.
@@ -115,17 +117,17 @@ unavailable.
 
 The audited roster, inference receipts, request-scoped cards, resident managers,
 native lifecycle telemetry, CLI, and dashboard provide a strong base. Runtime
-candidate `45b21cdc` retains the repaired Rule-1 source/simulation state: native
+candidate `211563c7` retains the repaired Rule-1 source/simulation state: native
 child staffing preserves one complete inference-selected team or proceeds
 unstaffed. Its sealed in-lifetime Claude collector advances Claude Rule 4 only
-through Implementation and Simulation. Its Codex v2 attestor separately proves
-Rule-4 Implementation and Simulation for exact CLI `0.147.0` in-file and
-authentic one-record TUI cross-file ancestry. No exact-candidate Installed or
-Live layer is proven, and no top-level matrix cell is green. Candidate
-`45b21cdc` safely rejects the observed unmarked Sol path, seals every required
-canonical prefix and causal edge, bounds aggregate external ancestry to 64 MiB,
-and rolls final-validation failure back before commit. Desktop alpha and
-unobserved exec depth-two/deeper remain unsupported.
+through Implementation and Simulation. Its sealed Codex v3 attestor separately
+proves Rule-4 Implementation and Simulation for unchanged exact CLI `0.147.0`
+profiles plus the exact Desktop `0.147.0-alpha.6.6` profile. No exact-candidate
+Installed or Live layer is proven, and no top-level matrix cell is green.
+Candidate `211563c7` safely rejects observed unmarked calls, seals every required
+canonical prefix, file, profile, currentness check, and causal edge, bounds
+aggregate external ancestry to 64 MiB, and rolls final-validation failure back
+before commit. Exec depth-two/deeper remains unsupported.
 
 Tracker issue [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
 mirrors the umbrella state. Repository-local AR-119, AR-256, and their evidence
@@ -3907,12 +3909,39 @@ passed 365 focused tests, the 673-test fast spine with 6 skips, and a scoped
 19/19 mutation run with a green baseline and `source_unchanged=true`. The
 independent reviewer passed 200 tests, killed the same 19/19 mutations, and
 reported no finding at any severity. This advances only Codex Rule-4
-Implementation and Simulation. The 134-test dashboard suite, routing evaluation,
-Ruff, format, and documentation/schema gates pass. The complete current
-decision-conformance evaluator exited zero in 883.1 seconds: its baseline passed
-in 169,548 ms, all 131/131 mutations were killed, zero survived or were invalid,
-and `source_unchanged=true`. Desktop alpha, exec depth-two/deeper, Installed,
-and Live remain unproven; no install, trust, or canary action occurred.
+Implementation and Simulation. For candidate `45b21cdc`, the 134-test dashboard
+suite, routing evaluation, Ruff, format, and documentation/schema gates passed.
+Its decision-conformance evaluator exited zero in 883.1 seconds: the baseline
+passed in 169,548 ms, all 131/131 mutations were killed, zero survived or were
+invalid, and `source_unchanged=true`. Desktop alpha, exec depth-two/deeper,
+Installed, and Live remain unproven; no install, trust, or canary action occurred.
+
+### AR-180 Desktop-alpha checkpoint — 2026-08-13
+
+Candidate `211563c7` and ledger `ee8db873` add the sealed v3 Desktop profile,
+pinned only to runtime `0.147.0-alpha.6.6`; the exact CLI `0.147.0` profiles are
+unchanged. Desktop requires one exact root, while depth-one/depth-two V2 child
+ancestry must match one of 13 atomic observed tuples. Eight tested but unobserved
+cross-products, disabled guardians, greater depth, mixed profiles, and schema drift fail open
+unstaffed. Canonical owner files, both depth-two edges, exact adjacent direct
+event/output records, copied history, file/profile/currentness seals, and the
+64 MiB aggregate external bound remain mandatory. Ancestor calls use the exact
+ordinary schema or that schema plus `encrypted_function_args: []`; the current
+authorization call still requires the exact empty marker.
+
+Focused provenance/hook verification passed 288/288, focused plus the anchor
+passed 289/289, and the named fast spine passed 673 with 6 skips. The scoped
+Desktop baseline passed and killed 20/20 mutations with zero survived or invalid
+and `source_unchanged=true`; an independent run reproduced those results and
+reported no finding at any severity. A content-safe probe resolved 52/52
+authentic V2 Desktop chains (47 depth one, 5 depth two), with maximum external
+ancestry 32,650,955 bytes and maximum resolver time 2.765 seconds. All 65
+observed Desktop calls were encrypted and unmarked, so no rewrite or child was
+proved. Codex Rule-4 Implementation and Simulation remain proven; State,
+Installed, and Live remain unproven. For `211563c7`, dashboard UI passed 134/134,
+routing passed every threshold, and Ruff lint/format passed. The expanded
+decision-conformance evaluator remains pending; the 131/131 result above remains
+`45b21cdc` history.
 
 ### Still required before AR-119 can close
 
@@ -3945,11 +3974,10 @@ and Live remain unproven; no install, trust, or canary action occurred.
 
 ### Next bounded work package
 
-Separately pin the observed Desktop-alpha schema and ancestry. Then obtain a
-read-only real-host exec depth-two sample, if one is emitted, before defining or
-reviewing that schema. After explicit install/trust/live authorization and
-current Codex and Claude artifacts, continue AR-252, AR-253, AR-125, and derived
-Rule 9.
+Search and sample read-only real-host exec depth-two/deeper ancestry, if emitted,
+before defining or reviewing that separate schema. After explicit install/
+trust/live authorization and current Codex and Claude artifacts, continue
+AR-252, AR-253, AR-125, and derived Rule 9.
 
 ### Context checkpoint constraints
 
@@ -3986,9 +4014,9 @@ candidate.
       artifact contains multiple compatible card hashes before first speech.
       Claude has three prior-candidate artifacts but is exact-candidate
       unproven. Codex has reviewed conditional host support and exact CLI
-      `0.147.0` TUI compatibility, but Desktop-alpha and exec-depth-two/deeper
-      compatibility plus exact-candidate installed/live proof remain open;
-      ZCode, Hermes, and OpenClaw remain unproven.
+      `0.147.0` plus Desktop `0.147.0-alpha.6.6` compatibility, but exec-depth-
+      two/deeper compatibility and exact-candidate installed/live proof remain
+      open; ZCode, Hermes, and OpenClaw remain unproven.
 - [ ] Rule 8: Agency unavailability supplies no card and never suppresses the
       host's natural response on any host. Only a verifier's definite negative
       and the malformed-`Stop` forgery boundary deliberately withhold.
