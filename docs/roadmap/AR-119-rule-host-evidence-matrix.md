@@ -26,7 +26,7 @@ superseded_by: null
 type: roadmap
 ar119_authority: completion-evidence
 vision_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
-candidate_commit: 42c1354b7eca41dc31d7f4a8243fbe6ac78e75f7
+candidate_commit: 75663ed0e29bd44e8ce5849eefa0278752e01bdc
 evidence_cutoff: 2026-08-13
 ---
 
@@ -60,6 +60,22 @@ swept the generic adapter instead, so its Rule 7 simulation stayed unproven
 rather than assumed. Its decision-conformance evaluator exited zero with a
 baseline of 211,811 ms, 151/151 mutations killed, zero survived or invalid, and
 `source_unchanged=true`.
+
+Candidate `75663ed0` proves Rule 6 in simulation on all five hosts. The hiring
+ladder itself was never in doubt and already had thorough host-neutral coverage;
+what it lacked was any evidence of running inside a turn on a host boundary,
+which is what Rule 9 asks of every rule. Each case now drives the host's own
+entry point with a request the roster cannot cover and follows the whole ladder:
+inference proves the gap, an independent critic and a security review pass on it,
+the contractor is filed under `origin='agency'` in the contractor lane, and it is
+dealt into the very turn whose gap created it. A second turn then finds it
+already in the pool and hires nobody, because "file it in the pool for next
+time" is the half of the rule a single-turn assertion cannot reach. Two seams
+were required and are worth recording: `hire_contractor_for_gap` binds the real
+invoker as a default argument at import time, so patching the inference module
+alone leaves hiring calling a live provider and failing as a silent abstention,
+and `workforce.provider` must be configured or hiring declines the same quiet
+way. Installed and Live still require a native same-turn hiring artifact.
 
 Candidate `42c1354b` gives Rules 2 and 3 their first evidence of any kind. The
 product's central claim -- "load into the caller, don't spawn", and more than
@@ -164,11 +180,11 @@ two/deeper remains unsupported, and no Installed or Live layer advances.
 | R5 | zcode | unproven | unproven | unproven | unproven | unproven | Source call-graph absence proof plus native spawn-origin artifact | none | unobserved | `docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md` | No current native-origin artifact or absence verifier |
 | R5 | hermes | unproven | unproven | unproven | unproven | unproven | Source call-graph absence proof plus native spawn-origin artifact | none | unobserved | `docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md` | No current native-origin artifact or absence verifier |
 | R5 | openclaw | unproven | unproven | unproven | unproven | unproven | Source call-graph absence proof plus native spawn-origin artifact | none | unobserved | `docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md` | No current native-origin artifact or absence verifier |
-| R6 | claude | unproven | proven | unproven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | host-neutral contractor contract test only | 2026-08-12 | `docs/roadmap/AR-119-acceptance-evidence.md#ar-122-governed-contractor-hiring-and-workforce-lifecycle` | Implementation is present, but no Claude-scoped simulation or installed same-turn artifact exists |
-| R6 | codex | unproven | proven | unproven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | host-neutral contractor contract test only | 2026-08-12 | `docs/roadmap/AR-119-acceptance-evidence.md#ar-122-governed-contractor-hiring-and-workforce-lifecycle` | Implementation is present, but no Codex-scoped simulation or installed same-turn artifact exists |
-| R6 | zcode | unproven | proven | unproven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | host-neutral contractor contract test only | 2026-08-12 | `docs/roadmap/AR-119-acceptance-evidence.md#ar-122-governed-contractor-hiring-and-workforce-lifecycle` | Implementation is present, but no ZCode-scoped simulation or installed same-turn artifact exists |
-| R6 | hermes | unproven | proven | unproven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | host-neutral contractor contract test only | 2026-08-12 | `docs/roadmap/AR-119-acceptance-evidence.md#ar-122-governed-contractor-hiring-and-workforce-lifecycle` | Implementation is present, but no Hermes-scoped simulation or installed same-turn artifact exists |
-| R6 | openclaw | unproven | proven | unproven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | host-neutral contractor contract test only | 2026-08-12 | `docs/roadmap/AR-119-acceptance-evidence.md#ar-122-governed-contractor-hiring-and-workforce-lifecycle` | Implementation is present, but no OpenClaw-scoped simulation or installed same-turn artifact exists |
+| R6 | claude | unproven | proven | proven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | one uncovered turn proves the gap, passes an independent critic and a security review, files the contractor under origin=agency, and is dealt the new card in that same turn; the next turn reuses it and hires nobody | 2026-08-13 | `tests/test_contractor_minting_host_parity.py:297-333` | Deterministic ladder evidence with inference stubbed; no installed or live host artifact |
+| R6 | codex | unproven | proven | proven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | one uncovered turn proves the gap, passes an independent critic and a security review, files the contractor under origin=agency, and is dealt the new card in that same turn; the next turn reuses it and hires nobody | 2026-08-13 | `tests/test_contractor_minting_host_parity.py:297-333` | Deterministic ladder evidence with inference stubbed; no installed or live host artifact |
+| R6 | zcode | unproven | proven | proven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | one uncovered turn proves the gap, passes an independent critic and a security review, files the contractor under origin=agency, and is dealt the new card in that same turn; the next turn reuses it and hires nobody | 2026-08-13 | `tests/test_contractor_minting_host_parity.py:297-333` | Deterministic ladder evidence with inference stubbed; no installed or live host artifact |
+| R6 | hermes | unproven | proven | proven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | one uncovered turn proves the gap, passes an independent critic and a security review, files the contractor under origin=agency, and is dealt the new card in that same turn; the next turn reuses it and hires nobody | 2026-08-13 | `tests/test_contractor_minting_host_parity.py:297-333` | Deterministic ladder evidence with inference stubbed; no installed or live host artifact |
+| R6 | openclaw | unproven | proven | proven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | one uncovered turn proves the gap, passes an independent critic and a security review, files the contractor under origin=agency, and is dealt the new card in that same turn; the next turn reuses it and hires nobody | 2026-08-13 | `tests/test_contractor_minting_host_parity.py:297-333` | Deterministic ladder evidence with inference stubbed; no installed or live host artifact |
 | R7 | claude | unproven | proven | proven | unproven | unproven | Same identity observed in one turn and absent from the next turn | two-turn parity case: the card is held in its own turn, absent from the next, and its expiry is stated there | 2026-08-13 | `agency_runtime/core/evals/host_parity.py:231-293` | Deterministic eval evidence only; no installed or live host artifact |
 | R7 | codex | unproven | proven | proven | unproven | unproven | Same identity observed in one turn and absent from the next turn | two-turn parity case: the card is held in its own turn, absent from the next, and its expiry is stated there | 2026-08-13 | `agency_runtime/core/evals/host_parity.py:231-293` | Deterministic eval evidence only; no installed or live host artifact |
 | R7 | zcode | unproven | proven | proven | unproven | unproven | Same identity observed in one turn and absent from the next turn | two-turn parity case on the adapter the hooks boundary itself builds for zcode: the card is held in its own turn, absent from the next, and its expiry is stated there | 2026-08-13 | `agency_runtime/core/evals/host_parity.py:231-293` | Deterministic eval evidence only; no installed or live host artifact |
@@ -215,6 +231,11 @@ satisfy a layer.
 | R6 | zcode | Implementation | proven | source | inference gap hiring, critic audit, enablement, and activation path | 2026-08-12 | `agency_runtime/core/workforce/hiring.py:1863-1940` |
 | R6 | hermes | Implementation | proven | source | inference gap hiring, critic audit, enablement, and activation path | 2026-08-12 | `agency_runtime/core/workforce/hiring.py:1863-1940` |
 | R6 | openclaw | Implementation | proven | source | inference gap hiring, critic audit, enablement, and activation path | 2026-08-12 | `agency_runtime/core/workforce/hiring.py:1863-1940` |
+| R6 | claude | Simulation | proven | test | an uncovered turn mints, interviews, and files a contractor, deals it that same turn, and the next turn reuses it without hiring again | 2026-08-13 | `tests/test_contractor_minting_host_parity.py:297-363` |
+| R6 | codex | Simulation | proven | test | an uncovered turn mints, interviews, and files a contractor, deals it that same turn, and the next turn reuses it without hiring again | 2026-08-13 | `tests/test_contractor_minting_host_parity.py:297-363` |
+| R6 | zcode | Simulation | proven | test | an uncovered turn mints, interviews, and files a contractor, deals it that same turn, and the next turn reuses it without hiring again | 2026-08-13 | `tests/test_contractor_minting_host_parity.py:297-363` |
+| R6 | hermes | Simulation | proven | test | an uncovered turn mints, interviews, and files a contractor, deals it that same turn, and the next turn reuses it without hiring again | 2026-08-13 | `tests/test_contractor_minting_host_parity.py:297-363` |
+| R6 | openclaw | Simulation | proven | test | an uncovered turn mints, interviews, and files a contractor, deals it that same turn, and the next turn reuses it without hiring again | 2026-08-13 | `tests/test_contractor_minting_host_parity.py:297-363` |
 | R8 | claude | Implementation | proven | source | fail-open unavailable prompt and unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` |
 | R8 | codex | Implementation | proven | source | fail-open unavailable prompt and unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` |
 | R8 | zcode | Implementation | proven | source | fail-open unavailable prompt and unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` |
