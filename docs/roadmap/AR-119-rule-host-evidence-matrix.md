@@ -26,7 +26,7 @@ superseded_by: null
 type: roadmap
 ar119_authority: completion-evidence
 vision_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
-candidate_commit: 211563c799e167bee03bfd0fa60e3f2ca6cc9195
+candidate_commit: e80cb40c5cc930b5732f223278bad978f9a944b0
 evidence_cutoff: 2026-08-13
 ---
 
@@ -46,6 +46,19 @@ bound to that exact candidate. Earlier artifacts remain visible as prior-
 candidate context but cannot make a current installed/live layer green or red.
 Although the schema reserves `not-applicable`, none of the nine rules is
 optional on a supported host.
+
+Candidate `e80cb40c` repairs the only two `negative` cells. Hermes and OpenClaw
+previously withheld a completed turn whenever Agency itself could not run, which
+Rule 8 forbids and which `THREAT_MODEL.md` already described as the opposite of
+the intended contract. Both hosts now return the host's own output when Agency
+is blind, while an evaluated negative still withholds, envelope integrity still
+denies, and stale evidence still cannot terminalize a turn. It changes only the
+two host bridges, the generated Hermes payload, and their tests, so every other
+row's source anchor is unchanged from `211563c7`. Its decision-conformance
+evaluator exited zero with a baseline of 201,500 ms, 151/151 mutations killed,
+zero survived or invalid, and `source_unchanged=true`; the curated mutation that
+disables the evaluated-negative branch is still killed, so the blocking path
+this repair deliberately preserved remains observable. No cell is `negative`.
 
 Candidate `211563c7` retains AR-255 native-child inference authority, Claude's
 in-lifetime collector, and the exact CLI `0.147.0` TUI/exec profiles. Its sealed
@@ -119,13 +132,13 @@ two/deeper remains unsupported, and no Installed or Live layer advances.
 | R8 | claude | unproven | proven | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | no Claude-scoped prompt-preflight simulation | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` | Implementation fails open, but the cited prompt-preflight test covers only Codex and ZCode and no native publication proof exists |
 | R8 | codex | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[codex]` | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` | Contract output cannot prove native host publication |
 | R8 | zcode | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[zcode]` | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` | No live host publication artifact |
-| R8 | hermes | negative | negative | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | bridge exception path replaces output with block response | 2026-08-12 | `agency_runtime/adapters/hermes/bridge.py:269-318` | Current source withholds when Agency is unavailable; no separate simulation proof is claimed |
-| R8 | openclaw | negative | negative | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | bridge failure cancels host output | 2026-08-12 | `agency_runtime/adapters/openclaw/node_bridge.py:790-903` | Current source withholds when Agency is unavailable; no separate simulation proof is claimed |
+| R8 | hermes | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | Agency-blind paths return the host draft unchanged while an evaluated rejection still replaces it | 2026-08-13 | `agency_runtime/adapters/hermes/bridge.py:269-322` | Contract output cannot prove native host publication |
+| R8 | openclaw | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | Agency-blind gates allow the turn while envelope integrity and evaluated negatives still deny | 2026-08-13 | `agency_runtime/adapters/openclaw/node_bridge.py:798-947` | Contract output cannot prove native host publication |
 | R9 | claude | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 211563c7 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but multiple rules and every installed/live layer remain unproven |
 | R9 | codex | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 211563c7 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 4 source/simulation are proven, but other rules and installed/live parity remain unproven |
 | R9 | zcode | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 211563c7 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but missing rule and live evidence prevents parity |
-| R9 | hermes | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 211563c7 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
-| R9 | openclaw | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 211563c7 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
+| R9 | hermes | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate e80cb40c | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | The Rule 8 negative is repaired, but most rules and every installed/live layer remain unproven |
+| R9 | openclaw | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate e80cb40c | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | The Rule 8 negative is repaired, but most rules and every installed/live layer remain unproven |
 
 ## Layer evidence
 
@@ -162,8 +175,10 @@ satisfy a layer.
 | R8 | zcode | Implementation | proven | source | fail-open unavailable prompt and unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` |
 | R8 | codex | Simulation | proven | test | unavailable preflight publishes the host prompt | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` |
 | R8 | zcode | Simulation | proven | test | unavailable preflight publishes the host prompt | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` |
-| R8 | hermes | Implementation | negative | source | bridge exception replaces output with a blocking response | 2026-08-12 | `agency_runtime/adapters/hermes/bridge.py:269-318` |
-| R8 | openclaw | Implementation | negative | source | bridge failure cancels host output | 2026-08-12 | `agency_runtime/adapters/openclaw/node_bridge.py:790-903` |
+| R8 | hermes | Implementation | proven | source | an unavailable Agency path returns the host draft unchanged | 2026-08-13 | `agency_runtime/adapters/hermes/bridge.py:269-322` |
+| R8 | hermes | Simulation | proven | test | a raising finalizer returns the draft unchanged and does not terminalize the turn | 2026-08-13 | `tests/test_completion_policy_boundary.py:241-273` |
+| R8 | openclaw | Implementation | proven | source | blind soft control, correlation, evidence, decision, and commit paths allow the turn | 2026-08-13 | `agency_runtime/adapters/openclaw/node_bridge.py:798-947` |
+| R8 | openclaw | Simulation | proven | test | unreadable evidence and unrecoverable correlation allow, while a broken envelope still denies | 2026-08-13 | `tests/test_owned_adapter_surface_coverage_final.py:805-888` |
 
 ## Cross-cutting completion gates
 

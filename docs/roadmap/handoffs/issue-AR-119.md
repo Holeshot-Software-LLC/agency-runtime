@@ -130,12 +130,12 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-Both prior items are discharged. Confirm the repaired evaluator returns 151/151,
-then take the two Rule-8 negatives: Hermes fails closed when its Agency path
-raises (`adapters/hermes/bridge.py:313-318`, `installer_payload_hermes.py`) and
-OpenClaw denies four Agency-blind conditions
-(`adapters/openclaw/node_bridge.py:852-900`), yet only an evaluated negative may
-withhold. Inverting `test_completion_policy_boundary.py` needs confirmation.
+Candidate `e80cb40c` repaired both Rule-8 negatives, so no matrix cell is
+negative and the next unblocked work is the four rules with no evidence at any
+layer: R2 and R3 (cards reaching the parent caller, singly and severally), R5
+(the spawn-origin absence proof), and R7 (per-turn expiry). None needs
+authorization; each needs a verifier and a host artifact that does not exist
+yet. Everything else waits on authorization or on the two unavailable hosts.
 
 ## verification
 

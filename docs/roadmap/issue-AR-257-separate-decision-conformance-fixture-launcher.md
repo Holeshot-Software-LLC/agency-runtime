@@ -114,6 +114,13 @@ invalid, and `source_unchanged=true`. The expanded decision-conformance gate is
 therefore satisfied for the current candidate. This is a source and simulation
 result only; it advances no Installed or Live matrix layer.
 
+Candidate `e80cb40c`, which repairs the two Rule-8 host negatives, then ran the
+same gate and also exited zero: baseline 201,500 ms, 151/151 killed, zero
+survived or invalid, and `source_unchanged=true`. The curated mutation that
+disables the Hermes evaluated-negative branch remains killed, confirming that
+making Agency-blind paths fail open did not weaken the blocking path the
+verifier's definite negative depends on.
+
 ## Acceptance
 
 - [x] The evaluator may run pytest through a workspace virtual environment

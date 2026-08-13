@@ -840,6 +840,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d9344156` | 2026-08-13 | docs(roadmap): checkpoint Desktop evaluator restart | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
 | `217fb78f` | 2026-08-13 | fix(evals): observe the Codex identity domain without filename masking | null | null |
 | `fc5749c3` | 2026-08-13 | docs(roadmap): checkpoint the repaired conformance gate and exec census | null | null |
+| `e80cb40c` | 2026-08-13 | fix(hosts)!: never withhold a Hermes or OpenClaw turn for Agency blindness | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

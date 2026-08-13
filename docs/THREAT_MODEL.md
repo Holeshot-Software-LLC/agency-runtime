@@ -295,6 +295,16 @@ retired transports cannot satisfy those properties.
   trusted same-process plugin at the same terminal priority remains outside the
   seal. OpenClaw support is therefore restricted to audited stable `2026.7.x`
   patches at or above `2026.7.1`, with live maturity tracked separately.
+  Its outbound gate applies the same split Hermes does. An unreadable soft
+  control, unrecoverable correlation for an otherwise intact envelope, absent
+  authoritative evidence, an unobtainable decision, an unbindable revision on an
+  accepted response, and an unreachable store all allow the turn, because none
+  of them is a finding about the response. An evaluated negative still denies,
+  including one whose revision cannot be bound, and so does a broken envelope: a
+  payload that does not bind to the policy text, or a missing session or
+  response, would otherwise make the contract bypassable by a malformed payload.
+  A store that answers and refuses a binding is a conflict rather than an
+  outage, so stale evidence still cannot terminalize a turn.
 - Hermes exposes no permanent host deny result. Its preflight tells the model
   to construct the first visible response through the local `agency.finalize`
   tool; `pre_verify` never requests a second model pass. The
