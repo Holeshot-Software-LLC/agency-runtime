@@ -26,7 +26,7 @@ superseded_by: null
 type: roadmap
 ar119_authority: completion-evidence
 vision_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
-candidate_commit: cb6808fe491b6f76eb442345f851425e426c3521
+candidate_commit: 42c1354b7eca41dc31d7f4a8243fbe6ac78e75f7
 evidence_cutoff: 2026-08-13
 ---
 
@@ -60,6 +60,23 @@ swept the generic adapter instead, so its Rule 7 simulation stayed unproven
 rather than assumed. Its decision-conformance evaluator exited zero with a
 baseline of 211,811 ms, 151/151 mutations killed, zero survived or invalid, and
 `source_unchanged=true`.
+
+Candidate `42c1354b` gives Rules 2 and 3 their first evidence of any kind. The
+product's central claim -- "load into the caller, don't spawn", and more than
+one card when the job needs them -- held ten `unproven` cells and no artifact,
+though nothing was missing from the runtime: preflight already builds the
+capsule and every host already hands it to the caller's own turn. What was
+missing was anyone watching it happen. Each case now follows the real path an
+ordinary user turn takes on that host -- the `UserPromptSubmit` boundary for
+claude, codex, and zcode, the request-scoped adapter entry point for hermes and
+openclaw -- with only the choice stubbed, since inference alone chooses. The
+cards are real roster specialists and their instruction bodies are read back out
+of the Store, so a passing test cannot merely agree with itself. Rule 3 needed
+its own two-unit stub: one work unit takes exactly one specialist, so a second
+card exists only when the turn holds a second unit of work. Both rules are
+therefore proven at Implementation and Simulation on all five hosts. The
+Installed and Live layers are untouched and still require a native
+primary-caller artifact.
 
 Candidate `cb6808fe` closes that gap without inventing a zcode adapter. The
 construction the hooks boundary performs for a host without its own adapter
@@ -127,16 +144,16 @@ two/deeper remains unsupported, and no Installed or Live layer advances.
 | R1 | zcode | unproven | proven | proven | unproven | unproven | Inference receipt joined to exact delivered card hashes | exact inference team reaches the plaintext host boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` | No exact-candidate installed/live join exists |
 | R1 | hermes | unproven | proven | proven | unproven | unproven | Inference receipt joined to exact delivered card hashes | shared native-child adapter forwards one exact inference result | 2026-08-12 | `tests/test_native_child_adapter_staffing.py:39-95` | Shared adapter simulation is not installed Hermes bridge or host proof |
 | R1 | openclaw | unproven | proven | proven | unproven | unproven | Inference receipt joined to exact delivered card hashes | shared native-child adapter forwards one exact inference result | 2026-08-12 | `tests/test_native_child_adapter_staffing.py:39-95` | Shared adapter simulation is not installed OpenClaw bridge or host proof |
-| R2 | claude | unproven | unproven | unproven | unproven | unproven | Native primary-caller artifact containing selected cards before first caller speech | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | Child artifacts do not prove that the existing parent conversation received its cards |
-| R2 | codex | unproven | unproven | unproven | unproven | unproven | Native primary-caller artifact containing selected cards before first caller speech | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | Child simulation does not prove primary-caller delivery through the real encrypted channel |
-| R2 | zcode | unproven | unproven | unproven | unproven | unproven | Native primary-caller artifact containing selected cards before first caller speech | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | No exact-candidate primary-caller artifact |
-| R2 | hermes | unproven | unproven | unproven | unproven | unproven | Native host artifact containing cards before first caller speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Host path remains unmeasured |
-| R2 | openclaw | unproven | unproven | unproven | unproven | unproven | Native host artifact containing cards before first caller speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Host path remains unmeasured |
-| R3 | claude | unproven | unproven | unproven | unproven | unproven | Native primary-caller artifact with multiple compatible card hashes before first caller speech | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | Prior multi-card child artifacts prove Rule 4, not multi-card delivery into the parent caller |
-| R3 | codex | unproven | unproven | unproven | unproven | unproven | Native primary-caller artifact with multiple compatible card hashes before first caller speech | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | Fake child simulation does not prove multi-card primary-caller delivery |
-| R3 | zcode | unproven | unproven | unproven | unproven | unproven | Native primary-caller artifact with multiple compatible card hashes before first caller speech | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | No exact-candidate multi-card primary-caller artifact |
-| R3 | hermes | unproven | unproven | unproven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Multi-card behavior is unmeasured |
-| R3 | openclaw | unproven | unproven | unproven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Multi-card behavior is unmeasured |
+| R2 | claude | unproven | proven | proven | unproven | unproven | Native primary-caller artifact containing selected cards before first caller speech | the chosen card's own instruction body reaches the caller's turn, the turn records it, and no child exists that could have received it instead | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:189-213` | Deterministic delivery evidence with inference stubbed; no installed or live host artifact |
+| R2 | codex | unproven | proven | proven | unproven | unproven | Native primary-caller artifact containing selected cards before first caller speech | the chosen card's own instruction body reaches the caller's turn, the turn records it, and no child exists that could have received it instead | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:189-213` | Deterministic delivery evidence with inference stubbed; no installed or live host artifact |
+| R2 | zcode | unproven | proven | proven | unproven | unproven | Native primary-caller artifact containing selected cards before first caller speech | the chosen card's own instruction body reaches the caller's turn, the turn records it, and no child exists that could have received it instead | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:189-213` | Deterministic delivery evidence with inference stubbed; no installed or live host artifact |
+| R2 | hermes | unproven | proven | proven | unproven | unproven | Native host artifact containing cards before first caller speech | the chosen card's own instruction body reaches the caller's turn, the turn records it, and no child exists that could have received it instead | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:189-213` | Deterministic delivery evidence with inference stubbed; no installed or live host artifact |
+| R2 | openclaw | unproven | proven | proven | unproven | unproven | Native host artifact containing cards before first caller speech | the chosen card's own instruction body reaches the caller's turn, the turn records it, and no child exists that could have received it instead | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:189-213` | Deterministic delivery evidence with inference stubbed; no installed or live host artifact |
+| R3 | claude | unproven | proven | proven | unproven | unproven | Native primary-caller artifact with multiple compatible card hashes before first caller speech | two units of work in one turn each keep their own card, and both instruction bodies arrive whole in the caller's turn | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:215-236` | Deterministic delivery evidence with inference stubbed; no installed or live host artifact |
+| R3 | codex | unproven | proven | proven | unproven | unproven | Native primary-caller artifact with multiple compatible card hashes before first caller speech | two units of work in one turn each keep their own card, and both instruction bodies arrive whole in the caller's turn | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:215-236` | Deterministic delivery evidence with inference stubbed; no installed or live host artifact |
+| R3 | zcode | unproven | proven | proven | unproven | unproven | Native primary-caller artifact with multiple compatible card hashes before first caller speech | two units of work in one turn each keep their own card, and both instruction bodies arrive whole in the caller's turn | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:215-236` | Deterministic delivery evidence with inference stubbed; no installed or live host artifact |
+| R3 | hermes | unproven | proven | proven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | two units of work in one turn each keep their own card, and both instruction bodies arrive whole in the caller's turn | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:215-236` | Deterministic delivery evidence with inference stubbed; no installed or live host artifact |
+| R3 | openclaw | unproven | proven | proven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | two units of work in one turn each keep their own card, and both instruction bodies arrive whole in the caller's turn | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:215-236` | Deterministic delivery evidence with inference stubbed; no installed or live host artifact |
 | R4 | claude | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | in-lifetime SafeClaude collector with real HookBridge lifecycle | 2026-08-12 | `tests/test_host_canary.py:805-1055` | Test-managed install and fake process runner are simulation only; prior-candidate live artifacts do not green this candidate |
 | R4 | codex | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | reviewed sealed v3 exact CLI `0.147.0` and Desktop `0.147.0-alpha.6.6` profiles | 2026-08-13 | `agency_runtime/core/codex_spawn_provenance.py`, `tests/test_codex_spawn_provenance.py` | Source/simulation cover the CLI 11/11 TUI census and Desktop 52/52 V2 census; exec depth-two/deeper and exact-candidate host artifacts remain open |
 | R4 | zcode | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | exact inference team reaches the ZCode child boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` | Simulation exists but no exact-candidate native child artifact |
@@ -203,6 +220,26 @@ satisfy a layer.
 | R8 | zcode | Implementation | proven | source | fail-open unavailable prompt and unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` |
 | R8 | codex | Simulation | proven | test | unavailable preflight publishes the host prompt | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` |
 | R8 | zcode | Simulation | proven | test | unavailable preflight publishes the host prompt | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` |
+| R2 | claude | Implementation | proven | source | the host hands preflight's context to the caller's own turn | 2026-08-13 | `agency_runtime/adapters/hooks.py:1728-1782` |
+| R2 | claude | Simulation | proven | test | the caller's own turn context carries the chosen card whole | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:189-213` |
+| R2 | codex | Implementation | proven | source | the host hands preflight's context to the caller's own turn | 2026-08-13 | `agency_runtime/adapters/hooks.py:1728-1782` |
+| R2 | codex | Simulation | proven | test | the caller's own turn context carries the chosen card whole | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:189-213` |
+| R2 | zcode | Implementation | proven | source | the host hands preflight's context to the caller's own turn | 2026-08-13 | `agency_runtime/adapters/hooks.py:1728-1782` |
+| R2 | zcode | Simulation | proven | test | the caller's own turn context carries the chosen card whole | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:189-213` |
+| R2 | hermes | Implementation | proven | source | the host hands preflight's context to the caller's own turn | 2026-08-13 | `agency_runtime/adapters/hermes/plugin.py:77-88` |
+| R2 | hermes | Simulation | proven | test | the caller's own turn context carries the chosen card whole | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:189-213` |
+| R2 | openclaw | Implementation | proven | source | the host hands preflight's context to the caller's own turn | 2026-08-13 | `agency_runtime/adapters/openclaw/plugin.py:29-37` |
+| R2 | openclaw | Simulation | proven | test | the caller's own turn context carries the chosen card whole | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:189-213` |
+| R3 | claude | Implementation | proven | source | the host hands preflight's context to the caller's own turn | 2026-08-13 | `agency_runtime/adapters/hooks.py:1728-1782` |
+| R3 | claude | Simulation | proven | test | the caller's own turn context carries every chosen card whole | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:215-236` |
+| R3 | codex | Implementation | proven | source | the host hands preflight's context to the caller's own turn | 2026-08-13 | `agency_runtime/adapters/hooks.py:1728-1782` |
+| R3 | codex | Simulation | proven | test | the caller's own turn context carries every chosen card whole | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:215-236` |
+| R3 | zcode | Implementation | proven | source | the host hands preflight's context to the caller's own turn | 2026-08-13 | `agency_runtime/adapters/hooks.py:1728-1782` |
+| R3 | zcode | Simulation | proven | test | the caller's own turn context carries every chosen card whole | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:215-236` |
+| R3 | hermes | Implementation | proven | source | the host hands preflight's context to the caller's own turn | 2026-08-13 | `agency_runtime/adapters/hermes/plugin.py:77-88` |
+| R3 | hermes | Simulation | proven | test | the caller's own turn context carries every chosen card whole | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:215-236` |
+| R3 | openclaw | Implementation | proven | source | the host hands preflight's context to the caller's own turn | 2026-08-13 | `agency_runtime/adapters/openclaw/plugin.py:29-37` |
+| R3 | openclaw | Simulation | proven | test | the caller's own turn context carries every chosen card whole | 2026-08-13 | `tests/test_parent_caller_card_delivery.py:215-236` |
 | R7 | claude | Implementation | proven | source | closing a turn expires its cards and the next turn is told which expired | 2026-08-13 | `agency_runtime/core/store/evidence.py:1298-1340` |
 | R7 | claude | Simulation | proven | test | a card held in one turn is absent from the next and its expiry is stated | 2026-08-13 | `tests/test_host_parity_eval.py:34-51` |
 | R7 | codex | Implementation | proven | source | closing a turn expires its cards and the next turn is told which expired | 2026-08-13 | `agency_runtime/core/store/evidence.py:1298-1340` |

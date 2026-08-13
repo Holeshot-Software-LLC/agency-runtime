@@ -59,8 +59,7 @@ must be loaded first after any compaction or session restart.
 - Tracker creation for AR-255 through AR-257 and tracker synchronization for
   locally reopened historical issues remain pending explicit authorization.
   No missing tracker write is represented as complete.
-- The expanded evaluator first failed for `211563c7` at 149/151, then passed
-  151/151 after the AR-257 repair; exec depth-two is parked negative per AR-180.
+- Conformance history is in AR-257; exec depth-two is parked per AR-180.
 
 ## completed-evidence
 
@@ -130,12 +129,13 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-No cell is negative, and `cb6808fe` proves R7 at source and simulation on all
-five supported hosts: the hooks boundary's own zcode construction is now a named
-function the parity sweep calls, so it observes zcode instead of generic.
-Remaining unblocked work is R2 and R3 (cards reaching the parent caller, singly
-and severally) and R5 (the spawn-origin absence proof). Installed and Live need a
-reinstall first: the switch is off and hooks are staged from three stale trees.
+No cell is negative. `cb6808fe` proves R7 on all five hosts by sweeping the
+hooks boundary's own zcode construction instead of generic, and `42c1354b`
+gives R2 and R3 their first evidence: the whole card reaches the caller's own
+turn, and two units of work in one turn each keep their own card, on every host.
+Remaining unblocked work is R5 (the spawn-origin absence proof) and the R6
+per-host simulations. Installed and Live need a reinstall first: the switch is
+off and hooks are staged from three stale trees.
 
 ## verification
 
