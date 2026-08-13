@@ -66,6 +66,17 @@ def test_header_instruction_reuses_current_capsule_before_loading_more() -> None
 def test_persistent_host_turns_never_inject_specialist_bodies_into_parent_history(
     tmp_path: Path,
 ) -> None:
+    """A blind turn is still published, and still adds no body to the history.
+
+    No provider is configured here, so preflight cannot run. Rule 8 says the
+    turn goes out anyway -- but a turn that produced no evidence recipe carries
+    no resident-manager binding, so there is nothing to acknowledge and the
+    kernel is re-injected next turn rather than reused. The acknowledge-and-
+    reuse contract is proven in
+    `test_persistent_host_reuses_an_acknowledged_kernel_on_the_next_turn`,
+    where inference exists to make preflight succeed.
+    """
+
     host = "claude"
     store = Store(tmp_path / f"{host}.db")
     store.set_host_control(
@@ -103,13 +114,10 @@ def test_persistent_host_turns_never_inject_specialist_bodies_into_parent_histor
         ]
     finally:
         connection.close()
-    assert store.acknowledge_resident_manager_binding(
-        session_id=session_id,
-        host=host,
-        trace_id="turn-one",
-        binding=store.get_completion_evidence_snapshot(session_id, "turn-one")[
-            "resident_manager_binding"
-        ],
+    # Nothing to acknowledge: preflight failed, so no recipe and no binding.
+    assert (
+        store.get_completion_evidence_snapshot(session_id, "turn-one")["resident_manager_binding"]
+        is None
     )
 
     second = bridge.handle(
@@ -124,17 +132,104 @@ def test_persistent_host_turns_never_inject_specialist_bodies_into_parent_histor
 
     assert first_context.startswith(RESIDENT_MANAGER_KERNEL)
     assert "delivery=injected" in first_context
-    assert "[AGENCY PREFLIGHT] Current isolated turn turn-one" in first_context
-    assert second_context.startswith("[Agency resident managers active")
-    assert "delivery=reused" in second_context
-    assert RESIDENT_MANAGER_KERNEL not in second_context
-    assert "[AGENCY PREFLIGHT] Current isolated turn turn-two" in second_context
+    # Unacknowledged, so the second turn pays for the kernel again. That cost is
+    # the honest consequence of Agency being blind, not a reuse failure.
+    assert second_context.startswith(RESIDENT_MANAGER_KERNEL)
+    assert "delivery=injected" in second_context
+    assert "delivery=reused" not in second_context
     assert len(first_context) <= 4_096
     assert len(second_context) <= 4_096
+    # The point of the test: no specialist body ever reaches the parent history.
     assert all(body not in first_context for body in prompt_bodies)
     assert all(body not in second_context for body in prompt_bodies)
     assert store.get_specialists_for_trace(session_id, "turn-one") == []
     assert store.get_specialists_for_trace(session_id, "turn-two") == []
+
+
+def test_persistent_host_reuses_an_acknowledged_kernel_on_the_next_turn(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The kernel is dealt once per session, not once per turn.
+
+    This is the contract the blind-path test above cannot reach: preflight has
+    to succeed for the turn to persist a resident-manager binding, and only an
+    acknowledged binding lets the next turn carry the short reused header
+    instead of the whole kernel again. Only the inference choice is stubbed.
+    """
+
+    from tests.runtime_support import harden_private_test_file, stub_inference_invoker
+
+    host = "claude"
+    db_path = tmp_path / f"{host}.db"
+    config_path = tmp_path / "agency.yaml"
+    config_path.write_text(
+        "judge:\n"
+        '  model: ""\n'
+        "ollama:\n"
+        "  enabled: false\n"
+        "providers:\n"
+        "  - name: task-agency-router\n"
+        "    type: litellm\n"
+        "    model: router-alias\n"
+        "    base_url: https://router.example.test/v1\n"
+        "    api_key: secret\n"
+        f"store:\n  db_path: {db_path!s}\n",
+        encoding="utf-8",
+    )
+    harden_private_test_file(config_path)
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(config_path))
+    from agency_runtime.core.config import reset_config_cache
+
+    reset_config_cache()
+    from agency_runtime.core.workforce import inference as workforce_inference
+
+    monkeypatch.setattr(
+        workforce_inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+
+    store = Store(db_path)
+    store.set_host_control(host, enabled=False, expected_generation=0, source="test-materialize")
+    store.set_host_control(host, enabled=True, expected_generation=1, source="test-materialize")
+    bridge = HookBridge(host, store=store)
+    session_id = f"{host}-reuse-session"
+
+    first_context = bridge.handle(
+        {
+            "hook_event_name": "UserPromptSubmit",
+            "session_id": session_id,
+            "turn_id": "turn-one",
+            "prompt": "Review the authentication and security implementation.",
+        }
+    )["hookSpecificOutput"]["additionalContext"]
+
+    assert first_context.startswith(RESIDENT_MANAGER_KERNEL)
+    assert "delivery=injected" in first_context
+    assert store.acknowledge_resident_manager_binding(
+        session_id=session_id,
+        host=host,
+        trace_id="turn-one",
+        binding=store.get_completion_evidence_snapshot(session_id, "turn-one")[
+            "resident_manager_binding"
+        ],
+    )
+
+    second_context = bridge.handle(
+        {
+            "hook_event_name": "UserPromptSubmit",
+            "session_id": session_id,
+            "turn_id": "turn-two",
+            "prompt": "Document the operator workflow and release checks.",
+        }
+    )["hookSpecificOutput"]["additionalContext"]
+
+    assert second_context.startswith("[Agency resident managers active")
+    assert "delivery=reused" in second_context
+    assert RESIDENT_MANAGER_KERNEL not in second_context
+    # Reuse has to be cheaper than injection, or it buys nothing.
+    assert len(second_context) < len(first_context)
 
 
 @pytest.mark.parametrize("host", ["codex"])
