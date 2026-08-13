@@ -848,6 +848,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cb6808fe` | 2026-08-13 | feat(evals): observe zcode in the host-parity sweep through its own boundary | null | null |
 | `c578fde6` | 2026-08-13 | docs(roadmap): prove rule 7 on zcode at candidate cb6808fe | null | null |
 | `42c1354b` | 2026-08-13 | test(rules): prove cards reach the parent caller on every host | null | null |
+| `d995981f` | 2026-08-13 | docs(roadmap): record rules 2 and 3 as proven at candidate 42c1354b | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
