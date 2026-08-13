@@ -487,8 +487,15 @@ def _commit_terminal_outcome(
     evidence_revision: int,
     missing: list[str] | None = None,
     response_binding: str = "",
-) -> bool:
-    """Atomically bind one response to the evidence revision that validated it."""
+) -> str:
+    """Atomically bind one response to the evidence revision that validated it.
+
+    Returns `committed` on success, `unavailable` when the store could not be
+    reached at all, and `conflict` when the store answered but the binding did
+    not hold.  The two failures are not interchangeable: an unreachable store
+    is Agency being blind, while a revision or digest mismatch means the
+    evidence that validated this response no longer stands.
+    """
     try:
         from agency_runtime.core.header.finalize import response_hash
 
@@ -506,8 +513,8 @@ def _commit_terminal_outcome(
             missing=missing,
         )
     except Exception:
-        return False
-    return bool(
+        return "unavailable"
+    bound = bool(
         isinstance(committed, dict)
         and committed.get("authoritative") is True
         and committed.get("outcome") in {"committed", "replay"}
@@ -516,6 +523,7 @@ def _commit_terminal_outcome(
         and committed.get("policy_response_hash") == policy_digest
         and committed.get("status") == status
     )
+    return "committed" if bound else "conflict"
 
 
 def _evaluate_pre_verify_policy(
@@ -631,7 +639,7 @@ def _finish_policy_rejection(
         missing=_missing_fields(decision),
         response_binding=response_binding,
     )
-    if not committed:
+    if committed != "committed":
         return _revision()
     return _terminal_pre_verify_result(rejection_action, response_binding, trace_id)
 
@@ -796,7 +804,15 @@ def _handle_outbound_gate(
     outbound_payload: str = "",
     model: str = "",
 ) -> dict[str, Any]:
-    """Authorize only an exact accepted digest; deny every unverifiable final."""
+    """Deny an evaluated negative or a broken envelope; never deny for blindness.
+
+    Rule 8 permits withholding a turn only when Agency evaluated the response
+    and rejected it.  Agency's own faults -- unreadable evidence, a policy call
+    that raised, unbindable revision, a failed commit -- allow the turn instead.
+    Envelope integrity is separate: a payload that does not bind to the policy
+    text, or a missing session or response, is still denied, because failing
+    open there would make the contract bypassable by a malformed payload.
+    """
 
     binding = outbound_payload or final_response
     digest = response_hash(binding)
@@ -805,10 +821,9 @@ def _handle_outbound_gate(
         if not bool(adapter.runtime_enabled()):
             return _outbound_allowance(digest, runtime_disabled=True)
     except Exception:
-        return _outbound_denial(
-            digest,
-            "Agency Runtime could not verify its soft-control state.",
-        )
+        # Blind is not the same as off: the soft control could not be read, so
+        # the turn proceeds while the runtime still reports itself enabled.
+        return _outbound_allowance(digest)
 
     if not _outbound_binding_matches_policy_text(outbound_payload, final_response):
         return _outbound_denial(
@@ -831,10 +846,9 @@ def _handle_outbound_gate(
     except Exception:
         effective_trace = ""
     if not effective_trace:
-        return _outbound_denial(
-            digest,
-            "Agency Runtime could not correlate this outbound response.",
-        )
+        # The envelope is well formed and Agency simply could not find its own
+        # record for it.  That is Agency being blind, not a verdict.
+        return _outbound_allowance(digest)
 
     terminal_state = _exact_outbound_terminal_state(
         adapter,
@@ -850,10 +864,9 @@ def _handle_outbound_gate(
     if terminal_state == "completed":
         return _outbound_allowance(digest, trace_id=effective_trace)
     if terminal_state == "unavailable":
-        return _outbound_denial(
-            digest,
-            "Agency Runtime could not read authoritative outbound evidence.",
-        )
+        # Agency could not read its own evidence.  Rule 8 permits withholding
+        # only for an evaluated negative, so a blind gate allows the turn.
+        return _outbound_allowance(digest, trace_id=effective_trace)
 
     decision = _safe_policy_decision(
         adapter,
@@ -864,19 +877,43 @@ def _handle_outbound_gate(
         trace_id=effective_trace,
     )
     if decision is None:
-        return _outbound_denial(
-            digest,
-            "Agency Runtime could not verify this outbound response.",
-        )
+        return _outbound_allowance(digest, trace_id=effective_trace)
     if decision.get("runtime_disabled") is True:
         return _outbound_allowance(digest, runtime_disabled=True)
-    revision = _evidence_revision(decision)
-    if revision is None:
-        return _outbound_denial(
-            digest,
-            "Agency Runtime could not bind outbound evidence.",
-        )
+    return _outbound_evaluated_decision(
+        adapter,
+        decision=decision,
+        digest=digest,
+        session_id=session_id,
+        effective_trace=effective_trace,
+        final_response=final_response,
+        binding=binding,
+        revision=_evidence_revision(decision),
+    )
+
+
+def _outbound_evaluated_decision(
+    adapter: Any,
+    *,
+    decision: dict[str, Any],
+    digest: str,
+    session_id: str,
+    effective_trace: str,
+    final_response: str,
+    binding: str,
+    revision: int | None,
+) -> dict[str, Any]:
+    """Bind one evaluated decision, separating a blind commit from a refused one."""
+
     accepted = decision.get("action") == "accept"
+    if revision is None:
+        # Agency evaluated the response but cannot bind its own evidence.  An
+        # acceptance proceeds, because the verdict was positive and only the
+        # receipt is missing.  An evaluated negative still withholds: the
+        # verdict stands even when Agency cannot write down why.
+        if accepted:
+            return _outbound_allowance(digest, trace_id=effective_trace)
+        return _outbound_denial(digest)
     rejection_action = (
         "delegation_declined"
         if decision.get("delegation_strength") == "strongly_preferred"
@@ -893,7 +930,14 @@ def _handle_outbound_gate(
         missing=_missing_fields(decision),
         response_binding=binding,
     )
-    if not committed:
+    if committed == "unavailable":
+        # A persistence failure deliberately leaves the correlated turn open
+        # rather than withholding a completed turn to report an Agency fault.
+        return _outbound_allowance(digest, trace_id=effective_trace)
+    if committed != "committed":
+        # The store answered and refused the binding, so the evidence that
+        # validated this response no longer stands.  That is a verdict about
+        # the turn, and stale evidence must not terminalize it.
         return _outbound_denial(
             digest,
             "Agency Runtime could not commit outbound evidence.",

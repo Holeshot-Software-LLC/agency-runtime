@@ -186,7 +186,9 @@ def test_hermes_bridge_dispatch_and_fail_closed_paths(monkeypatch) -> None:
     monkeypatch.setattr("agency_runtime.core.runtime_control.master_enabled", lambda: True)
 
     assert hermes_bridge._pre_verify(adapter, {}) is None
-    assert hermes_bridge._transform_output(adapter, {}) == hermes_bridge.FINALIZATION_BLOCK_RESPONSE
+    # Correlation is offline, so Agency has no finding and returns the draft
+    # it was given -- here the empty payload text -- rather than a block.
+    assert hermes_bridge._transform_output(adapter, {}) == ""
     hermes_bridge._close_session(adapter, {})
     assert calls == []
     assert not hermes_bridge._terminalize_policy_rejection(adapter, "x", "s", "t", "m")
@@ -922,7 +924,8 @@ def test_openclaw_outbound_gate_error_and_decision_matrix(monkeypatch) -> None:
         SimpleNamespace(runtime_enabled=lambda: _raise(OSError("control")), store=object()),
         **common,
     )
-    assert result["action"] == "replace" and "soft-control" in result["message"]
+    # An unreadable soft control is Agency blind, not off and not a verdict.
+    assert result["action"] == "allow" and result["runtimeEnabled"] is True
 
     result = node_bridge._handle_outbound_gate(
         SimpleNamespace(runtime_enabled=lambda: True, store=object()),
@@ -950,7 +953,9 @@ def test_openclaw_outbound_gate_error_and_decision_matrix(monkeypatch) -> None:
         trace_id="",
         final_response="draft",
     )
-    assert result["action"] == "replace" and "correlate" in result["message"]
+    # The envelope is intact and only recovery failed, so Agency is blind here
+    # rather than holding a verdict, and the turn proceeds.
+    assert result["action"] == "allow"
 
     monkeypatch.setattr(
         node_bridge, "_exact_outbound_terminal_state", lambda *_args, **_kw: "unavailable"
@@ -958,7 +963,7 @@ def test_openclaw_outbound_gate_error_and_decision_matrix(monkeypatch) -> None:
     result = node_bridge._handle_outbound_gate(
         SimpleNamespace(runtime_enabled=lambda: True, store=object()), **common
     )
-    assert "authoritative" in result["message"]
+    assert result["action"] == "allow"
 
     monkeypatch.setattr(node_bridge, "_exact_outbound_terminal_state", lambda *_args, **_kw: "")
     monkeypatch.setattr(
@@ -979,7 +984,21 @@ def test_openclaw_outbound_gate_error_and_decision_matrix(monkeypatch) -> None:
     result = node_bridge._handle_outbound_gate(
         SimpleNamespace(runtime_enabled=lambda: True, store=object()), **common
     )
-    assert result["action"] == "replace" and "bind outbound" in result["message"]
+    # Agency evaluated but cannot bind its evidence.  An acceptance proceeds,
+    # because only the receipt is missing and the verdict was positive.
+    assert result["action"] == "allow"
+
+    monkeypatch.setattr(
+        node_bridge,
+        "_safe_policy_decision",
+        lambda *_args, **_kw: {"action": "continue", "evidence_revision": 0},
+    )
+    result = node_bridge._handle_outbound_gate(
+        SimpleNamespace(runtime_enabled=lambda: True, store=object()), **common
+    )
+    # An evaluated negative still withholds on the same unbindable revision:
+    # the verdict stands even when Agency cannot write down why.
+    assert result["action"] == "replace"
 
 
 def test_openclaw_persistence_runtime_disabled_and_constructor_matrix(monkeypatch) -> None:
