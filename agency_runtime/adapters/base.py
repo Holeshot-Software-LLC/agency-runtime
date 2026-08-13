@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -349,8 +350,39 @@ class BaseAdapter(ABC):
 
     host_name: str = "unknown"
 
+    # Adapters read the operator's durable master switch by default.  A caller
+    # that owns its own control root binds it explicitly; nothing infers one.
+    _enforcement_control_home: Path | None = None
+
     def __init__(self, store: Store | None = None):
         self._store = store
+        self._enforcement_control_home = None
+
+    @property
+    def enforcement_control_home(self) -> Path | None:
+        """Return the caller-owned master-switch root, or None for the operator's."""
+
+        return self._enforcement_control_home
+
+    @enforcement_control_home.setter
+    def enforcement_control_home(self, value: str | Path | None) -> None:
+        """Bind this adapter to a master switch the caller owns.
+
+        A deterministic evaluation must not change result because an operator
+        toggled Agency off, and it must not read a control file it does not
+        own.  Binding an explicit root keeps that state hermetic.  This is not
+        a security boundary: the master switch decides whether Agency works at
+        all, and any code able to set this already runs as the owner inside
+        Agency, which the threat model excludes.
+        """
+
+        if value is None:
+            self._enforcement_control_home = None
+            return
+        home = Path(value)
+        if not home.is_absolute():
+            raise ValueError("enforcement control home must be an absolute path")
+        self._enforcement_control_home = home
 
     @property
     def store(self) -> Store:
@@ -388,7 +420,7 @@ class BaseAdapter(ABC):
         """Return the current persistent soft-control state for this host."""
         from agency_runtime.core.runtime_control import master_enabled
 
-        if not master_enabled():
+        if not master_enabled(home_dir=self._enforcement_control_home):
             return False
         from agency_runtime.core.config_binding import assert_store_config_binding
 

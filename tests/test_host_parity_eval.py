@@ -24,7 +24,60 @@ def test_host_parity_eval_harness_passes_core_contracts() -> None:
         "detect_status_query_no_delegate",
         "all_adapters_track_evidence",
         "all_adapters_capture_model_receipts",
+        "cards_expire_with_their_turn",
     } <= names
+
+
+def test_cards_do_not_survive_the_turn_that_loaded_them_on_every_adapter() -> None:
+    """Rule 7 on every swept host: the card returns to the cabinet at turn end.
+
+    ZCode is deliberately absent. It has no adapter class and reaches Agency
+    through the shared hooks boundary, so this sweep observes the generic
+    adapter instead and cannot speak for it.
+    """
+
+    detail = host_parity_eval._case_cards_expire_with_their_turn()
+
+    assert detail["hosts"] == ["hermes", "openclaw", "codex", "claude", "generic"]
+
+
+def test_card_expiry_eval_fails_when_a_card_survives_into_the_next_turn(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The case must be able to fail; a always-empty next turn proves nothing."""
+
+    monkeypatch.setattr(
+        host_parity_eval.Store,
+        "get_specialists_for_trace",
+        lambda *_args: ["software-architect"],
+    )
+
+    with pytest.raises(AssertionError, match="carried into the next turn"):
+        host_parity_eval._case_cards_expire_with_their_turn()
+
+
+def test_host_parity_eval_owns_its_master_switch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A deterministic eval must not change result when an operator runs `agency off`.
+
+    The adapters read the operator's durable control by default, so without an
+    explicitly bound root this suite silently reported evidence mismatches
+    whenever Agency was disabled on the machine running it.
+    """
+
+    # Model the real situation rather than a switch that is off everywhere:
+    # the operator's durable control says disabled, and only a caller-owned
+    # root says enabled. Patching without honouring `home_dir` would defeat
+    # the very override under test.
+    monkeypatch.setattr(
+        "agency_runtime.core.runtime_control.master_enabled",
+        lambda **kwargs: kwargs.get("home_dir") is not None,
+    )
+
+    report = run_host_parity_eval()
+
+    assert report["passed"] is True
 
 
 def test_cli_eval_host_parity_json(capsys) -> None:
