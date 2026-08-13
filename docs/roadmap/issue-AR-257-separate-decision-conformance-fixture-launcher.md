@@ -72,8 +72,47 @@ install or trust a projection.
 Candidate `45b21cdc` completed its expanded evaluator on 2026-08-13. It exited
 zero in 883.1 seconds: baseline passed in 169,548 ms, all 131/131 mutations were
 killed, zero survived or were invalid, and `source_unchanged=true`. That result
-remains candidate-scoped history; the expanded evaluator is pending for current
-candidate `211563c7`.
+remains candidate-scoped history.
+
+## 2026-08-13 expanded evaluator result for `211563c7`
+
+The expanded evaluator then ran for candidate `211563c7` and **failed**. Its
+baseline passed in 197,516 ms and 149 of 151 curated mutations were killed with
+zero invalid and `source_unchanged=true`, but two survived. Both weaken
+`_codex_uuid` in `agency_runtime/core/codex_spawn_provenance.py`, and both were
+mapped to `test_session_identity_requires_non_nil_rfc_uuid7`:
+`codex-rollout-allows-nil-uuid-identity`, which accepts the nil UUID, and
+`codex-rollout-drops-observed-uuid-version-domain`, which accepts any UUID
+version. The third mutation sharing that node,
+`codex-rollout-drops-rfc-uuid-variant`, was killed.
+
+The cause was measured rather than inferred. The rollout filename embeds the
+current thread identity, and `_rollout_filename_residual_seconds` derives its
+UTC clock from that identity's UUIDv7 timestamp bits, so a nil or non-v7
+session identity is already refused by the clock residual before its UUID
+domain matters. All three identities in that test were filename-bound, so the
+test could not observe the identity rule it names. Only the bad-variant case,
+which preserves the exact timestamp bits, discriminated — which is why the
+variant mutation died while the other two survived.
+
+The repair restores observability without weakening any boundary. A new
+`test_root_identity_requires_canonical_non_nil_uuid7_without_filename_binding`
+exercises the root and parent identities of a child rollout, which carry no
+filename residual, over nil, UUIDv1, version-nibble-only, and bad-variant
+inputs; `codex-rollout-allows-nil-uuid-identity` now maps to it, since nil
+acceptance is observable nowhere else. The session test additionally gains
+`019ff8ee-eb1c-4de3-815d-3deea9eca028`, which preserves the exact UUIDv7
+timestamp and RFC variant of `_SESSION` and changes only the version nibble, so
+the residual check cannot mask a weakened version domain. A probe confirmed the
+unmutated source refuses all four inputs while each mutation accepts at least
+one, and a positive control confirmed the fixture otherwise attests. The
+focused suite passes 279 tests and Ruff lint/format pass.
+
+The confirming rerun then exited zero for `211563c7`: its baseline passed in
+200,798 ms, all 151 curated mutations were killed, zero survived or were
+invalid, and `source_unchanged=true`. The expanded decision-conformance gate is
+therefore satisfied for the current candidate. This is a source and simulation
+result only; it advances no Installed or Live matrix layer.
 
 ## Acceptance
 

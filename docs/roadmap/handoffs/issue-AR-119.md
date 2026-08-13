@@ -59,6 +59,8 @@ must be loaded first after any compaction or session restart.
 - Tracker creation for AR-255 through AR-257 and tracker synchronization for
   locally reopened historical issues remain pending explicit authorization.
   No missing tracker write is represented as complete.
+- The expanded evaluator first failed for `211563c7` at 149/151, then passed
+  151/151 after the AR-257 repair; exec depth-two is parked negative per AR-180.
 
 ## completed-evidence
 
@@ -91,9 +93,7 @@ must be loaded first after any compaction or session restart.
   reported no finding at any severity.
 - Candidate `45b21cdc` retains the historical 131/131 decision-conformance
   result. For `211563c7`, dashboard UI passed 134/134, routing passed every
-  threshold, and Ruff lint/format passed. Its expanded evaluator started from
-  clean `ee82c602` but was stopped at the owner's request before producing a
-  result; it remains pending, with no pass or failure inferred.
+  threshold, and Ruff lint/format passed.
 - Claude's earlier Rule-4 artifacts and Codex's prior TUI/Desktop/exec negatives
   remain prior-candidate context. No Agency canary, live rewrite, real Claude
   invocation, or exact-candidate Installed/Live proof ran.
@@ -101,8 +101,8 @@ must be loaded first after any compaction or session restart.
 ## exact-blocker
 
 1. **AR-180 — Codex support.** Candidate `211563c7` proves exact CLI 0.147 and
-   Desktop `0.147.0-alpha.6.6` Implementation/Simulation. Exec depth-two/deeper
-   is unobserved; obtain a read-only real-host sample before any separate pin.
+   Desktop `0.147.0-alpha.6.6` Implementation/Simulation. Exec depth-two is
+   parked: no same-version sample exists, so it needs a live spawn or a drop.
 2. **AR-255 — exact host proof.** After those support gaps close, obtain explicit
    authorization before exact install or live proof, including one current
    Claude artifact. Passing fake-runner integration is simulation only.
@@ -130,9 +130,12 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-First rerun `agency eval decision-conformance --repository . --json` to obtain
-the missing current-candidate result. Then search read-only for exec depth-two
-ancestry before requesting authorization for install, trust, and live proof.
+Both prior items are discharged. Confirm the repaired evaluator returns 151/151,
+then take the two Rule-8 negatives: Hermes fails closed when its Agency path
+raises (`adapters/hermes/bridge.py:313-318`, `installer_payload_hermes.py`) and
+OpenClaw denies four Agency-blind conditions
+(`adapters/openclaw/node_bridge.py:852-900`), yet only an evaluated negative may
+withhold. Inverting `test_completion_policy_boundary.py` needs confirmation.
 
 ## verification
 

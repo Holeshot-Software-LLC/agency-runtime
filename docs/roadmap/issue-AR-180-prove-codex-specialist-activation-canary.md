@@ -308,8 +308,35 @@ observed Desktop calls were encrypted and unmarked, so no live rewrite or child
 was proved. Rule-4 Implementation and Simulation remain proven; State,
 Installed, and Live remain unproven. For `211563c7`, dashboard UI passed 134/134,
 routing passed every threshold, and Ruff lint/format passed. The expanded
-decision-conformance evaluator remains pending; the 131/131 result above remains
+decision-conformance evaluator first failed with two survivors and then passed
+151/151 after the AR-257 repair; the 131/131 result above remains
 candidate-`45b21cdc` history.
+
+### 2026-08-13 exec depth-two ancestry census
+
+A read-only, content-safe census answered the open exec depth-two question. It
+read only the first `session_meta` record of every rollout beneath the canonical
+sessions root (1,359 files) and the archived root (657 files), and emitted only
+lineage, version, depth, and identity fields.
+
+Exec depth-two ancestry **does** exist on the evidence machine, but only at CLI
+`0.145.0`: exactly one chain, root `019fa98d-4ea5-72b1-a16f-1be79a8f77f6` to
+depth-one `019fa98d-98ef-7cb0-a4fe-4ac65080a296` to depth-two
+`019fa98e-2b0c-7a20-bb3c-dcfd712555b1`, observed 2026-07-28. At the pinned exact
+`0.147.0` the exec lineage has four roots and exactly one depth-one child
+(`019ff1e9-defe-77c2-8bd1-9d503f1670b6`, already cited as R5 prior-candidate
+context) and **zero** depth-two records. For contrast, exact `0.147.0` TUI shows
+61 depth-one and 15 depth-two, and Desktop `0.147.0-alpha.6.6` shows 47 and 5,
+which is why both received profiles and exec did not.
+
+The consequence is exact: the ADR-0159 requirement to obtain a read-only
+real-host sample before any separate exec pin **cannot be satisfied from
+existing history**. A `0.145.0` chain cannot authorize a `0.147.0` schema
+decision under the exact-version rule. Closing this gap requires either a newly
+generated real exec depth-two spawn on `0.147.0`, which is a live host action
+needing explicit authorization, or an owner decision that exec depth-two/deeper
+stays permanently unsupported. Both remain open; exec depth-two/deeper therefore
+remains unsupported and unstaffed, and no acceptance item below advances.
 
 ## Approach
 

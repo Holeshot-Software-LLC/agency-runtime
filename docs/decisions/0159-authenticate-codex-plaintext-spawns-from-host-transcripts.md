@@ -189,6 +189,11 @@ authentic V2 Desktop chains (47 depth one, 5 depth two), with a maximum
 encrypted and unmarked, so these results advance only Codex Rule-4
 Implementation and Simulation. For `211563c7`, the dashboard UI suite passed
 134/134, routing passed every threshold, and Ruff lint/format passed. The
-expanded decision-conformance evaluator remains pending; the prior 131/131
-result remains candidate-`45b21cdc` history. Exec depth-two/deeper ancestry and
-all Installed and Live proof remain unproven.
+expanded decision-conformance evaluator first failed with two survivors against
+a masked identity test, then passed 151/151 after the AR-257 repair with a
+baseline of 200,798 ms and `source_unchanged=true`; the prior 131/131 result
+remains candidate-`45b21cdc` history. A read-only census then settled exec
+ancestry: one real depth-two chain exists at CLI `0.145.0` only and exact
+`0.147.0` exec has none, so the same-version sample this decision requires
+cannot come from history. Exec depth-two/deeper ancestry and all Installed and
+Live proof remain unproven.

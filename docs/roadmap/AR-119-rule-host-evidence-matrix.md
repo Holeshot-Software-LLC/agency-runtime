@@ -68,9 +68,12 @@ focused-plus-anchor gate passed 289/289, and the named fast spine passed 673 wit
 6 skips. The scoped Desktop baseline passed and killed 20/20 mutations with
 zero survived or invalid and `source_unchanged=true`; an independent run
 reproduced those results and reported no finding at any severity. Codex R4
-Implementation and Simulation are therefore proven. The complete 131/131
-decision-conformance result remains evidence for candidate `45b21cdc`; the
-expanded evaluator remains pending for `211563c7`. Its dashboard UI suite passed
+Implementation and Simulation are therefore proven. The expanded
+decision-conformance evaluator first failed for `211563c7` with two survivors
+that a masked identity test could not observe; after the AR-257 repair it exited
+zero with a baseline passing in 200,798 ms, 151/151 mutations killed, zero
+survived or invalid, and `source_unchanged=true`. The earlier 131/131 result
+remains candidate-`45b21cdc` history. Its dashboard UI suite passed
 134/134, routing passed every threshold, and Ruff lint/format passed. Exec depth-
 two/deeper remains unsupported, and no Installed or Live layer advances.
 
