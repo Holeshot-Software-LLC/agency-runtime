@@ -824,6 +824,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7f637cb6` | 2026-08-12 | docs(roadmap): checkpoint AR-255 host delivery proof | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | null |
 | `ccb1802c` | 2026-08-12 | docs(architecture): bind Codex plaintext spawn provenance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
 | `cb5b34aa` | 2026-08-12 | docs(roadmap): checkpoint AR-180 capability preflight | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | null |
+| `ae72fba4` | 2026-08-12 | docs(roadmap): correct AR-180 preflight evidence | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
