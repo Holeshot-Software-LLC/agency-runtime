@@ -846,6 +846,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8d086651` | 2026-08-13 | docs(roadmap): checkpoint rule 7 and the hermetic parity suite at 967b0a2c | null | null |
 | `31c21d79` | 2026-08-13 | docs(roadmap): record the conformance result for 967b0a2c | null | null |
 | `cb6808fe` | 2026-08-13 | feat(evals): observe zcode in the host-parity sweep through its own boundary | null | null |
+| `c578fde6` | 2026-08-13 | docs(roadmap): prove rule 7 on zcode at candidate cb6808fe | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
