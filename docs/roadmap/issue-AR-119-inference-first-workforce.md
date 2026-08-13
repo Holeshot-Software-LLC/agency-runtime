@@ -18,6 +18,7 @@ related:
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
+  - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/AR-119-acceptance-evidence.md
@@ -3864,6 +3865,22 @@ tests instead.
   answers "what is Agency costing my turns right now". A read-only surface over the column already
   being written is a small piece of work and should precede any latency tuning.
 
+### AR-180 exact-host capability preflight — 2026-08-12
+
+The current PATH-resolved Codex runtime is `0.147.0`; Codex Desktop package
+`26.803.10989.0` carries runtime `0.147.0-alpha.6.6`. Tagged Codex 0.147 source
+has a conditional plaintext collaboration path identified by host response-item
+marker `encrypted_function_args: []`. The documented `PreToolUse` payload omits
+that marker, however, and the exact active Sol/TUI spawn omitted it too: its
+1,036-character `message` was ciphertext and reached the child as encrypted
+content. This corrects the broad statement that Codex 0.147 has no plaintext
+path while preserving the current verdict: candidate `7e1b3603` cannot
+authenticate or use it, so Codex Rule 4 remains source/simulation-negative and
+every Installed/Live layer remains unproven. No Agency canary, install, or trust
+change occurred.
+ADR-0159 now governs the version-pinned transcript authorization; it does not
+replace the host-authored child artifact required for Rule-4 proof.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -3895,15 +3912,15 @@ tests instead.
 
 ### Next bounded work package
 
-Continue with the remaining AR-255/AR-180 host boundary. Establish the exact
-Codex executable/version and whether it exposes an authenticated pre-speech
-child assignment; keep the current adapter explicitly unstaffed while it is
-opaque. With explicit install/trust/live authorization, build and verify the
-exact `7e1b3603` candidate, obtain one current Claude host artifact, and run the
-bounded Codex TUI, Desktop, and exec measurements only if the required channel
-exists. Do not reinterpret simulation as installed/live proof or weaken the
-Store-independent artifact gate. After that boundary, continue AR-252,
-AR-253, AR-125, and derived Rule 9 in dependency order.
+Continue the remaining AR-255/AR-180 host boundary by implementing a bounded,
+version-aware Codex transcript attestation for the host's explicit plaintext
+marker. Bind the exact session, turn, tool call, namespace, arguments, and
+marker; fail open unstaffed on absence, ambiguity, replay, path drift, or schema
+drift, and keep plaintext-looking input unauthenticated. After focused
+adversarial simulation passes, explicit install/trust/live authorization is
+still required to refresh the exact candidate, obtain one current Claude host
+artifact, and run bounded Codex TUI, Desktop, and exec measurements. Then
+continue AR-252, AR-253, AR-125, and derived Rule 9 in dependency order.
 
 ### Context checkpoint constraints
 
@@ -3939,8 +3956,9 @@ candidate.
 - [ ] Rule 4: each native host independently starts a child whose host-authored
       artifact contains multiple compatible card hashes before first speech.
       Claude has three prior-candidate artifacts but is exact-candidate
-      unproven. Codex is negative in current source and exact-candidate
-      installed/live unproven; ZCode, Hermes, and OpenClaw remain unproven.
+      unproven. Codex has conditional host support but is negative in current
+      Agency source and exact-candidate installed/live unproven; ZCode, Hermes,
+      and OpenClaw remain unproven.
 - [ ] Rule 8: Agency unavailability supplies no card and never suppresses the
       host's natural response on any host. Only a verifier's definite negative
       and the malformed-`Stop` forgery boundary deliberately withhold.

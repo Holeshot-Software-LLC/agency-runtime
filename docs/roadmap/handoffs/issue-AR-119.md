@@ -20,6 +20,7 @@ related:
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
+  - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
   - docs/roadmap/AR-119-acceptance-evidence.md
   - docs/NORTH_STAR_ACCEPTANCE.md
   - docs/SESSION_HANDOFF.md
@@ -49,6 +50,10 @@ must be loaded first after any compaction or session restart.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
   Codex's integrity-bound child channel and exact-candidate Claude
   Installed/Live proof remain open.
+- The AR-180 read-only exact-host preflight is complete. ADR-0159 binds the
+  conditional Codex 0.147 plaintext path to an exact host transcript record;
+  the current Sol/TUI spawn omitted the marker and stayed encrypted, so the live
+  canary remains a NO-GO until source and simulation pass.
 - Matrix candidate `7e1b3603` has no proven top-level cell. Rule 1 source and
   simulation are repaired on all five adapters; Claude Rule 4 source and
   simulation are proven; Codex Rule 4 remains negative. Every Installed and
@@ -67,12 +72,16 @@ must be loaded first after any compaction or session restart.
   one-use delivery proof. Store-only state and caller mappings are diagnostic.
 - SafeClaude allocates a live private lease, brackets the real process with a
   one-use invocation window, and collects one canonical current artifact before
-  profile cleanup. Codex 0.147 remains unstaffed with
-  `unsupported_opaque_interagent_channel`.
-- Final focused verification passed 229 tests with 1 skipped. The named fast
-  Python spine passed 673 with 6 skipped; dashboard UI passed 134; docs passed
-  for 685 Markdown files. Full Ruff lint/format, metadata, policy, worklog, and
-  whitespace checks passed.
+  profile cleanup. Candidate `7e1b3603` keeps every Codex assignment unstaffed
+  with `unsupported_opaque_interagent_channel`.
+- Exact preflight inventory: PATH TUI/exec Codex `0.147.0`, native SHA-256
+  `935A1911...2AD9D`; Desktop `26.803.10989.0` with runtime
+  `0.147.0-alpha.6.6`, native SHA-256 `59295889...69B3`. The observed Sol/TUI
+  call omitted `encrypted_function_args` and carried a `gAAAAA...` message.
+- Current preflight checkpoint verification: the named fast Python spine passed
+  673 with 6 skipped, schema/decision tests passed 84, dashboard UI passed 134,
+  and docs passed for 685 Markdown files. Ruff lint/format, metadata, policy,
+  worklog, and whitespace checks passed.
 - Checkout routing evaluation passed every gate. Decision conformance passed
   its baseline, killed 83/83 mutations with zero survived or invalid, and
   reported `source_unchanged=true`.
@@ -86,10 +95,12 @@ must be loaded first after any compaction or session restart.
 
 ## exact-blocker
 
-1. **AR-180 — Codex support.** Codex 0.147 exposes no plaintext or authenticated
-   initial inter-agent assignment before first child speech. Keep the host
-   supported and fail open unstaffed until Codex exposes that boundary; AR-180
-   exact-installs and live-proves it in TUI, Desktop, and exec when available.
+1. **AR-180 — Codex support.** Codex 0.147 exposes a conditional plaintext
+   assignment only when its host response item has explicit
+   `encrypted_function_args: []`. The hook payload omits that marker and the
+   current Sol path did not emit it. Authenticate the exact persisted host call,
+   preserve unstaffed fail-open behavior on drift, then exact-install and
+   live-prove TUI, Desktop, and exec under explicit authorization.
 2. **AR-255 — exact host proof.** Build and verify candidate `7e1b3603`, then
    obtain one current Claude artifact through the real executable. The passing
    fake-runner integration is simulation, not Installed or Live authority.
@@ -117,14 +128,14 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-Start AR-180 with a read-only exact-host capability preflight: identify the
-current Codex executable/version and determine whether any authenticated
-pre-speech child assignment is available. Keep Codex unstaffed while the
-channel is opaque. An exact candidate build, install, trust change, or live
-Claude/Codex canary requires explicit authorization. If authorized and the
-channel exists, verify/install `7e1b3603`, obtain one real Claude artifact, and
-run bounded Codex TUI, Desktop, and exec proof. Then continue AR-252, AR-253,
-AR-125, and derived Rule 9 in dependency order.
+Implement and adversarially test a bounded, version-aware Codex transcript
+attestation for the explicit plaintext marker. Match the exact session, turn,
+tool call, namespace, arguments, and marker; reject spoof, replay, ambiguity,
+path/schema drift, and plaintext-looking messages without host provenance.
+Keep Codex unstaffed on every unsupported path. An exact candidate install,
+trust change, or live Claude/Codex canary still requires explicit authorization.
+After source proof, obtain that authorization and run bounded TUI, Desktop, and
+exec proof; then continue AR-252, AR-253, AR-125, and derived Rule 9.
 
 ## verification
 
@@ -155,6 +166,8 @@ is refreshed under explicit install authorization.
   recall, filter hard-ineligible candidates, validate, budget, and correlate.
 - Only a host-written artifact with exact card hashes before first child speech
   proves Rule 4. Agency rows and model prose are diagnostics.
+- A plaintext-looking Codex tool argument is not proof. The explicit host marker
+  must be bound to the exact persisted call before Agency rewrites it.
 - Same-process private reflection and same-account transcript plus Store
   forgery are threat-model exclusions; do not describe the lease as protection
   from code already executing as the owner inside Agency.

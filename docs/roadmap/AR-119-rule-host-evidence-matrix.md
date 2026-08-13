@@ -19,6 +19,7 @@ related:
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
+  - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
 supersedes:
   - docs/roadmap/AR-119-acceptance-evidence.md
 superseded_by: null
@@ -51,12 +52,18 @@ inference authority and Claude's in-lifetime proof collector, but it is not an
 installed or live host artifact. Every Installed and Live layer therefore
 remains unproven.
 
+The 2026-08-12 AR-180 preflight found a conditional host-marked plaintext path
+in Codex 0.147, but the current Sol/TUI spawn omitted its explicit marker and
+delivered ciphertext. Candidate `7e1b3603` does not authenticate or use that
+path, so the Codex R4 Implementation and Simulation layers remain negative.
+This source capability observation advances no Installed or Live layer.
+
 ## Canonical matrix
 
 | Rule | Host | State | Implementation | Simulation | Installed | Live | Proof authority | Artifact | Observed | Source | Limitation |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | R1 | claude | unproven | proven | proven | unproven | unproven | Inference receipt joined to exact delivered card hashes | complete-universe inference team and exact plaintext HookBridge forwarding | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` | Implementation and simulation preserve the exact inference team; no exact-candidate installed/live join exists |
-| R1 | codex | unproven | proven | proven | unproven | unproven | Inference receipt joined to exact delivered card hashes | opaque assignment is refused without a deterministic substitute | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:210-237` | Safe unstaffed refusal proves authority but not card delivery; installed/live join is absent |
+| R1 | codex | unproven | proven | proven | unproven | unproven | Inference receipt joined to exact delivered card hashes | unmarked or opaque assignment is refused without a deterministic substitute | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:210-237` | Safe unstaffed refusal proves authority but not card delivery; conditional host support is not implemented and installed/live join is absent |
 | R1 | zcode | unproven | proven | proven | unproven | unproven | Inference receipt joined to exact delivered card hashes | exact inference team reaches the plaintext host boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` | No exact-candidate installed/live join exists |
 | R1 | hermes | unproven | proven | proven | unproven | unproven | Inference receipt joined to exact delivered card hashes | shared native-child adapter forwards one exact inference result | 2026-08-12 | `tests/test_native_child_adapter_staffing.py:39-95` | Shared adapter simulation is not installed Hermes bridge or host proof |
 | R1 | openclaw | unproven | proven | proven | unproven | unproven | Inference receipt joined to exact delivered card hashes | shared native-child adapter forwards one exact inference result | 2026-08-12 | `tests/test_native_child_adapter_staffing.py:39-95` | Shared adapter simulation is not installed OpenClaw bridge or host proof |
@@ -71,7 +78,7 @@ remains unproven.
 | R3 | hermes | unproven | unproven | unproven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Multi-card behavior is unmeasured |
 | R3 | openclaw | unproven | unproven | unproven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Multi-card behavior is unmeasured |
 | R4 | claude | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | in-lifetime SafeClaude collector with real HookBridge lifecycle | 2026-08-12 | `tests/test_host_canary.py:805-1055` | Test-managed install and fake process runner are simulation only; prior-candidate live artifacts do not green this candidate |
-| R4 | codex | negative | negative | negative | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | Codex 0.147 opaque assignment is rejected as unsupported | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:210-237` | Current source and simulation cannot bind cards to the encrypted child context; prior-candidate negatives do not bind this candidate |
+| R4 | codex | negative | negative | negative | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | candidate rejects every Codex assignment because it cannot authenticate the conditional plaintext marker | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:210-237` | Codex 0.147 has a marked plaintext path, but current source does not attest it and the active Sol call omitted it; installed/live join is absent |
 | R4 | zcode | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | exact inference team reaches the ZCode child boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` | Simulation exists but no exact-candidate native child artifact |
 | R4 | hermes | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | none | unobserved | `docs/roadmap/issue-AR-119-inference-first-workforce.md#historical-acceptance-record-superseded` | Host is unavailable on the evidence machine |
 | R4 | openclaw | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | none | unobserved | `docs/roadmap/issue-AR-119-inference-first-workforce.md#historical-acceptance-record-superseded` | Host is unavailable on the evidence machine |

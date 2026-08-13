@@ -22,6 +22,7 @@ related:
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
+  - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
   - agency_runtime/core/canary.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/canary_proof.py
@@ -46,9 +47,10 @@ blocks: [AR-119, AR-252, AR-253]
 > Codex trust and lifecycle investigations, but its Job B work units, one-use
 > grants, Store-only load proof, and response header are not current success
 > authority. AR-255 builds inference-owned staffing and sealed host-artifact
-> proof, but Codex 0.147 still exposes only an opaque assignment and therefore
-> proceeds unstaffed. AR-180 establishes whether a supported authenticated
-> channel exists, then exact-installs and live-proves one real Codex child on
+> proof. The exact-host preflight below found that Codex 0.147 has a conditional
+> host-marked plaintext assignment path, while the current Sol/TUI call remained
+> encrypted and the hook payload omitted that marker. AR-180 authenticates and
+> uses the supported path, then exact-installs and live-proves one real child on
 > TUI, Desktop, and exec. Only the Approach and Acceptance sections as amended
 > below govern closure.
 
@@ -219,6 +221,42 @@ invalid inference closes the canary as `workforce_inference_failure`. Attended
 trust and the explicit invocation-only autonomous bypass are now separate
 adapters over the same behavioral proof.
 
+### 2026-08-12 exact-host capability preflight
+
+The read-only preflight identified two exact local runtimes. The PATH-resolved
+TUI and exec installation reports Codex `0.147.0`; its Windows native binary has
+SHA-256 `935A1911ED2556E4FFCEC995F4886AC2AC425863BA26FED264DF62E30272AD9D`.
+Codex Desktop package `26.803.10989.0` uses runtime `0.147.0-alpha.6.6`; that
+native binary has SHA-256
+`592958896CBFFA154709618476FC9C9BF7FE73957E9A4FC12094C5051B6C69B3`.
+
+The official `rust-v0.147.0` source includes merged upstream change `#35845`.
+For `collaboration.spawn_agent`, `send_message`, and `followup_task`, the router
+selects `DirectPlaintextMessage` only when the host response item carries
+`encrypted_function_args: []`; otherwise delivery remains encrypted. The tagged
+stream path records that response item before it queues the tool future. This is
+a conditional host capability, not proof that every model or surface emits the
+marker.
+
+Current TUI parent `019ff8ee-eb1c-7de3-815d-3deea9eca028`, running Sol through
+Codex `0.147.0`, emitted spawn call
+`call_4fLyxjPXggCL0L9VWsSXDWr3` with a 1,036-character `gAAAAA...` message and
+no `encrypted_function_args` field. The child received encrypted content. This
+normal read-only preflight child is evidence that the exact active path is
+opaque; it is not an Agency canary and advances no Installed or Live gate.
+
+The documented `PreToolUse` payload supplies `transcript_path`, `turn_id`,
+`tool_use_id`, and parsed `tool_input`, and it permits `updatedInput` rewrites.
+It does not expose the plaintext marker or internal tool-call source, and the
+documented transcript format is explicitly unstable. A plaintext-looking
+`tool_input.message` therefore has no authority by itself. The next source
+package must prove a bounded, exact-call transcript attestation for the explicit
+empty marker and fail open unstaffed on absence, ambiguity, replay, path drift,
+or schema/version drift. Until that implementation and its adversarial tests
+pass, the current Sol path is a **NO-GO** for a live Rule-4 measurement.
+ADR-0159 governs the exact transcript authorization and keeps host child
+artifacts separate as the later delivery-proof authority.
+
 ## Approach
 
 Define a time-bounded Codex activation probe whose requested work has one safe
@@ -252,6 +290,9 @@ instead of weakening the evidence gate.
 - [x] The historical bounded control proved configured inference could select
   exactly one expected specialist with provider and inferred-decision receipts;
   no deterministic fallback chose or substituted it.
+- [x] A read-only exact-host preflight inventories the active TUI/exec and
+      Desktop runtimes, distinguishes conditional host support from the active
+      encrypted path, and advances no Installed or Live claim.
 - [ ] Current-profile Codex exposes and invokes the supported native child tool
   through attended trust or the explicit autonomous bypass, without shell
   access, file writes, or external services.

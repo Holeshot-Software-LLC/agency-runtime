@@ -14,6 +14,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
+  - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/canary_proof.py
   - agency_runtime/core/child_delivery_evidence.py
@@ -38,10 +39,13 @@ candidate. That violates ADR-0118. Separately, the Codex canary can treat an
 Agency-authored `specialist_load` row as card-delivery proof even though the
 authoritative evidence contract requires an artifact written by the host.
 
-Codex exposes model-authored plaintext `task_name`, but the `message` that can
-carry context and exact card hashes is encrypted and opaque to the current hook.
-The unvalidated label is not a delivery channel. Remaining a supported host
-requires an integrity-bound channel, not a waiver or a relabeled Agency receipt.
+The current Codex Sol path exposes model-authored plaintext `task_name`, but its
+`message` is encrypted and opaque to the current hook. Codex 0.147 also has a
+conditional plaintext path marked in the host response item, but that marker is
+absent from the documented hook payload and the current adapter does not
+authenticate it. Neither an unvalidated label nor plaintext-looking message is
+a delivery channel. Remaining a supported host requires an integrity-bound
+channel, not a waiver or a relabeled Agency receipt.
 
 ## Current state
 
@@ -55,11 +59,13 @@ replays cannot mint that capability.
 
 Implementation and simulation are proven, not installed or live behavior. The
 SafeClaude integration uses a test-managed install and fake process runner.
-Claude's three prior-candidate artifacts remain historical context only. Codex
-0.147 still exposes an opaque inter-agent assignment, so the current adapter
-returns `unsupported_opaque_interagent_channel` and lets the host proceed
-unstaffed. AR-180 owns exact-install and live proof when an integrity-bound
-Codex channel is available.
+Claude's three prior-candidate artifacts remain historical context only. The
+2026-08-12 AR-180 preflight found conditional host support for plaintext Codex
+collaboration messages, keyed by explicit `encrypted_function_args: []`, but
+the exact active Sol/TUI call omitted the marker and delivered ciphertext. The
+current adapter still returns `unsupported_opaque_interagent_channel` and lets
+the host proceed unstaffed. AR-180 owns source authentication of that marker,
+then exact-install and live proof.
 
 ## Approach
 
@@ -70,9 +76,13 @@ reject invalid output; it may not rank or replace the inference result. If no
 valid inference survives, deliver no card and emit an honest diagnostic.
 
 Make the host-authored child artifact the sole green Rule-4 authority. Agency
-Store rows may index or diagnose correlation but cannot prove delivery. Build a
-Codex-supported, integrity-bound context channel here; AR-180 exact-installs and
-live-proves that channel.
+Store rows may index or diagnose correlation but cannot prove delivery. For
+Codex, accept a plaintext rewrite only after a bounded host-transcript record
+matches the exact session, turn, tool call, namespace, arguments, and explicit
+empty encrypted-argument marker. Treat the documented transcript instability
+as versioned input and fail open unstaffed on drift. AR-180 exact-installs and
+live-proves that channel after source and adversarial simulation pass.
+ADR-0159 governs this authorization boundary and its fail-open behavior.
 
 ## Dependencies
 
@@ -97,6 +107,11 @@ live-proves that channel.
 - Same-process private reflection and same-account transcript plus Store
   forgery remain the documented threat-model exclusion. No installed or live
   host layer advances from this checkpoint.
+- The AR-180 read-only preflight identified exact Codex `0.147.0` and Desktop
+  runtime `0.147.0-alpha.6.6` binaries, proved the current Sol/TUI spawn remained
+  encrypted, and located a conditional host-marked plaintext path in the tagged
+  `0.147.0` source. It did not run an Agency canary or change installation or
+  trust state.
 
 ## Acceptance
 
