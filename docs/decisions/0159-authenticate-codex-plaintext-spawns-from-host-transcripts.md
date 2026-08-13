@@ -3,7 +3,7 @@ title: "Authenticate Codex plaintext spawns from host transcripts"
 status: accepted
 category: decisions
 created: 2026-08-12
-updated: 2026-08-12
+updated: 2026-08-13
 tags: [codex, native-child, hooks, transcripts, security, evidence]
 related:
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -16,6 +16,8 @@ related:
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/THREAT_MODEL.md
   - agency_runtime/adapters/hooks.py
+  - agency_runtime/core/codex_spawn_provenance.py
+  - agency_runtime/core/store/maintenance.py
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -112,3 +114,8 @@ The 2026-08-12 AR-180 read-only preflight identified Codex CLI `0.147.0`,
 Desktop runtime `0.147.0-alpha.6.6`, the conditional marker contract, and one
 current encrypted Sol/TUI spawn. It ran no Agency canary and changed no install
 or trust state.
+
+Candidate `966845cc` implements this boundary with a bounded descriptor scanner,
+sealed record identities, repeated revalidation, and an atomic successful-launch
+guard. Its source and synthetic simulation pass; Installed and Live proof remain
+outside this decision and unproven.

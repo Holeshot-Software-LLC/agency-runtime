@@ -3,7 +3,7 @@ title: "AR-255: Make native child staffing inference-owned and host-proven"
 status: open
 category: roadmap
 created: 2026-08-12
-updated: 2026-08-12
+updated: 2026-08-13
 tags: [routing, inference, native-child, codex, evidence, critical-path]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -16,6 +16,7 @@ related:
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
   - agency_runtime/adapters/hooks.py
+  - agency_runtime/core/codex_spawn_provenance.py
   - agency_runtime/core/canary_proof.py
   - agency_runtime/core/child_delivery_evidence.py
 supersedes: []
@@ -39,13 +40,11 @@ candidate. That violates ADR-0118. Separately, the Codex canary can treat an
 Agency-authored `specialist_load` row as card-delivery proof even though the
 authoritative evidence contract requires an artifact written by the host.
 
-The current Codex Sol path exposes model-authored plaintext `task_name`, but its
-`message` is encrypted and opaque to the current hook. Codex 0.147 also has a
-conditional plaintext path marked in the host response item, but that marker is
-absent from the documented hook payload and the current adapter does not
-authenticate it. Neither an unvalidated label nor plaintext-looking message is
-a delivery channel. Remaining a supported host requires an integrity-bound
-channel, not a waiver or a relabeled Agency receipt.
+The observed Codex Sol path exposes model-authored plaintext `task_name`, but
+its `message` was encrypted and opaque to the hook. Codex 0.147 also has a
+conditional plaintext path marked in the host response item, while that marker
+is absent from the documented hook payload. Neither an unvalidated label nor a
+plaintext-looking message is authority; the persisted exact host call must be.
 
 ## Current state
 
@@ -59,13 +58,12 @@ replays cannot mint that capability.
 
 Implementation and simulation are proven, not installed or live behavior. The
 SafeClaude integration uses a test-managed install and fake process runner.
-Claude's three prior-candidate artifacts remain historical context only. The
-2026-08-12 AR-180 preflight found conditional host support for plaintext Codex
-collaboration messages, keyed by explicit `encrypted_function_args: []`, but
-the exact active Sol/TUI call omitted the marker and delivered ciphertext. The
-current adapter still returns `unsupported_opaque_interagent_channel` and lets
-the host proceed unstaffed. AR-180 owns source authentication of that marker,
-then exact-install and live proof.
+Claude's three prior-candidate artifacts remain historical context only.
+Candidate `966845cc` now authenticates a Codex plaintext spawn from the private
+active 0.147 rollout, binds exact arguments and correlation, reattests before
+Store persistence and hook output, and atomically permits one successful route
+per launch. The active Sol/TUI call still omitted the marker and correctly
+remains unstaffed. AR-180 owns exact-install and live proof.
 
 ## Approach
 
@@ -112,6 +110,11 @@ ADR-0159 governs this authorization boundary and its fail-open behavior.
   encrypted, and located a conditional host-marked plaintext path in the tagged
   `0.147.0` source. It did not run an Agency canary or change installation or
   trust state.
+- Codex source `966845cc` and ledger `d9ee4a0a` add the sealed bounded scanner,
+  double hook revalidation, and atomic replay guard. The 303-test focused slice,
+  673-test fast spine with 6 skipped, 134 dashboard tests, Ruff, routing eval,
+  and whitespace checks passed. Independent attack and the current-candidate
+  mutation run remain open; Installed and Live layers do not advance.
 
 ## Acceptance
 

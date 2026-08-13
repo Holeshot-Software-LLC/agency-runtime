@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-08-12
+updated: 2026-08-13
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance, multi-harness]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -112,13 +112,14 @@ unavailable.
 
 The audited roster, inference receipts, request-scoped cards, resident managers,
 native lifecycle telemetry, CLI, and dashboard provide a strong base. Runtime
-candidate `7e1b3603` removes the current Rule-1 source negative: native child
+candidate `966845cc` removes the current Rule-1 source negative: native child
 staffing now preserves one complete inference-selected team or proceeds
 unstaffed. Its sealed in-lifetime Claude collector advances Rule 4 only through
 implementation and simulation. No exact-candidate Installed or Live layer is
-proven, and no top-level matrix cell is green. Codex Rule 4 remains current
-source- and simulation-negative because version 0.147 exposes only an opaque,
-unauthenticated assignment channel.
+proven, and no top-level matrix cell is green. Codex Rule 4 now has source and
+simulation support for an exact host-marked 0.147 plaintext call, while the
+observed Sol path remains encrypted and safely unstaffed. Independent attack,
+exact installation, and live host artifacts remain open.
 
 Tracker issue [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
 mirrors the umbrella state. Repository-local AR-119, AR-256, and their evidence

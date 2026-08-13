@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-11
+updated: 2026-08-13
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -77,6 +77,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex 0.147 plaintext collaboration spawns now require a sealed exact-call
+  attestation from the canonical private host rollout before Agency can rewrite
+  the child message. Unknown, unmarked, stale, replayed, linked, oversized, or
+  drifted calls remain unstaffed, and one atomic Store guard permits at most one
+  successful inference route per native launch. Installed and live Codex proof
+  remains a separate release gate.
 - Codex product child diagnostics now classify nested `apply_patch`,
   `shell_command`, and other calls inside current `functions.exec` wrappers,
   plus fixed wrapper outcomes. The Store persists only bounded counts, keeps

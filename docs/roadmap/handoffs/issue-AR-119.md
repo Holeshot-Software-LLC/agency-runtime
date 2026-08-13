@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-08-12
+updated: 2026-08-13
 tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -31,8 +31,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: 7e1b3603e69d04531d9d606fa8f5501946e89fb1
-minimum_ledger_commit: 3a004b3321057ceafc6d7d9bd669ea2d53dd0ff3
+evidence_commit: 966845cc36ac93c61a85d39de2cafd2752ffc47d
+minimum_ledger_commit: d9ee4a0ac0810630ea79646ac106d9269530d17e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -45,20 +45,18 @@ must be loaded first after any compaction or session restart.
 
 ## checkpoint
 
-- The reviewed preflight design pair is docs `ccb1802c` and ledger `a7e8cf54`;
-  its capsule/ledger baseline is `cb5b34aa`/`3a004b33`. Runtime candidate
-  remains `7e1b3603` with ledger `fb650b04`.
+- The current source pair is Codex runtime `966845cc` and ledger `d9ee4a0a`;
+  the reviewed preflight design remains `ccb1802c`/`a7e8cf54`.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
-  Codex's integrity-bound child channel and exact-candidate Claude
-  Installed/Live proof remain open.
+  Codex source/simulation and exact-candidate Claude Installed/Live proof await
+  independent attack and real-host proof respectively.
 - The AR-180 read-only exact-host preflight is complete. ADR-0159 binds the
-  conditional Codex 0.147 plaintext path to an exact host transcript record;
-  the current Sol/TUI spawn omitted the marker and stayed encrypted, so the live
-  canary remains a NO-GO until source and simulation pass.
-- Matrix candidate `7e1b3603` has no proven top-level cell. Rule 1 source and
+  Codex 0.147 plaintext path to a sealed exact-call transcript attestation;
+  the current Sol/TUI spawn omitted the marker and remains safely unstaffed.
+- Matrix candidate `966845cc` has no proven top-level cell. Rule 1 source and
   simulation are repaired on all five adapters; Claude Rule 4 source and
-  simulation are proven; Codex Rule 4 remains negative. Every Installed and
-  Live layer remains unproven.
+  simulation are proven; Codex Rule 4 source/simulation now pass. Every
+  Installed and Live layer remains unproven.
 - Tracker creation for AR-255 through AR-257 and tracker synchronization for
   locally reopened historical issues remain pending explicit authorization.
   No missing tracker write is represented as complete.
@@ -66,23 +64,21 @@ must be loaded first after any compaction or session restart.
 ## completed-evidence
 
 - `AR-119-founding-vision.md` is the sole wording authority and the matrix is
-  the sole completion authority. Candidate `7e1b3603` preserves all 45 cells
+  the sole completion authority. Candidate `966845cc` preserves all 45 cells
   without converting implementation or simulation into host proof.
 - AR-255 now uses complete-universe inference, exact ordered multi-card v6
   delivery, install/config/roster fences, fail-open diagnostics, and sealed
   one-use delivery proof. Store-only state and caller mappings are diagnostic.
-- SafeClaude allocates a live private lease, brackets the real process with a
-  one-use invocation window, and collects one canonical current artifact before
-  profile cleanup. Candidate `7e1b3603` keeps every Codex assignment unstaffed
-  with `unsupported_opaque_interagent_channel`.
+- SafeClaude retains its in-lifetime collector. Codex now accepts only an exact
+  marked 0.147 call from the private active rollout, reattests before persistence
+  and output, and atomically rejects duplicate successful launch decisions.
 - Exact preflight inventory: PATH TUI/exec Codex `0.147.0`, native SHA-256
   `935A1911...2AD9D`; Desktop `26.803.10989.0` with runtime
   `0.147.0-alpha.6.6`, native SHA-256 `59295889...69B3`. The observed Sol/TUI
   call omitted `encrypted_function_args` and carried a `gAAAAA...` message.
-- Current preflight checkpoint verification: the named fast Python spine passed
-  673 with 6 skipped, schema/decision tests passed 84, dashboard UI passed 134,
-  and docs passed for 686 Markdown files. Ruff lint/format, metadata, policy,
-  worklog, and whitespace checks passed.
+- Current source verification: 303 focused tests and the 673-test fast spine
+  passed with 6 skipped; dashboard UI passed 134. Ruff, routing evaluation, and
+  whitespace passed. The new candidate mutation run remains the next gate.
 - Checkout routing evaluation passed every gate. Decision conformance passed
   its baseline, killed 83/83 mutations with zero survived or invalid, and
   reported `source_unchanged=true`.
@@ -96,13 +92,11 @@ must be loaded first after any compaction or session restart.
 
 ## exact-blocker
 
-1. **AR-180 — Codex support.** Codex 0.147 exposes a conditional plaintext
-   assignment only when its host response item has explicit
-   `encrypted_function_args: []`. The hook payload omits that marker and the
-   current Sol path did not emit it. Authenticate the exact persisted host call,
-   preserve unstaffed fail-open behavior on drift, then exact-install and
-   live-prove TUI, Desktop, and exec under explicit authorization.
-2. **AR-255 — exact host proof.** Build and verify candidate `7e1b3603`, then
+1. **AR-180 — Codex support.** Independently attack candidate `966845cc`, add
+   its curated decision-conformance mutations, then exact-install and live-prove
+   TUI, Desktop, and exec under explicit authorization. The current Sol path
+   emitted no marker and is not positive evidence.
+2. **AR-255 — exact host proof.** Build and verify candidate `966845cc`, then
    obtain one current Claude artifact through the real executable. The passing
    fake-runner integration is simulation, not Installed or Live authority.
 3. **AR-252 — automatic contractor critical path.** Record host-backed producer
@@ -123,20 +117,17 @@ must be loaded first after any compaction or session restart.
 
 After restart or compaction, load this file and `AR-119-founding-vision.md`
 first. Then read AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158.
-Confirm branch, runtime `7e1b3603`, ledger `3a004b33`, status, and worklog
+Confirm branch, runtime `966845cc`, ledger `d9ee4a0a`, status, and worklog
 parity. Do not reconstruct retired Job B, plan-row, work-unit, grant, or
 consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-Implement and adversarially test a bounded, version-aware Codex transcript
-attestation for the explicit plaintext marker. Match the exact session, turn,
-tool call, namespace, arguments, and marker; reject spoof, replay, ambiguity,
-path/schema drift, and plaintext-looking messages without host provenance.
-Keep Codex unstaffed on every unsupported path. An exact candidate install,
-trust change, or live Claude/Codex canary still requires explicit authorization.
-After source proof, obtain that authorization and run bounded TUI, Desktop, and
-exec proof; then continue AR-252, AR-253, AR-125, and derived Rule 9.
+Independently attack the Codex attestor, hook revalidation, and atomic replay
+guard; resolve every material finding and add curated decision-conformance
+mutations. Keep unsupported paths unstaffed. Then obtain explicit authorization
+for exact install/trust and bounded TUI, Desktop, exec, and Claude proof; after
+host proof continue AR-252, AR-253, AR-125, and derived Rule 9.
 
 ## verification
 

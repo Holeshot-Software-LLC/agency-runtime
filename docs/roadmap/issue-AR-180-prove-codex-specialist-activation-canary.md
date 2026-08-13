@@ -3,7 +3,7 @@ title: "AR-180: Prove Codex specialist activation in the live canary"
 status: open
 category: roadmap
 created: 2026-07-27
-updated: 2026-08-12
+updated: 2026-08-13
 tags: [codex, canary, activation, delegation, production-readiness]
 related:
   - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
@@ -249,13 +249,15 @@ The documented `PreToolUse` payload supplies `transcript_path`, `turn_id`,
 `tool_use_id`, and parsed `tool_input`, and it permits `updatedInput` rewrites.
 It does not expose the plaintext marker or internal tool-call source, and the
 documented transcript format is explicitly unstable. A plaintext-looking
-`tool_input.message` therefore has no authority by itself. The next source
-package must prove a bounded, exact-call transcript attestation for the explicit
-empty marker and fail open unstaffed on absence, ambiguity, replay, path drift,
-or schema/version drift. Until that implementation and its adversarial tests
-pass, the current Sol path is a **NO-GO** for a live Rule-4 measurement.
-ADR-0159 governs the exact transcript authorization and keeps host child
-artifacts separate as the later delivery-proof authority.
+`tool_input.message` therefore has no authority by itself. Candidate `966845cc`
+implements a bounded exact-0.147 scanner, sealed exact-record attestation,
+validator-time and output-time revalidation, and an atomic successful-launch
+replay guard. Missing, ambiguous, completed, malformed, oversized, linked,
+unmarked, or drifted evidence remains unstaffed. Its synthetic marked-host path
+and the real current unmarked transcript both pass their expected controls.
+This is source and simulation only: independent attack, exact installation, and
+host child artifacts remain required before a live Rule-4 measurement.
+ADR-0159 keeps rewrite authorization separate from delivery-proof authority.
 
 ## Approach
 
@@ -293,6 +295,9 @@ instead of weakening the evidence gate.
 - [x] A read-only exact-host preflight inventories the active TUI/exec and
       Desktop runtimes, distinguishes conditional host support from the active
       encrypted path, and advances no Installed or Live claim.
+- [x] Exact-version source authentication binds the private rollout, session,
+      turn, call, namespace, complete arguments, explicit empty marker, stable
+      records, and one successful Store launch; unsupported paths fail open.
 - [ ] Current-profile Codex exposes and invokes the supported native child tool
   through attended trust or the explicit autonomous bypass, without shell
   access, file writes, or external services.
