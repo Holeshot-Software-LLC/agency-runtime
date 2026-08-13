@@ -288,6 +288,7 @@ def test_store_receipt_remains_diagnostic_without_host_artifact_proof(
     ) == ("verified host-authored Codex child card delivery was not proven",)
 
     second = deepcopy(decision)
+    second["launch_id"] = "launch-second-child"
     second["nonce"] = "nonce-second-child"
     second["binding_id"] = "second-child"
     store.record_routing_decision(

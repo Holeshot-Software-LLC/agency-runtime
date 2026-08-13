@@ -527,6 +527,14 @@ def test_store_rejects_every_cross_decision_replay_identity(
             binding_id=first["binding_id"],
         )
     second = _decision(**second_kwargs)
+    if collision == "launch_binding":
+        with pytest.raises(
+            ValueError,
+            match="native_child launch already has a successful routing decision",
+        ):
+            _record_decision(store, second)
+        assert _ledger_count(store) == 1
+        return
     _, second_id = _record_decision(store, second)
     if collision not in {"launch_binding", "child"}:
         _bind_launch(store, second, child_id="child-2")

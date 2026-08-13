@@ -183,7 +183,7 @@ def test_plaintext_hosts_forward_one_exact_inference_team_without_self_attesting
     monkeypatch.setattr(
         native_child_install_identity,
         "current_managed_host_install_identity",
-        lambda actual_host: _install(actual_host),
+        lambda actual_host, **_kwargs: _install(actual_host),
     )
 
     result = HookBridge(host, store=store).handle(_payload(host))  # type: ignore[arg-type]
@@ -272,7 +272,7 @@ def test_valid_v6_retry_is_idempotent_and_never_restaffed(
     monkeypatch.setattr(
         native_child_install_identity,
         "current_managed_host_install_identity",
-        lambda actual_host: _install(actual_host),
+        lambda actual_host, **_kwargs: _install(actual_host),
     )
 
     assert (
@@ -312,7 +312,7 @@ def test_foreign_or_expired_v6_is_scrubbed_while_host_launch_proceeds_unstaffed(
     monkeypatch.setattr(
         native_child_install_identity,
         "current_managed_host_install_identity",
-        lambda actual_host: _install(actual_host),
+        lambda actual_host, **_kwargs: _install(actual_host),
     )
 
     result = HookBridge("claude", store=store).handle(  # type: ignore[arg-type]
@@ -396,7 +396,7 @@ def test_tampered_v6_marker_and_host_output_overflow_fail_as_whole_team(
     monkeypatch.setattr(
         native_child_install_identity,
         "current_managed_host_install_identity",
-        lambda actual_host: _install(actual_host),
+        lambda actual_host, **_kwargs: _install(actual_host),
     )
 
     overflow = HookBridge("claude", store=store).handle(_payload("claude"))  # type: ignore[arg-type]

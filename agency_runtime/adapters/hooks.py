@@ -1092,8 +1092,14 @@ class HookBridge:
         args: dict[str, Any],
         task_field: str,
         task: str,
+        channel_attestation: Any | None = None,
     ) -> dict[str, Any]:
         """Carry one inference-owned atomic team to a host-owned spawn."""
+
+        if self.host == "codex" and channel_attestation is None:
+            # Keep the shared helper safe if a future Codex caller bypasses the
+            # public pre-tool attestation gate.
+            return {}
 
         from agency_runtime.core.native_child_install_identity import (
             current_runtime_managed_host_install_identity,
@@ -1121,6 +1127,28 @@ class HookBridge:
             return {}
         if not isinstance(frozen_args, dict):
             return {}
+
+        def channel_is_current() -> bool:
+            if channel_attestation is None:
+                return True
+            try:
+                from agency_runtime.core.codex_spawn_provenance import (
+                    codex_plaintext_spawn_attestation_is_current,
+                )
+
+                return (
+                    codex_plaintext_spawn_attestation_is_current(
+                        channel_attestation,
+                        tool_input=frozen_args,
+                    )
+                    is True
+                )
+            except Exception:
+                logger.debug(
+                    "native-child channel attestation could not be revalidated",
+                    exc_info=True,
+                )
+                return False
 
         existing_delivery = parse_inference_team_delivery(task)
         if existing_delivery is not None:
@@ -1179,10 +1207,13 @@ class HookBridge:
                 install_identity=install_identity_reader(self.host),
                 install_identity_reader=install_identity_reader,
                 maximum_delivery_bytes=MAX_CONTEXT_CHARS,
-                delivery_validator=lambda rewritten_task: _native_child_delivery_fits_hook(
-                    frozen_args,
-                    task_field=task_field,
-                    rewritten_task=rewritten_task,
+                delivery_validator=lambda rewritten_task: (
+                    channel_is_current()
+                    and _native_child_delivery_fits_hook(
+                        frozen_args,
+                        task_field=task_field,
+                        rewritten_task=rewritten_task,
+                    )
                 ),
             )
         except Exception:
@@ -1216,6 +1247,12 @@ class HookBridge:
                 reason_code="native_child_delivery_exceeds_host_limit",
             )
             return {}
+        if not channel_is_current():
+            # The host transcript is external mutable state. It may change after
+            # the pre-persistence delivery validation, so refuse to emit the
+            # staffed rewrite unless the exact call remains authenticated at
+            # the final return boundary.
+            return {}
         return response
 
     def _handle_native_child_pre_tool_use(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -1237,17 +1274,44 @@ class HookBridge:
         if not isinstance(task, str) or not task:
             raise HookInputError(f"{tool_name} tool_input.{task_field} is required")
         if self.host == "codex":
-            # Codex 0.147's initial InterAgentCommunication payload is encrypted
-            # at this boundary. ``task_name`` is model-authored and cannot carry
-            # or authenticate the assignment. Until the host exposes a trusted
-            # plaintext/digest surface, Agency supplies no card and never blocks.
-            self._record_native_child_unstaffed(
+            try:
+                from agency_runtime.core.codex_spawn_provenance import (
+                    attest_codex_plaintext_spawn,
+                )
+
+                correlation = self._correlation(payload, args)
+                channel_attestation = attest_codex_plaintext_spawn(
+                    payload.get("transcript_path"),
+                    session_id=correlation.session_id,
+                    turn_id=correlation.turn_id,
+                    tool_use_id=correlation.tool_use_id,
+                    tool_input=args,
+                    environ=os.environ,
+                )
+            except Exception:
+                logger.debug(
+                    "Codex plaintext spawn could not be authenticated",
+                    exc_info=True,
+                )
+                channel_attestation = None
+            if channel_attestation is None:
+                # Encrypted, unmarked, ambiguous, or stale Codex calls remain
+                # ordinary host spawns. The diagnostic is content-free and the
+                # hook never blocks the child.
+                self._record_native_child_unstaffed(
+                    payload=payload,
+                    args=args,
+                    task=task,
+                    reason_code="unsupported_opaque_interagent_channel",
+                )
+                return {}
+            return self._staff_plaintext_native_child(
                 payload=payload,
                 args=args,
+                task_field=task_field,
                 task=task,
-                reason_code="unsupported_opaque_interagent_channel",
+                channel_attestation=channel_attestation,
             )
-            return {}
         return self._staff_plaintext_native_child(
             payload=payload,
             args=args,

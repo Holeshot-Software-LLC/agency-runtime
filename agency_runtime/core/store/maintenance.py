@@ -80,6 +80,11 @@ def _activity_cursor_time(name: str, row: Mapping[str, Any]) -> str:
 # any store write, in addition to the operator's policy cutoff.
 _STALE_OPEN_MIN_INACTIVITY_SECONDS = 24 * 60 * 60
 
+# Mirror the native-child resolver's content-free document budget.  Rows over
+# that budget are not valid prior projections and never reach SQLite's JSON
+# parser.
+_MAX_NATIVE_CHILD_ROUTING_DECISION_BYTES = 64 * 1024
+
 
 def _activation_policy_identity(value: object, *, field: str) -> tuple[str, ...]:
     """Return one secret-free canonical disabled-agent policy identity."""
@@ -118,6 +123,64 @@ def _expected_roster_generation(value: object) -> int | None:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise ValueError("expected_roster_generation must be a non-negative integer")
     return value
+
+
+def _guard_native_child_launch_replay(
+    conn: Any,
+    *,
+    source: str,
+    decision: Mapping[str, Any],
+    session_id: str,
+    trace_id: str,
+) -> None:
+    """Reject malformed or already-recorded successful native-child launches.
+
+    ``BEGIN IMMEDIATE`` must already be held by the caller.  That makes the
+    lookup and subsequent insert one serialized operation without adding a
+    schema-level index or migration.
+    """
+
+    if source != "native_child_inference":
+        return
+    delivery = decision.get("native_child_delivery")
+    if not isinstance(delivery, Mapping):
+        raise ValueError("native_child_inference requires a valid native_child_delivery")
+    if decision.get("status") != "applied":
+        raise ValueError("native_child_inference requires an applied decision")
+    if (
+        delivery.get("parent_session_id") != session_id
+        or delivery.get("parent_trace_id") != trace_id
+    ):
+        raise ValueError("native_child_delivery does not match routing session and trace")
+
+    host = str(delivery["host"])
+    launch_id = str(delivery["launch_id"])
+    duplicate = conn.execute(
+        "SELECT id FROM routing_decisions "
+        "WHERE session_id = ? AND trace_id = ? "
+        "AND source = 'native_child_inference' AND status = 'applied' "
+        "AND CASE WHEN typeof(decision) = 'text' "
+        "AND length(CAST(decision AS BLOB)) BETWEEN 1 AND ? THEN "
+        "CASE WHEN json_valid(decision) THEN ("
+        "json_extract(decision, '$.source') = 'native_child_inference' "
+        "AND json_extract(decision, '$.status') = 'applied' "
+        "AND json_extract(decision, '$.native_child_delivery.host') = ? "
+        "AND json_extract(decision, '$.native_child_delivery.parent_session_id') = ? "
+        "AND json_extract(decision, '$.native_child_delivery.parent_trace_id') = ? "
+        "AND json_extract(decision, '$.native_child_delivery.launch_id') = ?) "
+        "ELSE 0 END ELSE 0 END LIMIT 1",
+        (
+            session_id,
+            trace_id,
+            _MAX_NATIVE_CHILD_ROUTING_DECISION_BYTES,
+            host,
+            session_id,
+            trace_id,
+            launch_id,
+        ),
+    ).fetchone()
+    if duplicate is not None:
+        raise ValueError("native_child launch already has a successful routing decision")
 
 
 class MaintenanceStoreMixin:
@@ -464,6 +527,13 @@ class MaintenanceStoreMixin:
                     trace_id=normalized_trace,
                     session_id=normalized_session,
                 )
+            _guard_native_child_launch_replay(
+                conn,
+                source=source,
+                decision=safe_decision,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+            )
             if expected_generation is not None:
                 generation = conn.execute(
                     "SELECT value FROM store_counters WHERE name = 'roster-generation'"
