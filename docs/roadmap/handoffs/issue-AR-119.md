@@ -130,12 +130,12 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-Candidate `e80cb40c` repaired both Rule-8 negatives, so no matrix cell is
-negative and the next unblocked work is the four rules with no evidence at any
-layer: R2 and R3 (cards reaching the parent caller, singly and severally), R5
-(the spawn-origin absence proof), and R7 (per-turn expiry). None needs
-authorization; each needs a verifier and a host artifact that does not exist
-yet. Everything else waits on authorization or on the two unavailable hosts.
+No cell is negative, and `967b0a2c` proves R7 at source and simulation on the
+four hosts with adapter classes; only its zcode simulation stays open, since
+that host has no adapter and the parity suite sweeps generic instead. Remaining
+unblocked work is R2 and R3 (cards reaching the parent caller, singly and
+severally) and R5 (the spawn-origin absence proof). The machine's master switch
+is off, which silently empties adapter evidence gathered outside that suite.
 
 ## verification
 

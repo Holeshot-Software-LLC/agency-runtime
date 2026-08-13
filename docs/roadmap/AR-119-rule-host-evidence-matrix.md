@@ -26,7 +26,7 @@ superseded_by: null
 type: roadmap
 ar119_authority: completion-evidence
 vision_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
-candidate_commit: e80cb40c5cc930b5732f223278bad978f9a944b0
+candidate_commit: 967b0a2c7936ed34206a07905302be5967d2f685
 evidence_cutoff: 2026-08-13
 ---
 
@@ -46,6 +46,18 @@ bound to that exact candidate. Earlier artifacts remain visible as prior-
 candidate context but cannot make a current installed/live layer green or red.
 Although the schema reserves `not-applicable`, none of the nine rules is
 optional on a supported host.
+
+Candidate `967b0a2c` proves Rule 7 at source and simulation on the four hosts
+that have adapter classes. The mechanism was already present and simply never
+observed: closing a turn expires its cards, and the next turn is told which
+expired, because a card appended to the caller's context cannot be retracted.
+Observing it first required repairing the host-parity suite, which read the
+operator's durable master switch and so reported evidence mismatches whenever
+Agency was switched off; two of its four cases had been failing for that reason
+alone and pass again now. ZCode is deliberately not claimed: it has no adapter
+class, reaches Agency through the shared hooks boundary, and the suite sweeps
+the generic adapter instead, so its Rule 7 simulation stays unproven rather than
+assumed.
 
 Candidate `e80cb40c` repairs the only two `negative` cells. Hermes and OpenClaw
 previously withheld a completed turn whenever Agency itself could not run, which
@@ -124,11 +136,11 @@ two/deeper remains unsupported, and no Installed or Live layer advances.
 | R6 | zcode | unproven | proven | unproven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | host-neutral contractor contract test only | 2026-08-12 | `docs/roadmap/AR-119-acceptance-evidence.md#ar-122-governed-contractor-hiring-and-workforce-lifecycle` | Implementation is present, but no ZCode-scoped simulation or installed same-turn artifact exists |
 | R6 | hermes | unproven | proven | unproven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | host-neutral contractor contract test only | 2026-08-12 | `docs/roadmap/AR-119-acceptance-evidence.md#ar-122-governed-contractor-hiring-and-workforce-lifecycle` | Implementation is present, but no Hermes-scoped simulation or installed same-turn artifact exists |
 | R6 | openclaw | unproven | proven | unproven | unproven | unproven | Inference hiring receipt independent critic receipt immutable identity and host-backed use | host-neutral contractor contract test only | 2026-08-12 | `docs/roadmap/AR-119-acceptance-evidence.md#ar-122-governed-contractor-hiring-and-workforce-lifecycle` | Implementation is present, but no OpenClaw-scoped simulation or installed same-turn artifact exists |
-| R7 | claude | unproven | unproven | unproven | unproven | unproven | Same identity observed in one turn and absent from the next turn | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | No current two-turn non-carryover artifact |
-| R7 | codex | unproven | unproven | unproven | unproven | unproven | Same identity observed in one turn and absent from the next turn | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | No current two-turn non-carryover artifact |
-| R7 | zcode | unproven | unproven | unproven | unproven | unproven | Same identity observed in one turn and absent from the next turn | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | No current two-turn non-carryover artifact |
-| R7 | hermes | unproven | unproven | unproven | unproven | unproven | Same identity observed in one turn and absent from the next turn | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | No current two-turn non-carryover artifact |
-| R7 | openclaw | unproven | unproven | unproven | unproven | unproven | Same identity observed in one turn and absent from the next turn | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | No current two-turn non-carryover artifact |
+| R7 | claude | unproven | proven | proven | unproven | unproven | Same identity observed in one turn and absent from the next turn | two-turn parity case: the card is held in its own turn, absent from the next, and its expiry is stated there | 2026-08-13 | `agency_runtime/core/evals/host_parity.py:213-283` | Deterministic eval evidence only; no installed or live host artifact |
+| R7 | codex | unproven | proven | proven | unproven | unproven | Same identity observed in one turn and absent from the next turn | two-turn parity case: the card is held in its own turn, absent from the next, and its expiry is stated there | 2026-08-13 | `agency_runtime/core/evals/host_parity.py:213-283` | Deterministic eval evidence only; no installed or live host artifact |
+| R7 | zcode | unproven | proven | unproven | unproven | unproven | Same identity observed in one turn and absent from the next turn | shared turn-scoped expiry only; no zcode-specific observation | 2026-08-13 | `agency_runtime/core/store/evidence.py:1298-1340` | ZCode has no adapter class and is exercised through the shared hooks boundary, so the parity eval sweeps the generic adapter instead and never observes zcode |
+| R7 | hermes | unproven | proven | proven | unproven | unproven | Same identity observed in one turn and absent from the next turn | two-turn parity case: the card is held in its own turn, absent from the next, and its expiry is stated there | 2026-08-13 | `agency_runtime/core/evals/host_parity.py:213-283` | Deterministic eval evidence only; no installed or live host artifact |
+| R7 | openclaw | unproven | proven | proven | unproven | unproven | Same identity observed in one turn and absent from the next turn | two-turn parity case: the card is held in its own turn, absent from the next, and its expiry is stated there | 2026-08-13 | `agency_runtime/core/evals/host_parity.py:213-283` | Deterministic eval evidence only; no installed or live host artifact |
 | R8 | claude | unproven | proven | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | no Claude-scoped prompt-preflight simulation | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` | Implementation fails open, but the cited prompt-preflight test covers only Codex and ZCode and no native publication proof exists |
 | R8 | codex | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[codex]` | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` | Contract output cannot prove native host publication |
 | R8 | zcode | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[zcode]` | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` | No live host publication artifact |
@@ -175,6 +187,15 @@ satisfy a layer.
 | R8 | zcode | Implementation | proven | source | fail-open unavailable prompt and unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` |
 | R8 | codex | Simulation | proven | test | unavailable preflight publishes the host prompt | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` |
 | R8 | zcode | Simulation | proven | test | unavailable preflight publishes the host prompt | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` |
+| R7 | claude | Implementation | proven | source | closing a turn expires its cards and the next turn is told which expired | 2026-08-13 | `agency_runtime/core/store/evidence.py:1298-1340` |
+| R7 | claude | Simulation | proven | test | a card held in one turn is absent from the next and its expiry is stated | 2026-08-13 | `tests/test_host_parity_eval.py:31-57` |
+| R7 | codex | Implementation | proven | source | closing a turn expires its cards and the next turn is told which expired | 2026-08-13 | `agency_runtime/core/store/evidence.py:1298-1340` |
+| R7 | codex | Simulation | proven | test | a card held in one turn is absent from the next and its expiry is stated | 2026-08-13 | `tests/test_host_parity_eval.py:31-57` |
+| R7 | zcode | Implementation | proven | source | closing a turn expires its cards and the next turn is told which expired | 2026-08-13 | `agency_runtime/core/store/evidence.py:1298-1340` |
+| R7 | hermes | Implementation | proven | source | closing a turn expires its cards and the next turn is told which expired | 2026-08-13 | `agency_runtime/core/store/evidence.py:1298-1340` |
+| R7 | hermes | Simulation | proven | test | a card held in one turn is absent from the next and its expiry is stated | 2026-08-13 | `tests/test_host_parity_eval.py:31-57` |
+| R7 | openclaw | Implementation | proven | source | closing a turn expires its cards and the next turn is told which expired | 2026-08-13 | `agency_runtime/core/store/evidence.py:1298-1340` |
+| R7 | openclaw | Simulation | proven | test | a card held in one turn is absent from the next and its expiry is stated | 2026-08-13 | `tests/test_host_parity_eval.py:31-57` |
 | R8 | hermes | Implementation | proven | source | an unavailable Agency path returns the host draft unchanged | 2026-08-13 | `agency_runtime/adapters/hermes/bridge.py:269-322` |
 | R8 | hermes | Simulation | proven | test | a raising finalizer returns the draft unchanged and does not terminalize the turn | 2026-08-13 | `tests/test_completion_policy_boundary.py:241-273` |
 | R8 | openclaw | Implementation | proven | source | blind soft control, correlation, evidence, decision, and commit paths allow the turn | 2026-08-13 | `agency_runtime/adapters/openclaw/node_bridge.py:798-947` |
