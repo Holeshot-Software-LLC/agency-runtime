@@ -1,10 +1,11 @@
 """Deterministic host-parity evaluation harness.
 
 Rule 9 says a capability that exists on one host and not another is incomplete.
-This suite proves the observable contract holds identically on all five adapters
-without calling an LLM: each records the skills and specialists a turn loaded,
-each records a delegation the *host itself* chose to make, and each captures a
-model receipt. It never spawns a worker — Agency does not decide to spawn.
+This suite proves the observable contract holds identically on every supported
+host without calling an LLM: each records the skills and specialists a turn
+loaded, each records a delegation the *host itself* chose to make, each captures
+a model receipt, and each returns its cards when the turn ends. It never spawns
+a worker — Agency does not decide to spawn.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from agency_runtime.adapters.claude.wrapper import ClaudeAdapter
 from agency_runtime.adapters.codex.wrapper import CodexAdapter
 from agency_runtime.adapters.generic.wrapper import GenericAdapter
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
+from agency_runtime.adapters.hooks import hook_host_adapter
 from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 from agency_runtime.core.header.contract import fill_header_fields, format_header
 from agency_runtime.core.private_paths import private_temporary_directory
@@ -78,7 +80,29 @@ def _with_store(
         return fn(store, adapter)
 
 
-def _make_adapter(adapter_cls: type, store: Store, control_home: Path | None = None):
+# Every supported host, each built the way that host is really built.  ZCode
+# owns no adapter class: it reaches Agency through the shared hooks boundary,
+# which builds a Claude adapter and rebinds its host identity.  Asking that
+# boundary for the adapter is what makes a claim here a claim about zcode,
+# rather than a claim about whichever neighbouring host the sweep happened to
+# construct.  `generic` is not a sixth product host; it stands for any host
+# with no dedicated adapter at all.
+_PARITY_ADAPTERS: tuple[tuple[str, Callable[[Store], Any]], ...] = (
+    ("hermes", lambda store: HermesAdapter(store=store)),
+    ("openclaw", lambda store: OpenClawAdapter(store=store)),
+    ("codex", lambda store: CodexAdapter(store=store)),
+    ("claude", lambda store: ClaudeAdapter(store=store)),
+    ("zcode", lambda store: hook_host_adapter("zcode", store)),
+    ("generic", lambda store: GenericAdapter(store=store, cli_cmd="definitely-not-installed")),
+)
+
+
+def _make_adapter(
+    build: Callable[[Store], Any],
+    store: Store,
+    control_home: Path | None = None,
+    expected_host: str = "",
+):
     """Build one adapter, bound to a master switch this evaluation owns.
 
     Without `control_home` the adapter reads the operator's durable switch, so
@@ -86,12 +110,18 @@ def _make_adapter(adapter_cls: type, store: Store, control_home: Path | None = N
     runs `agency off`, and it changes into a misleading evidence mismatch
     rather than a statement that Agency was disabled.  Callers inside the eval
     always pass a private root.
+
+    `expected_host` is checked rather than trusted.  A builder that quietly
+    returned a neighbouring host would make the whole sweep report parity it
+    never observed, which is the exact failure Rule 9 exists to catch.
     """
 
-    if adapter_cls is GenericAdapter:
-        adapter = adapter_cls(store=store, cli_cmd="definitely-not-installed")
-    else:
-        adapter = adapter_cls(store=store)
+    adapter = build(store)
+    if expected_host:
+        _require(
+            adapter.host_name == expected_host,
+            f"parity sweep built host {adapter.host_name!r} while claiming {expected_host!r}",
+        )
     if control_home is not None:
         set_master_enabled(True, home_dir=control_home)
         adapter.enforcement_control_home = control_home
@@ -123,16 +153,10 @@ def _create_eval_turn(
 
 def _case_all_adapters_track_evidence() -> dict[str, Any]:
     hosts: list[str] = []
-    for adapter_cls in (
-        HermesAdapter,
-        OpenClawAdapter,
-        CodexAdapter,
-        ClaudeAdapter,
-        GenericAdapter,
-    ):
+    for host, build in _PARITY_ADAPTERS:
         with private_temporary_directory(prefix="host-parity-eval") as tmpdir:
             store = Store(tmpdir / "agency.db")
-            adapter = _make_adapter(adapter_cls, store, tmpdir / "control-home")
+            adapter = _make_adapter(build, store, tmpdir / "control-home", host)
             trace_id = f"eval-{adapter.host_name}"
             _create_eval_turn(store, trace_id=trace_id, host=adapter.host_name)
             adapter.post_tool_call_handler(
@@ -179,16 +203,10 @@ def _case_all_adapters_track_evidence() -> dict[str, Any]:
 
 def _case_all_adapters_capture_model_receipts() -> dict[str, Any]:
     hosts: list[str] = []
-    for adapter_cls in (
-        HermesAdapter,
-        OpenClawAdapter,
-        CodexAdapter,
-        ClaudeAdapter,
-        GenericAdapter,
-    ):
+    for host, build in _PARITY_ADAPTERS:
         with private_temporary_directory(prefix="host-parity-eval") as tmpdir:
             store = Store(tmpdir / "agency.db")
-            adapter = _make_adapter(adapter_cls, store, tmpdir / "control-home")
+            adapter = _make_adapter(build, store, tmpdir / "control-home", host)
             trace_id = f"eval-model-{adapter.host_name}"
             _create_eval_turn(store, trace_id=trace_id, host=adapter.host_name)
             adapter.post_api_request_handler(
@@ -220,16 +238,10 @@ def _case_cards_expire_with_their_turn() -> dict[str, Any]:
     """
 
     hosts: list[str] = []
-    for adapter_cls in (
-        HermesAdapter,
-        OpenClawAdapter,
-        CodexAdapter,
-        ClaudeAdapter,
-        GenericAdapter,
-    ):
+    for host, build in _PARITY_ADAPTERS:
         with private_temporary_directory(prefix="host-parity-eval") as tmpdir:
             store = Store(tmpdir / "agency.db")
-            adapter = _make_adapter(adapter_cls, store, tmpdir / "control-home")
+            adapter = _make_adapter(build, store, tmpdir / "control-home", host)
             first = f"eval-expiry-first-{adapter.host_name}"
             second = f"eval-expiry-second-{adapter.host_name}"
 

@@ -621,6 +621,37 @@ def _canonical_tool_call(
     return tool_name, args
 
 
+def hook_host_adapter(host: str, store: Store) -> Any:
+    """Build the adapter a hook-driven host actually runs on.
+
+    This is the single place that knows a host reaches Agency through the
+    shared hooks boundary rather than through an adapter class of its own.
+    Anything that wants to observe such a host -- the hook bridge itself, or a
+    parity evaluation that must speak for every supported host -- builds it
+    here, so an evaluation cannot silently observe some neighbouring host's
+    construction and report it as parity.
+    """
+
+    normalized_host = str(host or "").strip().casefold()
+    if normalized_host == "codex":
+        from agency_runtime.adapters.codex.wrapper import CodexAdapter
+
+        return CodexAdapter(store=store)
+    if normalized_host not in {"claude", "zcode"}:
+        raise ValueError(f"unsupported hook host: {host}")
+    from agency_runtime.adapters.claude.wrapper import ClaudeAdapter
+
+    # ADR-0087: zcode reuses the Claude hook model and Agent-tool delegation
+    # primitive, so it shares the ClaudeAdapter behavior. But it must keep
+    # its own host identity so runtime-control reads the zcode row (not
+    # claude's) and all evidence receipts are attributed to zcode rather
+    # than masqueraded as claude.
+    adapter = ClaudeAdapter(store=store)
+    if normalized_host == "zcode":
+        adapter.host_name = "zcode"
+    return adapter
+
+
 class HookBridge:
     """Translate one native hook event to a host adapter operation."""
 
@@ -661,21 +692,7 @@ class HookBridge:
         self._adapter = value
 
     def _new_adapter(self) -> Any:
-        if self.host == "codex":
-            from agency_runtime.adapters.codex.wrapper import CodexAdapter
-
-            return CodexAdapter(store=self.store)
-        from agency_runtime.adapters.claude.wrapper import ClaudeAdapter
-
-        # ADR-0087: zcode reuses the Claude hook model and Agent-tool delegation
-        # primitive, so it shares the ClaudeAdapter behavior. But it must keep
-        # its own host identity so runtime-control reads the zcode row (not
-        # claude's) and all evidence receipts are attributed to zcode rather
-        # than masqueraded as claude.
-        adapter = ClaudeAdapter(store=self.store)
-        if self.host == "zcode":
-            adapter.host_name = "zcode"
-        return adapter
+        return hook_host_adapter(self.host, self.store)
 
     def _event_name(self, payload: dict[str, Any]) -> str:
         event = _required_string(payload, "hook_event_name")
@@ -2866,5 +2883,6 @@ __all__ = [
     "HookBridge",
     "HookCorrelation",
     "HookInputError",
+    "hook_host_adapter",
     "run_hook_stdio",
 ]
