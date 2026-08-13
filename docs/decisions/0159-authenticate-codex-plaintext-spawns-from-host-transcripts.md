@@ -117,5 +117,6 @@ or trust state.
 
 Candidate `966845cc` implements this boundary with a bounded descriptor scanner,
 sealed record identities, repeated revalidation, and an atomic successful-launch
-guard. Its source and synthetic simulation pass; Installed and Live proof remain
-outside this decision and unproven.
+guard. Adversarial review found incomplete nested-thread ancestry and a
+post-persistence final-validation gap; source and simulation remain negative
+until those defects are repaired. Installed and Live proof remains unproven.

@@ -48,15 +48,14 @@ must be loaded first after any compaction or session restart.
 - The current source pair is Codex runtime `966845cc` and ledger `d9ee4a0a`;
   the reviewed preflight design remains `ccb1802c`/`a7e8cf54`.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
-  Codex source/simulation and exact-candidate Claude Installed/Live proof await
-  independent attack and real-host proof respectively.
+  exact-candidate Claude Installed/Live proof remains open.
 - The AR-180 read-only exact-host preflight is complete. ADR-0159 binds the
   Codex 0.147 plaintext path to a sealed exact-call transcript attestation;
   the current Sol/TUI spawn omitted the marker and remains safely unstaffed.
 - Matrix candidate `966845cc` has no proven top-level cell. Rule 1 source and
   simulation are repaired on all five adapters; Claude Rule 4 source and
-  simulation are proven; Codex Rule 4 source/simulation now pass. Every
-  Installed and Live layer remains unproven.
+  simulation are proven; Codex Rule 4 remains negative after adversarial review.
+  Every Installed and Live layer remains unproven.
 - Tracker creation for AR-255 through AR-257 and tracker synchronization for
   locally reopened historical issues remain pending explicit authorization.
   No missing tracker write is represented as complete.
@@ -69,9 +68,9 @@ must be loaded first after any compaction or session restart.
 - AR-255 now uses complete-universe inference, exact ordered multi-card v6
   delivery, install/config/roster fences, fail-open diagnostics, and sealed
   one-use delivery proof. Store-only state and caller mappings are diagnostic.
-- SafeClaude retains its in-lifetime collector. Codex now accepts only an exact
-  marked 0.147 call from the private active rollout, reattests before persistence
-  and output, and atomically rejects duplicate successful launch decisions.
+- SafeClaude retains its in-lifetime collector. Codex candidate `966845cc`
+  safely rejects unmarked calls, but its root-only rollout identity cannot staff
+  nested children and final drift can leave an applied Store row without output.
 - Exact preflight inventory: PATH TUI/exec Codex `0.147.0`, native SHA-256
   `935A1911...2AD9D`; Desktop `26.803.10989.0` with runtime
   `0.147.0-alpha.6.6`, native SHA-256 `59295889...69B3`. The observed Sol/TUI
@@ -92,10 +91,10 @@ must be loaded first after any compaction or session restart.
 
 ## exact-blocker
 
-1. **AR-180 — Codex support.** Independently attack candidate `966845cc`, add
-   its curated decision-conformance mutations, then exact-install and live-prove
-   TUI, Desktop, and exec under explicit authorization. The current Sol path
-   emitted no marker and is not positive evidence.
+1. **AR-180 — Codex support.** Separate child thread identity from root session
+   identity for the exact 0.147 forked-rollout shape, and make final attestation
+   failure leave no successful route or poisoned retry. Reattack and add curated
+   mutations before any authorized exact install/live proof.
 2. **AR-255 — exact host proof.** Build and verify candidate `966845cc`, then
    obtain one current Claude artifact through the real executable. The passing
    fake-runner integration is simulation, not Installed or Live authority.
@@ -123,9 +122,9 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-Independently attack the Codex attestor, hook revalidation, and atomic replay
-guard; resolve every material finding and add curated decision-conformance
-mutations. Keep unsupported paths unstaffed. Then obtain explicit authorization
+Repair the two adversarial findings: exact forked-child rollout ancestry and
+transactional final-validation retry safety. Add real-shape fixtures, reattack,
+and add curated decision-conformance mutations. Then obtain explicit authorization
 for exact install/trust and bounded TUI, Desktop, exec, and Claude proof; after
 host proof continue AR-252, AR-253, AR-125, and derived Rule 9.
 

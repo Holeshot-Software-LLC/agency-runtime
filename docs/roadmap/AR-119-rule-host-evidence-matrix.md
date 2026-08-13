@@ -54,9 +54,11 @@ Every Installed and Live layer therefore remains unproven.
 
 The 2026-08-12 AR-180 preflight found a conditional host-marked plaintext path
 in Codex 0.147, but the current Sol/TUI spawn omitted its explicit marker and
-delivered ciphertext. Candidate `966845cc` authenticates the marked path and
-keeps unmarked calls unstaffed, so Codex R4 Implementation and Simulation now
-pass. This source/simulation evidence advances no Installed or Live layer.
+delivered ciphertext. Candidate `966845cc` authenticates a root-only marked
+shape and keeps unmarked calls unstaffed, but adversarial review proved that it
+rejects the real forked-child ancestry and can retain a successful Store row
+after final output suppression. Codex R4 Implementation and Simulation remain
+negative. No Installed or Live layer advances.
 
 ## Canonical matrix
 
@@ -78,7 +80,7 @@ pass. This source/simulation evidence advances no Installed or Live layer.
 | R3 | hermes | unproven | unproven | unproven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Multi-card behavior is unmeasured |
 | R3 | openclaw | unproven | unproven | unproven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Multi-card behavior is unmeasured |
 | R4 | claude | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | in-lifetime SafeClaude collector with real HookBridge lifecycle | 2026-08-12 | `tests/test_host_canary.py:805-1055` | Test-managed install and fake process runner are simulation only; prior-candidate live artifacts do not green this candidate |
-| R4 | codex | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | sealed exact-call attestation and atomic successful-launch guard | 2026-08-13 | `tests/test_codex_spawn_provenance.py`, `tests/test_codex_plaintext_hook.py` | Marked synthetic source path passes; active Sol omitted the marker and no installed/live host artifact exists |
+| R4 | codex | negative | negative | negative | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | adversarial forked-child rollout and post-persistence drift review | 2026-08-13 | `agency_runtime/core/codex_spawn_provenance.py:240-245` | Root-only synthetic path passes, but real nested ancestry and retry-safe final validation are not implemented |
 | R4 | zcode | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | exact inference team reaches the ZCode child boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` | Simulation exists but no exact-candidate native child artifact |
 | R4 | hermes | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | none | unobserved | `docs/roadmap/issue-AR-119-inference-first-workforce.md#historical-acceptance-record-superseded` | Host is unavailable on the evidence machine |
 | R4 | openclaw | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | none | unobserved | `docs/roadmap/issue-AR-119-inference-first-workforce.md#historical-acceptance-record-superseded` | Host is unavailable on the evidence machine |
@@ -103,7 +105,7 @@ pass. This source/simulation evidence advances no Installed or Live layer.
 | R8 | hermes | negative | negative | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | bridge exception path replaces output with block response | 2026-08-12 | `agency_runtime/adapters/hermes/bridge.py:269-318` | Current source withholds when Agency is unavailable; no separate simulation proof is claimed |
 | R8 | openclaw | negative | negative | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | bridge failure cancels host output | 2026-08-12 | `agency_runtime/adapters/openclaw/node_bridge.py:790-903` | Current source withholds when Agency is unavailable; no separate simulation proof is claimed |
 | R9 | claude | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 7e1b3603 | 2026-08-12 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but multiple rules and every installed/live layer remain unproven |
-| R9 | codex | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 966845cc | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 4 source/simulation pass, but other rules and installed/live parity remain unproven |
+| R9 | codex | negative | negative | negative | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 966845cc | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 4 remains source/simulation-negative; installed/live parity is unproven |
 | R9 | zcode | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 7e1b3603 | 2026-08-12 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but missing rule and live evidence prevents parity |
 | R9 | hermes | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 7e1b3603 | 2026-08-12 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
 | R9 | openclaw | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 7e1b3603 | 2026-08-12 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
@@ -129,8 +131,8 @@ satisfy a layer.
 | R1 | openclaw | Simulation | proven | test | shared adapter preserves the exact OpenClaw inference result | 2026-08-12 | `tests/test_native_child_adapter_staffing.py:39-95` |
 | R4 | claude | Implementation | proven | source | sealed in-lifetime collector binds one current host artifact to one invocation | 2026-08-12 | `agency_runtime/core/child_delivery_evidence.py:1484-1665` |
 | R4 | claude | Simulation | proven | test | SafeClaude collects a real-shape HookBridge artifact before profile cleanup | 2026-08-12 | `tests/test_host_canary.py:805-1055` |
-| R4 | codex | Implementation | proven | source | bounded sealed transcript attestation with exact record revalidation | 2026-08-13 | `agency_runtime/core/codex_spawn_provenance.py:432-619` |
-| R4 | codex | Simulation | proven | test | exact marked rewrite plus spoof, drift, replay, path, schema, and size rejection | 2026-08-13 | `tests/test_codex_spawn_provenance.py:100-281` |
+| R4 | codex | Implementation | negative | source | root-only transcript identity rejects real forked-child ancestry | 2026-08-13 | `agency_runtime/core/codex_spawn_provenance.py:240-245` |
+| R4 | codex | Simulation | negative | test | synthetic fixtures omit fork ancestry and post-persistence retry state | 2026-08-13 | `tests/test_codex_spawn_provenance.py:48-58` |
 | R4 | zcode | Implementation | proven | source | host-started plaintext child receives the exact inference team | 2026-08-12 | `agency_runtime/adapters/hooks.py:1088-1256` |
 | R4 | zcode | Simulation | proven | test | exact inference team reaches the ZCode child boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` |
 | R6 | claude | Implementation | proven | source | inference gap hiring, critic audit, enablement, and activation path | 2026-08-12 | `agency_runtime/core/workforce/hiring.py:1863-1940` |

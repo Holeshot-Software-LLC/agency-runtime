@@ -255,8 +255,11 @@ validator-time and output-time revalidation, and an atomic successful-launch
 replay guard. Missing, ambiguous, completed, malformed, oversized, linked,
 unmarked, or drifted evidence remains unstaffed. Its synthetic marked-host path
 and the real current unmarked transcript both pass their expected controls.
-This is source and simulation only: independent attack, exact installation, and
-host child artifacts remain required before a live Rule-4 measurement.
+Independent attack found that root-only identity matching rejects real nested
+child rollout ancestry, and a final revalidation failure can leave a successful
+Store row without emitting `updatedInput`. Source and simulation therefore stay
+negative until both findings are repaired and reattacked; exact installation
+and host child artifacts remain later gates before a live Rule-4 measurement.
 ADR-0159 keeps rewrite authorization separate from delivery-proof authority.
 
 ## Approach
@@ -295,9 +298,9 @@ instead of weakening the evidence gate.
 - [x] A read-only exact-host preflight inventories the active TUI/exec and
       Desktop runtimes, distinguishes conditional host support from the active
       encrypted path, and advances no Installed or Live claim.
-- [x] Exact-version source authentication binds the private rollout, session,
-      turn, call, namespace, complete arguments, explicit empty marker, stable
-      records, and one successful Store launch; unsupported paths fail open.
+- [ ] Exact-version source authentication binds root and nested-child rollout
+      ancestry, exact call provenance, and retry-safe final validation; every
+      unsupported or drifted path fails open without a successful Store row.
 - [ ] Current-profile Codex exposes and invokes the supported native child tool
   through attended trust or the explicit autonomous bypass, without shell
   access, file writes, or external services.

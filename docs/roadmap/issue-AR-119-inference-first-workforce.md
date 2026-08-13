@@ -116,10 +116,11 @@ candidate `966845cc` removes the current Rule-1 source negative: native child
 staffing now preserves one complete inference-selected team or proceeds
 unstaffed. Its sealed in-lifetime Claude collector advances Rule 4 only through
 implementation and simulation. No exact-candidate Installed or Live layer is
-proven, and no top-level matrix cell is green. Codex Rule 4 now has source and
-simulation support for an exact host-marked 0.147 plaintext call, while the
-observed Sol path remains encrypted and safely unstaffed. Independent attack,
-exact installation, and live host artifacts remain open.
+proven, and no top-level matrix cell is green. Candidate `966845cc` safely
+rejects the observed unmarked Sol path, but adversarial review found its
+root-only rollout model rejects nested Codex children and its final drift path
+can retain a successful Store row without emitting a rewrite. Codex Rule 4 is
+therefore still source/simulation-negative; install and live proof remain open.
 
 Tracker issue [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
 mirrors the umbrella state. Repository-local AR-119, AR-256, and their evidence

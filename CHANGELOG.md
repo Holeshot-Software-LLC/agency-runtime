@@ -77,12 +77,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
-- Codex 0.147 plaintext collaboration spawns now require a sealed exact-call
-  attestation from the canonical private host rollout before Agency can rewrite
-  the child message. Unknown, unmarked, stale, replayed, linked, oversized, or
-  drifted calls remain unstaffed, and one atomic Store guard permits at most one
-  successful inference route per native launch. Installed and live Codex proof
-  remains a separate release gate.
+- Codex 0.147 plaintext collaboration support is being hardened behind a sealed
+  exact-call host-rollout attestation. The current candidate safely rejects
+  unmarked calls, but nested rollout ancestry and retry-safe final validation
+  remain open blockers; no Installed or Live Codex support is claimed yet.
 - Codex product child diagnostics now classify nested `apply_patch`,
   `shell_command`, and other calls inside current `functions.exec` wrappers,
   plus fixed wrapper outcomes. The Store persists only bounded counts, keeps

@@ -59,11 +59,11 @@ replays cannot mint that capability.
 Implementation and simulation are proven, not installed or live behavior. The
 SafeClaude integration uses a test-managed install and fake process runner.
 Claude's three prior-candidate artifacts remain historical context only.
-Candidate `966845cc` now authenticates a Codex plaintext spawn from the private
-active 0.147 rollout, binds exact arguments and correlation, reattests before
-Store persistence and hook output, and atomically permits one successful route
-per launch. The active Sol/TUI call still omitted the marker and correctly
-remains unstaffed. AR-180 owns exact-install and live proof.
+Candidate `966845cc` authenticates a root-only Codex plaintext spawn shape and
+correctly leaves the active unmarked Sol/TUI call unstaffed. Adversarial review
+found that real forked-child ancestry is rejected and final drift can leave an
+applied route without emitting a rewrite. AR-180 owns those source repairs,
+then exact-install and live proof.
 
 ## Approach
 
@@ -115,6 +115,9 @@ ADR-0159 governs this authorization boundary and its fail-open behavior.
   673-test fast spine with 6 skipped, 134 dashboard tests, Ruff, routing eval,
   and whitespace checks passed. Independent attack and the current-candidate
   mutation run remain open; Installed and Live layers do not advance.
+- Independent attack found one Rule-4 completeness defect in nested rollout
+  identity and one evidence-integrity defect in post-persistence drift cleanup.
+  The matrix remains negative until both are repaired and reattacked.
 
 ## Acceptance
 
