@@ -130,12 +130,12 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-No cell is negative, and `967b0a2c` proves R7 at source and simulation on the
-four hosts with adapter classes; only its zcode simulation stays open, since
-that host has no adapter and the parity suite sweeps generic instead. Remaining
-unblocked work is R2 and R3 (cards reaching the parent caller, singly and
-severally) and R5 (the spawn-origin absence proof). The machine's master switch
-is off, which silently empties adapter evidence gathered outside that suite.
+No cell is negative, and `cb6808fe` proves R7 at source and simulation on all
+five supported hosts: the hooks boundary's own zcode construction is now a named
+function the parity sweep calls, so it observes zcode instead of generic.
+Remaining unblocked work is R2 and R3 (cards reaching the parent caller, singly
+and severally) and R5 (the spawn-origin absence proof). Installed and Live need a
+reinstall first: the switch is off and hooks are staged from three stale trees.
 
 ## verification
 
