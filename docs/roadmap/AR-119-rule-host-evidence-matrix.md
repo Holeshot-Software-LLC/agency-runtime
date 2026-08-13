@@ -57,7 +57,9 @@ Agency was switched off; two of its four cases had been failing for that reason
 alone and pass again now. ZCode is deliberately not claimed: it has no adapter
 class, reaches Agency through the shared hooks boundary, and the suite sweeps
 the generic adapter instead, so its Rule 7 simulation stays unproven rather than
-assumed.
+assumed. Its decision-conformance evaluator exited zero with a baseline of
+211,811 ms, 151/151 mutations killed, zero survived or invalid, and
+`source_unchanged=true`.
 
 Candidate `e80cb40c` repairs the only two `negative` cells. Hermes and OpenClaw
 previously withheld a completed turn whenever Agency itself could not run, which

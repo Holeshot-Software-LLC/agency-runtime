@@ -121,6 +121,10 @@ disables the Hermes evaluated-negative branch remains killed, confirming that
 making Agency-blind paths fail open did not weaken the blocking path the
 verifier's definite negative depends on.
 
+Candidate `967b0a2c`, which makes the host-parity suite hermetic and proves
+Rule 7, also exited zero: baseline 211,811 ms, 151/151 killed, zero survived or
+invalid, and `source_unchanged=true`.
+
 ## Acceptance
 
 - [x] The evaluator may run pytest through a workspace virtual environment
