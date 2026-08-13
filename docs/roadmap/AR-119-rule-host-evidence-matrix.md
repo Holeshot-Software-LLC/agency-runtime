@@ -26,7 +26,7 @@ superseded_by: null
 type: roadmap
 ar119_authority: completion-evidence
 vision_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
-candidate_commit: d4b64c357de08b7f17905c375d8f0c7894b3daea
+candidate_commit: be18a9b06897c4c01559cfe814b20175bc3d72a1
 evidence_cutoff: 2026-08-13
 ---
 
@@ -61,11 +61,34 @@ rather than assumed. Its decision-conformance evaluator exited zero with a
 baseline of 211,811 ms, 151/151 mutations killed, zero survived or invalid, and
 `source_unchanged=true`.
 
-Candidate `d4b64c35` proves Rule 5 in simulation on all five hosts and, with it,
-completes simulation parity on codex and zcode: every rule R1 through R8 is now
-proven at that layer for both, so their Rule 9 simulation derives as proven.
-Claude still lacks a Rule 8 simulation, and Hermes and OpenClaw still lack a
-Rule 4 one.
+Candidate `be18a9b0` completes **simulation parity on all five supported
+hosts**: every rule R1 through R8 is proven at that layer everywhere, so Rule 9
+derives as proven in simulation for each of them. It closes the last three gaps,
+and both gaps were the same kind -- a rule proven somewhere else and assumed
+here.
+
+Claude had no Rule 8 simulation: the fail-open prompt-preflight case is entirely
+host-generic, yet it ran on Codex and ZCode only, so the host whose boundary
+that code was written for was the one host it never ran on. Hermes and OpenClaw
+had no Rule 4 simulation of their own: the existing evidence was a synthetic
+adapter subclass calling `build_preflight_context` directly, which cannot speak
+for the shipped plugin classes or for the bridges that actually receive a child
+launch -- the same substitution the ZCode Rule 7 work had to undo. Both now
+drive each bridge's real `handle()` entry with its real adapter and its own
+payload key names, and assert the exact plural ordered team reaches the child,
+bound to the host's own parent and launch identities, before the child model
+runs. A third case pins the other half: a child the host cannot fully correlate
+is left unstaffed rather than guessed at, so the suite cannot pass on a path
+that staffs anything it is told about. The staffing service is stubbed at the
+same boundary the Claude and ZCode Rule 4 rows stub it, so the claim is like for
+like.
+
+No cell is proven, and none can become proven from here. Rule 5 Implementation
+and every Installed and Live layer on every host remain open, and those need a
+host artifact bound to this exact candidate rather than any further source work.
+
+Candidate `d4b64c35` proves Rule 5 in simulation on all five hosts, which is
+what first completed that layer on codex and zcode.
 
 Rule 5's negative half is an absence, so it is measured rather than read off the
 source. Every seam Agency has for creating a process -- the owned-process policy
@@ -200,8 +223,8 @@ two/deeper remains unsupported, and no Installed or Live layer advances.
 | R4 | claude | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | in-lifetime SafeClaude collector with real HookBridge lifecycle | 2026-08-12 | `tests/test_host_canary.py:805-1055` | Test-managed install and fake process runner are simulation only; prior-candidate live artifacts do not green this candidate |
 | R4 | codex | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | reviewed sealed v3 exact CLI `0.147.0` and Desktop `0.147.0-alpha.6.6` profiles | 2026-08-13 | `agency_runtime/core/codex_spawn_provenance.py`, `tests/test_codex_spawn_provenance.py` | Source/simulation cover the CLI 11/11 TUI census and Desktop 52/52 V2 census; exec depth-two/deeper and exact-candidate host artifacts remain open |
 | R4 | zcode | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | exact inference team reaches the ZCode child boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` | Simulation exists but no exact-candidate native child artifact |
-| R4 | hermes | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | none | unobserved | `docs/roadmap/issue-AR-119-inference-first-workforce.md#historical-acceptance-record-superseded` | Host is unavailable on the evidence machine |
-| R4 | openclaw | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | none | unobserved | `docs/roadmap/issue-AR-119-inference-first-workforce.md#historical-acceptance-record-superseded` | Host is unavailable on the evidence machine |
+| R4 | hermes | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | the exact plural ordered team reaches a host-spawned child through each bridge's real handle() entry with its real adapter, bound to the host's own parent and launch identities; a child the host cannot fully correlate is left unstaffed | 2026-08-13 | `tests/test_native_child_host_boundary_staffing.py:119-217` | Host-boundary simulation with the staffing service stubbed at the same boundary the Claude and ZCode Rule 4 rows stub it; the host is unavailable on the evidence machine, so no installed or live native child artifact exists |
+| R4 | openclaw | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | the exact plural ordered team reaches a host-spawned child through each bridge's real handle() entry with its real adapter, bound to the host's own parent and launch identities; a child the host cannot fully correlate is left unstaffed | 2026-08-13 | `tests/test_native_child_host_boundary_staffing.py:119-217` | Host-boundary simulation with the staffing service stubbed at the same boundary the Claude and ZCode Rule 4 rows stub it; the host is unavailable on the evidence machine, so no installed or live native child artifact exists |
 | R5 | claude | unproven | unproven | proven | unproven | unproven | Source call-graph absence proof plus native spawn-origin artifact | a whole turn on a request that asks to be split up starts no process at any seam, while being planned, staffed, and dealt a card; a positive control proves the detector fires; and the host's own delegation is recorded without Agency starting it | 2026-08-13 | `tests/test_spawn_origin_absence.py:144-228` | Simulation only. A static call-graph absence proof does not hold as written: the turn-path import closure legitimately contains 16 process-capable modules, because inference reaches CLI providers through the same bounded-process primitive the installer and canary use. The Implementation layer needs a formulation that separates starting an agent from running a tool, and no native spawn-origin artifact is bound to this candidate |
 | R5 | codex | unproven | unproven | proven | unproven | unproven | Source call-graph absence proof plus native spawn-origin artifact | a whole turn on a request that asks to be split up starts no process at any seam, while being planned, staffed, and dealt a card; a positive control proves the detector fires; and the host's own delegation is recorded without Agency starting it | 2026-08-13 | `tests/test_spawn_origin_absence.py:144-228` | Simulation only. A static call-graph absence proof does not hold as written: the turn-path import closure legitimately contains 16 process-capable modules, because inference reaches CLI providers through the same bounded-process primitive the installer and canary use. The Implementation layer needs a formulation that separates starting an agent from running a tool, and no native spawn-origin artifact is bound to this candidate |
 | R5 | zcode | unproven | unproven | proven | unproven | unproven | Source call-graph absence proof plus native spawn-origin artifact | a whole turn on a request that asks to be split up starts no process at any seam, while being planned, staffed, and dealt a card; a positive control proves the detector fires; and the host's own delegation is recorded without Agency starting it | 2026-08-13 | `tests/test_spawn_origin_absence.py:144-228` | Simulation only. A static call-graph absence proof does not hold as written: the turn-path import closure legitimately contains 16 process-capable modules, because inference reaches CLI providers through the same bounded-process primitive the installer and canary use. The Implementation layer needs a formulation that separates starting an agent from running a tool, and no native spawn-origin artifact is bound to this candidate |
@@ -217,16 +240,16 @@ two/deeper remains unsupported, and no Installed or Live layer advances.
 | R7 | zcode | unproven | proven | proven | unproven | unproven | Same identity observed in one turn and absent from the next turn | two-turn parity case on the adapter the hooks boundary itself builds for zcode: the card is held in its own turn, absent from the next, and its expiry is stated there | 2026-08-13 | `agency_runtime/core/evals/host_parity.py:231-293` | Deterministic eval evidence only; no installed or live host artifact |
 | R7 | hermes | unproven | proven | proven | unproven | unproven | Same identity observed in one turn and absent from the next turn | two-turn parity case: the card is held in its own turn, absent from the next, and its expiry is stated there | 2026-08-13 | `agency_runtime/core/evals/host_parity.py:231-293` | Deterministic eval evidence only; no installed or live host artifact |
 | R7 | openclaw | unproven | proven | proven | unproven | unproven | Same identity observed in one turn and absent from the next turn | two-turn parity case: the card is held in its own turn, absent from the next, and its expiry is stated there | 2026-08-13 | `agency_runtime/core/evals/host_parity.py:231-293` | Deterministic eval evidence only; no installed or live host artifact |
-| R8 | claude | unproven | proven | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | no Claude-scoped prompt-preflight simulation | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` | Implementation fails open, but the cited prompt-preflight test covers only Codex and ZCode and no native publication proof exists |
+| R8 | claude | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[claude]`: a bridge fault publishes the prompt, loudly, without costing the turn | 2026-08-13 | `tests/test_host_hooks.py:2345-2406` | No live host publication artifact |
 | R8 | codex | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[codex]` | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` | Contract output cannot prove native host publication |
 | R8 | zcode | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[zcode]` | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` | No live host publication artifact |
 | R8 | hermes | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | Agency-blind paths return the host draft unchanged while an evaluated rejection still replaces it | 2026-08-13 | `agency_runtime/adapters/hermes/bridge.py:269-322` | Contract output cannot prove native host publication |
 | R8 | openclaw | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | Agency-blind gates allow the turn while envelope integrity and evaluated negatives still deny | 2026-08-13 | `agency_runtime/adapters/openclaw/node_bridge.py:798-947` | Contract output cannot prove native host publication |
-| R9 | claude | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 211563c7 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but multiple rules and every installed/live layer remain unproven |
+| R9 | claude | unproven | unproven | proven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | every rule R1 through R8 is proven at the simulation layer on claude | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Simulation parity is complete for this host, but Rule 5 Implementation and every Installed and Live layer remain unproven, so parity itself is not proven |
 | R9 | codex | unproven | unproven | proven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | every rule R1 through R8 is proven at the simulation layer on codex | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Simulation parity is complete for this host, but Rule 5 Implementation and every Installed and Live layer remain unproven, so parity itself is not proven |
 | R9 | zcode | unproven | unproven | proven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | every rule R1 through R8 is proven at the simulation layer on zcode | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Simulation parity is complete for this host, but Rule 5 Implementation and every Installed and Live layer remain unproven, so parity itself is not proven |
-| R9 | hermes | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate e80cb40c | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | The Rule 8 negative is repaired, but most rules and every installed/live layer remain unproven |
-| R9 | openclaw | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate e80cb40c | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | The Rule 8 negative is repaired, but most rules and every installed/live layer remain unproven |
+| R9 | hermes | unproven | unproven | proven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | every rule R1 through R8 is proven at the simulation layer on hermes | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Simulation parity is complete for this host, but Rule 5 Implementation and every Installed and Live layer remain unproven, so parity itself is not proven |
+| R9 | openclaw | unproven | unproven | proven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | every rule R1 through R8 is proven at the simulation layer on openclaw | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Simulation parity is complete for this host, but Rule 5 Implementation and every Installed and Live layer remain unproven, so parity itself is not proven |
 
 ## Layer evidence
 
@@ -253,6 +276,11 @@ satisfy a layer.
 | R4 | codex | Simulation | proven | test | exact CLI and Desktop lineage, causal, profile, currentness, bound, and replay fixtures pass for every supported variant | 2026-08-13 | `tests/test_codex_spawn_provenance.py:776-1835` |
 | R4 | zcode | Implementation | proven | source | host-started plaintext child receives the exact inference team | 2026-08-12 | `agency_runtime/adapters/hooks.py:1088-1256` |
 | R4 | zcode | Simulation | proven | test | exact inference team reaches the ZCode child boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` |
+| R8 | claude | Simulation | proven | test | a bridge fault publishes the prompt without costing the turn | 2026-08-13 | `tests/test_host_hooks.py:2345-2406` |
+| R4 | hermes | Implementation | proven | source | the shared native-child boundary forwards one exact inference team to a host-started child | 2026-08-13 | `agency_runtime/adapters/base.py:832-884` |
+| R4 | hermes | Simulation | proven | test | the exact plural team reaches a host-spawned child at that host's real bridge entry | 2026-08-13 | `tests/test_native_child_host_boundary_staffing.py:119-217` |
+| R4 | openclaw | Implementation | proven | source | the shared native-child boundary forwards one exact inference team to a host-started child | 2026-08-13 | `agency_runtime/adapters/base.py:832-884` |
+| R4 | openclaw | Simulation | proven | test | the exact plural team reaches a host-spawned child at that host's real bridge entry | 2026-08-13 | `tests/test_native_child_host_boundary_staffing.py:119-217` |
 | R5 | claude | Simulation | proven | test | a complete turn starts no process at any seam, and the host's own delegation is recorded rather than started | 2026-08-13 | `tests/test_spawn_origin_absence.py:144-228` |
 | R5 | codex | Simulation | proven | test | a complete turn starts no process at any seam, and the host's own delegation is recorded rather than started | 2026-08-13 | `tests/test_spawn_origin_absence.py:144-228` |
 | R5 | zcode | Simulation | proven | test | a complete turn starts no process at any seam, and the host's own delegation is recorded rather than started | 2026-08-13 | `tests/test_spawn_origin_absence.py:144-228` |

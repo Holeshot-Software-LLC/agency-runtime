@@ -127,15 +127,15 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-No cell is negative. `d4b64c35` completes **simulation parity on codex and
-zcode**: R1-R8 all proven, so their R9 simulation derives as proven. R2/R3
-(`42c1354b`), R6 (`75663ed0`), R7 (`cb6808fe`), and R5 (`d4b64c35`) each landed
-as a measured turn on every host's own boundary. Three simulation gaps remain:
-claude R8, hermes/openclaw R4. R5 Implementation is open on purpose: a static
-call-graph absence proof does not hold, since the turn-path closure legitimately
-holds 16 process-capable modules (inference shells out to CLI providers through
-the installer's own primitive), so it needs a formulation separating starting an
-agent from running a tool. Installed and Live need a reinstall first.
+**Simulation parity is complete on all five hosts** at `be18a9b0`: R1-R8 proven
+everywhere, so R9 derives as proven in simulation for each. It landed as R2/R3
+(`42c1354b`), R7 (`cb6808fe`), R6 (`75663ed0`), R5 (`d4b64c35`), then claude R8
+and hermes/openclaw R4 -- each a measured turn on that host's own boundary. No
+cell is negative and none is proven. Nothing further can be proven from source.
+R5 Implementation stays open on purpose: a static call-graph absence proof does
+not hold, since the turn-path closure legitimately holds 16 process-capable
+modules (inference shells out to CLI providers through the installer's own
+primitive). Installed and Live need a reinstall under explicit authorization.
 
 ## verification
 
