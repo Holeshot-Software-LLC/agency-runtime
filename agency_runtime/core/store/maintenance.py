@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import stat
 from collections.abc import Callable, Mapping
 from pathlib import Path
@@ -30,9 +31,11 @@ from agency_runtime.core.store.schema import (
 from agency_runtime.core.store.schema import (
     RUNTIME_TABLE_TIMESTAMPS as _RUNTIME_TABLE_TIMESTAMPS,
 )
-from agency_runtime.core.store.schema import STORE_CLOCK_SQL
+from agency_runtime.core.store.schema import STORE_CLOCK_SQL, store_clock_value_is_canonical
 from agency_runtime.core.store.security import metadata_is_link_or_reparse_point
 from agency_runtime.core.store.trace_identity import correlation_pair_digests
+
+logger = logging.getLogger(__name__)
 
 _DASHBOARD_ACTIVITY_PAGE_SPECS: Mapping[str, tuple[str, str, str]] = {
     "runs": ("runs", "runs.started_at", "runs.id"),
@@ -55,6 +58,18 @@ _DASHBOARD_ACTIVITY_PAGE_SPECS: Mapping[str, tuple[str, str, str]] = {
     "specialists": ("specialists_loaded", "specialist.loaded_at", "specialist.id"),
     "routing": ("routing_decisions", "routing_decisions.created_at", "routing_decisions.id"),
 }
+
+
+def _warn_postcommit_routing_close_failure() -> None:
+    """Emit best-effort cleanup diagnostics without changing commit authority."""
+
+    try:
+        logger.warning(
+            "routing decision connection close failed after commit",
+            exc_info=True,
+        )
+    except Exception:  # diagnostics cannot alter an already-committed outcome
+        return
 
 
 def _activity_cursor_time(name: str, row: Mapping[str, Any]) -> str:
@@ -245,12 +260,20 @@ def _require_exact_inserted_native_child_route(
         "work_units",
         "decision",
     )
-    from agency_runtime.core.native_child_decision import (
-        project_native_child_staffing_decision,
-    )
+    from agency_runtime.core.native_child_decision import project_native_child_success_route
 
-    delivery = project_native_child_staffing_decision(
-        projected_decision.get("native_child_delivery")
+    run = conn.execute(
+        "SELECT host FROM runs WHERE trace_id = ? AND session_id = ?",
+        (trace_id, session_id),
+    ).fetchone()
+    run_host = str(run["host"] or "").strip().casefold() if run is not None else ""
+    delivery = project_native_child_success_route(
+        projected_decision,
+        session_id=session_id,
+        trace_id=trace_id,
+        query_hash=query_hash,
+        context_fingerprint=context_fingerprint,
+        host=run_host,
     )
     expected_slugs = (
         [] if delivery is None else [str(card["specialist_slug"]) for card in delivery["cards"]]
@@ -258,20 +281,11 @@ def _require_exact_inserted_native_child_route(
     if (
         row is None
         or tuple(row[field] for field in fields) != expected
-        or not isinstance(row["created_at"], str)
-        or not row["created_at"]
+        or not store_clock_value_is_canonical(row["created_at"])
         or delivery is None
-        or status != projected_decision.get("status")
-        or source != projected_decision.get("source")
         or status != "applied"
         or source != "native_child_inference"
-        or session_id != delivery["parent_session_id"]
-        or trace_id != delivery["parent_trace_id"]
-        or query_hash != delivery["task_sha256"]
-        or projected_decision.get("selected_ids") != expected_slugs
-        or projected_decision.get("semantic_ids") != expected_slugs
-        or projected_decision.get("companion_ids") not in (None, [])
-        or projected_decision.get("available_companion_ids") not in (None, [])
+        or work_units != "{}"
         or selected_ids != json.dumps(expected_slugs)
         or semantic_ids != json.dumps(expected_slugs)
         or companion_ids != "[]"
@@ -618,9 +632,10 @@ class MaintenanceStoreMixin:
             if event_id != decision_id:
                 raise ValueError("decision_id must already be canonical")
         conn = self._connect()
+        committed = False
         try:
             conn.execute("BEGIN IMMEDIATE")
-            if require_open_run:
+            if source == "native_child_inference" or require_open_run:
                 self._require_open_run(
                     conn,
                     trace_id=normalized_trace,
@@ -712,12 +727,22 @@ class MaintenanceStoreMixin:
             if final_delivery_validator is not None and final_delivery_validator() is not True:
                 raise ValueError("final native-child delivery validation failed")
             conn.commit()
+            committed = True
             return event_id
         except Exception:
             conn.rollback()
             raise
         finally:
-            conn.close()
+            if committed:
+                try:
+                    conn.close()
+                except Exception:
+                    # Commit is the authoritative outcome.  A cleanup failure
+                    # must not turn its successful route into an apparent
+                    # failure that suppresses output and poisons exact retry.
+                    _warn_postcommit_routing_close_failure()
+            else:
+                conn.close()
 
     def _delete_eligible_terminal_pairs(
         self,

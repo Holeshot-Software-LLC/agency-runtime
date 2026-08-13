@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
@@ -13,6 +14,7 @@ from agency_runtime.core.native_child_decision import (
     NATIVE_CHILD_STAFFING_DECISION_SCHEMA,
     canonical_native_child_provider_receipt_digest,
     project_native_child_staffing_decision,
+    project_native_child_success_route,
 )
 from agency_runtime.core.store.sqlite import Store
 
@@ -43,8 +45,6 @@ def _decision() -> dict[str, object]:
             "body_character_length": 6,
         }
     ]
-    import json
-
     team_digest = _digest(
         json.dumps(cards, allow_nan=False, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
     )
@@ -73,10 +73,58 @@ def _decision() -> dict[str, object]:
     }
 
 
+def _success_route(expected: dict[str, object]) -> dict[str, object]:
+    cards = expected["cards"]
+    assert isinstance(cards, list)
+    slugs = [str(card["specialist_slug"]) for card in cards]
+    return {
+        "status": "applied",
+        "semantic_status": "applied",
+        "source": "native_child_inference",
+        "selected_ids": slugs,
+        "semantic_ids": slugs,
+        "companion_ids": [],
+        "available_companion_ids": [],
+        "unavailable_companion_ids": [],
+        "confidence": 0.9,
+        "latency_ms": 12,
+        "provider": "selector",
+        "candidate_count": 1,
+        "top_score": 0.0,
+        "native_child_reason": "applied",
+        "inference_configured": True,
+        "inference_required": True,
+        "inference_attempted": True,
+        "inference_mode": "inferred",
+        "source_message_hash": str(expected["task_sha256"]),
+        "query_hash": str(expected["task_sha256"]),
+        "context_fingerprint": _digest("context"),
+        "native_child_delivery": expected,
+    }
+
+
 def test_projection_preserves_the_exact_content_free_decision() -> None:
     value = _decision()
 
     assert project_native_child_staffing_decision(value) == value
+
+
+def test_success_route_requires_neutral_work_units() -> None:
+    expected = _decision()
+    route = _success_route(expected)
+    route["work_units"] = {}
+    arguments = {
+        "session_id": str(expected["parent_session_id"]),
+        "trace_id": str(expected["parent_trace_id"]),
+        "query_hash": str(expected["task_sha256"]),
+        "context_fingerprint": _digest("context"),
+        "host": str(expected["host"]),
+    }
+
+    assert project_native_child_success_route(route, **arguments) == expected
+
+    route["work_units"] = {"delegate": True}
+    assert project_native_child_success_route(route, **arguments) is None
 
 
 @pytest.mark.parametrize(
@@ -165,30 +213,12 @@ def test_store_resolves_the_exact_decision_without_calling_it_delivery(tmp_path:
         host=str(expected["host"]),
         user_message="Parent request",
     )
-    slugs = [str(card["specialist_slug"]) for card in expected["cards"]]
     decision_id = store.record_routing_decision(
         trace_id=str(expected["parent_trace_id"]),
         session_id=str(expected["parent_session_id"]),
         query_hash=str(expected["task_sha256"]),
         context_fingerprint=_digest("context"),
-        decision={
-            "status": "applied",
-            "semantic_status": "applied",
-            "source": "native_child_inference",
-            "selected_ids": slugs,
-            "semantic_ids": slugs,
-            "companion_ids": [],
-            "available_companion_ids": [],
-            "confidence": 0.9,
-            "latency_ms": 12,
-            "provider": "selector",
-            "native_child_reason": "applied",
-            "inference_configured": True,
-            "inference_required": True,
-            "inference_attempted": True,
-            "inference_mode": "inferred",
-            "native_child_delivery": expected,
-        },
+        decision=_success_route(expected),
     )
 
     resolved = store.get_native_child_staffing_decision(decision_id)
@@ -199,7 +229,26 @@ def test_store_resolves_the_exact_decision_without_calling_it_delivery(tmp_path:
     assert "verified_delivery" not in resolved
 
 
-def test_store_rejects_a_route_column_that_no_longer_matches_its_decision(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("column", "replacement"),
+    [
+        ("selected_ids", '["different"]'),
+        ("confidence", 0.1),
+        ("latency_ms", 999),
+        ("provider", "different-provider"),
+        ("created_at", ""),
+        ("created_at", "bogus"),
+        ("created_at", " "),
+        ("created_at", "!"),
+        ("created_at", "9999-99-99T99:99:99.999000+00:00"),
+        ("created_at", "2026-08-13T00:00:00.123456+00:00"),
+    ],
+)
+def test_store_rejects_a_route_column_that_no_longer_matches_its_decision(
+    tmp_path: Path,
+    column: str,
+    replacement: object,
+) -> None:
     store = Store(tmp_path / "agency.db")
     expected = _decision()
     store.create_run(
@@ -213,21 +262,67 @@ def test_store_rejects_a_route_column_that_no_longer_matches_its_decision(tmp_pa
         session_id=str(expected["parent_session_id"]),
         query_hash=str(expected["task_sha256"]),
         context_fingerprint=_digest("context"),
-        decision={
-            "status": "applied",
-            "semantic_status": "applied",
-            "source": "native_child_inference",
-            "selected_ids": ["security-reviewer"],
-            "semantic_ids": ["security-reviewer"],
-            "available_companion_ids": [],
-            "native_child_delivery": expected,
-        },
+        decision=_success_route(expected),
     )
     conn = store._connect()
     try:
-        conn.execute(
-            "UPDATE routing_decisions SET selected_ids = '[\"different\"]' WHERE id = ?",
+        statement = {
+            "selected_ids": "UPDATE routing_decisions SET selected_ids = ? WHERE id = ?",
+            "confidence": "UPDATE routing_decisions SET confidence = ? WHERE id = ?",
+            "latency_ms": "UPDATE routing_decisions SET latency_ms = ? WHERE id = ?",
+            "provider": "UPDATE routing_decisions SET provider = ? WHERE id = ?",
+            "created_at": "UPDATE routing_decisions SET created_at = ? WHERE id = ?",
+        }[column]
+        conn.execute(statement, (replacement, decision_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+    assert store.get_native_child_staffing_decision(decision_id) is None
+
+
+@pytest.mark.parametrize("tamper", ["extra-field", "work-units"])
+def test_store_rejects_nonexact_native_child_success_rows(
+    tmp_path: Path,
+    tamper: str,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    expected = _decision()
+    store.create_run(
+        session_id=str(expected["parent_session_id"]),
+        trace_id=str(expected["parent_trace_id"]),
+        host=str(expected["host"]),
+        user_message="Parent request",
+    )
+    decision_id = store.record_routing_decision(
+        trace_id=str(expected["parent_trace_id"]),
+        session_id=str(expected["parent_session_id"]),
+        query_hash=str(expected["task_sha256"]),
+        context_fingerprint=_digest("context"),
+        decision=_success_route(expected),
+    )
+    conn = store._connect()
+    try:
+        row = conn.execute(
+            "SELECT decision FROM routing_decisions WHERE id = ?",
             (decision_id,),
+        ).fetchone()
+        assert row is not None
+        persisted = json.loads(row["decision"])
+        work_units = "{}"
+        if tamper == "extra-field":
+            persisted["fallback_applied"] = True
+        else:
+            persisted["work_units"] = {
+                "delegate": True,
+                "count": 1,
+                "confidence": "high",
+                "source": "test",
+            }
+            work_units = json.dumps(persisted["work_units"])
+        conn.execute(
+            "UPDATE routing_decisions SET decision = ?, work_units = ? WHERE id = ?",
+            (json.dumps(persisted, sort_keys=True), work_units, decision_id),
         )
         conn.commit()
     finally:

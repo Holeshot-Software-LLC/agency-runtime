@@ -1439,7 +1439,7 @@ class _NominationSemantics:""",
             "root session carried by hook correlation."
         ),
         source_path="agency_runtime/core/codex_spawn_provenance.py",
-        before='    return canonical, sessions_root, match.group("thread_id")',
+        before="    return canonical, sessions_root, thread_id",
         after="    return canonical, sessions_root, root_session_id",
         test_node=(
             "tests/test_codex_spawn_provenance.py::"
@@ -1461,6 +1461,409 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_native_child_duplicate_launch.py::"
             "test_final_delivery_validation_rolls_back_and_exact_launch_can_retry"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-config-lock-exit-suppresses-committed-delivery",
+        invariant=(
+            "A config-lock release failure after route commit preserves the matching staffed "
+            "output instead of leaving a successful row that poisons retry."
+        ),
+        source_path="agency_runtime/core/native_child_staffing.py",
+        before="""        if not decision_id:
+            state_unchanged = False""",
+        after="""        decision_id = ""
+        state_unchanged = False""",
+        test_node=(
+            "tests/test_native_child_staffing.py::"
+            "test_config_lock_exit_failure_preserves_committed_staffed_delivery"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-response-schema-drift",
+        invariant=("A marked Codex spawn must match the exact pinned 0.147 response-item schema."),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    if set(payload) != _FUNCTION_CALL_KEYS:
+        return False""",
+        after="""    if False and set(payload) != _FUNCTION_CALL_KEYS:
+        return False""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_function_call_requires_exact_observed_response_item_schema"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-outer-envelope-drift",
+        invariant=(
+            "A marked Codex spawn must match one of the two exact observed 0.147 response "
+            "envelopes, including its timestamp and optional ordinal contract."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="    if keys not in (",
+        after="    if False and keys not in (",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_target_response_item_rejects_an_extra_outer_key"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-timestamp-format-drift",
+        invariant=(
+            "The marked response envelope uses the exact valid millisecond UTC timestamp "
+            "format observed for Codex 0.147."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            "    if not isinstance(timestamp, str) "
+            "or _CODEX_TIMESTAMP.fullmatch(timestamp) is None:"
+        ),
+        after="    if not isinstance(timestamp, str):",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_target_response_item_requires_exact_observed_timestamp"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-boolean-ordinal",
+        invariant=(
+            "The optional Codex 0.147 response ordinal is a non-boolean nonnegative integer."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            "        if isinstance(ordinal, bool) or not isinstance(ordinal, int) or ordinal < 0:"
+        ),
+        after="        if not isinstance(ordinal, int) or ordinal < 0:",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_target_response_item_requires_a_nonnegative_integer_ordinal"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-malformed-function-item-id",
+        invariant=(
+            "The marked Codex function call carries the exact observed 0.147 function-item "
+            "identity format before that identity can be sealed."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            "    if not isinstance(item_id, str) or _FUNCTION_ITEM_ID.fullmatch(item_id) is None:"
+        ),
+        after="    if not isinstance(item_id, str):",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_function_call_requires_exact_observed_response_item_schema"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-rollout-allows-noncanonical-date-widths",
+        invariant=(
+            "The canonical Codex sessions path uses exact four-digit year and two-digit month "
+            "and day components."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    if (
+        re.fullmatch(r"[0-9]{4}", year) is None
+        or re.fullmatch(r"[0-9]{2}", month) is None
+        or re.fullmatch(r"[0-9]{2}", day_value) is None
+    ):""",
+        after="    if False:",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_rollout_path_requires_canonical_padded_date_components"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-rollout-allows-nil-uuid-identity",
+        invariant=("Codex session, thread, and turn UUID identities are canonical and non-nil."),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    return bool(
+        parsed.int
+        and str(parsed) == value
+        and parsed.variant == RFC_4122
+        and parsed.version in versions
+    )""",
+        after="""    return bool(
+        parsed.int == 0
+        or (
+            parsed.int
+            and str(parsed) == value
+            and parsed.variant == RFC_4122
+            and parsed.version in versions
+        )
+    )""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::test_session_identity_requires_non_nil_rfc_uuid7"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-rollout-drops-observed-uuid-version-domain",
+        invariant=(
+            "Codex thread/session identities are UUIDv7 and turn identities are observed "
+            "UUIDv4 or UUIDv7 values."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="        and parsed.version in versions",
+        after="        and parsed.version is not None",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::test_session_identity_requires_non_nil_rfc_uuid7"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-rollout-drops-rfc-uuid-variant",
+        invariant=("Codex session, thread, and turn identities use the RFC UUID variant."),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        and parsed.variant == RFC_4122
+        and parsed.version in versions""",
+        after="        and ((parsed.int >> 76) & 0xF) in versions",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::test_session_identity_requires_non_nil_rfc_uuid7"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-initial-item-id-reuse",
+        invariant=(
+            "The sealed Codex function-call item identity occurs exactly once in the initial "
+            "bounded transcript snapshot."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=("    if not _function_item_is_unique(descriptor, size, item_id=function_item_id):"),
+        after=(
+            "    if False and not _function_item_is_unique("
+            "descriptor, size, item_id=function_item_id):"
+        ),
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_function_item_identity_must_be_unique_across_initial_snapshot"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-appended-item-id-reuse",
+        invariant=(
+            "Any appended response item reusing the sealed Codex function-call identity "
+            "invalidates the ephemeral attestation."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='            payload.get("call_id") == tool_use_id or payload.get("id") == function_item_id',
+        after='            payload.get("call_id") == tool_use_id or False',
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_appended_different_call_cannot_reuse_attested_function_item_identity"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-contradictory-semantic-status",
+        invariant=(
+            "The transactional native-child readback rejects an inner semantic status that "
+            "contradicts its applied outer route."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before='        or value.get("semantic_status") != "applied"',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_contradictory_native_child_success_projection_rolls_back_before_callback"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-extra-success-fields",
+        invariant=(
+            "The transactional native-child readback accepts only the exact applied success "
+            "field set, never fallback, continuation, or origin metadata."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before=(
+            "    if not isinstance(value, Mapping) or frozenset(value) != _SUCCESS_ROUTE_FIELDS:"
+        ),
+        after=(
+            "    if not isinstance(value, Mapping) "
+            "or not frozenset(value) >= _SUCCESS_ROUTE_FIELDS:"
+        ),
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_extra_native_child_success_projection_rolls_back_before_callback"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-nonneutral-work-units",
+        invariant=(
+            "An applied native-child success cannot smuggle delegated work units alongside "
+            "the host-owned child launch."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before='        or value.get("work_units") != {}',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_decision.py::test_success_route_requires_neutral_work_units"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-drops-parent-host-binding",
+        invariant=(
+            "The delivery host must equal the host of the exact open parent run before the "
+            "final callback can authorize output."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before='        or delivery["host"] != host',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_native_child_delivery_host_must_match_open_parent_before_callback"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-drops-applied-provider-binding",
+        invariant=(
+            "The route provider must equal the sole applied provider attempt sealed into "
+            "the native-child delivery receipt."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before="        or provider != applied_provider",
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_route_provider_must_match_applied_attempt_and_exact_launch_can_retry"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-route-uses-raw-provider-name",
+        invariant=(
+            "The route and sealed delivery use the same content-free applied provider "
+            "identity even when a valid configured name requires hashing."
+        ),
+        source_path="agency_runtime/core/native_child_staffing.py",
+        before='        "provider": _route_provider_name(raw, native_child_delivery),',
+        after='        "provider": _provider_name(raw),',
+        test_node=(
+            "tests/test_native_child_staffing.py::"
+            "test_provider_name_uses_the_same_safe_identity_as_the_applied_receipt"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-out-of-range-confidence",
+        invariant=(
+            "An applied native-child success retains the inference judge's public zero-to-one "
+            "confidence contract."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before="        or not 0.0 <= confidence <= 1.0",
+        after="        or not -1_000_000.0 <= confidence <= 1_000_000.0",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_native_child_success_numeric_contract_rolls_back_and_retries"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-impossible-candidate-count",
+        invariant=(
+            "A successful complete-universe decision cannot select more cards than its "
+            "reported inference candidate universe contained."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before=("        or not len(expected_slugs) <= candidate_count <= 86_400_000"),
+        after="        or not 0 <= candidate_count <= 86_400_000",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_native_child_success_numeric_contract_rolls_back_and_retries"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-retrieval-score-in-complete-mode",
+        invariant=(
+            "Native-child inference uses the complete candidate universe and therefore "
+            "retains its exact neutral retrieval top score."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before="        or top_score != 0.0",
+        after="        or not -1_000_000.0 <= top_score <= 1_000_000.0",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_native_child_success_numeric_contract_rolls_back_and_retries"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-postcommit-close-suppresses-staffed-output",
+        invariant=(
+            "A connection cleanup failure after commit cannot convert an authoritative "
+            "native-child success into unstaffed output."
+        ),
+        source_path="agency_runtime/core/store/maintenance.py",
+        before="            if committed:",
+        after="            if False and committed:",
+        test_node=(
+            "tests/test_native_child_staffing.py::"
+            "test_postcommit_connection_close_failure_preserves_exact_staffed_output"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-postcommit-diagnostic-suppresses-staffed-output",
+        invariant=(
+            "A logging failure while diagnosing post-commit cleanup cannot escape and "
+            "suppress the exact staffed output."
+        ),
+        source_path="agency_runtime/core/store/maintenance.py",
+        before="""    except Exception:  # diagnostics cannot alter an already-committed outcome
+        return""",
+        after="""    except Exception:  # diagnostics cannot alter an already-committed outcome
+        raise""",
+        test_node=(
+            "tests/test_native_child_staffing.py::"
+            "test_postcommit_connection_close_failure_preserves_exact_staffed_output"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-resolver-drops-route-confidence-projection",
+        invariant=(
+            "The native-child resolver rejects a duplicated confidence column that no longer "
+            "matches the exact serialized success."
+        ),
+        source_path="agency_runtime/core/store/evidence.py",
+        before='        or row["confidence"] != decision.get("confidence")',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_decision.py::"
+            "test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-resolver-drops-route-latency-projection",
+        invariant=(
+            "The native-child resolver rejects a duplicated latency column that no longer "
+            "matches the exact serialized success."
+        ),
+        source_path="agency_runtime/core/store/evidence.py",
+        before='        or row["latency_ms"] != decision.get("latency_ms")',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_decision.py::"
+            "test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-resolver-drops-route-provider-projection",
+        invariant=(
+            "The native-child resolver rejects a duplicated provider column that no longer "
+            "matches the exact serialized success."
+        ),
+        source_path="agency_runtime/core/store/evidence.py",
+        before='        or row["provider"] != decision.get("provider")',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_decision.py::"
+            "test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-resolver-allows-noncanonical-created-at",
+        invariant=(
+            "The native-child resolver mirrors the transactional requirement that the route "
+            "has the exact valid timestamp shape authored by the Store clock."
+        ),
+        source_path="agency_runtime/core/store/evidence.py",
+        before='        or not store_clock_value_is_canonical(row["created_at"])',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_decision.py::"
+            "test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
         ),
     ),
     DecisionMutation(

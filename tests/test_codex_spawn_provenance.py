@@ -19,7 +19,9 @@ _GRANDCHILD_THREAD = "019ff928-4178-7421-86f6-d391c6316d98"
 _EXEC_SESSION = "019ff1e8-e0fe-7fe0-b8ba-57de219228c6"
 _EXEC_CHILD = "019ff1e9-defe-77c2-8bd1-9d503f1670b6"
 _TURN = "019ff8ef-c6e1-7961-a682-d8aa9f11f464"
+_V4_TURN = "550e8400-e29b-41d4-a716-446655440000"
 _CALL = "call_4fLyxjPXggCL0L9VWsSXDWr3"
+_FUNCTION_ITEM = "fc_" + "a" * 50
 _ARGS = {
     "task_name": "security_review",
     "message": "Review the exact transaction boundary.",
@@ -29,7 +31,7 @@ _MISSING = object()
 
 
 def _record(kind: str, payload: dict[str, Any]) -> dict[str, Any]:
-    return {"timestamp": "2026-08-13T00:00:00Z", "type": kind, "payload": payload}
+    return {"timestamp": "2026-08-13T00:00:00.000Z", "type": kind, "payload": payload}
 
 
 def _root_metadata(
@@ -112,6 +114,7 @@ def _records(
         "name": "spawn_agent",
         "arguments": json.dumps(args or _ARGS, separators=(",", ":")),
         "call_id": call_id,
+        "id": _FUNCTION_ITEM,
         "internal_chat_message_metadata_passthrough": {"turn_id": turn_id},
     }
     if marker is not _MISSING:
@@ -124,7 +127,7 @@ def _records(
             history_mode=history_mode,
             originator=originator,
         ),
-        _record("event_msg", {"type": "task_started", "turn_id": _TURN}),
+        _record("event_msg", {"type": "task_started", "turn_id": turn_id}),
         _record("response_item", call),
     ]
 
@@ -261,6 +264,70 @@ def test_exact_marked_spawn_attests_and_tolerates_unrelated_append(
     with path.open("a", encoding="utf-8") as stream:
         stream.write(json.dumps(_record("event_msg", {"type": "token_count"})) + "\n")
     assert subject.codex_plaintext_spawn_attestation_is_current(attestation, tool_input=_ARGS)
+
+
+def test_outer_record_ordinal_remains_optional(
+    rollout: tuple[Path, dict[str, str]],
+) -> None:
+    path, environ = rollout
+    records = _records(marker=[])
+    for ordinal, record in enumerate(records):
+        record["ordinal"] = ordinal
+    _write(path, records)
+
+    assert _attest(path, environ) is not None
+
+
+def test_target_response_item_rejects_an_extra_outer_key(
+    rollout: tuple[Path, dict[str, str]],
+) -> None:
+    path, environ = rollout
+    records = _records(marker=[])
+    records[-1]["future_envelope_field"] = True
+    _write(path, records)
+
+    assert _attest(path, environ) is None
+
+
+@pytest.mark.parametrize("ordinal", [True, -1, "0", 1.0, None])
+def test_target_response_item_requires_a_nonnegative_integer_ordinal(
+    rollout: tuple[Path, dict[str, str]],
+    ordinal: object,
+) -> None:
+    path, environ = rollout
+    records = _records(marker=[])
+    records[-1]["ordinal"] = ordinal
+    _write(path, records)
+
+    assert _attest(path, environ) is None
+
+
+@pytest.mark.parametrize(
+    "timestamp",
+    [
+        _MISSING,
+        None,
+        1723507200,
+        "2026-08-13T00:00:00Z",
+        "2026-08-13T00:00:00.000000Z",
+        "2026-13-13T00:00:00.000Z",
+        "2026-08-13T24:00:00.000Z",
+        "2026-08-13T00:00:00.000+00:00",
+    ],
+)
+def test_target_response_item_requires_exact_observed_timestamp(
+    rollout: tuple[Path, dict[str, str]],
+    timestamp: object,
+) -> None:
+    path, environ = rollout
+    records = _records(marker=[])
+    if timestamp is _MISSING:
+        records[-1].pop("timestamp")
+    else:
+        records[-1]["timestamp"] = timestamp
+    _write(path, records)
+
+    assert _attest(path, environ) is None
 
 
 def test_exact_forked_child_shape_attests_and_binds_thread_and_root(
@@ -650,9 +717,92 @@ def test_missing_null_or_nonempty_marker_never_attests(
 @pytest.mark.parametrize(
     "mutation",
     [
+        "missing_id",
+        "malformed_id",
+        "extra_payload_key",
+        "extra_metadata_key",
+    ],
+)
+def test_function_call_requires_exact_observed_response_item_schema(
+    rollout: tuple[Path, dict[str, str]],
+    mutation: str,
+) -> None:
+    path, environ = rollout
+    records = _records(marker=[])
+    call = records[-1]["payload"]
+    if mutation == "missing_id":
+        call.pop("id")
+    elif mutation == "malformed_id":
+        call["id"] = "fc_" + "g" * 50
+    elif mutation == "extra_payload_key":
+        call["delivery_mode"] = "plaintext"
+    elif mutation == "extra_metadata_key":
+        call["internal_chat_message_metadata_passthrough"]["future_key"] = True
+    _write(path, records)
+
+    assert _attest(path, environ) is None
+
+
+@pytest.mark.parametrize("position", ["before", "after"])
+def test_function_item_identity_must_be_unique_across_initial_snapshot(
+    rollout: tuple[Path, dict[str, str]],
+    position: str,
+) -> None:
+    path, environ = rollout
+    records = _records(marker=[])
+    reused = _record(
+        "response_item",
+        {
+            "type": "future_response_type",
+            "call_id": "call_AAAAAAAAAAAAAAAAAAAAAAAA",
+            "id": _FUNCTION_ITEM,
+        },
+    )
+    if position == "before":
+        records.insert(-1, reused)
+    else:
+        records.append(reused)
+    _write(path, records)
+
+    assert _attest(path, environ) is None
+
+
+@pytest.mark.parametrize(
+    ("turn_id", "call_id"),
+    [
+        ("parent-turn", _CALL),
+        (_TURN, "spawn-call-one"),
+        ("019FF8EF-C6E1-7961-A682-D8AA9F11F464", _CALL),
+        (_TURN, "call_" + "a" * 25),
+    ],
+)
+def test_attestation_requires_exact_codex_turn_and_call_identity_formats(
+    rollout: tuple[Path, dict[str, str]],
+    turn_id: str,
+    call_id: str,
+) -> None:
+    path, environ = rollout
+    _write(path, _records(marker=[], turn_id=turn_id, call_id=call_id))
+
+    assert (
+        subject.attest_codex_plaintext_spawn(
+            path,
+            session_id=_SESSION,
+            turn_id=turn_id,
+            tool_use_id=call_id,
+            tool_input=_ARGS,
+            environ=environ,
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
         {"cli_version": "0.147.0-alpha.6.6"},
-        {"call_id": "different-call"},
-        {"turn_id": "different-turn"},
+        {"call_id": "call_AAAAAAAAAAAAAAAAAAAAAAAA"},
+        {"turn_id": "019ff8ef-c6e1-7961-a682-d8aa9f11f465"},
     ],
 )
 def test_version_or_correlation_drift_never_attests(
@@ -662,6 +812,119 @@ def test_version_or_correlation_drift_never_attests(
     _write(path, _records(marker=[], **mutation))
 
     assert _attest(path, environ) is None
+
+
+def test_observed_v4_turn_identity_remains_supported(
+    rollout: tuple[Path, dict[str, str]],
+) -> None:
+    path, environ = rollout
+    _write(path, _records(marker=[], turn_id=_V4_TURN))
+
+    assert (
+        subject.attest_codex_plaintext_spawn(
+            path,
+            session_id=_SESSION,
+            turn_id=_V4_TURN,
+            tool_use_id=_CALL,
+            tool_input=_ARGS,
+            environ=environ,
+        )
+        is not None
+    )
+
+
+@pytest.mark.parametrize(
+    "identity",
+    [
+        "00000000-0000-0000-0000-000000000000",
+        "123e4567-e89b-12d3-a456-426614174000",
+        "019ff8ee-eb1c-7de3-015d-3deea9eca028",
+    ],
+)
+def test_session_identity_requires_non_nil_rfc_uuid7(
+    rollout: tuple[Path, dict[str, str]],
+    identity: str,
+) -> None:
+    original, environ = rollout
+    path = original.with_name(original.name.replace(_SESSION, identity))
+    _write(path, _records(marker=[], session_id=identity))
+
+    assert (
+        subject.attest_codex_plaintext_spawn(
+            path,
+            session_id=identity,
+            turn_id=_TURN,
+            tool_use_id=_CALL,
+            tool_input=_ARGS,
+            environ=environ,
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize(
+    "turn_id",
+    [
+        "00000000-0000-0000-0000-000000000000",
+        "123e4567-e89b-12d3-a456-426614174000",
+        "550e8400-e29b-41d4-0716-446655440000",
+    ],
+)
+def test_turn_identity_requires_non_nil_observed_rfc_uuid_version(
+    rollout: tuple[Path, dict[str, str]],
+    turn_id: str,
+) -> None:
+    path, environ = rollout
+    _write(path, _records(marker=[], turn_id=turn_id))
+
+    assert (
+        subject.attest_codex_plaintext_spawn(
+            path,
+            session_id=_SESSION,
+            turn_id=turn_id,
+            tool_use_id=_CALL,
+            tool_input=_ARGS,
+            environ=environ,
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize("clock", ["T24-00-00", "T23-60-00", "T23-59-60", "T99-99-99"])
+def test_rollout_filename_requires_a_valid_clock_time(
+    rollout: tuple[Path, dict[str, str]],
+    clock: str,
+) -> None:
+    original, environ = rollout
+    path = original.with_name(original.name.replace("T22-23-55", clock))
+    _write(path, _records(marker=[]))
+
+    assert _attest(path, environ) is None
+
+
+@pytest.mark.parametrize(
+    ("month", "day_value"),
+    [("8", "12"), ("08", "3"), ("8", "3")],
+)
+def test_rollout_path_requires_canonical_padded_date_components(
+    rollout: tuple[Path, dict[str, str]],
+    month: str,
+    day_value: str,
+) -> None:
+    original, environ = rollout
+    sessions = Path(environ["CODEX_HOME"]) / "sessions"
+    path = (
+        sessions
+        / "2026"
+        / month
+        / day_value
+        / f"rollout-2026-{month}-{day_value}T22-23-55-{_SESSION}.jsonl"
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _write(path, _records(marker=[]))
+
+    assert _attest(path, environ) is None
+    assert original.parent != path.parent
 
 
 def test_full_arguments_and_pinned_schema_must_match(
@@ -712,6 +975,17 @@ def test_completed_or_output_call_is_stale_before_attestation(
     assert _attest(path, environ) is None
 
 
+def test_unknown_same_call_response_item_fails_initial_attestation(
+    rollout: tuple[Path, dict[str, str]],
+) -> None:
+    path, environ = rollout
+    records = _records(marker=[])
+    records.append(_record("response_item", {"type": "future_state", "call_id": _CALL}))
+    _write(path, records)
+
+    assert _attest(path, environ) is None
+
+
 @pytest.mark.parametrize("terminal", ["function_call", "function_call_output", "task_complete"])
 def test_append_replay_output_or_completion_invalidates_attestation(
     rollout: tuple[Path, dict[str, str]], terminal: str
@@ -732,6 +1006,41 @@ def test_append_replay_output_or_completion_invalidates_attestation(
                 else {"type": terminal, "turn_id": _TURN}
             ),
         )
+    )
+    with path.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(appended, separators=(",", ":")) + "\n")
+
+    assert not subject.codex_plaintext_spawn_attestation_is_current(attestation, tool_input=_ARGS)
+
+
+def test_appended_unknown_same_call_response_item_invalidates_attestation(
+    rollout: tuple[Path, dict[str, str]],
+) -> None:
+    path, environ = rollout
+    _write(path, _records(marker=[]))
+    attestation = _attest(path, environ)
+    assert attestation is not None
+    appended = _record("response_item", {"type": "future_state", "call_id": _CALL})
+    with path.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(appended, separators=(",", ":")) + "\n")
+
+    assert not subject.codex_plaintext_spawn_attestation_is_current(attestation, tool_input=_ARGS)
+
+
+def test_appended_different_call_cannot_reuse_attested_function_item_identity(
+    rollout: tuple[Path, dict[str, str]],
+) -> None:
+    path, environ = rollout
+    _write(path, _records(marker=[]))
+    attestation = _attest(path, environ)
+    assert attestation is not None
+    appended = _record(
+        "response_item",
+        {
+            "type": "future_response_type",
+            "call_id": "call_AAAAAAAAAAAAAAAAAAAAAAAA",
+            "id": _FUNCTION_ITEM,
+        },
     )
     with path.open("a", encoding="utf-8") as stream:
         stream.write(json.dumps(appended, separators=(",", ":")) + "\n")

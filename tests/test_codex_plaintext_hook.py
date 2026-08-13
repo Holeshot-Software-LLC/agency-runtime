@@ -20,6 +20,9 @@ from agency_runtime.core.native_child_staffing import NativeChildStaffingResult
 
 _TASK = "Review the transaction boundary and add regression tests."
 _SESSION_ID = "019ff8ee-eb1c-7de3-815d-3deea9eca028"
+_TURN_ID = "019ff8ef-c6e1-7961-a682-d8aa9f11f464"
+_CALL_ID = "call_4fLyxjPXggCL0L9VWsSXDWr3"
+_FUNCTION_ITEM_ID = "fc_" + "a" * 50
 _ARGS = {
     "message": _TASK,
     "task_name": "transaction_review",
@@ -29,7 +32,7 @@ _ARGS = {
 
 class _LiveParentStore:
     def get_run(self, trace_id: str) -> dict[str, str] | None:
-        if trace_id != "parent-turn":
+        if trace_id != _TURN_ID:
             return None
         return {
             "trace_id": trace_id,
@@ -49,8 +52,8 @@ def _payload(
     return {
         "hook_event_name": "PreToolUse",
         "session_id": _SESSION_ID,
-        "turn_id": "parent-turn",
-        "tool_use_id": "spawn-call-one",
+        "turn_id": _TURN_ID,
+        "tool_use_id": _CALL_ID,
         "tool_name": tool_name,
         "transcript_path": transcript_path,
         "tool_input": args,
@@ -121,17 +124,19 @@ def test_real_attestor_and_hook_integration_rewrites_exact_marked_spawn(
         },
         {
             "type": "event_msg",
-            "payload": {"type": "task_started", "turn_id": "parent-turn"},
+            "payload": {"type": "task_started", "turn_id": _TURN_ID},
         },
         {
+            "timestamp": "2026-08-12T22:23:55.000Z",
             "type": "response_item",
             "payload": {
                 "type": "function_call",
                 "namespace": "collaboration",
                 "name": "spawn_agent",
-                "call_id": "spawn-call-one",
+                "call_id": _CALL_ID,
+                "id": _FUNCTION_ITEM_ID,
                 "arguments": json.dumps(_ARGS, separators=(",", ":")),
-                "internal_chat_message_metadata_passthrough": {"turn_id": "parent-turn"},
+                "internal_chat_message_metadata_passthrough": {"turn_id": _TURN_ID},
                 "encrypted_function_args": [],
             },
         },
@@ -218,8 +223,8 @@ def test_authenticated_codex_spawn_alias_routes_through_plaintext_staffing(
         {
             "transcript_path": "C:\\codex-home\\sessions\\rollout-parent-session.jsonl",
             "session_id": _SESSION_ID,
-            "turn_id": "parent-turn",
-            "tool_use_id": "spawn-call-one",
+            "turn_id": _TURN_ID,
+            "tool_use_id": _CALL_ID,
             "tool_input": _ARGS,
             "environ": os.environ,
         }
@@ -227,7 +232,7 @@ def test_authenticated_codex_spawn_alias_routes_through_plaintext_staffing(
     assert len(staffing_calls) == 1
     assert staffing_calls[0]["host"] == "codex"
     assert staffing_calls[0]["task"] == _TASK
-    assert staffing_calls[0]["launch_id"] == "spawn-call-one"
+    assert staffing_calls[0]["launch_id"] == _CALL_ID
     assert current_calls == [(attestation, _ARGS), (attestation, _ARGS)]
 
 
@@ -259,7 +264,7 @@ def test_unattested_codex_spawn_stays_unstaffed_with_existing_reason(
     assert _bridge().handle(_payload(message=message)) == {}
     assert len(failures) == 1
     assert failures[0]["reason_code"] == "unsupported_opaque_interagent_channel"
-    assert failures[0]["launch_id"] == "spawn-call-one"
+    assert failures[0]["launch_id"] == _CALL_ID
     assert failures[0]["task"] == message
 
 

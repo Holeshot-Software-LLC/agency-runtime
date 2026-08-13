@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -22,6 +23,7 @@ from agency_runtime.core.native_child_decision import (
 from agency_runtime.core.native_child_install_identity import NativeChildInstallIdentity
 from agency_runtime.core.native_child_prompt_delivery import parse_inference_team_delivery
 from agency_runtime.core.routing_snapshot import RoutingSnapshot
+from agency_runtime.core.store import maintenance
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -198,7 +200,7 @@ def _judge_result(selected: object) -> dict[str, Any]:
         "inference_mode": "inferred",
         "provider_name": "primary",
         "candidate_count": 2,
-        "top_score": 0.8,
+        "top_score": 0.0,
         "provider_attempts": [_attempt("failed", name="first"), _attempt()],
     }
 
@@ -646,6 +648,62 @@ def test_provider_receipt_must_have_exactly_one_applied_attempt(
     assert store.prompt_reads == []
 
 
+def test_provider_name_uses_the_same_safe_identity_as_the_applied_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    prompt = "Exact specialist prompt."
+    agent = _agent("alpha-reviewer", prompt)
+    store = Store(tmp_path / "provider-identity.db")
+    store.create_run(
+        session_id="parent-session",
+        trace_id="parent-trace",
+        host="claude",
+        user_message="Parent request",
+    )
+    monkeypatch.setattr(
+        store,
+        "get_routing_roster_snapshot",
+        lambda **_kwargs: {
+            "generation": store.get_roster_generation(),
+            "catalog": [agent],
+        },
+    )
+    monkeypatch.setattr(
+        store,
+        "get_versioned_specialist_prompt",
+        lambda *_args, **_kwargs: {
+            "slug": "alpha-reviewer",
+            "version": agent["version"],
+            "hash": agent["hash"],
+            "prompt_body": prompt,
+            "prompt_truncated": False,
+        },
+    )
+    judge_result = _judge_result(["alpha-reviewer"])
+    judge_result["provider_name"] = "valid provider name"
+    judge_result["provider_attempts"] = [_attempt(name="valid provider name")]
+
+    result = _invoke(monkeypatch, store, judge_result)
+
+    assert result.staffed is True
+    assert result.decision_id
+    assert store.get_native_child_staffing_decision(result.decision_id) is not None
+    conn = store._connect()
+    try:
+        row = conn.execute(
+            "SELECT provider, decision FROM routing_decisions WHERE id = ?",
+            (result.decision_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+    assert row is not None
+    decision = json.loads(row["decision"])
+    applied_provider = decision["native_child_delivery"]["provider_attempts"][0]["provider_name"]
+    assert applied_provider.startswith("sha256:")
+    assert row["provider"] == decision["provider"] == applied_provider
+
+
 def test_launch_child_install_time_and_nonce_bind_each_delivery_against_replay(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1005,6 +1063,102 @@ def test_real_store_final_validation_rejection_leaves_no_applied_route_and_retri
     assert retried.staffed is True
     assert retried.decision_id
     assert store.get_native_child_staffing_decision(retried.decision_id) is not None
+
+
+def test_config_lock_exit_failure_preserves_committed_staffed_delivery(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompt = "Exact specialist prompt."
+    store = _Store([_agent("alpha-reviewer", prompt)], {"alpha-reviewer": prompt})
+
+    @contextmanager
+    def fail_after_commit() -> Iterator[None]:
+        yield
+        raise RuntimeError("lock release failed after commit")
+
+    monkeypatch.setattr(
+        staffing,
+        "_native_child_config_read_lock",
+        lambda _store: fail_after_commit(),
+    )
+
+    result = _invoke(monkeypatch, store, _judge_result(["alpha-reviewer"]))
+
+    assert result.staffed is True
+    assert result.decision_id
+    assert [item["decision"]["status"] for item in store.decisions] == ["applied"]
+
+
+@pytest.mark.parametrize("warning_fails", [False, True])
+def test_postcommit_connection_close_failure_preserves_exact_staffed_output(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    warning_fails: bool,
+) -> None:
+    prompt = "Exact specialist prompt."
+    agent = _agent("alpha-reviewer", prompt)
+    store = Store(tmp_path / "postcommit-close.db")
+    store.create_run(
+        session_id="parent-session",
+        trace_id="parent-trace",
+        host="claude",
+        user_message="Parent request",
+    )
+    monkeypatch.setattr(
+        store,
+        "get_routing_roster_snapshot",
+        lambda **_kwargs: {
+            "generation": store.get_roster_generation(),
+            "catalog": [agent],
+        },
+    )
+    monkeypatch.setattr(
+        store,
+        "get_versioned_specialist_prompt",
+        lambda *_args, **_kwargs: {
+            "slug": "alpha-reviewer",
+            "version": agent["version"],
+            "hash": agent["hash"],
+            "prompt_body": prompt,
+            "prompt_truncated": False,
+        },
+    )
+    real_connect = store._connect
+
+    class _PostcommitCloseFailure:
+        def __init__(self) -> None:
+            self._connection = real_connect()
+            self._committed = False
+
+        def __getattr__(self, name: str) -> Any:
+            return getattr(self._connection, name)
+
+        def commit(self) -> None:
+            self._connection.commit()
+            self._committed = True
+
+        def close(self) -> None:
+            self._connection.close()
+            if self._committed:
+                raise RuntimeError("postcommit close failed")
+
+    monkeypatch.setattr(store, "_connect", _PostcommitCloseFailure)
+    if warning_fails:
+        monkeypatch.setattr(
+            maintenance.logger,
+            "warning",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                RuntimeError("postcommit warning failed")
+            ),
+        )
+
+    result = _invoke(monkeypatch, store, _judge_result(["alpha-reviewer"]))
+
+    assert result.staffed is True
+    assert result.decision_id
+    resolved = store.get_native_child_staffing_decision(result.decision_id)
+    assert resolved is not None
+    assert resolved["decision_id"] == result.decision_id
 
 
 def test_exact_render_failure_happens_before_any_applied_route(

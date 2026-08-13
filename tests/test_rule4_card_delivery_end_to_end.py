@@ -98,7 +98,7 @@ def _judge_result() -> dict[str, Any]:
         "inference_attempted": True,
         "provider_name": "primary",
         "candidate_count": 20,
-        "top_score": 0.9,
+        "top_score": 0.0,
         "provider_attempts": [
             {
                 "provider_name": "primary",

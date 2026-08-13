@@ -9,6 +9,7 @@ parent/launch/child binding, and one credential-free provider receipt.
 from __future__ import annotations
 
 import json
+import math
 import re
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
@@ -58,6 +59,33 @@ _CARD_FIELDS = frozenset(
         "specialist_version",
         "specialist_prompt_hash",
         "body_character_length",
+    }
+)
+_SUCCESS_ROUTE_FIELDS = frozenset(
+    {
+        "status",
+        "semantic_status",
+        "source",
+        "native_child_reason",
+        "inference_configured",
+        "inference_required",
+        "inference_attempted",
+        "inference_mode",
+        "selected_ids",
+        "semantic_ids",
+        "companion_ids",
+        "available_companion_ids",
+        "unavailable_companion_ids",
+        "confidence",
+        "latency_ms",
+        "provider",
+        "candidate_count",
+        "top_score",
+        "source_message_hash",
+        "query_hash",
+        "context_fingerprint",
+        "native_child_delivery",
+        "work_units",
     }
 )
 
@@ -233,10 +261,85 @@ def project_native_child_staffing_decision(value: object) -> dict[str, Any] | No
     }
 
 
+def project_native_child_success_route(
+    value: object,
+    *,
+    session_id: str,
+    trace_id: str,
+    query_hash: str,
+    context_fingerprint: str,
+    host: str,
+) -> dict[str, Any] | None:
+    """Validate the one exact persisted success shape around a child delivery."""
+
+    if not isinstance(value, Mapping) or frozenset(value) != _SUCCESS_ROUTE_FIELDS:
+        return None
+    delivery = project_native_child_staffing_decision(value.get("native_child_delivery"))
+    if delivery is None:
+        return None
+    expected_slugs = [str(card["specialist_slug"]) for card in delivery["cards"]]
+    applied_provider = next(
+        (
+            str(attempt["provider_name"])
+            for attempt in delivery["provider_attempts"]
+            if attempt.get("status") == "applied"
+        ),
+        "",
+    )
+    confidence = value.get("confidence")
+    top_score = value.get("top_score")
+    latency_ms = value.get("latency_ms")
+    candidate_count = value.get("candidate_count")
+    provider = value.get("provider")
+    if (
+        value.get("status") != "applied"
+        or value.get("semantic_status") != "applied"
+        or value.get("source") != "native_child_inference"
+        or value.get("native_child_reason") != "applied"
+        or value.get("inference_configured") is not True
+        or value.get("inference_required") is not True
+        or value.get("inference_attempted") is not True
+        or value.get("inference_mode") != "inferred"
+        or value.get("selected_ids") != expected_slugs
+        or value.get("semantic_ids") != expected_slugs
+        or value.get("companion_ids") != []
+        or value.get("available_companion_ids") != []
+        or value.get("unavailable_companion_ids") != []
+        or value.get("work_units") != {}
+        or isinstance(confidence, bool)
+        or not isinstance(confidence, (int, float))
+        or not math.isfinite(confidence)
+        or not 0.0 <= confidence <= 1.0
+        or isinstance(top_score, bool)
+        or not isinstance(top_score, (int, float))
+        or not math.isfinite(top_score)
+        or top_score != 0.0
+        or isinstance(latency_ms, bool)
+        or not isinstance(latency_ms, int)
+        or not 0 <= latency_ms <= 86_400_000
+        or isinstance(candidate_count, bool)
+        or not isinstance(candidate_count, int)
+        or not len(expected_slugs) <= candidate_count <= 86_400_000
+        or not isinstance(provider, str)
+        or len(provider) > 128
+        or provider != applied_provider
+        or value.get("source_message_hash") != query_hash
+        or value.get("query_hash") != query_hash
+        or value.get("context_fingerprint") != context_fingerprint
+        or delivery["parent_session_id"] != session_id
+        or delivery["parent_trace_id"] != trace_id
+        or delivery["task_sha256"] != query_hash
+        or delivery["host"] != host
+    ):
+        return None
+    return delivery
+
+
 __all__ = [
     "MAX_NATIVE_CHILD_DELIVERY_TTL_SECONDS",
     "MAX_NATIVE_CHILD_STAFFING_CARDS",
     "NATIVE_CHILD_STAFFING_DECISION_SCHEMA",
     "canonical_native_child_provider_receipt_digest",
     "project_native_child_staffing_decision",
+    "project_native_child_success_route",
 ]

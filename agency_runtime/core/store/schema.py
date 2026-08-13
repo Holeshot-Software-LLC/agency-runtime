@@ -84,6 +84,23 @@ MODEL_RECEIPT_MIGRATED_COLUMNS: tuple[tuple[str, str], ...] = (
 )
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
+_STORE_CLOCK_VALUE = re.compile(
+    r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}000\+00:00$"
+)
+
+
+def store_clock_value_is_canonical(value: object) -> bool:
+    """Return whether ``value`` has the exact valid timestamp shape SQLite writes."""
+
+    if not isinstance(value, str) or _STORE_CLOCK_VALUE.fullmatch(value) is None:
+        return False
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return False
+    return parsed.isoformat(timespec="microseconds") == value
+
+
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_worker_runs_native_scope "
     "ON worker_runs(host, session_id, trace_id, worker_id, native_run_id) "

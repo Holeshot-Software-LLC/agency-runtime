@@ -267,6 +267,26 @@ def _provider_name(value: Mapping[str, Any] | None) -> str:
     return name if len(name) <= 128 else ""
 
 
+def _route_provider_name(
+    value: Mapping[str, Any] | None,
+    delivery: Mapping[str, Any] | None,
+) -> str:
+    """Use the same content-free provider identity sealed into the delivery."""
+
+    fallback = _provider_name(value)
+    if delivery is None:
+        return fallback
+    attempts = delivery.get("provider_attempts")
+    if not isinstance(attempts, (list, tuple)):
+        return fallback
+    applied = [
+        str(attempt.get("provider_name") or "")
+        for attempt in attempts
+        if isinstance(attempt, Mapping) and attempt.get("status") == "applied"
+    ]
+    return applied[0] if len(applied) == 1 and len(applied[0]) <= 128 else fallback
+
+
 def _failure_status(reason_code: str) -> str:
     if reason_code in _INVALID_PERSISTENCE_REASONS:
         return "inference_invalid"
@@ -328,7 +348,7 @@ def _routing_projection(
         "unavailable_companion_ids": [],
         "confidence": raw.get("confidence", 0.0),
         "latency_ms": raw.get("latency_ms", 0),
-        "provider": _provider_name(raw),
+        "provider": _route_provider_name(raw, native_child_delivery),
         "candidate_count": raw.get("candidate_count", 0),
         "top_score": raw.get("top_score", 0.0),
         "source_message_hash": task_sha256,
@@ -1179,6 +1199,8 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
         source=_SUCCESS_SOURCE,
         native_child_delivery=delivery_projection,
     )
+    state_unchanged = False
+    decision_id = ""
     try:
         # Cooperative config writers acquire this same lock before consulting
         # Store.  Keep the global order config lock -> SQLite BEGIN IMMEDIATE:
@@ -1214,8 +1236,12 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
                 else ""
             )
     except Exception:
-        state_unchanged = False
-        decision_id = ""
+        # A config-lock release can fail after ``record_routing_decision`` has
+        # already committed.  Preserve that exact success so the caller emits
+        # the matching staffed output; converting it to an unstaffed result
+        # would leave a successful route that poisons an otherwise safe retry.
+        if not decision_id:
+            state_unchanged = False
     if not state_unchanged:
         return _unstaffed(
             store=store,

@@ -88,6 +88,9 @@ def _delivery(
 
 
 def _routing(delivery: object) -> dict[str, Any]:
+    task_sha256 = delivery.get("task_sha256", "") if isinstance(delivery, dict) else ""
+    nonce = delivery.get("nonce", "") if isinstance(delivery, dict) else ""
+    context_fingerprint = _digest(f"context:{nonce}")
     return {
         "status": "applied",
         "semantic_status": "applied",
@@ -96,14 +99,20 @@ def _routing(delivery: object) -> dict[str, Any]:
         "semantic_ids": ["security-reviewer"],
         "companion_ids": [],
         "available_companion_ids": [],
+        "unavailable_companion_ids": [],
         "confidence": 0.9,
         "latency_ms": 12,
         "provider": "selector",
+        "candidate_count": 1,
+        "top_score": 0.0,
         "native_child_reason": "applied",
         "inference_configured": True,
         "inference_required": True,
         "inference_attempted": True,
         "inference_mode": "inferred",
+        "source_message_hash": task_sha256,
+        "query_hash": task_sha256,
+        "context_fingerprint": context_fingerprint,
         "native_child_delivery": delivery,
     }
 
@@ -271,6 +280,212 @@ def test_exact_inserted_route_readback_mismatch_rolls_back_before_callback(
     assert _applied_native_child_count(store) == 0
 
 
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    [
+        ("semantic_status", "inference_invalid"),
+        ("native_child_reason", "native_child_delivery_invalid"),
+        ("inference_configured", False),
+        ("inference_required", False),
+        ("inference_attempted", False),
+        ("inference_mode", "unavailable"),
+        ("selected_ids", ["different-specialist"]),
+        ("semantic_ids", ["different-specialist"]),
+        ("companion_ids", ["invented-companion"]),
+        ("available_companion_ids", ["invented-companion"]),
+        ("unavailable_companion_ids", ["invented-companion"]),
+    ],
+)
+def test_contradictory_native_child_success_projection_rolls_back_before_callback(
+    tmp_path: Path,
+    field: str,
+    replacement: object,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    delivery = _delivery(host="codex")
+    _create_parent(store, delivery)
+    decision = _routing(delivery)
+    decision[field] = replacement
+    callback_called = False
+
+    def final_validator() -> bool:
+        nonlocal callback_called
+        callback_called = True
+        return True
+
+    with pytest.raises(
+        RuntimeError,
+        match="native-child routing projection failed transactional readback",
+    ):
+        store.record_routing_decision(
+            trace_id=delivery["parent_trace_id"],
+            session_id=delivery["parent_session_id"],
+            query_hash=delivery["task_sha256"],
+            context_fingerprint=_digest(f"context:{delivery['nonce']}"),
+            decision=decision,
+            require_open_run=True,
+            final_delivery_validator=final_validator,
+        )
+
+    assert callback_called is False
+    assert _routing_count(store) == 0
+    assert _applied_native_child_count(store) == 0
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["source_message_hash", "query_hash", "context_fingerprint"],
+)
+def test_native_child_inner_digest_mismatch_rolls_back_before_callback(
+    tmp_path: Path,
+    field: str,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    delivery = _delivery(host="codex")
+    _create_parent(store, delivery)
+    decision = _routing(delivery)
+    decision[field] = _digest(f"contradictory:{field}")
+    callback_called = False
+
+    def final_validator() -> bool:
+        nonlocal callback_called
+        callback_called = True
+        return True
+
+    with pytest.raises(
+        RuntimeError,
+        match="native-child routing projection failed transactional readback",
+    ):
+        store.record_routing_decision(
+            trace_id=delivery["parent_trace_id"],
+            session_id=delivery["parent_session_id"],
+            query_hash=delivery["task_sha256"],
+            context_fingerprint=_digest(f"context:{delivery['nonce']}"),
+            decision=decision,
+            require_open_run=True,
+            final_delivery_validator=final_validator,
+        )
+
+    assert callback_called is False
+    assert _routing_count(store) == 0
+    assert _applied_native_child_count(store) == 0
+
+
+def test_route_provider_must_match_applied_attempt_and_exact_launch_can_retry(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    delivery = _delivery(host="codex")
+    _create_parent(store, delivery)
+    decision = _routing(delivery)
+    decision["provider"] = "contradictory-provider"
+    callback_called = False
+
+    def final_validator() -> bool:
+        nonlocal callback_called
+        callback_called = True
+        return True
+
+    with pytest.raises(
+        RuntimeError,
+        match="native-child routing projection failed transactional readback",
+    ):
+        store.record_routing_decision(
+            trace_id=delivery["parent_trace_id"],
+            session_id=delivery["parent_session_id"],
+            query_hash=delivery["task_sha256"],
+            context_fingerprint=_digest(f"context:{delivery['nonce']}"),
+            decision=decision,
+            require_open_run=True,
+            final_delivery_validator=final_validator,
+        )
+
+    assert callback_called is False
+    assert _routing_count(store) == 0
+    assert _applied_native_child_count(store) == 0
+
+    retried = _record(
+        store,
+        delivery,
+        final_delivery_validator=lambda: True,
+    )
+    assert retried
+    assert _routing_count(store) == 1
+    assert _applied_native_child_count(store) == 1
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    [
+        ("confidence", -1.0),
+        ("confidence", 2.0),
+        ("candidate_count", 0),
+        ("top_score", -0.1),
+        ("top_score", 0.9),
+    ],
+)
+def test_native_child_success_numeric_contract_rolls_back_and_retries(
+    tmp_path: Path,
+    field: str,
+    replacement: object,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    delivery = _delivery(host="codex")
+    _create_parent(store, delivery)
+    decision = _routing(delivery)
+    decision[field] = replacement
+    callback_called = False
+
+    def final_validator() -> bool:
+        nonlocal callback_called
+        callback_called = True
+        return True
+
+    with pytest.raises(
+        RuntimeError,
+        match="native-child routing projection failed transactional readback",
+    ):
+        store.record_routing_decision(
+            trace_id=delivery["parent_trace_id"],
+            session_id=delivery["parent_session_id"],
+            query_hash=delivery["task_sha256"],
+            context_fingerprint=_digest(f"context:{delivery['nonce']}"),
+            decision=decision,
+            require_open_run=True,
+            final_delivery_validator=final_validator,
+        )
+
+    assert callback_called is False
+    assert _routing_count(store) == 0
+    assert _applied_native_child_count(store) == 0
+    assert _record(store, delivery, final_delivery_validator=lambda: True)
+
+
+def test_exact_native_child_success_projection_reaches_callback_and_commits(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    delivery = _delivery(host="codex")
+    _create_parent(store, delivery)
+    callback_calls = 0
+
+    def final_validator() -> bool:
+        nonlocal callback_calls
+        callback_calls += 1
+        return True
+
+    decision_id = _record(
+        store,
+        delivery,
+        final_delivery_validator=final_validator,
+    )
+
+    assert decision_id
+    assert callback_calls == 1
+    assert _routing_count(store) == 1
+    assert _applied_native_child_count(store) == 1
+
+
 def test_concurrent_validated_native_child_launch_has_exactly_one_winner(
     tmp_path: Path,
 ) -> None:
@@ -388,7 +603,11 @@ def test_concurrent_native_child_launch_has_exactly_one_winner(tmp_path: Path) -
 @pytest.mark.parametrize(
     "replacement",
     [
-        {"host": "codex"},
+        {
+            "host": "codex",
+            "session_id": "parent-session-codex",
+            "trace_id": "parent-trace-codex",
+        },
         {"launch_id": "launch-2"},
         {"trace_id": "parent-trace-2"},
         {"session_id": "parent-session-2", "trace_id": "parent-trace-2"},
@@ -410,6 +629,96 @@ def test_distinct_native_child_launch_scopes_are_accepted(
 
     assert second_id != first_id
     assert _routing_count(store) == 2
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    [
+        ("fallback_applied", True),
+        ("fallback_companion_ids", ["invented-fallback"]),
+        ("companion_actions", ["invented-action"]),
+        ("continuation_reused", True),
+        ("origin_trace_id", "contradictory-origin"),
+        ("origin_query_hash", "0" * 64),
+        ("origin_context_fingerprint", "1" * 64),
+        ("trace_id", "contradictory-inner-trace"),
+        (
+            "work_units",
+            {"delegate": True, "count": 1, "confidence": "high", "source": "test"},
+        ),
+    ],
+)
+def test_extra_native_child_success_projection_rolls_back_before_callback(
+    tmp_path: Path,
+    field: str,
+    replacement: object,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    delivery = _delivery(host="codex")
+    _create_parent(store, delivery)
+    decision = _routing(delivery)
+    decision[field] = replacement
+    callback_called = False
+
+    def final_validator() -> bool:
+        nonlocal callback_called
+        callback_called = True
+        return True
+
+    with pytest.raises(
+        RuntimeError,
+        match="native-child routing projection failed transactional readback",
+    ):
+        store.record_routing_decision(
+            trace_id=delivery["parent_trace_id"],
+            session_id=delivery["parent_session_id"],
+            query_hash=delivery["task_sha256"],
+            context_fingerprint=_digest(f"context:{delivery['nonce']}"),
+            decision=decision,
+            require_open_run=True,
+            final_delivery_validator=final_validator,
+        )
+
+    assert callback_called is False
+    assert _routing_count(store) == 0
+    assert _applied_native_child_count(store) == 0
+
+
+def test_native_child_delivery_host_must_match_open_parent_before_callback(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    delivery = _delivery(host="codex")
+    store.create_run(
+        session_id=delivery["parent_session_id"],
+        trace_id=delivery["parent_trace_id"],
+        host="claude",
+        user_message="Parent request",
+    )
+    callback_called = False
+
+    def final_validator() -> bool:
+        nonlocal callback_called
+        callback_called = True
+        return True
+
+    with pytest.raises(
+        RuntimeError,
+        match="native-child routing projection failed transactional readback",
+    ):
+        store.record_routing_decision(
+            trace_id=delivery["parent_trace_id"],
+            session_id=delivery["parent_session_id"],
+            query_hash=delivery["task_sha256"],
+            context_fingerprint=_digest(f"context:{delivery['nonce']}"),
+            decision=_routing(delivery),
+            require_open_run=True,
+            final_delivery_validator=final_validator,
+        )
+
+    assert callback_called is False
+    assert _routing_count(store) == 0
+    assert _applied_native_child_count(store) == 0
 
 
 def test_malformed_native_child_delivery_is_rejected(tmp_path: Path) -> None:

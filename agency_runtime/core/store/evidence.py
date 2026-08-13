@@ -77,7 +77,7 @@ from agency_runtime.core.store.projections import (
 )
 from agency_runtime.core.store.queries import _ROUTING_DECISION_FIELDS
 from agency_runtime.core.store.receipt_authority import MODEL_RECEIPT_AUTHORITY_ORDER_SQL
-from agency_runtime.core.store.schema import STORE_CLOCK_SQL
+from agency_runtime.core.store.schema import STORE_CLOCK_SQL, store_clock_value_is_canonical
 
 MAX_HOST_CONTROL_GENERATION = (2**63) - 1
 # A routing payload is ids, hashes, flags and small numbers; anything larger is
@@ -203,18 +203,23 @@ def _project_native_child_staffing_row(
         return None
     if not isinstance(decision, Mapping):
         return None
-    from agency_runtime.core.native_child_decision import (
-        project_native_child_staffing_decision,
-    )
+    from agency_runtime.core.native_child_decision import project_native_child_success_route
 
-    expected = project_native_child_staffing_decision(decision.get("native_child_delivery"))
+    context_fingerprint = str(row["context_fingerprint"] or "")
+    expected = project_native_child_success_route(
+        decision,
+        session_id=str(row["session_id"] or ""),
+        trace_id=str(row["trace_id"] or ""),
+        query_hash=str(row["query_hash"] or ""),
+        context_fingerprint=context_fingerprint,
+        host=str(row["run_host"] or "").strip().casefold(),
+    )
     selected = _project_canary_strings(row["selected_ids"], maximum_chars=256)
     semantic = _project_canary_strings(row["semantic_ids"], maximum_chars=256)
     companions = _project_canary_strings(row["companion_ids"], maximum_chars=256)
     expected_slugs = (
         [str(card["specialist_slug"]) for card in expected["cards"]] if expected is not None else []
     )
-    context_fingerprint = str(row["context_fingerprint"] or "")
     if (
         expected is None
         or row["id"] != decision_id
@@ -224,15 +229,14 @@ def _project_native_child_staffing_row(
         or row["trace_id"] != expected["parent_trace_id"]
         or row["query_hash"] != expected["task_sha256"]
         or content_digest_identity(context_fingerprint) != context_fingerprint
+        or row["work_units"] != "{}"
         or selected != expected_slugs
         or semantic != expected_slugs
         or companions != []
-        or decision.get("status") != "applied"
-        or decision.get("source") != "native_child_inference"
-        or decision.get("selected_ids") != expected_slugs
-        or decision.get("semantic_ids") != expected_slugs
-        or decision.get("companion_ids") not in (None, [])
-        or decision.get("available_companion_ids") not in (None, [])
+        or row["confidence"] != decision.get("confidence")
+        or row["latency_ms"] != decision.get("latency_ms")
+        or row["provider"] != decision.get("provider")
+        or not store_clock_value_is_canonical(row["created_at"])
     ):
         return None
     return {
@@ -264,10 +268,16 @@ def _bounded_canary_native_child_join(
     """
 
     route_rows = conn.execute(
-        "SELECT id, trace_id, session_id, query_hash, context_fingerprint, "
-        "status, source, selected_ids, semantic_ids, companion_ids, decision, created_at "
-        "FROM routing_decisions WHERE session_id = ? AND trace_id = ? "
-        "AND source = 'native_child_inference' ORDER BY created_at, rowid "
+        "SELECT route.id, route.trace_id, route.session_id, route.query_hash, "
+        "route.context_fingerprint, "
+        "route.status, route.source, route.selected_ids, route.semantic_ids, "
+        "route.companion_ids, route.confidence, route.latency_ms, route.provider, "
+        "route.work_units, route.decision, route.created_at, "
+        "run.host AS run_host FROM routing_decisions AS route JOIN runs AS run "
+        "ON run.trace_id = route.trace_id AND run.session_id = route.session_id "
+        "WHERE route.session_id = ? AND route.trace_id = ? "
+        "AND route.source = 'native_child_inference' "
+        "ORDER BY route.created_at, route.rowid "
         "LIMIT ?",
         (session_id, trace_id, _CANARY_ACTIVATION_MAX_ROWS + 1),
     ).fetchall()
@@ -1838,9 +1848,14 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         conn = self._connect()
         try:
             row = conn.execute(
-                "SELECT id, trace_id, session_id, query_hash, context_fingerprint, "
-                "status, source, selected_ids, semantic_ids, companion_ids, decision, "
-                "created_at FROM routing_decisions WHERE id = ?",
+                "SELECT route.id, route.trace_id, route.session_id, route.query_hash, "
+                "route.context_fingerprint, "
+                "route.status, route.source, route.selected_ids, route.semantic_ids, "
+                "route.companion_ids, route.confidence, route.latency_ms, route.provider, "
+                "route.work_units, route.decision, route.created_at, "
+                "run.host AS run_host FROM routing_decisions AS route JOIN runs AS run "
+                "ON run.trace_id = route.trace_id AND run.session_id = route.session_id "
+                "WHERE route.id = ?",
                 (normalized_id,),
             ).fetchone()
         finally:
@@ -1964,7 +1979,9 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             row = conn.execute(
                 "SELECT route.id, route.trace_id, route.session_id, route.query_hash, "
                 "route.context_fingerprint, route.status, route.source, route.selected_ids, "
-                "route.semantic_ids, route.companion_ids, route.decision, route.created_at, "
+                "route.semantic_ids, route.companion_ids, route.confidence, "
+                "route.latency_ms, route.provider, route.work_units, route.decision, "
+                "route.created_at, "
                 "run.host AS run_host, run.status AS run_status, run.ended_at AS run_ended_at, "
                 "run.terminal_finalization_id AS run_terminal_finalization_id, "
                 "finalization.id AS finalization_id, "
