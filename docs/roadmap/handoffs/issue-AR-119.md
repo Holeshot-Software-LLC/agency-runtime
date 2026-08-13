@@ -32,7 +32,7 @@ type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
 evidence_commit: 7e1b3603e69d04531d9d606fa8f5501946e89fb1
-minimum_ledger_commit: a7e8cf547b5dd1f76b770b4531544258323d5521
+minimum_ledger_commit: 3a004b3321057ceafc6d7d9bd669ea2d53dd0ff3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -45,8 +45,9 @@ must be loaded first after any compaction or session restart.
 
 ## checkpoint
 
-- The current clean preflight pair is docs `ccb1802c` and ledger `a7e8cf54`;
-  runtime candidate remains `7e1b3603` with ledger `fb650b04`.
+- The reviewed preflight design pair is docs `ccb1802c` and ledger `a7e8cf54`;
+  its capsule/ledger baseline is `cb5b34aa`/`3a004b33`. Runtime candidate
+  remains `7e1b3603` with ledger `fb650b04`.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
   Codex's integrity-bound child channel and exact-candidate Claude
   Installed/Live proof remain open.
@@ -89,9 +90,9 @@ must be loaded first after any compaction or session restart.
   caller-root, and replay repairs. The final reattack found no unresolved
   Critical or High issue; its child-evidence suite passed 54 tests.
 - Claude's three earlier Rule-4 artifacts and Codex's earlier TUI/Desktop/exec
-  negatives remain prior-candidate context. No real Claude or Codex executable
-  was invoked for this checkpoint, so every Installed and Live layer is still
-  unproven.
+  negatives remain prior-candidate context. A routine real Codex TUI child was
+  observed in preflight; no Agency canary, real Claude invocation, or exact-
+  candidate Installed/Live proof ran, so those layers remain unproven.
 
 ## exact-blocker
 
@@ -122,7 +123,7 @@ must be loaded first after any compaction or session restart.
 
 After restart or compaction, load this file and `AR-119-founding-vision.md`
 first. Then read AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158.
-Confirm branch, runtime `7e1b3603`, ledger `a7e8cf54`, status, and worklog
+Confirm branch, runtime `7e1b3603`, ledger `3a004b33`, status, and worklog
 parity. Do not reconstruct retired Job B, plan-row, work-unit, grant, or
 consumed-receipt transport from historical sections.
 
