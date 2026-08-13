@@ -32,7 +32,7 @@ type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
 evidence_commit: 7e1b3603e69d04531d9d606fa8f5501946e89fb1
-minimum_ledger_commit: fb650b04c26d82f406621808f1cbb0f36c6256ec
+minimum_ledger_commit: a7e8cf547b5dd1f76b770b4531544258323d5521
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -45,8 +45,8 @@ must be loaded first after any compaction or session restart.
 
 ## checkpoint
 
-- The current clean recovery pair is AR-255 runtime `7e1b3603` and ledger
-  `fb650b04` on `codex/ar119-vision-mitigation-handoff`.
+- The current clean preflight pair is docs `ccb1802c` and ledger `a7e8cf54`;
+  runtime candidate remains `7e1b3603` with ledger `fb650b04`.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
   Codex's integrity-bound child channel and exact-candidate Claude
   Installed/Live proof remain open.
@@ -80,7 +80,7 @@ must be loaded first after any compaction or session restart.
   call omitted `encrypted_function_args` and carried a `gAAAAA...` message.
 - Current preflight checkpoint verification: the named fast Python spine passed
   673 with 6 skipped, schema/decision tests passed 84, dashboard UI passed 134,
-  and docs passed for 685 Markdown files. Ruff lint/format, metadata, policy,
+  and docs passed for 686 Markdown files. Ruff lint/format, metadata, policy,
   worklog, and whitespace checks passed.
 - Checkout routing evaluation passed every gate. Decision conformance passed
   its baseline, killed 83/83 mutations with zero survived or invalid, and
@@ -122,7 +122,7 @@ must be loaded first after any compaction or session restart.
 
 After restart or compaction, load this file and `AR-119-founding-vision.md`
 first. Then read AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158.
-Confirm branch, runtime `7e1b3603`, ledger `fb650b04`, status, and worklog
+Confirm branch, runtime `7e1b3603`, ledger `a7e8cf54`, status, and worklog
 parity. Do not reconstruct retired Job B, plan-row, work-unit, grant, or
 consumed-receipt transport from historical sections.
 
