@@ -843,6 +843,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e80cb40c` | 2026-08-13 | fix(hosts)!: never withhold a Hermes or OpenClaw turn for Agency blindness | null | null |
 | `339875f9` | 2026-08-13 | docs(roadmap): checkpoint the Rule-8 repair at candidate e80cb40c | null | null |
 | `967b0a2c` | 2026-08-13 | fix(evals): let the host-parity suite own its master switch, and prove rule 7 | null | null |
+| `8d086651` | 2026-08-13 | docs(roadmap): checkpoint rule 7 and the hermetic parity suite at 967b0a2c | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
