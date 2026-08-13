@@ -1772,8 +1772,24 @@ class _NominationSemantics:""",
             "parent thread rather than the current grandchild."
         ),
         source_path="agency_runtime/core/codex_spawn_provenance.py",
-        before="            child_thread_id=thread_id if depth == 1 else parent_thread_id,",
-        after="            child_thread_id=thread_id,",
+        before="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=thread_id if depth == 1 else parent_thread_id,
+            parent_agent_path=None,
+            child_agent_path=(current_agent_path if depth == 1 else str(parent_agent_path_hint)),
+            inherited=current_inherited if depth == 1 else True,
+        )""",
+        after="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=thread_id,
+            parent_agent_path=None,
+            child_agent_path=(current_agent_path if depth == 1 else str(parent_agent_path_hint)),
+            inherited=current_inherited if depth == 1 else True,
+        )""",
         test_node=(
             "tests/test_codex_spawn_provenance.py::"
             "test_exact_one_metadata_tui_chain_attests_across_canonical_rollouts[2-True]"
@@ -1786,8 +1802,24 @@ class _NominationSemantics:""",
             "uses fork_turns none."
         ),
         source_path="agency_runtime/core/codex_spawn_provenance.py",
-        before='        or (not inherited and fork_turns != "none")',
-        after="        or False",
+        before="""    if (
+        child_agent_path != expected_path
+        or (not inherited and fork_turns != "none")
+        or (inherited and fork_turns != "all" and _POSITIVE_DECIMAL.fullmatch(fork_turns) is None)
+    ):
+        return None
+    call_timestamp = _exact_codex_timestamp(call_record.get("timestamp"))
+    start_timestamp = _exact_codex_timestamp(start_record.get("timestamp"))
+    child_timestamp = datetime.fromtimestamp(""",
+        after="""    if (
+        child_agent_path != expected_path
+        or False
+        or (inherited and fork_turns != "all" and _POSITIVE_DECIMAL.fullmatch(fork_turns) is None)
+    ):
+        return None
+    call_timestamp = _exact_codex_timestamp(call_record.get("timestamp"))
+    start_timestamp = _exact_codex_timestamp(start_record.get("timestamp"))
+    child_timestamp = datetime.fromtimestamp(""",
         test_node=(
             "tests/test_codex_spawn_provenance.py::"
             "test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage"
@@ -1801,11 +1833,24 @@ class _NominationSemantics:""",
             "fork_turns all or a canonical positive decimal."
         ),
         source_path="agency_runtime/core/codex_spawn_provenance.py",
-        before=(
-            '        or (inherited and fork_turns != "all" and '
-            "_POSITIVE_DECIMAL.fullmatch(fork_turns) is None)"
-        ),
-        after="        or False",
+        before="""    if (
+        child_agent_path != expected_path
+        or (not inherited and fork_turns != "none")
+        or (inherited and fork_turns != "all" and _POSITIVE_DECIMAL.fullmatch(fork_turns) is None)
+    ):
+        return None
+    call_timestamp = _exact_codex_timestamp(call_record.get("timestamp"))
+    start_timestamp = _exact_codex_timestamp(start_record.get("timestamp"))
+    child_timestamp = datetime.fromtimestamp(""",
+        after="""    if (
+        child_agent_path != expected_path
+        or (not inherited and fork_turns != "none")
+        or False
+    ):
+        return None
+    call_timestamp = _exact_codex_timestamp(call_record.get("timestamp"))
+    start_timestamp = _exact_codex_timestamp(start_record.get("timestamp"))
+    child_timestamp = datetime.fromtimestamp(""",
         test_node=(
             "tests/test_codex_spawn_provenance.py::"
             "test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage"
@@ -1819,8 +1864,18 @@ class _NominationSemantics:""",
             "separately opened canonical root payload."
         ),
         source_path="agency_runtime/core/codex_spawn_provenance.py",
-        before="            or parent_prefix[1].payload != root_prefix[0].payload",
-        after="            or False",
+        before="""            or not _cross_file_root_metadata_is_exact(
+                parent_prefix[1],
+                root_session_id=root_session_id,
+                ordinal=1,
+            )
+            or parent_prefix[1].payload != root_prefix[0].payload""",
+        after="""            or not _cross_file_root_metadata_is_exact(
+                parent_prefix[1],
+                root_session_id=root_session_id,
+                ordinal=1,
+            )
+            or False""",
         test_node=(
             "tests/test_codex_spawn_provenance.py::"
             "test_cross_file_copied_root_matches_canonical_payload"
@@ -1940,8 +1995,10 @@ class _NominationSemantics:""",
             "at 64 MiB and fails closed only when that aggregate exceeds the bound."
         ),
         source_path="agency_runtime/core/codex_spawn_provenance.py",
-        before="        if root_size + parent_size > _MAX_EXTERNAL_ANCESTRY_BYTES:",
-        after="        if root_size + parent_size >= _MAX_EXTERNAL_ANCESTRY_BYTES:",
+        before="""        if root_size + parent_size > _MAX_EXTERNAL_ANCESTRY_BYTES:
+            raise _InvalidTranscript("external ancestry exceeds aggregate bounds")""",
+        after="""        if root_size + parent_size >= _MAX_EXTERNAL_ANCESTRY_BYTES:
+            raise _InvalidTranscript("external ancestry exceeds aggregate bounds")""",
         test_node=(
             "tests/test_codex_spawn_provenance.py::"
             "test_external_ancestry_aggregate_byte_bound_is_exact"
@@ -1980,6 +2037,7 @@ class _NominationSemantics:""",
             resolved_path, resolved_offset = _find_unique_rollout_for_thread(
                 sessions_root,
                 thread_id=attestation.external_file_thread_ids[index],
+                profile=_external_filename_profile(profile),
             )
             if (
                 resolved_path != Path(attestation.external_file_paths[index])
@@ -1991,6 +2049,372 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_codex_spawn_provenance.py::"
             "test_final_currentness_recomputes_unique_external_namespace"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-shifts-pinned-version",
+        invariant=(
+            "Desktop authority remains atomically pinned to runtime 0.147.0-alpha.6.6 rather "
+            "than accepting the separate CLI 0.147.0 version."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='_SUPPORTED_DESKTOP_VERSION: Final = "0.147.0-alpha.6.6"',
+        after='_SUPPORTED_DESKTOP_VERSION: Final = "0.147.0"',
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::test_exact_desktop_alpha_marked_root_attests"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-metadata-envelope-drift",
+        invariant=(
+            "Desktop session metadata uses the exact no-ordinal Desktop envelope and cannot "
+            "be confused with the CLI ordinal envelope."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="        set(envelope) == _DESKTOP_SESSION_ENVELOPE_KEYS",
+        after="        True",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_profile_and_metadata_drift_fail_open"
+            "[desktop-envelope-ordinal]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-disabled-subagent-lineage",
+        invariant=(
+            "Only active v2 thread-spawn metadata can authorize Desktop ancestry; disabled "
+            "guardian or other subagent records fail open."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        or payload.get("parent_thread_id") != parent_thread_id
+        or payload.get("thread_source") != "subagent"
+        or payload.get("multi_agent_version") != "v2"
+        or (inherited and payload.get("forked_from_id") != parent_thread_id)""",
+        after="""        or payload.get("parent_thread_id") != parent_thread_id
+        or payload.get("thread_source") != "subagent"
+        or False
+        or (inherited and payload.get("forked_from_id") != parent_thread_id)""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_profile_and_metadata_drift_fail_open"
+            "[desktop-multi-agent-disabled]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-unobserved-shape-cross-products",
+        invariant=(
+            "Desktop child authority requires one complete observed alpha.6.6 tuple across "
+            "depth, inheritance, prefix size, dynamic tools, Git shape, fork semantics, "
+            "filename residual, and canonical-parent inheritance; independently observed "
+            "field values cannot be recombined."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="    return shape in _DESKTOP_OBSERVED_CHILD_SHAPES",
+        after="    return True",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_rejects_unobserved_shape_cross_products"
+            "[d1-inherited-child-only-dynamic-branch-fork1-residual0]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-skips-dynamic-tools-pin",
+        invariant=(
+            "When Desktop metadata carries dynamic_tools, its bounded canonical digest is "
+            "the pinned alpha.6.6 two-namespace value."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        and hmac.compare_digest(
+            hashlib.sha256(encoded).hexdigest(),
+            _DESKTOP_DYNAMIC_TOOLS_SHA256,
+        )""",
+        after="        and True",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_profile_and_metadata_drift_fail_open"
+            "[desktop-dynamic-tools-drift]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-parent-child-causal-edge",
+        invariant=(
+            "A Desktop depth-two parent rollout launches the exact current child rather "
+            "than naming its own thread as the child."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""            parent_scan = _scan_external_rollout(
+                parent_descriptor,
+                parent_size,
+                parent_thread_id=parent_thread_id,
+                child_thread_id=thread_id,
+                parent_agent_path=parent_agent_path_hint,""",
+        after="""            parent_scan = _scan_external_rollout(
+                parent_descriptor,
+                parent_size,
+                parent_thread_id=parent_thread_id,
+                child_thread_id=parent_thread_id,
+                parent_agent_path=parent_agent_path_hint,""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_observed_ancestry_variants_attest"
+            "[d2-child-parent-all-dynamic-branch-residual0]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-root-parent-causal-edge",
+        invariant=(
+            "A Desktop depth-two root rollout launches the canonical intermediate parent, "
+            "not the current grandchild."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=thread_id if depth == 1 else parent_thread_id,
+            parent_agent_path=None,
+            child_agent_path=current_agent_path if depth == 1 else str(parent_agent_path),""",
+        after="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=thread_id,
+            parent_agent_path=None,
+            child_agent_path=current_agent_path if depth == 1 else str(parent_agent_path),""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_observed_ancestry_variants_attest"
+            "[d2-child-parent-all-dynamic-branch-residual0]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-binds-root-edge-to-current-inheritance",
+        invariant=(
+            "The Desktop root-to-parent edge uses the canonical parent's own inherited or "
+            "sparse binding independently of the current child's inheritance."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""            inherited=(
+                current_inherited if depth == 1 else bool(parent_metadata and parent_metadata[0])
+            ),""",
+        after="            inherited=current_inherited,",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_observed_ancestry_variants_attest"
+            "[d2-child-parent-sparse-parent-all-no-dynamic-branch-residual0]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-copied-parent-payload-drift",
+        invariant=(
+            "A copied Desktop parent payload is byte-semantically equal to its unique "
+            "canonical parent owner before it can contribute ancestry."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="                    or current_copies[0].payload != parent_prefix[0].payload",
+        after="                    or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_requires_unique_canonical_owners_and_exact_copies"
+            "[copied-parent-drift]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-event-schema-or-call-drift",
+        invariant=(
+            "A direct Desktop start has the exact pinned event schema and event_id equal to "
+            "its immediately preceding spawn call_id."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        or set(start_payload) != _DESKTOP_CAUSAL_EVENT_KEYS
+        or start_payload.get("type") != "sub_agent_activity"
+        or start_payload.get("kind") != "started"
+        or start_payload.get("event_id") != call_payload.get("call_id")""",
+        after="""        or False
+        or start_payload.get("type") != "sub_agent_activity"
+        or start_payload.get("kind") != "started"
+        or False""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_direct_causal_transaction_is_exact[event-schema-drift]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-event-child-thread",
+        invariant=(
+            "A direct Desktop start names the exact child thread resolved from canonical metadata."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=thread_id if depth == 1 else parent_thread_id,
+            parent_agent_path=None,
+            child_agent_path=current_agent_path if depth == 1 else str(parent_agent_path),""",
+        after="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=root_session_id if depth == 1 else parent_thread_id,
+            parent_agent_path=None,
+            child_agent_path=current_agent_path if depth == 1 else str(parent_agent_path),""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_observed_ancestry_variants_attest"
+            "[d1-inherited-external-three-dynamic-branch-residual0]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-event-agent-path",
+        invariant=(
+            "A direct Desktop start names the exact canonical child agent path derived from "
+            "the spawn arguments and parent path."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='        or start_payload.get("agent_path") != child_agent_path',
+        after="        or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_direct_causal_transaction_is_exact[path-drift]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-widens-direct-event-time-residual",
+        invariant=(
+            "The Desktop direct event outer timestamp equals occurred_at_ms or trails it by "
+            "exactly one observed millisecond."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="        or event_ms - occurred_at_ms not in {0, 1}",
+        after="        or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_direct_causal_transaction_is_exact[event-time-plus-two]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-drops-cli-external-residual-separation",
+        invariant=(
+            "Observed plus-one filename residuals apply to Desktop and CLI current/in-file "
+            "profiles, while the pinned CLI cross-file census remains exact-zero."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            "    allowed_residuals = profile.filename_residual_seconds "
+            "if profile is not None else frozenset({0})"
+        ),
+        after="""    allowed_residuals = (
+        _CLI_TUI_PROFILE.filename_residual_seconds
+        if profile is None or profile == _CLI_TUI_CROSS_FILE_PROFILE
+        else profile.filename_residual_seconds
+    )""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_cli_external_rollout_rejects_plus_one_residual"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-direct-outcome-suffix-replay",
+        invariant=(
+            "Any appended Desktop direct outcome reusing the current call_id invalidates the "
+            "sealed authorization before rewrite."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            '        if profile.desktop and outer_type == "event_msg" '
+            'and payload.get("event_id") == tool_use_id:'
+        ),
+        after=(
+            '        if False and profile.desktop and outer_type == "event_msg" '
+            'and payload.get("event_id") == tool_use_id:'
+        ),
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_current_or_external_direct_replay_invalidates_attestation"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-accepts-profile-id-rebinding",
+        invariant=(
+            "The sealed Desktop profile_id and alpha version remain an atomic authority and "
+            "cannot be rebound to a CLI profile identifier."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""_PROFILES_BY_ID: Final = {
+    profile.profile_id: profile
+    for profile in (_CLI_TUI_PROFILE, _CLI_EXEC_PROFILE, _DESKTOP_PROFILE)
+}""",
+        after="""_PROFILES_BY_ID: Final = {
+    **{
+        profile.profile_id: profile
+        for profile in (_CLI_TUI_PROFILE, _CLI_EXEC_PROFILE, _DESKTOP_PROFILE)
+    },
+    _CLI_TUI_PROFILE_ID: _DESKTOP_PROFILE,
+}""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_sealed_profile_and_external_arrays_are_authoritative"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-nonempty-current-marker",
+        invariant=(
+            "The current Desktop authorization call carries the explicit exact-empty host "
+            "marker, never missing, null, or nonempty marker content."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='    if payload["encrypted_function_args"] != []:',
+        after="    if False:",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_current_and_ancestor_marker_domains_are_separate[current-null]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-current-arguments",
+        invariant=(
+            "The canonical current Desktop call arguments exactly equal the hook tool_input "
+            "whose digest is sealed."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="    return canonical == expected_input",
+        after="    return True",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_current_call_binds_shared_authorization_fields[arguments]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-current-turn",
+        invariant=(
+            "The current Desktop response item carries the exact hook turn_id in its pinned "
+            "metadata passthrough object."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='        or metadata.get("turn_id") != turn_id',
+        after="        or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_current_call_binds_shared_authorization_fields[turn]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-current-call-id",
+        invariant=(
+            "The one current Desktop function call selected from the initial snapshot has "
+            "the exact hook tool_use_id."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            '        if outer_type == "response_item" and payload.get("call_id") == tool_use_id:'
+        ),
+        after=(
+            '        if outer_type == "response_item" and payload.get("type") == "function_call":'
+        ),
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_current_call_binds_shared_authorization_fields[call]"
         ),
     ),
     DecisionMutation(

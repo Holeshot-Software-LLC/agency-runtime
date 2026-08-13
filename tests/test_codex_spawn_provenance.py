@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+from copy import deepcopy
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +31,50 @@ _ARGS = {
     "fork_turns": "all",
 }
 _MISSING = object()
+
+_DESKTOP_ROOT = "019ff5e8-e866-7f60-9720-c10a0753ca6f"
+_DESKTOP_PARENT = "019ff5e9-e999-7293-87c0-80a1784f816a"
+_DESKTOP_CHILD = "019ff653-7840-76b1-91a0-3fce88331fe4"
+_DESKTOP_TURN = "019ff632-eb5c-75d0-9830-bec5247e0a5a"
+_DESKTOP_CALL = "call_DesktopMarkedSpawn000001"
+_DESKTOP_FUNCTION_ITEM = "fc_" + "9" * 50
+_DESKTOP_CONTEXT_WINDOWS = {
+    _DESKTOP_ROOT: "019ff5e8-e866-7f60-9720-c11d05b613e5",
+    _DESKTOP_PARENT: "019ff5e9-e999-7293-87c0-80b192433582",
+    _DESKTOP_CHILD: "019ff653-7840-76b1-91a0-3fd88aa72cdd",
+}
+_DESKTOP_ARGS = {
+    "task_name": "desktop_review",
+    "message": "Review the sanitized Desktop boundary.",
+    "fork_turns": "all",
+}
+_DESKTOP_DYNAMIC_TOOLS = [
+    {
+        "type": "namespace",
+        "name": "codex_app",
+        "description": "Sanitized Desktop tools.",
+        "tools": [
+            {
+                "type": "function",
+                "name": "sanitized_tool",
+                "description": "Synthetic observed-shape tool.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": False,
+                },
+                "deferLoading": True,
+            }
+        ],
+    },
+    {
+        "type": "namespace",
+        "name": "plugin_management",
+        "description": "Sanitized plugin tools.",
+        "tools": [],
+    },
+]
+_DESKTOP_DYNAMIC_TOOLS_SHA256 = "d1060035f3e4bf53e8af0940ad8723e794921afa3b2f026eb02c0135f6115f90"
 
 
 def _real_record(
@@ -300,6 +346,1493 @@ def _write_cross_file_chain(
     _write(root, root_records)
     _write(current, current_records)
     return current, root, parent
+
+
+def _desktop_record(
+    kind: str,
+    payload: dict[str, Any],
+    *,
+    timestamp: str,
+) -> dict[str, Any]:
+    return {"timestamp": timestamp, "type": kind, "payload": payload}
+
+
+def _desktop_git(variant: str) -> dict[str, Any]:
+    git: dict[str, Any] = {
+        "commit_hash": "b" * 40,
+        "repository_url": "https://example.invalid/sanitized.git",
+    }
+    if variant == "branch":
+        git["branch"] = "codex/sanitized"
+    return git
+
+
+def _desktop_metadata_common(
+    *,
+    thread_id: str,
+    timestamp: str,
+    git_variant: str,
+    dynamic_tools: object = _MISSING,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "timestamp": timestamp,
+        "cwd": "C:\\sanitized\\agency-runtime",
+        "originator": "Codex Desktop",
+        "cli_version": "0.147.0-alpha.6.6",
+        "model_provider": "openai",
+        "base_instructions": {"text": "sanitized Desktop instructions"},
+        "history_mode": "legacy",
+        "context_window": {"window_id": _DESKTOP_CONTEXT_WINDOWS[thread_id]},
+        "git": _desktop_git(git_variant),
+    }
+    if dynamic_tools is not _MISSING:
+        payload["dynamic_tools"] = deepcopy(dynamic_tools)
+    return payload
+
+
+def _desktop_root_metadata(
+    *,
+    git_variant: str = "branch",
+    outer_timestamp: str = "2026-08-12T12:18:37.445Z",
+) -> dict[str, Any]:
+    payload = {
+        "session_id": _DESKTOP_ROOT,
+        "id": _DESKTOP_ROOT,
+        **_desktop_metadata_common(
+            thread_id=_DESKTOP_ROOT,
+            timestamp="2026-08-12T12:18:29.766Z",
+            git_variant=git_variant,
+            dynamic_tools=_DESKTOP_DYNAMIC_TOOLS,
+        ),
+        "source": "vscode",
+        "thread_source": "user",
+    }
+    return _desktop_record("session_meta", payload, timestamp=outer_timestamp)
+
+
+def _desktop_subagent_metadata(
+    *,
+    thread_id: str,
+    parent_thread_id: str,
+    depth: int,
+    agent_path: str,
+    inherited: bool,
+    dynamic_tools: bool,
+    git_variant: str = "branch",
+    outer_timestamp: str | None = None,
+) -> dict[str, Any]:
+    timestamp = {
+        _DESKTOP_PARENT: "2026-08-12T12:19:35.653Z",
+        _DESKTOP_CHILD: "2026-08-12T14:14:53.361Z",
+    }[thread_id]
+    payload = {
+        "session_id": _DESKTOP_ROOT,
+        "id": thread_id,
+        **_desktop_metadata_common(
+            thread_id=thread_id,
+            timestamp=timestamp,
+            git_variant=git_variant,
+            dynamic_tools=_DESKTOP_DYNAMIC_TOOLS if dynamic_tools else _MISSING,
+        ),
+        "parent_thread_id": parent_thread_id,
+        "source": {
+            "subagent": {
+                "thread_spawn": {
+                    "parent_thread_id": parent_thread_id,
+                    "depth": depth,
+                    "agent_path": agent_path,
+                    "agent_nickname": "Curie",
+                    "agent_role": None,
+                }
+            }
+        },
+        "thread_source": "subagent",
+        "agent_nickname": "Curie",
+        "agent_path": agent_path,
+        "multi_agent_version": "v2",
+    }
+    if inherited:
+        payload["forked_from_id"] = parent_thread_id
+    return _desktop_record(
+        "session_meta",
+        payload,
+        timestamp=outer_timestamp
+        or (
+            "2026-08-12T12:19:40.733Z"
+            if thread_id == _DESKTOP_PARENT
+            else "2026-08-12T14:14:58.070Z"
+        ),
+    )
+
+
+def _desktop_causal_pair(
+    *,
+    child_thread_id: str,
+    child_agent_path: str,
+    fork_turns: str,
+    call_id: str,
+    function_item_character: str,
+    call_timestamp: str,
+    event_timestamp: str,
+    event_outer_residual_ms: int = 0,
+    marker: object = _MISSING,
+) -> list[dict[str, Any]]:
+    call: dict[str, Any] = {
+        "type": "function_call",
+        "id": "fc_" + function_item_character * 50,
+        "name": "spawn_agent",
+        "namespace": "collaboration",
+        "arguments": json.dumps(
+            {
+                "task_name": child_agent_path.rsplit("/", 1)[-1],
+                "fork_turns": fork_turns,
+                "message": "Sanitized bounded Desktop child task.",
+            },
+            separators=(",", ":"),
+        ),
+        "call_id": call_id,
+        "internal_chat_message_metadata_passthrough": {"turn_id": _DESKTOP_TURN},
+    }
+    if marker is not _MISSING:
+        call["encrypted_function_args"] = marker
+    event_datetime = datetime.strptime(event_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
+        tzinfo=timezone.utc
+    )
+    occurred_at_ms = int(event_datetime.timestamp() * 1000)
+    event_outer_timestamp = (
+        event_datetime + timedelta(milliseconds=event_outer_residual_ms)
+    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+    if function_item_character == "7":
+        output_id = "fco_019ff5e9-fe74-7c61-b81a-3413fa2cb44b"
+        output_timestamp = "2026-08-12T12:19:40.789Z"
+    else:
+        output_id = "fco_019ff653-8b5a-78f1-ba7f-7660fcc370ad"
+        output_timestamp = "2026-08-12T14:14:58.138Z"
+    return [
+        _desktop_record("response_item", call, timestamp=call_timestamp),
+        _desktop_record(
+            "event_msg",
+            {
+                "type": "sub_agent_activity",
+                "event_id": call_id,
+                "occurred_at_ms": occurred_at_ms,
+                "agent_thread_id": child_thread_id,
+                "agent_path": child_agent_path,
+                "kind": "started",
+            },
+            timestamp=event_outer_timestamp,
+        ),
+        _desktop_record(
+            "response_item",
+            {
+                "type": "function_call_output",
+                "id": output_id,
+                "call_id": call_id,
+                "output": json.dumps(
+                    {"task_name": child_agent_path},
+                    separators=(",", ":"),
+                ),
+                "internal_chat_message_metadata_passthrough": {"turn_id": _DESKTOP_TURN},
+            },
+            timestamp=output_timestamp,
+        ),
+    ]
+
+
+def _desktop_current_records(
+    *,
+    marker: object = [],
+    args: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    call: dict[str, Any] = {
+        "type": "function_call",
+        "id": _DESKTOP_FUNCTION_ITEM,
+        "name": "spawn_agent",
+        "namespace": "collaboration",
+        "arguments": json.dumps(args or _DESKTOP_ARGS, separators=(",", ":")),
+        "call_id": _DESKTOP_CALL,
+        "internal_chat_message_metadata_passthrough": {"turn_id": _DESKTOP_TURN},
+    }
+    if marker is not _MISSING:
+        call["encrypted_function_args"] = marker
+    return [
+        _desktop_record(
+            "event_msg",
+            {
+                "type": "task_started",
+                "turn_id": _DESKTOP_TURN,
+                "started_at": 1786544098,
+                "model_context_window": 258400,
+                "collaboration_mode_kind": "default",
+            },
+            timestamp="2026-08-12T14:14:58.070Z",
+        ),
+        _desktop_record(
+            "response_item",
+            call,
+            timestamp="2026-08-12T14:15:00.000Z",
+        ),
+    ]
+
+
+def _desktop_rollout_path(
+    home: Path,
+    *,
+    thread_id: str,
+    residual_seconds: int = 0,
+) -> Path:
+    local_timestamp = {
+        _DESKTOP_ROOT: datetime(2026, 8, 12, 8, 18, 29),
+        _DESKTOP_PARENT: datetime(2026, 8, 12, 8, 19, 35),
+        _DESKTOP_CHILD: datetime(2026, 8, 12, 10, 14, 53),
+    }[thread_id] + timedelta(seconds=residual_seconds)
+    return (
+        home
+        / "sessions"
+        / local_timestamp.strftime("%Y")
+        / local_timestamp.strftime("%m")
+        / local_timestamp.strftime("%d")
+        / f"rollout-{local_timestamp.strftime('%Y-%m-%dT%H-%M-%S')}-{thread_id}.jsonl"
+    )
+
+
+def _desktop_copied_metadata(record: dict[str, Any], *, timestamp: str) -> dict[str, Any]:
+    copied = deepcopy(record)
+    copied["timestamp"] = timestamp
+    return copied
+
+
+def _write_desktop_chain(
+    home: Path,
+    *,
+    depth: int,
+    inherited: bool,
+    prefix_variant: str,
+    dynamic_tools: bool | None = None,
+    git_variant: str = "branch",
+    fork_turns: str | None = None,
+    current_marker: object = [],
+    root_marker: object = _MISSING,
+    parent_marker: object = _MISSING,
+    current_residual_seconds: int = 0,
+    root_event_outer_residual_ms: int = 0,
+    parent_event_outer_residual_ms: int = 0,
+    parent_inherited: bool = True,
+) -> tuple[Path, Path, Path | None]:
+    current_dynamic_tools = (
+        dynamic_tools
+        if dynamic_tools is not None
+        else not (depth == 2 and prefix_variant == "child-only")
+    )
+    current_fork_turns = fork_turns
+    if current_fork_turns is None:
+        if not inherited:
+            current_fork_turns = "none"
+        elif depth == 1:
+            current_fork_turns = "all" if prefix_variant == "full" else "2"
+        else:
+            current_fork_turns = "2" if prefix_variant == "child-only" else "all"
+    root_path = _desktop_rollout_path(home, thread_id=_DESKTOP_ROOT)
+    parent_path = _desktop_rollout_path(home, thread_id=_DESKTOP_PARENT)
+    current_thread = _DESKTOP_PARENT if depth == 1 else _DESKTOP_CHILD
+    current_path = _desktop_rollout_path(
+        home,
+        thread_id=current_thread,
+        residual_seconds=current_residual_seconds,
+    )
+    current_agent_path = (
+        "/root/desktop_parent" if depth == 1 else "/root/desktop_parent/desktop_child"
+    )
+    current_metadata = _desktop_subagent_metadata(
+        thread_id=current_thread,
+        parent_thread_id=_DESKTOP_ROOT if depth == 1 else _DESKTOP_PARENT,
+        depth=depth,
+        agent_path=current_agent_path,
+        inherited=inherited,
+        dynamic_tools=current_dynamic_tools,
+        git_variant=git_variant,
+    )
+    root_metadata = _desktop_root_metadata(git_variant=git_variant)
+    root_records = [
+        root_metadata,
+        *_desktop_causal_pair(
+            child_thread_id=_DESKTOP_PARENT,
+            child_agent_path="/root/desktop_parent",
+            fork_turns=(
+                current_fork_turns if depth == 1 else ("all" if parent_inherited else "none")
+            ),
+            call_id="call_DesktopRootEdge000000001",
+            function_item_character="7",
+            call_timestamp="2026-08-12T12:19:35.403Z",
+            event_timestamp="2026-08-12T12:19:40.765Z",
+            event_outer_residual_ms=root_event_outer_residual_ms,
+            marker=root_marker,
+        ),
+    ]
+    current_prefix = [current_metadata]
+    parent_metadata: dict[str, Any] | None = None
+    if depth == 1:
+        if prefix_variant == "full":
+            current_prefix.append(
+                _desktop_copied_metadata(
+                    root_metadata,
+                    timestamp="2026-08-12T12:19:40.734Z",
+                )
+            )
+    else:
+        parent_metadata = _desktop_subagent_metadata(
+            thread_id=_DESKTOP_PARENT,
+            parent_thread_id=_DESKTOP_ROOT,
+            depth=1,
+            agent_path="/root/desktop_parent",
+            inherited=parent_inherited,
+            dynamic_tools=True,
+            git_variant=git_variant,
+        )
+        parent_records = [
+            parent_metadata,
+            _desktop_copied_metadata(
+                root_metadata,
+                timestamp="2026-08-12T12:19:40.734Z",
+            ),
+            *_desktop_causal_pair(
+                child_thread_id=_DESKTOP_CHILD,
+                child_agent_path=current_agent_path,
+                fork_turns=current_fork_turns,
+                call_id="call_DesktopParentEdge0000001",
+                function_item_character="8",
+                call_timestamp="2026-08-12T14:14:50.186Z",
+                event_timestamp="2026-08-12T14:14:58.119Z",
+                event_outer_residual_ms=parent_event_outer_residual_ms,
+                marker=parent_marker,
+            ),
+        ]
+        parent_path.parent.mkdir(parents=True, exist_ok=True)
+        _write(parent_path, parent_records)
+        if prefix_variant in {"full", "child-parent"}:
+            current_prefix.append(
+                _desktop_copied_metadata(
+                    parent_metadata,
+                    timestamp="2026-08-12T14:14:58.071Z",
+                )
+            )
+        if prefix_variant == "full":
+            current_prefix.append(
+                _desktop_copied_metadata(
+                    root_metadata,
+                    timestamp="2026-08-12T14:14:58.071Z",
+                )
+            )
+    root_path.parent.mkdir(parents=True, exist_ok=True)
+    current_path.parent.mkdir(parents=True, exist_ok=True)
+    _write(root_path, root_records)
+    _write(current_path, [*current_prefix, *_desktop_current_records(marker=current_marker)])
+    return current_path, root_path, parent_path if depth == 2 else None
+
+
+def _write_desktop_root_rollout(
+    home: Path,
+    *,
+    marker: object = [],
+    git_variant: str = "branch",
+) -> Path:
+    path = _desktop_rollout_path(home, thread_id=_DESKTOP_ROOT)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _write(
+        path,
+        [
+            _desktop_root_metadata(git_variant=git_variant),
+            *_desktop_current_records(marker=marker),
+        ],
+    )
+    return path
+
+
+def _prepare_desktop_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    assert subject._DESKTOP_DYNAMIC_TOOLS_SHA256 == _DESKTOP_DYNAMIC_TOOLS_SHA256
+    fixture_digest = hashlib.sha256(
+        json.dumps(
+            _DESKTOP_DYNAMIC_TOOLS,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+    monkeypatch.setattr(subject, "_DESKTOP_DYNAMIC_TOOLS_SHA256", fixture_digest)
+
+
+def _attest_desktop(path: Path, home: Path) -> subject.CodexPlaintextSpawnAttestation | None:
+    return subject.attest_codex_plaintext_spawn(
+        path,
+        session_id=_DESKTOP_ROOT,
+        turn_id=_DESKTOP_TURN,
+        tool_use_id=_DESKTOP_CALL,
+        tool_input=_DESKTOP_ARGS,
+        environ={"CODEX_HOME": str(home)},
+    )
+
+
+def test_exact_desktop_alpha_marked_root_attests(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    path = _write_desktop_root_rollout(home)
+
+    attestation = _attest_desktop(path, home)
+
+    assert isinstance(attestation, subject.CodexPlaintextSpawnAttestation)
+    assert attestation.profile_id == "desktop-0.147.0-alpha.6.6"
+    assert attestation.cli_version == "0.147.0-alpha.6.6"
+    assert attestation.ancestry_thread_ids == (_DESKTOP_ROOT,)
+    assert subject.codex_plaintext_spawn_attestation_is_current(
+        attestation,
+        tool_input=_DESKTOP_ARGS,
+    )
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "full",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "all",
+                "root_marker": [],
+                "residual": 1,
+                "root_event_outer_residual_ms": 1,
+            },
+            id="d1-inherited-full-all-dynamic-branch-residual1-marked-root-edge",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "child-only",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "2",
+                "residual": 0,
+            },
+            id="d1-inherited-external-two-dynamic-branch-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "child-only",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "3",
+                "residual": 0,
+            },
+            id="d1-inherited-external-three-dynamic-branch-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "child-only",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "3",
+                "residual": 1,
+            },
+            id="d1-inherited-external-three-dynamic-branch-residual1",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "child-only",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "4",
+                "residual": 0,
+            },
+            id="d1-inherited-external-four-dynamic-branch-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "child-only",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "5",
+                "residual": 0,
+            },
+            id="d1-inherited-external-five-dynamic-branch-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "full",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "all",
+                "residual": 0,
+            },
+            id="d1-inherited-full-all-dynamic-branch-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "full",
+                "dynamic_tools": True,
+                "git_variant": "no-branch",
+                "fork_turns": "all",
+                "residual": 0,
+            },
+            id="d1-inherited-full-all-dynamic-no-branch-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": False,
+                "prefix_variant": "child-only",
+                "dynamic_tools": False,
+                "git_variant": "branch",
+                "fork_turns": "none",
+                "residual": 0,
+            },
+            id="d1-sparse-external-none-no-dynamic-branch-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 2,
+                "inherited": True,
+                "prefix_variant": "full",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "all",
+                "parent_marker": [],
+                "residual": 0,
+            },
+            id="d2-full-all-dynamic-branch-residual0-marked-parent-edge",
+        ),
+        pytest.param(
+            {
+                "depth": 2,
+                "inherited": True,
+                "prefix_variant": "child-parent",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "all",
+                "residual": 0,
+            },
+            id="d2-child-parent-all-dynamic-branch-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 2,
+                "inherited": True,
+                "prefix_variant": "child-only",
+                "dynamic_tools": False,
+                "git_variant": "branch",
+                "fork_turns": "2",
+                "residual": 0,
+            },
+            id="d2-inherited-child-inherited-parent-two-no-dynamic-branch-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 2,
+                "inherited": True,
+                "prefix_variant": "child-parent",
+                "dynamic_tools": False,
+                "git_variant": "branch",
+                "fork_turns": "all",
+                "residual": 0,
+                "parent_inherited": False,
+            },
+            id="d2-child-parent-sparse-parent-all-no-dynamic-branch-residual0",
+        ),
+    ],
+)
+def test_desktop_alpha_observed_ancestry_variants_attest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    case: dict[str, Any],
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, _root, _parent = _write_desktop_chain(
+        home,
+        depth=case["depth"],
+        inherited=case["inherited"],
+        prefix_variant=case["prefix_variant"],
+        dynamic_tools=case["dynamic_tools"],
+        git_variant=case["git_variant"],
+        fork_turns=case["fork_turns"],
+        root_marker=case.get("root_marker", _MISSING),
+        parent_marker=case.get("parent_marker", _MISSING),
+        current_residual_seconds=case["residual"],
+        root_event_outer_residual_ms=case.get("root_event_outer_residual_ms", 0),
+        parent_event_outer_residual_ms=case.get("parent_event_outer_residual_ms", 0),
+        parent_inherited=case.get("parent_inherited", True),
+    )
+
+    attestation = _attest_desktop(current, home)
+
+    assert isinstance(attestation, subject.CodexPlaintextSpawnAttestation)
+    assert attestation.profile_id == "desktop-0.147.0-alpha.6.6"
+    expected_threads = (
+        (_DESKTOP_PARENT, _DESKTOP_ROOT)
+        if case["depth"] == 1
+        else (_DESKTOP_CHILD, _DESKTOP_PARENT, _DESKTOP_ROOT)
+    )
+    assert attestation.ancestry_thread_ids == expected_threads
+    assert len(attestation.external_file_paths) == case["depth"]
+    if case["depth"] == 1:
+        assert attestation.external_file_paths == (str(_root.resolve()),)
+        assert attestation.ancestry_file_indexes == (0, 1)
+        copied_count = 1 if case["prefix_variant"] == "full" else 0
+        assert attestation.external_record_file_indexes == (0,) * copied_count + (1, 1, 1)
+    else:
+        assert _parent is not None
+        assert attestation.external_file_paths == (
+            str(_parent.resolve()),
+            str(_root.resolve()),
+        )
+        assert attestation.ancestry_file_indexes == (0, 1, 2)
+        copied_count = {"child-only": 0, "child-parent": 1, "full": 2}[case["prefix_variant"]]
+        assert attestation.external_record_file_indexes == (
+            (0,) * copied_count + (1, 1, 1, 1, 2, 2, 2)
+        )
+    assert subject.codex_plaintext_spawn_attestation_is_current(
+        attestation,
+        tool_input=_DESKTOP_ARGS,
+    )
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "child-only",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "1",
+                "residual": 0,
+            },
+            id="d1-inherited-child-only-dynamic-branch-fork1-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "child-only",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "6",
+                "residual": 0,
+            },
+            id="d1-inherited-child-only-dynamic-branch-fork6-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "child-only",
+                "dynamic_tools": False,
+                "git_variant": "branch",
+                "fork_turns": "2",
+                "residual": 0,
+            },
+            id="d1-inherited-child-only-no-dynamic-branch-fork2-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": False,
+                "prefix_variant": "child-only",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "none",
+                "residual": 0,
+            },
+            id="d1-sparse-child-only-dynamic-branch-none-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 1,
+                "inherited": True,
+                "prefix_variant": "child-only",
+                "dynamic_tools": True,
+                "git_variant": "no-branch",
+                "fork_turns": "2",
+                "residual": 0,
+            },
+            id="d1-inherited-child-only-dynamic-no-branch-fork2-residual0",
+        ),
+        pytest.param(
+            {
+                "depth": 2,
+                "inherited": True,
+                "prefix_variant": "child-parent",
+                "dynamic_tools": True,
+                "git_variant": "no-branch",
+                "fork_turns": "all",
+                "residual": 0,
+            },
+            id="d2-inherited-child-parent-dynamic-no-branch-all-residual0-parent-inherited",
+        ),
+        pytest.param(
+            {
+                "depth": 2,
+                "inherited": True,
+                "prefix_variant": "child-parent",
+                "dynamic_tools": False,
+                "git_variant": "branch",
+                "fork_turns": "3",
+                "residual": 0,
+                "parent_inherited": False,
+            },
+            id="d2-inherited-child-parent-no-dynamic-branch-fork3-residual0-parent-sparse",
+        ),
+        pytest.param(
+            {
+                "depth": 2,
+                "inherited": True,
+                "prefix_variant": "full",
+                "dynamic_tools": True,
+                "git_variant": "branch",
+                "fork_turns": "all",
+                "residual": 1,
+            },
+            id="d2-inherited-full-dynamic-branch-all-residual1-parent-inherited",
+        ),
+    ],
+)
+def test_desktop_alpha_rejects_unobserved_shape_cross_products(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    case: dict[str, Any],
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, _root, _parent = _write_desktop_chain(
+        home,
+        depth=case["depth"],
+        inherited=case["inherited"],
+        prefix_variant=case["prefix_variant"],
+        dynamic_tools=case["dynamic_tools"],
+        git_variant=case["git_variant"],
+        fork_turns=case["fork_turns"],
+        current_residual_seconds=case["residual"],
+        parent_inherited=case.get("parent_inherited", True),
+    )
+
+    assert _attest_desktop(current, home) is None
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "cli-version-with-desktop-lineage",
+        "cli-source-with-desktop-version",
+        "paginated-history-with-desktop-version",
+        "cli-origin-with-desktop-version",
+        "desktop-thread-source-user",
+        "desktop-envelope-ordinal",
+        "desktop-extra-metadata-key",
+        "desktop-context-key-drift",
+        "desktop-multi-agent-disabled",
+        "desktop-subagent-other",
+        "desktop-fork-parent-drift",
+        "desktop-history-start-injected",
+        "desktop-dynamic-tools-drift",
+        "desktop-git-key-drift",
+        "desktop-git-hash-drift",
+        "desktop-depth-three",
+        "desktop-agent-role-nonnull",
+        "desktop-agent-path-drift",
+    ],
+)
+def test_desktop_alpha_profile_and_metadata_drift_fail_open(  # noqa: C901
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, _root, _parent = _write_desktop_chain(
+        home,
+        depth=1,
+        inherited=True,
+        prefix_variant="child-only",
+    )
+    records = [json.loads(line) for line in current.read_text(encoding="utf-8").splitlines()]
+    metadata = records[0]
+    payload = metadata["payload"]
+    spawn = payload["source"]["subagent"]["thread_spawn"]
+    if mutation == "cli-version-with-desktop-lineage":
+        payload["cli_version"] = "0.147.0"
+    elif mutation == "cli-source-with-desktop-version":
+        payload["source"] = "cli"
+    elif mutation == "paginated-history-with-desktop-version":
+        payload["history_mode"] = "paginated"
+    elif mutation == "cli-origin-with-desktop-version":
+        payload["originator"] = "codex-tui"
+    elif mutation == "desktop-thread-source-user":
+        payload["thread_source"] = "user"
+    elif mutation == "desktop-envelope-ordinal":
+        metadata["ordinal"] = 0
+    elif mutation == "desktop-extra-metadata-key":
+        payload["future_key"] = True
+    elif mutation == "desktop-context-key-drift":
+        payload["context_window"]["future_key"] = True
+    elif mutation == "desktop-multi-agent-disabled":
+        payload["multi_agent_version"] = "disabled"
+    elif mutation == "desktop-subagent-other":
+        payload["source"] = {"subagent": {"other": "guardian"}}
+    elif mutation == "desktop-fork-parent-drift":
+        payload["forked_from_id"] = _DESKTOP_CHILD
+    elif mutation == "desktop-history-start-injected":
+        payload["subagent_history_start_ordinal"] = 27
+    elif mutation == "desktop-dynamic-tools-drift":
+        payload["dynamic_tools"][0]["name"] = "future_app"
+    elif mutation == "desktop-git-key-drift":
+        payload["git"]["future_key"] = "future"
+    elif mutation == "desktop-git-hash-drift":
+        payload["git"]["commit_hash"] = "B" * 40
+    elif mutation == "desktop-depth-three":
+        spawn["depth"] = 3
+    elif mutation == "desktop-agent-role-nonnull":
+        spawn["agent_role"] = "reviewer"
+    elif mutation == "desktop-agent-path-drift":
+        payload["agent_path"] = "/root/different"
+    _write(current, records)
+
+    assert _attest_desktop(current, home) is None
+
+
+def test_desktop_alpha_and_cli_profiles_cannot_cross_mix(
+    rollout: tuple[Path, dict[str, str]],
+) -> None:
+    path, environ = rollout
+    _write(path, _records(marker=[], cli_version="0.147.0-alpha.6.6"))
+
+    assert _attest(path, environ) is None
+
+
+@pytest.mark.parametrize(
+    "parent_thread_id",
+    [_DESKTOP_ROOT, _DESKTOP_PARENT],
+    ids=["parent-is-session", "parent-differs-from-session"],
+)
+def test_desktop_alpha_no_depth_guardian_shape_fails_open(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    parent_thread_id: str,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    path = _desktop_rollout_path(home, thread_id=_DESKTOP_CHILD)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    metadata = {
+        "session_id": _DESKTOP_ROOT,
+        "id": _DESKTOP_CHILD,
+        **_desktop_metadata_common(
+            thread_id=_DESKTOP_CHILD,
+            timestamp="2026-08-12T14:14:53.361Z",
+            git_variant="branch",
+        ),
+        "parent_thread_id": parent_thread_id,
+        "source": {"subagent": {"other": "guardian"}},
+        "thread_source": "subagent",
+        "multi_agent_version": "disabled",
+    }
+    _write(
+        path,
+        [
+            _desktop_record(
+                "session_meta",
+                metadata,
+                timestamp="2026-08-12T14:14:58.070Z",
+            ),
+            *_desktop_current_records(),
+        ],
+    )
+
+    assert _attest_desktop(path, home) is None
+
+
+@pytest.mark.parametrize("mutation", ["metadata-binding", "causal-binding"])
+def test_desktop_alpha_depth_two_requires_inherited_parent_binding(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, _root, parent = _write_desktop_chain(
+        home,
+        depth=2,
+        inherited=True,
+        prefix_variant="child-only",
+    )
+    assert parent is not None
+    if mutation == "metadata-binding":
+        current_records = [
+            json.loads(line) for line in current.read_text(encoding="utf-8").splitlines()
+        ]
+        current_records[0]["payload"].pop("forked_from_id")
+        _write(current, current_records)
+        parent_records = [
+            json.loads(line) for line in parent.read_text(encoding="utf-8").splitlines()
+        ]
+        arguments = json.loads(parent_records[-3]["payload"]["arguments"])
+        arguments["fork_turns"] = "none"
+        parent_records[-3]["payload"]["arguments"] = json.dumps(
+            arguments,
+            separators=(",", ":"),
+        )
+        _write(parent, parent_records)
+    else:
+        parent_records = [
+            json.loads(line) for line in parent.read_text(encoding="utf-8").splitlines()
+        ]
+        arguments = json.loads(parent_records[-3]["payload"]["arguments"])
+        arguments["fork_turns"] = "none"
+        parent_records[-3]["payload"]["arguments"] = json.dumps(
+            arguments,
+            separators=(",", ":"),
+        )
+        _write(parent, parent_records)
+
+    assert _attest_desktop(current, home) is None
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "missing-root-owner",
+        "ambiguous-root-owner",
+        "replaced-root-owner",
+        "missing-parent-owner",
+        "ambiguous-parent-owner",
+        "replaced-parent-owner",
+        "copied-parent-drift",
+        "copied-root-drift",
+    ],
+)
+def test_desktop_alpha_requires_unique_canonical_owners_and_exact_copies(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, root, parent = _write_desktop_chain(
+        home,
+        depth=2,
+        inherited=True,
+        prefix_variant="full",
+    )
+    assert parent is not None
+    attestation: subject.CodexPlaintextSpawnAttestation | None = None
+    if mutation in {"replaced-root-owner", "replaced-parent-owner"}:
+        attestation = _attest_desktop(current, home)
+        assert attestation is not None
+    if mutation == "missing-root-owner":
+        root.unlink()
+    elif mutation == "ambiguous-root-owner":
+        root.with_name(root.name.replace("T08-18-29", "T07-18-29")).write_bytes(root.read_bytes())
+    elif mutation == "replaced-root-owner":
+        raw = root.read_bytes()
+        root.unlink()
+        root.write_bytes(raw)
+    elif mutation == "missing-parent-owner":
+        parent.unlink()
+    elif mutation == "ambiguous-parent-owner":
+        parent.with_name(parent.name.replace("T08-19-35", "T07-19-35")).write_bytes(
+            parent.read_bytes()
+        )
+    elif mutation == "replaced-parent-owner":
+        raw = parent.read_bytes()
+        parent.unlink()
+        parent.write_bytes(raw)
+    else:
+        records = [json.loads(line) for line in current.read_text(encoding="utf-8").splitlines()]
+        copied = records[1] if mutation == "copied-parent-drift" else records[2]
+        if mutation == "copied-parent-drift":
+            copied["payload"]["git"]["branch"] = "codex/different"
+        else:
+            copied["payload"]["model_provider"] = "future-provider"
+        _write(current, records)
+
+    if attestation is None:
+        assert _attest_desktop(current, home) is None
+    else:
+        assert not subject.codex_plaintext_spawn_attestation_is_current(
+            attestation,
+            tool_input=_DESKTOP_ARGS,
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "not-adjacent-call-start",
+        "event-id-drift",
+        "child-id-drift",
+        "path-drift",
+        "event-schema-drift",
+        "event-time-minus-one",
+        "event-time-plus-two",
+        "duplicate-start",
+        "missing-start",
+        "missing-output",
+        "output-before-start",
+        "output-call-id-drift",
+        "output-id-drift",
+        "output-turn-drift",
+        "output-path-drift",
+        "output-schema-drift",
+        "output-uuid-before-event",
+        "output-outer-plus-three",
+    ],
+)
+def test_desktop_alpha_direct_causal_transaction_is_exact(  # noqa: C901
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, root, _parent = _write_desktop_chain(
+        home,
+        depth=1,
+        inherited=True,
+        prefix_variant="child-only",
+    )
+    records = [json.loads(line) for line in root.read_text(encoding="utf-8").splitlines()]
+    _call, start, output = records[-3:]
+    if mutation == "not-adjacent-call-start":
+        records.insert(
+            -2, _desktop_record("event_msg", {"type": "token_count"}, timestamp=start["timestamp"])
+        )
+    elif mutation == "event-id-drift":
+        start["payload"]["event_id"] = "call_AAAAAAAAAAAAAAAAAAAAAAAA"
+    elif mutation == "child-id-drift":
+        start["payload"]["agent_thread_id"] = _DESKTOP_CHILD
+    elif mutation == "path-drift":
+        start["payload"]["agent_path"] = "/root/different"
+    elif mutation == "event-schema-drift":
+        start["payload"]["future_key"] = True
+    elif mutation == "event-time-minus-one":
+        start["payload"]["occurred_at_ms"] += 1
+    elif mutation == "event-time-plus-two":
+        start["timestamp"] = "2026-08-12T12:19:40.767Z"
+    elif mutation == "duplicate-start":
+        records.append(deepcopy(start))
+    elif mutation == "missing-start":
+        records.pop(-2)
+    elif mutation == "missing-output":
+        records.pop()
+    elif mutation == "output-before-start":
+        records[-2:] = [output, start]
+    elif mutation == "output-call-id-drift":
+        output["payload"]["call_id"] = "call_AAAAAAAAAAAAAAAAAAAAAAAA"
+    elif mutation == "output-id-drift":
+        output["payload"]["id"] = "fco_not-a-uuid"
+    elif mutation == "output-turn-drift":
+        output["payload"]["internal_chat_message_metadata_passthrough"]["turn_id"] = _TURN
+    elif mutation == "output-path-drift":
+        output["payload"]["output"] = '{"task_name":"/root/different"}'
+    elif mutation == "output-schema-drift":
+        output["payload"]["future_key"] = True
+    elif mutation == "output-uuid-before-event":
+        output["payload"]["id"] = f"fco_{_DESKTOP_PARENT}"
+    elif mutation == "output-outer-plus-three":
+        output["timestamp"] = "2026-08-12T12:19:40.791Z"
+    _write(root, records)
+
+    assert _attest_desktop(current, home) is None
+
+
+@pytest.mark.parametrize(
+    ("edge", "mutation"),
+    [
+        pytest.param("parent", "event-id", id="parent-event-id"),
+        pytest.param("root", "event-id", id="root-event-id"),
+        pytest.param("root", "reused-output-id", id="cross-edge-output-id-reuse"),
+    ],
+)
+def test_desktop_alpha_depth_two_binds_both_causal_transactions(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    edge: str,
+    mutation: str,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, root, parent = _write_desktop_chain(
+        home,
+        depth=2,
+        inherited=True,
+        prefix_variant="child-only",
+    )
+    assert parent is not None
+    path = parent if edge == "parent" else root
+    records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    if mutation == "event-id":
+        records[-2]["payload"]["event_id"] = "call_AAAAAAAAAAAAAAAAAAAAAAAA"
+    else:
+        parent_records = [
+            json.loads(line) for line in parent.read_text(encoding="utf-8").splitlines()
+        ]
+        records[-1]["payload"]["id"] = parent_records[-1]["payload"]["id"]
+    _write(path, records)
+
+    assert _attest_desktop(current, home) is None
+
+
+@pytest.mark.parametrize("edge", ["parent", "root"])
+def test_desktop_alpha_depth_two_currentness_revalidates_each_external_edge(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    edge: str,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, root, parent = _write_desktop_chain(
+        home,
+        depth=2,
+        inherited=True,
+        prefix_variant="child-only",
+    )
+    assert parent is not None
+    attestation = _attest_desktop(current, home)
+    assert attestation is not None
+    path = parent if edge == "parent" else root
+    records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    records[-2]["payload"]["event_id"] = "call_AAAAAAAAAAAAAAAAAAAAAAAA"
+    _write(path, records)
+
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        attestation,
+        tool_input=_DESKTOP_ARGS,
+    )
+
+
+@pytest.mark.parametrize(
+    ("target", "marker"),
+    [
+        pytest.param("current", _MISSING, id="current-missing"),
+        pytest.param("current", None, id="current-null"),
+        pytest.param("current", ["ciphertext"], id="current-nonempty"),
+        pytest.param("ancestor", None, id="ancestor-null"),
+        pytest.param("ancestor", ["ciphertext"], id="ancestor-nonempty"),
+        pytest.param("ancestor", {}, id="ancestor-wrong-type"),
+    ],
+)
+def test_desktop_alpha_current_and_ancestor_marker_domains_are_separate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    target: str,
+    marker: object,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, _root, _parent = _write_desktop_chain(
+        home,
+        depth=1,
+        inherited=True,
+        prefix_variant="child-only",
+        current_marker=marker if target == "current" else [],
+        root_marker=marker if target == "ancestor" else _MISSING,
+    )
+
+    assert _attest_desktop(current, home) is None
+
+
+@pytest.mark.parametrize(
+    "residual_seconds",
+    [pytest.param(-1, id="minus-one"), pytest.param(2, id="plus-two")],
+)
+def test_desktop_alpha_filename_residual_rejects_unobserved_values(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    residual_seconds: int,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, _root, _parent = _write_desktop_chain(
+        home,
+        depth=1,
+        inherited=True,
+        prefix_variant="child-only",
+        current_residual_seconds=residual_seconds,
+    )
+
+    assert _attest_desktop(current, home) is None
+
+
+def test_cli_profile_accepts_observed_plus_one_filename_residual(
+    rollout: tuple[Path, dict[str, str]],
+) -> None:
+    original, environ = rollout
+    shifted = original.with_name(original.name.replace("T22-23-55", "T22-23-56"))
+    _write(shifted, _records(marker=[]))
+
+    assert _attest(shifted, environ) is not None
+
+
+def test_cross_file_cli_external_rollout_rejects_plus_one_residual(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, _parent = _write_cross_file_chain(home, depth=1, inherited=True)
+    root.rename(root.with_name(root.name.replace("T22-23-55", "T22-23-56")))
+
+    assert _attest(current, {"CODEX_HOME": str(home)}) is None
+
+
+def test_desktop_alpha_requires_task_start_before_current_call(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    path = _write_desktop_root_rollout(home)
+    records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    records.pop(1)
+    _write(path, records)
+
+    assert _attest_desktop(path, home) is None
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        pytest.param("arguments", id="arguments"),
+        pytest.param("turn", id="turn"),
+        pytest.param("call", id="call"),
+        pytest.param("task-schema", id="task-schema"),
+    ],
+)
+def test_desktop_alpha_current_call_binds_shared_authorization_fields(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    field: str,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    path = _write_desktop_root_rollout(home)
+    records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    task = records[1]["payload"]
+    call = records[2]["payload"]
+    if field == "arguments":
+        drifted = {**_DESKTOP_ARGS, "message": "Different transcript message."}
+        call["arguments"] = json.dumps(drifted, separators=(",", ":"))
+    elif field == "turn":
+        call["internal_chat_message_metadata_passthrough"]["turn_id"] = _TURN
+    elif field == "call":
+        call["call_id"] = "call_AAAAAAAAAAAAAAAAAAAAAAAA"
+    elif field == "task-schema":
+        task["future_key"] = True
+    _write(path, records)
+
+    assert _attest_desktop(path, home) is None
+
+
+def test_desktop_alpha_current_or_external_direct_replay_invalidates_attestation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+
+    current_home = tmp_path / "current-home"
+    current_path = _write_desktop_root_rollout(current_home)
+    current_attestation = _attest_desktop(current_path, current_home)
+    assert current_attestation is not None
+    current_replay = _desktop_record(
+        "event_msg",
+        {
+            "type": "sub_agent_activity",
+            "event_id": _DESKTOP_CALL,
+            "occurred_at_ms": 1786544100000,
+            "agent_thread_id": _DESKTOP_CHILD,
+            "agent_path": "/root/desktop_review",
+            "kind": "started",
+        },
+        timestamp="2026-08-12T14:15:00.000Z",
+    )
+    with current_path.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(current_replay, separators=(",", ":")) + "\n")
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        current_attestation,
+        tool_input=_DESKTOP_ARGS,
+    )
+
+    external_home = tmp_path / "external-home"
+    external_path, root, _parent = _write_desktop_chain(
+        external_home,
+        depth=1,
+        inherited=True,
+        prefix_variant="child-only",
+    )
+    external_attestation = _attest_desktop(external_path, external_home)
+    assert external_attestation is not None
+    root_records = [json.loads(line) for line in root.read_text(encoding="utf-8").splitlines()]
+    with root.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(root_records[-2], separators=(",", ":")) + "\n")
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        external_attestation,
+        tool_input=_DESKTOP_ARGS,
+    )
+
+
+def test_desktop_alpha_sealed_profile_and_external_arrays_are_authoritative(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, _root, _parent = _write_desktop_chain(
+        home,
+        depth=1,
+        inherited=True,
+        prefix_variant="child-only",
+    )
+    attestation = _attest_desktop(current, home)
+    assert attestation is not None
+
+    unsealed_atomic_drift = replace(
+        attestation,
+        profile_id="cli-tui-0.147.0",
+        cli_version="0.147.0",
+    )
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        unsealed_atomic_drift,
+        tool_input=_DESKTOP_ARGS,
+    )
+
+    profile_drift = replace(attestation, profile_id="cli-tui-0.147.0", seal="")
+    profile_drift = replace(profile_drift, seal=subject._sealed(profile_drift))
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        profile_drift,
+        tool_input=_DESKTOP_ARGS,
+    )
+
+    array_drift = replace(
+        attestation,
+        external_edge_child_thread_ids=(),
+        seal="",
+    )
+    array_drift = replace(array_drift, seal=subject._sealed(array_drift))
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        array_drift,
+        tool_input=_DESKTOP_ARGS,
+    )
+
+
+@pytest.mark.parametrize("mutation", ["ancestry-index", "record-index", "file-order"])
+def test_desktop_alpha_depth_two_rejects_resealed_index_or_file_order_drift(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, _root, _parent = _write_desktop_chain(
+        home,
+        depth=2,
+        inherited=True,
+        prefix_variant="child-only",
+    )
+    attestation = _attest_desktop(current, home)
+    assert attestation is not None
+    if mutation == "ancestry-index":
+        drifted = replace(attestation, ancestry_file_indexes=(0, 2, 1), seal="")
+    elif mutation == "record-index":
+        swapped = tuple(
+            2 if value == 1 else 1 for value in attestation.external_record_file_indexes
+        )
+        drifted = replace(attestation, external_record_file_indexes=swapped, seal="")
+    else:
+        drifted = replace(
+            attestation,
+            external_file_paths=tuple(reversed(attestation.external_file_paths)),
+            seal="",
+        )
+    drifted = replace(drifted, seal=subject._sealed(drifted))
+
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        drifted,
+        tool_input=_DESKTOP_ARGS,
+    )
+
+
+@pytest.mark.parametrize(
+    ("depth", "location", "memory_mode"),
+    [
+        pytest.param(1, "root", _MISSING, id="external-root-missing"),
+        pytest.param(1, "root", "enabled", id="external-root-enabled"),
+        pytest.param(1, "current", "enabled", id="current-depth-one-enabled"),
+        pytest.param(2, "current", "enabled", id="current-depth-two-enabled"),
+        pytest.param(2, "parent", "enabled", id="external-parent-enabled"),
+    ],
+)
+def test_desktop_alpha_late_metadata_cannot_poison_initial_or_current_authority(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    depth: int,
+    location: str,
+    memory_mode: object,
+) -> None:
+    _prepare_desktop_fixture(monkeypatch)
+    home = tmp_path / "codex-home"
+    current, root, parent = _write_desktop_chain(
+        home,
+        depth=depth,
+        inherited=True,
+        prefix_variant="child-only",
+    )
+    historical = _desktop_root_metadata(
+        outer_timestamp=(
+            "2026-08-12T12:20:00.000Z" if location == "root" else "2026-08-12T14:14:59.000Z"
+        )
+    )
+    if memory_mode is not _MISSING:
+        historical["payload"]["memory_mode"] = memory_mode
+    target = {"root": root, "current": current, "parent": parent}[location]
+    assert target is not None
+    target_records = [json.loads(line) for line in target.read_text(encoding="utf-8").splitlines()]
+    if location in {"root", "parent"}:
+        historical_index = len(target_records)
+    else:
+        historical_index = 2
+    target_records.insert(historical_index, historical)
+    _write(target, target_records)
+    attestation = _attest_desktop(current, home)
+    assert attestation is not None
+
+    target_records[historical_index]["payload"]["model_provider"] = "future-provider"
+    _write(target, target_records)
+
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        attestation,
+        tool_input=_DESKTOP_ARGS,
+    )
+    assert _attest_desktop(current, home) is None
 
 
 def _record(kind: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -1592,7 +3125,8 @@ def test_exact_depth_two_forked_child_shape_attests(
     forked_rollout: tuple[Path, dict[str, str]],
 ) -> None:
     original, environ = forked_rollout
-    path = original.with_name(f"rollout-2026-08-13T00-16-49-{_GRANDCHILD_THREAD}.jsonl")
+    path = original.parents[1] / "12" / f"rollout-2026-08-12T23-26-32-{_GRANDCHILD_THREAD}.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
     parent = _subagent_metadata(
         thread_id=_DEPTH_TWO_PARENT,
         parent_thread_id=_SESSION,
@@ -1637,7 +3171,8 @@ def test_depth_two_fork_requires_exact_observed_two_record_chain(
     mutation: str,
 ) -> None:
     original, environ = forked_rollout
-    path = original.with_name(f"rollout-2026-08-13T00-16-49-{_GRANDCHILD_THREAD}.jsonl")
+    path = original.parents[1] / "12" / f"rollout-2026-08-12T23-26-32-{_GRANDCHILD_THREAD}.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
     parent = _subagent_metadata(
         thread_id=_DEPTH_TWO_PARENT,
         parent_thread_id=_SESSION,
