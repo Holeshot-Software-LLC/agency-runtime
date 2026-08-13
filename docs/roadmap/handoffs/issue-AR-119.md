@@ -89,18 +89,17 @@ must be loaded first after any compaction or session restart.
   baseline killed 20/20 scoped mutations with zero survived/invalid and
   `source_unchanged=true`; independent verification reproduced the result and
   reported no finding at any severity.
-- Candidate `45b21cdc` retains the historical 131/131 decision-conformance
-  result. For `211563c7`, dashboard UI passed 134/134, routing passed every
-  threshold, and Ruff lint/format passed.
+- `45b21cdc` retains the historical 131/131 conformance result; for `211563c7`
+  dashboard UI passed 134/134, routing every threshold, and Ruff lint/format.
 - Claude's earlier Rule-4 artifacts and Codex's prior TUI/Desktop/exec negatives
   remain prior-candidate context. No Agency canary, live rewrite, real Claude
   invocation, or exact-candidate Installed/Live proof ran.
 
 ## exact-blocker
 
-1. **AR-180 — Codex support.** Candidate `211563c7` proves exact CLI 0.147 and
-   Desktop `0.147.0-alpha.6.6` Implementation/Simulation. Exec depth-two is
-   parked: no same-version sample exists, so it needs a live spawn or a drop.
+1. **AR-180 — Codex support.** `211563c7` proves exact CLI 0.147 and Desktop
+   `0.147.0-alpha.6.6` Impl/Sim. Exec depth-two is parked: no same-version
+   sample, so it needs a live spawn or a drop.
 2. **AR-255 — exact host proof.** After those support gaps close, obtain explicit
    authorization before exact install or live proof, including one current
    Claude artifact. Passing fake-runner integration is simulation only.
@@ -128,14 +127,15 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-No cell is negative, and R2, R3, R6, and R7 are now proven at source and
-simulation on all five hosts: `cb6808fe` sweeps the hooks boundary's own zcode
-construction instead of generic, `42c1354b` shows the whole card reaching the
-caller's own turn and two units each keeping their own card, and `75663ed0`
-shows an uncovered turn minting, interviewing, and filing a contractor that the
-next turn reuses. R5 (the spawn-origin absence proof) is the last unblocked
-rule. Installed and Live need a reinstall first: the switch is off and the
-hooks come from three stale trees.
+No cell is negative. `d4b64c35` completes **simulation parity on codex and
+zcode**: R1-R8 all proven, so their R9 simulation derives as proven. R2/R3
+(`42c1354b`), R6 (`75663ed0`), R7 (`cb6808fe`), and R5 (`d4b64c35`) each landed
+as a measured turn on every host's own boundary. Three simulation gaps remain:
+claude R8, hermes/openclaw R4. R5 Implementation is open on purpose: a static
+call-graph absence proof does not hold, since the turn-path closure legitimately
+holds 16 process-capable modules (inference shells out to CLI providers through
+the installer's own primitive), so it needs a formulation separating starting an
+agent from running a tool. Installed and Live need a reinstall first.
 
 ## verification
 
