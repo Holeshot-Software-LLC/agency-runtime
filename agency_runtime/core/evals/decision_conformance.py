@@ -1651,6 +1651,349 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-cross-file-allows-parallel-evidence-shape-drift",
+        invariant=(
+            "A sealed cross-file Codex attestation rejects mismatched parallel evidence "
+            "arrays before any indexed revalidation."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="        if not _attestation_array_shapes_are_valid(attestation):",
+        after="        if False and not _attestation_array_shapes_are_valid(attestation):",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_external_records_and_parallel_arrays_are_structurally_bound"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-drops-external-file-identity",
+        invariant=(
+            "Each external Codex ancestry rollout remains bound to the exact sealed device "
+            "and inode rather than a byte-identical pathname replacement."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""                int(external_opened.st_dev) != attestation.external_file_devices[index]
+                or int(external_opened.st_ino) != attestation.external_file_inodes[index]""",
+        after="                False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_external_identity_and_scanned_prefix_are_sealed"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-skips-scanned-prefix-digest",
+        invariant=(
+            "The full external prefix scanned for absence and uniqueness remains sealed, "
+            "including records outside the selected metadata and causal pair."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        for index in range(external_count):
+            if not hmac.compare_digest(
+                _snapshot_sha256(
+                    descriptors[index + 1],
+                    attestation.external_file_snapshot_sizes[index],
+                ),
+                attestation.external_file_snapshot_sha256[index],
+            ):
+                return False""",
+        after="""        for index in range(external_count):
+            if False and not hmac.compare_digest(
+                _snapshot_sha256(
+                    descriptors[index + 1],
+                    attestation.external_file_snapshot_sizes[index],
+                ),
+                attestation.external_file_snapshot_sha256[index],
+            ):
+                return False""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_external_identity_and_scanned_prefix_are_sealed"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-skips-external-record-revalidation",
+        invariant=(
+            "Every sealed external metadata and causal record digest is independently "
+            "revalidated before a Codex rewrite remains authoritative."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        for file_index, offset, length, expected in zip(
+            attestation.external_record_file_indexes,
+            attestation.external_record_offsets,
+            attestation.external_record_lengths,
+            attestation.external_record_sha256,
+            strict=True,
+        ):
+            if not _bound_record_digest_is_current(""",
+        after="""        for file_index, offset, length, expected in zip(
+            attestation.external_record_file_indexes,
+            attestation.external_record_offsets,
+            attestation.external_record_lengths,
+            attestation.external_record_sha256,
+            strict=True,
+        ):
+            if False and not _bound_record_digest_is_current(""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_external_records_and_parallel_arrays_are_structurally_bound"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-allows-appended-causal-replay",
+        invariant=(
+            "An external ancestry rollout cannot append a duplicate sealed launch, item, "
+            "child-start, or session record after attestation."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="            if not _external_suffix_is_current(",
+        after="            if False and not _external_suffix_is_current(",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_appended_causal_replay_is_rejected"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-decouples-causal-parent-thread",
+        invariant=(
+            "A host-written child-start event is bound to the exact parent rollout thread "
+            "for both cross-file causal edges."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='        or start_payload.get("thread_id") != parent_thread_id',
+        after="        or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_both_causal_edges_and_history_variant_are_authoritative"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-weakens-root-parent-causal-edge",
+        invariant=(
+            "A depth-two chain binds its canonical root launch to the exact intermediate "
+            "parent thread rather than the current grandchild."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="            child_thread_id=thread_id if depth == 1 else parent_thread_id,",
+        after="            child_thread_id=thread_id,",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_exact_one_metadata_tui_chain_attests_across_canonical_rollouts[2-True]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-decouples-sparse-fork-turn-semantics",
+        invariant=(
+            "A sparse one-record child is accepted only when its causal launch explicitly "
+            "uses fork_turns none."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='        or (not inherited and fork_turns != "none")',
+        after="        or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage"
+            "[sparse_wrong_fork_turns]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-decouples-fork-history-variant",
+        invariant=(
+            "An inherited one-record child is accepted only when its causal launch uses "
+            "fork_turns all or a canonical positive decimal."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            '        or (inherited and fork_turns != "all" and '
+            "_POSITIVE_DECIMAL.fullmatch(fork_turns) is None)"
+        ),
+        after="        or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage"
+            "[inherited_wrong_fork_turns]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-allows-copied-root-payload-drift",
+        invariant=(
+            "A depth-two parent's copied root metadata payload exactly matches the "
+            "separately opened canonical root payload."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="            or parent_prefix[1].payload != root_prefix[0].payload",
+        after="            or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_copied_root_matches_canonical_payload"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-drops-rollout-offset-binding",
+        invariant=(
+            "Each canonical external rollout retains its own independently derived integral "
+            "UTC offset rather than inheriting another ancestor's offset."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    else:
+        parent_path, parent_offset_minutes = _find_unique_rollout_for_thread(
+            sessions_root,
+            thread_id=parent_thread_id,
+        )""",
+        after="""    else:
+        parent_path, _parent_offset_minutes = _find_unique_rollout_for_thread(
+            sessions_root,
+            thread_id=parent_thread_id,
+        )
+        parent_offset_minutes = root_offset_minutes""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_one_metadata_tui_chain_accepts_independent_cross_offset_rollouts"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-drops-adjacent-utc-day-lookup",
+        invariant=(
+            "Canonical ancestry lookup checks only the bounded UTC date neighborhood needed "
+            "for valid minus-twelve through plus-fourteen-hour rollout offsets."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            "        for candidate in "
+            "(utc_day - timedelta(days=1), utc_day, utc_day + timedelta(days=1))"
+        ),
+        after="        for candidate in (utc_day,)",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_nonzero_offset_is_required_for_canonical_lookup"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-drops-rollout-directory-entry-bound",
+        invariant=(
+            "Each candidate UTC-date directory is scanned under a fixed entry bound before "
+            "any external ancestry path can become authoritative."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="                    if entries_seen > _MAX_ROLLOUT_DIRECTORY_ENTRIES:",
+        after="                    if False:",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage"
+            "[bounded_root_directory]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-allows-ambiguous-initial-namespace",
+        invariant=(
+            "Initial external rollout lookup requires exactly one canonical filename for "
+            "each ancestor thread across the bounded UTC-date neighborhood."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="    if len(matches) != 1:",
+        after="    if not matches:",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage"
+            "[ambiguous_root_path]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-repeats-initial-external-scan",
+        invariant=(
+            "Each external ancestry rollout is parsed and hashed in one bounded initial "
+            "streaming pass."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    digest = hashlib.sha256()
+    for offset, raw in _snapshot_lines(descriptor, size):
+        digest.update(raw)""",
+        after="""    digest = hashlib.sha256()
+    tuple(_snapshot_lines(descriptor, size))
+    for offset, raw in _snapshot_lines(descriptor, size):
+        digest.update(raw)""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_external_rollouts_use_one_initial_streaming_pass_each"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-rejects-exact-empty-causal-marker",
+        invariant=(
+            "A cross-file causal call accepts either the exact ordinary schema or that exact "
+            "schema plus the observed empty encrypted-function-arguments marker."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    if keys == _CAUSAL_CALL_KEYS:
+        pass
+    elif keys != _MARKED_CAUSAL_CALL_KEYS or payload.get("encrypted_function_args") != []:
+        return None""",
+        after="""    if keys != _CAUSAL_CALL_KEYS:
+        return None""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_causal_edges_accept_exact_empty_delivery_marker[root]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-shifts-initial-aggregate-byte-bound",
+        invariant=(
+            "A depth-two initial ancestry scan admits a combined external snapshot exactly "
+            "at 64 MiB and fails closed only when that aggregate exceeds the bound."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="        if root_size + parent_size > _MAX_EXTERNAL_ANCESTRY_BYTES:",
+        after="        if root_size + parent_size >= _MAX_EXTERNAL_ANCESTRY_BYTES:",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_external_ancestry_aggregate_byte_bound_is_exact"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-drops-current-aggregate-byte-bound",
+        invariant=(
+            "Currentness fails closed when the combined present size of all external "
+            "ancestry rollouts exceeds 64 MiB."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        if (
+            sum(int(metadata.st_size) for metadata in opened_metadata[1:])
+            > _MAX_EXTERNAL_ANCESTRY_BYTES
+        ):
+            return False""",
+        after="""        if False and (
+            sum(int(metadata.st_size) for metadata in opened_metadata[1:])
+            > _MAX_EXTERNAL_ANCESTRY_BYTES
+        ):
+            return False""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_current_external_ancestry_aggregate_byte_bound_is_exact"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-skips-final-namespace-recomputation",
+        invariant=(
+            "External rollout uniqueness and independently derived offsets are recomputed "
+            "after record and file revalidation, immediately before success."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        for index in range(external_count):
+            resolved_path, resolved_offset = _find_unique_rollout_for_thread(
+                sessions_root,
+                thread_id=attestation.external_file_thread_ids[index],
+            )
+            if (
+                resolved_path != Path(attestation.external_file_paths[index])
+                or resolved_offset != attestation.external_file_utc_offset_minutes[index]
+            ):
+                return False
+        return True""",
+        after="        return True",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_final_currentness_recomputes_unique_external_namespace"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="native-child-readback-allows-contradictory-semantic-status",
         invariant=(
             "The transactional native-child readback rejects an inner semantic status that "

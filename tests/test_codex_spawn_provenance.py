@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import replace
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +29,277 @@ _ARGS = {
     "fork_turns": "all",
 }
 _MISSING = object()
+
+
+def _real_record(
+    kind: str,
+    payload: dict[str, Any],
+    *,
+    ordinal: int,
+    timestamp: str,
+) -> dict[str, Any]:
+    return {"timestamp": timestamp, "type": kind, "payload": payload, "ordinal": ordinal}
+
+
+def _real_metadata_common(
+    *,
+    thread_id: str,
+    timestamp: str,
+) -> dict[str, Any]:
+    return {
+        "timestamp": timestamp,
+        "cwd": "C:\\sanitized\\agency-runtime",
+        "originator": "codex-tui",
+        "cli_version": "0.147.0",
+        "thread_source": "subagent",
+        "model_provider": "openai",
+        "base_instructions": {"text": "sanitized Codex 0.147 instructions"},
+        "history_mode": "paginated",
+        "context_window": {"window_id": thread_id},
+        "git": {
+            "branch": "codex/sanitized",
+            "commit_hash": "a" * 40,
+            "repository_url": "https://example.invalid/agency-runtime",
+        },
+    }
+
+
+def _real_root_metadata(
+    *,
+    session_id: str = _SESSION,
+    ordinal: int = 0,
+    outer_timestamp: str | None = None,
+) -> dict[str, Any]:
+    timestamp = "2026-08-13T02:23:55.164Z"
+    return _real_record(
+        "session_meta",
+        {
+            "session_id": session_id,
+            "id": session_id,
+            **_real_metadata_common(thread_id=session_id, timestamp=timestamp),
+            "source": "cli",
+            "thread_source": "user",
+        },
+        ordinal=ordinal,
+        timestamp=outer_timestamp or timestamp,
+    )
+
+
+def _real_subagent_metadata(
+    *,
+    thread_id: str,
+    parent_thread_id: str,
+    root_session_id: str,
+    depth: int,
+    agent_path: str,
+    inherited: bool,
+) -> dict[str, Any]:
+    timestamp = {
+        _CHILD_THREAD: "2026-08-13T04:16:49.225Z",
+        _DEPTH_TWO_PARENT: "2026-08-13T03:25:50.439Z",
+        _GRANDCHILD_THREAD: "2026-08-13T03:26:32.824Z",
+    }[thread_id]
+    payload = {
+        "session_id": root_session_id,
+        "id": thread_id,
+        **_real_metadata_common(thread_id=thread_id, timestamp=timestamp),
+        "parent_thread_id": parent_thread_id,
+        "source": {
+            "subagent": {
+                "thread_spawn": {
+                    "parent_thread_id": parent_thread_id,
+                    "depth": depth,
+                    "agent_path": agent_path,
+                    "agent_nickname": "Goodall",
+                    "agent_role": None,
+                }
+            }
+        },
+        "agent_nickname": "Goodall",
+        "agent_path": agent_path,
+        "multi_agent_version": "v2",
+    }
+    if inherited:
+        payload["forked_from_id"] = parent_thread_id
+        payload["subagent_history_start_ordinal"] = 27
+    return _real_record("session_meta", payload, ordinal=0, timestamp=timestamp)
+
+
+def _causal_edge(
+    *,
+    parent_thread_id: str,
+    child_thread_id: str,
+    task_name: str,
+    child_agent_path: str,
+    fork_turns: str,
+    ordinal: int,
+    call_id: str,
+    function_item_character: str,
+    call_timestamp: str,
+    start_timestamp: str,
+) -> list[dict[str, Any]]:
+    turn_id = _TURN if parent_thread_id == _SESSION else _V4_TURN
+    started_at_ms = int(
+        datetime.strptime(start_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+        .replace(tzinfo=timezone.utc)
+        .timestamp()
+        * 1000
+    )
+    return [
+        _real_record(
+            "response_item",
+            {
+                "type": "function_call",
+                "namespace": "collaboration",
+                "name": "spawn_agent",
+                "arguments": json.dumps(
+                    {
+                        "task_name": task_name,
+                        "message": "Sanitized bounded child task.",
+                        "fork_turns": fork_turns,
+                    },
+                    separators=(",", ":"),
+                ),
+                "call_id": call_id,
+                "id": "fc_" + function_item_character * 50,
+                "internal_chat_message_metadata_passthrough": {"turn_id": turn_id},
+            },
+            ordinal=ordinal,
+            timestamp=call_timestamp,
+        ),
+        _real_record(
+            "event_msg",
+            {
+                "type": "item_completed",
+                "thread_id": parent_thread_id,
+                "turn_id": turn_id,
+                "item": {
+                    "type": "SubAgentActivity",
+                    "id": call_id,
+                    "kind": "started",
+                    "agent_thread_id": child_thread_id,
+                    "agent_path": child_agent_path,
+                },
+                "started_at_ms": started_at_ms,
+                "completed_at_ms": started_at_ms,
+            },
+            ordinal=ordinal + 1,
+            timestamp=start_timestamp,
+        ),
+    ]
+
+
+def _cross_file_paths(
+    home: Path,
+    *,
+    depth: int,
+) -> tuple[Path, Path, Path | None]:
+    sessions = home / "sessions"
+    root = sessions / "2026" / "08" / "12" / f"rollout-2026-08-12T22-23-55-{_SESSION}.jsonl"
+    if depth == 1:
+        current = (
+            sessions / "2026" / "08" / "13" / f"rollout-2026-08-13T00-16-49-{_CHILD_THREAD}.jsonl"
+        )
+        return current, root, None
+    current = (
+        sessions / "2026" / "08" / "12" / f"rollout-2026-08-12T23-26-32-{_GRANDCHILD_THREAD}.jsonl"
+    )
+    parent = (
+        sessions / "2026" / "08" / "12" / f"rollout-2026-08-12T23-25-50-{_DEPTH_TWO_PARENT}.jsonl"
+    )
+    return current, root, parent
+
+
+def _write_cross_file_chain(
+    home: Path,
+    *,
+    depth: int,
+    inherited: bool,
+) -> tuple[Path, Path, Path | None]:
+    current, root, parent = _cross_file_paths(home, depth=depth)
+    current_thread = _CHILD_THREAD if depth == 1 else _GRANDCHILD_THREAD
+    current_parent = _SESSION if depth == 1 else _DEPTH_TWO_PARENT
+    current_task = "depth_one_child" if depth == 1 else "depth_two_child"
+    parent_task = "depth_one_parent"
+    current.parent.mkdir(parents=True, exist_ok=True)
+    root.parent.mkdir(parents=True, exist_ok=True)
+    current_agent_path = (
+        f"/root/{current_task}" if depth == 1 else f"/root/{parent_task}/{current_task}"
+    )
+    current_records = [
+        _real_subagent_metadata(
+            thread_id=current_thread,
+            parent_thread_id=current_parent,
+            root_session_id=_SESSION,
+            depth=depth,
+            agent_path=current_agent_path,
+            inherited=inherited,
+        ),
+        *_records(marker=[])[1:],
+    ]
+    root_records = [_real_root_metadata()]
+    if depth == 1:
+        root_records.extend(
+            _causal_edge(
+                parent_thread_id=_SESSION,
+                child_thread_id=current_thread,
+                task_name=current_task,
+                child_agent_path=current_agent_path,
+                fork_turns="2" if inherited else "none",
+                ordinal=10,
+                call_id="call_DepthOneChild12345678901",
+                function_item_character="b",
+                call_timestamp="2026-08-13T04:16:49.100Z",
+                start_timestamp="2026-08-13T04:16:49.225Z",
+            )
+        )
+    else:
+        root_records.extend(
+            _causal_edge(
+                parent_thread_id=_SESSION,
+                child_thread_id=_DEPTH_TWO_PARENT,
+                task_name=parent_task,
+                child_agent_path=f"/root/{parent_task}",
+                fork_turns="all",
+                ordinal=10,
+                call_id="call_DepthOneParent1234567890",
+                function_item_character="c",
+                call_timestamp="2026-08-13T03:25:50.100Z",
+                start_timestamp="2026-08-13T03:25:50.439Z",
+            )
+        )
+        assert parent is not None
+        copied_root = _real_root_metadata(
+            ordinal=1,
+            outer_timestamp="2026-08-13T03:25:50.439Z",
+        )
+        parent_records = [
+            _real_subagent_metadata(
+                thread_id=_DEPTH_TWO_PARENT,
+                parent_thread_id=_SESSION,
+                root_session_id=_SESSION,
+                depth=1,
+                agent_path=f"/root/{parent_task}",
+                inherited=True,
+            ),
+            copied_root,
+            *_causal_edge(
+                parent_thread_id=_DEPTH_TWO_PARENT,
+                child_thread_id=current_thread,
+                task_name=current_task,
+                child_agent_path=current_agent_path,
+                fork_turns="3" if inherited else "none",
+                ordinal=10,
+                call_id="call_DepthTwoChild12345678901",
+                function_item_character="d",
+                call_timestamp="2026-08-13T03:26:32.700Z",
+                start_timestamp="2026-08-13T03:26:32.824Z",
+            ),
+        ]
+        _write(parent, parent_records)
+    _write(root, root_records)
+    _write(current, current_records)
+    return current, root, parent
 
 
 def _record(kind: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -345,6 +617,816 @@ def test_exact_forked_child_shape_attests_and_binds_thread_and_root(
     assert len(attestation.ancestry_lengths) == 2
     assert all(length > 0 for length in attestation.ancestry_lengths)
     assert subject.codex_plaintext_spawn_attestation_is_current(attestation, tool_input=_ARGS)
+
+
+@pytest.mark.parametrize(("depth", "inherited"), [(1, True), (1, False), (2, True), (2, False)])
+def test_exact_one_metadata_tui_chain_attests_across_canonical_rollouts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    depth: int,
+    inherited: bool,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, _root, _parent = _write_cross_file_chain(
+        home,
+        depth=depth,
+        inherited=inherited,
+    )
+
+    attestation = _attest(current, {"CODEX_HOME": str(home)})
+
+    assert isinstance(attestation, subject.CodexPlaintextSpawnAttestation)
+    expected_threads = (
+        (_CHILD_THREAD, _SESSION)
+        if depth == 1
+        else (_GRANDCHILD_THREAD, _DEPTH_TWO_PARENT, _SESSION)
+    )
+    assert attestation.ancestry_thread_ids == expected_threads
+    assert len(attestation.external_file_paths) == depth
+    assert attestation.external_file_utc_offset_minutes == (-240,) * depth
+    assert subject.codex_plaintext_spawn_attestation_is_current(attestation, tool_input=_ARGS)
+
+
+def test_one_metadata_tui_chain_accepts_independent_cross_offset_rollouts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, parent = _write_cross_file_chain(home, depth=2, inherited=True)
+    assert parent is not None
+    shifted_root = root.with_name(root.name.replace("T22-23-55", "T21-23-55"))
+    shifted_parent = parent.with_name(parent.name.replace("T23-25-50", "T21-25-50"))
+    root.rename(shifted_root)
+    parent.rename(shifted_parent)
+
+    attestation = _attest(current, {"CODEX_HOME": str(home)})
+
+    assert attestation is not None
+    assert tuple(map(Path, attestation.external_file_paths)) == (
+        shifted_parent,
+        shifted_root,
+    )
+    assert attestation.external_file_utc_offset_minutes == (-360, -300)
+    assert subject.codex_plaintext_spawn_attestation_is_current(attestation, tool_input=_ARGS)
+
+
+def test_cross_file_ancestry_allows_only_unrelated_external_append(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, _parent = _write_cross_file_chain(home, depth=1, inherited=True)
+    attestation = _attest(current, {"CODEX_HOME": str(home)})
+    assert attestation is not None
+
+    with root.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(_record("event_msg", {"type": "token_count"})) + "\n")
+
+    assert subject.codex_plaintext_spawn_attestation_is_current(attestation, tool_input=_ARGS)
+
+
+def test_external_rollouts_use_one_initial_streaming_pass_each(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, parent = _write_cross_file_chain(home, depth=2, inherited=True)
+    assert parent is not None
+    external_inodes = {root.stat().st_ino, parent.stat().st_ino}
+    initial_passes: dict[int, int] = dict.fromkeys(external_inodes, 0)
+    original_snapshot_lines = subject._snapshot_lines
+
+    def observed_snapshot_lines(
+        descriptor: int,
+        size: int,
+        *,
+        start: int = 0,
+    ):
+        inode = os.fstat(descriptor).st_ino
+        if inode in initial_passes and start == 0:
+            initial_passes[inode] += 1
+        return original_snapshot_lines(descriptor, size, start=start)
+
+    monkeypatch.setattr(subject, "_snapshot_lines", observed_snapshot_lines)
+
+    assert _attest(current, {"CODEX_HOME": str(home)}) is not None
+    assert initial_passes == dict.fromkeys(external_inodes, 1)
+
+
+@pytest.mark.parametrize("edge_owner", ["root", "parent"])
+def test_cross_file_causal_edges_accept_exact_empty_delivery_marker(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    edge_owner: str,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, parent = _write_cross_file_chain(home, depth=2, inherited=True)
+    assert parent is not None
+    target = root if edge_owner == "root" else parent
+    records = [json.loads(line) for line in target.read_text(encoding="utf-8").splitlines()]
+    records[-2]["payload"]["encrypted_function_args"] = []
+    _write(target, records)
+
+    attestation = _attest(current, {"CODEX_HOME": str(home)})
+
+    assert attestation is not None
+    target.write_bytes(
+        target.read_bytes().replace(b'"encrypted_function_args":[]', b'"future_marker_property":{}')
+    )
+    assert not subject.codex_plaintext_spawn_attestation_is_current(attestation, tool_input=_ARGS)
+
+
+def test_one_metadata_depth_one_accepts_observed_three_turn_inheritance(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, _parent = _write_cross_file_chain(home, depth=1, inherited=True)
+    records = [json.loads(line) for line in root.read_text(encoding="utf-8").splitlines()]
+    arguments = json.loads(records[-2]["payload"]["arguments"])
+    arguments["fork_turns"] = "3"
+    records[-2]["payload"]["arguments"] = json.dumps(arguments, separators=(",", ":"))
+    _write(root, records)
+
+    assert _attest(current, {"CODEX_HOME": str(home)}) is not None
+
+
+def test_one_metadata_depth_one_accepts_observed_four_turn_inheritance(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, _parent = _write_cross_file_chain(home, depth=1, inherited=True)
+    records = [json.loads(line) for line in root.read_text(encoding="utf-8").splitlines()]
+    arguments = json.loads(records[-2]["payload"]["arguments"])
+    arguments["fork_turns"] = "4"
+    records[-2]["payload"]["arguments"] = json.dumps(arguments, separators=(",", ":"))
+    _write(root, records)
+
+    assert _attest(current, {"CODEX_HOME": str(home)}) is not None
+
+
+def test_depth_two_accepts_numeric_inherited_root_edge(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, _parent = _write_cross_file_chain(home, depth=2, inherited=True)
+    records = [json.loads(line) for line in root.read_text(encoding="utf-8").splitlines()]
+    arguments = json.loads(records[-2]["payload"]["arguments"])
+    arguments["fork_turns"] = "4"
+    records[-2]["payload"]["arguments"] = json.dumps(arguments, separators=(",", ":"))
+    _write(root, records)
+
+    assert _attest(current, {"CODEX_HOME": str(home)}) is not None
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "missing_root",
+        "missing_parent",
+        "ambiguous_root_path",
+        "malformed_root_filename",
+        "bounded_root_directory",
+        "current_depth_three",
+        "cycle",
+        "root_extra_key",
+        "root_missing_git",
+        "wrong_version",
+        "wrong_lineage",
+        "copied_root_drift",
+        "parent_not_inherited",
+        "sparse_wrong_fork_turns",
+        "inherited_wrong_fork_turns",
+        "inherited_noncanonical_decimal",
+        "root_inherited_none",
+        "non_null_agent_role",
+        "causal_marker_null",
+        "causal_marker_nonempty",
+        "causal_marker_wrong",
+        "causal_marker_extra",
+        "causal_not_adjacent",
+        "causal_event_parent",
+        "causal_turn",
+        "causal_agent_path",
+        "causal_time",
+        "causal_completed_bool",
+        "metadata_ordinal",
+        "metadata_timestamp",
+        "noncanonical_agent_path",
+        "duplicate_started",
+    ],
+)
+def test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage(  # noqa: C901
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    depth = (
+        1
+        if mutation
+        in {
+            "missing_root",
+            "ambiguous_root_path",
+            "malformed_root_filename",
+            "bounded_root_directory",
+            "current_depth_three",
+            "cycle",
+            "root_extra_key",
+            "root_missing_git",
+            "wrong_version",
+            "wrong_lineage",
+            "sparse_wrong_fork_turns",
+            "inherited_wrong_fork_turns",
+            "inherited_noncanonical_decimal",
+            "causal_marker_null",
+            "causal_marker_nonempty",
+            "causal_marker_wrong",
+            "causal_marker_extra",
+            "causal_not_adjacent",
+            "causal_event_parent",
+            "causal_turn",
+            "causal_agent_path",
+            "causal_time",
+            "causal_completed_bool",
+            "metadata_ordinal",
+            "metadata_timestamp",
+            "noncanonical_agent_path",
+            "duplicate_started",
+        }
+        else 2
+    )
+    inherited = mutation != "sparse_wrong_fork_turns"
+    current, root, parent = _write_cross_file_chain(
+        home,
+        depth=depth,
+        inherited=inherited,
+    )
+    current_records = [
+        json.loads(line) for line in current.read_text(encoding="utf-8").splitlines()
+    ]
+    root_records = [json.loads(line) for line in root.read_text(encoding="utf-8").splitlines()]
+    parent_records = (
+        [json.loads(line) for line in parent.read_text(encoding="utf-8").splitlines()]
+        if parent is not None
+        else []
+    )
+    if mutation == "missing_root":
+        root.unlink()
+    elif mutation == "missing_parent":
+        assert parent is not None
+        parent.unlink()
+    elif mutation == "ambiguous_root_path":
+        duplicate = root.with_name(root.name.replace("T22-23-55", "T21-23-55"))
+        duplicate.write_bytes(root.read_bytes())
+    elif mutation == "malformed_root_filename":
+        malformed = root.with_name(root.name.replace("T22-23-55", "T99-23-55"))
+        root.rename(malformed)
+    elif mutation == "bounded_root_directory":
+        (root.parent / "unrelated.jsonl").write_text("{}\n", encoding="utf-8")
+        monkeypatch.setattr(subject, "_MAX_ROLLOUT_DIRECTORY_ENTRIES", 1)
+    elif mutation == "current_depth_three":
+        current_records[0]["payload"]["source"]["subagent"]["thread_spawn"]["depth"] = 3
+    elif mutation == "cycle":
+        current_records[0]["payload"]["parent_thread_id"] = _CHILD_THREAD
+        current_records[0]["payload"]["forked_from_id"] = _CHILD_THREAD
+        current_records[0]["payload"]["source"]["subagent"]["thread_spawn"]["parent_thread_id"] = (
+            _CHILD_THREAD
+        )
+    elif mutation == "root_extra_key":
+        root_records[0]["payload"]["future"] = True
+    elif mutation == "root_missing_git":
+        root_records[0]["payload"].pop("git")
+    elif mutation == "wrong_version":
+        current_records[0]["payload"]["cli_version"] = "0.148.0"
+    elif mutation == "wrong_lineage":
+        current_records[0]["payload"]["originator"] = "codex_exec"
+    elif mutation == "copied_root_drift":
+        parent_records[1]["payload"]["model_provider"] = "different"
+    elif mutation == "parent_not_inherited":
+        parent_records[0]["payload"].pop("forked_from_id")
+        parent_records[0]["payload"].pop("subagent_history_start_ordinal")
+    elif mutation in {
+        "sparse_wrong_fork_turns",
+        "inherited_wrong_fork_turns",
+        "inherited_noncanonical_decimal",
+    }:
+        records = root_records if depth == 1 else parent_records
+        records[-2]["payload"]["arguments"] = json.dumps(
+            {
+                "task_name": "depth_one_child" if depth == 1 else "depth_two_child",
+                "message": "Sanitized bounded child task.",
+                "fork_turns": (
+                    "2"
+                    if mutation == "sparse_wrong_fork_turns"
+                    else "04"
+                    if mutation == "inherited_noncanonical_decimal"
+                    else "none"
+                ),
+            },
+            separators=(",", ":"),
+        )
+    elif mutation == "root_inherited_none":
+        root_records[-2]["payload"]["arguments"] = json.dumps(
+            {
+                "task_name": "depth_one_parent",
+                "message": "Sanitized bounded child task.",
+                "fork_turns": "none",
+            },
+            separators=(",", ":"),
+        )
+    elif mutation == "non_null_agent_role":
+        current_records[0]["payload"]["source"]["subagent"]["thread_spawn"]["agent_role"] = (
+            "reviewer"
+        )
+    elif mutation in {
+        "causal_marker_null",
+        "causal_marker_nonempty",
+        "causal_marker_wrong",
+        "causal_marker_extra",
+    }:
+        root_records[-2]["payload"]["encrypted_function_args"] = {
+            "causal_marker_null": None,
+            "causal_marker_nonempty": ["sealed"],
+            "causal_marker_wrong": {},
+            "causal_marker_extra": [],
+        }[mutation]
+        if mutation == "causal_marker_extra":
+            root_records[-2]["payload"]["future"] = True
+    elif mutation == "causal_not_adjacent":
+        root_records.insert(-1, _record("event_msg", {"type": "token_count"}))
+    elif mutation == "causal_event_parent":
+        root_records[-1]["payload"]["thread_id"] = _CHILD_THREAD
+    elif mutation == "causal_turn":
+        root_records[-1]["payload"]["turn_id"] = _V4_TURN
+    elif mutation == "causal_agent_path":
+        root_records[-1]["payload"]["item"]["agent_path"] = "/root/other"
+    elif mutation == "causal_time":
+        root_records[-1]["payload"]["started_at_ms"] += 1
+        root_records[-1]["payload"]["completed_at_ms"] += 1
+    elif mutation == "causal_completed_bool":
+        root_records[-1]["payload"]["completed_at_ms"] = float(
+            root_records[-1]["payload"]["started_at_ms"]
+        )
+    elif mutation == "metadata_ordinal":
+        current_records[0]["ordinal"] = 1
+    elif mutation == "metadata_timestamp":
+        current_records[0]["payload"]["timestamp"] = "2026-02-30T04:16:49.226Z"
+    elif mutation == "noncanonical_agent_path":
+        current_records[0]["payload"]["agent_path"] = "/root//depth_one_child"
+        current_records[0]["payload"]["source"]["subagent"]["thread_spawn"]["agent_path"] = (
+            "/root//depth_one_child"
+        )
+    elif mutation == "duplicate_started":
+        root_records.append(root_records[-1])
+    if current.exists():
+        _write(current, current_records)
+    if root.exists():
+        _write(root, root_records)
+    if parent is not None and parent.exists():
+        _write(parent, parent_records)
+
+    assert _attest(current, {"CODEX_HOME": str(home)}) is None
+
+
+def test_one_metadata_exec_fork_remains_unsupported(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, _root, _parent = _write_cross_file_chain(home, depth=1, inherited=True)
+    records = [json.loads(line) for line in current.read_text(encoding="utf-8").splitlines()]
+    records[0]["payload"]["history_mode"] = "legacy"
+    records[0]["payload"]["originator"] = "codex_exec"
+    records[0]["payload"]["subagent_history_start_ordinal"] = None
+    _write(current, records)
+
+    assert _attest(current, {"CODEX_HOME": str(home)}) is None
+
+
+def test_external_rollout_hardlink_and_oversize_fail_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, _parent = _write_cross_file_chain(home, depth=1, inherited=True)
+    hardlink = tmp_path / "root-hardlink.jsonl"
+    try:
+        os.link(root, hardlink)
+    except OSError:
+        pytest.skip("hardlinks are unavailable on this filesystem")
+    assert _attest(current, {"CODEX_HOME": str(home)}) is None
+    hardlink.unlink()
+
+    with root.open("a", encoding="utf-8") as stream:
+        stream.write(
+            json.dumps(
+                _record("event_msg", {"type": "token_count", "padding": "x" * 4096}),
+                separators=(",", ":"),
+            )
+            + "\n"
+        )
+    original_limit = subject._MAX_TRANSCRIPT_BYTES
+    monkeypatch.setattr(subject, "_MAX_TRANSCRIPT_BYTES", root.stat().st_size - 1)
+    assert current.stat().st_size < subject._MAX_TRANSCRIPT_BYTES
+    assert original_limit > root.stat().st_size
+    assert _attest(current, {"CODEX_HOME": str(home)}) is None
+
+
+def test_external_ancestry_aggregate_byte_bound_is_exact(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, parent = _write_cross_file_chain(home, depth=2, inherited=True)
+    assert parent is not None
+    exact_size = root.stat().st_size + parent.stat().st_size
+    monkeypatch.setattr(subject, "_MAX_EXTERNAL_ANCESTRY_BYTES", exact_size)
+
+    assert _attest(current, {"CODEX_HOME": str(home)}) is not None
+
+    monkeypatch.setattr(subject, "_MAX_EXTERNAL_ANCESTRY_BYTES", exact_size - 1)
+    assert _attest(current, {"CODEX_HOME": str(home)}) is None
+
+
+def test_final_currentness_recomputes_unique_external_namespace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, _parent = _write_cross_file_chain(home, depth=1, inherited=True)
+    attestation = _attest(current, {"CODEX_HOME": str(home)})
+    assert attestation is not None
+    duplicate = root.with_name(root.name.replace("T22-23-55", "T21-23-55"))
+    original_open_rollout = subject._open_rollout
+    opens = 0
+
+    def racing_open_rollout(path: Path, sessions_root: Path):
+        nonlocal opens
+        descriptor, metadata = original_open_rollout(path, sessions_root)
+        opens += 1
+        if opens == 2:
+            duplicate.write_bytes(root.read_bytes())
+        return descriptor, metadata
+
+    monkeypatch.setattr(subject, "_open_rollout", racing_open_rollout)
+
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        attestation,
+        tool_input=_ARGS,
+    )
+    assert duplicate.exists()
+
+
+def test_current_external_ancestry_aggregate_byte_bound_is_exact(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, parent = _write_cross_file_chain(home, depth=2, inherited=True)
+    assert parent is not None
+    attestation = _attest(current, {"CODEX_HOME": str(home)})
+    assert attestation is not None
+    with root.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(_record("event_msg", {"type": "token_count"})) + "\n")
+    current_total = root.stat().st_size + parent.stat().st_size
+    monkeypatch.setattr(subject, "_MAX_EXTERNAL_ANCESTRY_BYTES", current_total)
+
+    assert subject.codex_plaintext_spawn_attestation_is_current(attestation, tool_input=_ARGS)
+
+    monkeypatch.setattr(subject, "_MAX_EXTERNAL_ANCESTRY_BYTES", current_total - 1)
+    assert not subject.codex_plaintext_spawn_attestation_is_current(attestation, tool_input=_ARGS)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "current_metadata",
+        "parent_metadata",
+        "root_metadata",
+        "copied_root",
+        "parent_launch",
+        "root_launch",
+        "parent_replacement",
+        "root_replacement",
+        "root_unbound_mutation",
+        "parent_duplicate_suffix",
+        "root_session_meta_suffix",
+        "root_ambiguous_path_suffix",
+    ],
+)
+def test_cross_file_bound_mutation_replacement_or_replay_invalidates_attestation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, parent = _write_cross_file_chain(home, depth=2, inherited=True)
+    assert parent is not None
+    if mutation == "root_unbound_mutation":
+        with root.open("a", encoding="utf-8") as stream:
+            stream.write(
+                json.dumps(
+                    _record("event_msg", {"type": "token_count", "padding": "aaaa"}),
+                    separators=(",", ":"),
+                )
+                + "\n"
+            )
+    attestation = _attest(current, {"CODEX_HOME": str(home)})
+    assert attestation is not None
+    target = {
+        "current_metadata": current,
+        "parent_metadata": parent,
+        "root_metadata": root,
+        "copied_root": parent,
+        "parent_launch": parent,
+        "root_launch": root,
+    }.get(mutation)
+    if target is not None:
+        raw = target.read_bytes()
+        needle = {
+            "current_metadata": b'"agent_nickname":"Goodall"',
+            "parent_metadata": b'"agent_nickname":"Goodall"',
+            "root_metadata": b'"model_provider":"openai"',
+            "copied_root": b'"model_provider":"openai"',
+            "parent_launch": b'\\"task_name\\":\\"depth_two_child\\"',
+            "root_launch": b'\\"task_name\\":\\"depth_one_parent\\"',
+        }[mutation]
+        replacement = (
+            needle.replace(b"Goodall", b"Badall!")
+            .replace(b"openai", b"closed")
+            .replace(b"depth", b"wrong")
+        )
+        target.write_bytes(raw.replace(needle, replacement, 1))
+    elif mutation in {"parent_replacement", "root_replacement"}:
+        replaced = parent if mutation == "parent_replacement" else root
+        raw = replaced.read_bytes()
+        replaced.unlink()
+        replaced.write_bytes(raw)
+    elif mutation == "root_unbound_mutation":
+        raw = root.read_bytes()
+        assert b'"padding":"aaaa"' in raw
+        root.write_bytes(raw.replace(b'"padding":"aaaa"', b'"padding":"bbbb"'))
+    elif mutation == "parent_duplicate_suffix":
+        with parent.open("a", encoding="utf-8") as stream:
+            duplicate = _causal_edge(
+                parent_thread_id=_DEPTH_TWO_PARENT,
+                child_thread_id=_GRANDCHILD_THREAD,
+                task_name="depth_two_child",
+                child_agent_path="/root/depth_one_parent/depth_two_child",
+                fork_turns="3",
+                ordinal=100,
+                call_id=attestation.external_edge_call_ids[0],
+                function_item_character="e",
+                call_timestamp="2026-08-13T03:26:32.700Z",
+                start_timestamp="2026-08-13T03:26:32.824Z",
+            )
+            stream.write(
+                "".join(json.dumps(item, separators=(",", ":")) + "\n" for item in duplicate)
+            )
+    elif mutation == "root_session_meta_suffix":
+        with root.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(_real_root_metadata(), separators=(",", ":")) + "\n")
+    elif mutation == "root_ambiguous_path_suffix":
+        duplicate = root.with_name(root.name.replace("T22-23-55", "T21-23-55"))
+        duplicate.write_bytes(root.read_bytes())
+
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        attestation,
+        tool_input=_ARGS,
+    )
+
+
+def test_cross_file_external_identity_and_scanned_prefix_are_sealed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+
+    replacement_home = tmp_path / "replacement-home"
+    current, root, _parent = _write_cross_file_chain(
+        replacement_home,
+        depth=1,
+        inherited=True,
+    )
+    attestation = _attest(current, {"CODEX_HOME": str(replacement_home)})
+    assert attestation is not None
+    original = root.read_bytes()
+    root.unlink()
+    root.write_bytes(original)
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        attestation,
+        tool_input=_ARGS,
+    )
+
+    prefix_home = tmp_path / "prefix-home"
+    current, root, _parent = _write_cross_file_chain(
+        prefix_home,
+        depth=1,
+        inherited=True,
+    )
+    records = [json.loads(line) for line in root.read_text(encoding="utf-8").splitlines()]
+    records.insert(
+        1,
+        _real_record(
+            "event_msg",
+            {"type": "token_count", "opaque_bucket": "alpha"},
+            ordinal=5,
+            timestamp="2026-08-13T04:00:00.000Z",
+        ),
+    )
+    _write(root, records)
+    attestation = _attest(current, {"CODEX_HOME": str(prefix_home)})
+    assert attestation is not None
+    raw = root.read_bytes()
+    assert raw.count(b'"opaque_bucket":"alpha"') == 1
+    root.write_bytes(raw.replace(b'"opaque_bucket":"alpha"', b'"opaque_bucket":"omega"'))
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        attestation,
+        tool_input=_ARGS,
+    )
+
+
+def test_cross_file_external_records_and_parallel_arrays_are_structurally_bound(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, _root, _parent = _write_cross_file_chain(home, depth=1, inherited=True)
+    attestation = _attest(current, {"CODEX_HOME": str(home)})
+    assert attestation is not None
+
+    forged_record = replace(
+        attestation,
+        external_record_sha256=("0" * 64, *attestation.external_record_sha256[1:]),
+        seal="",
+    )
+    forged_record = replace(forged_record, seal=subject._sealed(forged_record))
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        forged_record,
+        tool_input=_ARGS,
+    )
+
+    forged_shape = replace(
+        attestation,
+        external_file_snapshot_sha256=(
+            *attestation.external_file_snapshot_sha256,
+            "0" * 64,
+        ),
+        seal="",
+    )
+    forged_shape = replace(forged_shape, seal=subject._sealed(forged_shape))
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        forged_shape,
+        tool_input=_ARGS,
+    )
+
+
+def test_cross_file_both_causal_edges_and_history_variant_are_authoritative(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+
+    parent_join_home = tmp_path / "parent-join-home"
+    current, _root, parent = _write_cross_file_chain(
+        parent_join_home,
+        depth=2,
+        inherited=True,
+    )
+    assert parent is not None
+    parent_records = [json.loads(line) for line in parent.read_text(encoding="utf-8").splitlines()]
+    parent_records[-1]["payload"]["thread_id"] = _SESSION
+    _write(parent, parent_records)
+    assert _attest(current, {"CODEX_HOME": str(parent_join_home)}) is None
+
+    root_join_home = tmp_path / "root-join-home"
+    current, root, _parent = _write_cross_file_chain(
+        root_join_home,
+        depth=2,
+        inherited=True,
+    )
+    root_records = [json.loads(line) for line in root.read_text(encoding="utf-8").splitlines()]
+    root_arguments = json.loads(root_records[-2]["payload"]["arguments"])
+    root_arguments["fork_turns"] = "none"
+    root_records[-2]["payload"]["arguments"] = json.dumps(
+        root_arguments,
+        separators=(",", ":"),
+    )
+    _write(root, root_records)
+    assert _attest(current, {"CODEX_HOME": str(root_join_home)}) is None
+
+    variant_home = tmp_path / "variant-home"
+    current, _root, parent = _write_cross_file_chain(
+        variant_home,
+        depth=2,
+        inherited=True,
+    )
+    assert parent is not None
+    parent_records = [json.loads(line) for line in parent.read_text(encoding="utf-8").splitlines()]
+    current_arguments = json.loads(parent_records[-2]["payload"]["arguments"])
+    current_arguments["fork_turns"] = "none"
+    parent_records[-2]["payload"]["arguments"] = json.dumps(
+        current_arguments,
+        separators=(",", ":"),
+    )
+    _write(parent, parent_records)
+    assert _attest(current, {"CODEX_HOME": str(variant_home)}) is None
+
+
+def test_cross_file_copied_root_matches_canonical_payload(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, _root, parent = _write_cross_file_chain(home, depth=2, inherited=True)
+    assert parent is not None
+    parent_records = [json.loads(line) for line in parent.read_text(encoding="utf-8").splitlines()]
+    parent_records[1]["payload"]["model_provider"] = "different"
+    _write(parent, parent_records)
+
+    assert _attest(current, {"CODEX_HOME": str(home)}) is None
+
+
+def test_cross_file_nonzero_offset_is_required_for_canonical_lookup(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, _root, _parent = _write_cross_file_chain(home, depth=1, inherited=True)
+
+    assert _attest(current, {"CODEX_HOME": str(home)}) is not None
+
+
+def test_cross_file_appended_causal_replay_is_rejected(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "codex-home"
+    monkeypatch.setattr(subject, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_a, **_k: True)
+    current, root, _parent = _write_cross_file_chain(home, depth=1, inherited=True)
+    attestation = _attest(current, {"CODEX_HOME": str(home)})
+    assert attestation is not None
+    replay = _causal_edge(
+        parent_thread_id=_SESSION,
+        child_thread_id=_CHILD_THREAD,
+        task_name="depth_one_child",
+        child_agent_path="/root/depth_one_child",
+        fork_turns="2",
+        ordinal=100,
+        call_id=attestation.external_edge_call_ids[0],
+        function_item_character="e",
+        call_timestamp="2026-08-13T04:16:49.100Z",
+        start_timestamp="2026-08-13T04:16:49.225Z",
+    )
+    with root.open("a", encoding="utf-8") as stream:
+        stream.write("".join(json.dumps(item, separators=(",", ":")) + "\n" for item in replay))
+
+    assert not subject.codex_plaintext_spawn_attestation_is_current(
+        attestation,
+        tool_input=_ARGS,
+    )
 
 
 def test_exact_exec_root_shape_attests(
