@@ -850,6 +850,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `42c1354b` | 2026-08-13 | test(rules): prove cards reach the parent caller on every host | null | null |
 | `d995981f` | 2026-08-13 | docs(roadmap): record rules 2 and 3 as proven at candidate 42c1354b | null | null |
 | `75663ed0` | 2026-08-13 | test(rules): prove contractor minting inside a real turn on every host | null | null |
+| `a4d4b7fe` | 2026-08-13 | docs(roadmap): record rule 6 as proven in simulation at candidate 75663ed0 | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
