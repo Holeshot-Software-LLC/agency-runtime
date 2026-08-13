@@ -87,15 +87,16 @@ Rule 4 — harness-spawned children receive specialist cards, plural — was fir
 observed on a prior Claude candidate on 2026-08-11. Three host-authored child
 artifacts contain exact card identities before the child first spoke. None is
 bound to the matrix's exact candidate, so Claude's current installed/live layers
-remain unproven. Codex now has a repaired conditional plaintext source path,
-and its full verifier and independent review pass, but authentic host shapes
-remain unsupported and prior-candidate live negatives do not establish exact-
-candidate installed/live state:
+remain unproven. Codex now has a repaired conditional plaintext source path;
+exact CLI `0.147.0` in-file and authentic one-record TUI cross-file ancestry pass
+source, simulation, and independent review. Desktop alpha and unobserved exec
+depth-two/deeper remain unsupported, and prior-candidate live negatives do not
+establish exact-candidate installed/live state:
 
 | host | children provably staffed | blocker |
 |---|---|---|
 | claude | **0 exact-candidate proofs** (3 prior-candidate, 6 legacy) | exact-candidate install/live canary is absent; Rule 1 and parity remain negative |
-| codex | **0 exact-candidate proofs** (prior-candidate negatives, 11 legacy) | one-record TUI forks, Desktop alpha, and unobserved exec depth-two/deeper remain unsupported; exact-candidate install/live canary is absent |
+| codex | **0 exact-candidate proofs** (prior-candidate negatives, 11 legacy) | Desktop alpha and unobserved exec depth-two/deeper remain unsupported; exact-candidate install/live canary is absent |
 | zcode | not measured | host emits no `SubagentStart`/`SubagentStop` |
 | openclaw | not measured | not installed on the development box |
 | hermes | not measured | not installed on the development box |
@@ -103,9 +104,9 @@ candidate installed/live state:
 Codex is the sharp case: the host demonstrably spawns children — eleven legacy
 artifacts prove it — and no prior-candidate measured child carried a card. The
 current adapter leaves encrypted calls untouched and conditionally staffs only
-an authenticated marked call. Source verification passes, but compatibility and
-exact-candidate installed/live state remain unproven. ZCode, Hermes, and
-OpenClaw are not waived.
+an authenticated marked call. Exact CLI `0.147.0` source and simulation now cover
+the authentic 11/11 one-record TUI census; exact-candidate installed/live state
+remains unproven. ZCode, Hermes, and OpenClaw are not waived.
 Hermes and OpenClaw also have a current source-level Rule-8 negative because
 their bridge failure paths withhold the host response when Agency is
 unavailable.
@@ -114,16 +115,17 @@ unavailable.
 
 The audited roster, inference receipts, request-scoped cards, resident managers,
 native lifecycle telemetry, CLI, and dashboard provide a strong base. Runtime
-candidate `e8b60f64` removes the current Rule-1 source negative: native child
-staffing now preserves one complete inference-selected team or proceeds
-unstaffed. Its sealed in-lifetime Claude collector advances Rule 4 only through
-implementation and simulation. No exact-candidate Installed or Live layer is
-proven, and no top-level matrix cell is green. Candidate `e8b60f64` safely
-rejects the observed unmarked Sol path, binds observed TUI and exec fork
-ancestry, and rolls final-validation failure back before commit. Its full
-112-mutation verifier, named fast spine, and independent reattack pass. Codex
-Rule 4 remains unproven because real host shapes and install/live proof remain
-open.
+candidate `45b21cdc` retains the repaired Rule-1 source/simulation state: native
+child staffing preserves one complete inference-selected team or proceeds
+unstaffed. Its sealed in-lifetime Claude collector advances Claude Rule 4 only
+through Implementation and Simulation. Its Codex v2 attestor separately proves
+Rule-4 Implementation and Simulation for exact CLI `0.147.0` in-file and
+authentic one-record TUI cross-file ancestry. No exact-candidate Installed or
+Live layer is proven, and no top-level matrix cell is green. Candidate
+`45b21cdc` safely rejects the observed unmarked Sol path, seals every required
+canonical prefix and causal edge, bounds aggregate external ancestry to 64 MiB,
+and rolls final-validation failure back before commit. Desktop alpha and
+unobserved exec depth-two/deeper remain unsupported.
 
 Tracker issue [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
 mirrors the umbrella state. Repository-local AR-119, AR-256, and their evidence
@@ -3887,6 +3889,30 @@ Live layer remain unproven. No Agency canary, install, or trust change occurred.
 ADR-0159 now governs the version-pinned transcript authorization; it does not
 replace the host-authored child artifact required for Rule-4 proof.
 
+### AR-180 cross-file ancestry checkpoint — 2026-08-13
+
+Candidate `45b21cdc` and ledger `01730614` add the v2 exact-CLI-`0.147.0`
+attestation for authentic one-record TUI forks. It resolves each declared
+parent/root UUID through a unique canonical UTC-day plus-or-minus-one lookup,
+validates file offsets independently, seals the complete external prefixes,
+proves exact adjacent causal records at both depth-two edges, and applies one
+64 MiB aggregate external-ancestry limit. The current authorization call still
+requires `encrypted_function_args: []`; only ancestor causal calls may use the
+ordinary exact schema or that schema plus the exact empty marker.
+
+The authentic census resolved 11/11 chains: one depth-one sparse, seven depth-
+one inherited, one depth-two sparse, and two depth-two inherited. The largest
+sample sealed 48,678,898 external bytes and resolved in 3.809 seconds. The parent
+passed 365 focused tests, the 673-test fast spine with 6 skips, and a scoped
+19/19 mutation run with a green baseline and `source_unchanged=true`. The
+independent reviewer passed 200 tests, killed the same 19/19 mutations, and
+reported no finding at any severity. This advances only Codex Rule-4
+Implementation and Simulation. The 134-test dashboard suite, routing evaluation,
+Ruff, format, and documentation/schema gates pass; only the current complete
+decision-conformance evaluator remains pending. Desktop alpha, exec depth-two/
+deeper, Installed, and Live remain unproven; no install, trust, or canary action
+occurred.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -3918,11 +3944,11 @@ replace the host-authored child artifact required for Rule-4 proof.
 
 ### Next bounded work package
 
-Implement trusted cross-file ancestry for authentic one-record TUI fork prefixes
-and adversarially review it. Then separately pin Desktop alpha; obtain a read-only
-real-host exec depth-two sample, if one is emitted, before defining or reviewing
-that schema. After explicit install/trust/live authorization and current Codex
-and Claude artifacts, continue AR-252, AR-253, AR-125, and derived Rule 9.
+Separately pin the observed Desktop-alpha schema and ancestry. Then obtain a
+read-only real-host exec depth-two sample, if one is emitted, before defining or
+reviewing that schema. After explicit install/trust/live authorization and
+current Codex and Claude artifacts, continue AR-252, AR-253, AR-125, and derived
+Rule 9.
 
 ### Context checkpoint constraints
 
@@ -3958,9 +3984,10 @@ candidate.
 - [ ] Rule 4: each native host independently starts a child whose host-authored
       artifact contains multiple compatible card hashes before first speech.
       Claude has three prior-candidate artifacts but is exact-candidate
-      unproven. Codex has reviewed conditional host support but still lacks full
-      real-shape compatibility and exact-candidate installed/live proof; ZCode,
-      Hermes, and OpenClaw remain unproven.
+      unproven. Codex has reviewed conditional host support and exact CLI
+      `0.147.0` TUI compatibility, but Desktop-alpha and exec-depth-two/deeper
+      compatibility plus exact-candidate installed/live proof remain open;
+      ZCode, Hermes, and OpenClaw remain unproven.
 - [ ] Rule 8: Agency unavailability supplies no card and never suppresses the
       host's natural response on any host. Only a verifier's definite negative
       and the malformed-`Stop` forgery boundary deliberately withhold.

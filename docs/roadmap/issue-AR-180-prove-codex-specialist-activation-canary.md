@@ -51,8 +51,9 @@ blocks: [AR-119, AR-252, AR-253]
 > host-marked plaintext assignment path, while the current Sol/TUI call remained
 > encrypted and the hook payload omitted that marker. AR-180 authenticates and
 > uses exact-`0.147.0` TUI root/depth-one/depth-two and exec root/depth-one
-> shapes. Exec depth-two/deeper is unobserved and unsupported pending a real-host
-> sample. Desktop runtime
+> shapes, including authentic one-record TUI forks whose canonical parent/root
+> ancestry is sealed across files. Exec depth-two/deeper is unobserved and
+> unsupported pending a real-host sample. Desktop runtime
 > `0.147.0-alpha.6.6` has a materially different lineage and remains unsupported
 > until its schema and ancestry receive a separate exact pin; it cannot enter a
 > live proof by broadening the CLI pin. Only the Approach and Acceptance sections
@@ -254,19 +255,29 @@ The documented `PreToolUse` payload supplies `transcript_path`, `turn_id`,
 It does not expose the plaintext marker or internal tool-call source, and the
 documented transcript format is explicitly unstable. A plaintext-looking
 `tool_input.message` therefore has no authority by itself. Candidate `e8b60f64`
-implements a bounded exact-0.147 scanner, sealed exact-record attestation,
-separate shared-session and thread identity for observed in-file TUI root,
-depth-one, and depth-two plus exec root and depth-one ancestry, and atomic replay/
-final-validation rollback. Missing, ambiguous, completed, malformed, oversized,
-linked, unmarked, drifted, one-record fork, or unsupported ancestry remains
-unstaffed. One-record TUI forks are authentic 0.147 host shapes but need a trusted
-cross-file parent/root verifier before support. Exec depth-two/deeper is
-unobserved and fails open until a real-host sample can define its exact schema.
-Focused real-shape and retry tests pass, including the current
-unmarked transcript control. The full 112-mutation verifier, named fast spine,
-and exact-current adversarial review pass. Source and simulation remain
-conservatively unproven because authentic host shapes are still unsupported;
-exact installation and host child artifacts remain later gates.
+implemented the bounded exact-0.147 in-file scanner, sealed exact-record
+attestation, separate shared-session and thread identity for observed TUI and
+exec ancestry, and atomic replay/final-validation rollback. In that candidate,
+authentic one-record TUI forks remained unsupported.
+
+Candidate `45b21cdc` and ledger `01730614` add the v2 cross-file verifier. It
+resolves each declared parent/root UUID through a unique bounded UTC-day
+plus-or-minus-one canonical lookup, validates each file offset independently,
+seals every external prefix and causal record, proves both edges for depth two,
+and caps aggregate external ancestry at 64 MiB. The current authorization call
+still mandates `encrypted_function_args: []`; ancestor causal calls accept only
+the ordinary exact schema or that schema plus the exact empty marker. Missing,
+ambiguous, completed, malformed, linked, unmarked, drifted, oversized, or
+unsupported ancestry remains unstaffed. The authentic census resolved 11/11
+chains across depth-one sparse/inherited and depth-two sparse/inherited variants;
+the maximum was 48,678,898 external bytes at 3.809 seconds. The parent passed
+365 focused tests, the 673-test fast spine with 6 skips, and a scoped 19/19
+mutation run with a green baseline and unchanged source. The independent
+reviewer passed 200 tests, killed 19/19 mutations, and found no issue at any
+severity. Codex Rule-4 Implementation and Simulation are proven. The 134-test
+dashboard suite, routing evaluation, Ruff, format, and documentation/schema
+gates pass; only the current complete decision-conformance evaluator remains
+pending. Exact installation and host child artifacts remain later gates.
 ADR-0159 keeps rewrite authorization separate from delivery-proof authority.
 Desktop `0.147.0-alpha.6.6` is deliberately outside that exact CLI pin: its
 observed legacy history and `Codex Desktop` lineage require a separate bounded
@@ -308,10 +319,10 @@ instead of weakening the evidence gate.
 - [x] A read-only exact-host preflight inventories the active TUI/exec and
       Desktop runtimes, distinguishes conditional host support from the active
       encrypted path, and advances no Installed or Live claim.
-- [x] Exact-version source authentication binds the supported fully materialized
-      TUI root/depth-one/depth-two and exec root/depth-one shapes, exact call
-      provenance, and retry-safe final validation; every unsupported or drifted
-      path fails open without a successful Store row.
+- [x] Exact-version source authentication binds supported in-file TUI/exec and
+      authentic one-record TUI cross-file ancestry, every required causal edge,
+      exact call provenance, and retry-safe final validation; every unsupported
+      or drifted path fails open without a successful Store row.
 - [ ] Current-profile Codex exposes and invokes the supported native child tool
   through attended trust or the explicit autonomous bypass, without shell
   access, file writes, or external services.

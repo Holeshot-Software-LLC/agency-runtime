@@ -31,8 +31,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: e8b60f64b24968496f88a25d9935f4cfd77f3fe9
-minimum_ledger_commit: 4026ddd67d491b5e85e80dc9bc939bdd2405510f
+evidence_commit: 45b21cdcdbaac789bda58d31653179fc1a9f5c65
+minimum_ledger_commit: 01730614d328e97e8db740cf715122bfb575f435
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -45,17 +45,17 @@ must be loaded first after any compaction or session restart.
 
 ## checkpoint
 
-- The current source pair is Codex runtime `e8b60f64` and ledger `4026ddd6`;
+- The current source pair is Codex runtime `45b21cdc` and ledger `01730614`;
   the reviewed preflight design remains `ccb1802c`/`a7e8cf54`.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
   exact-candidate Claude Installed/Live proof remains open.
-- The AR-180 read-only exact-host preflight is complete. ADR-0159 binds the
-  Codex 0.147 plaintext path to a sealed exact-call transcript attestation;
-  the current Sol/TUI spawn omitted the marker and remains safely unstaffed.
-- Matrix candidate `e8b60f64` has no proven top-level cell. Rule 1 source and
-  simulation are repaired on all five adapters; Claude Rule 4 source and
-  simulation are proven. Codex Rule 4 remains conservatively unproven because
-  real host shapes remain unsupported. Every Installed/Live layer is unproven.
+- The AR-180 read-only exact-host preflight is complete. ADR-0159 now binds the
+  exact CLI 0.147 plaintext path to a v2 sealed in-file or cross-file transcript
+  attestation; the current Sol/TUI spawn omitted the marker and remains safely
+  unstaffed.
+- Matrix candidate `45b21cdc` has no proven top-level cell. Rule 1 source and
+  simulation are repaired on all five adapters; Claude and Codex Rule 4
+  Implementation/Simulation are proven. Every Installed/Live layer is unproven.
 - Tracker creation for AR-255 through AR-257 and tracker synchronization for
   locally reopened historical issues remain pending explicit authorization.
   No missing tracker write is represented as complete.
@@ -63,26 +63,30 @@ must be loaded first after any compaction or session restart.
 ## completed-evidence
 
 - `AR-119-founding-vision.md` is the sole wording authority and the matrix is
-  the sole completion authority. Candidate `e8b60f64` preserves all 45 cells
+  the sole completion authority. Candidate `45b21cdc` preserves all 45 cells
   without converting implementation or simulation into host proof.
 - AR-255 now uses complete-universe inference, exact ordered multi-card v6
   delivery, install/config/roster fences, fail-open diagnostics, and sealed
   one-use delivery proof. Store-only state and caller mappings are diagnostic.
-- SafeClaude retains its in-lifetime collector. Codex candidate `e8b60f64`
-  binds separate root/thread identities for exact 0.147 TUI and exec ancestry;
-  final attestation failure rolls back the applied route so retry remains safe.
+- SafeClaude retains its in-lifetime collector. Codex candidate `45b21cdc`
+  binds exact 0.147 CLI in-file ancestry plus authentic one-record TUI ancestry
+  across unique bounded canonical parent/root rollouts. It seals complete
+  prefixes and every causal edge, enforces independent offsets and a 64 MiB
+  aggregate external limit, and rolls final-attestation failure back safely.
 - Exact preflight inventory: PATH TUI/exec Codex `0.147.0`, native SHA-256
   `935A1911...2AD9D`; Desktop `26.803.10989.0` with runtime
   `0.147.0-alpha.6.6`, native SHA-256 `59295889...69B3`. The observed Sol/TUI
   call omitted `encrypted_function_args` and carried a `gAAAAA...` message.
-- Candidate verification passed 342 focused tests, the 673-test fast spine with
-  6 skips, 134 dashboard tests, every routing gate, Ruff, format, docs/schema,
-  and whitespace checks. Telemetry reported 70.6 percent remaining.
-- Decision conformance passed its baseline, killed 112/112 mutations with zero
-  survived or invalid, and reported `source_unchanged=true`.
-- The exact-current adversarial review found no unresolved finding at any
-  severity; it independently passed 323 focused tests and killed 29/29 scoped
-  mutations with zero survived or invalid.
+- The authentic cross-file census resolves 11/11 chains: depth-one sparse 1,
+  depth-one inherited 7, depth-two sparse 1, and depth-two inherited 2. Maximum
+  external ancestry is 48,678,898 bytes; maximum resolver time is 3.809 seconds.
+- Parent verification passed 365 focused tests and the 673-test fast spine with
+  6 skips. Its scoped baseline passed, killed 19/19 mutations, and reported
+  zero survived/invalid with `source_unchanged=true`.
+- The exact-current adversarial review found no finding at any severity; it
+  independently passed 200 tests and killed the same 19/19 mutations. Dashboard
+  134/134, routing, Ruff, format, and documentation/schema gates pass; only the
+  current complete decision-conformance evaluator remains pending.
 - Claude's three earlier Rule-4 artifacts and Codex's earlier TUI/Desktop/exec
   negatives remain prior-candidate context. A routine real Codex TUI child was
   observed in preflight; no Agency canary, real Claude invocation, or exact-
@@ -90,10 +94,10 @@ must be loaded first after any compaction or session restart.
 
 ## exact-blocker
 
-1. **AR-180 — Codex support.** Candidate `e8b60f64` passes its source gates.
-   Add trusted cross-file ancestry for authentic one-record TUI forks; separately
-   pin Desktop `0.147.0-alpha.6.6`. Exec depth-two/deeper is unobserved and
-   unsupported; obtain a read-only real-host sample before any separate pin.
+1. **AR-180 — Codex support.** Candidate `45b21cdc` proves exact CLI 0.147
+   in-file and authentic one-record TUI cross-file Implementation/Simulation.
+   Separately pin Desktop `0.147.0-alpha.6.6`. Exec depth-two/deeper is
+   unobserved; obtain a read-only real-host sample before any separate pin.
 2. **AR-255 — exact host proof.** After those support gaps close, obtain explicit
    authorization before exact install or live proof, including one current
    Claude artifact. Passing fake-runner integration is simulation only.
@@ -115,17 +119,16 @@ must be loaded first after any compaction or session restart.
 
 After restart or compaction, load this file and `AR-119-founding-vision.md`
 first. Then read AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158.
-Confirm branch, runtime `e8b60f64`, ledger `4026ddd6`, status, and worklog
+Confirm branch, runtime `45b21cdc`, ledger `01730614`, status, and worklog
 parity. Do not reconstruct retired Job B, plan-row, work-unit, grant, or
 consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-Implement and adversarially review trusted cross-file ancestry for authentic
-one-record TUI fork prefixes. Then separately pin the observed Desktop-alpha and
-obtain a read-only exec depth-two sample, if the host emits one, before separately
-pinning it or requesting install/trust/live authorization. Continue AR-252,
-AR-253, AR-125, and derived Rule 9 afterward.
+Separately pin and adversarially review the observed Desktop-alpha schema and
+ancestry. Then obtain a read-only exec depth-two sample, if the host emits one,
+before separately pinning it or requesting install/trust/live authorization.
+Continue AR-252, AR-253, AR-125, and derived Rule 9 afterward.
 
 ## verification
 
@@ -156,8 +159,9 @@ is refreshed under explicit install authorization.
   recall, filter hard-ineligible candidates, validate, budget, and correlate.
 - Only a host-written artifact with exact card hashes before first child speech
   proves Rule 4. Agency rows and model prose are diagnostics.
-- A plaintext-looking Codex tool argument is not proof. The explicit host marker
-  must be bound to the exact persisted call before Agency rewrites it.
+- A plaintext-looking Codex tool argument is not proof. The current authorization
+  call must contain the explicit empty host marker; only exact ancestor causal
+  calls may omit it under the pinned v2 schema.
 - Same-process private reflection and same-account transcript plus Store
   forgery are threat-model exclusions; do not describe the lease as protection
   from code already executing as the owner inside Agency.

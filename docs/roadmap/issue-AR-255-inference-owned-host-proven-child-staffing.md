@@ -59,12 +59,15 @@ replays cannot mint that capability.
 Implementation and simulation are proven, not installed or live behavior. The
 SafeClaude integration uses a test-managed install and fake process runner.
 Claude's three prior-candidate artifacts remain historical context only.
-Candidate `e8b60f64` correctly leaves the active unmarked Sol/TUI call unstaffed,
-binds separate root and thread identities for observed exact-0.147 TUI and exec
-ancestry, and rolls final-validation failure back before route commit. Focused
-tests, the full verifier, fast spine, and independent reattack pass. AR-180 still
-owns authentic one-record TUI and Desktop-alpha support; exec depth-two/deeper is
-unobserved and must remain fail open before exact-install and live proof.
+Candidate `45b21cdc` correctly leaves the active unmarked Sol/TUI call unstaffed,
+binds separate root and thread identities for observed exact-0.147 CLI TUI and
+exec ancestry, and rolls final-validation failure back before route commit. Its
+v2 attestation also resolves, seals, causally joins, and revalidates authentic
+one-record TUI ancestry across unique canonical parent/root rollouts. Scoped
+tests, mutations, and independent reattack pass, so Codex Rule-4 Implementation
+and Simulation are proven. AR-180 still owns Desktop-alpha support; exec depth-
+two/deeper is unobserved and must remain fail open. Exact-install and live proof
+remain open.
 
 ## Approach
 
@@ -76,11 +79,12 @@ valid inference survives, deliver no card and emit an honest diagnostic.
 
 Make the host-authored child artifact the sole green Rule-4 authority. Agency
 Store rows may index or diagnose correlation but cannot prove delivery. For
-Codex, accept a plaintext rewrite only after a bounded host-transcript record
-matches the exact session, turn, tool call, namespace, arguments, and explicit
-empty encrypted-argument marker. Treat the documented transcript instability
-as versioned input and fail open unstaffed on drift. AR-180 exact-installs and
-live-proves that channel after source and adversarial simulation pass.
+Codex, accept a plaintext rewrite only after bounded canonical host-transcript
+records match the exact session, turn, tool call, namespace, arguments,
+current-call empty encrypted-argument marker, and any required cross-file causal
+ancestry. Treat the documented transcript instability as versioned input and
+fail open unstaffed on drift. AR-180 exact-installs and live-proves that channel
+after source and adversarial simulation pass.
 ADR-0159 governs this authorization boundary and its fail-open behavior.
 
 ## Dependencies
@@ -126,6 +130,17 @@ ADR-0159 governs this authorization boundary and its fail-open behavior.
   342-test focused slice, 112/112 mutation run, 673-test fast spine with 6 skips,
   134 dashboard tests, routing gates, and independent review pass. Installed and
   Live layers remain unproven.
+- Cross-file hardening `45b21cdc` and ledger `01730614` authenticate authentic
+  one-record TUI ancestry across unique bounded canonical parent/root files.
+  The census resolves 11/11 chains across depth-one sparse/inherited and depth-
+  two sparse/inherited variants; the largest seals 48,678,898 external bytes and
+  resolves in 3.809 seconds. The parent passed 365 focused tests, the 673-test
+  fast spine with 6 skips, and 19/19 scoped mutations with a green baseline and
+  unchanged source. The independent reviewer passed 200 tests, killed 19/19,
+  and found no issue at any severity. The 134-test dashboard suite, routing,
+  Ruff, format, and documentation/schema gates pass; only the current complete
+  decision-conformance evaluator remains pending. Installed and Live layers do
+  not advance.
 
 ## Acceptance
 

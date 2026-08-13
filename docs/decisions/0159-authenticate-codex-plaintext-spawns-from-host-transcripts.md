@@ -64,18 +64,28 @@ rollout lines without loading the transcript as one object.
 The transcript filename supplies the concrete UUIDv7 thread identity while the
 hook's session ID supplies the shared UUIDv7 root identity. The canonical path
 uses padded date components, and turn IDs accept only the observed non-nil RFC
-UUIDv4/UUIDv7 domain. The exact 0.147 ancestry prefix must be fully materialized
-in the same rollout: one root record, or two leading records for an observed TUI
-or exec depth-one fork or TUI depth-two fork. Every accepted metadata record is
-sealed and later revalidated. Authentic one-record TUI fork prefixes currently
-fail open because their parent/root records live in other rollouts; supporting
-them requires trusted cross-file ancestry lookup and sealing. Unsupported
-single-record forks and deeper ancestry fail open. Exactly one
-`response_item.function_call` must use namespace
-`collaboration`, name `spawn_agent`, the hook's turn and call IDs, arguments
-exactly equal to the complete hook input, and `encrypted_function_args` present
-as exactly an empty list. Null, missing, nonempty, ambiguous, stale, completed,
-or replayed calls are unstaffed. V1 receives no implicit exception.
+UUIDv4/UUIDv7 domain. Exact CLI `0.147.0` ancestry may be fully materialized in
+one rollout or use the authentic one-record TUI fork form. For that cross-file
+form, Agency resolves each declared parent/root UUID only in its canonical UTC
+date directory plus the immediately adjacent UTC dates, requires one unique
+canonical filename without recursive search, and validates each file's own
+recorded UTC offset independently. Every external descriptor, complete scanned
+prefix, metadata record, causal record, and identity join is sealed and later
+revalidated; all external ancestry together is capped at 64 MiB.
+
+An accepted cross-file edge requires the exact parent `spawn_agent` call and
+its exact adjacent `SubAgentActivity(started)` completion record. TUI depth two
+must prove both root-to-parent and parent-to-child edges. Ancestor causal calls
+accept only the observed ordinary response-item schema or that exact schema
+plus `encrypted_function_args: []`; this optional historical marker does not
+authorize the current rewrite. The current authorization call still requires
+exactly one `response_item.function_call` using namespace `collaboration`, name
+`spawn_agent`, the hook's turn and call IDs, arguments exactly equal to the
+complete hook input, and `encrypted_function_args` present as exactly an empty
+list. Null, missing, nonempty, ambiguous, stale, completed, replayed, or
+unsupported ancestry is unstaffed. V1 receives no implicit exception. Desktop
+`0.147.0-alpha.6.6` and exec depth-two/deeper remain unsupported until each
+receives a separate observed exact-schema decision.
 
 Attestation returns only sealed, content-free identities and digests. Agency
 revalidates the exact file and records during delivery validation and as the
@@ -97,8 +107,9 @@ claims additionally bind the exact Codex executable and Agency candidate.
 - A marked plaintext call can use the existing inference-owned multi-card
   staffing path without trusting a model-authored label or message.
 - Codex transcript or version drift becomes an explicit compatibility failure
-  and requires a reviewed capability update. This includes observed one-record
-  fork prefixes until cross-file ancestry is authenticated.
+  and requires a reviewed capability update. The exact CLI `0.147.0` pin now
+  includes observed authentic one-record TUI fork prefixes; it does not widen
+  to Desktop alpha or unobserved exec depth-two/deeper ancestry.
 - The new scanner and one-use transaction need focused spoof, replay, path,
   schema, size, concurrency, and TOCTOU tests before installation.
 - Source and simulation can advance independently; neither changes an Installed
@@ -132,6 +143,19 @@ lineages, seals each ancestry record, and moves final validation before commit.
 Hardening `e8b60f64` pins the exact inner and outer response schema, canonical
 paths and UUID domains, duplicate item identity, exact persisted success
 projection, and retry-safe post-commit cleanup. Its 112-mutation verifier, named
-fast spine, and independent adversarial review pass. Authentic one-record TUI
-forks, Desktop alpha, unobserved exec depth-two/deeper ancestry, and all
-Installed and Live proof remain unproven.
+fast spine, and independent adversarial review pass.
+
+Candidate `45b21cdc` and ledger `01730614` add the v2 cross-file attestation for
+authentic one-record TUI forks. The observed census resolved 11/11 canonical
+chains: one depth-one sparse, seven depth-one inherited, one depth-two sparse,
+and two depth-two inherited. The largest accepted sample sealed 48,678,898
+external bytes and resolved in 3.809 seconds. The parent checkpoint passed 365
+focused warning-strict tests and the 673-test fast spine with 6 skips. Its
+scoped mutation run killed 19/19 mutations with a green baseline and
+`source_unchanged=true`; an independent reviewer passed 200 tests, killed the
+same 19/19 mutations, and reported no finding at any severity. These results
+advance only Codex Rule-4 Implementation and Simulation. The 134-test dashboard
+suite, routing evaluation, Ruff, format, and documentation/schema gates pass;
+only the current complete decision-conformance evaluator remains pending.
+Desktop alpha, unobserved exec depth-two/deeper ancestry, and all Installed and
+Live proof remain unproven.

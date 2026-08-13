@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-08-12
+updated: 2026-08-13
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
@@ -192,7 +192,7 @@ flowchart LR
 
 | Host | Integration | Host-native child primitive | Rule-4 exact-candidate state |
 |---|---|---|---|
-| **Codex** | Hooks + MCP + controls | `spawn_agent` | **unproven**: exact-0.147 TUI/exec source verification passes for fully materialized ancestry, but one-record TUI forks, Desktop alpha, unobserved exec depth-two/deeper, and exact-candidate installed/live artifacts remain open |
+| **Codex** | Hooks + MCP + controls | `spawn_agent` | **unproven**: exact-0.147 CLI source and simulation cover in-file plus authentic one-record TUI cross-file ancestry; Desktop alpha, unobserved exec depth-two/deeper, and exact-candidate installed/live artifacts remain open |
 | **Claude Code** | Hooks + MCP + controls | `Agent` | **unproven**: three host-authored prior-candidate artifacts contain cards before speech, but none binds the exact candidate |
 | **ZCode** | Hooks + controls | `Agent` (Claude-like) | **unproven** |
 | **Hermes** | Python plugin + MCP | `delegate_task` | **unproven** |

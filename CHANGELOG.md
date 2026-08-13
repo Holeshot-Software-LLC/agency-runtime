@@ -79,10 +79,12 @@ changes rather than duplicating every commit.
 
 - Codex 0.147 plaintext collaboration support is now guarded by a sealed
   exact-call host-rollout attestation, exact response schema, atomic replay
-  protection, and retry-safe transactional validation. The 112-mutation gate,
-  fast production spine, and independent adversarial review pass. Authentic
-  one-record TUI forks, Desktop alpha, unobserved exec depth-two/deeper, and all
-  Installed or Live Codex proof remain unsupported or unproven.
+  protection, and retry-safe transactional validation. Exact CLI `0.147.0`
+  support now resolves, seals, and revalidates authentic one-record TUI fork
+  ancestry across unique canonical parent/root rollouts, including both
+  depth-two causal edges. The scoped 19-mutation gate and independent
+  adversarial review pass. Desktop alpha, unobserved exec depth-two/deeper, and
+  all Installed or Live Codex proof remain unsupported or unproven.
 - Codex product child diagnostics now classify nested `apply_patch`,
   `shell_command`, and other calls inside current `functions.exec` wrappers,
   plus fixed wrapper outcomes. The Store persists only bounded counts, keeps

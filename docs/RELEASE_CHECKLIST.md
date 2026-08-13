@@ -3,7 +3,7 @@ title: "Release Checklist"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-12
+updated: 2026-08-13
 tags: [release, verification]
 related:
   - CHANGELOG.md
@@ -577,11 +577,13 @@ set must reject executable and disguised PE payloads in both profiles.
 
 AR-119's canonical matrix currently records Claude Rule 4 as exact-candidate
 unproven despite three prior-candidate live artifacts. Codex has a repaired
-conditional plaintext source candidate whose full local verifier and independent
-review pass, while encrypted calls remain unstaffed. Authentic one-record TUI
-forks, Desktop alpha, unobserved exec depth-two/deeper, and exact-candidate
-installed/live state remain unproven. ZCode, Hermes, and OpenClaw remain
-unproven. That evidence is not release-ready. AR-119 and AR-125 also still
+conditional plaintext source candidate whose exact CLI `0.147.0` in-file and
+authentic one-record TUI cross-file ancestry pass scoped local verification and
+independent adversarial review, while encrypted calls remain unstaffed. Codex
+Rule 4 Implementation and Simulation are proven; Desktop alpha, unobserved exec
+depth-two/deeper, and exact-candidate Installed/Live state remain unproven.
+ZCode, Hermes, and OpenClaw remain unproven. That evidence is not release-ready.
+AR-119 and AR-125 also still
 require a benchmark-valid completed outcome corpus and current-artifact host/OS
 evidence. The automatic three-success/seven-day contractor path remains dormant
 without host-backed accepted outcomes and is on the release critical path.
