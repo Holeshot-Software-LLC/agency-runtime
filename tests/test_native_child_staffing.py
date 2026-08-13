@@ -123,6 +123,9 @@ class _Store:
             sorted(self.disabled_agents)
         ):
             raise ValueError("activation policy changed before routing decision persistence")
+        final_delivery_validator = values.get("final_delivery_validator")
+        if final_delivery_validator is not None and final_delivery_validator() is not True:
+            raise ValueError("final native-child delivery validation failed")
         decision_id = str(values.get("decision_id") or f"route-{len(self.decisions) + 1}")
         if decision_id in self.decision_ids:
             raise RuntimeError("routing decision ID collision")
@@ -918,22 +921,90 @@ def test_route_persistence_failure_returns_original_task_without_delivery(
     assert result.decision_id == ""
 
 
-def test_persisted_projection_mismatch_returns_no_delivery(
+def test_final_delivery_validation_failure_returns_no_applied_delivery(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     prompt = "Exact specialist prompt."
     store = _Store([_agent("alpha-reviewer", prompt)], {"alpha-reviewer": prompt})
-    monkeypatch.setattr(store, "get_native_child_staffing_decision", lambda _id: None)
 
-    result = _invoke(monkeypatch, store, _judge_result(["alpha-reviewer"]))
+    result = _invoke(
+        monkeypatch,
+        store,
+        _judge_result(["alpha-reviewer"]),
+        final_delivery_validator=lambda: False,
+    )
 
     assert result.staffed is False
-    assert result.reason_code == "native_child_routing_projection_invalid"
+    assert result.reason_code == "native_child_routing_decision_unavailable"
     assert result.context_segment == ""
-    assert [item["decision"]["status"] for item in store.decisions] == [
-        "applied",
-        "inference_invalid",
-    ]
+    assert [item["decision"]["status"] for item in store.decisions] == ["inference_invalid"]
+
+
+def test_real_store_final_validation_rejection_leaves_no_applied_route_and_retries(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    prompt = "Exact specialist prompt."
+    agent = _agent("alpha-reviewer", prompt)
+    store = Store(tmp_path / "final-validation.db")
+    store.create_run(
+        session_id="parent-session",
+        trace_id="parent-trace",
+        host="claude",
+        user_message="Parent request",
+    )
+    monkeypatch.setattr(
+        store,
+        "get_routing_roster_snapshot",
+        lambda **_kwargs: {
+            "generation": store.get_roster_generation(),
+            "catalog": [agent],
+        },
+    )
+    monkeypatch.setattr(
+        store,
+        "get_versioned_specialist_prompt",
+        lambda *_args, **_kwargs: {
+            "slug": "alpha-reviewer",
+            "version": agent["version"],
+            "hash": agent["hash"],
+            "prompt_body": prompt,
+            "prompt_truncated": False,
+        },
+    )
+    freshness = iter([False, True])
+
+    rejected = _invoke(
+        monkeypatch,
+        store,  # type: ignore[arg-type]
+        _judge_result(["alpha-reviewer"]),
+        final_delivery_validator=lambda: next(freshness),
+    )
+
+    assert rejected.staffed is False
+    assert rejected.reason_code == "native_child_routing_decision_unavailable"
+    conn = store._connect()
+    try:
+        assert (
+            conn.execute(
+                "SELECT COUNT(*) FROM routing_decisions "
+                "WHERE source = 'native_child_inference' AND status = 'applied'"
+            ).fetchone()[0]
+            == 0
+        )
+    finally:
+        conn.close()
+
+    retried = _invoke(
+        monkeypatch,
+        store,  # type: ignore[arg-type]
+        _judge_result(["alpha-reviewer"]),
+        final_delivery_validator=lambda: next(freshness),
+    )
+
+    assert retried.staffed is True
+    assert retried.decision_id
+    assert store.get_native_child_staffing_decision(retried.decision_id) is not None
 
 
 def test_exact_render_failure_happens_before_any_applied_route(

@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import stat
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -181,6 +181,102 @@ def _guard_native_child_launch_replay(
     ).fetchone()
     if duplicate is not None:
         raise ValueError("native_child launch already has a successful routing decision")
+
+
+def _require_exact_inserted_native_child_route(
+    conn: Any,
+    *,
+    decision_id: str,
+    trace_id: str,
+    session_id: str,
+    query_hash: str,
+    context_fingerprint: str,
+    status: str,
+    source: str,
+    selected_ids: str,
+    semantic_ids: str,
+    companion_ids: str,
+    confidence: float,
+    latency_ms: int,
+    provider: str,
+    work_units: str,
+    decision: str,
+    projected_decision: Mapping[str, Any],
+) -> None:
+    """Require the exact just-inserted native-child projection before commit."""
+
+    row = conn.execute(
+        "SELECT id, trace_id, session_id, query_hash, context_fingerprint, status, "
+        "source, selected_ids, semantic_ids, companion_ids, confidence, latency_ms, "
+        "provider, work_units, decision, created_at FROM routing_decisions WHERE id = ?",
+        (decision_id,),
+    ).fetchone()
+    expected = (
+        decision_id,
+        trace_id,
+        session_id,
+        query_hash,
+        context_fingerprint,
+        status,
+        source,
+        selected_ids,
+        semantic_ids,
+        companion_ids,
+        confidence,
+        latency_ms,
+        provider,
+        work_units,
+        decision,
+    )
+    fields = (
+        "id",
+        "trace_id",
+        "session_id",
+        "query_hash",
+        "context_fingerprint",
+        "status",
+        "source",
+        "selected_ids",
+        "semantic_ids",
+        "companion_ids",
+        "confidence",
+        "latency_ms",
+        "provider",
+        "work_units",
+        "decision",
+    )
+    from agency_runtime.core.native_child_decision import (
+        project_native_child_staffing_decision,
+    )
+
+    delivery = project_native_child_staffing_decision(
+        projected_decision.get("native_child_delivery")
+    )
+    expected_slugs = (
+        [] if delivery is None else [str(card["specialist_slug"]) for card in delivery["cards"]]
+    )
+    if (
+        row is None
+        or tuple(row[field] for field in fields) != expected
+        or not isinstance(row["created_at"], str)
+        or not row["created_at"]
+        or delivery is None
+        or status != projected_decision.get("status")
+        or source != projected_decision.get("source")
+        or status != "applied"
+        or source != "native_child_inference"
+        or session_id != delivery["parent_session_id"]
+        or trace_id != delivery["parent_trace_id"]
+        or query_hash != delivery["task_sha256"]
+        or projected_decision.get("selected_ids") != expected_slugs
+        or projected_decision.get("semantic_ids") != expected_slugs
+        or projected_decision.get("companion_ids") not in (None, [])
+        or projected_decision.get("available_companion_ids") not in (None, [])
+        or selected_ids != json.dumps(expected_slugs)
+        or semantic_ids != json.dumps(expected_slugs)
+        or companion_ids != "[]"
+    ):
+        raise RuntimeError("native-child routing projection failed transactional readback")
 
 
 class MaintenanceStoreMixin:
@@ -457,7 +553,7 @@ class MaintenanceStoreMixin:
             ).hexdigest(),
         }
 
-    def record_routing_decision(
+    def record_routing_decision(  # noqa: C901 - one atomic guarded write transaction
         self,
         *,
         trace_id: str,
@@ -469,6 +565,7 @@ class MaintenanceStoreMixin:
         require_open_run: bool = False,
         expected_roster_generation: int | None = None,
         expected_disabled_agents: tuple[str, ...] | None = None,
+        final_delivery_validator: Callable[[], bool] | None = None,
     ) -> str:
         """Persist one metadata-only authoritative routing projection.
 
@@ -478,6 +575,9 @@ class MaintenanceStoreMixin:
         policy to remain exact inside this same write transaction.  The native
         child service holds the Store-bound configuration read lock before
         entering this method, preserving config-lock then SQLite-lock ordering.
+        A final delivery validator is legal only for an open native-child route;
+        it runs after exact inserted-row readback and immediately before commit,
+        so rejection or failure rolls the successful projection back in full.
         Defaults preserve the general routing behavior.
         """
         normalized_trace = validate_correlation_id(trace_id, field="trace_id")
@@ -506,6 +606,11 @@ class MaintenanceStoreMixin:
             )
         )
         safe_decision, safe_work_units, source = project_routing_decision(decision)
+        if final_delivery_validator is not None:
+            if not callable(final_delivery_validator):
+                raise TypeError("final_delivery_validator must be callable")
+            if source != "native_child_inference" or require_open_run is not True:
+                raise ValueError("final_delivery_validator requires open native-child inference")
         if decision_id is None:
             event_id = self._uuid()
         else:
@@ -548,6 +653,15 @@ class MaintenanceStoreMixin:
                     raise ValueError("roster changed before routing decision persistence")
             if expected_activation_policy is not None:
                 _require_activation_policy(self, expected_activation_policy)
+            status = str(safe_decision.get("status") or "unknown")
+            selected_ids = json.dumps(safe_decision.get("selected_ids") or [])
+            semantic_ids = json.dumps(safe_decision.get("semantic_ids") or [])
+            companion_ids = json.dumps(safe_decision.get("available_companion_ids") or [])
+            confidence = float(safe_decision.get("confidence") or 0.0)
+            latency_ms = int(safe_decision.get("latency_ms") or 0)
+            provider = str(safe_decision.get("provider") or "")
+            work_units = json.dumps(safe_work_units)
+            decision_document = json.dumps(safe_decision, sort_keys=True, default=str)
             conn.execute(
                 "INSERT INTO routing_decisions "
                 "(id, trace_id, session_id, query_hash, context_fingerprint, status, source, "
@@ -561,20 +675,42 @@ class MaintenanceStoreMixin:
                     normalized_session,
                     normalized_query_hash,
                     normalized_context_fingerprint,
-                    str(safe_decision.get("status") or "unknown"),
+                    status,
                     source,
-                    json.dumps(safe_decision.get("selected_ids") or []),
-                    json.dumps(safe_decision.get("semantic_ids") or []),
-                    json.dumps(safe_decision.get("available_companion_ids") or []),
-                    float(safe_decision.get("confidence") or 0.0),
-                    int(safe_decision.get("latency_ms") or 0),
-                    str(safe_decision.get("provider") or ""),
-                    json.dumps(safe_work_units),
-                    json.dumps(safe_decision, sort_keys=True, default=str),
+                    selected_ids,
+                    semantic_ids,
+                    companion_ids,
+                    confidence,
+                    latency_ms,
+                    provider,
+                    work_units,
+                    decision_document,
                 ),
             )
             if expected_activation_policy is not None:
                 _require_activation_policy(self, expected_activation_policy)
+            if source == "native_child_inference":
+                _require_exact_inserted_native_child_route(
+                    conn,
+                    decision_id=event_id,
+                    trace_id=normalized_trace,
+                    session_id=normalized_session,
+                    query_hash=normalized_query_hash,
+                    context_fingerprint=normalized_context_fingerprint,
+                    status=status,
+                    source=source,
+                    selected_ids=selected_ids,
+                    semantic_ids=semantic_ids,
+                    companion_ids=companion_ids,
+                    confidence=confidence,
+                    latency_ms=latency_ms,
+                    provider=provider,
+                    work_units=work_units,
+                    decision=decision_document,
+                    projected_decision=safe_decision,
+                )
+            if final_delivery_validator is not None and final_delivery_validator() is not True:
+                raise ValueError("final native-child delivery validation failed")
             conn.commit()
             return event_id
         except Exception:

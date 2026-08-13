@@ -46,6 +46,13 @@ _REQUIRED_SPAWN_KEYS: Final = frozenset({"task_name", "message"})
 _REASONING_EFFORTS: Final = frozenset({"low", "medium", "high", "xhigh", "max", "ultra"})
 _TASK_NAME = re.compile(r"^[a-z0-9_]{1,128}$")
 _SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,511}$")
+_CODEX_THREAD_ID_PATTERN: Final = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+_CODEX_THREAD_ID = re.compile(rf"^{_CODEX_THREAD_ID_PATTERN}$")
+_MAX_ANCESTRY_DEPTH: Final = 2
+_MAX_METADATA_TEXT_BYTES: Final = 1024
+_TUI_LINEAGE: Final = ("cli", "paginated", "codex-tui")
+_EXEC_LINEAGE: Final = ("exec", "legacy", "codex_exec")
+_SUPPORTED_LINEAGES: Final = frozenset({_TUI_LINEAGE, _EXEC_LINEAGE})
 _SEAL_KEY = secrets.token_bytes(32)
 
 
@@ -60,7 +67,12 @@ class CodexPlaintextSpawnAttestation:
     schema: str
     transcript_path: str
     sessions_root: str
-    session_id: str
+    thread_id: str
+    root_session_id: str
+    ancestry_thread_ids: tuple[str, ...]
+    ancestry_offsets: tuple[int, ...]
+    ancestry_lengths: tuple[int, ...]
+    ancestry_sha256: tuple[str, ...]
     turn_id: str
     tool_use_id: str
     cli_version: str
@@ -68,9 +80,6 @@ class CodexPlaintextSpawnAttestation:
     file_device: int
     file_inode: int
     snapshot_size: int
-    session_offset: int
-    session_length: int
-    session_sha256: str
     task_offset: int
     task_length: int
     task_sha256: str
@@ -209,15 +218,15 @@ def _active_sessions_root(environ: Mapping[str, str] | None) -> Path:
 def _canonical_rollout_path(
     transcript_path: object,
     *,
-    session_id: str,
+    root_session_id: str,
     environ: Mapping[str, str] | None,
-) -> tuple[Path, Path]:
+) -> tuple[Path, Path, str]:
     if not isinstance(transcript_path, (str, os.PathLike)):
         raise _InvalidTranscript("transcript path is unavailable")
     raw = os.fspath(transcript_path)
     if not isinstance(raw, str) or not raw or len(raw.encode("utf-8")) > _MAX_PATH_BYTES:
         raise _InvalidTranscript("transcript path exceeds bounds")
-    if _SAFE_ID.fullmatch(session_id) is None:
+    if _CODEX_THREAD_ID.fullmatch(root_session_id) is None:
         raise _InvalidTranscript("session identity is invalid")
     candidate = Path(raw)
     if not candidate.is_absolute() or any(part in {".", ".."} for part in candidate.parts):
@@ -239,11 +248,12 @@ def _canonical_rollout_path(
         raise _InvalidTranscript("transcript date is invalid") from exc
     pattern = re.compile(
         rf"^rollout-{re.escape(year)}-{re.escape(month)}-{re.escape(day_value)}"
-        rf"T\d{{2}}-\d{{2}}-\d{{2}}-{re.escape(session_id)}\.jsonl$"
+        rf"T\d{{2}}-\d{{2}}-\d{{2}}-(?P<thread_id>{_CODEX_THREAD_ID_PATTERN})\.jsonl$"
     )
-    if pattern.fullmatch(filename) is None:
+    match = pattern.fullmatch(filename)
+    if match is None:
         raise _InvalidTranscript("transcript filename is invalid")
-    return canonical, sessions_root
+    return canonical, sessions_root, match.group("thread_id")
 
 
 def _path_is_trusted(path: Path, sessions_root: Path) -> bool:
@@ -353,22 +363,184 @@ def _function_call_is_exact(
     return canonical == expected_input
 
 
+def _bounded_metadata_text(value: object, *, nullable: bool = False) -> bool:
+    if value is None:
+        return nullable
+    return bool(
+        isinstance(value, str) and value and len(value.encode("utf-8")) <= _MAX_METADATA_TEXT_BYTES
+    )
+
+
+def _root_session_lineage(
+    payload: dict[str, Any],
+    *,
+    root_session_id: str,
+) -> tuple[str, str, str] | None:
+    if (
+        payload.get("id") != root_session_id
+        or payload.get("session_id") != root_session_id
+        or payload.get("cli_version") != _SUPPORTED_CLI_VERSION
+        or payload.get("thread_source") != "user"
+        or "forked_from_id" in payload
+        or "parent_thread_id" in payload
+    ):
+        return None
+    lineage = (
+        payload.get("source"),
+        payload.get("history_mode"),
+        payload.get("originator"),
+    )
+    return lineage if lineage in _SUPPORTED_LINEAGES else None
+
+
+def _subagent_session_depth(
+    payload: dict[str, Any],
+    *,
+    thread_id: str,
+    root_session_id: str,
+    parent_thread_id: str,
+    lineage: tuple[str, str, str],
+) -> int | None:
+    if (
+        payload.get("id") != thread_id
+        or payload.get("session_id") != root_session_id
+        or payload.get("cli_version") != _SUPPORTED_CLI_VERSION
+        or payload.get("forked_from_id") != parent_thread_id
+        or payload.get("parent_thread_id") != parent_thread_id
+        or payload.get("thread_source") != "subagent"
+        or payload.get("history_mode") != lineage[1]
+        or payload.get("originator") != lineage[2]
+        or payload.get("multi_agent_version") != "v2"
+    ):
+        return None
+    history_start = payload.get("subagent_history_start_ordinal")
+    if lineage == _TUI_LINEAGE and (
+        isinstance(history_start, bool) or not isinstance(history_start, int) or history_start < 0
+    ):
+        return None
+    if lineage == _EXEC_LINEAGE and history_start is not None:
+        return None
+    source = payload.get("source")
+    if not isinstance(source, dict) or set(source) != {"subagent"}:
+        return None
+    subagent = source.get("subagent")
+    if not isinstance(subagent, dict) or set(subagent) != {"thread_spawn"}:
+        return None
+    spawn = subagent.get("thread_spawn")
+    if not isinstance(spawn, dict) or set(spawn) != {
+        "parent_thread_id",
+        "depth",
+        "agent_path",
+        "agent_nickname",
+        "agent_role",
+    }:
+        return None
+    depth = spawn.get("depth")
+    if (
+        spawn.get("parent_thread_id") != parent_thread_id
+        or isinstance(depth, bool)
+        or not isinstance(depth, int)
+        or not 1 <= depth <= _MAX_ANCESTRY_DEPTH
+        or not _bounded_metadata_text(spawn.get("agent_path"))
+        or not _bounded_metadata_text(spawn.get("agent_nickname"))
+        or not _bounded_metadata_text(spawn.get("agent_role"), nullable=True)
+        or payload.get("agent_path") != spawn.get("agent_path")
+        or payload.get("agent_nickname") != spawn.get("agent_nickname")
+    ):
+        return None
+    return depth
+
+
+def _validate_session_ancestry(
+    sessions: list[tuple[_RecordIdentity, dict[str, Any]]],
+    *,
+    thread_id: str,
+    root_session_id: str,
+) -> tuple[tuple[_RecordIdentity, ...], tuple[str, ...]]:
+    # Codex 0.147 serializes one root metadata record, or exactly two leading
+    # records for a fork.  A depth-two rollout still contains only its current
+    # and immediate-parent records; the latter authenticates its own root link.
+    # Deeper forks are rejected until a canonical host shape is observed.
+    if len(sessions) not in {1, 2}:
+        raise _InvalidTranscript("session ancestry shape is unsupported")
+    thread_ids = tuple(str(payload.get("id") or "") for _identity_value, payload in sessions)
+    if (
+        thread_ids[0] != thread_id
+        or len(set(thread_ids)) != len(thread_ids)
+        or any(_CODEX_THREAD_ID.fullmatch(value) is None for value in thread_ids)
+    ):
+        raise _InvalidTranscript("session ancestry identities do not match")
+    if len(sessions) == 1:
+        if (
+            thread_id != root_session_id
+            or _root_session_lineage(sessions[0][1], root_session_id=root_session_id) is None
+        ):
+            raise _InvalidTranscript("root session metadata does not match")
+        return (sessions[0][0],), thread_ids
+
+    if thread_id == root_session_id:
+        raise _InvalidTranscript("forked session identity does not match")
+    child_mode = (
+        str(sessions[0][1].get("history_mode") or ""),
+        str(sessions[0][1].get("originator") or ""),
+    )
+    # A child has a structured source record, so its root source is recovered
+    # from the exact observed history/originator pair instead.
+    lineage = next(
+        (candidate for candidate in _SUPPORTED_LINEAGES if candidate[1:] == child_mode),
+        None,
+    )
+    if lineage is None:
+        raise _InvalidTranscript("child session lineage is unsupported")
+    current_depth = _subagent_session_depth(
+        sessions[0][1],
+        thread_id=thread_id,
+        root_session_id=root_session_id,
+        parent_thread_id=thread_ids[1],
+        lineage=lineage,
+    )
+    if current_depth == 1:
+        if (
+            thread_ids[1] != root_session_id
+            or _root_session_lineage(sessions[1][1], root_session_id=root_session_id) != lineage
+        ):
+            raise _InvalidTranscript("root parent metadata does not match")
+    elif current_depth == 2:
+        if (
+            lineage != _TUI_LINEAGE
+            or thread_ids[1] == root_session_id
+            or _subagent_session_depth(
+                sessions[1][1],
+                thread_id=thread_ids[1],
+                root_session_id=root_session_id,
+                parent_thread_id=root_session_id,
+                lineage=lineage,
+            )
+            != 1
+        ):
+            raise _InvalidTranscript("depth-two parent metadata does not match")
+    else:
+        raise _InvalidTranscript("fork depth is unsupported")
+    return tuple(identity for identity, _payload_value in sessions), thread_ids
+
+
 def _scan_initial(  # noqa: C901 - one bounded pass keeps record ordering explicit
     descriptor: int,
     size: int,
     *,
-    session_id: str,
+    thread_id: str,
+    root_session_id: str,
     turn_id: str,
     tool_use_id: str,
     expected_input: dict[str, Any],
-) -> tuple[_RecordIdentity, _RecordIdentity, _RecordIdentity]:
-    session_record: _RecordIdentity | None = None
+) -> tuple[tuple[_RecordIdentity, ...], tuple[str, ...], _RecordIdentity, _RecordIdentity]:
+    session_records: list[tuple[_RecordIdentity, dict[str, Any]]] = []
     task_record: _RecordIdentity | None = None
     call_record: _RecordIdentity | None = None
-    session_count = 0
     task_count = 0
     same_call_count = 0
     first = True
+    metadata_closed = False
     for offset, raw in _snapshot_lines(descriptor, size):
         record = _strict_json(raw)
         outer_type, payload = _payload(record)
@@ -377,14 +549,11 @@ def _scan_initial(  # noqa: C901 - one bounded pass keeps record ordering explic
             if outer_type != "session_meta":
                 raise _InvalidTranscript("session metadata is not the first record")
         if outer_type == "session_meta":
-            session_count += 1
-            if (
-                payload.get("id") != session_id
-                or payload.get("session_id") != session_id
-                or payload.get("cli_version") != _SUPPORTED_CLI_VERSION
-            ):
-                raise _InvalidTranscript("session metadata does not match")
-            session_record = _identity(offset, raw)
+            if metadata_closed or len(session_records) >= 2:
+                raise _InvalidTranscript("session metadata ordering is unsupported")
+            session_records.append((_identity(offset, raw), payload))
+        else:
+            metadata_closed = True
         if outer_type == "event_msg" and payload.get("turn_id") == turn_id:
             if payload.get("type") == "task_started":
                 task_count += 1
@@ -407,13 +576,18 @@ def _scan_initial(  # noqa: C901 - one bounded pass keeps record ordering explic
                 ):
                     raise _InvalidTranscript("spawn call does not match")
                 call_record = _identity(offset, raw)
-    if session_count != 1 or task_count != 1 or same_call_count != 1:
+    if task_count != 1 or same_call_count != 1:
         raise _InvalidTranscript("transcript correlation is ambiguous")
-    if session_record is None or task_record is None or call_record is None:
+    if task_record is None or call_record is None:
         raise _InvalidTranscript("transcript correlation is incomplete")
-    if not session_record.offset < task_record.offset < call_record.offset:
+    ancestry_records, ancestry_thread_ids = _validate_session_ancestry(
+        session_records,
+        thread_id=thread_id,
+        root_session_id=root_session_id,
+    )
+    if not ancestry_records[-1].offset < task_record.offset < call_record.offset:
         raise _InvalidTranscript("transcript correlation order is invalid")
-    return session_record, task_record, call_record
+    return ancestry_records, ancestry_thread_ids, task_record, call_record
 
 
 def _seal_payload(attestation: CodexPlaintextSpawnAttestation) -> bytes:
@@ -445,17 +619,18 @@ def attest_codex_plaintext_spawn(
         if _SAFE_ID.fullmatch(turn_id) is None or _SAFE_ID.fullmatch(tool_use_id) is None:
             raise _InvalidTranscript("turn or tool identity is invalid")
         expected_input, arguments_digest = _canonical_tool_input(tool_input)
-        path, sessions_root = _canonical_rollout_path(
+        path, sessions_root, thread_id = _canonical_rollout_path(
             transcript_path,
-            session_id=session_id,
+            root_session_id=session_id,
             environ=environ,
         )
         descriptor, opened = _open_rollout(path, sessions_root)
         snapshot_size = int(opened.st_size)
-        session, task, call = _scan_initial(
+        ancestry, ancestry_thread_ids, task, call = _scan_initial(
             descriptor,
             snapshot_size,
-            session_id=session_id,
+            thread_id=thread_id,
+            root_session_id=session_id,
             turn_id=turn_id,
             tool_use_id=tool_use_id,
             expected_input=expected_input,
@@ -473,7 +648,12 @@ def attest_codex_plaintext_spawn(
             schema=_SCHEMA,
             transcript_path=str(path),
             sessions_root=str(sessions_root),
-            session_id=session_id,
+            thread_id=thread_id,
+            root_session_id=session_id,
+            ancestry_thread_ids=ancestry_thread_ids,
+            ancestry_offsets=tuple(record.offset for record in ancestry),
+            ancestry_lengths=tuple(record.length for record in ancestry),
+            ancestry_sha256=tuple(record.digest for record in ancestry),
             turn_id=turn_id,
             tool_use_id=tool_use_id,
             cli_version=_SUPPORTED_CLI_VERSION,
@@ -481,9 +661,6 @@ def attest_codex_plaintext_spawn(
             file_device=int(opened.st_dev),
             file_inode=int(opened.st_ino),
             snapshot_size=snapshot_size,
-            session_offset=session.offset,
-            session_length=session.length,
-            session_sha256=session.digest,
             task_offset=task.offset,
             task_length=task.length,
             task_sha256=task.digest,
@@ -577,15 +754,30 @@ def codex_plaintext_spawn_attestation_is_current(
             or int(opened.st_size) < attestation.snapshot_size
         ):
             return False
-        for offset, length, expected in (
-            (
-                attestation.session_offset,
-                attestation.session_length,
-                attestation.session_sha256,
+        ancestry_count = len(attestation.ancestry_thread_ids)
+        if (
+            ancestry_count not in {1, 2}
+            or len(attestation.ancestry_offsets) != ancestry_count
+            or len(attestation.ancestry_lengths) != ancestry_count
+            or len(attestation.ancestry_sha256) != ancestry_count
+            or attestation.ancestry_thread_ids[0] != attestation.thread_id
+            or (
+                ancestry_count == 1
+                and attestation.ancestry_thread_ids[0] != attestation.root_session_id
+            )
+        ):
+            return False
+        bound_records = [
+            *zip(
+                attestation.ancestry_offsets,
+                attestation.ancestry_lengths,
+                attestation.ancestry_sha256,
+                strict=True,
             ),
             (attestation.task_offset, attestation.task_length, attestation.task_sha256),
             (attestation.call_offset, attestation.call_length, attestation.call_sha256),
-        ):
+        ]
+        for offset, length, expected in bound_records:
             if hashlib.sha256(_read_exact_at(descriptor, offset, length)).hexdigest() != expected:
                 return False
         current_size = int(opened.st_size)

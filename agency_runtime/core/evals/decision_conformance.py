@@ -1433,6 +1433,37 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-forked-rollout-collapses-thread-into-root-session",
+        invariant=(
+            "A forked Codex rollout binds its filename thread identity separately from the "
+            "root session carried by hook correlation."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='    return canonical, sessions_root, match.group("thread_id")',
+        after="    return canonical, sessions_root, root_session_id",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_exact_forked_child_shape_attests_and_binds_thread_and_root"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-final-validation-persists-poisoned-success",
+        invariant=(
+            "A failed final delivery validation rolls back the successful native-child route "
+            "so the exact launch remains retryable."
+        ),
+        source_path="agency_runtime/core/store/maintenance.py",
+        before=(
+            "            if final_delivery_validator is not None "
+            "and final_delivery_validator() is not True:"
+        ),
+        after="            if final_delivery_validator is not None and False:",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_final_delivery_validation_rolls_back_and_exact_launch_can_retry"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="ranking-order-reversed",
         invariant="The model's semantic ranking order is preserved, never locally reranked.",
         source_path="agency_runtime/core/workforce/inference.py",

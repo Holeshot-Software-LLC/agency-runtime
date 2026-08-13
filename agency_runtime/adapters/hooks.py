@@ -1215,6 +1215,9 @@ class HookBridge:
                         rewritten_task=rewritten_task,
                     )
                 ),
+                final_delivery_validator=(
+                    channel_is_current if channel_attestation is not None else None
+                ),
             )
         except Exception:
             logger.debug(
@@ -1246,12 +1249,6 @@ class HookBridge:
                 task=task,
                 reason_code="native_child_delivery_exceeds_host_limit",
             )
-            return {}
-        if not channel_is_current():
-            # The host transcript is external mutable state. It may change after
-            # the pre-persistence delivery validation, so refuse to emit the
-            # staffed rewrite unless the exact call remains authenticated at
-            # the final return boundary.
             return {}
         return response
 

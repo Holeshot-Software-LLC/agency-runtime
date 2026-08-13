@@ -19,6 +19,7 @@ from agency_runtime.core import (
 from agency_runtime.core.native_child_staffing import NativeChildStaffingResult
 
 _TASK = "Review the transaction boundary and add regression tests."
+_SESSION_ID = "019ff8ee-eb1c-7de3-815d-3deea9eca028"
 _ARGS = {
     "message": _TASK,
     "task_name": "transaction_review",
@@ -32,7 +33,7 @@ class _LiveParentStore:
             return None
         return {
             "trace_id": trace_id,
-            "session_id": "parent-session",
+            "session_id": _SESSION_ID,
             "host": "codex",
             "status": "active",
         }
@@ -47,7 +48,7 @@ def _payload(
     args = {**_ARGS, "message": message}
     return {
         "hook_event_name": "PreToolUse",
-        "session_id": "parent-session",
+        "session_id": _SESSION_ID,
         "turn_id": "parent-turn",
         "tool_use_id": "spawn-call-one",
         "tool_name": tool_name,
@@ -102,16 +103,20 @@ def test_real_attestor_and_hook_integration_rewrites_exact_marked_spawn(
         / "2026"
         / "08"
         / "12"
-        / "rollout-2026-08-12T22-23-55-parent-session.jsonl"
+        / f"rollout-2026-08-12T22-23-55-{_SESSION_ID}.jsonl"
     )
     transcript.parent.mkdir(parents=True)
     records = [
         {
             "type": "session_meta",
             "payload": {
-                "id": "parent-session",
-                "session_id": "parent-session",
+                "id": _SESSION_ID,
+                "session_id": _SESSION_ID,
                 "cli_version": "0.147.0",
+                "source": "cli",
+                "thread_source": "user",
+                "history_mode": "paginated",
+                "originator": "codex-tui",
             },
         },
         {
@@ -150,6 +155,7 @@ def test_real_attestor_and_hook_integration_rewrites_exact_marked_spawn(
     def staff(_store: object, **kwargs: Any) -> NativeChildStaffingResult:
         rewritten = kwargs["task"] + "\n\n[authenticated team]"
         assert kwargs["delivery_validator"](rewritten) is True
+        assert kwargs["final_delivery_validator"]() is True
         return _staffed(rewritten)
 
     monkeypatch.setattr(native_child_staffing, "staff_native_child", staff)
@@ -190,6 +196,7 @@ def test_authenticated_codex_spawn_alias_routes_through_plaintext_staffing(
         staffing_calls.append(kwargs)
         rewritten = kwargs["task"] + "\n\n[authenticated team]"
         assert kwargs["delivery_validator"](rewritten) is True
+        assert kwargs["final_delivery_validator"]() is True
         return _staffed(rewritten)
 
     monkeypatch.setattr(codex_spawn_provenance, "attest_codex_plaintext_spawn", attest)
@@ -210,7 +217,7 @@ def test_authenticated_codex_spawn_alias_routes_through_plaintext_staffing(
     assert attest_calls == [
         {
             "transcript_path": "C:\\codex-home\\sessions\\rollout-parent-session.jsonl",
-            "session_id": "parent-session",
+            "session_id": _SESSION_ID,
             "turn_id": "parent-turn",
             "tool_use_id": "spawn-call-one",
             "tool_input": _ARGS,
@@ -311,7 +318,7 @@ def test_attestation_drift_inside_delivery_validator_suppresses_rewrite(
     assert _bridge().handle(_payload()) == {}
 
 
-def test_attestation_drift_after_persistence_suppresses_staffed_rewrite(
+def test_attestation_drift_during_final_transaction_validation_suppresses_rewrite(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     attestation = object()
@@ -331,7 +338,8 @@ def test_attestation_drift_after_persistence_suppresses_staffed_rewrite(
     def staff(_store: object, **kwargs: Any) -> NativeChildStaffingResult:
         rewritten = kwargs["task"] + "\n\n[must not escape]"
         assert kwargs["delivery_validator"](rewritten) is True
-        return _staffed(rewritten)
+        assert kwargs["final_delivery_validator"]() is False
+        return _unstaffed()
 
     monkeypatch.setattr(native_child_staffing, "staff_native_child", staff)
     _install_stub(monkeypatch)

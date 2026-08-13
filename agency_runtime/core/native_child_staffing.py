@@ -395,6 +395,7 @@ def _record_decision(
     decision_id: str = "",
     expected_roster_generation: int | None = None,
     expected_disabled_agents: tuple[str, ...] | None = None,
+    final_delivery_validator: Callable[[], bool] | None = None,
 ) -> str:
     recorder = getattr(store, "record_routing_decision", None)
     if not callable(recorder) or not _parent_scope_is_current(
@@ -419,6 +420,8 @@ def _record_decision(
             arguments["expected_roster_generation"] = expected_roster_generation
         if expected_disabled_agents is not None:
             arguments["expected_disabled_agents"] = expected_disabled_agents
+        if final_delivery_validator is not None:
+            arguments["final_delivery_validator"] = final_delivery_validator
         recorded_id = recorder(
             **arguments,
         )
@@ -428,26 +431,6 @@ def _record_decision(
     if _ROUTE_ID.fullmatch(normalized) is None or (decision_id and normalized != decision_id):
         return ""
     return normalized
-
-
-def _persisted_delivery_matches(
-    store: Any,
-    *,
-    decision_id: str,
-    expected: Mapping[str, Any],
-) -> bool:
-    getter = getattr(store, "get_native_child_staffing_decision", None)
-    if not callable(getter):
-        return False
-    try:
-        persisted = getter(decision_id)
-    except Exception:
-        return False
-    return bool(
-        isinstance(persisted, Mapping)
-        and persisted.get("decision_id") == decision_id
-        and all(persisted.get(key) == value for key, value in expected.items())
-    )
 
 
 def record_native_child_staffing_failure(
@@ -690,6 +673,7 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
     maximum_delivery_bytes: int = MAX_NATIVE_CHILD_STAFFING_DELIVERY_BYTES,
     ttl_seconds: int = NATIVE_CHILD_STAFFING_TTL_SECONDS,
     delivery_validator: Callable[[str], bool] | None = None,
+    final_delivery_validator: Callable[[], bool] | None = None,
 ) -> NativeChildStaffingResult:
     """Return one exact inference-selected v6 team or an unstaffed diagnostic.
 
@@ -698,6 +682,8 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
     is the host-neutral launch identity: Claude/ZCode use their tool-use ID,
     Hermes/OpenClaw use a native-run ID, and Codex must supply an authenticated
     plaintext launch/input identity before this service can staff it.
+    ``final_delivery_validator`` is passed to the Store for the last guarded
+    pre-commit check; it must not persist state or re-enter the Store.
     """
 
     original_task = task if isinstance(task, str) else ""
@@ -725,6 +711,7 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             or not isinstance(ttl_seconds, int)
             or not 1 <= ttl_seconds <= MAX_NATIVE_CHILD_DELIVERY_TTL_SECONDS
             or (delivery_validator is not None and not callable(delivery_validator))
+            or (final_delivery_validator is not None and not callable(final_delivery_validator))
             or not callable(install_identity_reader)
         ):
             raise ValueError("staffing budget is invalid")
@@ -1221,6 +1208,7 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
                     decision_id=proposed_decision_id,
                     expected_roster_generation=snapshot.roster_generation,
                     expected_disabled_agents=tuple(snapshot.config.agents.disabled),
+                    final_delivery_validator=final_delivery_validator,
                 )
                 if state_unchanged
                 else ""
@@ -1254,24 +1242,6 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             judge_result=judge_result,
             provider_attempts=projected_attempts,
         )
-    if not _persisted_delivery_matches(
-        store,
-        decision_id=decision_id,
-        expected=delivery_projection,
-    ):
-        return _unstaffed(
-            store=store,
-            reason_code="native_child_routing_projection_invalid",
-            task=original_task,
-            host=normalized_host,
-            parent_session_id=session_id,
-            parent_trace_id=trace_id,
-            task_sha256=task_hash,
-            context_fingerprint=context_fingerprint,
-            judge_result=judge_result,
-            provider_attempts=projected_attempts,
-        )
-
     return NativeChildStaffingResult(
         staffed=True,
         reason_code="staffed",
