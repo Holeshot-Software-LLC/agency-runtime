@@ -576,11 +576,11 @@ positive controls remain unavailable. The paired portable/`win_amd64` artifact
 set must reject executable and disguised PE payloads in both profiles.
 
 AR-119's canonical matrix currently records Claude Rule 4 as exact-candidate
-unproven despite three prior-candidate live artifacts. Codex Rule 4 is negative
-in current source because the adapter cannot carry cards through the encrypted
-context channel, while its prior-candidate TUI, Desktop, and exec observations
-do not establish the exact candidate's installed/live state. ZCode, Hermes,
-and OpenClaw remain unproven. That evidence is not release-ready. AR-119 and
+unproven despite three prior-candidate live artifacts. Codex has a repaired
+conditional plaintext source candidate pending full verification and independent
+review, while encrypted calls remain unstaffed and prior-candidate TUI, Desktop,
+and exec observations do not establish exact-candidate installed/live state.
+ZCode, Hermes, and OpenClaw remain unproven. That evidence is not release-ready. AR-119 and
 AR-125 also still
 require a benchmark-valid completed outcome corpus and current-artifact host/OS
 evidence. The automatic three-success/seven-day contractor path remains dormant

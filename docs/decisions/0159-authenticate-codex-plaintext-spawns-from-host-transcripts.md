@@ -61,19 +61,22 @@ truncation, oversized input, duplicate keys, and unstable descriptor/path
 identity. A purpose-built bounded streaming scanner must support observed large
 rollout lines without loading the transcript as one object.
 
-The transcript must have one matching root session identity and exactly one
-`response_item.function_call` with namespace `collaboration`, name
-`spawn_agent`, the hook's session, turn, and call IDs, arguments exactly equal
-to the complete hook input, and `encrypted_function_args` present as exactly an
-empty list. Null, missing, nonempty, ambiguous, stale, completed, or replayed
-calls are unstaffed. V1 receives no implicit exception.
+The transcript filename supplies the concrete thread identity while the hook's
+session ID supplies the shared root identity. The exact 0.147 ancestry prefix
+must match an observed TUI or exec root, depth-one, or TUI depth-two shape; every
+metadata record is sealed and later revalidated. Unsupported deeper ancestry
+fails open. Exactly one `response_item.function_call` must use namespace
+`collaboration`, name `spawn_agent`, the hook's turn and call IDs, arguments
+exactly equal to the complete hook input, and `encrypted_function_args` present
+as exactly an empty list. Null, missing, nonempty, ambiguous, stale, completed,
+or replayed calls are unstaffed. V1 receives no implicit exception.
 
 Attestation returns only sealed, content-free identities and digests. Agency
-revalidates the exact file and records during the existing delivery validator
-and again immediately before returning `updatedInput`. The Store transaction
-atomically rejects a second native-child inference delivery for the same host,
-parent session, parent trace, and launch ID so concurrent hooks cannot obtain
-two rewrites.
+revalidates the exact file and records during delivery validation and as the
+last guarded action inside the successful route's `BEGIN IMMEDIATE` transaction.
+Failure rolls the route back before any staffed output can be returned. The same
+transaction rejects a second delivery for the same host, parent session, parent
+trace, and launch ID so concurrent hooks cannot obtain two rewrites.
 
 This attestation authorizes only the pre-spawn rewrite. It cannot prove that the
 child received or used the cards. ADR-0156 remains the sole Rule-4 authority: a
@@ -115,8 +118,9 @@ Desktop runtime `0.147.0-alpha.6.6`, the conditional marker contract, and one
 current encrypted Sol/TUI spawn. It ran no Agency canary and changed no install
 or trust state.
 
-Candidate `966845cc` implements this boundary with a bounded descriptor scanner,
-sealed record identities, repeated revalidation, and an atomic successful-launch
-guard. Adversarial review found incomplete nested-thread ancestry and a
-post-persistence final-validation gap; source and simulation remain negative
-until those defects are repaired. Installed and Live proof remains unproven.
+Candidate `966845cc` first implemented this boundary; adversarial review found
+incomplete nested-thread ancestry and a post-persistence final-validation gap.
+Repair `2fe5e9ec` separates root and thread identity across observed TUI/exec
+lineages, seals each ancestry record, and moves final validation before commit.
+Focused verification passes; full verification and independent reattack remain
+open. Installed and Live proof remains unproven.

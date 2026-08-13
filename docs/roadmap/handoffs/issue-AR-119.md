@@ -31,8 +31,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: 966845cc36ac93c61a85d39de2cafd2752ffc47d
-minimum_ledger_commit: d9ee4a0ac0810630ea79646ac106d9269530d17e
+evidence_commit: 2fe5e9ecf34011b03597efc7b0d2c59fc80c9fea
+minimum_ledger_commit: 9eb6c683403a361236a45b4fcf990ac0e48b2805
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -45,17 +45,17 @@ must be loaded first after any compaction or session restart.
 
 ## checkpoint
 
-- The current source pair is Codex runtime `966845cc` and ledger `d9ee4a0a`;
+- The current source pair is Codex runtime `2fe5e9ec` and ledger `9eb6c683`;
   the reviewed preflight design remains `ccb1802c`/`a7e8cf54`.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
   exact-candidate Claude Installed/Live proof remains open.
 - The AR-180 read-only exact-host preflight is complete. ADR-0159 binds the
   Codex 0.147 plaintext path to a sealed exact-call transcript attestation;
   the current Sol/TUI spawn omitted the marker and remains safely unstaffed.
-- Matrix candidate `966845cc` has no proven top-level cell. Rule 1 source and
+- Matrix candidate `2fe5e9ec` has no proven top-level cell. Rule 1 source and
   simulation are repaired on all five adapters; Claude Rule 4 source and
-  simulation are proven; Codex Rule 4 remains negative after adversarial review.
-  Every Installed and Live layer remains unproven.
+  simulation are proven. Codex Rule 4 is conservatively unproven pending the
+  full verifier and independent reattack. Every Installed/Live layer is unproven.
 - Tracker creation for AR-255 through AR-257 and tracker synchronization for
   locally reopened historical issues remain pending explicit authorization.
   No missing tracker write is represented as complete.
@@ -63,21 +63,21 @@ must be loaded first after any compaction or session restart.
 ## completed-evidence
 
 - `AR-119-founding-vision.md` is the sole wording authority and the matrix is
-  the sole completion authority. Candidate `966845cc` preserves all 45 cells
+  the sole completion authority. Candidate `2fe5e9ec` preserves all 45 cells
   without converting implementation or simulation into host proof.
 - AR-255 now uses complete-universe inference, exact ordered multi-card v6
   delivery, install/config/roster fences, fail-open diagnostics, and sealed
   one-use delivery proof. Store-only state and caller mappings are diagnostic.
-- SafeClaude retains its in-lifetime collector. Codex candidate `966845cc`
-  safely rejects unmarked calls, but its root-only rollout identity cannot staff
-  nested children and final drift can leave an applied Store row without output.
+- SafeClaude retains its in-lifetime collector. Codex candidate `2fe5e9ec`
+  binds separate root/thread identities for exact 0.147 TUI and exec ancestry;
+  final attestation failure rolls back the applied route so retry remains safe.
 - Exact preflight inventory: PATH TUI/exec Codex `0.147.0`, native SHA-256
   `935A1911...2AD9D`; Desktop `26.803.10989.0` with runtime
   `0.147.0-alpha.6.6`, native SHA-256 `59295889...69B3`. The observed Sol/TUI
   call omitted `encrypted_function_args` and carried a `gAAAAA...` message.
-- Current source verification: 303 focused tests and the 673-test fast spine
-  passed with 6 skipped; dashboard UI passed 134. Ruff, routing evaluation, and
-  whitespace passed. The new candidate mutation run remains the next gate.
+- Current repair verification: 206 focused tests passed warning-strict; Ruff,
+  format, and whitespace passed. The full 85-mutation run, fast spine, dashboard,
+  routing evaluation, and independent reattack remain the next gates.
 - Checkout routing evaluation passed every gate. Decision conformance passed
   its baseline, killed 83/83 mutations with zero survived or invalid, and
   reported `source_unchanged=true`.
@@ -91,11 +91,10 @@ must be loaded first after any compaction or session restart.
 
 ## exact-blocker
 
-1. **AR-180 — Codex support.** Separate child thread identity from root session
-   identity for the exact 0.147 forked-rollout shape, and make final attestation
-   failure leave no successful route or poisoned retry. Reattack and add curated
-   mutations before any authorized exact install/live proof.
-2. **AR-255 — exact host proof.** Build and verify candidate `966845cc`, then
+1. **AR-180 — Codex support.** Run the full verifier and independent reattack on
+   repaired candidate `2fe5e9ec`; depth greater than two remains safely unsupported.
+   Then obtain authorization before any exact install or live host proof.
+2. **AR-255 — exact host proof.** Build and verify candidate `2fe5e9ec`, then
    obtain one current Claude artifact through the real executable. The passing
    fake-runner integration is simulation, not Installed or Live authority.
 3. **AR-252 — automatic contractor critical path.** Record host-backed producer
@@ -116,17 +115,17 @@ must be loaded first after any compaction or session restart.
 
 After restart or compaction, load this file and `AR-119-founding-vision.md`
 first. Then read AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158.
-Confirm branch, runtime `966845cc`, ledger `d9ee4a0a`, status, and worklog
+Confirm branch, runtime `2fe5e9ec`, ledger `9eb6c683`, status, and worklog
 parity. Do not reconstruct retired Job B, plan-row, work-unit, grant, or
 consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-Repair the two adversarial findings: exact forked-child rollout ancestry and
-transactional final-validation retry safety. Add real-shape fixtures, reattack,
-and add curated decision-conformance mutations. Then obtain explicit authorization
-for exact install/trust and bounded TUI, Desktop, exec, and Claude proof; after
-host proof continue AR-252, AR-253, AR-125, and derived Rule 9.
+Run the full decision-conformance evaluator, fast spine, dashboard and routing
+gates, then independently reattack the exact TUI/exec ancestry and transactional
+rollback repair. After a clean review, obtain explicit authorization for exact
+install/trust and bounded TUI, Desktop, exec, and Claude proof; then continue
+AR-252, AR-253, AR-125, and derived Rule 9.
 
 ## verification
 

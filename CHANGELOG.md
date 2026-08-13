@@ -78,9 +78,10 @@ changes rather than duplicating every commit.
 ### Fixed
 
 - Codex 0.147 plaintext collaboration support is being hardened behind a sealed
-  exact-call host-rollout attestation. The current candidate safely rejects
-  unmarked calls, but nested rollout ancestry and retry-safe final validation
-  remain open blockers; no Installed or Live Codex support is claimed yet.
+  exact-call host-rollout attestation. The repair binds observed TUI and exec
+  fork ancestry and rolls final-validation failure back before route commit;
+  full verification and independent review remain open. No Installed or Live
+  Codex support is claimed yet.
 - Codex product child diagnostics now classify nested `apply_patch`,
   `shell_command`, and other calls inside current `functions.exec` wrappers,
   plus fixed wrapper outcomes. The Store persists only bounded counts, keeps

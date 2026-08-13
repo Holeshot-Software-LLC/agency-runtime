@@ -249,16 +249,14 @@ The documented `PreToolUse` payload supplies `transcript_path`, `turn_id`,
 `tool_use_id`, and parsed `tool_input`, and it permits `updatedInput` rewrites.
 It does not expose the plaintext marker or internal tool-call source, and the
 documented transcript format is explicitly unstable. A plaintext-looking
-`tool_input.message` therefore has no authority by itself. Candidate `966845cc`
+`tool_input.message` therefore has no authority by itself. Candidate `2fe5e9ec`
 implements a bounded exact-0.147 scanner, sealed exact-record attestation,
-validator-time and output-time revalidation, and an atomic successful-launch
-replay guard. Missing, ambiguous, completed, malformed, oversized, linked,
-unmarked, or drifted evidence remains unstaffed. Its synthetic marked-host path
-and the real current unmarked transcript both pass their expected controls.
-Independent attack found that root-only identity matching rejects real nested
-child rollout ancestry, and a final revalidation failure can leave a successful
-Store row without emitting `updatedInput`. Source and simulation therefore stay
-negative until both findings are repaired and reattacked; exact installation
+separate shared-session and thread identity for observed TUI and exec ancestry,
+and atomic replay/final-validation rollback. Missing, ambiguous, completed,
+malformed, oversized, linked, unmarked, drifted, or unsupported deeper ancestry
+remains unstaffed. Focused real-shape and retry tests pass, including the current
+unmarked transcript control. Source and simulation remain conservatively
+unproven until the full verifier and independent reattack pass; exact installation
 and host child artifacts remain later gates before a live Rule-4 measurement.
 ADR-0159 keeps rewrite authorization separate from delivery-proof authority.
 
