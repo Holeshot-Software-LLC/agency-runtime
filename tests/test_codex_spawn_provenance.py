@@ -3456,6 +3456,10 @@ def test_observed_v4_turn_identity_remains_supported(
         "00000000-0000-0000-0000-000000000000",
         "123e4567-e89b-12d3-a456-426614174000",
         "019ff8ee-eb1c-7de3-015d-3deea9eca028",
+        # Keeps the exact UUIDv7 timestamp and RFC variant of `_SESSION` and
+        # changes only the version nibble, so the filename-residual check cannot
+        # mask a weakened version domain.
+        "019ff8ee-eb1c-4de3-815d-3deea9eca028",
     ],
 )
 def test_session_identity_requires_non_nil_rfc_uuid7(
@@ -3470,6 +3474,43 @@ def test_session_identity_requires_non_nil_rfc_uuid7(
         subject.attest_codex_plaintext_spawn(
             path,
             session_id=identity,
+            turn_id=_TURN,
+            tool_use_id=_CALL,
+            tool_input=_ARGS,
+            environ=environ,
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize(
+    "root",
+    [
+        "00000000-0000-0000-0000-000000000000",
+        "123e4567-e89b-12d3-a456-426614174000",
+        "019ff8ee-eb1c-4de3-815d-3deea9eca028",
+        "019ff8ee-eb1c-7de3-015d-3deea9eca028",
+    ],
+)
+def test_root_identity_requires_canonical_non_nil_uuid7_without_filename_binding(
+    forked_rollout: tuple[Path, dict[str, str]],
+    root: str,
+) -> None:
+    """A child rollout's root and parent identities carry no filename residual.
+
+    The canonical rollout filename embeds only the current thread, so a root or
+    parent identity is validated by the UUID domain alone.  Exercising the rule
+    here keeps nil and non-UUIDv7 rejection observable instead of masked by the
+    filename-clock correspondence that already refuses a filename-bound thread.
+    """
+
+    path, environ = forked_rollout
+    _write(path, _forked_records(marker=[], root_session_id=root, parent_thread_id=root))
+
+    assert (
+        subject.attest_codex_plaintext_spawn(
+            path,
+            session_id=root,
             turn_id=_TURN,
             tool_use_id=_CALL,
             tool_input=_ARGS,

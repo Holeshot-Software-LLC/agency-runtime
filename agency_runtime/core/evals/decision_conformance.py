@@ -1591,8 +1591,12 @@ class _NominationSemantics:""",
             and parsed.version in versions
         )
     )""",
+        # A filename-bound thread identity is refused by the rollout-clock
+        # residual before its UUID domain matters, so nil acceptance is only
+        # observable on the root and parent identities of a child rollout.
         test_node=(
-            "tests/test_codex_spawn_provenance.py::test_session_identity_requires_non_nil_rfc_uuid7"
+            "tests/test_codex_spawn_provenance.py::"
+            "test_root_identity_requires_canonical_non_nil_uuid7_without_filename_binding"
         ),
     ),
     DecisionMutation(
