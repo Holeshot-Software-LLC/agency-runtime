@@ -26,7 +26,7 @@ superseded_by: null
 type: roadmap
 ar119_authority: completion-evidence
 vision_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
-candidate_commit: be18a9b06897c4c01559cfe814b20175bc3d72a1
+candidate_commit: a25ec35007031cf352a19fc2d8d37f1f5bc55de1
 evidence_cutoff: 2026-08-13
 ---
 
@@ -46,6 +46,23 @@ bound to that exact candidate. Earlier artifacts remain visible as prior-
 candidate context but cannot make a current installed/live layer green or red.
 Although the schema reserves `not-applicable`, none of the nine rules is
 optional on a supported host.
+
+Candidate `a25ec350` carries the same evidence as `be18a9b0` and advances the
+baseline by two test-only commits, which retire assertions that the delegation
+prune and the resident-manager kernel split had orphaned. No anchored file
+moved, so every citation below resolves unchanged. Its decision-conformance
+evaluator exited zero with a baseline passing in 218,955 ms, **151/151
+mutations killed, zero survived and zero invalid**, and `source_unchanged=true`.
+
+That run also settles a scare worth recording. An earlier attempt at this gate
+reported `passed=false` with 84 killed, zero survived, and 67 `invalid_test_result`
+entries carrying exit code 106 and empty `failed_nodes` -- a runner that could
+not launch, not a mutation that escaped. The working tree it ran in lost its
+`.venv/pyvenv.cfg` and its git worktree registration during that run. The cause
+was a second job started against the same tree while the evaluator held it, not
+the evaluator: run alone, it completed cleanly and left the tree intact. Do not
+run anything against a tree while this evaluator is running against it; the
+failure mode is a destroyed working tree, not a slow suite.
 
 Candidate `967b0a2c` proves Rule 7 at source and simulation on the four hosts
 that have adapter classes. The mechanism was already present and simply never

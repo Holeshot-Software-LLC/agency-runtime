@@ -856,6 +856,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `be18a9b0` | 2026-08-13 | test(rules): close the last three simulation gaps | null | null |
 | `f90995c1` | 2026-08-13 | docs(roadmap): record complete simulation parity at candidate be18a9b0 | null | null |
 | `cec10b02` | 2026-08-13 | docs(roadmap): scope the installed-projection reconciliation as AR-258 | null | null |
+| `74589af7` | 2026-08-13 | test(selector): retire two assertions the prune and the kernel split orphaned | null | null |
+| `a25ec350` | 2026-08-13 | test(resident-managers): split the kernel lifetime contract by whether Agency can run | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

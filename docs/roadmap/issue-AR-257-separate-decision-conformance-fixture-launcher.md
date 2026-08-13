@@ -125,6 +125,23 @@ Candidate `967b0a2c`, which makes the host-parity suite hermetic and proves
 Rule 7, also exited zero: baseline 211,811 ms, 151/151 killed, zero survived or
 invalid, and `source_unchanged=true`.
 
+## 2026-08-13 result for `a25ec350`
+
+Candidate `a25ec350` exited zero: baseline passed in 218,955 ms, all 151
+curated mutations were killed, zero survived, zero were invalid, and
+`source_unchanged=true`.
+
+An earlier attempt at the same gate reported `passed=false` with 84 killed,
+zero survived, and 67 `invalid_test_result` entries. Each carried exit code 106
+with empty `failed_nodes`, which is a runner that could not launch rather than
+a mutation that escaped, and the tree it ran in lost `.venv/pyvenv.cfg` and its
+git worktree registration during the run. A second job had been started against
+that tree while the evaluator held it. Run alone, the evaluator completed
+cleanly and left the tree intact, so the damage was the concurrent job rather
+than the evaluator. The operational rule that follows: nothing else may touch a
+tree while this gate runs against it, because the failure mode is a destroyed
+working tree rather than a slow suite.
+
 ## Acceptance
 
 - [x] The evaluator may run pytest through a workspace virtual environment
