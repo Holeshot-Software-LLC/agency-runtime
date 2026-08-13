@@ -854,6 +854,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d4b64c35` | 2026-08-13 | test(rules): measure that agency never decides to spawn, on every host | null | null |
 | `ebfdeab5` | 2026-08-13 | docs(roadmap): record rule 5 simulation and codex/zcode simulation parity | null | null |
 | `be18a9b0` | 2026-08-13 | test(rules): close the last three simulation gaps | null | null |
+| `f90995c1` | 2026-08-13 | docs(roadmap): record complete simulation parity at candidate be18a9b0 | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
