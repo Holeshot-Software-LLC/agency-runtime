@@ -841,6 +841,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `217fb78f` | 2026-08-13 | fix(evals): observe the Codex identity domain without filename masking | null | null |
 | `fc5749c3` | 2026-08-13 | docs(roadmap): checkpoint the repaired conformance gate and exec census | null | null |
 | `e80cb40c` | 2026-08-13 | fix(hosts)!: never withhold a Hermes or OpenClaw turn for Agency blindness | null | null |
+| `339875f9` | 2026-08-13 | docs(roadmap): checkpoint the Rule-8 repair at candidate e80cb40c | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
