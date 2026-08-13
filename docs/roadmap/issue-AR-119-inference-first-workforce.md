@@ -88,13 +88,14 @@ observed on a prior Claude candidate on 2026-08-11. Three host-authored child
 artifacts contain exact card identities before the child first spoke. None is
 bound to the matrix's exact candidate, so Claude's current installed/live layers
 remain unproven. Codex now has a repaired conditional plaintext source path,
-but its full verification and independent review are pending and its prior-
-candidate live negatives do not establish exact-candidate installed/live state:
+and its full verifier and independent review pass, but authentic host shapes
+remain unsupported and prior-candidate live negatives do not establish exact-
+candidate installed/live state:
 
 | host | children provably staffed | blocker |
 |---|---|---|
 | claude | **0 exact-candidate proofs** (3 prior-candidate, 6 legacy) | exact-candidate install/live canary is absent; Rule 1 and parity remain negative |
-| codex | **0 exact-candidate proofs** (prior-candidate negatives, 11 legacy) | repaired marked-call source awaits full review; exact-candidate install/live canary is absent |
+| codex | **0 exact-candidate proofs** (prior-candidate negatives, 11 legacy) | one-record TUI forks, Desktop alpha, and unobserved exec depth-two/deeper remain unsupported; exact-candidate install/live canary is absent |
 | zcode | not measured | host emits no `SubagentStart`/`SubagentStop` |
 | openclaw | not measured | not installed on the development box |
 | hermes | not measured | not installed on the development box |
@@ -102,8 +103,9 @@ candidate live negatives do not establish exact-candidate installed/live state:
 Codex is the sharp case: the host demonstrably spawns children — eleven legacy
 artifacts prove it — and no prior-candidate measured child carried a card. The
 current adapter leaves encrypted calls untouched and conditionally staffs only
-an authenticated marked call. Candidate verification and exact-candidate
-installed/live state remain unproven. ZCode, Hermes, and OpenClaw are not waived.
+an authenticated marked call. Source verification passes, but compatibility and
+exact-candidate installed/live state remain unproven. ZCode, Hermes, and
+OpenClaw are not waived.
 Hermes and OpenClaw also have a current source-level Rule-8 negative because
 their bridge failure paths withhold the host response when Agency is
 unavailable.
@@ -112,15 +114,16 @@ unavailable.
 
 The audited roster, inference receipts, request-scoped cards, resident managers,
 native lifecycle telemetry, CLI, and dashboard provide a strong base. Runtime
-candidate `2fe5e9ec` removes the current Rule-1 source negative: native child
+candidate `e8b60f64` removes the current Rule-1 source negative: native child
 staffing now preserves one complete inference-selected team or proceeds
 unstaffed. Its sealed in-lifetime Claude collector advances Rule 4 only through
 implementation and simulation. No exact-candidate Installed or Live layer is
-proven, and no top-level matrix cell is green. Candidate `2fe5e9ec` safely
+proven, and no top-level matrix cell is green. Candidate `e8b60f64` safely
 rejects the observed unmarked Sol path, binds observed TUI and exec fork
-ancestry, and rolls final-validation failure back before commit. Codex Rule 4
-source and simulation remain unproven until the full verifier and independent
-reattack pass; install and live proof remain open.
+ancestry, and rolls final-validation failure back before commit. Its full
+112-mutation verifier, named fast spine, and independent reattack pass. Codex
+Rule 4 remains unproven because real host shapes and install/live proof remain
+open.
 
 Tracker issue [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
 mirrors the umbrella state. Repository-local AR-119, AR-256, and their evidence
@@ -3877,10 +3880,10 @@ that marker, however, and the exact active Sol/TUI spawn omitted it too: its
 1,036-character `message` was ciphertext and reached the child as encrypted
 content. This corrects the broad statement that Codex 0.147 has no plaintext
 path while preserving that checkpoint's verdict: candidate `7e1b3603` could not
-authenticate or use it. Later candidate `2fe5e9ec` repairs the source boundary,
-but its full verification and independent reattack remain open and every
-Installed/Live layer remains unproven. No Agency canary, install, or trust change
-occurred.
+authenticate or use it. Candidate `e8b60f64` repairs and adversarially verifies
+the exact-0.147 TUI/exec source boundary, but authentic one-record TUI forks,
+Desktop alpha, unobserved exec depth-two/deeper ancestry, and every Installed/
+Live layer remain unproven. No Agency canary, install, or trust change occurred.
 ADR-0159 now governs the version-pinned transcript authorization; it does not
 replace the host-authored child artifact required for Rule-4 proof.
 
@@ -3915,12 +3918,11 @@ replace the host-authored child artifact required for Rule-4 proof.
 
 ### Next bounded work package
 
-Complete the full verifier, fast production spine, and independent reattack for
-candidate `2fe5e9ec`. After that source gate passes, explicit install/trust/live
-authorization is still required to refresh the exact candidate, obtain one
-current Claude host artifact, and run bounded Codex TUI, Desktop, and exec
-measurements. Then continue AR-252, AR-253, AR-125, and derived Rule 9 in
-dependency order.
+Implement trusted cross-file ancestry for authentic one-record TUI fork prefixes
+and adversarially review it. Then separately pin Desktop alpha; obtain a read-only
+real-host exec depth-two sample, if one is emitted, before defining or reviewing
+that schema. After explicit install/trust/live authorization and current Codex
+and Claude artifacts, continue AR-252, AR-253, AR-125, and derived Rule 9.
 
 ### Context checkpoint constraints
 
@@ -3956,9 +3958,9 @@ candidate.
 - [ ] Rule 4: each native host independently starts a child whose host-authored
       artifact contains multiple compatible card hashes before first speech.
       Claude has three prior-candidate artifacts but is exact-candidate
-      unproven. Codex has conditional host support and a repaired candidate
-      pending full source review, while exact-candidate installed/live remains
-      unproven; ZCode, Hermes, and OpenClaw remain unproven.
+      unproven. Codex has reviewed conditional host support but still lacks full
+      real-shape compatibility and exact-candidate installed/live proof; ZCode,
+      Hermes, and OpenClaw remain unproven.
 - [ ] Rule 8: Agency unavailability supplies no card and never suppresses the
       host's natural response on any host. Only a verifier's definite negative
       and the malformed-`Stop` forgery boundary deliberately withhold.

@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-08-12
+updated: 2026-08-13
 tags: [planning, tracker]
 related:
   - docs/roadmap/AR-119-founding-vision.md
@@ -457,7 +457,7 @@ not stable internal identifiers.
 | [AR-177](issue-AR-177-make-exhaustive-python-ci-manual.md) | `60543e1`; hosted measurement and tracker creation pending authorization | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md), [ADR-0100](../decisions/0100-short-circuit-trusted-docs-only-pull-requests.md), [ADR-0101](../decisions/0101-run-exhaustive-python-verification-on-demand.md) |
 | [AR-178](issue-AR-178-evaluate-one-shot-applications-post-production.md) | `6cb8406`; deferred post-production evaluation | [ADR-0102](../decisions/0102-defer-one-shot-application-evaluation.md) |
 | [AR-179](issue-AR-179-fail-named-regulated-assurance-gaps-closed.md) | `c2ebfc6`, `99b51bd` | [ADR-0103](../decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md) |
-| [AR-180](issue-AR-180-prove-codex-specialist-activation-canary.md) | `cb06c73`, `77ec4f6`, `54d82a9`, `23dd496`, `5d39042`, `9c7a3d3`, `8f4c3b7`, `8fdc186`, `55a03e1`, `29fd9a9`, `64705f1`, `ccb1802c`, `cb5b34aa`, `ae72fba4`, `966845cc`, `81f7d411`, `3a66ee80`, `2fe5e9ec`, `9557521e`, `e8b60f64`; exact 0.147 ancestry and transactional retry repair checkpointed; full verification and live proof pending | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md), [ADR-0104](../decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md), [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| [AR-180](issue-AR-180-prove-codex-specialist-activation-canary.md) | `cb06c73`, `77ec4f6`, `54d82a9`, `23dd496`, `5d39042`, `9c7a3d3`, `8f4c3b7`, `8fdc186`, `55a03e1`, `29fd9a9`, `64705f1`, `ccb1802c`, `cb5b34aa`, `ae72fba4`, `966845cc`, `81f7d411`, `3a66ee80`, `2fe5e9ec`, `9557521e`, `e8b60f64`; full exact-0.147 source verification and reattack pass; real-shape compatibility and installed/live proof remain open | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md), [ADR-0104](../decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md), [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
 | [AR-181](issue-AR-181-bound-all-host-smoke-launcher-preparation.md) | `c625bc7`; exact fresh-wheel recheck and tracker creation pending authorization | None; bounded smoke optimization preserves existing launcher trust contracts |
 | [AR-182](issue-AR-182-bind-codex-hook-trust-inventory.md) | `4e39d4c`; tracker creation pending authorization | None; exact generated inventory ownership only |
 | [AR-183](issue-AR-183-normalize-private-posix-wheel-modes.md) | `d07f4d8`; restrictive-umask Linux and merged-set proof pending; tracker creation pending authorization | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
@@ -525,9 +525,9 @@ not stable internal identifiers.
 | [AR-252](issue-AR-252-record-verified-acceptance-outcomes.md) | `64705f1`; planning only; host-evidenced, independently verified automatic-promotion path is open and blocks AR-119 | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0157](../decisions/0157-automatically-promote-host-verified-contractors.md) |
 | [AR-253](issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | `64705f1`; planning only; multi-card staffing, latency, accepted-outcome, promotion, and five-host parity proof is open and blocks AR-119 | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0132](../decisions/0132-fund-one-repair-per-workforce-inference-stage.md), [ADR-0153](../decisions/0153-adopt-per-stage-inference-profile-routes.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0157](../decisions/0157-automatically-promote-host-verified-contractors.md) |
 | [AR-254](issue-AR-254-reconcile-canonical-worklog-history.md) | `d1f8ed2`, `b980e60`, `a78653c`, `a45422d`, `1c03a40`, `9ac9d29`; canonical index, exact historical exceptions, clone-independent IDs, platform-independent UTF-8 subjects, and hosted aggregate verification complete | None |
-| [AR-255](issue-AR-255-inference-owned-host-proven-child-staffing.md) | `7e1b360`, `7f637cb`, `ccb1802c`, `966845cc`, `81f7d411`, `3a66ee80`, `2fe5e9ec`, `9557521e`, `e8b60f64`; inference-owned staffing, sealed Claude proof, and repaired Codex provenance transaction recorded; full verification and installed/live proof remain open | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0158](../decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md), [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| [AR-255](issue-AR-255-inference-owned-host-proven-child-staffing.md) | `7e1b360`, `7f637cb`, `ccb1802c`, `966845cc`, `81f7d411`, `3a66ee80`, `2fe5e9ec`, `9557521e`, `e8b60f64`; inference-owned staffing, sealed Claude proof, and reviewed Codex provenance transaction recorded; real-shape compatibility and installed/live proof remain open | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0158](../decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md), [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
 | [AR-256](issue-AR-256-canonical-nine-rule-completion-contract.md) | `64705f1`, `b2e728b1`, `4acd4951`; canonical matrix, status reconciliation, verifier enforcement, and recovery checkpoint complete | [ADR-0025](../decisions/0025-self-contained-linked-documentation.md), [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0157](../decisions/0157-automatically-promote-host-verified-contractors.md) |
-| [AR-257](issue-AR-257-separate-decision-conformance-fixture-launcher.md) | `b2e728b1`, `4acd4951`; final independent runner/fixture API baseline passed, 83/83 curated mutations killed, zero survived/invalid, `source_unchanged=true` | [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
+| [AR-257](issue-AR-257-separate-decision-conformance-fixture-launcher.md) | `b2e728b1`, `4acd4951`, `e8b60f64`; current independent baseline passed, 112/112 curated mutations killed, zero survived/invalid, `source_unchanged=true` | [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
@@ -612,9 +612,9 @@ not stable internal identifiers.
 - Historical product trials and isolated canaries remain prior-candidate
   evidence, not current nine-rule completion. The authoritative AR-119 matrix
   records Claude Rule 4 exact-candidate installed/live state as unproven despite
-  three historical host artifacts. Codex Rule 4 has a repaired source candidate
-  pending full verification and independent review; prior TUI/Desktop/exec
-  observations do not establish exact-candidate installed/live state.
+  three historical host artifacts. Codex's reviewed source candidate still lacks
+  real-shape compatibility and exact-candidate installed/live proof; prior
+  TUI/Desktop/exec observations cannot fill either gap.
   ZCode/Hermes/OpenClaw remain unproven, and parity is incomplete. No host's
   result substitutes for another's.
 

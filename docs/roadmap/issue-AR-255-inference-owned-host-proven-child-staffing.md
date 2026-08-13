@@ -59,11 +59,12 @@ replays cannot mint that capability.
 Implementation and simulation are proven, not installed or live behavior. The
 SafeClaude integration uses a test-managed install and fake process runner.
 Claude's three prior-candidate artifacts remain historical context only.
-Candidate `2fe5e9ec` correctly leaves the active unmarked Sol/TUI call unstaffed,
+Candidate `e8b60f64` correctly leaves the active unmarked Sol/TUI call unstaffed,
 binds separate root and thread identities for observed exact-0.147 TUI and exec
 ancestry, and rolls final-validation failure back before route commit. Focused
-tests pass; AR-180 still owns the full verifier and independent reattack before
-exact-install and live proof.
+tests, the full verifier, fast spine, and independent reattack pass. AR-180 still
+owns authentic one-record TUI and Desktop-alpha support; exec depth-two/deeper is
+unobserved and must remain fail open before exact-install and live proof.
 
 ## Approach
 
@@ -119,7 +120,12 @@ ADR-0159 governs this authorization boundary and its fail-open behavior.
   identity and one evidence-integrity defect in post-persistence drift cleanup.
   Repair `2fe5e9ec` and ledger `9eb6c683` address both with exact TUI/exec
   ancestry and transactional rollback. Its focused 206-test slice, Ruff, format,
-  and whitespace checks pass; full verification and reattack remain open.
+  and whitespace checks pass.
+- Hardening `e8b60f64` and ledger `4026ddd6` close the subsequent exact-schema,
+  duplicate-identity, Store-projection, retry, and cleanup findings. The current
+  342-test focused slice, 112/112 mutation run, 673-test fast spine with 6 skips,
+  134 dashboard tests, routing gates, and independent review pass. Installed and
+  Live layers remain unproven.
 
 ## Acceptance
 

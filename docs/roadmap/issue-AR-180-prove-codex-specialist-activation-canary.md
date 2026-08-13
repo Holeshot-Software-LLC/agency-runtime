@@ -50,9 +50,13 @@ blocks: [AR-119, AR-252, AR-253]
 > proof. The exact-host preflight below found that Codex 0.147 has a conditional
 > host-marked plaintext assignment path, while the current Sol/TUI call remained
 > encrypted and the hook payload omitted that marker. AR-180 authenticates and
-> uses the supported path, then exact-installs and live-proves one real child on
-> TUI, Desktop, and exec. Only the Approach and Acceptance sections as amended
-> below govern closure.
+> uses exact-`0.147.0` TUI root/depth-one/depth-two and exec root/depth-one
+> shapes. Exec depth-two/deeper is unobserved and unsupported pending a real-host
+> sample. Desktop runtime
+> `0.147.0-alpha.6.6` has a materially different lineage and remains unsupported
+> until its schema and ancestry receive a separate exact pin; it cannot enter a
+> live proof by broadening the CLI pin. Only the Approach and Acceptance sections
+> as amended below govern closure.
 
 ## Problem
 
@@ -249,16 +253,24 @@ The documented `PreToolUse` payload supplies `transcript_path`, `turn_id`,
 `tool_use_id`, and parsed `tool_input`, and it permits `updatedInput` rewrites.
 It does not expose the plaintext marker or internal tool-call source, and the
 documented transcript format is explicitly unstable. A plaintext-looking
-`tool_input.message` therefore has no authority by itself. Candidate `2fe5e9ec`
+`tool_input.message` therefore has no authority by itself. Candidate `e8b60f64`
 implements a bounded exact-0.147 scanner, sealed exact-record attestation,
-separate shared-session and thread identity for observed TUI and exec ancestry,
-and atomic replay/final-validation rollback. Missing, ambiguous, completed,
-malformed, oversized, linked, unmarked, drifted, or unsupported deeper ancestry
-remains unstaffed. Focused real-shape and retry tests pass, including the current
-unmarked transcript control. Source and simulation remain conservatively
-unproven until the full verifier and independent reattack pass; exact installation
-and host child artifacts remain later gates before a live Rule-4 measurement.
+separate shared-session and thread identity for observed in-file TUI root,
+depth-one, and depth-two plus exec root and depth-one ancestry, and atomic replay/
+final-validation rollback. Missing, ambiguous, completed, malformed, oversized,
+linked, unmarked, drifted, one-record fork, or unsupported ancestry remains
+unstaffed. One-record TUI forks are authentic 0.147 host shapes but need a trusted
+cross-file parent/root verifier before support. Exec depth-two/deeper is
+unobserved and fails open until a real-host sample can define its exact schema.
+Focused real-shape and retry tests pass, including the current
+unmarked transcript control. The full 112-mutation verifier, named fast spine,
+and exact-current adversarial review pass. Source and simulation remain
+conservatively unproven because authentic host shapes are still unsupported;
+exact installation and host child artifacts remain later gates.
 ADR-0159 keeps rewrite authorization separate from delivery-proof authority.
+Desktop `0.147.0-alpha.6.6` is deliberately outside that exact CLI pin: its
+observed legacy history and `Codex Desktop` lineage require a separate bounded
+schema/ancestry authority before any Desktop install or live artifact can count.
 
 ## Approach
 
@@ -296,14 +308,20 @@ instead of weakening the evidence gate.
 - [x] A read-only exact-host preflight inventories the active TUI/exec and
       Desktop runtimes, distinguishes conditional host support from the active
       encrypted path, and advances no Installed or Live claim.
-- [ ] Exact-version source authentication binds root and nested-child rollout
-      ancestry, exact call provenance, and retry-safe final validation; every
-      unsupported or drifted path fails open without a successful Store row.
+- [x] Exact-version source authentication binds the supported fully materialized
+      TUI root/depth-one/depth-two and exec root/depth-one shapes, exact call
+      provenance, and retry-safe final validation; every unsupported or drifted
+      path fails open without a successful Store row.
 - [ ] Current-profile Codex exposes and invokes the supported native child tool
   through attended trust or the explicit autonomous bypass, without shell
   access, file writes, or external services.
-- [ ] TUI, Desktop, and exec each produce a host-written child artifact bound to
-      the exact parent, child, install, inference decision, and card hashes.
+- [ ] Supported TUI and exec shapes each produce a host-written child artifact
+      bound to the exact parent, child, install, inference decision, and card
+      hashes.
+- [ ] Desktop's `0.147.0-alpha.6.6` schema and ancestry are separately observed,
+      exactly pinned, and adversarially reviewed before Desktop produces the
+      equivalent host-written child artifact; widening the CLI version predicate
+      alone cannot satisfy this gate.
 - [ ] The expected specialist cards appear before the child's first speech and
       only in the child context; Store rows and response prose cannot pass.
 - [ ] At least one Codex child receives two or more compatible cards selected by

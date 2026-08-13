@@ -26,7 +26,7 @@ superseded_by: null
 type: roadmap
 ar119_authority: completion-evidence
 vision_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
-candidate_commit: 2fe5e9ecf34011b03597efc7b0d2c59fc80c9fea
+candidate_commit: e8b60f64b24968496f88a25d9935f4cfd77f3fe9
 evidence_cutoff: 2026-08-13
 ---
 
@@ -47,19 +47,25 @@ candidate context but cannot make a current installed/live layer green or red.
 Although the schema reserves `not-applicable`, none of the nine rules is
 optional on a supported host.
 
-Candidate `2fe5e9ec` retains AR-255 native-child inference authority and
+Candidate `e8b60f64` retains AR-255 native-child inference authority and
 Claude's in-lifetime collector. Its exact-0.147 Codex attestor separates root
 session and thread identity across observed TUI and exec ancestry, and final
 validation now rolls the route back transactionally. It is not an installed or
 live host artifact. Every Installed and Live layer therefore remains unproven.
 
+The in-file attestor accepts only root or exact two-record fork ancestry.
+Authentic one-record TUI forks fail open until their parent/root records can be
+resolved, sealed, and revalidated across trusted canonical rollout files. This
+known compatibility gap is one reason Codex Rule 4 remains unproven.
+
 The 2026-08-12 AR-180 preflight found a conditional host-marked plaintext path
 in Codex 0.147, but the current Sol/TUI spawn omitted its explicit marker and
-delivered ciphertext. Candidate `2fe5e9ec` repairs the two review findings and
-passes focused real-shape and rollback tests, while unmarked calls remain
-unstaffed. Codex R4 Implementation and Simulation stay conservatively unproven
-until the full verifier and independent reattack pass. No Installed or Live
-layer advances.
+delivered ciphertext. Candidate `e8b60f64` passes the full 112-mutation verifier,
+named fast spine, real-shape and rollback tests, and independent adversarial
+review while unmarked calls remain unstaffed. Codex R4 Implementation and
+Simulation stay conservatively unproven because authentic one-record TUI forks,
+Desktop alpha, and unobserved exec depth-two or deeper ancestry remain
+unsupported. No Installed or Live layer advances.
 
 ## Canonical matrix
 
@@ -81,7 +87,7 @@ layer advances.
 | R3 | hermes | unproven | unproven | unproven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Multi-card behavior is unmeasured |
 | R3 | openclaw | unproven | unproven | unproven | unproven | unproven | Native host artifact with multiple compatible card hashes before speech | none | unobserved | `docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md` | Multi-card behavior is unmeasured |
 | R4 | claude | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | in-lifetime SafeClaude collector with real HookBridge lifecycle | 2026-08-12 | `tests/test_host_canary.py:805-1055` | Test-managed install and fake process runner are simulation only; prior-candidate live artifacts do not green this candidate |
-| R4 | codex | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | repaired TUI/exec ancestry and transactional rollback candidate pending full verification | 2026-08-13 | `tests/test_codex_spawn_provenance.py`, `tests/test_native_child_duplicate_launch.py` | Focused source simulations pass; full verifier, independent reattack, and host artifact remain open |
+| R4 | codex | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | reviewed exact-0.147 TUI/exec ancestry and transactional rollback candidate | 2026-08-13 | `tests/test_codex_spawn_provenance.py`, `tests/test_native_child_duplicate_launch.py` | Full source gates pass, but authentic one-record TUI forks, Desktop alpha, unobserved exec depth-two/deeper, and exact-candidate host artifacts remain open |
 | R4 | zcode | unproven | proven | proven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | exact inference team reaches the ZCode child boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` | Simulation exists but no exact-candidate native child artifact |
 | R4 | hermes | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | none | unobserved | `docs/roadmap/issue-AR-119-inference-first-workforce.md#historical-acceptance-record-superseded` | Host is unavailable on the evidence machine |
 | R4 | openclaw | unproven | unproven | unproven | unproven | unproven | Correlated native child artifact with exact card hashes before first speech | none | unobserved | `docs/roadmap/issue-AR-119-inference-first-workforce.md#historical-acceptance-record-superseded` | Host is unavailable on the evidence machine |
@@ -100,16 +106,16 @@ layer advances.
 | R7 | zcode | unproven | unproven | unproven | unproven | unproven | Same identity observed in one turn and absent from the next turn | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | No current two-turn non-carryover artifact |
 | R7 | hermes | unproven | unproven | unproven | unproven | unproven | Same identity observed in one turn and absent from the next turn | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | No current two-turn non-carryover artifact |
 | R7 | openclaw | unproven | unproven | unproven | unproven | unproven | Same identity observed in one turn and absent from the next turn | none | unobserved | `docs/roadmap/AR-119-founding-vision.md` | No current two-turn non-carryover artifact |
-| R8 | claude | unproven | proven | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | no Claude-scoped prompt-preflight simulation | 2026-08-12 | `agency_runtime/adapters/hooks.py:932-951` | Implementation fails open, but the cited prompt-preflight test covers only Codex and ZCode and no native publication proof exists |
+| R8 | claude | unproven | proven | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | no Claude-scoped prompt-preflight simulation | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` | Implementation fails open, but the cited prompt-preflight test covers only Codex and ZCode and no native publication proof exists |
 | R8 | codex | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[codex]` | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` | Contract output cannot prove native host publication |
 | R8 | zcode | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[zcode]` | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` | No live host publication artifact |
 | R8 | hermes | negative | negative | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | bridge exception path replaces output with block response | 2026-08-12 | `agency_runtime/adapters/hermes/bridge.py:269-318` | Current source withholds when Agency is unavailable; no separate simulation proof is claimed |
 | R8 | openclaw | negative | negative | unproven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | bridge failure cancels host output | 2026-08-12 | `agency_runtime/adapters/openclaw/node_bridge.py:790-903` | Current source withholds when Agency is unavailable; no separate simulation proof is claimed |
-| R9 | claude | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 7e1b3603 | 2026-08-12 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but multiple rules and every installed/live layer remain unproven |
-| R9 | codex | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 2fe5e9ec | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 4 verification and installed/live parity remain unproven |
-| R9 | zcode | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 7e1b3603 | 2026-08-12 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but missing rule and live evidence prevents parity |
-| R9 | hermes | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 7e1b3603 | 2026-08-12 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
-| R9 | openclaw | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate 7e1b3603 | 2026-08-12 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
+| R9 | claude | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate e8b60f64 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but multiple rules and every installed/live layer remain unproven |
+| R9 | codex | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate e8b60f64 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 4 compatibility and installed/live parity remain unproven |
+| R9 | zcode | unproven | unproven | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate e8b60f64 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule-1 source and simulation are repaired, but missing rule and live evidence prevents parity |
+| R9 | hermes | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate e8b60f64 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
+| R9 | openclaw | negative | negative | unproven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | this matrix at candidate e8b60f64 | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Rule 8 source is negative and simulation/live evidence is incomplete |
 
 ## Layer evidence
 
@@ -139,9 +145,9 @@ satisfy a layer.
 | R6 | zcode | Implementation | proven | source | inference gap hiring, critic audit, enablement, and activation path | 2026-08-12 | `agency_runtime/core/workforce/hiring.py:1863-1940` |
 | R6 | hermes | Implementation | proven | source | inference gap hiring, critic audit, enablement, and activation path | 2026-08-12 | `agency_runtime/core/workforce/hiring.py:1863-1940` |
 | R6 | openclaw | Implementation | proven | source | inference gap hiring, critic audit, enablement, and activation path | 2026-08-12 | `agency_runtime/core/workforce/hiring.py:1863-1940` |
-| R8 | claude | Implementation | proven | source | fail-open unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:932-951` |
-| R8 | codex | Implementation | proven | source | fail-open unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:932-951` |
-| R8 | zcode | Implementation | proven | source | fail-open unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:932-951` |
+| R8 | claude | Implementation | proven | source | fail-open unavailable prompt and unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` |
+| R8 | codex | Implementation | proven | source | fail-open unavailable prompt and unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` |
+| R8 | zcode | Implementation | proven | source | fail-open unavailable prompt and unstaffed-child boundary | 2026-08-12 | `agency_runtime/adapters/hooks.py:257-293` |
 | R8 | codex | Simulation | proven | test | unavailable preflight publishes the host prompt | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` |
 | R8 | zcode | Simulation | proven | test | unavailable preflight publishes the host prompt | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` |
 | R8 | hermes | Implementation | negative | source | bridge exception replaces output with a blocking response | 2026-08-12 | `agency_runtime/adapters/hermes/bridge.py:269-318` |
@@ -150,7 +156,7 @@ satisfy a layer.
 ## Cross-cutting completion gates
 
 - **Inference authority:** implementation and simulation are proven on all five
-  host adapters at `2fe5e9ec`; installed and live card-hash joins remain
+  host adapters at `e8b60f64`; installed and live card-hash joins remain
   unproven everywhere.
 - **Automatic contractor promotion:** implementation and simulation exist, but
   installed and live proof is unproven on all five hosts. AR-252 remains P0 and

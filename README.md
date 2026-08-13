@@ -94,11 +94,10 @@ with the request, so your main agent stays small.
 > Agency Runtime is prerelease software. Install it from this repository; no
 > public package release is claimed yet.
 
-> **Nine-rule completion is not claimed.** The current matrix records Rule 1
-> negative on Claude, Codex, and ZCode because the JIT path can still alter the
-> inference choice; Rule 8 source-negative on Hermes and OpenClaw; and the
-> mixed Rule-4 state shown below. AR-255 and the other P0 matrix repairs must
-> land before these intended behaviors become a cross-host product claim.
+> **Nine-rule completion is not claimed.** Rule 1 source and simulation are
+> repaired across all five adapters, but Rule 8 remains source-negative on
+> Hermes and OpenClaw and Rule 4 retains the host-evidence and compatibility gaps
+> shown below. The canonical matrix remains the only completion authority.
 
 ---
 
@@ -193,7 +192,7 @@ flowchart LR
 
 | Host | Integration | Host-native child primitive | Rule-4 exact-candidate state |
 |---|---|---|---|
-| **Codex** | Hooks + MCP + controls | `spawn_agent` | **negative in source, installed/live unproven**: the current adapter cannot carry cards through the encrypted context channel; prior-candidate TUI, Desktop, and exec children received no card |
+| **Codex** | Hooks + MCP + controls | `spawn_agent` | **unproven**: exact-0.147 TUI/exec source verification passes for fully materialized ancestry, but one-record TUI forks, Desktop alpha, unobserved exec depth-two/deeper, and exact-candidate installed/live artifacts remain open |
 | **Claude Code** | Hooks + MCP + controls | `Agent` | **unproven**: three host-authored prior-candidate artifacts contain cards before speech, but none binds the exact candidate |
 | **ZCode** | Hooks + controls | `Agent` (Claude-like) | **unproven** |
 | **Hermes** | Python plugin + MCP | `delegate_task` | **unproven** |

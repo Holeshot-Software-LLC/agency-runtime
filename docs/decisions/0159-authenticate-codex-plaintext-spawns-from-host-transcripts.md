@@ -61,11 +61,17 @@ truncation, oversized input, duplicate keys, and unstable descriptor/path
 identity. A purpose-built bounded streaming scanner must support observed large
 rollout lines without loading the transcript as one object.
 
-The transcript filename supplies the concrete thread identity while the hook's
-session ID supplies the shared root identity. The exact 0.147 ancestry prefix
-must match an observed TUI or exec root, depth-one, or TUI depth-two shape; every
-metadata record is sealed and later revalidated. Unsupported deeper ancestry
-fails open. Exactly one `response_item.function_call` must use namespace
+The transcript filename supplies the concrete UUIDv7 thread identity while the
+hook's session ID supplies the shared UUIDv7 root identity. The canonical path
+uses padded date components, and turn IDs accept only the observed non-nil RFC
+UUIDv4/UUIDv7 domain. The exact 0.147 ancestry prefix must be fully materialized
+in the same rollout: one root record, or two leading records for an observed TUI
+or exec depth-one fork or TUI depth-two fork. Every accepted metadata record is
+sealed and later revalidated. Authentic one-record TUI fork prefixes currently
+fail open because their parent/root records live in other rollouts; supporting
+them requires trusted cross-file ancestry lookup and sealing. Unsupported
+single-record forks and deeper ancestry fail open. Exactly one
+`response_item.function_call` must use namespace
 `collaboration`, name `spawn_agent`, the hook's turn and call IDs, arguments
 exactly equal to the complete hook input, and `encrypted_function_args` present
 as exactly an empty list. Null, missing, nonempty, ambiguous, stale, completed,
@@ -91,7 +97,8 @@ claims additionally bind the exact Codex executable and Agency candidate.
 - A marked plaintext call can use the existing inference-owned multi-card
   staffing path without trusting a model-authored label or message.
 - Codex transcript or version drift becomes an explicit compatibility failure
-  and requires a reviewed capability update.
+  and requires a reviewed capability update. This includes observed one-record
+  fork prefixes until cross-file ancestry is authenticated.
 - The new scanner and one-use transaction need focused spoof, replay, path,
   schema, size, concurrency, and TOCTOU tests before installation.
 - Source and simulation can advance independently; neither changes an Installed
@@ -122,5 +129,9 @@ Candidate `966845cc` first implemented this boundary; adversarial review found
 incomplete nested-thread ancestry and a post-persistence final-validation gap.
 Repair `2fe5e9ec` separates root and thread identity across observed TUI/exec
 lineages, seals each ancestry record, and moves final validation before commit.
-Focused verification passes; full verification and independent reattack remain
-open. Installed and Live proof remains unproven.
+Hardening `e8b60f64` pins the exact inner and outer response schema, canonical
+paths and UUID domains, duplicate item identity, exact persisted success
+projection, and retry-safe post-commit cleanup. Its 112-mutation verifier, named
+fast spine, and independent adversarial review pass. Authentic one-record TUI
+forks, Desktop alpha, unobserved exec depth-two/deeper ancestry, and all
+Installed and Live proof remain unproven.

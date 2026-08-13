@@ -577,11 +577,11 @@ set must reject executable and disguised PE payloads in both profiles.
 
 AR-119's canonical matrix currently records Claude Rule 4 as exact-candidate
 unproven despite three prior-candidate live artifacts. Codex has a repaired
-conditional plaintext source candidate pending full verification and independent
-review, while encrypted calls remain unstaffed and prior-candidate TUI, Desktop,
-and exec observations do not establish exact-candidate installed/live state.
-ZCode, Hermes, and OpenClaw remain unproven. That evidence is not release-ready. AR-119 and
-AR-125 also still
+conditional plaintext source candidate whose full local verifier and independent
+review pass, while encrypted calls remain unstaffed. Authentic one-record TUI
+forks, Desktop alpha, unobserved exec depth-two/deeper, and exact-candidate
+installed/live state remain unproven. ZCode, Hermes, and OpenClaw remain
+unproven. That evidence is not release-ready. AR-119 and AR-125 also still
 require a benchmark-valid completed outcome corpus and current-artifact host/OS
 evidence. The automatic three-success/seven-day contractor path remains dormant
 without host-backed accepted outcomes and is on the release critical path.

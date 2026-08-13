@@ -77,11 +77,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
-- Codex 0.147 plaintext collaboration support is being hardened behind a sealed
-  exact-call host-rollout attestation. The repair binds observed TUI and exec
-  fork ancestry and rolls final-validation failure back before route commit;
-  full verification and independent review remain open. No Installed or Live
-  Codex support is claimed yet.
+- Codex 0.147 plaintext collaboration support is now guarded by a sealed
+  exact-call host-rollout attestation, exact response schema, atomic replay
+  protection, and retry-safe transactional validation. The 112-mutation gate,
+  fast production spine, and independent adversarial review pass. Authentic
+  one-record TUI forks, Desktop alpha, unobserved exec depth-two/deeper, and all
+  Installed or Live Codex proof remain unsupported or unproven.
 - Codex product child diagnostics now classify nested `apply_patch`,
   `shell_command`, and other calls inside current `functions.exec` wrappers,
   plus fixed wrapper outcomes. The Store persists only bounded counts, keeps
