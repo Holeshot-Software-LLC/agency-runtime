@@ -504,7 +504,14 @@ def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
     assert "source=session" in pipeline.build_routing_context(
         {**low_confidence, "session_reused": True}, cfg
     )
-    opportunity = pipeline.build_routing_context(
+    # Rules 5 and 8: Agency never nudges the host toward spawning. A request
+    # that decomposes gets exactly the same abstention as one that does not,
+    # so `work_units` stays declared here on purpose -- the point is that it
+    # changes nothing. The `[DELEGATION OPPORTUNITY]` banner this once asserted
+    # was deleted with the work-unit planner in `fb34191f`; `build_routing_context`
+    # records the deletion in a comment, and the resident-steward kernel tells
+    # the caller the same thing every turn.
+    decomposable = pipeline.build_routing_context(
         {
             "selected_ids": [],
             "confidence": 0.0,
@@ -513,8 +520,9 @@ def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
         },
         cfg,
     )
-    assert "[DELEGATION OPPORTUNITY]" in opportunity
-    assert "Detected work units:" not in opportunity
+    assert "[AGENCY PREFLIGHT] No high-confidence specialist match found" in decomposable
+    assert "DELEGATION" not in decomposable
+    assert "Detected work units:" not in decomposable
     trivial_routing = pipeline.route(
         "session",
         "ok",
@@ -526,8 +534,13 @@ def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
         turn_state={"state_known": True},
     )
     trivial_context = pipeline.build_routing_context(trivial_routing, cfg)
-    assert "agency-steward" in trivial_context
     assert "source=policy_fallback" in trivial_context
+    assert "agents-orchestrator, chief-of-staff" in trivial_context
+    # The resident steward is not a specialist and is never named here. It
+    # reaches the caller as the kernel that preflight prepends, and
+    # `_selected_prompts` filters resident-manager slugs out of selection, so a
+    # steward appearing in a routing *suggestion* would be the bug.
+    assert "agency-steward" not in trivial_context
 
 
 @pytest.mark.parametrize(
