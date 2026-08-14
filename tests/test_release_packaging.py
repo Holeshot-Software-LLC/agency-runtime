@@ -846,13 +846,10 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     # Derive the expectation from the matrix rather than pinning a second copy
     # of the list.  A citation added to the matrix and not to CI fails here,
     # which is the drift that let R4 claude stay red behind a green pipeline.
-    matrix_text = (
-        Path("docs/roadmap/AR-119-rule-host-evidence-matrix.md")
-        .read_text(encoding="utf-8")
+    matrix_text = Path("docs/roadmap/AR-119-rule-host-evidence-matrix.md").read_text(
+        encoding="utf-8"
     )
-    cited = sorted(
-        set(re.findall(r"`(tests/test_[a-z0-9_]+\.py)(?::\d+-\d+)?`", matrix_text))
-    )
+    cited = sorted(set(re.findall(r"`(tests/test_[a-z0-9_]+\.py)(?::\d+-\d+)?`", matrix_text)))
     assert cited, "the matrix cites no test files; the citation pattern moved"
     assert sorted(re.findall(r"tests/test_[a-z0-9_]+\.py", matrix_evidence["run"])) == cited
 
