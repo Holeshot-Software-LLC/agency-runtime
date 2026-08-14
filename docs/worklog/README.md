@@ -881,6 +881,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1fe68701` | 2026-08-14 | feat(evals): measure staffing rate, recruiter cost, and the cold budget | null | null |
 | `9ade8261` | 2026-08-14 | fix(security)!: require integrity, not secrecy, of files hosts wrote | null | null |
 | `1e8552a7` | 2026-08-14 | docs(ar119): record the Linux parity gap under Rule 4 and rebind | null | null |
+| `9e29aabe` | 2026-08-14 | feat(workforce)!: count only host-evidenced acceptances toward promotion | null | null |
+| `63f60171` | 2026-08-14 | docs(ar119): bind the acceptance core to 9e29aabe and run its evidence in CI | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
