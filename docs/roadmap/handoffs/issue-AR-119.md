@@ -51,22 +51,18 @@ must be loaded first after any compaction or session restart.
   globally on at generation 56. Hooks reload only in a fresh session.
 - Conformance carries forward from `9724820e`; the `a25ec350` workstation run
   was 151/151. CI's quality job runs 7m33s without the matrix step, 10m35s with.
-- **CI now runs every matrix-cited test file** (step "Run AR-119 matrix
-  evidence"), and `test_release_packaging.py` derives that list from the matrix,
-  so a new citation must be added to CI in the same commit or the contract
-  fails. It caught a Linux-only Rule 4 gap on its first run.
-- **`eval decision-conformance` cannot run its mutation phase on this
-  workstation** — pytest lives in user site-packages and the sandbox redirects
-  `HOME`, so the baseline dies in 58 ms with "No module named pytest". It fails
-  identically on clean `main`. Run `baseline.test_nodes` with ordinary pytest
-  instead, and say that it proves the baseline, not the mutations.
+- **CI runs every matrix-cited test file** ("Run AR-119 matrix evidence"), and
+  `test_release_packaging.py` derives that list from the matrix, so a new
+  citation must join CI in the same commit or the contract fails.
+- **`eval decision-conformance` cannot run its mutation phase here** — pytest is
+  in user site-packages and the sandbox redirects `HOME`, so the baseline dies in
+  58 ms. Identical on clean `main`. Run `baseline.test_nodes` with ordinary
+  pytest; that proves the baseline, not the mutations.
 - ADR-0159 binds exact CLI 0.147 and a pinned Desktop alpha to a sealed v3
-  attestation; Sol/TUI and all 65 Desktop calls omit the marker, so go unstaffed.
-- AR-255 is open: exact-candidate Claude Installed/Live proof remains open.
-- No top-level cell is proven: every Installed/Live layer is unproven, so source
-  and simulation progress never promotes a cell on its own.
-- Tracker creation for AR-255 through AR-258 and tracker sync for locally
-  reopened issues remain pending authorization. Conformance history is in
+  attestation; Sol/TUI and 65 Desktop calls omit the marker, so go unstaffed.
+- No cell is proven: every Installed/Live layer is unproven, so source and
+  simulation progress never promotes a cell on its own. AR-255 stays open.
+- Tracker creation/sync stays pending authorization. Conformance history is in
   AR-257; exec depth-two is parked per AR-180.
 
 ## completed-evidence
@@ -74,14 +70,11 @@ must be loaded first after any compaction or session restart.
 - `AR-119-founding-vision.md` is the sole wording authority and the matrix the
   sole completion authority; neither implementation nor simulation is host proof.
 - AR-255 uses complete-universe inference, exact ordered multi-card v6 delivery,
-  install/config/roster fences, fail-open diagnostics, and sealed one-use
-  delivery proof. Store-only state and caller mappings are diagnostic.
-- SafeClaude retains its in-lifetime collector. Codex candidate `211563c7`
-  preserves the exact CLI 0.147 profiles and adds a sealed Desktop
-  `0.147.0-alpha.6.6` profile accepting one exact root and 13 observed V2 child
-  tuples. Disabled guardians and exec depth-two/deeper remain unsupported. The
-  census, chain probe, and verification runs are recorded in AR-180 and the
-  matrix; do not re-derive them here.
+  install/config/roster fences, and sealed one-use delivery proof.
+- SafeClaude retains its in-lifetime collector. Codex `211563c7` preserves the
+  exact CLI 0.147 profiles and adds a sealed Desktop `0.147.0-alpha.6.6` profile;
+  exec depth-two/deeper stays unsupported. Census and verification runs are in
+  AR-180 and the matrix; do not re-derive them here.
 - Claude's earlier Rule-4 artifacts and Codex's prior negatives remain
   prior-candidate context. No exact-candidate Installed/Live proof ran.
 
@@ -90,21 +83,16 @@ must be loaded first after any compaction or session restart.
 1. **AR-180 — Codex support.** `211563c7` proves exact CLI 0.147 and Desktop
    `0.147.0-alpha.6.6` Impl/Sim. Exec depth-two is parked: no same-version
    sample, so it needs a live spawn or a drop.
-2. **AR-255 — exact host proof.** After those support gaps close, obtain explicit
-   authorization before exact install or live proof, including one current
-   Claude artifact. Passing fake-runner integration is simulation only.
+2. **AR-255 — exact host proof.** Obtain explicit authorization before exact
+   install or live proof. Fake-runner integration is simulation only.
 3. **AR-252 — automatic contractor critical path.** The host-free half is built
-   and its five acceptance items are checked: `workforce/acceptance.py` decides
-   what counts, `record_accepted_outcome` records it and promotes atomically,
-   and readiness was migrated off work units and consumed receipts. **Nothing
-   yet collects a real envelope** — every producer and verifier proof in that
-   evidence is constructed by the test. The remaining work is the collector that
-   pairs one producer proof, one distinct verifier proof, and that verifier's
-   verdict, then live proof on Claude and Codex.
-4. **AR-253 — staffing rate, latency, and parity.** Add the fixed staffing eval,
-   separate the successful recruiter call from bounded repair attempts, restore
-   the 15-second cold gate, and obtain exact-candidate evidence on all five
-   supported hosts.
+   and its five acceptance items are checked. **Nothing yet collects a real
+   envelope** — every producer and verifier proof is constructed by the test.
+   What remains is the collector pairing one producer proof, one distinct
+   verifier proof, and that verdict, then live proof on Claude and Codex.
+4. **AR-253 — staffing rate, latency, and parity.** The overrun is the recruiter
+   (50-85 s inference; the 9 s process floor is not the lever). Obtain
+   exact-candidate evidence on all five hosts against the 15-second cold gate.
 5. **AR-125 — value.** Run the matched Agency-on/off corpus only after candidate
    and provider validity hold. Malformed or timed-out arms are invalid, never
    upstream losses.
@@ -122,12 +110,10 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-**Implementation and Simulation are both 45/45 since `e216670a`, and the
-cross-cutting promotion gate now has its host-free half.** R5 Implementation
-closed on a separation rather than an absence: process-capable and
-worker-creating modules are disjoint (21 and 5, overlap 0), worker origin is
-confined to the host boundaries, and every process module declares a tool
-purpose (`agency eval spawn-authority`). AR-252's acceptance rule, recorder, and
+**Implementation and Simulation are both 45/45; Installed and Live are both
+0/45, so every one of the 45 cells still reads `unproven`.** R5 Implementation
+closed on a separation: process-capable and worker-creating modules are disjoint
+(`agency eval spawn-authority`). AR-252's acceptance rule, recorder, and
 readiness migration followed.
 
 **What remains needs a real host: the 45 Installed and 45 Live layers, and
@@ -135,6 +121,20 @@ AR-252's envelope collector.** Claude and zcode are ready on the evidence
 workstation; codex hook trust needs interactive TUI approval against digest
 `3925824a5bd2`; hermes and openclaw are not on that box. The matrix cannot reach
 45/45 cells from one machine.
+
+**Start here: no activation receipt is minted for the canary's native child.**
+Two live runs at `bcfbe664`; the second staffed the parent correctly
+(`code-reviewer` loaded and selected, one correlated trace, zero preflight
+failures) and then recorded a delegation with an empty
+`retrieved_specialist_slug` and no `activation_receipt_id`, while
+`native_child_delivery_verifications` stayed empty. The slug is written only when
+an activation receipt is consumed, and none was minted -- the newest receipt row
+predates the canary by a week, though older rows show the mechanism working with
+real slugs. So it is a regression or isolated-profile gap, not an unbuilt path.
+**Fix it and R4 claude Live becomes reachable with no new authorization.**
+`executed_worker_kind=generic-worker` is normal; the schema requires it. The
+recruiter is also nondeterministic -- run one failed at routing on the same
+inputs -- so never conclude from a single canary.
 
 ## verification
 

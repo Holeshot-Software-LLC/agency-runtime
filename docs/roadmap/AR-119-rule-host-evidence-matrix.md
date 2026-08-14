@@ -97,6 +97,42 @@ guarantees a distinct inode everywhere and is the shape a real replacement
 takes. CI reported one of the five because the conformance baseline runs under
 `-x`; the other four were measured directly on Linux.
 
+**Rule 4 Live on claude is blocked at one exact point: the host spawns the
+child, Agency records it, and the child is staffed as a generic worker with no
+card.** Two live isolated-profile canary runs were executed on 2026-08-14 at
+`bcfbe664`. Neither produced an attestation, and the canary correctly persisted
+none.
+
+The first run failed earlier, at routing: the planner applied and the recruiter
+was rejected twice, so nothing was staffed and no child existed to collect. The
+second run passed that stage -- `preflight_failures: 0`, `runs: 2`,
+`routing: 3`, `specialists: 6`, the expected `code-reviewer` both loaded and
+selected, `routed_specialists` = `application-security-engineer, code-reviewer`,
+and one correlated trace. **The recruiter stage is therefore nondeterministic
+across otherwise identical runs, which is itself a finding: a single failed
+canary is not evidence that the path is broken.**
+
+The second run then stopped on the delivery proof. Its delegation row reads
+`backend=delegate_task`, `native_run_id=claude-agent:ad903e971f817b43f`,
+`status=completed`, `error=ok` -- with `retrieved_specialist_slug` empty and
+`activation_receipt_id` unset, and `native_child_delivery_verifications` holds
+zero rows. (`executed_worker_kind=generic-worker` is *not* an anomaly: the schema
+constrains that column to exactly that value for a host-spawned native child.)
+
+The break is upstream of the collector. `retrieved_specialist_slug` is written
+only when a delegation activation receipt is consumed and attached, and **no
+activation receipt was minted for this child at all** -- the newest row in
+`delegation_activation_receipts` predates the canary by a week. So the host
+spawned the child and Agency recorded the delegation, but native-child staffing
+never engaged, and no card was dealt. No card means no host-written artifact
+carrying card hashes, which is the only thing that can satisfy Rule 4.
+
+That mechanism demonstrably works on this machine: earlier receipts pair
+`claude-agent:` children with real specialist slugs, consumed and attached to
+their delegation events. So this is a regression or an isolated-profile gap
+rather than an unbuilt path, and it is the single thing between the canary and
+R4 claude Live. The same boundary gates R4 on every other host.
+
 **AR-252's promotion policy had no evidence it could ever receive.** The
 three-success, seven-day policy has shipped since `f85074fe`, and this matrix
 recorded it as having implementation and simulation. What it counted was
