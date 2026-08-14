@@ -883,6 +883,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1e8552a7` | 2026-08-14 | docs(ar119): record the Linux parity gap under Rule 4 and rebind | null | null |
 | `9e29aabe` | 2026-08-14 | feat(workforce)!: count only host-evidenced acceptances toward promotion | null | null |
 | `63f60171` | 2026-08-14 | docs(ar119): bind the acceptance core to 9e29aabe and run its evidence in CI | null | null |
+| `90756987` | 2026-08-14 | docs(ar252): record the three constraints a collector has to answer | null | null |
+| `2f46767c` | 2026-08-14 | docs(ar253): locate the latency overrun in the recruiter, not startup | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
