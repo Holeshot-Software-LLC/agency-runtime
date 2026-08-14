@@ -887,6 +887,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2f46767c` | 2026-08-14 | docs(ar253): locate the latency overrun in the recruiter, not startup | null | null |
 | `59da40ae` | 2026-08-14 | feat(preflight): make a terminal failure receipt explain itself | null | null |
 | `f7cae78f` | 2026-08-14 | docs(ar119): locate R4 claude Live at one missing activation receipt | null | null |
+| `129f2a6a` | 2026-08-14 | docs(ar119)!: native-child staffing has been dead here since 2026-08-07 | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
