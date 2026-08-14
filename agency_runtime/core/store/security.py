@@ -232,7 +232,20 @@ def storage_creation_boundary_is_trusted(
 
 
 def storage_file_is_trusted(path: Path, *, is_windows: bool) -> bool:
-    """Require one current-user-owned, non-writable storage file identity."""
+    """Require one current-user-owned, non-writable storage file identity.
+
+    Every caller reads a file some *other* program wrote: a Claude sub-agent
+    transcript, a Codex rollout, a host wiring file. Agency does not own those
+    writers and cannot choose their umask, so the property that can be required
+    is integrity -- nobody but the owner could have substituted the bytes --
+    and not confidentiality of the host's own transcript.
+
+    Requiring the group and other *read* bits to be clear as well demanded mode
+    0600 from files hosts write at 0644. On Windows a different branch accepted
+    the same artifact, so one host artifact was trusted there and refused on
+    Linux, and the Rule 4 host-artifact proof was unobtainable on Linux for any
+    host with a normal umask.
+    """
 
     try:
         metadata = os.lstat(path)
@@ -252,10 +265,13 @@ def storage_file_is_trusted(path: Path, *, is_windows: bool) -> bool:
             private_access=True,
         )
     uid_getter = getattr(os, "geteuid", None)
+    # Writability is the integrity boundary. The parent chain is already proven
+    # private, so an owner-only-writable regular file with one link cannot have
+    # been substituted by another account.
     return bool(
         callable(uid_getter)
         and int(metadata.st_uid) == int(uid_getter())
-        and not stat.S_IMODE(metadata.st_mode) & (stat.S_IRWXG | stat.S_IRWXO)
+        and not stat.S_IMODE(metadata.st_mode) & (stat.S_IWGRP | stat.S_IWOTH)
     )
 
 

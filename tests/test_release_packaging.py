@@ -817,6 +817,7 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
         "tests/test_senior_audit_hardening.py",
         "tests/test_configuration_namespace_security.py",
         "tests/test_executable_namespace_security.py",
+        "tests/test_storage_file_trust.py",
         "tests/test_dashboard_auth_boundary_regression.py",
         "tests/test_dashboard_transaction_refactors.py",
         "tests/test_routing_correctness.py",
