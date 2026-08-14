@@ -26,7 +26,7 @@ superseded_by: null
 type: roadmap
 ar119_authority: completion-evidence
 vision_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
-candidate_commit: e216670a4abe01866b928a6d25242c5f3cbe0049
+candidate_commit: 2f0758d93b4b3fe5c913509e0d2b78c69abcca44
 evidence_cutoff: 2026-08-14
 ---
 
@@ -47,8 +47,12 @@ candidate context but cannot make a current installed/live layer green or red.
 Although the schema reserves `not-applicable`, none of the nine rules is
 optional on a supported host.
 
-Candidate `e216670a` advances `a9d84a27` by proving Rule 5 at the source, which
-closes the last ten Implementation slots and takes both the Implementation and
+Candidate `2f0758d9` advances `e216670a` by repairing a platform parity gap that
+sat underneath the Rule 4 host-artifact proof, described below, and by putting
+every cited test file into CI for the first time.
+
+Candidate `e216670a` advanced `a9d84a27` by proving Rule 5 at the source, which
+closed the last ten Implementation slots and took both the Implementation and
 Simulation layers to 45/45. The reasoning is recorded under R5 below.
 
 Candidate `a9d84a27` advanced `9724820e` by one test-only repair, described
@@ -88,6 +92,30 @@ eagerly, so the mutations only ever bit on Windows. Substituting by rename
 guarantees a distinct inode everywhere and is the shape a real replacement
 takes. CI reported one of the five because the conformance baseline runs under
 `-x`; the other four were measured directly on Linux.
+
+**Rule 4's host-artifact proof did not hold on Linux, and the matrix could not
+see it.** `storage_file_is_trusted` required a foreign artifact to carry no
+group or other bits at all -- mode `0600` -- while hosts write their transcripts
+at `0644`. Every caller of that guard reads a file another program wrote: a
+Claude sub-agent transcript, a Codex rollout, a host wiring file. On Windows a
+different branch accepted the same artifact, so one artifact was trusted there
+and refused on Linux, and the host-artifact half of Rule 4 was unobtainable on
+Linux for any host with a normal umask.
+
+`2f0758d9` keeps ownership, the private parent chain, single link count,
+regular-file and symlink rejection, and the `(dev, ino)` seal, and drops only
+the demand that group and other be unable to *read* the host's own transcript --
+a confidentiality property of data Agency does not own, which the guard's own
+docstring never claimed. Group- and other-writable files are still refused, and
+the rejection cases are now pinned by a test in CI's spine.
+
+This is the third time this exact shape has appeared: a layer marked `proven`
+from a source read, where the property the row asserts is not the property the
+code has. It was found by the matrix-evidence CI step added in the same
+candidate, on that step's first run, and it could not have been found on a
+Windows-only workstation. The R4 claude and codex Implementation rows remain
+`proven`, but they were reading `proven` throughout a period when the artifact
+they depend on was refused on Linux.
 
 **R4 claude Simulation is proven again at this candidate, and the cause of its
 one-day regression is worth keeping.** The failure was in the test, not the
