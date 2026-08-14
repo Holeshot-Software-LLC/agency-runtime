@@ -1,46 +1,100 @@
-"""Strict evidence coverage for contractor promotion readiness."""
+"""Strict evidence coverage for contractor promotion readiness.
+
+The evidence rule itself lives in ``tests/test_accepted_outcomes.py``. These
+cases cover the policy laid over it -- threshold, review window, and who may be
+promoted at all -- so they build their evidence by running the real rule rather
+than by hand-writing a manifest it would have refused.
+"""
 
 from __future__ import annotations
 
+import hashlib
+
 import pytest
 
+from agency_runtime.core.workforce.acceptance import (
+    ACCEPTANCE_ENVELOPE_SCHEMA,
+    HOST_CHILD_PROOF_SCHEMA,
+    evaluate_acceptance,
+)
 from agency_runtime.core.workforce.promotion import promotion_readiness
 
+_CONTRACTOR_CARD = {
+    "specialist_slug": "typescript-application-engineer",
+    "specialist_version": "1.0.0",
+    "specialist_prompt_hash": "a" * 64,
+}
+_VERIFIER_CARD = {
+    "specialist_slug": "code-reviewer",
+    "specialist_version": "2.0.0",
+    "specialist_prompt_hash": "b" * 64,
+}
 
-def _outcome(
-    unit: str,
-    *,
-    worker_id: str = "worker-verifier",
-    receipt: str = "review-receipt",
-) -> dict[str, object]:
+
+def _proof(child_id: str, decision_id: str, card: dict[str, str], digest: str) -> dict[str, object]:
     return {
-        "event_type": "acceptance",
-        "outcome": "passed",
-        "work_unit_id": unit,
-        "activation_receipt_id": f"activation-{unit}",
-        "evidence_refs": {
-            "independent_verifier_worker_id": worker_id,
-            "independent_verification_receipt_id": receipt,
-            "independent_verification_validated": True,
-        },
+        "schema": HOST_CHILD_PROOF_SCHEMA,
+        "verified_delivery": True,
+        "host": "claude",
+        "child_id": child_id,
+        "decision_id": decision_id,
+        "artifact_digest": digest,
+        "cards": [card],
     }
 
 
-def test_promotion_requires_distinct_independently_verified_assignments() -> None:
+def _outcome(unit: str, *, verifier_child_id: str = "child-verifier") -> dict[str, object]:
+    """One recorded acceptance for a distinct produced artifact."""
+
+    digest = hashlib.sha256(unit.encode("utf-8")).hexdigest()
+    outcome = evaluate_acceptance(
+        {
+            "schema": ACCEPTANCE_ENVELOPE_SCHEMA,
+            "contractor_worker_id": "worker-contractor",
+            "contractor_card": _CONTRACTOR_CARD,
+            "producer": _proof(f"child-{unit}", "decision-producer", _CONTRACTOR_CARD, digest),
+            "verifier": _proof(verifier_child_id, "decision-verifier", _VERIFIER_CARD, ""),
+            "verdict": {
+                "verdict_id": f"verdict-{unit}",
+                "decision": "accepted",
+                "artifact_digest": digest,
+                "verifier_child_id": verifier_child_id,
+            },
+        }
+    )
+    assert outcome.accepted, outcome.reason
+    return {
+        "event_type": "acceptance",
+        "outcome": "accepted",
+        "evidence_refs": dict(outcome.manifest),
+    }
+
+
+def test_promotion_requires_distinct_host_evidenced_acceptances() -> None:
+    """Only distinct artifacts count, and only from an intact acceptance manifest."""
+
     worker = {"worker_id": "worker-contractor", "state": "contractor"}
+    tampered = _outcome("unit-tampered")
+    tampered["evidence_refs"] = {
+        **tampered["evidence_refs"],
+        "verifier_child_id": "child-somebody-else",
+    }
     result = promotion_readiness(
         worker,
         [
             _outcome("unit-1"),
             _outcome("unit-1"),
             _outcome("unit-2"),
-            _outcome("unit-self", worker_id="worker-contractor"),
-            {**_outcome("unit-no-receipt"), "activation_receipt_id": ""},
+            tampered,
+            {**_outcome("unit-not-an-acceptance"), "event_type": "assignment"},
+            {"event_type": "acceptance", "outcome": "accepted", "evidence_refs": {}},
         ],
         required_successes=2,
     )
 
-    assert result["verified_work_units"] == ["unit-1", "unit-2"]
+    assert result["verified_artifacts"] == sorted(
+        hashlib.sha256(unit.encode("utf-8")).hexdigest() for unit in ("unit-1", "unit-2")
+    )
     assert result["verified_successes"] == 2
     assert result["eligible_for_automatic_promotion"] is True
 

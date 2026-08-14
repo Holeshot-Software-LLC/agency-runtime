@@ -14,6 +14,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from datetime import datetime
@@ -40,8 +41,12 @@ from agency_runtime.core.store.workforce import (
     MAX_HIRING_SUMMARY_PAGE,
     WorkforcePayloadBudgetError,
 )
+from agency_runtime.core.workforce.acceptance import (
+    ACCEPTANCE_ENVELOPE_SCHEMA,
+    HOST_CHILD_PROOF_SCHEMA,
+)
 from agency_runtime.core.workforce.known_installer import install_known_contractors
-from agency_runtime.core.workforce.promotion import promotion_readiness
+from agency_runtime.core.workforce.promotion import PROMOTION_EVIDENCE_RULE, promotion_readiness
 from agency_runtime.server import dashboard as dashboard_module
 from agency_runtime.server.dashboard import (
     MAX_WORKFORCE_DETAIL_RESPONSE_BYTES,
@@ -52,6 +57,51 @@ from agency_runtime.server.dashboard import (
 )
 
 _OWNER_MUTATION_PATHS = DashboardHTTPHandler._OWNER_MUTATION_PATHS
+
+
+def _acceptance_envelope(
+    contractor: Mapping[str, object],
+    verifier: Mapping[str, object],
+) -> dict[str, object]:
+    """One host-evidenced accepted outcome (AR-252) for the readiness projection."""
+
+    def proof(worker: Mapping[str, object], child_id: str, decision_id: str) -> dict[str, object]:
+        return {
+            "schema": HOST_CHILD_PROOF_SCHEMA,
+            "verified_delivery": True,
+            "host": "codex",
+            "child_id": child_id,
+            "decision_id": decision_id,
+            "artifact_digest": "",
+            "cards": [
+                {
+                    "specialist_slug": str(worker["agent_slug"]),
+                    "specialist_version": str(worker["current_version"]),
+                    "specialist_prompt_hash": str(worker["current_hash"]),
+                }
+            ],
+        }
+
+    digest = "9" * 64
+    producer = proof(contractor, "dashboard-producer-child", "dashboard-producer-decision")
+    producer["artifact_digest"] = digest
+    return {
+        "schema": ACCEPTANCE_ENVELOPE_SCHEMA,
+        "contractor_worker_id": str(contractor["worker_id"]),
+        "contractor_card": {
+            "specialist_slug": str(contractor["agent_slug"]),
+            "specialist_version": str(contractor["current_version"]),
+            "specialist_prompt_hash": str(contractor["current_hash"]),
+        },
+        "producer": producer,
+        "verifier": proof(verifier, "dashboard-verifier-child", "dashboard-verifier-decision"),
+        "verdict": {
+            "verdict_id": "dashboard-verdict",
+            "decision": "accepted",
+            "artifact_digest": digest,
+            "verifier_child_id": "dashboard-verifier-child",
+        },
+    }
 
 
 def _verified_codex_record() -> dict[str, object]:
@@ -854,13 +904,10 @@ def test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle(
         "required_successes": 3,
         "verified_successes": 0,
         "remaining_successes": 3,
-        "verified_work_units": [],
-        "evidence_rule": (
-            "Distinct accepted work units with an activation receipt and a receipt from "
-            "a different verifying worker."
-        ),
+        "verified_artifacts": [],
+        "evidence_rule": PROMOTION_EVIDENCE_RULE,
         "reasons": [
-            "3 more independently verified successful assignments are required.",
+            "3 more host-evidenced accepted outcomes are required.",
             "The contractor is within its 7-day review window; automatic promotion is "
             "suppressed until the window expires.",
         ],
@@ -1193,16 +1240,17 @@ def test_dashboard_worker_detail_omits_history_documents_with_readiness_parity(
     recorded = store.record_workforce_outcome(
         contractor["worker_id"],
         idempotency_key="7" * 64,
-        event_type="acceptance",
+        event_type="artifact",
         outcome="passed",
         score=1.0,
         evidence_hash="8" * 64,
-        evidence_refs={
-            "payload": "dashboard-private-outcome-" * 9_000,
-            "independent_verifier_worker_id": verifier["worker_id"],
-            "independent_verification_receipt_id": "dashboard-verifier-activation",
-        },
+        evidence_refs={"payload": "dashboard-private-outcome-" * 9_000},
         activation_receipt_id="dashboard-contractor-activation",
+        auto_promote_successes=0,
+        disabled_agents=(),
+    )
+    accepted = store.record_accepted_outcome(
+        envelope=_acceptance_envelope(contractor, verifier),
         auto_promote_successes=0,
         disabled_agents=(),
     )
@@ -1216,7 +1264,10 @@ def test_dashboard_worker_detail_omits_history_documents_with_readiness_parity(
         required_successes=3,
         review_window_days=7,
     )
-    assert full["outcomes"][0]["evidence_refs"] == recorded["evidence_refs"]
+    private_row = next(item for item in full["outcomes"] if item["event_type"] == "artifact")
+    assert accepted["recorded"] is True
+    assert expected_readiness["verified_artifacts"] == [accepted["artifact_digest"]]
+    assert private_row["evidence_refs"] == recorded["evidence_refs"]
 
     status, raw, headers = _request(
         dashboard_server,
@@ -1231,7 +1282,7 @@ def test_dashboard_worker_detail_omits_history_documents_with_readiness_parity(
     assert detail["promotion_readiness"] == expected_readiness
     assert all("evidence" not in item for item in detail["events"])
     assert all("evidence_refs" not in item for item in detail["outcomes"])
-    assert all("_promotion_evidence_qualified" not in item for item in detail["outcomes"])
+    assert all("_promotion_evidence_manifest" not in item for item in detail["outcomes"])
     assert detail["events_total_count"] == full["events_total_count"]
     assert detail["outcomes_total_count"] == full["outcomes_total_count"]
     assert b"dashboard-private-event" not in raw

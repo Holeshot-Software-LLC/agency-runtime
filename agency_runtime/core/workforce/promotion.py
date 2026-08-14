@@ -1,4 +1,14 @@
-"""Evidence rules for human and policy-driven contractor promotion."""
+"""Evidence rules for human and policy-driven contractor promotion.
+
+AR-252 migrated the counted evidence off retired work-unit and consumed
+activation-receipt identities. A success now has to be a recorded acceptance
+carrying a validated host-evidenced manifest: a host-written producer artifact,
+a distinct inference-selected verifier's host-written artifact, and that
+verifier's accepted verdict bound to the exact produced artifact.
+
+Distinctness is per produced artifact, not per recorded row. Two verdicts on
+one artifact are one piece of accepted work.
+"""
 
 from __future__ import annotations
 
@@ -6,7 +16,14 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from agency_runtime.core.workforce.acceptance import accepted_outcome_manifest
+
 _SUCCESS_OUTCOMES = frozenset({"accepted", "completed", "passed", "succeeded", "success"})
+
+PROMOTION_EVIDENCE_RULE = (
+    "Distinct produced artifacts, each proven delivered by a host-written producer "
+    "artifact and accepted by a distinct inference-selected verifier's bound verdict."
+)
 
 
 def _parse_created_at(value: Any) -> datetime | None:
@@ -43,31 +60,24 @@ def _within_review_window(
     return created_at + timedelta(days=review_window_days) > moment
 
 
-def _independent_success_units(
-    outcomes: Sequence[Mapping[str, Any]],
-    *,
-    worker_id: str,
-) -> tuple[str, ...]:
-    units: set[str] = set()
+def _accepted_artifacts(outcomes: Sequence[Mapping[str, Any]]) -> tuple[str, ...]:
+    """Return the distinct produced artifacts this worker has accepted outcomes for.
+
+    Every identity is re-derived from the stored manifest rather than trusted
+    as a flag, so a row whose evidence was edited after recording contributes
+    nothing.
+    """
+
+    artifacts: set[str] = set()
     for item in outcomes:
-        refs = item.get("evidence_refs")
-        if not isinstance(refs, Mapping):
+        if str(item.get("event_type") or "").casefold() != "acceptance":
             continue
-        verifier = str(refs.get("independent_verifier_worker_id") or "").strip()
-        receipt = str(refs.get("independent_verification_receipt_id") or "").strip()
-        unit = str(item.get("work_unit_id") or "").strip()
-        if (
-            str(item.get("event_type") or "").casefold() == "acceptance"
-            and str(item.get("outcome") or "").casefold() in _SUCCESS_OUTCOMES
-            and str(item.get("activation_receipt_id") or "").strip()
-            and unit
-            and verifier
-            and verifier != worker_id
-            and receipt
-            and refs.get("independent_verification_validated") is True
-        ):
-            units.add(unit)
-    return tuple(sorted(units))
+        if str(item.get("outcome") or "").casefold() not in _SUCCESS_OUTCOMES:
+            continue
+        manifest = accepted_outcome_manifest(item.get("evidence_refs"))
+        if manifest is not None:
+            artifacts.add(manifest["artifact_digest"])
+    return tuple(sorted(artifacts))
 
 
 def promotion_readiness(
@@ -92,9 +102,8 @@ def promotion_readiness(
         or required_successes < 0
     ):
         raise ValueError("required promotion successes must be a non-negative integer")
-    worker_id = str(worker.get("worker_id") or "")
     state = str(worker.get("state") or "").casefold()
-    units = _independent_success_units(outcomes, worker_id=worker_id)
+    units = _accepted_artifacts(outcomes)
     policy_enabled = required_successes > 0
     contractor = state == "contractor"
     in_review_window = _within_review_window(
@@ -113,8 +122,8 @@ def promotion_readiness(
     elif len(units) < required_successes:
         remaining = required_successes - len(units)
         reasons.append(
-            f"{remaining} more independently verified successful "
-            f"{'assignment is' if remaining == 1 else 'assignments are'} required."
+            f"{remaining} more host-evidenced accepted "
+            f"{'outcome is' if remaining == 1 else 'outcomes are'} required."
         )
     if in_review_window:
         reasons.append(
@@ -132,13 +141,10 @@ def promotion_readiness(
         "required_successes": required_successes,
         "verified_successes": len(units),
         "remaining_successes": max(0, required_successes - len(units)),
-        "verified_work_units": list(units),
-        "evidence_rule": (
-            "Distinct accepted work units with an activation receipt and a receipt from "
-            "a different verifying worker."
-        ),
+        "verified_artifacts": list(units),
+        "evidence_rule": PROMOTION_EVIDENCE_RULE,
         "reasons": reasons,
     }
 
 
-__all__ = ["promotion_readiness"]
+__all__ = ["PROMOTION_EVIDENCE_RULE", "promotion_readiness"]

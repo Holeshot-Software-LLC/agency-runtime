@@ -19,12 +19,74 @@ from agency_runtime.core.store.workforce import (
     MAX_WORKFORCE_DOCUMENT_BYTES,
 )
 from agency_runtime.core.workforce import project_workforce_contract, stable_worker_id
+from agency_runtime.core.workforce.acceptance import (
+    ACCEPTANCE_ENVELOPE_SCHEMA,
+    HOST_CHILD_PROOF_SCHEMA,
+)
 from agency_runtime.core.workforce.known_installer import install_known_contractors
 from agency_runtime.core.workforce.promotion import promotion_readiness
 
 
 def _agent(slug: str) -> dict[str, object]:
     return next(dict(agent) for agent in BundledRoster() if agent["slug"] == slug)
+
+
+def _delivery_proof(worker: dict[str, object], *, child_id: str, decision_id: str) -> dict:
+    """One sealed host-child delivery proof for this worker's active card."""
+
+    return {
+        "schema": HOST_CHILD_PROOF_SCHEMA,
+        "verified_delivery": True,
+        "host": "codex",
+        "child_id": child_id,
+        "decision_id": decision_id,
+        "artifact_digest": "",
+        "cards": [
+            {
+                "specialist_slug": str(worker["agent_slug"]),
+                "specialist_version": str(worker["current_version"]),
+                "specialist_prompt_hash": str(worker["current_hash"]),
+            }
+        ],
+    }
+
+
+def _acceptance_envelope(
+    contractor: dict[str, object],
+    verifier: dict[str, object],
+    *,
+    index: int,
+) -> dict[str, object]:
+    """A host-evidenced acceptance for one distinct produced artifact (AR-252)."""
+
+    digest = f"{index:064x}"
+    producer = _delivery_proof(
+        contractor,
+        child_id=f"child-producer-{index}",
+        decision_id="decision-producer",
+    )
+    producer["artifact_digest"] = digest
+    return {
+        "schema": ACCEPTANCE_ENVELOPE_SCHEMA,
+        "contractor_worker_id": str(contractor["worker_id"]),
+        "contractor_card": {
+            "specialist_slug": str(contractor["agent_slug"]),
+            "specialist_version": str(contractor["current_version"]),
+            "specialist_prompt_hash": str(contractor["current_hash"]),
+        },
+        "producer": producer,
+        "verifier": _delivery_proof(
+            verifier,
+            child_id="child-verifier",
+            decision_id="decision-verifier",
+        ),
+        "verdict": {
+            "verdict_id": f"verdict-{index}",
+            "decision": "accepted",
+            "artifact_digest": digest,
+            "verifier_child_id": "child-verifier",
+        },
+    }
 
 
 def _contract_document(value: dict[str, object]) -> tuple[dict[str, object], str]:
@@ -769,16 +831,17 @@ def test_worker_dashboard_history_projection_omits_documents_and_keeps_proof_sca
     outcome = store.record_workforce_outcome(
         contractor["worker_id"],
         idempotency_key="3" * 64,
-        event_type="acceptance",
+        event_type="artifact",
         outcome="passed",
         score=1.0,
         evidence_hash="4" * 64,
-        evidence_refs={
-            "payload": "private-outcome-sentinel-" * 9_000,
-            "independent_verifier_worker_id": verifier["worker_id"],
-            "independent_verification_receipt_id": "summary-verifier-activation",
-        },
+        evidence_refs={"payload": "private-outcome-sentinel-" * 9_000},
         activation_receipt_id="summary-contractor-activation",
+        auto_promote_successes=0,
+        disabled_agents=(),
+    )
+    accepted = store.record_accepted_outcome(
+        envelope=_acceptance_envelope(contractor, verifier, index=1),
         auto_promote_successes=0,
         disabled_agents=(),
     )
@@ -794,22 +857,34 @@ def test_worker_dashboard_history_projection_omits_documents_and_keeps_proof_sca
         include_history_documents=False,
     )
 
+    private_row = next(item for item in full["outcomes"] if item["event_type"] == "artifact")
+    summary_private = next(item for item in summary["outcomes"] if item["event_type"] == "artifact")
+    summary_accepted = next(
+        item for item in summary["outcomes"] if item["event_type"] == "acceptance"
+    )
+
     assert full["events"][0]["evidence"]["payload"].startswith("private-event-sentinel-")
     assert full["events"][0]["reason"] == "operator-note-sentinel-private"
-    assert full["outcomes"][0]["evidence_refs"] == outcome["evidence_refs"]
+    assert private_row["evidence_refs"] == outcome["evidence_refs"]
     assert all("evidence" not in item for item in summary["events"])
     assert all("reason" not in item for item in summary["events"])
     assert summary["events"][0]["reason_present"] is True
     assert all("reason_hash" not in item for item in summary["events"])
     assert all("evidence_refs" not in item for item in summary["outcomes"])
-    assert summary["outcomes"][0]["_promotion_evidence_qualified"] is True
+    # The acceptance manifest is identities and digests only, so the summary
+    # carries the real evidence; the private artifact payload carries none.
+    assert summary_private["_promotion_evidence_manifest"] is None
+    assert (
+        summary_accepted["_promotion_evidence_manifest"]["accepted_outcome_key"]
+        == (accepted["accepted_outcome_key"])
+    )
     assert summary["events_total_count"] == full["events_total_count"]
     assert summary["outcomes_total_count"] == full["outcomes_total_count"]
     assert promotion_readiness(
         full["worker"],
         full["outcomes"],
         required_successes=1,
-    )["verified_work_units"] == ["summary-unit"]
+    )["verified_artifacts"] == [accepted["artifact_digest"]]
     serialized_summary = json.dumps(summary, separators=(",", ":")).encode("utf-8")
     assert b"private-event-sentinel" not in serialized_summary
     assert b"operator-note-sentinel-private" not in serialized_summary
@@ -1146,7 +1221,7 @@ def test_performance_outcomes_bind_consumed_activation_and_replay_safely(tmp_pat
         )
 
 
-def test_receipt_validated_acceptance_can_auto_promote_without_changing_identity(
+def test_host_evidenced_acceptance_can_auto_promote_without_changing_identity(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "agency.db")
@@ -1157,53 +1232,9 @@ def test_receipt_validated_acceptance_can_auto_promote_without_changing_identity
         disabled_agents=(),
     )
     verifier = store.get_workforce_worker("code-reviewer", disabled_agents=())
-    store.create_run(trace_id="promotion-trace", session_id="promotion-session", host="codex")
-    with closing(store._connect()) as conn, conn:
-        conn.executemany(
-            "INSERT INTO delegation_activation_receipts "
-            "(id, token_hash, session_id, trace_id, work_unit_id, specialist_slug, "
-            "specialist_version, specialist_prompt_hash, worker_kind, worker_id, "
-            "native_run_id, created_at, consumed_at) VALUES "
-            "(?, ?, 'promotion-session', 'promotion-trace', ?, ?, ?, ?, "
-            "'native-child', ?, ?, '2026-07-21T00:00:00+00:00', "
-            "'2026-07-21T00:00:01+00:00')",
-            [
-                (
-                    "contractor-activation",
-                    "a" * 64,
-                    "unit-build",
-                    contractor["agent_slug"],
-                    contractor["current_version"],
-                    contractor["current_hash"],
-                    "child-build",
-                    "codex:child-build",
-                ),
-                (
-                    "verifier-activation",
-                    "b" * 64,
-                    "unit-review",
-                    verifier["agent_slug"],
-                    verifier["current_version"],
-                    verifier["current_hash"],
-                    "child-review",
-                    "codex:child-review",
-                ),
-            ],
-        )
 
-    recorded = store.record_workforce_outcome(
-        contractor["worker_id"],
-        idempotency_key="c" * 64,
-        event_type="acceptance",
-        outcome="passed",
-        score=1.0,
-        evidence_hash="d" * 64,
-        evidence_refs={
-            "artifact": "git-diff:complete-app",
-            "independent_verifier_worker_id": verifier["worker_id"],
-            "independent_verification_receipt_id": "verifier-activation",
-        },
-        activation_receipt_id="contractor-activation",
+    recorded = store.record_accepted_outcome(
+        envelope=_acceptance_envelope(contractor, verifier, index=1),
         auto_promote_successes=1,
         disabled_agents=(),
     )
@@ -1212,57 +1243,38 @@ def test_receipt_validated_acceptance_can_auto_promote_without_changing_identity
         contractor["worker_id"],
         disabled_agents=(),
     )
-    assert recorded["evidence_refs"]["independent_verification_validated"] is True
+    assert recorded["recorded"] is True
+    assert recorded["promoted"] is True
     assert after["worker"]["worker_id"] == contractor["worker_id"]
     assert after["worker"]["agent_slug"] == contractor["agent_slug"]
     assert after["worker"]["state"] == "employee"
     assert not after["worker"]["display_label"].startswith("Contractor · ")
     promotion = next(item for item in after["events"] if item["event_type"] == "promote")
     assert promotion["actor"] == "promotion-policy"
-    assert promotion["evidence"]["verified_work_units"] == ["unit-build"]
+    assert promotion["evidence"]["verified_artifacts"] == [recorded["artifact_digest"]]
 
 
-def test_acceptance_rejects_unproven_independent_verifier_receipts(tmp_path: Path) -> None:
+def test_acceptance_rejects_a_verifier_that_is_the_contractor_itself(tmp_path: Path) -> None:
+    """AR-252: a producer judging its own work is not independent verification."""
+
     store = Store(tmp_path / "agency.db")
     install_known_contractors(store)
     contractor = store.get_workforce_worker(
         "typescript-application-engineer",
         disabled_agents=(),
     )
-    store.create_run(trace_id="invalid-trace", session_id="invalid-session", host="codex")
-    with closing(store._connect()) as conn, conn:
-        conn.execute(
-            "INSERT INTO delegation_activation_receipts "
-            "(id, token_hash, session_id, trace_id, work_unit_id, specialist_slug, "
-            "specialist_version, specialist_prompt_hash, worker_kind, worker_id, "
-            "native_run_id, created_at, consumed_at) VALUES "
-            "('source-activation', ?, 'invalid-session', 'invalid-trace', "
-            "'unit-build', ?, ?, ?, 'native-child', 'child-build', "
-            "'codex:child-build', '2026-07-21T00:00:00+00:00', "
-            "'2026-07-21T00:00:01+00:00')",
-            (
-                "e" * 64,
-                contractor["agent_slug"],
-                contractor["current_version"],
-                contractor["current_hash"],
-            ),
-        )
 
-    with pytest.raises(ValueError, match="missing or unconsumed"):
-        store.record_workforce_outcome(
-            contractor["worker_id"],
-            idempotency_key="f" * 64,
-            event_type="acceptance",
-            outcome="passed",
-            evidence_hash="0" * 64,
-            evidence_refs={
-                "independent_verifier_worker_id": "worker-does-not-exist",
-                "independent_verification_receipt_id": "missing-receipt",
-            },
-            activation_receipt_id="source-activation",
-            auto_promote_successes=1,
-            disabled_agents=(),
-        )
+    refused = store.record_accepted_outcome(
+        envelope=_acceptance_envelope(contractor, contractor, index=1),
+        auto_promote_successes=1,
+        disabled_agents=(),
+    )
+    after = store.get_workforce_worker_detail(contractor["worker_id"], disabled_agents=())
+
+    assert refused["recorded"] is False
+    assert refused["reason"] == "shared_producer_verifier_identity"
+    assert after["worker"]["state"] == "contractor"
+    assert after["outcomes"] == []
 
 
 def test_merge_and_state_pages_preserve_history_and_exclude_routing(tmp_path: Path) -> None:

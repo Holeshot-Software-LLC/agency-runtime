@@ -1188,32 +1188,22 @@ def _dashboard_promotion_projection(
     required_successes: int,
     review_window_days: int = 0,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Compute readiness from Store-proven scalars, then discard the private proof bit."""
+    """Compute readiness from the real acceptance manifest, then withhold it.
+
+    The manifest carries only child ids, decision ids, and digests, so the
+    readiness rule can be evaluated on the evidence itself rather than on a
+    stand-in built to imitate it. Only the public projection drops it.
+    """
 
     public: list[dict[str, Any]] = []
     readiness_inputs: list[dict[str, Any]] = []
-    worker_id = str(worker.get("worker_id") or "")
-    verifier = (
-        "dashboard-projected-verifier-2"
-        if worker_id == "dashboard-projected-verifier"
-        else "dashboard-projected-verifier"
-    )
     for outcome in outcomes:
         item = dict(outcome)
         item.pop("evidence_refs", None)
-        qualified = item.pop("_promotion_evidence_qualified", False) is True
+        manifest = item.pop("_promotion_evidence_manifest", None)
         public.append(item)
-        if qualified:
-            readiness_inputs.append(
-                {
-                    **item,
-                    "evidence_refs": {
-                        "independent_verifier_worker_id": verifier,
-                        "independent_verification_receipt_id": "dashboard-projected-receipt",
-                        "independent_verification_validated": True,
-                    },
-                }
-            )
+        if isinstance(manifest, Mapping):
+            readiness_inputs.append({**item, "evidence_refs": dict(manifest)})
         else:
             readiness_inputs.append(item)
     return public, promotion_readiness(

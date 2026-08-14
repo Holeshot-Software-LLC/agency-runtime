@@ -15,6 +15,10 @@ from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.roster.revisions import serialized_revision_metadata
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
+from agency_runtime.core.workforce.acceptance import (
+    ACCEPTANCE_ENVELOPE_SCHEMA,
+    evaluate_acceptance,
+)
 from agency_runtime.core.workforce.contract import (
     parse_workforce_contract,
     project_workforce_contract,
@@ -55,6 +59,14 @@ _HIRING_CASE_SUMMARY_FIELDS = (
 _ACTIVATION_BOUND_OUTCOMES = frozenset(
     {"assignment", "artifact", "review", "test", "acceptance", "failure"}
 )
+_RETIRED_OUTCOME_EVIDENCE_KEYS = frozenset(
+    {
+        "independent_verifier_worker_id",
+        "independent_verification_receipt_id",
+        "independent_verification_validated",
+    }
+)
+_ACCEPTANCE_SCHEMA_KEYS = frozenset({"acceptance_validated", "accepted_outcome_key"})
 
 
 class WorkforcePayloadBudgetError(RuntimeError):
@@ -421,42 +433,27 @@ def _bind_outcome_activation(
     )
 
 
-def _validated_outcome_evidence(
-    conn: Any,
-    worker: Mapping[str, Any],
-    *,
-    event: str,
-    session: str,
-    trace: str,
-    evidence_refs: Mapping[str, Any],
-) -> str:
+def _validated_outcome_evidence(evidence_refs: Mapping[str, Any]) -> str:
+    """Serialize free-form outcome evidence, refusing promotion-bearing shapes.
+
+    AR-252 retired the independent-verifier receipt identities, and promotion
+    evidence is no longer something a caller may hand-write. This recorder
+    stays available for assignments, artifacts, reviews, and tests, but the
+    only writer of a countable acceptance manifest is
+    ``record_accepted_outcome``, which builds it from host artifacts. Refusing
+    both shapes here keeps that the single path rather than leaving a second
+    one that merely looks retired.
+    """
+
     normalized = dict(evidence_refs)
-    normalized.pop("independent_verification_validated", None)
-    verifier_id = str(normalized.get("independent_verifier_worker_id") or "").strip()
-    receipt_id = str(normalized.get("independent_verification_receipt_id") or "").strip()
-    if bool(verifier_id) != bool(receipt_id):
-        raise ValueError("independent verification evidence is incomplete")
-    if not verifier_id:
-        return _document(normalized, field="evidence_refs")
-    if event != "acceptance":
-        raise ValueError("independent verification evidence is valid only for acceptance")
-    verification = conn.execute(
-        "SELECT receipt.*, workforce.worker_id AS verifier_worker_id "
-        "FROM delegation_activation_receipts AS receipt "
-        "JOIN agent_workers AS workforce "
-        "ON workforce.agent_slug = receipt.specialist_slug "
-        "WHERE receipt.id = ? LIMIT 1",
-        (receipt_id,),
-    ).fetchone()
-    if verification is None or verification["consumed_at"] is None:
-        raise ValueError("independent verification receipt is missing or unconsumed")
-    if str(verification["verifier_worker_id"]) != verifier_id:
-        raise ValueError("independent verifier identity does not match receipt")
-    if verifier_id == str(worker["worker_id"]):
-        raise ValueError("independent verifier must be a different worker")
-    if str(verification["session_id"]) != session or str(verification["trace_id"]) != trace:
-        raise ValueError("independent verification receipt belongs to another turn")
-    normalized["independent_verification_validated"] = True
+    retired = sorted(_RETIRED_OUTCOME_EVIDENCE_KEYS & set(normalized))
+    if retired:
+        raise ValueError(
+            "independent-verification outcome evidence was retired by AR-252; "
+            "record acceptance from host artifacts instead"
+        )
+    if _ACCEPTANCE_SCHEMA_KEYS & set(normalized):
+        raise ValueError("acceptance evidence may only be recorded from host artifacts")
     return _document(normalized, field="evidence_refs")
 
 
@@ -513,7 +510,7 @@ def _auto_promote_if_ready(
         surface="outcome-recorder",
         reason=(
             "automatic promotion after "
-            f"{readiness['verified_successes']} independently verified successful assignments"
+            f"{readiness['verified_successes']} host-evidenced accepted outcomes"
         ),
         evidence=_document(readiness, field="automatic promotion evidence"),
     )
@@ -2008,26 +2005,26 @@ class WorkforceStoreMixin:
                     outcomes.append(item)
             else:
                 outcomes = []
+                # An acceptance manifest is all identities and digests, never
+                # retained content, so a summary that must not expose evidence
+                # can still carry the real manifest instead of reconstructing a
+                # stand-in for it. The SQL is a cheap filter only; the rule that
+                # decides whether a manifest counts lives in one place, in
+                # ``accepted_outcome_manifest``.
                 for row in conn.execute(
                     "SELECT id, worker_id, version, version_hash, session_id, trace_id, "
                     "work_unit_id, activation_receipt_id, event_type, outcome, score, "
                     "evidence_hash, created_at, CASE WHEN "
-                    "NULLIF(TRIM(CAST(json_extract(evidence_refs, "
-                    "'$.independent_verifier_worker_id') AS TEXT)), '') IS NOT NULL "
-                    "AND TRIM(CAST(json_extract(evidence_refs, "
-                    "'$.independent_verifier_worker_id') AS TEXT)) <> worker_id "
-                    "AND NULLIF(TRIM(CAST(json_extract(evidence_refs, "
-                    "'$.independent_verification_receipt_id') AS TEXT)), '') IS NOT NULL "
-                    "AND json_type(evidence_refs, "
-                    "'$.independent_verification_validated') = 'true' "
-                    "THEN 1 ELSE 0 END AS _promotion_evidence_qualified "
+                    "json_extract(evidence_refs, '$.schema') = ? "
+                    "THEN evidence_refs ELSE NULL END AS _promotion_evidence_manifest "
                     "FROM agent_performance_events WHERE worker_id = ? "
                     "ORDER BY created_at DESC, rowid DESC LIMIT ?",
-                    (worker_id, evidence_limit),
+                    (ACCEPTANCE_ENVELOPE_SCHEMA, worker_id, evidence_limit),
                 ).fetchall():
                     item = dict(row)
-                    item["_promotion_evidence_qualified"] = bool(
-                        item["_promotion_evidence_qualified"]
+                    manifest = item.pop("_promotion_evidence_manifest", None)
+                    item["_promotion_evidence_manifest"] = (
+                        _decoded(manifest) if manifest is not None else None
                     )
                     outcomes.append(item)
             case_where = (
@@ -2329,6 +2326,138 @@ class WorkforceStoreMixin:
                 evidence=evidence,
             )
 
+    def record_accepted_outcome(
+        self,
+        *,
+        envelope: Mapping[str, Any],
+        auto_promote_successes: int | None = None,
+        disabled_agents: Container[str] | None = None,
+    ) -> dict[str, Any]:
+        """Record at most one host-evidenced acceptance and promote atomically.
+
+        The envelope is evaluated before the transaction opens: refused
+        evidence writes nothing at all and reports one bounded reason, so a
+        rejected, ambiguous, Agency-only, or shared-identity submission leaves
+        no row behind to be miscounted later.
+
+        Replay is not an error. The evaluator's outcome key is the row's
+        idempotency key, so re-presenting the same evidence -- or two
+        finalizers racing on it -- resolves to the first event and reports
+        ``replayed``. ``BEGIN IMMEDIATE`` serializes the writers and the unique
+        idempotency key decides the tie, so neither path can produce a second
+        success or a second promotion.
+
+        Promotion runs inside the same transaction that persists the
+        acceptance, so a contractor that becomes eligible is promoted by the
+        outcome itself, with no operator action.
+        """
+
+        outcome = evaluate_acceptance(envelope)
+        if not outcome.accepted:
+            return {
+                "recorded": False,
+                "promoted": False,
+                "reason": outcome.reason,
+                "event_id": "",
+                "worker_id": "",
+                "accepted_outcome_key": "",
+                "artifact_digest": "",
+            }
+        manifest = dict(outcome.manifest)
+        evidence_document = _document(manifest, field="evidence_refs")
+        evidence_digest = _document_hash(evidence_document)
+        successes, disabled, review_window_days = _outcome_promotion_policy(
+            self,
+            auto_promote_successes,
+            disabled_agents,
+        )
+        event_id = str(uuid.uuid4())
+        with closing(self._connect()) as conn, conn:
+            conn.execute("BEGIN IMMEDIATE")
+            worker = conn.execute(
+                "SELECT * FROM agent_workers WHERE worker_id = ? LIMIT 1",
+                (outcome.contractor_worker_id,),
+            ).fetchone()
+            if worker is None:
+                raise KeyError("workforce worker not found")
+            if str(worker["agent_slug"]) != manifest["contractor_specialist_slug"]:
+                # The delivered card names a different specialist than the
+                # worker being credited, so this outcome is not attributable to
+                # that immutable identity.
+                return {
+                    "recorded": False,
+                    "promoted": False,
+                    "reason": "contractor_identity_mismatch",
+                    "event_id": "",
+                    "worker_id": str(worker["worker_id"]),
+                    "accepted_outcome_key": "",
+                    "artifact_digest": "",
+                }
+            existing = conn.execute(
+                "SELECT * FROM agent_performance_events WHERE idempotency_key = ?",
+                (outcome.outcome_key,),
+            ).fetchone()
+            if existing is not None:
+                if (
+                    str(existing["worker_id"]) != str(worker["worker_id"])
+                    or str(existing["evidence_hash"]) != evidence_digest
+                ):
+                    raise RuntimeError("accepted outcome evidence conflicts with its replay")
+                return {
+                    "recorded": False,
+                    "promoted": False,
+                    "reason": "replayed",
+                    "event_id": str(existing["id"]),
+                    "worker_id": str(worker["worker_id"]),
+                    "accepted_outcome_key": outcome.outcome_key,
+                    "artifact_digest": outcome.artifact_digest,
+                }
+            conn.execute(
+                "INSERT INTO agent_performance_events "
+                "(id, idempotency_key, worker_id, version, version_hash, session_id, trace_id, "
+                "work_unit_id, activation_receipt_id, event_type, outcome, score, evidence_hash, "
+                "evidence_refs, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, '', '', 'acceptance', 'accepted', 1.0, ?, ?, "
+                f"{STORE_CLOCK_SQL})",
+                (
+                    event_id,
+                    outcome.outcome_key,
+                    str(worker["worker_id"]),
+                    manifest["contractor_specialist_version"],
+                    manifest["contractor_prompt_hash"],
+                    "",
+                    "",
+                    evidence_digest,
+                    evidence_document,
+                ),
+            )
+            _auto_promote_if_ready(
+                conn,
+                worker,
+                disabled=disabled,
+                required_successes=successes,
+                review_window_days=review_window_days,
+            )
+            promoted = (
+                str(
+                    conn.execute(
+                        "SELECT employment_class FROM agent_workers WHERE worker_id = ?",
+                        (worker["worker_id"],),
+                    ).fetchone()["employment_class"]
+                )
+                == "employee"
+                and str(worker["employment_class"]) != "employee"
+            )
+        return {
+            "recorded": True,
+            "promoted": promoted,
+            "reason": "accepted",
+            "event_id": event_id,
+            "worker_id": str(worker["worker_id"]),
+            "accepted_outcome_key": outcome.outcome_key,
+            "artifact_digest": outcome.artifact_digest,
+        }
+
     def record_workforce_outcome(
         self,
         worker_id_or_slug: str,
@@ -2367,6 +2496,12 @@ class WorkforceStoreMixin:
             if activation_receipt_id
             else ""
         )
+        # Evidence shape is a property of the arguments alone, so it is decided
+        # before any connection opens rather than midway through a transaction,
+        # and before the activation rule -- a caller reaching for retired or
+        # promotion-bearing evidence should be told that, not sent to find a
+        # receipt that would not have helped.
+        evidence_document = _validated_outcome_evidence(evidence_refs)
         if event in _ACTIVATION_BOUND_OUTCOMES and not activation_id:
             raise ValueError(f"{event} outcomes require an activation receipt")
         auto_promote_successes, disabled, review_window_days = _outcome_promotion_policy(
@@ -2390,14 +2525,6 @@ class WorkforceStoreMixin:
                 session=session,
                 trace=trace,
                 unit=unit,
-            )
-            evidence_document = _validated_outcome_evidence(
-                conn,
-                worker,
-                event=event,
-                session=session,
-                trace=trace,
-                evidence_refs=evidence_refs,
             )
             existing = conn.execute(
                 "SELECT * FROM agent_performance_events WHERE idempotency_key = ?", (key,)
