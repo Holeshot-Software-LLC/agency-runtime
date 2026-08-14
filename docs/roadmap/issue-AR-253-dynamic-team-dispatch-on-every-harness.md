@@ -46,6 +46,45 @@ Codex has prior-candidate negative observations across TUI, Desktop, and exec
 and a current source negative. Neither host has exact-candidate installed/live
 proof; ZCode, Hermes, and OpenClaw are unproven.
 
+## Where the latency actually is (measured 2026-08-14, `9e29aabe`)
+
+The budget overrun is **the recruiter stage**, not process overhead. Measured on
+one live Windows workstation against the real `claude-subscription` CLI
+transport:
+
+| what | measured |
+|---|---|
+| `claude -p` process cost under the transport's own isolated environment | 8.3 s warm, 9.2 s cold |
+| planner call, end to end | 15.9 s |
+| recruiter call, end to end | 59.3 s and 94.0 s |
+| one accepted in-path turn (hook surface, 5 specialists, confidence 1.0) | 106.3 s |
+
+Subtracting the ~9 s process floor, the planner spends ~7 s on inference and the
+recruiter **50-85 s**, so the recruiter is roughly 7-12x the planner and owns the
+overrun. A fresh isolated home costs no more than a reused one (9.2 s vs 8.3 s),
+so pooling or warming the transport's home directory is not the lever.
+
+Two measurement traps were found in the process, both of which inflate numbers
+that look like product latency:
+
+1. **A direct `claude` CLI run while a Claude session is open stalls exactly
+   60 s** on `~/.claude.json` lock contention — the debug log says
+   `Lock acquisition took longer than expected - another Claude instance may be
+   running`. The same invocation costs 83-95 s with the lock and 8-9 s without.
+   **Agency's transport is not affected**: `_isolated_invocation_environment` in
+   `agency_runtime/core/cli_transport.py` redirects `HOME`/`USERPROFILE`/
+   `APPDATA` to a private directory while keeping `CLAUDE_CONFIG_DIR` real, which
+   preserves authentication and sidesteps the lock. Do not attribute this 60 s to
+   Agency.
+2. `agency route` from the CLI runs on an unproven surface and rejects 251 of 282
+   candidates as `execution_host_unproven`, so its latency and its
+   `staff_without_safe_team` failures are both artifacts. Measure staffing from
+   `routing_decisions` rows produced by the hook path.
+
+The earlier p50 88.3 s / p95 195.9 s figures are therefore plausible as real
+inference cost rather than startup overhead, and the remeasurement should target
+the recruiter prompt — 282 candidates per call — before anything else.
+
 ## Current state
 
 `agency evidence latency` exposes overall and decision-source distributions,
