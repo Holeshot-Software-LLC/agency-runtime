@@ -26,8 +26,8 @@ superseded_by: null
 type: roadmap
 ar119_authority: completion-evidence
 vision_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
-candidate_commit: a25ec35007031cf352a19fc2d8d37f1f5bc55de1
-evidence_cutoff: 2026-08-13
+candidate_commit: 9724820eee127a7bab76929c1cbb7a31fc6eb84d
+evidence_cutoff: 2026-08-14
 ---
 
 # AR-119 rule and host evidence matrix
@@ -46,6 +46,48 @@ bound to that exact candidate. Earlier artifacts remain visible as prior-
 candidate context but cannot make a current installed/live layer green or red.
 Although the schema reserves `not-applicable`, none of the nine rules is
 optional on a supported host.
+
+Candidate `9724820e` advances `a25ec350` by two repairs that a Windows-only
+workstation could not have found, and one of them was a real defect this matrix
+was already claiming did not exist.
+
+The R8 openclaw row asserted that "envelope integrity and evaluated negatives
+still deny" while the code no longer did either. `_exact_outbound_terminal_state`
+filters on the presented digest, so it answers `""` both when a trace has no
+terminal at all and when it holds one that committed a *different* response.
+The Rule 8 fail-open in `e80cb40c` read that single answer as Agency being
+blind, and the policy call on a closed turn returns `None`, which now allows.
+The result was that a completed turn re-presented with a tampered outbound
+payload was delivered, and a trace terminalized as `response_invalid` became
+deliverable by simply sending different text: the exact-digest binding could be
+bypassed by failing to satisfy it. Both cases pass on `origin/main` and failed
+here, so the branch introduced them. `e0d88ee4` separates the two answers by
+asking the store for the trace's terminal without a digest filter -- a readable
+terminal that disagrees is a verdict, not a fault -- and an unreadable, silent,
+or agreeing store still falls through to the fail-open path, so Rule 8 keeps its
+intent. This is the failure mode the R8 rows are most exposed to: the layer was
+read from source, and a source read cannot see a property the code has lost.
+Neither case is in the curated mutation set, so CI was green across both.
+
+`25bdec39` is test-only and platform-driven. Five codex spawn-provenance
+mutations expressed file substitution as `unlink()` followed by rewriting the
+same bytes, which is an identity no-op on Linux: freeing an inode returns it to
+the allocator, which hands the same number back to the next create in that
+directory, so `st_dev`, `st_ino` and `st_size` all match and the `(dev, ino)`
+seal reads the substitute as current. NTFS does not recycle file IDs that
+eagerly, so the mutations only ever bit on Windows. Substituting by rename
+guarantees a distinct inode everywhere and is the shape a real replacement
+takes. CI reported one of the five because the conformance baseline runs under
+`-x`; the other four were measured directly on Linux.
+
+This candidate's decision-conformance gate was proven by the repository's own
+Linux CI rather than by a workstation run, which is the stronger evidence here
+precisely because both repairs were invisible to Windows. Its quality job passed
+in 7m33s at `9724820e`. Two failures remain outside the gate and are not this
+branch's: `test_routing_receipt_header.py` loses two cases that are already
+recorded in the `bd38e34c` baseline, and `test_owned_adapter_surface_coverage_final.py`
+loses three that fail identically on `origin/main`. None is in the curated
+mutation set, and none falls inside a cited range.
 
 Candidate `a25ec350` carries the same evidence as `be18a9b0` and advances the
 baseline by two test-only commits, which retire assertions that the delegation
@@ -261,7 +303,7 @@ two/deeper remains unsupported, and no Installed or Live layer advances.
 | R8 | codex | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[codex]` | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` | Contract output cannot prove native host publication |
 | R8 | zcode | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | `test_hook_boundary_publishes_prompt_when_preflight_integrity_fails[zcode]` | 2026-08-12 | `tests/test_host_hooks.py:2377-2428` | No live host publication artifact |
 | R8 | hermes | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | Agency-blind paths return the host draft unchanged while an evaluated rejection still replaces it | 2026-08-13 | `agency_runtime/adapters/hermes/bridge.py:269-322` | Contract output cannot prove native host publication |
-| R8 | openclaw | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | Agency-blind gates allow the turn while envelope integrity and evaluated negatives still deny | 2026-08-13 | `agency_runtime/adapters/openclaw/node_bridge.py:798-947` | Contract output cannot prove native host publication |
+| R8 | openclaw | unproven | proven | proven | unproven | unproven | Native host publication artifact showing an unstaffed turn proceeded | Agency-blind gates allow the turn while envelope integrity and evaluated negatives still deny | 2026-08-14 | `agency_runtime/adapters/openclaw/node_bridge.py:769-1000` | Contract output cannot prove native host publication |
 | R9 | claude | unproven | unproven | proven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | every rule R1 through R8 is proven at the simulation layer on claude | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Simulation parity is complete for this host, but Rule 5 Implementation and every Installed and Live layer remain unproven, so parity itself is not proven |
 | R9 | codex | unproven | unproven | proven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | every rule R1 through R8 is proven at the simulation layer on codex | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Simulation parity is complete for this host, but Rule 5 Implementation and every Installed and Live layer remain unproven, so parity itself is not proven |
 | R9 | zcode | unproven | unproven | proven | unproven | unproven | Aggregate of every R1 through R8 cell under one exact candidate identity | every rule R1 through R8 is proven at the simulation layer on zcode | 2026-08-13 | `docs/roadmap/AR-119-rule-host-evidence-matrix.md` | Simulation parity is complete for this host, but Rule 5 Implementation and every Installed and Live layer remain unproven, so parity itself is not proven |
@@ -290,7 +332,7 @@ satisfy a layer.
 | R4 | claude | Implementation | proven | source | sealed in-lifetime collector binds one current host artifact to one invocation | 2026-08-12 | `agency_runtime/core/child_delivery_evidence.py:1484-1665` |
 | R4 | claude | Simulation | proven | test | SafeClaude collects a real-shape HookBridge artifact before profile cleanup | 2026-08-12 | `tests/test_host_canary.py:805-1055` |
 | R4 | codex | Implementation | proven | source | sealed v3 attestation preserves exact CLI profiles and adds the atomic 13-family Desktop profile with exact causal/output/currentness binding | 2026-08-13 | `agency_runtime/core/codex_spawn_provenance.py:245-3525` |
-| R4 | codex | Simulation | proven | test | exact CLI and Desktop lineage, causal, profile, currentness, bound, and replay fixtures pass for every supported variant | 2026-08-13 | `tests/test_codex_spawn_provenance.py:776-1835` |
+| R4 | codex | Simulation | proven | test | exact CLI and Desktop lineage, causal, profile, currentness, bound, and replay fixtures pass for every supported variant | 2026-08-14 | `tests/test_codex_spawn_provenance.py:800-1855` |
 | R4 | zcode | Implementation | proven | source | host-started plaintext child receives the exact inference team | 2026-08-12 | `agency_runtime/adapters/hooks.py:1088-1256` |
 | R4 | zcode | Simulation | proven | test | exact inference team reaches the ZCode child boundary | 2026-08-12 | `tests/test_jit_staffing_host_parity.py:162-208` |
 | R8 | claude | Simulation | proven | test | a bridge fault publishes the prompt without costing the turn | 2026-08-13 | `tests/test_host_hooks.py:2345-2406` |
@@ -350,8 +392,8 @@ satisfy a layer.
 | R7 | openclaw | Simulation | proven | test | a card held in one turn is absent from the next and its expiry is stated | 2026-08-13 | `tests/test_host_parity_eval.py:34-51` |
 | R8 | hermes | Implementation | proven | source | an unavailable Agency path returns the host draft unchanged | 2026-08-13 | `agency_runtime/adapters/hermes/bridge.py:269-322` |
 | R8 | hermes | Simulation | proven | test | a raising finalizer returns the draft unchanged and does not terminalize the turn | 2026-08-13 | `tests/test_completion_policy_boundary.py:241-273` |
-| R8 | openclaw | Implementation | proven | source | blind soft control, correlation, evidence, decision, and commit paths allow the turn | 2026-08-13 | `agency_runtime/adapters/openclaw/node_bridge.py:798-947` |
-| R8 | openclaw | Simulation | proven | test | unreadable evidence and unrecoverable correlation allow, while a broken envelope still denies | 2026-08-13 | `tests/test_owned_adapter_surface_coverage_final.py:805-888` |
+| R8 | openclaw | Implementation | proven | source | blind soft control, correlation, evidence, decision, and commit paths allow the turn, while a terminal that disagrees with the presented digest still denies | 2026-08-14 | `agency_runtime/adapters/openclaw/node_bridge.py:769-1000` |
+| R8 | openclaw | Simulation | proven | test | unreadable evidence and unrecoverable correlation allow, while a tampered payload on a completed turn and any delivery on a terminalized trace are still replaced | 2026-08-14 | `tests/test_adapter_parity.py:1593-1681` |
 
 ## Cross-cutting completion gates
 
