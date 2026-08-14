@@ -108,3 +108,33 @@ The collector seam is `agency_runtime/core/child_delivery_evidence.py`, whose
 verified delivery. What is missing is the step that pairs one producer proof
 with one verifier proof and that verifier's verdict, which is where the live
 work starts.
+
+## Measured before building the collector (2026-08-14, `9e29aabe`)
+
+Three constraints found by reading the seam, and any collector design has to
+answer all three. They are recorded here so the next attempt does not discover
+them halfway through a build.
+
+1. **Agency cannot summon the verifier.** Rule 5 gives spawning to the native
+   harness alone, and `agency_runtime/core/evals/spawn_authority.py` proves at
+   the source that worker origin is confined to the host boundaries. So a
+   "distinct governed verifier selected by inference" is not something Agency
+   arranges — it exists only when the *host* independently spawns a second child
+   and Agency staffs it. The collector can recognise verification; it cannot
+   cause it. An acceptance rate below 100% is therefore the expected steady
+   state, not a defect, and the promotion policy has to tolerate that.
+
+2. **The verified-delivery capability is one-use and canary-only.**
+   `_consume_verified_host_child_delivery` pops its identity on read, and the
+   sole production consumer is `agency_runtime/core/canary_proof.py`, which
+   collects inside a disposable host profile under ADR-0158. Nothing today holds
+   two such capabilities at once, which is exactly what one envelope needs.
+   Widening the seal is a threat-model change, not a refactor.
+
+3. **No child carries a producer/verifier role, and completion is not
+   acceptance.** `record_native_assignment_outcome` maps a native child's exit
+   to `passed`/`failed`; ADR-0157 rejects counting child exits precisely because
+   completion is not semantic acceptance. Nothing records that one child's work
+   was the subject of another child's judgement, so the correlation the envelope
+   needs — verdict bound to the producer's artifact digest — has no producer in
+   the runtime yet.
