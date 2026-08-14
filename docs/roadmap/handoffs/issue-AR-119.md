@@ -49,8 +49,9 @@ must be loaded first after any compaction or session restart.
   merged as `be209e7a`; the `-ar119` worktree and its branch are history.
 - **AR-258 is done.** All three hosts pin one runtime digest and Agency is
   globally on at generation 56. Hooks reload only in a fresh session.
-- Candidate `a9d84a27` advances `9724820e` by one test-only R4 claude repair;
-  conformance carries forward (Linux CI quality job 7m33s, `a25ec350` 151/151).
+- Candidate `e216670a` proves R5 at the source; `a9d84a27` before it was the
+  test-only R4 claude repair. Conformance carries forward from `9724820e`
+  (Linux CI quality job 7m33s; the `a25ec350` workstation run was 151/151).
 - **CI's fast spine is an allowlist of 23 files and most matrix-cited tests are
   not in it.** A cited test can sit red for days with CI green; run cited files.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
@@ -120,21 +121,20 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-**Simulation parity is complete on all five hosts**: R1-R8 proven everywhere, so
-R9 derives as proven in simulation for each. It landed as R2/R3 (`42c1354b`),
-R7 (`cb6808fe`), R6 (`75663ed0`), R5 (`d4b64c35`), then claude R8 and
-hermes/openclaw R4 (`be18a9b0`) -- each a measured turn on that host's own
-boundary. **Nothing further can be proven from source.**
+**Implementation and Simulation are both 45/45 at `e216670a`, so the source-only
+work is finished.** R5 Implementation closed last, on a separation rather than an
+absence: process-capable modules and worker-creating modules are disjoint (21 and
+5, overlap 0), worker origin is confined to the host boundaries, and every process
+module declares a tool purpose. `agency eval spawn-authority` runs it; three of
+its tests inject a violation into a copy of the shipped package and require the
+eval to fail. **Nothing further can be proven from source.**
 
-Two things remain, in this order. **1. The twenty Installed layers.** The
-projection is reconciled and Agency is on, so a fresh session per host can now
-produce exact-candidate artifacts; codex hook trust still needs interactive TUI
-approval and zcode install ends `partial_failure` at `config_drift`. This is the
-precondition for every Live layer. **2. R5 Implementation**, open on purpose: a
-static call-graph absence proof does not hold, since the turn-path closure
-legitimately holds 16 process-capable modules (inference shells out to CLI
-providers through the installer's own primitive). It needs a formulation that
-separates starting an agent from running a tool.
+**All that remains is the 45 Installed and 45 Live layers, and every one needs a
+real host.** The projection is reconciled and Agency is on, so a fresh session per
+host can now produce exact-candidate artifacts. Only claude is ready on the
+evidence workstation: codex hook trust needs interactive TUI approval, zcode
+install ends `partial_failure` at `config_drift`, and hermes/openclaw are not on
+that box at all. The matrix therefore cannot reach 45/45 cells from one machine.
 
 ## verification
 
@@ -149,6 +149,7 @@ ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 node --test tests/dashboard_ui.test.mjs
 agency eval routing --json --no-details
+agency eval spawn-authority --json
 agency eval decision-conformance --repository . --json
 git diff --check
 ~~~
