@@ -880,6 +880,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `917c9b60` | 2026-08-14 | fix(canary): log the invocation traceback instead of discarding it | null | null |
 | `1fe68701` | 2026-08-14 | feat(evals): measure staffing rate, recruiter cost, and the cold budget | null | null |
 | `9ade8261` | 2026-08-14 | fix(security)!: require integrity, not secrecy, of files hosts wrote | null | null |
+| `1e8552a7` | 2026-08-14 | docs(ar119): record the Linux parity gap under Rule 4 and rebind | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
