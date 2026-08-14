@@ -860,6 +860,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a25ec350` | 2026-08-13 | test(resident-managers): split the kernel lifetime contract by whether Agency can run | null | null |
 | `b60fa62b` | 2026-08-13 | docs(roadmap): bump the candidate to a25ec350 and record its conformance run | null | null |
 | `4ade96a3` | 2026-08-14 | docs(handoff): point the capsule at the live worktree, PR, and candidate | null | null |
+| `25bdec39` | 2026-08-14 | fix(tests): substitute rollout files by rename so the identity seal is testable on Linux | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
