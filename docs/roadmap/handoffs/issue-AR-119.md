@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-08-13
+updated: 2026-08-14
 tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -48,11 +48,11 @@ must be loaded first after any compaction or session restart.
 - **WORK IN `C:\Workspaces\Holeshot Software\agency-runtime-ar119`.** The old
   `.codex/worktrees/56b7/agency-runtime` was destroyed 2026-08-13 (lost `.git`
   and its worktree registration); its files remain but it is not a repository.
-- **PR #274 is open and awaiting review** — the branch is pushed, fast-forwards
-  onto `main`, and carries every commit below. Nothing is merged yet. It cannot
-  be self-approved: the authoring account is the only one authenticated here.
-- Candidate `a25ec350`: decision-conformance passed 151/151 killed, zero
-  survived, zero invalid, `source_unchanged=true`, baseline 218,955 ms.
+- **PR #274 is open and unmerged.** It cannot be self-approved: the authoring
+  account is the only one authenticated here. CI arrived red and took two
+  repairs, both invisible on Windows; the matrix narrative records them.
+- Candidate `9724820e`: decision-conformance proven by the repository's Linux
+  CI (quality job 7m33s); the `a25ec350` workstation run was 151/151 killed.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
   exact-candidate Claude Installed/Live proof remains open.
 - ADR-0159 binds exact CLI 0.147 and a pinned Desktop alpha to a sealed v3
