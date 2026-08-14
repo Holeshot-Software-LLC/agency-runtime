@@ -77,6 +77,30 @@ _DESKTOP_DYNAMIC_TOOLS = [
 _DESKTOP_DYNAMIC_TOOLS_SHA256 = "d1060035f3e4bf53e8af0940ad8723e794921afa3b2f026eb02c0135f6115f90"
 
 
+def _substitute_identical_file(path: Path) -> None:
+    """Put a *different* file, with identical bytes, at ``path``.
+
+    The attestation seals ``(st_dev, st_ino)`` because the scanned prefix digest
+    alone cannot distinguish an append by the original writer from a substituted
+    file whose prefix was crafted to match. Exercising that seal needs a
+    genuinely new inode.
+
+    Unlinking and rewriting in place does not produce one: Linux frees the inode
+    and the allocator hands the same number straight back to the next create in
+    the same directory, so ``(st_dev, st_ino, st_size)`` all match and the seal
+    reads the substitute as current. NTFS does not recycle file IDs that
+    eagerly, which is why the in-place form appeared to work on Windows only.
+
+    Writing a sibling first and renaming it over the target guarantees a
+    distinct inode everywhere, because both files exist at once. It is also the
+    shape a real substitution takes, since atomic replacement is
+    written-then-renamed.
+    """
+    substitute = path.with_name(path.name + ".substitute")
+    substitute.write_bytes(path.read_bytes())
+    os.replace(substitute, path)
+
+
 def _real_record(
     kind: str,
     payload: dict[str, Any],
@@ -1352,9 +1376,7 @@ def test_desktop_alpha_requires_unique_canonical_owners_and_exact_copies(
     elif mutation == "ambiguous-root-owner":
         root.with_name(root.name.replace("T08-18-29", "T07-18-29")).write_bytes(root.read_bytes())
     elif mutation == "replaced-root-owner":
-        raw = root.read_bytes()
-        root.unlink()
-        root.write_bytes(raw)
+        _substitute_identical_file(root)
     elif mutation == "missing-parent-owner":
         parent.unlink()
     elif mutation == "ambiguous-parent-owner":
@@ -1362,9 +1384,7 @@ def test_desktop_alpha_requires_unique_canonical_owners_and_exact_copies(
             parent.read_bytes()
         )
     elif mutation == "replaced-parent-owner":
-        raw = parent.read_bytes()
-        parent.unlink()
-        parent.write_bytes(raw)
+        _substitute_identical_file(parent)
     else:
         records = [json.loads(line) for line in current.read_text(encoding="utf-8").splitlines()]
         copied = records[1] if mutation == "copied-parent-drift" else records[2]
@@ -2724,10 +2744,7 @@ def test_cross_file_bound_mutation_replacement_or_replay_invalidates_attestation
         )
         target.write_bytes(raw.replace(needle, replacement, 1))
     elif mutation in {"parent_replacement", "root_replacement"}:
-        replaced = parent if mutation == "parent_replacement" else root
-        raw = replaced.read_bytes()
-        replaced.unlink()
-        replaced.write_bytes(raw)
+        _substitute_identical_file(parent if mutation == "parent_replacement" else root)
     elif mutation == "root_unbound_mutation":
         raw = root.read_bytes()
         assert b'"padding":"aaaa"' in raw
@@ -2777,9 +2794,7 @@ def test_cross_file_external_identity_and_scanned_prefix_are_sealed(
     )
     attestation = _attest(current, {"CODEX_HOME": str(replacement_home)})
     assert attestation is not None
-    original = root.read_bytes()
-    root.unlink()
-    root.write_bytes(original)
+    _substitute_identical_file(root)
     assert not subject.codex_plaintext_spawn_attestation_is_current(
         attestation,
         tool_input=_ARGS,
