@@ -869,6 +869,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a9d84a27` | 2026-08-14 | fix(tests): stub the complete-scope judge with its real zero top score | null | null |
 | `38ea6aeb` | 2026-08-14 | docs(ar119): rebind to a9d84a27 and restore R4 claude simulation | null | null |
 | `6fa4a782` | 2026-08-14 | docs(ar119): point the capsule at main, generation 56, and a9d84a27 | null | null |
+| `e216670a` | 2026-08-14 | feat(evals): prove at the source that only the host may start an agent | null | null |
+| `62f6ba48` | 2026-08-14 | docs(ar119): prove Rule 5 at the source and rebind to e216670a | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
