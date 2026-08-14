@@ -45,19 +45,22 @@ must be loaded first after any compaction or session restart.
 
 ## checkpoint
 
-- The current source pair is Codex runtime `211563c7` and ledger `ee8db873`;
-  Desktop documentation is `1a6e4887`/`ee82c602`, cross-file CLI history is
-  `45b21cdc`/`01730614`, and preflight design is `ccb1802c`/`a7e8cf54`.
+- **WORK IN `C:\Workspaces\Holeshot Software\agency-runtime-ar119`.** The old
+  `.codex/worktrees/56b7/agency-runtime` was destroyed 2026-08-13 (lost `.git`
+  and its worktree registration); its files remain but it is not a repository.
+- **PR #274 is open and awaiting review** — the branch is pushed, fast-forwards
+  onto `main`, and carries every commit below. Nothing is merged yet. It cannot
+  be self-approved: the authoring account is the only one authenticated here.
+- Candidate `a25ec350`: decision-conformance passed 151/151 killed, zero
+  survived, zero invalid, `source_unchanged=true`, baseline 218,955 ms.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
   exact-candidate Claude Installed/Live proof remains open.
-- ADR-0159 now binds exact CLI 0.147 and separately pinned Desktop alpha to a
-  sealed v3 attestation. Current Sol/TUI and all 65 observed Desktop calls
-  omitted the marker and remain safely unstaffed.
+- ADR-0159 binds exact CLI 0.147 and a pinned Desktop alpha to a sealed v3
+  attestation; Sol/TUI and all 65 Desktop calls omit the marker, safely unstaffed.
 - No top-level cell is proven: every Installed/Live layer is still unproven, so
   source and simulation progress never promotes a cell on its own.
-- Tracker creation for AR-255 through AR-257 and tracker synchronization for
+- Tracker creation for AR-255 through AR-258 and tracker synchronization for
   locally reopened historical issues remain pending explicit authorization.
-  No missing tracker write is represented as complete.
 - Conformance history is in AR-257; exec depth-two is parked per AR-180.
 
 ## completed-evidence
@@ -77,20 +80,10 @@ must be loaded first after any compaction or session restart.
 - Desktop seals the canonical owner and both depth-two edges, exact adjacent
   direct event/output evidence, copied history, files, profile, currentness,
   independent offsets, and the 64 MiB aggregate external limit.
-- Exact preflight inventory: PATH TUI/exec Codex `0.147.0`, native SHA-256
-  `935A1911...2AD9D`; Desktop `26.803.10989.0` with runtime
-  `0.147.0-alpha.6.6`, native SHA-256 `59295889...69B3`. The observed Sol/TUI
-  call omitted `encrypted_function_args` and carried a `gAAAAA...` message.
-- The authentic CLI cross-file census remains 11/11. The content-safe Desktop
-  probe resolves 52/52 V2 chains (47 depth one, 5 depth two); maximum external
-  ancestry is 32,650,955 bytes and maximum resolver time is 2.765 seconds.
-- Desktop verification passed 288/288 focused provenance/hook tests, 289/289
-  focused plus anchor, and the 673-test fast spine with 6 skips. Its green
-  baseline killed 20/20 scoped mutations with zero survived/invalid and
-  `source_unchanged=true`; independent verification reproduced the result and
-  reported no finding at any severity.
-- `45b21cdc` retains the historical 131/131 conformance result; for `211563c7`
-  dashboard UI passed 134/134, routing every threshold, and Ruff lint/format.
+- Exact preflight inventory, the 11/11 CLI census, the 52/52 Desktop V2 chain
+  probe, and the Desktop verification runs (288/288, 289/289, 673-test spine,
+  20/20 scoped mutations) are recorded in AR-180 and the matrix; do not
+  re-derive them here.
 - Claude's earlier Rule-4 artifacts and Codex's prior TUI/Desktop/exec negatives
   remain prior-candidate context. No Agency canary, live rewrite, real Claude
   invocation, or exact-candidate Installed/Live proof ran.
@@ -127,15 +120,22 @@ consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
-**Simulation parity is complete on all five hosts** at `be18a9b0`: R1-R8 proven
-everywhere, so R9 derives as proven in simulation for each. It landed as R2/R3
-(`42c1354b`), R7 (`cb6808fe`), R6 (`75663ed0`), R5 (`d4b64c35`), then claude R8
-and hermes/openclaw R4 -- each a measured turn on that host's own boundary. No
-cell is negative and none is proven. Nothing further can be proven from source.
-R5 Implementation stays open on purpose: a static call-graph absence proof does
-not hold, since the turn-path closure legitimately holds 16 process-capable
-modules (inference shells out to CLI providers through the installer's own
-primitive). Installed and Live need a reinstall under explicit authorization.
+**Simulation parity is complete on all five hosts**: R1-R8 proven everywhere, so
+R9 derives as proven in simulation for each. It landed as R2/R3 (`42c1354b`),
+R7 (`cb6808fe`), R6 (`75663ed0`), R5 (`d4b64c35`), then claude R8 and
+hermes/openclaw R4 (`be18a9b0`) -- each a measured turn on that host's own
+boundary. **Nothing further can be proven from source.**
+
+Two things remain, in this order. **1. Merge PR #274**, then follow
+`issue-AR-258-reconcile-the-installed-projection.md`: the shared Store is at
+schema 45 and every other tree is at 44, so the installed CLI cannot read it and
+no host can produce an artifact until it is refreshed from the merged `main`.
+That unlocks all twenty Installed layers and is the precondition for every Live
+one. **2. R5 Implementation**, open on purpose: a static call-graph absence
+proof does not hold, since the turn-path closure legitimately holds 16
+process-capable modules (inference shells out to CLI providers through the
+installer's own primitive). It needs a formulation that separates starting an
+agent from running a tool.
 
 ## verification
 
