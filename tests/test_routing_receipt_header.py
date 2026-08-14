@@ -12,6 +12,7 @@ import pytest
 from agency_runtime.core import preflight as preflight_module
 from agency_runtime.core.config import AgencyConfig, OllamaConfig
 from agency_runtime.core.header.contract import (
+    HEADER_FIELDS,
     EvidenceCorrelationError,
     _delegation_line,
     fill_header_fields,
@@ -575,7 +576,7 @@ def test_routing_receipt_continuation_and_normalization_fail_closed() -> None:
     ]
 
 
-def test_ready_receipt_persists_once_and_drives_all_six_header_fields(
+def test_ready_receipt_persists_once_and_drives_the_five_header_fields(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -608,10 +609,13 @@ def test_ready_receipt_persists_once_and_drives_all_six_header_fields(
         "ready-receipt",
         evidence_snapshot=snapshot,
     )
-    assert "substantive answer or action" in fields["why"]
-    assert "required capabilities" in fields["why"]
-    assert "Agency attempted inference" in fields["how_it_shaped_outcome"]
-    assert "eligibility exclusions were applied" in fields["how_it_shaped_outcome"]
+    # AR-224 reduced the header to five factual fields; a caller-supplied
+    # narrative is dropped rather than carried into the turn.
+    assert set(fields) == {name for name, _label in HEADER_FIELDS}
+    assert "why" not in fields
+    assert "how_it_shaped_outcome" not in fields
+    assert fields["agencies_loaded"] == "agency-steward"
+    assert fields["recruited_via"] == "none (declined)"
     # The workforce planner's own receipt is the one model identity a hook can
     # actually observe, so it is the whole line when no launch requested one.
     assert fields["actual_model_selected"].startswith("workforce inference:")
@@ -634,7 +638,7 @@ def test_ready_receipt_persists_once_and_drives_all_six_header_fields(
         )
         == first
     )
-    forged = dict(fields, why="a plausible but unrecorded explanation")
+    forged = dict(fields, recruited_via="a plausible but unrecorded receipt")
     violation = validate_completion_policy(
         format_header(forged) + "\n\nBody",
         session_id="session",
@@ -643,7 +647,7 @@ def test_ready_receipt_persists_once_and_drives_all_six_header_fields(
         model="task-general",
     )
     assert violation is not None
-    assert violation["missing"] == ["why"]
+    assert violation["missing"] == ["recruited_via"]
 
 
 def test_ready_receipt_fails_closed_when_its_persisted_twin_is_tampered(
@@ -746,10 +750,8 @@ def test_legacy_ready_recipe_without_receipt_remains_readable_but_reports_unavai
         "legacy-receipt",
         evidence_snapshot=snapshot,
     )
-    assert "substantive answer or action" in fields["why"]
-    assert fields["how_it_shaped_outcome"] == (
-        "Unavailable - no authoritative routing effect was recorded for this turn."
-    )
+    assert fields["recruited_via"] == "none (no routing receipt)"
+    assert fields["actual_model_selected"] == "requested execution alias: task-general"
 
 
 def test_delegated_header_names_only_the_validated_specialist() -> None:
