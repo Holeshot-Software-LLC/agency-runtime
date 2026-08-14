@@ -1580,6 +1580,26 @@ def cmd_eval_host_parity(args: argparse.Namespace) -> int:
     return 0 if report["passed"] else 1
 
 
+def cmd_eval_spawn_authority(args: argparse.Namespace) -> int:
+    """Prove at the source that Agency never decides to spawn an agent."""
+    from agency_runtime.core.evals.spawn_authority import run_spawn_authority_eval
+
+    report = run_spawn_authority_eval()
+    if args.json:
+        _print_json(report)
+    else:
+        status = "passed" if report["passed"] else "failed"
+        print(
+            f"spawn-authority eval {status}: "
+            f"{report['passed_count']} passed, {report['failed_count']} failed"
+        )
+        for case in report["cases"]:
+            marker = "ok" if case["passed"] else "FAIL"
+            detail = case.get("error") or case.get("detail") or ""
+            print(f"{marker}\t{case['name']}\t{detail}")
+    return 0 if report["passed"] else 1
+
+
 def cmd_eval_routing(args: argparse.Namespace) -> int:
     """Run the versioned routing, policy, delegation, and latency gates."""
     from agency_runtime.core.evals.routing import run_routing_eval

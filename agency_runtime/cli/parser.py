@@ -1081,6 +1081,14 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
         "--json", action="store_true", help="Print machine-readable results"
     )
     _bind(eval_host_parity, handlers, "cmd_eval_host_parity")
+    eval_spawn_authority = eval_sub.add_parser(
+        "spawn-authority",
+        help="Prove at the source that only the host may start an agent",
+    )
+    eval_spawn_authority.add_argument(
+        "--json", action="store_true", help="Print machine-readable results"
+    )
+    _bind(eval_spawn_authority, handlers, "cmd_eval_spawn_authority")
     eval_routing = eval_sub.add_parser(
         "routing",
         help="Run versioned routing and latency gates",
