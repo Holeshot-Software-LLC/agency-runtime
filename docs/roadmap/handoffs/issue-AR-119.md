@@ -45,14 +45,14 @@ must be loaded first after any compaction or session restart.
 
 ## checkpoint
 
-- **WORK IN `C:\Workspaces\Holeshot Software\agency-runtime-ar119`.** The old
-  `.codex/worktrees/56b7/agency-runtime` was destroyed 2026-08-13 (lost `.git`
-  and its worktree registration); its files remain but it is not a repository.
-- **PR #274 is open and unmerged.** It cannot be self-approved: the authoring
-  account is the only one authenticated here. CI arrived red and took two
-  repairs, both invisible on Windows; the matrix narrative records them.
-- Candidate `9724820e`: decision-conformance proven by the repository's Linux
-  CI (quality job 7m33s); the `a25ec350` workstation run was 151/151 killed.
+- **WORK ON `main` IN `C:\Workspaces\Holeshot Software\agency-runtime`.** PR #274
+  merged as `be209e7a`; the `-ar119` worktree and its branch are history.
+- **AR-258 is done.** All three hosts pin one runtime digest and Agency is
+  globally on at generation 56. Hooks reload only in a fresh session.
+- Candidate `a9d84a27` advances `9724820e` by one test-only R4 claude repair;
+  conformance carries forward (Linux CI quality job 7m33s, `a25ec350` 151/151).
+- **CI's fast spine is an allowlist of 23 files and most matrix-cited tests are
+  not in it.** A cited test can sit red for days with CI green; run cited files.
 - AR-255 is still open. Its first five acceptance gates are checkpointed;
   exact-candidate Claude Installed/Live proof remains open.
 - ADR-0159 binds exact CLI 0.147 and a pinned Desktop alpha to a sealed v3
@@ -126,16 +126,15 @@ R7 (`cb6808fe`), R6 (`75663ed0`), R5 (`d4b64c35`), then claude R8 and
 hermes/openclaw R4 (`be18a9b0`) -- each a measured turn on that host's own
 boundary. **Nothing further can be proven from source.**
 
-Two things remain, in this order. **1. Merge PR #274**, then follow
-`issue-AR-258-reconcile-the-installed-projection.md`: the shared Store is at
-schema 45 and every other tree is at 44, so the installed CLI cannot read it and
-no host can produce an artifact until it is refreshed from the merged `main`.
-That unlocks all twenty Installed layers and is the precondition for every Live
-one. **2. R5 Implementation**, open on purpose: a static call-graph absence
-proof does not hold, since the turn-path closure legitimately holds 16
-process-capable modules (inference shells out to CLI providers through the
-installer's own primitive). It needs a formulation that separates starting an
-agent from running a tool.
+Two things remain, in this order. **1. The twenty Installed layers.** The
+projection is reconciled and Agency is on, so a fresh session per host can now
+produce exact-candidate artifacts; codex hook trust still needs interactive TUI
+approval and zcode install ends `partial_failure` at `config_drift`. This is the
+precondition for every Live layer. **2. R5 Implementation**, open on purpose: a
+static call-graph absence proof does not hold, since the turn-path closure
+legitimately holds 16 process-capable modules (inference shells out to CLI
+providers through the installer's own primitive). It needs a formulation that
+separates starting an agent from running a tool.
 
 ## verification
 
