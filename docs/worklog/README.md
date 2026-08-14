@@ -873,6 +873,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `62f6ba48` | 2026-08-14 | docs(ar119): prove Rule 5 at the source and rebind to e216670a | null | null |
 | `540a0bfc` | 2026-08-14 | docs(ar119): the capsule's source-only work is finished | null | null |
 | `f0e09997` | 2026-08-14 | fix(zcode): see Agency's own older handlers, and honour a forced refresh | null | null |
+| `03fdcff1` | 2026-08-14 | ci: run the AR-119 matrix evidence, and tie the list to the matrix | null | null |
+| `8f0059f3` | 2026-08-14 | fix(tests): assert the five header fields AR-224 actually ships | null | null |
+| `778f4c67` | 2026-08-14 | fix(tests): assert the openclaw fail-open and the turn guard that ship today | null | null |
+| `03f8ab48` | 2026-08-14 | style: format the matrix-evidence contract | null | null |
+| `917c9b60` | 2026-08-14 | fix(canary): log the invocation traceback instead of discarding it | null | null |
+| `1fe68701` | 2026-08-14 | feat(evals): measure staffing rate, recruiter cost, and the cold budget | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
