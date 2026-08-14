@@ -848,7 +848,10 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
             "inference_attempted": True,
             "provider_name": "selector",
             "candidate_count": len(bundled_roster()),
-            "top_score": 0.99,
+            # Native-child staffing always asks the judge for the complete
+            # candidate universe, which never scores lexical retrieval, so a
+            # faithful stub must report the zero top score the real judge does.
+            "top_score": 0.0,
             "provider_attempts": attempts,
         },
     )
