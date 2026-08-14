@@ -864,6 +864,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e0d88ee4` | 2026-08-14 | fix(openclaw)!: deny an outbound payload a terminalized trace never committed | null | null |
 | `2138fdc1` | 2026-08-14 | docs(ar119): bind the matrix to candidate 9724820e and correct the R8 openclaw evidence | null | null |
 | `4081215d` | 2026-08-14 | docs(ar119): point the capsule at candidate 9724820e and the CI repairs | null | null |
+| `be209e7a` | 2026-08-14 | Merge pull request #274 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
