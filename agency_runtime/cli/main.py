@@ -303,6 +303,7 @@ cmd_route = _roster.cmd_route
 cmd_explain = _roster.cmd_explain
 cmd_eval_host_parity = _roster.cmd_eval_host_parity
 cmd_eval_spawn_authority = _roster.cmd_eval_spawn_authority
+cmd_eval_staffing = _roster.cmd_eval_staffing
 cmd_eval_routing = _roster.cmd_eval_routing
 cmd_eval_compare = _evals.cmd_eval_compare
 cmd_eval_decision_conformance = _evals.cmd_eval_decision_conformance
@@ -427,6 +428,7 @@ _COMMAND_NAMES = (
     "cmd_eval_upstream_selection",
     "cmd_eval_host_parity",
     "cmd_eval_spawn_authority",
+    "cmd_eval_staffing",
     "cmd_eval_routing",
     "cmd_eval_workforce",
     "cmd_evidence_children",

@@ -1600,6 +1600,28 @@ def cmd_eval_spawn_authority(args: argparse.Namespace) -> int:
     return 0 if report["passed"] else 1
 
 
+def cmd_eval_staffing(args: argparse.Namespace) -> int:
+    """Measure staffing over the fixed ask set and print the manifest."""
+    from agency_runtime.core.evals.staffing import run_staffing_eval
+
+    report = run_staffing_eval(include_details=not args.no_details)
+    if args.json:
+        _print_json(report)
+    else:
+        status = "passed" if report["passed"] else "failed"
+        metrics = report["metrics"]
+        print(
+            f"staffing eval {status}: {metrics['staffed']}/{metrics['valid_arms']} staffed"
+            f" ({metrics['invalid_arms']} invalid arms reported, never scored)"
+        )
+        for gate in report["gates"]:
+            marker = "ok" if gate["passed"] else "FAIL"
+            print(
+                f"{marker}	{gate['name']}	{gate['observed']} (threshold {gate['threshold']})"
+            )
+    return 0 if report["passed"] else 1
+
+
 def cmd_eval_routing(args: argparse.Namespace) -> int:
     """Run the versioned routing, policy, delegation, and latency gates."""
     from agency_runtime.core.evals.routing import run_routing_eval

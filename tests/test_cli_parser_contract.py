@@ -41,6 +41,7 @@ HANDLER_NAMES = (
     "cmd_eval_product",
     "cmd_eval_routing",
     "cmd_eval_spawn_authority",
+    "cmd_eval_staffing",
     "cmd_eval_upstream_architecture",
     "cmd_eval_upstream_selection",
     "cmd_eval_workforce",
@@ -136,6 +137,7 @@ EXPECTED_PATHS = (
     "agency eval product",
     "agency eval routing",
     "agency eval spawn-authority",
+    "agency eval staffing",
     "agency eval upstream-architecture",
     "agency eval upstream-selection",
     "agency eval workforce",
@@ -235,6 +237,7 @@ EXPECTED_BINDINGS = {
     "agency eval decision-conformance": "cmd_eval_decision_conformance",
     "agency eval host-parity": "cmd_eval_host_parity",
     "agency eval spawn-authority": "cmd_eval_spawn_authority",
+    "agency eval staffing": "cmd_eval_staffing",
     "agency eval full-roster": "cmd_eval_full_roster",
     "agency eval product": "cmd_eval_product",
     "agency eval routing": "cmd_eval_routing",
@@ -297,7 +300,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "53780a60ad59776a4565e93ed3a15e8f13663bf20a5cece4352dcdca7170425c"
+EXPECTED_MANIFEST_SHA256 = "b86069d7595b6d55acc14a049ecbca71ab9e8d9229d6ec6e5ec0728c81ff71a5"
 
 
 def _handler(name: str):

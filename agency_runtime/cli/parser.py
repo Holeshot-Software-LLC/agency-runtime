@@ -1089,6 +1089,15 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
         "--json", action="store_true", help="Print machine-readable results"
     )
     _bind(eval_spawn_authority, handlers, "cmd_eval_spawn_authority")
+    eval_staffing = eval_sub.add_parser(
+        "staffing",
+        help="Measure staffing rate, recruiter cost, and the cold budget",
+    )
+    eval_staffing.add_argument("--json", action="store_true", help="Print machine-readable results")
+    eval_staffing.add_argument(
+        "--no-details", action="store_true", help="Omit the per-ask manifest"
+    )
+    _bind(eval_staffing, handlers, "cmd_eval_staffing")
     eval_routing = eval_sub.add_parser(
         "routing",
         help="Run versioned routing and latency gates",
