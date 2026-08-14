@@ -3,7 +3,7 @@ title: "AR-137: Make dashboard collections complete and paginated"
 status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [dashboard, workforce, pagination, ui, truth]
 related:
   - docs/decisions/0095-complete-paginated-dashboard-collections.md
@@ -52,12 +52,12 @@ ADR-0095 defines collection completeness. AR-138 owns asynchronous UI state.
 
 ## Acceptance
 
-- Workforces of 263, 1,001, and filtered subsets expose exact totals and all
+- [x] Workforces of 263, 1,001, and filtered subsets expose exact totals and all
   rows through stable pagination.
-- Hiring, roster, activity, and workforce views declare truncation consistently.
-- Paging remains deterministic under concurrent inserts using documented
+- [x] Hiring, roster, activity, and workforce views declare truncation consistently.
+- [x] Paging remains deterministic under concurrent inserts using documented
   cursor semantics.
-- UI labels distinguish page count, filtered total, and global total.
+- [x] UI labels distinguish page count, filtered total, and global total.
 
 ## Implementation evidence
 

@@ -3,7 +3,7 @@ title: "AR-222: Reconcile legacy work-unit integrity tests"
 status: done
 category: roadmap
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-12
 tags: [bug, testing, delegation, compatibility]
 related:
   - agency_runtime/core/unit_assignment.py
@@ -56,7 +56,10 @@ None. This is independent of the AR-221 live README product proof.
 
 ## Acceptance
 
-- [ ] The supported legacy/current contract is explicit and documented.
-- [ ] All fourteen work-unit integrity tests pass without deterministic
+- [x] The supported legacy/current contract is explicit and documented.
+- [x] All fourteen work-unit integrity tests pass without deterministic
   specialist selection or weakening current plan validation.
-- [ ] Focused lint, format, and relevant delegation checks pass.
+- [x] Focused lint, format, and relevant delegation checks pass.
+
+Commit `9ff23e80` and `tests/test_work_unit_integrity.py` close these historical
+compatibility criteria. Work units are not the current Rule-4 transport.

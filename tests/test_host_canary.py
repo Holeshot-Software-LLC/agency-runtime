@@ -9,11 +9,16 @@ import platform
 import shutil
 import sqlite3
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
 import agency_runtime.core.canary as canary_module
+from agency_runtime.adapters.hooks import HookBridge
+from agency_runtime.core import child_delivery_evidence as child_evidence
+from agency_runtime.core import native_child_install_identity as install_identity_module
+from agency_runtime.core import native_child_staffing
 from agency_runtime.core.canary import (
     CODEX_CANARY_EXEC_OPTIONS,
     CODEX_CURRENT_PROFILE_EXEC_OPTIONS,
@@ -32,6 +37,9 @@ from agency_runtime.core.installer_contracts import (
     CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
     CODEX_HOOK_EVENTS,
 )
+from agency_runtime.core.native_child_prompt_delivery import parse_inference_team_delivery
+from agency_runtime.core.roster.bundled import bundled_roster
+from agency_runtime.core.roster.revisions import content_digest
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -399,9 +407,11 @@ def test_canary_report_preserves_only_content_free_collaboration_diagnostic(
                     "reason": "parent_spawn_missing",
                     "parent_rollout_observed": True,
                     "spawn_count": 0,
+                    "followup_count": 0,
                     "wait_count": 0,
                     "tool_output_count": 0,
                     "child_start_count": 0,
+                    "child_interaction_count": 0,
                     "agent_message_count": 0,
                     "unexpected_item_count": 0,
                 },
@@ -507,7 +517,7 @@ def test_tokenless_evidence_cannot_reach_attestation_persistence(
     assert "private persistence detail" not in json.dumps(report)
 
 
-def test_live_canary_passes_only_with_correlated_runtime_evidence(
+def test_claude_store_only_runtime_evidence_cannot_pass_live_canary(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "agency.db"
@@ -576,8 +586,12 @@ def test_live_canary_passes_only_with_correlated_runtime_evidence(
     assert report["evidence"]["accepted_trace_ids"] == ["trace-live-canary"]
     assert report["evidence"]["expected_specialist_selected"] is True
     assert report["evidence"]["expected_specialist_loaded"] is True
-    assert report["canary_passed"] is True
+    assert report["canary_passed"] is False
     assert report["attestation_persisted"] is False
+    assert (
+        "verified host-authored Claude child card delivery was not proven"
+        in report["unmet_prerequisites"]
+    )
     assert "stdout" not in report["invocation"]
     attestation = Store(path).get_host_canary_attestation("claude")
     assert attestation is None
@@ -729,7 +743,7 @@ def test_failed_canary_cleanup_is_request_scoped_without_routing_evidence(
     assert store.get_run("concurrent-unrelated-turn")["status"] == "active"
 
 
-def test_claude_real_shape_canary_passes_without_synthesizing_a_receipt(
+def test_claude_store_only_real_shape_cannot_pass_without_host_artifact(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "agency.db"
@@ -779,9 +793,266 @@ def test_claude_real_shape_canary_passes_without_synthesizing_a_receipt(
     assert report["evidence"]["receipt_required"] is False
     assert report["evidence"]["receipt_proven"] is False
     assert report["evidence"]["host_receipt_count"] == 0
-    assert report["canary_passed"] is True
+    assert report["canary_passed"] is False
     assert report["attestation_persisted"] is False
+    assert (
+        "verified host-authored Claude child card delivery was not proven"
+        in report["unmet_prerequisites"]
+    )
     assert Store(path).get_host_canary_attestation("claude") is None
+
+
+def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    private_installer_launcher: tuple[Path, Path],
+) -> None:
+    db_path = tmp_path / "agency.db"
+    store = Store(db_path)
+    for agent in bundled_roster():
+        store._activate_prevalidated_agent(agent)
+    task = "Review the bounded canary change for correctness."
+    session_id = "claude-canary-parent"
+    trace_id = "claude-canary-trace"
+    child_id = "claude-canary-child"
+    decision_id = "claude-canary-decision"
+    launch_id = "claude-canary-launch"
+    attempts = [
+        {
+            "provider_name": "selector",
+            "provider_type": "openai",
+            "requested_model": "gpt-test",
+            "model_group": "",
+            "actual_model": "gpt-test",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "",
+        }
+    ]
+    query_hash = content_digest(task)
+    issued = datetime.now(timezone.utc).replace(microsecond=0)
+
+    def timestamp(value: datetime) -> str:
+        return value.isoformat(timespec="seconds").replace("+00:00", "Z")
+
+    monkeypatch.setattr(
+        native_child_staffing,
+        "query_judge",
+        lambda *_args, **_kwargs: {
+            "selected_ids": ["code-reviewer"],
+            "confidence": 0.99,
+            "latency_ms": 12,
+            "status": "applied",
+            "inference_mode": "inferred",
+            "inference_configured": True,
+            "inference_attempted": True,
+            "provider_name": "selector",
+            "candidate_count": len(bundled_roster()),
+            "top_score": 0.99,
+            "provider_attempts": attempts,
+        },
+    )
+    monkeypatch.setattr(native_child_staffing, "_utc_now", lambda: issued)
+    monkeypatch.setattr(native_child_staffing, "_nonce", lambda: "nonce-canary")
+    monkeypatch.setattr(native_child_staffing, "_decision_id", lambda: decision_id)
+
+    owner_home = tmp_path / "owner-home"
+    (owner_home / ".claude").mkdir(parents=True)
+    staged = install_agent_adapter("claude", home_dir=owner_home)
+    assert staged["ok"] is True
+    managed_target = Path(staged["target"])
+    plugin_dir = managed_target / "plugins" / "agency-preflight"
+    assert plugin_dir.is_dir()
+    runtime_digest = content_digest("canary-runtime")
+    monkeypatch.setattr(
+        install_identity_module,
+        "runtime_digest_for_bootstrap",
+        lambda _path: runtime_digest,
+    )
+    monkeypatch.setattr(
+        install_identity_module,
+        "running_runtime_digest",
+        lambda: runtime_digest,
+    )
+    assert (
+        install_identity_module.current_managed_host_install_identity(
+            "claude",
+            home_dir=owner_home,
+        )
+        is not None
+    )
+    before = store.recent_runtime_activity(limit=200)
+    auth_source = tmp_path / "claude-auth.json"
+    auth_source.write_text('{"token":"test"}', encoding="utf-8")
+    observed_home: list[Path] = []
+    monkeypatch.setattr(
+        child_evidence,
+        "storage_parent_is_trusted",
+        lambda *_args, **_kwargs: True,
+    )
+
+    def runner(argv: list[str], **kwargs: object) -> BoundedProcessResult:
+        assert "--tools=Agent" in argv
+        assert "--no-session-persistence" not in argv
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        claude_home = Path(environment["CLAUDE_CONFIG_DIR"])
+        assert Path(environment["AGENCY_CANARY_NATIVE_INSTALL_HOME"]) == owner_home.resolve()
+        assert Path(environment["HOME"]) != owner_home.resolve()
+        observed_home.append(claude_home)
+        invocation_store = Store(db_path)
+        invocation_store.create_run(
+            session_id=session_id,
+            trace_id=trace_id,
+            host="claude",
+            user_message=task,
+        )
+        pre_tool_payload = {
+            "hook_event_name": "PreToolUse",
+            "session_id": session_id,
+            "turn_id": trace_id,
+            "tool_name": "Agent",
+            "tool_use_id": launch_id,
+            "tool_input": {
+                "description": "canary-review",
+                "prompt": task,
+                "subagent_type": "general-purpose",
+                "model": "sonnet",
+            },
+        }
+        with monkeypatch.context() as environment_patch:
+            for name, value in environment.items():
+                environment_patch.setenv(name, value)
+            response = HookBridge(
+                "claude",
+                store=invocation_store,
+                _master={"enabled": True},
+            ).handle(pre_tool_payload)
+        assert response
+        updated_input = response["hookSpecificOutput"]["updatedInput"]
+        envelope = updated_input["prompt"]
+        delivery = parse_inference_team_delivery(envelope)
+        assert delivery is not None
+        assert delivery.decision_id == decision_id
+        assert delivery.launch_id == launch_id
+        assert tuple(card.specialist_slug for card in delivery.cards) == ("code-reviewer",)
+        persisted = invocation_store.get_native_child_staffing_decision(decision_id)
+        assert persisted is not None
+        assert persisted["install_id"] == delivery.install_id
+        assert invocation_store.get_specialist_load_history(session_id) == []
+
+        HookBridge(
+            "claude",
+            store=invocation_store,
+            _master={"enabled": True},
+        ).handle(
+            {
+                "hook_event_name": "SubagentStart",
+                "session_id": session_id,
+                "turn_id": trace_id,
+                "agent_id": child_id,
+                "agent_type": "general-purpose",
+            }
+        )
+        artifact = (
+            claude_home
+            / "projects"
+            / "project"
+            / session_id
+            / "subagents"
+            / f"agent-{child_id}.jsonl"
+        )
+        artifact.parent.mkdir(parents=True)
+        observed = datetime.now(timezone.utc).replace(microsecond=0)
+        artifact.write_text(
+            json.dumps(
+                {
+                    "type": "user",
+                    "isSidechain": True,
+                    "agentId": child_id,
+                    "sessionId": session_id,
+                    "timestamp": timestamp(observed),
+                    "message": {
+                        "role": "user",
+                        "content": [{"type": "text", "text": envelope}],
+                    },
+                },
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        post_tool_payload = {
+            **pre_tool_payload,
+            "hook_event_name": "PostToolUse",
+            "tool_input": updated_input,
+            "tool_response": {"agentId": child_id, "status": "completed"},
+        }
+        HookBridge(
+            "claude",
+            store=invocation_store,
+            _master={"enabled": True},
+        ).handle(post_tool_payload)
+        _commit_accepted_canary_turn(
+            invocation_store,
+            trace_id=trace_id,
+            session_id=session_id,
+            host="claude",
+        )
+        return BoundedProcessResult(0, json.dumps({"result": _valid_header()}), "")
+
+    backend = canary_module._SafeClaudeCanaryBackend(
+        executable="C:/tools/claude.exe",
+        db_path=db_path,
+        timeout=10,
+        plugin_dir=plugin_dir,
+        auth_source=auth_source,
+        process_runner=runner,
+        source_env={
+            "PATH": "C:/tools",
+            "HOME": str(owner_home),
+            "USERPROFILE": str(owner_home),
+        },
+    )
+    preparation = canary_module._LivePreparation(
+        store=store,
+        before=before,
+        backend=backend,
+        prompt=task,
+        expected_query_hash=query_hash,
+    )
+
+    outcome = canary_module._invoke_and_collect_evidence(
+        preparation,
+        host="claude",
+        path=db_path,
+        prompt=task,
+        expected_query_hash=query_hash,
+        mode="agency",
+    )
+
+    assert outcome.error is None
+    assert outcome.result is not None
+    assert outcome.evidence is not None
+    assert outcome.host_child_delivery is not None
+    assert len(observed_home) == 1
+    assert not observed_home[0].exists()
+    proof = canary_module._evaluate_proof(
+        "claude",
+        result=outcome.result,
+        evidence=outcome.evidence,
+        default_profile_scope="isolated-profile",
+        mode="agency",
+        host_child_delivery=outcome.host_child_delivery,
+    )
+
+    assert proof.passed is True
+    assert proof.failures == ()
+    assert proof.invocation["host_child_delivery"]["verified_delivery"] is True
+    assert proof.invocation["host_child_delivery"]["pre_speech"] is True
+    assert proof.invocation["host_child_delivery"]["decision_id"] == decision_id
+    assert outcome.evidence["expected_specialist_loaded"] is False
+    assert Store(db_path).get_native_child_delivery_verification(decision_id) is not None
 
 
 def test_codex_tokenless_isolated_profile_cannot_attest_activation(
@@ -1061,14 +1332,14 @@ def test_claude_canary_loads_managed_plugin_without_safe_mode_or_profile_setting
     argv = calls[0]["argv"]
     assert "--safe-mode" not in argv
     assert argv[argv.index("--plugin-dir") + 1] == str(plugin_dir)
-    # =-joined empty values: the plain two-token forms would put empty argv
-    # items in the command, which the owned-process runner rejects.
+    # =-joined values avoid empty argv items while allowing only Claude's
+    # native child boundary inside the isolated profile.
     assert "--setting-sources=" in argv
-    assert "--tools=" in argv
+    assert "--tools=Agent" in argv
     assert "" not in argv
     assert "mcp__*" in argv
     assert "--strict-mcp-config" in argv
-    assert "--no-session-persistence" in argv
+    assert "--no-session-persistence" not in argv
     assert "ANTHROPIC_API_KEY" not in calls[0]["env"]
     assert calls[0]["env"]["AGENCY_CANARY_MODE"] == "1"
     assert calls[0]["env"]["AGENCY_CANARY_MASTER_ENABLED"] == "1"

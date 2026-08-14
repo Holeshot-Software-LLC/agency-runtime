@@ -3,7 +3,7 @@ title: "AR-123: Add complete workforce CLI and live dashboard operations"
 status: done
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-08-12
 tags: [cli, dashboard, workforce, operations]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -43,7 +43,7 @@ AR-122 defines the authoritative workforce operations and evidence.
 
 ## Acceptance
 
-- [ ] Every lifecycle operation is available in CLI and dashboard.
-- [ ] Protected resident managers cannot be disabled.
-- [ ] Destructive actions require explicit confirmation and current generations.
-- [ ] Live UI remains responsive, accessible, reduced-motion safe, and fully tested.
+- [x] Every lifecycle operation is available in CLI and dashboard.
+- [x] Protected resident managers cannot be disabled.
+- [x] Destructive actions require explicit confirmation and current generations.
+- [x] Live UI remains responsive, accessible, reduced-motion safe, and fully tested.

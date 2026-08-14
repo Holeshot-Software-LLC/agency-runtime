@@ -1,12 +1,18 @@
 ---
-title: "AR-252: Record verified acceptance outcomes so automatic promotion can fire"
+title: "AR-252: Record host-evidenced, independently verified outcomes for automatic promotion"
 status: open
 category: roadmap
 created: 2026-08-05
-updated: 2026-08-05
-tags: [workforce, promotion, evidence, native-child, outcomes]
+updated: 2026-08-12
+tags: [workforce, promotion, evidence, native-child, outcomes, critical-path]
 related:
+  - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-242-autonomous-promotion-review-window.md
+  - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
+  - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - agency_runtime/core/child_delivery_evidence.py
   - agency_runtime/core/store/workforce.py
   - agency_runtime/core/store/native_child.py
   - agency_runtime/core/workforce/promotion.py
@@ -15,58 +21,70 @@ superseded_by: null
 type: issue
 epic: workforce
 issue_id: AR-252
-priority: p2
+priority: p0
 tracker_url: null
-depends_on: []
-blocks: []
+depends_on: [AR-180, AR-242, AR-255]
+blocks: [AR-119, AR-253]
 ---
 
-# AR-252: Record verified acceptance outcomes so automatic promotion can fire
+# AR-252: Record host-evidenced, independently verified outcomes for automatic promotion
 
 ## Problem
 
-The automatic contractor→employee promotion policy (AR-242) requires
-`promotion_readiness` evidence that only receipt-validated **acceptance**
-events can satisfy: `event_type="acceptance"`, a consumed activation receipt,
-and cross-checked independent-verifier refs
-(`independent_verifier_worker_id`, `independent_verification_receipt_id`,
-validated against the verifier's consumed receipt in the same session and
-trace — `_validated_outcome_evidence`,
-`agency_runtime/core/store/workforce.py`).
+The automatic contractor-to-employee policy is implemented, but its live
+evidence path is dormant. Native child termination records an `assignment`
+outcome without independent acceptance evidence, so production work cannot
+satisfy `promotion_readiness` or trigger `_auto_promote_if_ready`.
 
-The live outcome path now evaluates the promotion policy on every native
-child terminal outcome (`record_native_assignment_outcome` runs
-`_auto_promote_if_ready` in the same transaction). But that path records
-`event_type="assignment"` events with no verifier evidence, so readiness can
-never be met from live delegations alone. Automatic promotion therefore
-remains dormant in production: the policy is wired and tested, but the
-evidence pipeline that would trigger it does not exist.
+The former proposal depended on retired Job B plan rows, assurance units, and
+consumed activation receipts. Restoring that transport would contradict the
+current host-spawned, just-in-time architecture.
 
-## Proposal
+## Current state
 
-When a turn's plan contains an independent assurance unit whose verifier
-worker consumed its own activation receipt and its review unit accepted the
-producing worker's artifact, record an `acceptance` performance event for the
-producing worker carrying:
+AR-242 set the three-success and seven-day review-window policy. Store code can
+validate acceptance evidence and perform automatic promotion atomically, but no
+current host-backed producer/verifier correlation emits the required event.
+Agency-authored assignment rows alone are not proof of successful work.
 
-- the producer's consumed activation receipt id,
-- `independent_verifier_worker_id` = the assurance unit's worker,
-- `independent_verification_receipt_id` = the assurance unit's consumed
-  receipt,
+## Approach
 
-so `_validated_outcome_evidence` can validate it and
-`promotion_readiness` counts it. The natural recording point is turn
-finalization, where the Store already correlates both units' delegation and
-receipt evidence.
+Build an outcome envelope from artifacts the native host wrote. Those artifacts
+prove the producer/verifier children, delivered card hashes, artifact digest,
+and correlation; they do not prove semantic correctness. A distinct governed
+verifier selected by inference establishes semantic acceptance through its
+verdict bound to that exact artifact. Store receipts remain a derived audit
+index, not the delivery authority.
+
+Evaluate promotion in the same transaction that persists the validated
+acceptance. Keep the existing three-success threshold and per-contractor review
+window. Do not depend on Job B, model-authored headers, Agency-only lifecycle
+rows, or a shared producer/verifier identity.
+
+## Dependencies
+
+- AR-255 must establish inference-owned card choice and host-authored delivery
+  proof before an outcome can be attributed to a specialist.
+- AR-242 supplies the existing threshold and review-window implementation; its
+  unchecked acceptance record is reconciled under AR-256.
 
 ## Acceptance
 
-- A turn with a producer unit and a disjoint after-artifact assurance unit,
-  both with consumed receipts and accepted outcomes, produces one
-  receipt-validated acceptance event for the producer.
-- Three such turns (distinct work units, outside the review window) trigger
-  `_auto_promote_if_ready` on the live path with no operator action, and the
-  promote event records `actor="promotion-policy"` with the readiness
-  evidence document.
-- Turns without an assurance unit, with a shared-identity verifier, or with
-  unconsumed receipts record no acceptance event.
+- [ ] A host-backed producer artifact plus a distinct, inference-selected
+      verifier's host-backed artifact and bound accepted verdict records exactly
+      one acceptance event.
+- [ ] Missing, ambiguous, replayed, Agency-only, shared-identity, or rejected
+      evidence records no acceptance and reports a bounded reason.
+- [ ] Three distinct accepted outcomes automatically promote an eligible
+      contractor after its review window with `actor="promotion-policy"` and
+      the exact evidence manifest; no operator action is required.
+- [ ] Replay and concurrent finalization cannot duplicate an outcome or
+      promotion.
+- [ ] Migrate promotion validation and readiness from retired work-unit and
+      consumed-activation-receipt identities to the host child, card hash,
+      artifact digest, verifier decision, and verdict identities above.
+- [ ] Live evidence proves the path through at least Claude and Codex before
+      AR-119 can close.
+- [ ] AR-253 proves the same accepted-outcome and automatic-promotion behavior
+      on ZCode, Hermes, and OpenClaw; an unavailable supported host remains
+      unproven and blocks AR-119.

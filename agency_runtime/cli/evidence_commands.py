@@ -337,20 +337,19 @@ def cmd_evidence_intent(args: argparse.Namespace) -> int:
 def cmd_evidence_children(args: argparse.Namespace) -> int:
     """Report which harness-spawned children provably received a card.
 
-    Reads only what the host wrote. A card is counted when its body verifies
-    against its own pinned hash inside the input the child received before it
-    first spoke — never from an Agency row, which the delivering code writes.
+    This command is diagnostic and read-only. Receipt creation belongs only to
+    the in-lifetime safe-host collector, never a caller-selected path.
     """
 
     hosts = (args.host,) if getattr(args, "host", None) else _HOSTS
     override = getattr(args, "root", None)
     raw_limit = getattr(args, "limit", None)
     limit = 50 if raw_limit is None else raw_limit
-    if override and len(hosts) != 1:
+    if override is not None and len(hosts) != 1:
         raise ValueError("--root applies to exactly one --host")
     results = []
     for host in hosts:
-        root = Path(override) if override else default_child_artifact_root(host)
+        root = Path(override) if override is not None else default_child_artifact_root(host)
         results.append(child_delivery_projection(root, host=host, limit=limit))
     if getattr(args, "json", False):
         _print_json(
@@ -391,5 +390,10 @@ def cmd_evidence_children(args: argparse.Namespace) -> int:
             slugs = ", ".join(card["slug"] for card in child["cards"]) or "-"
             marks = "" if child["correlated"] else "  [uncorrelated]"
             legacy = "  [legacy envelope]" if child["legacy"] else ""
-            print(f"  {child['child_id']}  {slugs}{marks}{legacy}")
+            unverified = (
+                f"  [unverified v6: {child['verification_reason']}]"
+                if child["v6"] and not child["verified_delivery"]
+                else ""
+            )
+            print(f"  {child['child_id']}  {slugs}{marks}{legacy}{unverified}")
     return 0

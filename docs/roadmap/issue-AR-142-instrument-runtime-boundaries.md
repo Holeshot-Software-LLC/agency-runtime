@@ -3,7 +3,7 @@ title: "AR-142: Instrument runtime boundaries and hiring outcomes"
 status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [observability, http, mcp, hooks, sqlite, hiring]
 related:
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
@@ -49,11 +49,11 @@ AR-132 defines hiring semantics. AR-136 defines planned-child failure reasons.
 
 ## Acceptance
 
-- UI, HTTP, MCP, hooks, and Store logs correlate one request without payloads.
-- Slow queries and lock/busy outcomes are measurable without SQL values.
-- Silent planned-hook failures become bounded deny/pass-through observations.
-- Every route receipt contains a truthful hiring outcome.
-- Logs redact control characters, tokens, prompt text, credentials, and private
+- [x] UI, HTTP, MCP, hooks, and Store logs correlate one request without payloads.
+- [x] Slow queries and lock/busy outcomes are measurable without SQL values.
+- [x] Silent planned-hook failures become bounded deny/pass-through observations.
+- [x] Every route receipt contains a truthful hiring outcome.
+- [x] Logs redact control characters, tokens, prompt text, credentials, and private
   filesystem paths; retention remains finite and documented.
 
 ## Implementation evidence

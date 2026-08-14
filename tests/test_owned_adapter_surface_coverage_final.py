@@ -550,14 +550,30 @@ def test_openclaw_private_fail_closed_helpers() -> None:
             commit_terminal_finalization=lambda **_kwargs: (_ for _ in ()).throw(OSError())
         )
     )
-    assert not node_bridge._commit_terminal_outcome(
-        adapter,
-        session_id="s",
-        trace_id="t",
-        final_response="draft",
-        action="accept",
-        status="completed",
-        evidence_revision=1,
+    assert (
+        node_bridge._commit_terminal_outcome(
+            adapter,
+            session_id="s",
+            trace_id="t",
+            final_response="draft",
+            action="accept",
+            status="completed",
+            evidence_revision=1,
+        )
+        == "unavailable"
+    )
+    adapter.store = SimpleNamespace(commit_terminal_finalization=lambda **_kwargs: {})
+    assert (
+        node_bridge._commit_terminal_outcome(
+            adapter,
+            session_id="s",
+            trace_id="t",
+            final_response="draft",
+            action="accept",
+            status="completed",
+            evidence_revision=1,
+        )
+        == "conflict"
     )
     adapter.store = SimpleNamespace()
     assert (
@@ -695,7 +711,7 @@ def test_openclaw_persistence_and_preverify_edge_matrix(monkeypatch) -> None:
     monkeypatch.setattr(
         node_bridge,
         "_commit_terminal_outcome",
-        lambda *_args, **_kwargs: True,
+        lambda *_args, **_kwargs: "committed",
     )
     rejected = node_bridge._finish_policy_rejection(
         **common, decision={"action": "continue", "evidence_revision": 1}
@@ -784,14 +800,16 @@ def test_openclaw_outbound_payload_binds_every_text_surface(
 
 @pytest.mark.parametrize(
     ("session_id", "trace_id", "final_response"),
-    (("", "t", "draft"), ("s", "", "draft"), ("s", "t", "")),
+    (("", "t", "draft"), ("s", "t", "")),
 )
 def test_openclaw_outbound_gate_requires_exact_correlation(
     session_id: str,
     trace_id: str,
     final_response: str,
 ) -> None:
-    adapter = SimpleNamespace(store=object())
+    """A missing session or response is a broken envelope and still withholds."""
+
+    adapter = SimpleNamespace(store=object(), runtime_enabled=lambda: True)
     result = node_bridge._handle_outbound_gate(
         adapter,
         session_id=session_id,
@@ -802,26 +820,55 @@ def test_openclaw_outbound_gate_requires_exact_correlation(
     assert len(result["responseHash"]) == 64
 
 
-def test_openclaw_outbound_gate_fails_closed_without_authoritative_evidence() -> None:
-    adapter = SimpleNamespace(store=object())
+def test_openclaw_outbound_gate_allows_when_correlation_cannot_be_recovered() -> None:
+    """Rule 8: a well-formed envelope Agency cannot correlate is blindness.
+
+    The session and response are present, so nothing about the envelope is
+    malformed; Agency simply could not find its own record for the turn. That
+    is Agency being unavailable, which may never withhold a completed turn.
+    """
+
+    adapter = SimpleNamespace(store=object(), runtime_enabled=lambda: True)
+    result = node_bridge._handle_outbound_gate(
+        adapter,
+        session_id="s",
+        trace_id="",
+        final_response="draft",
+    )
+    assert result["action"] == "allow"
+    assert result["runtimeEnabled"] is True
+    assert len(result["responseHash"]) == 64
+
+
+def test_openclaw_outbound_gate_allows_when_evidence_cannot_be_read() -> None:
+    """Rule 8: an unreadable evidence store is Agency blind, never a verdict.
+
+    Each store below leaves Agency unable to determine anything about the turn:
+    absent entirely, raising, or answering with nothing authoritative. None of
+    them is an evaluated rejection, so none may withhold the response. An
+    operator auditing these turns finds them under "Agency was blind" in
+    `agency evidence rejections`.
+    """
+
+    adapter = SimpleNamespace(store=object(), runtime_enabled=lambda: True)
     common = {
         "adapter": adapter,
         "session_id": "s",
         "trace_id": "t",
         "final_response": "draft",
     }
-    assert node_bridge._handle_outbound_gate(**common)["action"] == "replace"
+    assert node_bridge._handle_outbound_gate(**common)["action"] == "allow"
 
     adapter.store = SimpleNamespace(
         get_authoritative_finalization=lambda *_args, **_kwargs: (_ for _ in ()).throw(
             OSError("store unavailable")
         )
     )
-    assert node_bridge._handle_outbound_gate(**common)["action"] == "replace"
+    assert node_bridge._handle_outbound_gate(**common)["action"] == "allow"
     adapter.store = SimpleNamespace(get_authoritative_finalization=lambda *_args, **_kwargs: None)
-    assert node_bridge._handle_outbound_gate(**common)["action"] == "replace"
+    assert node_bridge._handle_outbound_gate(**common)["action"] == "allow"
     adapter.store = SimpleNamespace(get_authoritative_finalization=lambda *_args, **_kwargs: {})
-    assert node_bridge._handle_outbound_gate(**common)["action"] == "replace"
+    assert node_bridge._handle_outbound_gate(**common)["action"] == "allow"
 
     adapter = SimpleNamespace(
         store=object(),
@@ -1251,7 +1298,9 @@ def test_openclaw_outbound_rejection_preverify_and_native_child_matrix(monkeypat
             "evidence_revision": 1,
         },
     )
-    monkeypatch.setattr(node_bridge, "_commit_terminal_outcome", lambda *_args, **_kwargs: True)
+    monkeypatch.setattr(
+        node_bridge, "_commit_terminal_outcome", lambda *_args, **_kwargs: "committed"
+    )
     rejected = node_bridge._handle_outbound_gate(
         adapter,
         session_id="session",

@@ -3,7 +3,7 @@ title: "AR-125: Prove workforce selection, host portability, and Agency-on/off v
 status: open
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [evaluation, testing, portability, routing]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -20,7 +20,7 @@ issue_id: AR-125
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/138
 depends_on: [AR-120, AR-121, AR-122, AR-123, AR-124, AR-179]
-blocks: []
+blocks: [AR-119]
 ---
 
 # AR-125: Prove workforce selection, host portability, and Agency-on/off value

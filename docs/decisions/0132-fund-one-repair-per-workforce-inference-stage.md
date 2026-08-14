@@ -3,7 +3,7 @@ title: "Fund one repair per workforce inference stage"
 status: accepted
 category: decisions
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-12
 tags: [routing, workforce, inference, configuration, budgets]
 related:
   - docs/roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md
@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
+  - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/decisions/0114-fund-one-default-workforce-semantic-repair.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/worklog/README.md

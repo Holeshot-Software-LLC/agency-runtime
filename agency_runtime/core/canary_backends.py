@@ -13,13 +13,24 @@ from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.bounded_io import FileSizeLimitError
+from agency_runtime.core.child_delivery_evidence import (
+    _begin_private_host_artifact_collection,
+    _collect_private_host_child_delivery,
+    _finish_private_host_invocation,
+    _start_private_host_invocation,
+    _VerifiedHostChildDelivery,
+)
 from agency_runtime.core.codex_child_tool_evidence import (
     CODEX_PRODUCT_CHILD_TOOL_EVIDENCE_FIELDS,
     classify_codex_exec_nested_tools,
     classify_codex_exec_wrapper_failure,
     classify_codex_exec_wrapper_output,
 )
-from agency_runtime.core.private_paths import private_temporary_directory
+from agency_runtime.core.native_child_install_identity import CANARY_NATIVE_INSTALL_HOME_ENV
+from agency_runtime.core.private_paths import (
+    _private_temporary_directory_lease,
+    private_temporary_directory,
+)
 
 _CODEX_ROLLOUT_MAX_BYTES = 1024 * 1024
 _CODEX_ROLLOUT_MAX_LINES = 5_000
@@ -2341,13 +2352,16 @@ def _codex_collaboration_diagnostic_reason(
         return "parent_spawn_missing"
     if rollout_contract == "canary" and counts["spawn_count"] != 1:
         return "parent_spawn_ambiguous"
-    if counts["followup_count"] == 0:
+    if rollout_contract == "canary":
+        # AR-223's current protocol executes the exact task in the initial spawn
+        # message. A follow-up is drift, not a required lifecycle transition.
+        if counts["followup_count"] != 0:
+            return "parent_followup_ambiguous"
+    elif counts["followup_count"] == 0:
         return "parent_followup_missing"
-    if rollout_contract == "canary" and counts["followup_count"] != 1:
-        return "parent_followup_ambiguous"
     if counts["wait_count"] == 0:
         return "parent_wait_missing"
-    if rollout_contract == "canary" and counts["wait_count"] != 2:
+    if rollout_contract == "canary" and counts["wait_count"] != 1:
         return "parent_wait_ambiguous"
     if counts["tool_output_count"] < (
         counts["spawn_count"] + counts["followup_count"] + counts["wait_count"]
@@ -3101,23 +3115,30 @@ class SafeClaudeCanaryBackend:
     source_env: Mapping[str, str]
     master_enabled: bool = True
 
-    def execute(
+    def _execute(
         self,
         *,
         task: str,
         workdir: str,
-        check: bool = False,
-    ) -> dict[str, Any]:
-        del check
+        delivery_store: object | None,
+    ) -> tuple[dict[str, Any], _VerifiedHostChildDelivery | None]:
         facade = _facade()
         deadline = facade.time.monotonic() + self.timeout
-        with private_temporary_directory(prefix="claude-home") as runtime_home:
+        verified_delivery: _VerifiedHostChildDelivery | None = None
+        with _private_temporary_directory_lease(prefix="claude-home") as runtime_lease:
+            runtime_home = runtime_lease.path
             claude_home = facade._prepare_private_host_home(
                 runtime_home,
                 directory_name="claude",
                 auth_source=self.auth_source,
                 auth_name=".credentials.json",
                 host="Claude",
+            )
+            if facade._remaining_canary_timeout(deadline) <= 0:
+                return _timeout_record("claude"), None
+            collection = _begin_private_host_artifact_collection(
+                runtime_lease,
+                host="claude",
             )
             env = facade._isolated_canary_environment(
                 self.source_env,
@@ -3129,40 +3150,92 @@ class SafeClaudeCanaryBackend:
                 enabled=self.master_enabled,
             )
             env["AGENCY_CANARY_MASTER_ENABLED"] = "1" if projected["enabled"] else "0"
+            env[CANARY_NATIVE_INSTALL_HOME_ENV] = str(
+                facade._source_home(self.source_env).resolve()
+            )
             env["CLAUDE_CONFIG_DIR"] = str(claude_home)
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
-                return _timeout_record("claude")
-            result = self.process_runner(
-                [
-                    self.executable,
-                    "-p",
-                    "--output-format",
-                    "json",
-                    # One bounded preamble turn before the final message; a
-                    # hard 1-turn cap kills responses that open with text.
-                    "--max-turns",
-                    "2",
-                    "--no-session-persistence",
-                    # =-joined spellings: the empty argv items the plain forms
-                    # require are rejected by the owned-process runner.
-                    "--setting-sources=",
-                    "--plugin-dir",
-                    str(self.plugin_dir),
-                    "--tools=",
-                    "--disallowedTools",
-                    "mcp__*",
-                    "--strict-mcp-config",
-                    "--permission-mode",
-                    "dontAsk",
-                ],
-                timeout=timeout,
-                cwd=workdir,
-                env=env,
-                input_text=task,
-                max_output_chars=256_000,
-            )
-        return facade._claude_canary_record(result)
+                return _timeout_record("claude"), None
+            invocation_start = _start_private_host_invocation(collection)
+            try:
+                result = self.process_runner(
+                    [
+                        self.executable,
+                        "-p",
+                        "--output-format",
+                        "json",
+                        # One bounded preamble turn before the final message; a
+                        # hard 1-turn cap kills responses that open with text.
+                        "--max-turns",
+                        "2",
+                        # Persist only inside the isolated, owner-private home so
+                        # the host-authored child transcript can be collected
+                        # before that home is deleted. The sole enabled tool is
+                        # Claude's native child boundary.
+                        "--setting-sources=",
+                        "--plugin-dir",
+                        str(self.plugin_dir),
+                        "--tools=Agent",
+                        "--disallowedTools",
+                        "mcp__*",
+                        "--strict-mcp-config",
+                        "--permission-mode",
+                        "dontAsk",
+                    ],
+                    timeout=timeout,
+                    cwd=workdir,
+                    env=env,
+                    input_text=task,
+                    max_output_chars=256_000,
+                )
+            finally:
+                invocation = _finish_private_host_invocation(invocation_start)
+            if delivery_store is not None:
+                try:
+                    verified_delivery = _collect_private_host_child_delivery(
+                        collection,
+                        invocation=invocation,
+                        store=delivery_store,
+                    )
+                except (OSError, RuntimeError, TypeError, ValueError):
+                    verified_delivery = None
+            record = facade._claude_canary_record(result)
+        return record, verified_delivery
+
+    def execute(
+        self,
+        *,
+        task: str,
+        workdir: str,
+        check: bool = False,
+    ) -> dict[str, Any]:
+        """Execute without Store mutation for direct backend diagnostics."""
+
+        del check
+        record, _verified_delivery = self._execute(
+            task=task,
+            workdir=workdir,
+            delivery_store=None,
+        )
+        return record
+
+    def execute_with_host_delivery(
+        self,
+        *,
+        task: str,
+        workdir: str,
+        store: object,
+        check: bool = False,
+    ) -> tuple[dict[str, Any], _VerifiedHostChildDelivery | None]:
+        """Execute and collect the host artifact before isolated-home cleanup."""
+
+        del check
+        return self._execute(
+            task=task,
+            workdir=workdir,
+            delivery_store=store,
+        )
 
 
 def managed_target(native: Mapping[str, Any] | None, *, error: str) -> Path:

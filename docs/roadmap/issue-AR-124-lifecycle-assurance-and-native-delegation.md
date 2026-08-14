@@ -3,7 +3,7 @@ title: "AR-124: Integrate lifecycle assurance, native delegation, and provider e
 status: done
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-08-12
 tags: [delegation, assurance, providers, receipts]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -45,7 +45,11 @@ AR-121 supplies validated staffing plans and lifecycle timing.
 
 ## Acceptance
 
-- [ ] Assurance agents activate only after their required artifact exists.
-- [ ] Conflicting methods never share a forbidden context.
-- [ ] Planned native children consume one-use parent activations without rerouting.
-- [ ] Provider/router/actual-model evidence is accurate across every supported host.
+- [x] Assurance agents activate only after their required artifact exists.
+- [x] Conflicting methods never share a forbidden context.
+- [x] Planned native children consume one-use parent activations without rerouting.
+- [x] Provider/router/actual-model evidence is accurate across every supported host.
+
+This is evidence for the historical one-use-activation mechanism. That
+transport was later retired; the current vision requires host-owned spawn and
+host-authored delivery evidence under ADR-0156.

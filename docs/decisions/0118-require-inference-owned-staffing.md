@@ -3,7 +3,7 @@ title: "Require inference-owned specialist staffing"
 status: accepted
 category: decisions
 created: 2026-07-30
-updated: 2026-08-01
+updated: 2026-08-12
 tags: [routing, inference, workforce, safety, failure]
 related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
@@ -11,9 +11,14 @@ related:
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
+  - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
+  - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
+  - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - README.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0157-automatically-promote-host-verified-contractors.md
 supersedes:
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
 superseded_by: null

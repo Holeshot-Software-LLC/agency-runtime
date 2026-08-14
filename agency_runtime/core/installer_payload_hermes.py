@@ -468,8 +468,11 @@ def _transform_llm_output(response_text="", **kwargs):
             },
         )
     except Exception:
-        return _FINALIZATION_BLOCK_RESPONSE
-    return result if isinstance(result, str) and result.strip() else _FINALIZATION_BLOCK_RESPONSE
+        # Agency could not run at all for this turn.  Its own unavailability is
+        # not a finding about the response, so the draft is returned unchanged.
+        # An evaluated rejection still arrives as a replacement from the bridge.
+        return response_text
+    return result if isinstance(result, str) and result.strip() else response_text
 
 
 def _on_session_end(**kwargs):

@@ -312,10 +312,14 @@ def _transform_output(adapter: HermesAdapter, payload: Mapping[str, Any]) -> str
         )
     except Exception as error:
         del error
-        return FINALIZATION_BLOCK_RESPONSE
+        # Agency's own unavailability is not a finding about the response.  A
+        # verifier that evaluated and rejected still withholds above; reaching
+        # here means Agency could not verify or persist at all, so the host's
+        # draft is returned unchanged rather than replaced with a block.
+        return response_text
     if isinstance(finalized, str) and finalized.strip():
         return _bounded_text(finalized)
-    return FINALIZATION_BLOCK_RESPONSE
+    return response_text
 
 
 def _close_session(adapter: HermesAdapter, payload: Mapping[str, Any]) -> None:

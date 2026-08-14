@@ -27,6 +27,19 @@ def _mutation(
     )
 
 
+def _fixture_repository(root: Path) -> tuple[Path, conformance.DecisionMutation]:
+    repository = root / "repository"
+    source = repository / "agency_runtime" / "example.py"
+    test = repository / "tests" / "test_example.py"
+    source.parent.mkdir(parents=True)
+    test.parent.mkdir(parents=True)
+    source.write_text("DECISION = True", encoding="utf-8")
+    (repository / "agency_runtime" / "__init__.py").write_text("", encoding="utf-8")
+    test.write_text("def test_decision(): pass", encoding="utf-8")
+    (repository / "pyproject.toml").write_text("[tool.pytest.ini_options]", encoding="utf-8")
+    return repository, _mutation()
+
+
 def test_curated_manifest_anchors_are_current_and_unique() -> None:
     root = Path(__file__).resolve().parent.parent
 
@@ -76,6 +89,7 @@ def test_mutation_classification_requires_the_expected_ordinary_failure(
         mutation,
         tmp_path,
         python_executable=sys.executable,
+        fixture_python_executable=sys.executable,
         timeout_seconds=10,
         source_root=tmp_path,
         pytest_runner=lambda *_args: run,
@@ -87,7 +101,7 @@ def test_mutation_classification_requires_the_expected_ordinary_failure(
 def test_baseline_gives_each_named_test_its_own_deadline(tmp_path: Path) -> None:
     observed: list[tuple[tuple[str, ...], float]] = []
 
-    def runner(checkout, nodes, _python, timeout, source_root):
+    def runner(checkout, nodes, _python, _fixture_python, timeout, source_root):
         assert checkout == tmp_path
         assert source_root == tmp_path
         observed.append((tuple(nodes), timeout))
@@ -96,6 +110,7 @@ def test_baseline_gives_each_named_test_its_own_deadline(tmp_path: Path) -> None
     result = conformance._run_baseline(
         tmp_path,
         ("tests/test_one.py::test_one", "tests/test_two.py::test_two"),
+        sys.executable,
         sys.executable,
         90,
         tmp_path,
@@ -112,7 +127,7 @@ def test_baseline_gives_each_named_test_its_own_deadline(tmp_path: Path) -> None
 def test_baseline_stops_after_the_first_failed_node(tmp_path: Path) -> None:
     observed: list[str] = []
 
-    def runner(_checkout, nodes, _python, _timeout, _source_root):
+    def runner(_checkout, nodes, _python, _fixture_python, _timeout, _source_root):
         observed.append(nodes[0])
         if len(observed) == 1:
             return conformance._PytestRun(0, (), 3)
@@ -121,6 +136,7 @@ def test_baseline_stops_after_the_first_failed_node(tmp_path: Path) -> None:
     result = conformance._run_baseline(
         tmp_path,
         ("test_one", "test_two", "test_three"),
+        sys.executable,
         sys.executable,
         90,
         tmp_path,
@@ -143,6 +159,7 @@ def test_baseline_preserves_bounded_failure_diagnostic(tmp_path: Path) -> None:
         tmp_path,
         ("tests/test_one.py::test_one",),
         sys.executable,
+        sys.executable,
         90,
         tmp_path,
         pytest_runner=lambda *_args: failure,
@@ -151,15 +168,17 @@ def test_baseline_preserves_bounded_failure_diagnostic(tmp_path: Path) -> None:
     assert result.failure_excerpt == "AssertionError: exact private path was rejected"
 
 
-def test_pytest_environment_binds_fixture_interpreter_to_evaluator_python(
+def test_pytest_environment_separates_runner_from_trusted_fixture_launcher(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     checkout = tmp_path / "checkout"
     checkout.mkdir()
     observed: dict[str, str] = {}
+    command: list[str] = []
 
-    def run(_command, **kwargs):
+    def run(invocation, **kwargs):
+        command.extend(invocation)
         observed.update(kwargs["env"])
         return type("Result", (), {"returncode": 0, "stdout": "", "stderr": ""})()
 
@@ -168,11 +187,145 @@ def test_pytest_environment_binds_fixture_interpreter_to_evaluator_python(
         checkout,
         ("tests/test_example.py::test_decision",),
         "/private/evaluator-python",
+        "/trusted/persistent-python",
         10,
         tmp_path,
     )
 
-    assert observed["AGENCY_CI_PYTHON"] == "/private/evaluator-python"
+    assert command[:3] == ["/private/evaluator-python", "-m", "pytest"]
+    assert observed["AGENCY_CI_PYTHON"] == "/trusted/persistent-python"
+
+
+def test_default_fixture_selection_never_derives_from_noncurrent_runner(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, mutation = _fixture_repository(tmp_path)
+    runner = tmp_path / "workspace-venv" / "python.exe"
+    runner.parent.mkdir()
+    runner.write_text("runner", encoding="utf-8")
+    scratch = tmp_path / "private-scratch"
+    scratch.mkdir()
+    resolver_requests: list[str | Path | None] = []
+    receipts: list[tuple[str, str]] = []
+
+    @contextmanager
+    def private_copy(*, prefix: str):
+        assert prefix == "decision-conformance"
+        yield scratch
+
+    def resolve_fixture(requested: str | Path | None = None) -> str:
+        resolver_requests.append(requested)
+        return "/trusted/persistent-python"
+
+    def fake_pytest(_checkout, nodes, runner_python, fixture_python, *_args):
+        receipts.append((runner_python, fixture_python))
+        if len(receipts) == 1:
+            return conformance._PytestRun(0, (), 1)
+        return conformance._PytestRun(1, (nodes[0],), 1)
+
+    monkeypatch.setattr(conformance, "private_temporary_directory", private_copy)
+    monkeypatch.setattr(conformance, "_resolve_fixture_python_executable", resolve_fixture)
+    report = conformance.run_decision_conformance_eval(
+        repository,
+        mutations=(mutation,),
+        python_executable=str(runner),
+        pytest_runner=fake_pytest,
+    )
+
+    assert report["passed"] is True
+    assert resolver_requests == [None]
+    assert receipts == [
+        (str(runner.resolve()), "/trusted/persistent-python"),
+        (str(runner.resolve()), "/trusted/persistent-python"),
+    ]
+
+
+def test_explicit_fixture_launcher_is_validated_and_preserved_exactly(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, mutation = _fixture_repository(tmp_path)
+    runner = tmp_path / "workspace-venv" / "python.exe"
+    fixture = tmp_path / "trusted-runtime" / "python.exe"
+    runner.parent.mkdir()
+    fixture.parent.mkdir()
+    runner.write_text("runner", encoding="utf-8")
+    fixture.write_text("fixture", encoding="utf-8")
+    scratch = tmp_path / "private-scratch"
+    scratch.mkdir()
+    requested: list[str | Path | None] = []
+    receipts: list[tuple[str, str]] = []
+
+    @contextmanager
+    def private_copy(*, prefix: str):
+        assert prefix == "decision-conformance"
+        yield scratch
+
+    def resolve_fixture(value: str | Path | None = None) -> str:
+        requested.append(value)
+        return str(fixture.resolve())
+
+    def fake_pytest(_checkout, nodes, runner_python, fixture_python, *_args):
+        receipts.append((runner_python, fixture_python))
+        if len(receipts) == 1:
+            return conformance._PytestRun(0, (), 1)
+        return conformance._PytestRun(1, (nodes[0],), 1)
+
+    monkeypatch.setattr(conformance, "private_temporary_directory", private_copy)
+    monkeypatch.setattr(conformance, "_resolve_fixture_python_executable", resolve_fixture)
+    report = conformance.run_decision_conformance_eval(
+        repository,
+        mutations=(mutation,),
+        python_executable=str(runner),
+        fixture_python_executable=fixture,
+        pytest_runner=fake_pytest,
+    )
+
+    assert report["passed"] is True
+    assert requested == [fixture]
+    assert receipts == [
+        (str(runner.resolve()), str(fixture.resolve())),
+        (str(runner.resolve()), str(fixture.resolve())),
+    ]
+
+
+def test_unsafe_explicit_fixture_fails_before_copy_or_pytest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, mutation = _fixture_repository(tmp_path)
+    runner = tmp_path / "workspace-venv" / "python.exe"
+    runner.parent.mkdir()
+    runner.write_text("runner", encoding="utf-8")
+    copied = False
+    ran_pytest = False
+
+    def reject_fixture(_requested: str | Path | None = None) -> str:
+        raise OSError("unsafe persistent fixture launcher")
+
+    def copy_inputs(*_args, **_kwargs) -> None:
+        nonlocal copied
+        copied = True
+
+    def fake_pytest(*_args) -> conformance._PytestRun:
+        nonlocal ran_pytest
+        ran_pytest = True
+        return conformance._PytestRun(0, (), 1)
+
+    monkeypatch.setattr(conformance, "_resolve_fixture_python_executable", reject_fixture)
+    monkeypatch.setattr(conformance, "_copy_inputs", copy_inputs)
+    with pytest.raises(OSError, match="unsafe persistent fixture launcher"):
+        conformance.run_decision_conformance_eval(
+            repository,
+            mutations=(mutation,),
+            python_executable=str(runner),
+            fixture_python_executable=tmp_path / "unsafe" / "python.exe",
+            pytest_runner=fake_pytest,
+        )
+
+    assert copied is False
+    assert ran_pytest is False
 
 
 def test_evaluator_mutates_only_private_copies(
@@ -198,7 +351,7 @@ def test_evaluator_mutates_only_private_copies(
         assert prefix == "decision-conformance"
         yield scratch
 
-    def fake_pytest(checkout, nodes, _python, _timeout, source_root):
+    def fake_pytest(checkout, nodes, _python, _fixture_python, _timeout, source_root):
         observed.append(checkout)
         assert checkout != source_root
         mutated = (checkout / mutation.source_path).read_text(encoding="utf-8")

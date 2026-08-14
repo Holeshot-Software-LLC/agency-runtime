@@ -3,7 +3,7 @@ title: "AR-117: Parallelize PR verification without weakening coverage"
 status: done
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [testing, ci, coverage, performance]
 related:
   - .github/workflows/ci.yml
@@ -68,4 +68,4 @@ uninstrumented gate.
 - [x] Lint, workflow/docs contracts, dashboard coverage, and performance run independently.
 - [x] Workflow contract tests protect sharding, recombination, and the performance boundary.
 - [x] The full compatibility matrix runs on `main` and manual dispatch, not every PR edit.
-- [ ] Hosted CI proves the parallel workflow and merge completes.
+- [x] Hosted CI proves the parallel workflow and merge completes.

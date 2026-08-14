@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from agency_runtime.core.filesystem_trust import metadata_is_link_or_reparse_point
+from agency_runtime.core.launcher_bootstrap import persistent_python_executable
 from agency_runtime.core.private_paths import private_temporary_directory
 from agency_runtime.core.process_environment import least_privilege_subprocess_environment
 
@@ -1432,6 +1433,1211 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-forked-rollout-collapses-thread-into-root-session",
+        invariant=(
+            "A forked Codex rollout binds its filename thread identity separately from the "
+            "root session carried by hook correlation."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="    return canonical, sessions_root, thread_id",
+        after="    return canonical, sessions_root, root_session_id",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_exact_forked_child_shape_attests_and_binds_thread_and_root"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-final-validation-persists-poisoned-success",
+        invariant=(
+            "A failed final delivery validation rolls back the successful native-child route "
+            "so the exact launch remains retryable."
+        ),
+        source_path="agency_runtime/core/store/maintenance.py",
+        before=(
+            "            if final_delivery_validator is not None "
+            "and final_delivery_validator() is not True:"
+        ),
+        after="            if final_delivery_validator is not None and False:",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_final_delivery_validation_rolls_back_and_exact_launch_can_retry"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-config-lock-exit-suppresses-committed-delivery",
+        invariant=(
+            "A config-lock release failure after route commit preserves the matching staffed "
+            "output instead of leaving a successful row that poisons retry."
+        ),
+        source_path="agency_runtime/core/native_child_staffing.py",
+        before="""        if not decision_id:
+            state_unchanged = False""",
+        after="""        decision_id = ""
+        state_unchanged = False""",
+        test_node=(
+            "tests/test_native_child_staffing.py::"
+            "test_config_lock_exit_failure_preserves_committed_staffed_delivery"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-response-schema-drift",
+        invariant=("A marked Codex spawn must match the exact pinned 0.147 response-item schema."),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    if set(payload) != _FUNCTION_CALL_KEYS:
+        return False""",
+        after="""    if False and set(payload) != _FUNCTION_CALL_KEYS:
+        return False""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_function_call_requires_exact_observed_response_item_schema"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-outer-envelope-drift",
+        invariant=(
+            "A marked Codex spawn must match one of the two exact observed 0.147 response "
+            "envelopes, including its timestamp and optional ordinal contract."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="    if keys not in (",
+        after="    if False and keys not in (",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_target_response_item_rejects_an_extra_outer_key"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-timestamp-format-drift",
+        invariant=(
+            "The marked response envelope uses the exact valid millisecond UTC timestamp "
+            "format observed for Codex 0.147."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            "    if not isinstance(timestamp, str) "
+            "or _CODEX_TIMESTAMP.fullmatch(timestamp) is None:"
+        ),
+        after="    if not isinstance(timestamp, str):",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_target_response_item_requires_exact_observed_timestamp"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-boolean-ordinal",
+        invariant=(
+            "The optional Codex 0.147 response ordinal is a non-boolean nonnegative integer."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            "        if isinstance(ordinal, bool) or not isinstance(ordinal, int) or ordinal < 0:"
+        ),
+        after="        if not isinstance(ordinal, int) or ordinal < 0:",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_target_response_item_requires_a_nonnegative_integer_ordinal"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-malformed-function-item-id",
+        invariant=(
+            "The marked Codex function call carries the exact observed 0.147 function-item "
+            "identity format before that identity can be sealed."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            "    if not isinstance(item_id, str) or _FUNCTION_ITEM_ID.fullmatch(item_id) is None:"
+        ),
+        after="    if not isinstance(item_id, str):",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_function_call_requires_exact_observed_response_item_schema"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-rollout-allows-noncanonical-date-widths",
+        invariant=(
+            "The canonical Codex sessions path uses exact four-digit year and two-digit month "
+            "and day components."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    if (
+        re.fullmatch(r"[0-9]{4}", year) is None
+        or re.fullmatch(r"[0-9]{2}", month) is None
+        or re.fullmatch(r"[0-9]{2}", day_value) is None
+    ):""",
+        after="    if False:",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_rollout_path_requires_canonical_padded_date_components"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-rollout-allows-nil-uuid-identity",
+        invariant=("Codex session, thread, and turn UUID identities are canonical and non-nil."),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    return bool(
+        parsed.int
+        and str(parsed) == value
+        and parsed.variant == RFC_4122
+        and parsed.version in versions
+    )""",
+        after="""    return bool(
+        parsed.int == 0
+        or (
+            parsed.int
+            and str(parsed) == value
+            and parsed.variant == RFC_4122
+            and parsed.version in versions
+        )
+    )""",
+        # A filename-bound thread identity is refused by the rollout-clock
+        # residual before its UUID domain matters, so nil acceptance is only
+        # observable on the root and parent identities of a child rollout.
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_root_identity_requires_canonical_non_nil_uuid7_without_filename_binding"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-rollout-drops-observed-uuid-version-domain",
+        invariant=(
+            "Codex thread/session identities are UUIDv7 and turn identities are observed "
+            "UUIDv4 or UUIDv7 values."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="        and parsed.version in versions",
+        after="        and parsed.version is not None",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::test_session_identity_requires_non_nil_rfc_uuid7"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-rollout-drops-rfc-uuid-variant",
+        invariant=("Codex session, thread, and turn identities use the RFC UUID variant."),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        and parsed.variant == RFC_4122
+        and parsed.version in versions""",
+        after="        and ((parsed.int >> 76) & 0xF) in versions",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::test_session_identity_requires_non_nil_rfc_uuid7"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-initial-item-id-reuse",
+        invariant=(
+            "The sealed Codex function-call item identity occurs exactly once in the initial "
+            "bounded transcript snapshot."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=("    if not _function_item_is_unique(descriptor, size, item_id=function_item_id):"),
+        after=(
+            "    if False and not _function_item_is_unique("
+            "descriptor, size, item_id=function_item_id):"
+        ),
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_function_item_identity_must_be_unique_across_initial_snapshot"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-marked-call-allows-appended-item-id-reuse",
+        invariant=(
+            "Any appended response item reusing the sealed Codex function-call identity "
+            "invalidates the ephemeral attestation."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='            payload.get("call_id") == tool_use_id or payload.get("id") == function_item_id',
+        after='            payload.get("call_id") == tool_use_id or False',
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_appended_different_call_cannot_reuse_attested_function_item_identity"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-allows-parallel-evidence-shape-drift",
+        invariant=(
+            "A sealed cross-file Codex attestation rejects mismatched parallel evidence "
+            "arrays before any indexed revalidation."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="        if not _attestation_array_shapes_are_valid(attestation):",
+        after="        if False and not _attestation_array_shapes_are_valid(attestation):",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_external_records_and_parallel_arrays_are_structurally_bound"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-drops-external-file-identity",
+        invariant=(
+            "Each external Codex ancestry rollout remains bound to the exact sealed device "
+            "and inode rather than a byte-identical pathname replacement."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""                int(external_opened.st_dev) != attestation.external_file_devices[index]
+                or int(external_opened.st_ino) != attestation.external_file_inodes[index]""",
+        after="                False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_external_identity_and_scanned_prefix_are_sealed"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-skips-scanned-prefix-digest",
+        invariant=(
+            "The full external prefix scanned for absence and uniqueness remains sealed, "
+            "including records outside the selected metadata and causal pair."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        for index in range(external_count):
+            if not hmac.compare_digest(
+                _snapshot_sha256(
+                    descriptors[index + 1],
+                    attestation.external_file_snapshot_sizes[index],
+                ),
+                attestation.external_file_snapshot_sha256[index],
+            ):
+                return False""",
+        after="""        for index in range(external_count):
+            if False and not hmac.compare_digest(
+                _snapshot_sha256(
+                    descriptors[index + 1],
+                    attestation.external_file_snapshot_sizes[index],
+                ),
+                attestation.external_file_snapshot_sha256[index],
+            ):
+                return False""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_external_identity_and_scanned_prefix_are_sealed"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-skips-external-record-revalidation",
+        invariant=(
+            "Every sealed external metadata and causal record digest is independently "
+            "revalidated before a Codex rewrite remains authoritative."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        for file_index, offset, length, expected in zip(
+            attestation.external_record_file_indexes,
+            attestation.external_record_offsets,
+            attestation.external_record_lengths,
+            attestation.external_record_sha256,
+            strict=True,
+        ):
+            if not _bound_record_digest_is_current(""",
+        after="""        for file_index, offset, length, expected in zip(
+            attestation.external_record_file_indexes,
+            attestation.external_record_offsets,
+            attestation.external_record_lengths,
+            attestation.external_record_sha256,
+            strict=True,
+        ):
+            if False and not _bound_record_digest_is_current(""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_external_records_and_parallel_arrays_are_structurally_bound"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-allows-appended-causal-replay",
+        invariant=(
+            "An external ancestry rollout cannot append a duplicate sealed launch, item, "
+            "child-start, or session record after attestation."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="            if not _external_suffix_is_current(",
+        after="            if False and not _external_suffix_is_current(",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_appended_causal_replay_is_rejected"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-decouples-causal-parent-thread",
+        invariant=(
+            "A host-written child-start event is bound to the exact parent rollout thread "
+            "for both cross-file causal edges."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='        or start_payload.get("thread_id") != parent_thread_id',
+        after="        or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_both_causal_edges_and_history_variant_are_authoritative"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-weakens-root-parent-causal-edge",
+        invariant=(
+            "A depth-two chain binds its canonical root launch to the exact intermediate "
+            "parent thread rather than the current grandchild."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=thread_id if depth == 1 else parent_thread_id,
+            parent_agent_path=None,
+            child_agent_path=(current_agent_path if depth == 1 else str(parent_agent_path_hint)),
+            inherited=current_inherited if depth == 1 else True,
+        )""",
+        after="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=thread_id,
+            parent_agent_path=None,
+            child_agent_path=(current_agent_path if depth == 1 else str(parent_agent_path_hint)),
+            inherited=current_inherited if depth == 1 else True,
+        )""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_exact_one_metadata_tui_chain_attests_across_canonical_rollouts[2-True]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-decouples-sparse-fork-turn-semantics",
+        invariant=(
+            "A sparse one-record child is accepted only when its causal launch explicitly "
+            "uses fork_turns none."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    if (
+        child_agent_path != expected_path
+        or (not inherited and fork_turns != "none")
+        or (inherited and fork_turns != "all" and _POSITIVE_DECIMAL.fullmatch(fork_turns) is None)
+    ):
+        return None
+    call_timestamp = _exact_codex_timestamp(call_record.get("timestamp"))
+    start_timestamp = _exact_codex_timestamp(start_record.get("timestamp"))
+    child_timestamp = datetime.fromtimestamp(""",
+        after="""    if (
+        child_agent_path != expected_path
+        or False
+        or (inherited and fork_turns != "all" and _POSITIVE_DECIMAL.fullmatch(fork_turns) is None)
+    ):
+        return None
+    call_timestamp = _exact_codex_timestamp(call_record.get("timestamp"))
+    start_timestamp = _exact_codex_timestamp(start_record.get("timestamp"))
+    child_timestamp = datetime.fromtimestamp(""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage"
+            "[sparse_wrong_fork_turns]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-decouples-fork-history-variant",
+        invariant=(
+            "An inherited one-record child is accepted only when its causal launch uses "
+            "fork_turns all or a canonical positive decimal."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    if (
+        child_agent_path != expected_path
+        or (not inherited and fork_turns != "none")
+        or (inherited and fork_turns != "all" and _POSITIVE_DECIMAL.fullmatch(fork_turns) is None)
+    ):
+        return None
+    call_timestamp = _exact_codex_timestamp(call_record.get("timestamp"))
+    start_timestamp = _exact_codex_timestamp(start_record.get("timestamp"))
+    child_timestamp = datetime.fromtimestamp(""",
+        after="""    if (
+        child_agent_path != expected_path
+        or (not inherited and fork_turns != "none")
+        or False
+    ):
+        return None
+    call_timestamp = _exact_codex_timestamp(call_record.get("timestamp"))
+    start_timestamp = _exact_codex_timestamp(start_record.get("timestamp"))
+    child_timestamp = datetime.fromtimestamp(""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage"
+            "[inherited_wrong_fork_turns]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-allows-copied-root-payload-drift",
+        invariant=(
+            "A depth-two parent's copied root metadata payload exactly matches the "
+            "separately opened canonical root payload."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""            or not _cross_file_root_metadata_is_exact(
+                parent_prefix[1],
+                root_session_id=root_session_id,
+                ordinal=1,
+            )
+            or parent_prefix[1].payload != root_prefix[0].payload""",
+        after="""            or not _cross_file_root_metadata_is_exact(
+                parent_prefix[1],
+                root_session_id=root_session_id,
+                ordinal=1,
+            )
+            or False""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_copied_root_matches_canonical_payload"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-drops-rollout-offset-binding",
+        invariant=(
+            "Each canonical external rollout retains its own independently derived integral "
+            "UTC offset rather than inheriting another ancestor's offset."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    else:
+        parent_path, parent_offset_minutes = _find_unique_rollout_for_thread(
+            sessions_root,
+            thread_id=parent_thread_id,
+        )""",
+        after="""    else:
+        parent_path, _parent_offset_minutes = _find_unique_rollout_for_thread(
+            sessions_root,
+            thread_id=parent_thread_id,
+        )
+        parent_offset_minutes = root_offset_minutes""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_one_metadata_tui_chain_accepts_independent_cross_offset_rollouts"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-drops-adjacent-utc-day-lookup",
+        invariant=(
+            "Canonical ancestry lookup checks only the bounded UTC date neighborhood needed "
+            "for valid minus-twelve through plus-fourteen-hour rollout offsets."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            "        for candidate in "
+            "(utc_day - timedelta(days=1), utc_day, utc_day + timedelta(days=1))"
+        ),
+        after="        for candidate in (utc_day,)",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_nonzero_offset_is_required_for_canonical_lookup"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-drops-rollout-directory-entry-bound",
+        invariant=(
+            "Each candidate UTC-date directory is scanned under a fixed entry bound before "
+            "any external ancestry path can become authoritative."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="                    if entries_seen > _MAX_ROLLOUT_DIRECTORY_ENTRIES:",
+        after="                    if False:",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage"
+            "[bounded_root_directory]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-allows-ambiguous-initial-namespace",
+        invariant=(
+            "Initial external rollout lookup requires exactly one canonical filename for "
+            "each ancestor thread across the bounded UTC-date neighborhood."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="    if len(matches) != 1:",
+        after="    if not matches:",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage"
+            "[ambiguous_root_path]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-repeats-initial-external-scan",
+        invariant=(
+            "Each external ancestry rollout is parsed and hashed in one bounded initial "
+            "streaming pass."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    digest = hashlib.sha256()
+    for offset, raw in _snapshot_lines(descriptor, size):
+        digest.update(raw)""",
+        after="""    digest = hashlib.sha256()
+    tuple(_snapshot_lines(descriptor, size))
+    for offset, raw in _snapshot_lines(descriptor, size):
+        digest.update(raw)""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_external_rollouts_use_one_initial_streaming_pass_each"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-rejects-exact-empty-causal-marker",
+        invariant=(
+            "A cross-file causal call accepts either the exact ordinary schema or that exact "
+            "schema plus the observed empty encrypted-function-arguments marker."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""    if keys == _CAUSAL_CALL_KEYS:
+        pass
+    elif keys != _MARKED_CAUSAL_CALL_KEYS or payload.get("encrypted_function_args") != []:
+        return None""",
+        after="""    if keys != _CAUSAL_CALL_KEYS:
+        return None""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_causal_edges_accept_exact_empty_delivery_marker[root]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-shifts-initial-aggregate-byte-bound",
+        invariant=(
+            "A depth-two initial ancestry scan admits a combined external snapshot exactly "
+            "at 64 MiB and fails closed only when that aggregate exceeds the bound."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        if root_size + parent_size > _MAX_EXTERNAL_ANCESTRY_BYTES:
+            raise _InvalidTranscript("external ancestry exceeds aggregate bounds")""",
+        after="""        if root_size + parent_size >= _MAX_EXTERNAL_ANCESTRY_BYTES:
+            raise _InvalidTranscript("external ancestry exceeds aggregate bounds")""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_external_ancestry_aggregate_byte_bound_is_exact"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-drops-current-aggregate-byte-bound",
+        invariant=(
+            "Currentness fails closed when the combined present size of all external "
+            "ancestry rollouts exceeds 64 MiB."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        if (
+            sum(int(metadata.st_size) for metadata in opened_metadata[1:])
+            > _MAX_EXTERNAL_ANCESTRY_BYTES
+        ):
+            return False""",
+        after="""        if False and (
+            sum(int(metadata.st_size) for metadata in opened_metadata[1:])
+            > _MAX_EXTERNAL_ANCESTRY_BYTES
+        ):
+            return False""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_current_external_ancestry_aggregate_byte_bound_is_exact"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-cross-file-skips-final-namespace-recomputation",
+        invariant=(
+            "External rollout uniqueness and independently derived offsets are recomputed "
+            "after record and file revalidation, immediately before success."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        for index in range(external_count):
+            resolved_path, resolved_offset = _find_unique_rollout_for_thread(
+                sessions_root,
+                thread_id=attestation.external_file_thread_ids[index],
+                profile=_external_filename_profile(profile),
+            )
+            if (
+                resolved_path != Path(attestation.external_file_paths[index])
+                or resolved_offset != attestation.external_file_utc_offset_minutes[index]
+            ):
+                return False
+        return True""",
+        after="        return True",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_final_currentness_recomputes_unique_external_namespace"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-shifts-pinned-version",
+        invariant=(
+            "Desktop authority remains atomically pinned to runtime 0.147.0-alpha.6.6 rather "
+            "than accepting the separate CLI 0.147.0 version."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='_SUPPORTED_DESKTOP_VERSION: Final = "0.147.0-alpha.6.6"',
+        after='_SUPPORTED_DESKTOP_VERSION: Final = "0.147.0"',
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::test_exact_desktop_alpha_marked_root_attests"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-metadata-envelope-drift",
+        invariant=(
+            "Desktop session metadata uses the exact no-ordinal Desktop envelope and cannot "
+            "be confused with the CLI ordinal envelope."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="        set(envelope) == _DESKTOP_SESSION_ENVELOPE_KEYS",
+        after="        True",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_profile_and_metadata_drift_fail_open"
+            "[desktop-envelope-ordinal]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-disabled-subagent-lineage",
+        invariant=(
+            "Only active v2 thread-spawn metadata can authorize Desktop ancestry; disabled "
+            "guardian or other subagent records fail open."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        or payload.get("parent_thread_id") != parent_thread_id
+        or payload.get("thread_source") != "subagent"
+        or payload.get("multi_agent_version") != "v2"
+        or (inherited and payload.get("forked_from_id") != parent_thread_id)""",
+        after="""        or payload.get("parent_thread_id") != parent_thread_id
+        or payload.get("thread_source") != "subagent"
+        or False
+        or (inherited and payload.get("forked_from_id") != parent_thread_id)""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_profile_and_metadata_drift_fail_open"
+            "[desktop-multi-agent-disabled]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-unobserved-shape-cross-products",
+        invariant=(
+            "Desktop child authority requires one complete observed alpha.6.6 tuple across "
+            "depth, inheritance, prefix size, dynamic tools, Git shape, fork semantics, "
+            "filename residual, and canonical-parent inheritance; independently observed "
+            "field values cannot be recombined."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="    return shape in _DESKTOP_OBSERVED_CHILD_SHAPES",
+        after="    return True",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_rejects_unobserved_shape_cross_products"
+            "[d1-inherited-child-only-dynamic-branch-fork1-residual0]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-skips-dynamic-tools-pin",
+        invariant=(
+            "When Desktop metadata carries dynamic_tools, its bounded canonical digest is "
+            "the pinned alpha.6.6 two-namespace value."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        and hmac.compare_digest(
+            hashlib.sha256(encoded).hexdigest(),
+            _DESKTOP_DYNAMIC_TOOLS_SHA256,
+        )""",
+        after="        and True",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_profile_and_metadata_drift_fail_open"
+            "[desktop-dynamic-tools-drift]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-parent-child-causal-edge",
+        invariant=(
+            "A Desktop depth-two parent rollout launches the exact current child rather "
+            "than naming its own thread as the child."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""            parent_scan = _scan_external_rollout(
+                parent_descriptor,
+                parent_size,
+                parent_thread_id=parent_thread_id,
+                child_thread_id=thread_id,
+                parent_agent_path=parent_agent_path_hint,""",
+        after="""            parent_scan = _scan_external_rollout(
+                parent_descriptor,
+                parent_size,
+                parent_thread_id=parent_thread_id,
+                child_thread_id=parent_thread_id,
+                parent_agent_path=parent_agent_path_hint,""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_observed_ancestry_variants_attest"
+            "[d2-child-parent-all-dynamic-branch-residual0]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-root-parent-causal-edge",
+        invariant=(
+            "A Desktop depth-two root rollout launches the canonical intermediate parent, "
+            "not the current grandchild."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=thread_id if depth == 1 else parent_thread_id,
+            parent_agent_path=None,
+            child_agent_path=current_agent_path if depth == 1 else str(parent_agent_path),""",
+        after="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=thread_id,
+            parent_agent_path=None,
+            child_agent_path=current_agent_path if depth == 1 else str(parent_agent_path),""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_observed_ancestry_variants_attest"
+            "[d2-child-parent-all-dynamic-branch-residual0]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-binds-root-edge-to-current-inheritance",
+        invariant=(
+            "The Desktop root-to-parent edge uses the canonical parent's own inherited or "
+            "sparse binding independently of the current child's inheritance."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""            inherited=(
+                current_inherited if depth == 1 else bool(parent_metadata and parent_metadata[0])
+            ),""",
+        after="            inherited=current_inherited,",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_observed_ancestry_variants_attest"
+            "[d2-child-parent-sparse-parent-all-no-dynamic-branch-residual0]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-copied-parent-payload-drift",
+        invariant=(
+            "A copied Desktop parent payload is byte-semantically equal to its unique "
+            "canonical parent owner before it can contribute ancestry."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="                    or current_copies[0].payload != parent_prefix[0].payload",
+        after="                    or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_requires_unique_canonical_owners_and_exact_copies"
+            "[copied-parent-drift]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-event-schema-or-call-drift",
+        invariant=(
+            "A direct Desktop start has the exact pinned event schema and event_id equal to "
+            "its immediately preceding spawn call_id."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        or set(start_payload) != _DESKTOP_CAUSAL_EVENT_KEYS
+        or start_payload.get("type") != "sub_agent_activity"
+        or start_payload.get("kind") != "started"
+        or start_payload.get("event_id") != call_payload.get("call_id")""",
+        after="""        or False
+        or start_payload.get("type") != "sub_agent_activity"
+        or start_payload.get("kind") != "started"
+        or False""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_direct_causal_transaction_is_exact[event-schema-drift]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-event-child-thread",
+        invariant=(
+            "A direct Desktop start names the exact child thread resolved from canonical metadata."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=thread_id if depth == 1 else parent_thread_id,
+            parent_agent_path=None,
+            child_agent_path=current_agent_path if depth == 1 else str(parent_agent_path),""",
+        after="""        root_scan = _scan_external_rollout(
+            root_descriptor,
+            root_size,
+            parent_thread_id=root_session_id,
+            child_thread_id=root_session_id if depth == 1 else parent_thread_id,
+            parent_agent_path=None,
+            child_agent_path=current_agent_path if depth == 1 else str(parent_agent_path),""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_observed_ancestry_variants_attest"
+            "[d1-inherited-external-three-dynamic-branch-residual0]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-event-agent-path",
+        invariant=(
+            "A direct Desktop start names the exact canonical child agent path derived from "
+            "the spawn arguments and parent path."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='        or start_payload.get("agent_path") != child_agent_path',
+        after="        or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_direct_causal_transaction_is_exact[path-drift]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-widens-direct-event-time-residual",
+        invariant=(
+            "The Desktop direct event outer timestamp equals occurred_at_ms or trails it by "
+            "exactly one observed millisecond."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="        or event_ms - occurred_at_ms not in {0, 1}",
+        after="        or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_direct_causal_transaction_is_exact[event-time-plus-two]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-drops-cli-external-residual-separation",
+        invariant=(
+            "Observed plus-one filename residuals apply to Desktop and CLI current/in-file "
+            "profiles, while the pinned CLI cross-file census remains exact-zero."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            "    allowed_residuals = profile.filename_residual_seconds "
+            "if profile is not None else frozenset({0})"
+        ),
+        after="""    allowed_residuals = (
+        _CLI_TUI_PROFILE.filename_residual_seconds
+        if profile is None or profile == _CLI_TUI_CROSS_FILE_PROFILE
+        else profile.filename_residual_seconds
+    )""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_cross_file_cli_external_rollout_rejects_plus_one_residual"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-direct-outcome-suffix-replay",
+        invariant=(
+            "Any appended Desktop direct outcome reusing the current call_id invalidates the "
+            "sealed authorization before rewrite."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            '        if profile.desktop and outer_type == "event_msg" '
+            'and payload.get("event_id") == tool_use_id:'
+        ),
+        after=(
+            '        if False and profile.desktop and outer_type == "event_msg" '
+            'and payload.get("event_id") == tool_use_id:'
+        ),
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_current_or_external_direct_replay_invalidates_attestation"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-accepts-profile-id-rebinding",
+        invariant=(
+            "The sealed Desktop profile_id and alpha version remain an atomic authority and "
+            "cannot be rebound to a CLI profile identifier."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="""_PROFILES_BY_ID: Final = {
+    profile.profile_id: profile
+    for profile in (_CLI_TUI_PROFILE, _CLI_EXEC_PROFILE, _DESKTOP_PROFILE)
+}""",
+        after="""_PROFILES_BY_ID: Final = {
+    **{
+        profile.profile_id: profile
+        for profile in (_CLI_TUI_PROFILE, _CLI_EXEC_PROFILE, _DESKTOP_PROFILE)
+    },
+    _CLI_TUI_PROFILE_ID: _DESKTOP_PROFILE,
+}""",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_sealed_profile_and_external_arrays_are_authoritative"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-allows-nonempty-current-marker",
+        invariant=(
+            "The current Desktop authorization call carries the explicit exact-empty host "
+            "marker, never missing, null, or nonempty marker content."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='    if payload["encrypted_function_args"] != []:',
+        after="    if False:",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_current_and_ancestor_marker_domains_are_separate[current-null]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-current-arguments",
+        invariant=(
+            "The canonical current Desktop call arguments exactly equal the hook tool_input "
+            "whose digest is sealed."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before="    return canonical == expected_input",
+        after="    return True",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_current_call_binds_shared_authorization_fields[arguments]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-current-turn",
+        invariant=(
+            "The current Desktop response item carries the exact hook turn_id in its pinned "
+            "metadata passthrough object."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before='        or metadata.get("turn_id") != turn_id',
+        after="        or False",
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_current_call_binds_shared_authorization_fields[turn]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-desktop-decouples-current-call-id",
+        invariant=(
+            "The one current Desktop function call selected from the initial snapshot has "
+            "the exact hook tool_use_id."
+        ),
+        source_path="agency_runtime/core/codex_spawn_provenance.py",
+        before=(
+            '        if outer_type == "response_item" and payload.get("call_id") == tool_use_id:'
+        ),
+        after=(
+            '        if outer_type == "response_item" and payload.get("type") == "function_call":'
+        ),
+        test_node=(
+            "tests/test_codex_spawn_provenance.py::"
+            "test_desktop_alpha_current_call_binds_shared_authorization_fields[call]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-contradictory-semantic-status",
+        invariant=(
+            "The transactional native-child readback rejects an inner semantic status that "
+            "contradicts its applied outer route."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before='        or value.get("semantic_status") != "applied"',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_contradictory_native_child_success_projection_rolls_back_before_callback"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-extra-success-fields",
+        invariant=(
+            "The transactional native-child readback accepts only the exact applied success "
+            "field set, never fallback, continuation, or origin metadata."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before=(
+            "    if not isinstance(value, Mapping) or frozenset(value) != _SUCCESS_ROUTE_FIELDS:"
+        ),
+        after=(
+            "    if not isinstance(value, Mapping) "
+            "or not frozenset(value) >= _SUCCESS_ROUTE_FIELDS:"
+        ),
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_extra_native_child_success_projection_rolls_back_before_callback"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-nonneutral-work-units",
+        invariant=(
+            "An applied native-child success cannot smuggle delegated work units alongside "
+            "the host-owned child launch."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before='        or value.get("work_units") != {}',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_decision.py::test_success_route_requires_neutral_work_units"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-drops-parent-host-binding",
+        invariant=(
+            "The delivery host must equal the host of the exact open parent run before the "
+            "final callback can authorize output."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before='        or delivery["host"] != host',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_native_child_delivery_host_must_match_open_parent_before_callback"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-drops-applied-provider-binding",
+        invariant=(
+            "The route provider must equal the sole applied provider attempt sealed into "
+            "the native-child delivery receipt."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before="        or provider != applied_provider",
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_route_provider_must_match_applied_attempt_and_exact_launch_can_retry"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-route-uses-raw-provider-name",
+        invariant=(
+            "The route and sealed delivery use the same content-free applied provider "
+            "identity even when a valid configured name requires hashing."
+        ),
+        source_path="agency_runtime/core/native_child_staffing.py",
+        before='        "provider": _route_provider_name(raw, native_child_delivery),',
+        after='        "provider": _provider_name(raw),',
+        test_node=(
+            "tests/test_native_child_staffing.py::"
+            "test_provider_name_uses_the_same_safe_identity_as_the_applied_receipt"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-out-of-range-confidence",
+        invariant=(
+            "An applied native-child success retains the inference judge's public zero-to-one "
+            "confidence contract."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before="        or not 0.0 <= confidence <= 1.0",
+        after="        or not -1_000_000.0 <= confidence <= 1_000_000.0",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_native_child_success_numeric_contract_rolls_back_and_retries"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-impossible-candidate-count",
+        invariant=(
+            "A successful complete-universe decision cannot select more cards than its "
+            "reported inference candidate universe contained."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before=("        or not len(expected_slugs) <= candidate_count <= 86_400_000"),
+        after="        or not 0 <= candidate_count <= 86_400_000",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_native_child_success_numeric_contract_rolls_back_and_retries"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-readback-allows-retrieval-score-in-complete-mode",
+        invariant=(
+            "Native-child inference uses the complete candidate universe and therefore "
+            "retains its exact neutral retrieval top score."
+        ),
+        source_path="agency_runtime/core/native_child_decision.py",
+        before="        or top_score != 0.0",
+        after="        or not -1_000_000.0 <= top_score <= 1_000_000.0",
+        test_node=(
+            "tests/test_native_child_duplicate_launch.py::"
+            "test_native_child_success_numeric_contract_rolls_back_and_retries"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-postcommit-close-suppresses-staffed-output",
+        invariant=(
+            "A connection cleanup failure after commit cannot convert an authoritative "
+            "native-child success into unstaffed output."
+        ),
+        source_path="agency_runtime/core/store/maintenance.py",
+        before="            if committed:",
+        after="            if False and committed:",
+        test_node=(
+            "tests/test_native_child_staffing.py::"
+            "test_postcommit_connection_close_failure_preserves_exact_staffed_output"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-postcommit-diagnostic-suppresses-staffed-output",
+        invariant=(
+            "A logging failure while diagnosing post-commit cleanup cannot escape and "
+            "suppress the exact staffed output."
+        ),
+        source_path="agency_runtime/core/store/maintenance.py",
+        before="""    except Exception:  # diagnostics cannot alter an already-committed outcome
+        return""",
+        after="""    except Exception:  # diagnostics cannot alter an already-committed outcome
+        raise""",
+        test_node=(
+            "tests/test_native_child_staffing.py::"
+            "test_postcommit_connection_close_failure_preserves_exact_staffed_output"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-resolver-drops-route-confidence-projection",
+        invariant=(
+            "The native-child resolver rejects a duplicated confidence column that no longer "
+            "matches the exact serialized success."
+        ),
+        source_path="agency_runtime/core/store/evidence.py",
+        before='        or row["confidence"] != decision.get("confidence")',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_decision.py::"
+            "test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-resolver-drops-route-latency-projection",
+        invariant=(
+            "The native-child resolver rejects a duplicated latency column that no longer "
+            "matches the exact serialized success."
+        ),
+        source_path="agency_runtime/core/store/evidence.py",
+        before='        or row["latency_ms"] != decision.get("latency_ms")',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_decision.py::"
+            "test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-resolver-drops-route-provider-projection",
+        invariant=(
+            "The native-child resolver rejects a duplicated provider column that no longer "
+            "matches the exact serialized success."
+        ),
+        source_path="agency_runtime/core/store/evidence.py",
+        before='        or row["provider"] != decision.get("provider")',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_decision.py::"
+            "test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="native-child-resolver-allows-noncanonical-created-at",
+        invariant=(
+            "The native-child resolver mirrors the transactional requirement that the route "
+            "has the exact valid timestamp shape authored by the Store clock."
+        ),
+        source_path="agency_runtime/core/store/evidence.py",
+        before='        or not store_clock_value_is_canonical(row["created_at"])',
+        after="        or False",
+        test_node=(
+            "tests/test_native_child_decision.py::"
+            "test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="ranking-order-reversed",
         invariant="The model's semantic ranking order is preserved, never locally reranked.",
         source_path="agency_runtime/core/workforce/inference.py",
@@ -1444,7 +2650,7 @@ class _NominationSemantics:""",
     ),
 )
 
-PytestRunner = Callable[[Path, Sequence[str], str, float, Path], _PytestRun]
+PytestRunner = Callable[[Path, Sequence[str], str, str, float, Path], _PytestRun]
 
 
 def _normalized_node(value: str) -> str:
@@ -1462,10 +2668,17 @@ def _failed_nodes(output: str) -> tuple[str, ...]:
     return tuple(nodes)
 
 
+def _resolve_fixture_python_executable(requested: str | Path | None = None) -> str:
+    """Resolve one trusted persistent launcher without consulting the test runner."""
+
+    return persistent_python_executable(requested)
+
+
 def _run_pytest(
     checkout: Path,
     test_nodes: Sequence[str],
     python_executable: str,
+    fixture_python_executable: str,
     timeout_seconds: float,
     source_root: Path,
 ) -> _PytestRun:
@@ -1482,7 +2695,7 @@ def _run_pytest(
         current_directory=checkout,
         forbidden_roots=(source_root,),
         extra_env={
-            "AGENCY_CI_PYTHON": python_executable,
+            "AGENCY_CI_PYTHON": fixture_python_executable,
             "AGENCY_DECISION_CONFORMANCE": "1",
             "PYTHONIOENCODING": "utf-8",
             "PYTHONPATH": str(checkout),
@@ -1539,6 +2752,7 @@ def _run_baseline(
     checkout: Path,
     test_nodes: Sequence[str],
     python_executable: str,
+    fixture_python_executable: str,
     timeout_seconds: float,
     source_root: Path,
     *,
@@ -1552,6 +2766,7 @@ def _run_baseline(
             checkout,
             (test_node,),
             python_executable,
+            fixture_python_executable,
             timeout_seconds,
             source_root,
         )
@@ -1711,6 +2926,7 @@ def _mutation_result(
     checkout: Path,
     *,
     python_executable: str,
+    fixture_python_executable: str,
     timeout_seconds: float,
     source_root: Path,
     pytest_runner: PytestRunner,
@@ -1735,6 +2951,7 @@ def _mutation_result(
         checkout,
         (mutation.test_node,),
         python_executable,
+        fixture_python_executable,
         timeout_seconds,
         source_root,
     )
@@ -1769,6 +2986,7 @@ def run_decision_conformance_eval(
     *,
     mutations: Sequence[DecisionMutation] = MUTATIONS,
     python_executable: str | None = None,
+    fixture_python_executable: str | Path | None = None,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     pytest_runner: PytestRunner = _run_pytest,
 ) -> dict[str, Any]:
@@ -1780,6 +2998,7 @@ def run_decision_conformance_eval(
         raise ValueError("decision-conformance timeout must be from 1 through 300 seconds")
     source_root = _validate_repository(Path(repository), mutations)
     interpreter = str(Path(python_executable or sys.executable).resolve(strict=True))
+    fixture_interpreter = _resolve_fixture_python_executable(fixture_python_executable)
     before = _fingerprints(source_root, mutations)
     baseline_nodes = tuple(dict.fromkeys(mutation.test_node for mutation in mutations))
     mutation_results: list[dict[str, Any]] = []
@@ -1791,6 +3010,7 @@ def run_decision_conformance_eval(
             baseline_copy,
             baseline_nodes,
             interpreter,
+            fixture_interpreter,
             float(timeout_seconds),
             source_root,
             pytest_runner=pytest_runner,
@@ -1805,6 +3025,7 @@ def run_decision_conformance_eval(
                         mutation,
                         mutation_copy,
                         python_executable=interpreter,
+                        fixture_python_executable=fixture_interpreter,
                         timeout_seconds=float(timeout_seconds),
                         source_root=source_root,
                         pytest_runner=pytest_runner,

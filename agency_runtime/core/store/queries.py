@@ -123,6 +123,12 @@ _ROUTING_DECISION_FIELDS = frozenset(
         "query_hash",
         "execution_context",
         "routing_receipt",
+        "native_child_delivery",
+        "native_child_reason",
+        "inference_configured",
+        "inference_required",
+        "inference_attempted",
+        "inference_mode",
     }
 )
 
@@ -139,7 +145,9 @@ _ROUTING_LIST_FIELDS = frozenset(
         "unavailable_fallback_companion_ids",
     }
 )
-_ROUTING_LABEL_FIELDS = frozenset({"status", "semantic_status", "source"})
+_ROUTING_LABEL_FIELDS = frozenset(
+    {"status", "semantic_status", "source", "native_child_reason", "inference_mode"}
+)
 _ROUTING_BOOLEAN_FIELDS = frozenset(
     {
         "fallback_considered",
@@ -148,6 +156,9 @@ _ROUTING_BOOLEAN_FIELDS = frozenset(
         "session_reused",
         "continuation_reused",
         "continuation_resolution_required",
+        "inference_configured",
+        "inference_required",
+        "inference_attempted",
     }
 )
 _ROUTING_FLOAT_FIELDS = frozenset({"confidence", "top_score"})
@@ -228,6 +239,12 @@ def _project_routing_field(key: str, value: object) -> object:
         )
 
         return normalize_durable_routing_receipt(value) or _OMIT_ROUTING_FIELD
+    if key == "native_child_delivery":
+        from agency_runtime.core.native_child_decision import (
+            project_native_child_staffing_decision,
+        )
+
+        return project_native_child_staffing_decision(value) or _OMIT_ROUTING_FIELD
     if key in {"trace_id", "origin_trace_id"}:
         return str(value or "").strip()[:256]
     return _OMIT_ROUTING_FIELD
@@ -492,6 +509,11 @@ def project_routing_decision(
         source = "policy_fallback"
     elif safe_decision.get("source") == "codex_activation_canary_inference":
         source = "codex_activation_canary_inference"
+    elif safe_decision.get("source") in {
+        "native_child_inference",
+        "native_child_inference_failure",
+    }:
+        source = str(safe_decision["source"])
     else:
         source = "computed"
     return safe_decision, safe_work_units, source

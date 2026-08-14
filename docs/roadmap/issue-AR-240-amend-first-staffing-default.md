@@ -3,7 +3,7 @@ title: "AR-240: Amend-first staffing default (slice 4 of AR-235)"
 status: done
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [workforce, hiring, staffing, sub-issue]
 related:
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
@@ -64,12 +64,12 @@ workforce duplication for scenarios that differ only in narrow scope.
 
 ## Acceptance
 
-- [ ] `allow_existing_worker_amendment` defaults to `True`.
-- [ ] `amend_overlap_threshold: 0.7` config knob is added and wired.
-- [ ] When the recruiter returns `action: "amend"` with
+- [x] `allow_existing_worker_amendment` defaults to `True`.
+- [x] `amend_overlap_threshold: 0.7` config knob is added and wired.
+- [x] When the recruiter returns `action: "amend"` with
       `coherent_amendment_target` and `maximum_overlap >= threshold`,
       the `_amendment_agent` runs. Below threshold or with no coherent
       target, the standard hire path runs.
-- [ ] The `_HIRE_SYSTEM` prompt reflects the amend-first policy.
-- [ ] Focused tests cover: amend-first default, below-threshold
+- [x] The `_HIRE_SYSTEM` prompt reflects the amend-first policy.
+- [x] Focused tests cover: amend-first default, below-threshold
       fallthrough, reuse unchanged.

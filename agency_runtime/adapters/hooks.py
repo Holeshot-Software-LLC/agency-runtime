@@ -14,6 +14,7 @@ import re
 import sys
 from contextlib import suppress
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, BinaryIO, TextIO
 from uuid import UUID, uuid4
 
@@ -38,17 +39,11 @@ from agency_runtime.core.native_child_activation import (
     NativeChildRunIdentity,
     build_native_child_run_identity,
 )
-from agency_runtime.core.native_child_prompt_delivery import (
-    NativeChildPromptDelivery,
-    is_codex_opaque_collaboration_message,
-    parse_native_child_prompt_delivery,
-)
 from agency_runtime.core.observability import (
     RuntimeBoundary,
     correlate_current_observation,
     mark_current_observation,
 )
-from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.store.sqlite import Store
 
 logger = logging.getLogger(__name__)
@@ -177,13 +172,58 @@ _CODEX_FOLLOWUP_TOOL_NAMES = frozenset(
 _CLAUDE_AGENT_TOOL_NAME = "Agent"
 _CLAUDE_CHILD_IDENTITY_MARKER = "[AGENCY NATIVE CHILD IDENTITY v1]"
 _PLANNED_NATIVE_WORK_UNIT_PATTERN = re.compile(r"^unit-[0-9a-f]{10}$")
-# Deterministic lexical narrowing runs inside the hook, so a few candidates are read
-# in rank order until one has a pinned, resolvable prompt version.
-_JIT_STAFFING_CANDIDATE_LIMIT = 5
-# Rule 4 is explicit that a harness-spawned child gets cards, plural. Three is
-# the practical ceiling: bodies are ~2.6k chars at the median, so three cards is
-# roughly 8k against the bounded hook envelope.
-_JIT_STAFFING_MAX_CARDS = 3
+
+
+def _encoded_hook_output(payload: dict[str, Any]) -> bytes | None:
+    """Return the exact stdout bytes for one hook response, including newline."""
+
+    try:
+        return (
+            json.dumps(
+                payload,
+                allow_nan=False,
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            + b"\n"
+        )
+    except (TypeError, UnicodeError, ValueError):
+        return None
+
+
+def _native_child_staffing_response(
+    args: dict[str, Any],
+    *,
+    task_field: str,
+    rewritten_task: str,
+) -> dict[str, Any]:
+    """Build the one exact prospective and returned native-child hook response."""
+
+    return {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "allow",
+            "updatedInput": {**args, task_field: rewritten_task},
+        }
+    }
+
+
+def _native_child_delivery_fits_hook(
+    args: dict[str, Any],
+    *,
+    task_field: str,
+    rewritten_task: str,
+) -> bool:
+    """Validate the exact serialized hook output without writing or persisting."""
+
+    encoded = _encoded_hook_output(
+        _native_child_staffing_response(
+            args,
+            task_field=task_field,
+            rewritten_task=rewritten_task,
+        )
+    )
+    return encoded is not None and len(encoded) <= MAX_HOOK_OUTPUT_BYTES
 
 
 def _bounded_completion_reason(reason: object) -> str:
@@ -518,22 +558,6 @@ def _native_child_tool_identity(
     )
 
 
-def _is_codex_opaque_native_task(host: str, task: str) -> bool:
-    """Recognize only Codex's bounded encrypted collaboration-message shape."""
-
-    return host == "codex" and is_codex_opaque_collaboration_message(task)
-
-
-def _project_native_child_goal(
-    canonical_args: dict[str, Any],
-    delivery: NativeChildPromptDelivery,
-) -> None:
-    """Project plaintext goals only when the host exposed and authenticated them."""
-
-    if delivery.original_task:
-        canonical_args["goal"] = delivery.original_task
-
-
 def _native_work_unit_label(host: str, tool_name: str, args: dict[str, Any]) -> str:
     """Return only an explicit Agency recipe label from official native args."""
 
@@ -597,6 +621,37 @@ def _canonical_tool_call(
     return tool_name, args
 
 
+def hook_host_adapter(host: str, store: Store) -> Any:
+    """Build the adapter a hook-driven host actually runs on.
+
+    This is the single place that knows a host reaches Agency through the
+    shared hooks boundary rather than through an adapter class of its own.
+    Anything that wants to observe such a host -- the hook bridge itself, or a
+    parity evaluation that must speak for every supported host -- builds it
+    here, so an evaluation cannot silently observe some neighbouring host's
+    construction and report it as parity.
+    """
+
+    normalized_host = str(host or "").strip().casefold()
+    if normalized_host == "codex":
+        from agency_runtime.adapters.codex.wrapper import CodexAdapter
+
+        return CodexAdapter(store=store)
+    if normalized_host not in {"claude", "zcode"}:
+        raise ValueError(f"unsupported hook host: {host}")
+    from agency_runtime.adapters.claude.wrapper import ClaudeAdapter
+
+    # ADR-0087: zcode reuses the Claude hook model and Agent-tool delegation
+    # primitive, so it shares the ClaudeAdapter behavior. But it must keep
+    # its own host identity so runtime-control reads the zcode row (not
+    # claude's) and all evidence receipts are attributed to zcode rather
+    # than masqueraded as claude.
+    adapter = ClaudeAdapter(store=store)
+    if normalized_host == "zcode":
+        adapter.host_name = "zcode"
+    return adapter
+
+
 class HookBridge:
     """Translate one native hook event to a host adapter operation."""
 
@@ -637,21 +692,7 @@ class HookBridge:
         self._adapter = value
 
     def _new_adapter(self) -> Any:
-        if self.host == "codex":
-            from agency_runtime.adapters.codex.wrapper import CodexAdapter
-
-            return CodexAdapter(store=self.store)
-        from agency_runtime.adapters.claude.wrapper import ClaudeAdapter
-
-        # ADR-0087: zcode reuses the Claude hook model and Agent-tool delegation
-        # primitive, so it shares the ClaudeAdapter behavior. But it must keep
-        # its own host identity so runtime-control reads the zcode row (not
-        # claude's) and all evidence receipts are attributed to zcode rather
-        # than masqueraded as claude.
-        adapter = ClaudeAdapter(store=self.store)
-        if self.host == "zcode":
-            adapter.host_name = "zcode"
-        return adapter
+        return hook_host_adapter(self.host, self.store)
 
     def _event_name(self, payload: dict[str, Any]) -> str:
         event = _required_string(payload, "hook_event_name")
@@ -696,15 +737,8 @@ class HookBridge:
         work_unit_id = work_unit_id or _response_work_unit(tool_response)
         return HookCorrelation(session_id, turn_id, work_unit_id, model, tool_use_id)
 
-    def _unambiguous_open_trace(self, session_id: str, *, require_live_parent: bool = True) -> str:
+    def _unambiguous_open_trace(self, session_id: str) -> str:
         """Recover one open routed turn when a host omits native turn IDs.
-
-        ``require_live_parent=False`` also accepts a parent turn that already
-        reached a terminal status. Only just-in-time child staffing passes it:
-        a child's cards are chosen by deterministic local code, so a parent whose
-        own inference failed is no reason to send the child out unstaffed. The
-        "exactly one or nothing" rule is unchanged either way -- an ambiguous
-        session still resolves to no trace.
 
         Claude's documented hook envelope does not guarantee a ``turn_id``.
         Falling back to the session ID would merge unrelated turns, while
@@ -741,7 +775,7 @@ class HookBridge:
             open_traces = {
                 str(row.get("trace_id"))
                 for row in session_runs
-                if not require_live_parent or row.get("status") in {"active", "evidence_only"}
+                if row.get("status") in {"active", "evidence_only"}
             }
             return next(iter(open_traces)) if len(open_traces) == 1 else ""
 
@@ -765,22 +799,16 @@ class HookBridge:
     def _native_child_parent_scope(
         self,
         payload: dict[str, Any],
-        *,
-        require_live_parent: bool = True,
     ) -> tuple[str, str, str]:
         """Resolve the parent turn a native child belongs to.
 
-        The correlation itself is never relaxed: the run must still belong to the
-        same session, so a child can never attach to somebody else's turn. Only
-        the liveness requirement is optional, and only just-in-time staffing turns
-        it off (rules 4 and 8) -- a parent turn that failed its own preflight must
-        not silently cost the child the cards deterministic code already chose for
-        it. Lifecycle recording keeps the strict default, where writing an audit
-        edge against a finished turn would be wrong.
+        An explicit host turn must name an existing live run in the same session.
+        It is never replaced by a different open trace when invalid. Only a host
+        that omitted ``turn_id`` may use the exactly-one-open-trace fallback.
         """
 
         correlation = self._correlation(payload)
-        trace_id = correlation.trace_id
+        trace_id = correlation.turn_id
         run_reader = getattr(self.store, "get_run", None)
         if trace_id and callable(run_reader):
             try:
@@ -792,44 +820,11 @@ class HookBridge:
                 and candidate.get("session_id") == correlation.session_id
             )
             live = correlated and candidate.get("status") in {"active", "evidence_only"}
-            if not (live or (correlated and not require_live_parent)):
-                trace_id = ""
-        trace_id = trace_id or self._unambiguous_open_trace(
-            correlation.session_id,
-            require_live_parent=require_live_parent,
-        )
+            if not live:
+                return correlation.session_id, "", correlation.work_unit_id
+        if not trace_id:
+            trace_id = self._unambiguous_open_trace(correlation.session_id)
         return correlation.session_id, trace_id, correlation.work_unit_id
-
-    def _issue_native_child_parent_scope(
-        self,
-        *,
-        session_id: str,
-        trace_id: str,
-        work_unit_id: str,
-        identity: NativeChildRunIdentity,
-    ) -> dict[str, Any] | None:
-        """Persist one explicit cross-process join receipt when parent evidence is exact."""
-
-        if self.host not in {"codex", "claude"} or not session_id or not trace_id:
-            return None
-        issuer = getattr(self.store, "create_native_child_parent_scope", None)
-        if not callable(issuer):
-            return None
-        child_session_id = f"{self.host}-child:{identity.worker_id}"
-        try:
-            receipt = issuer(
-                host=self.host,
-                parent_session_id=session_id,
-                parent_trace_id=trace_id,
-                work_unit_id=work_unit_id,
-                worker_kind=identity.worker_kind,
-                worker_id=identity.worker_id,
-                native_run_id=identity.native_run_id,
-                child_session_id=child_session_id,
-            )
-        except Exception:
-            return None
-        return receipt if isinstance(receipt, dict) else None
 
     def _record_native_child_lifecycle(
         self,
@@ -929,248 +924,353 @@ class HookBridge:
             fallback_agent_id=_optional_string(payload, "agent_id"),
         )
 
-    def _jit_staff_native_child(
+    def _native_child_staffing_parent(
         self,
-        *,
         payload: dict[str, Any],
         args: dict[str, Any],
-        task_field: str,
-        task: str,
-    ) -> dict[str, Any]:
-        """Never let a staffing failure block a child the host chose to spawn."""
+    ) -> tuple[HookCorrelation, str]:
+        """Resolve exactly one existing live parent; never substitute a tool ID."""
 
-        try:
-            return self._jit_specialist_delivery(
-                payload=payload,
-                args=args,
-                task_field=task_field,
-                task=task,
-            )
-        except Exception:
-            logger.debug(
-                "just-in-time staffing did not apply to this host-initiated child; "
-                "it runs unstaffed",
-                exc_info=True,
-            )
-            return {}
-
-    def _jit_specialist_delivery(
-        self,
-        *,
-        payload: dict[str, Any],
-        args: dict[str, Any],
-        task_field: str,
-        task: str,
-    ) -> dict[str, Any]:
-        """Staff a child the host spawned on its own initiative.
-
-        Agency never decides to spawn, but when the host does, the child still gets a
-        specialist. There is no plan, no work unit, and no activation grant on this
-        path, so it is structurally incapable of emitting a lifecycle skeleton and it
-        creates no obligation the parent must finalize against. Every failure returns
-        an empty response and lets the child run exactly as it otherwise would.
-        """
-
-        from agency_runtime.core.native_child_prompt_delivery import (
-            parse_jit_specialist_delivery,
-            render_jit_specialist_delivery,
-        )
-        from agency_runtime.core.selector.candidate_narrow import pre_narrow
-
-        if _is_codex_opaque_native_task(self.host, task):
-            return {}
-        if parse_jit_specialist_delivery(task) is not None:
-            return {}
         correlation = self._correlation(payload, args)
-        if not correlation.session_id or not correlation.tool_use_id:
-            return {}
-        # Claude does not guarantee a turn_id, and _correlation falls back to the
-        # tool_use_id. Resolve the parent turn the same way every other native-child
-        # path does, so the audit row is never stamped with a tool identity.
-        # A child's cards come from deterministic, network-free local code, so the
-        # parent's own routing health is irrelevant to whether they can be chosen.
-        # Requiring a live parent here meant one failed planner call -- a rate
-        # limit, an expired login, an unreachable CLI -- silently took rule 4 down
-        # with it and looked exactly like "staffing is broken" (see the handoff).
-        session_id, trace_id, _work_unit_id = self._native_child_parent_scope(
-            payload,
-            require_live_parent=False,
-        )
-        if session_id != correlation.session_id or not trace_id:
-            return {}
-        catalog_reader = getattr(self.store, "get_active_roster_as_catalog", None)
-        prompt_reader = getattr(self.store, "get_versioned_specialist_prompt", None)
-        if not callable(catalog_reader) or not callable(prompt_reader):
-            return {}
-        try:
-            candidates, _scores = pre_narrow(
-                task,
-                catalog_reader(),
-                limit=_JIT_STAFFING_CANDIDATE_LIMIT,
-            )
-        except (RuntimeError, TypeError, ValueError):
-            return {}
-        resolved = self._resolvable_jit_candidates(candidates, prompt_reader)
-        if not resolved:
-            return {}
-        # A child gets cards, plural. Only the deterministic compatibility rules
-        # apply here: this runs inside a PreToolUse hook, so asking inference
-        # whether two cards conflict is not available at any price.
-        accepted = self._compatible_jit_slugs([slug for slug, _prompt in resolved], candidates)
-        delivered_task = task
-        delivered: list[str] = []
-        result: dict[str, Any] = {}
-        for slug, prompt in resolved:
-            if slug not in accepted or len(delivered) >= _JIT_STAFFING_MAX_CARDS:
-                continue
+        if not correlation.tool_use_id:
+            return correlation, ""
+        run_reader = getattr(self.store, "get_run", None)
+        if correlation.turn_id:
+            if not callable(run_reader):
+                return correlation, ""
             try:
-                candidate_task = render_jit_specialist_delivery(
-                    delivered_task,
-                    prompt["prompt_body"],
-                    host=self.host,
-                    parent_session_id=correlation.session_id,
-                    parent_trace_id=trace_id,
-                    tool_use_id=correlation.tool_use_id,
-                    specialist_slug=slug,
-                    specialist_version=str(prompt.get("version") or prompt["_version"]),
-                    specialist_prompt_hash=str(prompt.get("hash") or prompt["_hash"]),
-                )
-            except (RuntimeError, TypeError, ValueError):
-                continue
-            candidate_result = {
-                "hookSpecificOutput": {
-                    "hookEventName": "PreToolUse",
-                    "permissionDecision": "allow",
-                    "updatedInput": {**args, task_field: candidate_task},
-                }
-            }
-            try:
-                encoded = json.dumps(
-                    candidate_result,
-                    allow_nan=False,
-                    ensure_ascii=False,
-                    separators=(",", ":"),
-                ).encode("utf-8")
-            except (TypeError, ValueError):
-                continue
-            # The envelope ceiling decides how many cards actually fit. Stop at
-            # the first that does not rather than dropping the ones already
-            # staffed: a smaller real team beats an oversized rejected one.
-            if len(encoded) >= MAX_HOOK_OUTPUT_BYTES:
-                break
-            delivered_task = candidate_task
-            result = candidate_result
-            delivered.append(slug)
-        if not delivered:
-            return {}
-        for slug in delivered:
-            self._record_jit_specialist_load(
-                session_id=correlation.session_id,
-                trace_id=trace_id,
-                slug=slug,
-            )
-        return result
-
-    def _resolvable_jit_candidates(
-        self,
-        candidates: list[Any],
-        prompt_reader: Any,
-    ) -> list[tuple[str, dict[str, Any]]]:
-        """Keep only candidates whose pinned prompt version actually resolves."""
-
-        from agency_runtime.core.resident_managers import is_resident_manager_slug
-
-        resolved: list[tuple[str, dict[str, Any]]] = []
-        for candidate in candidates:
-            if not isinstance(candidate, dict):
-                continue
-            slug = str(candidate.get("slug") or "").strip()
-            version = str(candidate.get("version") or "").strip()
-            content_hash = str(candidate.get("hash") or "").strip()
-            if not slug or not version or not content_hash or is_resident_manager_slug(slug):
-                continue
-            try:
-                prompt = prompt_reader(
-                    slug,
-                    version,
-                    content_hash,
-                    max_chars=MAX_SPECIALIST_PROMPT_CHARS,
-                )
-            except (RuntimeError, ValueError):
-                continue
-            if (
-                not isinstance(prompt, dict)
-                or prompt.get("prompt_truncated") is not False
-                or not isinstance(prompt.get("prompt_body"), str)
-                or not prompt["prompt_body"]
+                candidate = run_reader(correlation.turn_id)
+            except Exception:
+                return correlation, ""
+            if not (
+                isinstance(candidate, dict)
+                and candidate.get("session_id") == correlation.session_id
+                and candidate.get("status") in {"active", "evidence_only"}
             ):
-                continue
-            resolved.append((slug, {**prompt, "_version": version, "_hash": content_hash}))
-        return resolved
-
-    def _compatible_jit_slugs(
-        self,
-        slugs: list[str],
-        candidates: list[Any],
-    ) -> set[str]:
-        """Return the deterministic compatible subset, or everything on failure.
-
-        Fail-open matches the rest of this path: a compatibility check that
-        cannot run must not cost the child its specialists. The first slug is
-        always kept so a degraded check can never staff nobody.
-        """
-
-        if len(slugs) < 2:
-            return set(slugs)
+                # An explicit but invalid/cross-session/terminal turn is not
+                # permission to attach this launch to a different open trace.
+                return correlation, ""
+            return correlation, correlation.turn_id
+        trace_id = self._unambiguous_open_trace(correlation.session_id)
+        if not trace_id or not callable(run_reader):
+            return correlation, ""
         try:
-            from agency_runtime.core.selector.compatibility import enforce_compatible_set
-
-            catalog = [item for item in candidates if isinstance(item, dict)]
-            compatible = enforce_compatible_set(
-                slugs,
-                catalog,
-                limit=_JIT_STAFFING_MAX_CARDS,
-            )
-            accepted = {str(slug) for slug in compatible.get("selected_ids") or ()}
+            candidate = run_reader(trace_id)
         except Exception:
-            logger.debug(
-                "just-in-time compatibility check did not run; delivering the "
-                "narrowed candidates as selected",
-                exc_info=True,
-            )
-            return set(slugs)
-        return accepted or {slugs[0]}
+            return correlation, ""
+        if not (
+            isinstance(candidate, dict)
+            and candidate.get("session_id") == correlation.session_id
+            and candidate.get("status") in {"active", "evidence_only"}
+        ):
+            return correlation, ""
+        return correlation, trace_id
 
-    def _record_jit_specialist_load(
+    def _record_native_child_unstaffed(
         self,
         *,
-        session_id: str,
-        trace_id: str,
-        slug: str,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        task: str,
+        reason_code: str,
     ) -> None:
-        """Record the load for audit only. It is deliberately not a delegation row.
+        """Persist one content-free reason only when its parent is exact and live."""
 
-        A host-initiated child is staffed but not accounted: the parent never planned
-        it, so requiring a receipt to finalize would reintroduce the blocking that the
-        specialist load exists to remove. The row expires with the turn like any other
-        loaded specialist; the exact version stays pinned in the delivered envelope.
-        """
-
-        recorder = getattr(self.store, "record_specialist_loaded", None)
-        if not callable(recorder):
+        correlation, trace_id = self._native_child_staffing_parent(payload, args)
+        if not trace_id:
             return
         try:
-            recorder(session_id, slug, trace_id=trace_id)
+            from agency_runtime.core.native_child_staffing import (
+                record_native_child_staffing_failure,
+            )
+
+            record_native_child_staffing_failure(
+                self.store,
+                host=self.host,
+                task=task,
+                parent_session_id=correlation.session_id,
+                parent_trace_id=trace_id,
+                launch_id=correlation.tool_use_id,
+                reason_code=reason_code,
+            )
         except Exception:
             logger.debug(
-                "could not record the just-in-time specialist load for %s; the child "
-                "keeps its specialist",
-                slug,
+                "native-child staffing failure could not be projected",
                 exc_info=True,
             )
 
+    def _exact_native_child_delivery_retry(
+        self,
+        *,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        delivery: Any,
+    ) -> bool:
+        """Accept only the exact still-current Store-bound launch as a retry."""
+
+        correlation, trace_id = self._native_child_staffing_parent(payload, args)
+        if not trace_id:
+            return False
+        if not (
+            delivery.host == self.host
+            and delivery.parent_session_id == correlation.session_id
+            and delivery.parent_trace_id == trace_id
+            and delivery.launch_id == correlation.tool_use_id
+            and delivery.binding_kind == "launch_id"
+            and delivery.binding_id == correlation.tool_use_id
+        ):
+            return False
+        try:
+            expires_at = datetime.fromisoformat(
+                delivery.expires_at[:-1] + "+00:00"
+                if delivery.expires_at.endswith("Z")
+                else delivery.expires_at
+            )
+            if expires_at.tzinfo is None or expires_at <= datetime.now(timezone.utc):
+                return False
+        except (AttributeError, TypeError, ValueError):
+            return False
+        getter = getattr(self.store, "get_native_child_staffing_decision", None)
+        if not callable(getter):
+            return False
+        try:
+            expected = getter(delivery.decision_id)
+            from agency_runtime.core.native_child_install_identity import (
+                current_runtime_managed_host_install_identity,
+            )
+
+            install = current_runtime_managed_host_install_identity(self.host)
+        except Exception:
+            return False
+        cards = [
+            {
+                "specialist_slug": card.specialist_slug,
+                "specialist_version": card.specialist_version,
+                "specialist_prompt_hash": card.specialist_prompt_hash,
+                "body_character_length": card.body_character_length,
+            }
+            for card in delivery.cards
+        ]
+        exact = {
+            "decision_id": delivery.decision_id,
+            "host": delivery.host,
+            "parent_session_id": delivery.parent_session_id,
+            "parent_trace_id": delivery.parent_trace_id,
+            "launch_id": delivery.launch_id,
+            "provider_receipt_digest": delivery.provider_receipt_digest,
+            "task_sha256": delivery.task_sha256,
+            "team_digest": delivery.team_digest,
+            "candidate_digest": delivery.candidate_digest,
+            "runtime_digest": delivery.runtime_digest,
+            "install_id": delivery.install_id,
+            "bundle_digest": delivery.bundle_digest,
+            "issued_at": delivery.issued_at,
+            "expires_at": delivery.expires_at,
+            "nonce": delivery.nonce,
+            "binding_kind": delivery.binding_kind,
+            "binding_id": delivery.binding_id,
+            "cards": cards,
+        }
+        return bool(
+            isinstance(expected, dict)
+            and all(expected.get(key) == value for key, value in exact.items())
+            and getattr(install, "host", "") == delivery.host
+            and getattr(install, "install_id", "") == delivery.install_id
+            and getattr(install, "bundle_digest", "") == delivery.bundle_digest
+            and getattr(install, "candidate_digest", "") == delivery.candidate_digest
+            and getattr(install, "running_runtime_digest", "") == delivery.runtime_digest
+        )
+
+    @staticmethod
+    def _scrub_native_child_delivery(task: str, delivery: Any | None = None) -> str:
+        """Remove an unauthorized Agency namespace without blocking the host spawn."""
+
+        if delivery is not None and isinstance(delivery.original_task, str):
+            original = delivery.original_task
+        else:
+            reserved = (
+                "\n\n[AGENCY INFERENCE TEAM v6]\n",
+                "[AGENCY INFERENCE TEAM v6]",
+                "<!-- agency-native-child-team:v6:",
+                "<!-- agency-native-child-team-end:v6:",
+            )
+            positions = [position for token in reserved if (position := task.find(token)) >= 0]
+            original = task[: min(positions)].rstrip() if positions else ""
+        try:
+            safe = bool(original and len(original.encode("utf-8")) <= MAX_CONTEXT_CHARS)
+        except UnicodeError:
+            safe = False
+        return original if safe else "Proceed as an unstaffed generalist without Agency context."
+
+    def _staff_plaintext_native_child(
+        self,
+        *,
+        payload: dict[str, Any],
+        args: dict[str, Any],
+        task_field: str,
+        task: str,
+        channel_attestation: Any | None = None,
+    ) -> dict[str, Any]:
+        """Carry one inference-owned atomic team to a host-owned spawn."""
+
+        if self.host == "codex" and channel_attestation is None:
+            # Keep the shared helper safe if a future Codex caller bypasses the
+            # public pre-tool attestation gate.
+            return {}
+
+        from agency_runtime.core.native_child_install_identity import (
+            current_runtime_managed_host_install_identity,
+        )
+        from agency_runtime.core.native_child_prompt_delivery import (
+            parse_inference_team_delivery,
+        )
+        from agency_runtime.core.native_child_staffing import staff_native_child
+
+        try:
+            serialized_args = json.dumps(
+                args,
+                allow_nan=False,
+                ensure_ascii=False,
+                separators=(",", ":"),
+            )
+            frozen_args = json.loads(serialized_args)
+        except (TypeError, UnicodeError, ValueError):
+            self._record_native_child_unstaffed(
+                payload=payload,
+                args=args,
+                task=task,
+                reason_code="native_child_host_serialization_invalid",
+            )
+            return {}
+        if not isinstance(frozen_args, dict):
+            return {}
+
+        def channel_is_current() -> bool:
+            if channel_attestation is None:
+                return True
+            try:
+                from agency_runtime.core.codex_spawn_provenance import (
+                    codex_plaintext_spawn_attestation_is_current,
+                )
+
+                return (
+                    codex_plaintext_spawn_attestation_is_current(
+                        channel_attestation,
+                        tool_input=frozen_args,
+                    )
+                    is True
+                )
+            except Exception:
+                logger.debug(
+                    "native-child channel attestation could not be revalidated",
+                    exc_info=True,
+                )
+                return False
+
+        existing_delivery = parse_inference_team_delivery(task)
+        if existing_delivery is not None:
+            if self._exact_native_child_delivery_retry(
+                payload=payload,
+                args=args,
+                delivery=existing_delivery,
+            ):
+                # Only an exact current Store- and install-bound retry keeps the
+                # already-rewritten host input unchanged.
+                return {}
+            self._record_native_child_unstaffed(
+                payload=payload,
+                args=args,
+                task=existing_delivery.original_task,
+                reason_code="native_child_existing_delivery_invalid",
+            )
+            return _native_child_staffing_response(
+                frozen_args,
+                task_field=task_field,
+                rewritten_task=self._scrub_native_child_delivery(task, existing_delivery),
+            )
+        if any(
+            marker in task
+            for marker in (
+                "[AGENCY INFERENCE TEAM v6]",
+                "<!-- agency-native-child-team:v6:",
+                "<!-- agency-native-child-team-end:v6:",
+            )
+        ):
+            self._record_native_child_unstaffed(
+                payload=payload,
+                args=args,
+                task=task,
+                reason_code="native_child_existing_delivery_invalid",
+            )
+            return _native_child_staffing_response(
+                frozen_args,
+                task_field=task_field,
+                rewritten_task=self._scrub_native_child_delivery(task),
+            )
+        correlation, trace_id = self._native_child_staffing_parent(payload, args)
+        if not trace_id:
+            return {}
+        try:
+            install_identity_reader = current_runtime_managed_host_install_identity
+            result = staff_native_child(
+                self.store,
+                host=self.host,
+                task=task,
+                parent_session_id=correlation.session_id,
+                parent_trace_id=trace_id,
+                launch_id=correlation.tool_use_id,
+                binding_kind="launch_id",
+                binding_id=correlation.tool_use_id,
+                install_identity=install_identity_reader(self.host),
+                install_identity_reader=install_identity_reader,
+                maximum_delivery_bytes=MAX_CONTEXT_CHARS,
+                delivery_validator=lambda rewritten_task: (
+                    channel_is_current()
+                    and _native_child_delivery_fits_hook(
+                        frozen_args,
+                        task_field=task_field,
+                        rewritten_task=rewritten_task,
+                    )
+                ),
+                final_delivery_validator=(
+                    channel_is_current if channel_attestation is not None else None
+                ),
+            )
+        except Exception:
+            logger.debug(
+                "inference-owned native-child staffing failed open",
+                exc_info=True,
+            )
+            return {}
+        if not result.staffed:
+            return {}
+        # The exact same frozen JSON input and serializer were accepted by the
+        # pre-persistence validator, so this mapping serializes byte-for-byte to
+        # the already-validated prospective response.
+        response = _native_child_staffing_response(
+            frozen_args,
+            task_field=task_field,
+            rewritten_task=result.rewritten_task,
+        )
+        if not _native_child_delivery_fits_hook(
+            frozen_args,
+            task_field=task_field,
+            rewritten_task=result.rewritten_task,
+        ):
+            # Defense in depth for a mutated or substituted staffing service.
+            # The production service validates this exact output before its
+            # applied route commit; the hook still refuses an oversized return.
+            self._record_native_child_unstaffed(
+                payload=payload,
+                args=args,
+                task=task,
+                reason_code="native_child_delivery_exceeds_host_limit",
+            )
+            return {}
+        return response
+
     def _handle_native_child_pre_tool_use(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Inject one exact prompt while leaving the native scheduler in control."""
+        """Staff plaintext host launches; fail opaque Codex launches open."""
 
         tool_name = _required_string(payload, "tool_name")
         if self.host == "codex" and tool_name in _CODEX_FOLLOWUP_TOOL_NAMES:
@@ -1187,11 +1287,46 @@ class HookBridge:
         task = args.get(task_field)
         if not isinstance(task, str) or not task:
             raise HookInputError(f"{tool_name} tool_input.{task_field} is required")
-        # The harness decided to spawn this child. Agency's only job is to staff
-        # it -- there is no plan to verify it against and nothing it can fail.
-        # Every launch is allowed; staffing that cannot be completed just yields
-        # an unstaffed child rather than a denial (rules 4, 5 and 8).
-        return self._jit_staff_native_child(
+        if self.host == "codex":
+            try:
+                from agency_runtime.core.codex_spawn_provenance import (
+                    attest_codex_plaintext_spawn,
+                )
+
+                correlation = self._correlation(payload, args)
+                channel_attestation = attest_codex_plaintext_spawn(
+                    payload.get("transcript_path"),
+                    session_id=correlation.session_id,
+                    turn_id=correlation.turn_id,
+                    tool_use_id=correlation.tool_use_id,
+                    tool_input=args,
+                    environ=os.environ,
+                )
+            except Exception:
+                logger.debug(
+                    "Codex plaintext spawn could not be authenticated",
+                    exc_info=True,
+                )
+                channel_attestation = None
+            if channel_attestation is None:
+                # Encrypted, unmarked, ambiguous, or stale Codex calls remain
+                # ordinary host spawns. The diagnostic is content-free and the
+                # hook never blocks the child.
+                self._record_native_child_unstaffed(
+                    payload=payload,
+                    args=args,
+                    task=task,
+                    reason_code="unsupported_opaque_interagent_channel",
+                )
+                return {}
+            return self._staff_plaintext_native_child(
+                payload=payload,
+                args=args,
+                task_field=task_field,
+                task=task,
+                channel_attestation=channel_attestation,
+            )
+        return self._staff_plaintext_native_child(
             payload=payload,
             args=args,
             task_field=task_field,
@@ -1204,13 +1339,7 @@ class HookBridge:
         lifecycle = self._record_native_child_lifecycle(payload, event="started")
         if lifecycle is None:
             return {}
-        session_id, trace_id, work_unit_id, identity = lifecycle
-        parent_scope = self._issue_native_child_parent_scope(
-            session_id=session_id,
-            trace_id=trace_id,
-            work_unit_id=work_unit_id,
-            identity=identity,
-        )
+        _session_id, _trace_id, _work_unit_id, identity = lifecycle
         context_lines = [
             _CLAUDE_CHILD_IDENTITY_MARKER,
             "This identity belongs only to the current native child. It does not "
@@ -1218,28 +1347,10 @@ class HookBridge:
             f"worker_kind={json.dumps(identity.worker_kind)}",
             f"worker_id={json.dumps(identity.worker_id, ensure_ascii=True)}",
             f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
-            "A planned child receives a versioned [AGENCY EXACT SPECIALIST ACTIVATION] "
-            "context through the installed hooks. Follow that exact prompt when present; "
-            "no prepare/load tool calls are required. Otherwise make no Agency specialist "
-            "claim until independently "
-            "calling agency.preflight with the complete delegated assignment.",
+            "If Agency supplied a valid inference-selected team, its complete atomic "
+            "context is already part of the host-owned launch prompt. This identity "
+            "message supplies no card and does not ask the child to repair staffing.",
         ]
-        if parent_scope is not None:
-            context_lines.append(
-                "To join the parent budget, cache, and singleflight controls exactly once, "
-                "call agency.preflight before substantive unplanned work with "
-                f"session_id={json.dumps(parent_scope['child_session_id'], ensure_ascii=True)}, "
-                f"host={json.dumps(self.host)}, the complete delegated assignment as "
-                "user_message, and "
-                f"parent_scope_token={json.dumps(parent_scope['parent_scope_token'], ensure_ascii=True)}. "
-                "Do not send parent_session_id or parent_trace_id; the Store receipt owns "
-                "that authority."
-            )
-        else:
-            context_lines.append(
-                "An exact parent-scope receipt is unavailable. Route independently and do "
-                "not claim or reuse parent budget, cache, lineage, or specialist evidence."
-            )
         context = "\n".join(context_lines)
         return {
             "hookSpecificOutput": {
@@ -1255,33 +1366,12 @@ class HookBridge:
         return {}
 
     def _handle_codex_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Inject exact identity and any unambiguous staged Codex delivery."""
+        """Inject identity while reporting the current opaque staffing limit."""
 
         lifecycle = self._record_native_child_lifecycle(payload, event="started")
         if lifecycle is None:
             return {}
-        session_id, trace_id, work_unit_id, identity = lifecycle
-        parent_scope = self._issue_native_child_parent_scope(
-            session_id=session_id,
-            trace_id=trace_id,
-            work_unit_id=work_unit_id,
-            identity=identity,
-        )
-        child_session_id = f"codex-child:{identity.worker_id}"
-        exact_delivery = ""
-        if exact_delivery:
-            if len(exact_delivery) > MAX_CONTEXT_CHARS:
-                exact_delivery = (
-                    _CLAUDE_CHILD_IDENTITY_MARKER
-                    + "\nAgency could not deliver the exact specialist context within the "
-                    "host limit. Stop this child without substantive work."
-                )
-            return {
-                "hookSpecificOutput": {
-                    "hookEventName": "SubagentStart",
-                    "additionalContext": exact_delivery,
-                }
-            }
+        _session_id, _trace_id, _work_unit_id, identity = lifecycle
         context_lines = [
             _CLAUDE_CHILD_IDENTITY_MARKER,
             "This identity belongs only to the current native Codex child. It does not "
@@ -1289,33 +1379,16 @@ class HookBridge:
             f"worker_kind={json.dumps(identity.worker_kind)}",
             f"worker_id={json.dumps(identity.worker_id, ensure_ascii=True)}",
             f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
-            "If no current recipe is present, independently call agency.preflight "
-            "before substantive work using the complete delegated assignment as "
-            "user_message and "
-            f"session_id={json.dumps(child_session_id, ensure_ascii=True)}.",
+            "Codex 0.147 did not expose this child's decrypted inter-agent assignment "
+            "to the synchronous hook, so Agency supplied no specialist card. The host "
+            "may proceed with its native child unstaffed; this child is not asked to "
+            "call preflight or repair the missing channel.",
         ]
-        if parent_scope is not None:
-            context_lines.append(
-                "To join the parent controls exactly once, include "
-                f"parent_scope_token={json.dumps(parent_scope['parent_scope_token'], ensure_ascii=True)} "
-                "in that same agency.preflight call. Do not send parent_session_id or "
-                "parent_trace_id; the Store receipt owns that authority."
-            )
-        else:
-            context_lines.append(
-                "An exact parent-scope receipt is unavailable. Route independently and do "
-                "not claim or reuse parent budget, cache, lineage, or specialist evidence."
-            )
-        context_lines.append(
-            "Apply only the returned child-turn context. Do not claim parent Agency "
-            "delegation without an authoritative activation receipt."
-        )
         context = "\n".join(context_lines)
         if len(context) > MAX_CONTEXT_CHARS:
             context = (
                 _CLAUDE_CHILD_IDENTITY_MARKER
-                + "\nAgency could not deliver the exact specialist context within the "
-                "host limit. Stop this child without substantive work."
+                + "\nAgency supplied no specialist card to this native Codex child."
             )
         return {
             "hookSpecificOutput": {
@@ -1402,102 +1475,6 @@ class HookBridge:
             trace_id=trace_id,
         )
 
-    def _consume_native_child_prompt_delivery(
-        self,
-        *,
-        event: str,
-        payload: dict[str, Any],
-        tool_input: Any,
-        tool_response: Any,
-        trace_id: str,
-    ) -> tuple[NativeChildPromptDelivery | None, Any, NativeChildRunIdentity | None, bool]:
-        """Report an observed child delivery; nothing is activated from it.
-
-        This used to authenticate the delivery against a persisted plan row and
-        consume the one-use grant it carried. There is no plan row to match and
-        no grant to consume, so the delivery is reported as-is and the child is
-        left alone.
-        """
-
-        del event, trace_id
-        args = _dict_or_empty(tool_input)
-        raw_task = args.get("prompt" if self.host in {"claude", "zcode"} else "message")
-        task = raw_task if isinstance(raw_task, str) else ""
-        delivery = parse_native_child_prompt_delivery(task)
-        return delivery, tool_response, None, False
-
-    def _native_child_delivery(
-        self,
-        *,
-        payload: dict[str, Any],
-        tool_input: Any,
-        task: str,
-        trace_id: str,
-    ) -> tuple[NativeChildPromptDelivery | None, bool]:
-        """Parse plaintext delivery or recover one exact opaque Codex delivery."""
-
-        # Opaque Codex recovery needed a persisted plan row to rebuild delivery
-        # evidence from, and no route produces one, so only plaintext is parsed.
-        return parse_native_child_prompt_delivery(task), False
-
-    def _claim_codex_direct_spawn_execution(
-        self,
-        *,
-        event: str,
-        tool_name: str,
-        session_id: str,
-        trace_id: str,
-        work_unit_id: str,
-        identity: NativeChildRunIdentity | None,
-        tool_use_id: str,
-    ) -> None:
-        """Bind direct execution only after spawn output records its delegation."""
-
-        if (
-            event != "PostToolUse"
-            or self.host != "codex"
-            or tool_name not in _CODEX_SPAWN_TOOL_NAMES
-            or not work_unit_id
-            or identity is None
-            or identity.worker_id.startswith("task:")
-        ):
-            return
-        if not tool_use_id:
-            tool_use_reader = getattr(
-                self.store,
-                "get_consumed_codex_spawn_tool_use_id",
-                None,
-            )
-            if callable(tool_use_reader):
-                tool_use_id = str(
-                    tool_use_reader(
-                        session_id=session_id,
-                        trace_id=trace_id,
-                        work_unit_id=work_unit_id,
-                        worker_id=identity.worker_id,
-                        native_run_id=identity.native_run_id,
-                    )
-                    or ""
-                )
-        execution_claimer = getattr(
-            self.store,
-            "claim_codex_native_child_execution",
-            None,
-        )
-        if (
-            not callable(execution_claimer)
-            or execution_claimer(
-                session_id=session_id,
-                trace_id=trace_id,
-                work_unit_id=work_unit_id,
-                worker_id=identity.worker_id,
-                native_run_id=identity.native_run_id,
-                tool_use_id=tool_use_id,
-            )
-            is not True
-        ):
-            raise RuntimeError("Codex direct spawn execution receipt was not recorded")
-
     def _handle_post_tool_use(
         self,
         event: str,
@@ -1530,21 +1507,6 @@ class HookBridge:
             tool_response,
         )
         observed_tool_response = tool_response
-        delivery: NativeChildPromptDelivery | None = None
-        _delivery_identity: NativeChildRunIdentity | None = None
-        delivery_activated = False
-        if (self.host in {"claude", "zcode"} and tool_name == _CLAUDE_AGENT_TOOL_NAME) or (
-            self.host == "codex" and tool_name in _CODEX_SPAWN_TOOL_NAMES
-        ):
-            delivery, tool_response, _delivery_identity, delivery_activated = (
-                self._consume_native_child_prompt_delivery(
-                    event=event,
-                    payload=payload,
-                    tool_input=tool_input,
-                    tool_response=tool_response,
-                    trace_id=trace_id,
-                )
-            )
         resolved_codex_unit = self._resolve_codex_post_tool_unit(
             tool_name=tool_name,
             tool_input=tool_input,
@@ -1552,9 +1514,6 @@ class HookBridge:
             session_id=correlation.session_id,
             trace_id=trace_id,
         )
-        # Nothing to reconcile: recovering a consumed planned Codex child needed a
-        # persisted plan row, and no route produces one.
-        reconciled_codex_specialist = ""
         if self.host in {"claude", "zcode"} and tool_name == _CLAUDE_AGENT_TOOL_NAME:
             # ``subagent_type`` is a native Claude worker profile, not an Agency
             # specialist identity, and there is no persisted plan row to
@@ -1570,9 +1529,7 @@ class HookBridge:
             )
             canonical_args["requested_model"] = requested_model
             canonical_args["resolved_model"] = resolved_model or "unavailable"
-            if delivery is not None and delivery_activated:
-                _project_native_child_goal(canonical_args, delivery)
-            elif not isinstance(tool_response, dict) or not _first_string(
+            if not isinstance(tool_response, dict) or not _first_string(
                 tool_response, "native_run_id"
             ):
                 if self.host == "claude":
@@ -1586,14 +1543,7 @@ class HookBridge:
                         tool_response,
                     )
         elif self.host == "codex" and tool_name in _CODEX_SPAWN_TOOL_NAMES:
-            if delivery is not None and delivery_activated:
-                canonical_args["agent"] = delivery.specialist_slug
-                canonical_args["work_unit_id"] = delivery.work_unit_id
-                _project_native_child_goal(canonical_args, delivery)
-            elif reconciled_codex_specialist:
-                canonical_args["agent"] = reconciled_codex_specialist
-                canonical_args["work_unit_id"] = resolved_codex_unit
-            elif not isinstance(tool_response, dict) or not _first_string(
+            if not isinstance(tool_response, dict) or not _first_string(
                 tool_response, "native_run_id"
             ):
                 tool_response, _identity = _native_child_tool_identity(
@@ -1617,15 +1567,6 @@ class HookBridge:
             model=correlation.model,
             tool_use_id=correlation.tool_use_id,
             agent_id=_optional_string(payload, "agent_id"),
-        )
-        self._claim_codex_direct_spawn_execution(
-            event=event,
-            tool_name=tool_name,
-            session_id=correlation.session_id,
-            trace_id=trace_id,
-            work_unit_id=resolved_codex_unit,
-            identity=_delivery_identity,
-            tool_use_id=(delivery.tool_use_id if delivery is not None else correlation.tool_use_id),
         )
         return self._codex_post_tool_header_output(
             event=event,
@@ -2736,19 +2677,8 @@ def _write_output(stream: BinaryIO | TextIO, payload: dict[str, Any]) -> None:
             safe = {}
         return json.dumps(safe, ensure_ascii=True, separators=(",", ":")).encode("ascii") + b"\n"
 
-    try:
-        encoded = (
-            json.dumps(
-                payload,
-                allow_nan=False,
-                ensure_ascii=False,
-                separators=(",", ":"),
-            ).encode("utf-8")
-            + b"\n"
-        )
-    except (TypeError, ValueError):
-        encoded = fallback()
-    if len(encoded) > MAX_HOOK_OUTPUT_BYTES:
+    encoded = _encoded_hook_output(payload)
+    if encoded is None or len(encoded) > MAX_HOOK_OUTPUT_BYTES:
         encoded = fallback()
     try:
         stream.write(encoded)  # type: ignore[arg-type]
@@ -2953,5 +2883,6 @@ __all__ = [
     "HookBridge",
     "HookCorrelation",
     "HookInputError",
+    "hook_host_adapter",
     "run_hook_stdio",
 ]

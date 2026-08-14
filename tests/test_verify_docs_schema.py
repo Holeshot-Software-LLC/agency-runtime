@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from copy import deepcopy
 from datetime import date
 from pathlib import Path
@@ -11,6 +12,15 @@ import pytest
 
 from scripts import update_worklog, verify_docs
 from scripts.worklog_history import stable_short_shas
+
+
+@pytest.fixture(autouse=True)
+def _isolate_done_acceptance_exception_registry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Keep fixture-only document sets independent from repository exceptions."""
+
+    monkeypatch.setattr(verify_docs, "DONE_ACCEPTANCE_PROVENANCE_EXCEPTIONS", {})
 
 
 def _base_meta(**overrides: Any) -> dict[str, object]:
@@ -614,3 +624,730 @@ def test_documentation_git_subjects_are_decoded_as_utf8(
         f"{'a' * 40}\x1f2026-08-04\x1fAR-233: Architecture fixes — honest headers"
     )
     assert [invocation["encoding"] for invocation in captured] == ["utf-8", "utf-8"]
+
+
+def _issue_with_acceptance(
+    body: str,
+    *,
+    status: str = "done",
+    relative: str = "docs/roadmap/issue-AR-999-fixture.md",
+    superseded_by: str | None = None,
+) -> verify_docs.Document:
+    doc = _document(
+        _base_meta(
+            type="issue",
+            status=status,
+            epic="testing",
+            issue_id="AR-999",
+            priority="p1",
+            tracker_url=None,
+            depends_on=[],
+            blocks=[],
+            superseded_by=superseded_by,
+        ),
+        relative=relative,
+    )
+    doc.body = body
+    return doc
+
+
+def test_done_issue_acceptance_requires_real_checked_tasks() -> None:
+    checked = _issue_with_acceptance("# Issue\n\n## Acceptance\n\n- [x] Proven.\n")
+    open_issue = _issue_with_acceptance(
+        "# Issue\n\n## Acceptance\n\n- [ ] Pending.\n", status="open"
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([checked, open_issue], errors)
+
+    assert errors == []
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        (
+            "# Issue\n",
+            "requires exactly one real ## Acceptance section; found 0",
+        ),
+        ("# Issue\n\n## Acceptance\n\nNo tasks.\n", "Acceptance has no task markers"),
+        (
+            "# Issue\n\n```md\n## Acceptance\n- [x] Fake.\n```\n",
+            "requires exactly one real ## Acceptance section; found 0",
+        ),
+        (
+            "# Issue\n\n## Acceptance\n\n```md\n- [x] Fake.\n```\n- [ ] Real.\n",
+            "has 1 unchecked Acceptance task(s)",
+        ),
+    ],
+)
+def test_done_issue_acceptance_rejects_missing_unchecked_and_fenced_bypasses(
+    body: str,
+    message: str,
+) -> None:
+    doc = _issue_with_acceptance(body)
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([doc], errors)
+
+    assert errors == [f"{doc.relative}: done issue {message}"]
+
+
+def test_done_issue_acceptance_rejects_duplicate_sections_and_indented_fake_fence() -> None:
+    duplicate = _issue_with_acceptance(
+        "# Issue\n\n## Acceptance\n\n- [x] First.\n\n## Acceptance\n\n- [ ] Hidden second.\n"
+    )
+    indented = _issue_with_acceptance(
+        "# Issue\n\n## Acceptance\n\n    ~~~\n- [ ] Not fenced.\n    ~~~\n"
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([duplicate, indented], errors)
+
+    assert errors == [
+        f"{duplicate.relative}: done issue requires exactly one real ## Acceptance "
+        "section; found 2",
+        f"{indented.relative}: done issue has 1 unchecked Acceptance task(s)",
+    ]
+
+
+def test_done_issue_acceptance_does_not_honor_invalid_backtick_info_fence() -> None:
+    doc = _issue_with_acceptance("# Issue\n\n## Acceptance\n\n```bad`info\n- [ ] Real.\n```\n")
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([doc], errors)
+
+    assert errors == [f"{doc.relative}: done issue has 1 unchecked Acceptance task(s)"]
+
+
+def test_done_issue_acceptance_rejects_indented_or_commented_fake_tasks() -> None:
+    indented = _issue_with_acceptance(
+        "# Issue\n\n## Acceptance\n\n    - [x] Indented code.\n",
+        relative="docs/roadmap/issue-AR-998-indented.md",
+    )
+    commented = _issue_with_acceptance(
+        "# Issue\n\n## Acceptance\n\n<!--\n- [x] Commented.\n-->\n",
+        relative="docs/roadmap/issue-AR-999-commented.md",
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([indented, commented], errors)
+
+    assert errors == [
+        f"{indented.relative}: done issue has 1 unchecked Acceptance task(s)",
+        f"{commented.relative}: done issue Acceptance has no task markers",
+    ]
+
+
+def test_done_issue_acceptance_detects_deep_nested_gfm_tasks() -> None:
+    doc = _issue_with_acceptance(
+        "# Issue\n\n## Acceptance\n\n"
+        "- [x] Parent.\n"
+        "  - [x] Child.\n"
+        "    - [ ] Deep unfinished task.\n"
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([doc], errors)
+
+    assert errors == [f"{doc.relative}: done issue has 1 unchecked Acceptance task(s)"]
+
+
+@pytest.mark.parametrize(
+    "quoted_task",
+    [
+        "> - [ ] Blockquoted pending task.",
+        "> - [x] Blockquoted checked example.",
+        "> > 1. [ ] Nested quoted pending task.",
+        "    > - [ ] Indented quoted pending task.",
+        "1. > - [ ] Ordered-list quoted pending task.",
+        "- > - [ ] Unordered-list quoted pending task.",
+    ],
+)
+def test_done_issue_acceptance_rejects_blockquoted_task_markers(
+    quoted_task: str,
+) -> None:
+    doc = _issue_with_acceptance(
+        "# Issue\n\n## Acceptance\n\n- [x] Real completion.\n" + quoted_task + "\n"
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([doc], errors)
+
+    assert errors == [
+        f"{doc.relative}: done issue Acceptance contains 1 blockquoted task marker(s); "
+        "quoted examples cannot satisfy acceptance"
+    ]
+
+
+def test_done_issue_acceptance_allows_plain_blockquote_without_task_marker() -> None:
+    doc = _issue_with_acceptance(
+        "# Issue\n\n## Acceptance\n\n- [x] Real completion.\n"
+        "> Historical prose without a checkbox.\n"
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([doc], errors)
+
+    assert errors == []
+
+
+def test_done_issue_historical_exception_is_digest_and_successor_bound(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    relative = "docs/roadmap/issue-AR-999-fixture.md"
+    successor = "docs/roadmap/issue-AR-1000-successor.md"
+    section = "## Acceptance\n\n- [x] Preserved.\n- [ ] Retired.\n"
+    digest = hashlib.sha256(section.encode("utf-8")).hexdigest()
+    monkeypatch.setattr(
+        verify_docs,
+        "DONE_ACCEPTANCE_PROVENANCE_EXCEPTIONS",
+        {
+            relative: {
+                "acceptance_sha256": digest,
+                "superseded_by": successor,
+                "provenance_commit": "a" * 40,
+                "reason": "retired surface",
+            }
+        },
+    )
+    historical_text = "---\ntitle: Historical\nstatus: done\n---\n\n# Issue\n\n" + section
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: historical_text)
+    doc = _issue_with_acceptance(
+        f"# Issue\n\n{section}", relative=relative, superseded_by=successor
+    )
+    successor_doc = _issue_with_acceptance(
+        "# Successor\n\n## Acceptance\n\n- [ ] Open.\n",
+        status="open",
+        relative=successor,
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([doc, successor_doc], errors)
+
+    assert errors == []
+
+    doc.body = doc.body.replace("Retired.", "Changed.")
+    verify_docs.validate_issue_acceptance([doc, successor_doc], errors)
+    assert errors == [
+        f"{relative}: historical Acceptance digest changed "
+        f"(expected {digest}, got "
+        f"{hashlib.sha256(section.replace('Retired.', 'Changed.').encode('utf-8')).hexdigest()})"
+    ]
+
+
+def test_unlisted_superseded_done_issue_cannot_bypass_acceptance() -> None:
+    doc = _issue_with_acceptance(
+        "# Issue\n\n## Acceptance\n\n- [ ] Pending.\n",
+        superseded_by="docs/roadmap/issue-AR-1000-successor.md",
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([doc], errors)
+
+    assert errors == [f"{doc.relative}: done issue has 1 unchecked Acceptance task(s)"]
+
+
+def test_done_issue_historical_exception_rejects_malformed_provenance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    relative = "docs/roadmap/issue-AR-999-fixture.md"
+    successor = "docs/roadmap/issue-AR-1000-successor.md"
+    section = "## Acceptance\n\n- [ ] Retired.\n"
+    monkeypatch.setattr(
+        verify_docs,
+        "DONE_ACCEPTANCE_PROVENANCE_EXCEPTIONS",
+        {
+            relative: {
+                "acceptance_sha256": hashlib.sha256(section.encode("utf-8")).hexdigest(),
+                "superseded_by": successor,
+                "provenance_commit": "not-a-commit",
+                "reason": "",
+            }
+        },
+    )
+    doc = _issue_with_acceptance(
+        f"# Issue\n\n{section}", relative=relative, superseded_by=successor
+    )
+    successor_doc = _issue_with_acceptance(
+        "# Successor\n\n## Acceptance\n\n- [ ] Open.\n",
+        status="open",
+        relative=successor,
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([doc, successor_doc], errors)
+
+    assert errors == [
+        f"{relative}: historical Acceptance exception needs a full provenance commit",
+        f"{relative}: historical Acceptance exception needs a non-empty reason",
+    ]
+
+
+def test_done_issue_historical_exception_requires_existing_document(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    relative = "docs/roadmap/issue-AR-999-missing.md"
+    monkeypatch.setattr(
+        verify_docs,
+        "DONE_ACCEPTANCE_PROVENANCE_EXCEPTIONS",
+        {
+            relative: {
+                "acceptance_sha256": "a" * 64,
+                "superseded_by": "docs/roadmap/issue-AR-1000-successor.md",
+                "provenance_commit": "b" * 40,
+                "reason": "retired",
+            }
+        },
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_issue_acceptance([], errors)
+
+    assert errors == [f"{relative}: configured done-acceptance exception document is missing"]
+
+
+def _ar119_authority_docs(
+    tmp_path: Path,
+    *,
+    vision_body: str = "## Canonical card metaphor\nCanonical.\n\n## Differentiator\nNovel.\n",
+) -> tuple[verify_docs.Document, verify_docs.Document]:
+    block = verify_docs._canonical_vision_block(vision_body)
+    assert block is not None
+    digest = hashlib.sha256(block.encode("utf-8")).hexdigest()
+    vision = _document(
+        _base_meta(
+            ar119_authority="vision-wording",
+            canonical_block_sha256=digest,
+        ),
+        relative=verify_docs.AR119_AUTHORITY_PATHS["vision-wording"],
+    )
+    vision.body = vision_body
+    header = "| " + " | ".join(verify_docs.AR119_MATRIX_COLUMNS) + " |"
+    separator = "|" + "|".join("---" for _ in verify_docs.AR119_MATRIX_COLUMNS) + "|"
+    rows = [
+        "| "
+        + " | ".join(
+            [
+                rule,
+                host,
+                "unproven",
+                "unproven",
+                "unproven",
+                "unproven",
+                "unproven",
+                "required artifact",
+                "none",
+                "unobserved",
+                "fixture source",
+                "missing evidence",
+            ]
+        )
+        + " |"
+        for rule in sorted(verify_docs.AR119_RULES, key=lambda value: int(value[1:]))
+        for host in sorted(verify_docs.AR119_SUPPORTED_HOSTS)
+    ]
+    matrix = _document(
+        _base_meta(
+            ar119_authority="completion-evidence",
+            vision_block_sha256=digest,
+            candidate_commit="a" * 40,
+            evidence_cutoff="2026-07-12",
+        ),
+        relative=verify_docs.AR119_AUTHORITY_PATHS["completion-evidence"],
+    )
+    layer_header = "| " + " | ".join(verify_docs.AR119_LAYER_EVIDENCE_COLUMNS) + " |"
+    layer_separator = "|" + "|".join("---" for _ in verify_docs.AR119_LAYER_EVIDENCE_COLUMNS) + "|"
+    matrix.body = (
+        "# Matrix\n\n## Canonical matrix\n\n"
+        + header
+        + "\n"
+        + separator
+        + "\n"
+        + "\n".join(rows)
+        + "\n\n## Layer evidence\n\n"
+        + layer_header
+        + "\n"
+        + layer_separator
+        + "\n"
+    )
+    return vision, matrix
+
+
+def test_ar119_authorities_accept_exact_digest_matrix_and_crlf(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "")
+    vision, matrix = _ar119_authority_docs(
+        tmp_path,
+        vision_body=(
+            "## Canonical card metaphor\r\nCanonical.\r\n\r\n## Differentiator\r\nNovel.\r\n"
+        ),
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert errors == []
+
+
+def test_ar119_authorities_reject_vision_tamper_and_bad_boundaries(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    vision.body = vision.body.replace("Canonical.", "Tampered.")
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any("canonical vision digest mismatch" in error for error in errors)
+
+    vision.body = "## Differentiator\nFirst.\n## Canonical card metaphor\nSecond.\n"
+    errors = []
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+    assert any("canonical vision boundaries are missing or ambiguous" in error for error in errors)
+
+
+def test_ar119_authorities_reject_fenced_canonical_vision_block(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    vision.body = "```md\n" + vision.body + "```\n\n# Visible replacement\n"
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any("canonical vision boundaries are missing or ambiguous" in error for error in errors)
+
+
+@pytest.mark.parametrize(
+    "wrapper",
+    [
+        ("<details><summary>Archived</summary>\n", "\n</details>"),
+        (
+            "<details><!--x-->\n<summary><!--x-->hidden</summary>\n",
+            "\n</details><!--x-->",
+        ),
+        ('<DIV hidden\nclass="archived">\n', "\n</DIV>"),
+        ("<template>\n", "\n</template>"),
+    ],
+)
+def test_ar119_authorities_reject_canonical_vision_inside_raw_html(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    wrapper: tuple[str, str],
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    prefix, suffix = wrapper
+    vision.body = (
+        "## Canonical card metaphor\nVisible replacement.\n\n## Differentiator\n"
+        "Visible replacement.\n\n"
+        + prefix
+        + "## Canonical card metaphor\nCanonical.\n\n## Differentiator\nNovel."
+        + suffix
+        + "\n"
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any("canonical vision boundaries are missing or ambiguous" in error for error in errors)
+
+
+def test_ar119_authority_allows_raw_html_literal_inside_fenced_example(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "")
+    vision, matrix = _ar119_authority_docs(
+        tmp_path,
+        vision_body=(
+            "```html\n<details>example only</details>\n```\n\n"
+            "## Canonical card metaphor\nCanonical.\n\n## Differentiator\nNovel.\n"
+        ),
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert errors == []
+
+
+def test_ar119_authorities_reject_duplicate_wrong_path_and_unknown_role(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    duplicate = _document(
+        _base_meta(ar119_authority="vision-wording"),
+        relative="docs/roadmap/duplicate.md",
+    )
+    unknown = _document(
+        _base_meta(ar119_authority="everything"),
+        relative="docs/roadmap/unknown.md",
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix, duplicate, unknown], errors)
+
+    assert any("reserved for docs/roadmap/AR-119-founding-vision.md" in error for error in errors)
+    assert any("requires exactly one document" in error and "found 2" in error for error in errors)
+    assert any("unknown ar119_authority role 'everything'" in error for error in errors)
+
+
+def test_ar119_matrix_rejects_missing_duplicate_and_invalid_cells(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    missing_row = next(
+        line for line in matrix.body.splitlines() if line.startswith("| R1 | claude |")
+    )
+    duplicate_row = next(
+        line for line in matrix.body.splitlines() if line.startswith("| R1 | codex |")
+    )
+    matrix.body = matrix.body.replace(missing_row + "\n", "", 1)
+    matrix.body = matrix.body.replace(
+        "\n\n## Layer evidence", "\n" + duplicate_row + "\n\n## Layer evidence", 1
+    )
+    matrix.body = matrix.body.replace("| R2 | codex | unproven |", "| R2 | codex | invalid |", 1)
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any("duplicate matrix cell R1/codex" in error for error in errors)
+    assert any("matrix is missing cells R1/claude" in error for error in errors)
+    assert any("R2/codex has invalid State state 'invalid'" in error for error in errors)
+
+
+def test_ar119_matrix_rejects_false_green_rule_nine_and_missing_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    matrix.body = matrix.body.replace(
+        "| R1 | claude | unproven | unproven | unproven | unproven | unproven |",
+        "| R1 | claude | proven | negative | unproven | unproven | unproven |",
+        1,
+    )
+    matrix.body = matrix.body.replace(
+        "| R9 | claude | unproven | unproven | unproven | unproven | unproven |",
+        "| R9 | claude | proven | proven | proven | proven | proven |",
+        1,
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any("R1/claude State must derive" in error for error in errors)
+    assert any("R1/claude asserted evidence needs an artifact" in error for error in errors)
+    assert any("R1/claude asserted evidence needs an observation date" in error for error in errors)
+    assert any("R9/claude State must derive from R1-R8" in error for error in errors)
+
+
+def test_ar119_matrix_rejects_fenced_table_invalid_candidate_and_cutoff(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    matrix.meta["candidate_commit"] = "garbage"
+    matrix.meta["evidence_cutoff"] = "not-a-date"
+    matrix.body = matrix.body.replace("## Canonical matrix\n\n", "## Canonical matrix\n\n````md\n")
+    matrix.body += "\n```\n````\n"
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any("candidate_commit must be a full lowercase Git SHA" in error for error in errors)
+    assert any("evidence_cutoff must be YYYY-MM-DD" in error for error in errors)
+    assert any("missing or malformed canonical evidence matrix table" in error for error in errors)
+
+
+@pytest.mark.parametrize(
+    "wrapper",
+    [
+        ("<!--\n", "\n-->"),
+        ("    ", ""),
+    ],
+)
+def test_ar119_matrix_rejects_commented_or_indented_authority_table(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    wrapper: tuple[str, str],
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    prefix, suffix = wrapper
+    heading, table = matrix.body.split("## Canonical matrix\n\n", 1)
+    if prefix == "    ":
+        table = "\n".join(prefix + line for line in table.splitlines())
+        matrix.body = heading + "## Canonical matrix\n\n" + table
+    else:
+        matrix.body = heading + "## Canonical matrix\n\n" + prefix + table + suffix
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any("missing or malformed canonical evidence matrix table" in error for error in errors)
+
+
+def test_ar119_matrix_rejects_missing_candidate_and_post_cutoff_observation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+
+    def missing_commit(*_args: str) -> str:
+        raise verify_docs.subprocess.CalledProcessError(1, ["git", "cat-file"])
+
+    monkeypatch.setattr(verify_docs, "git", missing_commit)
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    matrix.body = matrix.body.replace(
+        "| R1 | claude | unproven | unproven | unproven | unproven | unproven "
+        "| required artifact | none | unobserved |",
+        "| R1 | claude | unproven | unproven | unproven | unproven | unproven "
+        "| required artifact | none | 2026-07-13 |",
+        1,
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any("candidate_commit does not identify a Git commit" in error for error in errors)
+    assert any("R1/claude observation exceeds evidence_cutoff" in error for error in errors)
+
+
+def test_ar119_matrix_rejects_non_ancestor_candidate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+
+    def non_ancestor(*args: str) -> str:
+        if args[0] == "merge-base":
+            raise verify_docs.subprocess.CalledProcessError(1, ["git", *args])
+        return ""
+
+    monkeypatch.setattr(verify_docs, "git", non_ancestor)
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any("candidate_commit must be an ancestor of HEAD" in error for error in errors)
+
+
+def test_ar119_matrix_requires_scope_bound_layer_evidence_for_each_assertion(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "line\n")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    matrix.body = matrix.body.replace(
+        "| R2 | claude | unproven | unproven | unproven | unproven | unproven "
+        "| required artifact | none | unobserved | fixture source | missing evidence |",
+        "| R2 | claude | unproven | proven | unproven | unproven | unproven "
+        "| unsupported assertion | README.md | 2026-07-12 | README.md | claimed |",
+        1,
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any("missing layer evidence R2/claude/Implementation" in error for error in errors)
+
+
+def test_ar119_matrix_accepts_exact_typed_candidate_bound_layer_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "line\n")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    matrix.body = matrix.body.replace(
+        "| R2 | claude | unproven | unproven | unproven | unproven | unproven "
+        "| required artifact | none | unobserved | fixture source | missing evidence |",
+        "| R2 | claude | unproven | proven | unproven | unproven | unproven "
+        "| source-bound proof | exact source receipt | 2026-07-12 "
+        "| `agency_runtime/fixture.py:1` | installed and live remain unproven |",
+        1,
+    )
+    matrix.body += (
+        "| R2 | claude | Implementation | proven | source | exact source receipt "
+        "| 2026-07-12 | `agency_runtime/fixture.py:1` |\n"
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert errors == []
+
+
+def test_ar119_layer_evidence_rejects_wrong_kind_bare_source_and_r9_record(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "line\n")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    matrix.body += (
+        "| R9 | claude | Implementation | negative | live-host | aggregate | 2026-07-12 "
+        "| README.md |\n"
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any("R9 must not have direct layer evidence" in error for error in errors)
+    assert any("supplies evidence for an unasserted layer" in error for error in errors)
+    assert any("Authority kind must be 'source'" in error for error in errors)
+    assert any("Source must be an exact repository" in error for error in errors)
+
+
+def test_ar119_layer_evidence_rejects_unrelated_source_authority_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(verify_docs, "git", lambda *_args: "line\n")
+    vision, matrix = _ar119_authority_docs(tmp_path)
+    matrix.body = matrix.body.replace(
+        "| R2 | claude | unproven | unproven | unproven | unproven | unproven "
+        "| required artifact | none | unobserved | fixture source | missing evidence |",
+        "| R2 | claude | unproven | proven | unproven | unproven | unproven "
+        "| source proof | exact receipt | 2026-07-12 | `README.md:1` | partial |",
+        1,
+    )
+    matrix.body += (
+        "| R2 | claude | Implementation | proven | source | exact receipt "
+        "| 2026-07-12 | `README.md:1` |\n"
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_ar119_authorities([vision, matrix], errors)
+
+    assert any(
+        "R2/claude/Implementation source authority must cite agency_runtime/" in error
+        for error in errors
+    )

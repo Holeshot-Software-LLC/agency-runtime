@@ -1,9 +1,9 @@
 ---
 title: "AR-235: Make gap contractor hiring autonomous with isolated security review and amend-first staffing"
-status: done
+status: open
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [workforce, hiring, security, routing, observability, inference]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md

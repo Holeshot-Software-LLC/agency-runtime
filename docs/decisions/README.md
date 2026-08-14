@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-08-06
+updated: 2026-08-12
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -123,6 +123,9 @@ Status meanings:
 | [ADR-0065](0065-keep-compact-resident-manager-kernel.md) | Keep a compact resident manager kernel at the parent boundary | Superseded |
 | [ADR-0093](0093-atomic-finalization-evidence-batches.md) | Commit one finalization evidence batch atomically | Accepted |
 | [ADR-0120](0120-construct-first-pass-evidence-headers.md) | Construct evidence headers before first publication | Accepted |
+| [ADR-0156](0156-host-artifacts-prove-native-child-delivery.md) | Use host-authored artifacts as native-child delivery proof | Accepted |
+| [ADR-0158](0158-collect-child-canary-proof-inside-disposable-host-profiles.md) | Collect child-canary proof inside disposable host profiles | Accepted |
+| [ADR-0159](0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) | Authenticate Codex plaintext spawns from host transcripts | Accepted |
 
 ## State and roster governance
 
@@ -136,6 +139,7 @@ Status meanings:
 | [ADR-0066](0066-package-audited-roster-and-sync-quarantined-deltas.md) | Package the audited upstream roster and synchronize quarantined deltas | Accepted |
 | [ADR-0081](0081-compile-contractors-from-governed-structured-contracts.md) | Compile contractors from governed structured contracts | Accepted |
 | [ADR-0134](0134-bind-contractor-risk-to-validated-authority.md) | Bind contractor risk to validated authority | Accepted |
+| [ADR-0157](0157-automatically-promote-host-verified-contractors.md) | Automatically promote contractors from host-evidenced, independently verified outcomes | Accepted |
 
 ## Operations and engineering
 

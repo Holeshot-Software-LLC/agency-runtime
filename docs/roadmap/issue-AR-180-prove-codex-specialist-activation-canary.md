@@ -3,13 +3,14 @@ title: "AR-180: Prove Codex specialist activation in the live canary"
 status: open
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-30
+updated: 2026-08-13
 tags: [codex, canary, activation, delegation, production-readiness]
 related:
   - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
   - docs/roadmap/issue-AR-114-guided-codex-hook-activation.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
@@ -19,6 +20,9 @@ related:
   - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
+  - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
   - agency_runtime/core/canary.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/canary_proof.py
@@ -33,11 +37,27 @@ epic: host-integrations
 issue_id: AR-180
 priority: p0
 tracker_url: null
-depends_on: [AR-143, AR-182, AR-185, AR-191, AR-192, AR-195]
-blocks: [AR-119]
+depends_on: [AR-143, AR-182, AR-185, AR-191, AR-192, AR-195, AR-255]
+blocks: [AR-119, AR-252, AR-253]
 ---
 
 # AR-180: Prove Codex specialist activation in the live canary
+
+> **RESTATED 2026-08-12.** The historical canary narrative below records useful
+> Codex trust and lifecycle investigations, but its Job B work units, one-use
+> grants, Store-only load proof, and response header are not current success
+> authority. AR-255 builds inference-owned staffing and sealed host-artifact
+> proof. The exact-host preflight below found that Codex 0.147 has a conditional
+> host-marked plaintext assignment path, while the current Sol/TUI call remained
+> encrypted and the hook payload omitted that marker. AR-180 authenticates and
+> uses exact-`0.147.0` TUI root/depth-one/depth-two and exec root/depth-one
+> shapes, including authentic one-record TUI forks whose canonical parent/root
+> ancestry is sealed across files. Exec depth-two/deeper is unobserved and
+> unsupported pending a real-host sample. Desktop runtime
+> `0.147.0-alpha.6.6` now has a separate sealed v3 profile for its exact observed
+> V2 lineage; the CLI profiles remain unchanged. That source/simulation proof is
+> not a live rewrite or child artifact. Only the Approach and Acceptance sections
+> as amended below govern closure.
 
 ## Problem
 
@@ -206,21 +226,134 @@ invalid inference closes the canary as `workforce_inference_failure`. Attended
 trust and the explicit invocation-only autonomous bypass are now separate
 adapters over the same behavioral proof.
 
+### 2026-08-12 exact-host capability preflight
+
+The read-only preflight identified two exact local runtimes. The PATH-resolved
+TUI and exec installation reports Codex `0.147.0`; its Windows native binary has
+SHA-256 `935A1911ED2556E4FFCEC995F4886AC2AC425863BA26FED264DF62E30272AD9D`.
+Codex Desktop package `26.803.10989.0` uses runtime `0.147.0-alpha.6.6`; that
+native binary has SHA-256
+`592958896CBFFA154709618476FC9C9BF7FE73957E9A4FC12094C5051B6C69B3`.
+
+The official `rust-v0.147.0` source includes merged upstream change `#35845`.
+For `collaboration.spawn_agent`, `send_message`, and `followup_task`, the router
+selects `DirectPlaintextMessage` only when the host response item carries
+`encrypted_function_args: []`; otherwise delivery remains encrypted. The tagged
+stream path records that response item before it queues the tool future. This is
+a conditional host capability, not proof that every model or surface emits the
+marker.
+
+Current TUI parent `019ff8ee-eb1c-7de3-815d-3deea9eca028`, running Sol through
+Codex `0.147.0`, emitted spawn call
+`call_4fLyxjPXggCL0L9VWsSXDWr3` with a 1,036-character `gAAAAA...` message and
+no `encrypted_function_args` field. The child received encrypted content. This
+normal read-only preflight child is evidence that the exact active path is
+opaque; it is not an Agency canary and advances no Installed or Live gate.
+
+The documented `PreToolUse` payload supplies `transcript_path`, `turn_id`,
+`tool_use_id`, and parsed `tool_input`, and it permits `updatedInput` rewrites.
+It does not expose the plaintext marker or internal tool-call source, and the
+documented transcript format is explicitly unstable. A plaintext-looking
+`tool_input.message` therefore has no authority by itself. Candidate `e8b60f64`
+implemented the bounded exact-0.147 in-file scanner, sealed exact-record
+attestation, separate shared-session and thread identity for observed TUI and
+exec ancestry, and atomic replay/final-validation rollback. In that candidate,
+authentic one-record TUI forks remained unsupported.
+
+Candidate `45b21cdc` and ledger `01730614` add the v2 cross-file verifier. It
+resolves each declared parent/root UUID through a unique bounded UTC-day
+plus-or-minus-one canonical lookup, validates each file offset independently,
+seals every external prefix and causal record, proves both edges for depth two,
+and caps aggregate external ancestry at 64 MiB. The current authorization call
+still mandates `encrypted_function_args: []`; ancestor causal calls accept only
+the ordinary exact schema or that schema plus the exact empty marker. Missing,
+ambiguous, completed, malformed, linked, unmarked, drifted, oversized, or
+unsupported ancestry remains unstaffed. The authentic census resolved 11/11
+chains across depth-one sparse/inherited and depth-two sparse/inherited variants;
+the maximum was 48,678,898 external bytes at 3.809 seconds. The parent passed
+365 focused tests, the 673-test fast spine with 6 skips, and a scoped 19/19
+mutation run with a green baseline and unchanged source. The independent
+reviewer passed 200 tests, killed 19/19 mutations, and found no issue at any
+severity. Codex Rule-4 Implementation and Simulation are proven. The 134-test
+dashboard suite, routing evaluation, Ruff, format, and documentation/schema
+gates passed for that candidate. Its decision-conformance evaluator exited zero
+in 883.1 seconds: its baseline passed in 169,548 ms, all 131/131 mutations were
+killed, zero survived or were invalid, and `source_unchanged=true`. Exact
+installation and host child artifacts remain later gates.
+ADR-0159 keeps rewrite authorization separate from delivery-proof authority.
+Desktop `0.147.0-alpha.6.6` is deliberately outside that exact CLI pin: its
+observed legacy history and `Codex Desktop` lineage require a separate bounded
+schema/ancestry authority before any Desktop install or live artifact can count.
+
+Candidate `211563c7` and ledger `ee8db873` supply that separate sealed v3
+Desktop profile without changing the exact CLI `0.147.0` profiles. Desktop
+requires one exact root; depth-one/depth-two V2 child ancestry must match one of
+13 atomic observed tuples. Eight tested but unobserved cross-products, disabled
+guardians, greater depth, mixed profiles, or drift fail open unstaffed. Canonical
+owner files, both
+depth-two edges, exact adjacent call/direct-event/output records, copied history,
+file/profile/currentness seals, and the 64 MiB aggregate external bound are
+mandatory. The current authorization call still requires the exact empty marker;
+ancestor calls may use only the ordinary exact schema or that schema plus the
+exact empty marker.
+
+Focused provenance/hook verification passed 288/288, focused plus the anchor
+passed 289/289, and the named fast spine passed 673 with 6 skips. The Desktop
+baseline passed and killed 20/20 scoped mutations with zero survived or invalid
+and `source_unchanged=true`; independent verification reproduced the result and
+reported no finding at any severity. A content-safe probe resolved 52/52
+authentic V2 Desktop chains (47 depth one, 5 depth two), with maximum external
+ancestry 32,650,955 bytes and maximum resolver time 2.765 seconds. All 65
+observed Desktop calls were encrypted and unmarked, so no live rewrite or child
+was proved. Rule-4 Implementation and Simulation remain proven; State,
+Installed, and Live remain unproven. For `211563c7`, dashboard UI passed 134/134,
+routing passed every threshold, and Ruff lint/format passed. The expanded
+decision-conformance evaluator first failed with two survivors and then passed
+151/151 after the AR-257 repair; the 131/131 result above remains
+candidate-`45b21cdc` history.
+
+### 2026-08-13 exec depth-two ancestry census
+
+A read-only, content-safe census answered the open exec depth-two question. It
+read only the first `session_meta` record of every rollout beneath the canonical
+sessions root (1,359 files) and the archived root (657 files), and emitted only
+lineage, version, depth, and identity fields.
+
+Exec depth-two ancestry **does** exist on the evidence machine, but only at CLI
+`0.145.0`: exactly one chain, root `019fa98d-4ea5-72b1-a16f-1be79a8f77f6` to
+depth-one `019fa98d-98ef-7cb0-a4fe-4ac65080a296` to depth-two
+`019fa98e-2b0c-7a20-bb3c-dcfd712555b1`, observed 2026-07-28. At the pinned exact
+`0.147.0` the exec lineage has four roots and exactly one depth-one child
+(`019ff1e9-defe-77c2-8bd1-9d503f1670b6`, already cited as R5 prior-candidate
+context) and **zero** depth-two records. For contrast, exact `0.147.0` TUI shows
+61 depth-one and 15 depth-two, and Desktop `0.147.0-alpha.6.6` shows 47 and 5,
+which is why both received profiles and exec did not.
+
+The consequence is exact: the ADR-0159 requirement to obtain a read-only
+real-host sample before any separate exec pin **cannot be satisfied from
+existing history**. A `0.145.0` chain cannot authorize a `0.147.0` schema
+decision under the exact-version rule. Closing this gap requires either a newly
+generated real exec depth-two spawn on `0.147.0`, which is a live host action
+needing explicit authorization, or an owner decision that exec depth-two/deeper
+stays permanently unsupported. Both remain open; exec depth-two/deeper therefore
+remains unsupported and unstaffed, and no acceptance item below advances.
+
 ## Approach
 
 Define a time-bounded Codex activation probe whose requested work has one safe
-isolated unit and one eligible specialist selected by configured inference.
-Require the inferred decision and its provider receipts before narrowing that
-same worker to the closed diagnostic execution boundary. Prove first that the
+isolated unit and a compatible multi-card team selected by configured inference.
+Require the inferred decision and its provider receipts before narrowing those
+same cards to the closed diagnostic execution boundary. Prove first that the
 non-interactive Codex surface exposes the required native delegation tool.
 The user-level probe must explicitly request exactly one sub-agent for the
 whole unit so the canary remains compatible with Codex's native delegation
 policy; indivisibility constrains fanout rather than prohibiting delegation.
-Then require exactly one child launch, exact work-unit correlation, pre-LLM
-specialist delivery, one-use activation consumption, child completion, parent
-finalization, and a valid response header. Reject absent tools, topology drift,
-extra children, timeouts, unconsumed grants, parent-only prompt loading, and
-uncorrelated evidence. Keep shell, filesystem writes, and external services
+Then require exactly one child launch and a host-written child artifact that
+contains the exact inference-selected card hashes before first child speech.
+Correlate parent, child, install, channel, and inference decision without Job B
+work units or one-use grants. Reject absent tools, topology drift, extra
+children, timeouts, parent-only prompt loading, replay, and uncorrelated or
+Agency-only evidence. Keep shell, filesystem writes, and external services
 disabled. Run the same proof through either attended native trust or the
 explicit per-invocation autonomous bypass without conflating the two.
 
@@ -235,18 +368,34 @@ instead of weakening the evidence gate.
 
 ## Acceptance
 
-- [x] Configured inference selects exactly one expected specialist for the
-  bounded canary unit, with provider and inferred-decision receipts; no
-  deterministic fallback may choose or substitute that specialist.
+- [x] The historical bounded control proved configured inference could select
+  exactly one expected specialist with provider and inferred-decision receipts;
+  no deterministic fallback chose or substituted it.
+- [x] A read-only exact-host preflight inventories the active TUI/exec and
+      Desktop runtimes, distinguishes conditional host support from the active
+      encrypted path, and advances no Installed or Live claim.
+- [x] Exact-version source authentication binds supported in-file TUI/exec and
+      authentic one-record TUI cross-file ancestry, every required causal edge,
+      exact call provenance, and retry-safe final validation; every unsupported
+      or drifted path fails open without a successful Store row.
 - [ ] Current-profile Codex exposes and invokes the supported native child tool
   through attended trust or the explicit autonomous bypass, without shell
   access, file writes, or external services.
-- [ ] PreToolUse, SubagentStart, PostToolUse, SubagentStop, and Stop evidence is
-  correlated to one session, trace, work unit, child, and install identity.
-- [ ] The expected specialist prompt is delivered only to the child and its
-  one-use activation grant is consumed exactly once.
-- [ ] Child completion and parent finalization are accepted, the Agency header
-  is valid, and the installation-bound current-profile attestation persists.
+- [ ] Supported TUI and exec shapes each produce a host-written child artifact
+      bound to the exact parent, child, install, inference decision, and card
+      hashes.
+- [x] Desktop's `0.147.0-alpha.6.6` schema and ancestry are separately observed,
+      exactly pinned, and adversarially reviewed without widening the CLI
+      version predicate.
+- [ ] Desktop produces the equivalent host-written child artifact bound to the
+      exact candidate, installation, inference decision, and card hashes.
+- [ ] The expected specialist cards appear before the child's first speech and
+      only in the child context; Store rows and response prose cannot pass.
+- [ ] At least one Codex child receives two or more compatible cards selected by
+      the same valid inference decision; one child must not be confused with one
+      card.
+- [ ] Child completion and parent finalization are accepted and the
+      installation-bound current-profile attestation persists.
 - [x] Missing tools, extra delegation, timeout, drift, replay, or incomplete
   evidence fails and closes only the exact canary run.
 - [x] Focused tests cover positive, unavailable-tool, timeout, and correlation-

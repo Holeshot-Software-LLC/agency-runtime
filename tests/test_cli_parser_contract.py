@@ -470,6 +470,14 @@ def test_install_parser_exposes_explicit_autonomous_activation_mode() -> None:
     assert parsed.json is True
 
 
+def test_child_evidence_parser_exposes_no_receipt_writing_mode() -> None:
+    child_parser = dict(_walk_parser(_parser()))["agency evidence children"]
+
+    assert "record_verification" not in child_parser._option_string_actions
+    assert "--record-verification" not in child_parser.format_help()
+    assert "--db" not in child_parser.format_help()
+
+
 @pytest.mark.parametrize(
     ("argv", "expected"),
     [

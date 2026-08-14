@@ -24,6 +24,7 @@ from uuid import uuid4
 import pytest
 import yaml
 
+from agency_runtime.core import child_delivery_evidence as child_evidence
 from agency_runtime.core.dashboard_runtime import (
     dashboard_api_request,
     remove_dashboard_runtime,
@@ -2045,11 +2046,34 @@ def test_dashboard_child_evidence_contract_is_bounded_and_absence_is_only_no_pro
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    observed_stores: list[object] = []
+    projection = dashboard_module.child_delivery_projection
+
+    def observe_projection(
+        root: Path,
+        *,
+        host: str,
+        limit: int,
+        store: object | None = None,
+    ) -> dict[str, object]:
+        observed_stores.append(store)
+        return projection(root, host=host, limit=limit, store=store)
+
+    def fail_if_writer_is_called(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("read-only dashboard evidence called the receipt writer")
+
+    monkeypatch.setattr(dashboard_module, "child_delivery_projection", observe_projection)
     monkeypatch.setattr(
-        dashboard_module,
-        "default_child_artifact_root",
-        lambda host: tmp_path / f"absent-{host}",
+        Store,
+        "_record_native_child_delivery_verification",
+        fail_if_writer_is_called,
     )
+
+    def absent_root(host: str) -> Path:
+        return tmp_path / f"absent-{host}"
+
+    monkeypatch.setattr(dashboard_module, "default_child_artifact_root", absent_root)
+    monkeypatch.setattr(child_evidence, "default_child_artifact_root", absent_root)
 
     status, payload, _headers = _json_response(
         dashboard_server,
@@ -2058,13 +2082,28 @@ def test_dashboard_child_evidence_contract_is_bounded_and_absence_is_only_no_pro
     )
 
     assert status == 200
-    assert payload["schema_version"] == "agency.dashboard.child_delivery.v1"
+    assert observed_stores == [dashboard_server["store"]]
+    assert payload["schema_version"] == "agency.dashboard.child_delivery.v2"
     assert payload["source"] == {
-        "authority": "host_written_child_artifacts",
+        "authority": "host_written_artifacts_with_bound_verification_receipts",
         "artifact_hosts": ["claude", "codex"],
-        "agency_store_consulted": False,
-        "evidence_meaning": "hash_verified_specialist_cards_in_child_input_before_first_speech",
+        "agency_store_consulted": True,
+        "store_role": "read_only_decision_and_verification_receipt_projection",
+        "evidence_meaning": (
+            "host_artifact_delivery_correlated_to_exact_inference_decision_and_receipt"
+        ),
     }
+    assert payload["service_binding"] == {
+        "store_path": str(dashboard_server["store"].db_path),
+        "desired_store_path": str(dashboard_server["store"].db_path),
+        "store_restart_required": False,
+    }
+    assert payload["store_path"] == payload["service_binding"]["store_path"]
+    assert payload["desired_store_path"] == payload["service_binding"]["desired_store_path"]
+    assert payload["store_restart_required"] is False
+    assert payload["config_path"] == str(dashboard_server["store"].config_path)
+    assert isinstance(payload["config_revision"], str) and payload["config_revision"]
+    assert isinstance(payload["environment_overrides"], dict)
     assert payload["window"] == {
         "kind": "newest_verified_child_delivery_evidence",
         "hosts": ["claude"],
@@ -2086,6 +2125,8 @@ def test_dashboard_child_evidence_contract_is_bounded_and_absence_is_only_no_pro
             "correlated_staffed_children": 0,
             "uncorrelated_staffed_children": 0,
             "legacy_deliveries": 0,
+            "verified_deliveries": 0,
+            "unverified_deliveries": 0,
             "detail_limit": 1,
             "detail_truncated": False,
             "children": [],
@@ -2771,11 +2812,13 @@ def test_store_bound_dashboard_endpoints_fail_closed_when_store_restart_is_requi
         "specialist_selection_distribution",
         fail_metric_read,
     )
+    monkeypatch.setattr(dashboard_module, "child_delivery_projection", fail_metric_read)
 
     requests = [
         ("/api/roster?limit=1&projection=activation", "GET", None),
         ("/api/agents/lookup?slug=security-reviewer", "GET", None),
         ("/api/hosts", "GET", None),
+        ("/api/evidence/children", "GET", None),
         ("/api/evidence/latency", "GET", None),
         ("/api/evidence/selections", "GET", None),
         (

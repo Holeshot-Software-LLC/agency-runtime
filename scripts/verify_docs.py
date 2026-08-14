@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import subprocess
 import sys
@@ -76,6 +77,57 @@ HANDOFF_REQUIRED_HEADINGS = frozenset(
         "constraints",
     }
 )
+AR119_AUTHORITY_PATHS = {
+    "vision-wording": "docs/roadmap/AR-119-founding-vision.md",
+    "completion-evidence": "docs/roadmap/AR-119-rule-host-evidence-matrix.md",
+}
+AR119_VISION_START = "## Canonical card metaphor\n"
+AR119_VISION_END = "## Differentiator\n"
+AR119_SUPPORTED_HOSTS = frozenset({"claude", "codex", "zcode", "hermes", "openclaw"})
+AR119_RULES = frozenset({f"R{number}" for number in range(1, 10)})
+AR119_EVIDENCE_STATES = frozenset({"proven", "negative", "unproven", "not-applicable"})
+AR119_MATRIX_COLUMNS = (
+    "Rule",
+    "Host",
+    "State",
+    "Implementation",
+    "Simulation",
+    "Installed",
+    "Live",
+    "Proof authority",
+    "Artifact",
+    "Observed",
+    "Source",
+    "Limitation",
+)
+AR119_LAYER_EVIDENCE_COLUMNS = (
+    "Rule",
+    "Host",
+    "Layer",
+    "State",
+    "Authority kind",
+    "Artifact",
+    "Observed",
+    "Source",
+)
+AR119_LAYER_AUTHORITY_KINDS = {
+    "Implementation": "source",
+    "Simulation": "test",
+    "Installed": "installed-host",
+    "Live": "live-host",
+}
+# This is intentionally code-bound rather than a front-matter escape hatch.
+# AR-161's delivery surface was removed by AR-197 before the remaining gates
+# could apply. Any change to its preserved Acceptance section invalidates the
+# exception and forces a fresh review.
+DONE_ACCEPTANCE_PROVENANCE_EXCEPTIONS = {
+    "docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md": {
+        "acceptance_sha256": ("e36df0a5baca59c9f9b057e1a03081f5154ad4ea19acb3512353f90c0841da36"),
+        "superseded_by": "docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md",
+        "provenance_commit": "f5ca1729915b7dfb8385774412a9e923ab41c404",
+        "reason": "AR-197 retired the helper before public delivery",
+    }
+}
 
 
 @dataclass
@@ -134,6 +186,17 @@ def parse_document(path: Path, errors: list[str]) -> Document | None:
         errors.append(f"{relative}: front matter must be a mapping")
         return None
     return Document(path=path, meta=meta, body="\n".join(lines[closing + 1 :]))
+
+
+def _markdown_body(text: str) -> str | None:
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    if not lines or lines[0] != "---":
+        return None
+    try:
+        closing = lines.index("---", 1)
+    except ValueError:
+        return None
+    return "\n".join(lines[closing + 1 :])
 
 
 def is_date(value: object) -> bool:
@@ -374,6 +437,688 @@ def headings(body: str) -> set[str]:
         counts[base] = count + 1
         result.add(base if count == 0 else f"{base}-{count}")
     return result
+
+
+def _fence_run(line: str) -> tuple[str, str] | None:
+    """Return a CommonMark-style fence run and suffix (at most 3-space indent)."""
+
+    match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
+    return (match.group(1), match.group(2)) if match else None
+
+
+def _opening_fence(line: str) -> str | None:
+    """Return a valid CommonMark opening fence delimiter, if present."""
+
+    run = _fence_run(line)
+    if run is None:
+        return None
+    delimiter, suffix = run
+    if delimiter[0] == "`" and "`" in suffix:
+        return None
+    return delimiter
+
+
+def _markdown_visibility(lines: list[str]) -> list[bool]:
+    """Mark lines visible to the narrow authority parser.
+
+    Fenced code and multi-line HTML comments are never documentation authority.
+    The parser is intentionally conservative: a line containing an HTML comment
+    marker is excluded in full rather than trying to interpret inline Markdown.
+    """
+
+    visible: list[bool] = []
+    fence: str | None = None
+    in_comment = False
+    for line in lines:
+        run = _fence_run(line)
+        if fence is not None:
+            visible.append(False)
+            if run and run[0][0] == fence[0] and len(run[0]) >= len(fence) and not run[1].strip():
+                fence = None
+            continue
+        if in_comment:
+            visible.append(False)
+            if "-->" in line:
+                in_comment = False
+            continue
+        if "<!--" in line:
+            visible.append(False)
+            start = line.index("<!--") + 4
+            if "-->" not in line[start:]:
+                in_comment = True
+            continue
+        opening = _opening_fence(line)
+        if opening:
+            visible.append(False)
+            fence = opening
+            continue
+        visible.append(True)
+    return visible
+
+
+def _contains_visible_raw_html(body: str) -> bool:
+    """Return whether active Markdown contains a raw HTML tag outside examples."""
+
+    lines = body.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    active_lines: list[str] = []
+    fence: str | None = None
+    in_comment = False
+    for line in lines:
+        run = _fence_run(line)
+        if fence is not None:
+            active_lines.append("")
+            if run and run[0][0] == fence[0] and len(run[0]) >= len(fence) and not run[1].strip():
+                fence = None
+            continue
+        cleaned: list[str] = []
+        cursor = 0
+        while cursor < len(line):
+            if in_comment:
+                end = line.find("-->", cursor)
+                if end < 0:
+                    cursor = len(line)
+                    break
+                in_comment = False
+                cursor = end + 3
+                continue
+            start = line.find("<!--", cursor)
+            if start < 0:
+                cleaned.append(line[cursor:])
+                break
+            cleaned.append(line[cursor:start])
+            in_comment = True
+            cursor = start + 4
+        active_line = "".join(cleaned)
+        opening = _opening_fence(active_line)
+        if opening:
+            active_lines.append("")
+            fence = opening
+            continue
+        active_lines.append(active_line)
+    active = "\n".join(active_lines)
+    return bool(re.search(r"<\s*/?\s*[A-Za-z][A-Za-z0-9-]*(?=[\s/>])", active))
+
+
+def _level_two_sections(body: str, heading: str) -> list[str]:
+    """Return every real matching H2 section, ignoring fenced examples."""
+
+    lines = body.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    visible = _markdown_visibility(lines)
+    sections: list[str] = []
+    start: int | None = None
+    expected = heading.casefold()
+    for index, line in enumerate(lines):
+        if not visible[index]:
+            continue
+        match = re.fullmatch(r"##\s+(.+?)\s*#*\s*", line)
+        if not match:
+            continue
+        if start is not None:
+            sections.append("\n".join(lines[start:index]).rstrip("\n") + "\n")
+            start = None
+        if match.group(1).casefold() == expected:
+            start = index
+    if start is not None:
+        sections.append("\n".join(lines[start:]).rstrip("\n") + "\n")
+    return sections
+
+
+def _level_two_section(body: str, heading: str) -> str | None:
+    """Return exactly one real H2 section with normalized LF and terminal LF."""
+
+    sections = _level_two_sections(body, heading)
+    return sections[0] if len(sections) == 1 else None
+
+
+def _task_markers(section: str) -> list[str]:
+    markers: list[str] = []
+    active_indents: list[int] = []
+    lines = section.splitlines()
+    visible = _markdown_visibility(lines)
+    for index, line in enumerate(lines):
+        if not visible[index]:
+            continue
+        expanded = line.expandtabs(4)
+        task_candidates = list(re.finditer(r"(?:[-*+]|\d+[.)])\s+\[([ xX])\](?:\s+|$)", expanded))
+        if any(">" in expanded[: match.start()] for match in task_candidates):
+            markers.append("quoted")
+            continue
+        indent = len(expanded) - len(expanded.lstrip(" "))
+        match = re.match(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)\[([ xX])\](?:\s+|$)", expanded)
+        if match:
+            has_parent = any(parent_indent < indent for parent_indent in active_indents)
+            markers.append(match.group(1) if indent < 4 or has_parent else " ")
+            active_indents = [value for value in active_indents if value < indent]
+            active_indents.append(indent)
+        elif expanded.strip() and indent == 0:
+            active_indents.clear()
+    return markers
+
+
+def _validate_done_acceptance_exception(
+    doc: Document,
+    section: str,
+    exception: dict[str, str],
+    issues_by_path: dict[str, Document],
+    errors: list[str],
+) -> None:
+    """Validate one exact code-bound historical Acceptance exception."""
+
+    digest = hashlib.sha256(section.encode("utf-8")).hexdigest()
+    if digest != exception["acceptance_sha256"]:
+        errors.append(
+            f"{doc.relative}: historical Acceptance digest changed "
+            f"(expected {exception['acceptance_sha256']}, got {digest})"
+        )
+    if doc.meta.get("superseded_by") != exception["superseded_by"]:
+        errors.append(
+            f"{doc.relative}: historical Acceptance exception requires "
+            f"superseded_by={exception['superseded_by']}"
+        )
+    provenance_commit = exception.get("provenance_commit")
+    if not isinstance(provenance_commit, str) or not re.fullmatch(
+        r"[0-9a-f]{40}", provenance_commit
+    ):
+        errors.append(
+            f"{doc.relative}: historical Acceptance exception needs a full provenance commit"
+        )
+    else:
+        try:
+            historical_text = git("show", f"{provenance_commit}:{doc.relative}")
+        except subprocess.CalledProcessError:
+            errors.append(
+                f"{doc.relative}: historical Acceptance provenance commit/path is unavailable"
+            )
+        else:
+            historical_body = _markdown_body(historical_text)
+            historical_section = (
+                _level_two_section(historical_body, "Acceptance")
+                if historical_body is not None
+                else None
+            )
+            historical_digest = (
+                hashlib.sha256(historical_section.encode("utf-8")).hexdigest()
+                if historical_section is not None
+                else None
+            )
+            if historical_digest != exception["acceptance_sha256"]:
+                errors.append(
+                    f"{doc.relative}: provenance commit does not contain the bound "
+                    "historical Acceptance section"
+                )
+    if not isinstance(exception.get("reason"), str) or not exception["reason"].strip():
+        errors.append(f"{doc.relative}: historical Acceptance exception needs a non-empty reason")
+    successor = issues_by_path.get(exception["superseded_by"])
+    if successor is None:
+        errors.append(f"{doc.relative}: historical Acceptance successor is not an issue document")
+
+
+def validate_issue_acceptance(docs: list[Document], errors: list[str]) -> None:
+    issues = [doc for doc in docs if doc.meta.get("type") == "issue"]
+    issues_by_path = {doc.relative: doc for doc in issues}
+    exception_paths = set(DONE_ACCEPTANCE_PROVENANCE_EXCEPTIONS)
+    seen_exception_paths: set[str] = set()
+    for doc in issues:
+        if doc.meta.get("status") != "done":
+            continue
+        sections = _level_two_sections(doc.body, "Acceptance")
+        if len(sections) != 1:
+            errors.append(
+                f"{doc.relative}: done issue requires exactly one real ## Acceptance "
+                f"section; found {len(sections)}"
+            )
+            continue
+        section = sections[0]
+        markers = _task_markers(section)
+        if not markers:
+            errors.append(f"{doc.relative}: done issue Acceptance has no task markers")
+            continue
+        quoted = sum(marker == "quoted" for marker in markers)
+        if quoted:
+            errors.append(
+                f"{doc.relative}: done issue Acceptance contains {quoted} blockquoted "
+                "task marker(s); quoted examples cannot satisfy acceptance"
+            )
+            continue
+        unchecked = sum(marker == " " for marker in markers)
+        exception = DONE_ACCEPTANCE_PROVENANCE_EXCEPTIONS.get(doc.relative)
+        if not unchecked:
+            if exception:
+                errors.append(
+                    f"{doc.relative}: stale done-acceptance provenance exception; "
+                    "all Acceptance tasks are checked"
+                )
+            continue
+        if not exception:
+            errors.append(
+                f"{doc.relative}: done issue has {unchecked} unchecked Acceptance task(s)"
+            )
+            continue
+        seen_exception_paths.add(doc.relative)
+        _validate_done_acceptance_exception(
+            doc,
+            section,
+            exception,
+            issues_by_path,
+            errors,
+        )
+    missing = sorted(exception_paths - seen_exception_paths)
+    errors.extend(
+        f"{path}: configured done-acceptance exception is not in use"
+        for path in missing
+        if path in issues_by_path
+    )
+    errors.extend(
+        f"{path}: configured done-acceptance exception document is missing"
+        for path in sorted(exception_paths - set(issues_by_path))
+    )
+
+
+def _canonical_vision_block(body: str) -> str | None:
+    if _contains_visible_raw_html(body):
+        return None
+    normalized = body.replace("\r\n", "\n").replace("\r", "\n")
+    lines = normalized.split("\n")
+    visible = _markdown_visibility(lines)
+    starts = [
+        index
+        for index, line in enumerate(lines)
+        if visible[index] and line + "\n" == AR119_VISION_START
+    ]
+    ends = [
+        index
+        for index, line in enumerate(lines)
+        if visible[index] and line + "\n" == AR119_VISION_END
+    ]
+    if len(starts) != 1 or len(ends) != 1 or ends[0] <= starts[0]:
+        return None
+    return "\n".join(lines[starts[0] : ends[0]]) + "\n"
+
+
+def _matrix_rows(body: str) -> list[dict[str, str]] | None:
+    section = _level_two_section(body, "Canonical matrix")
+    if section is None:
+        return None
+    lines = section.splitlines()
+    visible = _markdown_visibility(lines)
+    expected_header = list(AR119_MATRIX_COLUMNS)
+    header_indexes: list[int] = []
+    for index, line in enumerate(lines):
+        if not visible[index]:
+            continue
+        if not re.match(r"^ {0,3}\|", line):
+            continue
+        header = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if header == expected_header:
+            header_indexes.append(index)
+    if len(header_indexes) != 1:
+        return None
+    index = header_indexes[0]
+    if (
+        index + 1 >= len(lines)
+        or not visible[index + 1]
+        or not re.fullmatch(
+            r"\s*\|(?:\s*:?-+:?\s*\|){11}\s*:?-+:?\s*\|?\s*",
+            lines[index + 1],
+        )
+    ):
+        return None
+    rows: list[dict[str, str]] = []
+    for row_index in range(index + 2, len(lines)):
+        row_line = lines[row_index]
+        if not visible[row_index] or not re.match(r"^ {0,3}\|", row_line):
+            break
+        cells = [cell.strip() for cell in row_line.strip().strip("|").split("|")]
+        if len(cells) != len(expected_header):
+            return None
+        rows.append(dict(zip(expected_header, cells, strict=True)))
+    return rows
+
+
+def _layer_evidence_rows(body: str) -> list[dict[str, str]] | None:
+    section = _level_two_section(body, "Layer evidence")
+    if section is None:
+        return None
+    lines = section.splitlines()
+    visible = _markdown_visibility(lines)
+    expected_header = list(AR119_LAYER_EVIDENCE_COLUMNS)
+    header_indexes: list[int] = []
+    for index, line in enumerate(lines):
+        if not visible[index] or not re.match(r"^ {0,3}\|", line):
+            continue
+        header = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if header == expected_header:
+            header_indexes.append(index)
+    if len(header_indexes) != 1:
+        return None
+    index = header_indexes[0]
+    if (
+        index + 1 >= len(lines)
+        or not visible[index + 1]
+        or not re.fullmatch(
+            r"\s*\|(?:\s*:?-+:?\s*\|){7}\s*:?-+:?\s*\|?\s*",
+            lines[index + 1],
+        )
+    ):
+        return None
+    rows: list[dict[str, str]] = []
+    for row_index in range(index + 2, len(lines)):
+        row_line = lines[row_index]
+        if not visible[row_index] or not re.match(r"^ {0,3}\|", row_line):
+            break
+        cells = [cell.strip() for cell in row_line.strip().strip("|").split("|")]
+        if len(cells) != len(expected_header):
+            return None
+        rows.append(dict(zip(expected_header, cells, strict=True)))
+    return rows
+
+
+def _aggregate_evidence_states(states: list[str]) -> str:
+    if "negative" in states:
+        return "negative"
+    if states and all(state == "proven" for state in states):
+        return "proven"
+    return "unproven"
+
+
+def _ar119_matrix_row_errors(relative: str, row: dict[str, str]) -> list[str]:
+    key = (row["Rule"], row["Host"])
+    errors: list[str] = []
+    if row["Rule"] not in AR119_RULES:
+        errors.append(f"{relative}: unknown matrix rule {row['Rule']!r}")
+    if row["Host"] not in AR119_SUPPORTED_HOSTS:
+        errors.append(f"{relative}: unknown matrix host {row['Host']!r}")
+    state_columns = ("State", "Implementation", "Simulation", "Installed", "Live")
+    errors.extend(
+        f"{relative}: {key[0]}/{key[1]} has invalid {column} state {row[column]!r}"
+        for column in state_columns
+        if row[column] not in AR119_EVIDENCE_STATES
+    )
+    if "not-applicable" in {row[column] for column in state_columns}:
+        errors.append(
+            f"{relative}: {key[0]}/{key[1]} cannot be not-applicable for a supported host"
+        )
+    layer_columns = ("Implementation", "Simulation", "Installed", "Live")
+    if all(row[column] in AR119_EVIDENCE_STATES for column in state_columns):
+        expected_state = _aggregate_evidence_states([row[column] for column in layer_columns])
+        if row["State"] != expected_state:
+            errors.append(
+                f"{relative}: {key[0]}/{key[1]} State must derive from its evidence "
+                f"layers as {expected_state!r}"
+            )
+    evidence_columns = ("Proof authority", "Artifact", "Observed", "Source", "Limitation")
+    errors.extend(
+        f"{relative}: {key[0]}/{key[1]} has empty {column}"
+        for column in evidence_columns
+        if not row[column]
+    )
+    if row["Observed"] != "unobserved" and not is_date(row["Observed"]):
+        errors.append(f"{relative}: {key[0]}/{key[1]} Observed must be YYYY-MM-DD or unobserved")
+    asserted_evidence = any(row[column] in {"proven", "negative"} for column in state_columns)
+    if asserted_evidence:
+        if row["Source"].strip("`").casefold() == "none":
+            errors.append(f"{relative}: {key[0]}/{key[1]} asserted evidence needs a source")
+        if row["Artifact"].strip("`").casefold() == "none":
+            errors.append(f"{relative}: {key[0]}/{key[1]} asserted evidence needs an artifact")
+        if row["Observed"] == "unobserved":
+            errors.append(
+                f"{relative}: {key[0]}/{key[1]} asserted evidence needs an observation date"
+            )
+    return errors
+
+
+def _ar119_rule_nine_errors(relative: str, rows: list[dict[str, str]]) -> list[str]:
+    by_key = {(row["Rule"], row["Host"]): row for row in rows}
+    expected_keys = {(rule, host) for rule in AR119_RULES for host in AR119_SUPPORTED_HOSTS}
+    if set(by_key) != expected_keys:
+        return []
+    errors: list[str] = []
+    columns = ("State", "Implementation", "Simulation", "Installed", "Live")
+    for host in sorted(AR119_SUPPORTED_HOSTS):
+        parity = by_key[("R9", host)]
+        for column in columns:
+            expected = _aggregate_evidence_states(
+                [by_key[(f"R{number}", host)][column] for number in range(1, 9)]
+            )
+            if parity[column] != expected:
+                errors.append(
+                    f"{relative}: R9/{host} {column} must derive from R1-R8 as {expected!r}"
+                )
+    return errors
+
+
+def _validate_layer_source(
+    relative: str,
+    key: tuple[str, str, str],
+    source: str,
+    candidate_commit: str,
+) -> list[str]:
+    errors: list[str] = []
+    normalized = source.strip().strip("`")
+    match = re.fullmatch(
+        r"(?P<path>[A-Za-z0-9_./-]+)"
+        r"(?::(?P<start>\d+)(?:-(?P<end>\d+))?|#(?P<anchor>[a-z0-9][a-z0-9-]*))",
+        normalized,
+    )
+    label = f"{key[0]}/{key[1]}/{key[2]}"
+    if not match:
+        return [
+            f"{relative}: {label} layer evidence Source must be an exact "
+            "repository path:line[-line] or path#heading"
+        ]
+    path = match.group("path")
+    candidate = Path(path)
+    if candidate.is_absolute() or ".." in candidate.parts or "\\" in path:
+        return [f"{relative}: {label} layer evidence Source escapes the repository"]
+    try:
+        content = git("show", f"{candidate_commit}:{path}")
+    except subprocess.CalledProcessError:
+        return [f"{relative}: {label} layer evidence Source is absent from candidate_commit"]
+    authority_kind = AR119_LAYER_AUTHORITY_KINDS.get(key[2])
+    if authority_kind == "source" and not path.startswith("agency_runtime/"):
+        errors.append(
+            f"{relative}: {label} source authority must cite agency_runtime/ implementation"
+        )
+    elif authority_kind == "test" and not path.startswith("tests/"):
+        errors.append(f"{relative}: {label} test authority must cite tests/")
+    elif authority_kind in {"installed-host", "live-host"} and not (
+        path.startswith("docs/roadmap/") and match.group("anchor")
+    ):
+        errors.append(
+            f"{relative}: {label} host authority must cite a docs/roadmap/ evidence heading"
+        )
+    start = match.group("start")
+    if start is not None:
+        first = int(start)
+        last = int(match.group("end") or start)
+        line_count = len(content.splitlines())
+        if first < 1 or last < first or last > line_count:
+            errors.append(
+                f"{relative}: {label} layer evidence Source has an invalid candidate line range"
+            )
+    else:
+        anchor = match.group("anchor")
+        body = _markdown_body(content) if path.casefold().endswith(".md") else content
+        if body is None or anchor not in headings(body):
+            errors.append(
+                f"{relative}: {label} layer evidence Source heading is absent from candidate"
+            )
+    return errors
+
+
+def _ar119_layer_evidence_errors(
+    relative: str,
+    matrix_rows: list[dict[str, str]],
+    layer_rows: list[dict[str, str]],
+    candidate_commit: str,
+    evidence_cutoff: date | None,
+) -> list[str]:
+    errors: list[str] = []
+    expected = {
+        (row["Rule"], row["Host"], layer): row[layer]
+        for row in matrix_rows
+        if row["Rule"] != "R9"
+        for layer in AR119_LAYER_AUTHORITY_KINDS
+        if row[layer] in {"proven", "negative"}
+    }
+    observed: dict[tuple[str, str, str], dict[str, str]] = {}
+    for row in layer_rows:
+        key = (row["Rule"], row["Host"], row["Layer"])
+        label = f"{key[0]}/{key[1]}/{key[2]}"
+        if key in observed:
+            errors.append(f"{relative}: duplicate layer evidence {label}")
+            continue
+        observed[key] = row
+        if row["Rule"] == "R9":
+            errors.append(f"{relative}: R9 must not have direct layer evidence")
+        if row["Rule"] not in AR119_RULES or row["Host"] not in AR119_SUPPORTED_HOSTS:
+            errors.append(f"{relative}: {label} is not a supported matrix layer")
+            continue
+        expected_kind = AR119_LAYER_AUTHORITY_KINDS.get(row["Layer"])
+        if expected_kind is None:
+            errors.append(f"{relative}: {label} has an unknown evidence layer")
+            continue
+        expected_state = expected.get(key)
+        if expected_state is None:
+            errors.append(f"{relative}: {label} supplies evidence for an unasserted layer")
+        elif row["State"] != expected_state:
+            errors.append(
+                f"{relative}: {label} evidence State must match the matrix as {expected_state!r}"
+            )
+        if row["State"] not in {"proven", "negative"}:
+            errors.append(f"{relative}: {label} evidence State must be proven or negative")
+        if row["Authority kind"] != expected_kind:
+            errors.append(f"{relative}: {label} Authority kind must be {expected_kind!r}")
+        if not row["Artifact"] or row["Artifact"].strip("`").casefold() == "none":
+            errors.append(f"{relative}: {label} needs a non-none layer Artifact")
+        observed_at = as_date(row["Observed"])
+        if observed_at is None:
+            errors.append(f"{relative}: {label} layer Observed must be YYYY-MM-DD")
+        elif evidence_cutoff and observed_at > evidence_cutoff:
+            errors.append(f"{relative}: {label} layer observation exceeds evidence_cutoff")
+        errors.extend(_validate_layer_source(relative, key, row["Source"], candidate_commit))
+    missing = sorted(set(expected) - set(observed))
+    if missing:
+        errors.append(
+            f"{relative}: missing layer evidence "
+            + ", ".join(f"{rule}/{host}/{layer}" for rule, host, layer in missing)
+        )
+    return errors
+
+
+def _validate_ar119_matrix(doc: Document, vision_digest: str, errors: list[str]) -> None:
+    if doc.meta.get("vision_block_sha256") != vision_digest:
+        errors.append(f"{doc.relative}: vision_block_sha256 must equal the founding vision digest")
+    candidate_commit = doc.meta.get("candidate_commit")
+    if not isinstance(candidate_commit, str) or not re.fullmatch(r"[0-9a-f]{40}", candidate_commit):
+        errors.append(f"{doc.relative}: candidate_commit must be a full lowercase Git SHA")
+    else:
+        try:
+            git("cat-file", "-e", f"{candidate_commit}^{{commit}}")
+        except subprocess.CalledProcessError:
+            errors.append(f"{doc.relative}: candidate_commit does not identify a Git commit")
+        else:
+            try:
+                git("merge-base", "--is-ancestor", candidate_commit, "HEAD")
+            except subprocess.CalledProcessError:
+                errors.append(f"{doc.relative}: candidate_commit must be an ancestor of HEAD")
+    evidence_cutoff = as_date(doc.meta.get("evidence_cutoff"))
+    if evidence_cutoff is None:
+        errors.append(f"{doc.relative}: evidence_cutoff must be YYYY-MM-DD")
+    rows = _matrix_rows(doc.body)
+    if rows is None:
+        errors.append(f"{doc.relative}: missing or malformed canonical evidence matrix table")
+        return
+    expected = {(rule, host) for rule in AR119_RULES for host in AR119_SUPPORTED_HOSTS}
+    observed: set[tuple[str, str]] = set()
+    for row in rows:
+        key = (row["Rule"], row["Host"])
+        if key in observed:
+            errors.append(f"{doc.relative}: duplicate matrix cell {key[0]}/{key[1]}")
+        observed.add(key)
+        errors.extend(_ar119_matrix_row_errors(doc.relative, row))
+        observed_at = as_date(row["Observed"])
+        if evidence_cutoff and observed_at and observed_at > evidence_cutoff:
+            errors.append(f"{doc.relative}: {key[0]}/{key[1]} observation exceeds evidence_cutoff")
+    missing = sorted(expected - observed)
+    unexpected = sorted(observed - expected)
+    if missing:
+        errors.append(
+            f"{doc.relative}: matrix is missing cells "
+            + ", ".join(f"{rule}/{host}" for rule, host in missing)
+        )
+    if unexpected:
+        errors.append(
+            f"{doc.relative}: matrix has unexpected cells "
+            + ", ".join(f"{rule}/{host}" for rule, host in unexpected)
+        )
+    errors.extend(_ar119_rule_nine_errors(doc.relative, rows))
+    layer_rows = _layer_evidence_rows(doc.body)
+    if layer_rows is None:
+        errors.append(f"{doc.relative}: missing or malformed layer evidence table")
+    elif isinstance(candidate_commit, str) and re.fullmatch(r"[0-9a-f]{40}", candidate_commit):
+        errors.extend(
+            _ar119_layer_evidence_errors(
+                doc.relative,
+                rows,
+                layer_rows,
+                candidate_commit,
+                evidence_cutoff,
+            )
+        )
+
+
+def validate_ar119_authorities(docs: list[Document], errors: list[str]) -> None:
+    marked = [doc for doc in docs if "ar119_authority" in doc.meta]
+    by_role: dict[str, list[Document]] = {}
+    for doc in marked:
+        role = str(doc.meta.get("ar119_authority"))
+        if role not in AR119_AUTHORITY_PATHS:
+            errors.append(f"{doc.relative}: unknown ar119_authority role {role!r}")
+            continue
+        by_role.setdefault(role, []).append(doc)
+        expected_path = AR119_AUTHORITY_PATHS[role]
+        if doc.relative != expected_path:
+            errors.append(
+                f"{doc.relative}: ar119_authority {role!r} is reserved for {expected_path}"
+            )
+        if doc.meta.get("status") != "active":
+            errors.append(f"{doc.relative}: AR-119 authority must have status 'active'")
+    for role, expected_path in AR119_AUTHORITY_PATHS.items():
+        current = by_role.get(role, [])
+        if len(current) != 1:
+            errors.append(
+                f"AR-119 authority role {role!r} requires exactly one document at "
+                f"{expected_path}; found {len(current)}"
+            )
+
+    vision = next(
+        (doc for doc in marked if doc.relative == AR119_AUTHORITY_PATHS["vision-wording"]),
+        None,
+    )
+    matrix = next(
+        (doc for doc in marked if doc.relative == AR119_AUTHORITY_PATHS["completion-evidence"]),
+        None,
+    )
+    if vision is None:
+        return
+    recorded_digest = vision.meta.get("canonical_block_sha256")
+    if not isinstance(recorded_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", recorded_digest):
+        errors.append(f"{vision.relative}: canonical_block_sha256 must be 64 lowercase hex chars")
+        return
+    block = _canonical_vision_block(vision.body)
+    if block is None:
+        errors.append(f"{vision.relative}: canonical vision boundaries are missing or ambiguous")
+        return
+    computed_digest = hashlib.sha256(block.encode("utf-8")).hexdigest()
+    if computed_digest != recorded_digest:
+        errors.append(
+            f"{vision.relative}: canonical vision digest mismatch "
+            f"(expected {recorded_digest}, got {computed_digest})"
+        )
+        return
+    if matrix is not None:
+        _validate_ar119_matrix(matrix, recorded_digest, errors)
 
 
 def validate_link(doc: Document, raw_target: str, errors: list[str]) -> None:
@@ -679,6 +1424,8 @@ def main() -> int:
         validate_metadata_references(doc, errors)
         validate_links_and_boundaries(doc, errors)
     validate_roadmap(docs, args.require_tracker, errors)
+    validate_issue_acceptance(docs, errors)
+    validate_ar119_authorities(docs, errors)
     validate_handoffs(docs, errors)
     validate_worklog(docs, errors)
     validate_decisions(docs, errors)

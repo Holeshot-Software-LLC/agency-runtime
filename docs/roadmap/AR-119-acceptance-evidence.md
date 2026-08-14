@@ -1,26 +1,42 @@
 ---
-title: "AR-119 acceptance evidence summary"
-status: active
+title: "Historical AR-119 acceptance evidence summary"
+status: draft
 category: roadmap
 created: 2026-07-24
-updated: 2026-07-24
-tags: [roadmap, acceptance, evidence, AR-119]
+updated: 2026-08-12
+tags: [roadmap, acceptance, evidence, AR-119, historical]
 related:
+  - docs/roadmap/AR-119-founding-vision.md
+  - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
+  - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/AR-119-rule-host-evidence-matrix.md
 type: roadmap
 ---
 
-# AR-119 acceptance evidence
+# Historical AR-119 acceptance evidence
 
-This maps each child issue's acceptance criteria to concrete evidence
-produced during the ADR-0087 implementation on PR #140 (merged) and the
-child-routing follow-up.
+This document is retained as implementation history for the ADR-0087 work on
+PR #140 and its child-routing follow-up. It is not a current AR-119 completion
+authority. Its planned-child, deterministic-staffing, work-unit, activation-
+receipt, and Store-evidence language describes a retired architecture and must
+not be restored.
+
+The [founding vision](AR-119-founding-vision.md) defines the nine rules, and the
+[rule/host evidence matrix](AR-119-rule-host-evidence-matrix.md) is the sole
+current completion projection. No checkbox below closes a current rule or host
+cell. Current Rule-4 proof must be authored by the native host and contain the
+exact delivered card hashes before first child speech; Agency-authored rows and
+model prose remain diagnostic only.
+
+## Superseded implementation record
 
 ## AR-120: Normalize and audit the complete workforce recruitment index
 

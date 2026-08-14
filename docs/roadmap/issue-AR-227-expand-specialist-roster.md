@@ -3,7 +3,7 @@ title: "AR-227: Expand the specialist roster"
 status: done
 category: roadmap
 created: 2026-08-03
-updated: 2026-08-03
+updated: 2026-08-12
 tags: [feature, roster-governance, workforce, inference]
 related:
   - agency_runtime/core/workforce/known_contractors.py
@@ -76,7 +76,7 @@ fallback behavior, host trust, or delegation execution.
 - [x] Existing overlaps are compared without introducing selection drift.
 - [x] Every new specialist has evidence requirements and positive/hard-negative cases.
 - [x] Focused tests and the named fast production spine pass.
-- [ ] A follow-up pull request is open with exact verification evidence.
+- [x] A follow-up pull request is open with exact verification evidence.
 
 ## Verification
 
@@ -87,5 +87,5 @@ install, roster enrichment, selection safety, dynamic hiring, workforce CLI,
 full roster eval) passed 139 with one skip after correcting the index
 envelope exact-size assertion to the measured 263,616 bytes. Ruff check and
 format, documentation validation (647 Markdown files), the dashboard UI test
-(110/110), and the routing eval passed. The follow-up pull request is pending
-operator authorization to push.
+(110/110), and the routing eval passed. Pull request #236 supplied the formerly
+pending review evidence.

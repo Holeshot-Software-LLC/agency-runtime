@@ -3,7 +3,7 @@ title: "AR-215: Repair critic-rejected contractor proposals once"
 status: done
 category: roadmap
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-12
 tags: [bug, product, inference, hiring, contractor]
 related:
   - README.md
@@ -108,6 +108,6 @@ item begins only after both boundaries and does not reopen either one.
 - [x] Existing first-pass approved hiring behavior and high-risk approval gates
   remain unchanged.
 - [x] The named local production spine passes on one exact head.
-- [ ] One reviewed exact build passes autonomous activation and at most one
+- [x] One reviewed exact build passes autonomous activation and at most one
   fresh product trial with specialist delegation, workspace write, a first-pass
   valid header, zero corrections, and independent artifact checks.

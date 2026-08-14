@@ -1304,8 +1304,8 @@ export function createRenderer(core, config, callbacks) {
 		if (!source || !bounds || !summary || !list) return;
 		list.replaceChildren();
 		source.textContent = data
-			? "Source: hash-verified specialist cards in host-written Claude and Codex child artifacts. Agency Store staffing rows are not consulted."
-			: "Source: host-written Claude and Codex child artifacts; Agency Store staffing rows are not a substitute.";
+			? "Source: host-written Claude and Codex child artifacts joined read-only to exact Agency Store decisions and one-use verification receipts. Store staffing rows alone are not delivery proof."
+			: "Source: host-written Claude and Codex child artifacts plus exact Agency Store verification receipts; neither source is delivery proof by itself.";
 		if (!data) {
 			bounds.textContent = "Bounded artifact scan details will appear after this source loads.";
 			summary.textContent = "No validated child-delivery proof sample is available.";
@@ -1322,25 +1322,28 @@ export function createRenderer(core, config, callbacks) {
 			correlated: result.correlated + host.correlated_staffed_children,
 			uncorrelated: result.uncorrelated + host.uncorrelated_staffed_children,
 			legacy: result.legacy + host.legacy_deliveries,
+			unverified: result.unverified + host.unverified_deliveries,
 			visits: result.visits + host.filesystem_entries_visited,
 			incomplete: result.incomplete || !host.artifact_candidate_count_complete,
-		}), { candidates: 0, scanned: 0, evidence: 0, staffed: 0, correlated: 0, uncorrelated: 0, legacy: 0, visits: 0, incomplete: false });
+		}), { candidates: 0, scanned: 0, evidence: 0, staffed: 0, correlated: 0, uncorrelated: 0, legacy: 0, unverified: 0, visits: 0, incomplete: false });
 		bounds.textContent = `Bounds: at most ${data.bounds.filesystem_visit_limit_per_host} host-tree entries and ${data.bounds.artifact_scan_limit_per_host} artifact bodies per host; ${formatBytes(data.bounds.artifact_prefix_bytes)} prefix and ${data.bounds.artifact_record_limit} records per artifact; ${data.bounds.detail_limit} detail rows per host. Visited ${totals.visits} entries and scanned ${totals.scanned} of ${totals.candidates}${totals.incomplete ? "+" : ""} observed candidates in this sample${totals.incomplete ? "; candidate counts are lower bounds where traversal stopped" : ""}.`;
-		summary.textContent = `${totals.staffed} children contain verified specialist cards (${totals.correlated} parent-correlated, ${totals.uncorrelated} uncorrelated); ${totals.legacy} legacy delivery markers contain no specialist card proof.`;
+		summary.textContent = `${totals.staffed} children contain verified specialist cards (${totals.correlated} parent-correlated, ${totals.uncorrelated} uncorrelated); ${totals.unverified} findings are unverified, including ${totals.legacy} legacy delivery markers.`;
 		data.hosts.forEach((host) => {
 			const row = el("article", "vision-proof-row");
 			row.setAttribute("role", "listitem");
 			row.append(
 				strong("", host.host),
 				small("", `${host.artifacts_scanned} of ${host.artifact_candidates}${host.artifact_candidate_count_complete ? "" : "+"} observed candidates scanned · ${host.filesystem_entries_visited} host-tree entries visited${host.artifact_scan_truncated ? " · traversal or body bound reached" : ""}`),
-				small("", `${host.staffed_children} verified staffed children · ${host.evidence_count} delivery findings${host.detail_truncated ? " · details truncated" : ""}`),
+				small("", `${host.verified_deliveries} verified deliveries · ${host.unverified_deliveries} unverified findings · ${host.evidence_count} total${host.detail_truncated ? " · details truncated" : ""}`),
 				small("vision-proof-path", `Artifact root (${host.root_present ? "present" : "not observed"}): ${host.root}`),
 			);
 			host.children.forEach((child) => {
 				const detail = div("vision-proof-detail");
-				const cardSummary = child.cards.length
-					? child.cards.map((card) => `${card.slug}@${card.version}`).join(", ")
-					: "legacy delivery marker; no verified specialist cards";
+				const cardSummary = child.verified_delivery
+					? `verified receipt · ${child.cards.map((card) => `${card.slug}@${card.version}`).join(", ")}`
+					: child.legacy
+						? "legacy delivery marker; non-authoritative and unverified"
+						: `unverified v6 delivery · ${child.verification_reason}`;
 				detail.append(
 					strong("", child.child_id),
 					small("", `${child.correlated ? "parent-correlated" : "not parent-correlated"} · ${cardSummary}`),

@@ -285,7 +285,7 @@ def codex_hooks(
                 "hooks": [
                     handler(
                         "PreToolUse",
-                        "Binding exact Agency specialist task to native child",
+                        "Checking Agency native child staffing",
                     )
                 ],
             }
@@ -401,7 +401,7 @@ def zcode_hooks(
                     {
                         "matcher": "Agent",
                         "hooks": [
-                            handler("PreToolUse", "Binding exact Agency specialist to native child")
+                            handler("PreToolUse", "Selecting Agency native child team by inference")
                         ],
                     }
                 ],

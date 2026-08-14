@@ -1,9 +1,9 @@
 ---
 title: "AR-127: Make ZCode Stop rejections actually block"
-status: done
+status: open
 category: roadmap
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-08-12
 tags: [governance, host-integrations, zcode, observability, reliability]
 related:
   - AGENTS.md
@@ -117,3 +117,9 @@ fallback also emits `decision:block` for zcode.
 - `ruff check`, `ruff format --check`, and `python -m pytest tests/ -q -W error`
   pass.
 - A live ZCode session no longer accepts responses missing the Agency header.
+
+## AR-256 status correction (2026-08-12)
+
+Reopened because no durable receipt proves the exact historical full-suite
+command named above. The implementation, focused checks, and live ZCode result
+remain valid evidence for the other criteria.

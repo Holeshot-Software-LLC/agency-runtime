@@ -501,6 +501,109 @@ class NativeChildStoreMixin:
         finally:
             conn.close()
 
+    def bind_native_child_launch(
+        self,
+        *,
+        host: str,
+        session_id: str,
+        trace_id: str,
+        worker_id: str,
+        native_run_id: str,
+        launch_id: str,
+    ) -> bool:
+        """Bind one host-reported launch call to its exact native child.
+
+        This content-free row supports correlation only; it is never delivery
+        proof.  The binding is written after the native host reports the child
+        identity, may arrive after the child ended, and is immutable once set.
+        """
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        normalized_host = _identity(
+            host,
+            maximum=MAX_DELEGATION_HOST_CHARS,
+            field="host",
+        ).lower()
+        normalized_worker = _identity(
+            worker_id,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
+            field="worker_id",
+        )
+        normalized_run = _identity(
+            native_run_id,
+            maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+            field="native_run_id",
+        )
+        normalized_launch = validate_correlation_id(launch_id, field="launch_id")
+        row_id = _worker_run_id(
+            normalized_host,
+            normalized_session,
+            normalized_trace,
+            normalized_worker,
+            normalized_run,
+        )
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT execution_tool_use_id, execution_dispatched_at "
+                "FROM worker_runs WHERE id = ? AND host = ? AND session_id = ? "
+                "AND trace_id = ? AND worker_id = ? AND native_run_id = ?",
+                (
+                    row_id,
+                    normalized_host,
+                    normalized_session,
+                    normalized_trace,
+                    normalized_worker,
+                    normalized_run,
+                ),
+            ).fetchone()
+            if row is None:
+                conn.rollback()
+                return False
+            existing = str(row["execution_tool_use_id"] or "")
+            if row["execution_dispatched_at"] is not None or existing:
+                conn.rollback()
+                return bool(
+                    existing == normalized_launch and row["execution_dispatched_at"] is not None
+                )
+            conflict = conn.execute(
+                "SELECT 1 FROM worker_runs WHERE session_id = ? AND trace_id = ? "
+                "AND execution_tool_use_id = ? AND id <> ? LIMIT 1",
+                (normalized_session, normalized_trace, normalized_launch, row_id),
+            ).fetchone()
+            if conflict is not None:
+                conn.rollback()
+                return False
+            updated = conn.execute(
+                f"UPDATE worker_runs SET execution_tool_use_id = ?, "  # nosec B608
+                f"execution_dispatched_at = {STORE_CLOCK_SQL} WHERE id = ? "  # nosec B608
+                "AND execution_tool_use_id = '' AND execution_dispatched_at IS NULL",
+                (normalized_launch, row_id),
+            ).rowcount
+            if updated != 1:
+                conn.rollback()
+                return False
+            stored = conn.execute(
+                "SELECT execution_tool_use_id, execution_dispatched_at "
+                "FROM worker_runs WHERE id = ?",
+                (row_id,),
+            ).fetchone()
+            if (
+                stored is None
+                or stored["execution_tool_use_id"] != normalized_launch
+                or stored["execution_dispatched_at"] is None
+            ):
+                raise RuntimeError("native child launch binding postcondition failed")
+            conn.commit()
+            return True
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def record_codex_child_tool_evidence(
         self,
         *,

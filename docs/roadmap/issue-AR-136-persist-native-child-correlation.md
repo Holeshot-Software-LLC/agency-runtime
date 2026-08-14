@@ -3,7 +3,7 @@ title: "AR-136: Persist native-child correlation and fail planned work closed"
 status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [routing, delegation, hooks, evidence, security]
 related:
   - docs/THREAT_MODEL.md
@@ -55,18 +55,22 @@ ADR-0094 defines receipt authority and fail-closed behavior.
 
 ## Acceptance
 
-- Two real hook subprocesses preserve the exact parent scope once.
-- Replay, ambiguity, timeout, wrong host, and wrong child identity fail closed.
-- A planned-shaped label plus Store failure cannot start side effects.
-- Generic non-Agency delegations remain pass-through.
-- Parent budgets, cache, singleflight, activation, and terminal lineage use the
+- [x] Two real hook subprocesses preserve the exact parent scope once.
+- [x] Replay, ambiguity, timeout, wrong host, and wrong child identity fail closed.
+- [x] A planned-shaped label plus Store failure cannot start side effects.
+- [x] Generic non-Agency delegations remain pass-through.
+- [x] Parent budgets, cache, singleflight, activation, and terminal lineage use the
   same durable scope.
-- A forged but parseable delivery never bypasses pending-grant verification.
-- Codex and Claude use an explicit durable child receipt because their
+- [x] A forged but parseable delivery never bypasses pending-grant verification.
+- [x] Codex and Claude use an explicit durable child receipt because their
   documented UserPromptSubmit payload cannot be guessed into an automatic
   child-session join.
-- ZCode claims only planned PreTool/PostTool lineage until the host exposes a
+- [x] ZCode claims only planned PreTool/PostTool lineage until the host exposes a
   real child lifecycle identifier.
+
+This checklist closes the historical planned-work correlation mechanism. It is
+not current Rule-4 delivery authority; ADR-0156 now requires a native
+host-authored artifact with exact card hashes before first child speech.
 
 ## Implementation evidence
 

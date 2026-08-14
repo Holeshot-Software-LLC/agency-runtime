@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -349,8 +350,39 @@ class BaseAdapter(ABC):
 
     host_name: str = "unknown"
 
+    # Adapters read the operator's durable master switch by default.  A caller
+    # that owns its own control root binds it explicitly; nothing infers one.
+    _enforcement_control_home: Path | None = None
+
     def __init__(self, store: Store | None = None):
         self._store = store
+        self._enforcement_control_home = None
+
+    @property
+    def enforcement_control_home(self) -> Path | None:
+        """Return the caller-owned master-switch root, or None for the operator's."""
+
+        return self._enforcement_control_home
+
+    @enforcement_control_home.setter
+    def enforcement_control_home(self, value: str | Path | None) -> None:
+        """Bind this adapter to a master switch the caller owns.
+
+        A deterministic evaluation must not change result because an operator
+        toggled Agency off, and it must not read a control file it does not
+        own.  Binding an explicit root keeps that state hermetic.  This is not
+        a security boundary: the master switch decides whether Agency works at
+        all, and any code able to set this already runs as the owner inside
+        Agency, which the threat model excludes.
+        """
+
+        if value is None:
+            self._enforcement_control_home = None
+            return
+        home = Path(value)
+        if not home.is_absolute():
+            raise ValueError("enforcement control home must be an absolute path")
+        self._enforcement_control_home = home
 
     @property
     def store(self) -> Store:
@@ -388,7 +420,7 @@ class BaseAdapter(ABC):
         """Return the current persistent soft-control state for this host."""
         from agency_runtime.core.runtime_control import master_enabled
 
-        if not master_enabled():
+        if not master_enabled(home_dir=self._enforcement_control_home):
             return False
         from agency_runtime.core.config_binding import assert_store_config_binding
 
@@ -644,7 +676,11 @@ class BaseAdapter(ABC):
                         worker_id=executed_worker_id,
                         native_run_id=native_run_id,
                     )
-            elif self.host_name == "claude" and tool_name == "delegate_task" and has_child_identity:
+            elif (
+                self.host_name in {"claude", "zcode"}
+                and tool_name == "delegate_task"
+                and has_child_identity
+            ):
                 child_recorder = getattr(self.store, "record_native_child_ended", None)
                 if callable(child_recorder):
                     child_recorder(
@@ -657,6 +693,17 @@ class BaseAdapter(ABC):
                         native_run_id=native_run_id,
                         outcome="error" if failure_reason else "ok",
                         error=failure_reason,
+                    )
+                launch_binder = getattr(self.store, "bind_native_child_launch", None)
+                launch_id = _clean(kwargs.get("tool_use_id"))
+                if callable(launch_binder) and launch_id:
+                    launch_binder(
+                        host=self.host_name,
+                        session_id=session_id,
+                        trace_id=trace_id,
+                        worker_id=executed_worker_id,
+                        native_run_id=native_run_id,
+                        launch_id=launch_id,
                     )
 
     def post_tool_call_handler(self, **kwargs: Any) -> None:
@@ -782,6 +829,59 @@ class BaseAdapter(ABC):
         if not self.runtime_enabled():
             return None
         del model
+        native_child_fields = (
+            parent_session_id,
+            parent_trace_id,
+            native_worker_id,
+            native_run_id,
+        )
+        if any(native_child_fields):
+            # Hermes and OpenClaw expose the exact plaintext assignment plus
+            # host-owned parent/child identities before the child model runs.
+            # Native-child staffing therefore uses the dedicated inference-only
+            # atomic team path, never ordinary preflight or a deterministic
+            # companion/fallback path. Partial correlation yields no Agency
+            # context and leaves the host free to proceed unstaffed.
+            if self.host_name not in {"hermes", "openclaw"} or not all(native_child_fields):
+                return None
+            try:
+                from agency_runtime.core.native_child_install_identity import (
+                    current_managed_host_install_identity,
+                )
+                from agency_runtime.core.native_child_staffing import staff_native_child
+
+                staffing = staff_native_child(
+                    self.store,
+                    host=self.host_name,
+                    task=user_message,
+                    parent_session_id=parent_session_id,
+                    parent_trace_id=parent_trace_id,
+                    launch_id=native_run_id,
+                    binding_kind="child_id",
+                    binding_id=native_worker_id,
+                    install_identity=current_managed_host_install_identity(self.host_name),
+                    install_identity_reader=current_managed_host_install_identity,
+                    config=config,
+                )
+            except Exception:
+                logger.debug(
+                    "native child staffing failed open for %s",
+                    self.host_name,
+                    exc_info=True,
+                )
+                return None
+            if not staffing.staffed:
+                return None
+            return {
+                "status": "applied",
+                "semantic_status": "applied",
+                "context": staffing.context_segment,
+                "selected_ids": list(staffing.selected_ids),
+                "semantic_ids": list(staffing.selected_ids),
+                "native_child_delivery": dict(staffing.native_child_delivery),
+                "native_child_decision_id": staffing.decision_id,
+                "native_child_reason": staffing.reason_code,
+            }
         from agency_runtime.core.host_capabilities import (
             EXECUTION_HOSTS,
             native_adapter_capability_receipt,

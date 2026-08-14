@@ -1,9 +1,9 @@
 ---
 title: "AR-251: CLI presentation richness (sub-issue 10 of AR-236)"
-status: done
+status: open
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [cli, dashboard, parity, presentation, card, sub-issue]
 related:
   - docs/roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md

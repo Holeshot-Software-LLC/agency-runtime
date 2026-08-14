@@ -3,7 +3,7 @@ title: "AR-122: Implement governed contractor hiring and workforce lifecycle"
 status: done
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-08-12
 tags: [contractors, hiring, lifecycle, governance]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -44,7 +44,7 @@ AR-120 provides comparison contracts and AR-121 supplies typed uncovered work.
 
 ## Acceptance
 
-- [ ] A proven real gap hires, enables, activates, and reports a contractor.
-- [ ] Duplicate gaps amend a coherent worker; unsafe merges are rejected.
-- [ ] Known contractors are audited, enabled, visible, and exercised.
-- [ ] Promotion removes only the display moniker and preserves identity/history.
+- [x] A proven real gap hires, enables, activates, and reports a contractor.
+- [x] Duplicate gaps amend a coherent worker; unsafe merges are rejected.
+- [x] Known contractors are audited, enabled, visible, and exercised.
+- [x] Promotion removes only the display moniker and preserves identity/history.

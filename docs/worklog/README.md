@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-12
+updated: 2026-08-14
 tags: []
 related: []
 supersedes: []
@@ -816,6 +816,54 @@ This registry connects repository history to the roadmap and to optional detail 
 | `15911085` | 2026-08-12 | docs(roadmap): record post-Job-B dashboard verification | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
 | `1c03a40b` | 2026-08-12 | fix(docs): decode worklog history as UTF-8 | [AR-254](../roadmap/issue-AR-254-reconcile-canonical-worklog-history.md) | null |
 | `9ac9d295` | 2026-08-12 | docs(roadmap): checkpoint green dashboard gates | [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md) | null |
+| `e392c040` | 2026-08-12 | Merge pull request #270 from Holeshot-Software-LLC/codex/dashboard-vision-parity | null | null |
+| `64705f1b` | 2026-08-12 | docs(roadmap): put nine-rule mitigations on the P0 path | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `b2e728b1` | 2026-08-12 | AR-256: enforce the nine-rule completion contract | [AR-256](../roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md) | null |
+| `4acd4951` | 2026-08-12 | docs(roadmap): checkpoint AR-256 completion | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `7e1b3603` | 2026-08-12 | fix(native-child): require host-proven inference delivery | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | null |
+| `7f637cb6` | 2026-08-12 | docs(roadmap): checkpoint AR-255 host delivery proof | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | null |
+| `ccb1802c` | 2026-08-12 | docs(architecture): bind Codex plaintext spawn provenance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `cb5b34aa` | 2026-08-12 | docs(roadmap): checkpoint AR-180 capability preflight | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | null |
+| `ae72fba4` | 2026-08-12 | docs(roadmap): correct AR-180 preflight evidence | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | null |
+| `966845cc` | 2026-08-13 | feat(codex): authenticate plaintext child spawns | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `81f7d411` | 2026-08-13 | docs(roadmap): checkpoint Codex spawn attestation | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `3a66ee80` | 2026-08-13 | docs(roadmap): record Codex attestation review findings | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `2fe5e9ec` | 2026-08-13 | fix(codex): bind spawn ancestry transactionally | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `9557521e` | 2026-08-13 | docs(roadmap): checkpoint Codex ancestry repair | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `e8b60f64` | 2026-08-13 | fix(codex): seal exact spawn outcomes | [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `9b2065e1` | 2026-08-13 | docs(roadmap): checkpoint exact Codex outcome review | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `45b21cdc` | 2026-08-13 | fix(codex): authenticate cross-file spawn ancestry | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `e051dcc0` | 2026-08-13 | docs(roadmap): checkpoint cross-file Codex ancestry | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `922442e0` | 2026-08-13 | docs(roadmap): record complete Codex conformance proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `211563c7` | 2026-08-13 | fix(codex): authenticate Desktop alpha ancestry | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `1a6e4887` | 2026-08-13 | docs(roadmap): checkpoint Desktop alpha ancestry | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `d9344156` | 2026-08-13 | docs(roadmap): checkpoint Desktop evaluator restart | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [ADR-0159](../decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) |
+| `217fb78f` | 2026-08-13 | fix(evals): observe the Codex identity domain without filename masking | null | null |
+| `fc5749c3` | 2026-08-13 | docs(roadmap): checkpoint the repaired conformance gate and exec census | null | null |
+| `e80cb40c` | 2026-08-13 | fix(hosts)!: never withhold a Hermes or OpenClaw turn for Agency blindness | null | null |
+| `339875f9` | 2026-08-13 | docs(roadmap): checkpoint the Rule-8 repair at candidate e80cb40c | null | null |
+| `967b0a2c` | 2026-08-13 | fix(evals): let the host-parity suite own its master switch, and prove rule 7 | null | null |
+| `8d086651` | 2026-08-13 | docs(roadmap): checkpoint rule 7 and the hermetic parity suite at 967b0a2c | null | null |
+| `31c21d79` | 2026-08-13 | docs(roadmap): record the conformance result for 967b0a2c | null | null |
+| `cb6808fe` | 2026-08-13 | feat(evals): observe zcode in the host-parity sweep through its own boundary | null | null |
+| `c578fde6` | 2026-08-13 | docs(roadmap): prove rule 7 on zcode at candidate cb6808fe | null | null |
+| `42c1354b` | 2026-08-13 | test(rules): prove cards reach the parent caller on every host | null | null |
+| `d995981f` | 2026-08-13 | docs(roadmap): record rules 2 and 3 as proven at candidate 42c1354b | null | null |
+| `75663ed0` | 2026-08-13 | test(rules): prove contractor minting inside a real turn on every host | null | null |
+| `a4d4b7fe` | 2026-08-13 | docs(roadmap): record rule 6 as proven in simulation at candidate 75663ed0 | null | null |
+| `d4b64c35` | 2026-08-13 | test(rules): measure that agency never decides to spawn, on every host | null | null |
+| `ebfdeab5` | 2026-08-13 | docs(roadmap): record rule 5 simulation and codex/zcode simulation parity | null | null |
+| `be18a9b0` | 2026-08-13 | test(rules): close the last three simulation gaps | null | null |
+| `f90995c1` | 2026-08-13 | docs(roadmap): record complete simulation parity at candidate be18a9b0 | null | null |
+| `cec10b02` | 2026-08-13 | docs(roadmap): scope the installed-projection reconciliation as AR-258 | null | null |
+| `74589af7` | 2026-08-13 | test(selector): retire two assertions the prune and the kernel split orphaned | null | null |
+| `a25ec350` | 2026-08-13 | test(resident-managers): split the kernel lifetime contract by whether Agency can run | null | null |
+| `b60fa62b` | 2026-08-13 | docs(roadmap): bump the candidate to a25ec350 and record its conformance run | null | null |
+| `4ade96a3` | 2026-08-14 | docs(handoff): point the capsule at the live worktree, PR, and candidate | null | null |
+| `25bdec39` | 2026-08-14 | fix(tests): substitute rollout files by rename so the identity seal is testable on Linux | null | null |
+| `e0d88ee4` | 2026-08-14 | fix(openclaw)!: deny an outbound payload a terminalized trace never committed | null | null |
+| `2138fdc1` | 2026-08-14 | docs(ar119): bind the matrix to candidate 9724820e and correct the R8 openclaw evidence | null | null |
+| `4081215d` | 2026-08-14 | docs(ar119): point the capsule at candidate 9724820e and the CI repairs | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

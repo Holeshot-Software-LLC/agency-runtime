@@ -3,7 +3,7 @@ title: "AR-246: Roster scans parity (sub-issue 5 of AR-236)"
 status: done
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [cli, dashboard, parity, roster, scans, sub-issue]
 related:
   - docs/roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md
@@ -33,4 +33,4 @@ Add `GET /api/roster/scans` endpoint that calls `list_source_scans`.
 
 ## Acceptance
 
-- [ ] `GET /api/roster/scans` returns scan evidence matching the CLI.
+- [x] `GET /api/roster/scans` returns scan evidence matching the CLI.

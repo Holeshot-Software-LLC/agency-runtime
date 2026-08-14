@@ -6,7 +6,6 @@ import hashlib
 import io
 import json
 import os
-import re
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -1679,6 +1678,12 @@ def test_claude_session_end_closes_every_open_turn(tmp_path: Path) -> None:
 
 
 def _run_hook(host: str, db_path: Path, payload: str) -> subprocess.CompletedProcess[str]:
+    runtime_control_path = db_path.parent / ".agency-runtime" / "run" / "control.json"
+    env = os.environ.copy()
+    env["AGENCY_CANARY_MODE"] = "1"
+    env["AGENCY_CANARY_CONTROL_PATH"] = str(runtime_control_path)
+    env.pop("AGENCY_CANARY_REQUIRE_EXISTING_STORE", None)
+    env.pop("AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS", None)
     return subprocess.run(
         [
             sys.executable,
@@ -1688,11 +1693,14 @@ def _run_hook(host: str, db_path: Path, payload: str) -> subprocess.CompletedPro
             host,
             "--db",
             str(db_path),
+            "--runtime-control",
+            str(runtime_control_path),
         ],
         input=payload,
         capture_output=True,
         text=True,
         cwd=Path(__file__).parents[1],
+        env=env,
         timeout=30,
         check=False,
     )
@@ -1717,6 +1725,11 @@ def test_agency_hook_keeps_explicit_config_identity_without_environment(tmp_path
     env = os.environ.copy()
     env.pop("AGENCY_CONFIG_PATH", None)
     env.pop("AGENCY_DB_PATH", None)
+    runtime_control_path = config_path.parent / ".agency-runtime" / "run" / "control.json"
+    env["AGENCY_CANARY_MODE"] = "1"
+    env["AGENCY_CANARY_CONTROL_PATH"] = str(runtime_control_path)
+    env.pop("AGENCY_CANARY_REQUIRE_EXISTING_STORE", None)
+    env.pop("AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS", None)
 
     completed = subprocess.run(
         [
@@ -1729,6 +1742,8 @@ def test_agency_hook_keeps_explicit_config_identity_without_environment(tmp_path
             "UserPromptSubmit",
             "--config",
             str(config_path),
+            "--runtime-control",
+            str(runtime_control_path),
         ],
         input=event,
         capture_output=True,
@@ -1765,10 +1780,10 @@ def test_agency_hook_codex_runs_as_an_actual_stdin_process(tmp_path: Path) -> No
     assert RESIDENT_MANAGER_KERNEL in output["hookSpecificOutput"]["additionalContext"]
 
 
-def test_two_real_hook_processes_preserve_parent_scope_for_one_consumer(
+def test_two_real_hook_processes_keep_subagent_start_identity_only(
     tmp_path: Path,
 ) -> None:
-    db_path = tmp_path / "cross-process-parent-scope.db"
+    db_path = tmp_path / "cross-process-child-identity.db"
     Store(db_path)
     parent = _run_hook(
         "codex",
@@ -1801,63 +1816,13 @@ def test_two_real_hook_processes_preserve_parent_scope_for_one_consumer(
     )
     assert child_start.returncode == 0, child_start.stderr
     context = json.loads(child_start.stdout)["hookSpecificOutput"]["additionalContext"]
-    token_match = re.search(r'parent_scope_token=("[^"]+")', context)
-    assert token_match is not None
-    token = json.loads(token_match.group(1))
-
-    consumer = """
-import json
-import sys
-from agency_runtime.core.store.sqlite import Store
-
-request = json.load(sys.stdin)
-try:
-    scope = Store(request["db_path"]).consume_native_child_parent_scope(
-        parent_scope_token=request["token"],
-        host="codex",
-        child_session_id="codex-child:agent-42",
-        child_trace_id="cross-process-child-turn",
-    )
-except Exception as exc:
-    print(json.dumps({"ok": False, "error": str(exc)}))
-    raise SystemExit(2)
-print(json.dumps({"ok": True, "scope": scope}, sort_keys=True))
-"""
-    request = json.dumps({"db_path": str(db_path), "token": token})
-    consumed = subprocess.run(
-        [sys.executable, "-c", consumer],
-        input=request,
-        capture_output=True,
-        text=True,
-        cwd=Path(__file__).parents[1],
-        timeout=30,
-        check=False,
-    )
-    replay = subprocess.run(
-        [sys.executable, "-c", consumer],
-        input=request,
-        capture_output=True,
-        text=True,
-        cwd=Path(__file__).parents[1],
-        timeout=30,
-        check=False,
-    )
-
-    assert consumed.returncode == 0, consumed.stderr
-    scope = json.loads(consumed.stdout)["scope"]
-    assert scope == {
-        "host": "codex",
-        "parent_session_id": "cross-process-parent",
-        "parent_trace_id": "cross-process-parent-turn",
-        "work_unit_id": "",
-        "worker_kind": "generic-worker",
-        "worker_id": "agent-42",
-        "native_run_id": "codex-agent:agent-42",
-        "child_session_id": "codex-child:agent-42",
-        "child_trace_id": "cross-process-child-turn",
-    }
-    assert replay.returncode == 2
-    assert "already consumed" in json.loads(replay.stdout)["error"]
+    assert "[AGENCY NATIVE CHILD IDENTITY v1]" in context
+    assert 'worker_id="agent-42"' in context
+    assert 'native_run_id="codex-agent:agent-42"' in context
+    assert "did not expose this child's decrypted inter-agent assignment" in context
+    assert "proceed with its native child unstaffed" in context
+    assert "parent_scope_token" not in context
+    assert "agency.preflight" not in context
 
 
 def test_codex_stdio_preflight_header_is_accepted_first_pass(tmp_path: Path) -> None:
@@ -2105,7 +2070,9 @@ def test_agency_hook_claude_records_real_tool_evidence_from_stdin(
 
     assert completed.returncode == 0
     assert completed.stderr == ""
-    assert json.loads(completed.stdout) == {}
+    context = json.loads(completed.stdout)["hookSpecificOutput"]["additionalContext"]
+    assert context.startswith("[AGENCY UPDATED HEADER SNAPSHOT v1]\n")
+    assert "Skills loaded: security-review\n" in context
     assert Store(db_path).get_skills_for_session("real-claude") == ["security-review"]
 
 
@@ -2375,7 +2342,7 @@ def test_hook_boundary_allows_positively_identified_oversized_non_stop() -> None
     assert "host operation continues" in errors.getvalue()
 
 
-@pytest.mark.parametrize("host", ["codex", "zcode"])
+@pytest.mark.parametrize("host", ["codex", "zcode", "claude"])
 def test_hook_boundary_publishes_prompt_when_preflight_integrity_fails(
     host: str,
     monkeypatch: pytest.MonkeyPatch,

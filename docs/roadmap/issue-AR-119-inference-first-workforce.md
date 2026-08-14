@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-30
+updated: 2026-08-13
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance, multi-harness]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -15,6 +15,13 @@ related:
   - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
+  - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
+  - docs/roadmap/AR-119-founding-vision.md
+  - docs/roadmap/AR-119-rule-host-evidence-matrix.md
+  - docs/roadmap/AR-119-acceptance-evidence.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -26,6 +33,10 @@ related:
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/roadmap/issue-AR-199-restore-codex-workforce-evidence.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
+  - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
+  - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
+  - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
+  - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
@@ -43,7 +54,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-179, AR-180, AR-185, AR-190, AR-228]
+depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256]
 blocks: [AR-178, AR-200, AR-201]
 ---
 
@@ -51,8 +62,9 @@ blocks: [AR-178, AR-200, AR-201]
 
 ## Problem
 
-> **RESTATED 2026-08-11.** Everything below the Approach heading is retained as
-> provenance and is no longer the contract. This issue was written around
+> **RESTATED 2026-08-12.** The section explicitly titled "Historical execution
+> record" is retained as provenance and is no longer the contract. This issue
+> was written around
 > "every native work unit is performed by the best compatible specialist" and
 > closed on five per-host *product trials* — Agency authoring a multi-unit plan,
 > staffing a team against it, executing it, and being graded on the result.
@@ -64,40 +76,70 @@ blocks: [AR-178, AR-200, AR-201]
 **What is actually wanted: prove the nine vision rules on every supported host,
 using evidence the host itself wrote.**
 
-Seven rules are done and evidenced. Rule 4 — harness-spawned children receive
-specialist cards, plural — was proven in production for the first time on
-2026-08-11: one child, three cards, `correlated=true`, the `jit:v5` envelope
-present in record 0 of the child's own transcript before it first spoke. Rule 8
-was settled the same day and is now auditable rather than asserted.
+Implementation and simulation coverage exist for much of the vision, but they
+are not completion evidence. The
+[canonical rule/host matrix](AR-119-rule-host-evidence-matrix.md) is the sole
+current completion projection. It records selection authority, installed and
+live state, proof authority, exact artifacts, and limitations separately so a
+contract test or Store row cannot silently become a green host claim.
 
-What remains is rule 4 on the other hosts, and therefore rule 9. Measured
-2026-08-11 with `agency evidence children`:
+Rule 4 — harness-spawned children receive specialist cards, plural — was first
+observed on a prior Claude candidate on 2026-08-11. Three host-authored child
+artifacts contain exact card identities before the child first spoke. None is
+bound to the matrix's exact candidate, so Claude's current installed/live layers
+remain unproven. Codex now has a repaired conditional plaintext source path;
+exact CLI `0.147.0` in-file and authentic one-record TUI cross-file ancestry pass
+source, simulation, and independent review. A separate sealed v3 profile now
+does the same for observed Desktop `0.147.0-alpha.6.6` root/depth-one/depth-two
+V2 ancestry. Exec depth-two/deeper remains unsupported, and prior-candidate live
+negatives do not establish exact-candidate installed/live state:
 
 | host | children provably staffed | blocker |
 |---|---|---|
-| claude | **1** (6 legacy) | none — proven |
-| codex | **0** (11 legacy) | hooks never trusted in a Codex TUI; AR-209's encrypted `PreToolUse` payload |
+| claude | **0 exact-candidate proofs** (3 prior-candidate, 6 legacy) | exact-candidate install/live canary is absent; Rule 1 and parity remain negative |
+| codex | **0 exact-candidate proofs** (prior-candidate negatives, 11 legacy) | CLI and Desktop-alpha source/simulation are proven; exec depth-two/deeper remains unsupported and the exact-candidate install/live canary is absent |
 | zcode | not measured | host emits no `SubagentStart`/`SubagentStop` |
 | openclaw | not measured | not installed on the development box |
 | hermes | not measured | not installed on the development box |
 
 Codex is the sharp case: the host demonstrably spawns children — eleven legacy
-artifacts prove it — and not one carried a card. That is the differentiator
-silently absent on a supported host.
+artifacts prove it — and no prior-candidate measured child carried a card. The
+current adapter leaves encrypted calls untouched and conditionally staffs only
+an authenticated marked call. Exact CLI `0.147.0` source/simulation covers the
+authentic 11/11 one-record TUI census; the separate Desktop-alpha profile covers
+the authentic 52/52 V2 census. Exact-candidate installed/live state remains
+unproven. ZCode, Hermes, and OpenClaw are not waived.
+Hermes and OpenClaw also have a current source-level Rule-8 negative because
+their bridge failure paths withhold the host response when Agency is
+unavailable.
 
 ## Current state
 
-The audited roster, turn-scoped activation, resident managers, native-child
-receipts, provider evidence, CLI, and dashboard provide a strong base. The
-complete contract and completion gates are authoritative in tracker issue
-[#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132).
+The audited roster, inference receipts, request-scoped cards, resident managers,
+native lifecycle telemetry, CLI, and dashboard provide a strong base. Runtime
+candidate `211563c7` retains the repaired Rule-1 source/simulation state: native
+child staffing preserves one complete inference-selected team or proceeds
+unstaffed. Its sealed in-lifetime Claude collector advances Claude Rule 4 only
+through Implementation and Simulation. Its sealed Codex v3 attestor separately
+proves Rule-4 Implementation and Simulation for unchanged exact CLI `0.147.0`
+profiles plus the exact Desktop `0.147.0-alpha.6.6` profile. No exact-candidate
+Installed or Live layer is proven, and no top-level matrix cell is green.
+Candidate `211563c7` safely rejects observed unmarked calls, seals every required
+canonical prefix, file, profile, currentness check, and causal edge, bounds
+aggregate external ancestry to 64 MiB, and rolls final-validation failure back
+before commit. Exec depth-two/deeper remains unsupported.
+
+Tracker issue [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
+mirrors the umbrella state. Repository-local AR-119, AR-256, and their evidence
+records provide durable history. The founding vision defines the rules, the
+rule/host matrix owns completion status, and the active capsule owns recovery.
 AR-120 through AR-125 divide implementation into independently verifiable
 slices without narrowing that umbrella contract.
 
 Fresh-task recovery uses the bounded
 [AR-119 active recovery capsule](handoffs/issue-AR-119.md). The capsule is the
-current bootstrap projection; this issue remains the complete historical and
-acceptance contract.
+current bootstrap projection; this issue remains the complete historical
+record and dependency map, not a second completion projection.
 
 The independent production-readiness review is now captured in
 [the 2026-07-26 audit report](../analysis/2026-07-26-production-readiness-review.md).
@@ -107,27 +149,37 @@ required corrective slices of this production push; the earlier untracked
 
 ## Approach
 
-Plan typed work before naming agents; resolve the required controlled
-capabilities against an immutable versioned projection of the entire workforce;
-and give the native host exact specialist recipes without replacing its
-scheduler.
+Inference reads the current intent and is the only authority that chooses one
+or more compatible specialist cards or declares a contractor gap. The cards
+load into the current caller. Agency never creates an execution plan or decides
+to spawn; if the native host independently starts a child, Agency may deliver
+the exact inference-chosen cards, and only the host's own artifact containing
+their hashes before first speech proves delivery.
 
-> **ADR-0087 plus its ADR-0088 offline amendment govern this approach.**
-> Inference is the sole
-> specialist decider when a provider is configured: plan the intent, run
-> broad typed recall (zero false negatives), then let inference pick the best
-> eligible specialist per unit, declare a real gap, or hire a governed
-> contractor on the gap. Deterministic code is **recall plus validation only**
-> — it never selects the best specialist and never overrides the model's
-> eligible required nomination with role anchors. When no provider is
-> configured, ADR-0088 now permits a clearly stamped deterministic typed-recall
-> floor for obvious safe matches and otherwise abstains. The earlier wording
-> below ("verify staffing
-> deterministically", "high-margin complete local result needs no recruiter
-> call") predates ADR-0087 and is retained for provenance; the deterministic
-> decider it implied was removed from the configured-inference path. See
-> [ADR-0087](../decisions/0087-inference-decides-from-a-relevance-shortlist.md)
-> and [ADR-0088](../decisions/0088-deterministic-typed-recall-offline-floor.md).
+> **ADR-0118 governs the current approach and supersedes the ADR-0088 offline
+> amendment.** Every substantive specialist or contractor choice requires a
+> validated inference decision. Deterministic code may recall candidates and
+> enforce hard eligibility, compatibility, budgets, and evidence correlation;
+> it may never select, rank, replace, or invent the team. No valid inference
+> means Agency supplies no specialist card or contractor and emits an
+> honest diagnostic; the native host remains free to proceed unstaffed.
+> Conflicting historical wording below is provenance, not an authorized
+> fallback.
+
+The current closure path requires the same behavior on Codex, Claude Code,
+ZCode, Hermes, and OpenClaw; multi-card Rule-4 proof on each host; Rule-8
+fail-open publication when Agency is unavailable; and automatic contractor
+promotion after three independently accepted successes and the seven-day review
+window. The unchanged cold staffing control is 15,000 ms. AR-125 may establish
+value only from a valid matched Agency-on/off corpus; malformed or timed-out
+arms are invalid rather than upstream losses.
+
+### Historical approach record (superseded)
+
+The remainder of this Approach section records the earlier Job B, planned-child,
+work-unit, deterministic-floor, activation-receipt, and operator-promotion
+design. It is preserved for provenance only. It grants no current fallback,
+host waiver, delivery proof, or execution authority.
 
 A high-margin complete local result needs no recruiter call. Balanced and strict
 modes may ask inference to resolve an ambiguous bounded shortlist, but the model
@@ -135,6 +187,13 @@ cannot nominate outside the runtime-supplied cards or override eligibility and
 composition policy. Every accepted Agency work unit must prove that the
 performing parent or child consumed its exact-version activation receipt. Parent
 plans are reused by children so native fan-out does not multiply inference calls.
+
+> **Superseded current-contract note (2026-08-12).** The paragraph immediately
+> above is historical Job B/offline-floor behavior. Under ADR-0118 and the
+> restatement, there is no deterministic specialist choice, parent dispatch
+> plan, Agency work unit, or one-use activation receipt. The native host owns
+> spawning; Agency may only deliver cards chosen by valid inference, or deliver
+> none and let the host proceed unstaffed with an honest diagnostic.
 
 Treat routing speed as a product contract: the common path uses one compact
 intent-planning call followed by local whole-roster recall, warm continuations
@@ -159,6 +218,11 @@ capability indexing, audit, version, conflict, eligibility, activation, and
 receipt path as an employee. Probation restricts authority and reuse; it never
 bypasses workforce governance.
 
+> **Superseded promotion note (2026-08-12).** Operator-controlled promotion is
+> historical. ADR-0157 makes the default three-success/seven-day automatic path
+> part of AR-119; AR-252 must supply and live-prove its host-backed acceptance
+> evidence before the umbrella closes.
+
 Prove value with paired Agency-on and Agency-off trials using the same ask,
 host, model, configuration, and evaluator. An Agency-on trial without accepted
 specialist activation evidence is invalid participation evidence, regardless of
@@ -177,7 +241,13 @@ not evidence that Agency is better.
 AR-115 establishes trustworthy live selection, AR-116 bounds native-child
 routing and provider choice, and AR-118 reconciles activation evidence.
 
-## Execution checkpoint
+## Historical execution record (superseded)
+
+The following checkpoint narrative is the faithful chronological record of the
+retired work-unit, Job B, deterministic-floor, planned-child, and product-trial
+program. It is not the current implementation plan, acceptance checklist, or
+host-proof authority. Resume only from the active recovery capsule, and score
+completion only from the canonical rule/host matrix.
 
 ### Proven locally in the current slice
 
@@ -3804,6 +3874,75 @@ tests instead.
   answers "what is Agency costing my turns right now". A read-only surface over the column already
   being written is a small piece of work and should precede any latency tuning.
 
+### AR-180 exact-host capability preflight — 2026-08-12
+
+The current PATH-resolved Codex runtime is `0.147.0`; Codex Desktop package
+`26.803.10989.0` carries runtime `0.147.0-alpha.6.6`. Tagged Codex 0.147 source
+has a conditional plaintext collaboration path identified by host response-item
+marker `encrypted_function_args: []`. The documented `PreToolUse` payload omits
+that marker, however, and the exact active Sol/TUI spawn omitted it too: its
+1,036-character `message` was ciphertext and reached the child as encrypted
+content. This corrects the broad statement that Codex 0.147 has no plaintext
+path while preserving that checkpoint's verdict: candidate `7e1b3603` could not
+authenticate or use it. Candidate `e8b60f64` repairs and adversarially verifies
+the exact-0.147 TUI/exec source boundary, but authentic one-record TUI forks,
+Desktop alpha, unobserved exec depth-two/deeper ancestry, and every Installed/
+Live layer remain unproven. No Agency canary, install, or trust change occurred.
+ADR-0159 now governs the version-pinned transcript authorization; it does not
+replace the host-authored child artifact required for Rule-4 proof.
+
+### AR-180 cross-file ancestry checkpoint — 2026-08-13
+
+Candidate `45b21cdc` and ledger `01730614` add the v2 exact-CLI-`0.147.0`
+attestation for authentic one-record TUI forks. It resolves each declared
+parent/root UUID through a unique canonical UTC-day plus-or-minus-one lookup,
+validates file offsets independently, seals the complete external prefixes,
+proves exact adjacent causal records at both depth-two edges, and applies one
+64 MiB aggregate external-ancestry limit. The current authorization call still
+requires `encrypted_function_args: []`; only ancestor causal calls may use the
+ordinary exact schema or that schema plus the exact empty marker.
+
+The authentic census resolved 11/11 chains: one depth-one sparse, seven depth-
+one inherited, one depth-two sparse, and two depth-two inherited. The largest
+sample sealed 48,678,898 external bytes and resolved in 3.809 seconds. The parent
+passed 365 focused tests, the 673-test fast spine with 6 skips, and a scoped
+19/19 mutation run with a green baseline and `source_unchanged=true`. The
+independent reviewer passed 200 tests, killed the same 19/19 mutations, and
+reported no finding at any severity. This advances only Codex Rule-4
+Implementation and Simulation. For candidate `45b21cdc`, the 134-test dashboard
+suite, routing evaluation, Ruff, format, and documentation/schema gates passed.
+Its decision-conformance evaluator exited zero in 883.1 seconds: the baseline
+passed in 169,548 ms, all 131/131 mutations were killed, zero survived or were
+invalid, and `source_unchanged=true`. Desktop alpha, exec depth-two/deeper,
+Installed, and Live remain unproven; no install, trust, or canary action occurred.
+
+### AR-180 Desktop-alpha checkpoint — 2026-08-13
+
+Candidate `211563c7` and ledger `ee8db873` add the sealed v3 Desktop profile,
+pinned only to runtime `0.147.0-alpha.6.6`; the exact CLI `0.147.0` profiles are
+unchanged. Desktop requires one exact root, while depth-one/depth-two V2 child
+ancestry must match one of 13 atomic observed tuples. Eight tested but unobserved
+cross-products, disabled guardians, greater depth, mixed profiles, and schema drift fail open
+unstaffed. Canonical owner files, both depth-two edges, exact adjacent direct
+event/output records, copied history, file/profile/currentness seals, and the
+64 MiB aggregate external bound remain mandatory. Ancestor calls use the exact
+ordinary schema or that schema plus `encrypted_function_args: []`; the current
+authorization call still requires the exact empty marker.
+
+Focused provenance/hook verification passed 288/288, focused plus the anchor
+passed 289/289, and the named fast spine passed 673 with 6 skips. The scoped
+Desktop baseline passed and killed 20/20 mutations with zero survived or invalid
+and `source_unchanged=true`; an independent run reproduced those results and
+reported no finding at any severity. A content-safe probe resolved 52/52
+authentic V2 Desktop chains (47 depth one, 5 depth two), with maximum external
+ancestry 32,650,955 bytes and maximum resolver time 2.765 seconds. All 65
+observed Desktop calls were encrypted and unmarked, so no rewrite or child was
+proved. Codex Rule-4 Implementation and Simulation remain proven; State,
+Installed, and Live remain unproven. For `211563c7`, dashboard UI passed 134/134,
+routing passed every threshold, and Ruff lint/format passed. The expanded
+decision-conformance evaluator remains pending; the 131/131 result above remains
+`45b21cdc` history.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -3835,21 +3974,16 @@ tests instead.
 
 ### Next bounded work package
 
-Complete only AR-141's security- and protocol-sensitive consolidation where
-focused tests can prove unchanged authority, then freeze one final candidate.
-Run the named fast production spine, UI coverage, docs/static/routing gates,
-build one exact private Windows wheel/sdist, verify and install it in a fresh
-environment, repeat packaged and all-host smoke, and perform installed
-desktop/mobile dashboard QA. Do not run the complete corpus, coverage shards,
-compatibility matrix, hosted workflow, or another live Codex canary without the
-required explicit request or exact post-refresh hook-trust state change. Keep
-the 15000 ms cold and one-call fast matched controls fixed; malformed or timed-
-out upstream arms remain invalid, never losses.
+Search and sample read-only real-host exec depth-two/deeper ancestry, if emitted,
+before defining or reviewing that separate schema. After explicit install/
+trust/live authorization and current Codex and Claude artifacts, continue
+AR-252, AR-253, AR-125, and derived Rule 9.
 
 ### Context checkpoint constraints
 
-- Continue on `main` from the current local recovery checkpoint; do not reset,
-  discard, or silently rewrite the accumulated AR-119 work.
+- Continue on `codex/ar119-vision-mitigation-handoff` from the current local
+  recovery checkpoint; do not reset, discard, or silently rewrite the
+  accumulated AR-119 work.
 - Keep tracker issue #132 open and do not claim the north-star goal complete.
 - Do not push or trigger hosted GitHub Actions during intermediate packages;
   the user requested one consolidated hosted verification near the end.
@@ -3860,24 +3994,49 @@ out upstream arms remain invalid, never losses.
 
 ## Acceptance
 
-> **ADR-0087 plus ADR-0088 frame.** With a configured provider, inference
-> selects the best eligible specialist per typed unit, declares a real gap, or
-> hires a governed contractor; deterministic code only recalls candidates and
-> validates eligibility, composition, coverage, and budget. With no configured
-> provider, ADR-0088 permits the explicitly stamped deterministic typed-recall
-> floor to form an obvious safe team or abstain without injecting a specialist.
-> ZCode is the fifth execution host; its main session carries the Agency
-> banner, but ZCode native children are host-limited (ZCode emits no
-> `SubagentStart`/`SubagentStop`), so governed native-child self-routing is a
-> follow-up gated on host support.
+Current acceptance is the
+[founding nine-rule vision](AR-119-founding-vision.md) evaluated cell by cell in
+the [canonical rule/host evidence matrix](AR-119-rule-host-evidence-matrix.md).
+That matrix is the only current completion projection. A rule is not complete
+from implementation, simulation, registration, an Agency Store row, or model
+prose; it needs the proof authority named in its matrix cell for the exact
+candidate.
 
-**Superseded 2026-08-11.** The gate list below the horizontal rule is the
-retired product-trial contract, kept for provenance. The live acceptance is
-this: **each rule is closed by evidence the host itself wrote, never by an
-Agency row.** A `specialists_loaded` row proves only that Agency tried — it is
-written by the same code under test, and during degraded parent inference it is
-not written at all even when delivery succeeded. That trap produced years of
-false negatives on rule 4; `agency evidence children` exists to avoid it.
+- [ ] Rules 1 through 8 are `proven` on **Codex, Claude Code, ZCode, Hermes,
+      and OpenClaw**, with no negative or unproven cell; Rule 9 is proven by
+      that complete five-host set. An unavailable host stays unproven. There is
+      no host waiver or not-applicable path while it remains supported.
+- [ ] Rule 1: the exact inference decision is the only specialist or contractor
+      choice and is joined to the delivered card hashes. Deterministic code may
+      recall, hard-filter, validate, budget, and correlate, but never select,
+      rank, replace, erase, or invent the staffing result.
+- [ ] Rule 4: each native host independently starts a child whose host-authored
+      artifact contains multiple compatible card hashes before first speech.
+      Claude has three prior-candidate artifacts but is exact-candidate
+      unproven. Codex has reviewed conditional host support and exact CLI
+      `0.147.0` plus Desktop `0.147.0-alpha.6.6` compatibility, but exec-depth-
+      two/deeper compatibility and exact-candidate installed/live proof remain
+      open; ZCode, Hermes, and OpenClaw remain unproven.
+- [ ] Rule 8: Agency unavailability supplies no card and never suppresses the
+      host's natural response on any host. Only a verifier's definite negative
+      and the malformed-`Stop` forgery boundary deliberately withhold.
+- [ ] Rule 6: host-backed producer and independent-verifier artifacts feed the
+      accepted-outcome path, and three successes after the seven-day review
+      window automatically promote the contractor without operator action.
+- [ ] The fixed 15,000 ms cold staffing control passes without weakening
+      inference, host spawn, evidence, Rule-8, or promotion authority.
+- [ ] AR-125 produces a valid matched Agency-on/off corpus before any value or
+      superiority claim; malformed and timed-out arms remain invalid.
+- [ ] The merged exact candidate, documentation/tracker records, installed
+      artifacts, and release evidence agree before tracker issue #132 closes.
+
+## Historical acceptance record (superseded)
+
+Everything below this heading is retained verbatim as chronological evidence
+for the former deterministic-floor, planned-child, activation-receipt, host-
+limitation, and product-trial contracts. It grants no current fallback, host
+waiver, acceptance credit, or proof authority. Current status is exclusively in
+the matrix linked above.
 
 - [x] Rules 1, 2, 3, 5, 6, 7 hold, each with a landed commit.
 - [x] Rule 4 on **claude** — child `ad68a49ad2297ebd2`, three cards, `legacy=false`, `correlated=true`, envelope in record 0 (2026-08-11). **Re-proven the same day on the refreshed adapter** (`cae7ca576462`, installed 18:46Z) through a fresh headless `claude -p` session with Agency enabled before session start: child `a9c6ab358c1e5ebc6`, parent `91e03ac9-c1ec-40f1-b8a8-eaf6dc853c65`, `legacy=false`, `correlated=true`, cards `python-cli-architecture-specialist, agency-model-explainer, software-architect`. Provably staffed count 1 → 2. **Confirmed a third time in an attended interactive session** (not headless): child `a41e5c325024bb208`, `legacy=false`, `correlated=true`, same three cards, count 2 → 3. It required **no re-trust** after the republish, unlike codex — the two hosts do not gate hook execution the same way, which is worth remembering before reading a codex trust state as a general fact.

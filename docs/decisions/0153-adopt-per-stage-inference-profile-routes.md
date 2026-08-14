@@ -3,11 +3,12 @@ title: "Adopt per-stage inference profile routes"
 status: accepted
 category: decisions
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [routing, inference, workforce, configuration, security]
 related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
+  - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/roadmap/handoffs/issue-AR-235.md
   - agency_runtime/core/inference_profiles.py

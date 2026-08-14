@@ -3,7 +3,7 @@ title: "Troubleshooting Agency Runtime"
 status: active
 category: operations
 created: 2026-07-10
-updated: 2026-07-28
+updated: 2026-08-12
 tags: [operations, troubleshooting]
 related:
   - README.md
@@ -21,6 +21,8 @@ related:
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
+  - docs/roadmap/AR-119-founding-vision.md
+  - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0071-bound-native-delegation-correction.md
@@ -497,8 +499,8 @@ agency host-canary <host>
 ```
 
 It lists every unmet prerequisite. Hermes and OpenClaw currently reject live
-execution because a proven read-only, no-tools noninteractive mode is not
-available. Codex and Claude require the exact
+execution because a proven read-only, bounded native-child noninteractive mode
+is not available. Codex and Claude require the exact
 `RUN LIVE <host> CANARY` confirmation before invoking the host.
 
 For an Agency-off comparison, leave the plugin installed, run
@@ -543,14 +545,13 @@ Inspect `host_execution.agency_evidence.workspace_trust`,
 the JSON report. In Agency mode the runtime evidence must also be
 `agency.canary-activation-evidence.v1` for the exact executed prompt hash.
 
-For current Codex evidence, also inspect
-`host_execution.agency_evidence.collaboration`. Each accepted work unit needs
-one spawn, one `followup_task`, and two completed waits. Its projected
-`execution_delivery` must match the activation delivery's work-unit and goal
-hash, and its Store worker run must carry the same content-free follow-up
-tool-use ID. A completed activation-only turn without that later causal
-execution turn is not successful product work and cannot satisfy workspace
-proof.
+For current Codex child-delivery evidence, inspect the native host artifact.
+The exact inference decision, parent/child correlation, candidate/install
+identity, and every selected card hash must appear before the child's first
+speech. A `specialist_load`, activation, collaboration, work-unit, or model
+prose row is diagnostic only; none can originate a green Rule-4 claim. The host
+alone chooses whether to spawn, and an unavailable or opaque channel remains
+unproven.
 
 ## Dashboard does not authenticate
 
@@ -901,25 +902,15 @@ evidence view or SQLite record rather than matching only the agent name.
 The generic backend is unavailable until configured with an explicit command.
 That is intentional; it never turns a no-op into completed work.
 
-Each detected work unit has its own compatible specialist closure; do not assume
-the first parent specialist owns every unit. Unit routing considers the complete
-approved enabled roster and uses configured inference when semantic selection
-is required. A unit with no eligible match remains an explicit gap—the
-Agency-native resident steward preserves the parent boundary and is never
-substituted as a domain worker.
-
-Selection is still only a plan, but the native host must dispatch every accepted
-row exactly once. It may schedule independent rows concurrently and preserve
-dependency order; it may not merge or omit rows or perform their specialist work
-in the parent. If a row cannot be dispatched safely, record one explicit decline
-and stop the parent without claiming the planned outcome. Only units the host
-actually starts can produce one-use child activation and reciprocal native
-worker/run evidence. Dependents enter the ready queue only after every one of
-their own prerequisites has an authoritative successful result. A slow
-independent unit does not block a ready branch, but a failed, missing, duplicate,
-or malformed prerequisite recursively prevents its descendants from producing a
-successful turn. Inspect the exact work-unit IDs and dependency edges when the
-observed order differs from a simple topological level list.
+Configured inference chooses the exact compatible specialist card set for the
+existing caller. Agency never converts that selection into a spawn plan or
+dispatch queue. If the native host independently starts a child, Agency carries
+the already-authorized inference decision to that child and validation rejects
+forged, stale, conflicting, or ineligible cards without choosing replacements.
+If no safe card is selected or Agency is unavailable, Agency supplies no card
+and the host's natural turn proceeds. Diagnose delivery only from the native
+host artifact and the current AR-119 matrix; Store projections remain
+non-authoritative for delivery.
 
 ## An executable is found but refused before launch
 

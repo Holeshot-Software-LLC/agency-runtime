@@ -3,7 +3,7 @@ title: "AR-244: Workforce duplicates and consolidate parity (sub-issue 3 of AR-2
 status: done
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [cli, dashboard, parity, workforce, duplicates, sub-issue]
 related:
   - docs/roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md
@@ -49,8 +49,8 @@ follow-up; this slice delivers the server-side parity.
 
 ## Acceptance
 
-- [ ] `GET /api/workforce/duplicates` returns the consolidation candidates
+- [x] `GET /api/workforce/duplicates` returns the consolidation candidates
       payload (workforce_count, contract_fingerprint, authority,
       automatic_mutation, candidates) matching the CLI's
       `workforce consolidate --json` output.
-- [ ] The endpoint requires owner auth (read-side but workforce-sensitive).
+- [x] The endpoint requires owner auth (read-side but workforce-sensitive).

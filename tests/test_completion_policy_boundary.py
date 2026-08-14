@@ -264,7 +264,10 @@ def test_generated_hermes_output_hook_does_not_terminalize_generic_failure(
         turn_id="turn",
     )
 
-    assert replacement == module._FINALIZATION_BLOCK_RESPONSE
+    # Rule 8: finalization raising is Agency being unavailable, not a verdict on
+    # the draft, so the host's own text is returned unchanged.  An Agency fault
+    # still must not terminalize the turn.
+    assert replacement == exact
     assert store.get_run("turn")["status"] == "active"
     assert store.get_authoritative_finalization("session", "turn") is None
 
@@ -357,9 +360,17 @@ def test_generated_hermes_pre_verify_failure_is_bounded_and_fail_closed(
     assert decision is None
 
 
-def test_generated_hermes_adapter_construction_failure_never_leaks_draft(
+def test_generated_hermes_adapter_construction_failure_returns_the_draft(
     tmp_path: Path,
 ) -> None:
+    """Rule 8: Agency that cannot even construct may not withhold the turn.
+
+    A draft the verifier evaluated and rejected is still replaced elsewhere.
+    Here Agency never ran, so it has no finding about the response, and
+    withholding a completed turn to report an Agency fault is precisely the
+    failure mode the rule exists to prevent.
+    """
+
     module = _load_generated_hermes(tmp_path)
     module._adapter = None
 
@@ -367,13 +378,11 @@ def test_generated_hermes_adapter_construction_failure_never_leaks_draft(
         raise RuntimeError("database unavailable")
 
     module.HermesAdapter = fail_adapter
-    original = "Sensitive draft that must not be published."
+    original = "Draft written while Agency was unavailable."
 
     assert module._pre_verify(original, attempt="invalid") is None
     assert module._pre_verify(original, attempt=0) is None
-    replacement = module._transform_llm_output(original)
-    assert replacement == module._FINALIZATION_BLOCK_RESPONSE
-    assert original not in replacement
+    assert module._transform_llm_output(original) == original
 
 
 def test_generated_hermes_terminal_receipt_requires_exact_authority(

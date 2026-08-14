@@ -1676,8 +1676,10 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             mark_current_observation("ok", "completed", only_if_unset=True)
 
     def _handle_evidence_children(self) -> None:
-        """Return bounded host-written proof, not Agency staffing attempts."""
+        """Return bounded host proof joined to immutable verification receipts."""
 
+        state = read_config_state(self.config_path)
+        binding = _require_store_service_binding(self.store, state)
         values = _single_query_values(
             self.path,
             allowed=frozenset({"host", "limit"}),
@@ -1692,14 +1694,15 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         )
         hosts = (host,) if host else ("claude", "codex")
         payload = {
-            "schema_version": "agency.dashboard.child_delivery.v1",
+            "schema_version": "agency.dashboard.child_delivery.v2",
             "sampled_at": _utc_now(),
             "source": {
-                "authority": "host_written_child_artifacts",
+                "authority": "host_written_artifacts_with_bound_verification_receipts",
                 "artifact_hosts": ["claude", "codex"],
-                "agency_store_consulted": False,
+                "agency_store_consulted": True,
+                "store_role": "read_only_decision_and_verification_receipt_projection",
                 "evidence_meaning": (
-                    "hash_verified_specialist_cards_in_child_input_before_first_speech"
+                    "host_artifact_delivery_correlated_to_exact_inference_decision_and_receipt"
                 ),
             },
             "window": {
@@ -1719,9 +1722,12 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                     default_child_artifact_root(item),
                     host=item,
                     limit=limit,
+                    store=self.store,
                 )
                 for item in hosts
             ],
+            "service_binding": binding,
+            **_store_response_identity(state, binding),
         }
         self._send_json(
             HTTPStatus.OK,

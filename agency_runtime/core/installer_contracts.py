@@ -12,9 +12,10 @@ MARKETPLACE_ID = "agency-runtime"
 INSTALL_MANIFEST = ".agency-runtime-install.json"
 ADAPTER_LAUNCHER_MANIFEST = ".agency-runtime-launcher.json"
 PLUGIN_VERSION = "0.1.0"
-# v3: the proof changed meaning. It attests card delivery to a harness-spawned
-# child, not the retired plan/delegation/grant/consumption chain.
-CODEX_ACTIVATION_CANARY_PROOF_CONTRACT = "agency.codex-activation-canary.v3"
+# v4: card delivery is proven only by a verified host-written child artifact.
+# Store specialist-load rows and Codex collaboration/output projections remain
+# useful lifecycle diagnostics, but cannot attest that a card reached a child.
+CODEX_ACTIVATION_CANARY_PROOF_CONTRACT = "agency.codex-activation-canary.v4"
 CODEX_AUTOMATION_CANARY_PROOF_CONTRACT = "agency.codex-automation-canary.v1"
 CODEX_CANARY_PROOF_CONTRACTS = frozenset(
     {

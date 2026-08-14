@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import stat
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.agent_activation import normalize_disabled_agents
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.store.queries import (
     DASHBOARD_ACTIVITY_QUERIES,
@@ -29,9 +31,11 @@ from agency_runtime.core.store.schema import (
 from agency_runtime.core.store.schema import (
     RUNTIME_TABLE_TIMESTAMPS as _RUNTIME_TABLE_TIMESTAMPS,
 )
-from agency_runtime.core.store.schema import STORE_CLOCK_SQL
+from agency_runtime.core.store.schema import STORE_CLOCK_SQL, store_clock_value_is_canonical
 from agency_runtime.core.store.security import metadata_is_link_or_reparse_point
 from agency_runtime.core.store.trace_identity import correlation_pair_digests
+
+logger = logging.getLogger(__name__)
 
 _DASHBOARD_ACTIVITY_PAGE_SPECS: Mapping[str, tuple[str, str, str]] = {
     "runs": ("runs", "runs.started_at", "runs.id"),
@@ -56,6 +60,18 @@ _DASHBOARD_ACTIVITY_PAGE_SPECS: Mapping[str, tuple[str, str, str]] = {
 }
 
 
+def _warn_postcommit_routing_close_failure() -> None:
+    """Emit best-effort cleanup diagnostics without changing commit authority."""
+
+    try:
+        logger.warning(
+            "routing decision connection close failed after commit",
+            exc_info=True,
+        )
+    except Exception:  # diagnostics cannot alter an already-committed outcome
+        return
+
+
 def _activity_cursor_time(name: str, row: Mapping[str, Any]) -> str:
     if name == "delegations":
         return str(row.get("completed_at") or row.get("started_at") or "")
@@ -78,6 +94,203 @@ def _activity_cursor_time(name: str, row: Mapping[str, Any]) -> str:
 # turn. Open graphs become retention candidates only after a full day without
 # any store write, in addition to the operator's policy cutoff.
 _STALE_OPEN_MIN_INACTIVITY_SECONDS = 24 * 60 * 60
+
+# Mirror the native-child resolver's content-free document budget.  Rows over
+# that budget are not valid prior projections and never reach SQLite's JSON
+# parser.
+_MAX_NATIVE_CHILD_ROUTING_DECISION_BYTES = 64 * 1024
+
+
+def _activation_policy_identity(value: object, *, field: str) -> tuple[str, ...]:
+    """Return one secret-free canonical disabled-agent policy identity."""
+
+    if isinstance(value, (str, bytes, bytearray, Mapping)):
+        raise ValueError(f"{field} must be a collection of agent slugs")
+    try:
+        items = list(value)  # type: ignore[arg-type]
+        return normalize_disabled_agents(items)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field} must be a canonical disabled-agent policy") from exc
+
+
+def _require_activation_policy(
+    store: Any,
+    expected: tuple[str, ...],
+) -> None:
+    """Compare live Store-bound hard eligibility to one frozen route input."""
+
+    getter = getattr(store, "get_disabled_agent_slugs", None)
+    if not callable(getter):
+        raise RuntimeError("live activation policy authority is unavailable")
+    try:
+        current = _activation_policy_identity(getter(), field="live disabled agents")
+    except Exception as exc:
+        raise RuntimeError("live activation policy authority is unavailable") from exc
+    if current != expected:
+        raise ValueError("activation policy changed before routing decision persistence")
+
+
+def _expected_roster_generation(value: object) -> int | None:
+    """Validate one optional roster-generation transaction guard."""
+
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError("expected_roster_generation must be a non-negative integer")
+    return value
+
+
+def _guard_native_child_launch_replay(
+    conn: Any,
+    *,
+    source: str,
+    decision: Mapping[str, Any],
+    session_id: str,
+    trace_id: str,
+) -> None:
+    """Reject malformed or already-recorded successful native-child launches.
+
+    ``BEGIN IMMEDIATE`` must already be held by the caller.  That makes the
+    lookup and subsequent insert one serialized operation without adding a
+    schema-level index or migration.
+    """
+
+    if source != "native_child_inference":
+        return
+    delivery = decision.get("native_child_delivery")
+    if not isinstance(delivery, Mapping):
+        raise ValueError("native_child_inference requires a valid native_child_delivery")
+    if decision.get("status") != "applied":
+        raise ValueError("native_child_inference requires an applied decision")
+    if (
+        delivery.get("parent_session_id") != session_id
+        or delivery.get("parent_trace_id") != trace_id
+    ):
+        raise ValueError("native_child_delivery does not match routing session and trace")
+
+    host = str(delivery["host"])
+    launch_id = str(delivery["launch_id"])
+    duplicate = conn.execute(
+        "SELECT id FROM routing_decisions "
+        "WHERE session_id = ? AND trace_id = ? "
+        "AND source = 'native_child_inference' AND status = 'applied' "
+        "AND CASE WHEN typeof(decision) = 'text' "
+        "AND length(CAST(decision AS BLOB)) BETWEEN 1 AND ? THEN "
+        "CASE WHEN json_valid(decision) THEN ("
+        "json_extract(decision, '$.source') = 'native_child_inference' "
+        "AND json_extract(decision, '$.status') = 'applied' "
+        "AND json_extract(decision, '$.native_child_delivery.host') = ? "
+        "AND json_extract(decision, '$.native_child_delivery.parent_session_id') = ? "
+        "AND json_extract(decision, '$.native_child_delivery.parent_trace_id') = ? "
+        "AND json_extract(decision, '$.native_child_delivery.launch_id') = ?) "
+        "ELSE 0 END ELSE 0 END LIMIT 1",
+        (
+            session_id,
+            trace_id,
+            _MAX_NATIVE_CHILD_ROUTING_DECISION_BYTES,
+            host,
+            session_id,
+            trace_id,
+            launch_id,
+        ),
+    ).fetchone()
+    if duplicate is not None:
+        raise ValueError("native_child launch already has a successful routing decision")
+
+
+def _require_exact_inserted_native_child_route(
+    conn: Any,
+    *,
+    decision_id: str,
+    trace_id: str,
+    session_id: str,
+    query_hash: str,
+    context_fingerprint: str,
+    status: str,
+    source: str,
+    selected_ids: str,
+    semantic_ids: str,
+    companion_ids: str,
+    confidence: float,
+    latency_ms: int,
+    provider: str,
+    work_units: str,
+    decision: str,
+    projected_decision: Mapping[str, Any],
+) -> None:
+    """Require the exact just-inserted native-child projection before commit."""
+
+    row = conn.execute(
+        "SELECT id, trace_id, session_id, query_hash, context_fingerprint, status, "
+        "source, selected_ids, semantic_ids, companion_ids, confidence, latency_ms, "
+        "provider, work_units, decision, created_at FROM routing_decisions WHERE id = ?",
+        (decision_id,),
+    ).fetchone()
+    expected = (
+        decision_id,
+        trace_id,
+        session_id,
+        query_hash,
+        context_fingerprint,
+        status,
+        source,
+        selected_ids,
+        semantic_ids,
+        companion_ids,
+        confidence,
+        latency_ms,
+        provider,
+        work_units,
+        decision,
+    )
+    fields = (
+        "id",
+        "trace_id",
+        "session_id",
+        "query_hash",
+        "context_fingerprint",
+        "status",
+        "source",
+        "selected_ids",
+        "semantic_ids",
+        "companion_ids",
+        "confidence",
+        "latency_ms",
+        "provider",
+        "work_units",
+        "decision",
+    )
+    from agency_runtime.core.native_child_decision import project_native_child_success_route
+
+    run = conn.execute(
+        "SELECT host FROM runs WHERE trace_id = ? AND session_id = ?",
+        (trace_id, session_id),
+    ).fetchone()
+    run_host = str(run["host"] or "").strip().casefold() if run is not None else ""
+    delivery = project_native_child_success_route(
+        projected_decision,
+        session_id=session_id,
+        trace_id=trace_id,
+        query_hash=query_hash,
+        context_fingerprint=context_fingerprint,
+        host=run_host,
+    )
+    expected_slugs = (
+        [] if delivery is None else [str(card["specialist_slug"]) for card in delivery["cards"]]
+    )
+    if (
+        row is None
+        or tuple(row[field] for field in fields) != expected
+        or not store_clock_value_is_canonical(row["created_at"])
+        or delivery is None
+        or status != "applied"
+        or source != "native_child_inference"
+        or work_units != "{}"
+        or selected_ids != json.dumps(expected_slugs)
+        or semantic_ids != json.dumps(expected_slugs)
+        or companion_ids != "[]"
+    ):
+        raise RuntimeError("native-child routing projection failed transactional readback")
 
 
 class MaintenanceStoreMixin:
@@ -354,7 +567,7 @@ class MaintenanceStoreMixin:
             ).hexdigest(),
         }
 
-    def record_routing_decision(
+    def record_routing_decision(  # noqa: C901 - one atomic guarded write transaction
         self,
         *,
         trace_id: str,
@@ -362,8 +575,25 @@ class MaintenanceStoreMixin:
         query_hash: str,
         context_fingerprint: str,
         decision: dict[str, Any],
+        decision_id: str | None = None,
+        require_open_run: bool = False,
+        expected_roster_generation: int | None = None,
+        expected_disabled_agents: tuple[str, ...] | None = None,
+        final_delivery_validator: Callable[[], bool] | None = None,
     ) -> str:
-        """Persist one metadata-only authoritative routing projection."""
+        """Persist one metadata-only authoritative routing projection.
+
+        Callers that must bind a prospective artifact to the route may propose
+        its exact ID before rendering.  Native-child callers may additionally
+        require the parent, roster generation, and Store-bound activation
+        policy to remain exact inside this same write transaction.  The native
+        child service holds the Store-bound configuration read lock before
+        entering this method, preserving config-lock then SQLite-lock ordering.
+        A final delivery validator is legal only for an open native-child route;
+        it runs after exact inserted-row readback and immediately before commit,
+        so rejection or failure rolls the successful projection back in full.
+        Defaults preserve the general routing behavior.
+        """
         normalized_trace = validate_correlation_id(trace_id, field="trace_id")
         normalized_session = validate_correlation_id(session_id, field="session_id")
         normalized_query_hash = str(query_hash or "").strip()
@@ -378,16 +608,75 @@ class MaintenanceStoreMixin:
                 raise ValueError(f"{label} must be a lowercase SHA-256 digest")
         if not isinstance(decision, Mapping):
             raise ValueError("routing decision must be a mapping")
+        if type(require_open_run) is not bool:
+            raise TypeError("require_open_run must be a boolean")
+        expected_generation = _expected_roster_generation(expected_roster_generation)
+        expected_activation_policy = (
+            None
+            if expected_disabled_agents is None
+            else _activation_policy_identity(
+                expected_disabled_agents,
+                field="expected_disabled_agents",
+            )
+        )
         safe_decision, safe_work_units, source = project_routing_decision(decision)
-        event_id = self._uuid()
+        if final_delivery_validator is not None:
+            if not callable(final_delivery_validator):
+                raise TypeError("final_delivery_validator must be callable")
+            if source != "native_child_inference" or require_open_run is not True:
+                raise ValueError("final_delivery_validator requires open native-child inference")
+        if decision_id is None:
+            event_id = self._uuid()
+        else:
+            event_id = validate_correlation_id(decision_id, field="decision_id")
+            if event_id != decision_id:
+                raise ValueError("decision_id must already be canonical")
         conn = self._connect()
+        committed = False
         try:
             conn.execute("BEGIN IMMEDIATE")
-            self._ensure_run(
+            if source == "native_child_inference" or require_open_run:
+                self._require_open_run(
+                    conn,
+                    trace_id=normalized_trace,
+                    session_id=normalized_session,
+                )
+            else:
+                self._ensure_run(
+                    conn,
+                    trace_id=normalized_trace,
+                    session_id=normalized_session,
+                )
+            _guard_native_child_launch_replay(
                 conn,
-                trace_id=normalized_trace,
+                source=source,
+                decision=safe_decision,
                 session_id=normalized_session,
+                trace_id=normalized_trace,
             )
+            if expected_generation is not None:
+                generation = conn.execute(
+                    "SELECT value FROM store_counters WHERE name = 'roster-generation'"
+                ).fetchone()
+                if generation is None:
+                    raise RuntimeError("roster generation counter is unavailable")
+                try:
+                    current_generation = int(generation["value"])
+                except (TypeError, ValueError, OverflowError) as exc:
+                    raise RuntimeError("roster generation counter is invalid") from exc
+                if current_generation != expected_generation:
+                    raise ValueError("roster changed before routing decision persistence")
+            if expected_activation_policy is not None:
+                _require_activation_policy(self, expected_activation_policy)
+            status = str(safe_decision.get("status") or "unknown")
+            selected_ids = json.dumps(safe_decision.get("selected_ids") or [])
+            semantic_ids = json.dumps(safe_decision.get("semantic_ids") or [])
+            companion_ids = json.dumps(safe_decision.get("available_companion_ids") or [])
+            confidence = float(safe_decision.get("confidence") or 0.0)
+            latency_ms = int(safe_decision.get("latency_ms") or 0)
+            provider = str(safe_decision.get("provider") or "")
+            work_units = json.dumps(safe_work_units)
+            decision_document = json.dumps(safe_decision, sort_keys=True, default=str)
             conn.execute(
                 "INSERT INTO routing_decisions "
                 "(id, trace_id, session_id, query_hash, context_fingerprint, status, source, "
@@ -401,25 +690,59 @@ class MaintenanceStoreMixin:
                     normalized_session,
                     normalized_query_hash,
                     normalized_context_fingerprint,
-                    str(safe_decision.get("status") or "unknown"),
+                    status,
                     source,
-                    json.dumps(safe_decision.get("selected_ids") or []),
-                    json.dumps(safe_decision.get("semantic_ids") or []),
-                    json.dumps(safe_decision.get("available_companion_ids") or []),
-                    float(safe_decision.get("confidence") or 0.0),
-                    int(safe_decision.get("latency_ms") or 0),
-                    str(safe_decision.get("provider") or ""),
-                    json.dumps(safe_work_units),
-                    json.dumps(safe_decision, sort_keys=True, default=str),
+                    selected_ids,
+                    semantic_ids,
+                    companion_ids,
+                    confidence,
+                    latency_ms,
+                    provider,
+                    work_units,
+                    decision_document,
                 ),
             )
+            if expected_activation_policy is not None:
+                _require_activation_policy(self, expected_activation_policy)
+            if source == "native_child_inference":
+                _require_exact_inserted_native_child_route(
+                    conn,
+                    decision_id=event_id,
+                    trace_id=normalized_trace,
+                    session_id=normalized_session,
+                    query_hash=normalized_query_hash,
+                    context_fingerprint=normalized_context_fingerprint,
+                    status=status,
+                    source=source,
+                    selected_ids=selected_ids,
+                    semantic_ids=semantic_ids,
+                    companion_ids=companion_ids,
+                    confidence=confidence,
+                    latency_ms=latency_ms,
+                    provider=provider,
+                    work_units=work_units,
+                    decision=decision_document,
+                    projected_decision=safe_decision,
+                )
+            if final_delivery_validator is not None and final_delivery_validator() is not True:
+                raise ValueError("final native-child delivery validation failed")
             conn.commit()
+            committed = True
             return event_id
         except Exception:
             conn.rollback()
             raise
         finally:
-            conn.close()
+            if committed:
+                try:
+                    conn.close()
+                except Exception:
+                    # Commit is the authoritative outcome.  A cleanup failure
+                    # must not turn its successful route into an apparent
+                    # failure that suppresses output and poisons exact retry.
+                    _warn_postcommit_routing_close_failure()
+            else:
+                conn.close()
 
     def _delete_eligible_terminal_pairs(
         self,

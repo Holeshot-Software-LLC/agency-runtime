@@ -61,6 +61,8 @@ from agency_runtime.core.store.schema import (
     DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL,
     DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS,
     MODEL_RECEIPT_MIGRATED_COLUMNS,
+    NATIVE_CHILD_DELIVERY_VERIFICATION_TABLE_SQL,
+    NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL,
     NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL,
     NATIVE_CHILD_PARENT_SCOPE_TRIGGER_NAME,
     NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL,
@@ -411,6 +413,90 @@ def _codex_native_plan_scope_schema_is_current(conn: sqlite3.Connection) -> bool
     )
 
 
+def _native_child_delivery_verification_schema_is_current(
+    conn: sqlite3.Connection,
+) -> bool:
+    """Verify the bounded, immutable one-use host-delivery ledger."""
+
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' "
+        "AND name = 'native_child_delivery_verifications'"
+    ).fetchone()
+    observed_sql = _normalized_schema_sql(row["sql"] if row is not None else "").replace(
+        "ifnotexists", ""
+    )
+    expected_ddl = (
+        "CREATE TABLE" + NATIVE_CHILD_DELIVERY_VERIFICATION_TABLE_SQL.split("CREATE TABLE", 1)[1]
+    )
+    expected_sql = _normalized_schema_sql(expected_ddl).replace("ifnotexists", "")
+    table_info = list(conn.execute("PRAGMA table_info(native_child_delivery_verifications)"))
+    columns = {str(item["name"]) for item in table_info}
+    primary_keys = {str(item["name"]) for item in table_info if int(item["pk"] or 0) == 1}
+    unique_column_sets = {
+        tuple(
+            str(column["name"])
+            for column in conn.execute(
+                f"PRAGMA index_info({index['name']})"  # nosec B608
+            )
+        )
+        for index in conn.execute("PRAGMA index_list(native_child_delivery_verifications)")
+        if int(index["unique"] or 0) == 1
+    }
+    triggers = {
+        str(item["name"]): str(item["sql"] or "")
+        for item in conn.execute(
+            "SELECT name, sql FROM sqlite_master WHERE type = 'trigger' "
+            "AND tbl_name = 'native_child_delivery_verifications'"
+        ).fetchall()
+    }
+    foreign_keys = {
+        (
+            str(item["from"]),
+            str(item["table"]),
+            str(item["to"]),
+            str(item["on_delete"]).casefold(),
+        )
+        for item in conn.execute("PRAGMA foreign_key_list(native_child_delivery_verifications)")
+    }
+    return bool(
+        observed_sql.rstrip(";") == expected_sql.rstrip(";")
+        and columns
+        == {
+            "decision_id",
+            "nonce",
+            "artifact_digest",
+            "host",
+            "parent_session_id",
+            "parent_trace_id",
+            "launch_id",
+            "binding_kind",
+            "binding_id",
+            "child_id",
+            "verified_at",
+        }
+        and primary_keys == {"decision_id"}
+        and {
+            ("nonce",),
+            ("artifact_digest",),
+            (
+                "host",
+                "parent_session_id",
+                "parent_trace_id",
+                "launch_id",
+                "binding_kind",
+                "binding_id",
+            ),
+            ("host", "child_id"),
+        }.issubset(unique_column_sets)
+        and ("decision_id", "routing_decisions", "id", "cascade") in foreign_keys
+        and set(triggers) == set(NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL)
+        and all(
+            _normalized_schema_sql(triggers.get(name)) == _normalized_schema_sql(statement)
+            for name, statement in NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL.items()
+        )
+    )
+
+
 def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
     """Verify the current schema contract.
 
@@ -641,6 +727,7 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
     return bool(
         _v36_authority_schema_is_current(conn, triggers)
         and _codex_native_plan_scope_schema_is_current(conn)
+        and _native_child_delivery_verification_schema_is_current(conn)
         and _codex_execution_tool_use_index_is_current(conn)
     )
 

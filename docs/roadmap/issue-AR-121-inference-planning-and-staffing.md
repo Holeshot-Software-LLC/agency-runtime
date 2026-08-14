@@ -3,7 +3,7 @@ title: "AR-121: Implement inference-first planning and deterministic staffing"
 status: done
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-27
+updated: 2026-08-12
 tags: [planning, recruitment, selection, inference]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -46,7 +46,12 @@ AR-120 supplies the normalized, versioned workforce index.
 
 ## Acceptance
 
-- [ ] Configured inference plans before recruiting and sees the whole workforce.
-- [ ] Deterministic code enforces coverage, eligibility, composition, and budgets.
-- [ ] Disabled and unavailable semantic winners are visible but never activated.
-- [ ] Degraded deterministic fallback abstains on unsafe or weak coverage.
+- [x] Configured inference plans before recruiting and sees the whole workforce.
+- [x] Deterministic code enforces coverage, eligibility, composition, and budgets.
+- [x] Disabled and unavailable semantic winners are visible but never activated.
+- [x] Degraded deterministic fallback abstains on unsafe or weak coverage.
+
+These boxes record the historical AR-121 contract mapped in
+`AR-119-acceptance-evidence.md`. ADR-0118 and AR-255 now govern the stricter
+inference-only selection contract; this issue is not authority for a
+deterministic production selector.

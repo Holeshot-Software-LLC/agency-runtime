@@ -3,7 +3,7 @@ title: "AR-238: Isolated security review with bounded repair (slices 2-3 of AR-2
 status: done
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [workforce, hiring, security, routing, inference, sub-issue]
 related:
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
@@ -146,32 +146,32 @@ the standard gap-hire path. The reviewer is the gate.
 
 ## Acceptance
 
-- [ ] `classify_contractor_risk` remains as a first-pass hint source on
+- [x] `classify_contractor_risk` remains as a first-pass hint source on
       the contract body. The marker classes are passed to the reviewer as
       scrutiny hints; the filter never rejects on its own. The reviewer's
       verdict is final.
-- [ ] A new `security_review` inference stage runs on a fresh isolated
+- [x] A new `security_review` inference stage runs on a fresh isolated
       session, sees only the request hash, work unit, compiled contract,
       and contract hash, and returns `{verdict, reasons,
       required_changes}`. The session is constructed without shared
       creator context.
-- [ ] The reviewer and creator use different models and different
+- [x] The reviewer and creator use different models and different
       `thinking_level`s (via the existing `agency-security` vs
       `agency-hiring` profiles). When the same provider is used, the
       case records `same_provider_as_creator: true`.
-- [ ] A clean contract that would have passed on attempt 1 still passes
+- [x] A clean contract that would have passed on attempt 1 still passes
       on attempt 1 — the repair path is entered only when the reviewer
       returns `unsafe`.
-- [ ] An unsafe verdict triggers a repair loop bounded by
+- [x] An unsafe verdict triggers a repair loop bounded by
       `hiring_repair_budget: 3`. After 3 unsafe verdicts, the case →
       `rejected`, the worker is never instantiated, and the affected
       work unit fails open to a generalist with `Recruited via: none`.
-- [ ] Every attempt and verdict is recorded in the case's `attempts`
+- [x] Every attempt and verdict is recorded in the case's `attempts`
       array and the audit trail.
-- [ ] The `human_approval_required` flag is `False` and `risk_tier` is
+- [x] The `human_approval_required` flag is `False` and `risk_tier` is
       `standard` on the gap-hire path (the reviewer is the gate). The
       full verdict is recorded in `critic_evidence.security_review`.
-- [ ] The focused test spine (`test_workforce_dynamic_hiring`,
+- [x] The focused test spine (`test_workforce_dynamic_hiring`,
       `test_workforce_hiring_contract`, `test_workforce_selection_safety`,
       `test_routing_correctness`) passes with the new code paths. New
       focused tests cover: isolated security review, bounded repair loop,

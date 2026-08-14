@@ -3,7 +3,7 @@ title: "Derive runtime claims from authoritative correlated evidence"
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-26
+updated: 2026-08-12
 tags: [evidence, tracing, delegation]
 related:
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
@@ -20,6 +20,7 @@ related:
   - docs/roadmap/issue-AR-69-require-correlation-complete-cli-delegation-evidence.md
   - docs/roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md
   - docs/worklog/README.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
 supersedes: []
 superseded_by: null
 id: ADR-0027

@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-08-11
+updated: 2026-08-13
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
@@ -16,6 +16,14 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0119-separate-native-trust-modes-from-activation-proof.md
   - docs/decisions/0136-bind-opaque-codex-execution-by-ciphertext-identity.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - docs/roadmap/AR-119-founding-vision.md
+  - docs/roadmap/AR-119-rule-host-evidence-matrix.md
+  - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
+  - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
+  - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
@@ -46,9 +54,11 @@ specialist pool. It then selects faithful audited specialists or, for a real
 gap, designs, audits, and hires a narrow contractor. This is a staffing
 decision, not an execution plan: the native host alone decides whether to
 spawn children, what they do, and how it completes the request. When a host
-does start a child, Agency can attach request-scoped specialist cards and
-correlate the host's own evidence. The cards leave the active context with the
-request, so your main agent stays small.
+does start a child, Agency's supported integrations are designed to attach
+request-scoped specialist cards and correlate the host's own evidence. Only a
+host-written artifact containing the exact delivered card hashes before the
+child's first speech proves that delivery. The cards leave the active context
+with the request, so your main agent stays small.
 
 > **Doctrine note (2026-08-05).** Earlier revisions treated any near-match as
 > a mandatory gap and let deterministic coverage checks veto inference-chosen
@@ -83,6 +93,11 @@ request, so your main agent stays small.
 
 > Agency Runtime is prerelease software. Install it from this repository; no
 > public package release is claimed yet.
+
+> **Nine-rule completion is not claimed.** Rule 1 source and simulation are
+> repaired across all five adapters, but Rule 8 remains source-negative on
+> Hermes and OpenClaw and Rule 4 retains the host-evidence and compatibility gaps
+> shown below. The canonical matrix remains the only completion authority.
 
 ---
 
@@ -175,17 +190,20 @@ flowchart LR
 
 ## 🔌 Supported hosts
 
-| Host | Integration | Host-native child primitive | Request-scoped card delivery | Canary |
-|---|---|---|---|---|
-| **Codex** | Hooks + MCP + controls | `spawn_agent` | Card-delivery evidence when hooks and host artifacts prove it | ✅ |
-| **Claude Code** | Hooks + MCP + controls | `Agent` | Hook-bound specialist cards | ✅ |
-| **ZCode** | Hooks + controls | `Agent` (Claude-like) | Hook-bound cards; child lifecycle evidence is limited | planned |
-| **Hermes** | Python plugin + MCP | `delegate_task` | MCP/plugin specialist-card framing | ✅ |
-| **OpenClaw** | JavaScript plugin | `sessions_spawn` | MCP/plugin specialist-card framing | ✅ |
+| Host | Integration | Host-native child primitive | Rule-4 exact-candidate state |
+|---|---|---|---|
+| **Codex** | Hooks + MCP + controls | `spawn_agent` | **unproven**: exact CLI `0.147.0` and separately pinned Desktop `0.147.0-alpha.6.6` source/simulation cover their observed root, depth-one, and supported depth-two V2 ancestry; exec depth-two/deeper and exact-candidate Installed/Live artifacts remain open |
+| **Claude Code** | Hooks + MCP + controls | `Agent` | **unproven**: three host-authored prior-candidate artifacts contain cards before speech, but none binds the exact candidate |
+| **ZCode** | Hooks + controls | `Agent` (Claude-like) | **unproven** |
+| **Hermes** | Python plugin + MCP | `delegate_task` | **unproven** |
+| **OpenClaw** | JavaScript plugin | `sessions_spawn` | **unproven** |
 
-All hosts have deterministic Windows and Linux contract coverage. **Live status
-is reported separately** — a copied plugin directory is never proof a host loaded
-it. Run `agency doctor --json` to see what is installed and verified.
+Contract and simulation coverage is not live completion evidence. The
+[AR-119 rule/host matrix](docs/roadmap/AR-119-rule-host-evidence-matrix.md) is
+the sole current completion projection and requires the same behavior on all
+five hosts. A copied plugin directory, an Agency Store row, or an unavailable
+host never becomes proof. Run `agency doctor --json` to inspect local install
+and verification state without promoting it to a live-delivery claim.
 
 > **ZCode note:** ZCode reuses the Claude hook model and `Agent` tool for
 > host-owned child work. It does not emit `SubagentStart`/`SubagentStop`, so the
@@ -222,7 +240,8 @@ sequenceDiagram
     opt Host starts a child and correlation succeeds
         Host->>Agency: native child lifecycle event
         Agency->>Child: request-scoped specialist card(s)
-        Host->>Store: child/card evidence
+        Host->>Host: write child artifact with exact card hashes
+        Agency->>Store: index the observed host artifact
     end
     Host->>Agency: natural response / finalization evidence
 ```
@@ -284,7 +303,8 @@ A declared gap is a contractor specification. Agency:
   contract content.
 - **Admits** the worker as a least-privilege, visibly-marked probationary
   contractor tied to the agency origin (`origin="agency"`,
-  `employment="contractor"`), with a one-use activation receipt.
+  `employment="contractor"`), with immutable identity and request-scoped
+  admission evidence.
 - **Keeps roles narrow** — ordinary task staffing creates the exact missing
   specialist instead of expanding a near-match into a broad generalist.
 - A contract asserting an owner-gated high-risk domain class is persisted as a
@@ -298,15 +318,16 @@ employees. **Promotion to employee happens two ways.** The owner can promote
 any active contractor at any time through the CLI or dashboard transition
 action, informed by the surfaced promotion-readiness projection. Separately, a
 policy-based automatic promotion fires after
-`workforce.auto_promote_successes` (default 3) receipt-validated assignments
-whose acceptance was independently verified by a different worker in the same
-turn; it is suppressed during the `workforce.contractor_review_days` review
-window and disabled entirely with `auto_promote_successes: 0`. Every promotion
+`workforce.auto_promote_successes` (default 3) assignments whose acceptance
+was independently verified by a different worker in the same turn; it is
+suppressed during the `workforce.contractor_review_days` review window (default
+7 days) and disabled entirely with `auto_promote_successes: 0`. Every promotion
 — automatic or operator — is recorded as a worker event with its actor and
-evidence. (Live native-child outcomes do not yet record verified-acceptance
-evidence, so automatic promotion stays dormant until
+evidence. This automatic path is an AR-119 P0 closure gate. Live native-child
+outcomes do not yet record verified-acceptance evidence, so automatic promotion
+stays dormant until
 [AR-252](docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md)
-lands.)
+lands.
 
 ---
 
@@ -767,7 +788,9 @@ recorded in the bundled roster manifest and in [LICENSE](LICENSE).)
   quarantines the delta** — it never approves or activates.
 - New agents become selectable only after a separate **audit → approval →
   activation** step, so nothing enters the live roster unreviewed.
-- A nightly workflow runs the upstream delta audit and publishes review evidence.
+- A nightly workflow quarantines and audits upstream deltas and publishes review
+  evidence. It does not yet update normalized contracts, confusion groups, and
+  ingestion evaluations end to end; AR-120 remains open for that completion.
 - Enrichment (`scripts/enrich_workforce_contracts.py`) regenerates typed
   `stacks` and user-facing `scope_qualifiers` for the roster so the
   deterministic verifier scores real stack coverage; `domains` come from a

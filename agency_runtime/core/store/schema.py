@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 44
+SCHEMA_VERSION = 45
 
 # Columns an already-created activation receipts table gains by migration.
 #
@@ -84,6 +84,23 @@ MODEL_RECEIPT_MIGRATED_COLUMNS: tuple[tuple[str, str], ...] = (
 )
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
+_STORE_CLOCK_VALUE = re.compile(
+    r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}000\+00:00$"
+)
+
+
+def store_clock_value_is_canonical(value: object) -> bool:
+    """Return whether ``value`` has the exact valid timestamp shape SQLite writes."""
+
+    if not isinstance(value, str) or _STORE_CLOCK_VALUE.fullmatch(value) is None:
+        return False
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return False
+    return parsed.isoformat(timespec="microseconds") == value
+
+
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_worker_runs_native_scope "
     "ON worker_runs(host, session_id, trace_id, worker_id, native_run_id) "
@@ -778,6 +795,63 @@ CREATE TABLE IF NOT EXISTS native_child_parent_scopes (
 );
 """
 
+NATIVE_CHILD_DELIVERY_VERIFICATION_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS native_child_delivery_verifications (
+    decision_id TEXT PRIMARY KEY
+        CHECK (typeof(decision_id) = 'text'
+               AND length(CAST(decision_id AS BLOB)) BETWEEN 1 AND 512),
+    nonce TEXT NOT NULL UNIQUE
+        CHECK (typeof(nonce) = 'text'
+               AND length(CAST(nonce AS BLOB)) BETWEEN 1 AND 512),
+    artifact_digest TEXT NOT NULL UNIQUE
+        CHECK (typeof(artifact_digest) = 'text' AND length(artifact_digest) = 64
+               AND artifact_digest NOT GLOB '*[^0-9a-f]*'),
+    host TEXT NOT NULL
+        CHECK (host IN ('claude', 'codex', 'hermes', 'openclaw', 'zcode')),
+    parent_session_id TEXT NOT NULL
+        CHECK (typeof(parent_session_id) = 'text'
+               AND length(CAST(parent_session_id AS BLOB)) BETWEEN 1 AND 512),
+    parent_trace_id TEXT NOT NULL
+        CHECK (typeof(parent_trace_id) = 'text'
+               AND length(CAST(parent_trace_id AS BLOB)) BETWEEN 1 AND 512),
+    launch_id TEXT NOT NULL
+        CHECK (typeof(launch_id) = 'text'
+               AND length(CAST(launch_id AS BLOB)) BETWEEN 1 AND 512),
+    binding_kind TEXT NOT NULL
+        CHECK (typeof(binding_kind) = 'text'
+               AND length(CAST(binding_kind AS BLOB)) BETWEEN 2 AND 32
+               AND substr(binding_kind, 1, 1) GLOB '[a-z]'
+               AND binding_kind NOT GLOB '*[^a-z0-9_]*'),
+    binding_id TEXT NOT NULL
+        CHECK (typeof(binding_id) = 'text'
+               AND length(CAST(binding_id AS BLOB)) BETWEEN 1 AND 512),
+    child_id TEXT NOT NULL
+        CHECK (typeof(child_id) = 'text'
+               AND length(CAST(child_id AS BLOB)) BETWEEN 1 AND 512),
+    verified_at TEXT NOT NULL
+        CHECK (typeof(verified_at) = 'text'
+               AND length(CAST(verified_at AS BLOB)) BETWEEN 20 AND 40),
+    UNIQUE (
+        host,
+        parent_session_id,
+        parent_trace_id,
+        launch_id,
+        binding_kind,
+        binding_id
+    ),
+    UNIQUE (host, child_id),
+    FOREIGN KEY (decision_id) REFERENCES routing_decisions(id) ON DELETE CASCADE
+);
+"""
+
+NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL: dict[str, str] = {
+    "agency_native_child_delivery_verifications_immutable_update": (
+        "CREATE TRIGGER agency_native_child_delivery_verifications_immutable_update "
+        "BEFORE UPDATE ON native_child_delivery_verifications BEGIN "
+        "SELECT RAISE(ABORT, 'native child delivery verification is immutable'); END"
+    ),
+}
+
 CODEX_NATIVE_PLAN_SCOPE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS codex_native_plan_scopes (
     id TEXT PRIMARY KEY
@@ -800,7 +874,8 @@ CREATE TABLE IF NOT EXISTS codex_native_plan_scopes (
 );
 """
 
-SCHEMA_V1 = """
+SCHEMA_V1 = (
+    """
 -- Run tracking
 CREATE TABLE IF NOT EXISTS runs (
     id TEXT PRIMARY KEY,
@@ -1826,13 +1901,23 @@ WHEN (NEW.human_approved_by IS NOT OLD.human_approved_by
       AND NEW.human_approved_at IS NOT NULL
   )
 BEGIN SELECT RAISE(ABORT, 'agent hiring approval is immutable'); END;
-""" + "\n".join(
-    (
-        _REMEDIATION_RESOLUTION_INDEX_SQL + ";",
-        _REMEDIATION_QUEUE_IDENTITY_INDEX_SQL + ";",
-        # This index is installed by create_remediation_indexes() after legacy
-        # agent_import_events rows gain their v31 event_sequence column.
-        _REMEDIATION_SCAN_PROVENANCE_INDEX_SQL + ";",
+"""
+    + "\n"
+    + NATIVE_CHILD_DELIVERY_VERIFICATION_TABLE_SQL
+    + "\n"
+    + "\n".join(
+        statement.replace("CREATE TRIGGER ", "CREATE TRIGGER IF NOT EXISTS ", 1) + ";"
+        for statement in NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL.values()
+    )
+    + "\n"
+    + "\n".join(
+        (
+            _REMEDIATION_RESOLUTION_INDEX_SQL + ";",
+            _REMEDIATION_QUEUE_IDENTITY_INDEX_SQL + ";",
+            # This index is installed by create_remediation_indexes() after legacy
+            # agent_import_events rows gain their v31 event_sequence column.
+            _REMEDIATION_SCAN_PROVENANCE_INDEX_SQL + ";",
+        )
     )
 )
 
@@ -1849,6 +1934,7 @@ ALL_TABLES: tuple[str, ...] = (
     "worker_runs",
     "finalization_events",
     "routing_decisions",
+    "native_child_delivery_verifications",
     "store_secrets",
     "store_counters",
     "trace_tombstones",
@@ -4660,6 +4746,19 @@ def create_native_child_parent_scope_trigger(conn: sqlite3.Connection) -> None:
     conn.execute(NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL)
 
 
+def create_native_child_delivery_verification_schema(conn: sqlite3.Connection) -> None:
+    """Create the immutable, content-free native child delivery ledger."""
+
+    conn.execute(NATIVE_CHILD_DELIVERY_VERIFICATION_TABLE_SQL)
+    conn.execute(
+        "DROP TRIGGER IF EXISTS agency_native_child_delivery_verifications_immutable_delete"
+    )
+    for trigger_name in NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL:
+        conn.execute(f"DROP TRIGGER IF EXISTS {trigger_name}")  # nosec B608
+    for statement in NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL.values():
+        conn.execute(statement)
+
+
 CODEX_NATIVE_PLAN_SCOPE_TRIGGER_SQL: dict[str, str] = {
     "agency_codex_native_plan_scope_insert_guard": (
         "CREATE TRIGGER agency_codex_native_plan_scope_insert_guard "
@@ -5366,6 +5465,7 @@ def migrate_schema(
         )
     create_delegation_activation_invariant_triggers(conn)
     create_native_child_parent_scope_trigger(conn)
+    create_native_child_delivery_verification_schema(conn)
     create_codex_native_plan_scope_triggers(conn)
     create_boolean_domain_triggers(conn)
     create_activity_triggers(conn)

@@ -188,13 +188,14 @@ function selectionDistributionPayload(overrides = {}) {
 
 function childDeliveryPayload(overrides = {}) {
   return {
-    schema_version: "agency.dashboard.child_delivery.v1",
+    schema_version: "agency.dashboard.child_delivery.v2",
     sampled_at: "2026-08-11T12:00:02+00:00",
     source: {
-      authority: "host_written_child_artifacts",
+      authority: "host_written_artifacts_with_bound_verification_receipts",
       artifact_hosts: ["claude", "codex"],
-      agency_store_consulted: false,
-      evidence_meaning: "hash_verified_specialist_cards_in_child_input_before_first_speech",
+      agency_store_consulted: true,
+      store_role: "read_only_decision_and_verification_receipt_projection",
+      evidence_meaning: "host_artifact_delivery_correlated_to_exact_inference_decision_and_receipt",
     },
     window: {
       kind: "newest_verified_child_delivery_evidence",
@@ -222,6 +223,8 @@ function childDeliveryPayload(overrides = {}) {
       correlated_staffed_children: 1,
       uncorrelated_staffed_children: 0,
       legacy_deliveries: 0,
+      verified_deliveries: 1,
+      unverified_deliveries: 0,
       detail_limit: 50,
       detail_truncated: false,
       children: [{
@@ -231,10 +234,27 @@ function childDeliveryPayload(overrides = {}) {
         envelope_parent_id: "parent-1",
         correlated: true,
         legacy: false,
+        v6: true,
+        verified_delivery: true,
+        verification_reason: "verified_existing_receipt",
+        pre_speech: true,
+        artifact_digest: "b".repeat(64),
+        decision_id: "decision-child-1",
+        team_digest: "c".repeat(64),
+        candidate_digest: "d".repeat(64),
+        runtime_digest: "d".repeat(64),
+        install_id: "install-child-1",
+        bundle_digest: "e".repeat(64),
         cards: [{
           slug: "code-reviewer",
           version: "1",
           prompt_hash: "a".repeat(64),
+        }],
+        diagnostic_cards: [{
+          slug: "code-reviewer",
+          version: "1",
+          prompt_hash: "a".repeat(64),
+          body_character_length: 128,
         }],
       }],
     }, {
@@ -251,10 +271,23 @@ function childDeliveryPayload(overrides = {}) {
       correlated_staffed_children: 0,
       uncorrelated_staffed_children: 0,
       legacy_deliveries: 0,
+      verified_deliveries: 0,
+      unverified_deliveries: 0,
       detail_limit: 50,
       detail_truncated: false,
       children: [],
     }],
+    service_binding: {
+      store_path: "C:\\runtime\\agency.db",
+      desired_store_path: "C:\\runtime\\agency.db",
+      store_restart_required: false,
+    },
+    config_path: "C:\\runtime\\config.yaml",
+    config_revision: "child-evidence-config-revision",
+    environment_overrides: {},
+    store_path: "C:\\runtime\\agency.db",
+    desired_store_path: "C:\\runtime\\agency.db",
+    store_restart_required: false,
     ...overrides,
   };
 }
@@ -3372,7 +3405,85 @@ test("Vision Evidence validators reject inconsistent bounded projections", () =>
     version: "1",
     prompt_hash: "a".repeat(64),
   }));
+  maximumTeam.hosts[0].children[0].diagnostic_cards = maximumTeam.hosts[0].children[0].cards
+    .map((card) => ({ ...card, body_character_length: 128 }));
   assert.doesNotThrow(() => harness.api.validateChildDeliveryPayload(maximumTeam));
+
+  const unverifiedV6 = clone(childDeliveryPayload());
+  Object.assign(unverifiedV6.hosts[0], {
+    staffed_children: 0,
+    correlated_staffed_children: 0,
+    verified_deliveries: 0,
+    unverified_deliveries: 1,
+  });
+  Object.assign(unverifiedV6.hosts[0].children[0], {
+    verified_delivery: false,
+    verification_reason: "expected_decision_not_found_or_invalid",
+    cards: [],
+  });
+  assert.doesNotThrow(() => harness.api.validateChildDeliveryPayload(unverifiedV6));
+
+  const legacyDelivery = clone(unverifiedV6);
+  Object.assign(legacyDelivery.hosts[0], { legacy_deliveries: 1 });
+  Object.assign(legacyDelivery.hosts[0].children[0], {
+    legacy: true,
+    v6: false,
+    verification_reason: "legacy_delivery_non_authoritative",
+    decision_id: "",
+    team_digest: "",
+    candidate_digest: "",
+    runtime_digest: "",
+    install_id: "",
+    bundle_digest: "",
+    diagnostic_cards: [{
+      slug: "code-reviewer",
+      version: "1",
+      prompt_hash: "a".repeat(64),
+      body_character_length: null,
+    }],
+  });
+  assert.doesNotThrow(() => harness.api.validateChildDeliveryPayload(legacyDelivery));
+
+  const unverifiedWithCards = clone(unverifiedV6);
+  unverifiedWithCards.hosts[0].children[0].cards = [{
+    slug: "code-reviewer",
+    version: "1",
+    prompt_hash: "a".repeat(64),
+  }];
+  assert.throws(
+    () => harness.api.validateChildDeliveryPayload(unverifiedWithCards),
+    /child-delivery evidence is invalid/i,
+  );
+  const contradictoryLegacy = clone(legacyDelivery);
+  contradictoryLegacy.hosts[0].children[0].v6 = true;
+  assert.throws(
+    () => harness.api.validateChildDeliveryPayload(contradictoryLegacy),
+    /child-delivery evidence is invalid/i,
+  );
+  const contradictoryPartition = clone(childDeliveryPayload());
+  contradictoryPartition.hosts[0].unverified_deliveries = 1;
+  assert.throws(
+    () => harness.api.validateChildDeliveryPayload(contradictoryPartition),
+    /child-delivery evidence is invalid/i,
+  );
+  const unboundStoreAuthority = clone(childDeliveryPayload());
+  unboundStoreAuthority.source.agency_store_consulted = false;
+  assert.throws(
+    () => harness.api.validateChildDeliveryPayload(unboundStoreAuthority),
+    /child-delivery evidence is invalid/i,
+  );
+  const mismatchedReceiptCards = clone(childDeliveryPayload());
+  mismatchedReceiptCards.hosts[0].children[0].diagnostic_cards[0].prompt_hash = "f".repeat(64);
+  assert.throws(
+    () => harness.api.validateChildDeliveryPayload(mismatchedReceiptCards),
+    /child-delivery evidence is invalid/i,
+  );
+  const mismatchedVerifiedRuntime = clone(childDeliveryPayload());
+  mismatchedVerifiedRuntime.hosts[0].children[0].runtime_digest = "f".repeat(64);
+  assert.throws(
+    () => harness.api.validateChildDeliveryPayload(mismatchedVerifiedRuntime),
+    /child-delivery evidence is invalid/i,
+  );
   const impossibleChildCount = clone(childDeliveryPayload());
   impossibleChildCount.hosts[0].evidence_count = 2;
   assert.throws(
@@ -3531,6 +3642,39 @@ test("Vision Evidence renders three source contracts with accessible bounded fre
   );
 });
 
+test("Vision Evidence renders an unverified v6 delivery without calling it legacy", async () => {
+  const children = childDeliveryPayload();
+  Object.assign(children.hosts[0], {
+    staffed_children: 0,
+    correlated_staffed_children: 0,
+    verified_deliveries: 0,
+    unverified_deliveries: 1,
+  });
+  Object.assign(children.hosts[0].children[0], {
+    verified_delivery: false,
+    verification_reason: "expected_decision_not_found_or_invalid",
+    cards: [],
+  });
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/evidence/children") return jsonResponse(200, children);
+    if (path === "/api/evidence/rejections") return jsonResponse(200, rule8EvidencePayload());
+    if (path === "/api/evidence/wiring") return jsonResponse(200, wiringEvidencePayload());
+    throw new Error(`unexpected unverified-v6 request: ${path}`);
+  });
+  harness.api.configureOwnerSurface();
+  harness.api.state.activeView = "evidence";
+
+  assert.equal(await harness.api.refreshVisionEvidence(), true);
+  const childText = descendants(harness.node("vision-children-list"))
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.match(childText, /unverified v6 delivery/i);
+  assert.match(childText, /expected_decision_not_found_or_invalid/i);
+  assert.doesNotMatch(childText, /legacy delivery marker/i);
+  assert.match(harness.node("vision-children-source").textContent, /joined read-only/i);
+  assert.match(harness.node("vision-children-source").textContent, /staffing rows alone/i);
+});
+
 test("Vision Evidence marks an initial source failure unavailable without stale evidence", async () => {
   const harness = createAppHarness(async (path) => {
     if (path === "/api/evidence/children") {
@@ -3569,6 +3713,8 @@ test("Vision Evidence empty states preserve bounded unknown semantics", async ()
     correlated_staffed_children: 0,
     uncorrelated_staffed_children: 0,
     legacy_deliveries: 0,
+    verified_deliveries: 0,
+    unverified_deliveries: 0,
     detail_truncated: false,
     children: [],
   }));

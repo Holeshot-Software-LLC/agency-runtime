@@ -11,14 +11,18 @@ from __future__ import annotations
 import base64
 import json
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from hashlib import sha256
 from typing import Any, Final
 
 from agency_runtime.core.agent_activation import normalize_agent_slug
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.correlation import validate_correlation_id
+from agency_runtime.core.native_child_decision import MAX_NATIVE_CHILD_DELIVERY_TTL_SECONDS
 from agency_runtime.core.roster.revisions import content_digest_identity, content_identity_matches
+from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.store.version_identity import normalize_version_identity
 
 NATIVE_CHILD_PROMPT_DELIVERY_VERSION: Final[int] = 1
@@ -29,6 +33,8 @@ CODEX_NATIVE_CHILD_EXECUTION_VERSION: Final[int] = 1
 # marker namespace so the planned-delivery parser can never match it and send an
 # unplanned child down the plan-verification path.
 JIT_SPECIALIST_DELIVERY_VERSION: Final[int] = 5
+INFERENCE_TEAM_DELIVERY_VERSION: Final[int] = 6
+MAX_INFERENCE_TEAM_CARDS: Final[int] = 3
 MAX_NATIVE_CHILD_DELIVERY_METADATA_BYTES: Final[int] = 2_048
 MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS: Final[int] = 256
 
@@ -157,6 +163,57 @@ _JIT_FIELDS = frozenset(
         "specialist_prompt_hash",
     }
 )
+_INFERENCE_TEAM_SECTION = (
+    "\n\n[AGENCY INFERENCE TEAM v6]\n"
+    "Inference selected the exact ordered specialist team below for this native child. "
+    "The cards are one atomic, turn-scoped team: use all of them in order or none of "
+    "them. Do not copy this context into the parent, another worker, status text, or "
+    "the final response.\n"
+)
+_INFERENCE_TEAM_MARKER_PREFIX = "<!-- agency-native-child-team:v6:"
+_INFERENCE_TEAM_MARKER_PATTERN = re.compile(
+    re.escape(_INFERENCE_TEAM_MARKER_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_SUFFIX)
+)
+_INFERENCE_TEAM_END_PREFIX = "<!-- agency-native-child-team-end:v6:"
+_INFERENCE_TEAM_FIELDS = frozenset(
+    {
+        "version",
+        "host",
+        "parent_session_id",
+        "parent_trace_id",
+        "launch_id",
+        "decision_id",
+        "provider_receipt_digest",
+        "task_sha256",
+        "candidate_digest",
+        "install_id",
+        "bundle_digest",
+        "runtime_digest",
+        "issued_at",
+        "expires_at",
+        "nonce",
+        "binding_kind",
+        "binding_id",
+        "cards",
+        "team_digest",
+    }
+)
+_INFERENCE_TEAM_CARD_FIELDS = frozenset(
+    {
+        "specialist_slug",
+        "specialist_version",
+        "specialist_prompt_hash",
+        "body_character_length",
+    }
+)
+_MIXED_NATIVE_CHILD_MARKER_PREFIXES = (
+    _MARKER_PREFIX,
+    _CODEX_OPAQUE_MARKER_PREFIX,
+    _CODEX_DIRECT_MARKER_PREFIX,
+    _CODEX_EXECUTION_MARKER_PREFIX,
+    _JIT_MARKER_PREFIX,
+)
+_BINDING_KIND_PATTERN = re.compile(r"[a-z][a-z0-9_-]{0,63}")
 _DIGEST_PATTERN = re.compile(r"[0-9a-f]{64}")
 _CODEX_EXECUTION_FIELDS = frozenset({"version", "work_unit_id", "native_task_name", "goal_hash"})
 
@@ -192,6 +249,47 @@ class JitSpecialistDelivery:
     specialist_prompt_hash: str
     original_task: str
     prompt_body: str
+
+
+@dataclass(frozen=True, slots=True)
+class InferenceTeamCard:
+    """One exact immutable specialist card in an inference-selected team."""
+
+    specialist_slug: str
+    specialist_version: str
+    specialist_prompt_hash: str
+    prompt_body: str = field(repr=False)
+
+    @property
+    def body_character_length(self) -> int:
+        """Return the exact Unicode character count bound into the envelope."""
+
+        return len(self.prompt_body)
+
+
+@dataclass(frozen=True, slots=True)
+class InferenceTeamDelivery:
+    """One integrity-bound, all-or-nothing inference staffing decision."""
+
+    host: str
+    parent_session_id: str
+    parent_trace_id: str
+    launch_id: str
+    decision_id: str
+    provider_receipt_digest: str
+    task_sha256: str
+    candidate_digest: str
+    install_id: str
+    bundle_digest: str
+    runtime_digest: str
+    issued_at: str
+    expires_at: str
+    nonce: str
+    binding_kind: str
+    binding_id: str
+    team_digest: str
+    original_task: str = field(compare=False, repr=False)
+    cards: tuple[InferenceTeamCard, ...] = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -238,6 +336,199 @@ def _decoded_metadata(
     if not isinstance(result, dict) or frozenset(result) != expected_fields:
         return None
     return result
+
+
+def _sha256_text(value: str, *, field: str) -> str:
+    try:
+        return sha256(value.encode("utf-8")).hexdigest()
+    except UnicodeEncodeError as exc:
+        raise ValueError(f"{field} must be valid UTF-8 text") from exc
+
+
+def _normalized_sha256(value: object, *, field: str) -> str:
+    normalized = str(value or "").strip().casefold()
+    if _DIGEST_PATTERN.fullmatch(normalized) is None:
+        raise ValueError(f"{field} must be a lowercase SHA-256 digest")
+    return normalized
+
+
+def _canonical_timestamp(value: object, *, field: str) -> tuple[str, datetime]:
+    if isinstance(value, datetime):
+        parsed = value
+    elif isinstance(value, str) and value.strip():
+        raw = value.strip()
+        try:
+            parsed = datetime.fromisoformat(raw[:-1] + "+00:00" if raw.endswith("Z") else raw)
+        except ValueError as exc:
+            raise ValueError(f"{field} must be an RFC 3339 timestamp") from exc
+    else:
+        raise ValueError(f"{field} must be an RFC 3339 timestamp")
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{field} must include a UTC offset")
+    utc = parsed.astimezone(timezone.utc)
+    timespec = "microseconds" if utc.microsecond else "seconds"
+    return utc.isoformat(timespec=timespec).replace("+00:00", "Z"), utc
+
+
+def _normalized_inference_team_card_metadata(value: object) -> dict[str, Any]:
+    if not isinstance(value, Mapping) or frozenset(value) != _INFERENCE_TEAM_CARD_FIELDS:
+        raise ValueError("inference team card metadata is malformed")
+    slug = normalize_agent_slug(value.get("specialist_slug"))
+    version = str(value.get("specialist_version") or "").strip()
+    if not version or normalize_version_identity(version) != version:
+        raise ValueError("specialist_version is invalid")
+    prompt_hash = str(value.get("specialist_prompt_hash") or "").strip().casefold()
+    if content_digest_identity(prompt_hash) is None:
+        raise ValueError("specialist_prompt_hash must be a SHA-256 identity")
+    body_length = value.get("body_character_length")
+    if type(body_length) is not int or not 1 <= body_length <= MAX_SPECIALIST_PROMPT_CHARS:
+        raise ValueError("specialist prompt body character length is invalid")
+    return {
+        "specialist_slug": slug,
+        "specialist_version": version,
+        "specialist_prompt_hash": prompt_hash,
+        "body_character_length": body_length,
+    }
+
+
+def _normalized_inference_team_cards(
+    cards: object,
+) -> tuple[tuple[InferenceTeamCard, ...], list[dict[str, Any]]]:
+    if (
+        not isinstance(cards, Sequence)
+        or isinstance(cards, (str, bytes, bytearray))
+        or not 1 <= len(cards) <= MAX_INFERENCE_TEAM_CARDS
+    ):
+        raise ValueError(f"inference team must contain 1-{MAX_INFERENCE_TEAM_CARDS} cards")
+    normalized_cards: list[InferenceTeamCard] = []
+    metadata_cards: list[dict[str, Any]] = []
+    seen_slugs: set[str] = set()
+    for card in cards:
+        if not isinstance(card, InferenceTeamCard):
+            raise ValueError("inference team cards must be InferenceTeamCard values")
+        if not isinstance(card.prompt_body, str) or not card.prompt_body:
+            raise ValueError("specialist prompt body must be a non-empty string")
+        descriptor = _normalized_inference_team_card_metadata(
+            {
+                "specialist_slug": card.specialist_slug,
+                "specialist_version": card.specialist_version,
+                "specialist_prompt_hash": card.specialist_prompt_hash,
+                "body_character_length": len(card.prompt_body),
+            }
+        )
+        if descriptor["specialist_slug"] in seen_slugs:
+            raise ValueError("inference team cannot contain a duplicate specialist")
+        seen_slugs.add(str(descriptor["specialist_slug"]))
+        try:
+            matches = content_identity_matches(
+                card.prompt_body,
+                descriptor["specialist_prompt_hash"],
+            )
+        except UnicodeEncodeError as exc:
+            raise ValueError("specialist prompt body must be valid UTF-8 text") from exc
+        if not matches:
+            raise ValueError("specialist prompt body failed exact identity verification")
+        normalized_cards.append(
+            InferenceTeamCard(
+                specialist_slug=str(descriptor["specialist_slug"]),
+                specialist_version=str(descriptor["specialist_version"]),
+                specialist_prompt_hash=str(descriptor["specialist_prompt_hash"]),
+                prompt_body=card.prompt_body,
+            )
+        )
+        metadata_cards.append(descriptor)
+    return tuple(normalized_cards), metadata_cards
+
+
+def _inference_team_descriptor_digest(cards: list[dict[str, Any]]) -> str:
+    return sha256(
+        json.dumps(
+            cards,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def inference_team_digest(cards: object) -> str:
+    """Return the canonical identity of one exact ordered multi-card team."""
+
+    _normalized_cards, metadata_cards = _normalized_inference_team_cards(cards)
+    return _inference_team_descriptor_digest(metadata_cards)
+
+
+def _inference_team_metadata(
+    *,
+    host: object,
+    parent_session_id: object,
+    parent_trace_id: object,
+    launch_id: object,
+    decision_id: object,
+    provider_receipt_digest: object,
+    task_sha256: object,
+    candidate_digest: object,
+    install_id: object,
+    bundle_digest: object,
+    runtime_digest: object,
+    issued_at: object,
+    expires_at: object,
+    nonce: object,
+    binding_kind: object,
+    binding_id: object,
+    cards: object,
+) -> dict[str, Any]:
+    normalized_host = str(host or "").strip().casefold()
+    if normalized_host not in {"codex", "claude", "zcode", "hermes", "openclaw"}:
+        raise ValueError("native-child prompt delivery host is unsupported")
+    canonical_issued_at, issued = _canonical_timestamp(issued_at, field="issued_at")
+    canonical_expires_at, expires = _canonical_timestamp(expires_at, field="expires_at")
+    if expires <= issued:
+        raise ValueError("expires_at must be later than issued_at")
+    if (expires - issued).total_seconds() > MAX_NATIVE_CHILD_DELIVERY_TTL_SECONDS:
+        raise ValueError("native-child delivery lifetime exceeds its maximum")
+    kind = str(binding_kind or "").strip().casefold()
+    if _BINDING_KIND_PATTERN.fullmatch(kind) is None:
+        raise ValueError("binding_kind is invalid")
+    if not isinstance(cards, list) or not 1 <= len(cards) <= MAX_INFERENCE_TEAM_CARDS:
+        raise ValueError(f"inference team must contain 1-{MAX_INFERENCE_TEAM_CARDS} cards")
+    normalized_cards = [_normalized_inference_team_card_metadata(card) for card in cards]
+    slugs = [str(card["specialist_slug"]) for card in normalized_cards]
+    if len(slugs) != len(set(slugs)):
+        raise ValueError("inference team cannot contain a duplicate specialist")
+    candidate = _normalized_sha256(candidate_digest, field="candidate_digest")
+    runtime = _normalized_sha256(runtime_digest, field="runtime_digest")
+    if candidate != runtime:
+        raise ValueError("candidate_digest must match runtime_digest")
+    metadata: dict[str, Any] = {
+        "version": INFERENCE_TEAM_DELIVERY_VERSION,
+        "host": normalized_host,
+        "parent_session_id": validate_correlation_id(
+            parent_session_id,
+            field="parent_session_id",
+        ),
+        "parent_trace_id": validate_correlation_id(parent_trace_id, field="parent_trace_id"),
+        "launch_id": validate_correlation_id(launch_id, field="launch_id"),
+        "decision_id": validate_correlation_id(decision_id, field="decision_id"),
+        "provider_receipt_digest": _normalized_sha256(
+            provider_receipt_digest,
+            field="provider_receipt_digest",
+        ),
+        "task_sha256": _normalized_sha256(task_sha256, field="task_sha256"),
+        "candidate_digest": candidate,
+        "install_id": validate_correlation_id(install_id, field="install_id"),
+        "bundle_digest": _normalized_sha256(bundle_digest, field="bundle_digest"),
+        "runtime_digest": runtime,
+        "issued_at": canonical_issued_at,
+        "expires_at": canonical_expires_at,
+        "nonce": validate_correlation_id(nonce, field="nonce"),
+        "binding_kind": kind,
+        "binding_id": validate_correlation_id(binding_id, field="binding_id"),
+        "cards": normalized_cards,
+    }
+    metadata["team_digest"] = _inference_team_descriptor_digest(normalized_cards)
+    return metadata
 
 
 def _identity_metadata(
@@ -762,6 +1053,262 @@ def parse_all_jit_specialist_deliveries(value: object) -> list[JitSpecialistDeli
     return deliveries
 
 
+def _inference_team_card_header(
+    index: int,
+    count: int,
+    card: Mapping[str, Any],
+) -> str:
+    return (
+        f"\n[AGENCY INFERENCE TEAM CARD {index}/{count}]\n"
+        f"Specialist: {card['specialist_slug']}\n"
+        f"Version: {card['specialist_version']}\n"
+    )
+
+
+def render_inference_team_context_segment(
+    original_task: object,
+    cards: object,
+    *,
+    host: object,
+    parent_session_id: object,
+    parent_trace_id: object,
+    launch_id: object,
+    decision_id: object,
+    provider_receipt_digest: object,
+    candidate_digest: object,
+    install_id: object,
+    bundle_digest: object,
+    runtime_digest: object,
+    issued_at: object,
+    expires_at: object,
+    nonce: object,
+    binding_kind: object,
+    binding_id: object,
+) -> str:
+    """Render only the exact v6 context segment bound to ``original_task``.
+
+    Append-only hosts may add the returned segment to the same byte-for-byte task.
+    Parsing and evidence validation still consume the resulting full task plus segment.
+    """
+
+    if not isinstance(original_task, str) or not original_task:
+        raise ValueError("native child task must be a non-empty string")
+    if any(
+        token in original_task
+        for token in (
+            _INFERENCE_TEAM_SECTION,
+            _INFERENCE_TEAM_MARKER_PREFIX,
+            _INFERENCE_TEAM_END_PREFIX,
+            *_MIXED_NATIVE_CHILD_MARKER_PREFIXES,
+        )
+    ):
+        raise ValueError("native child task contains a reserved inference-team marker")
+    normalized_cards, card_metadata = _normalized_inference_team_cards(cards)
+    for card in normalized_cards:
+        if any(
+            token in card.prompt_body
+            for token in (
+                _INFERENCE_TEAM_SECTION,
+                _INFERENCE_TEAM_MARKER_PREFIX,
+                _INFERENCE_TEAM_END_PREFIX,
+                *_MIXED_NATIVE_CHILD_MARKER_PREFIXES,
+            )
+        ):
+            raise ValueError("specialist prompt body contains a reserved inference-team marker")
+    metadata = _inference_team_metadata(
+        host=host,
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        launch_id=launch_id,
+        decision_id=decision_id,
+        provider_receipt_digest=provider_receipt_digest,
+        task_sha256=_sha256_text(original_task, field="native child task"),
+        candidate_digest=candidate_digest,
+        install_id=install_id,
+        bundle_digest=bundle_digest,
+        runtime_digest=runtime_digest,
+        issued_at=issued_at,
+        expires_at=expires_at,
+        nonce=nonce,
+        binding_kind=binding_kind,
+        binding_id=binding_id,
+        cards=card_metadata,
+    )
+    marker = f"{_INFERENCE_TEAM_MARKER_PREFIX}{_encoded_metadata(metadata)}{_MARKER_SUFFIX}"
+    payload = "".join(
+        _inference_team_card_header(index, len(normalized_cards), descriptor) + card.prompt_body
+        for index, (card, descriptor) in enumerate(
+            zip(normalized_cards, card_metadata, strict=True),
+            start=1,
+        )
+    )
+    end_marker = f"\n{_INFERENCE_TEAM_END_PREFIX}{metadata['team_digest']}{_MARKER_SUFFIX}"
+    return f"{_INFERENCE_TEAM_SECTION}{marker}{payload}{end_marker}"
+
+
+def render_inference_team_delivery(
+    original_task: object,
+    cards: object,
+    *,
+    host: object,
+    parent_session_id: object,
+    parent_trace_id: object,
+    launch_id: object,
+    decision_id: object,
+    provider_receipt_digest: object,
+    candidate_digest: object,
+    install_id: object,
+    bundle_digest: object,
+    runtime_digest: object,
+    issued_at: object,
+    expires_at: object,
+    nonce: object,
+    binding_kind: object,
+    binding_id: object,
+) -> str:
+    """Append one exact ordered inference-selected team to a native child task."""
+
+    if not isinstance(original_task, str) or not original_task:
+        raise ValueError("native child task must be a non-empty string")
+    return original_task + render_inference_team_context_segment(
+        original_task,
+        cards,
+        host=host,
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        launch_id=launch_id,
+        decision_id=decision_id,
+        provider_receipt_digest=provider_receipt_digest,
+        candidate_digest=candidate_digest,
+        install_id=install_id,
+        bundle_digest=bundle_digest,
+        runtime_digest=runtime_digest,
+        issued_at=issued_at,
+        expires_at=expires_at,
+        nonce=nonce,
+        binding_kind=binding_kind,
+        binding_id=binding_id,
+    )
+
+
+def parse_inference_team_delivery(value: object) -> InferenceTeamDelivery | None:
+    """Recover one complete v6 team, rejecting any invalid member atomically."""
+
+    if not isinstance(value, str) or not value:
+        return None
+    if (
+        value.count(_INFERENCE_TEAM_SECTION) != 1
+        or value.count(_INFERENCE_TEAM_MARKER_PREFIX) != 1
+        or value.count(_INFERENCE_TEAM_END_PREFIX) != 1
+    ):
+        return None
+    matches = list(_INFERENCE_TEAM_MARKER_PATTERN.finditer(value))
+    if len(matches) != 1:
+        return None
+    match = matches[0]
+    section_start = value.rfind(_INFERENCE_TEAM_SECTION, 0, match.start())
+    if section_start < 0 or section_start + len(_INFERENCE_TEAM_SECTION) != match.start():
+        return None
+    original_task = value[:section_start]
+    if not original_task or any(
+        marker in original_task for marker in _MIXED_NATIVE_CHILD_MARKER_PREFIXES
+    ):
+        return None
+    metadata = _decoded_metadata(
+        match.group(1),
+        expected_fields=_INFERENCE_TEAM_FIELDS,
+    )
+    if metadata is None:
+        return None
+    try:
+        normalized = _inference_team_metadata(
+            host=metadata.get("host"),
+            parent_session_id=metadata.get("parent_session_id"),
+            parent_trace_id=metadata.get("parent_trace_id"),
+            launch_id=metadata.get("launch_id"),
+            decision_id=metadata.get("decision_id"),
+            provider_receipt_digest=metadata.get("provider_receipt_digest"),
+            task_sha256=metadata.get("task_sha256"),
+            candidate_digest=metadata.get("candidate_digest"),
+            install_id=metadata.get("install_id"),
+            bundle_digest=metadata.get("bundle_digest"),
+            runtime_digest=metadata.get("runtime_digest"),
+            issued_at=metadata.get("issued_at"),
+            expires_at=metadata.get("expires_at"),
+            nonce=metadata.get("nonce"),
+            binding_kind=metadata.get("binding_kind"),
+            binding_id=metadata.get("binding_id"),
+            cards=metadata.get("cards"),
+        )
+        if (
+            metadata != normalized
+            or _sha256_text(
+                original_task,
+                field="native child task",
+            )
+            != normalized["task_sha256"]
+        ):
+            return None
+    except (TypeError, ValueError):
+        return None
+
+    cursor = match.end()
+    parsed_cards: list[InferenceTeamCard] = []
+    card_metadata = normalized["cards"]
+    for index, descriptor in enumerate(card_metadata, start=1):
+        header = _inference_team_card_header(index, len(card_metadata), descriptor)
+        if not value.startswith(header, cursor):
+            return None
+        cursor += len(header)
+        body_length = int(descriptor["body_character_length"])
+        prompt_body = value[cursor : cursor + body_length]
+        if len(prompt_body) != body_length or any(
+            marker in prompt_body for marker in _MIXED_NATIVE_CHILD_MARKER_PREFIXES
+        ):
+            return None
+        try:
+            if not content_identity_matches(
+                prompt_body,
+                descriptor["specialist_prompt_hash"],
+            ):
+                return None
+        except UnicodeEncodeError:
+            return None
+        parsed_cards.append(
+            InferenceTeamCard(
+                specialist_slug=str(descriptor["specialist_slug"]),
+                specialist_version=str(descriptor["specialist_version"]),
+                specialist_prompt_hash=str(descriptor["specialist_prompt_hash"]),
+                prompt_body=prompt_body,
+            )
+        )
+        cursor += body_length
+    expected_end = f"\n{_INFERENCE_TEAM_END_PREFIX}{normalized['team_digest']}{_MARKER_SUFFIX}"
+    if value[cursor:] != expected_end:
+        return None
+    return InferenceTeamDelivery(
+        host=str(normalized["host"]),
+        parent_session_id=str(normalized["parent_session_id"]),
+        parent_trace_id=str(normalized["parent_trace_id"]),
+        launch_id=str(normalized["launch_id"]),
+        decision_id=str(normalized["decision_id"]),
+        provider_receipt_digest=str(normalized["provider_receipt_digest"]),
+        task_sha256=str(normalized["task_sha256"]),
+        candidate_digest=str(normalized["candidate_digest"]),
+        install_id=str(normalized["install_id"]),
+        bundle_digest=str(normalized["bundle_digest"]),
+        runtime_digest=str(normalized["runtime_digest"]),
+        issued_at=str(normalized["issued_at"]),
+        expires_at=str(normalized["expires_at"]),
+        nonce=str(normalized["nonce"]),
+        binding_kind=str(normalized["binding_kind"]),
+        binding_id=str(normalized["binding_id"]),
+        team_digest=str(normalized["team_digest"]),
+        original_task=original_task,
+        cards=tuple(parsed_cards),
+    )
+
+
 def render_codex_opaque_native_child_prompt_delivery(
     prompt_body: object,
     *,
@@ -971,19 +1518,27 @@ __all__ = [
     "CODEX_DIRECT_NATIVE_CHILD_PROMPT_DELIVERY_VERSION",
     "CODEX_NATIVE_CHILD_EXECUTION_VERSION",
     "CODEX_OPAQUE_NATIVE_CHILD_PROMPT_DELIVERY_VERSION",
+    "INFERENCE_TEAM_DELIVERY_VERSION",
+    "MAX_INFERENCE_TEAM_CARDS",
     "MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS",
     "MAX_NATIVE_CHILD_DELIVERY_METADATA_BYTES",
     "NATIVE_CHILD_PROMPT_DELIVERY_VERSION",
     "CodexNativeChildExecutionDelivery",
+    "InferenceTeamCard",
+    "InferenceTeamDelivery",
     "NativeChildPromptDelivery",
     "codex_opaque_child_message_ciphertext",
+    "inference_team_digest",
     "is_codex_opaque_collaboration_message",
     "parse_all_jit_specialist_deliveries",
     "parse_codex_native_child_execution_message",
+    "parse_inference_team_delivery",
     "parse_native_child_prompt_delivery",
     "render_codex_direct_native_child_prompt_delivery",
     "render_codex_native_child_execution_message",
     "render_codex_native_child_execution_prefix",
     "render_codex_opaque_native_child_prompt_delivery",
+    "render_inference_team_context_segment",
+    "render_inference_team_delivery",
     "render_native_child_prompt_delivery",
 ]

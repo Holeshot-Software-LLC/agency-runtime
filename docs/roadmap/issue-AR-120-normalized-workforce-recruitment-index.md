@@ -1,9 +1,9 @@
 ---
 title: "AR-120: Normalize and audit the complete workforce recruitment index"
-status: done
+status: open
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-08-12
 tags: [roster, taxonomy, audit, ingestion]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -49,3 +49,8 @@ prompt provenance and activation approval.
 - [ ] Typed relationships replace overloaded conflict semantics.
 - [ ] Every projection is independently checked against its prompt body.
 - [ ] Nightly ingestion updates contracts, confusion groups, and evaluations safely.
+
+## AR-256 status correction (2026-08-12)
+
+Reopened because the nightly ingestion criterion remains unimplemented and no
+successor owns it. The other index work does not make that gate complete.

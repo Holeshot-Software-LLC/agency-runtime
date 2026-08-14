@@ -3,13 +3,14 @@ title: "AR-242: Autonomous promotion with review window (slice 6 of AR-235)"
 status: done
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-12
 tags: [workforce, promotion, hiring, sub-issue]
 related:
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
   - agency_runtime/core/workforce/promotion.py
   - agency_runtime/core/store/workforce.py
   - agency_runtime/core/config_defaults.yaml
+  - docs/decisions/0157-automatically-promote-host-verified-contractors.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -18,7 +19,7 @@ issue_id: AR-242
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/251"
 depends_on: []
-blocks: []
+blocks: [AR-252]
 ---
 
 # AR-242: Autonomous promotion with review window (slice 6 of AR-235)
@@ -31,6 +32,12 @@ promotion human-controlled by default, which is incompatible with autonomous
 assignments is a known-good asset that does not need a human in the loop.
 
 ## Current state
+
+> **Corrected 2026-08-12.** The bullets below describe the pre-implementation
+> state retained for provenance. Commit `f85074f` set the defaults to three
+> successes and seven days and wired the review-window projection. AR-256 owns
+> reconciliation of the unchecked acceptance boxes; AR-252 owns the still-
+> missing live host-backed acceptance path.
 
 - `auto_promote_successes: 0` (`config_defaults.yaml`) — automatic promotion
   is off.
@@ -60,13 +67,17 @@ assignments is a known-good asset that does not need a human in the loop.
 
 ## Acceptance
 
-- [ ] `auto_promote_successes: 3` and `contractor_review_days: 7` are the
+- [x] `auto_promote_successes: 3` and `contractor_review_days: 7` are the
       new defaults.
-- [ ] A contractor with 3 verified successes is auto-promoted when past the
+- [x] A contractor with 3 verified successes is auto-promoted when past the
       review window.
-- [ ] A contractor within the review window is not auto-promoted even with
+- [x] A contractor within the review window is not auto-promoted even with
       3 verified successes; the readiness projection shows
       `in_review_window: true`.
-- [ ] The review window is computed per-contractor from `created_at`.
-- [ ] Focused tests cover: auto-promote past window, suppression within
-      window, release after expiry.
+- [x] The review window is computed per-contractor from `created_at`.
+- [x] Focused tests cover: auto-promote past window, suppression within
+  window, release after expiry.
+
+These checks prove the policy implementation and simulation only. AR-252
+remains P0 because production outcomes do not yet provide the independent,
+host-backed acceptance evidence needed to trigger automatic promotion live.

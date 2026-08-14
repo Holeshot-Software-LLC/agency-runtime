@@ -3,7 +3,7 @@ title: "AR-228: Fail open with an honest header when no specialist is selected"
 status: done
 category: roadmap
 created: 2026-08-03
-updated: 2026-08-03
+updated: 2026-08-12
 tags: [bug, inference, routing, workforce, product, failure]
 related:
   - docs/decisions/0152-fail-open-with-honest-header-when-no-specialist.md
@@ -107,7 +107,7 @@ starts from a clean branch off merged main so the roster PR stays isolated.
       truthful reasons (Package 3 — see findings below).
 - [x] Specialist routing fires on ordinary prompts against a verified host
       capability receipt (Package 4 — see verification below).
-- [ ] A follow-up pull request is open with exact verification evidence.
+- [x] A follow-up pull request is open with exact verification evidence.
 
 ## Routing verification (Package 4)
 
