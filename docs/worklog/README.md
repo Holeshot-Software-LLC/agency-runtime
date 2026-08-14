@@ -879,6 +879,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `03f8ab48` | 2026-08-14 | style: format the matrix-evidence contract | null | null |
 | `917c9b60` | 2026-08-14 | fix(canary): log the invocation traceback instead of discarding it | null | null |
 | `1fe68701` | 2026-08-14 | feat(evals): measure staffing rate, recruiter cost, and the cold budget | null | null |
+| `9ade8261` | 2026-08-14 | fix(security)!: require integrity, not secrecy, of files hosts wrote | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
