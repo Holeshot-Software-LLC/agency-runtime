@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-13
+updated: 2026-08-14
 tags: []
 related: []
 supersedes: []
@@ -859,6 +859,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `74589af7` | 2026-08-13 | test(selector): retire two assertions the prune and the kernel split orphaned | null | null |
 | `a25ec350` | 2026-08-13 | test(resident-managers): split the kernel lifetime contract by whether Agency can run | null | null |
 | `b60fa62b` | 2026-08-13 | docs(roadmap): bump the candidate to a25ec350 and record its conformance run | null | null |
+| `4ade96a3` | 2026-08-14 | docs(handoff): point the capsule at the live worktree, PR, and candidate | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
