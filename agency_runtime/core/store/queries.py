@@ -25,7 +25,7 @@ RECENT_ACTIVITY_QUERIES: Mapping[str, str] = {
     "preflight_failures": (
         "SELECT id, session_id, trace_id, host, stage, reason_code, invariant_code, "
         "exception_category, provider_attempts, staffing_reason_codes, "
-        "hiring_reason_codes, recorded_at "
+        "hiring_reason_codes, eligibility_reason_codes, recorded_at "
         "FROM preflight_failure_receipts "
         "ORDER BY recorded_at DESC, id DESC LIMIT ?"
     ),
@@ -443,6 +443,13 @@ def normalize_activity_rows(
                     maximum_depth=2,
                     maximum_nodes=64,
                 )
+                eligibility_reason_codes = safe_load_bounded_json(
+                    # Rows written before this column existed decode as empty.
+                    str(row.get("eligibility_reason_codes") or "[]"),
+                    maximum_bytes=MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES,
+                    maximum_depth=2,
+                    maximum_nodes=64,
+                )
             except (TypeError, ValueError) as exc:
                 raise RuntimeError(
                     "preflight failure activity failed integrity validation"
@@ -457,6 +464,7 @@ def normalize_activity_rows(
                     "provider_attempts": attempts,
                     "staffing_reason_codes": staffing_reason_codes,
                     "hiring_reason_codes": hiring_reason_codes,
+                    "eligibility_reason_codes": eligibility_reason_codes,
                 }
             )
             if projected is None:

@@ -128,8 +128,13 @@ def _codes(value: object, *, limit: int = _MAX_CODES) -> list[str]:
     return result
 
 
-def _validation_failures(value: object) -> list[dict[str, str]]:
-    """Project only the allowlisted, content-free recruiter failure contract."""
+def project_nomination_failures(value: object) -> list[dict[str, str]]:
+    """Project only the allowlisted, content-free recruiter failure contract.
+
+    Both the routing receipt and the terminal preflight-failure receipt need
+    this answer, and they must agree, so the rule lives here once rather than
+    being restated per receipt.
+    """
 
     raw: object = value
     if isinstance(value, str):
@@ -184,7 +189,7 @@ def _provider_attempts(value: object) -> list[dict[str, Any]]:
             "reason_code": _reason_family(item.get("reason"))
             or _reason_family(item.get("reason_code")),
         }
-        validation_failures = _validation_failures(
+        validation_failures = project_nomination_failures(
             item.get("validation_failures", item.get("validation_detail"))
         )
         if validation_failures:
@@ -690,5 +695,6 @@ __all__ = [
     "bounded_receipt_text",
     "normalize_durable_routing_receipt",
     "project_durable_routing_receipt",
+    "project_nomination_failures",
     "routing_projection_digest",
 ]

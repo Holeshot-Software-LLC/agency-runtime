@@ -806,6 +806,7 @@ def inference_operational_snapshot(
             "provider_attempts": list(receipt.get("provider_attempts") or ()),
             "staffing_reason_codes": list(receipt.get("staffing_reason_codes") or ()),
             "hiring_reason_codes": list(receipt.get("hiring_reason_codes") or ()),
+            "eligibility_reason_codes": list(receipt.get("eligibility_reason_codes") or ()),
             "recorded_at": str(receipt.get("recorded_at") or ""),
             "trace_id": str(receipt.get("trace_id") or "")[:256],
             "host": str(receipt.get("host") or "")[:64],

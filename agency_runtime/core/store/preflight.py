@@ -238,12 +238,27 @@ def _prepare_preflight_failure_receipt(
         separators=(",", ":"),
         sort_keys=True,
     )
+    encoded_eligibility = json.dumps(
+        projected["eligibility_reason_codes"],
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
     if any(
         len(encoded.encode("utf-8")) > MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES
-        for encoded in (encoded_staffing, encoded_hiring)
+        for encoded in (encoded_staffing, encoded_hiring, encoded_eligibility)
     ):
         raise ValueError("preflight failure reason codes exceed their durable bound")
-    return projected, encoded_attempts, encoded_staffing, encoded_hiring
+    return projected, encoded_attempts, encoded_staffing, encoded_hiring, encoded_eligibility
+
+
+def _row_value(row: Mapping[str, Any], column: str) -> Any:
+    """Read one column that may be absent from an older stored row."""
+
+    try:
+        return row[column]
+    except (IndexError, KeyError):
+        return None
 
 
 def _decode_preflight_failure_receipt(row: Mapping[str, Any]) -> dict[str, Any]:
@@ -268,6 +283,13 @@ def _decode_preflight_failure_receipt(row: Mapping[str, Any]) -> dict[str, Any]:
             maximum_depth=2,
             maximum_nodes=64,
         )
+        eligibility_reason_codes = safe_load_bounded_json(
+            # Databases written before this column existed decode as empty.
+            str(_row_value(row, "eligibility_reason_codes") or "[]"),
+            maximum_bytes=MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES,
+            maximum_depth=2,
+            maximum_nodes=64,
+        )
     except (TypeError, ValueError) as exc:
         raise RuntimeError("preflight failure receipt failed integrity validation") from exc
     projected = project_preflight_failure_receipt(
@@ -280,6 +302,7 @@ def _decode_preflight_failure_receipt(row: Mapping[str, Any]) -> dict[str, Any]:
             "provider_attempts": provider_attempts,
             "staffing_reason_codes": staffing_reason_codes,
             "hiring_reason_codes": hiring_reason_codes,
+            "eligibility_reason_codes": eligibility_reason_codes,
         }
     )
     if projected is None:
@@ -1867,7 +1890,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
             row = conn.execute(
                 "SELECT id, session_id, trace_id, host, stage, reason_code, "
                 "invariant_code, exception_category, provider_attempts, staffing_reason_codes, "
-                "hiring_reason_codes, recorded_at "
+                "hiring_reason_codes, eligibility_reason_codes, recorded_at "
                 "FROM preflight_failure_receipts WHERE session_id = ? AND trace_id = ?",
                 (normalized_session, normalized_trace),
             ).fetchone()
@@ -1923,13 +1946,19 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
             )
             if closed.rowcount:
                 if projected_failure is not None:
-                    receipt, encoded_attempts, encoded_staffing, encoded_hiring = projected_failure
+                    (
+                        receipt,
+                        encoded_attempts,
+                        encoded_staffing,
+                        encoded_hiring,
+                        encoded_eligibility,
+                    ) = projected_failure
                     inserted = conn.execute(
                         "INSERT INTO preflight_failure_receipts "
                         "(id, session_id, trace_id, host, stage, reason_code, invariant_code, "
                         "exception_category, provider_attempts, staffing_reason_codes, "
-                        "hiring_reason_codes, recorded_at) "
-                        "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, ?, ?, ?, "
+                        "hiring_reason_codes, eligibility_reason_codes, recorded_at) "
+                        "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, ?, ?, ?, ?, "
                         f"{STORE_CLOCK_SQL} FROM runs "  # nosec B608
                         "WHERE session_id = ? AND trace_id = ? AND status = 'preflight_failed'",
                         (
@@ -1941,6 +1970,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                             encoded_attempts,
                             encoded_staffing,
                             encoded_hiring,
+                            encoded_eligibility,
                             session_id,
                             trace_id,
                         ),
@@ -2003,13 +2033,19 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                 ),
             )
             if closed.rowcount and projected_failure is not None:
-                receipt, encoded_attempts, encoded_staffing, encoded_hiring = projected_failure
+                (
+                    receipt,
+                    encoded_attempts,
+                    encoded_staffing,
+                    encoded_hiring,
+                    encoded_eligibility,
+                ) = projected_failure
                 inserted = conn.execute(
                     "INSERT INTO preflight_failure_receipts "
                     "(id, session_id, trace_id, host, stage, reason_code, invariant_code, "
                     "exception_category, provider_attempts, staffing_reason_codes, "
-                    "hiring_reason_codes, recorded_at) "
-                    "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, ?, ?, ?, "
+                    "hiring_reason_codes, eligibility_reason_codes, recorded_at) "
+                    "SELECT ?, session_id, trace_id, host, ?, ?, ?, ?, ?, ?, ?, ?, "
                     f"{STORE_CLOCK_SQL} FROM runs "  # nosec B608
                     "WHERE session_id = ? AND trace_id = ? AND status = 'preflight_failed'",
                     (
@@ -2021,6 +2057,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                         encoded_attempts,
                         encoded_staffing,
                         encoded_hiring,
+                        encoded_eligibility,
                         session_id,
                         trace_id,
                     ),

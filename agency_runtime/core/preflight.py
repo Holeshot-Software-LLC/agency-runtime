@@ -24,6 +24,7 @@ from agency_runtime.core.host_capabilities import (
 from agency_runtime.core.preflight_failure import (
     PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
     default_preflight_failure_reason,
+    preflight_eligibility_reason_codes,
     preflight_exception_category,
     preflight_hiring_reason_codes,
     preflight_invariant_code,
@@ -116,6 +117,7 @@ class _PreflightFailureDiagnostics:
     """Track only allowlisted state needed if this attempt becomes terminal."""
 
     __slots__ = (
+        "eligibility_reason_codes",
         "hiring_reason_codes",
         "provider_attempts",
         "reason_code",
@@ -129,6 +131,7 @@ class _PreflightFailureDiagnostics:
         self.provider_attempts: list[dict[str, Any]] = []
         self.staffing_reason_codes: list[str] = []
         self.hiring_reason_codes: list[str] = []
+        self.eligibility_reason_codes: list[str] = []
 
     def enter(self, stage: str) -> None:
         self.stage = stage
@@ -139,6 +142,7 @@ class _PreflightFailureDiagnostics:
         self.provider_attempts = [] if attempts is None else attempts
         self.staffing_reason_codes = preflight_staffing_reason_codes(routing)
         self.hiring_reason_codes = preflight_hiring_reason_codes(routing)
+        self.eligibility_reason_codes = preflight_eligibility_reason_codes(routing)
         self.reason_code = preflight_routing_failure_reason(routing)
 
     def mark_substantive_specialist_unavailable(self, routing: Mapping[str, Any]) -> None:
@@ -164,6 +168,7 @@ class _PreflightFailureDiagnostics:
             "provider_attempts": self.provider_attempts,
             "staffing_reason_codes": self.staffing_reason_codes,
             "hiring_reason_codes": self.hiring_reason_codes,
+            "eligibility_reason_codes": self.eligibility_reason_codes,
         }
 
 

@@ -444,6 +444,7 @@ def _failed_preflight_canary_snapshot(
         "failure.provider_attempts AS failure_provider_attempts, "
         "failure.staffing_reason_codes AS failure_staffing_reason_codes, "
         "failure.hiring_reason_codes AS failure_hiring_reason_codes, "
+        "failure.eligibility_reason_codes AS failure_eligibility_reason_codes, "
         "failure.recorded_at AS failure_recorded_at "
         "FROM runs AS run JOIN preflight_failure_receipts AS failure "
         "ON failure.trace_id = run.trace_id AND failure.session_id = run.session_id "
@@ -469,6 +470,7 @@ def _failed_preflight_canary_snapshot(
         "provider_attempts": row["failure_provider_attempts"],
         "staffing_reason_codes": row["failure_staffing_reason_codes"],
         "hiring_reason_codes": row["failure_hiring_reason_codes"],
+        "eligibility_reason_codes": row["failure_eligibility_reason_codes"],
         "recorded_at": str(row["failure_recorded_at"] or ""),
     }
     failure = {**failure_row, **_decode_preflight_failure_receipt(failure_row)}

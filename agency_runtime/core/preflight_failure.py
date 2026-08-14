@@ -162,6 +162,7 @@ def project_preflight_provider_attempts(value: object) -> list[dict[str, Any]] |
 
     from agency_runtime.core.selector.receipt_projection import (
         project_model_receipt_attempts,
+        project_nomination_failures,
     )
 
     projected = project_model_receipt_attempts(value)
@@ -177,8 +178,43 @@ def project_preflight_provider_attempts(value: object) -> list[dict[str, Any]] |
         stage = str(source.get("stage") or "unknown").strip().casefold()
         if stage not in PREFLIGHT_PROVIDER_STAGES:
             stage = "unknown"
-        result.append({"stage": stage, **attempt})
+        entry: dict[str, Any] = {"stage": stage, **attempt}
+        # A rejected recruiter attempt is the most common terminal failure, and
+        # its reason_code alone ("provider_response_contract_invalid") does not
+        # say which units failed or why. The per-unit codes are an allowlisted
+        # vocabulary, not model text, so the receipt can carry them and explain
+        # itself without a live re-run.
+        nomination_failures = project_nomination_failures(
+            source.get("validation_failures", source.get("validation_detail"))
+        )
+        if nomination_failures:
+            entry["validation_failures"] = nomination_failures
+        result.append(entry)
     return result
+
+
+def preflight_eligibility_reason_codes(routing: Mapping[str, Any]) -> list[str]:
+    """Project why candidates were filtered out before the recruiter saw them.
+
+    When nearly the whole roster is ineligible the recruiter cannot form a team
+    however well it nominates, so a terminal staffing failure is unreadable
+    without this. Only the distinct reason codes are kept -- never the rejected
+    slugs, which would grow with the roster and say nothing extra.
+    """
+
+    raw = routing.get("eligibility_rejections")
+    rejections = raw if isinstance(raw, (list, tuple)) else ()
+    codes: list[object] = []
+    for item in rejections:
+        if not isinstance(item, Mapping):
+            continue
+        code = item.get("reason")
+        if code not in codes:
+            codes.append(code)
+        if len(codes) >= MAX_PREFLIGHT_FAILURE_REASON_CODES:
+            break
+    projected = project_preflight_reason_codes(codes[:MAX_PREFLIGHT_FAILURE_REASON_CODES])
+    return [] if projected is None else projected
 
 
 def project_preflight_reason_codes(value: object) -> list[str] | None:
@@ -242,6 +278,7 @@ def project_preflight_failure_receipt(value: object) -> dict[str, Any] | None:
         "provider_attempts",
         "staffing_reason_codes",
         "hiring_reason_codes",
+        "eligibility_reason_codes",
     }:
         return None
     if value.get("schema_version") != PREFLIGHT_FAILURE_RECEIPT_SCHEMA:
@@ -260,7 +297,13 @@ def project_preflight_failure_receipt(value: object) -> dict[str, Any] | None:
     provider_attempts = project_preflight_provider_attempts(value.get("provider_attempts"))
     staffing_reason_codes = project_preflight_reason_codes(value.get("staffing_reason_codes"))
     hiring_reason_codes = project_preflight_reason_codes(value.get("hiring_reason_codes"))
-    if provider_attempts is None or staffing_reason_codes is None or hiring_reason_codes is None:
+    eligibility_reason_codes = project_preflight_reason_codes(value.get("eligibility_reason_codes"))
+    if (
+        provider_attempts is None
+        or staffing_reason_codes is None
+        or hiring_reason_codes is None
+        or eligibility_reason_codes is None
+    ):
         return None
     return {
         "schema_version": PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
@@ -271,6 +314,7 @@ def project_preflight_failure_receipt(value: object) -> dict[str, Any] | None:
         "provider_attempts": provider_attempts,
         "staffing_reason_codes": staffing_reason_codes,
         "hiring_reason_codes": hiring_reason_codes,
+        "eligibility_reason_codes": eligibility_reason_codes,
     }
 
 
@@ -286,6 +330,7 @@ def default_preflight_failure_receipt() -> dict[str, Any]:
         "provider_attempts": [],
         "staffing_reason_codes": [],
         "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
     }
 
 
@@ -301,6 +346,7 @@ __all__ = [
     "PreflightInvariantError",
     "default_preflight_failure_reason",
     "default_preflight_failure_receipt",
+    "preflight_eligibility_reason_codes",
     "preflight_exception_category",
     "preflight_hiring_reason_codes",
     "preflight_invariant_code",

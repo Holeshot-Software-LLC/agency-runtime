@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 45
+SCHEMA_VERSION = 46
 
 # Columns an already-created activation receipts table gains by migration.
 #
@@ -946,6 +946,15 @@ CREATE TABLE IF NOT EXISTS preflight_failure_receipts (
                AND json_valid(hiring_reason_codes)
                AND json_type(hiring_reason_codes) = 'array'
                AND json_array_length(hiring_reason_codes) <= 32),
+    -- Why candidates were filtered out before the recruiter ever saw them.
+    -- Without it a terminal staffing failure cannot be told apart from an
+    -- ineligible roster, which cost two live re-runs to diagnose once.
+    eligibility_reason_codes TEXT NOT NULL DEFAULT '[]'
+        CHECK (typeof(eligibility_reason_codes) = 'text'
+               AND length(CAST(eligibility_reason_codes AS BLOB)) BETWEEN 2 AND 4096
+               AND json_valid(eligibility_reason_codes)
+               AND json_type(eligibility_reason_codes) = 'array'
+               AND json_array_length(eligibility_reason_codes) <= 32),
     recorded_at TEXT NOT NULL,
     FOREIGN KEY (trace_id) REFERENCES runs(trace_id) ON DELETE CASCADE
 );
@@ -5318,6 +5327,16 @@ def migrate_schema(
         "AND json_valid(hiring_reason_codes) "
         "AND json_type(hiring_reason_codes) = 'array' "
         "AND json_array_length(hiring_reason_codes) <= 32)",
+    )
+    ensure_column(
+        conn,
+        "preflight_failure_receipts",
+        "eligibility_reason_codes",
+        "TEXT NOT NULL DEFAULT '[]' CHECK (typeof(eligibility_reason_codes) = 'text' "
+        "AND length(CAST(eligibility_reason_codes AS BLOB)) BETWEEN 2 AND 4096 "
+        "AND json_valid(eligibility_reason_codes) "
+        "AND json_type(eligibility_reason_codes) = 'array' "
+        "AND json_array_length(eligibility_reason_codes) <= 32)",
     )
     conn.execute(
         "INSERT OR IGNORE INTO preflight_failure_receipts "
