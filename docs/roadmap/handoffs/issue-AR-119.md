@@ -122,19 +122,17 @@ workstation; codex hook trust needs interactive TUI approval against digest
 `3925824a5bd2`; hermes and openclaw are not on that box. The matrix cannot reach
 45/45 cells from one machine.
 
-**Start here: no activation receipt is minted for the canary's native child.**
-Two live runs at `bcfbe664`; the second staffed the parent correctly
-(`code-reviewer` loaded and selected, one correlated trace, zero preflight
-failures) and then recorded a delegation with an empty
-`retrieved_specialist_slug` and no `activation_receipt_id`, while
-`native_child_delivery_verifications` stayed empty. The slug is written only when
-an activation receipt is consumed, and none was minted -- the newest receipt row
-predates the canary by a week, though older rows show the mechanism working with
-real slugs. So it is a regression or isolated-profile gap, not an unbuilt path.
-**Fix it and R4 claude Live becomes reachable with no new authorization.**
-`executed_worker_kind=generic-worker` is normal; the schema requires it. The
-recruiter is also nondeterministic -- run one failed at routing on the same
-inputs -- so never conclude from a single canary.
+**START HERE: native-child staffing has been dead on this workstation since
+2026-08-07, on both hosts.** Measured in `delegation_events` with a real native
+backend: **127 of 174 spawns staffed before 2026-08-07T14:31Z, 0 of 8 after.**
+Last consumed activation receipt `2026-08-07T14:36:19Z`. Every spawn since has an
+empty `retrieved_specialist_slug` and no receipt, so no card is dealt and no
+host artifact can carry card hashes. **R4 Live and Rule 1's native-child join
+have been unobtainable here for a week; evidence from that window is empty, not
+negative.** Find what changed around 2026-08-07 first. Two canary runs at
+`bcfbe664` are only where it surfaced -- and note the recruiter is
+nondeterministic (run one failed at routing on identical inputs), while
+`executed_worker_kind=generic-worker` is normal, not an anomaly.
 
 ## verification
 

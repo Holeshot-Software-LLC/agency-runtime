@@ -127,11 +127,27 @@ spawned the child and Agency recorded the delegation, but native-child staffing
 never engaged, and no card was dealt. No card means no host-written artifact
 carrying card hashes, which is the only thing that can satisfy Rule 4.
 
-That mechanism demonstrably works on this machine: earlier receipts pair
-`claude-agent:` children with real specialist slugs, consumed and attached to
-their delegation events. So this is a regression or an isolated-profile gap
-rather than an unbuilt path, and it is the single thing between the canary and
-R4 claude Live. The same boundary gates R4 on every other host.
+**This is not a canary artifact, and it is not specific to the disposable
+profile. Native-child staffing stopped on this machine on 2026-08-07 and has
+staffed nothing since.** Counting `delegation_events` with a real native backend
+(`delegate_task`, `spawn_agent`):
+
+| window | native spawns | staffed |
+|---|---|---|
+| before 2026-08-07T14:31Z | 174 | **127** |
+| after 2026-08-07T14:31Z | 8 | **0** |
+
+The last consumed activation receipt is `2026-08-07T14:36:19Z`. Every spawn
+since -- three Claude `delegate_task` and five Codex `spawn_agent` -- carries an
+empty `retrieved_specialist_slug` and no receipt. Against a 73% base rate, 0/8
+is not sampling noise.
+
+The consequence is larger than one failed canary: **R4 Live, and Rule 1's
+native-child card-hash join, have been unobtainable on this workstation for a
+week, on both hosts.** Any evidence gathered here in that window about child
+staffing is empty rather than negative. Whatever changed around 2026-08-07 is
+the first thing a live-evidence session must find; the canary is only where it
+became visible.
 
 **AR-252's promotion policy had no evidence it could ever receive.** The
 three-success, seven-day policy has shipped since `f85074fe`, and this matrix
