@@ -871,6 +871,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6fa4a782` | 2026-08-14 | docs(ar119): point the capsule at main, generation 56, and a9d84a27 | null | null |
 | `e216670a` | 2026-08-14 | feat(evals): prove at the source that only the host may start an agent | null | null |
 | `62f6ba48` | 2026-08-14 | docs(ar119): prove Rule 5 at the source and rebind to e216670a | null | null |
+| `540a0bfc` | 2026-08-14 | docs(ar119): the capsule's source-only work is finished | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
