@@ -866,6 +866,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4081215d` | 2026-08-14 | docs(ar119): point the capsule at candidate 9724820e and the CI repairs | null | null |
 | `be209e7a` | 2026-08-14 | Merge pull request #274 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
 | `1f60159c` | 2026-08-14 | docs(ar119)!: R4 claude simulation is unproven, and R9 claude follows it down | null | null |
+| `a9d84a27` | 2026-08-14 | fix(tests): stub the complete-scope judge with its real zero top score | null | null |
+| `38ea6aeb` | 2026-08-14 | docs(ar119): rebind to a9d84a27 and restore R4 claude simulation | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
