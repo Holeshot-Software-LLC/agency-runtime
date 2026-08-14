@@ -130,12 +130,24 @@ def _restore_config(path: Path, *, current: bytes, prior: bytes | None) -> None:
     )
 
 
+# Agency has written two argv shapes for its own ZCode handlers: the current
+# digest-pinned launcher, which passes ``agency_runtime.cli`` as its own token,
+# and the earlier ``python -m agency_runtime.cli.main`` form.  Both are Agency's.
+# Recognising only the current one leaves the installer blind to handlers it
+# wrote itself, which reports as "no Agency handlers here" while seven are
+# running, and would let a merge append a second set beside them.
+_ENTRY_POINT_TOKENS = ("agency_runtime.cli", "agency_runtime.cli.main")
+
+
 def _argument_event(args: object) -> str | None:
     if not isinstance(args, list) or not all(isinstance(item, str) for item in args):
         return None
-    expected_prefix = ["agency_runtime.cli", "hook", "zcode", "--event"]
-    for index in range(max(0, len(args) - len(expected_prefix))):
-        if args[index : index + 4] == expected_prefix and index + 4 < len(args):
+    for index, token in enumerate(args):
+        if (
+            token in _ENTRY_POINT_TOKENS
+            and args[index + 1 : index + 4] == ["hook", "zcode", "--event"]
+            and index + 4 < len(args)
+        ):
             return args[index + 4]
     return None
 
@@ -371,7 +383,6 @@ def register_zcode_config(
     home_dir: str | Path | None,
     force_refresh: bool = False,
 ) -> tuple[list[dict[str, Any]], bool, str | None]:
-    del force_refresh
     config_path = zcode_config_path(home_dir=home_dir)
     state_path = zcode_registration_state_path(home_dir=home_dir)
     config_raw = _read_optional(config_path, limit=_MAX_CONFIG_BYTES, label="ZCode config")
@@ -393,12 +404,23 @@ def register_zcode_config(
             raise ZCodeRegistrationError("ZCode registration state path identity changed")
         _hooks, current_events = _config_parts(config)
         current_owned = _owned_registrations(current_events)
+        readopted = False
         if prior_handlers is not None:
             prior_facts = _registration_facts(config, prior_handlers)
             if not prior_facts["registered"]:
-                raise ZCodeRegistrationError(
-                    "Agency-owned ZCode handlers drifted since the last transaction"
-                )
+                # Refusing is the default so a hand-edited handler is reported
+                # rather than silently overwritten.  An explicit refresh is the
+                # documented way back: it re-adopts Agency's own event slots and
+                # never touches a registration Agency does not own.
+                if not force_refresh:
+                    raise ZCodeRegistrationError(
+                        "Agency-owned ZCode handlers drifted since the last transaction"
+                    )
+                if any(len(items) > 1 for items in current_owned.values()):
+                    raise ZCodeRegistrationError(
+                        "duplicate Agency ZCode handlers cannot be refreshed automatically"
+                    )
+                readopted = True
         elif any(len(items) > 1 for items in current_owned.values()):
             raise ZCodeRegistrationError("duplicate legacy Agency ZCode handlers require review")
 
@@ -445,6 +467,7 @@ def register_zcode_config(
                 "name": "config_merge",
                 "ok": True,
                 "changed": config_changed,
+                "readopted": readopted,
                 "config_path": str(config_path),
                 "preserved_global_hooks_enabled": facts["global_hooks_enabled"],
             },

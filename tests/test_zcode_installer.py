@@ -353,3 +353,173 @@ def test_zcode_rollback_reconciles_retained_fragment_without_clobbering_user_con
     assert config["hooks"]["events"]["SessionStart"][0] == _user_handler()
     stop = _agency_registration(config, "Stop")
     assert stop["hooks"][0]["statusMessage"] == "Historical Agency stop check"
+
+
+def _legacy_registration(event: str) -> dict[str, Any]:
+    """One Agency handler in the argv shape an earlier installer wrote.
+
+    The current installer pins a digest and passes ``agency_runtime.cli`` as its
+    own token; this shape ran the CLI with ``python -m agency_runtime.cli.main``.
+    Both are Agency's own.
+    """
+
+    registration: dict[str, Any] = {
+        "hooks": [
+            {
+                "type": "process",
+                "command": str(Path(sys.executable).resolve()),
+                "args": [
+                    "-m",
+                    "agency_runtime.cli.main",
+                    "hook",
+                    "zcode",
+                    "--event",
+                    event,
+                    "--config",
+                    "C:/agency/agency.yaml",
+                ],
+                "enabled": True,
+                "timeoutMs": 305_000,
+            }
+        ]
+    }
+    if event == "PreToolUse":
+        registration["matcher"] = "Agent"
+    elif event in {"PermissionRequest", "PostToolUse", "PostToolUseFailure"}:
+        registration["matcher"] = "*"
+    return registration
+
+
+def _seed_legacy_agency_config(home: Path) -> Path:
+    path = home / ".zcode" / "cli" / "config.json"
+    path.parent.mkdir(parents=True)
+    events: dict[str, Any] = {event: [_legacy_registration(event)] for event in ZCODE_EVENTS}
+    events["SessionStart"] = [_user_handler(), _legacy_registration("SessionStart")]
+    path.write_text(
+        json.dumps(
+            {"theme": "user-owned", "hooks": {"enabled": True, "events": events}},
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return path
+
+
+def test_an_earlier_agency_argv_shape_is_recognised_as_agency_owned() -> None:
+    """Being blind to its own older handlers made the installer report zero."""
+
+    from agency_runtime.core.installer_zcode import _argument_event
+
+    legacy = _legacy_registration("Stop")["hooks"][0]["args"]
+    current = [
+        "-I",
+        "-S",
+        "C:/agency/launchers/runtime-sha256-abc/site-packages/agency_runtime/_bootstrap.py",
+        "agency_runtime.cli",
+        "hook",
+        "zcode",
+        "--event",
+        "Stop",
+    ]
+
+    assert _argument_event(legacy) == "Stop"
+    assert _argument_event(current) == "Stop"
+    assert _argument_event(["-m", "some_other.cli", "hook", "zcode", "--event", "Stop"]) is None
+    assert _argument_event(["agency_runtime.cli", "hook", "claude", "--event", "Stop"]) is None
+    assert _argument_event(["agency_runtime.cli", "hook", "zcode", "--event"]) is None
+
+
+def test_installing_over_an_earlier_agency_argv_shape_replaces_it_once(tmp_path: Path) -> None:
+    """The old handlers must be replaced, never left running beside the new."""
+
+    config_path = _seed_legacy_agency_config(tmp_path)
+
+    assert _install(tmp_path)["ok"] is True
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    for event in ZCODE_EVENTS:
+        registrations = config["hooks"]["events"][event]
+        agency = [
+            registration
+            for registration in registrations
+            if any(
+                "agency_runtime.cli" in handler.get("args", [])
+                or "agency_runtime.cli.main" in handler.get("args", [])
+                for handler in registration.get("hooks", [])
+            )
+        ]
+        assert len(agency) == 1, f"{event} kept {len(agency)} Agency handlers"
+        assert "agency_runtime.cli.main" not in agency[0]["hooks"][0]["args"]
+    # The unrelated user handler is untouched.
+    assert _user_handler() in config["hooks"]["events"]["SessionStart"]
+
+
+def test_a_refresh_readopts_drifted_agency_handlers_without_touching_others(
+    tmp_path: Path,
+) -> None:
+    """The recovery path the drift refusal never had.
+
+    ``force_refresh`` is already threaded from the orchestration layer for every
+    other host; ZCode discarded it, so a config Agency itself had drifted from
+    could not be repaired by any command.
+    """
+
+    from agency_runtime.core.installer_zcode import register_zcode_config
+
+    config_path = _seed_zcode(tmp_path)
+    assert _install(tmp_path)["ok"] is True
+    target = Path(_install(tmp_path)["target"])
+
+    drifted = json.loads(config_path.read_text(encoding="utf-8"))
+    _agency_registration(drifted, "Stop")["hooks"][0]["statusMessage"] = "tampered"
+    config_path.write_text(
+        json.dumps(drifted, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+    refused, refused_ok, refused_step = register_zcode_config(
+        target,
+        home_dir=tmp_path,
+        force_refresh=False,
+    )
+    assert refused_ok is False
+    assert refused_step == "config_drift"
+    assert "drifted since the last transaction" in refused[0]["error"]
+
+    steps, ok, failed_step = register_zcode_config(target, home_dir=tmp_path, force_refresh=True)
+
+    assert ok is True
+    assert failed_step is None
+    assert steps[0]["readopted"] is True
+    refreshed = json.loads(config_path.read_text(encoding="utf-8"))
+    assert _agency_registration(refreshed, "Stop")["hooks"][0].get("statusMessage") != "tampered"
+    assert _user_handler() in refreshed["hooks"]["events"]["SessionStart"]
+
+
+def test_a_refresh_still_refuses_duplicate_agency_handlers(tmp_path: Path) -> None:
+    """A refresh re-adopts one slot per event; two is still a human's call."""
+
+    from agency_runtime.core.installer_zcode import register_zcode_config
+
+    config_path = _seed_zcode(tmp_path)
+    assert _install(tmp_path)["ok"] is True
+    target = Path(_install(tmp_path)["target"])
+
+    duplicated = json.loads(config_path.read_text(encoding="utf-8"))
+    duplicated["hooks"]["events"]["Stop"].append(_legacy_registration("Stop"))
+    config_path.write_text(
+        json.dumps(duplicated, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    before = config_path.read_bytes()
+
+    steps, ok, failed_step = register_zcode_config(target, home_dir=tmp_path, force_refresh=True)
+
+    assert ok is False
+    assert failed_step == "config_drift"
+    assert "duplicate Agency ZCode handlers" in steps[0]["error"]
+    assert config_path.read_bytes() == before
