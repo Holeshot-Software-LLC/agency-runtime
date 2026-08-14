@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -26,6 +27,8 @@ from agency_runtime.core.private_paths import private_temporary_directory
 from agency_runtime.core.roster.revisions import content_digest_identity
 from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.store.version_identity import normalize_version_identity
+
+logger = logging.getLogger(__name__)
 
 CANARY_INVOCATION_FAILURE_REASONS = frozenset(
     {
@@ -479,6 +482,12 @@ def invoke_and_collect_evidence(
             if not isinstance(result, dict):
                 raise RuntimeError("canary backend returned an invalid result")
     except Exception:
+        # The reported error stays fixed and content-free: it travels into
+        # evidence, and a formatted exception can carry prompt text. The real
+        # traceback still has to reach whoever is diagnosing, or a precise
+        # failure deep in the store arrives as an unattributed invocation
+        # failure and costs a day to find again.
+        logger.debug("safe host canary invocation raised", exc_info=True)
         invocation_error = "safe host invocation failed before evidence could be evaluated"
     if mode == "agency" and host == "codex":
         try:
