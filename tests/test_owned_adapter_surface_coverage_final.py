@@ -89,12 +89,36 @@ def test_native_delegation_batch_projects_bounded_official_shapes() -> None:
     assert limited is not None and len(limited) == 16
 
 
-def test_public_facade_rejects_invalid_diagnostic_and_delegation_inputs(tmp_path) -> None:
+def test_public_facade_rejects_invalid_diagnostic_and_delegation_inputs(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     runtime = AgencyRuntime(str(tmp_path / "public-owned.db"))
     with pytest.raises(ValueError, match="session_id is required"):
         runtime.route("", "review code")
 
+    # The turn guard runs before any argument is inspected, and an unconfigured
+    # runtime ends its preflight `preflight_failed`, so a closed turn is refused
+    # whatever the arguments say.
     runtime.preflight("session", "Review this change.", trace_id="turn")
+    assert runtime._store.get_run("turn")["status"] == "preflight_failed"
+    with pytest.raises(ValueError, match="terminal turn"):
+        runtime.record_delegation(
+            trace_id="turn",
+            session_id="session",
+            work_unit_id="unit",
+            recommended_agent="reviewer",
+            backend="test",
+        )
+
+    # Past that guard, each argument contract is its own rejection. Isolating
+    # the guard keeps this case about argument validation; the guard itself is
+    # covered above and in test_public_api.
+    monkeypatch.setattr(
+        AgencyRuntime,
+        "_require_active_turn",
+        lambda _self, _session_id, _trace_id: None,
+    )
     cases = (
         ({"work_unit_id": "", "recommended_agent": "reviewer"}, "work_unit_id"),
         ({"work_unit_id": "unit", "recommended_agent": ""}, "recommended_agent"),
@@ -728,6 +752,8 @@ def test_openclaw_persistence_and_preverify_edge_matrix(monkeypatch) -> None:
         "_effective_pre_verify_trace",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError()),
     )
+    # Rule 8: Agency being unable to read this is not a finding about the
+    # response, so the host draft is returned unchanged.
     assert (
         node_bridge._handle_pre_verify(
             active,
@@ -735,8 +761,8 @@ def test_openclaw_persistence_and_preverify_edge_matrix(monkeypatch) -> None:
             session_id="s",
             trace_id="t",
             model="m",
-        )["terminalStatus"]
-        == "verification_failed"
+        )
+        == {}
     )
     monkeypatch.setattr(node_bridge, "_effective_pre_verify_trace", lambda *_args, **_kwargs: "t")
     monkeypatch.setattr(
@@ -744,6 +770,8 @@ def test_openclaw_persistence_and_preverify_edge_matrix(monkeypatch) -> None:
         "_exact_policy_terminal_state",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError()),
     )
+    # Rule 8: Agency being unable to read this is not a finding about the
+    # response, so the host draft is returned unchanged.
     assert (
         node_bridge._handle_pre_verify(
             active,
@@ -751,8 +779,8 @@ def test_openclaw_persistence_and_preverify_edge_matrix(monkeypatch) -> None:
             session_id="s",
             trace_id="t",
             model="m",
-        )["terminalStatus"]
-        == "verification_failed"
+        )
+        == {}
     )
     monkeypatch.setattr(node_bridge, "_exact_policy_terminal_state", lambda *_args, **_kwargs: "")
     monkeypatch.setattr(
@@ -1324,7 +1352,8 @@ def test_openclaw_outbound_rejection_preverify_and_native_child_matrix(monkeypat
         trace_id="trace",
         model="model",
     )
-    assert result["action"] in {"continue", "terminal"}
+    # An unreadable store is Agency unavailable, so the turn proceeds.
+    assert result == {}
 
     calls: list[tuple[str, dict[str, Any]]] = []
 
