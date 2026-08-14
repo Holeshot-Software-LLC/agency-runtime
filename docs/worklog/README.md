@@ -863,6 +863,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `25bdec39` | 2026-08-14 | fix(tests): substitute rollout files by rename so the identity seal is testable on Linux | null | null |
 | `e0d88ee4` | 2026-08-14 | fix(openclaw)!: deny an outbound payload a terminalized trace never committed | null | null |
 | `2138fdc1` | 2026-08-14 | docs(ar119): bind the matrix to candidate 9724820e and correct the R8 openclaw evidence | null | null |
+| `4081215d` | 2026-08-14 | docs(ar119): point the capsule at candidate 9724820e and the CI repairs | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
