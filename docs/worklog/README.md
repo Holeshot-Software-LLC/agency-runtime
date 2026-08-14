@@ -868,6 +868,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1f60159c` | 2026-08-14 | docs(ar119)!: R4 claude simulation is unproven, and R9 claude follows it down | null | null |
 | `a9d84a27` | 2026-08-14 | fix(tests): stub the complete-scope judge with its real zero top score | null | null |
 | `38ea6aeb` | 2026-08-14 | docs(ar119): rebind to a9d84a27 and restore R4 claude simulation | null | null |
+| `6fa4a782` | 2026-08-14 | docs(ar119): point the capsule at main, generation 56, and a9d84a27 | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
