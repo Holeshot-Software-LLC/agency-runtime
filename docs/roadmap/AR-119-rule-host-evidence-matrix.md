@@ -127,27 +127,31 @@ spawned the child and Agency recorded the delegation, but native-child staffing
 never engaged, and no card was dealt. No card means no host-written artifact
 carrying card hashes, which is the only thing that can satisfy Rule 4.
 
-**This is not a canary artifact, and it is not specific to the disposable
-profile. Native-child staffing stopped on this machine on 2026-08-07 and has
-staffed nothing since.** Counting `delegation_events` with a real native backend
-(`delegate_task`, `spawn_agent`):
+**A correction, recorded because the wrong reading is the tempting one.** The
+delegation columns suggest an outage: 127 of 174 native spawns carry a specialist
+slug before `2026-08-07T14:31Z`, and 0 of 8 after, with the last consumed
+activation receipt at `2026-08-07T14:36:19Z`. That reading is wrong.
 
-| window | native spawns | staffed |
-|---|---|---|
-| before 2026-08-07T14:31Z | 174 | **127** |
-| after 2026-08-07T14:31Z | 8 | **0** |
+`cd56471d` ("staff harness-spawned children just in time", `2026-08-07T16:04`)
+retired exactly that accounting, deliberately and in its own words: the v5 JIT
+envelope "carries no work_unit_id and no activation_token; there is nothing to
+bind them to", and the child is "staffed but not accounted -- the load is
+recorded for audit, but no delegation row is written, so the parent turn gains no
+obligation to finalize against". `b222414b` then deleted the one-use activation
+grant organ outright.
 
-The last consumed activation receipt is `2026-08-07T14:36:19Z`. Every spawn
-since -- three Claude `delegate_task` and five Codex `spawn_agent` -- carries an
-empty `retrieved_specialist_slug` and no receipt. Against a 73% base rate, 0/8
-is not sampling noise.
+So `retrieved_specialist_slug` and `activation_receipt_id` are **expected to be
+empty** on a JIT-staffed child, and their emptiness is not evidence that no card
+was dealt. The capsule already forbids reconstructing "grant" and
+"consumed-receipt" transport; that ban applies to reading them as evidence too.
 
-The consequence is larger than one failed canary: **R4 Live, and Rule 1's
-native-child card-hash join, have been unobtainable on this workstation for a
-week, on both hosts.** Any evidence gathered here in that window about child
-staffing is empty rather than negative. Whatever changed around 2026-08-07 is
-the first thing a live-evidence session must find; the canary is only where it
-became visible.
+What the failed canary actually shows is narrower and still open: no
+collector-minted host-artifact proof was produced for the child, which is what
+`_claude_host_child_delivery_failures` requires and the only thing that can
+satisfy Rule 4. Whether the JIT path delivered cards is answerable **only** from
+the host's own artifact, never from an Agency row -- which is ADR-0156's whole
+point. R4 claude Live therefore remains `unproven` on collector evidence, with
+no supported claim about a staffing outage.
 
 **AR-252's promotion policy had no evidence it could ever receive.** The
 three-success, seven-day policy has shipped since `f85074fe`, and this matrix

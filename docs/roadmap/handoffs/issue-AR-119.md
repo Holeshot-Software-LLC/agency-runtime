@@ -96,9 +96,8 @@ must be loaded first after any compaction or session restart.
 5. **AR-125 — value.** Run the matched Agency-on/off corpus only after candidate
    and provider validity hold. Malformed or timed-out arms are invalid, never
    upstream losses.
-6. Rule 9 remains derived and cannot close until Rules 1-8 are proven under the
-   same candidate on Claude, Codex, ZCode, Hermes, and OpenClaw. Unavailable
-   hosts remain visibly unproven.
+6. Rule 9 is derived and cannot close until Rules 1-8 are proven under one
+   candidate on all five hosts. Unavailable hosts stay visibly unproven.
 
 ## same-task-continuity
 
@@ -122,17 +121,20 @@ workstation; codex hook trust needs interactive TUI approval against digest
 `3925824a5bd2`; hermes and openclaw are not on that box. The matrix cannot reach
 45/45 cells from one machine.
 
-**START HERE: native-child staffing has been dead on this workstation since
-2026-08-07, on both hosts.** Measured in `delegation_events` with a real native
-backend: **127 of 174 spawns staffed before 2026-08-07T14:31Z, 0 of 8 after.**
-Last consumed activation receipt `2026-08-07T14:36:19Z`. Every spawn since has an
-empty `retrieved_specialist_slug` and no receipt, so no card is dealt and no
-host artifact can carry card hashes. **R4 Live and Rule 1's native-child join
-have been unobtainable here for a week; evidence from that window is empty, not
-negative.** Find what changed around 2026-08-07 first. Two canary runs at
-`bcfbe664` are only where it surfaced -- and note the recruiter is
-nondeterministic (run one failed at routing on identical inputs), while
-`executed_worker_kind=generic-worker` is normal, not an anomaly.
+**START HERE, and do not repeat this session's mistake.** The delegation columns
+look like an outage -- 127 of 174 spawns carry a slug before `2026-08-07T14:31Z`
+and 0 of 8 after -- but `cd56471d` retired that accounting on purpose the same
+afternoon: a JIT-staffed child carries "no activation_token" and writes "no
+delegation row". **Empty `retrieved_specialist_slug` / `activation_receipt_id`
+is expected and proves nothing.** Never read retired grant or consumed-receipt
+transport as evidence.
+
+The real open item from two canary runs at `bcfbe664`: no collector-minted
+host-artifact proof was produced for the child, which is the only thing that can
+satisfy Rule 4 (ADR-0156). Whether cards were delivered is answerable only from
+the host's own artifact. Also note the recruiter is nondeterministic (run one
+failed at routing on identical inputs) and
+`executed_worker_kind=generic-worker` is normal.
 
 ## verification
 
