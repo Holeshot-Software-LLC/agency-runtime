@@ -766,6 +766,43 @@ def _exact_outbound_terminal_state(
     return ""
 
 
+def _conflicting_terminal_action(
+    adapter: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    digest: str,
+) -> str:
+    """Name the terminal already bound to this trace when it is not this response.
+
+    `_exact_outbound_terminal_state` filters on the presented digest, so it
+    answers "" both when the trace has no terminal at all and when it has one
+    that committed a *different* response. Those are opposites. The first is
+    Agency being blind, which Rule 8 says must not withhold a turn. The second
+    is a readable verdict that this envelope is not the one Agency bound, and
+    allowing it would let any later payload overwrite a committed response by
+    simply not matching it.
+
+    Returns the committed terminal's action when it disagrees with `digest`,
+    and "" whenever the store is unreadable, silent, or in agreement -- so a
+    genuine fault still falls through to the fail-open path.
+    """
+
+    getter = getattr(adapter.store, "get_authoritative_finalization", None)
+    if not callable(getter):
+        return ""
+    try:
+        terminal = getter(session_id, trace_id)
+    except Exception:
+        return ""
+    if not isinstance(terminal, dict):
+        return ""
+    committed = str(terminal.get("response_hash") or "")
+    if not committed or committed == digest:
+        return ""
+    return str(terminal.get("action") or "")
+
+
 def _outbound_binding_matches_policy_text(
     outbound_payload: str,
     final_response: str,
@@ -867,6 +904,22 @@ def _handle_outbound_gate(
         # Agency could not read its own evidence.  Rule 8 permits withholding
         # only for an evaluated negative, so a blind gate allows the turn.
         return _outbound_allowance(digest, trace_id=effective_trace)
+
+    conflicting_action = _conflicting_terminal_action(
+        adapter,
+        session_id=session_id,
+        trace_id=effective_trace,
+        digest=digest,
+    )
+    if conflicting_action:
+        # This trace is already terminal against a different response, which is
+        # evidence Agency read rather than a fault it suffered.  Denying here
+        # keeps the exact-digest binding from being bypassed by any payload
+        # that simply fails to match the committed one.
+        return _outbound_denial(
+            digest,
+            TERMINAL_OUTCOME_MESSAGES.get(conflicting_action, _TERMINAL_REJECTION_MESSAGE),
+        )
 
     decision = _safe_policy_decision(
         adapter,
