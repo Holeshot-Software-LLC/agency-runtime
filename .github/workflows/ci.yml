@@ -234,6 +234,31 @@ jobs:
             tests/test_security_turn_boundaries.py \
             -q -W error -p no:cacheprovider \
             --basetemp "${AGENCY_CI_TEMP}/pytest-production-spine"
+      - name: Run AR-119 matrix evidence
+        # Every test file the rule-and-host evidence matrix cites. A cited file
+        # that runs nowhere lets a proven layer rot in silence: R4 claude sat
+        # red for a day behind a green pipeline for exactly that reason. The
+        # release-packaging contract derives this list from the matrix itself,
+        # so adding a citation without adding it here fails that contract.
+        if: steps.change-scope.outputs.code_required == 'true'
+        run: |
+          export TMPDIR="${AGENCY_CI_TEMP}"
+          "${AGENCY_CI_PYTHON}" -m pytest \
+            tests/test_adapter_parity.py \
+            tests/test_codex_plaintext_hook.py \
+            tests/test_codex_spawn_provenance.py \
+            tests/test_completion_policy_boundary.py \
+            tests/test_contractor_minting_host_parity.py \
+            tests/test_host_canary.py \
+            tests/test_host_hooks.py \
+            tests/test_host_parity_eval.py \
+            tests/test_jit_staffing_host_parity.py \
+            tests/test_native_child_adapter_staffing.py \
+            tests/test_native_child_host_boundary_staffing.py \
+            tests/test_parent_caller_card_delivery.py \
+            tests/test_spawn_origin_absence.py \
+            -q -W error -p no:cacheprovider \
+            --basetemp "${AGENCY_CI_TEMP}/pytest-matrix-evidence"
       - name: Prove decision-conformance mutations
         if: steps.change-scope.outputs.code_required == 'true'
         run: >-

@@ -718,6 +718,7 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
         "Install documentation dependencies",
         "Prepare private quality runtime",
         "Run fast Python production spine",
+        "Run AR-119 matrix evidence",
         "Verify fast workflow contracts",
         "Run dashboard UI tests with coverage",
         "Verify documentation ledgers",
@@ -837,6 +838,24 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
         "tests/test_cli_owner_authority.py",
         "tests/test_security_turn_boundaries.py",
     ]
+    matrix_evidence = quality_steps["Run AR-119 matrix evidence"]
+    assert matrix_evidence["if"] == "steps.change-scope.outputs.code_required == 'true'"
+    assert 'export TMPDIR="${AGENCY_CI_TEMP}"' in matrix_evidence["run"]
+    assert '"${AGENCY_CI_PYTHON}" -m pytest' in matrix_evidence["run"]
+    assert '--basetemp "${AGENCY_CI_TEMP}/pytest-matrix-evidence"' in matrix_evidence["run"]
+    # Derive the expectation from the matrix rather than pinning a second copy
+    # of the list.  A citation added to the matrix and not to CI fails here,
+    # which is the drift that let R4 claude stay red behind a green pipeline.
+    matrix_text = (
+        Path("docs/roadmap/AR-119-rule-host-evidence-matrix.md")
+        .read_text(encoding="utf-8")
+    )
+    cited = sorted(
+        set(re.findall(r"`(tests/test_[a-z0-9_]+\.py)(?::\d+-\d+)?`", matrix_text))
+    )
+    assert cited, "the matrix cites no test files; the citation pattern moved"
+    assert sorted(re.findall(r"tests/test_[a-z0-9_]+\.py", matrix_evidence["run"])) == cited
+
     assert jobs["test"]["strategy"]["matrix"]["include"] == [
         {
             "os": "ubuntu-24.04",
