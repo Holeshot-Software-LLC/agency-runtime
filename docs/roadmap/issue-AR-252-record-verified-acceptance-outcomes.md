@@ -70,17 +70,17 @@ rows, or a shared producer/verifier identity.
 
 ## Acceptance
 
-- [ ] A host-backed producer artifact plus a distinct, inference-selected
+- [x] A host-backed producer artifact plus a distinct, inference-selected
       verifier's host-backed artifact and bound accepted verdict records exactly
       one acceptance event.
-- [ ] Missing, ambiguous, replayed, Agency-only, shared-identity, or rejected
+- [x] Missing, ambiguous, replayed, Agency-only, shared-identity, or rejected
       evidence records no acceptance and reports a bounded reason.
-- [ ] Three distinct accepted outcomes automatically promote an eligible
+- [x] Three distinct accepted outcomes automatically promote an eligible
       contractor after its review window with `actor="promotion-policy"` and
       the exact evidence manifest; no operator action is required.
-- [ ] Replay and concurrent finalization cannot duplicate an outcome or
+- [x] Replay and concurrent finalization cannot duplicate an outcome or
       promotion.
-- [ ] Migrate promotion validation and readiness from retired work-unit and
+- [x] Migrate promotion validation and readiness from retired work-unit and
       consumed-activation-receipt identities to the host child, card hash,
       artifact digest, verifier decision, and verdict identities above.
 - [ ] Live evidence proves the path through at least Claude and Codex before
@@ -88,3 +88,23 @@ rows, or a shared producer/verifier identity.
 - [ ] AR-253 proves the same accepted-outcome and automatic-promotion behavior
       on ZCode, Hermes, and OpenClaw; an unavailable supported host remains
       unproven and blocks AR-119.
+
+## What the checked boxes do and do not mean
+
+The five checked items are the host-free half: the rule that decides what may
+count, the recorder that applies it, and the readiness migration. They are
+proven by source and simulation in `agency_runtime/core/workforce/acceptance.py`
+and `tests/test_accepted_outcomes.py`, which runs in CI.
+
+They are not proof that the path runs. No host has yet produced a real envelope:
+the producer and verifier proofs come from the sealed
+`agency.host-child-delivery-proof.v1` projection, and in every case above they
+are constructed by the test rather than collected from a Claude transcript or a
+Codex rollout. The remaining two items are exactly that gap, and until they
+close, the runtime can accept an outcome that nothing yet offers it.
+
+The collector seam is `agency_runtime/core/child_delivery_evidence.py`, whose
+`_host_child_delivery_projection` already emits the accepted proof shape for a
+verified delivery. What is missing is the step that pairs one producer proof
+with one verifier proof and that verifier's verdict, which is where the live
+work starts.

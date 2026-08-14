@@ -274,10 +274,14 @@ The existing per-worker "Promotion readiness" card is extended. The
 new views:
 
 - A per-contractor **activity log**: every assignment the contractor
-  has handled, with outcome, score, evidence hash, and
-  `independent_verifier_worker_id` + `independent_verification_receipt_id`.
-  Source data: existing `agent_performance_events` table — no schema
-  change required.
+  has handled, with outcome, score, evidence hash, and — for accepted
+  outcomes — the acceptance manifest's `producer_child_id`,
+  `verifier_child_id`, `verifier_decision_id`, and
+  `producer_artifact_digest`. AR-252 retired the
+  `independent_verifier_worker_id` and
+  `independent_verification_receipt_id` identities this section
+  originally named. Source data: existing `agent_performance_events`
+  table — no schema change required.
 - A per-case **security review trail**: the original contract, the
   reviewer's verdict and reasons, every repair attempt's diff, and
   the final verdict. Visible in the case detail view.

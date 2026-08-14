@@ -26,7 +26,7 @@ superseded_by: null
 type: roadmap
 ar119_authority: completion-evidence
 vision_block_sha256: 8d81be4301ea76b3820b792f54842916321a9557b4a13fce58d6688abe962e50
-candidate_commit: 2f0758d93b4b3fe5c913509e0d2b78c69abcca44
+candidate_commit: 9e29aabe70b4977669e79fdbc62f21daf17f6ea8
 evidence_cutoff: 2026-08-14
 ---
 
@@ -47,7 +47,11 @@ candidate context but cannot make a current installed/live layer green or red.
 Although the schema reserves `not-applicable`, none of the nine rules is
 optional on a supported host.
 
-Candidate `2f0758d9` advances `e216670a` by repairing a platform parity gap that
+Candidate `9e29aabe` advances `2f0758d9` by building the host-free half of the
+automatic-promotion gate, described below. It moves no rule cell: the gate is
+cross-cutting, and its evidence is source and simulation only.
+
+Candidate `2f0758d9` advanced `e216670a` by repairing a platform parity gap that
 sat underneath the Rule 4 host-artifact proof, described below, and by putting
 every cited test file into CI for the first time.
 
@@ -92,6 +96,38 @@ eagerly, so the mutations only ever bit on Windows. Substituting by rename
 guarantees a distinct inode everywhere and is the shape a real replacement
 takes. CI reported one of the five because the conformance baseline runs under
 `-x`; the other four were measured directly on Linux.
+
+**AR-252's promotion policy had no evidence it could ever receive.** The
+three-success, seven-day policy has shipped since `f85074fe`, and this matrix
+recorded it as having implementation and simulation. What it counted was
+distinct work units carrying consumed activation receipts -- identities the
+host-spawned, just-in-time architecture retired -- so no amount of successful
+live work could reach the threshold. The gate read as a missing *live* proof
+when the path itself did not exist.
+
+The counted evidence is now an acceptance manifest built only from artifacts a
+host wrote: a producer child's delivery proof carrying the contractor's exact
+card and the produced artifact digest, a distinct inference-selected verifier
+child's own proof, and that verifier's accepted verdict bound to the same
+digest. Distinctness counts produced artifacts rather than recorded rows,
+because two verdicts on one artifact are one piece of accepted work; the replay
+identity is separate, so re-presenting the same evidence resolves to the first
+event rather than adding a second success. Missing, ambiguous, Agency-only,
+shared-identity, rejected, and replayed submissions each report one bounded
+reason and write nothing.
+
+Two paths were closed rather than left looking retired. The generic outcome
+recorder now refuses both the retired verifier-receipt keys and any hand-written
+acceptance manifest, so the only writer of countable promotion evidence is the
+host-artifact path. And the dashboard's readiness projection stopped
+reconstructing a stand-in for evidence it had just stripped: the manifest is
+identities and digests with no retained content, so the summary carries the real
+one and the parity assertion between the two paths now means something.
+
+This is source and simulation only, and the gap is the point. Nothing yet
+collects a real envelope -- every producer and verifier proof in the evidence is
+constructed by the test. The runtime can now accept an outcome that no host has
+yet offered it, which is precisely the remaining AR-252 work.
 
 **Rule 4's host-artifact proof did not hold on Linux, and the matrix could not
 see it.** `storage_file_is_trusted` required a foreign artifact to carry no
@@ -489,7 +525,11 @@ satisfy a layer.
 - **Inference authority:** implementation and simulation are proven on all five
   host adapters at `211563c7`; installed and live card-hash joins remain
   unproven everywhere.
-- **Automatic contractor promotion:** implementation and simulation exist, but
+- **Automatic contractor promotion:** the rule that decides what may count, the
+  recorder that applies it, and the readiness migration are proven at the source
+  and in simulation (`agency_runtime/core/workforce/acceptance.py`,
+  `tests/test_accepted_outcomes.py`). No host has produced an envelope: every
+  producer and verifier proof in that evidence is constructed by the test, so
   installed and live proof is unproven on all five hosts. AR-252 remains P0 and
   blocks AR-119.
 - **Latency:** negative against the unchanged 15,000 ms cold gate. The latest

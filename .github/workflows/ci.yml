@@ -245,6 +245,7 @@ jobs:
         run: |
           export TMPDIR="${AGENCY_CI_TEMP}"
           "${AGENCY_CI_PYTHON}" -m pytest \
+            tests/test_accepted_outcomes.py \
             tests/test_adapter_parity.py \
             tests/test_codex_plaintext_hook.py \
             tests/test_codex_spawn_provenance.py \
