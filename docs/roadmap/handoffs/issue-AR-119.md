@@ -15,15 +15,12 @@ related:
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-257-separate-decision-conformance-fixture-launcher.md
   - docs/roadmap/AR-119-founding-vision.md
-  - docs/decisions/0055-freeze-executable-identity-before-launch.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
   - docs/roadmap/AR-119-acceptance-evidence.md
-  - docs/NORTH_STAR_ACCEPTANCE.md
-  - docs/SESSION_HANDOFF.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes: []
@@ -41,140 +38,143 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 
 Current bootstrap projection for completing the owner-confirmed nine-rule
 vision. The canonical issue retains history; this file and the founding vision
-must be loaded first after any compaction or session restart.
+load first after any compaction or restart.
 
 ## checkpoint
 
 - **WORK ON `main` IN `C:\Workspaces\Holeshot Software\agency-runtime`.** PR #274
   merged as `be209e7a`; the `-ar119` worktree and its branch are history.
 - **AR-258 is done.** All three hosts pin one runtime digest and Agency is
-  globally on at generation 56. Hooks reload only in a fresh session.
-- Conformance carries forward from `9724820e`; the `a25ec350` workstation run
-  was 151/151. CI's quality job runs 7m33s without the matrix step, 10m35s with.
+  globally on at generation 56. Hooks reload only in a fresh session. ADR-0159
+  binds exact CLI 0.147 and a pinned Desktop alpha to a sealed v3 attestation;
+  Sol/TUI and 65 Desktop calls omit the marker, so go unstaffed. Conformance
+  carries forward from `9724820e`; `a25ec350` was 151/151. CI's quality job runs
+  7m33s without the matrix step, 10m35s with.
 - **CI runs every matrix-cited test file** ("Run AR-119 matrix evidence"), and
-  `test_release_packaging.py` derives that list from the matrix, so a new
-  citation must join CI in the same commit or the contract fails.
+  `test_release_packaging.py` asserts that list *equals* the matrix citations,
+  so a citation and a CI entry must arrive together, both directions.
 - **`eval decision-conformance` cannot run its mutation phase here** — pytest is
   in user site-packages and the sandbox redirects `HOME`, so the baseline dies in
-  58 ms. Identical on clean `main`. Run `baseline.test_nodes` with ordinary
-  pytest; that proves the baseline, not the mutations.
-- ADR-0159 binds exact CLI 0.147 and a pinned Desktop alpha to a sealed v3
-  attestation; Sol/TUI and 65 Desktop calls omit the marker, so go unstaffed.
-- No cell is proven: every Installed/Live layer is unproven, so source and
-  simulation progress never promotes a cell on its own. AR-255 stays open.
-- Tracker creation/sync stays pending authorization. Conformance history is in
-  AR-257; exec depth-two is parked per AR-180.
+  58 ms, identically on clean `main`. Run `baseline.test_nodes` with ordinary
+  pytest; that proves the baseline, not the mutations. History is in AR-257.
 
 ## completed-evidence
 
 - `AR-119-founding-vision.md` is the sole wording authority and the matrix the
   sole completion authority; neither implementation nor simulation is host proof.
 - AR-255 uses complete-universe inference, exact ordered multi-card v6 delivery,
-  install/config/roster fences, and sealed one-use delivery proof.
-- SafeClaude retains its in-lifetime collector. Codex `211563c7` preserves the
-  exact CLI 0.147 profiles and adds a sealed Desktop `0.147.0-alpha.6.6` profile;
-  exec depth-two/deeper stays unsupported. Census and verification runs are in
-  AR-180 and the matrix; do not re-derive them here.
-- Claude's earlier Rule-4 artifacts and Codex's prior negatives remain
-  prior-candidate context. No exact-candidate Installed/Live proof ran.
+  install/config/roster fences, and sealed one-use delivery proof. SafeClaude
+  retains its in-lifetime collector. Codex `211563c7` preserves the exact CLI
+  0.147 profiles and adds a sealed Desktop `0.147.0-alpha.6.6`; exec depth-two
+  stays unsupported, and its census runs live in AR-180 and the matrix. Claude's
+  earlier Rule-4 artifacts stay prior-candidate context; no exact-candidate
+  Installed/Live proof ran.
+- AR-252 has a fourth constraint, in its issue: the verdict must bind the
+  producer's *transcript* digest, which no verifier child can read, so Agency
+  supplies that binding and the verdict is a joint object. Settle that first.
 
 ## exact-blocker
 
 1. **AR-180 — Codex support.** `211563c7` proves exact CLI 0.147 and Desktop
    `0.147.0-alpha.6.6` Impl/Sim. Exec depth-two is parked: no same-version
-   sample, so it needs a live spawn or a drop.
-2. **AR-255 — exact host proof.** Obtain explicit authorization before exact
-   install or live proof. Fake-runner integration is simulation only.
-3. **AR-252 — automatic contractor critical path.** The host-free half is built
-   and its five acceptance items are checked. **Nothing yet collects a real
+   sample, so it needs a live spawn or a drop. **AR-255 — exact host proof:**
+   obtain authorization before exact install or live proof; fake-runner
+   integration is simulation only.
+2. **AR-252 — automatic contractor critical path.** The host-free half is built
+   and its five acceptance items are checked, but **nothing yet collects a real
    envelope** — every producer and verifier proof is constructed by the test.
    What remains is the collector pairing one producer proof, one distinct
    verifier proof, and that verdict, then live proof on Claude and Codex.
-4. **AR-253 — staffing rate, latency, and parity.** The overrun is the recruiter
+3. **AR-253 — staffing rate, latency, and parity.** The overrun is the recruiter
    (50-85 s inference; the 9 s process floor is not the lever). Obtain
    exact-candidate evidence on all five hosts against the 15-second cold gate.
-5. **AR-125 — value.** Run the matched Agency-on/off corpus only after candidate
-   and provider validity hold. Malformed or timed-out arms are invalid, never
-   upstream losses.
-6. Rule 9 is derived and cannot close until Rules 1-8 are proven under one
-   candidate on all five hosts. Unavailable hosts stay visibly unproven.
+4. **AR-125 — value.** Run the matched Agency-on/off corpus only after candidate
+   and provider validity hold; malformed or timed-out arms are invalid, never
+   upstream losses. Rule 9 is derived and cannot close until 1-8 are proven
+   under one candidate on all five hosts.
 
 ## same-task-continuity
 
 After restart or compaction, load this file and `AR-119-founding-vision.md`
-first. Then read AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158.
-Confirm branch, runtime `211563c7`, minimum ledger `ee82c602`, status, and worklog
-parity. Do not reconstruct retired Job B, plan-row, work-unit, grant, or
-consumed-receipt transport from historical sections.
+first, then AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158. Confirm
+branch, runtime `211563c7`, ledger `ee82c602`, status, and worklog parity. Do
+not reconstruct retired Job B, plan-row, work-unit, grant, or consumed-receipt
+transport from historical sections.
 
 ## next-bounded-work-package
 
 **Implementation and Simulation are both 45/45; Installed and Live are both
-0/45, so every one of the 45 cells still reads `unproven`.** R5 Implementation
-closed on a separation: process-capable and worker-creating modules are disjoint
-(`agency eval spawn-authority`). AR-252's acceptance rule, recorder, and
-readiness migration followed.
+0/45, so every one of the 45 cells still reads `unproven`.** Claude and zcode
+are ready here; codex hook trust needs interactive TUI approval against digest
+`3925824a5bd2`; hermes and openclaw are absent, so one machine cannot reach 45.
 
-**What remains needs a real host: the 45 Installed and 45 Live layers, and
-AR-252's envelope collector.** Claude and zcode are ready on the evidence
-workstation; codex hook trust needs interactive TUI approval against digest
-`3925824a5bd2`; hermes and openclaw are not on that box. The matrix cannot reach
-45/45 cells from one machine.
+**START HERE. This workstation can produce a readable host artifact; that is
+settled.** `claude -p` under an isolated `CLAUDE_CONFIG_DIR` writes
+`projects/<slug>/<session>/subagents/agent-<child>.jsonl` with exactly the
+record-zero shape the parser needs, observed twice on 2026-08-14. Rule 4 Live is
+blocked in two other places, both now located:
 
-**START HERE, and do not repeat this session's mistake.** The delegation columns
-look like an outage -- 127 of 174 spawns carry a slug before `2026-08-07T14:31Z`
-and 0 of 8 after -- but `cd56471d` retired that accounting on purpose the same
-afternoon: a JIT-staffed child carries "no activation_token" and writes "no
-delegation row". **Empty `retrieved_specialist_slug` / `activation_receipt_id`
-is expected and proves nothing.** Never read retired grant or consumed-receipt
-transport as evidence.
+1. **The canary profile never activates Agency.** The `f4039746` run wrote four
+   well-formed child transcripts with the literal `[AGENCY` absent from every
+   one, plus `routing: 0` at its own query hash. Six flag and profile
+   combinations against a fresh home -- empty/default/user setting sources each
+   with `--plugin-dir`, then `enabledPlugins` + `extraKnownMarketplaces` with
+   and without it, then the real `installed_plugins.json` and
+   `known_marketplaces.json` -- **all produced zero markers**, so neither the
+   flag nor enablement is the cause. The canary
+   says as much: `canary profile plugin registration and enablement were not
+   proven`. This is the open one.
+2. **The real profile has never written a v6 envelope.** Of 63 child artifacts
+   under `~/.claude/projects`, 9 are marked: 3 v5 (newest `2026-08-11T19:33Z`),
+   7 v1, **0 v6**, and v5 parses as `legacy_delivery_non_authoritative`, which
+   can never verify. The installed launcher does carry the v6 renderer, so no
+   native child has been spawned there since v6 took over. **One native child
+   spawned in the real profile settles it**, and that needs the owner's hands:
+   this session may not call the Agent tool.
 
-The real open item from two canary runs at `bcfbe664`: no collector-minted
-host-artifact proof was produced for the child, which is the only thing that can
-satisfy Rule 4 (ADR-0156). Whether cards were delivered is answerable only from
-the host's own artifact. Also note the recruiter is nondeterministic (run one
-failed at routing on identical inputs) and
+The collector now names the stage that refused instead of returning a bare
+`None`; two live runs report `delivery_marker_absent`, so read
+`host_child_collection_reason` before theorising. The recruiter is also
+nondeterministic, and `counts.specialists` / `counts.runs` are not canary-scoped.
+
+**Do not repeat the earlier mistake.** The delegation columns look like an
+outage after `2026-08-07T14:31Z`, but `cd56471d` retired that accounting on
+purpose the same afternoon: **empty `retrieved_specialist_slug` /
+`activation_receipt_id` is expected and proves nothing**, and
 `executed_worker_kind=generic-worker` is normal.
 
 ## verification
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
-python scripts/docs_metadata.py --check
-python scripts/update_policy_availability.py --check
-python scripts/update_worklog.py --check
-python scripts/verify_docs.py
+python scripts/docs_metadata.py --check && python scripts/verify_docs.py
+python scripts/update_policy_availability.py --check && python scripts/update_worklog.py --check
 python -m pytest tests/test_verify_docs_schema.py tests/test_decision_conformance.py -q -W error
-ruff check agency_runtime tests scripts
-ruff format --check agency_runtime tests scripts
-node --test tests/dashboard_ui.test.mjs
-agency eval routing --json --no-details
-agency eval spawn-authority --json
-agency eval decision-conformance --repository . --json
-git diff --check
+ruff check agency_runtime tests scripts && ruff format --check agency_runtime tests scripts
+node --test tests/dashboard_ui.test.mjs && git diff --check
+agency eval routing --json --no-details && agency eval spawn-authority --json
+agency eval decision-conformance --repository . --json  # mutations die here; see above
 ~~~
 
-Run focused tests, the named fast spine, and the matrix-evidence list before each
+Run focused tests, the fast spine, and the matrix-evidence list before each
 checkpoint. A checkout-local evaluator is authoritative until an exact artifact
 is refreshed under explicit install authorization.
 
 ## constraints
 
 - Codex remains supported; never weaken evidence or parity to hide its opaque
-  channel.
+  channel. A plaintext-looking Codex tool argument is not proof: the
+  authorization call must carry the explicit empty host marker, and only exact
+  ancestor causal calls may omit it under the sealed v3 profile.
 - Inference alone chooses specialists and contractors. Deterministic code may
   recall, filter hard-ineligible candidates, validate, budget, and correlate.
 - Only a host-written artifact with exact card hashes before first child speech
   proves Rule 4. Agency rows and model prose are diagnostics.
-- A plaintext-looking Codex tool argument is not proof. The authorization call
-  must contain the explicit empty host marker; only exact ancestor causal calls
-  may omit it under the sealed v3 profile.
 - Same-process private reflection and same-account transcript plus Store forgery
-  are threat-model exclusions; the lease is not protection from code already
+  are threat-model exclusions; the lease does not protect against code already
   executing as the owner inside Agency.
 - Keep the 15,000 ms cold control fixed; do not trade authority, safety, or
-  evidence for latency.
-- Automatic promotion remains on the AR-119 critical path.
-- Do not claim Agency superiority before a valid matched corpus proves it.
+  evidence for latency. Automatic promotion remains on the critical path, and
+  no Agency-superiority claim precedes a valid matched corpus.
 - No push, PR, tracker write, hosted dispatch, install, trust action,
   publication, tag, release, or repository-setting change without authorization.

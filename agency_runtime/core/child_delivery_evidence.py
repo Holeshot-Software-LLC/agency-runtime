@@ -222,6 +222,46 @@ class ChildArtifactScan:
         return not self.candidate_count_complete or self.candidate_count > len(self.artifacts)
 
 
+#: Every answer the in-lifetime collector may give. A silent ``None`` cost a day
+#: of diagnosis on 2026-08-14: four host-written child artifacts existed, none
+#: carried a card, and the canary reported only that delivery "was not proven".
+#: Each stage below now names itself, so the next failure is read rather than
+#: re-derived. These strings are evidence, so the vocabulary is closed.
+HOST_CHILD_COLLECTION_REASONS: Final[frozenset[str]] = frozenset(
+    {
+        "collected",
+        "collector_raised",
+        "host_root_changed",
+        "artifact_scan_incomplete",
+        "no_child_artifact",
+        "multiple_child_artifacts",
+        "artifact_unreadable",
+        "artifact_outside_invocation_window",
+        "artifact_not_trusted",
+        "delivery_marker_absent",
+        "legacy_delivery_not_authoritative",
+        "artifact_origin_not_canonical",
+        "child_event_timestamp_invalid",
+        "child_event_outside_invocation_window",
+        "artifact_not_in_bounded_host_scan",
+        "expected_decision_not_found_or_invalid",
+        "persisted_decision_invalid",
+        "verification_refused",
+    }
+)
+
+#: Verification reasons that already name their own stage precisely enough to
+#: travel unchanged. Anything else collapses to ``verification_refused`` rather
+#: than widening evidence with an unbounded string.
+_PROMOTED_VERIFICATION_REASONS: Final[frozenset[str]] = frozenset(
+    {
+        "artifact_not_in_bounded_host_scan",
+        "artifact_origin_not_canonical",
+        "expected_decision_not_found_or_invalid",
+        "persisted_decision_invalid",
+    }
+)
+
 _PRIVATE_COLLECTION_SEAL = object()
 _VERIFIED_DELIVERY_SEAL = object()
 _VERIFIED_DELIVERY_IDENTITIES: dict[int, object] = {}
@@ -288,6 +328,30 @@ class _HostInvocationStart:
             or self.started_at_ns <= 0
         ):
             raise TypeError("host invocation starts are created by the safe backend")
+
+
+@dataclass(frozen=True, slots=True)
+class HostChildCollection:
+    """One collection attempt: the sealed proof when it exists, and why not.
+
+    The reason is reported whether or not a proof was minted, so a passing run
+    says ``collected`` and every refusal names the stage that refused. It never
+    carries host text, a path, or an exception message: it travels into evidence
+    and into the canary report.
+    """
+
+    proof: _VerifiedHostChildDelivery | None
+    reason: str
+
+    def __post_init__(self) -> None:
+        if self.reason not in HOST_CHILD_COLLECTION_REASONS:
+            raise ValueError("host child collection reason is outside the bounded vocabulary")
+        if (self.proof is not None) != (self.reason == "collected"):
+            raise ValueError("host child collection reason does not agree with the proof")
+
+
+def _uncollected(reason: str) -> HostChildCollection:
+    return HostChildCollection(proof=None, reason=reason)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1570,12 +1634,112 @@ def _finish_private_host_invocation(
     )
 
 
+def _collected_host_root(
+    collection: _PrivateHostArtifactCollection,
+) -> str:
+    """Confirm the private namespace is still the one that was captured."""
+
+    try:
+        current_root = collection.root.lstat()
+    except OSError:
+        return "host_root_changed"
+    if (
+        not same_file_identity(collection.root_metadata, current_root)
+        or metadata_is_link_or_reparse_point(current_root)
+        or not stat.S_ISDIR(current_root.st_mode)
+        or not storage_parent_is_trusted(collection.root, is_windows=os.name == "nt")
+    ):
+        return "host_root_changed"
+    return ""
+
+
+def _sole_window_artifact(
+    collection: _PrivateHostArtifactCollection,
+    *,
+    invocation: _HostInvocationWindow,
+) -> tuple[str, Path | None]:
+    """Return the one artifact this invocation wrote, or why there is not one.
+
+    ``multiple_child_artifacts`` is a real and expected outcome, not a corrupt
+    namespace: a host that fans a task out to several children writes one
+    transcript each. Collection still refuses, because "the artifact this
+    invocation produced" has no answer then -- but it now says so.
+    """
+
+    scan = scan_child_artifacts(collection.root, host=collection.host)
+    if not scan.root_present or scan.truncated:
+        return "artifact_scan_incomplete", None
+    if scan.candidate_count == 0:
+        return "no_child_artifact", None
+    if scan.candidate_count != 1 or len(scan.artifacts) != 1:
+        return "multiple_child_artifacts", None
+    artifact = scan.artifacts[0]
+    try:
+        metadata = artifact.lstat()
+    except OSError:
+        return "artifact_unreadable", None
+    # The file timestamp and host-authored event must both fall inside the exact
+    # real-process interval. Destination mtime alone would allow an old artifact
+    # copied into a fresh directory to replay a still-unconsumed Store decision.
+    modified_ns = int(getattr(metadata, "st_mtime_ns", 0) or 0)
+    if not _within_invocation(modified_ns, invocation):
+        return "artifact_outside_invocation_window", None
+    return "", artifact
+
+
+def _within_invocation(moment_ns: int, invocation: _HostInvocationWindow) -> bool:
+    clock_skew_ns = 1_000_000_000
+    return (
+        moment_ns + clock_skew_ns >= invocation.started_at_ns
+        and moment_ns <= invocation.finished_at_ns + clock_skew_ns
+    )
+
+
+def _readable_v6_delivery(
+    artifact: Path,
+    *,
+    collection: _PrivateHostArtifactCollection,
+    invocation: _HostInvocationWindow,
+) -> tuple[str, ChildDeliveryEvidence | None]:
+    """Read one artifact for a current, canonical, pre-speech v6 delivery."""
+
+    if _trusted_launch_prefix_bytes(artifact, label="host child artifact") is None:
+        # Classification only: these bytes are discarded, and the authoritative
+        # read still happens inside ``child_delivery_evidence`` below, so this
+        # adds no new trust surface. It only separates "the guard refused the
+        # file" -- ownership, link shape, parent chain -- from "the file was
+        # read and carried no card", which have opposite fixes.
+        return "artifact_not_trusted", None
+    diagnostic = child_delivery_evidence(artifact, host=collection.host)
+    if diagnostic is None:
+        return "delivery_marker_absent", None
+    if not diagnostic.v6_delivery:
+        return (
+            "legacy_delivery_not_authoritative"
+            if diagnostic.legacy_delivery
+            else "delivery_marker_absent"
+        ), None
+    if not _canonical_host_artifact_is_trusted(
+        artifact,
+        host=collection.host,
+        root=collection.root,
+        evidence=diagnostic,
+    ):
+        return "artifact_origin_not_canonical", None
+    observed = _utc_timestamp(diagnostic.host_event_at)
+    if observed is None:
+        return "child_event_timestamp_invalid", None
+    if not _within_invocation(int(observed.timestamp() * 1_000_000_000), invocation):
+        return "child_event_outside_invocation_window", None
+    return "", diagnostic
+
+
 def _collect_private_host_child_delivery(
     collection: _PrivateHostArtifactCollection,
     *,
     invocation: _HostInvocationWindow,
     store: object,
-) -> _VerifiedHostChildDelivery | None:
+) -> HostChildCollection:
     """Consume one exact newly written host artifact while its home is alive.
 
     Exactly one bounded child artifact must have appeared in the previously
@@ -1583,6 +1747,8 @@ def _collect_private_host_child_delivery(
     canonical child shape and private ownership, and the immutable inference
     decision plus one-use Store consumer must agree before the sealed proof is
     constructed.  No backend mapping participates in this transition.
+
+    Every refusal returns a bounded reason naming the stage that refused.
     """
 
     if not isinstance(collection, _PrivateHostArtifactCollection):
@@ -1596,75 +1762,36 @@ def _collect_private_host_child_delivery(
         or not _private_temporary_lease_is_current(collection.lease)
     ):
         raise TypeError("matching host invocation window is required")
-    try:
-        current_root = collection.root.lstat()
-    except OSError:
-        return None
-    if (
-        not same_file_identity(collection.root_metadata, current_root)
-        or metadata_is_link_or_reparse_point(current_root)
-        or not stat.S_ISDIR(current_root.st_mode)
-        or not storage_parent_is_trusted(collection.root, is_windows=os.name == "nt")
-    ):
-        return None
-    scan = scan_child_artifacts(collection.root, host=collection.host)
-    if (
-        not scan.root_present
-        or scan.truncated
-        or scan.candidate_count != 1
-        or len(scan.artifacts) != 1
-    ):
-        return None
-    artifact = scan.artifacts[0]
-    try:
-        metadata = artifact.lstat()
-    except OSError:
-        return None
-    # The file timestamp and host-authored event must both fall inside the exact
-    # real-process interval. Destination mtime alone would allow an old artifact
-    # copied into a fresh directory to replay a still-unconsumed Store decision.
-    modified_ns = int(getattr(metadata, "st_mtime_ns", 0) or 0)
-    clock_skew_ns = 1_000_000_000
-    if (
-        modified_ns + clock_skew_ns < invocation.started_at_ns
-        or modified_ns > invocation.finished_at_ns + clock_skew_ns
-    ):
-        return None
-    diagnostic = child_delivery_evidence(artifact, host=collection.host)
-    if (
-        diagnostic is None
-        or not diagnostic.v6_delivery
-        or not _canonical_host_artifact_is_trusted(
-            artifact,
-            host=collection.host,
-            root=collection.root,
-            evidence=diagnostic,
-        )
-    ):
-        return None
-    observed = _utc_timestamp(diagnostic.host_event_at)
-    if observed is None:
-        return None
-    observed_ns = int(observed.timestamp() * 1_000_000_000)
-    if (
-        observed_ns + clock_skew_ns < invocation.started_at_ns
-        or observed_ns > invocation.finished_at_ns + clock_skew_ns
-    ):
-        return None
+    reason = _collected_host_root(collection)
+    if reason:
+        return _uncollected(reason)
+    reason, artifact = _sole_window_artifact(collection, invocation=invocation)
+    if artifact is None:
+        return _uncollected(reason)
+    reason, diagnostic = _readable_v6_delivery(
+        artifact,
+        collection=collection,
+        invocation=invocation,
+    )
+    if diagnostic is None:
+        return _uncollected(reason)
     verified = _verify_child_delivery_with_capability(
         artifact,
         collection=collection,
         store=store,
     )
     if verified is None or not verified.staffed:
-        return None
+        refusal = verified.verification_reason if verified is not None else ""
+        return _uncollected(
+            refusal if refusal in _PROMOTED_VERIFICATION_REASONS else "verification_refused"
+        )
     proof = _VerifiedHostChildDelivery(
         evidence=verified,
         _seal=_VERIFIED_DELIVERY_SEAL,
     )
     with _VERIFIED_DELIVERY_LOCK:
         _VERIFIED_DELIVERY_IDENTITIES[id(proof)] = proof
-    return proof
+    return HostChildCollection(proof=proof, reason="collected")
 
 
 def child_delivery_projection(
@@ -1785,6 +1912,7 @@ def child_delivery_projection(
 
 
 __all__ = [
+    "HOST_CHILD_COLLECTION_REASONS",
     "MAX_CHILD_ARTIFACTS",
     "MAX_CHILD_DETAIL_RESULTS",
     "MAX_CHILD_FILESYSTEM_ENTRIES",
@@ -1793,6 +1921,7 @@ __all__ = [
     "ChildArtifactScan",
     "ChildDeliveryEvidence",
     "DeliveredCard",
+    "HostChildCollection",
     "child_delivery_evidence",
     "child_delivery_projection",
     "claude_child_artifacts",

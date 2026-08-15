@@ -230,11 +230,13 @@ def test_store_route_alone_is_diagnostic_but_host_artifact_verifies_once(
     assert diagnostic.verified_delivery is False
     assert diagnostic.staffed is False
 
-    capability = _collect_private_host_child_delivery(
+    collected = _collect_private_host_child_delivery(
         collection,
         invocation=invocation,
         store=store,
     )
+    assert collected.reason == "collected"
+    capability = collected.proof
     assert capability is not None
     verified = capability.evidence
     assert verified is not None

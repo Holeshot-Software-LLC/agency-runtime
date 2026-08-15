@@ -3191,16 +3191,26 @@ class SafeClaudeCanaryBackend:
                 )
             finally:
                 invocation = _finish_private_host_invocation(invocation_start)
+            collection_reason = "collected"
             if delivery_store is not None:
                 try:
-                    verified_delivery = _collect_private_host_child_delivery(
+                    collected = _collect_private_host_child_delivery(
                         collection,
                         invocation=invocation,
                         store=delivery_store,
                     )
+                    verified_delivery = collected.proof
+                    collection_reason = collected.reason
                 except (OSError, RuntimeError, TypeError, ValueError):
                     verified_delivery = None
+                    collection_reason = "collector_raised"
             record = facade._claude_canary_record(result)
+            if delivery_store is not None:
+                # The stage that refused travels with the invocation. Without it
+                # a failed Rule 4 canary reports only that delivery "was not
+                # proven", which is true of a missing card, an unspawned child,
+                # and a permissions fault alike.
+                record["host_child_collection_reason"] = collection_reason
         return record, verified_delivery
 
     def execute(

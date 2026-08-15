@@ -14,6 +14,7 @@ from typing import Any
 
 from agency_runtime.core.agent_activation import normalize_agent_slug
 from agency_runtime.core.child_delivery_evidence import (
+    HOST_CHILD_COLLECTION_REASONS,
     _consume_verified_host_child_delivery,
     _VerifiedHostChildDelivery,
 )
@@ -821,11 +822,22 @@ def _claude_host_child_delivery_failures(
     *,
     proof: Mapping[str, Any] | None,
     evidence: Mapping[str, Any],
+    collection_reason: str | None = None,
 ) -> tuple[str, ...]:
     """Validate the collector-minted Claude proof against the exact canary turn."""
 
     if not isinstance(proof, Mapping):
-        return ("verified host-authored Claude child card delivery was not proven",)
+        stage = (
+            collection_reason
+            if collection_reason in HOST_CHILD_COLLECTION_REASONS
+            and collection_reason != "collected"
+            else None
+        )
+        return (
+            (f"verified host-authored Claude child card delivery was not proven ({stage})")
+            if stage is not None
+            else "verified host-authored Claude child card delivery was not proven",
+        )
     if set(proof) != _HOST_CHILD_DELIVERY_FIELDS:
         return ("host-authored Claude child delivery proof had an invalid contract",)
     if (
@@ -1302,6 +1314,10 @@ def evaluate_proof(
         result.get("isolated_plugin") if isinstance(result.get("isolated_plugin"), dict) else None
     )
     host_child_delivery_projection = _consume_verified_host_child_delivery(host_child_delivery)
+    raw_collection_reason = result.get("host_child_collection_reason")
+    collection_reason = (
+        raw_collection_reason if raw_collection_reason in HOST_CHILD_COLLECTION_REASONS else None
+    )
     plugin_invoked = bool(evidence.get("correlated_trace_ids"))
     activation_failures: tuple[str, ...] | None = None
     if mode == "agency" and host == "codex":
@@ -1322,6 +1338,7 @@ def evaluate_proof(
         activation_failures = _claude_host_child_delivery_failures(
             proof=host_child_delivery_projection,
             evidence=evidence,
+            collection_reason=collection_reason,
         )
     if mode == "native-only":
         profile_proven = bool(
@@ -1374,6 +1391,8 @@ def evaluate_proof(
         ),
         "collaboration": collaboration_projection,
     }
+    if collection_reason is not None:
+        invocation["host_child_collection_reason"] = collection_reason
     if host_child_delivery_projection is not None:
         invocation["host_child_delivery"] = host_child_delivery_projection
     if mode == "agency" and host == "codex":

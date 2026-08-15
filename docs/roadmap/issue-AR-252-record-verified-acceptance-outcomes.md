@@ -138,3 +138,42 @@ them halfway through a build.
    was the subject of another child's judgement, so the correlation the envelope
    needs — verdict bound to the producer's artifact digest — has no producer in
    the runtime yet.
+
+## A fourth constraint, found by reading the rule against the seam (2026-08-14)
+
+The three above were found by reading the collector. This one falls out of the
+acceptance rule itself and is the sharpest of the four.
+
+`evaluate_acceptance` takes `artifact_digest` from `producer["artifact_digest"]`,
+and `_host_child_delivery_projection` sets that field from
+`evidence.artifact_digest` — the SHA-256 of the bounded trusted read window of
+**the producer child's own transcript**. It is not a digest of any work product.
+The verdict must then match it exactly (`verdict_artifact_mismatch`).
+
+So the thing a verifier must bind its verdict to is the hash of a file it cannot
+read: the producer's transcript lives in the host's namespace, and the verifier
+child has no access to it. **No verifier can compute or even quote that digest
+unaided.** Only the collector — Agency, after reading the producer artifact —
+can supply it.
+
+That does not make the envelope unbuildable, but it fixes the verdict's shape:
+the *semantic* half (accept or reject) must come from the verifier child's own
+host-written output, while the *binding* half (which artifact, which verifier)
+is assembled by Agency around it. A verdict is therefore a joint object, and the
+design has to say so out loud rather than let a reader assume the verifier
+authored the whole thing. Whether that division is acceptable evidence, or
+whether the rule should bind to a digest of the produced work instead, is an
+open decision and not one to settle inside a collector build.
+
+## Collector diagnosis shipped ahead of the collector (2026-08-14)
+
+`_collect_private_host_child_delivery` answered eighteen distinct conditions
+with a bare `None`, so a Rule 4 canary reported only that delivery "was not
+proven". It now returns `HostChildCollection` with a closed reason vocabulary,
+the canary record carries `host_child_collection_reason`, and the operator-facing
+failure line quotes it. On a live run the same afternoon that previously said
+nothing, it says `delivery_marker_absent`.
+
+This is not the envelope collector and does not check any box above. It is the
+instrument the envelope collector will be built with — every stage it now names
+is a stage the pairing collector has to pass through twice.

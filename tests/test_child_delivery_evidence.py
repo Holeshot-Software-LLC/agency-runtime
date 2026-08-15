@@ -768,11 +768,13 @@ def test_real_store_consumer_atomically_verifies_then_rejects_replay(
     invocation = _finish_private_host_invocation(invocation_start)
     diagnostic = claude_child_delivery_evidence(artifact)
     assert diagnostic is not None
-    capability = _collect_private_host_child_delivery(
+    collected = _collect_private_host_child_delivery(
         collection,
         invocation=invocation,
         store=store,
     )
+    assert collected.reason == "collected"
+    capability = collected.proof
     assert capability is not None
     verified = capability.evidence
     proof = _consume_verified_host_child_delivery(capability)
@@ -1022,14 +1024,14 @@ def test_private_file_outside_collector_scope_cannot_reach_store(
         def get_native_child_delivery_verification(self, _decision_id: str) -> object:
             raise AssertionError("out-of-scope artifacts must not consult the Store")
 
-    assert (
-        subject._collect_private_host_child_delivery(
-            collection,
-            invocation=invocation,
-            store=StoreLike(),
-        )
-        is None
+    collected = subject._collect_private_host_child_delivery(
+        collection,
+        invocation=invocation,
+        store=StoreLike(),
     )
+    assert collected.proof is None
+    # The private namespace stayed empty: the artifact was written outside it.
+    assert collected.reason == "no_child_artifact"
 
 
 def test_copied_historical_artifact_cannot_enter_current_invocation_window(
@@ -1060,14 +1062,106 @@ def test_copied_historical_artifact_cannot_enter_current_invocation_window(
         ),
     )
 
-    assert (
-        subject._collect_private_host_child_delivery(
-            collection,
-            invocation=invocation,
-            store=object(),
-        )
-        is None
+    collected = subject._collect_private_host_child_delivery(
+        collection,
+        invocation=invocation,
+        store=object(),
     )
+    assert collected.proof is None
+    # The file was written now, so its mtime is current; the host-authored event
+    # inside it is a week old, which is the copy this guard exists to refuse.
+    assert collected.reason == "child_event_outside_invocation_window"
+
+
+def _extra_claude_artifact(root: Path, child_id: str, text: object) -> Path:
+    record = _claude_record(text)
+    record["agentId"] = child_id
+    return _write_jsonl(
+        root / "proj" / PARENT_SESSION / "subagents" / f"agent-{child_id}.jsonl",
+        [record],
+    )
+
+
+def test_collection_reason_vocabulary_is_closed_and_agrees_with_the_proof() -> None:
+    assert "collected" in subject.HOST_CHILD_COLLECTION_REASONS
+    with pytest.raises(ValueError, match="bounded vocabulary"):
+        subject.HostChildCollection(proof=None, reason="something_new")
+    with pytest.raises(ValueError, match="does not agree"):
+        subject.HostChildCollection(proof=None, reason="collected")
+
+
+def test_a_host_that_fans_out_to_several_children_says_so(
+    private_root: None,
+    collector_lease,
+) -> None:
+    """Four children is the shape a real canary produced on 2026-08-14.
+
+    Collection still refuses -- "the artifact this invocation wrote" has no
+    single answer -- but a fan-out must not be indistinguishable from a host
+    that spawned nothing at all.
+    """
+
+    collection = subject._begin_private_host_artifact_collection(collector_lease, host="claude")
+    invocation_start = subject._start_private_host_invocation(collection)
+    _claude_artifact(collection.root, [_claude_record(_v6_envelope("Audit the schema."))])
+    _extra_claude_artifact(collection.root, "a538d7182969e4855", "List the files.")
+    invocation = subject._finish_private_host_invocation(invocation_start)
+
+    collected = subject._collect_private_host_child_delivery(
+        collection,
+        invocation=invocation,
+        store=object(),
+    )
+
+    assert collected.proof is None
+    assert collected.reason == "multiple_child_artifacts"
+
+
+def test_a_child_that_received_no_card_is_named_as_such(
+    private_root: None,
+    collector_lease,
+) -> None:
+    """The live failure: a well-formed child transcript with no Agency marker."""
+
+    collection = subject._begin_private_host_artifact_collection(collector_lease, host="claude")
+    invocation_start = subject._start_private_host_invocation(collection)
+    _claude_artifact(collection.root, [_claude_record("Review the change and report.")])
+    invocation = subject._finish_private_host_invocation(invocation_start)
+
+    collected = subject._collect_private_host_child_delivery(
+        collection,
+        invocation=invocation,
+        store=object(),
+    )
+
+    assert collected.proof is None
+    assert collected.reason == "delivery_marker_absent"
+
+
+def test_a_legacy_envelope_is_refused_under_its_own_name(
+    private_root: None,
+    collector_lease,
+) -> None:
+    """Every marked child on the evidence workstation carries v5, not v6.
+
+    A v5 envelope means a card *was* delivered, by a runtime that predates the
+    Rule 4 authority. Reporting that as "no marker" would send the next reader
+    looking for a staffing outage that is not there.
+    """
+
+    collection = subject._begin_private_host_artifact_collection(collector_lease, host="claude")
+    invocation_start = subject._start_private_host_invocation(collection)
+    _claude_artifact(collection.root, [_claude_record(_envelope("Audit the schema."))])
+    invocation = subject._finish_private_host_invocation(invocation_start)
+
+    collected = subject._collect_private_host_child_delivery(
+        collection,
+        invocation=invocation,
+        store=object(),
+    )
+
+    assert collected.proof is None
+    assert collected.reason == "legacy_delivery_not_authoritative"
 
 
 def test_raw_diagnostic_and_forged_typed_value_cannot_project_authority(

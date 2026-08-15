@@ -49,7 +49,10 @@ optional on a supported host.
 
 Candidate `9e29aabe` advances `2f0758d9` by building the host-free half of the
 automatic-promotion gate, described below. It moves no rule cell: the gate is
-cross-cutting, and its evidence is source and simulation only.
+cross-cutting, and its evidence is source and simulation only. A later
+same-candidate change makes the Rule 4 collector name the stage that refused it;
+that moves no cell either, but it is what turned two silent canary failures into
+the two located blockers recorded under R4 claude below.
 
 Candidate `2f0758d9` advanced `e216670a` by repairing a platform parity gap that
 sat underneath the Rule 4 host-artifact proof, described below, and by putting
@@ -97,20 +100,89 @@ guarantees a distinct inode everywhere and is the shape a real replacement
 takes. CI reported one of the five because the conformance baseline runs under
 `-x`; the other four were measured directly on Linux.
 
-**Rule 4 Live on claude is blocked at one exact point: the host spawns the
-child, Agency records it, and the child is staffed as a generic worker with no
-card.** Two live isolated-profile canary runs were executed on 2026-08-14 at
+**Rule 4 Live on claude is blocked in two independent places, and this
+workstation can produce a readable host artifact.** That last point was an open
+question and is now settled by measurement rather than inference.
+
+`claude -p` under an isolated `CLAUDE_CONFIG_DIR` spawns sub-agents and writes
+one transcript each at
+`projects/<slug>/<session>/subagents/agent-<child>.jsonl` — exactly the shape
+`_canonical_host_artifact_shape` accepts, with record zero carrying
+`type=user`, `isSidechain=true`, `message.role=user`, `agentId`, `sessionId`,
+and `timestamp`. Observed twice on 2026-08-14: once from a bare probe, once
+from a live canary that produced four of them. **Artifact production is not the
+gate.** (A probe artifact written into an ordinary scratch directory is still
+refused: `assert_storage_parent_chain` passes and `storage_parent_is_trusted`
+fails. That is the ACL guard doing its job, and the canary's private lease
+satisfies it by construction.)
+
+The first blocker is the **disposable canary profile, where Agency does not
+activate at all**. The 2026-08-14 run at `f4039746` produced four well-formed
+child transcripts and **not one carried any Agency marker** — not a partial or
+mixed-version envelope, the literal `[AGENCY` absent from every launch text —
+alongside `routing: 0` at the canary's own query hash, `runs: 0`,
+`specialists: 0`, all five header lines missing, and `isolated_plugin` =
+`{load_requested: true, registered: null, enabled: null}`. Six flag
+combinations were then tested directly against a fresh home: `--setting-sources=`
+(the canary's own), default sources, and `--setting-sources=user`, each with
+`--plugin-dir`; then a home carrying `enabledPlugins` and
+`extraKnownMarketplaces`, once without `--plugin-dir` and once with; then one
+carrying the real profile's `installed_plugins.json` and
+`known_marketplaces.json`. **All six produced zero markers.** So the cause is
+neither the empty setting-sources flag nor plugin enablement, and it remains
+open.
+
+The second blocker is the **envelope version in the real profile, where Agency
+does activate**. Of 63 child artifacts under `~/.claude/projects`, 9 carry a
+delivery marker: 3 v5 JIT (newest `2026-08-11T19:33Z`) and 7 v1 exact-activation
+(newest `2026-08-07T14:30Z`), all correlated. **`v6` count is zero — no
+inference-team envelope has ever been written on this machine** — and
+`_evidence` treats v5 as `legacy_delivery_non_authoritative`, which can never
+verify. `native_child_delivery_verifications` holds zero rows, ever. The
+installed launcher does contain the v6 renderer, and `staff_native_child` is the
+only writer, so this is not a stale install: **no native child has been spawned
+in the real profile since the v6 runtime took over.** One native child spawned
+there under the current runtime would settle it.
+
+**The collector now names the stage that refused.** It previously returned a
+bare `None` for eighteen distinct conditions, which is why the two runs below
+cost a day. `HostChildCollection` carries a closed reason vocabulary, the
+canary record carries `host_child_collection_reason`, and the Rule 4 failure
+line quotes it — two further live runs the same afternoon both report
+`verified host-authored Claude child card delivery was not proven
+(delivery_marker_absent)`, beside the pre-existing
+`canary profile plugin registration and enablement were not proven` that
+corroborates the first blocker. Three of those reasons were written directly
+from what the live runs hit, and are held by `tests/test_child_delivery_evidence.py`:
+`multiple_child_artifacts` (the collector requires exactly one artifact and one
+run fanned out to four — the gate is unchanged, but a fan-out no longer reads
+the same as a host that spawned nothing), `delivery_marker_absent`, and
+`legacy_delivery_not_authoritative`.
+
+Two live isolated-profile canary runs were executed on 2026-08-14 at
 `bcfbe664`. Neither produced an attestation, and the canary correctly persisted
 none.
 
 The first run failed earlier, at routing: the planner applied and the recruiter
 was rejected twice, so nothing was staffed and no child existed to collect. The
-second run passed that stage -- `preflight_failures: 0`, `runs: 2`,
-`routing: 3`, `specialists: 6`, the expected `code-reviewer` both loaded and
-selected, `routed_specialists` = `application-security-engineer, code-reviewer`,
-and one correlated trace. **The recruiter stage is therefore nondeterministic
-across otherwise identical runs, which is itself a finding: a single failed
-canary is not evidence that the path is broken.**
+second run passed that stage -- `routing: 3` at the canary's own query hash, the
+expected `code-reviewer` both loaded and selected, `routed_specialists` =
+`application-security-engineer, code-reviewer`, and one correlated trace. **The
+recruiter stage is therefore nondeterministic across otherwise identical runs,
+which is itself a finding: a single failed canary is not evidence that the path
+is broken** -- and the 2026-08-14 run at `f4039746`, with `routing: 0`, is the
+opposite draw of the same coin.
+
+**Read the canary's counts with care; two of the fields quoted above are not
+canary-scoped.** `evidence_summary` filters `routing` by the canary's exact
+query hash and `loaded_specialists` by those traces, so those are the canary's
+own. `counts.specialists` is unfiltered and `counts.runs` is filtered only by
+host and status, so on a workstation whose own interactive Claude session writes
+to the same store, both can absorb activity that was never the canary's.
+`specialists: 6` and `runs: 2` are therefore upper bounds, not measurements.
+`preflight_failures: 0` is worse than ambiguous: it is equally what a clean
+preflight and an unrun hook produce, and the `f4039746` run has both that zero
+and no Agency activity at all.
 
 The second run then stopped on the delivery proof. Its delegation row reads
 `backend=delegate_task`, `native_run_id=claude-agent:ad903e971f817b43f`,
@@ -505,7 +577,7 @@ satisfy a layer.
 | R1 | hermes | Simulation | proven | test | shared adapter preserves the exact Hermes inference result | 2026-08-12 | `tests/test_native_child_adapter_staffing.py:39-95` |
 | R1 | openclaw | Implementation | proven | source | shared native-child adapter uses only the inference service result | 2026-08-12 | `agency_runtime/adapters/base.py:779-852` |
 | R1 | openclaw | Simulation | proven | test | shared adapter preserves the exact OpenClaw inference result | 2026-08-12 | `tests/test_native_child_adapter_staffing.py:39-95` |
-| R4 | claude | Implementation | proven | source | sealed in-lifetime collector binds one current host artifact to one invocation | 2026-08-12 | `agency_runtime/core/child_delivery_evidence.py:1484-1665` |
+| R4 | claude | Implementation | proven | source | sealed in-lifetime collector binds one current host artifact to one invocation, and names the stage that refused when it cannot | 2026-08-14 | `agency_runtime/core/child_delivery_evidence.py:1548-1792` |
 | R4 | claude | Simulation | proven | test | the host artifact carrying the exact team envelope is collected inside the disposable profile's lifetime and proves verified pre-speech delivery of the exact decision | 2026-08-14 | `tests/test_host_canary.py:805-1058` |
 | R4 | codex | Implementation | proven | source | sealed v3 attestation preserves exact CLI profiles and adds the atomic 13-family Desktop profile with exact causal/output/currentness binding | 2026-08-13 | `agency_runtime/core/codex_spawn_provenance.py:245-3525` |
 | R4 | codex | Simulation | proven | test | exact CLI and Desktop lineage, causal, profile, currentness, bound, and replay fixtures pass for every supported variant | 2026-08-14 | `tests/test_codex_spawn_provenance.py:800-1855` |

@@ -16,9 +16,9 @@ import pytest
 
 import agency_runtime.core.canary as canary_module
 from agency_runtime.adapters.hooks import HookBridge
+from agency_runtime.core import canary_proof, native_child_staffing
 from agency_runtime.core import child_delivery_evidence as child_evidence
 from agency_runtime.core import native_child_install_identity as install_identity_module
-from agency_runtime.core import native_child_staffing
 from agency_runtime.core.canary import (
     CODEX_CANARY_EXEC_OPTIONS,
     CODEX_CURRENT_PROFILE_EXEC_OPTIONS,
@@ -1051,11 +1051,45 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
 
     assert proof.passed is True
     assert proof.failures == ()
+    assert outcome.result["host_child_collection_reason"] == "collected"
+    assert proof.invocation["host_child_collection_reason"] == "collected"
     assert proof.invocation["host_child_delivery"]["verified_delivery"] is True
     assert proof.invocation["host_child_delivery"]["pre_speech"] is True
     assert proof.invocation["host_child_delivery"]["decision_id"] == decision_id
     assert outcome.evidence["expected_specialist_loaded"] is False
     assert Store(db_path).get_native_child_delivery_verification(decision_id) is not None
+
+
+def test_a_failed_rule4_canary_names_the_stage_that_refused() -> None:
+    """A Rule 4 refusal must say which stage refused, not only that it did.
+
+    Two live canary runs on 2026-08-14 reported "delivery was not proven" and
+    nothing else; diagnosing them meant re-running the host under a shim. The
+    reason now travels with the invocation.
+    """
+
+    evidence = {
+        "routed_specialists": [],
+        "expected_specialist": "code-reviewer",
+        "accepted_trace_ids": [],
+        "correlated_trace_ids": [],
+    }
+
+    named = canary_proof._claude_host_child_delivery_failures(
+        proof=None,
+        evidence=evidence,
+        collection_reason="delivery_marker_absent",
+    )
+    assert named == (
+        "verified host-authored Claude child card delivery was not proven (delivery_marker_absent)",
+    )
+
+    for unusable in (None, "collected", "not-a-reason"):
+        assert canary_proof._claude_host_child_delivery_failures(
+            proof=None,
+            evidence=evidence,
+            collection_reason=unusable,
+        ) == ("verified host-authored Claude child card delivery was not proven",)
 
 
 def test_codex_tokenless_isolated_profile_cannot_attest_activation(

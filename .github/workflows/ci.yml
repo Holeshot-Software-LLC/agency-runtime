@@ -247,6 +247,7 @@ jobs:
           "${AGENCY_CI_PYTHON}" -m pytest \
             tests/test_accepted_outcomes.py \
             tests/test_adapter_parity.py \
+            tests/test_child_delivery_evidence.py \
             tests/test_codex_plaintext_hook.py \
             tests/test_codex_spawn_provenance.py \
             tests/test_completion_policy_boundary.py \
