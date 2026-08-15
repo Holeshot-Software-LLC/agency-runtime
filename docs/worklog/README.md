@@ -891,6 +891,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `437eb783` | 2026-08-14 | docs(ar119)!: retract the staffing-outage claim; the accounting was retired | null | null |
 | `8e0fba31` | 2026-08-14 | feat(rule4): make the collector name the stage that refused | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
 | `5c654408` | 2026-08-14 | docs(ar119)!: the profile was never the variable; `claude -p` runs no hooks | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
+| `519f48f7` | 2026-08-14 | fix(doctor)!: fail on schema drift; retract the `claude -p` claim | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
