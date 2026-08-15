@@ -893,6 +893,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5c654408` | 2026-08-14 | docs(ar119)!: the profile was never the variable; `claude -p` runs no hooks | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
 | `519f48f7` | 2026-08-14 | fix(doctor)!: fail on schema drift; retract the `claude -p` claim | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
 | `190f31d8` | 2026-08-14 | docs(ar119): record the runtime republish that restored hook staffing | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
+| `687b4f95` | 2026-08-14 | docs(ar119): the repaired canary records, and fails at the recruiter instead | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
