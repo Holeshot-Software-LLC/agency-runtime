@@ -69,7 +69,21 @@ def _compile(
         value,
         request=request,
         context=_context(),
-        known_domains=("software-engineering", "security", "quality-assurance"),
+        # A slice of the real roster vocabulary. The compiler rejects a domain
+        # no contract declares, so a fixture roster narrower than the domains
+        # under test would prove nothing about canonicalization.
+        known_domains=(
+            "accessibility",
+            "design",
+            "finance",
+            "marketing",
+            "product",
+            "quality-assurance",
+            "research",
+            "security",
+            "software-engineering",
+            "workforce-governance",
+        ),
         known_stacks=("python", "typescript", "javascript"),
         known_capability_ids=(
             "analysis",
@@ -461,6 +475,52 @@ def test_compiler_separates_known_capabilities_from_a_real_novel_gap() -> None:
         _compile(_intent(novel="risk-analysis"))
     with pytest.raises(ValueError, match="current workforce ontology"):
         _compile(_intent(capabilities=["unknown-capability"]))
+
+
+def test_an_invented_domain_is_refused_by_name_before_it_reaches_the_recruiter() -> None:
+    # Coverage is conjunctive, so a domain no contract declares makes the unit
+    # permanently unstaffable: the recruiter can only answer
+    # staff_without_safe_team, and its repair prompt cannot change the plan.
+    with pytest.raises(ValueError, match="known workforce vocabulary: text-normalization"):
+        _compile(
+            _intent(artifact="review-report", domains=["text-normalization"]),
+            request="Review a one-line change to a text-normalization helper.",
+        )
+
+
+def test_a_declared_capability_gap_may_still_name_its_own_new_domain() -> None:
+    # The open-ended pool reaches the recruiter and declares a hiring gap only
+    # if genuinely novel work survives planning. novel_capability is the signal
+    # that separates new work from a narrower synonym for covered work.
+    plan = _compile(
+        _intent(
+            artifact="analysis",
+            domains=["quantum-build-systems"],
+            capabilities=["analysis"],
+            novel="quantum-build-evaluation",
+        ),
+        request="Evaluate an unfamiliar quantum compiler build system.",
+    )
+
+    assert plan.units[0].domains == ("quantum-build-systems",)
+    assert "quantum-build-evaluation" in plan.units[0].required_capabilities
+
+
+@pytest.mark.parametrize(
+    ("planned", "canonical"),
+    [
+        ("python-cli", "software-engineering"),
+        ("code-review", "software-engineering"),
+        ("code-quality", "quality-assurance"),
+        ("cybersecurity", "security"),
+    ],
+)
+def test_a_synonym_normalization_can_rescue_is_not_refused(planned: str, canonical: str) -> None:
+    # The boundary refuses only what normalization could not place. It must not
+    # narrow the vocabulary the planner may write in.
+    plan = _compile(_intent(artifact="analysis", domains=[planned], capabilities=["analysis"]))
+
+    assert plan.units[0].domains == (canonical,)
 
 
 def test_code_intent_is_enriched_with_ordered_assurance_without_losing_capabilities() -> None:

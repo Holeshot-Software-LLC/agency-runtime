@@ -342,6 +342,25 @@ def test_plan_and_proposal_schemas_are_closed_bounded_and_snapshot_bound() -> No
         _plan(*(_unit(f"unit-{index}") for index in range(17)))
 
 
+def test_domain_vocabulary_is_enforced_only_for_callers_that_know_the_roster() -> None:
+    # A caller compiling an already-typed plan has no roster to check against,
+    # so the guard stays off by default and turns on for the one boundary that
+    # does know: the planner, whose invented domain is otherwise unstaffable.
+    document = {
+        "schema_version": 2,
+        "request_summary": "Complete the requested work with safe staffing.",
+        "units": [_unit("unit-one")],
+    }
+
+    assert parse_work_unit_plan(document).units[0].domains == ("software-engineering",)
+    assert parse_work_unit_plan(
+        document,
+        allowed_domains=frozenset({"software-engineering"}),
+    ).units[0].domains == ("software-engineering",)
+    with pytest.raises(ValueError, match="known workforce vocabulary: software-engineering"):
+        parse_work_unit_plan(document, allowed_domains=frozenset({"security"}))
+
+
 def test_plan_hash_roster_fingerprint_count_and_generation_are_authoritative() -> None:
     roster = (_contract("analyst", outcomes=("Technical analysis",)),)
     plan = _plan(_unit("unit-analysis"))

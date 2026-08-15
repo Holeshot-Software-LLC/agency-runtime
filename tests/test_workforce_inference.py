@@ -927,6 +927,49 @@ def test_open_ended_pool_can_declare_gap_without_inventing_a_roster_candidate() 
     assert outcome.proposal.units[0].abstention_reasons == ("inference-declared-gap",)
 
 
+def test_an_invented_domain_is_repaired_by_the_planner_not_blamed_on_the_recruiter() -> None:
+    # The live canary died at staff_without_safe_team because the plan required
+    # a domain no contract declares. That failure is unfixable by the recruiter:
+    # coverage is conjunctive, so no ranking it could return would help, and its
+    # repair prompt cannot change the plan. Refuse the plan instead, and name
+    # the offending domain in the feedback the planner receives.
+    snapshot = _snapshot(_contract("technical-analyst"))
+    invented = _compact_plan_document()
+    invented["units"][0]["domains"] = ["text-normalization"]
+    responses = iter(
+        (
+            _result(invented),
+            _result(_compact_plan_document()),
+            _result(_nomination_document()),
+        )
+    )
+    prompts: list[str] = []
+    systems: list[str] = []
+
+    def invoke(*args, **kwargs):
+        prompts.append(args[1])
+        systems.append(str(kwargs["system_prompt"]))
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(balanced_call_budget=3),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert [
+        (attempt.stage, attempt.reason_code)
+        for attempt in outcome.attempts
+        if attempt.status == "rejected"
+    ] == [("planner", "provider_response_contract_invalid")]
+    assert "[RUNTIME VALIDATION FEEDBACK]" in prompts[1]
+    assert "text-normalization" in prompts[1]
+    assert systems[1] == systems[0]
+
+
 def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     invalid = _compact_plan_document()

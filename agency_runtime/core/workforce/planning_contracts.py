@@ -259,7 +259,7 @@ _ROW_FIELDS = frozenset(
 )
 
 
-def _parse_unit(value: object) -> WorkUnit:
+def _parse_unit(value: object, *, allowed_domains: frozenset[str] | None = None) -> WorkUnit:
     raw = _mapping(value, label="work unit", fields=_UNIT_FIELDS)
     unit_id = _identifier(raw["unit_id"], label="unit_id")
     if _UNIT_ID_RE.fullmatch(unit_id) is None:
@@ -277,12 +277,24 @@ def _parse_unit(value: object) -> WorkUnit:
         or parallelization not in _PARALLELIZATION
     ):
         raise ValueError("work unit enum is invalid")
+    domains = _items(raw["domains"], label="domains", identifiers=True, required=True)
+    if allowed_domains is not None:
+        # A domain is a staffing requirement, not free prose: coverage is
+        # conjunctive, so a domain no contract can declare makes the unit
+        # permanently unstaffable and no recruiter ranking can rescue it. Name
+        # the unknown values here, where the planner still owns the mistake.
+        unknown = tuple(item for item in domains if item not in allowed_domains)
+        if unknown:
+            raise ValueError(
+                "work unit domains are outside the known workforce vocabulary: "
+                + ", ".join(unknown)
+            )
     return WorkUnit(
         unit_id=unit_id,
         outcome=_text(raw["outcome"], label="outcome"),
         artifact_kind=artifact,
         lifecycle_phase=lifecycle,
-        domains=_items(raw["domains"], label="domains", identifiers=True, required=True),
+        domains=domains,
         languages=_items(raw["languages"], label="languages", identifiers=True),
         frameworks=_items(raw["frameworks"], label="frameworks", identifiers=True),
         required_capabilities=_items(
@@ -323,7 +335,18 @@ def _plan_digest(request_summary: str, units: tuple[WorkUnit, ...]) -> str:
     return "sha256:" + hashlib.sha256(payload).hexdigest()
 
 
-def parse_work_unit_plan(value: object) -> WorkUnitPlan:
+def parse_work_unit_plan(
+    value: object,
+    *,
+    allowed_domains: frozenset[str] | None = None,
+) -> WorkUnitPlan:
+    """Parse a typed work-unit plan.
+
+    ``allowed_domains`` is the vocabulary a plan may staff against. Callers that
+    know the live roster pass it so an unstaffable domain is rejected here,
+    while callers compiling an already-typed plan omit it.
+    """
+
     raw = _mapping(value, label="work-unit plan", fields=_PLAN_FIELDS)
     if raw["schema_version"] != PLAN_SCHEMA_VERSION:
         raise ValueError("work-unit plan schema_version is unsupported")
@@ -336,7 +359,7 @@ def parse_work_unit_plan(value: object) -> WorkUnitPlan:
     ):
         raise ValueError("work-unit plan units must be a nonempty bounded list")
     summary = _text(raw["request_summary"], label="request_summary")
-    units = tuple(_parse_unit(item) for item in raw_units)
+    units = tuple(_parse_unit(item, allowed_domains=allowed_domains) for item in raw_units)
     ids = [unit.unit_id for unit in units]
     if len(set(ids)) != len(ids):
         raise ValueError("work-unit plan contains duplicate unit ids")

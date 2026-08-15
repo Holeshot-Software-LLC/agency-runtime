@@ -96,6 +96,16 @@ _DOMAIN_ALIASES = {
     "technical-writing": "software-engineering",
     "developer-documentation": "software-engineering",
 }
+# Domains this module can produce by itself: every alias target plus the token
+# fallbacks in `_canonical_domain`. A compiled plan may carry one of these even
+# when no contract declares it, because the runtime chose the value rather than
+# the planner, and asking the planner to replan cannot make it coverable.
+_RUNTIME_DOMAINS = frozenset(_DOMAIN_ALIASES.values()) | {
+    "quality-assurance",
+    "security",
+    "software-engineering",
+    "workforce-governance",
+}
 _SOFTWARE_TOKENS = frozenset(
     {
         "api",
@@ -282,7 +292,11 @@ COMPACT_INTENT_SYSTEM = (
     "- Security-sensitive code needs a separate security-domain review-report in addition "
     "to the non-security software-correctness review.\n"
     "- Each unit depends on the units whose output it consumes.\n\n"
-    "Use the exact known domain, stack, and capability identifiers when they fit. "
+    "Every domain must come from planning_taxonomy.known_domains unless the same unit also "
+    "sets novel_capability. A domain outside that list names no specialist the workforce can "
+    "supply, so unless you are declaring genuinely new work the plan is rejected: choose the "
+    "closest known domain instead of inventing a narrower synonym for work it already covers. "
+    "Use the exact known stack and capability identifiers when they fit. "
     "Set novel_capability only for a genuine capability gap, not for a narrower "
     "synonym such as python-cli or json-storage.\n"
     "Use plan for operational, recovery, migration, rollout, or decision plans. "
@@ -612,6 +626,13 @@ def compile_intent_plan(
     stacks = frozenset(str(item).casefold() for item in known_stacks)
     capabilities = frozenset(str(item).casefold() for item in known_capability_ids)
     units = []
+    # A domain is a staffing requirement, so an unknown one must be deliberate.
+    # A unit that declares novel_capability is claiming genuinely new work and
+    # may name the domain it lives in — that is how an open-ended pool reaches
+    # the recruiter and declares a hiring gap. A unit that claims no novelty has
+    # invented a narrower synonym for work the workforce already covers, and no
+    # recruiter ranking can rescue it.
+    allowed_domains = set(domains) | _RUNTIME_DOMAINS
     for item in raw_units:
         unit = _mapping(
             item,
@@ -734,6 +755,13 @@ def compile_intent_plan(
                 or {"agent", "selection"} <= outcome_tokens
             ):
                 document["domains"] = ["workforce-governance"]
+        if _text(
+            unit["novel_capability"],
+            label="novel_capability",
+            maximum=MAX_LABEL_CHARS,
+            allow_empty=True,
+        ):
+            allowed_domains.update(document["domains"])
         units.append(document)
     return parse_work_unit_plan(
         {
@@ -744,7 +772,8 @@ def compile_intent_plan(
                 maximum=min(512, MAX_TEXT_CHARS),
             ),
             "units": units,
-        }
+        },
+        allowed_domains=frozenset(allowed_domains),
     )
 
 
