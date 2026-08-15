@@ -177,3 +177,12 @@ nothing, it says `delivery_marker_absent`.
 This is not the envelope collector and does not check any box above. It is the
 instrument the envelope collector will be built with — every stage it now names
 is a stage the pairing collector has to pass through twice.
+
+What the instrument then found changes where the collector can live. **`claude -p`
+runs no Agency hooks at all**: against the real profile, with no
+`CLAUDE_CONFIG_DIR` override and every inherited `CLAUDE_CODE_*` variable
+stripped, a headless run spawned a child that received no card and left
+`runs: 0`, `routing: 0`, `receipts: 0`. Interactive sessions on the same machine
+staff at confidence 1.0. Since the disposable-profile canary is built on `-p`,
+**the producer proof this envelope needs cannot be collected there today** —
+which is a prerequisite for this issue, not a detail of it.

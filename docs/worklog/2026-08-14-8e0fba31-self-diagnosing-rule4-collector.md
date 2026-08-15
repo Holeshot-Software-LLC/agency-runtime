@@ -88,8 +88,25 @@ all. Tested with those keys present, then again with the real profile's
 `installed_plugins.json` and `known_marketplaces.json` copied in — **both
 produced zero markers.** Also not the cause.
 
-Six combinations, no activation. The canary profile's failure to activate
-Agency is therefore still open, and it is upstream of everything Rule 4 needs.
+Six combinations, no activation — which left the isolated profile itself as the
+remaining suspect, and that framing was also wrong.
+
+**The control settles it, and it supersedes both hypotheses above.** Running
+`claude -p` against the *real* profile — the same `~/.claude` whose hooks fire
+for an interactive session, no `CLAUDE_CONFIG_DIR` override — produced a
+sub-agent child with no Agency marker, no AGENCY text anywhere in the parent
+transcript, and zero Agency rows: `runs: 0`, `routing: 0`,
+`preflight_failure_receipts: 0`. The hook did not decline; **it never ran**.
+Repeated with every inherited `CLAUDE_CODE_*` variable stripped, including
+`CLAUDE_CODE_CHILD_SESSION` — a fair confound for any measurement taken from
+inside a Claude Code session, and worth testing rather than assuming — with the
+same result.
+
+Eight runs, two profiles, zero markers, while interactive sessions on the same
+machine staff normally at confidence 1.0. **`claude -p` does not run the Agency
+plugin's hooks, and the profile was never the variable.** The Claude canary is
+built on `-p`, so it cannot produce Rule 4 Live evidence in its present shape.
+That is structural, not a configuration defect.
 
 A third finding fell out of reading `evidence_summary` while chasing the above:
 `routing` and `loaded_specialists` are filtered by the canary's own query hash,
@@ -137,13 +154,16 @@ canary record and the operator-facing failure list.
 
 ## Follow-ups
 
-- **Why the disposable canary profile never activates Agency** is open and is
-  now the top Rule 4 blocker
-  ([AR-119](../roadmap/issue-AR-119-inference-first-workforce.md)).
+- **`claude -p` runs no Agency hooks**, so the canary's whole surface cannot
+  produce Rule 4 Live evidence
+  ([AR-119](../roadmap/issue-AR-119-inference-first-workforce.md)). Either
+  headless mode is made to run hooks, or Rule 4 is collected from an
+  interactive surface. This is now the top Rule 4 blocker, and it is a design
+  question rather than a bug to chase.
 - **No v6 envelope has ever been written on the evidence workstation** — 63
   child artifacts, 3 v5, 7 v1, 0 v6. The installed launcher does carry the v6
-  renderer, so one native child spawned in the real profile would settle it.
-  That needs the owner's hands.
+  renderer, so one child spawned from an *interactive* session would settle
+  whether delivery works at all today. That needs the owner's hands.
 - The AR-252 envelope collector is unstarted, and its fourth constraint — the
   verdict must bind a transcript digest no verifier child can read — is recorded
   in [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md)

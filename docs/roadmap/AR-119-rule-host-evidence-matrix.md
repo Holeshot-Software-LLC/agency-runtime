@@ -116,21 +116,41 @@ refused: `assert_storage_parent_chain` passes and `storage_parent_is_trusted`
 fails. That is the ACL guard doing its job, and the canary's private lease
 satisfies it by construction.)
 
-The first blocker is the **disposable canary profile, where Agency does not
-activate at all**. The 2026-08-14 run at `f4039746` produced four well-formed
-child transcripts and **not one carried any Agency marker** — not a partial or
-mixed-version envelope, the literal `[AGENCY` absent from every launch text —
-alongside `routing: 0` at the canary's own query hash, `runs: 0`,
-`specialists: 0`, all five header lines missing, and `isolated_plugin` =
-`{load_requested: true, registered: null, enabled: null}`. Six flag
-combinations were then tested directly against a fresh home: `--setting-sources=`
-(the canary's own), default sources, and `--setting-sources=user`, each with
-`--plugin-dir`; then a home carrying `enabledPlugins` and
-`extraKnownMarketplaces`, once without `--plugin-dir` and once with; then one
-carrying the real profile's `installed_plugins.json` and
-`known_marketplaces.json`. **All six produced zero markers.** So the cause is
-neither the empty setting-sources flag nor plugin enablement, and it remains
-open.
+The first blocker is that **`claude -p` does not run the Agency plugin's hooks
+at all.** It was first read as a disposable-profile fault, and it is not: the
+profile was never the variable.
+
+The 2026-08-14 run at `f4039746` produced four well-formed child transcripts and
+**not one carried any Agency marker** — not a partial or mixed-version envelope,
+the literal `[AGENCY` absent from every launch text — alongside `routing: 0` at
+the canary's own query hash, `runs: 0`, `specialists: 0`, all five header lines
+missing, and `isolated_plugin` = `{load_requested: true, registered: null,
+enabled: null}`. Six flag and profile combinations were then tested against a
+fresh home: `--setting-sources=` (the canary's own), default sources, and
+`--setting-sources=user`, each with `--plugin-dir`; then a home carrying
+`enabledPlugins` and `extraKnownMarketplaces`, once without `--plugin-dir` and
+once with; then one carrying the real profile's `installed_plugins.json` and
+`known_marketplaces.json`. All six produced zero markers, which ruled out the
+flag and ruled out enablement but still left the isolated profile itself as the
+suspect.
+
+**The control settles it.** Running `claude -p` against the *real* profile — the
+same `~/.claude` whose hooks fire for an interactive session, plugin installed
+and enabled in `settings.json`, no `CLAUDE_CONFIG_DIR` override — produced a
+sub-agent child with **no Agency marker, no AGENCY text anywhere in the parent
+transcript, and zero Agency rows of any kind**: `runs: 0`, `routing: 0`,
+`preflight_failure_receipts: 0`. The hook did not decline; it never ran. Repeated
+with every inherited `CLAUDE_CODE_*` variable stripped — `CLAUDE_CODE_CHILD_SESSION`
+among them, which would otherwise be a fair confound for measurements taken from
+inside a Claude Code session — with the same result. Eight runs, two profiles,
+zero markers, while interactive sessions on the same machine staff normally at
+confidence 1.0.
+
+**So the Claude canary cannot produce Rule 4 Live evidence in its present shape,
+because it is built on `claude -p`.** That is a structural finding about the
+evidence path, not a configuration defect, and no amount of profile repair will
+move it. What remains open is whether headless mode can be made to run hooks at
+all, or whether Rule 4 Live needs a different collection surface.
 
 The second blocker is the **envelope version in the real profile, where Agency
 does activate**. Of 63 child artifacts under `~/.claude/projects`, 9 carry a

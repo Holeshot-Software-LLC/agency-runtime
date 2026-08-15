@@ -114,23 +114,23 @@ settled.** `claude -p` under an isolated `CLAUDE_CONFIG_DIR` writes
 record-zero shape the parser needs, observed twice on 2026-08-14. Rule 4 Live is
 blocked in two other places, both now located:
 
-1. **The canary profile never activates Agency.** The `f4039746` run wrote four
-   well-formed child transcripts with the literal `[AGENCY` absent from every
-   one, plus `routing: 0` at its own query hash. Six flag and profile
-   combinations against a fresh home -- empty/default/user setting sources each
-   with `--plugin-dir`, then `enabledPlugins` + `extraKnownMarketplaces` with
-   and without it, then the real `installed_plugins.json` and
-   `known_marketplaces.json` -- **all produced zero markers**, so neither the
-   flag nor enablement is the cause. The canary
-   says as much: `canary profile plugin registration and enablement were not
-   proven`. This is the open one.
-2. **The real profile has never written a v6 envelope.** Of 63 child artifacts
-   under `~/.claude/projects`, 9 are marked: 3 v5 (newest `2026-08-11T19:33Z`),
-   7 v1, **0 v6**, and v5 parses as `legacy_delivery_non_authoritative`, which
-   can never verify. The installed launcher does carry the v6 renderer, so no
-   native child has been spawned there since v6 took over. **One native child
-   spawned in the real profile settles it**, and that needs the owner's hands:
-   this session may not call the Agent tool.
+1. **`claude -p` does not run the Agency hooks at all — the profile was never
+   the variable.** Eight runs, zero markers: six flag/profile combinations
+   against a fresh home, then the control that settles it — **`claude -p`
+   against the real `~/.claude`**, no override, gave no marker, no AGENCY text
+   in the parent transcript, and `runs: 0` / `routing: 0` / `receipts: 0`. The
+   hook never ran. Repeated with every inherited `CLAUDE_CODE_*` stripped
+   (`CLAUDE_CODE_CHILD_SESSION` is a fair confound from inside a Claude session;
+   it is not the cause), while interactive sessions staff at confidence 1.0.
+   **So the canary cannot prove Rule 4 Live in its present shape — it is built
+   on `-p`.** Open: make headless run hooks, or collect from another surface.
+2. **No v6 envelope has ever been written here.** Of 63 child artifacts under
+   `~/.claude/projects`, 9 are marked: 3 v5 (newest `2026-08-11T19:33Z`), 7 v1,
+   **0 v6**; v5 parses as `legacy_delivery_non_authoritative` and can never
+   verify. The launcher does carry the v6 renderer, so no native child has been
+   spawned *interactively* since v6 took over. **One child spawned from an
+   interactive session settles it** — owner's hands; this session may not call
+   the Agent tool.
 
 The collector now names the stage that refused instead of returning a bare
 `None`; two live runs report `delivery_marker_absent`, so read
