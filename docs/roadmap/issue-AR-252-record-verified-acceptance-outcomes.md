@@ -178,11 +178,22 @@ This is not the envelope collector and does not check any box above. It is the
 instrument the envelope collector will be built with — every stage it now names
 is a stage the pairing collector has to pass through twice.
 
-What the instrument then found changes where the collector can live. **`claude -p`
-runs no Agency hooks at all**: against the real profile, with no
-`CLAUDE_CONFIG_DIR` override and every inherited `CLAUDE_CODE_*` variable
-stripped, a headless run spawned a child that received no card and left
-`runs: 0`, `routing: 0`, `receipts: 0`. Interactive sessions on the same machine
-staff at confidence 1.0. Since the disposable-profile canary is built on `-p`,
-**the producer proof this envelope needs cannot be collected there today** —
-which is a prerequisite for this issue, not a detail of it.
+What the instrument then found was a break this issue caused. Raising
+`SCHEMA_VERSION` from 45 to 46 here, and then running checkout-local CLI
+commands against the real `~/.agency-runtime/agency.db`, migrated that store
+past the pinned launcher every hook actually executes. Since
+`2026-08-14T23:15:24Z` every Agency hook on the evidence workstation has raised
+`RuntimeError: Agency Runtime database schema is newer than this runtime
+(46 > 45)` and failed open, staffing nothing and recording nothing.
+
+**So no producer proof was collectable on that machine for the rest of the day**,
+and every zero-marker measurement taken after that timestamp describes the break
+rather than the delivery path. The remedy is a reinstall so the launcher matches
+the store; it needs owner authorization.
+
+Two durable consequences for this issue. A schema bump is not a local change
+when the store is shared with an installed runtime — **it disables staffing
+everywhere until the launcher is refreshed**, which is worth sequencing
+deliberately rather than discovering. And `agency doctor` reported the stored
+version as a green tick throughout; it now compares that number against the
+running runtime's own `SCHEMA_VERSION`, so this condition announces itself.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 import tempfile
 import time
 from collections.abc import Iterator
@@ -164,6 +165,68 @@ def test_doctor_detects_empty_roster():
         report = run_doctor(cfg)
         roster_check = next(c for c in report.checks if c.name == "db_roster")
         assert roster_check.status == "fail"
+
+
+def test_doctor_fails_when_the_store_is_newer_than_this_runtime():
+    """A store ahead of the runtime disables everything, so doctor must say so.
+
+    On 2026-08-14 this check reported ``Schema version: 46`` with a green tick
+    while the running launcher was 45 and refused that exact store. Every hook
+    on the machine failed open for over an hour, staffing nothing, and the one
+    diagnostic meant to catch it agreed that all was well.
+    """
+
+    from agency_runtime.core.store.schema import SCHEMA_VERSION
+
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = AgencyConfig(
+            store=StoreConfig(db_path=f"{tmp}/test.db"),
+            judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
+        )
+        store = Store(cfg.store.resolved_path())
+        for agent in STARTER_ROSTER:
+            store._activate_prevalidated_agent(agent)
+        conn = sqlite3.connect(cfg.store.resolved_path())
+        try:
+            conn.execute("UPDATE schema_version SET version = ?", (SCHEMA_VERSION + 1,))
+            conn.commit()
+        finally:
+            conn.close()
+
+        report = run_doctor(cfg)
+
+    schema_check = next(c for c in report.checks if c.name == "db_schema")
+    assert schema_check.status == "fail"
+    assert str(SCHEMA_VERSION + 1) in schema_check.message
+    assert "Reinstall" in schema_check.message
+    assert report.exit_code == 1
+
+
+def test_doctor_warns_when_the_store_still_trails_this_runtime():
+    """The window before the first open is exactly when drift is preventable."""
+
+    from agency_runtime.core.store.schema import SCHEMA_VERSION
+
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = AgencyConfig(
+            store=StoreConfig(db_path=f"{tmp}/test.db"),
+            judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
+        )
+        store = Store(cfg.store.resolved_path())
+        for agent in STARTER_ROSTER:
+            store._activate_prevalidated_agent(agent)
+        conn = sqlite3.connect(cfg.store.resolved_path())
+        try:
+            conn.execute("UPDATE schema_version SET version = ?", (SCHEMA_VERSION - 1,))
+            conn.commit()
+        finally:
+            conn.close()
+
+        report = run_doctor(cfg)
+
+    schema_check = next(c for c in report.checks if c.name == "db_schema")
+    assert schema_check.status == "warn"
+    assert str(SCHEMA_VERSION - 1) in schema_check.message
 
 
 def test_doctor_exit_codes():

@@ -42,36 +42,34 @@ load first after any compaction or restart.
 
 ## checkpoint
 
-- **WORK ON `main` IN `C:\Workspaces\Holeshot Software\agency-runtime`.** PR #274
-  merged as `be209e7a`; the `-ar119` worktree and its branch are history.
+- **WORK ON `main` IN `C:\Workspaces\Holeshot Software\agency-runtime`.** PR #274 merged as `be209e7a`.
 - **AR-258 is done.** All three hosts pin one runtime digest and Agency is
   globally on at generation 56. Hooks reload only in a fresh session. ADR-0159
   binds exact CLI 0.147 and a pinned Desktop alpha to a sealed v3 attestation;
   Sol/TUI and 65 Desktop calls omit the marker, so go unstaffed. Conformance
-  carries forward from `9724820e`; `a25ec350` was 151/151. CI's quality job runs
-  7m33s without the matrix step, 10m35s with.
+  carries forward from `9724820e` (`a25ec350` was 151/151); CI's quality job
+  runs 7m33s without the matrix step, 10m35s with.
 - **CI runs every matrix-cited test file** ("Run AR-119 matrix evidence"), and
   `test_release_packaging.py` asserts that list *equals* the matrix citations,
   so a citation and a CI entry must arrive together, both directions.
 - **`eval decision-conformance` cannot run its mutation phase here** — pytest is
-  in user site-packages and the sandbox redirects `HOME`, so the baseline dies in
-  58 ms, identically on clean `main`. Run `baseline.test_nodes` with ordinary
-  pytest; that proves the baseline, not the mutations. History is in AR-257.
+  in user site-packages and the sandbox redirects `HOME`, so the baseline dies
+  in 58 ms, identically on clean `main`. Run `baseline.test_nodes` with ordinary
+  pytest: that proves the baseline, not the mutations. History is in AR-257.
 
 ## completed-evidence
 
 - `AR-119-founding-vision.md` is the sole wording authority and the matrix the
   sole completion authority; neither implementation nor simulation is host proof.
 - AR-255 uses complete-universe inference, exact ordered multi-card v6 delivery,
-  install/config/roster fences, and sealed one-use delivery proof. SafeClaude
+  install/config/roster fences, and sealed one-use delivery proof; SafeClaude
   retains its in-lifetime collector. Codex `211563c7` preserves the exact CLI
   0.147 profiles and adds a sealed Desktop `0.147.0-alpha.6.6`; exec depth-two
-  stays unsupported, and its census runs live in AR-180 and the matrix. Claude's
-  earlier Rule-4 artifacts stay prior-candidate context; no exact-candidate
-  Installed/Live proof ran.
-- AR-252 has a fourth constraint, in its issue: the verdict must bind the
-  producer's *transcript* digest, which no verifier child can read, so Agency
-  supplies that binding and the verdict is a joint object. Settle that first.
+  stays unsupported, census runs live in AR-180 and the matrix, and no
+  exact-candidate Installed/Live proof has run on any host.
+- AR-252's fourth constraint, in its issue: the verdict must bind the producer's
+  *transcript* digest, unreadable to any verifier child, so Agency supplies the
+  binding and the verdict is a joint object. Settle that first.
 
 ## exact-blocker
 
@@ -97,9 +95,9 @@ load first after any compaction or restart.
 
 After restart or compaction, load this file and `AR-119-founding-vision.md`
 first, then AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158. Confirm
-branch, runtime `211563c7`, ledger `ee82c602`, status, and worklog parity. Do
-not reconstruct retired Job B, plan-row, work-unit, grant, or consumed-receipt
-transport from historical sections.
+branch, runtime `211563c7`, ledger `ee82c602`, status, and worklog parity, and
+do not reconstruct retired Job B, plan-row, work-unit, grant, or
+consumed-receipt transport from historical sections.
 
 ## next-bounded-work-package
 
@@ -108,39 +106,41 @@ transport from historical sections.
 are ready here; codex hook trust needs interactive TUI approval against digest
 `3925824a5bd2`; hermes and openclaw are absent, so one machine cannot reach 45.
 
-**START HERE. This workstation can produce a readable host artifact; that is
-settled.** `claude -p` under an isolated `CLAUDE_CONFIG_DIR` writes
-`projects/<slug>/<session>/subagents/agent-<child>.jsonl` with exactly the
-record-zero shape the parser needs, observed twice on 2026-08-14. Rule 4 Live is
-blocked in two other places, both now located:
+**START HERE.** This workstation does produce readable host artifacts —
+`claude -p` writes `projects/<slug>/<session>/subagents/agent-<child>.jsonl`
+with exactly the record-zero shape the parser needs. That much is settled. The
+rest of 2026-08-14 was spent measuring a break of our own making:
 
-1. **`claude -p` does not run the Agency hooks at all — the profile was never
-   the variable.** Eight runs, zero markers: six flag/profile combinations
-   against a fresh home, then the control that settles it — **`claude -p`
-   against the real `~/.claude`**, no override, gave no marker, no AGENCY text
-   in the parent transcript, and `runs: 0` / `routing: 0` / `receipts: 0`. The
-   hook never ran. Repeated with every inherited `CLAUDE_CODE_*` stripped
-   (`CLAUDE_CODE_CHILD_SESSION` is a fair confound from inside a Claude session;
-   it is not the cause), while interactive sessions staff at confidence 1.0.
-   **So the canary cannot prove Rule 4 Live in its present shape — it is built
-   on `-p`.** Open: make headless run hooks, or collect from another surface.
-2. **No v6 envelope has ever been written here.** Of 63 child artifacts under
-   `~/.claude/projects`, 9 are marked: 3 v5 (newest `2026-08-11T19:33Z`), 7 v1,
-   **0 v6**; v5 parses as `legacy_delivery_non_authoritative` and can never
-   verify. The launcher does carry the v6 renderer, so no native child has been
-   spawned *interactively* since v6 took over. **One child spawned from an
-   interactive session settles it** — owner's hands; this session may not call
-   the Agent tool.
+1. **THE MACHINE IS BROKEN AND IT IS OURS. Fix before measuring anything.**
+   Every Agency hook here raises `RuntimeError: Agency Runtime database schema
+   is newer than this runtime (46 > 45)` and fails open, staffing nothing: the
+   live store and this checkout are 46, the **pinned launcher every hook runs
+   (`runtime-sha256-3925824a…`) is 45**. AR-252 bumped `SCHEMA_VERSION` and
+   checkout-local CLI runs against the real DB migrated it past the launcher.
+   Evidence stops dead at **`2026-08-14T23:15:24Z`** across `runs`,
+   `routing_decisions`, `preflight_failure_receipts`, `specialists_loaded`.
+   `Stop` fails *closed* — that is the "could not verify or persist the
+   turn-scoped evidence contract" block. **Remedy: reinstall so the launcher
+   matches the store; needs owner authorization.**
+2. **Every zero-marker result on 2026-08-14 measured that break** — both canary
+   runs, all nine host probes. `claude -p` runs hooks fine (a trivial hook fired
+   on all five events) and the profile was never the variable; both earlier
+   readings are retracted in the matrix.
+3. **Still true, because it is a census, not an inference:** of 63 child
+   artifacts under `~/.claude/projects`, 9 are marked — 3 v5, 7 v1, **0 v6** —
+   and `native_child_delivery_verifications` has zero rows, ever. Whether v6
+   delivery works here is unmeasured; one child spawned from a *repaired*
+   runtime settles it. Owner's hands: this session may not call the Agent tool.
 
-The collector now names the stage that refused instead of returning a bare
-`None`; two live runs report `delivery_marker_absent`, so read
-`host_child_collection_reason` before theorising. The recruiter is also
-nondeterministic, and `counts.specialists` / `counts.runs` are not canary-scoped.
-
-**Do not repeat the earlier mistake.** The delegation columns look like an
-outage after `2026-08-07T14:31Z`, but `cd56471d` retired that accounting on
-purpose the same afternoon: **empty `retrieved_specialist_slug` /
-`activation_receipt_id` is expected and proves nothing**, and
+**An unrun hook and a fail-open hook look identical from outside**, so zero
+Agency rows proves neither. Wrap the hook command in a shim logging stdin,
+stdout, stderr and exit code — that gave the root cause on the first run, after
+a day of eliminating profiles and flags. The collector names its own refusal
+(`host_child_collection_reason`); the recruiter is nondeterministic;
+`counts.specialists` / `counts.runs` are not canary-scoped; and the delegation
+columns still look like an outage after `2026-08-07T14:31Z` though `cd56471d`
+retired that accounting on purpose, so **empty `retrieved_specialist_slug` /
+`activation_receipt_id` proves nothing** and
 `executed_worker_kind=generic-worker` is normal.
 
 ## verification

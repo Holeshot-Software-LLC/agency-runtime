@@ -89,24 +89,45 @@ all. Tested with those keys present, then again with the real profile's
 produced zero markers.** Also not the cause.
 
 Six combinations, no activation — which left the isolated profile itself as the
-remaining suspect, and that framing was also wrong.
+suspect. Running `claude -p` against the *real* profile ruled that out too: no
+marker, no AGENCY text in the parent transcript, `runs: 0`, `routing: 0`,
+`receipts: 0`. Repeated with every inherited `CLAUDE_CODE_*` variable stripped,
+including `CLAUDE_CODE_CHILD_SESSION` — a fair confound for any measurement
+taken from inside a Claude Code session — with the same result. Nine runs, two
+profiles, zero markers.
 
-**The control settles it, and it supersedes both hypotheses above.** Running
-`claude -p` against the *real* profile — the same `~/.claude` whose hooks fire
-for an interactive session, no `CLAUDE_CONFIG_DIR` override — produced a
-sub-agent child with no Agency marker, no AGENCY text anywhere in the parent
-transcript, and zero Agency rows: `runs: 0`, `routing: 0`,
-`preflight_failure_receipts: 0`. The hook did not decline; **it never ran**.
-Repeated with every inherited `CLAUDE_CODE_*` variable stripped, including
-`CLAUDE_CODE_CHILD_SESSION` — a fair confound for any measurement taken from
-inside a Claude Code session, and worth testing rather than assuming — with the
-same result.
+**That was then read as "the hook never runs under `-p`", which was wrong, and
+the error is worth naming precisely: zero Agency rows is equally what a hook
+that never started and a hook that started and failed open both produce.**
+Agency fails open by design, so absence of its evidence cannot distinguish the
+two. The next probe supplied a *trivial* hook with an observable side effect
+through `--settings`: it fired on all five of `SessionStart`,
+`UserPromptSubmit`, `PreToolUse`, `SubagentStart` and `Stop`. Hooks run fine.
 
-Eight runs, two profiles, zero markers, while interactive sessions on the same
-machine staff normally at confidence 1.0. **`claude -p` does not run the Agency
-plugin's hooks, and the profile was never the variable.** The Claude canary is
-built on `-p`, so it cannot produce Rule 4 Live evidence in its present shape.
-That is structural, not a configuration defect.
+Wrapping Agency's own hook command in a shim that logs stdin, stdout, stderr and
+exit code then gave the real answer on the first run, identically on every
+event:
+
+~~~text
+RuntimeError: Agency Runtime database schema is newer than this runtime (46 > 45)
+agency hook claude: RuntimeError; host operation continues
+~~~
+
+**The break is this commit's own.** The live store is at schema 46, this
+checkout is at 46, and the pinned launcher every hook executes is at 45. The
+AR-252 work raised `SCHEMA_VERSION`, and running checkout-local CLI commands
+(`agency host-canary`, `agency eval …`) against the real
+`~/.agency-runtime/agency.db` migrated it past what the installed launcher
+accepts. `Store.__init__` refuses, the boundary fails open, the host proceeds
+uncarded — and `Stop` fails *closed*, returning the "could not verify or persist
+the turn-scoped evidence contract" block that interrupted the operator's own
+session.
+
+The evidence store stops dead at `2026-08-14T23:15:24Z`: newest `runs`,
+`routing_decisions`, `preflight_failure_receipts` and `specialists_loaded` rows
+all share that boundary. **Every zero-marker measurement after it — both canary
+runs and all nine host probes — describes this break and says nothing about
+`-p`, profiles, or card delivery.**
 
 A third finding fell out of reading `evidence_summary` while chasing the above:
 `routing` and `loaded_specialists` are filtered by the canary's own query hash,
@@ -147,23 +168,32 @@ canary record and the operator-facing failure list.
   `host_child_collection_reason: delivery_marker_absent` and the failure line
   `verified host-authored Claude child card delivery was not proven
   (delivery_marker_absent)`.
-- `verify_docs.py` (687 files), `docs_metadata.py --check`,
+- `verify_docs.py` (688 files), `docs_metadata.py --check`,
   `update_policy_availability.py --check`, `ruff check`, `ruff format --check`,
   `node --test tests/dashboard_ui.test.mjs`, `agency eval routing`,
-  `agency eval spawn-authority`, and the full matrix-evidence list.
+  `agency eval spawn-authority`, and the full matrix-evidence list (670 passed).
+- `tests/test_doctor.py` gains two cases for the drift that hid this: a store
+  ahead of the runtime now fails the `db_schema` check with the reinstall
+  remedy, and a store behind it warns. Previously the check only asserted that a
+  version row existed, which is why it showed a green `Schema version: 46` while
+  that same runtime was refusing that same store.
 
 ## Follow-ups
 
-- **`claude -p` runs no Agency hooks**, so the canary's whole surface cannot
-  produce Rule 4 Live evidence
-  ([AR-119](../roadmap/issue-AR-119-inference-first-workforce.md)). Either
-  headless mode is made to run hooks, or Rule 4 is collected from an
-  interactive surface. This is now the top Rule 4 blocker, and it is a design
-  question rather than a bug to chase.
+- **The evidence workstation needs a reinstall** so the launcher its hooks run
+  matches the store this work migrated. Until then every hook fails open and no
+  Rule 4 measurement on that machine means anything
+  ([AR-119](../roadmap/issue-AR-119-inference-first-workforce.md)). Installing
+  needs the owner's authorization.
+- **A schema bump is not a local change** when a checkout shares its store with
+  an installed runtime: it disables staffing machine-wide until the launcher is
+  refreshed. Worth sequencing deliberately, and arguably worth a guard that
+  refuses to migrate a store an older installed launcher still points at.
 - **No v6 envelope has ever been written on the evidence workstation** — 63
-  child artifacts, 3 v5, 7 v1, 0 v6. The installed launcher does carry the v6
-  renderer, so one child spawned from an *interactive* session would settle
-  whether delivery works at all today. That needs the owner's hands.
+  child artifacts, 3 v5, 7 v1, 0 v6, and zero
+  `native_child_delivery_verifications` rows. That census stands; the reason
+  does not follow from it. One child spawned from a repaired runtime settles
+  whether v6 delivery works at all today.
 - The AR-252 envelope collector is unstarted, and its fourth constraint — the
   verdict must bind a transcript digest no verifier child can read — is recorded
   in [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md)

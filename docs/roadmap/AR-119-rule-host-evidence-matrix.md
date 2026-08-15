@@ -116,9 +116,51 @@ refused: `assert_storage_parent_chain` passes and `storage_parent_is_trusted`
 fails. That is the ACL guard doing its job, and the canary's private lease
 satisfies it by construction.)
 
-The first blocker is that **`claude -p` does not run the Agency plugin's hooks
-at all.** It was first read as a disposable-profile fault, and it is not: the
-profile was never the variable.
+**RETRACTED, and the real cause is a schema bump made the same afternoon.**
+This section previously blamed the disposable canary profile, then blamed
+`claude -p` for running no hooks. Both are wrong. `-p` runs hooks fine — a
+trivial hook supplied through `--settings` fired on all five of `SessionStart`,
+`UserPromptSubmit`, `PreToolUse`, `SubagentStart` and `Stop` — and the profile
+was never the variable either.
+
+Wrapping Agency's own hook command in a logging shim produced the answer on the
+first run, identically on every event:
+
+~~~text
+RuntimeError: Agency Runtime database schema is newer than this runtime (46 > 45)
+agency hook claude: RuntimeError; host operation continues
+~~~
+
+The live store is at schema **46**, this checkout is at **46**, and the pinned
+launcher every hook actually executes
+(`runtime-sha256-3925824a…`) is at **45**. `Store.__init__` refuses a store
+newer than its runtime, the hook boundary catches it and fails open, and the
+host proceeds with no card. The `Stop` event fails *closed* instead, returning
+`{"continue": false}` with "could not verify or persist the turn-scoped
+evidence contract" — the same block that interrupted the operator's own session
+on this machine.
+
+**The evidence store stops dead at `2026-08-14T23:15:24Z`** — the newest row in
+`runs`, `routing_decisions`, `preflight_failure_receipts` and
+`specialists_loaded` all share that boundary. AR-252 raised `SCHEMA_VERSION`
+from 45 to 46, and running checkout-local CLI commands (`agency host-canary`,
+`agency eval …`) against the real `~/.agency-runtime/agency.db` migrated it past
+what the installed launcher accepts.
+
+**So every zero-marker observation below was measuring that break**, including
+both canary runs and all nine host probes. None of them says anything about
+`-p`, about profile configuration, or about card delivery. This is
+[the two-sources-of-truth shape](#) exactly: one schema fact, a checkout and an
+installed launcher reading different copies of it.
+
+`agency doctor` reported `db_schema: Schema version: 46` with a green tick
+throughout, because it only checked that a version row existed. It now compares
+the stored version against the running runtime's `SCHEMA_VERSION` and fails
+loudly when the store is ahead, which is the one condition that silently
+disables every hook on the machine.
+
+The original (wrong) reasoning follows, kept because the measurements are real
+and the elimination sequence is worth not repeating.
 
 The 2026-08-14 run at `f4039746` produced four well-formed child transcripts and
 **not one carried any Agency marker** — not a partial or mixed-version envelope,
@@ -134,35 +176,42 @@ once with; then one carrying the real profile's `installed_plugins.json` and
 flag and ruled out enablement but still left the isolated profile itself as the
 suspect.
 
-**The control settles it.** Running `claude -p` against the *real* profile — the
-same `~/.claude` whose hooks fire for an interactive session, plugin installed
-and enabled in `settings.json`, no `CLAUDE_CONFIG_DIR` override — produced a
-sub-agent child with **no Agency marker, no AGENCY text anywhere in the parent
-transcript, and zero Agency rows of any kind**: `runs: 0`, `routing: 0`,
-`preflight_failure_receipts: 0`. The hook did not decline; it never ran. Repeated
-with every inherited `CLAUDE_CODE_*` variable stripped — `CLAUDE_CODE_CHILD_SESSION`
-among them, which would otherwise be a fair confound for measurements taken from
-inside a Claude Code session — with the same result. Eight runs, two profiles,
-zero markers, while interactive sessions on the same machine staff normally at
-confidence 1.0.
+Running `claude -p` against the *real* profile — the same `~/.claude` whose
+hooks fire for an interactive session, plugin installed and enabled in
+`settings.json`, no `CLAUDE_CONFIG_DIR` override — produced a sub-agent child
+with **no Agency marker, no AGENCY text anywhere in the parent transcript, and
+zero Agency rows of any kind**: `runs: 0`, `routing: 0`,
+`preflight_failure_receipts: 0`. Repeated with every inherited `CLAUDE_CODE_*`
+variable stripped — `CLAUDE_CODE_CHILD_SESSION` among them, a fair confound for
+measurements taken from inside a Claude Code session — with the same result.
+Nine runs, two profiles, zero markers.
 
-**So the Claude canary cannot produce Rule 4 Live evidence in its present shape,
-because it is built on `claude -p`.** That is a structural finding about the
-evidence path, not a configuration defect, and no amount of profile repair will
-move it. What remains open is whether headless mode can be made to run hooks at
-all, or whether Rule 4 Live needs a different collection surface.
+That was read as "the hook never ran", and the reading was wrong: zero rows is
+also what a hook that runs and fails open produces, and Agency fails open by
+design. **Absence of Agency evidence cannot distinguish a hook that never
+started from one that started and refused** — which is precisely why the next
+probe used a hook with an observable side effect, and why the one after that
+wrapped Agency's own command instead of inferring from its silence.
 
-The second blocker is the **envelope version in the real profile, where Agency
-does activate**. Of 63 child artifacts under `~/.claude/projects`, 9 carry a
-delivery marker: 3 v5 JIT (newest `2026-08-11T19:33Z`) and 7 v1 exact-activation
-(newest `2026-08-07T14:30Z`), all correlated. **`v6` count is zero — no
-inference-team envelope has ever been written on this machine** — and
-`_evidence` treats v5 as `legacy_delivery_non_authoritative`, which can never
-verify. `native_child_delivery_verifications` holds zero rows, ever. The
-installed launcher does contain the v6 renderer, and `staff_native_child` is the
-only writer, so this is not a stale install: **no native child has been spawned
-in the real profile since the v6 runtime took over.** One native child spawned
-there under the current runtime would settle it.
+**The lesson, since it is the second time in one day the same shape bit:** an
+unrun hook and a fail-open hook are indistinguishable from the outside. Prove
+which one you have before theorising about why.
+
+One measurement from that sequence survives the retraction, because it is a
+census rather than an inference. Of 63 child artifacts under
+`~/.claude/projects`, 9 carry a delivery marker: 3 v5 JIT (newest
+`2026-08-11T19:33Z`) and 7 v1 exact-activation (newest `2026-08-07T14:30Z`), all
+correlated. **`v6` count is zero — no inference-team envelope has ever been
+written on this machine** — and `_evidence` treats v5 as
+`legacy_delivery_non_authoritative`, which can never verify.
+`native_child_delivery_verifications` holds zero rows, ever.
+
+What that does *not* establish is why. The installed launcher contains the v6
+renderer and `staff_native_child` is its only writer, so the honest reading is
+that no native child has been staffed under the v6 runtime here yet — and every
+attempt to produce one on 2026-08-14 ran into the schema break above. One child
+spawned from a working runtime settles it, and that is the next measurement,
+not a conclusion to draw now.
 
 **The collector now names the stage that refused.** It previously returned a
 bare `None` for eighteen distinct conditions, which is why the two runs below

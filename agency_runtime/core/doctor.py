@@ -277,6 +277,50 @@ def _read_database_state(
         conn.close()
 
 
+def _schema_version_check(version: tuple[Any, ...] | None) -> CheckResult:
+    """Compare the store's schema against the runtime that is actually running.
+
+    Reporting the stored number alone is how this check passed green on
+    2026-08-14 while every hook on the machine was refusing that same store:
+    a repository checkout had migrated it to 46 and the pinned launcher the
+    hooks run was still 45.  ``Store.__init__`` raises on that, the hook
+    boundary fails open, and the operator sees nothing but a missing card.
+    ``doctor`` is the one place that drift should be impossible to miss.
+    """
+
+    from agency_runtime.core.store.schema import SCHEMA_VERSION
+
+    if not version:
+        return CheckResult("db_schema", "fail", "Schema version table empty")
+    stored = version[0]
+    if not isinstance(stored, int) or isinstance(stored, bool):
+        return CheckResult(
+            "db_schema",
+            "fail",
+            f"Schema version is not a number: {stored!r}",
+        )
+    if stored == SCHEMA_VERSION:
+        return CheckResult("db_schema", "pass", f"Schema version: {stored}")
+    if stored > SCHEMA_VERSION:
+        return CheckResult(
+            "db_schema",
+            "fail",
+            f"Schema version {stored} is newer than this runtime ({SCHEMA_VERSION}); "
+            "this runtime refuses the store, so every hook fails open and nothing is "
+            "staffed or recorded. Reinstall so the launcher the hooks run matches the "
+            "store.",
+            f"store={stored} runtime={SCHEMA_VERSION}",
+        )
+    return CheckResult(
+        "db_schema",
+        "warn",
+        f"Schema version {stored} is older than this runtime ({SCHEMA_VERSION}); "
+        "the store migrates on next open, which will refuse any older runtime still "
+        "installed elsewhere.",
+        f"store={stored} runtime={SCHEMA_VERSION}",
+    )
+
+
 def _database_checks(cfg: AgencyConfig) -> list[CheckResult]:
     db_path = cfg.store.resolved_path()
     try:
@@ -292,11 +336,7 @@ def _database_checks(cfg: AgencyConfig) -> list[CheckResult]:
         if integrity_ok
         else f"SQLite integrity check failed: {integrity}",
     )
-    schema_check = CheckResult(
-        "db_schema",
-        "pass" if version else "fail",
-        f"Schema version: {version[0]}" if version else "Schema version table empty",
-    )
+    schema_check = _schema_version_check(version)
     roster_count = count_row[0] if count_row else 0
     roster_check = CheckResult(
         "db_roster",
