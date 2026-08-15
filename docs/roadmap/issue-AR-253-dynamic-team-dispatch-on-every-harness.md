@@ -140,3 +140,66 @@ hosts. Unavailable hosts remain explicitly unproven.
       this issue or AR-119 closure.
 - [ ] Optimization introduces no deterministic specialist choice, evidence
       downgrade, conversational hard block, or unsupported superiority claim.
+
+## The recruiter rejection is a plan defect wearing a recruiter's name (2026-08-15)
+
+With the runtime repaired, the live Claude canary reaches routing and dies at
+`workforce_inference_failed` / `inference_invalid`. The receipt now explains
+itself: both recruiter attempts on sonnet were rejected
+`provider_response_contract_invalid` with one identical validation failure,
+`staff_without_safe_team` on `unit-python-strip-regression-review`, and
+`eligibility_reason_codes` empty.
+
+`staff_without_safe_team` fires in `_validate_nomination_decisions` when the
+recruiter decided `staff` but `proposal_row.selected` came back empty — that is,
+no team within `max_selected_per_unit` (4 here) covers `_requirements(unit)`.
+Coverage is conjunctive across six axes: `artifact`, `lifecycle`, `domain`,
+`stack`, `capability`, `authority`. **If any one axis is uncoverable by the
+whole roster, no ranking the recruiter could return would help.**
+
+Measured offline against the live 283-contract roster, no inference involved:
+
+- A realistic review unit (`review-report` / `review` / `software-engineering` /
+  `python` / `review` / `review`) **is** staffable.
+- Sweeping every roster-declared value one axis at a time: **0 of 8 lifecycles,
+  0 of 8 artifact kinds and 0 of 4 authorities are unstaffable.** The typed
+  space is healthy.
+- A single off-vocabulary value is fatal and permanent: `lifecycle:verification`,
+  `artifact:code-review`, `domain:code-review` each leave exactly that
+  requirement uncoverable.
+
+So the question is what the planner is allowed to emit. Two gaps, and only two:
+
+1. **`lifecycle_phase: coordination` is enum-legal and declared by zero
+   contracts.** `_LIFECYCLES` carries nine values, the roster declares eight;
+   `coordination` is the orphan. Any unit planned in that phase is structurally
+   unstaffable. (`_ARTIFACTS` has no such gap — enum and roster match exactly.)
+2. **`domains` is an unvalidated free identifier.** `_parse_unit` enum-checks
+   artifact, lifecycle, authority, mutation and parallelization, but domains go
+   through `_items(..., identifiers=True)` with no allowed set. The planner is
+   *shown* the roster's 30 domains by `_known_intent_vocabulary` and merely
+   asked to use them, so an invented domain parses cleanly and is uncoverable.
+
+Both explain the observed behaviour exactly: deterministic per plan, identical
+on retry, and nondeterministic across runs because the planner picks differently
+each time. **The retry cannot help, because the repair prompt is addressed to
+the recruiter and the plan is what is wrong.** That also explains why the canary
+"passed this stage" on one run and failed on the next with no code change.
+
+Three candidate fixes, which differ in what they do to evidence and should not
+be chosen casually:
+
+- **Validate domains at plan parse.** An invented domain becomes an invalid
+  plan with a planner-targeted repair, instead of surfacing as a recruiter
+  failure two stages later. Narrowest, and it puts the error where the fault is.
+- **Give uncoverable axes the stack wildcard.** `_coverage` already treats an
+  axis no contract declares as neither proven nor disproven for stacks. Applying
+  that to domain and lifecycle would absorb both gaps, but it weakens the
+  sufficiency proof the verifier exists to make.
+- **Route the repair by fault.** Send structural failures back to the planner
+  and semantic ones to the recruiter. Most correct, largest change.
+
+Whichever lands, the receipt should also name **which requirement axis was
+uncoverable**, not just the unit. The axis names are a closed six-value
+vocabulary, so this costs no evidence bounding, and without it every future
+occurrence needs the same offline reconstruction this one did.
