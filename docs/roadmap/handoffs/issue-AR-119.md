@@ -91,49 +91,49 @@ load first after any compaction or restart.
 
 After restart or compaction, load this file and `AR-119-founding-vision.md`
 first, then AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158. Confirm
-branch, runtime `211563c7`, ledger `ee82c602`, status, and worklog parity, and
-do not reconstruct retired Job B, plan-row, work-unit, grant, or consumed-receipt
-transport from historical sections.
+branch, runtime `211563c7`, ledger `ee82c602`, status and worklog parity; do not
+reconstruct retired Job B, plan-row, work-unit, grant or consumed-receipt transport.
 
 ## next-bounded-work-package
 
 **Implementation and Simulation are both 45/45; Installed and Live are both
 0/45, so every one of the 45 cells still reads `unproven`.** Claude and zcode are
-ready here; codex needs the TUI trust pass against `f0ff261120e2`; hermes and
+ready here; codex needs the TUI trust pass against `0e42ee679dfc`; hermes and
 openclaw are absent, so one machine cannot reach 45.
 
-**START HERE.** This workstation does produce readable host artifacts —
-`claude -p` writes `projects/<slug>/<session>/subagents/agent-<child>.jsonl`
-with exactly the record-zero shape the parser needs. That much is settled.
+**START HERE. Run the live Claude canary first.** Everything below exists to
+make that one measurement meaningful, and it has never been run against a
+runtime carrying the plan-boundary fix.
 
-1. **The schema drift is repaired.** AR-252 bumped `SCHEMA_VERSION` to 46 and
-   checkout-local CLI runs migrated the live store past the pinned launcher, so
-   every hook raised `RuntimeError` and failed open while `Stop` failed closed.
-   Hooks now run **`runtime-sha256-f0ff261120e2`** at 46, it opens the store
-   cleanly, and every live host config points at it. **A session started before
-   the reinstall keeps calling the old launcher** — `agency_status` and
-   `agency_preflight` report "failed safely" and `Stop` blocks. Restart the
-   session; do **not** reinstall, which only resets Codex trust again. That
-   trust is still unverified against the new digest: owner's TUI pass, never
-   bypass. Any suite run rewrites `launchers/current.json`, so its drift
-   warning is a false alarm.
-2. **Every zero-marker result on 2026-08-14 measured that break** — both canary
-   runs, all nine host probes. `claude -p` runs hooks fine (a trivial hook fired
-   on all five events) and the profile was never the variable; both earlier
-   readings are retracted in the matrix. **Re-measure Rule 4 before trusting any
-   of it.**
-3. **The recruiter blocker is fixed at the plan boundary but unproven live.**
-   `staff_without_safe_team` was a plan defect: coverage is conjunctive, so a
-   domain no contract declares defeats every ranking. `compile_intent_plan` now
-   refuses an unknown domain unless the unit declares `novel_capability`, the
-   exception that keeps the rule-6 hiring gap reachable, and the failure names
-   the uncoverable axis: present means a plan or roster fault, absent means the
-   ranking is the recruiter's own. **The next live Claude canary is the test.**
-4. **Still true, because it is a census, not an inference:** of 63 child
-   artifacts under `~/.claude/projects`, 9 are marked — 3 v5, 7 v1, **0 v6** —
-   and `native_child_delivery_verifications` has zero rows, ever. One child
-   spawned from a *repaired* runtime settles v6. Owner's hands: this session may
-   not call the Agent tool.
+1. **The runtime is current and verified.** Hooks run
+   **`runtime-sha256-0e42ee679dfc`** at SCHEMA_VERSION 46, carrying the domain
+   refusal and the axis naming: it opens the live store, and a replayed
+   `SessionStart` exits 0 with **silent** stderr where `f0ff261120e2` now
+   answers `agency_runtime_stale_runtime`. `doctor` is DEGRADED for codex trust
+   alone. **A session started before an install keeps calling the old
+   launcher** — that is "failed safely", and the cure is a restart, never
+   another install. Suite runs rewrite `launchers/current.json`; ignore it.
+2. **Prove Claude in two steps and do not conflate them.** First the staffing
+   path: the canary reaches routing, records an accepted `routing_decisions`
+   row with selected specialists and no preflight receipt. That is the direct
+   test of the plan-boundary fix. Only then Rule 4, which needs a host-written
+   artifact carrying exact hashes for **two or more** cards before first child
+   speech. Step one passing is not step two. **Then the owner passes Codex TUI
+   trust against `0e42ee679dfc` and codex is measured the same way.**
+3. **What the canary is testing.** `staff_without_safe_team` was a plan defect:
+   coverage is conjunctive, so a domain no contract declares defeats every
+   ranking. `compile_intent_plan` now refuses an unknown domain unless the unit
+   declares `novel_capability`, the exception that keeps the rule-6 hiring gap
+   reachable. It is proven by mechanism against the live roster, never by
+   replay, because no plan is persisted. If the canary still fails, the receipt
+   now names the uncoverable axis — present means a plan or roster fault,
+   absent means the ranking is the recruiter's own.
+4. **Every zero-marker result on 2026-08-14 measured the schema break** — both
+   canary runs, all nine host probes; both earlier readings are retracted in
+   the matrix. Of 63 child artifacts under `~/.claude/projects`, 9 are marked —
+   3 v5, 7 v1, **0 v6** — and `native_child_delivery_verifications` has zero
+   rows, ever. One child spawned from this runtime settles v6. Owner's hands:
+   a session may not call the Agent tool.
 
 **An unrun hook and a fail-open hook look identical from outside**, so zero
 Agency rows proves neither; wrap the hook in a shim logging stdin, stdout,
