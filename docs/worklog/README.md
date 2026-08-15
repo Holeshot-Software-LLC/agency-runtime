@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-14
+updated: 2026-08-15
 tags: []
 related: []
 supersedes: []
@@ -894,6 +894,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `519f48f7` | 2026-08-14 | fix(doctor)!: fail on schema drift; retract the `claude -p` claim | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
 | `190f31d8` | 2026-08-14 | docs(ar119): record the runtime republish that restored hook staffing | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
 | `687b4f95` | 2026-08-14 | docs(ar119): the repaired canary records, and fails at the recruiter instead | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
+| `6b7eb1c0` | 2026-08-15 | docs(ar253): the recruiter rejection is a plan defect wearing a recruiter's name | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
