@@ -895,6 +895,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `190f31d8` | 2026-08-14 | docs(ar119): record the runtime republish that restored hook staffing | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
 | `687b4f95` | 2026-08-14 | docs(ar119): the repaired canary records, and fails at the recruiter instead | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
 | `6b7eb1c0` | 2026-08-15 | docs(ar253): the recruiter rejection is a plan defect wearing a recruiter's name | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `6e490801` | 2026-08-15 | fix(planning): refuse an invented domain at the plan boundary | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-15-6e490801-refuse-invented-plan-domains.md) |
+| `6be0977c` | 2026-08-15 | docs(ar253): record the shipped domain boundary and two corrections | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | [detail](2026-08-15-6e490801-refuse-invented-plan-domains.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
