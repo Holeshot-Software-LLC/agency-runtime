@@ -902,6 +902,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `88378cb8` | 2026-08-15 | fix(tests): repair the stale recruitment row and put its file in CI | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `548bba3a` | 2026-08-15 | docs(ar119): bring the recovery capsule current | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `30ab92f9` | 2026-08-15 | ci(workflows): stop billing a hosted run for every push to main | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-15-30ab92f9-local-gates-replace-push-ci.md) |
+| `bddd3b8c` | 2026-08-15 | ci(hooks): gate every push on the fast local checks | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-15-30ab92f9-local-gates-replace-push-ci.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

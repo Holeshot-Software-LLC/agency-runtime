@@ -107,11 +107,25 @@ the job.
   "Verify documentation ledgers", with every earlier step green on Linux — so
   the preceding commits were hosted-validated before push CI was retired.
 
-## Follow-ups
+## The pre-push hook (`bddd3b8c`)
 
-- No automatic gate now runs on push. A `pre-push` hook invoking `--fast` would
-  make it unforgettable at the cost of push latency; not added without the
-  owner's call. ([AR-119](../roadmap/issue-AR-119-inference-first-workforce.md))
+Added on the owner's call, because nothing forced the runner before a push.
+`.githooks/pre-push` runs `--fast` and refuses the push when a gate fails. It is
+tracked rather than written into `.git/hooks`, so the gate is versioned and
+reviewable; `core.hooksPath` is per-clone configuration that cannot be
+committed, so `CONTRIBUTING.md` now sets it during environment setup.
+
+Deliberate skips are supported and named **in the failure message** rather than
+left to be discovered: `SKIP_LOCAL_GATES=1` skips this check and `--no-verify`
+skips every hook. A deletion-only push skips itself, and a missing interpreter
+fails loudly instead of passing silently — a gate that cannot run must not look
+like a gate that passed.
+
+All three paths were exercised: deletion-only and `SKIP_LOCAL_GATES=1` exit 0
+without running gates, and a deliberate unused-import in `scripts/` stopped the
+push with exit 1 and named the failing gate.
+
+## Follow-ups
 - The integration coverage shards and the portability matrix still run only on
   `workflow_dispatch`, unchanged by this commit.
   ([AR-119](../roadmap/issue-AR-119-inference-first-workforce.md))
