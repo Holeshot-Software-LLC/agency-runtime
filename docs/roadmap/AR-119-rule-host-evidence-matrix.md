@@ -169,9 +169,21 @@ exit 0 with silent stderr where every event previously printed
 truthfully rather than incidentally. Codex hook trust is unverified against the
 new digest and needs the owner's interactive TUI pass; it was not bypassed.
 
-**Nothing below has been re-measured against the repaired runtime.** Rule 4
-Live for claude is exactly as unproven as it was this morning, and the next
-measurement starts from a machine that can record.
+**The first canary on the repaired runtime records again, and fails somewhere
+else entirely.** `counts` reads `runs: 1, preflight_failures: 1` where every
+earlier run today read all zeros — the hook now opens the store, creates its run
+row, attempts routing, and writes its own receipt. That receipt says
+`workforce_inference_failed` / `inference_invalid`: the planner applied on
+haiku, and the recruiter was rejected twice on sonnet with
+`provider_response_contract_invalid`, with `eligibility_reason_codes` empty. So
+the canary now dies at the **known nondeterministic recruiter stage** already
+recorded above, not at a broken runtime, and
+`host_child_collection_reason: delivery_marker_absent` is the honest
+consequence: nothing was staffed, so no envelope could reach the child.
+
+**Rule 4 Live for claude is exactly as unproven as it was this morning.** What
+changed is only that the machine can record, and that its remaining failure is
+one this matrix already names.
 
 The original (wrong) reasoning follows, kept because the measurements are real
 and the elimination sequence is worth not repeating.
