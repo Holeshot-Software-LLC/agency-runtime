@@ -180,11 +180,16 @@ canary record and the operator-facing failure list.
 
 ## Follow-ups
 
-- **The evidence workstation needs a reinstall** so the launcher its hooks run
-  matches the store this work migrated. Until then every hook fails open and no
-  Rule 4 measurement on that machine means anything
-  ([AR-119](../roadmap/issue-AR-119-inference-first-workforce.md)). Installing
-  needs the owner's authorization.
+- **Done, under explicit owner authorization:** `agency install --all`
+  republished the runtime, so Claude and ZCode hooks now run
+  `runtime-sha256-f0ff261120e2` at SCHEMA_VERSION 46. Verified three ways —
+  that launcher's own code opens the live store, a replayed `SessionStart`
+  returns exit 0 with silent stderr, and `doctor` reports schema 46 truthfully.
+  Codex hook trust is unverified against the new digest and awaits the owner's
+  TUI pass; it was not bypassed.
+- **Re-measure Rule 4 from the repaired runtime.** Nothing observed on
+  2026-08-14 survives as evidence about delivery
+  ([AR-119](../roadmap/issue-AR-119-inference-first-workforce.md)).
 - **A schema bump is not a local change** when a checkout shares its store with
   an installed runtime: it disables staffing machine-wide until the launcher is
   refreshed. Worth sequencing deliberately, and arguably worth a guard that

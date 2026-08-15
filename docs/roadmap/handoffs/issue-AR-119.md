@@ -104,28 +104,28 @@ consumed-receipt transport from historical sections.
 **Implementation and Simulation are both 45/45; Installed and Live are both
 0/45, so every one of the 45 cells still reads `unproven`.** Claude and zcode
 are ready here; codex hook trust needs interactive TUI approval against digest
-`3925824a5bd2`; hermes and openclaw are absent, so one machine cannot reach 45.
+`f0ff261120e2`; hermes and openclaw are absent, so one machine cannot reach 45.
 
 **START HERE.** This workstation does produce readable host artifacts —
 `claude -p` writes `projects/<slug>/<session>/subagents/agent-<child>.jsonl`
 with exactly the record-zero shape the parser needs. That much is settled. The
 rest of 2026-08-14 was spent measuring a break of our own making:
 
-1. **THE MACHINE IS BROKEN AND IT IS OURS. Fix before measuring anything.**
-   Every Agency hook here raises `RuntimeError: Agency Runtime database schema
-   is newer than this runtime (46 > 45)` and fails open, staffing nothing: the
-   live store and this checkout are 46, the **pinned launcher every hook runs
-   (`runtime-sha256-3925824a…`) is 45**. AR-252 bumped `SCHEMA_VERSION` and
-   checkout-local CLI runs against the real DB migrated it past the launcher.
-   Evidence stops dead at **`2026-08-14T23:15:24Z`** across `runs`,
-   `routing_decisions`, `preflight_failure_receipts`, `specialists_loaded`.
-   `Stop` fails *closed* — that is the "could not verify or persist the
-   turn-scoped evidence contract" block. **Remedy: reinstall so the launcher
-   matches the store; needs owner authorization.**
+1. **A schema drift broke every hook here for two hours; it is now repaired.**
+   AR-252 bumped `SCHEMA_VERSION` to 46 and checkout-local CLI runs migrated the
+   live store past the pinned launcher (45), so every hook raised
+   `RuntimeError: … schema is newer than this runtime (46 > 45)` and failed
+   open, staffing nothing. Evidence stopped dead at **`2026-08-14T23:15:24Z`**
+   across four tables; `Stop` failed *closed* — the "could not verify or persist
+   the turn-scoped evidence contract" block. `agency install --all` republished
+   the runtime: hooks now run **`runtime-sha256-f0ff261120e2`** at
+   SCHEMA_VERSION 46, which opens the live store cleanly. **Codex hook trust is
+   unverified against the new digest; owner's TUI pass, never bypass it.**
 2. **Every zero-marker result on 2026-08-14 measured that break** — both canary
    runs, all nine host probes. `claude -p` runs hooks fine (a trivial hook fired
    on all five events) and the profile was never the variable; both earlier
-   readings are retracted in the matrix.
+   readings are retracted in the matrix. **Re-measure Rule 4 before trusting any
+   of it.**
 3. **Still true, because it is a census, not an inference:** of 63 child
    artifacts under `~/.claude/projects`, 9 are marked — 3 v5, 7 v1, **0 v6** —
    and `native_child_delivery_verifications` has zero rows, ever. Whether v6

@@ -159,6 +159,20 @@ the stored version against the running runtime's `SCHEMA_VERSION` and fails
 loudly when the store is ahead, which is the one condition that silently
 disables every hook on the machine.
 
+**Repaired the same evening under explicit owner authorization.**
+`agency install --all` republished the runtime from this checkout: all three
+hosts re-registered, and Claude and ZCode now run
+`runtime-sha256-f0ff261120e2` at SCHEMA_VERSION 46. That launcher's own code
+opens the live store without raising, a replayed `SessionStart` payload returns
+exit 0 with silent stderr where every event previously printed
+`RuntimeError; host operation continues`, and `doctor` reports schema 46
+truthfully rather than incidentally. Codex hook trust is unverified against the
+new digest and needs the owner's interactive TUI pass; it was not bypassed.
+
+**Nothing below has been re-measured against the repaired runtime.** Rule 4
+Live for claude is exactly as unproven as it was this morning, and the next
+measurement starts from a machine that can record.
+
 The original (wrong) reasoning follows, kept because the measurements are real
 and the elimination sequence is worth not repeating.
 
