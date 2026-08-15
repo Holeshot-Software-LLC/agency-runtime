@@ -3,7 +3,7 @@ title: "AR-253: Prove staffing latency, rate, and cross-host parity"
 status: open
 category: roadmap
 created: 2026-08-05
-updated: 2026-08-12
+updated: 2026-08-15
 tags: [workforce, staffing, latency, harnesses, eval, host-evidence]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -203,3 +203,66 @@ Whichever lands, the receipt should also name **which requirement axis was
 uncoverable**, not just the unit. The axis names are a closed six-value
 vocabulary, so this costs no evidence bounding, and without it every future
 occurrence needs the same offline reconstruction this one did.
+
+## Domains are validated at the plan boundary (2026-08-15)
+
+The first option shipped. `parse_work_unit_plan` now takes an optional
+`allowed_domains` vocabulary, and `compile_intent_plan` — the one boundary that
+knows the live roster — supplies it. An unknown domain is refused there, by
+name, and `_invoke_stage` sends the failure back to the **planner** under the
+planner's own system prompt with the offending value in the feedback. The
+recruiter never sees the unstaffable unit.
+
+Two corrections to the diagnosis above, both found while building the fix:
+
+1. **An unknown domain is not always a defect.** `_validate_nomination_decisions`
+   only rejects `staff` decisions; a recruiter that answers `gap` is valid, and
+   that gap is what drives hiring. `test_open_ended_pool_can_declare_gap_without_
+   inventing_a_roster_candidate` plans `domains: ["quantum-build-systems"]` with
+   `novel_capability: "quantum-build-evaluation"` precisely so the recruiter can
+   declare `inference-declared-gap`. A blanket refusal would have closed the
+   rule-6 contractor path. The shipped rule therefore refuses an unknown domain
+   **only when the unit declares no novel capability** — novelty is the
+   contract's existing signal for work the workforce genuinely lacks, and a unit
+   that claims none has invented a narrower synonym for work already covered.
+2. **`lifecycle_phase: coordination` cannot be the live cause.** The compact
+   planner never chooses a lifecycle: `_unit_document` derives it from the
+   artifact through `_ARTIFACT_FACTS`, whose nine entries yield only discovery,
+   design, documentation, implementation, planning, review and testing. The
+   orphan enum value is unreachable from the synchronous path, so **domains were
+   the only planner-chosen axis that could go off-vocabulary.**
+
+The compiler still normalizes first and refuses only what normalization could
+not place, so the planner's vocabulary is not narrowed. Measured against the
+live 283-contract roster for the canary's own ask:
+
+| planner domain | normalizes to | in roster | coverable | at the boundary |
+|---|---|---|---|---|
+| `software-engineering` | `software-engineering` | yes | yes | accepted |
+| `code-review` | `software-engineering` | yes | yes | accepted |
+| `regression-testing` | `quality-assurance` | yes | yes | accepted |
+| `python-development` | `software-engineering` | yes | yes | accepted |
+| `code-quality` | `quality-assurance` | yes | yes | accepted |
+| `text-normalization` | *(unchanged)* | no | **no** | refused |
+| `text-processing` | *(unchanged)* | no | **no** | refused |
+| `string-handling` | *(unchanged)* | no | **no** | refused |
+
+Three of eight plausible domains for one ordinary review request leak through
+normalization verbatim, are coverable by no team of four, and previously reached
+the recruiter as an unwinnable `staff_without_safe_team`. Five are rescued and
+still accepted.
+
+**What this is not.** The canary's actual plan is unrecoverable: `routing_intent`
+and `routing_cache` are empty, the workforce cache is in-process, and
+`preflight_failure_receipts.provider_attempts` deliberately records attempt
+metadata without response content. So the exact domain that killed the live run
+is unknown, and this fix is proven by mechanism against the real roster, not by
+replaying the failure. **The next live Claude canary is the test.** If it fails
+the same way with a plan whose domains are all roster-declared, the fault is
+elsewhere and this section is wrong.
+
+Still open, and now more clearly worth doing: **the receipt should name which
+requirement axis was uncoverable.** Nothing in the stored evidence distinguished
+a domain gap from a lifecycle or authority gap, which is why the diagnosis
+needed offline reconstruction and why its second gap turned out to be
+unreachable.
