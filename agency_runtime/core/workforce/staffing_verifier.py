@@ -398,6 +398,20 @@ def _eligibility(
     return tuple(reasons)
 
 
+REQUIREMENT_AXES: frozenset[str] = frozenset(
+    {
+        "artifact",
+        "lifecycle",
+        "domain",
+        "stack",
+        "capability",
+        "authority",
+    }
+)
+"""Every axis `_requirements` can name. Team sufficiency is conjunctive across
+all of them, so one uncovered axis defeats every possible team."""
+
+
 def _requirements(unit: WorkUnit) -> tuple[str, ...]:
     values = [
         f"artifact:{unit.artifact_kind}",

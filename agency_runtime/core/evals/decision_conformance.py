@@ -192,7 +192,8 @@ def _typed_shortlists(""",
         ),
         source_path="agency_runtime/core/workforce/inference.py",
         before="""        if decision == "staff" and not proposal_row.selected:
-            failures.append(_NominationFailure(unit.unit_id, "staff_without_safe_team"))""",
+            axis = _uncoverable_requirement_axis(unit, contracts)
+            failures.append(_NominationFailure(unit.unit_id, "staff_without_safe_team", axis))""",
         after="""        if decision == "staff" and not proposal_row.selected:
             continue""",
         test_node=(

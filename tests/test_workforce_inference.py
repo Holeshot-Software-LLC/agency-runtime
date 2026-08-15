@@ -18,6 +18,7 @@ from agency_runtime.core.config import (
 from agency_runtime.core.preflight_failure import preflight_staffing_reason_codes
 from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 from agency_runtime.core.selector.pipeline import _record_workforce_model_receipts
+from agency_runtime.core.selector.receipt_projection import project_nomination_failures
 from agency_runtime.core.structured_provider import StructuredProviderResult
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
@@ -41,6 +42,7 @@ from agency_runtime.core.workforce.inference import (
     _explicit_indivisible_unit_request,
     _invoke_stage,
     _NominationAccumulator,
+    _NominationFailure,
     _NominationValidationError,
     _typed_shortlists,
     configured_workforce_providers,
@@ -970,6 +972,93 @@ def test_an_invented_domain_is_repaired_by_the_planner_not_blamed_on_the_recruit
     assert systems[1] == systems[0]
 
 
+def test_a_staffing_failure_names_the_axis_only_when_the_roster_cannot_cover_it() -> None:
+    # The receipt has to separate a fault the recruiter can fix from one it
+    # cannot. A ranking that omits an available specialist carries no axis; a
+    # requirement the whole workforce leaves uncovered names the axis, which is
+    # the fact that turns a day of offline reconstruction into one field.
+    from agency_runtime.core.workforce.inference import _uncoverable_requirement_axis
+
+    analyst = _contract("technical-analyst")
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": "Analyze the repository implementation.",
+            "units": [
+                {
+                    "unit_id": "unit-analyze",
+                    "outcome": "Complete technical analysis",
+                    "artifact_kind": "analysis",
+                    "lifecycle_phase": "discovery",
+                    "domains": ["software-engineering"],
+                    "languages": [],
+                    "frameworks": [],
+                    "required_capabilities": ["analysis"],
+                    "authority": "advise",
+                    "mutation_scope": "read_only",
+                    "risks": [],
+                    "trust_boundaries": ["repository"],
+                    "claims": [],
+                    "depends_on": [],
+                    "resources": ["repository"],
+                    "required_tools": ["repository-read"],
+                    "platforms": ["windows"],
+                    "acceptance_evidence": ["analysis verified"],
+                    "parallelization": "unspecified",
+                }
+            ],
+        }
+    )
+    unit = plan.units[0]
+
+    assert _uncoverable_requirement_axis(unit, (analyst,)) == ""
+    assert _uncoverable_requirement_axis(unit, ()) == "artifact"
+    assert (
+        _uncoverable_requirement_axis(unit, (replace(analyst, domains=("healthcare",)),))
+        == "domain"
+    )
+    assert (
+        _uncoverable_requirement_axis(
+            replace(unit, required_capabilities=("automation",)), (analyst,)
+        )
+        == "capability"
+    )
+
+
+def test_a_named_uncoverable_axis_survives_into_the_receipt_projection() -> None:
+    # The axis is a closed six-value vocabulary, so it crosses the content-free
+    # receipt boundary. Anything outside it fails the projection closed.
+    detail = str(
+        _NominationValidationError(
+            [
+                _NominationFailure("unit-one", "staff_without_safe_team", "domain"),
+                _NominationFailure("unit-two", "staff_without_safe_team"),
+            ]
+        )
+    )
+
+    assert detail == (
+        "workforce nomination failures: "
+        "unit-one=staff_without_safe_team:domain,unit-two=staff_without_safe_team"
+    )
+    assert project_nomination_failures(detail) == [
+        {
+            "unit_id": "unit-one",
+            "reason_code": "staff_without_safe_team",
+            "requirement_axis": "domain",
+        },
+        {"unit_id": "unit-two", "reason_code": "staff_without_safe_team"},
+    ]
+    assert (
+        project_nomination_failures(
+            "workforce nomination failures: unit-one=staff_without_safe_team:speciality"
+        )
+        == []
+    )
+    with pytest.raises(ValueError, match="not allowlisted"):
+        _NominationValidationError([_NominationFailure("unit-one", "gap_with_safe_team", "vibes")])
+
+
 def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     invalid = _compact_plan_document()
@@ -1692,15 +1781,21 @@ def test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requir
             ]
             return _result(unsafe)
         feedback = json.loads(prompt.partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
+        # The roster cannot cover capability:automation at all, so the repair
+        # names the axis and states the only honest answer instead of asking
+        # for a better ranking that cannot exist.
         assert feedback["failed_units"] == [
             {
                 "unit_id": "unit-architecture",
                 "code": "staff_without_safe_team",
+                "uncoverable_requirement_axis": "capability",
                 "required_correction": (
                     "Rank at least one semantically faithful candidate for this unit so the "
                     "staff decision can select a team, adding the coverage complements a "
                     "complete team needs within maximum_selected_per_unit. Declare gap only "
                     "when no supplied candidate is faithful."
+                    " No worker in the whole workforce covers this unit's capability "
+                    "requirement, so a faithful team cannot exist: declare gap."
                 ),
             }
         ]

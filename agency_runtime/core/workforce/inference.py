@@ -51,6 +51,7 @@ from agency_runtime.core.workforce.planning_contracts import (
     WorkUnitPlan,
 )
 from agency_runtime.core.workforce.staffing_verifier import (
+    REQUIREMENT_AXES,
     StaffingBudget,
     StaffingContext,
     StaffingDecision,
@@ -438,6 +439,10 @@ class WorkforceInferenceAttempt:
 class _NominationFailure:
     unit_id: str
     code: str
+    # The requirement axis no contract in the roster can cover, when there is
+    # one. Empty means the roster could have covered every axis, which points
+    # the fault at the ranking rather than at the plan.
+    axis: str = ""
 
 
 class _NominationValidationError(ValueError):
@@ -449,12 +454,16 @@ class _NominationValidationError(ValueError):
             raise ValueError("nomination validation error requires at least one failure")
         if any(
             failure.code not in _NOMINATION_FAILURE_CODES
+            or (failure.axis and failure.axis not in REQUIREMENT_AXES)
             or re.fullmatch(r"unit-[a-z0-9][a-z0-9-]{0,62}", failure.unit_id) is None
             for failure in unique
         ):
             raise ValueError("nomination validation failure is not allowlisted")
         self.failures = unique
-        detail = ",".join(f"{failure.unit_id}={failure.code}" for failure in unique)
+        detail = ",".join(
+            f"{failure.unit_id}={failure.code}" + (f":{failure.axis}" if failure.axis else "")
+            for failure in unique
+        )
         super().__init__(f"workforce nomination failures: {detail}")
 
 
@@ -891,8 +900,20 @@ def _invoke_stage(
                                         {
                                             "unit_id": failure.unit_id,
                                             "code": failure.code,
+                                            **(
+                                                {"uncoverable_requirement_axis": failure.axis}
+                                                if failure.axis
+                                                else {}
+                                            ),
                                             "required_correction": (
                                                 _NOMINATION_REPAIR_REQUIREMENTS[failure.code]
+                                                + (
+                                                    " No worker in the whole workforce covers "
+                                                    f"this unit's {failure.axis} requirement, so "
+                                                    "a faithful team cannot exist: declare gap."
+                                                    if failure.axis
+                                                    else ""
+                                                )
                                             ),
                                         }
                                         for failure in exc.failures
@@ -1278,16 +1299,40 @@ def _semantic_staffing_classes(
     return required, acceptable, forbidden
 
 
+def _uncoverable_requirement_axis(
+    unit: WorkUnit,
+    contracts: Sequence[WorkforceContract],
+) -> str:
+    """Return the requirement axis no contract in the roster can cover.
+
+    Team sufficiency is conjunctive across the six axes, so a single axis the
+    whole roster leaves uncovered defeats every ranking the recruiter could
+    return and no bounded repair can succeed. Naming it separates a plan or
+    roster fault, which the recruiter cannot fix, from a ranking fault, which it
+    can. An empty result means every axis was coverable.
+    """
+
+    covered: set[str] = set()
+    for contract in contracts:
+        covered |= typed_staffing_coverage(unit, contract)
+    for requirement in typed_staffing_requirements(unit):
+        if requirement not in covered:
+            return requirement.split(":", 1)[0]
+    return ""
+
+
 def _validate_nomination_decisions(
     plan: WorkUnitPlan,
     proposal: RecruiterProposal,
     decisions: Mapping[str, str],
+    contracts: Sequence[WorkforceContract],
 ) -> None:
     failures: list[_NominationFailure] = []
     for unit, proposal_row in zip(plan.units, proposal.units, strict=True):
         decision = decisions[unit.unit_id]
         if decision == "staff" and not proposal_row.selected:
-            failures.append(_NominationFailure(unit.unit_id, "staff_without_safe_team"))
+            axis = _uncoverable_requirement_axis(unit, contracts)
+            failures.append(_NominationFailure(unit.unit_id, "staff_without_safe_team", axis))
         if decision == "gap" and proposal_row.selected:
             failures.append(_NominationFailure(unit.unit_id, "gap_with_safe_team"))
     if failures:
@@ -1510,7 +1555,7 @@ def _proposal_from_nominations(
             unit_id for unit_id, decision in semantics.decisions.items() if decision == "gap"
         ),
     )
-    _validate_nomination_decisions(plan, proposal, semantics.decisions)
+    _validate_nomination_decisions(plan, proposal, semantics.decisions, snapshot.contracts)
     # ADR-0087: inference explicitly decides whether each unit should be
     # staffed or is a real semantic gap. Deterministic policy verifies that the
     # decision agrees with typed coverage and eligibility, but never adds or

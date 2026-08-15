@@ -9,6 +9,10 @@ from collections.abc import Mapping
 from hashlib import sha256
 from typing import Any
 
+from agency_runtime.core.workforce.staffing_verifier import (
+    REQUIREMENT_AXES as _REQUIREMENT_AXES,
+)
+
 RECEIPT_DESCRIPTION_BYTES = 4096
 ROUTING_RECEIPT_VERSION = 1
 
@@ -147,25 +151,41 @@ def project_nomination_failures(value: object) -> list[dict[str, str]]:
             unit_id, separator, reason_code = item.partition("=")
             if not separator:
                 return []
-            parsed.append({"unit_id": unit_id, "reason_code": reason_code})
+            # A failure may name the requirement axis the whole roster leaves
+            # uncovered, as "code:axis". The axis is a closed six-value
+            # vocabulary, so it carries no request content.
+            reason_code, _, axis = reason_code.partition(":")
+            row = {"unit_id": unit_id, "reason_code": reason_code}
+            if axis:
+                row["requirement_axis"] = axis
+            parsed.append(row)
         raw = parsed
     if not isinstance(raw, (list, tuple)) or not 1 <= len(raw) <= _MAX_STAFFING_UNITS:
         return []
     failures: list[dict[str, str]] = []
     for item in raw:
-        if not isinstance(item, Mapping) or set(item) != {"unit_id", "reason_code"}:
+        if not isinstance(item, Mapping) or not {"unit_id", "reason_code"} <= set(item) <= {
+            "unit_id",
+            "reason_code",
+            "requirement_axis",
+        }:
             return []
         unit_id = str(item.get("unit_id") or "").strip().casefold()
         reason_code = _code(item.get("reason_code"))
+        axis = _code(item.get("requirement_axis")) if "requirement_axis" in item else ""
         unit_id_is_digest = unit_id.startswith("sha256:") and _DIGEST.fullmatch(
             unit_id.removeprefix("sha256:")
         )
         if (
-            _NOMINATION_UNIT_ID.fullmatch(unit_id) is None and not unit_id_is_digest
-        ) or reason_code not in _NOMINATION_FAILURE_CODES:
+            (_NOMINATION_UNIT_ID.fullmatch(unit_id) is None and not unit_id_is_digest)
+            or reason_code not in _NOMINATION_FAILURE_CODES
+            or ("requirement_axis" in item and axis not in _REQUIREMENT_AXES)
+        ):
             return []
         projected_unit_id = _identity(unit_id)
         failure = {"unit_id": projected_unit_id, "reason_code": reason_code}
+        if axis:
+            failure["requirement_axis"] = axis
         if not projected_unit_id or failure in failures:
             return []
         failures.append(failure)
