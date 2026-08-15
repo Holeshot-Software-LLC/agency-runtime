@@ -1,0 +1,56 @@
+#!/bin/sh
+# Run the fast local gates before a push.
+#
+# Push to main no longer triggers hosted CI (see .github/workflows/ci.yml), so
+# this is the gate that would otherwise be easy to forget. It runs the ~1.3
+# minute subset: every lint, documentation, ledger and workflow-contract check,
+# but not the two long test suites.
+#
+# --fast is a smoke gate, not the full job. Before anything risky run
+#   python scripts/run_local_gates.py
+# and for platform-sensitive changes still use `gh workflow run ci.yml`.
+#
+# To skip deliberately:
+#   SKIP_LOCAL_GATES=1 git push        # skips only this check
+#   git push --no-verify               # skips every hook
+
+set -eu
+
+if [ "${SKIP_LOCAL_GATES:-}" = "1" ]; then
+    echo "pre-push: SKIP_LOCAL_GATES=1 set, skipping local gates."
+    exit 0
+fi
+
+# A push that only deletes refs has no content to verify. Git feeds us
+# "<local ref> <local sha> <remote ref> <remote sha>" lines on stdin; a deletion
+# carries an all-zero local sha.
+has_content=0
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+    case "${local_sha}" in
+        "" | *[!0]*) has_content=1 ;;
+    esac
+done
+if [ "${has_content}" -eq 0 ]; then
+    echo "pre-push: deletion only, nothing to verify."
+    exit 0
+fi
+
+repository="$(git rev-parse --show-toplevel)"
+
+python="python"
+if ! command -v "${python}" >/dev/null 2>&1; then
+    python="python3"
+fi
+if ! command -v "${python}" >/dev/null 2>&1; then
+    echo "pre-push: no python on PATH; cannot run the local gates." >&2
+    echo "pre-push: fix PATH, or push with SKIP_LOCAL_GATES=1 if intentional." >&2
+    exit 1
+fi
+
+echo "pre-push: running fast local gates (about 1.3 minutes)..."
+if ! (cd "${repository}" && "${python}" scripts/run_local_gates.py --fast); then
+    echo "" >&2
+    echo "pre-push: local gates failed, so the push was stopped." >&2
+    echo "pre-push: fix the gate above, or push with SKIP_LOCAL_GATES=1." >&2
+    exit 1
+fi

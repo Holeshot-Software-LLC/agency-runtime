@@ -38,9 +38,16 @@ python -m venv .venv
 # PowerShell: .venv\Scripts\Activate.ps1
 # POSIX:      . .venv/bin/activate
 python -m pip install -e ".[dev,release,security]"
+git config core.hooksPath .githooks
 ruff check agency_runtime tests scripts
 node --test tests/dashboard_ui.test.mjs
 ```
+
+`core.hooksPath` is per-clone git configuration, not a tracked file, so set it
+once per checkout. It enables `.githooks/pre-push`, which runs the fast local
+gates before every push. **Push to `main` no longer triggers hosted CI**, so
+that hook is the automatic gate; skip it deliberately with
+`SKIP_LOCAL_GATES=1 git push` when you mean to.
 
 Run the named fast Python production spine in the Validation section before a
 handoff. The exhaustive integration suites are deliberately not part of routine
@@ -78,7 +85,17 @@ this repository without sibling-repository links or machine-specific paths.
 ## Validation
 
 Run focused tests for every changed behavior and the automatic-equivalent gate
-before handoff. Its named fast Python production spine is:
+before handoff. `scripts/run_local_gates.py` runs that whole gate in the
+workflow's own order and stops at the first failure:
+
+```bash
+python scripts/run_local_gates.py          # everything runnable locally
+python scripts/run_local_gates.py --fast   # minus the two long suites
+```
+
+It cannot cover Linux-only behavior or the decision-conformance mutation phase;
+use `gh workflow run ci.yml` for a hosted run when either matters. The
+individual commands it wraps are:
 
 ```bash
 python scripts/docs_metadata.py --check
