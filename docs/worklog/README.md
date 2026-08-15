@@ -889,6 +889,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f7cae78f` | 2026-08-14 | docs(ar119): locate R4 claude Live at one missing activation receipt | null | null |
 | `129f2a6a` | 2026-08-14 | docs(ar119)!: native-child staffing has been dead here since 2026-08-07 | null | null |
 | `437eb783` | 2026-08-14 | docs(ar119)!: retract the staffing-outage claim; the accounting was retired | null | null |
+| `8e0fba31` | 2026-08-14 | feat(rule4): make the collector name the stage that refused | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-14-8e0fba31-self-diagnosing-rule4-collector.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
