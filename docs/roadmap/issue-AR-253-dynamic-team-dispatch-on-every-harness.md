@@ -261,8 +261,37 @@ replaying the failure. **The next live Claude canary is the test.** If it fails
 the same way with a plan whose domains are all roster-declared, the fault is
 elsewhere and this section is wrong.
 
-Still open, and now more clearly worth doing: **the receipt should name which
-requirement axis was uncoverable.** Nothing in the stored evidence distinguished
-a domain gap from a lifecycle or authority gap, which is why the diagnosis
-needed offline reconstruction and why its second gap turned out to be
-unreachable.
+## The receipt names the uncoverable axis (2026-08-15)
+
+Nothing in the stored evidence distinguished a domain gap from a lifecycle or
+authority gap, which is why the diagnosis needed offline reconstruction and why
+its second gap turned out to be unreachable. `staff_without_safe_team` now
+carries the axis.
+
+`_uncoverable_requirement_axis` asks the one question the receipt could not
+answer: is there a requirement **no contract in the roster covers**? The axis
+names come from `REQUIREMENT_AXES` in `staffing_verifier.py`, beside the
+`_requirements` function that produces them, so the vocabulary is not restated
+per consumer. It is a closed six-value set carrying no request content, so it
+crosses the content-free receipt boundary; `project_nomination_failures` emits
+it as `requirement_axis` and fails closed on anything outside the vocabulary.
+
+**The axis is a fault classifier, not decoration.** Present, it says the plan or
+the roster is at fault and no ranking the recruiter could return would help.
+Absent, it says the roster could have covered every axis and the ranking is at
+fault — which is the recruiter's own mistake and is exactly what its bounded
+repair is for. This morning's investigation spent a day on a question that is
+now one field.
+
+Naming the axis also makes the funded repair recoverable rather than doomed.
+When an axis is uncoverable, the repair prompt now says so and states the only
+honest answer — declare gap — instead of asking for a faithful ranking that
+cannot exist. `test_recruiter_repair_declares_gap_when_typed_recall_proves_
+uncovered_requirements` already covered a roster that cannot supply
+`capability:automation`; the recruiter reached the same gap by inference, and
+now it is told.
+
+Editing the `staff_without_safe_team` line required updating the matching
+`before` snippet in `core/evals/decision_conformance.py`, which stores literal
+source text for the mutation proof. That coupling is invisible from the edit
+site and belongs on the list of duplicated facts this codebase keeps.
