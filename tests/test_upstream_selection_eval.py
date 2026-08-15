@@ -201,27 +201,27 @@ def _abstained_disabled_outcome(provider: ProviderEntry) -> WorkforceRoutingOutc
         1,
         7,
         (
+            # Keyword arguments on purpose: this row was written positionally
+            # and silently rotted when AR-234 (f6e65ea2) dropped coverage,
+            # positive_evidence and negative_evidence from the dataclass.
             UnitRecruitment(
-                "unit-disabled",
-                (),
-                (),
-                (),
-                (),
-                (),
-                (),
-                (),
-                (),
-                (shadow,),
-                (),
-                (),
-                (),
-                (),
-                (),
-                0.0,
-                0.0,
-                "delegate",
-                "immediate",
-                ("best_candidate_disabled",),
+                unit_id="unit-disabled",
+                required=(),
+                acceptable=(),
+                forbidden=(),
+                selected=(),
+                runner_up=(),
+                ranked_semantic=(),
+                ranked_enabled=(),
+                ranked_executable=(),
+                disabled_shadows=(shadow,),
+                unavailable_shadows=(),
+                contexts=(),
+                confidence=0.0,
+                margin=0.0,
+                delivery="delegate",
+                timing="immediate",
+                abstention_reasons=("best_candidate_disabled",),
             ),
         ),
     )
@@ -447,6 +447,9 @@ def test_disabled_semantic_winner_is_visible_but_not_allowed_and_must_be_disclos
 
     assert report["passed"] is True
     assert lsp_card["enabled"] is False
+    # Visible but not allowed is only a claim if the allowlist is populated and
+    # the disabled winner is the one thing missing from it.
+    assert len(upstream_input["allowed_agent_ids"]) > 1
     assert "lsp-index-engineer" not in upstream_input["allowed_agent_ids"]
     assert report["details"][0]["agency"]["missing_disabled_disclosures"] == []
     assert report["details"][0]["upstream"]["missing_disabled_disclosures"] == []

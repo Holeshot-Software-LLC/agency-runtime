@@ -824,6 +824,7 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
         "tests/test_workforce_hiring_contract.py",
         "tests/test_workforce_selection_safety.py",
         "tests/test_workforce_dynamic_hiring.py",
+        "tests/test_upstream_selection_eval.py",
         "tests/test_decision_conformance.py",
         "tests/test_delegation_p1_correctness.py",
         "tests/test_store_turn_atomicity.py",
