@@ -899,6 +899,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6be0977c` | 2026-08-15 | docs(ar253): record the shipped domain boundary and two corrections | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | [detail](2026-08-15-6e490801-refuse-invented-plan-domains.md) |
 | `a75a906f` | 2026-08-15 | feat(evidence): name the requirement axis a staffing failure could not cover | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-15-a75a906f-name-the-uncoverable-requirement-axis.md) |
 | `89aca8a2` | 2026-08-15 | docs(ar253): record the axis naming and its fault-classifier meaning | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | [detail](2026-08-15-a75a906f-name-the-uncoverable-requirement-axis.md) |
+| `88378cb8` | 2026-08-15 | fix(tests): repair the stale recruitment row and put its file in CI | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
