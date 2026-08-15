@@ -1,8 +1,11 @@
 name: Upstream roster delta audit
 
 on:
+  # Weekly, not daily. This watches an external repository, so a local run
+  # cannot substitute for it -- but the upstream roster does not change daily,
+  # and ~30 hosted runs a month bought nothing that ~4 does not.
   schedule:
-    - cron: "17 4 * * *"
+    - cron: "17 4 * * 1"
   workflow_dispatch:
 
 permissions:

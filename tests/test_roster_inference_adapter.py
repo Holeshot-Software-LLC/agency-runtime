@@ -829,7 +829,7 @@ def test_cli_candidate_audit_automatically_uses_provider_and_reports_degradation
     assert emitted[-1]["inference_policy"]["mode"] == "configured_inference"
 
 
-def test_nightly_roster_import_uses_configured_adapter_and_always_publishes_receipt() -> None:
+def test_scheduled_roster_import_uses_configured_adapter_and_always_publishes_receipt() -> None:
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "roster-upstream-audit.yml"
     ).read_text(encoding="utf-8")

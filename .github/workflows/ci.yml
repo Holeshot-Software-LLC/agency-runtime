@@ -1,9 +1,12 @@
 name: CI
 
 on:
+  # Push to main deliberately does NOT trigger CI: this repository is developed
+  # direct-to-main, so every commit started a 7-10 minute hosted run and the
+  # concurrency group then cancelled the previous one mid-flight, billing both.
+  # Run `python scripts/run_local_gates.py` before pushing instead. Pull
+  # requests and manual dispatch still run the full hosted gate.
   pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

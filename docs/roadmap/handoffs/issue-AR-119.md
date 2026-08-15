@@ -145,15 +145,15 @@ accounting on purpose, so **empty `retrieved_specialist_slug` /
 
 ## verification
 
+**Push to `main` no longer triggers hosted CI**: direct-to-main billed a 7-10
+minute run per commit, then cancelled it mid-flight on the next. Run the same
+quality job locally; `gh workflow run ci.yml` still gets the Linux gate.
+
 ~~~text
+python scripts/run_local_gates.py          # the gates CI ran on push (~13 min)
+python scripts/run_local_gates.py --fast   # same minus the two long suites
 python scripts/context_handoff_status.py --json --threshold 50
-python scripts/docs_metadata.py --check && python scripts/verify_docs.py
-python scripts/update_policy_availability.py --check && python scripts/update_worklog.py --check
-python -m pytest tests/test_verify_docs_schema.py tests/test_decision_conformance.py -q -W error
-ruff check agency_runtime tests scripts && ruff format --check agency_runtime tests scripts
-node --test tests/dashboard_ui.test.mjs && git diff --check
 agency eval routing --json --no-details && agency eval spawn-authority --json
-agency eval decision-conformance --repository . --json  # mutations die here; see above
 ~~~
 
 Run focused tests, the fast spine, and the matrix-evidence list before each
