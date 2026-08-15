@@ -903,6 +903,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `548bba3a` | 2026-08-15 | docs(ar119): bring the recovery capsule current | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `30ab92f9` | 2026-08-15 | ci(workflows): stop billing a hosted run for every push to main | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-15-30ab92f9-local-gates-replace-push-ci.md) |
 | `bddd3b8c` | 2026-08-15 | ci(hooks): gate every push on the fast local checks | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-15-30ab92f9-local-gates-replace-push-ci.md) |
+| `bdfb535a` | 2026-08-15 | docs(ar119): open the capsule on the live Claude canary | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
