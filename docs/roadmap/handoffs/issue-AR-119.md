@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-08-15
+updated: 2026-08-16
 tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -101,20 +101,20 @@ reconstruct retired Job B, plan-row, work-unit, grant or consumed-receipt transp
 
 **Implementation and Simulation are both 45/45; Installed and Live are both
 0/45, so every one of the 45 cells still reads `unproven`.** Claude and zcode are
-ready here; codex needs the TUI trust pass against `0e42ee679dfc`; hermes and
+ready here; codex needs the TUI trust pass against `980eb2d1b755`; hermes and
 openclaw are absent, so one machine cannot reach 45.
 
-**START HERE.** The canary has now run on `0e42ee679dfc`. What is left is
-confirming the recruiter ranking fault it exposed.
+**START HERE.** The canary completed on `980eb2d1b755`. Parent staffing is
+proven; what is left is the child abstention that keeps Rule 4 at zero.
 
 1. **The runtime is current and verified.** Hooks run
-   **`runtime-sha256-0e42ee679dfc`** at SCHEMA_VERSION 46, carrying the domain
-   refusal and the axis naming: it opens the live store, and a replayed
-   `SessionStart` exits 0 with **silent** stderr where `f0ff261120e2` now
-   answers `agency_runtime_stale_runtime`. `doctor` is DEGRADED for codex trust
-   alone. **A session started before an install keeps calling the old
-   launcher** — that is "failed safely", and the cure is a restart, never
-   another install. Suite runs rewrite `launchers/current.json`; ignore it.
+   **`runtime-sha256-980eb2d1b755`** at SCHEMA_VERSION 46, carrying the domain
+   refusal, the axis naming and `ranked_agent_ids`: it opens the live store, and
+   a replayed `SessionStart` exits 0 with **silent** stderr where
+   `0e42ee679dfc` now answers `agency_runtime_stale_runtime`. `doctor` is
+   DEGRADED for codex trust alone. **A session started before an install keeps
+   calling the old launcher** — that is "failed safely", and the cure is a
+   restart, never another install. Suite runs rewrite `current.json`; ignore it.
 2. **Prove Claude in two steps and do not conflate them.** First the staffing
    path: an accepted `routing_decisions` row with selected specialists and no
    preflight receipt. Only then Rule 4, which needs a host-written artifact
@@ -123,13 +123,13 @@ confirming the recruiter ranking fault it exposed.
    passed TUI trust 2026-08-15 but `doctor` still read
    `adapter_codex_hook_trust: unverified`; check which terminal ran it before
    assuming codex is blocked.
-3. **The canary already refuted the plan-defect diagnosis.** Run on
-   `0e42ee679dfc` it failed identically — `staff_without_safe_team` on
-   `unit-python-strip-regression-review`, axis **absent**. Offline: the roster
-   covers all six requirements, 10 of 283 contracts are eligible, and
-   `code-reviewer` covers the unit alone. So it is a **recruiter ranking** fault,
-   not a plan defect; AR-253 carries the evidence. The failure now records the
-   ranked agent ids, so the next run confirms it from evidence.
+3. **Child abstention, not child failure, is what blocks Rule 4.** On
+   `980eb2d1b755` the parent staffed twice (`code-reviewer`, 0.9 and 1.0) and
+   all seven child routings failed `native_child_inference_invalid`. Confidence
+   0.85-0.95 proves `status="applied"`: the prompt says return an empty
+   `selected_ids` "when none fits", the protocol accepts it, staffing then
+   demands `1 <= len`. AR-255 carries the proof. Parent ranking is intermittent,
+   not deterministic — it staffed cleanly twice tonight.
 4. **Every zero-marker result on 2026-08-14 measured the schema break** — both
    canary runs, all nine host probes; both earlier readings are retracted in
    the matrix. Of 63 child artifacts under `~/.claude/projects`, 9 are marked —

@@ -3,7 +3,7 @@ title: "AR-255: Make native child staffing inference-owned and host-proven"
 status: open
 category: roadmap
 created: 2026-08-12
-updated: 2026-08-13
+updated: 2026-08-16
 tags: [routing, inference, native-child, codex, evidence, critical-path]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -160,6 +160,53 @@ ADR-0159 governs this authorization boundary and its fail-open behavior.
   threshold, and Ruff lint/format passed. The expanded decision-conformance
   evaluator remains pending; the 131/131 result above remains candidate-
   `45b21cdc` history.
+- **2026-08-16, confirmed live cause of `native_child_inference_invalid`.** The
+  first canary to complete on `980eb2d1b755` staffed the parent twice
+  (`code-reviewer`, confidence 0.9 and 1.0) but failed every one of seven child
+  routings, so no card ever reached a child and the collector reported
+  `delivery_marker_absent`. **The children were not failing inference — they
+  were abstaining, and the runtime records a sanctioned abstention as an invalid
+  decision.** `build_judge_prompt` tells the model to "Select zero to 3
+  specialists" and to "Return an empty selected_ids list when none fits";
+  `validated_decision` accepts that empty answer, bounding only
+  `len(selected) > max_sel`, and `applied_result` returns
+  `status="applied"` carrying the model's own confidence; then
+  `native_child_staffing` requires `1 <= len(selected)` and rejects the same
+  answer as `native_child_inference_invalid`. Three layers, two contracts.
+- **How the live rows prove it, without new instrumentation.** Every judge
+  failure path hardcodes `confidence: 0.0`, and only `applied_result` preserves
+  a model confidence, so the seven rows carrying **0.95, 0.95, 0.95, 0.95, 0.95,
+  0.9 and 0.85** prove the judge returned `status="applied"` with
+  `inference_mode="inferred"`. That excludes the status branch and the
+  provider-receipt branch (distinct reason code), and `candidate_count: 33`
+  excludes both early non-mapping branches, which record 0. Only the
+  `selected_ids` check remains, and four of its five disjuncts — non-list,
+  over-budget, unknown id, duplicate — are already enforced upstream by
+  `validated_decision` over the same catalog using the same `agent_identity`
+  function. The lower bound is the one disjunct nothing upstream enforces.
+  Reproduced offline: an empty answer is the only case that the protocol accepts
+  and staffing then rejects with the model's confidence intact.
+- **Two projection fields are structurally constant on this path and must not be
+  read as evidence.** `_unstaffed` always writes `selected_ids: []`, and the
+  complete-universe judge always passes `top_score=0.0`. Neither reflects what
+  the model returned. `candidate_count: 33` is the eligible catalog after
+  host/platform/tool filtering, against 283 in the full roster; the gap is
+  expected filtering, not a defect.
+- **This is a behaviour contract, not an oversight.**
+  `test_invalid_duplicate_unknown_and_over_budget_inference_is_rejected_whole`
+  parameterises `[]` alongside duplicate, unknown, and over-budget answers, so
+  changing it renegotiates a written test contract. It is also **not** the same
+  fault as the parent-side ranking failure: the parent recruiter has legitimate
+  abstention outcomes (`recruiter_abstained`, `no_safe_sufficient_team`), while
+  the child path collapses abstention into "invalid".
+- **Still open: why the model declined seven times out of seven.** The failure
+  row keeps only `source_message_hash`, so the child task text is unrecoverable
+  from the Store, and `hooks.log` holds no row for the canary parent trace
+  `3b304fbb`. A deliberate decline on a task whose parent had just selected
+  `code-reviewer` is suspicious on its face, but nothing yet distinguishes "the
+  child task genuinely needed nobody" from "the child prompt or catalog made
+  every candidate look unfit". Giving abstention its own reason code is what
+  makes that question answerable from evidence.
 
 ## Acceptance
 
