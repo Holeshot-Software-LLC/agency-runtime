@@ -270,6 +270,15 @@ def test_canary_output_and_records_cover_empty_and_failed_results() -> None:
     assert invalid["status"] == "failed"
 
 
+def test_claude_process_timeout_remains_a_timeout() -> None:
+    # A deadline reported as a plain failure publishes `"timed_out": false`
+    # beside exit code 124, which reads as a host that ran and refused.
+    record = canary._claude_canary_record(_result(returncode=124, timed_out=True))
+    assert record["status"] == "timed_out"
+    assert record["exit_code"] == 124
+    assert record["failure_reason"] == "claude_exec_timed_out"
+
+
 def test_codex_setup_and_inventory_failures_are_typed(tmp_path: Path) -> None:
     responses = iter([_result(returncode=0, timed_out=True)])
     backend = canary._SafeCodexCanaryBackend(

@@ -43,6 +43,7 @@ CANARY_INVOCATION_FAILURE_REASONS = frozenset(
         "codex_native_child_start_missing",
         "codex_hook_trust_not_ready",
         "codex_exec_timed_out",
+        "claude_exec_timed_out",
     }
 )
 

@@ -2638,6 +2638,11 @@ def codex_canary_record(
 def claude_canary_record(result: Any) -> dict[str, Any]:
     facade = _facade()
     completed = facade._process_succeeded(result)
+    # A deadline is a different fault from a host that ran and refused. Folding
+    # both into "failed" published `"timed_out": false` next to exit code 124,
+    # which reads as a host that exited on its own. Codex already reports this
+    # honestly; Claude did not.
+    timed_out = bool(result.timed_out)
     record: dict[str, Any] = {
         "backend": "claude",
         "profile_scope": "isolated-profile",
@@ -2646,11 +2651,13 @@ def claude_canary_record(result: Any) -> dict[str, Any]:
             "registered": None,
             "enabled": None,
         },
-        "status": "completed" if completed else "failed",
-        "exit_code": result.returncode,
+        "status": "completed" if completed else "timed_out" if timed_out else "failed",
+        "exit_code": 124 if timed_out else result.returncode,
         "stdout_truncated": result.stdout_truncated,
         "stderr_truncated": result.stderr_truncated,
     }
+    if timed_out:
+        record["failure_reason"] = "claude_exec_timed_out"
     if not completed:
         return record
     try:
