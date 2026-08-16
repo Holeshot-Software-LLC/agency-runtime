@@ -2667,7 +2667,18 @@ def claude_canary_record(result: Any) -> dict[str, Any]:
     if isinstance(payload, dict) and payload.get("result"):
         record["output"] = payload["result"]
     else:
-        record.update(status="failed", exit_code=1)
+        # `status` is the verdict and already fails this closed: `process_ok`
+        # requires status == "completed" before it looks at anything else.
+        # `exit_code` is a fact about the process, so synthesising 1 for a host
+        # that exited 0 bought no safety and misreported what the host did.
+        # Name the fault the way the Codex record already does, and keep the
+        # same two-way split between "could not parse" and "parsed, no result".
+        record["status"] = "failed"
+        record["failure_reason"] = (
+            "claude_output_projection_unavailable"
+            if isinstance(payload, dict)
+            else "claude_result_projection_unavailable"
+        )
     return record
 
 

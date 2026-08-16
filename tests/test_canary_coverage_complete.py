@@ -265,9 +265,16 @@ def test_canary_output_and_records_cover_empty_and_failed_results() -> None:
     assert unprojectable["failure_reason"] == "codex_result_projection_unavailable"
     assert canary._codex_canary_record(_result(returncode=1))["status"] == "failed"
     assert canary._claude_canary_record(_result(returncode=1))["status"] == "failed"
+    # Both backends now answer a protocol error the same way: the real process
+    # exit code, "failed" as the verdict, and a typed reason for the fault.
     invalid = canary._claude_canary_record(_result(stdout="{invalid"))
-    assert invalid["exit_code"] == 1
+    assert invalid["exit_code"] == 0
     assert invalid["status"] == "failed"
+    assert invalid["failure_reason"] == "claude_result_projection_unavailable"
+    empty = canary._claude_canary_record(_result(stdout="{}"))
+    assert empty["exit_code"] == 0
+    assert empty["status"] == "failed"
+    assert empty["failure_reason"] == "claude_output_projection_unavailable"
 
 
 def test_claude_process_timeout_remains_a_timeout() -> None:

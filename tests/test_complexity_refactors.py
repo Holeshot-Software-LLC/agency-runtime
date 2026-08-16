@@ -241,20 +241,28 @@ def test_codex_output_branch_table(stdout: str, expected: str | None) -> None:
 
 
 @pytest.mark.parametrize(
-    ("factory", "stdout"),
+    ("factory", "stdout", "failure_reason"),
     [
-        (_codex_canary_record, "not-json"),
-        (_claude_canary_record, "not-json"),
-        (_claude_canary_record, "{}"),
+        (_codex_canary_record, "not-json", "codex_result_projection_unavailable"),
+        (_claude_canary_record, "not-json", "claude_result_projection_unavailable"),
+        (_claude_canary_record, "{}", "claude_output_projection_unavailable"),
     ],
 )
 def test_canary_records_fail_closed_on_protocol_errors(
     factory: Any,
     stdout: str,
+    failure_reason: str,
 ) -> None:
+    # `status` is the verdict and is what fails this closed -- `process_ok` in
+    # canary_proof requires status == "completed". `exit_code` is a fact about
+    # the process, so a host that exited 0 must still report 0; this test used
+    # to demand a synthesised 1, which contradicted
+    # test_canary_output_and_records_cover_empty_and_failed_results and sat red
+    # on main because neither file was in the local gate spine.
     record = factory(BoundedProcessResult(0, stdout, ""))
     assert record["status"] == "failed"
-    assert record["exit_code"] == 1
+    assert record["exit_code"] == 0
+    assert record["failure_reason"] == failure_reason
 
 
 def test_canary_records_preserve_success_output() -> None:

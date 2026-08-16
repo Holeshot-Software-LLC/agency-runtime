@@ -44,6 +44,8 @@ CANARY_INVOCATION_FAILURE_REASONS = frozenset(
         "codex_hook_trust_not_ready",
         "codex_exec_timed_out",
         "claude_exec_timed_out",
+        "claude_result_projection_unavailable",
+        "claude_output_projection_unavailable",
     }
 )
 
