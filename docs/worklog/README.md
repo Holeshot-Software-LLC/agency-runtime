@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-15
+updated: 2026-08-16
 tags: []
 related: []
 supersedes: []
@@ -906,6 +906,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bdfb535a` | 2026-08-15 | docs(ar119): open the capsule on the live Claude canary | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `b6230f83` | 2026-08-15 | feat(evidence): record which candidates the recruiter actually ranked | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `e2c4e32f` | 2026-08-15 | docs(ar253): retract the plan-defect diagnosis the canary refuted | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | null |
+| `bfed8d45` | 2026-08-16 | docs(ar255): confirm child abstention is what fails as inference_invalid | null | null |
+| `15ca819c` | 2026-08-16 | fix(native-child): record a solicited abstention as abstention | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
