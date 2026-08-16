@@ -929,6 +929,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c91f0e07` | 2026-08-16 | docs(ar255): the child judge was shown code-reviewer and declined it | null | null |
 | `3a14a7b9` | 2026-08-16 | feat(evidence): record how much assignment the declining child was given | null | null |
 | `a432b181` | 2026-08-16 | docs(ar255): record the task-shape ceiling and the two rejected instruments | null | null |
+| `3a337b00` | 2026-08-16 | docs(ar255): ten child decisions, ten declines, and size does not explain it | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
