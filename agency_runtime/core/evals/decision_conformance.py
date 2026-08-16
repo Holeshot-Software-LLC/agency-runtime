@@ -192,13 +192,18 @@ def _typed_shortlists(""",
         ),
         source_path="agency_runtime/core/workforce/inference.py",
         before="""        if decision == "staff" and not proposal_row.selected:
-            axis = _uncoverable_requirement_axis(unit, contracts)
             ranked = tuple(
                 agent_id
                 for agent_id, _score in (rankings or {}).get(unit.unit_id, ())[
                     :MAX_RECORDED_RANKED_CANDIDATES
                 ]
             )
+            # Scope the axis to what was ranked. The empty team came from the
+            # ranked set failing to cover conjunctively, so the roster-wide
+            # answer names nothing a repair could act on.
+            ranked_ids = set(ranked)
+            scope = [item for item in contracts if item.agent_id in ranked_ids] or list(contracts)
+            axis = _uncoverable_requirement_axis(unit, scope)
             failures.append(
                 _NominationFailure(
                     unit.unit_id,

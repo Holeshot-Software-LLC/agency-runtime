@@ -150,6 +150,36 @@ touches the conjunctive sufficiency model that AR-253's acceptance criteria are
 written against, and that should not be rewritten in the same change that is
 trying to produce a first green Installed cell.
 
+## Settled 2026-08-16: it binds through coverage, not eligibility
+
+The `470ebf3b421a` canary returned `top_ranked_ineligibility` **absent** on both
+rejected attempts, with `code-reviewer` ranked first. The top-ranked candidate
+was executable, so no eligibility gate emptied the team, and direction B as
+originally framed would have fixed nothing.
+
+The binding constraint is still a planner invention, but it is the unit's
+**conjunctive six-axis requirement set**, applied by
+`_minimum_team_with_required` to the ranked candidates rather than by
+`_eligibility` to each candidate. `selected` is computed, not model-supplied:
+the search returns nothing when no combination of ranked executable candidates
+covers every requirement within `max_selected_per_unit`.
+
+This narrows all three directions:
+
+- **B must target coverage**, not eligibility. Making unit `required_tools` and
+  `platforms` advisory changes nothing; the requirement axes are what bind.
+- **A is unchanged in principle** and now clearly larger: removing the unit's
+  requirement synthesis means removing the conjunctive sufficiency model that
+  AR-253's acceptance criteria are written against.
+- **C got cheaper and better aimed.** The axis is now computed over the ranked
+  set, so it names the axis a bounded repair can actually act on.
+
+The immediate step taken was C: scope `_uncoverable_requirement_axis` to the
+ranked contracts. Roster-wide uncoverability is a strict subset of it, so no
+diagnostic power is lost. Whether the conjunctive requirement set should exist
+at all remains open, and should be decided on the next live failure that names
+a specific axis rather than on argument.
+
 ## What would settle it
 
 One canary run carrying `top_ranked_ineligibility`. If it names a unit-derived

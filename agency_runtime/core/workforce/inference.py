@@ -1331,13 +1331,19 @@ def _uncoverable_requirement_axis(
     unit: WorkUnit,
     contracts: Sequence[WorkforceContract],
 ) -> str:
-    """Return the requirement axis no contract in the roster can cover.
+    """Return the first requirement axis the supplied contracts cannot cover.
 
-    Team sufficiency is conjunctive across the six axes, so a single axis the
-    whole roster leaves uncovered defeats every ranking the recruiter could
-    return and no bounded repair can succeed. Naming it separates a plan or
-    roster fault, which the recruiter cannot fix, from a ranking fault, which it
-    can. An empty result means every axis was coverable.
+    Team sufficiency is conjunctive across the six axes, and `selected` is not
+    the model's answer: `_minimum_team_with_required` searches the ranked,
+    executable candidates for a combination whose coverage union contains every
+    requirement, and returns nothing when none does. So the question a failure
+    actually poses is which axis **the ranked set** missed, not whether the
+    283-contract roster could have covered it -- the roster almost always can,
+    which is why this reported nothing on every live failure until 2026-08-16.
+
+    Pass the ranked contracts to get the actionable answer; a bounded repair can
+    then name the axis to add. Roster-wide uncoverability is a strict subset: if
+    no contract anywhere covers an axis, no ranking covers it either.
     """
 
     covered: set[str] = set()
@@ -1372,7 +1378,9 @@ def _top_ranked_ineligibility(
     try:
         reasons = typed_staffing_ineligibility(unit, contract, context)
     except Exception:
-        return ""
+        # An absent field means "this candidate was executable", so a swallowed
+        # check must not read as one. Name the failure instead.
+        return "ineligibility_check_failed"
     return str(reasons[0]) if reasons else ""
 
 
@@ -1388,13 +1396,18 @@ def _validate_nomination_decisions(
     for unit, proposal_row in zip(plan.units, proposal.units, strict=True):
         decision = decisions[unit.unit_id]
         if decision == "staff" and not proposal_row.selected:
-            axis = _uncoverable_requirement_axis(unit, contracts)
             ranked = tuple(
                 agent_id
                 for agent_id, _score in (rankings or {}).get(unit.unit_id, ())[
                     :MAX_RECORDED_RANKED_CANDIDATES
                 ]
             )
+            # Scope the axis to what was ranked. The empty team came from the
+            # ranked set failing to cover conjunctively, so the roster-wide
+            # answer names nothing a repair could act on.
+            ranked_ids = set(ranked)
+            scope = [item for item in contracts if item.agent_id in ranked_ids] or list(contracts)
+            axis = _uncoverable_requirement_axis(unit, scope)
             failures.append(
                 _NominationFailure(
                     unit.unit_id,
