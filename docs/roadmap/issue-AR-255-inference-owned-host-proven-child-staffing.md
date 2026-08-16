@@ -414,10 +414,41 @@ child's actual task is unknown. `native_child_no_specialist_needed` may well be
 the *correct* answer for whatever the parent delegated — a child asked to read
 one file and report back needs no specialist. The open question has therefore
 moved from "was anyone capable offered" (answered: yes) to "what was the child
-asked to do", and nothing in the current evidence answers it. A bounded,
-content-free shape for the child task — artifact kind, lifecycle phase, or the
-parent unit id it descends from — is the next instrument, not another guess at
-the judge.
+asked to do", and nothing in the current evidence answers it.
+
+### The task shape, and why it is the ceiling for a content-free receipt
+
+`task_chars` and `task_lines` now ship on every unstaffed child decision. They
+separate a one-line errand, where `native_child_no_specialist_needed` is the
+correct answer, from a substantial brief, where it is not.
+
+Two richer instruments were considered and rejected on evidence, not taste:
+
+- **The parent work unit the child descends from.** `staff_native_child` never
+  receives one; its signature carries the task, correlation ids and host context
+  and nothing else. That isolation is deliberate — the steward kernel states
+  that any child the host spawns is staffed on its own. The `work_unit_id` on
+  `delegation_events` (`unit-019efc1344`) is a **synthesised** id, not a link to
+  a planner unit like `unit-python-text-normalization-strip-review`, so there is
+  no parent-plan linkage to expose. Plumbing one in would change the boundary,
+  not instrument it.
+- **A typed characterisation of the child task.** The child path calls
+  `query_judge` with `candidate_scope="complete"`, which skips retrieval
+  entirely, so `affirmative_intent` never runs and no descriptors exist. Adding
+  one would mean a second inference call on the child critical path, and the
+  terms it produces are drawn from the task text — content, not shape.
+
+So a structural count is the honest ceiling. **It is a weak signal and should not
+be oversold**: it cannot distinguish a code review from a summary of the same
+length, and nothing content-free can.
+
+**What would actually settle it** is already built and already owner-gated:
+`observability.capture_content` requires a typed `ENABLE CONTENT CAPTURE`
+confirmation in the dashboard and is currently `true` in `agency.yaml`. Wiring
+the child assignment into that capture is the one change that answers "what was
+the child asked" exactly. It is deliberately **not** taken here — starting to
+record child task text is the owner's call, not a diagnostic convenience, and
+the flag being on is not the same as the flag being pointed at this data.
 
 ## Acceptance
 
