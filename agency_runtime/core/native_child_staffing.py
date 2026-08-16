@@ -74,6 +74,12 @@ _INVALID_PERSISTENCE_REASONS = frozenset(
         "native_child_routing_projection_invalid",
     }
 )
+# The judge prompt asks for zero to MAX_INFERENCE_TEAM_CARDS specialists and
+# tells the model to return an empty list when none fits, so an empty selection
+# is a decision this runtime solicited, not a malformed one. Record it under its
+# own reason and status; the child still proceeds unstaffed either way.
+NATIVE_CHILD_ABSTAINED_REASON = "native_child_no_specialist_needed"
+_ABSTAINED_REASONS = frozenset({NATIVE_CHILD_ABSTAINED_REASON})
 
 
 @dataclass(frozen=True, slots=True)
@@ -290,6 +296,8 @@ def _route_provider_name(
 def _failure_status(reason_code: str) -> str:
     if reason_code in _INVALID_PERSISTENCE_REASONS:
         return "inference_invalid"
+    if reason_code in _ABSTAINED_REASONS:
+        return "inference_abstained"
     if (
         reason_code in _UNAVAILABLE_REASONS
         or ("provider" in reason_code and reason_code.endswith("_unavailable"))
@@ -323,7 +331,10 @@ def _routing_projection(
 ) -> dict[str, Any]:
     raw = result or {}
     inferred_success = status == "applied"
-    default_inference_signal = inferred_success or status == "inference_invalid"
+    default_inference_signal = inferred_success or status in {
+        "inference_invalid",
+        "inference_abstained",
+    }
     decision: dict[str, Any] = {
         "status": status,
         "semantic_status": status,
@@ -961,6 +972,23 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
         )
 
     selected = judge_result.get("selected_ids")
+    if type(selected) is list and not selected:
+        # Solicited abstention: the judge was offered the complete eligible
+        # universe and answered that none of it fits. Fail open unstaffed under
+        # a reason that says so, instead of calling the runtime's own contract
+        # an invalid model response.
+        return _unstaffed(
+            store=store,
+            reason_code=NATIVE_CHILD_ABSTAINED_REASON,
+            task=original_task,
+            host=normalized_host,
+            parent_session_id=session_id,
+            parent_trace_id=trace_id,
+            task_sha256=task_hash,
+            context_fingerprint=context_fingerprint,
+            judge_result=judge_result,
+            provider_attempts=projected_attempts,
+        )
     eligible_ids = {agent_identity(item) for item in eligible_catalog}
     if (
         type(selected) is not list

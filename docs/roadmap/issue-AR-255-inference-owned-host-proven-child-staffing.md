@@ -199,14 +199,56 @@ ADR-0159 governs this authorization boundary and its fail-open behavior.
   fault as the parent-side ranking failure: the parent recruiter has legitimate
   abstention outcomes (`recruiter_abstained`, `no_safe_sufficient_team`), while
   the child path collapses abstention into "invalid".
-- **Still open: why the model declined seven times out of seven.** The failure
-  row keeps only `source_message_hash`, so the child task text is unrecoverable
-  from the Store, and `hooks.log` holds no row for the canary parent trace
-  `3b304fbb`. A deliberate decline on a task whose parent had just selected
-  `code-reviewer` is suspicious on its face, but nothing yet distinguishes "the
-  child task genuinely needed nobody" from "the child prompt or catalog made
-  every candidate look unfit". Giving abstention its own reason code is what
-  makes that question answerable from evidence.
+- **Why the model declined, seven times out of seven: it was never shown a
+  single specialist who could do the work.** Reproduced against the live
+  283-agent roster at generation 289 with the child's own arguments
+  (`host="claude"`, `platform="win32"`, `available_tools=None`,
+  `capability_status=""`): `filter_eligible_catalog` returns **33 eligible and
+  250 rejected, and every one of the 250 carries the same reason,
+  `tool_capabilities_unproven:unknown`.** `code-reviewer` and
+  `application-security-engineer` — the two the parent had just selected — are
+  both in the rejected 250. What survives is the tool-free remainder:
+  `anthropologist`, `book-co-author`, `brand-guardian`, `cartography-designer`,
+  `game-designer`, `historian`, `level-designer`, `linkedin-content-creator`,
+  `narratologist`, `personal-growth-mentor`, `resume-tailor`,
+  `video-optimization-specialist`, `xr-interface-architect` and twenty more.
+  Asked to staff a Python regression review from that set and told to return an
+  empty list when none fits, the model returned an empty list. **The abstention
+  was correct.** The defect is the universe it was given.
+- **The two paths feed the same filter from different sources.**
+  `selector/pipeline.py` calls `current_host_capability_receipt(...)` and passes
+  `available_tools=capabilities.capabilities`, `inference_surface` and
+  `capability_status` into `filter_eligible_catalog`;
+  `adapters/base.py` builds that receipt with
+  `native_adapter_capability_receipt(host, platform=..., session_id=...,
+  trace_id=..., restricted=capabilities_restricted)`. The native-child call in
+  `adapters/hooks.py` passes **none** of it, so `staff_native_child` defaults to
+  `available_tools=None` and `capability_status=""`, which
+  `filter_eligible_catalog` documents as "tool capability unproven" and fails
+  closed on every tool-declaring specialist. One filter, two sources of truth.
+- **Two hypotheses tested and refuted.** `_KNOWN_INFERENCE_SURFACES` is only
+  `{"litellm"}`, so `host="claude"` is *not* reinterpreted as an inference
+  surface and the execution host is not lost. And the identity functions agree:
+  `judge._agent_id` delegates to the same `agent_identity` the staffing check
+  uses, so a selected id can never be unknown to one layer and known to the
+  other.
+- **Shipped: abstention is recorded as abstention.** A solicited empty selection
+  now returns `native_child_no_specialist_needed` with status
+  `inference_abstained` and `inference_mode: "abstained"`, keeping the judge's
+  real confidence and candidate count, and still failing open unstaffed;
+  `preflight_routing_failure_reason` maps it to
+  `substantive_specialist_unavailable`, beside the existing
+  `child_budget_abstained` precedent. `[]` was removed from
+  `test_invalid_duplicate_unknown_and_over_budget_inference_is_rejected_whole`
+  and given its own test. **This changes the record, not the outcome** — the
+  child still receives no card, so Rule 4 stays at zero until the catalog the
+  child judge sees contains someone who can do the work.
+- **The canary parent transcripts are gone.** Sessions `a7dcbfd4` and `42227b09`
+  ran inside the ADR-0158 disposable profile and are absent from
+  `~/.claude/projects`; a home-wide search found nothing. The exact child task
+  strings are therefore unrecoverable, and only the seven `query_hash` values
+  survive. Future runs need the abstention reason code above to be legible at
+  all.
 
 ## Acceptance
 

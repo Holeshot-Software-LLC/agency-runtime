@@ -518,7 +518,6 @@ def test_unverifiable_binding_kind_is_rejected_before_inference(
 @pytest.mark.parametrize(
     "selected",
     [
-        [],
         ["alpha-reviewer", "alpha-reviewer"],
         ["unknown-reviewer"],
         ["alpha-reviewer", "beta-reviewer", "gamma-reviewer", "delta-reviewer"],
@@ -546,6 +545,39 @@ def test_invalid_duplicate_unknown_and_over_budget_inference_is_rejected_whole(
     assert result.reason_code == "native_child_inference_invalid"
     assert result.context_segment == ""
     assert store.prompt_reads == []
+
+
+def test_solicited_empty_selection_is_recorded_as_abstention_not_invalid_inference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The judge prompt asks for zero to three specialists and tells the model to
+    return an empty list when none fits, so an empty answer is a decision this
+    runtime solicited. It must fail open unstaffed under its own reason, keeping
+    the judge's real confidence, rather than being reported as invalid output."""
+
+    prompts = {slug: f"Exact {slug} prompt." for slug in ("alpha-reviewer", "beta-reviewer")}
+    store = _Store([_agent(slug, prompt) for slug, prompt in prompts.items()], prompts)
+
+    result = _invoke(monkeypatch, store, _judge_result([]))
+
+    assert result.staffed is False
+    assert result.reason_code == "native_child_no_specialist_needed"
+    assert result.context_segment == ""
+    assert store.prompt_reads == []
+
+    decision = result.routing_decision
+    assert decision["status"] == "inference_abstained"
+    assert decision["semantic_status"] == "inference_abstained"
+    assert decision["native_child_reason"] == "native_child_no_specialist_needed"
+    assert decision["inference_mode"] == "abstained"
+    assert decision["inference_configured"] is True
+    assert decision["inference_attempted"] is True
+    assert decision["selected_ids"] == []
+    # The judge answered; its confidence is the evidence that separates a
+    # deliberate abstention from a provider or contract failure, which always
+    # project zero.
+    assert decision["confidence"] == 0.97
+    assert decision["candidate_count"] == 2
 
 
 def test_compatibility_may_reject_but_never_repair_the_inference_team(

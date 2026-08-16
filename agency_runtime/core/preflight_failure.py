@@ -148,6 +148,8 @@ def preflight_routing_failure_reason(routing: Mapping[str, Any]) -> str:
         return "workforce_inference_failed"
     if status == "child_budget_abstained" or source == "child_budget_policy":
         return "child_routing_unavailable"
+    if status == "inference_abstained":
+        return "substantive_specialist_unavailable"
     if not any(
         str(item or "").strip()
         for item in routing.get("selected_ids", ())
