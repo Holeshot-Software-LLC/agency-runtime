@@ -1051,6 +1051,78 @@ def test_a_staffing_failure_names_the_axis_only_when_the_roster_cannot_cover_it(
     assert _failure_axis(unit, ("covering-but-unrunnable",), (covering,), context) == ""
 
 
+def test_the_recorded_ranking_is_bounded_but_the_axis_is_scored_on_all_of_it() -> None:
+    # `ranked` is capped at 8 so the receipt stays bounded, and
+    # _NominationValidationError rejects anything longer. Scoring the axis on
+    # that prefix would report an axis the ninth candidate covers as
+    # uncoverable, which is a false definite negative -- the one direction this
+    # field must never fail in, and the direction the last three diagnoses died
+    # on. Score the whole ranking and record only the prefix.
+    from types import SimpleNamespace
+
+    from agency_runtime.core.workforce.inference import (
+        MAX_RECORDED_RANKED_CANDIDATES,
+        _NominationValidationError,
+        _validate_nomination_decisions,
+    )
+
+    analyst = _contract("technical-analyst")
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": "Analyze the repository implementation.",
+            "units": [
+                {
+                    "unit_id": "unit-analyze",
+                    "outcome": "Complete technical analysis",
+                    "artifact_kind": "analysis",
+                    "lifecycle_phase": "discovery",
+                    "domains": ["software-engineering"],
+                    "languages": [],
+                    "frameworks": [],
+                    "required_capabilities": ["analysis"],
+                    "authority": "advise",
+                    "mutation_scope": "read_only",
+                    "risks": [],
+                    "trust_boundaries": ["repository"],
+                    "claims": [],
+                    "depends_on": [],
+                    "resources": ["repository"],
+                    "required_tools": ["repository-read"],
+                    "platforms": ["windows"],
+                    "acceptance_evidence": ["analysis verified"],
+                    "parallelization": "unspecified",
+                }
+            ],
+        }
+    )
+    unit = plan.units[0]
+
+    contracts = (
+        *(
+            replace(analyst, agent_id=f"partial-{index}", artifact_kinds=("review-report",))
+            for index in range(MAX_RECORDED_RANKED_CANDIDATES)
+        ),
+        replace(analyst, agent_id="covering-ninth"),
+    )
+    ranking = tuple((item.agent_id, 1.0 - index / 100) for index, item in enumerate(contracts))
+
+    with pytest.raises(_NominationValidationError) as raised:
+        _validate_nomination_decisions(
+            plan,
+            SimpleNamespace(units=(SimpleNamespace(selected=()),)),
+            {unit.unit_id: "staff"},
+            contracts,
+            {unit.unit_id: ranking},
+            _context(),
+        )
+
+    failure = raised.value.failures[0]
+    assert len(failure.ranked) == MAX_RECORDED_RANKED_CANDIDATES
+    assert "covering-ninth" not in failure.ranked
+    assert failure.axis == ""
+
+
 def test_a_staffing_failure_records_who_the_recruiter_actually_ranked() -> None:
     # The live canary fails with every axis coverable, ten eligible candidates
     # and an empty team, which can only happen when the ranking itself holds no

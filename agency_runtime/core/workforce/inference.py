@@ -1428,13 +1428,13 @@ def _validate_nomination_decisions(
     for unit, proposal_row in zip(plan.units, proposal.units, strict=True):
         decision = decisions[unit.unit_id]
         if decision == "staff" and not proposal_row.selected:
-            ranked = tuple(
-                agent_id
-                for agent_id, _score in (rankings or {}).get(unit.unit_id, ())[
-                    :MAX_RECORDED_RANKED_CANDIDATES
-                ]
-            )
-            axis = _failure_axis(unit, ranked, contracts, context)
+            ranking = tuple(agent_id for agent_id, _score in (rankings or {}).get(unit.unit_id, ()))
+            ranked = ranking[:MAX_RECORDED_RANKED_CANDIDATES]
+            # Score the axis over the whole ranking, not the recorded prefix.
+            # The record is bounded at 8 for receipt size; scoring the prefix
+            # would report an axis the ninth candidate covers as uncoverable,
+            # which is the one direction this field must never be wrong in.
+            axis = _failure_axis(unit, ranking, contracts, context)
             failures.append(
                 _NominationFailure(
                     unit.unit_id,
