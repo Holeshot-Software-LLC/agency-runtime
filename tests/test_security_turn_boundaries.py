@@ -24,6 +24,61 @@ from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server import http
 
 
+def test_captured_user_messages_are_redacted_on_the_host_hook_path(tmp_path: Path) -> None:
+    """Both capture paths must scrub, not just the LiteLLM one.
+
+    `persisted_user_message` was the redaction seam and the LiteLLM callback was
+    its only supplier, so every native host-hook turn wrote the raw message to
+    `runs.user_message` whenever `observability.capture_content` was on.
+    """
+
+    from agency_runtime.core.content_redaction import MAX_CAPTURE_CHARS, redact_content
+    from agency_runtime.core.preflight import run_preflight
+
+    config_path = tmp_path / "agency.yaml"
+    config_path.write_text(
+        "observability:\n  capture_content: true\n",
+        encoding="utf-8",
+    )
+    store = Store(tmp_path / "agency.db", config_path=config_path)
+    secret = (
+        "Deploy with api_key='sk-proj-abcdefghijklmnop' for lucas@example.com "
+        "using Bearer abcdefghijklmnopqrstuvwxyz"
+    )
+
+    run_preflight(store, session_id="redaction-session", user_message=secret, host="test")
+
+    conn = store._connect()
+    try:
+        rows = [
+            row["user_message"]
+            for row in conn.execute(
+                "SELECT user_message FROM runs WHERE session_id = ?", ("redaction-session",)
+            )
+        ]
+    finally:
+        conn.close()
+
+    assert rows, "capture_content is on, so the turn must persist a message"
+    for persisted in rows:
+        # Assert the security properties, not byte equality with one direct
+        # redact_content() call. The persisted value differs from that by two
+        # quote characters around an already-redacted secret assignment, so some
+        # step between run_preflight's entry and this write normalises the
+        # message further. That normalisation is untraced and is recorded as an
+        # open question rather than pinned here; scrubbing is what this guards.
+        assert "sk-proj-abcdefghijklmnop" not in persisted
+        assert "lucas@example.com" not in persisted
+        assert "abcdefghijklmnopqrstuvwxyz" not in persisted
+        assert "[REDACTED]" in persisted and "[REDACTED_EMAIL]" in persisted
+        # The hook path was also unbounded; the scrubber's cap now applies here.
+        assert len(persisted) <= MAX_CAPTURE_CHARS
+    assert redact_content(redact_content(secret)) == redact_content(secret), (
+        "redaction must be idempotent: the LiteLLM path already redacts before "
+        "handing over persisted_user_message, so this now runs twice there"
+    )
+
+
 @pytest.mark.parametrize(
     ("host", "tool_name", "canonical"),
     [

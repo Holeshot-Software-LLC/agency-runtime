@@ -16,6 +16,7 @@ from threading import Event, Thread, current_thread
 from typing import Any
 
 from agency_runtime.core.config import AgencyConfig
+from agency_runtime.core.content_redaction import redact_content
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.host_capabilities import (
     HostCapabilityReceipt,
@@ -1352,10 +1353,16 @@ def run_preflight(
         request_fingerprint = sha256(
             str(user_message).encode("utf-8", errors="surrogatepass")
         ).hexdigest()
+        # Redact here, not only at the caller. `persisted_user_message` was the
+        # redaction seam and the LiteLLM callback was its only supplier, so every
+        # native host-hook turn wrote the raw message. Redacting an already
+        # redacted excerpt is idempotent, so the LiteLLM path is unaffected.
         persisted_source = (
             user_message if persisted_user_message is None else persisted_user_message
         )
-        persisted_message = persisted_source if cfg.observability.capture_content else ""
+        persisted_message = (
+            redact_content(persisted_source) if cfg.observability.capture_content else ""
+        )
         lease_seconds = hook_timeout_seconds(cfg)
         diagnostics.enter("lifecycle")
         lifecycle = store.begin_preflight_attempt(
