@@ -104,10 +104,10 @@ reconstruct retired Job B, plan-row, work-unit, grant or consumed-receipt transp
 ready here; codex needs the TUI trust pass against `980eb2d1b755`; hermes and
 openclaw are absent, so one machine cannot reach 45.
 
-**START HERE.** The canary completes cleanly on `76dd96b2cc50`. Parent staffing
-still fails; three hypotheses refuted, see AR-253 "the three branches that remain".
+**START HERE.** Parent staffing is **proven live** (trace `9b7890ac`):
+`code-reviewer` + `senior-secops-engineer` accepted, loaded, receipt correlated.
 
-1. **Claude runs `runtime-sha256-76dd96b2cc50`** at SCHEMA_VERSION 46; codex is
+1. **Claude runs `runtime-sha256-33ac14fcdac4`** at SCHEMA_VERSION 46; codex is
    behind on `530f6df6c4b6` and zcode on `980eb2d1b755`, so AR-258's one-digest
    property is broken. The packaged `agency.exe` is pinned at schema 45 and
    refuses to install — use `python -m agency_runtime.cli install --agent <host>`
@@ -123,13 +123,13 @@ still fails; three hypotheses refuted, see AR-253 "the three branches that remai
    passed TUI trust 2026-08-15 but `doctor` still read
    `adapter_codex_hook_trust: unverified`; check which terminal ran it before
    assuming codex is blocked.
-3. **The child judge was never shown anyone who could do the work; now it is.**
-   Unproven capability had rejected **250 of 283** as
-   `tool_capabilities_unproven:unknown`, `code-reviewer` included, leaving 33
-   historians and narratologists, so the model correctly returned an empty list.
-   `staff_native_child` now derives the parent adapter's capability receipt when
-   none is supplied: **33 to 64 of 283**, `code-reviewer` eligible, every
-   remaining rejection genuine. Empty now records as abstention. AR-255 proves it.
+3. **The child judge is now shown a real universe and still declines.** Proven
+   live 2026-08-16: the capability receipt raised the child's universe from 33
+   to **65 of 284** and the empty selection recorded honestly as
+   `inference_abstained` / `native_child_no_specialist_needed` in 5.6 s. The
+   delegation is real (`claude-agent:ae01af48c1d33466d`, `error: ok`) with no
+   slug, receipt or scope. **Rule 4 blocks on one inference judgment, not on
+   plumbing.** The receipt records 65 but not which 65; close that gap first.
 4. **Every zero-marker result on 2026-08-14 measured the schema break** — both
    canary runs, all nine host probes; both earlier readings are retracted in
    the matrix. Of 63 child artifacts under `~/.claude/projects`, 9 are marked —

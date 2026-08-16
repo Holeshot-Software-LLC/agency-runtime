@@ -276,6 +276,65 @@ ADR-0159 governs this authorization boundary and its fail-open behavior.
   survive. Future runs need the abstention reason code above to be legible at
   all.
 
+### First live host run of both repairs, and what is left (2026-08-16)
+
+The `33ac14fcdac4` Claude canary is the first run where **parent staffing
+succeeded on a host**, so the child path was reached for the first time. Both of
+today's AR-255 repairs fired live, and both behaved as designed.
+
+Parent, trace `9b7890ac`, routing `6f383f65`:
+
+| field | value |
+|---|---|
+| status / source | `accepted` / `computed` |
+| selected | `code-reviewer`, `senior-secops-engineer` |
+| candidate count | 284 |
+| recruiter latency | 124,165 ms |
+
+Both cards were written to `specialists_loaded`, the receipt correlated, and
+`isolated_plugin` came back `loaded: true, invoked: true`. Unmet prerequisites
+dropped from three to two.
+
+Child, routing `28cfc40b`, 5,611 ms:
+
+~~~json
+{"status": "inference_abstained", "native_child_reason": "native_child_no_specialist_needed",
+ "candidate_count": 65, "inference_attempted": true, "selected_ids": []}
+~~~
+
+**The capability receipt worked.** The child universe is **65 of 284**, against
+the 33 measured before the fix and the 64 predicted for the 283-contract roster.
+**The abstention reason code worked**: the empty selection records as
+`inference_abstained` with an honest reason, not as `native_child_inference_invalid`.
+
+So the child was shown a universe including `code-reviewer` and judged that none
+fit. The delegation is real and complete — `delegation_events` records
+`backend: delegate_task`, `native_run_id: claude-agent:ae01af48c1d33466d`,
+`error: "ok"` — but with `recommended_agent` and `retrieved_specialist_slug`
+both empty, no activation receipt, and no parent scope. No cards, therefore
+`delivery_marker_absent`, therefore Rule 4 stays at zero.
+`native_child_delivery_verifications` still holds **zero rows, ever**.
+
+**Rule 4 now blocks on one inference judgment, not on plumbing.** That is a
+different problem from every prior blocker on this issue, and it is the first
+time the question is "why did the judge decline" rather than "did the mechanism
+run".
+
+Two evidence gaps this run names, both worth closing before another run:
+
+1. **The child decision records `candidate_count` but not which candidates.**
+   Whether `code-reviewer` was in the 65 cannot be read from the receipt, only
+   inferred from an offline roster computation. That is exactly the gap
+   `ranked_agent_ids` closed for the parent, and it cost two days there.
+2. **`source` still reads `native_child_inference_failure` on an honest
+   abstention.** The status field was fixed today; this sibling label was not,
+   and it re-creates the misreading the reason code exists to prevent.
+
+Not a child problem, and tracked separately: the parent's finalization recorded
+`response_invalid` with `missing: ["actual_model_selected", "recruited_via"]`.
+The header shrank from five missing fields to two, and those two are parent
+prose rather than staffing.
+
 ## Acceptance
 
 - [x] Every delivered specialist slug and version is an exact member of one

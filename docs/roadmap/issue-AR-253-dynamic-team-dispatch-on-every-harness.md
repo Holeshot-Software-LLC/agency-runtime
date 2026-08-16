@@ -554,6 +554,35 @@ failure site. That is the next instrument, and unlike the axis it needs a
 projection change, so it is written down here rather than added in haste — the
 `ranked_agent_ids` depth break came from exactly that kind of hurry.
 
+## The staffing failure is intermittent, and the next run staffed (2026-08-16)
+
+The `33ac14fcdac4` canary **succeeded at parent staffing**. Routing `6f383f65`
+was `accepted` from `computed`, selecting `code-reviewer` and
+`senior-secops-engineer` out of 284 candidates, with both cards written to
+`specialists_loaded` and the receipt correlated. Zero preflight failures.
+
+The only code difference from the run that failed twenty-five minutes earlier is
+`_failure_axis`, which computes an evidence string and cannot affect selection.
+So **`staff_without_safe_team` is intermittent, not a deterministic mechanism**,
+and every diagnosis on this issue that treated it as one — including the three
+already retracted — was reading run-to-run variance as structure.
+
+The two runs are not repeated trials of the same input. The planner synthesises
+the units, and it produced `unit-python-text-normalization-strip-review` on the
+failing run and a single unit on the succeeding one. Unit synthesis varies, the
+requirement set varies with it, and the team search varies with that. That is
+the most economical account of every observation so far: absent axis, absent
+ineligibility, `code-reviewer` ranked first, and an empty team.
+
+This does not retire the instrument. Intermittent means the budget branches in
+"The three branches that remain" are still the place to look, and it raises the
+bar for reading any single run: **a green staffing run no longer proves the
+failure is fixed, and a red one no longer proves a mechanism.** Failure rate
+across repeated runs is now the measurement, not the content of one receipt.
+
+Recruiter latency on the accepted row was **124,165 ms**, consistent with the
+50-85 s and 124.0 s already recorded here. The overrun is unchanged.
+
 Two further silent-empty paths in the same function deserve receipts:
 `required_ids` not being a subset of the ranked ids, and `len(required_ids)`
 exceeding `max_selected_per_unit`.
