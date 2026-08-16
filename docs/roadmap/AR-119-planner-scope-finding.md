@@ -180,6 +180,37 @@ diagnostic power is lost. Whether the conjunctive requirement set should exist
 at all remains open, and should be decided on the next live failure that names
 a specific axis rather than on argument.
 
+## Retracted 2026-08-16: the ranked set covers, and the team is still empty
+
+The `76dd96b2cc50` canary carried that scoping and returned the axis **absent
+again**, on both attempts, with `code-reviewer` ranked first and no
+`top_ranked_ineligibility`. Since `typed_staffing_coverage` and
+`typed_staffing_requirements` are the verifier's own `_coverage` and
+`_requirements`, an absent axis means the ranked set genuinely covers every
+requirement. **So the conjunctive requirement set is not what emptied the team,
+and the section above is retracted.**
+
+That is the third hypothesis on this failure refuted by its own first
+measurement — ranking order, then eligibility, now coverage. The pattern is
+consistent and worth naming: each field was built to answer the question the
+previous refutation raised, and each came back absent because it was scored over
+a wider set than the one the verifier searches. The axis has now been narrowed
+again, to the ranked candidates that survive eligibility, which is exactly the
+set `_minimum_team_with_required` receives.
+
+What this does to the directions is smaller than it looks. **A** and **B** both
+target the planner's synthesised constraints, and no evidence yet shows those
+constraints rejecting anything: not the unit's tools or platforms (eligibility
+is clean), not its requirement axes (coverage is clean). The live blocker is
+looking less like planner scope and more like the **team-search budget** —
+`max_selected_per_unit` and the `required` classification interacting inside
+`_minimum_team_with_required`. If that holds, it is a fourth direction with a
+much smaller blast radius than either A or B, and neither of those needs
+deciding to unblock Rule 4.
+
+Nothing here is settled. See the AR-253 section "The three branches that
+remain" for the three integers that would settle it.
+
 ## What would settle it
 
 One canary run carrying `top_ranked_ineligibility`. If it names a unit-derived

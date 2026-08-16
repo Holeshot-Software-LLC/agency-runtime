@@ -437,6 +437,123 @@ whole 283-contract roster* could cover it and therefore reports nothing. The
 axis field answers a different question than the failure asks, which is why it
 has been empty on every live failure.
 
+## The Claude canary reported a deadline as a host refusal (2026-08-16)
+
+The first run against `76dd96b2cc50` came back `status: "failed"`,
+`exit_code: 124`, `timed_out: false`, with five unmet prerequisites headed by
+"host invocation did not complete successfully". Read literally that says the
+host ran and refused, which is a recruiter question. It is not what happened.
+
+`run_bounded_text_capture` sets `returncode = 124, timed_out = True` on
+`subprocess.TimeoutExpired`. `codex_canary_record` carries both through —
+`status: "timed_out"`, `failure_reason: "codex_exec_timed_out"`.
+`claude_canary_record` read neither: it derived status solely from
+`_process_succeeded`, so a Claude timeout published a **false** `timed_out`
+beside the timeout's own exit code. The two backends disagreed about how to
+report the same event.
+
+The store settles what actually happened. Run `5667202f` opened at 18:26:28 and
+the report sampled at 18:28:25 — 117 seconds, against the CLI's undeclared
+120-second default. Zero routing decisions, zero preflight failures, zero
+receipts: Agency's SessionStart hook opened the run and the deadline arrived
+before the parent turn reached staffing.
+
+Fixed by giving `claude_canary_record` the Codex idiom, with
+`claude_exec_timed_out` added to `CANARY_INVOCATION_FAILURE_REASONS` and a
+regression test asserting the three fields together. This is the same shape as
+the `ranked_agent_ids` depth break: an evidence field that reads as a definite
+negative when the real answer is "not measured". **A canary that cannot
+distinguish its own deadline from a host refusal cannot be trusted to report a
+staffing failure**, and this one nearly sent a fourth diagnosis after the wrong
+cause.
+
+Open, and deliberately not guessed at: whether 120 seconds was ever sufficient.
+The `530f6df6c4b6` and `470ebf3b421a` runs completed inside it, so either the
+cold isolated profile got slower or something in the parent turn now hangs. The
+re-run carries an explicit `--timeout` and answers that from evidence.
+
+**Answered by the re-run.** At `--timeout 420` the same canary completed
+cleanly: `exit_code 0`, `status: completed`, `timed_out: false`, three unmet
+prerequisites rather than five. The default was simply too short for a cold
+isolated profile on this machine, and nothing hangs. Use an explicit
+`--timeout` for Claude isolated-profile runs.
+
+## The axis was scoped to the ranked set and is still absent (2026-08-16)
+
+The `76dd96b2cc50` canary is the first run carrying the ranked-set scoping, and
+it **refutes the conclusion that shipped with it**. Both recruiter attempts on
+`unit-python-text-normalization-strip-review` were rejected
+`provider_response_contract_invalid` / `staff_without_safe_team`, both ranked
+`code-reviewer` first, and both carry **no `requirement_axis` and no
+`top_ranked_ineligibility`**:
+
+- attempt 1: `code-reviewer`, `application-security-engineer`,
+  `senior-secops-engineer`, `ai-generated-code-security-auditor`
+- attempt 2: the same four plus `test-results-analyzer`,
+  `codebase-onboarding-engineer`
+
+The scoping is confirmed present in the running projection (`scope = [item for
+item in contracts if item.agent_id in ranked_ids]` at
+`site-packages/agency_runtime/core/workforce/inference.py:1409`), so this is not
+a stale-launcher artifact. And `typed_staffing_coverage` /
+`typed_staffing_requirements` are literally `_coverage` / `_requirements` — the
+axis field and the verifier compute the same union over the same fields. So
+**the ranked set does cover every requirement, and the team search still
+returned nothing.** The prior section's conclusion — that the conjunctive
+requirement set applied to the ranked candidates is what empties the team — does
+not survive its own first measurement and is retracted.
+
+### What the search actually scores
+
+`_minimum_team_with_required` is called with the **executable** ranked ids:
+
+~~~python
+executable = [
+    (agent_id, score) for agent_id, score in semantic
+    if agent_id not in forbidden_ids and not _eligibility(unit, roster[agent_id], context)
+]
+selected = _minimum_team_with_required(
+    unit, tuple(a for a, _s in executable), roster, required_ids,
+    active_budget.max_selected_per_unit,
+)
+~~~
+
+The axis was scored over **all** ranked contracts. An axis covered only by an
+ineligible ranked candidate therefore read as covered while being unavailable to
+any team. Fixed: `_failure_axis` filters the ranked scope through
+`typed_staffing_ineligibility` before scoring, and widens back to the full
+ranked set when nothing survives, so an entirely unrunnable ranking still
+reports through `top_ranked_ineligibility` instead of inventing an axis.
+
+The dedicated regression test owed from the previous change now exists, and it
+records the non-obvious part: `_eligibility` already gates domain, capability
+and authority, so a candidate missing one of those is never executable and the
+two scopes agree. **Artifact and lifecycle are coverage-only** — they are the
+axes where the scopes can disagree, and where the field was silently wrong.
+
+### The three branches that remain, and the numbers that separate them
+
+If the executable-scoped axis also comes back absent, the executable ranked set
+covers everything and `()` came from one of three remaining paths in
+`_minimum_team_with_required`:
+
+1. `len(required_ids) > max_selected_per_unit` (4 here, unset in `agency.yaml`).
+   Attempt 2 ranked six candidates, so this is reachable; attempt 1 ranked four,
+   so it is not, and one mechanism must explain both.
+2. Budget starvation — `required_ids` is smaller than the cap but leaves too few
+   slots for the complements that would finish coverage, so the combination loop
+   `range(1, min(maximum - len(ordered_required), len(remaining)) + 1)` is empty
+   or too short.
+3. `required_ids` not a subset of the executable ids. `_semantic_classes`
+   already demotes ineligible model-required picks into `forbidden`, so this
+   should be unreachable — which makes it worth proving rather than assuming.
+
+Three integers separate all three: `len(required)`, `len(ranked_executable)` and
+`max_selected_per_unit`. `UnitRecruitment` already carries the first two at the
+failure site. That is the next instrument, and unlike the axis it needs a
+projection change, so it is written down here rather than added in haste — the
+`ranked_agent_ids` depth break came from exactly that kind of hurry.
+
 Two further silent-empty paths in the same function deserve receipts:
 `required_ids` not being a subset of the ranked ids, and `len(required_ids)`
 exceeding `max_selected_per_unit`.
