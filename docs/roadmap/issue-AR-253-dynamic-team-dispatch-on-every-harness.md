@@ -3,7 +3,7 @@ title: "AR-253: Prove staffing latency, rate, and cross-host parity"
 status: open
 category: roadmap
 created: 2026-08-05
-updated: 2026-08-15
+updated: 2026-08-16
 tags: [workforce, staffing, latency, harnesses, eval, host-evidence]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -359,3 +359,36 @@ refutes this too. The remaining fix, once confirmed, is a distinct reason code
 for "ranked only ineligible candidates" and a repair that names the eligible
 subset rather than restating an instruction the recruiter already believes it
 followed.
+
+## The recruiter ranks the right specialist first and still declines (2026-08-16)
+
+`ranked_agent_ids` fired live for the first time in the `530f6df6c4b6` canary,
+and it settles the question the offline simulation could not. Both recruiter
+attempts on `unit-review-textorm-strip-regression` were rejected
+`provider_response_contract_invalid` carrying `staff_without_safe_team`, and both
+ranked the sufficient specialist **first**:
+
+- attempt 1: `code-reviewer`, `application-security-engineer`,
+  `senior-secops-engineer`, `codebase-onboarding-engineer`
+- attempt 2: `code-reviewer`, `application-security-engineer`,
+  `senior-secops-engineer`, `ai-generated-code-security-auditor`,
+  `codebase-onboarding-engineer`
+
+`requirement_axis` is absent from both, so the roster covers every requirement
+and this is not a coverage gap. `code-reviewer` is eligible and covers the unit
+alone. **So the recruiter is not ranking only ineligible candidates — it ranks
+the correct candidate at position one and then does not select it.** The fault
+is between ranking and selection, in what the recruiter puts in the team, not in
+what it was shown or how the plan was compiled. Every earlier diagnosis on this
+issue that blamed the ranking order is superseded by this evidence.
+
+The same receipt is the first host proof that the flat `ranked_agent_ids`
+projection stores and reads correctly at the reader's `maximum_depth=4` bound;
+the nested form it replaced had blocked the preceding canary attempt outright.
+
+Not advanced by this run: the canary completed (`exit 0`, no timeout) but failed
+with three unmet prerequisites — isolated-profile plugin registration and
+enablement unproven, final response header unproven, and `delivery_marker_absent`.
+The parent turn died at routing, so the AR-255 child-staffing repairs shipped the
+same day — the capability receipt and the abstention reason — were never reached
+and remain unexercised on a host.
