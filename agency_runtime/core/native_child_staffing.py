@@ -327,6 +327,26 @@ def _failure_source(status: str) -> str:
     return _ABSTAINED_SOURCE if status == "inference_abstained" else _FAILURE_SOURCE
 
 
+def _task_shape(task: object) -> dict[str, Any]:
+    """Project the child assignment's size, never its content.
+
+    `offered_agent_ids` answered "was anyone capable in front of the judge" --
+    yes, `code-reviewer` was, and it declined anyway. The question that replaced
+    it is what the child was *asked*, and the receipt is content-free by policy,
+    so the strongest honest answer available without inference or a content
+    capture is how much assignment there was.
+
+    This is deliberately a weak signal. It separates a one-line errand, for which
+    `native_child_no_specialist_needed` is the correct answer, from a substantial
+    brief, for which it is not. It cannot distinguish a code review from a
+    summary of the same length, and nothing content-free can.
+    """
+
+    if not isinstance(task, str) or not task:
+        return {}
+    return {"task_chars": len(task), "task_lines": task.count("\n") + 1}
+
+
 def _offered_projection(offered_ids: Sequence[str] | None) -> dict[str, Any]:
     """Project the eligible universe the judge was shown, flat and bounded."""
 
@@ -365,6 +385,7 @@ def _routing_projection(
     reason_code: str = "",
     native_child_delivery: Mapping[str, Any] | None = None,
     offered_ids: Sequence[str] | None = None,
+    task: object = None,
 ) -> dict[str, Any]:
     raw = result or {}
     inferred_success = status == "applied"
@@ -403,6 +424,7 @@ def _routing_projection(
         "query_hash": task_sha256,
         "context_fingerprint": context_fingerprint,
         **_offered_projection(offered_ids),
+        **_task_shape(task),
     }
     if native_child_delivery is not None:
         decision["native_child_delivery"] = dict(native_child_delivery)
@@ -575,6 +597,7 @@ def record_native_child_staffing_failure(
         status=status,
         source=_failure_source(status),
         reason_code=reason_code,
+        task=task,
     )
     return _record_decision(
         store,
@@ -614,6 +637,7 @@ def _unstaffed(
             source=_failure_source(status),
             reason_code=reason_code,
             offered_ids=offered_ids,
+            task=task,
         )
         diagnostic_id = _record_decision(
             store,

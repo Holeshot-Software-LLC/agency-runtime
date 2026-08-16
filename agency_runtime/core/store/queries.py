@@ -115,6 +115,10 @@ _ROUTING_DECISION_FIELDS = frozenset(
         # anyone who could do the work was in front of it.
         "offered_agent_ids",
         "offered_agent_digest",
+        # How much assignment the child was given, never what it said. Separates
+        # a one-line errand, where declining is correct, from a real brief.
+        "task_chars",
+        "task_lines",
         "top_score",
         "cache_hit",
         "session_reused",
@@ -168,7 +172,7 @@ _ROUTING_BOOLEAN_FIELDS = frozenset(
     }
 )
 _ROUTING_FLOAT_FIELDS = frozenset({"confidence", "top_score"})
-_ROUTING_COUNT_FIELDS = frozenset({"latency_ms", "candidate_count"})
+_ROUTING_COUNT_FIELDS = frozenset({"latency_ms", "candidate_count", "task_chars", "task_lines"})
 _ROUTING_DIGEST_FIELDS = frozenset(
     {
         "source_message_hash",

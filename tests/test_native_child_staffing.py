@@ -616,6 +616,41 @@ def test_a_declining_judge_records_which_specialists_it_was_shown(
     assert isinstance(projected["offered_agent_ids"], str)
 
 
+def test_a_decline_records_how_much_assignment_the_child_was_given(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Size, never content.
+
+    `offered_agent_ids` answered "was anyone capable in front of the judge" --
+    yes, and it declined anyway. What the child was *asked* is the question that
+    replaced it, and the receipt is content-free by policy, so size is the
+    strongest honest answer without inference or a content capture.
+    """
+
+    from agency_runtime.core.native_child_staffing import _task_shape
+    from agency_runtime.core.store.queries import project_routing_decision
+
+    prompts = {"alpha-reviewer": "Exact alpha-reviewer prompt."}
+    store = _Store([_agent("alpha-reviewer", prompts["alpha-reviewer"])], prompts)
+
+    decision = _invoke(monkeypatch, store, _judge_result([])).routing_decision
+    task = "Review the exact authentication boundary."
+    assert decision["task_chars"] == len(task)
+    assert decision["task_lines"] == 1
+    assert project_routing_decision(decision)[0]["task_chars"] == len(task)
+
+    # A count, not a transcript: no substring of the assignment survives.
+    assert _task_shape("first\nsecond\nthird") == {"task_chars": 18, "task_lines": 3}
+    assert all(
+        word not in json.dumps(_task_shape("SECRET child assignment"))
+        for word in ("SECRET", "child", "assignment")
+    )
+    # Absent rather than zero when there is no assignment to describe, so a
+    # missing task cannot read as an empty one.
+    assert _task_shape("") == {}
+    assert _task_shape(None) == {}
+
+
 def test_the_offered_universe_fails_closed_rather_than_crossing_as_opaque_text() -> None:
     from agency_runtime.core.native_child_staffing import (
         MAX_RECORDED_OFFERED_AGENT_CHARS,
