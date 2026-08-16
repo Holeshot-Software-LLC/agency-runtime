@@ -908,6 +908,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e2c4e32f` | 2026-08-15 | docs(ar253): retract the plan-defect diagnosis the canary refuted | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | null |
 | `bfed8d45` | 2026-08-16 | docs(ar255): confirm child abstention is what fails as inference_invalid | null | null |
 | `15ca819c` | 2026-08-16 | fix(native-child): record a solicited abstention as abstention | null | null |
+| `7541a093` | 2026-08-16 | fix(native-child): prove child capability instead of leaving it unknown | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
