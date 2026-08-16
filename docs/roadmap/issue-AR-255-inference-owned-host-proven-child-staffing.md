@@ -487,6 +487,51 @@ The provider failure in run 3 is also correct behaviour worth noting:
 `native_child_inference_unavailable` carries **no** `offered_agent_digest`,
 because it fails before a catalog exists. Absent, not an empty-set digest.
 
+### The child is not evaluated the way the parent is (2026-08-16)
+
+Owner observation, and the evidence supports it: parent and child reach their
+staffing decisions through **different machinery**, and only the parent's
+machinery staffs anyone.
+
+| | parent | child |
+|---|---|---|
+| entry | `workforce/inference.py` | `selector/judge.py::query_judge` |
+| intent | planner emits typed `WorkUnit`s | none — raw task text |
+| requirements | six conjunctive axes per unit | none |
+| candidates | typed shortlist annotated with `uncovered_requirements` and `execution_eligible` | complete universe, unannotated |
+| decision | rank + classify required/acceptable/forbidden, then `_minimum_team_with_required` | one `selected_ids` list |
+| on rejection | **funded repair loop**, retried with a repair message | none — one call, then abstain |
+| critic | `workforce.recruiter.critic` route configured | none |
+| observed latency | 119,128 – 124,165 ms | 5,381 – 8,071 ms |
+
+The latency gap is the asymmetry made visible: two minutes of plan-plus-recruit-
+plus-verify-plus-repair against a single five-second call.
+
+One thing to be accurate about, having checked rather than assumed: the child's
+candidate cards are **not** impoverished. `_CANDIDATE_TEXT_LIMITS` and
+`_CANDIDATE_LIST_LIMITS` give each card capabilities (6 × 48), `preferred_when`
+and `avoid_when` (3 × 72 each), task types, tool affinity, conflicts, requires
+and evidence requirements. The child's disadvantage is not card content.
+
+What the child lacks is everything *around* the call:
+
+1. **No typed requirement to satisfy.** The parent's judge is asked to cover
+   named axes; the child's is asked an open question about a block of text.
+2. **A minimalism instruction beside a cheap escape.** The prompt says "Choose
+   the smallest sufficient compatible set" and "Return an empty `selected_ids`
+   list when none fits", with nothing pulling the other way. Zero is the
+   smallest set, and abstaining is always defensible.
+3. **No second chance.** A rejected recruiter proposal is repaired and retried;
+   an abstaining child judge is final. The parent's own live runs needed two
+   attempts, and the second is the one that succeeded.
+
+That is a sufficient account of a 10-of-10 decline without needing the judge to
+be wrong about any individual task. **The next change is architectural, not
+another receipt field**: give the child the parent's pattern — a typed
+characterisation to satisfy, and at minimum one funded repair before an
+abstention becomes final. Whether the child gets a full planner or a smaller
+typed intent step is the open design question.
+
 **What would actually settle it** is already built and already owner-gated:
 `observability.capture_content` requires a typed `ENABLE CONTENT CAPTURE`
 confirmation in the dashboard and is currently `true` in `agency.yaml`. Wiring
