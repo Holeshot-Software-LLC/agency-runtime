@@ -123,13 +123,13 @@ proven; what is left is the child abstention that keeps Rule 4 at zero.
    passed TUI trust 2026-08-15 but `doctor` still read
    `adapter_codex_hook_trust: unverified`; check which terminal ran it before
    assuming codex is blocked.
-3. **The child judge is never shown anyone who can do the work.** The hook calls
-   `staff_native_child` without a capability receipt, so `available_tools=None`
-   and `filter_eligible_catalog` rejects **250 of 283** for
-   `tool_capabilities_unproven:unknown` — `code-reviewer` included. The 33 left
-   are historians and narratologists; the model correctly returns an empty list.
-   That now records as `native_child_no_specialist_needed`, not invalid. Rule 4
-   stays zero until the child path passes the receipt the parent path builds.
+3. **The child judge was never shown anyone who could do the work; now it is.**
+   Unproven capability had rejected **250 of 283** as
+   `tool_capabilities_unproven:unknown`, `code-reviewer` included, leaving 33
+   historians and narratologists, so the model correctly returned an empty list.
+   `staff_native_child` now derives the parent adapter's capability receipt when
+   none is supplied: **33 to 64 of 283**, `code-reviewer` eligible, every
+   remaining rejection genuine. Empty now records as abstention. AR-255 proves it.
 4. **Every zero-marker result on 2026-08-14 measured the schema break** — both
    canary runs, all nine host probes; both earlier readings are retracted in
    the matrix. Of 63 child artifacts under `~/.claude/projects`, 9 are marked —

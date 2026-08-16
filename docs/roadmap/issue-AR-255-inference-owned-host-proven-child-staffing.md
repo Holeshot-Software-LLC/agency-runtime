@@ -243,6 +243,32 @@ ADR-0159 governs this authorization boundary and its fail-open behavior.
   and given its own test. **This changes the record, not the outcome** — the
   child still receives no card, so Rule 4 stays at zero until the catalog the
   child judge sees contains someone who can do the work.
+- **Shipped: the child proves its capability instead of leaving it unknown.**
+  When a caller supplies neither `available_tools` nor `capability_status`,
+  `staff_native_child` now builds the same `native_adapter_capability_receipt`
+  the parent adapter builds, and threads the result through both
+  `filter_eligible_catalog` calls and the context fingerprint so the post-decision
+  re-check cannot drift. The vision decides this: deterministic code may "enforce
+  hard eligibility" but "may not make or erase the staffing decision", and
+  **unproven is not hard-ineligible** — it removed 250 cards before inference ran,
+  which is the "deterministic layer that ... changes what gets staffed ... even
+  when the inference call still happens" the differentiator section forbids. It
+  also made `candidate_scope="complete"` false in the runtime's own vocabulary.
+  Measured on the live roster: the child universe goes **33 to 64 of 283**,
+  `code-reviewer` becomes eligible, and every remaining rejection is genuine hard
+  eligibility — `missing_capabilities:browser-interaction,web-research`,
+  `unsupported_tool_platform:windows`, and
+  `missing_capabilities:sandbox-environment,security-analysis`, which is why
+  `application-security-engineer` stays out on this box.
+- **The fence is unchanged for a caller that has proven the opposite.**
+  Derivation runs only when nothing was supplied; an explicit
+  `capability_status="unknown"` still hard-filters every tool-declaring card, and
+  `restricted=True` yields an unproven receipt with no execution host, which the
+  resolver refuses. A new `capabilities_restricted` parameter carries that
+  through, defaulting closed to the adapter's own default. Both directions have
+  tests. 367 tests pass across staffing, duplicate-launch, preflight bounds,
+  mandatory inference, canary contract, store coverage, decision conformance,
+  native-child adapter, Claude native-child hooks, adapter parity and host hooks.
 - **The canary parent transcripts are gone.** Sessions `a7dcbfd4` and `42227b09`
   ran inside the ADR-0158 disposable profile and are absent from
   `~/.claude/projects`; a home-wide search found nothing. The exact child task

@@ -580,6 +580,68 @@ def test_solicited_empty_selection_is_recorded_as_abstention_not_invalid_inferen
     assert decision["candidate_count"] == 2
 
 
+def _tool_agent(slug: str, prompt: str, *, tools: tuple[str, ...]) -> dict[str, Any]:
+    agent = _agent(slug, prompt)
+    agent["required_tools"] = list(tools)
+    return agent
+
+
+def test_unsupplied_child_capability_is_proven_so_tool_cards_reach_inference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A caller that supplies no tool set must not silently shrink the judge's
+    universe. Unproven capability is not a hard eligibility ground: it removes
+    every tool-declaring card before inference runs, which erases the staffing
+    decision instead of enforcing it. Prove this host the way the parent adapter
+    does, so the complete universe the judge is promised is the one it gets."""
+
+    prompt = "Exact tool-reviewer prompt."
+    store = _Store(
+        [_tool_agent("tool-reviewer", prompt, tools=("repository-read",))],
+        {
+            "tool-reviewer": prompt,
+        },
+    )
+
+    result = _invoke(
+        monkeypatch,
+        store,
+        _judge_result(["tool-reviewer"]),
+        available_tools=None,
+        capability_status="",
+    )
+
+    assert result.staffed is True
+    assert result.selected_ids == ("tool-reviewer",)
+
+
+def test_explicitly_unproven_child_capability_still_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Proving capability when nothing was supplied must not weaken the fence for
+    a caller that has proven the opposite. An explicit unknown status keeps every
+    tool-declaring card hard-ineligible, leaving nothing for the judge to see."""
+
+    prompt = "Exact tool-reviewer prompt."
+    store = _Store(
+        [_tool_agent("tool-reviewer", prompt, tools=("repository-read",))],
+        {
+            "tool-reviewer": prompt,
+        },
+    )
+
+    result = _invoke(
+        monkeypatch,
+        store,
+        _judge_result(["tool-reviewer"]),
+        available_tools=None,
+        capability_status="unknown",
+    )
+
+    assert result.staffed is False
+    assert result.reason_code == "native_child_eligible_catalog_empty"
+
+
 def test_compatibility_may_reject_but_never_repair_the_inference_team(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

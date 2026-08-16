@@ -22,7 +22,10 @@ from typing import Any, Final
 from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.correlation import validate_correlation_id
-from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
+from agency_runtime.core.host_capabilities import (
+    EXECUTION_HOSTS,
+    native_adapter_capability_receipt,
+)
 from agency_runtime.core.native_child_decision import (
     MAX_NATIVE_CHILD_DELIVERY_TTL_SECONDS,
     NATIVE_CHILD_STAFFING_DECISION_SCHEMA,
@@ -701,6 +704,7 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
     platform: str | None = None,
     available_tools: Container[str] | None = None,
     capability_status: str = "",
+    capabilities_restricted: bool = False,
     maximum_delivery_bytes: int = MAX_NATIVE_CHILD_STAFFING_DELIVERY_BYTES,
     ttl_seconds: int = NATIVE_CHILD_STAFFING_TTL_SECONDS,
     delivery_validator: Callable[[str], bool] | None = None,
@@ -813,21 +817,44 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
         )
 
     normalized_platform = str(platform or _default_platform()).strip().casefold()
+    resolved_tools = available_tools
+    resolved_capability_status = capability_status
+    if available_tools is None and not str(capability_status or "").strip():
+        # Rule 4 needs the child judge to see the same complete universe the
+        # parent recruiter sees. Leaving capability unproven is not a hard
+        # eligibility ground: it hard-filters every tool-declaring card before
+        # inference runs, which erases the staffing decision rather than
+        # enforcing it. Prove this host's capability the way the parent adapter
+        # already does, and keep failing closed when it cannot be proven.
+        try:
+            capability = native_adapter_capability_receipt(
+                normalized_host,
+                platform=normalized_platform,
+                session_id=session_id,
+                trace_id=trace_id,
+                restricted=capabilities_restricted,
+            )
+        except Exception:
+            capability = None
+        if capability is not None and capability.execution_host == normalized_host:
+            normalized_platform = capability.platform
+            resolved_tools = capability.capabilities
+            resolved_capability_status = capability.status
     try:
         snapshot = capture_routing_snapshot(store, config_authority)
         eligibility = filter_eligible_catalog(
             snapshot.catalog,
             host=normalized_host,
             platform=normalized_platform,
-            available_tools=available_tools,
-            capability_status=capability_status,
+            available_tools=resolved_tools,
+            capability_status=resolved_capability_status,
         )
         eligible_catalog = list(eligibility.eligible)
         context_fingerprint = _context_fingerprint(
             host=normalized_host,
             platform=normalized_platform,
-            available_tools=available_tools,
-            capability_status=capability_status,
+            available_tools=resolved_tools,
+            capability_status=resolved_capability_status,
             disabled_agents=frozenset(snapshot.config.agents.disabled),
             roster_generation=snapshot.roster_generation,
             catalog=eligible_catalog,
@@ -910,8 +937,8 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
         expected_config=snapshot.config,
         host=normalized_host,
         platform=normalized_platform,
-        available_tools=available_tools,
-        capability_status=capability_status,
+        available_tools=resolved_tools,
+        capability_status=resolved_capability_status,
         context_fingerprint=context_fingerprint,
         install=install,
         install_identity_reader=install_identity_reader,
@@ -1240,8 +1267,8 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
                 expected_config=snapshot.config,
                 host=normalized_host,
                 platform=normalized_platform,
-                available_tools=available_tools,
-                capability_status=capability_status,
+                available_tools=resolved_tools,
+                capability_status=resolved_capability_status,
                 context_fingerprint=context_fingerprint,
                 install=install,
                 install_identity_reader=install_identity_reader,
