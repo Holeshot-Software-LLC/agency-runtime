@@ -1355,6 +1355,38 @@ def _uncoverable_requirement_axis(
     return ""
 
 
+def _failure_axis(
+    unit: WorkUnit,
+    ranked: Sequence[str],
+    contracts: Sequence[WorkforceContract],
+    context: Any,
+) -> str:
+    """Return the axis the team search could not cover, over the set it searched.
+
+    `_minimum_team_with_required` searches the ranked candidates that survive
+    `_eligibility`, so an axis covered only by an ineligible ranked candidate is
+    not available to any team. Scoring every ranked contract therefore reports
+    "covered" for a set the verifier could not use -- which is what the
+    `76dd96b2cc50` canary produced: an absent axis on a failure whose ranked set
+    demonstrably could not be assembled.
+
+    Falling back widens rather than invents: an empty scope would score nothing
+    and report the first requirement as uncoverable, which is a false positive.
+    """
+
+    ranked_ids = set(ranked)
+    scope = [item for item in contracts if item.agent_id in ranked_ids] or list(contracts)
+    if context is not None:
+        try:
+            executable = [
+                item for item in scope if not typed_staffing_ineligibility(unit, item, context)
+            ]
+        except Exception:
+            executable = []
+        scope = executable or scope
+    return _uncoverable_requirement_axis(unit, scope)
+
+
 def _top_ranked_ineligibility(
     unit: WorkUnit,
     ranked: Sequence[str],
@@ -1402,12 +1434,7 @@ def _validate_nomination_decisions(
                     :MAX_RECORDED_RANKED_CANDIDATES
                 ]
             )
-            # Scope the axis to what was ranked. The empty team came from the
-            # ranked set failing to cover conjunctively, so the roster-wide
-            # answer names nothing a repair could act on.
-            ranked_ids = set(ranked)
-            scope = [item for item in contracts if item.agent_id in ranked_ids] or list(contracts)
-            axis = _uncoverable_requirement_axis(unit, scope)
+            axis = _failure_axis(unit, ranked, contracts, context)
             failures.append(
                 _NominationFailure(
                     unit.unit_id,

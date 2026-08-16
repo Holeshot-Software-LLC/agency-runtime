@@ -1024,6 +1024,32 @@ def test_a_staffing_failure_names_the_axis_only_when_the_roster_cannot_cover_it(
         == "capability"
     )
 
+    # The team search runs over the ranked candidates that survive eligibility,
+    # so an axis covered only by an ineligible one is not available to any team.
+    # Scoring the whole ranked set reported "covered" for a set the verifier
+    # could not assemble, which is the absent axis the 76dd96b2cc50 canary
+    # produced on a failure that was demonstrably a coverage failure.
+    from agency_runtime.core.workforce.inference import _failure_axis
+
+    # Artifact kind is deliberate: `_eligibility` gates domain, capability and
+    # authority, so a candidate that misses one of those is never executable and
+    # the two scopes agree. Artifact and lifecycle are coverage-only, so they are
+    # where the scopes can disagree -- and where the field was silently wrong.
+    covering = replace(analyst, agent_id="covering-but-unrunnable", platforms=("linux",))
+    partial = replace(analyst, agent_id="runnable-but-partial", artifact_kinds=("review-report",))
+    ranked = ("covering-but-unrunnable", "runnable-but-partial")
+    contracts = (covering, partial)
+    context = _context()
+
+    assert _uncoverable_requirement_axis(unit, contracts) == ""
+    assert _failure_axis(unit, ranked, contracts, context) == "artifact"
+    # Without a context there is nothing to filter on, so the answer widens back
+    # to the ranked set rather than inventing an uncoverable axis.
+    assert _failure_axis(unit, ranked, contracts, None) == ""
+    # An entirely unrunnable ranking widens too: `top_ranked_ineligibility` is
+    # the field that names that fault, and a false axis would compete with it.
+    assert _failure_axis(unit, ("covering-but-unrunnable",), (covering,), context) == ""
+
 
 def test_a_staffing_failure_records_who_the_recruiter_actually_ranked() -> None:
     # The live canary fails with every axis coverable, ten eligible candidates

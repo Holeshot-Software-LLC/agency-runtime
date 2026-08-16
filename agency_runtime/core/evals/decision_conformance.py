@@ -198,12 +198,7 @@ def _typed_shortlists(""",
                     :MAX_RECORDED_RANKED_CANDIDATES
                 ]
             )
-            # Scope the axis to what was ranked. The empty team came from the
-            # ranked set failing to cover conjunctively, so the roster-wide
-            # answer names nothing a repair could act on.
-            ranked_ids = set(ranked)
-            scope = [item for item in contracts if item.agent_id in ranked_ids] or list(contracts)
-            axis = _uncoverable_requirement_axis(unit, scope)
+            axis = _failure_axis(unit, ranked, contracts, context)
             failures.append(
                 _NominationFailure(
                     unit.unit_id,
