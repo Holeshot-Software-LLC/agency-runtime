@@ -912,6 +912,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1e884497` | 2026-08-16 | fix(receipts): keep ranked agent ids flat so the evidence store stays readable | null | null |
 | `0754c2ae` | 2026-08-16 | docs(ar253): the recruiter ranks the right specialist first and still declines | null | null |
 | `c701b6fe` | 2026-08-16 | docs(ar253): the canary's three prerequisites are one recruiter fault | null | null |
+| `7a399415` | 2026-08-16 | feat(evidence): name why the top-ranked candidate was not executable | null | null |
+| `136cddfe` | 2026-08-16 | docs(ar119): separate the planner's intent reading from its constraint synthesis | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
