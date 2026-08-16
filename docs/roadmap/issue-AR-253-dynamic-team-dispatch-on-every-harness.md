@@ -416,3 +416,39 @@ no Agency header is emitted, and no staffing decision means no cards and
 `delivery_marker_absent`. **The ranking-to-selection gap is therefore on the Rule 4
 critical path directly** — it is not a parallel AR-253 latency concern, it is the
 single thing standing between this machine and its first Installed/Live cell.
+
+### The ranked set does not cover the unit; the roster does (2026-08-16)
+
+The `470ebf3b421a` canary answered the question `top_ranked_ineligibility` was
+built for, by being **absent**. Both rejected recruiter attempts on
+`unit-python-strip-regression-risk-analysis` ranked `code-reviewer` first and
+carried no ineligibility reason, so the top-ranked candidate was executable.
+Eligibility is not what empties the team.
+
+`selected` is not the model's answer. `_minimum_team_with_required` computes it
+by searching combinations of the ranked, executable candidates for one whose
+union of `_coverage(unit, contract)` contains every entry of
+`_requirements(unit)`, and returns `()` when no combination within
+`max_selected_per_unit` does. Coverage is conjunctive across six axes.
+
+So `staff_without_safe_team` means **the ranked candidates jointly miss at least
+one required axis**, while `_uncoverable_requirement_axis` asks whether *the
+whole 283-contract roster* could cover it and therefore reports nothing. The
+axis field answers a different question than the failure asks, which is why it
+has been empty on every live failure.
+
+Two further silent-empty paths in the same function deserve receipts:
+`required_ids` not being a subset of the ranked ids, and `len(required_ids)`
+exceeding `max_selected_per_unit`.
+
+**The bounded fix is to compute the uncoverable axis over the ranked set rather
+than the roster.** That names the axis the ranking actually missed, which is
+also the one thing a bounded repair could act on — it can tell the recruiter to
+add a candidate covering that axis instead of re-ranking blind. It is an
+evidence and repair change, not an architecture change, and it targets the live
+Rule 4 blocker directly.
+
+This also re-aims the planner-scope finding. The binding constraint is the unit's
+conjunctive six-axis requirement set — still a planner invention — but it binds
+through coverage, not through eligibility, so direction B must make *coverage*
+requirements advisory to have any effect.
