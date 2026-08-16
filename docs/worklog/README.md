@@ -911,6 +911,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7541a093` | 2026-08-16 | fix(native-child): prove child capability instead of leaving it unknown | null | null |
 | `1e884497` | 2026-08-16 | fix(receipts): keep ranked agent ids flat so the evidence store stays readable | null | null |
 | `0754c2ae` | 2026-08-16 | docs(ar253): the recruiter ranks the right specialist first and still declines | null | null |
+| `c701b6fe` | 2026-08-16 | docs(ar253): the canary's three prerequisites are one recruiter fault | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
