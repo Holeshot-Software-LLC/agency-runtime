@@ -335,6 +335,44 @@ Not a child problem, and tracked separately: the parent's finalization recorded
 The header shrank from five missing fields to two, and those two are parent
 prose rather than staffing.
 
+### Both gaps closed: the decline now names its own universe (2026-08-16)
+
+`offered_agent_ids` and `offered_agent_digest` ship on the declining child
+decision. The ids are the eligible universe **sorted and joined flat with `~`**,
+the digest is sha256 over the complete set, and both cross the content-free
+receipt boundary through the same allowlist the parent's evidence uses.
+
+Four properties, each with a test rather than an assertion in prose:
+
+- **Flat, not nested.** A list here is what pushed `ranked_agent_ids` past the
+  reader's `maximum_depth=4` and bricked the live evidence store; a string is a
+  leaf at any depth.
+- **The digest covers the whole set, always.** When the ids exceed
+  `MAX_RECORDED_OFFERED_AGENT_CHARS` (16,384) the ids are omitted and the digest
+  stays, so a bounded record can never read as a smaller universe than the judge
+  saw. A 284-slug roster is roughly 5 KB, so omission is not reachable today.
+- **Slugs, not free text.** `_bounded_offered_agent_ids` fails the field closed
+  on anything that is not an agent id, rather than passing an opaque string
+  across the boundary.
+- **The whole path, not just the projection.** The round-trip test writes through
+  a real `Store` and reads back through `recent_runtime_activity` — the reader
+  that failed last time while the writer's own projection was happy.
+
+The sibling label is fixed too: a solicited decline now records
+`source: "native_child_inference_abstained"` instead of
+`native_child_inference_failure`. That required an addition to the source
+allowlist in `store.queries.project_routing_decision`, because **an unlisted
+source falls through to `"computed"`** — which would have labelled an inference
+abstention as a deterministic decision, a worse lie than the one being fixed.
+The failure-side helper picks the source from the status, so the two can no
+longer disagree.
+
+Also fixed in passing: `eligible_ids` was computed *after* the decline branches,
+so what the judge was shown was only in scope for the paths that did not need
+it. The invalid-selection path now carries it as well, since a selection naming
+an agent outside the offered set is the one invalid response the offered set
+explains directly.
+
 ## Acceptance
 
 - [x] Every delivered specialist slug and version is an exact member of one
