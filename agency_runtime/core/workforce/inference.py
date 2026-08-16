@@ -451,6 +451,12 @@ class _NominationFailure:
     # roster that had nobody to offer, and the difference has twice needed a
     # day of offline reconstruction to recover.
     ranked: tuple[str, ...] = ()
+    # Why the top-ranked candidate could not be executed, when it could not.
+    # `ranked` alone cannot separate "the model ranked the right specialist and
+    # declined to select it" from "deterministic eligibility moved every ranked
+    # candidate to forbidden", and those have opposite fixes. Empty means the
+    # top-ranked candidate was executable.
+    ineligibility: str = ""
 
 
 class _NominationValidationError(ValueError):
@@ -469,16 +475,21 @@ class _NominationValidationError(ValueError):
                 re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", agent_id) is None
                 for agent_id in failure.ranked
             )
+            or (
+                failure.ineligibility
+                and re.fullmatch(r"[a-z][a-z_]{0,63}", failure.ineligibility) is None
+            )
             for failure in unique
         ):
             raise ValueError("nomination validation failure is not allowlisted")
         self.failures = unique
-        # "unit=code[:axis][~agent~agent]". `~` appears in no agent id, unit id
-        # or reason code, so the three fields stay unambiguous.
+        # "unit=code[:axis][~agent~agent][|reason]". Neither `~` nor `|` appears
+        # in any agent id, unit id or reason code, so the fields stay unambiguous.
         detail = ",".join(
             f"{failure.unit_id}={failure.code}"
             + (f":{failure.axis}" if failure.axis else "")
             + "".join(f"~{agent_id}" for agent_id in failure.ranked)
+            + (f"|{failure.ineligibility}" if failure.ineligibility else "")
             for failure in unique
         )
         super().__init__(f"workforce nomination failures: {detail}")
@@ -1338,12 +1349,40 @@ def _uncoverable_requirement_axis(
     return ""
 
 
+def _top_ranked_ineligibility(
+    unit: WorkUnit,
+    ranked: Sequence[str],
+    contracts: Sequence[WorkforceContract],
+    context: Any,
+) -> str:
+    """Return why the top-ranked candidate could not be executed, if it could not.
+
+    A staff decision with an empty team has two opposite causes: the model
+    ranked an executable specialist and declined to select it, or deterministic
+    eligibility moved every ranked candidate into forbidden before selection.
+    The uncoverable axis cannot separate them, because coverage and eligibility
+    are different checks over different fields.
+    """
+
+    if not ranked or context is None:
+        return ""
+    contract = {item.agent_id: item for item in contracts}.get(ranked[0])
+    if contract is None:
+        return ""
+    try:
+        reasons = typed_staffing_ineligibility(unit, contract, context)
+    except Exception:
+        return ""
+    return str(reasons[0]) if reasons else ""
+
+
 def _validate_nomination_decisions(
     plan: WorkUnitPlan,
     proposal: RecruiterProposal,
     decisions: Mapping[str, str],
     contracts: Sequence[WorkforceContract],
     rankings: Mapping[str, Sequence[tuple[str, float]]] | None = None,
+    context: Any = None,
 ) -> None:
     failures: list[_NominationFailure] = []
     for unit, proposal_row in zip(plan.units, proposal.units, strict=True):
@@ -1357,7 +1396,13 @@ def _validate_nomination_decisions(
                 ]
             )
             failures.append(
-                _NominationFailure(unit.unit_id, "staff_without_safe_team", axis, ranked)
+                _NominationFailure(
+                    unit.unit_id,
+                    "staff_without_safe_team",
+                    axis,
+                    ranked,
+                    _top_ranked_ineligibility(unit, ranked, contracts, context),
+                )
             )
         if decision == "gap" and proposal_row.selected:
             failures.append(_NominationFailure(unit.unit_id, "gap_with_safe_team"))
@@ -1582,7 +1627,7 @@ def _proposal_from_nominations(
         ),
     )
     _validate_nomination_decisions(
-        plan, proposal, semantics.decisions, snapshot.contracts, semantics.rankings
+        plan, proposal, semantics.decisions, snapshot.contracts, semantics.rankings, context
     )
     # ADR-0087: inference explicitly decides whether each unit should be
     # staffed or is a real semantic gap. Deterministic policy verifies that the

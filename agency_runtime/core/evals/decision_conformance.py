@@ -200,7 +200,13 @@ def _typed_shortlists(""",
                 ]
             )
             failures.append(
-                _NominationFailure(unit.unit_id, "staff_without_safe_team", axis, ranked)
+                _NominationFailure(
+                    unit.unit_id,
+                    "staff_without_safe_team",
+                    axis,
+                    ranked,
+                    _top_ranked_ineligibility(unit, ranked, contracts, context),
+                )
             )""",
         after="""        if decision == "staff" and not proposal_row.selected:
             continue""",

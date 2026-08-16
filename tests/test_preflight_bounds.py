@@ -1692,3 +1692,50 @@ def test_recruiter_ranked_ids_stay_inside_the_receipt_bounded_json_depth() -> No
         maximum_nodes=512,
     )
     assert decoded == attempts
+
+
+def test_recruiter_failure_names_why_the_top_ranked_candidate_was_not_executable() -> None:
+    """`ranked_agent_ids` alone cannot separate the two opposite causes of an
+    empty team: the model ranked an executable specialist and declined to select
+    it, or deterministic eligibility moved every ranked candidate to forbidden.
+    The uncoverable axis does not separate them either, because coverage and
+    eligibility are different checks over different fields."""
+
+    from agency_runtime.core.bounded_json import safe_load_bounded_json
+    from agency_runtime.core.preflight_failure import (
+        MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
+    )
+    from agency_runtime.core.selector.receipt_projection import project_nomination_failures
+
+    blocked = project_nomination_failures(
+        "workforce nomination failures: "
+        "unit-review=staff_without_safe_team~code-reviewer~senior-secops-engineer"
+        "|agent_tools_missing"
+    )
+    assert blocked == [
+        {
+            "unit_id": "unit-review",
+            "reason_code": "staff_without_safe_team",
+            "ranked_agent_ids": "code-reviewer~senior-secops-engineer",
+            "top_ranked_ineligibility": "agent_tools_missing",
+        }
+    ]
+
+    # No trailing reason means the top-ranked candidate was executable, so the
+    # recruiter had a usable specialist and still returned no team.
+    declined = project_nomination_failures(
+        "workforce nomination failures: unit-review=staff_without_safe_team~code-reviewer"
+    )
+    assert "top_ranked_ineligibility" not in declined[0]
+
+    # Still flat, so the receipt keeps decoding at the reader's real bound.
+    attempts = [{"provider_name": "claude-sonnet", "nomination_failures": blocked}]
+    assert (
+        safe_load_bounded_json(
+            json.dumps(attempts),
+            maximum_bytes=MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
+            maximum_depth=4,
+            maximum_nodes=512,
+        )
+        == attempts
+    )

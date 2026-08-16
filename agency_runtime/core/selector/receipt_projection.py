@@ -148,6 +148,7 @@ def _parse_nomination_detail(value: str) -> list[dict[str, Any]] | None:
         unit_id, separator, remainder = item.partition("=")
         if not separator:
             return None
+        remainder, _, ineligibility = remainder.partition("|")
         remainder, _, ranked_text = remainder.partition("~")
         reason_code, _, axis = remainder.partition(":")
         row: dict[str, Any] = {"unit_id": unit_id, "reason_code": reason_code}
@@ -155,8 +156,33 @@ def _parse_nomination_detail(value: str) -> list[dict[str, Any]] | None:
             row["requirement_axis"] = axis
         if ranked_text:
             row["ranked_agent_ids"] = ranked_text
+        if ineligibility:
+            row["top_ranked_ineligibility"] = ineligibility
         parsed.append(row)
     return parsed
+
+
+def _nomination_ranked_ids(value: object) -> list[str] | None:
+    """Normalise the ranked ids, or None when the value is malformed.
+
+    The stored form is the flat delimited string ``project_nomination_failures``
+    emits, so this must round-trip through its own output; a nested list would
+    push the preflight receipt past its bounded-JSON depth.
+    """
+
+    raw = value or ()
+    if isinstance(raw, bytes):
+        return None
+    if isinstance(raw, str):
+        raw = raw.split("~") if raw else ()
+    elif not isinstance(raw, (list, tuple)):
+        return None
+    ranked = [str(item or "").strip().casefold() for item in raw]
+    if len(ranked) > _MAX_IDS or any(
+        _NOMINATION_AGENT_ID.fullmatch(agent_id) is None for agent_id in ranked
+    ):
+        return None
+    return ranked
 
 
 def project_nomination_failures(value: object) -> list[dict[str, Any]]:
@@ -186,24 +212,14 @@ def project_nomination_failures(value: object) -> list[dict[str, Any]]:
             "reason_code",
             "requirement_axis",
             "ranked_agent_ids",
+            "top_ranked_ineligibility",
         }:
             return []
         unit_id = str(item.get("unit_id") or "").strip().casefold()
         reason_code = _code(item.get("reason_code"))
         axis = _code(item.get("requirement_axis")) if "requirement_axis" in item else ""
-        raw_ranked = item.get("ranked_agent_ids") or ()
-        if isinstance(raw_ranked, bytes):
-            return []
-        if isinstance(raw_ranked, str):
-            # The stored form is the flat delimited string this function emits,
-            # so it must round-trip through its own output.
-            raw_ranked = raw_ranked.split("~") if raw_ranked else ()
-        elif not isinstance(raw_ranked, (list, tuple)):
-            return []
-        ranked = [str(value or "").strip().casefold() for value in raw_ranked]
-        if len(ranked) > _MAX_IDS or any(
-            _NOMINATION_AGENT_ID.fullmatch(agent_id) is None for agent_id in ranked
-        ):
+        ranked = _nomination_ranked_ids(item.get("ranked_agent_ids"))
+        if ranked is None:
             return []
         unit_id_is_digest = unit_id.startswith("sha256:") and _DIGEST.fullmatch(
             unit_id.removeprefix("sha256:")
@@ -218,12 +234,21 @@ def project_nomination_failures(value: object) -> list[dict[str, Any]]:
         failure: dict[str, Any] = {"unit_id": projected_unit_id, "reason_code": reason_code}
         if axis:
             failure["requirement_axis"] = axis
+        ineligibility = (
+            _code(item.get("top_ranked_ineligibility"))
+            if "top_ranked_ineligibility" in item
+            else ""
+        )
+        if "top_ranked_ineligibility" in item and not ineligibility:
+            return []
         if ranked:
             # Flat, not nested. A list here pushes the preflight-failure receipt
             # past its bounded-JSON depth of 4, and one over-deep row makes
             # recent_runtime_activity raise, which reads to every caller as
             # "runtime evidence store is unavailable" and blocks the canary.
             failure["ranked_agent_ids"] = "~".join(ranked)
+        if ineligibility:
+            failure["top_ranked_ineligibility"] = ineligibility
         if not projected_unit_id or failure in failures:
             return []
         failures.append(failure)
