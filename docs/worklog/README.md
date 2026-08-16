@@ -915,6 +915,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7a399415` | 2026-08-16 | feat(evidence): name why the top-ranked candidate was not executable | null | null |
 | `136cddfe` | 2026-08-16 | docs(ar119): separate the planner's intent reading from its constraint synthesis | null | null |
 | `e2b0ce29` | 2026-08-16 | docs(ar253): the ranked set misses an axis the roster can cover | null | null |
+| `ac1f95c6` | 2026-08-16 | fix(recruiter): scope the uncoverable axis to what was actually ranked | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
