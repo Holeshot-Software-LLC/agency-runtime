@@ -392,3 +392,27 @@ enablement unproven, final response header unproven, and `delivery_marker_absent
 The parent turn died at routing, so the AR-255 child-staffing repairs shipped the
 same day — the capability receipt and the abstention reason — were never reached
 and remain unexercised on a host.
+
+### All three canary prerequisites reduce to this one fault
+
+The `530f6df6c4b6` run also looked like an isolated-profile plugin failure —
+`isolated_plugin` came back `registered/enabled/loaded/invoked: None` with only
+`load_requested: true`. It is not a plugin fault. `profile_is_proven` requires,
+for Claude, `load_requested is True and plugin_invoked`, and
+`plugin_invoked = bool(evidence["correlated_trace_ids"])`, where
+`correlated = route_traces & final_traces`. The run recorded **zero** routing
+decisions, so that intersection is empty and every derived plugin field projects
+`None`.
+
+Agency was demonstrably live inside the disposable profile: it opened run
+`8eb4f96b`, ran the planner (`claude-haiku`, `structured_response_applied`), ran
+the recruiter twice (`claude-sonnet`), wrote one finalization and one preflight
+failure receipt with complete provider attempts. **An earlier reading of this run
+as "Agency may not have been active in the canary profile" is retracted.**
+
+So the three unmet prerequisites are one fault with three faces: no routing
+decision means the profile cannot be proven, the parent turn fails preflight so
+no Agency header is emitted, and no staffing decision means no cards and
+`delivery_marker_absent`. **The ranking-to-selection gap is therefore on the Rule 4
+critical path directly** — it is not a parallel AR-253 latency concern, it is the
+single thing standing between this machine and its first Installed/Live cell.
