@@ -18,6 +18,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised by the Python 3.10 m
 
 from scripts.read_release_version import read_release_version
 from scripts.release_contract import DISTRIBUTION_LICENSE_FILES
+from scripts.run_local_gates import PRODUCTION_SPINE
 from scripts.verify_release_hygiene import SECRET_PATTERNS, generated_path_reason
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -813,33 +814,18 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     assert 'export TMPDIR="${AGENCY_CI_TEMP}"' in production_spine["run"]
     assert '"${AGENCY_CI_PYTHON}" -m pytest' in production_spine["run"]
     assert '--basetemp "${AGENCY_CI_TEMP}/pytest-production-spine"' in production_spine["run"]
-    assert re.findall(r"tests/test_[a-z0-9_]+\.py", production_spine["run"]) == [
-        "tests/test_senior_audit_hardening.py",
-        "tests/test_configuration_namespace_security.py",
-        "tests/test_executable_namespace_security.py",
-        "tests/test_storage_file_trust.py",
-        "tests/test_dashboard_auth_boundary_regression.py",
-        "tests/test_dashboard_transaction_refactors.py",
-        "tests/test_routing_correctness.py",
-        "tests/test_workforce_hiring_contract.py",
-        "tests/test_workforce_selection_safety.py",
-        "tests/test_workforce_dynamic_hiring.py",
-        "tests/test_upstream_selection_eval.py",
-        "tests/test_decision_conformance.py",
-        "tests/test_delegation_p1_correctness.py",
-        "tests/test_store_turn_atomicity.py",
-        "tests/test_roster_snapshot_generation.py",
-        "tests/test_mcp_protocol_hardening.py",
-        "tests/test_cli_parser_contract.py",
-        "tests/test_cli_upgrade.py",
-        "tests/test_update_service.py",
-        "tests/test_native_installer.py",
-        "tests/test_host_uninstall.py",
-        "tests/test_cli_uninstall.py",
-        "tests/test_host_boundary_hardening.py",
-        "tests/test_cli_owner_authority.py",
-        "tests/test_security_turn_boundaries.py",
-    ]
+    # Derive the expectation from run_local_gates rather than pinning a third
+    # copy of the list, the same way the matrix-evidence assertion below derives
+    # its own. Four hand-kept copies existed and had already drifted: AGENTS.md
+    # was missing test_storage_file_trust and test_upstream_selection_eval, so
+    # the documented spine and the enforced one were different suites.
+    assert re.findall(r"tests/test_[a-z0-9_]+\.py", production_spine["run"]) == list(
+        PRODUCTION_SPINE
+    )
+    agents_text = Path("AGENTS.md").read_text(encoding="utf-8")
+    documented = re.search(r"python -m pytest \\\n(.*?)\n  -q -W error", agents_text, re.DOTALL)
+    assert documented, "the AGENTS.md production-spine block moved"
+    assert re.findall(r"tests/test_[a-z0-9_]+\.py", documented.group(1)) == list(PRODUCTION_SPINE)
     matrix_evidence = quality_steps["Run AR-119 matrix evidence"]
     assert matrix_evidence["if"] == "steps.change-scope.outputs.code_required == 'true'"
     assert 'export TMPDIR="${AGENCY_CI_TEMP}"' in matrix_evidence["run"]

@@ -235,8 +235,10 @@ jobs:
             tests/test_host_uninstall.py \
             tests/test_cli_uninstall.py \
             tests/test_host_boundary_hardening.py \
-          tests/test_cli_owner_authority.py \
+            tests/test_cli_owner_authority.py \
             tests/test_security_turn_boundaries.py \
+            tests/test_canary_coverage_complete.py \
+            tests/test_complexity_refactors.py \
             -q -W error -p no:cacheprovider \
             --basetemp "${AGENCY_CI_TEMP}/pytest-production-spine"
       - name: Run AR-119 matrix evidence

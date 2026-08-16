@@ -144,12 +144,14 @@ python -m pytest \
   tests/test_senior_audit_hardening.py \
   tests/test_configuration_namespace_security.py \
   tests/test_executable_namespace_security.py \
+  tests/test_storage_file_trust.py \
   tests/test_dashboard_auth_boundary_regression.py \
   tests/test_dashboard_transaction_refactors.py \
   tests/test_routing_correctness.py \
   tests/test_workforce_hiring_contract.py \
   tests/test_workforce_selection_safety.py \
   tests/test_workforce_dynamic_hiring.py \
+  tests/test_upstream_selection_eval.py \
   tests/test_decision_conformance.py \
   tests/test_delegation_p1_correctness.py \
   tests/test_store_turn_atomicity.py \
@@ -164,6 +166,8 @@ python -m pytest \
   tests/test_host_boundary_hardening.py \
   tests/test_cli_owner_authority.py \
   tests/test_security_turn_boundaries.py \
+  tests/test_canary_coverage_complete.py \
+  tests/test_complexity_refactors.py \
   -q -W error
 node --test tests/dashboard_ui.test.mjs
 agency eval routing --json --no-details

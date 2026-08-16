@@ -583,6 +583,47 @@ across repeated runs is now the measurement, not the content of one receipt.
 Recruiter latency on the accepted row was **124,165 ms**, consistent with the
 50-85 s and 124.0 s already recorded here. The overrun is unchanged.
 
+## Both canary records now answer a protocol error the same way (2026-08-16)
+
+Two tests asserted contradictory contracts for the same case — a host that exits
+0 whose stdout cannot be projected. `test_complexity_refactors.py` demanded
+`exit_code == 1`; `test_canary_coverage_complete.py` demanded `exit_code == 0`
+plus a typed `failure_reason`. The first had been **red on main** and neither
+file was in the gate spine, so nothing failed.
+
+`canary_proof.py` settles which is right:
+
+~~~python
+process_ok = result.get("status") == "completed" and result.get("exit_code") == 0
+~~~
+
+`status` already fails a protocol error closed, so the synthesised `exit_code=1`
+in `claude_canary_record` bought no safety and misreported what the host did.
+`exit_code` is a fact about the process; `status` is the verdict. Claude now
+matches Codex: the real returncode, `status: "failed"`, and a typed reason —
+`claude_result_projection_unavailable` when the payload will not parse,
+`claude_output_projection_unavailable` when it parses without a result. Dropping
+the synthesised code without those two reasons would have *lost* the diagnostic
+it was crudely standing in for.
+
+### The spine was a fourth copy of a list nobody could see drift
+
+`tests/test_canary_coverage_complete.py` and `tests/test_complexity_refactors.py`
+are now in the production spine. Adding them meant editing the spine in **four
+hand-kept places**: `scripts/run_local_gates.py`, `.github/workflows/ci.yml`,
+`AGENTS.md`, and a pinned expectation inside `test_release_packaging.py`.
+
+They had already drifted. **`AGENTS.md` was missing `test_storage_file_trust.py`
+and `test_upstream_selection_eval.py`**, so the documented spine and the enforced
+one were different suites, and had been for long enough that nobody noticed.
+
+Fixed the way this repository already fixes it one assertion further down, where
+the matrix-evidence list is derived rather than copied: `test_release_packaging`
+now imports `PRODUCTION_SPINE` and checks both `ci.yml` and the `AGENTS.md`
+Validation block against it. One source, two derived checks, and a doc that can
+no longer quietly disagree with the gate. Verified with a drop-one control:
+removing a single entry from the doc block makes the comparison fail.
+
 Two further silent-empty paths in the same function deserve receipts:
 `required_ids` not being a subset of the ranked ids, and `len(required_ids)`
 exceeding `max_selected_per_unit`.

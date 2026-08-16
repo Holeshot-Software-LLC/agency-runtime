@@ -35,7 +35,10 @@ from pathlib import Path
 
 REPOSITORY = Path(__file__).resolve().parent.parent
 
-# Kept identical to the "Run fast Python production spine" step in ci.yml.
+# The single source for the "Run fast Python production spine" step in ci.yml
+# and the Validation block in AGENTS.md; tests/test_release_packaging.py derives
+# both expectations from this tuple rather than pinning further copies. Three
+# hand-kept copies had already drifted: AGENTS.md was missing two entries.
 PRODUCTION_SPINE = (
     "tests/test_senior_audit_hardening.py",
     "tests/test_configuration_namespace_security.py",
@@ -62,6 +65,11 @@ PRODUCTION_SPINE = (
     "tests/test_host_boundary_hardening.py",
     "tests/test_cli_owner_authority.py",
     "tests/test_security_turn_boundaries.py",
+    # Canary record contracts. Two of these files asserted contradictory exit
+    # codes for the same protocol error, and the contradiction sat red on main
+    # because neither ran here.
+    "tests/test_canary_coverage_complete.py",
+    "tests/test_complexity_refactors.py",
 )
 
 # Kept identical to the "Run AR-119 matrix evidence" step in ci.yml. That list
