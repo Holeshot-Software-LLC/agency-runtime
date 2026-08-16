@@ -916,6 +916,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `136cddfe` | 2026-08-16 | docs(ar119): separate the planner's intent reading from its constraint synthesis | null | null |
 | `e2b0ce29` | 2026-08-16 | docs(ar253): the ranked set misses an axis the roster can cover | null | null |
 | `ac1f95c6` | 2026-08-16 | fix(recruiter): scope the uncoverable axis to what was actually ranked | null | null |
+| `23b123a6` | 2026-08-16 | fix(canary): report a Claude host deadline as a timeout, not a refusal | null | null |
+| `4bb04a66` | 2026-08-16 | fix(recruiter): score the uncoverable axis over the executable ranked set | null | null |
+| `82404c34` | 2026-08-16 | docs(ar253): the ranked set covers the unit and the team is still empty | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
