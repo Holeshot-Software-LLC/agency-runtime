@@ -104,17 +104,17 @@ reconstruct retired Job B, plan-row, work-unit, grant or consumed-receipt transp
 ready here; codex needs the TUI trust pass against `980eb2d1b755`; hermes and
 openclaw are absent, so one machine cannot reach 45.
 
-**START HERE.** The canary completed on `980eb2d1b755`. Parent staffing is
-proven; what is left is the child abstention that keeps Rule 4 at zero.
+**START HERE.** The canary completes cleanly on `76dd96b2cc50`. Parent staffing
+still fails; three hypotheses refuted, see AR-253 "the three branches that remain".
 
-1. **The runtime is current and verified.** Hooks run
-   **`runtime-sha256-980eb2d1b755`** at SCHEMA_VERSION 46, carrying the domain
-   refusal, the axis naming and `ranked_agent_ids`: it opens the live store, and
-   a replayed `SessionStart` exits 0 with **silent** stderr where
-   `0e42ee679dfc` now answers `agency_runtime_stale_runtime`. `doctor` is
-   DEGRADED for codex trust alone. **A session started before an install keeps
-   calling the old launcher** — that is "failed safely", and the cure is a
-   restart, never another install. Suite runs rewrite `current.json`; ignore it.
+1. **Claude runs `runtime-sha256-76dd96b2cc50`** at SCHEMA_VERSION 46; codex is
+   behind on `530f6df6c4b6` and zcode on `980eb2d1b755`, so AR-258's one-digest
+   property is broken. The packaged `agency.exe` is pinned at schema 45 and
+   refuses to install — use `python -m agency_runtime.cli install --agent <host>`
+   from the checkout. **A session started before an install keeps calling the old
+   launcher**; the cure is a restart, never another install. Suite runs rewrite
+   `current.json`; ignore it. Claude isolated-profile canaries need an explicit
+   `--timeout 420`: the undeclared 120 s default kills a cold profile mid-turn.
 2. **Prove Claude in two steps and do not conflate them.** First the staffing
    path: an accepted `routing_decisions` row with selected specialists and no
    preflight receipt. Only then Rule 4, which needs a host-written artifact
