@@ -11,7 +11,7 @@ import re
 import secrets
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from agency_runtime.core.config import AgencyConfig, ProviderEntry
 from agency_runtime.core.configuration_contracts import ConfigValidationError
@@ -435,6 +435,9 @@ class WorkforceInferenceAttempt:
     validation_detail: str = ""
 
 
+MAX_RECORDED_RANKED_CANDIDATES: Final[int] = 8
+
+
 @dataclass(frozen=True, slots=True)
 class _NominationFailure:
     unit_id: str
@@ -443,6 +446,11 @@ class _NominationFailure:
     # one. Empty means the roster could have covered every axis, which points
     # the fault at the ranking rather than at the plan.
     axis: str = ""
+    # Who the recruiter actually ranked, when its ranking is the thing under
+    # suspicion. Without this a staffing failure cannot be told apart from a
+    # roster that had nobody to offer, and the difference has twice needed a
+    # day of offline reconstruction to recover.
+    ranked: tuple[str, ...] = ()
 
 
 class _NominationValidationError(ValueError):
@@ -456,12 +464,21 @@ class _NominationValidationError(ValueError):
             failure.code not in _NOMINATION_FAILURE_CODES
             or (failure.axis and failure.axis not in REQUIREMENT_AXES)
             or re.fullmatch(r"unit-[a-z0-9][a-z0-9-]{0,62}", failure.unit_id) is None
+            or len(failure.ranked) > MAX_RECORDED_RANKED_CANDIDATES
+            or any(
+                re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", agent_id) is None
+                for agent_id in failure.ranked
+            )
             for failure in unique
         ):
             raise ValueError("nomination validation failure is not allowlisted")
         self.failures = unique
+        # "unit=code[:axis][~agent~agent]". `~` appears in no agent id, unit id
+        # or reason code, so the three fields stay unambiguous.
         detail = ",".join(
-            f"{failure.unit_id}={failure.code}" + (f":{failure.axis}" if failure.axis else "")
+            f"{failure.unit_id}={failure.code}"
+            + (f":{failure.axis}" if failure.axis else "")
+            + "".join(f"~{agent_id}" for agent_id in failure.ranked)
             for failure in unique
         )
         super().__init__(f"workforce nomination failures: {detail}")
@@ -1326,13 +1343,22 @@ def _validate_nomination_decisions(
     proposal: RecruiterProposal,
     decisions: Mapping[str, str],
     contracts: Sequence[WorkforceContract],
+    rankings: Mapping[str, Sequence[tuple[str, float]]] | None = None,
 ) -> None:
     failures: list[_NominationFailure] = []
     for unit, proposal_row in zip(plan.units, proposal.units, strict=True):
         decision = decisions[unit.unit_id]
         if decision == "staff" and not proposal_row.selected:
             axis = _uncoverable_requirement_axis(unit, contracts)
-            failures.append(_NominationFailure(unit.unit_id, "staff_without_safe_team", axis))
+            ranked = tuple(
+                agent_id
+                for agent_id, _score in (rankings or {}).get(unit.unit_id, ())[
+                    :MAX_RECORDED_RANKED_CANDIDATES
+                ]
+            )
+            failures.append(
+                _NominationFailure(unit.unit_id, "staff_without_safe_team", axis, ranked)
+            )
         if decision == "gap" and proposal_row.selected:
             failures.append(_NominationFailure(unit.unit_id, "gap_with_safe_team"))
     if failures:
@@ -1555,7 +1581,9 @@ def _proposal_from_nominations(
             unit_id for unit_id, decision in semantics.decisions.items() if decision == "gap"
         ),
     )
-    _validate_nomination_decisions(plan, proposal, semantics.decisions, snapshot.contracts)
+    _validate_nomination_decisions(
+        plan, proposal, semantics.decisions, snapshot.contracts, semantics.rankings
+    )
     # ADR-0087: inference explicitly decides whether each unit should be
     # staffed or is a real semantic gap. Deterministic policy verifies that the
     # decision agrees with typed coverage and eligibility, but never adds or

@@ -193,7 +193,15 @@ def _typed_shortlists(""",
         source_path="agency_runtime/core/workforce/inference.py",
         before="""        if decision == "staff" and not proposal_row.selected:
             axis = _uncoverable_requirement_axis(unit, contracts)
-            failures.append(_NominationFailure(unit.unit_id, "staff_without_safe_team", axis))""",
+            ranked = tuple(
+                agent_id
+                for agent_id, _score in (rankings or {}).get(unit.unit_id, ())[
+                    :MAX_RECORDED_RANKED_CANDIDATES
+                ]
+            )
+            failures.append(
+                _NominationFailure(unit.unit_id, "staff_without_safe_team", axis, ranked)
+            )""",
         after="""        if decision == "staff" and not proposal_row.selected:
             continue""",
         test_node=(
@@ -302,9 +310,9 @@ class _NominationSemantics:""",
         invariant=("A durable recruiter failure hashes a sensitive planner-derived unit identity."),
         source_path="agency_runtime/core/selector/receipt_projection.py",
         before="""        projected_unit_id = _identity(unit_id)
-        failure = {"unit_id": projected_unit_id, "reason_code": reason_code}""",
+        failure: dict[str, Any] = {"unit_id": projected_unit_id, "reason_code": reason_code}""",
         after="""        projected_unit_id = unit_id
-        failure = {"unit_id": projected_unit_id, "reason_code": reason_code}""",
+        failure: dict[str, Any] = {"unit_id": projected_unit_id, "reason_code": reason_code}""",
         test_node=(
             "tests/test_routing_receipt_header.py::"
             "test_routing_receipt_is_bounded_content_free_and_idempotent"

@@ -38,6 +38,9 @@ _SECRET_PREFIXES = (
 )
 _SENSITIVE_MARKERS = ("credential", "password", "secret", "token")
 _NOMINATION_UNIT_ID = re.compile(r"^unit-[a-z0-9][a-z0-9-]{0,62}$")
+# Ranked agents are recorded to diagnose a ranking, so a malformed value fails
+# the projection closed rather than becoming an opaque digest nobody can act on.
+_NOMINATION_AGENT_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 _NOMINATION_FAILURE_CODES = frozenset(
     {
         "candidate_outside_detail_cards",
@@ -132,7 +135,31 @@ def _codes(value: object, *, limit: int = _MAX_CODES) -> list[str]:
     return result
 
 
-def project_nomination_failures(value: object) -> list[dict[str, str]]:
+def _parse_nomination_detail(value: str) -> list[dict[str, Any]] | None:
+    """Split the wire detail into rows, or None when it is malformed.
+
+    Each row is ``unit=code[:axis][~agent~agent]``. The axis is a closed
+    six-value vocabulary and the agents are roster identities, so neither
+    carries request content; ``~`` appears in no code, unit id or identity.
+    """
+
+    parsed: list[dict[str, Any]] = []
+    for item in value.removeprefix(_NOMINATION_FAILURE_PREFIX).split(","):
+        unit_id, separator, remainder = item.partition("=")
+        if not separator:
+            return None
+        remainder, _, ranked_text = remainder.partition("~")
+        reason_code, _, axis = remainder.partition(":")
+        row: dict[str, Any] = {"unit_id": unit_id, "reason_code": reason_code}
+        if axis:
+            row["requirement_axis"] = axis
+        if ranked_text:
+            row["ranked_agent_ids"] = ranked_text.split("~")
+        parsed.append(row)
+    return parsed
+
+
+def project_nomination_failures(value: object) -> list[dict[str, Any]]:
     """Project only the allowlisted, content-free recruiter failure contract.
 
     Both the routing receipt and the terminal preflight-failure receipt need
@@ -146,19 +173,9 @@ def project_nomination_failures(value: object) -> list[dict[str, str]]:
             _NOMINATION_FAILURE_PREFIX
         ):
             return []
-        parsed: list[dict[str, str]] = []
-        for item in value.removeprefix(_NOMINATION_FAILURE_PREFIX).split(","):
-            unit_id, separator, reason_code = item.partition("=")
-            if not separator:
-                return []
-            # A failure may name the requirement axis the whole roster leaves
-            # uncovered, as "code:axis". The axis is a closed six-value
-            # vocabulary, so it carries no request content.
-            reason_code, _, axis = reason_code.partition(":")
-            row = {"unit_id": unit_id, "reason_code": reason_code}
-            if axis:
-                row["requirement_axis"] = axis
-            parsed.append(row)
+        parsed = _parse_nomination_detail(value)
+        if parsed is None:
+            return []
         raw = parsed
     if not isinstance(raw, (list, tuple)) or not 1 <= len(raw) <= _MAX_STAFFING_UNITS:
         return []
@@ -168,11 +185,20 @@ def project_nomination_failures(value: object) -> list[dict[str, str]]:
             "unit_id",
             "reason_code",
             "requirement_axis",
+            "ranked_agent_ids",
         }:
             return []
         unit_id = str(item.get("unit_id") or "").strip().casefold()
         reason_code = _code(item.get("reason_code"))
         axis = _code(item.get("requirement_axis")) if "requirement_axis" in item else ""
+        raw_ranked = item.get("ranked_agent_ids") or ()
+        if isinstance(raw_ranked, (str, bytes)) or not isinstance(raw_ranked, (list, tuple)):
+            return []
+        ranked = [str(value or "").strip().casefold() for value in raw_ranked]
+        if len(ranked) > _MAX_IDS or any(
+            _NOMINATION_AGENT_ID.fullmatch(agent_id) is None for agent_id in ranked
+        ):
+            return []
         unit_id_is_digest = unit_id.startswith("sha256:") and _DIGEST.fullmatch(
             unit_id.removeprefix("sha256:")
         )
@@ -183,9 +209,11 @@ def project_nomination_failures(value: object) -> list[dict[str, str]]:
         ):
             return []
         projected_unit_id = _identity(unit_id)
-        failure = {"unit_id": projected_unit_id, "reason_code": reason_code}
+        failure: dict[str, Any] = {"unit_id": projected_unit_id, "reason_code": reason_code}
         if axis:
             failure["requirement_axis"] = axis
+        if ranked:
+            failure["ranked_agent_ids"] = ranked
         if not projected_unit_id or failure in failures:
             return []
         failures.append(failure)

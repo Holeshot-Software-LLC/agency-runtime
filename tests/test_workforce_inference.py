@@ -1025,6 +1025,49 @@ def test_a_staffing_failure_names_the_axis_only_when_the_roster_cannot_cover_it(
     )
 
 
+def test_a_staffing_failure_records_who_the_recruiter_actually_ranked() -> None:
+    # The live canary fails with every axis coverable, ten eligible candidates
+    # and an empty team, which can only happen when the ranking itself holds no
+    # eligible candidate. The receipt could not show that, so the mechanism had
+    # to be reconstructed offline. Record the ranking instead.
+    detail = str(
+        _NominationValidationError(
+            [
+                _NominationFailure(
+                    "unit-python-strip-regression-review",
+                    "staff_without_safe_team",
+                    "",
+                    ("python-cli-architecture-specialist",),
+                )
+            ]
+        )
+    )
+
+    assert detail == (
+        "workforce nomination failures: unit-python-strip-regression-review="
+        "staff_without_safe_team~python-cli-architecture-specialist"
+    )
+    assert project_nomination_failures(detail) == [
+        {
+            "unit_id": "unit-python-strip-regression-review",
+            "reason_code": "staff_without_safe_team",
+            "ranked_agent_ids": ["python-cli-architecture-specialist"],
+        }
+    ]
+    # A malformed agent id fails the projection closed rather than arriving as
+    # an opaque digest that no one can act on.
+    assert (
+        project_nomination_failures(
+            "workforce nomination failures: unit-one=staff_without_safe_team~not a slug"
+        )
+        == []
+    )
+    with pytest.raises(ValueError, match="not allowlisted"):
+        _NominationValidationError(
+            [_NominationFailure("unit-one", "staff_without_safe_team", "", ("Not A Slug",))]
+        )
+
+
 def test_a_named_uncoverable_axis_survives_into_the_receipt_projection() -> None:
     # The axis is a closed six-value vocabulary, so it crosses the content-free
     # receipt boundary. Anything outside it fails the projection closed.
@@ -1530,9 +1573,20 @@ def test_staff_decision_without_safe_team_gets_one_bounded_inference_repair() ->
         "rejected",
         "applied",
     ]
+    # The rejected attempt names who it ranked, so the receipt shows that the
+    # recruiter led with wrong-neighbor and buried the candidate that could
+    # actually be staffed — the distinction that otherwise needs offline work.
     assert outcome.attempts[1].validation_detail == (
         "workforce nomination failures: unit-analyze=staff_without_safe_team"
+        "~wrong-neighbor~technical-analyst~analysis-alternative"
     )
+    assert project_nomination_failures(outcome.attempts[1].validation_detail) == [
+        {
+            "unit_id": "unit-analyze",
+            "reason_code": "staff_without_safe_team",
+            "ranked_agent_ids": ["wrong-neighbor", "technical-analyst", "analysis-alternative"],
+        }
+    ]
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
 
 
