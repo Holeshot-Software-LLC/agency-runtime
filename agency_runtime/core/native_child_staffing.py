@@ -12,7 +12,7 @@ import json
 import re
 import secrets
 import sys
-from collections.abc import Callable, Container, Mapping
+from collections.abc import Callable, Container, Mapping, Sequence
 from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -63,6 +63,11 @@ _BINDING_KIND = re.compile(r"[a-z][a-z0-9_]{1,31}\Z")
 _SUPPORTED_BINDING_KINDS = frozenset({"child_id", "launch_id"})
 _SUCCESS_SOURCE = "native_child_inference"
 _FAILURE_SOURCE = "native_child_inference_failure"
+# A solicited decline is not a failure, and the sibling `status` field was
+# corrected to `inference_abstained` without this one following. Both must be
+# allowlisted in store.queries.project_routing_decision; an unlisted source
+# falls through to "computed", which reads as a deterministic decision.
+_ABSTAINED_SOURCE = "native_child_inference_abstained"
 _UNAVAILABLE_REASONS = frozenset(
     {
         "native_child_catalog_unavailable",
@@ -83,6 +88,13 @@ _INVALID_PERSISTENCE_REASONS = frozenset(
 # own reason and status; the child still proceeds unstaffed either way.
 NATIVE_CHILD_ABSTAINED_REASON = "native_child_no_specialist_needed"
 _ABSTAINED_REASONS = frozenset({NATIVE_CHILD_ABSTAINED_REASON})
+
+# The judge's own universe, recorded so a decline can be read from the receipt
+# instead of reconstructed offline. `candidate_count: 65` cannot answer the only
+# question a decline raises -- whether anyone who could do the work was in front
+# of it -- which is the gap `ranked_agent_ids` closed for the parent recruiter
+# after it had already cost two days of reconstruction there.
+MAX_RECORDED_OFFERED_AGENT_CHARS: Final[int] = 16_384
 
 
 @dataclass(frozen=True, slots=True)
@@ -311,6 +323,27 @@ def _failure_status(reason_code: str) -> str:
     return "inference_invalid"
 
 
+def _failure_source(status: str) -> str:
+    return _ABSTAINED_SOURCE if status == "inference_abstained" else _FAILURE_SOURCE
+
+
+def _offered_projection(offered_ids: Sequence[str] | None) -> dict[str, Any]:
+    """Project the eligible universe the judge was shown, flat and bounded."""
+
+    if offered_ids is None:
+        return {}
+    ordered = sorted({item for item in offered_ids if type(item) is str and item})
+    joined = "~".join(ordered)
+    projection: dict[str, Any] = {
+        # Over the complete set, always. A set too large to record must still be
+        # comparable across runs, and must never read as a smaller universe.
+        "offered_agent_digest": sha256(joined.encode("utf-8")).hexdigest(),
+    }
+    if ordered and len(joined) <= MAX_RECORDED_OFFERED_AGENT_CHARS:
+        projection["offered_agent_ids"] = joined
+    return projection
+
+
 def _inference_signal(
     result: Mapping[str, Any],
     field: str,
@@ -331,6 +364,7 @@ def _routing_projection(
     source: str,
     reason_code: str = "",
     native_child_delivery: Mapping[str, Any] | None = None,
+    offered_ids: Sequence[str] | None = None,
 ) -> dict[str, Any]:
     raw = result or {}
     inferred_success = status == "applied"
@@ -368,6 +402,7 @@ def _routing_projection(
         "source_message_hash": task_sha256,
         "query_hash": task_sha256,
         "context_fingerprint": context_fingerprint,
+        **_offered_projection(offered_ids),
     }
     if native_child_delivery is not None:
         decision["native_child_delivery"] = dict(native_child_delivery)
@@ -538,7 +573,7 @@ def record_native_child_staffing_failure(
         context_fingerprint=context_fingerprint,
         selected_ids=[],
         status=status,
-        source=_FAILURE_SOURCE,
+        source=_failure_source(status),
         reason_code=reason_code,
     )
     return _record_decision(
@@ -564,6 +599,7 @@ def _unstaffed(
     context_fingerprint: str = "",
     judge_result: Mapping[str, Any] | None = None,
     provider_attempts: list[dict[str, Any]] | None = None,
+    offered_ids: Sequence[str] | None = None,
 ) -> NativeChildStaffingResult:
     decision: dict[str, Any] = {}
     diagnostic_id = ""
@@ -575,8 +611,9 @@ def _unstaffed(
             context_fingerprint=context_fingerprint,
             selected_ids=[],
             status=status,
-            source=_FAILURE_SOURCE,
+            source=_failure_source(status),
             reason_code=reason_code,
+            offered_ids=offered_ids,
         )
         diagnostic_id = _record_decision(
             store,
@@ -998,6 +1035,11 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             provider_attempts=[] if projected_attempts is None else projected_attempts,
         )
 
+    # Computed before the decline branches, not after: what the judge was shown
+    # is the evidence a decline turns on, and it was previously only in scope
+    # for the paths that did not need it.
+    eligible_ids = {agent_identity(item) for item in eligible_catalog}
+    offered_ids = sorted(eligible_ids)
     selected = judge_result.get("selected_ids")
     if type(selected) is list and not selected:
         # Solicited abstention: the judge was offered the complete eligible
@@ -1015,8 +1057,8 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             context_fingerprint=context_fingerprint,
             judge_result=judge_result,
             provider_attempts=projected_attempts,
+            offered_ids=offered_ids,
         )
-    eligible_ids = {agent_identity(item) for item in eligible_catalog}
     if (
         type(selected) is not list
         or not 1 <= len(selected) <= MAX_INFERENCE_TEAM_CARDS
@@ -1034,6 +1076,9 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             context_fingerprint=context_fingerprint,
             judge_result=judge_result,
             provider_attempts=projected_attempts,
+            # A selection naming an agent outside the offered set is the one
+            # invalid response the offered set explains directly.
+            offered_ids=offered_ids,
         )
     selected_ids = list(selected)
     if not _exact_compatible_team(selected_ids, eligible_catalog):

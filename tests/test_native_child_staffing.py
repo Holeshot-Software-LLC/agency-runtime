@@ -580,6 +580,73 @@ def test_solicited_empty_selection_is_recorded_as_abstention_not_invalid_inferen
     assert decision["candidate_count"] == 2
 
 
+def test_a_declining_judge_records_which_specialists_it_was_shown(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A count cannot answer the only question a decline raises.
+
+    The first live child decline recorded ``candidate_count: 65`` and nothing
+    else, so whether a specialist that could do the work was in front of the
+    judge could only be recovered by reproducing the eligibility filter offline.
+    That is the gap ``ranked_agent_ids`` closed for the parent recruiter, after
+    it had already cost two days of reconstruction there.
+    """
+
+    from agency_runtime.core.store.queries import project_routing_decision
+
+    prompts = {slug: f"Exact {slug} prompt." for slug in ("beta-reviewer", "alpha-reviewer")}
+    store = _Store([_agent(slug, prompt) for slug, prompt in prompts.items()], prompts)
+
+    decision = _invoke(monkeypatch, store, _judge_result([])).routing_decision
+
+    # Sorted, so two runs over the same universe produce the same string, and
+    # flat, so the payload cannot deepen a bounded reader past its limit.
+    assert decision["offered_agent_ids"] == "alpha-reviewer~beta-reviewer"
+    assert decision["offered_agent_digest"] == sha256(b"alpha-reviewer~beta-reviewer").hexdigest()
+    # A solicited decline is not a failure, and an unlisted source would fall
+    # through to "computed" -- reading as a deterministic decision.
+    assert decision["source"] == "native_child_inference_abstained"
+
+    projected, _work_units, source = project_routing_decision(decision)
+    assert projected["offered_agent_ids"] == decision["offered_agent_ids"]
+    assert projected["offered_agent_digest"] == decision["offered_agent_digest"]
+    assert source == "native_child_inference_abstained"
+    # Depth stays at the object itself: the string is a leaf, unlike the nested
+    # list that broke the live evidence store when ranked_agent_ids shipped.
+    assert isinstance(projected["offered_agent_ids"], str)
+
+
+def test_the_offered_universe_fails_closed_rather_than_crossing_as_opaque_text() -> None:
+    from agency_runtime.core.native_child_staffing import (
+        MAX_RECORDED_OFFERED_AGENT_CHARS,
+        _offered_projection,
+    )
+    from agency_runtime.core.store.queries import project_routing_decision
+
+    def projected(value: object) -> dict[str, Any]:
+        return project_routing_decision(
+            {"source": "native_child_inference_abstained", "offered_agent_ids": value}
+        )[0]
+
+    assert "offered_agent_ids" not in projected("Not A Slug")
+    assert "offered_agent_ids" not in projected(["alpha-reviewer"])
+    assert "offered_agent_ids" not in projected("alpha-reviewer~")
+    assert projected("alpha-reviewer~beta-reviewer")["offered_agent_ids"] == (
+        "alpha-reviewer~beta-reviewer"
+    )
+
+    # An offered set too large to record keeps the digest, so it can never be
+    # mistaken for a smaller universe than the judge actually saw.
+    oversized = [f"agent-{index:04d}" for index in range(2_000)]
+    projection = _offered_projection(oversized)
+    assert "offered_agent_ids" not in projection
+    assert (
+        projection["offered_agent_digest"]
+        == sha256("~".join(sorted(oversized)).encode("utf-8")).hexdigest()
+    )
+    assert len("~".join(sorted(oversized))) > MAX_RECORDED_OFFERED_AGENT_CHARS
+
+
 def _tool_agent(slug: str, prompt: str, *, tools: tuple[str, ...]) -> dict[str, Any]:
     agent = _agent(slug, prompt)
     agent["required_tools"] = list(tools)
@@ -1055,6 +1122,58 @@ def test_public_failure_projection_round_trips_through_real_store(tmp_path: Path
     assert projection["native_child_reason"] == "unsupported_opaque_interagent_channel"
     assert projection["inference_required"] is True
     assert store.get_native_child_staffing_decision(decision_id) is None
+
+
+def test_the_offered_universe_survives_a_real_store_write_and_read(tmp_path: Path) -> None:
+    """The projection accepting a field is not evidence the reader returns it.
+
+    ``ranked_agent_ids`` passed its own projection and still bricked the live
+    evidence store, because the reader applied a bound the writer never saw. A
+    decline is only diagnosable if the offered set survives the whole path.
+    """
+
+    store = Store(tmp_path / "agency.db")
+    store.create_run(
+        session_id="parent-session",
+        trace_id="parent-trace",
+        host="claude",
+        user_message="Parent request",
+    )
+    offered = sorted(f"agent-{index:03d}" for index in range(64))
+    decision_id = store.record_routing_decision(
+        session_id="parent-session",
+        trace_id="parent-trace",
+        query_hash=_digest("child task"),
+        context_fingerprint=_digest("child context"),
+        decision=staffing._routing_projection(
+            result={"candidate_count": len(offered)},
+            task_sha256=_digest("child task"),
+            context_fingerprint=_digest("child context"),
+            selected_ids=[],
+            status="inference_abstained",
+            source=staffing._failure_source("inference_abstained"),
+            reason_code=staffing.NATIVE_CHILD_ABSTAINED_REASON,
+            offered_ids=offered,
+        ),
+    )
+
+    conn = store._connect()
+    try:
+        row = conn.execute(
+            "SELECT source, decision FROM routing_decisions WHERE id = ?",
+            (decision_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+    assert row is not None
+    projection = json.loads(row["decision"])
+    assert row["source"] == "native_child_inference_abstained"
+    assert projection["offered_agent_ids"] == "~".join(offered)
+    assert projection["offered_agent_digest"] == _digest("~".join(offered))
+    assert projection["candidate_count"] == 64
+    # Every recent-activity reader decodes the same row; a payload that only the
+    # writer accepts is how the store was bricked before.
+    assert any(item.get("id") == decision_id for item in store.recent_runtime_activity()["routing"])
 
 
 def test_route_persistence_failure_returns_original_task_without_delivery(

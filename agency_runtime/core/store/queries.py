@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -109,6 +110,11 @@ _ROUTING_DECISION_FIELDS = frozenset(
         "latency_ms",
         "provider",
         "candidate_count",
+        # Which specialists the child judge was actually shown. `candidate_count`
+        # alone cannot answer the only question a decline raises -- whether
+        # anyone who could do the work was in front of it.
+        "offered_agent_ids",
+        "offered_agent_digest",
         "top_score",
         "cache_hit",
         "session_reused",
@@ -170,8 +176,13 @@ _ROUTING_DIGEST_FIELDS = frozenset(
         "query_hash",
         "origin_query_hash",
         "origin_context_fingerprint",
+        "offered_agent_digest",
     }
 )
+# Agent slugs, not free text. A malformed id fails the field closed rather than
+# crossing the content-free receipt boundary as an opaque string.
+_OFFERED_AGENT_ID = re.compile(r"[a-z0-9][a-z0-9-]{0,63}\Z")
+MAX_ROUTING_OFFERED_AGENT_CHARS = 16_384
 
 
 def _bounded_routing_list(value: object) -> list[str]:
@@ -203,6 +214,27 @@ def _bounded_routing_count(value: object) -> int:
     return max(0, min(parsed, 86_400_000))
 
 
+def _bounded_offered_agent_ids(value: object) -> object:
+    """Project the offered universe as one flat, slug-validated string.
+
+    Flat, not a list: the same payload reaches readers bounded at
+    ``maximum_depth=4``, and a nested list here is what broke the live evidence
+    store when ``ranked_agent_ids`` shipped that way. The digest travels beside
+    it over the complete set, so a value dropped here cannot be mistaken for a
+    smaller universe.
+    """
+
+    if not isinstance(value, str):
+        return _OMIT_ROUTING_FIELD
+    normalized = value.strip()
+    if not normalized or len(normalized) > MAX_ROUTING_OFFERED_AGENT_CHARS:
+        return _OMIT_ROUTING_FIELD
+    parts = normalized.split("~")
+    if any(_OFFERED_AGENT_ID.fullmatch(part) is None for part in parts):
+        return _OMIT_ROUTING_FIELD
+    return normalized
+
+
 def _routing_digest(value: object) -> str:
     normalized = str(value or "").strip()
     return (
@@ -227,6 +259,8 @@ def _project_routing_field(key: str, value: object) -> object:
         return _bounded_routing_float(value)
     if key in _ROUTING_COUNT_FIELDS:
         return _bounded_routing_count(value)
+    if key == "offered_agent_ids":
+        return _bounded_offered_agent_ids(value)
     if key in _ROUTING_DIGEST_FIELDS:
         return _routing_digest(value) or _OMIT_ROUTING_FIELD
     if key == "provider":
@@ -520,6 +554,10 @@ def project_routing_decision(
     elif safe_decision.get("source") in {
         "native_child_inference",
         "native_child_inference_failure",
+        # A solicited decline is not a failure. Unlisted sources fall through to
+        # "computed" below, which would label an inference abstention as a
+        # deterministic decision -- so an addition here is required, not optional.
+        "native_child_inference_abstained",
     }:
         source = str(safe_decision["source"])
     else:
