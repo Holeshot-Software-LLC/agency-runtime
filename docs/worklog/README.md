@@ -926,6 +926,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5bb3502e` | 2026-08-16 | ci(spine): derive the production spine from one source and gate the canary records | null | null |
 | `8c7d218f` | 2026-08-16 | feat(evidence): record which specialists the child judge was shown | null | null |
 | `ded7751e` | 2026-08-16 | docs(ar255): record the offered-universe evidence and the abstained source | null | null |
+| `c91f0e07` | 2026-08-16 | docs(ar255): the child judge was shown code-reviewer and declined it | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
