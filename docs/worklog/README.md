@@ -922,6 +922,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a93fcce5` | 2026-08-16 | docs(ar119): point the capsule at the current projection and the real blocker | null | null |
 | `a3820ad0` | 2026-08-16 | fix(recruiter): score the axis on the whole ranking, record only the prefix | null | null |
 | `375ea790` | 2026-08-16 | docs(ar255): parent staffing is proven live and Rule 4 blocks on one judgment | null | null |
+| `f5442023` | 2026-08-16 | fix(canary): give both backends one protocol-error contract | null | null |
+| `5bb3502e` | 2026-08-16 | ci(spine): derive the production spine from one source and gate the canary records | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
