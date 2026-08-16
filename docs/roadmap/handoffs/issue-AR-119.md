@@ -123,13 +123,13 @@ openclaw are absent, so one machine cannot reach 45.
    passed TUI trust 2026-08-15 but `doctor` still read
    `adapter_codex_hook_trust: unverified`; check which terminal ran it before
    assuming codex is blocked.
-3. **The child judge is now shown a real universe and still declines.** Proven
-   live 2026-08-16: the capability receipt raised the child's universe from 33
-   to **65 of 284** and the empty selection recorded honestly as
-   `inference_abstained` / `native_child_no_specialist_needed` in 5.6 s. The
-   delegation is real (`claude-agent:ae01af48c1d33466d`, `error: ok`) with no
-   slug, receipt or scope. **Rule 4 blocks on one inference judgment, not on
-   plumbing.** The receipt records 65 but not which 65; close that gap first.
+3. **The judge was shown `code-reviewer` and declined it.** `offered_agent_ids`
+   fired live on `95ceee1bcb81`: **66 of 285**, digest self-consistent, and the
+   set contains `code-reviewer`, `python-application-engineer` and
+   `software-test-engineer`. `application-security-engineer` is absent, matching
+   this box's `missing_capabilities` rejection, so parent and child universes
+   legitimately differ. **The universe is not the blocker.** The receipt is
+   content-free, so what the child was *asked* is the open question, not who.
 4. **Every zero-marker result on 2026-08-14 measured the schema break** — both
    canary runs, all nine host probes; both earlier readings are retracted in
    the matrix. Of 63 child artifacts under `~/.claude/projects`, 9 are marked —

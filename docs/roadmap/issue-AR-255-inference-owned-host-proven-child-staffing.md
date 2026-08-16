@@ -373,6 +373,52 @@ it. The invalid-selection path now carries it as well, since a selection naming
 an agent outside the offered set is the one invalid response the offered set
 explains directly.
 
+### The judge was shown `code-reviewer` and declined (2026-08-16)
+
+First live run of the instrument, on `95ceee1bcb81`, run `ea571f98`, child
+decision `2403c5d8`:
+
+| field | value |
+|---|---|
+| status / source | `inference_abstained` / `native_child_inference_abstained` |
+| reason | `native_child_no_specialist_needed` |
+| latency | 5,381 ms |
+| offered | **66** of 285, digest `f34c49c2566f…` |
+
+Self-consistent on its first live write: 66 ids recorded against
+`candidate_count: 66`, sorted and unique, and the digest recomputes exactly. The
+`native_child_inference_abstained` source survived the store's allowlist rather
+than falling through to `computed`.
+
+**`code-reviewer` was in the offered set.** So were `python-application-engineer`,
+`software-test-engineer`, `test-results-analyzer`, `codebase-onboarding-engineer`,
+`minimal-change-engineer`, `codebase-archaeologist` and
+`ai-generated-code-security-auditor`. The judge saw them and returned an empty
+list in 5.4 seconds.
+
+**So the universe is not the blocker.** The parent selected `code-reviewer` for
+the same turn from its own 285; the child was offered the same specialist and
+declined it. Every prior explanation on this issue — unproven capability leaving
+33 historians, an invalid model response, a plumbing fault — is now excluded by
+evidence rather than by argument.
+
+The 66 also confirm the capability filter is doing real work and doing it
+correctly. `application-security-engineer` and `senior-secops-engineer` are
+**absent** despite the parent selecting one of them, which matches the recorded
+`missing_capabilities:sandbox-environment,security-analysis` rejection for this
+box. Parent and child legitimately have different universes; that difference is
+now visible rather than inferred.
+
+**What this does not establish.** The receipt is content-free by design, so the
+child's actual task is unknown. `native_child_no_specialist_needed` may well be
+the *correct* answer for whatever the parent delegated — a child asked to read
+one file and report back needs no specialist. The open question has therefore
+moved from "was anyone capable offered" (answered: yes) to "what was the child
+asked to do", and nothing in the current evidence answers it. A bounded,
+content-free shape for the child task — artifact kind, lifecycle phase, or the
+parent unit id it descends from — is the next instrument, not another guess at
+the judge.
+
 ## Acceptance
 
 - [x] Every delivered specialist slug and version is an exact member of one
