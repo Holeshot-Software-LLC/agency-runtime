@@ -442,6 +442,51 @@ So a structural count is the honest ceiling. **It is a weak signal and should no
 be oversold**: it cannot distinguish a code review from a summary of the same
 length, and nothing content-free can.
 
+### The decline is consistent, and size does not explain it (2026-08-16)
+
+A three-run series on `dc2513c58a8f`, every failure kept rather than retried so
+the series measures a rate instead of producing a best-of. Run 3 hit the 420 s
+deadline **after spawning six children**, so it contributed six independent
+judge decisions rather than one.
+
+| run | parent | header | child decisions | `task_chars` | offered |
+|---|---|---|---|---|---|
+| 1 | staffed `code-reviewer` | **valid** | 1 decline | 1,518 | 66 · `f34c49c2566f` |
+| 2 | staffed 2 | missing 2 | 1 decline | 2,408 | 66 · `f34c49c2566f` |
+| 3 | staffed 2, timed out | n/a | 6 declines + 1 provider failure | 541 – 2,013 | 66 then 67 |
+
+**Ten child decisions across three projections; ten declines; zero staffed.**
+`code-reviewer` was offered in every one. Assignments ranged from 541 characters
+on one line to 2,408 characters over 17, and the answer never changed.
+
+So both remaining explanations are excluded by evidence rather than argument:
+
+- **Not intermittent.** Unlike parent staffing — which has now gone red, red,
+  green, green, green, green — the child judge has never once staffed.
+- **Not a trivial errand.** `task_chars` was built precisely to test whether
+  `native_child_no_specialist_needed` might simply be correct. A 2,408-character,
+  17-line brief is not an errand, and it drew the same answer as the 541-character
+  one. Size does not separate the outcomes because there is only one outcome.
+
+Three further facts this series produced, none of them sought:
+
+1. **Rule 6 hiring is live and visible mid-run.** `request-intake-analyst` was
+   minted during run 3, and the child universe grew **66 → 67 in flight**, with
+   `offered_agent_digest` correctly changing from `f34c49c2566f` to
+   `b5b83ecc699e`. The digest is doing exactly the job it was added for:
+   distinguishing "the same universe" from "a universe that moved".
+2. **A new canary limitation.** Run 3's collector returned
+   `multiple_child_artifacts`. A parent that spawns six children cannot prove
+   Rule 4 under the current collector, independent of any staffing question.
+3. **Today's timeout fix proved itself on a real timeout.** Run 3 reported
+   `status: timed_out`, `timed_out: true`, `failure_reason: claude_exec_timed_out`.
+   Before this morning the same event would have published `"timed_out": false`
+   beside exit code 124 and sent the next diagnosis after the wrong cause.
+
+The provider failure in run 3 is also correct behaviour worth noting:
+`native_child_inference_unavailable` carries **no** `offered_agent_digest`,
+because it fails before a catalog exists. Absent, not an empty-set digest.
+
 **What would actually settle it** is already built and already owner-gated:
 `observability.capture_content` requires a typed `ENABLE CONTENT CAPTURE`
 confirmation in the dashboard and is currently `true` in `agency.yaml`. Wiring

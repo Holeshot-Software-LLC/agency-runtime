@@ -123,13 +123,13 @@ openclaw are absent, so one machine cannot reach 45.
    passed TUI trust 2026-08-15 but `doctor` still read
    `adapter_codex_hook_trust: unverified`; check which terminal ran it before
    assuming codex is blocked.
-3. **The judge was shown `code-reviewer` and declined it.** `offered_agent_ids`
-   fired live on `95ceee1bcb81`: **66 of 285**, digest self-consistent, and the
-   set contains `code-reviewer`, `python-application-engineer` and
-   `software-test-engineer`. `application-security-engineer` is absent, matching
-   this box's `missing_capabilities` rejection, so parent and child universes
-   legitimately differ. **The universe is not the blocker.** The receipt is
-   content-free, so what the child was *asked* is the open question, not who.
+3. **Ten child decisions, ten declines, zero staffed** — with `code-reviewer`
+   offered every time and `task_chars` from 541 to 2,408. Not intermittent
+   (parent staffing is: red, red, then four greens) and not a trivial errand.
+   Universe and assignment size are both excluded by evidence. Rule 6 hiring is
+   live: the child universe grew **66 → 67 mid-run** as `request-intake-analyst`
+   was minted, and `offered_agent_digest` moved with it. A six-child parent also
+   cannot prove Rule 4 at all — the collector returns `multiple_child_artifacts`.
 4. **Every zero-marker result on 2026-08-14 measured the schema break** — both
    canary runs, all nine host probes; both earlier readings are retracted in
    the matrix. Of 63 child artifacts under `~/.claude/projects`, 9 are marked —
