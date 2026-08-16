@@ -920,6 +920,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4bb04a66` | 2026-08-16 | fix(recruiter): score the uncoverable axis over the executable ranked set | null | null |
 | `82404c34` | 2026-08-16 | docs(ar253): the ranked set covers the unit and the team is still empty | null | null |
 | `a93fcce5` | 2026-08-16 | docs(ar119): point the capsule at the current projection and the real blocker | null | null |
+| `a3820ad0` | 2026-08-16 | fix(recruiter): score the axis on the whole ranking, record only the prefix | null | null |
+| `375ea790` | 2026-08-16 | docs(ar255): parent staffing is proven live and Rule 4 blocks on one judgment | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
