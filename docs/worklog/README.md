@@ -904,6 +904,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `30ab92f9` | 2026-08-15 | ci(workflows): stop billing a hosted run for every push to main | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-15-30ab92f9-local-gates-replace-push-ci.md) |
 | `bddd3b8c` | 2026-08-15 | ci(hooks): gate every push on the fast local checks | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-15-30ab92f9-local-gates-replace-push-ci.md) |
 | `bdfb535a` | 2026-08-15 | docs(ar119): open the capsule on the live Claude canary | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `b6230f83` | 2026-08-15 | feat(evidence): record which candidates the recruiter actually ranked | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `e2c4e32f` | 2026-08-15 | docs(ar253): retract the plan-defect diagnosis the canary refuted | [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
