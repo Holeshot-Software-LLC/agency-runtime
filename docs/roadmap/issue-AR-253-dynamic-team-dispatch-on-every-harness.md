@@ -143,6 +143,13 @@ hosts. Unavailable hosts remain explicitly unproven.
 
 ## The recruiter rejection is a plan defect wearing a recruiter's name (2026-08-15)
 
+> **RETRACTED the same day by the live canary.** This section's conclusion is
+> wrong for the canary's unit: the plan is fully coverable and the fault is the
+> recruiter's ranking. Its mechanics — conjunctive coverage, and why a repair
+> aimed at the recruiter cannot fix a plan — remain correct and are why the
+> domain boundary still belongs where it was put. See "The canary refuted the
+> plan-defect diagnosis" below.
+
 With the runtime repaired, the live Claude canary reaches routing and dies at
 `workforce_inference_failed` / `inference_invalid`. The receipt now explains
 itself: both recruiter attempts on sonnet were rejected
@@ -295,3 +302,60 @@ Editing the `staff_without_safe_team` line required updating the matching
 `before` snippet in `core/evals/decision_conformance.py`, which stores literal
 source text for the mutation proof. That coupling is invisible from the edit
 site and belongs on the list of duplicated facts this codebase keeps.
+
+## The canary refuted the plan-defect diagnosis (2026-08-15)
+
+The runtime was republished as `0e42ee679dfc` carrying the domain refusal, and
+the live Claude canary was run against it. It failed **identically to before
+the fix**: `staff_without_safe_team` on `unit-python-strip-regression-review`,
+on both funded recruiter attempts. The falsification condition written into the
+section above fired, so that diagnosis is retracted.
+
+The axis field settled it in one read, which is what it was built for. It is
+**absent** on that failure, and the installed launcher's own projection emits
+`requirement_axis` when one exists, so the absence means what it says: no
+requirement axis is uncoverable.
+
+Verified offline against the live 283-contract roster, no inference spent:
+
+- The unit needs six things — `artifact:review-report`, `lifecycle:review`,
+  `domain:software-engineering`, `stack:python`, `capability:review`,
+  `authority:review`. **The whole roster covers all six.**
+- Filtered to a claude/windows execution context, **10 of 283 contracts are
+  eligible — and each of the ten covers the unit essentially single-handed.**
+- `code-reviewer`, the specialist the canary expects, appears exactly once, is
+  enabled, is eligible, and covers all six alone.
+- The typed shortlist the recruiter receives carries 24 candidates,
+  `uncovered_requirements: []`, and 10 marked `execution_eligible`.
+
+Simulating the deterministic team build from candidate rankings reproduces the
+failure exactly:
+
+| ranking supplied | resulting team |
+|---|---|
+| only `python-cli-architecture-specialist` (in shortlist, `eligible=False`) | `()` → `staff_without_safe_team` |
+| `code-reviewer` | `('code-reviewer',)` |
+| ineligible first, `code-reviewer` second | `('code-reviewer',)` |
+
+**The failure requires a ranking containing no eligible candidate at all.** One
+eligible name anywhere in it rescues the team. So this is a recruiter ranking
+fault, and `staff_without_safe_team` is actively misleading here: it asserts no
+safe team exists while ten do. The funded repair then tells the recruiter to
+"rank at least one semantically faithful candidate", which it believes it
+already did — which is why the retry reproduces rather than recovers.
+
+`python-cli-architecture-specialist` is the obvious lure: it sits in the same
+shortlist, it is the aptest-sounding name for reviewing a one-line Python
+change, and it is ineligible. Ordering cannot warn against it, because ADR-0118
+forbids a local preference — candidates are ordered by coverage count then
+identity, never by fit.
+
+**What shipped now is evidence only, deliberately.** The failure records the
+agent ids the recruiter actually ranked, projected as `ranked_agent_ids`
+alongside the unit and the axis. Recruiter behaviour is unchanged, so the next
+canary run either shows a ranking with no eligible candidate — confirming the
+mechanism from evidence instead of reconstruction — or shows something else and
+refutes this too. The remaining fix, once confirmed, is a distinct reason code
+for "ranked only ineligible candidates" and a repair that names the eligible
+subset rather than restating an instruction the recruiter already believes it
+followed.

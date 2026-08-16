@@ -50,21 +50,19 @@ load first after any compaction or restart.
 - **CI runs every matrix-cited test file** ("Run AR-119 matrix evidence"), and
   `test_release_packaging.py` asserts that list *equals* the matrix citations,
   so a citation and a CI entry must arrive together, both directions.
-- **`eval decision-conformance` cannot run its mutation phase here** — pytest is
-  in user site-packages and the sandbox redirects `HOME`, so the baseline dies
-  in ~120 ms, identically on clean `main` (AR-257). Run `baseline.test_nodes`
-  with ordinary pytest; to check one edited mutation, assert every `before`
-  snippet still matches its source exactly once.
+- **`eval decision-conformance` cannot run its mutation phase here** (AR-257):
+  the sandbox redirects `HOME` away from pytest, so the baseline dies in ~120 ms,
+  identically on clean `main`. Assert every `before` snippet still matches its
+  source exactly once instead.
 
 ## completed-evidence
 
 - `AR-119-founding-vision.md` is the sole wording authority and the matrix the
   sole completion authority; neither implementation nor simulation is host proof.
 - AR-255 uses complete-universe inference, exact ordered multi-card v6 delivery,
-  install/config/roster fences, and sealed one-use delivery proof; SafeClaude
-  retains its in-lifetime collector. Codex `211563c7` preserves exact CLI 0.147
-  and adds a sealed Desktop `0.147.0-alpha.6.6`; exec depth-two stays
-  unsupported and no exact-candidate Installed/Live proof has run on any host.
+  install/config/roster fences, and sealed one-use delivery proof. Codex
+  `211563c7` preserves exact CLI 0.147 and a sealed Desktop alpha; exec
+  depth-two stays unsupported and no Installed/Live proof has run on any host.
 - AR-252's fourth constraint, in its issue: the verdict must bind the producer's
   *transcript* digest, unreadable to any verifier child, so Agency supplies the
   binding and the verdict is a joint object. Settle that first.
@@ -72,17 +70,22 @@ load first after any compaction or restart.
 ## exact-blocker
 
 1. **AR-180 — Codex support.** `211563c7` proves exact CLI 0.147 and Desktop
-   `0.147.0-alpha.6.6` Impl/Sim. Exec depth-two is parked: no same-version
-   sample, so it needs a live spawn or a drop. **AR-255 — exact host proof:** get
-   authorization before exact install or live proof; fake runners are simulation.
+   alpha Impl/Sim; exec depth-two is parked pending a live spawn or a drop.
+   **AR-255:** get authorization before exact install or live proof.
 2. **AR-252 — automatic contractor critical path.** The host-free half is built
-   and its five acceptance items are checked, but **nothing yet collects a real
-   envelope** — every producer and verifier proof is constructed by the test.
-   What remains is a collector pairing one producer proof, one distinct verifier
-   proof and that verdict, then live proof on Claude and Codex.
-3. **AR-253 — staffing rate, latency, and parity.** The overrun is the recruiter
-   (50-85 s inference; the 9 s process floor is not the lever). Obtain
-   exact-candidate evidence on all five hosts against the 15-second cold gate.
+   and checked, but **nothing yet collects a real envelope** — every proof is
+   constructed by the test. What remains is a collector pairing one producer
+   proof, one distinct verifier proof and that verdict, then live host proof.
+3. **AR-253 — staffing rate, latency, and parity.** The recruiter owns the
+   overrun (50-85 s; the 9 s process floor is not the lever). **Measured live
+   2026-08-15: routing took 85.3 s and 124.0 s on two accepted rows, and one run
+   ran 28 minutes before being marked `abandoned`.** A parent turn and its child
+   usually finish before that turn's routing resolves, so the child's
+   `PreToolUse` finds no `active` run to correlate, and past two terminal runs
+   the 5.3.1 exactly-one-run fallback declines as well. **That, not a
+   plan-boundary regression, is why the first canary returned no envelope** —
+   the hook and runtime are proven working. Re-attempt after AR-253 lands or by
+   holding a parent turn open past recruiter resolution.
 4. **AR-125 — value.** Run the matched Agency-on/off corpus only after candidate
    and provider validity hold; malformed or timed-out arms are invalid, never
    upstream losses. Rule 9 cannot close until 1-8 are proven on all five hosts.
@@ -101,9 +104,8 @@ reconstruct retired Job B, plan-row, work-unit, grant or consumed-receipt transp
 ready here; codex needs the TUI trust pass against `0e42ee679dfc`; hermes and
 openclaw are absent, so one machine cannot reach 45.
 
-**START HERE. Run the live Claude canary first.** Everything below exists to
-make that one measurement meaningful, and it has never been run against a
-runtime carrying the plan-boundary fix.
+**START HERE.** The canary has now run on `0e42ee679dfc`. What is left is
+confirming the recruiter ranking fault it exposed.
 
 1. **The runtime is current and verified.** Hooks run
    **`runtime-sha256-0e42ee679dfc`** at SCHEMA_VERSION 46, carrying the domain
@@ -114,20 +116,20 @@ runtime carrying the plan-boundary fix.
    launcher** — that is "failed safely", and the cure is a restart, never
    another install. Suite runs rewrite `launchers/current.json`; ignore it.
 2. **Prove Claude in two steps and do not conflate them.** First the staffing
-   path: the canary reaches routing, records an accepted `routing_decisions`
-   row with selected specialists and no preflight receipt. That is the direct
-   test of the plan-boundary fix. Only then Rule 4, which needs a host-written
-   artifact carrying exact hashes for **two or more** cards before first child
-   speech. Step one passing is not step two. **Then the owner passes Codex TUI
-   trust against `0e42ee679dfc` and codex is measured the same way.**
-3. **What the canary is testing.** `staff_without_safe_team` was a plan defect:
-   coverage is conjunctive, so a domain no contract declares defeats every
-   ranking. `compile_intent_plan` now refuses an unknown domain unless the unit
-   declares `novel_capability`, the exception that keeps the rule-6 hiring gap
-   reachable. It is proven by mechanism against the live roster, never by
-   replay, because no plan is persisted. If the canary still fails, the receipt
-   now names the uncoverable axis — present means a plan or roster fault,
-   absent means the ranking is the recruiter's own.
+   path: an accepted `routing_decisions` row with selected specialists and no
+   preflight receipt. Only then Rule 4, which needs a host-written artifact
+   carrying exact hashes for **two or more** cards before first child speech.
+   Step one passing is not step two. Codex is measured the same way: the owner
+   passed TUI trust 2026-08-15 but `doctor` still read
+   `adapter_codex_hook_trust: unverified`; check which terminal ran it before
+   assuming codex is blocked.
+3. **The canary already refuted the plan-defect diagnosis.** Run on
+   `0e42ee679dfc` it failed identically — `staff_without_safe_team` on
+   `unit-python-strip-regression-review`, axis **absent**. Offline: the roster
+   covers all six requirements, 10 of 283 contracts are eligible, and
+   `code-reviewer` covers the unit alone. So it is a **recruiter ranking** fault,
+   not a plan defect; AR-253 carries the evidence. The failure now records the
+   ranked agent ids, so the next run confirms it from evidence.
 4. **Every zero-marker result on 2026-08-14 measured the schema break** — both
    canary runs, all nine host probes; both earlier readings are retracted in
    the matrix. Of 63 child artifacts under `~/.claude/projects`, 9 are marked —
@@ -136,12 +138,10 @@ runtime carrying the plan-boundary fix.
    a session may not call the Agent tool.
 
 **An unrun hook and a fail-open hook look identical from outside**, so zero
-Agency rows proves neither; wrap the hook in a shim logging stdin, stdout,
-stderr and exit code, which gave the root cause on the first run. The collector
-names its own refusal (`host_child_collection_reason`); `counts.specialists` /
-`counts.runs` are not canary-scoped; and `cd56471d` retired the delegation
-accounting on purpose, so **empty `retrieved_specialist_slug` /
-`activation_receipt_id` proves nothing**.
+Agency rows proves neither; a shim logging stdin/stdout/stderr/exit gave the
+root cause on the first run. The collector names its own refusal
+(`host_child_collection_reason`); `counts.specialists` / `counts.runs` are not
+canary-scoped; `cd56471d` retired the delegation accounting on purpose.
 
 ## verification
 
