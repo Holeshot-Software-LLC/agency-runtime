@@ -1643,3 +1643,52 @@ def test_fresh_turn_builds_route_request_once_and_reuses_it(
     assert any(kwargs.get("request") is not None for kwargs in captured_request_kwargs), (
         "route() must receive the pre-built request= kwarg"
     )
+
+
+def test_recruiter_ranked_ids_stay_inside_the_receipt_bounded_json_depth() -> None:
+    """A projected nomination failure must survive the reader that stores it.
+
+    ``normalize_activity_rows`` decodes ``preflight_failure_receipts`` provider
+    attempts at ``maximum_depth=4``. A nested ranked-id list pushes one attempt
+    past that, and the decode failure is raised for the whole batch, so a single
+    over-deep diagnostic row makes ``recent_runtime_activity`` unreadable and
+    every caller sees "runtime evidence store is unavailable" -- which is how a
+    live canary run was blocked on 2026-08-16.
+    """
+
+    from agency_runtime.core.bounded_json import safe_load_bounded_json
+    from agency_runtime.core.preflight_failure import (
+        MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
+    )
+    from agency_runtime.core.selector.receipt_projection import project_nomination_failures
+
+    failures = project_nomination_failures(
+        "workforce nomination failures: "
+        "unit-server-code-review=staff_without_safe_team"
+        "~code-reviewer~senior-secops-engineer~application-security-engineer"
+    )
+    assert failures == [
+        {
+            "unit_id": "unit-server-code-review",
+            "reason_code": "staff_without_safe_team",
+            "ranked_agent_ids": (
+                "code-reviewer~senior-secops-engineer~application-security-engineer"
+            ),
+        }
+    ]
+
+    attempts = [
+        {
+            "provider_name": "claude-haiku",
+            "provider_type": "cli",
+            "reason_code": "structured_response_invalid",
+            "nomination_failures": failures,
+        }
+    ]
+    decoded = safe_load_bounded_json(
+        json.dumps(attempts),
+        maximum_bytes=MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
+        maximum_depth=4,
+        maximum_nodes=512,
+    )
+    assert decoded == attempts

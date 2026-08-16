@@ -1051,7 +1051,8 @@ def test_a_staffing_failure_records_who_the_recruiter_actually_ranked() -> None:
         {
             "unit_id": "unit-python-strip-regression-review",
             "reason_code": "staff_without_safe_team",
-            "ranked_agent_ids": ["python-cli-architecture-specialist"],
+            # Flat, so the preflight receipt stays inside its bounded-JSON depth.
+            "ranked_agent_ids": "python-cli-architecture-specialist",
         }
     ]
     # A malformed agent id fails the projection closed rather than arriving as
@@ -1584,7 +1585,7 @@ def test_staff_decision_without_safe_team_gets_one_bounded_inference_repair() ->
         {
             "unit_id": "unit-analyze",
             "reason_code": "staff_without_safe_team",
-            "ranked_agent_ids": ["wrong-neighbor", "technical-analyst", "analysis-alternative"],
+            "ranked_agent_ids": "wrong-neighbor~technical-analyst~analysis-alternative",
         }
     ]
     assert outcome.staffing.units[0].selected == ("technical-analyst",)

@@ -154,7 +154,7 @@ def _parse_nomination_detail(value: str) -> list[dict[str, Any]] | None:
         if axis:
             row["requirement_axis"] = axis
         if ranked_text:
-            row["ranked_agent_ids"] = ranked_text.split("~")
+            row["ranked_agent_ids"] = ranked_text
         parsed.append(row)
     return parsed
 
@@ -192,7 +192,13 @@ def project_nomination_failures(value: object) -> list[dict[str, Any]]:
         reason_code = _code(item.get("reason_code"))
         axis = _code(item.get("requirement_axis")) if "requirement_axis" in item else ""
         raw_ranked = item.get("ranked_agent_ids") or ()
-        if isinstance(raw_ranked, (str, bytes)) or not isinstance(raw_ranked, (list, tuple)):
+        if isinstance(raw_ranked, bytes):
+            return []
+        if isinstance(raw_ranked, str):
+            # The stored form is the flat delimited string this function emits,
+            # so it must round-trip through its own output.
+            raw_ranked = raw_ranked.split("~") if raw_ranked else ()
+        elif not isinstance(raw_ranked, (list, tuple)):
             return []
         ranked = [str(value or "").strip().casefold() for value in raw_ranked]
         if len(ranked) > _MAX_IDS or any(
@@ -213,7 +219,11 @@ def project_nomination_failures(value: object) -> list[dict[str, Any]]:
         if axis:
             failure["requirement_axis"] = axis
         if ranked:
-            failure["ranked_agent_ids"] = ranked
+            # Flat, not nested. A list here pushes the preflight-failure receipt
+            # past its bounded-JSON depth of 4, and one over-deep row makes
+            # recent_runtime_activity raise, which reads to every caller as
+            # "runtime evidence store is unavailable" and blocks the canary.
+            failure["ranked_agent_ids"] = "~".join(ranked)
         if not projected_unit_id or failure in failures:
             return []
         failures.append(failure)
