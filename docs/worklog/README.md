@@ -927,6 +927,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8c7d218f` | 2026-08-16 | feat(evidence): record which specialists the child judge was shown | null | null |
 | `ded7751e` | 2026-08-16 | docs(ar255): record the offered-universe evidence and the abstained source | null | null |
 | `c91f0e07` | 2026-08-16 | docs(ar255): the child judge was shown code-reviewer and declined it | null | null |
+| `3a14a7b9` | 2026-08-16 | feat(evidence): record how much assignment the declining child was given | null | null |
+| `a432b181` | 2026-08-16 | docs(ar255): record the task-shape ceiling and the two rejected instruments | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
