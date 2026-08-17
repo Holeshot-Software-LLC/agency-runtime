@@ -215,9 +215,23 @@ def build_judge_prompt(
     prompted = facade._judge_candidates(candidates)
     catalog_lines = [_candidate_card_json(agent) for agent in prompted]
     catalog_text = "\n".join(catalog_lines)
+    # A complete universe has already been filtered to workers proven executable
+    # on this host, but the prompt never said so -- it asked the model to worry
+    # about host, platform and tool constraints that were resolved before the
+    # prompt was built. An apparently unvetted set invites caution, and caution
+    # has a one-word escape in the same sentence. Say what was already checked.
+    # Scoped to the complete universe so the retrieved-scope selector, whose
+    # candidates are NOT pre-filtered this way, is untouched.
+    vetted = (
+        "Every candidate below is already verified enabled, contract-valid, and "
+        "executable on this host and platform; those checks are done. "
+        if isinstance(candidates, facade._CompleteCandidateUniverse)
+        else ""
+    )
     # This is a bounded model prompt, not a database statement.
     prompt = (
         f"Task: {task_description}\n\n"  # nosec B608
+        f"{vetted}"
         f"Select zero to {max_sel} specialists from these {len(prompted)} "
         "candidates. Choose the smallest sufficient compatible set. Do not combine "
         "agents whose conflicts_with, authority, context_mode, tools, hosts, or "
