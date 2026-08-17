@@ -944,6 +944,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cb86e939` | 2026-08-16 | docs(ar119): open the overnight report with the runtime the machine is on | null | null |
 | `347f2982` | 2026-08-16 | docs(ar119): record the sweep verdicts and the completed baseline series | null | null |
 | `61c3aec3` | 2026-08-16 | docs(ar119): give the owner a runnable openclaw and hermes packet | null | null |
+| `e5016733` | 2026-08-16 | docs(ar119): refute the zcode-CLI stage for this box, by measurement | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
