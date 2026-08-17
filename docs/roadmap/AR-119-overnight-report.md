@@ -27,7 +27,9 @@ AR-258's one-digest property held all night through three installs:
 `8a429a54` (merge `227ab06b`). At no point was branch-only code installed.
 `~/.agency-runtime/overnight-runtime-state.json` carries the same facts.
 The matrix's Installed/Live evidence was measured on `2cd298158584`; the
-final build adds only the flag-gated capture wiring, inert until enabled.
+final build adds only the flag-gated capture wiring — **armed, not inert:
+your `capture_content` has been true since Aug 11** (section 2 retraction),
+so the next child decline records the assignment on its own.
 
 **Merged to main tonight, under the standing authorization** (full spine green
 locally — 1,462 then 793 post-fix — CI green 13/13 on the exact head, docs
@@ -114,6 +116,21 @@ Result, for claude:
   pass-shaped reasons and the mislabel. Evidence-integrity bug only (the gate
   uses a different signal); flagged for a daytime fix, and every R6 citation
   tonight carries this caveat.
+- **RETRACTED, one of my own claims: "the flag is off."** The overnight
+  report asserted in two places that `observability.capture_content` was
+  disabled — that the `captured_task` key was absent "because the flag is
+  off," and that enabling it was an open morning decision. **I never read the
+  value.** `agency.yaml` has carried `capture_content: true` since
+  2026-08-11 18:55, and a `config get` on 2026-08-17 confirms it; my own
+  `config set … true` this morning was a no-op that did not even change the
+  file's mtime. What the wiring's absence overnight actually reflects is
+  install order: the capture code merged and installed last, after every
+  measurement. Consequence worth stating plainly: the parent path has been
+  storing redacted user messages under this flag since Aug 11 (238 of 238
+  runs), which is your own opt-in and predates this work, and child
+  assignments now join them. Falsification of the corrected claim: a
+  `capture_content: false` in any config layer the hook actually reads, or a
+  post-install decline that records no `captured_task`.
 - **The brief's Stage 4 ("drive zcode through the zcode CLI") is refuted for
   this box, by measurement.** No `zcode` executable exists on PATH or in
   `C:\agency-cli`, and the zcode canary readiness itself reports "host
@@ -274,13 +291,17 @@ indistinguishable from the store (the gap above).
 
 ## 4. Morning decisions for the owner
 
-1. **Enable `observability.capture_content` for child assignments, or not.**
-   The judge declines on the merits; the child's actual assignment is the
-   last unexamined input. **The wiring shipped tonight** (PR #277, under the
-   standing authorization's conditions: redacted, local-only, flag-gated,
-   flag untouched) — one flip of the flag and the next decline records what
-   the child was asked. Enabling it was never mine to do; deciding whether
-   the wiring stays is also yours.
+1. **RETRACTED 2026-08-17 13:2x: this decision was already made — by you, on
+   Aug 11.** The item read "enable `observability.capture_content`, or not…
+   one flip of the flag and the next decline records what the child was
+   asked." **`agency.yaml` has carried `capture_content: true` since
+   2026-08-11 18:55**, so no flip was ever needed: the wiring shipped armed,
+   and the first child decline on the wired build records the assignment with
+   no action from you. The remaining decision is narrower — **whether the
+   child-assignment capture stays**, given your store already holds redacted
+   parent prompts (238 of 238 runs since Aug 11) and will now hold child
+   assignments too. See the retraction note in section 2 for why the original
+   claim was wrong.
 2. **Codex attended trust.** The bypass path proves the runtime records on
    codex but activation failed twice at the recruiter stage and the exec turn
    returned empty. Your fresh codex TUI (`Trust all and continue` over the 8
@@ -330,8 +351,12 @@ indistinguishable from the store (the gap above).
   (PR #277) after the ledger reached a clean merged state — redacted through
   `redact_content`, local store only, recorded only when
   `observability.capture_content` is already true, and on the abstention and
-  staffed outcomes alike. **No capture flag was touched at any point**; the
-  key is absent from every decision written tonight because the flag is off.
+  staffed outcomes alike. **No capture flag was touched at any point** —
+  verified: `agency.yaml` still carries its Aug 11 18:55 mtime. The
+  `captured_task` key is absent from every decision written overnight because
+  the **wiring was not installed until the final build**, after all
+  measurements — *not* because the flag was off. See the section 2
+  retraction.
 - The capsule is 180 lines, current, and points at the true remaining
   blockers: the child judge's merits-declines (instrument: capture wiring +
   repair receipts) and the AR-253 hook-window edge.
