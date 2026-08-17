@@ -298,3 +298,12 @@ path and the staffing eval); the retrieved-scope selector is untouched.
 Acceptance: a re-run canary's single child decision staffs `code-reviewer`
 on the pure work unit, and `native_child_delivery_verifications` gains its
 first row ever.
+
+**First acceptance series (same evening, build `cc478bc8`): 0/3 on
+provider flakiness alone, with the parent chain fully proven.** Run 2's
+parent turn was green end-to-end for the first time — routing accepted
+with `code-reviewer` alone (no security padding) and a valid Agency
+header — and the child judge's draw then died
+`native_child_inference_unavailable`. Runs 1 and 3 died at parent
+preflight. The policy is live and still unjudged at the decisive stage;
+the acceptance criterion stands for the next clean draw.

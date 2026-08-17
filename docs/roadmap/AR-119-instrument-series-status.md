@@ -116,7 +116,30 @@ card threshold for small units, which is an owner-level product question
 parent-side header and the recruiter's intermittent contract failures
 (AR-253) are the two runtime-side items still open.
 
-## 5. Carried-over owner decisions
+## 5. Addendum: the small-unit policy series (build `cc478bc8`)
+
+The owner ruled the same evening: **small units still get cards.** PR #287
+(`99a7b3ac`) shipped the policy into the complete-universe judge prompt —
+task size named a non-reason for an empty selection, coverage the only
+decline ground, abstention escape kept — and all three hosts reinstalled
+on one digest `cc478bc88258`. The three-run acceptance series then went
+0/3 **on provider flakiness alone**, but run 2 moved the frontier:
+
+- **Run 2 proved the parent chain fully green for the first time**:
+  routing accepted with `code-reviewer` ALONE — the security-team padding
+  is gone — and the parent emitted a **valid Agency header**, the first of
+  any isolated-profile canary today. The chain then died at the child
+  stage: `native_child_inference_unavailable` (the provider dropped the
+  child judge's draw), so the policy itself is still unjudged.
+- Runs 1 and 3 died at parent preflight (`workforce_provider_unavailable`,
+  `workforce_inference_failed`) before reaching the instrument.
+
+**Standing acceptance, unchanged:** one clean child draw that STAFFS the
+pure work unit and the first `native_child_delivery_verifications` row
+ever. Everything deterministic in the chain has now been proven green at
+least once; the only remaining variable is a provider draw that survives.
+
+## 6. Carried-over owner decisions
 
 Unchanged from the overnight report section 4: codex attended TUI trust; a
 fresh zcode session; whether the cancelled-hook artifact (session
