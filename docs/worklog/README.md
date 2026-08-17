@@ -957,6 +957,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `aff5fe6a` | 2026-08-17 | docs(ar119): R6 pool reuse held without a rehire | null | null |
 | `f2f3ca88` | 2026-08-17 | docs(ar119): record the installed and live evidence at candidate c77c67a4 | null | null |
 | `21b43506` | 2026-08-17 | docs(ar119): first Installed and Live layers - R2 R3 R6 R7 proven on claude | null | null |
+| `c1c978e3` | 2026-08-17 | docs(ar119): refresh the capsule and finish the morning report | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
