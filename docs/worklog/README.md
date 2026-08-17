@@ -961,6 +961,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `48f25270` | 2026-08-17 | feat(ar255): record the redacted child assignment under the owner's capture flag | null | null |
 | `6fbc6313` | 2026-08-17 | docs(ar119): the capture wiring shipped; correct the report | null | null |
 | `34b6c09f` | 2026-08-17 | docs(ar119): the machine wakes on main tip 227ab06b | null | null |
+| `d7ecbc55` | 2026-08-17 | docs(ar119): warn that the owner's eval_commands WIP left the working tree | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
