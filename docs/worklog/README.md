@@ -969,6 +969,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `53088a93` | 2026-08-17 | docs(ar255): the capture settled it -- the judge was right about errands | null | null |
 | `be8b8df4` | 2026-08-17 | docs(ar119): point the capsule at the settled verdict and the instrument fix | null | null |
 | `b480cc9a` | 2026-08-17 | fix(canary): hand the child the work unit verbatim in the activation prompt | null | null |
+| `a7ff98c3` | 2026-08-17 | fix(canary): demand exclusive verbatim handoff and pin the prompt text | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
