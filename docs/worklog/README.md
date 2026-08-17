@@ -934,6 +934,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b0940136` | 2026-08-16 | docs(ar255): the child is not evaluated the way the parent is | null | null |
 | `a32c4d91` | 2026-08-16 | fix(judge): tell a complete-universe judge what was already verified | null | null |
 | `a30c432d` | 2026-08-16 | docs(ar255): design for giving the child the parent's evaluation pattern | null | null |
+| `81934a97` | 2026-08-16 | docs(ar119): overnight autonomous brief, and P1 measured inconclusive at n=1 | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
