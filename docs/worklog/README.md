@@ -959,6 +959,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `21b43506` | 2026-08-17 | docs(ar119): first Installed and Live layers - R2 R3 R6 R7 proven on claude | null | null |
 | `c1c978e3` | 2026-08-17 | docs(ar119): refresh the capsule and finish the morning report | null | null |
 | `48f25270` | 2026-08-17 | feat(ar255): record the redacted child assignment under the owner's capture flag | null | null |
+| `6fbc6313` | 2026-08-17 | docs(ar119): the capture wiring shipped; correct the report | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
