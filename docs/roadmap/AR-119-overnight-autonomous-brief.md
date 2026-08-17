@@ -64,15 +64,43 @@ WHAT A WORKTREE DOES NOT ISOLATE -- know this before you install anything:
   - `~/.agency-runtime/agency.db` is machine-global. Every canary you run writes
     to his live store. That is expected and matches how tonight's runs worked.
   - Installed launcher projections are machine-global. Installing from the
-    worktree republishes the host hooks to run YOUR BRANCH's code, and they will
-    still be running it when he sits down. The projection is a self-contained
-    copy, so removing the worktree does not break it -- but the code his own
-    sessions execute in the morning will be the branch's, not main's.
-  - Therefore: record in the morning report the digest installed for each host,
-    the branch and commit it came from, and the exact command to restore main's
-    build (`python -m agency_runtime.cli install --agent <host>` run from the
-    primary checkout on main). Put that revert command in the report even if
-    everything went well.
+    worktree republishes the host hooks to run YOUR BRANCH's code. The projection
+    is a self-contained copy, so removing the worktree does not break it.
+
+HE MUST WAKE UP TO A KNOWN-GOOD RUNTIME. This is a hard requirement.
+
+You cannot avoid installing branch builds: host canaries execute the INSTALLED
+projection, not the checkout, so branch code cannot be measured on a host any
+other way. So install freely while you work, and then:
+
+  1. RESTORE MAIN'S BUILD AS YOUR FINAL ACTION, for every host you touched:
+       cd "C:\Workspaces\Holeshot Software\agency-runtime"   # primary, on main
+       git status --short          # confirm main, and leave his WIP alone
+       python -m agency_runtime.cli install --agent claude
+       python -m agency_runtime.cli install --agent codex
+       python -m agency_runtime.cli install --agent zcode
+     Then VERIFY it took: read `~/.agency-runtime/launchers/current-<host>.json`
+     and confirm the digest matches a fresh install from main, not your branch.
+     Do not claim the restore; check it.
+
+  2. KEEP A RUNTIME STATE FILE, updated immediately after EVERY install, at
+     `~/.agency-runtime/overnight-runtime-state.json`:
+       {"host": ..., "digest": ..., "branch": ..., "commit": ..., "at": ...,
+        "is_main_build": true|false, "restore_command": "..."}
+     Write it after the install, not before. If you crash, time out, or run out
+     of budget mid-night, this file is the only thing that tells him what his
+     hooks are actually running. Assume you will not get to say goodbye.
+
+  3. If you are ever about to idle for a long stretch, restore main's build
+     first and reinstall the branch when you resume. An unattended machine
+     should sit on main's build by default.
+
+EVIDENCE PRODUCED ON BRANCH CODE IS BRANCH EVIDENCE.
+Every matrix cell you green must record the runtime digest AND the commit that
+produced it. A cell proven by unmerged branch code is PROVISIONAL -- mark it so
+in the matrix and in the report. It becomes real when he merges, not when you
+measure it. Do not let a provisional cell read as proven; that is the exact
+failure this matrix has already recorded three times.
 
 READ FIRST, BEFORE ANY OTHER ACTION
   1. docs/roadmap/handoffs/issue-AR-119.md      (the capsule)
@@ -284,6 +312,10 @@ ACCEPTANCE -- you are done when all of these hold
       pushed, main untouched, nothing committed in the primary checkout.
   [ ] The capsule is current, still <= 180 lines, and points a fresh session at
       the true remaining blocker.
+  [ ] MAIN'S BUILD IS INSTALLED for every host you touched, VERIFIED by reading
+      the current-<host>.json digests -- not merely reinstalled and assumed.
+  [ ] `~/.agency-runtime/overnight-runtime-state.json` reflects that final state.
+  [ ] Every branch-derived matrix cell is marked provisional.
 
 MORNING REPORT -- write it to docs/roadmap/AR-119-overnight-report.md and commit
   1. What is now PROVEN, with the run ids and digests that prove it.
@@ -293,9 +325,13 @@ MORNING REPORT -- write it to docs/roadmap/AR-119-overnight-report.md and commit
   5. What is still blocked and exactly whose hands it needs.
   6. Anything you did that carries a caveat -- especially every codex result
      obtained under the trust bypass.
-  7. The branch name and its head commit, the digest installed per host with the
-     commit it came from, the command to restore main's build, and whether child
-     assignments are now being captured. He merges; you do not.
+  7. The branch name and head commit; confirmation that MAIN'S build is what is
+     installed right now, with the verified digest per host; which cells are
+     provisional pending merge; and whether child assignments are now being
+     captured. He merges; you do not.
+
+Open the report with one line stating what runtime his machine is on. That is
+the first thing he needs and the thing most likely to be wrong.
 
 Do not overstate. If the child judge still declines after P2, the correct report
 says the vision did not complete overnight and names precisely why. That is a
