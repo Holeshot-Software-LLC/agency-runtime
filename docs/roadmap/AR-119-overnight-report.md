@@ -201,6 +201,26 @@ indistinguishable from the store (the gap above).
   hidden. Matrix cells move only after the candidate advances (section 1a's
   cross-cutting precondition).
 
+- **R7 complete on claude, exact candidate, one artifact.** Same session
+  `aa740d50`, turn 2 (04:06:44Z): the capsule side file carries
+  `[AGENCY SPECIALIST EXPIRY] … no longer loaded:` naming **all four** turn-1
+  specialists; none is re-delivered (turn 2 loaded `code-reviewer` and
+  `function-naming-advisor` instead); the store shows every turn-1 card's
+  `expired_at == run 1's ended_at` (04:04:04Z) and turn 2's cards expiring at
+  run 2's end. Held in its own turn, absent from the next, expiry stated —
+  both halves of the authority in the host artifact plus the store join.
+- **R6 fired organically on the exact candidate.** Turn 2's rename request
+  found a roster gap and minted `function-naming-advisor` mid-turn: hiring
+  case `6c04ac6e` (04:11:13Z) status `applied`, worker filed
+  `origin='agency'`, `employment_class='contractor'`, and the new card —
+  entry plus whole instruction body — dealt into the very turn whose gap
+  created it, pre-first-speech, in the host artifact. The pool-reuse half
+  ("next turn reuses it and hires nobody") is being measured with a third
+  turn now.
+- **The hiring verdict fix is proven live.** Case `6c04ac6e`, hired on the
+  post-fix runtime, records `verdict: "safe"` with **6 annotation reasons** —
+  the exact shape that recorded `"unsafe"` on every applied hire yesterday.
+
 ## 2a. Repaired tonight
 
 - **The hiring verdict mislabel is fixed on the branch** (`e41ac039`): the
