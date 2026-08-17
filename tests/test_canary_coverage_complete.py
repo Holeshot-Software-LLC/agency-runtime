@@ -198,7 +198,10 @@ def test_agency_canary_explicitly_requests_one_whole_unit_subagent() -> None:
     assert prompt.startswith("treat this as exactly one indivisible code-review work unit")
     assert "exactly one sub-agent" in prompt
     assert "delegate that complete work unit" in prompt
-    assert "do not subdivide it further" in prompt
+    assert "spawn no other sub-agents this turn" in prompt
+    assert "do not inspect the environment before or after delegating" in prompt
+    assert "exactly the work unit text below" in prompt
+    assert "nothing before it and nothing after it" in prompt
     assert "user explicitly requested exactly one sub-agent" in (
         canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     )

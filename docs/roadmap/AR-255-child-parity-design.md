@@ -167,7 +167,7 @@ unit — and the parent model's natural delegation habit adds a role preamble
 and environment-inspection errand children around it, so the judge never sees
 a child with a staffable gap.
 
-### Instrument fix (draft, for the next session to implement)
+### Instrument fix (implemented 2026-08-17)
 
 Change the agency-mode canary parent prompt to remove both confounds:
 
@@ -190,6 +190,20 @@ question is whether a one-paragraph review brief is simply below the judge's
 threshold for dealing a card. Note the codex activation contract pins the
 exact prompt text (`_CODEX_ACTIVATION_CANARY_TASK` regex), so the codex-side
 recognizer must move in the same commit.
+
+**Status:** shipped 2026-08-17, hardened past this draft by adversarial
+review before merge. Three confirmed findings strengthened the wording in
+`CODEX_ACTIVATION_CANARY_PROMPT`: the prompt now demands *exclusivity*
+("exactly the work unit text below, nothing before it and nothing after
+it"), not just fidelity, because appending framing around a verbatim copy
+satisfies the draft's letter while failing the equal-text acceptance; it
+excludes the live-composed "Canary nonce" line from the work unit; and it
+bans environment inspection before *or after* delegating. The recognizer
+regex derives from the constant (prompt and codex recognizer move together
+by construction), a golden test pins the full prompt text so a mid-prompt
+insertion cannot pass, and `_explicit_indivisible_unit_request` is asserted
+to fire on the exact prompt. The acceptance run above has not happened yet —
+it needs the next installed build and one measured claude canary.
 
 ### The product question this raises for the owner
 

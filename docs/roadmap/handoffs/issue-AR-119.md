@@ -110,12 +110,12 @@ series split legacy / legacy / `native_child_abstention_confirmed` (n=3).
 1. **SETTLED by the capture lane (2026-08-17): the judge was RIGHT.** The
    `native_child_captured_assignments` table (schema 47, build `512f41fd`)
    persisted all 7 assignments of the first capture run: six were mechanical
-   errands ("paste this command output verbatim") where declining is correct
-   Rule 8 behavior, and the one review-shaped child arrived with the parent's
-   own "You are acting as an independent code reviewer…" preamble embedded —
+   errands where declining is correct Rule 8 behavior, and the one
+   review-shaped child carried the parent's own embedded reviewer preamble —
    the card would have duplicated it. The INSTRUMENT was self-defeating, not
-   the runtime. Next: implement the drafted canary prompt in AR-255 design
-   ("Instrument fix"), moving the codex recognizer regex in the same commit.
+   the runtime. The fixed prompt (verbatim work-unit handoff, no role
+   preamble, no inspection fan-out) is implemented per AR-255 "Instrument
+   fix"; after merge + install, one measured claude canary re-measures R4.
 2. **The AR-253 overrun has a harder edge.** A 486 s+ recruiter draw outlived
    the claude hook window: the host cancelled the hook (`hook_cancelled` in
    session `2b4b19d4`), the turn proceeded unstaffed and answered, and the
