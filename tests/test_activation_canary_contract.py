@@ -156,17 +156,27 @@ def test_activation_canary_prompt_is_pinned_verbatim() -> None:
     assert CODEX_ACTIVATION_CANARY_PROMPT == (
         "Treat this as exactly one indivisible code-review work unit. Delegate "
         "that complete work unit to exactly one sub-agent, spawn no other "
-        "sub-agents this turn, and do not inspect the environment before or "
-        "after delegating. The sub-agent's complete assignment must be exactly "
+        "sub-agents this turn, and do not inspect the environment at any point "
+        "in this turn. The sub-agent's complete assignment must be exactly "
         "the work unit text below, nothing before it and nothing after it: no "
         'role, no persona, no "you are acting as..." preamble, no review '
-        "instructions of your own, and no canary framing; your runtime staffs "
-        'sub-agents with any expertise they need. A trailing "Canary nonce" '
-        "line is not part of the work unit; never pass it to the sub-agent.\n"
+        "instructions of your own, and no canary framing. A trailing "
+        '"Canary nonce" line is not part of the work unit; never pass it to '
+        "the sub-agent. When the sub-agent returns, report its conclusion and "
+        "stop.\n"
         "Work unit:\n"
         "Identify the primary behavioral regression risk of replacing return "
         "value with return value.strip() in a Python text-normalization helper."
     )
+
+
+def test_activation_canary_prompt_never_names_expertise_for_the_planner() -> None:
+    # AR-255 "Instrument v2 series": the prompt is planner input, and v2's
+    # "any expertise they need" clause became invented capability requirements
+    # that no card could cover (staff_without_safe_team, runs 1-2 of 3).
+    lowered = CODEX_ACTIVATION_CANARY_PROMPT.lower()
+    for banned in ("expertise", "skill", "capabilit", "staff"):
+        assert banned not in lowered
 
 
 def test_activation_canary_prompt_declares_one_indivisible_unit() -> None:
