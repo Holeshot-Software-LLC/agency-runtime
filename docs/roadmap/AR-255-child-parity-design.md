@@ -205,6 +205,44 @@ insertion cannot pass, and `_explicit_indivisible_unit_request` is asserted
 to fire on the exact prompt. The acceptance run above has not happened yet —
 it needs the next installed build and one measured claude canary.
 
+### Instrument v2 series (2026-08-17, build `d2d0119a`): handoff proven, two new confounds
+
+Three serialized runs on the merged v2 prompt, failures kept:
+
+- **Runs 1-2: parent routing never survived.** Both died
+  `workforce_inference_failed` after the recruiter's response was rejected
+  twice with `staff_without_safe_team` (receipts `86043e77`, `c8392e94`).
+  Run 2's second attempt is the controlling datum: the recruiter ranked
+  exactly `code-reviewer` — the right answer — and deterministic selection
+  still emptied the team on the **capability axis**. The planner had turned
+  the prompt's "any expertise they need" clause into invented capability
+  requirements no card covers: the job-two failure mode
+  (`AR-119-planner-scope-finding`), re-triggered by instrument wording.
+  The morning series on code-identical routing (old prompt, build
+  `512f41fd`) routed cleanly, so the prompt is the delta. Run 1 overlapped
+  this session's own routing draw; run 2 ran with the session quiet, which
+  removes contention as the cause.
+- **Run 3: the verbatim handoff worked.** Routing passed with a two-agent
+  team (`code-reviewer` + `application-security-engineer` — same invented
+  requirement, luckier draw that happened to cover it). The parent handed
+  its first child assignment text **exactly equal to the work unit**
+  (decision `fc68eb32`, capture == unit, 138 chars): the v2 acceptance
+  criterion, met live. The judge still abstained on that pure unit
+  (`native_child_no_specialist_needed`; the funded repair could not produce
+  a valid answer this draw). **The embedded-role hypothesis is refuted for
+  this unit — the decline is on the unit's own merits.** The parent then
+  spawned two environment-inspection errands after the review child
+  returned (both `abstention_confirmed`), so single-child collection
+  refused with `multiple_child_artifacts`.
+
+**v3 (implemented):** drop the expertise clause entirely — the prompt is
+planner input, and no instrument wording may name expertise, skills, or
+capabilities (a regression test now bans those substrings); extend the
+inspection ban to the whole turn; end with "When the sub-agent returns,
+report its conclusion and stop." Acceptance for v3 adds two conditions to
+the equal-text criterion: parent routing accepts without security-team
+padding, and the turn produces exactly one child.
+
 ### The product question this raises for the owner
 
 The canary parent's habit is probably not unusual: **organic parents may

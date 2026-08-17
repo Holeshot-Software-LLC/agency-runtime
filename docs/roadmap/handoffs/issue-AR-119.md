@@ -108,14 +108,14 @@ authorized bypass; zcode has no CLI here; hermes and openclaw stay absent.
 series split legacy / legacy / `native_child_abstention_confirmed` (n=3).
 
 1. **SETTLED by the capture lane (2026-08-17): the judge was RIGHT.** The
-   `native_child_captured_assignments` table (schema 47, build `512f41fd`)
-   persisted all 7 assignments of the first capture run: six were mechanical
-   errands where declining is correct Rule 8 behavior, and the one
-   review-shaped child carried the parent's own embedded reviewer preamble —
-   the card would have duplicated it. The INSTRUMENT was self-defeating, not
-   the runtime. The fixed prompt (verbatim work-unit handoff, no role
-   preamble, no inspection fan-out) is implemented per AR-255 "Instrument
-   fix"; after merge + install, one measured claude canary re-measures R4.
+   capture table proved it twice. First run: errands plus an embedded
+   reviewer preamble. Then the v2 instrument series (build `d2d0119a`) got a
+   child assignment EQUAL to the work unit — and the judge still declined on
+   the merits, refuting the embedded-role hypothesis for that unit. Runs 1-2
+   died earlier: the planner turned v2's "any expertise they need" into
+   uncoverable capability requirements (`staff_without_safe_team`), and the
+   run-3 parent spawned two post-return inspection errands. v3 (AR-255) cut
+   the expertise clause and bans inspection all turn; re-measure after it.
 2. **The AR-253 overrun has a harder edge.** A 486 s+ recruiter draw outlived
    the claude hook window: the host cancelled the hook (`hook_cancelled` in
    session `2b4b19d4`), the turn proceeded unstaffed and answered, and the
