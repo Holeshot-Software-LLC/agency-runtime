@@ -953,6 +953,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ac292357` | 2026-08-16 | docs(ar255): the repair path is proven live and the judge declines on the merits | null | null |
 | `4223d52e` | 2026-08-16 | docs(ar119): hook-window cancellation erases staffing and its evidence | null | null |
 | `b3b11011` | 2026-08-17 | docs(ar119): R2 and R3 live evidence secured on claude at the exact candidate | null | null |
+| `e37c4ed5` | 2026-08-17 | docs(ar119): R7 complete and R6 fired organically on the exact candidate | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
