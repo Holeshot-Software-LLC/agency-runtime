@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -208,10 +208,11 @@ def _judge_result(selected: object) -> dict[str, Any]:
 def _invoke(
     monkeypatch: pytest.MonkeyPatch,
     store: _Store,
-    judge_result: dict[str, Any],
+    judge_result: dict[str, Any] | Callable[..., dict[str, Any]],
     **overrides: Any,
 ) -> staffing.NativeChildStaffingResult:
-    monkeypatch.setattr(staffing, "query_judge", lambda *_args, **_kwargs: judge_result)
+    judge = judge_result if callable(judge_result) else (lambda *_args, **_kwargs: judge_result)
+    monkeypatch.setattr(staffing, "query_judge", judge)
     monkeypatch.setattr(
         staffing,
         "_utc_now",
@@ -547,28 +548,42 @@ def test_invalid_duplicate_unknown_and_over_budget_inference_is_rejected_whole(
     assert store.prompt_reads == []
 
 
-def test_solicited_empty_selection_is_recorded_as_abstention_not_invalid_inference(
+def test_solicited_empty_selection_is_confirmed_by_one_funded_repair_call(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """The judge prompt asks for zero to three specialists and tells the model to
     return an empty list when none fits, so an empty answer is a decision this
-    runtime solicited. It must fail open unstaffed under its own reason, keeping
-    the judge's real confidence, rather than being reported as invalid output."""
+    runtime solicited. AR-255 P2 funds exactly one repair call that asks the
+    judge to test that abstention against the same concrete candidate set; a
+    reaffirmed empty answer is recorded under its own distinct reason so the
+    next series can tell whether the repair did anything."""
 
     prompts = {slug: f"Exact {slug} prompt." for slug in ("alpha-reviewer", "beta-reviewer")}
     store = _Store([_agent(slug, prompt) for slug, prompt in prompts.items()], prompts)
+    tasks: list[str] = []
 
-    result = _invoke(monkeypatch, store, _judge_result([]))
+    def judge(task: str, _candidates: list[dict[str, Any]], **_kwargs: Any) -> dict[str, Any]:
+        tasks.append(task)
+        return _judge_result([])
+
+    result = _invoke(monkeypatch, store, judge)
 
     assert result.staffed is False
-    assert result.reason_code == "native_child_no_specialist_needed"
+    assert result.reason_code == "native_child_abstention_confirmed"
     assert result.context_segment == ""
     assert store.prompt_reads == []
+    # Exactly one funded repair: two judge calls total, never a retry loop.
+    assert len(tasks) == 2
+    assert tasks[0] == "Review the exact authentication boundary."
+    assert tasks[1] == staffing.repair_abstention_task(tasks[0])
+    # The repair tests the abstention; it never instructs a forced pick.
+    assert "empty selection is the correct answer" in tasks[1]
+    assert "choose" not in tasks[1].casefold()
 
     decision = result.routing_decision
     assert decision["status"] == "inference_abstained"
     assert decision["semantic_status"] == "inference_abstained"
-    assert decision["native_child_reason"] == "native_child_no_specialist_needed"
+    assert decision["native_child_reason"] == "native_child_abstention_confirmed"
     assert decision["inference_mode"] == "abstained"
     assert decision["inference_configured"] is True
     assert decision["inference_attempted"] is True
@@ -578,6 +593,119 @@ def test_solicited_empty_selection_is_recorded_as_abstention_not_invalid_inferen
     # project zero.
     assert decision["confidence"] == 0.97
     assert decision["candidate_count"] == 2
+
+
+def test_abstention_stands_under_legacy_reason_when_repair_cannot_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A repair that dies is not a confirmation. The first-pass abstention
+    stands under the legacy reason, so the two outcomes stay separable."""
+
+    prompts = {slug: f"Exact {slug} prompt." for slug in ("alpha-reviewer", "beta-reviewer")}
+    store = _Store([_agent(slug, prompt) for slug, prompt in prompts.items()], prompts)
+    calls: list[str] = []
+
+    def judge(task: str, _candidates: list[dict[str, Any]], **_kwargs: Any) -> dict[str, Any]:
+        calls.append(task)
+        if len(calls) > 1:
+            raise RuntimeError("provider offline")
+        return _judge_result([])
+
+    result = _invoke(monkeypatch, store, judge)
+
+    assert result.staffed is False
+    assert result.reason_code == "native_child_no_specialist_needed"
+    assert len(calls) == 2
+    decision = result.routing_decision
+    assert decision["status"] == "inference_abstained"
+    assert decision["native_child_reason"] == "native_child_no_specialist_needed"
+
+
+def test_abstention_stands_under_legacy_reason_when_repair_answer_is_invalid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompts = {slug: f"Exact {slug} prompt." for slug in ("alpha-reviewer", "beta-reviewer")}
+    store = _Store([_agent(slug, prompt) for slug, prompt in prompts.items()], prompts)
+    calls: list[str] = []
+
+    def judge(task: str, _candidates: list[dict[str, Any]], **_kwargs: Any) -> dict[str, Any]:
+        calls.append(task)
+        if len(calls) > 1:
+            return {
+                "selected_ids": [],
+                "status": "inference_unavailable",
+                "inference_mode": "unavailable",
+                "error": "configured inference providers exhausted",
+                "provider_attempts": [],
+            }
+        return _judge_result([])
+
+    result = _invoke(monkeypatch, store, judge)
+
+    assert result.staffed is False
+    assert result.reason_code == "native_child_no_specialist_needed"
+    assert len(calls) == 2
+
+
+def test_repair_selection_staffs_the_child_and_binds_the_repair_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A repair that corrects the abstention staffs the child through the same
+    validation the first-pass selection would have passed, and the decision
+    binds exactly the repair call's one applied provider response."""
+
+    prompt = "Exact specialist prompt."
+    store = _Store([_agent("alpha-reviewer", prompt)], {"alpha-reviewer": prompt})
+    calls: list[str] = []
+
+    def judge(task: str, _candidates: list[dict[str, Any]], **_kwargs: Any) -> dict[str, Any]:
+        calls.append(task)
+        if len(calls) == 1:
+            return _judge_result([])
+        return _judge_result(["alpha-reviewer"])
+
+    result = _invoke(monkeypatch, store, judge)
+
+    assert result.staffed is True
+    assert result.status == "staffed"
+    assert len(calls) == 2
+    assert calls[1] == staffing.repair_abstention_task(calls[0])
+    assert result.selected_ids == ("alpha-reviewer",)
+    assert result.provider_receipt_digest == canonical_native_child_provider_receipt_digest(
+        result.provider_attempts
+    )
+    # Exactly one applied attempt is sealed into the decision: the repair's.
+    applied = [item for item in result.provider_attempts if item.get("status") == "applied"]
+    assert len(applied) == 1
+    [persisted] = store.decisions
+    assert persisted["decision"]["selected_ids"] == ["alpha-reviewer"]
+    assert persisted["decision"]["native_child_reason"] == "applied"
+
+
+def test_repair_selection_with_invalid_receipt_leaves_the_abstention_standing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A repair selection whose receipt does not carry exactly one applied
+    provider response cannot be sealed, so the abstention stands rather than
+    the decision binding an unverifiable receipt."""
+
+    prompt = "Exact specialist prompt."
+    store = _Store([_agent("alpha-reviewer", prompt)], {"alpha-reviewer": prompt})
+    calls: list[str] = []
+
+    def judge(task: str, _candidates: list[dict[str, Any]], **_kwargs: Any) -> dict[str, Any]:
+        calls.append(task)
+        if len(calls) == 1:
+            return _judge_result([])
+        doubled = _judge_result(["alpha-reviewer"])
+        doubled["provider_attempts"] = [_attempt(), _attempt()]
+        return doubled
+
+    result = _invoke(monkeypatch, store, judge)
+
+    assert result.staffed is False
+    assert result.reason_code == "native_child_no_specialist_needed"
+    assert len(calls) == 2
 
 
 def test_a_declining_judge_records_which_specialists_it_was_shown(

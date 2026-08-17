@@ -83,6 +83,27 @@ repair, and a new code for one that did not need repair, or vice versa — the
 exact split to be settled when implementing, but they must not collapse into one
 code, or the next measurement cannot tell whether the repair did anything.
 
+**Settled at implementation (2026-08-16):**
+`native_child_abstention_confirmed` means the funded repair ran and the judge
+reaffirmed its empty answer against the concrete set;
+`native_child_no_specialist_needed` (legacy) now means the first-pass abstention
+stood because the repair could not produce a valid answer — an exception,
+unavailable or invalid status, a non-list selection, or a repair selection whose
+receipt did not carry exactly one applied provider response. A repair that
+corrects the abstention adopts the repair call wholesale: its receipt is the one
+applied provider response the decision binds, routing state is re-verified after
+the extra call, and the selection passes the same validation a first-pass
+selection would. **Known limitation, recorded deliberately:** a staffed decision
+does not say whether the repair produced it — sealing both calls' receipts would
+break the exactly-one-applied-attempt invariant, and writing a second diagnostic
+row per abstention would distort decisions-to-declines rates. Conversion is
+therefore measured in aggregate: the pre-P2 baseline series (0 staffed / 10) is
+the control, and any post-P2 staffed child alongside `_confirmed` rows proves
+the repair path executes. Falsification: if post-P2 series shows staffed
+children but zero `native_child_abstention_confirmed` rows ever appear, the
+first-pass judge started selecting on its own and the repair claim is
+unsupported.
+
 Cost: +5–8 s **on declines only**; successful staffing is unaffected. Given
 10/10 declines today, that is currently every child, which is the point.
 
