@@ -107,15 +107,15 @@ authorized bypass; zcode has no CLI here; hermes and openclaw stay absent.
 **THE BLOCKER MOVED.** The child judge declines **on the merits**: the post-P2
 series split legacy / legacy / `native_child_abstention_confirmed` (n=3).
 
-1. **The judge was RIGHT — and the owner has RULED.** The re-measured v3
-   series proved the chain twice (routing accepted, card loaded, EXACTLY
-   one child, capture == work unit) with the pure unit declined both
-   times, once repair-confirmed (`0165dff0`). The owner lowered the
-   threshold (2026-08-17): small units still get cards. Policy shipped in
-   the complete-universe judge prompt — task size is a non-reason,
-   coverage the only decline ground, abstention escape kept. Next: merge,
-   reinstall, one claude canary; acceptance is the child STAFFING and
-   `native_child_delivery_verifications` gaining its first row ever.
+1. **The owner RULED and the policy is LIVE — awaiting one clean child
+   draw.** Small units still get cards (2026-08-17): shipped in the
+   complete-universe judge prompt (PR #287, hosts on `cc478bc8`). The
+   acceptance series went 0/3 on PROVIDER flakiness alone, but run 2
+   proved the parent chain fully green for the first time — routing
+   accepted with `code-reviewer` ALONE (no padding) and a VALID Agency
+   header — before the child judge draw died `inference_unavailable`;
+   runs 1 and 3 died at preflight. Acceptance stands: one clean child
+   draw that STAFFS, and the first delivery-verification row ever.
 2. **The AR-253 overrun has a harder edge.** A 486 s+ recruiter draw outlived
    the claude hook window: the host cancelled the hook (`hook_cancelled` in
    session `2b4b19d4`), the turn proceeded unstaffed and answered, and the
