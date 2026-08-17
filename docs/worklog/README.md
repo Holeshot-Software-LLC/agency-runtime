@@ -975,6 +975,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4cc94e09` | 2026-08-17 | docs(ar119): instrument-series verdict -- handoff proven, recruiter is the blocker | null | null |
 | `37e2cb46` | 2026-08-17 | docs(ar119): re-measured v3 verdict -- the judge's threshold is the R4 blocker | null | null |
 | `6878954f` | 2026-08-17 | feat(selector): owner policy -- small units still get cards | null | null |
+| `254ecdd5` | 2026-08-17 | docs(ar119): policy series addendum -- parent chain fully green, child draw provider-killed | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
