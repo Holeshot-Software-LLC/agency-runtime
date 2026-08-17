@@ -973,6 +973,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7c3f1fac` | 2026-08-17 | style(tests): sort the activation-canary contract import block | null | null |
 | `1796283e` | 2026-08-17 | fix(canary): v3 instrument -- the prompt is planner input, stop naming expertise | null | null |
 | `4cc94e09` | 2026-08-17 | docs(ar119): instrument-series verdict -- handoff proven, recruiter is the blocker | null | null |
+| `37e2cb46` | 2026-08-17 | docs(ar119): re-measured v3 verdict -- the judge's threshold is the R4 blocker | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
