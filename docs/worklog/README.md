@@ -972,6 +972,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a7ff98c3` | 2026-08-17 | fix(canary): demand exclusive verbatim handoff and pin the prompt text | null | null |
 | `7c3f1fac` | 2026-08-17 | style(tests): sort the activation-canary contract import block | null | null |
 | `1796283e` | 2026-08-17 | fix(canary): v3 instrument -- the prompt is planner input, stop naming expertise | null | null |
+| `4cc94e09` | 2026-08-17 | docs(ar119): instrument-series verdict -- handoff proven, recruiter is the blocker | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
