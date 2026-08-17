@@ -96,6 +96,13 @@ Result, for claude:
   pass-shaped reasons and the mislabel. Evidence-integrity bug only (the gate
   uses a different signal); flagged for a daytime fix, and every R6 citation
   tonight carries this caveat.
+- **The brief's Stage 4 ("drive zcode through the zcode CLI") is refuted for
+  this box, by measurement.** No `zcode` executable exists on PATH or in
+  `C:\agency-cli`, and the zcode canary readiness itself reports "host
+  executable not discovered" and "host has no proven read-only, bounded
+  native-child noninteractive canary mode". zcode therefore gets install
+  parity only tonight (same digest as claude/codex); installed *activation*
+  and every Live cell need your own zcode session in the morning.
 
 ## 3. Decisions taken in the owner's absence
 
