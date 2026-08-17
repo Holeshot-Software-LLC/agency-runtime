@@ -266,8 +266,11 @@ indistinguishable from the store (the gap above).
 
 1. **Enable `observability.capture_content` for child assignments, or not.**
    The judge declines on the merits; the child's actual assignment is the
-   last unexamined input. Wiring exists as an authorized option (I did not
-   wire it tonight — see section 7); enabling the flag was never mine to do.
+   last unexamined input. **The wiring shipped tonight** (PR #277, under the
+   standing authorization's conditions: redacted, local-only, flag-gated,
+   flag untouched) — one flip of the flag and the next decline records what
+   the child was asked. Enabling it was never mine to do; deciding whether
+   the wiring stays is also yours.
 2. **Codex attended trust.** The bypass path proves the runtime records on
    codex but activation failed twice at the recruiter stage and the exec turn
    returned empty. Your fresh codex TUI (`Trust all and continue` over the 8
@@ -313,10 +316,12 @@ indistinguishable from the store (the gap above).
 - Matrix: candidate `f2f3ca88`, Installed 5/45 and Live 4/45 proven (all on
   claude), every new layer citing the candidate evidence document. No
   provisional cells exist — nothing was measured on unmerged code.
-- Child assignment content capture: **NOT wired tonight.** The clean merged
-  ledger took priority; the authorization conditions are recorded in the
-  brief and the wiring is morning decision 5's sibling. No capture flag was
-  touched at any point.
+- Child assignment content capture: **wired tonight as the final increment**
+  (PR #277) after the ledger reached a clean merged state — redacted through
+  `redact_content`, local store only, recorded only when
+  `observability.capture_content` is already true, and on the abstention and
+  staffed outcomes alike. **No capture flag was touched at any point**; the
+  key is absent from every decision written tonight because the flag is off.
 - The capsule is 180 lines, current, and points at the true remaining
   blockers: the child judge's merits-declines (instrument: capture wiring +
   repair receipts) and the AR-253 hook-window edge.
