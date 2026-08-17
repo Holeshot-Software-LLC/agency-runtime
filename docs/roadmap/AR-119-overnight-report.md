@@ -19,13 +19,15 @@ issue_id: AR-119
 # AR-119 overnight report
 
 **Your machine is running main's build: all three hosts (claude, codex, zcode)
-pin runtime digest `2cd298158584…` — the post-P2 main (`c77c67a4`, the merge
-of PR #275) — verified by reading every `current-<host>.json` after install,
-with the installing tree's `agency_runtime/` verified bit-identical to main's.**
-AR-258's one-digest property held all night: first at `16f1e720f15d`
-(pre-merge main `c6df1449`), then at `2cd298158584` after the merge. At no
-point tonight was branch-only code installed.
+pin runtime digest `8a429a54ef1d…` — main tip `227ab06b`, the merge of PR
+#277 — verified by reading every `current-<host>.json` after the final
+install, with the installing tree verified identical to main's.**
+AR-258's one-digest property held all night through three installs:
+`16f1e720` (main `c6df1449`) → `2cd298158584` (merge `c77c67a4`) →
+`8a429a54` (merge `227ab06b`). At no point was branch-only code installed.
 `~/.agency-runtime/overnight-runtime-state.json` carries the same facts.
+The matrix's Installed/Live evidence was measured on `2cd298158584`; the
+final build adds only the flag-gated capture wiring, inert until enabled.
 
 **Merged to main tonight, under the standing authorization** (full spine green
 locally — 1,462 then 793 post-fix — CI green 13/13 on the exact head, docs
