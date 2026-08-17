@@ -963,6 +963,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `34b6c09f` | 2026-08-17 | docs(ar119): the machine wakes on main tip 227ab06b | null | null |
 | `d7ecbc55` | 2026-08-17 | docs(ar119): warn that the owner's eval_commands WIP left the working tree | null | null |
 | `c916e96d` | 2026-08-17 | docs(ar119): the owner resolved the WIP question; retire the warning | null | null |
+| `5c027afe` | 2026-08-17 | docs(ar119): retract my own claim that the capture flag was off | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
