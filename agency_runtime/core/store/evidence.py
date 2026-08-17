@@ -1885,6 +1885,88 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             conn.close()
         return None if row is None else {**dict(row), "verified_delivery": True}
 
+    def record_native_child_captured_assignment(
+        self,
+        *,
+        diagnostic_id: str,
+        host: str,
+        parent_session_id: str,
+        parent_trace_id: str,
+        task_sha256: str,
+        captured_task: str,
+    ) -> bool:
+        """Persist one redacted child assignment in its dedicated content lane.
+
+        The routing-decision projection stays content-free by design, so this
+        is the only writer of child-assignment content. Callers gate it on
+        ``observability.capture_content`` and pass text that already went
+        through ``redact_content``. Returns False without writing when the
+        owning routing-decision row is absent, so a failed decision write can
+        never leave orphaned content behind.
+        """
+
+        normalized_id = validate_correlation_id(diagnostic_id, field="diagnostic_id")
+        if host not in {"claude", "codex", "hermes", "openclaw", "zcode"}:
+            raise ValueError("captured assignment host is unsupported")
+        for field_name, value in (
+            ("parent_session_id", parent_session_id),
+            ("parent_trace_id", parent_trace_id),
+        ):
+            if type(value) is not str or not 1 <= len(value.encode("utf-8")) <= 512:
+                raise ValueError(f"captured assignment {field_name} is invalid")
+        if (
+            type(task_sha256) is not str
+            or len(task_sha256) != 64
+            or any(ch not in "0123456789abcdef" for ch in task_sha256)
+        ):
+            raise ValueError("captured assignment task_sha256 must be 64 lowercase hex")
+        if type(captured_task) is not str or not 1 <= len(captured_task.encode("utf-8")) <= 8192:
+            raise ValueError("captured assignment text must be 1 to 8192 UTF-8 bytes")
+        conn = self._connect()
+        try:
+            with conn:
+                owner = conn.execute(
+                    "SELECT 1 FROM routing_decisions WHERE id = ?",
+                    (normalized_id,),
+                ).fetchone()
+                if owner is None:
+                    return False
+                conn.execute(
+                    "INSERT OR REPLACE INTO native_child_captured_assignments "
+                    "(diagnostic_id, host, parent_session_id, parent_trace_id, "
+                    f"task_sha256, captured_task, created_at) VALUES (?, ?, ?, ?, ?, ?, {STORE_CLOCK_SQL})",  # nosec B608
+                    (
+                        normalized_id,
+                        host,
+                        parent_session_id,
+                        parent_trace_id,
+                        task_sha256,
+                        captured_task,
+                    ),
+                )
+        finally:
+            conn.close()
+        return True
+
+    def get_native_child_captured_assignment(
+        self,
+        diagnostic_id: str,
+    ) -> dict[str, Any] | None:
+        """Return one captured child assignment, or None when nothing was kept."""
+
+        normalized_id = validate_correlation_id(diagnostic_id, field="diagnostic_id")
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT diagnostic_id, host, parent_session_id, parent_trace_id, "
+                "task_sha256, captured_task, created_at "
+                "FROM native_child_captured_assignments WHERE diagnostic_id = ?",
+                (normalized_id,),
+            ).fetchone()
+        finally:
+            conn.close()
+        return None if row is None else dict(row)
+
     def list_native_child_delivery_verifications(
         self,
         *,

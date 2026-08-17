@@ -69,6 +69,7 @@ class _Store:
         self.prompts = prompts
         self.prompt_reads: list[str] = []
         self.decisions: list[dict[str, Any]] = []
+        self.captured_assignments: list[dict[str, Any]] = []
         self.decision_ids: set[str] = set()
         self.roster_generation = 7
         self.close_before_record = False
@@ -85,6 +86,10 @@ class _Store:
         if self.run is None or self.run.get("trace_id") != trace_id:
             return None
         return dict(self.run)
+
+    def record_native_child_captured_assignment(self, **kwargs: Any) -> bool:
+        self.captured_assignments.append(dict(kwargs))
+        return True
 
     def get_routing_roster_snapshot(self, **_kwargs: Any) -> dict[str, Any]:
         return {"generation": self.roster_generation, "catalog": self.catalog}
@@ -686,8 +691,10 @@ def test_capture_flag_records_the_redacted_child_assignment_on_a_decline(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Owner-gated instrument: with observability.capture_content on, a child
-    decline records the redacted assignment locally so it can finally be read
-    against what the child was asked. The flag itself is never written."""
+    decline writes the redacted assignment into its dedicated content lane,
+    keyed to the recorded decision — and NEVER into the routing-decision
+    projection, which the store strips to stay content-free. Asserting on the
+    projection is exactly the mistake that shipped an inert capture once."""
 
     from agency_runtime.core.config import ObservabilityConfig
     from agency_runtime.core.content_redaction import redact_content
@@ -706,8 +713,12 @@ def test_capture_flag_records_the_redacted_child_assignment_on_a_decline(
     )
 
     assert result.staffed is False
-    decision = result.routing_decision
-    assert decision["captured_task"] == redact_content("Review the exact authentication boundary.")
+    assert "captured_task" not in result.routing_decision
+    [captured] = store.captured_assignments
+    assert captured["diagnostic_id"] == result.diagnostic_decision_id
+    assert captured["captured_task"] == redact_content("Review the exact authentication boundary.")
+    assert captured["task_sha256"] == result.task_sha256
+    assert captured["host"] == "claude"
 
 
 def test_capture_stays_absent_when_the_owner_flag_is_off(
@@ -720,6 +731,65 @@ def test_capture_stays_absent_when_the_owner_flag_is_off(
 
     assert result.staffed is False
     assert "captured_task" not in result.routing_decision
+    assert store.captured_assignments == []
+
+
+def test_captured_assignment_survives_the_real_store_round_trip(
+    tmp_path: Path,
+) -> None:
+    """The persistence layer itself, on a real SQLite store: the lane accepts
+    a row keyed to an existing routing decision, returns it intact, and
+    refuses to orphan content when the owning decision is absent."""
+
+    store = Store(tmp_path / "agency.db")
+    store.create_run(
+        session_id="parent-session",
+        trace_id="parent-trace",
+        host="claude",
+        user_message="Parent request",
+    )
+    task_hash = _digest("child task")
+    decision_id = store.record_routing_decision(
+        session_id="parent-session",
+        trace_id="parent-trace",
+        query_hash=task_hash,
+        context_fingerprint=_digest("child context"),
+        decision=staffing._routing_projection(
+            result={},
+            task_sha256=task_hash,
+            context_fingerprint=_digest("child context"),
+            selected_ids=[],
+            status="inference_abstained",
+            source=staffing._failure_source("inference_abstained"),
+            reason_code=staffing.NATIVE_CHILD_ABSTAINED_REASON,
+        ),
+    )
+    assert store.record_native_child_captured_assignment(
+        diagnostic_id=decision_id,
+        host="claude",
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+        task_sha256=task_hash,
+        captured_task="Review the exact authentication boundary.",
+    )
+    row = store.get_native_child_captured_assignment(decision_id)
+    assert row is not None
+    assert row["captured_task"] == "Review the exact authentication boundary."
+    assert row["task_sha256"] == task_hash
+    assert row["host"] == "claude"
+    # No owning decision -> no orphaned content, ever.
+    assert (
+        store.record_native_child_captured_assignment(
+            diagnostic_id="route-nowhere",
+            host="claude",
+            parent_session_id="parent-session",
+            parent_trace_id="parent-trace",
+            task_sha256=task_hash,
+            captured_task="orphan",
+        )
+        is False
+    )
+    assert store.get_native_child_captured_assignment("route-nowhere") is None
 
 
 def test_repair_selection_with_invalid_receipt_leaves_the_abstention_standing(
