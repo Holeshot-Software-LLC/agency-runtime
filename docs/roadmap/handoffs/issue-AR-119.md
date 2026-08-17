@@ -107,15 +107,15 @@ authorized bypass; zcode has no CLI here; hermes and openclaw stay absent.
 **THE BLOCKER MOVED.** The child judge declines **on the merits**: the post-P2
 series split legacy / legacy / `native_child_abstention_confirmed` (n=3).
 
-1. **The judge was RIGHT, and the recruiter is the live blocker.** The v2
-   series proved the verbatim handoff (capture `fc68eb32` == work unit) and
-   the judge still declined the pure unit on its merits — embedded-role
-   hypothesis dead. The v3 series (build `084dd185`) then went 0/3 in
-   PARENT routing: sonnet's recruiter returns "staff" plus a ranking with
-   an EMPTY selection (receipts `a85e4621` `8c2bb917`; the resident session
-   fails identically on a clarify unit), refuting the v2 expertise-clause
-   attribution — provider-side drift, morning was clean. v3 is live and
-   UNMEASURED; re-run when draws validate. See instrument-series-status.
+1. **The judge was RIGHT — proven at full strength; R4 is now a product
+   question.** The re-measured v3 series (build `084dd185`) went clean
+   2/3: routing accepted with `code-reviewer` selected AND loaded, EXACTLY
+   one child, capture == work unit both runs — and the judge declined the
+   pure unit both times, once repair-confirmed (`0165dff0`). Embedded-role
+   hypothesis dead; the blocker is the judge's card threshold for
+   one-paragraph units — the owner decides if silence is correct there.
+   Recruiter draws still fail intermittently provider-side (~1/3,
+   `staff_without_safe_team`); selections carry security-team padding.
 2. **The AR-253 overrun has a harder edge.** A 486 s+ recruiter draw outlived
    the claude hook window: the host cancelled the hook (`hook_cancelled` in
    session `2b4b19d4`), the turn proceeded unstaffed and answered, and the
