@@ -950,6 +950,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `73152816` | 2026-08-16 | docs(ar119): the machine is on the post-P2 main build | null | null |
 | `2cd71694` | 2026-08-16 | docs(ar119): post-P2 run 1 per-run split and the repair observability gap | null | null |
 | `9dc5d64a` | 2026-08-16 | docs(ar119): run 2 legacy again, over-budget repair hypothesis refuted | null | null |
+| `ac292357` | 2026-08-16 | docs(ar255): the repair path is proven live and the judge declines on the merits | null | null |
+| `4223d52e` | 2026-08-16 | docs(ar119): hook-window cancellation erases staffing and its evidence | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
