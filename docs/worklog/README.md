@@ -937,6 +937,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `81934a97` | 2026-08-16 | docs(ar119): overnight autonomous brief, and P1 measured inconclusive at n=1 | null | null |
 | `dfe4b8bc` | 2026-08-16 | docs(ar119): aim the overnight brief at cells proven, not at Rule 4 alone | null | null |
 | `3db18069` | 2026-08-16 | docs(ar119): run the overnight session in a worktree on a branch, never main | null | null |
+| `e34ea035` | 2026-08-16 | docs(ar119): leave the owner on a known-good runtime, and mark branch evidence | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
