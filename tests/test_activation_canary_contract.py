@@ -15,7 +15,6 @@ from agency_runtime.core.activation_canary_contract import (
     is_exact_codex_activation_canary_task,
 )
 from agency_runtime.core.config import AgencyConfig
-from agency_runtime.core.workforce.inference import _explicit_indivisible_unit_request
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.selector import pipeline
 from agency_runtime.core.selector.cache import clear_cache
@@ -23,6 +22,7 @@ from agency_runtime.core.selector.stickiness import clear_session_routing
 from agency_runtime.core.unit_assignment import (
     MAX_WORK_UNIT_CHARS,
 )
+from agency_runtime.core.workforce.inference import _explicit_indivisible_unit_request
 
 _CANARY_ENV = {
     "AGENCY_CANARY_MODE": "1",
