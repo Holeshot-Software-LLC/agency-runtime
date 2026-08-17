@@ -940,6 +940,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e34ea035` | 2026-08-16 | docs(ar119): leave the owner on a known-good runtime, and mark branch evidence | null | null |
 | `a2d956aa` | 2026-08-16 | docs(ar119): box every blocker and forbid spinning overnight | null | null |
 | `6d075c53` | 2026-08-16 | docs(ar119): prefer merge-first over branch installs, per the owner | null | null |
+| `966e8bae` | 2026-08-16 | feat(ar255): fund one repair call before a child abstention is final | null | null |
+| `cb86e939` | 2026-08-16 | docs(ar119): open the overnight report with the runtime the machine is on | null | null |
+| `347f2982` | 2026-08-16 | docs(ar119): record the sweep verdicts and the completed baseline series | null | null |
+| `61c3aec3` | 2026-08-16 | docs(ar119): give the owner a runnable openclaw and hermes packet | null | null |
+| `e5016733` | 2026-08-16 | docs(ar119): refute the zcode-CLI stage for this box, by measurement | null | null |
+| `e41ac039` | 2026-08-16 | fix(hiring): record the security verdict from the gate signal | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

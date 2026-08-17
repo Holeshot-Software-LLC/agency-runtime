@@ -1,0 +1,155 @@
+---
+title: "AR-119 overnight report for 2026-08-17"
+status: draft
+category: roadmap
+created: 2026-08-16
+updated: 2026-08-16
+tags: [roadmap, report, autonomous, AR-119, AR-255, AR-258]
+related:
+  - docs/roadmap/AR-119-overnight-autonomous-brief.md
+  - docs/roadmap/handoffs/issue-AR-119.md
+  - docs/roadmap/AR-119-rule-host-evidence-matrix.md
+  - docs/roadmap/AR-255-child-parity-design.md
+supersedes: []
+superseded_by: null
+type: reference
+issue_id: AR-119
+---
+
+# AR-119 overnight report
+
+**Your machine is running main's build: all three hosts (claude, codex, zcode)
+pin runtime digest `16f1e720f15d…` built from a clean tree at main tip
+`c6df1449`, verified by reading every `current-<host>.json` after install.**
+AR-258's one-digest property is restored. `~/.agency-runtime/
+overnight-runtime-state.json` carries the same facts.
+
+This report is written incrementally through the night so a crash cannot erase
+it; the DRAFT marker leaves only when the session ends.
+
+## 1. Proven
+
+- **AR-258 one digest, again.** codex was at `530f6df6`, zcode at `980eb2d1`;
+  both now run `16f1e720f15d` alongside claude. Store schema 46 == launcher
+  schema 46; the doctor drift check passes. Evidence: the three
+  `current-<host>.json` files, install output, runs recorded post-install.
+- **The repaired runtime records.** Claude baseline canary run 1
+  (2026-08-17T02:08Z) wrote its run row and its own failure receipt; run 2
+  (02:15Z) staffed the parent fully.
+- **Parent staffing live on the main build** (claude baseline run 2, trace
+  `17d236b3`): routing decision `3721c950` accepted with
+  `code-reviewer + application-security-engineer`, both loaded,
+  `receipt_proven: true`, latency 104,972 ms (the known AR-253 overrun band).
+
+## 1a. Stage 0 sweep: which layers the child judge actually blocks
+
+Fifteen analysis agents swept R1–R8 acceptance criteria against the matrix,
+AR-256's layer definitions, the code anchors, the live store, and the host
+artifacts on disk; every "reachable" claim was then adversarially verified.
+Result, for claude:
+
+| Rule | Installed w/o child judge | Live w/o child judge | Verdict |
+|---|---|---|---|
+| R1 | **no** | **no** | both-no (v6 envelope is the only hash-carrying artifact; its only writer is a judge-accepted child staffing) |
+| R2 | yes | yes | CONFIRMED |
+| R3 | yes | yes | REFUTED as stated → corrected: claude-only, and only after the matrix candidate advances to the installed commit |
+| R4 | **no** | **no** | both-no (as expected) |
+| R5 | yes | yes | CONFIRMED |
+| R6 | yes | yes | CONFIRMED (parent-path hiring ladder) |
+| R7 | yes | yes | CONFIRMED (two consecutive parent turns) |
+| R8 | yes | yes | CONFIRMED (declines are generative: an unstaffed turn that proceeds is the evidence) |
+
+- **The brief's "R1 is parent-side" lead is refuted.** Every R1 anchor is the
+  native-child staffing path; the parent capsule carries no hash and no
+  decision id, and no shipped code computes a parent-side join. **P2 therefore
+  unlocks R1 and R4 together**, doubling its value.
+- The single `v6` marker among retained child transcripts is a **false
+  positive** (an analysis agent's grep output quoted inside a tool result, not
+  launch text). Genuine v6 envelopes ever delivered here: still zero.
+- codex generalization: uncertain until hook trust advances (bypass path
+  authorized tonight); zcode: the sweep's verifier called it not reachable
+  unattended — to be tested against the brief's zcode-CLI instruction before
+  accepting.
+- Cross-cutting precondition from the verifier: **advance the matrix
+  `candidate_commit` to the installed commit and re-run the source-evaluation
+  baseline before greening any cell**; the `source_unchanged` carry-forward
+  does not apply across ~1,070 runtime insertions.
+
+## 2. Refuted / narrowed
+
+- **Child task size does not explain the declines, further.** Decline #12
+  (decision `4c1f3350`, 02:15:13Z) carries `task_chars: 3040` — beyond the
+  previous 541–2,408 range — with `code-reviewer` offered (digest
+  `b5b83ecc699e`), `confidence: 0.9`, 5.8 s. Decline #13 (`19f89c78`,
+  02:20:43Z) at 1,867 chars, confidence 0.95. The size axis is excluded up to
+  3,040 characters.
+- Baseline (pre-P2) claude series is complete at n=3 on digest `16f1e720f15d`:
+  parent staffed 2/3 (the miss is the known recruiter stage,
+  `workforce_inference_failed`/`inference_invalid`; successes routed
+  `code-reviewer + application-security-engineer` at 105.0 s and 90.0 s);
+  child: 2 decisions, 2 declines, 0 staffed. Decisions-to-declines, not
+  runs-to-runs.
+- **Found in passing, verified against the store: passing contractor security
+  reviews are recorded `verdict: "unsafe"`.** `hiring.py:2091` computes
+  `"unsafe" if security_reasons else "safe"`, but reviewers now annotate
+  passes with reasons — all three applied hires since 08-16 15:39 carry 7–9
+  pass-shaped reasons and the mislabel. Evidence-integrity bug only (the gate
+  uses a different signal); flagged for a daytime fix, and every R6 citation
+  tonight carries this caveat.
+- **The brief's Stage 4 ("drive zcode through the zcode CLI") is refuted for
+  this box, by measurement.** No `zcode` executable exists on PATH or in
+  `C:\agency-cli`, and the zcode canary readiness itself reports "host
+  executable not discovered" and "host has no proven read-only, bounded
+  native-child noninteractive canary mode". zcode therefore gets install
+  parity only tonight (same digest as claude/codex); installed *activation*
+  and every Live cell need your own zcode session in the morning.
+
+## 3. Decisions taken in the owner's absence
+
+1. **Installed from the clean session worktree, not the primary checkout.**
+   The primary carries your WIP in `agency_runtime/cli/eval_commands.py`; an
+   install from there would have baked uncommitted WIP into the published
+   projection. The worktree sits at the identical commit `c6df1449` with a
+   clean tree, so the projection is a pure main build. Falsification: if a
+   clean-tree install from the primary at `c6df1449` yields a digest other
+   than `16f1e720f15d`, the "content-determined digest" premise is wrong and
+   the runtime-state file must be corrected.
+2. **AR-255 P2 reason-code split settled** (see the design doc):
+   `native_child_abstention_confirmed` = repair ran and reaffirmed;
+   `native_child_no_specialist_needed` (legacy) = abstention stood because the
+   repair could not produce a valid answer. Falsification recorded in the
+   design doc.
+3. **Canary series serialized, never concurrent.** Concurrent host canaries
+   would contend on the same inference providers and could depress staffing
+   rates; rates measured under contention would not be comparable to the
+   existing series.
+4. **Commit trailer names Fable 5**, the model actually driving this session,
+   where the brief's template said Opus 5.
+
+## 4. Morning decisions for the owner
+
+- (placeholder: filled at end of night)
+
+## 5. Still blocked, and whose hands it needs
+
+- **openclaw / hermes**: not installed here by your instruction; their
+  Installed/Live cells cannot move. Verification packet: see section 7.
+- **Rule 9**: cannot close while two hosts are out of reach by construction.
+
+## 6. Caveats
+
+- Any codex result produced tonight uses the authorized
+  `install --agent codex --verify-activation --autonomous` surface and carries
+  `trust_bypass_used: true`. Every such matrix cell is labeled bypass-derived
+  and none satisfies an attended-trust criterion.
+
+## 7. Branch and state
+
+- Branch: `claude/remote-control-14de96` (session worktree
+  `remote-control-7efcd5`). Head at the time of each update is in git.
+- Nothing committed in the primary checkout; your WIP untouched.
+- P2 implemented and committed (`966e8bae`); merge gated on the full
+  production spine + matrix-evidence suites under `-W error`, in flight.
+- Child assignment content capture: NOT wired as of this update; the standing
+  authorization conditions are recorded in the brief. If wired later tonight,
+  this line changes.

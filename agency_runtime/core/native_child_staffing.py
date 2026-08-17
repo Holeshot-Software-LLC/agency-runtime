@@ -86,8 +86,17 @@ _INVALID_PERSISTENCE_REASONS = frozenset(
 # tells the model to return an empty list when none fits, so an empty selection
 # is a decision this runtime solicited, not a malformed one. Record it under its
 # own reason and status; the child still proceeds unstaffed either way.
+#
+# AR-255 P2 splits the abstention outcome into two reasons so a series can tell
+# whether the funded repair call did anything. The legacy reason now means the
+# first-pass abstention stood because the repair could not produce a valid
+# answer; the confirmed reason means the judge tested its own abstention on the
+# repair call and reaffirmed it. They must never collapse into one code.
 NATIVE_CHILD_ABSTAINED_REASON = "native_child_no_specialist_needed"
-_ABSTAINED_REASONS = frozenset({NATIVE_CHILD_ABSTAINED_REASON})
+NATIVE_CHILD_ABSTENTION_CONFIRMED_REASON = "native_child_abstention_confirmed"
+_ABSTAINED_REASONS = frozenset(
+    {NATIVE_CHILD_ABSTAINED_REASON, NATIVE_CHILD_ABSTENTION_CONFIRMED_REASON}
+)
 
 # The judge's own universe, recorded so a decline can be read from the receipt
 # instead of reconstructed offline. `candidate_count: 65` cannot answer the only
@@ -362,6 +371,28 @@ def _offered_projection(offered_ids: Sequence[str] | None) -> dict[str, Any]:
     if ordered and len(joined) <= MAX_RECORDED_OFFERED_AGENT_CHARS:
         projection["offered_agent_ids"] = joined
     return projection
+
+
+def repair_abstention_task(task: str) -> str:
+    """Frame AR-255 P2's one funded repair without directing the outcome.
+
+    The repair asks the judge to test its own abstention against the same
+    concrete candidate set. It must never instruct the model to pick something:
+    a repair that says "choose one" converts honest abstentions into forced
+    selections and puts deterministic code back in charge of staffing. An empty
+    selection therefore remains an explicitly valid answer.
+    """
+
+    return (
+        "A previous evaluation of the assignment below against this exact "
+        "candidate set selected no one. Test that abstention rather than "
+        "repeating it: re-read each candidate's declared capabilities and "
+        "answer from that reading alone. If no candidate's declared "
+        "capabilities cover any part of the assignment, an empty selection is "
+        "the correct answer again. If one or more candidates' declared "
+        "capabilities do cover parts of the assignment, select exactly those "
+        "candidates.\n\nASSIGNMENT:\n" + task
+    )
 
 
 def _inference_signal(
@@ -1067,22 +1098,119 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
     selected = judge_result.get("selected_ids")
     if type(selected) is list and not selected:
         # Solicited abstention: the judge was offered the complete eligible
-        # universe and answered that none of it fits. Fail open unstaffed under
-        # a reason that says so, instead of calling the runtime's own contract
-        # an invalid model response.
-        return _unstaffed(
-            store=store,
-            reason_code=NATIVE_CHILD_ABSTAINED_REASON,
-            task=original_task,
+        # universe and answered that none of it fits. AR-255 P2 funds exactly
+        # one repair call before that answer is final: the judge is asked to
+        # test its own abstention against the same concrete candidate set. The
+        # repair never instructs a selection -- an empty answer remains valid
+        # -- so inference keeps the decision either way (ADR-0118).
+        try:
+            repair_result: Any = query_judge(
+                repair_abstention_task(original_task),
+                eligible_catalog,
+                config=snapshot.config,
+                max_selected=MAX_INFERENCE_TEAM_CARDS,
+                candidate_scope="complete",
+            )
+        except Exception:
+            repair_result = None
+        if isinstance(repair_result, Mapping):
+            try:
+                repair_result = dict(repair_result)
+            except Exception:
+                repair_result = None
+        else:
+            repair_result = None
+        repair_attempts: list[dict[str, Any]] | None = None
+        repair_digest: str | None = None
+        repair_selected: Any = None
+        if (
+            repair_result is not None
+            and repair_result.get("status") == "applied"
+            and repair_result.get("inference_mode") == "inferred"
+        ):
+            try:
+                repair_attempts = project_model_receipt_attempts(
+                    repair_result.get("provider_attempts")
+                )
+            except Exception:
+                repair_attempts = None
+            repair_digest = canonical_native_child_provider_receipt_digest(repair_attempts)
+            repair_selected = repair_result.get("selected_ids")
+        diagnostic_attempts = list(projected_attempts or [])
+        if repair_attempts is not None:
+            diagnostic_attempts.extend(repair_attempts)
+        if (
+            repair_result is None
+            or type(repair_selected) is not list
+            or (
+                repair_selected
+                and (
+                    repair_attempts is None
+                    or repair_digest is None
+                    or sum(item.get("status") == "applied" for item in repair_attempts) != 1
+                )
+            )
+        ):
+            # The repair could not produce a valid answer, so the first-pass
+            # abstention stands unconfirmed under the legacy reason.
+            return _unstaffed(
+                store=store,
+                reason_code=NATIVE_CHILD_ABSTAINED_REASON,
+                task=original_task,
+                host=normalized_host,
+                parent_session_id=session_id,
+                parent_trace_id=trace_id,
+                task_sha256=task_hash,
+                context_fingerprint=context_fingerprint,
+                judge_result=judge_result,
+                provider_attempts=diagnostic_attempts,
+                offered_ids=offered_ids,
+            )
+        if not repair_selected:
+            # The judge tested its own abstention and reaffirmed it.
+            return _unstaffed(
+                store=store,
+                reason_code=NATIVE_CHILD_ABSTENTION_CONFIRMED_REASON,
+                task=original_task,
+                host=normalized_host,
+                parent_session_id=session_id,
+                parent_trace_id=trace_id,
+                task_sha256=task_hash,
+                context_fingerprint=context_fingerprint,
+                judge_result=repair_result,
+                provider_attempts=diagnostic_attempts,
+                offered_ids=offered_ids,
+            )
+        # The repair produced a selection. Adopt the repair call wholesale --
+        # its receipt is the one applied provider response the decision binds
+        # -- and re-verify the routing state the extra call may have outlived.
+        if not _routing_state_matches(
+            store,
+            config_authority=config_authority,
+            expected_config=snapshot.config,
             host=normalized_host,
-            parent_session_id=session_id,
-            parent_trace_id=trace_id,
-            task_sha256=task_hash,
+            platform=normalized_platform,
+            available_tools=resolved_tools,
+            capability_status=resolved_capability_status,
             context_fingerprint=context_fingerprint,
-            judge_result=judge_result,
-            provider_attempts=projected_attempts,
-            offered_ids=offered_ids,
-        )
+            install=install,
+            install_identity_reader=install_identity_reader,
+        ):
+            return _unstaffed(
+                store=store,
+                reason_code="native_child_routing_state_changed",
+                task=original_task,
+                host=normalized_host,
+                parent_session_id=session_id,
+                parent_trace_id=trace_id,
+                task_sha256=task_hash,
+                context_fingerprint=context_fingerprint,
+                judge_result=repair_result,
+            )
+        judge_result = repair_result
+        projected_attempts = repair_attempts
+        receipt_digest = repair_digest
+        selected = repair_selected
     if (
         type(selected) is not list
         or not 1 <= len(selected) <= MAX_INFERENCE_TEAM_CARDS
