@@ -948,6 +948,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e41ac039` | 2026-08-16 | fix(hiring): record the security verdict from the gate signal | null | null |
 | `4d48d937` | 2026-08-16 | docs(ar119): record the hiring verdict repair in the report | null | null |
 | `73152816` | 2026-08-16 | docs(ar119): the machine is on the post-P2 main build | null | null |
+| `2cd71694` | 2026-08-16 | docs(ar119): post-P2 run 1 per-run split and the repair observability gap | null | null |
+| `9dc5d64a` | 2026-08-16 | docs(ar119): run 2 legacy again, over-budget repair hypothesis refuted | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
