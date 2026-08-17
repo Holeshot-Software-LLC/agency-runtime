@@ -941,6 +941,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a2d956aa` | 2026-08-16 | docs(ar119): box every blocker and forbid spinning overnight | null | null |
 | `6d075c53` | 2026-08-16 | docs(ar119): prefer merge-first over branch installs, per the owner | null | null |
 | `966e8bae` | 2026-08-16 | feat(ar255): fund one repair call before a child abstention is final | null | null |
+| `cb86e939` | 2026-08-16 | docs(ar119): open the overnight report with the runtime the machine is on | null | null |
+| `347f2982` | 2026-08-16 | docs(ar119): record the sweep verdicts and the completed baseline series | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
