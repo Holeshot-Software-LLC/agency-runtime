@@ -939,6 +939,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3db18069` | 2026-08-16 | docs(ar119): run the overnight session in a worktree on a branch, never main | null | null |
 | `e34ea035` | 2026-08-16 | docs(ar119): leave the owner on a known-good runtime, and mark branch evidence | null | null |
 | `a2d956aa` | 2026-08-16 | docs(ar119): box every blocker and forbid spinning overnight | null | null |
+| `6d075c53` | 2026-08-16 | docs(ar119): prefer merge-first over branch installs, per the owner | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
