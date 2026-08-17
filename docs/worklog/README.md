@@ -932,6 +932,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3a337b00` | 2026-08-16 | docs(ar255): ten child decisions, ten declines, and size does not explain it | null | null |
 | `9cfb6247` | 2026-08-16 | fix(privacy): redact captured user messages on the host-hook path | null | null |
 | `b0940136` | 2026-08-16 | docs(ar255): the child is not evaluated the way the parent is | null | null |
+| `a32c4d91` | 2026-08-16 | fix(judge): tell a complete-universe judge what was already verified | null | null |
+| `a30c432d` | 2026-08-16 | docs(ar255): design for giving the child the parent's evaluation pattern | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
