@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-16
+updated: 2026-08-17
 tags: []
 related: []
 supersedes: []
@@ -946,6 +946,18 @@ This registry connects repository history to the roadmap and to optional detail 
 | `61c3aec3` | 2026-08-16 | docs(ar119): give the owner a runnable openclaw and hermes packet | null | null |
 | `e5016733` | 2026-08-16 | docs(ar119): refute the zcode-CLI stage for this box, by measurement | null | null |
 | `e41ac039` | 2026-08-16 | fix(hiring): record the security verdict from the gate signal | null | null |
+| `4d48d937` | 2026-08-16 | docs(ar119): record the hiring verdict repair in the report | null | null |
+| `73152816` | 2026-08-16 | docs(ar119): the machine is on the post-P2 main build | null | null |
+| `2cd71694` | 2026-08-16 | docs(ar119): post-P2 run 1 per-run split and the repair observability gap | null | null |
+| `9dc5d64a` | 2026-08-16 | docs(ar119): run 2 legacy again, over-budget repair hypothesis refuted | null | null |
+| `ac292357` | 2026-08-16 | docs(ar255): the repair path is proven live and the judge declines on the merits | null | null |
+| `4223d52e` | 2026-08-16 | docs(ar119): hook-window cancellation erases staffing and its evidence | null | null |
+| `b3b11011` | 2026-08-17 | docs(ar119): R2 and R3 live evidence secured on claude at the exact candidate | null | null |
+| `e37c4ed5` | 2026-08-17 | docs(ar119): R7 complete and R6 fired organically on the exact candidate | null | null |
+| `aff5fe6a` | 2026-08-17 | docs(ar119): R6 pool reuse held without a rehire | null | null |
+| `f2f3ca88` | 2026-08-17 | docs(ar119): record the installed and live evidence at candidate c77c67a4 | null | null |
+| `21b43506` | 2026-08-17 | docs(ar119): first Installed and Live layers - R2 R3 R6 R7 proven on claude | null | null |
+| `c1c978e3` | 2026-08-17 | docs(ar119): refresh the capsule and finish the morning report | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

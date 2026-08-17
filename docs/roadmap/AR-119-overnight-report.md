@@ -19,10 +19,18 @@ issue_id: AR-119
 # AR-119 overnight report
 
 **Your machine is running main's build: all three hosts (claude, codex, zcode)
-pin runtime digest `16f1e720f15d…` built from a clean tree at main tip
-`c6df1449`, verified by reading every `current-<host>.json` after install.**
-AR-258's one-digest property is restored. `~/.agency-runtime/
-overnight-runtime-state.json` carries the same facts.
+pin runtime digest `2cd298158584…` — the post-P2 main (`c77c67a4`, the merge
+of PR #275) — verified by reading every `current-<host>.json` after install,
+with the installing tree's `agency_runtime/` verified bit-identical to main's.**
+AR-258's one-digest property held all night: first at `16f1e720f15d`
+(pre-merge main `c6df1449`), then at `2cd298158584` after the merge. At no
+point tonight was branch-only code installed.
+`~/.agency-runtime/overnight-runtime-state.json` carries the same facts.
+
+**Merged to main tonight, under the standing authorization** (full spine green
+locally — 1,462 then 793 post-fix — CI green 13/13 on the exact head, docs
+valid): AR-255 P2 (`966e8bae`) and the hiring verdict repair (`e41ac039`),
+via merge commit `c77c67a4` on [PR #275].
 
 This report is written incrementally through the night so a crash cannot erase
 it; the DRAFT marker leaves only when the session ends.
@@ -104,6 +112,134 @@ Result, for claude:
   parity only tonight (same digest as claude/codex); installed *activation*
   and every Live cell need your own zcode session in the morning.
 
+## 1b. Post-P2 series (per-run split, running)
+
+Digest `2cd298158584` (post-merge main `c77c67a4`); the installed projection
+verified to contain the P2 code (`repair_abstention_task` and the confirmed
+reason are in the launcher tree).
+
+| Run | Parent | Child decisions (per-run split) |
+|---|---|---|
+| 1 | staffed `code-reviewer + application-security-engineer`, routing 123.3 s | 1 decision: abstained under **legacy** `native_child_no_specialist_needed` — under P2 semantics the repair could not produce a valid answer. task_chars 1,278, 67 candidates, conf 0.95, first-call 5.0 s (decision `e78ee5de`, 03:17:47Z) |
+| 2 | staffed, routing 88.6 s | 1 decision: abstained under **legacy** code again. task_chars 1,369, conf 0.9, first-call 7.0 s (decision `b8fa9526`, 03:28:19Z) |
+| 3 | staffed, routing 101.3 s | 1 decision: **`native_child_abstention_confirmed`** — the first confirmed row ever. task_chars 3,431, conf 0.87, 9.5 s (decision `d6b514f7`, 03:36:59Z) |
+
+One repair-failure hypothesis already refuted deterministically: the repair
+preamble adds 477 chars against a 1.25 MiB complete-universe prompt budget
+(`_MAX_COMPLETE_CANDIDATE_PROMPT_BYTES`), so over-budget preflight failure is
+excluded. Remaining candidates — provider/contract rejection on the second
+call, or a response-shape violation elicited by the repair phrasing — are
+indistinguishable from the store (the gap above).
+
+**Series verdict (n=3, decisions-to-declines 3/3, 0 staffed):**
+
+1. **The P2 repair path is proven live** — run 3's confirmed code can only be
+   written by the repair branch of the installed `2cd298158584` runtime.
+2. Runs 1–2 show the repair transport is as intermittent as the recruiter:
+   repair attempted, no valid answer, abstention stood unconfirmed.
+3. **AR-255's falsification clause fires**: P1 and P2 both shipped and the
+   child still declines across a comparable series, including once after
+   testing its own abstention against the concrete candidate set. The judge
+   declines **on the merits**; the fault is upstream in what the parent
+   chooses to delegate. The remaining instrument is the owner-gated
+   `observability.capture_content` pointed at the child assignment — wiring
+   it (flag untouched) is authorized tonight; enabling the flag is the
+   owner's morning decision.
+
+- **P2 observability gap, found on run 1:** the persisted decision drops
+  `provider_attempts`, and the child judge's calls mint no `model_receipts`
+  rows (only the parent planner/recruiter do). The store therefore cannot
+  distinguish "repair reached the provider and failed" from "repair raised
+  before any call". If the series ends with only legacy-code abstentions and
+  zero `native_child_abstention_confirmed`, that gap is the first thing to
+  instrument — a receipt row for the repair call, or the owner-gated content
+  capture.
+
+## 1c. R2–R8 battery (in progress)
+
+- **R5 Installed: evidence in hand.** `eval spawn-authority` run with the
+  analyzed package root literally the installed launcher tree
+  (`runtime-sha256-2cd2981585843…/site-packages/agency_runtime`): 5/5 cases
+  pass, including both injected-violation controls. Note the case list is 5
+  at this candidate where the matrix's `e216670a` narrative described 8.
+- **New live failure mode found by the first R2/R3 measurement run** (`claude
+  -p`, real profile, fresh session on the new launcher, session `2b4b19d4`):
+  the UserPromptSubmit hook was **cancelled by the host after 486 s**
+  (`hook_cancelled` attachment 03:51:48Z against the 03:43:42Z user record) —
+  an extreme AR-253 recruiter-overrun draw outliving the host's hook window.
+  The turn proceeded unstaffed and answered both work units; the store has
+  the run row (terminal `response_invalid`) and **zero** routing or failure
+  rows — the hook died before it could write any receipt. Three lessons:
+  (a) this transcript is candidate **R8 Live** evidence (host artifact showing
+  an unstaffed turn that proceeded), with two caveats recorded: the
+  unstaffing came from host cancellation rather than Agency's own fail-open
+  branch, and the run terminalized `response_invalid` while the answer was
+  still delivered; (b) AR-253's overrun is not merely latency — past the hook
+  window it erases the turn's staffing AND its evidence, and only the host
+  artifact shows why (a third sibling for the unrun-vs-fail-open lesson:
+  cancelled-mid-flight); (c) the R2/R3 vehicle needs a routing draw inside
+  the window (90–125 s draws fit; retry in flight).
+
+- **R2 and R3 Live+Installed evidence secured on claude, exact candidate.**
+  Fresh real-profile `claude -p` session `aa740d50` (started 03:55Z, after the
+  `2cd298158584` installs; the plugin's `hooks.json` pins
+  `runtime-sha256-2cd298158584`, closing the binding chain). The host
+  artifact — the session transcript plus its persisted side file
+  `aa740d50…/tool-results/hook-4a16f3ce…-additionalContext.txt` (18,310
+  bytes) — carries `[AGENCY LOADED] Complete current-turn specialist
+  instruction capsule` with entries and **whole instruction bodies for four
+  specialists** (`application-security-engineer`,
+  `codebase-onboarding-engineer`, `security-implementation-engineer`,
+  `software-test-engineer`; `Instructions:` ×4), attached 04:02:48.098Z,
+  strictly before the first assistant record 04:02:53.769Z, by both
+  timestamp and file order. Store join: accepted routing decision (283.2 s —
+  the AR-253 overrun band, inside the hook window this time), four
+  `specialists_loaded` rows on the same trace, **zero** delegation events
+  (no child existed that could have received the cards). Recorded caveat:
+  the decision selected seven specialists and four were loaded; the loaded
+  set is what the artifact proves, and the 7→4 narrowing is noted, not
+  hidden. Matrix cells move only after the candidate advances (section 1a's
+  cross-cutting precondition).
+
+- **R7 complete on claude, exact candidate, one artifact.** Same session
+  `aa740d50`, turn 2 (04:06:44Z): the capsule side file carries
+  `[AGENCY SPECIALIST EXPIRY] … no longer loaded:` naming **all four** turn-1
+  specialists; none is re-delivered (turn 2 loaded `code-reviewer` and
+  `function-naming-advisor` instead); the store shows every turn-1 card's
+  `expired_at == run 1's ended_at` (04:04:04Z) and turn 2's cards expiring at
+  run 2's end. Held in its own turn, absent from the next, expiry stated —
+  both halves of the authority in the host artifact plus the store join.
+- **R6 fired organically on the exact candidate.** Turn 2's rename request
+  found a roster gap and minted `function-naming-advisor` mid-turn: hiring
+  case `6c04ac6e` (04:11:13Z) status `applied`, worker filed
+  `origin='agency'`, `employment_class='contractor'`, and the new card —
+  entry plus whole instruction body — dealt into the very turn whose gap
+  created it, pre-first-speech, in the host artifact. The pool-reuse half
+  ("next turn reuses it and hires nobody") is being measured with a third
+  turn now.
+- **The hiring verdict fix is proven live.** Case `6c04ac6e`, hired on the
+  post-fix runtime, records `verdict: "safe"` with **6 annotation reasons** —
+  the exact shape that recorded `"unsafe"` on every applied hire yesterday.
+- **R6's pool-reuse half held on turn 3** (trace `fb45d24e`, 04:15:24Z): the
+  same-domain request loaded `function-naming-advisor` again from the pool —
+  one worker row ever, zero further hiring cases for that slug. Hired once,
+  reused without re-hiring, in the same session's host artifact. R6 is
+  complete on claude at the exact candidate. (A second organic mint,
+  `contractor-reuse-system-analyst` at 04:20:24Z, occurred in the steward
+  session itself — Rule 6 firing twice in one night, unprompted.)
+
+## 2a. Repaired tonight
+
+- **The hiring verdict mislabel is fixed on the branch** (`e41ac039`): the
+  recorded `critic_evidence.security_review.verdict` now carries the
+  reviewer's own gate signal — the same field the hire gate and the
+  safety-repair loop branch on — instead of re-deriving from reason-list
+  emptiness. Regression test added for an annotated pass; the unsafe-rejects
+  path was already pinned. No runtime reader consumed the recorded string, so
+  the change is evidence-integrity only. Note: the task chip for this fix was
+  also started separately; if a duplicate branch/worktree appears for it, this
+  branch already carries the fix.
+
 ## 3. Decisions taken in the owner's absence
 
 1. **Installed from the clean session worktree, not the primary checkout.**
@@ -128,7 +264,28 @@ Result, for claude:
 
 ## 4. Morning decisions for the owner
 
-- (placeholder: filled at end of night)
+1. **Enable `observability.capture_content` for child assignments, or not.**
+   The judge declines on the merits; the child's actual assignment is the
+   last unexamined input. Wiring exists as an authorized option (I did not
+   wire it tonight — see section 7); enabling the flag was never mine to do.
+2. **Codex attended trust.** The bypass path proves the runtime records on
+   codex but activation failed twice at the recruiter stage and the exec turn
+   returned empty. Your fresh codex TUI (`Trust all and continue` over the 8
+   hook events) plus one real turn is the unblocked path.
+3. **zcode session.** Projection installed at the one digest; open your zcode
+   app fresh and run one turn to give it installed-activation evidence.
+4. **R8's candidate artifact** (session `2b4b19d4`: host cancelled the hook
+   at 486 s, turn proceeded unstaffed, run terminalized `response_invalid`):
+   decide whether that satisfies R8's "unstaffed turn proceeded" or whether
+   you want a receipt-backed organic routing failure instead.
+5. **Repair-call receipt instrumentation** (evidence-only change): unstaffed
+   decisions drop `provider_attempts` and child-judge calls mint no
+   `model_receipts` rows, so a failed repair is invisible. Small fix, big
+   diagnostic value; spine-covered code, so a daytime change.
+6. **`function-naming-advisor` and `contractor-reuse-system-analyst`** were
+   minted into your roster overnight (both passed critic + security review;
+   both recorded verdict "safe" on the fixed runtime). Keep or cull.
+7. **openclaw/hermes**: run the verification packet on your boxes when ready.
 
 ## 5. Still blocked, and whose hands it needs
 
@@ -146,10 +303,20 @@ Result, for claude:
 ## 7. Branch and state
 
 - Branch: `claude/remote-control-14de96` (session worktree
-  `remote-control-7efcd5`). Head at the time of each update is in git.
-- Nothing committed in the primary checkout; your WIP untouched.
-- P2 implemented and committed (`966e8bae`); merge gated on the full
-  production spine + matrix-evidence suites under `-W error`, in flight.
-- Child assignment content capture: NOT wired as of this update; the standing
-  authorization conditions are recorded in the brief. If wired later tonight,
-  this line changes.
+  `remote-control-7efcd5`). PR #275 merged to main as `c77c67a4`; the
+  follow-up docs increment (matrix candidate advance, evidence document,
+  capsule refresh, this report) merges as its own PR.
+- Nothing committed in the primary checkout; your WIP untouched. Nothing was
+  ever installed from unmerged code: `16f1e720` was pre-merge main content,
+  `2cd298158584` is post-merge main content, both from clean trees verified
+  tree-identical to main.
+- Matrix: candidate `f2f3ca88`, Installed 5/45 and Live 4/45 proven (all on
+  claude), every new layer citing the candidate evidence document. No
+  provisional cells exist — nothing was measured on unmerged code.
+- Child assignment content capture: **NOT wired tonight.** The clean merged
+  ledger took priority; the authorization conditions are recorded in the
+  brief and the wiring is morning decision 5's sibling. No capture flag was
+  touched at any point.
+- The capsule is 180 lines, current, and points at the true remaining
+  blockers: the child judge's merits-declines (instrument: capture wiring +
+  repair receipts) and the AR-253 hook-window edge.
