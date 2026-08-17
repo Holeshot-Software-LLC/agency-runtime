@@ -264,6 +264,19 @@ right), its hypothesis is unmeasured, and the re-run condition is a
 recruiter draw that validates again — see
 `AR-119-instrument-series-status.md`.
 
+**Re-measured the same evening (2026-08-17, runs 20:00-20:11 UTC):** two
+of three runs measured clean and identically — routing accepted with
+`code-reviewer` selected and loaded, exactly one child, captured
+assignment equal to the work unit — and the judge declined the pure unit
+both times, run 2 repair-confirmed (`0165dff0`,
+`native_child_abstention_confirmed`). Run 3 hit the recruiter defect
+again, so the provider flakiness is intermittent, not cleared. The v3
+whole-turn fan-out ban worked (zero errand children); the no-padding
+acceptance condition failed both runs (`application-security-engineer`
+rode along). The falsification clause's second branch is now settled with
+the strongest evidence the runtime can produce: whether a one-paragraph
+review brief merits a card is the owner's product decision, not a defect.
+
 ### The product question this raises for the owner
 
 The canary parent's habit is probably not unusual: **organic parents may

@@ -84,19 +84,37 @@ shipped in PR #284's rationale**:
   GitHub's API was returning 503s. This is AR-253 evidence, not an
   instrument defect and not a runtime regression.
 
-## 4. Verdict and next measurement
+## 4. The re-measured series (same evening) and the verdict
 
-- Instrument v3 is **live on the machine and unmeasured**: its hypothesis
-  (no expertise wording + whole-turn fan-out ban ⇒ clean routing and exactly
-  one child) is neither confirmed nor refuted.
-- Re-run the three-run v3 series when a recruiter draw validates again
-  (cheap probe: any interactive turn routing successfully, or
-  `agency eval routing`). No code change is warranted on tonight's
-  evidence; the wording change PR #284 shipped is harmless and keeps the
-  planner-input hygiene test.
-- The v2 positive finding (verbatim handoff proven; judge declines pure
-  unit on merits) does not expire with the v3 blockage — it is the
-  capture lane's second content-level settlement, recorded in AR-255.
+After `eval routing` passed and two live draws validated, the three-run
+series was re-run (runs at 20:00, 20:06, 20:11 UTC):
+
+- **Runs 1-2 measured clean and identically**: parent routing accepted
+  (`891ef137`, `caf73863` — `code-reviewer` selected AND loaded, a series
+  first), **exactly one child** (the whole-turn fan-out ban worked; v2's
+  run had two inspection errands, these had zero), and the child's
+  captured assignment **equaled the work unit exactly, both runs**. The
+  judge declined the pure unit both times — run 2's decline is
+  `native_child_abstention_confirmed` (`0165dff0`): the funded repair ran
+  and the judge reaffirmed against the concrete set. That is the
+  strongest-form decline the runtime can record.
+- **Run 3 hit the recruiter defect again** (`workforce_inference_failed`,
+  receipt `c3007311`): the provider-side flakiness is intermittent, not
+  cleared — roughly one draw in three still fails this evening.
+- Two v3 acceptance conditions met (equal-text capture; exactly one
+  child); the third — no security-team padding — **failed both clean
+  runs**: `application-security-engineer` rode alongside `code-reviewer`
+  each time.
+
+**Verdict:** the instrument is fixed and its question is answered. A child
+handed a pure one-paragraph review unit, judged over the complete
+universe, with a card selected and loaded at the parent, is declined —
+repair-confirmed. Rule 4's remaining blocker on claude is not a wiring
+defect, an instrument confound, or a routing accident: it is the judge's
+card threshold for small units, which is an owner-level product question
+(does a one-paragraph brief merit a card, or is silence correct?). The
+parent-side header and the recruiter's intermittent contract failures
+(AR-253) are the two runtime-side items still open.
 
 ## 5. Carried-over owner decisions
 
