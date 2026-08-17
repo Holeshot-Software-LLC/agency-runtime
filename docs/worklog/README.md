@@ -954,6 +954,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4223d52e` | 2026-08-16 | docs(ar119): hook-window cancellation erases staffing and its evidence | null | null |
 | `b3b11011` | 2026-08-17 | docs(ar119): R2 and R3 live evidence secured on claude at the exact candidate | null | null |
 | `e37c4ed5` | 2026-08-17 | docs(ar119): R7 complete and R6 fired organically on the exact candidate | null | null |
+| `aff5fe6a` | 2026-08-17 | docs(ar119): R6 pool reuse held without a rehire | null | null |
+| `f2f3ca88` | 2026-08-17 | docs(ar119): record the installed and live evidence at candidate c77c67a4 | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
