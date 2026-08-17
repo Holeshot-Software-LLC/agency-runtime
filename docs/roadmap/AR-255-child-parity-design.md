@@ -243,6 +243,27 @@ report its conclusion and stop." Acceptance for v3 adds two conditions to
 the equal-text criterion: parent routing accepts without security-team
 padding, and the turn produces exactly one child.
 
+### Correction (2026-08-17 evening): the expertise-clause attribution is refuted
+
+The v3 series (build `084dd185`, three serialized runs) failed 0/3 in
+parent routing **with the v3 prompt live and no expertise wording
+anywhere** — runs 2-3 died exactly like the v2 failures
+(`staff_without_safe_team`, twice per run; receipts `a85e4621`,
+`8c2bb917`), and run 1's planner call returned no valid response at all.
+So the v2 runs 1-2 attribution above ("the planner turned 'any expertise
+they need' into invented capability requirements") is **wrong**: removing
+the clause changed nothing. The receipts localize the real defect — the
+recruiter model returns decision "staff" with a ranked list but an empty
+selection, and the empty top-ranked-ineligibility field on the bare
+`code-reviewer` rejection proves the top candidate was deterministically
+executable. The same failure hit the resident-manager session on an
+unrelated clarify unit (receipt `6edd86ad`) while the morning's series was
+clean on code-identical routing: a provider-side sonnet behavior drift, in
+AR-253's territory. The v3 wording stays (planner-input hygiene is still
+right), its hypothesis is unmeasured, and the re-run condition is a
+recruiter draw that validates again — see
+`AR-119-instrument-series-status.md`.
+
 ### The product question this raises for the owner
 
 The canary parent's habit is probably not unusual: **organic parents may
