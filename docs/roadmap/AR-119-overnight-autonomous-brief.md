@@ -98,9 +98,29 @@ WHAT A WORKTREE DOES NOT ISOLATE -- know this before you install anything:
 
 HE MUST WAKE UP TO A KNOWN-GOOD RUNTIME. This is a hard requirement.
 
-You cannot avoid installing branch builds: host canaries execute the INSTALLED
-projection, not the checkout, so branch code cannot be measured on a host any
-other way. So install freely while you work, and then:
+Host canaries execute the INSTALLED projection, not the checkout, so branch code
+cannot be measured on a host without installing it. The owner's preferred
+resolution, and yours by default:
+
+  MERGE FIRST, THEN INSTALL FROM MAIN. Repeat per increment.
+    1. Do the work in the worktree on the overnight branch.
+    2. Run the FULL production spine, `-W error`, plus verify_docs. Not the fast
+       pre-push gate -- that skips the spine.
+    3. Only if green: push the branch, `gh pr create`, merge it to main.
+    4. In the PRIMARY checkout: `git pull`, then
+       `python -m agency_runtime.cli install --agent <host>` from main.
+    5. Measure. The runtime under test is now main's build.
+  Every install is therefore a main build, the machine is known-good at every
+  moment including a crash, and no cell is provisional because no evidence comes
+  from unmerged code. Merge in small coherent increments, not one dump at dawn.
+
+  DO NOT MERGE if the spine is red, if you are unsure of a change, or if it is
+  exploratory. Park it on the branch instead and say so. A parked change is fine;
+  a merged bad change is what he stayed up worrying about. Never merge to make a
+  measurement possible -- if it is not good enough for main, measure it on a
+  branch install and follow the fallback below.
+
+FALLBACK, for changes not ready to merge. If you must install a branch build:
 
   1. RESTORE MAIN'S BUILD AS YOUR FINAL ACTION, for every host you touched:
        cd "C:\Workspaces\Holeshot Software\agency-runtime"   # primary, on main
@@ -126,10 +146,12 @@ other way. So install freely while you work, and then:
 
 EVIDENCE PRODUCED ON BRANCH CODE IS BRANCH EVIDENCE.
 Every matrix cell you green must record the runtime digest AND the commit that
-produced it. A cell proven by unmerged branch code is PROVISIONAL -- mark it so
-in the matrix and in the report. It becomes real when he merges, not when you
-measure it. Do not let a provisional cell read as proven; that is the exact
-failure this matrix has already recorded three times.
+produced it. If you followed the merge-first flow the commit is on main and the
+cell is real. A cell proven by UNMERGED branch code is PROVISIONAL -- mark it so
+in the matrix and in the report, and say what has to merge to make it real. Do
+not let a provisional cell read as proven; that is the exact failure this matrix
+has already recorded three times. Preferring merge-first is partly why: it leaves
+nothing provisional to mislabel.
 
 READ FIRST, BEFORE ANY OTHER ACTION
   1. docs/roadmap/handoffs/issue-AR-119.md      (the capsule)
@@ -166,7 +188,11 @@ morning report. Never halt at a milestone.
 
 STANDING AUTHORIZATIONS FOR THIS RUN
 Granted by the owner and EXPIRING AT 08:30 LOCAL ON 2026-08-17, when he returns.
-  - Push the overnight BRANCH to origin, repeatedly. Never main.
+  - Push the overnight BRANCH to origin, repeatedly.
+  - Open PRs from that branch and MERGE them to main, in small coherent
+    increments, but only under the merge conditions above: full spine green,
+    docs valid, and no uncertainty about the change. Never merge to unblock a
+    measurement.
   - `python -m agency_runtime.cli install --agent <host>` from the checkout.
   - Run host canaries and inference-spending series as needed.
   - Use the Codex hook-trust bypass (see Stage 4).
@@ -180,8 +206,8 @@ Granted by the owner and EXPIRING AT 08:30 LOCAL ON 2026-08-17, when he returns.
     Record in the morning report that child assignments are now being captured,
     so he can decide whether the wiring stays.
 Nothing else is authorized. You may NOT: run `claude auth login` or any
-re-authentication, install openclaw or hermes, open PRs, write to the tracker,
-tag, release, or change repository settings.
+re-authentication, install openclaw or hermes, write to the tracker, tag,
+release, force-push, rewrite history, or change repository settings.
 
 ENVIRONMENT TRAPS -- these are known, do not rediscover them
   - Prepend C:\agency-cli to PATH or hosts read "native unverified".
