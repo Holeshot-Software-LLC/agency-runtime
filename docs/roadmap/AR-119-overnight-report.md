@@ -112,6 +112,25 @@ Result, for claude:
   parity only tonight (same digest as claude/codex); installed *activation*
   and every Live cell need your own zcode session in the morning.
 
+## 1b. Post-P2 series (per-run split, running)
+
+Digest `2cd298158584` (post-merge main `c77c67a4`); the installed projection
+verified to contain the P2 code (`repair_abstention_task` and the confirmed
+reason are in the launcher tree).
+
+| Run | Parent | Child decisions (per-run split) |
+|---|---|---|
+| 1 | staffed `code-reviewer + application-security-engineer`, routing 123.3 s | 1 decision: abstained under **legacy** `native_child_no_specialist_needed` — under P2 semantics the repair could not produce a valid answer. task_chars 1,278, 67 candidates, conf 0.95, first-call 5.0 s (decision `e78ee5de`, 03:17:47Z) |
+
+- **P2 observability gap, found on run 1:** the persisted decision drops
+  `provider_attempts`, and the child judge's calls mint no `model_receipts`
+  rows (only the parent planner/recruiter do). The store therefore cannot
+  distinguish "repair reached the provider and failed" from "repair raised
+  before any call". If the series ends with only legacy-code abstentions and
+  zero `native_child_abstention_confirmed`, that gap is the first thing to
+  instrument — a receipt row for the repair call, or the owner-gated content
+  capture.
+
 ## 2a. Repaired tonight
 
 - **The hiring verdict mislabel is fixed on the branch** (`e41ac039`): the
