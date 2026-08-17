@@ -21,6 +21,7 @@ from typing import Any, Final
 
 from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.config import AgencyConfig
+from agency_runtime.core.content_redaction import redact_content
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.host_capabilities import (
     EXECUTION_HOSTS,
@@ -417,6 +418,7 @@ def _routing_projection(
     native_child_delivery: Mapping[str, Any] | None = None,
     offered_ids: Sequence[str] | None = None,
     task: object = None,
+    captured_task: str = "",
 ) -> dict[str, Any]:
     raw = result or {}
     inferred_success = status == "applied"
@@ -457,6 +459,12 @@ def _routing_projection(
         **_offered_projection(offered_ids),
         **_task_shape(task),
     }
+    if captured_task:
+        # Owner-gated instrument (observability.capture_content): the child's
+        # redacted assignment, local store only, so a decline can be read
+        # against what the child was actually asked. Never written when the
+        # flag is off, and this code never changes the flag.
+        decision["captured_task"] = captured_task
     if native_child_delivery is not None:
         decision["native_child_delivery"] = dict(native_child_delivery)
     return decision
@@ -654,6 +662,7 @@ def _unstaffed(
     judge_result: Mapping[str, Any] | None = None,
     provider_attempts: list[dict[str, Any]] | None = None,
     offered_ids: Sequence[str] | None = None,
+    captured_task: str = "",
 ) -> NativeChildStaffingResult:
     decision: dict[str, Any] = {}
     diagnostic_id = ""
@@ -669,6 +678,7 @@ def _unstaffed(
             reason_code=reason_code,
             offered_ids=offered_ids,
             task=task,
+            captured_task=captured_task,
         )
         diagnostic_id = _record_decision(
             store,
@@ -967,6 +977,12 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
                 "inference_attempted": False,
             },
         )
+    try:
+        captured_task = (
+            redact_content(original_task) if snapshot.config.observability.capture_content else ""
+        )
+    except Exception:
+        captured_task = ""
     if not eligible_catalog:
         return _unstaffed(
             store=store,
@@ -1165,6 +1181,7 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
                 judge_result=judge_result,
                 provider_attempts=diagnostic_attempts,
                 offered_ids=offered_ids,
+                captured_task=captured_task,
             )
         if not repair_selected:
             # The judge tested its own abstention and reaffirmed it.
@@ -1180,6 +1197,7 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
                 judge_result=repair_result,
                 provider_attempts=diagnostic_attempts,
                 offered_ids=offered_ids,
+                captured_task=captured_task,
             )
         # The repair produced a selection. Adopt the repair call wholesale --
         # its receipt is the one applied provider response the decision binds
@@ -1450,6 +1468,7 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
         status="applied",
         source=_SUCCESS_SOURCE,
         native_child_delivery=delivery_projection,
+        captured_task=captured_task,
     )
     state_unchanged = False
     decision_id = ""
