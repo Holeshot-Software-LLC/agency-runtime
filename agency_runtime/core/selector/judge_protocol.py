@@ -222,9 +222,20 @@ def build_judge_prompt(
     # has a one-word escape in the same sentence. Say what was already checked.
     # Scoped to the complete universe so the retrieved-scope selector, whose
     # candidates are NOT pre-filtered this way, is untouched.
+    #
+    # The owner policy line is the 2026-08-17 ruling (AR-255, re-measured v3
+    # series): a pure one-paragraph review unit, judged over this universe with
+    # a covering card available, was declined -- repair-confirmed. The owner
+    # ruled that small units still get cards. The policy names task size as a
+    # non-reason; coverage remains the only decline ground, and the empty-list
+    # escape below stays, so inference still owns the choice.
     vetted = (
         "Every candidate below is already verified enabled, contract-valid, and "
         "executable on this host and platform; those checks are done. "
+        "Owner policy: a small or single-paragraph task is still real work, and "
+        "task size alone is never a reason to return an empty selection -- if a "
+        "candidate's declared capabilities cover the work, select it, however "
+        "brief the task. Decline only when no candidate's capabilities cover it. "
         if isinstance(candidates, facade._CompleteCandidateUniverse)
         else ""
     )

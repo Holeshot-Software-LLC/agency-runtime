@@ -286,3 +286,15 @@ also get cards" is satisfiable only where parents delegate plainly. Whether
 Agency should treat an embedded-role assignment as already-staffed (and say
 so in evidence) rather than as a decline is an owner-level reading of the
 vision, not an engineering default.
+
+**Owner ruling (2026-08-17): small units still get cards — the threshold
+is lowered.** Implemented as owner-policy language in the
+complete-universe judge prompt (`judge_protocol.py`): task size is named a
+non-reason for an empty selection; coverage of the work by a candidate's
+declared capabilities remains the only decline ground; and the
+empty-selection escape stays, so inference still owns the choice — this is
+policy, not a forced selection. Scoped to the complete universe (the child
+path and the staffing eval); the retrieved-scope selector is untouched.
+Acceptance: a re-run canary's single child decision staffs `code-reviewer`
+on the pure work unit, and `native_child_delivery_verifications` gains its
+first row ever.
