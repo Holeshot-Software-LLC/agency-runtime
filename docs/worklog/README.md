@@ -938,6 +938,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `dfe4b8bc` | 2026-08-16 | docs(ar119): aim the overnight brief at cells proven, not at Rule 4 alone | null | null |
 | `3db18069` | 2026-08-16 | docs(ar119): run the overnight session in a worktree on a branch, never main | null | null |
 | `e34ea035` | 2026-08-16 | docs(ar119): leave the owner on a known-good runtime, and mark branch evidence | null | null |
+| `a2d956aa` | 2026-08-16 | docs(ar119): box every blocker and forbid spinning overnight | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
