@@ -532,6 +532,31 @@ characterisation to satisfy, and at minimum one funded repair before an
 abstention becomes final. Whether the child gets a full planner or a smaller
 typed intent step is the open design question.
 
+### P1 measured: inconclusive at n=1 (2026-08-16)
+
+The `da46f4627aad` series produced **one** child decision, not the eight the
+previous series yielded: two of three runs failed parent staffing outright
+(`routing: 0`) and never reached a child. The one decision that landed —
+67 offered, `code-reviewer` present, 1,577 chars, 6,937 ms — **declined**.
+
+So the running total is 11 declines from 11 decisions, but **P1 itself is
+untested**: a single observation cannot separate "the preamble did not help"
+from "the preamble was not exercised". Do not record P1 as refuted. Re-measure
+alongside P2, and treat the pair as one change if the sample stays this thin.
+
+Two reading errors this series would have caused, both avoided by checking:
+
+- The harness inspects only the first run id a report lists, and these reports
+  listed two. Child decisions had to be read from the store directly. A rate
+  computed from the harness alone would have said *zero* decisions.
+- Rows written before `offered_agent_ids` existed project `code-reviewer
+  offered = false` simply because the field is absent. That is missing data, not
+  a decline without the specialist, and must never be counted as one.
+
+Parent staffing this series was **1 of 3**, against 3 of 3 in the previous one.
+The intermittency is real and is now the dominant source of variance in any
+child measurement — a child decision only exists when the parent staffs first.
+
 **What would actually settle it** is already built and already owner-gated:
 `observability.capture_content` requires a typed `ENABLE CONTENT CAPTURE`
 confirmation in the dashboard and is currently `true` in `agency.yaml`. Wiring
