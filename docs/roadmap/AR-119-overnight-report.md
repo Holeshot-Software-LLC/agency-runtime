@@ -121,6 +121,14 @@ reason are in the launcher tree).
 | Run | Parent | Child decisions (per-run split) |
 |---|---|---|
 | 1 | staffed `code-reviewer + application-security-engineer`, routing 123.3 s | 1 decision: abstained under **legacy** `native_child_no_specialist_needed` — under P2 semantics the repair could not produce a valid answer. task_chars 1,278, 67 candidates, conf 0.95, first-call 5.0 s (decision `e78ee5de`, 03:17:47Z) |
+| 2 | staffed, routing 88.6 s | 1 decision: abstained under **legacy** code again. task_chars 1,369, conf 0.9, first-call 7.0 s (decision `b8fa9526`, 03:28:19Z) |
+
+One repair-failure hypothesis already refuted deterministically: the repair
+preamble adds 477 chars against a 1.25 MiB complete-universe prompt budget
+(`_MAX_COMPLETE_CANDIDATE_PROMPT_BYTES`), so over-budget preflight failure is
+excluded. Remaining candidates — provider/contract rejection on the second
+call, or a response-shape violation elicited by the repair phrasing — are
+indistinguishable from the store (the gap above).
 
 - **P2 observability gap, found on run 1:** the persisted decision drops
   `provider_attempts`, and the child judge's calls mint no `model_receipts`
