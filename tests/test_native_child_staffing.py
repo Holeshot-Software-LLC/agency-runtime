@@ -682,6 +682,46 @@ def test_repair_selection_staffs_the_child_and_binds_the_repair_receipt(
     assert persisted["decision"]["native_child_reason"] == "applied"
 
 
+def test_capture_flag_records_the_redacted_child_assignment_on_a_decline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Owner-gated instrument: with observability.capture_content on, a child
+    decline records the redacted assignment locally so it can finally be read
+    against what the child was asked. The flag itself is never written."""
+
+    from agency_runtime.core.config import ObservabilityConfig
+    from agency_runtime.core.content_redaction import redact_content
+
+    prompts = {slug: f"Exact {slug} prompt." for slug in ("alpha-reviewer", "beta-reviewer")}
+    store = _Store([_agent(slug, prompt) for slug, prompt in prompts.items()], prompts)
+
+    result = _invoke(
+        monkeypatch,
+        store,
+        _judge_result([]),
+        config=AgencyConfig(
+            ollama=OllamaConfig(enabled=False),
+            observability=ObservabilityConfig(capture_content=True),
+        ),
+    )
+
+    assert result.staffed is False
+    decision = result.routing_decision
+    assert decision["captured_task"] == redact_content("Review the exact authentication boundary.")
+
+
+def test_capture_stays_absent_when_the_owner_flag_is_off(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompts = {slug: f"Exact {slug} prompt." for slug in ("alpha-reviewer", "beta-reviewer")}
+    store = _Store([_agent(slug, prompt) for slug, prompt in prompts.items()], prompts)
+
+    result = _invoke(monkeypatch, store, _judge_result([]))
+
+    assert result.staffed is False
+    assert "captured_task" not in result.routing_decision
+
+
 def test_repair_selection_with_invalid_receipt_leaves_the_abstention_standing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
