@@ -104,6 +104,18 @@ Result, for claude:
   parity only tonight (same digest as claude/codex); installed *activation*
   and every Live cell need your own zcode session in the morning.
 
+## 2a. Repaired tonight
+
+- **The hiring verdict mislabel is fixed on the branch** (`e41ac039`): the
+  recorded `critic_evidence.security_review.verdict` now carries the
+  reviewer's own gate signal — the same field the hire gate and the
+  safety-repair loop branch on — instead of re-deriving from reason-list
+  emptiness. Regression test added for an annotated pass; the unsafe-rejects
+  path was already pinned. No runtime reader consumed the recorded string, so
+  the change is evidence-integrity only. Note: the task chip for this fix was
+  also started separately; if a duplicate branch/worktree appears for it, this
+  branch already carries the fix.
+
 ## 3. Decisions taken in the owner's absence
 
 1. **Installed from the clean session worktree, not the primary checkout.**
