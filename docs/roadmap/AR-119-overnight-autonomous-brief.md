@@ -44,10 +44,35 @@ Stated first because the prompt must not promise what the machine cannot do.
 ## The prompt
 
 ~~~text
-You are continuing AR-119 in C:\Workspaces\Holeshot Software\agency-runtime on
-branch main, unattended, overnight. The owner is asleep and will read your
-report in the morning. Work continuously until the acceptance list below is
-satisfied or you are genuinely blocked on something only he can do.
+You are continuing AR-119 for the repository at
+C:\Workspaces\Holeshot Software\agency-runtime, unattended, overnight. The owner
+is asleep and will read your report in the morning. Work continuously until the
+acceptance list below is satisfied or you are genuinely blocked on something only
+he can do.
+
+WORK IN A WORKTREE, ON A BRANCH. NEVER ON MAIN.
+  git -C "C:\Workspaces\Holeshot Software\agency-runtime" worktree add \
+      ../agency-runtime-overnight -b overnight/ar119-vision-stages
+Do all work in that worktree. Commit there, push that branch, and NEVER push to
+main, merge to main, or commit in the primary checkout. Merging is the owner's
+morning decision -- a bad night must not be able to reach main.
+
+The primary checkout also holds his uncommitted WIP (see ENVIRONMENT TRAPS); a
+worktree keeps you away from it, which is the second reason for this rule.
+
+WHAT A WORKTREE DOES NOT ISOLATE -- know this before you install anything:
+  - `~/.agency-runtime/agency.db` is machine-global. Every canary you run writes
+    to his live store. That is expected and matches how tonight's runs worked.
+  - Installed launcher projections are machine-global. Installing from the
+    worktree republishes the host hooks to run YOUR BRANCH's code, and they will
+    still be running it when he sits down. The projection is a self-contained
+    copy, so removing the worktree does not break it -- but the code his own
+    sessions execute in the morning will be the branch's, not main's.
+  - Therefore: record in the morning report the digest installed for each host,
+    the branch and commit it came from, and the exact command to restore main's
+    build (`python -m agency_runtime.cli install --agent <host>` run from the
+    primary checkout on main). Put that revert command in the report even if
+    everything went well.
 
 READ FIRST, BEFORE ANY OTHER ACTION
   1. docs/roadmap/handoffs/issue-AR-119.md      (the capsule)
@@ -69,7 +94,7 @@ coverage, and the child's candidate universe -- each because a field was scored
 over a WIDER set than the code actually searches. Ask, every time: which exact
 set is this claim scored over?
 
-Ledger flow, unchanged. Direct-to-main conventional commits ending
+Ledger flow, unchanged except for the branch. Conventional commits ending
 "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>". Findings go in the repo
 docs, never only in your reply. After every substantive commit run
 `python scripts/update_worklog.py` and commit the result as a SEPARATE
@@ -84,7 +109,7 @@ morning report. Never halt at a milestone.
 
 STANDING AUTHORIZATIONS FOR THIS RUN
 Granted by the owner and EXPIRING AT 08:30 LOCAL ON 2026-08-17, when he returns.
-  - Push to origin main, repeatedly.
+  - Push the overnight BRANCH to origin, repeatedly. Never main.
   - `python -m agency_runtime.cli install --agent <host>` from the checkout.
   - Run host canaries and inference-spending series as needed.
   - Use the Codex hook-trust bypass (see Stage 4).
@@ -116,10 +141,15 @@ ENVIRONMENT TRAPS -- these are known, do not rediscover them
     test_litellm_hardening, test_litellm_reconciliation. Verified pre-existing by
     stashing. Do not attribute them to your changes; fixing them is optional and
     lower priority than the acceptance list.
-  - The working tree has the owner's WIP: agency_runtime/cli/eval_commands.py is
-    modified and captured_raw_responses.json, raw_responses_latest.json,
-    workforce_eval_output.json are untracked. NEVER commit, revert or stash
-    these. Stage only your own files, by explicit path.
+  - The PRIMARY checkout has the owner's WIP: agency_runtime/cli/eval_commands.py
+    is modified and captured_raw_responses.json, raw_responses_latest.json,
+    workforce_eval_output.json are untracked. Working in the worktree keeps you
+    clear of them. Never commit, revert or stash them, and never `git stash` in
+    the primary checkout. Stage only your own files, by explicit path.
+  - The pre-push hook runs `scripts/run_local_gates.py --fast`, which SKIPS the
+    production spine because that gate is marked slow. Run the spine yourself
+    before each push: `python -m pytest <PRODUCTION_SPINE> -q -W error`, reading
+    the list from scripts/run_local_gates.py. A green push is not a green spine.
 
 REFUTED -- do not re-chase these
   - Recruiter ranking ORDER is not the fault; code-reviewer ranks first.
@@ -250,7 +280,8 @@ ACCEPTANCE -- you are done when all of these hold
   [ ] openclaw and hermes have a runnable verification packet and are recorded
       as unproven here.
   [ ] Every finding carries its falsification condition.
-  [ ] Worklog regenerated and docs validation passing; everything pushed.
+  [ ] Worklog regenerated and docs validation passing; the overnight branch
+      pushed, main untouched, nothing committed in the primary checkout.
   [ ] The capsule is current, still <= 180 lines, and points a fresh session at
       the true remaining blocker.
 
@@ -262,6 +293,9 @@ MORNING REPORT -- write it to docs/roadmap/AR-119-overnight-report.md and commit
   5. What is still blocked and exactly whose hands it needs.
   6. Anything you did that carries a caveat -- especially every codex result
      obtained under the trust bypass.
+  7. The branch name and its head commit, the digest installed per host with the
+     commit it came from, the command to restore main's build, and whether child
+     assignments are now being captured. He merges; you do not.
 
 Do not overstate. If the child judge still declines after P2, the correct report
 says the vision did not complete overnight and names precisely why. That is a
