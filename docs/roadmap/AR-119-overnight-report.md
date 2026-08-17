@@ -180,6 +180,27 @@ indistinguishable from the store (the gap above).
   cancelled-mid-flight); (c) the R2/R3 vehicle needs a routing draw inside
   the window (90–125 s draws fit; retry in flight).
 
+- **R2 and R3 Live+Installed evidence secured on claude, exact candidate.**
+  Fresh real-profile `claude -p` session `aa740d50` (started 03:55Z, after the
+  `2cd298158584` installs; the plugin's `hooks.json` pins
+  `runtime-sha256-2cd298158584`, closing the binding chain). The host
+  artifact — the session transcript plus its persisted side file
+  `aa740d50…/tool-results/hook-4a16f3ce…-additionalContext.txt` (18,310
+  bytes) — carries `[AGENCY LOADED] Complete current-turn specialist
+  instruction capsule` with entries and **whole instruction bodies for four
+  specialists** (`application-security-engineer`,
+  `codebase-onboarding-engineer`, `security-implementation-engineer`,
+  `software-test-engineer`; `Instructions:` ×4), attached 04:02:48.098Z,
+  strictly before the first assistant record 04:02:53.769Z, by both
+  timestamp and file order. Store join: accepted routing decision (283.2 s —
+  the AR-253 overrun band, inside the hook window this time), four
+  `specialists_loaded` rows on the same trace, **zero** delegation events
+  (no child existed that could have received the cards). Recorded caveat:
+  the decision selected seven specialists and four were loaded; the loaded
+  set is what the artifact proves, and the 7→4 narrowing is noted, not
+  hidden. Matrix cells move only after the candidate advances (section 1a's
+  cross-cutting precondition).
+
 ## 2a. Repaired tonight
 
 - **The hiring verdict mislabel is fixed on the branch** (`e41ac039`): the
