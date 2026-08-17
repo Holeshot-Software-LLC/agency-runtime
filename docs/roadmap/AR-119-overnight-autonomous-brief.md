@@ -82,14 +82,24 @@ normally ask, instead: make the call, write the decision and its falsification
 condition into the relevant doc, and list it under DECISIONS TAKEN in your
 morning report. Never halt at a milestone.
 
-STANDING AUTHORIZATIONS FOR THIS RUN (granted by the owner for tonight only)
+STANDING AUTHORIZATIONS FOR THIS RUN
+Granted by the owner and EXPIRING AT 08:30 LOCAL ON 2026-08-17, when he returns.
   - Push to origin main, repeatedly.
   - `python -m agency_runtime.cli install --agent <host>` from the checkout.
   - Run host canaries and inference-spending series as needed.
-  - Use the Codex hook-trust bypass (see CODEX below).
-Nothing else is authorized. In particular you may NOT: run `claude auth login`
-or any re-authentication, install openclaw or hermes, open PRs, write to the
-tracker, tag, release, or change repository settings.
+  - Use the Codex hook-trust bypass (see Stage 4).
+  - Wire the child assignment into the existing owner-gated content capture, so
+    a decline can finally be read against what the child was actually asked.
+    CONDITIONS, all mandatory: it must pass through
+    `agency_runtime.core.content_redaction.redact_content`, which bounds it to
+    MAX_CAPTURE_CHARS and strips keys, tokens, JWTs, emails and card numbers; it
+    must stay gated on `observability.capture_content` and must NOT change that
+    flag's value; and it must be local storage only, never transmitted anywhere.
+    Record in the morning report that child assignments are now being captured,
+    so he can decide whether the wiring stays.
+Nothing else is authorized. You may NOT: run `claude auth login` or any
+re-authentication, install openclaw or hermes, open PRs, write to the tracker,
+tag, release, or change repository settings.
 
 ENVIRONMENT TRAPS -- these are known, do not rediscover them
   - Prepend C:\agency-cli to PATH or hosts read "native unverified".
@@ -131,6 +141,40 @@ red, green). The child judge has declined 10 of 10. Therefore:
     absent, rebuild it to these rules.
 
 THE WORK, IN ORDER
+
+Stage 0 -- FIRST, AND MOST IMPORTANT: sweep all nine rules, not just Rule 4.
+  The owner has to deliver this vision soon, so the objective overnight is CELLS
+  PROVEN, not one blocker chased to ground. A full session was just spent on
+  Rule 4 alone. That was a mistake of focus and you must not repeat it.
+
+  Read docs/roadmap/AR-119-rule-host-evidence-matrix.md. Every Installed and
+  Live cell is `unproven` for every rule on every host -- 0 of 45 each. But the
+  PARENT staffing path demonstrably works: it accepts routing decisions, selects
+  specialists, writes `specialists_loaded`, and correlates receipts. Several
+  rules are parent-side and may already be provable from evidence the runs you
+  are about to do will produce anyway:
+    - R1 "inference receipt joined to exact delivered card hashes" -- parent side.
+    - R2 "native primary-caller artifact containing selected cards before first
+      caller speech" -- parent side. The parent loads cards on nearly every turn.
+    - R3 the same, with two or more compatible cards in one turn.
+    - R6 contractor hiring -- OBSERVED LIVE tonight: `request-intake-analyst` was
+      minted mid-run and the child universe grew 66 -> 67 in flight, with the
+      offered digest moving f34c49c2566f -> b5b83ecc699e. Nobody captured that as
+      Rule 6 evidence. It may already be sitting in the store.
+  Only R4 requires the child judge to cooperate, and that is the one thing that
+  has resisted all day.
+
+  So: before touching P2, enumerate for each rule R1-R8 what its Installed and
+  Live acceptance actually demands, and mark which are reachable WITHOUT the
+  child judge. Collect those first. This is a lead, not a proven claim -- verify
+  each rule's acceptance criteria against the matrix rather than assuming a
+  parent turn satisfies it, and record any rule you find is NOT reachable that
+  way, with the reason. If the lead is wrong, saying so is worth more than a
+  cell claimed on a criterion you did not actually read.
+
+  Never mark a cell proven on a Store row or model prose alone. The matrix's own
+  rule stands: an installed or live result counts only when its host artifact
+  supports it.
 
 Stage 1 -- AR-255 P2: one funded repair before a child abstention is final.
   Designed in docs/roadmap/AR-255-child-parity-design.md; P1 already shipped.
@@ -186,7 +230,19 @@ Stage 6 -- openclaw and hermes, without installing them.
   the runtime they must be running to be comparable. State plainly in the matrix
   that both hosts remain unproven here and why.
 
+PRIORITY, IF YOU RUN SHORT OF TIME
+Order by cells proven per hour, not by how interesting the problem is:
+  1. Stage 0's nine-rule sweep on claude -- likely the largest single gain.
+  2. Stage 3/4 installs, so codex and zcode share one digest and the same sweep
+     can be repeated on them.
+  3. P2, which unlocks R4 only.
+  4. Everything else.
+If you must choose, three hosts with several rules proven beats one host with
+Rule 4 proven. Say in the report which you chose and why.
+
 ACCEPTANCE -- you are done when all of these hold
+  [ ] Every rule R1-R8 assessed for Installed/Live reachability without the
+      child judge, with the unreachable ones named and justified.
   [ ] P2 implemented, tested, installed, and measured over >= 3 runs.
   [ ] claude, codex and zcode all running the SAME runtime digest (AR-258).
   [ ] The matrix reflects measured reality for those three hosts, with every
