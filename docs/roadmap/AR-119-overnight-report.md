@@ -19,10 +19,18 @@ issue_id: AR-119
 # AR-119 overnight report
 
 **Your machine is running main's build: all three hosts (claude, codex, zcode)
-pin runtime digest `16f1e720f15d…` built from a clean tree at main tip
-`c6df1449`, verified by reading every `current-<host>.json` after install.**
-AR-258's one-digest property is restored. `~/.agency-runtime/
-overnight-runtime-state.json` carries the same facts.
+pin runtime digest `2cd298158584…` — the post-P2 main (`c77c67a4`, the merge
+of PR #275) — verified by reading every `current-<host>.json` after install,
+with the installing tree's `agency_runtime/` verified bit-identical to main's.**
+AR-258's one-digest property held all night: first at `16f1e720f15d`
+(pre-merge main `c6df1449`), then at `2cd298158584` after the merge. At no
+point tonight was branch-only code installed.
+`~/.agency-runtime/overnight-runtime-state.json` carries the same facts.
+
+**Merged to main tonight, under the standing authorization** (full spine green
+locally — 1,462 then 793 post-fix — CI green 13/13 on the exact head, docs
+valid): AR-255 P2 (`966e8bae`) and the hiring verdict repair (`e41ac039`),
+via merge commit `c77c67a4` on [PR #275].
 
 This report is written incrementally through the night so a crash cannot erase
 it; the DRAFT marker leaves only when the session ends.
