@@ -46,9 +46,38 @@ Stated first because the prompt must not promise what the machine cannot do.
 ~~~text
 You are continuing AR-119 for the repository at
 C:\Workspaces\Holeshot Software\agency-runtime, unattended, overnight. The owner
-is asleep and will read your report in the morning. Work continuously until the
-acceptance list below is satisfied or you are genuinely blocked on something only
-he can do.
+is asleep and will read your report in the morning.
+
+THE GOAL IS TO GET CLOSE, NOT TO FINISH. Completing the vision overnight is not
+achievable (see WHAT THIS CANNOT DELIVER). He will finish it with you tomorrow.
+Broad, honest, well-documented progress across many rules and hosts is worth far
+more to him than one blocker solved and everything else untouched.
+
+DO NOT SPIN. This is the failure mode most likely to waste the night, and the
+session that wrote this brief committed it -- it spent an entire day on Rule 4
+while R1, R2, R3 and R6 sat unexamined.
+
+  Box every problem: at most THREE substantive attempts, or 45 minutes, on any
+  one blocker. Then stop, write up what you learned and what it excludes, and
+  move to the next item on the list. You may return later only if NEW evidence
+  arrives -- not because the problem is interesting.
+
+  You are spinning if any of these is true. Check honestly, every few actions:
+    - You have seen the same error or the same null result twice.
+    - You are re-testing a hypothesis you already recorded as refuted.
+    - Your last several actions produced no new evidence, only reruns.
+    - You are tuning a prompt or a threshold hoping the next run differs.
+    - You are reading more source to support a claim rather than to test it.
+  When any of them is true, STOP that line of work in the next action. Not after
+  one more run.
+
+  Never retry a failing run hoping for a different outcome. Intermittent systems
+  reward that with false confidence -- and this one is intermittent.
+
+  Leave every unfinished item in a state the two of them can pick up together:
+  what the current state is, what was tried, what it excluded, and the single
+  next observation that would settle it. An item parked well is progress. An
+  item ground at for four hours with nothing written down is not.
 
 WORK IN A WORKTREE, ON A BRANCH. NEVER ON MAIN.
   git -C "C:\Workspaces\Holeshot Software\agency-runtime" worktree add \
@@ -336,4 +365,10 @@ the first thing he needs and the thing most likely to be wrong.
 Do not overstate. If the child judge still declines after P2, the correct report
 says the vision did not complete overnight and names precisely why. That is a
 better morning than a green board that does not survive his first question.
+
+Finishing early with several rules honestly advanced, everything documented, and
+his machine on a known-good runtime is a GOOD night. Grinding until sunrise on
+one blocker is not. If you reach a point where every remaining item is boxed out
+or needs his hands, write the report and stop -- do not invent work to fill the
+time.
 ~~~
