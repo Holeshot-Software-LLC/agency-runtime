@@ -37,6 +37,23 @@ via merge commit `c77c67a4` on [PR #275].
 This report is written incrementally through the night so a crash cannot erase
 it; the DRAFT marker leaves only when the session ends.
 
+**⚠ READ THIS SECOND: your uncommitted WIP hunks in
+`agency_runtime/cli/eval_commands.py` are no longer in the primary checkout's
+working tree.** Present at 01:57 UTC (recorded by this session's first status
+check), absent at the 06:15 UTC final sweep. What is known: the working tree
+now matches origin/main content while HEAD is still `c6df1449`; the stash is
+empty; your three untracked JSON outputs are intact; this session ran no
+checkout/restore/reset/stash/clean in the primary (only status, log, diff,
+and push); file-mtime noise shows some process iterated primary files
+tonight. Candidate actors, none proven: the separately-started chip session
+for the hiring fix, an installer source-root reconciliation during the
+worktree installs, or your own phone-driven action. The Aug-12 ephemeral
+evaluator snapshot was checked and is clean — neither tonight's actor nor a
+backup. **Recovery avenue: VS Code local history / Timeline for the file**
+(`%APPDATA%\Code\User\History` exists on this machine); git holds nothing for
+uncommitted overwrites. If you removed the hunks yourself tonight, this
+warning is moot — say so and it comes out of the report.
+
 ## 1. Proven
 
 - **AR-258 one digest, again.** codex was at `530f6df6`, zcode at `980eb2d1`;
