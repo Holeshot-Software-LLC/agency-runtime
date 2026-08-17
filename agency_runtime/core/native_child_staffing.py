@@ -418,7 +418,6 @@ def _routing_projection(
     native_child_delivery: Mapping[str, Any] | None = None,
     offered_ids: Sequence[str] | None = None,
     task: object = None,
-    captured_task: str = "",
 ) -> dict[str, Any]:
     raw = result or {}
     inferred_success = status == "applied"
@@ -459,12 +458,6 @@ def _routing_projection(
         **_offered_projection(offered_ids),
         **_task_shape(task),
     }
-    if captured_task:
-        # Owner-gated instrument (observability.capture_content): the child's
-        # redacted assignment, local store only, so a decline can be read
-        # against what the child was actually asked. Never written when the
-        # flag is off, and this code never changes the flag.
-        decision["captured_task"] = captured_task
     if native_child_delivery is not None:
         decision["native_child_delivery"] = dict(native_child_delivery)
     return decision
@@ -678,7 +671,6 @@ def _unstaffed(
             reason_code=reason_code,
             offered_ids=offered_ids,
             task=task,
-            captured_task=captured_task,
         )
         diagnostic_id = _record_decision(
             store,
@@ -689,6 +681,15 @@ def _unstaffed(
             context_fingerprint=context_fingerprint,
             decision=decision,
         )
+        _record_captured_assignment(
+            store,
+            diagnostic_id=diagnostic_id,
+            host=host,
+            parent_session_id=parent_session_id,
+            parent_trace_id=parent_trace_id,
+            task_sha256=task_sha256,
+            captured_task=captured_task,
+        )
     return NativeChildStaffingResult(
         staffed=False,
         reason_code=reason_code,
@@ -698,6 +699,42 @@ def _unstaffed(
         provider_attempts=tuple(dict(item) for item in (provider_attempts or [])),
         routing_decision=decision,
     )
+
+
+def _record_captured_assignment(
+    store: Any,
+    *,
+    diagnostic_id: str,
+    host: str,
+    parent_session_id: str,
+    parent_trace_id: str,
+    task_sha256: str,
+    captured_task: str,
+) -> None:
+    """Persist the redacted assignment in its own content lane, fail-open.
+
+    The routing-decision projection is content-free by design, so the capture
+    never rides the decision dict; it is a separate store write keyed to the
+    recorded decision, skipped whenever the flag left ``captured_task`` empty
+    or the decision itself was not persisted.
+    """
+
+    if not captured_task or not diagnostic_id:
+        return
+    recorder = getattr(store, "record_native_child_captured_assignment", None)
+    if not callable(recorder):
+        return
+    try:
+        recorder(
+            diagnostic_id=diagnostic_id,
+            host=host,
+            parent_session_id=parent_session_id,
+            parent_trace_id=parent_trace_id,
+            task_sha256=task_sha256,
+            captured_task=captured_task,
+        )
+    except Exception:
+        return
 
 
 def _exact_compatible_team(
@@ -1468,7 +1505,6 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
         status="applied",
         source=_SUCCESS_SOURCE,
         native_child_delivery=delivery_projection,
-        captured_task=captured_task,
     )
     state_unchanged = False
     decision_id = ""
@@ -1525,6 +1561,16 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             context_fingerprint=context_fingerprint,
             judge_result=judge_result,
             provider_attempts=projected_attempts,
+        )
+    if decision_id:
+        _record_captured_assignment(
+            store,
+            diagnostic_id=decision_id,
+            host=normalized_host,
+            parent_session_id=session_id,
+            parent_trace_id=trace_id,
+            task_sha256=task_hash,
+            captured_task=captured_task,
         )
     if not decision_id:
         return _unstaffed(

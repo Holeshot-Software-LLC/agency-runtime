@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 46
+SCHEMA_VERSION = 47
 
 # Columns an already-created activation receipts table gains by migration.
 #
@@ -851,6 +851,39 @@ NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL: dict[str, str] = {
         "SELECT RAISE(ABORT, 'native child delivery verification is immutable'); END"
     ),
 }
+
+# The one content-carrying lane for a native child's assignment, kept OUT of
+# the content-free routing-decision projection on purpose. Rows are written
+# only while observability.capture_content is true and the text has already
+# passed redact_content — the same write-side gate runs.user_message uses;
+# turning the flag off stops new rows and existing ones age out with their
+# owning routing decision via ON DELETE CASCADE, exactly like user_message
+# ages out with its run.
+NATIVE_CHILD_CAPTURED_ASSIGNMENT_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS native_child_captured_assignments (
+    diagnostic_id TEXT PRIMARY KEY
+        CHECK (typeof(diagnostic_id) = 'text'
+               AND length(CAST(diagnostic_id AS BLOB)) BETWEEN 1 AND 512),
+    host TEXT NOT NULL
+        CHECK (host IN ('claude', 'codex', 'hermes', 'openclaw', 'zcode')),
+    parent_session_id TEXT NOT NULL
+        CHECK (typeof(parent_session_id) = 'text'
+               AND length(CAST(parent_session_id AS BLOB)) BETWEEN 1 AND 512),
+    parent_trace_id TEXT NOT NULL
+        CHECK (typeof(parent_trace_id) = 'text'
+               AND length(CAST(parent_trace_id AS BLOB)) BETWEEN 1 AND 512),
+    task_sha256 TEXT NOT NULL
+        CHECK (typeof(task_sha256) = 'text' AND length(task_sha256) = 64
+               AND task_sha256 NOT GLOB '*[^0-9a-f]*'),
+    captured_task TEXT NOT NULL
+        CHECK (typeof(captured_task) = 'text'
+               AND length(CAST(captured_task AS BLOB)) BETWEEN 1 AND 8192),
+    created_at TEXT NOT NULL
+        CHECK (typeof(created_at) = 'text'
+               AND length(CAST(created_at AS BLOB)) BETWEEN 20 AND 40),
+    FOREIGN KEY (diagnostic_id) REFERENCES routing_decisions(id) ON DELETE CASCADE
+);
+"""
 
 CODEX_NATIVE_PLAN_SCOPE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS codex_native_plan_scopes (
@@ -1914,6 +1947,8 @@ BEGIN SELECT RAISE(ABORT, 'agent hiring approval is immutable'); END;
     + "\n"
     + NATIVE_CHILD_DELIVERY_VERIFICATION_TABLE_SQL
     + "\n"
+    + NATIVE_CHILD_CAPTURED_ASSIGNMENT_TABLE_SQL
+    + "\n"
     + "\n".join(
         statement.replace("CREATE TRIGGER ", "CREATE TRIGGER IF NOT EXISTS ", 1) + ";"
         for statement in NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL.values()
@@ -1944,6 +1979,7 @@ ALL_TABLES: tuple[str, ...] = (
     "finalization_events",
     "routing_decisions",
     "native_child_delivery_verifications",
+    "native_child_captured_assignments",
     "store_secrets",
     "store_counters",
     "trace_tombstones",
