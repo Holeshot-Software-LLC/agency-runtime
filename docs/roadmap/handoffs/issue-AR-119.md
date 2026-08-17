@@ -107,15 +107,15 @@ authorized bypass; zcode has no CLI here; hermes and openclaw stay absent.
 **THE BLOCKER MOVED.** The child judge declines **on the merits**: the post-P2
 series split legacy / legacy / `native_child_abstention_confirmed` (n=3).
 
-1. **The judge was RIGHT — proven at full strength; R4 is now a product
-   question.** The re-measured v3 series (build `084dd185`) went clean
-   2/3: routing accepted with `code-reviewer` selected AND loaded, EXACTLY
-   one child, capture == work unit both runs — and the judge declined the
-   pure unit both times, once repair-confirmed (`0165dff0`). Embedded-role
-   hypothesis dead; the blocker is the judge's card threshold for
-   one-paragraph units — the owner decides if silence is correct there.
-   Recruiter draws still fail intermittently provider-side (~1/3,
-   `staff_without_safe_team`); selections carry security-team padding.
+1. **The judge was RIGHT — and the owner has RULED.** The re-measured v3
+   series proved the chain twice (routing accepted, card loaded, EXACTLY
+   one child, capture == work unit) with the pure unit declined both
+   times, once repair-confirmed (`0165dff0`). The owner lowered the
+   threshold (2026-08-17): small units still get cards. Policy shipped in
+   the complete-universe judge prompt — task size is a non-reason,
+   coverage the only decline ground, abstention escape kept. Next: merge,
+   reinstall, one claude canary; acceptance is the child STAFFING and
+   `native_child_delivery_verifications` gaining its first row ever.
 2. **The AR-253 overrun has a harder edge.** A 486 s+ recruiter draw outlived
    the claude hook window: the host cancelled the hook (`hook_cancelled` in
    session `2b4b19d4`), the turn proceeded unstaffed and answered, and the
