@@ -1535,6 +1535,50 @@ def test_security_review_approved_external_hire_is_hired_without_human_gate(
     assert store.get_roster_entry("quantum-build-engineer") is not None
 
 
+def test_passing_security_review_with_annotated_reasons_records_verdict_safe(
+    tmp_path: Path,
+) -> None:
+    """A reviewer that approves AND annotates its pass must be recorded safe.
+
+    Live reviewers annotate passing reviews with reasons such as
+    "tools_limited_to_repository_read"; the recorded verdict must come from the
+    reviewer's own gate signal, not from reason-list emptiness, or every
+    annotated pass reads as an unsafe review that was hired anyway
+    (observed live: agent_hiring_cases 07362b4c / 16e7ab11 / 337d0480,
+    2026-08-16, all applied with verdict recorded "unsafe").
+    """
+
+    store = Store(tmp_path / "agency.db")
+    annotated_pass = {
+        "verdict": "safe",
+        "reasons": [
+            "tools_limited_to_repository_read",
+            "external_mutation_false_and_mutation_scope_read_only",
+        ],
+        "required_changes": [],
+        "same_provider_as_creator_warning": False,
+    }
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(provider_type="cli"),
+        invoker=_invoker(
+            _hiring_response(),
+            {"approved": True, "reason_codes": []},
+            annotated_pass,
+        ),
+    )
+
+    assert outcome.hired is True
+    assert outcome.hiring_case["status"] == "applied"
+    review = outcome.hiring_case["critic_evidence"]["security_review"]
+    assert review["verdict"] == "safe"
+    # The annotations themselves are preserved verbatim.
+    assert review["reasons"] == annotated_pass["reasons"]
+
+
 def test_owner_gated_hire_waits_for_approval_then_materializes(
     tmp_path: Path,
 ) -> None:

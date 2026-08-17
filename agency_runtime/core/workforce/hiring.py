@@ -2088,7 +2088,10 @@ def hire_contractor_for_gap(
             "compiled_prompt_hash": compiled.prompt_hash,
             "compiler_template_hash": CONTRACTOR_PROMPT_TEMPLATE_HASH,
             "security_review": {
-                "verdict": "unsafe" if security_reasons else "safe",
+                # The gate signal is the reviewer's own verdict (line 2019 and
+                # the repair loop both branch on it); reviewers annotate PASSING
+                # reviews with reasons, so reason-list emptiness is not it.
+                "verdict": security_verdict.verdict,
                 "reasons": list(security_reasons),
                 "same_provider_as_creator": same_provider_as_creator,
                 "risk_classes": list(compiled.risk_classes),
