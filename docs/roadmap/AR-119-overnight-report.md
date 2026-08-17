@@ -122,6 +122,7 @@ reason are in the launcher tree).
 |---|---|---|
 | 1 | staffed `code-reviewer + application-security-engineer`, routing 123.3 s | 1 decision: abstained under **legacy** `native_child_no_specialist_needed` — under P2 semantics the repair could not produce a valid answer. task_chars 1,278, 67 candidates, conf 0.95, first-call 5.0 s (decision `e78ee5de`, 03:17:47Z) |
 | 2 | staffed, routing 88.6 s | 1 decision: abstained under **legacy** code again. task_chars 1,369, conf 0.9, first-call 7.0 s (decision `b8fa9526`, 03:28:19Z) |
+| 3 | staffed, routing 101.3 s | 1 decision: **`native_child_abstention_confirmed`** — the first confirmed row ever. task_chars 3,431, conf 0.87, 9.5 s (decision `d6b514f7`, 03:36:59Z) |
 
 One repair-failure hypothesis already refuted deterministically: the repair
 preamble adds 477 chars against a 1.25 MiB complete-universe prompt budget
@@ -129,6 +130,21 @@ preamble adds 477 chars against a 1.25 MiB complete-universe prompt budget
 excluded. Remaining candidates — provider/contract rejection on the second
 call, or a response-shape violation elicited by the repair phrasing — are
 indistinguishable from the store (the gap above).
+
+**Series verdict (n=3, decisions-to-declines 3/3, 0 staffed):**
+
+1. **The P2 repair path is proven live** — run 3's confirmed code can only be
+   written by the repair branch of the installed `2cd298158584` runtime.
+2. Runs 1–2 show the repair transport is as intermittent as the recruiter:
+   repair attempted, no valid answer, abstention stood unconfirmed.
+3. **AR-255's falsification clause fires**: P1 and P2 both shipped and the
+   child still declines across a comparable series, including once after
+   testing its own abstention against the concrete candidate set. The judge
+   declines **on the merits**; the fault is upstream in what the parent
+   chooses to delegate. The remaining instrument is the owner-gated
+   `observability.capture_content` pointed at the child assignment — wiring
+   it (flag untouched) is authorized tonight; enabling the flag is the
+   owner's morning decision.
 
 - **P2 observability gap, found on run 1:** the persisted decision drops
   `provider_attempts`, and the child judge's calls mint no `model_receipts`
