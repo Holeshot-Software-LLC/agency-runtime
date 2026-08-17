@@ -27,9 +27,10 @@ AR-258's one-digest property held all night through three installs:
 `8a429a54` (merge `227ab06b`). At no point was branch-only code installed.
 `~/.agency-runtime/overnight-runtime-state.json` carries the same facts.
 The matrix's Installed/Live evidence was measured on `2cd298158584`; the
-final build adds only the flag-gated capture wiring — **armed, not inert:
-your `capture_content` has been true since Aug 11** (section 2 retraction),
-so the next child decline records the assignment on its own.
+final build adds only the flag-gated capture wiring, which **does not work —
+see the section 2 defect note.** The flag has been on since Aug 11, but the
+store's content-free projection allowlist strips `captured_task` before the
+row is written, so no child assignment is ever persisted.
 
 **Merged to main tonight, under the standing authorization** (full spine green
 locally — 1,462 then 793 post-fix — CI green 13/13 on the exact head, docs
@@ -116,6 +117,25 @@ Result, for claude:
   pass-shaped reasons and the mislabel. Evidence-integrity bug only (the gate
   uses a different signal); flagged for a daytime fix, and every R6 citation
   tonight carries this caveat.
+- **DEFECT in my own capture wiring: it records nothing, and my test could
+  not see that.** Measured 2026-08-17 13:18:57Z on the installed
+  `8a429a54` build with the flag on: decision `47b98520`, reason
+  `native_child_no_specialist_needed`, `task_chars: 2798`, 70 candidates —
+  and **no `captured_task` key in the persisted row**. Cause:
+  `store/queries.py::project_routing_decision` projects each decision through
+  the strict `_ROUTING_DECISION_FIELDS` allowlist, which is the mechanism that
+  keeps routing decisions content-free; `captured_task` is not in it, so the
+  key is stripped before the row is written. My unit tests asserted
+  `result.routing_decision["captured_task"]`, the **pre-projection** dict, so
+  they passed while the real path persisted nothing. This is the same failure
+  shape the matrix has now recorded five times — a test proving a layer the
+  live path does not use — and it means PR #277 shipped an inert change.
+  Excluded by measurement, not inference: config is not the cause
+  (`load_config` and the store-bound config both report
+  `capture_content=True`), and the launcher does contain the code (10
+  `captured_task` occurrences in the installed tree). Repair options are in
+  section 4 item 1; the choice is the owner's because it touches a privacy
+  boundary.
 - **RETRACTED, one of my own claims: "the flag is off."** The overnight
   report asserted in two places that `observability.capture_content` was
   disabled — that the `captured_task` key was absent "because the flag is
@@ -299,9 +319,21 @@ indistinguishable from the store (the gap above).
    and the first child decline on the wired build records the assignment with
    no action from you. The remaining decision is narrower — **whether the
    child-assignment capture stays**, given your store already holds redacted
-   parent prompts (238 of 238 runs since Aug 11) and will now hold child
-   assignments too. See the retraction note in section 2 for why the original
-   claim was wrong.
+   parent prompts (238 of 238 runs since Aug 11) — and **whether to repair the
+   child-assignment capture at all**, because as shipped it records nothing
+   (section 2 defect note). Two repair paths, both needing your call because
+   the blocker is a deliberate privacy boundary:
+   - **(a) Allowlist it.** Add `captured_task` to `_ROUTING_DECISION_FIELDS`
+     with a bounded-string projector. Smallest diff, but it puts content into
+     a structure whose whole purpose is to be content-free, and every reader
+     of routing decisions inherits that.
+   - **(b) Keep the decision content-free and store the assignment in the
+     lane captured content already uses.** `runs.user_message` is the only
+     existing captured-content column; a host-spawned child has no run row of
+     its own, so this needs a column or table of its own — a larger change,
+     but it leaves the privacy boundary intact. **Recommended.**
+   Doing nothing is also coherent: the child's assignment is recoverable from
+   the host transcript by hand for a one-off diagnosis.
 2. **Codex attended trust.** The bypass path proves the runtime records on
    codex but activation failed twice at the recruiter stage and the exec turn
    returned empty. Your fresh codex TUI (`Trust all and continue` over the 8
