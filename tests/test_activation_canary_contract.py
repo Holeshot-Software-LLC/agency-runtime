@@ -15,6 +15,7 @@ from agency_runtime.core.activation_canary_contract import (
     is_exact_codex_activation_canary_task,
 )
 from agency_runtime.core.config import AgencyConfig
+from agency_runtime.core.workforce.inference import _explicit_indivisible_unit_request
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.selector import pipeline
 from agency_runtime.core.selector.cache import clear_cache
@@ -146,14 +147,32 @@ def test_activation_canary_prompt_and_unit_fit_every_transport_bound() -> None:
     assert canary.CANARY_PROMPT == CODEX_ACTIVATION_CANARY_PROMPT
 
 
-def test_activation_canary_prompt_hands_the_work_unit_verbatim() -> None:
-    # The instrument fix (AR-255, "Settled 2026-08-17"): the unit must arrive
-    # unwrapped at the end of the prompt so the parent can hand "the text
-    # below" to its child without a role preamble to duplicate.
-    assert CODEX_ACTIVATION_CANARY_PROMPT.endswith(
-        f"Work unit:\n{CODEX_ACTIVATION_CANARY_WORK_UNIT}"
+def test_activation_canary_prompt_is_pinned_verbatim() -> None:
+    # Golden pin (AR-255 instrument fix): the prompt is a wire format. The
+    # codex recognizer fullmatches its exact text and the captured-assignment
+    # acceptance compares the child's assignment to the work unit for exact
+    # equality, so every wording change must be deliberate and must arrive
+    # here in the same commit; an insertion mid-prompt must not pass.
+    assert CODEX_ACTIVATION_CANARY_PROMPT == (
+        "Treat this as exactly one indivisible code-review work unit. Delegate "
+        "that complete work unit to exactly one sub-agent, spawn no other "
+        "sub-agents this turn, and do not inspect the environment before or "
+        "after delegating. The sub-agent's complete assignment must be exactly "
+        "the work unit text below, nothing before it and nothing after it: no "
+        'role, no persona, no "you are acting as..." preamble, no review '
+        "instructions of your own, and no canary framing; your runtime staffs "
+        'sub-agents with any expertise they need. A trailing "Canary nonce" '
+        "line is not part of the work unit; never pass it to the sub-agent.\n"
+        "Work unit:\n"
+        "Identify the primary behavioral regression risk of replacing return "
+        "value with return value.strip() in a Python text-normalization helper."
     )
-    assert "you are acting as" not in CODEX_ACTIVATION_CANARY_WORK_UNIT.lower()
+
+
+def test_activation_canary_prompt_declares_one_indivisible_unit() -> None:
+    # The one-unit routing constraint must keep firing on the exact prompt, or
+    # the planner regains license to decompose the canary turn into errands.
+    assert _explicit_indivisible_unit_request(CODEX_ACTIVATION_CANARY_PROMPT) is True
 
 
 def _inferred_projection(*, selected: str = "code-reviewer") -> dict[str, Any]:
