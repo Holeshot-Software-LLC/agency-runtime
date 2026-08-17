@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-16
+updated: 2026-08-17
 tags: []
 related: []
 supersedes: []
@@ -952,6 +952,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9dc5d64a` | 2026-08-16 | docs(ar119): run 2 legacy again, over-budget repair hypothesis refuted | null | null |
 | `ac292357` | 2026-08-16 | docs(ar255): the repair path is proven live and the judge declines on the merits | null | null |
 | `4223d52e` | 2026-08-16 | docs(ar119): hook-window cancellation erases staffing and its evidence | null | null |
+| `b3b11011` | 2026-08-17 | docs(ar119): R2 and R3 live evidence secured on claude at the exact candidate | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
