@@ -3,7 +3,7 @@ title: "Giving the child the parent's evaluation pattern"
 status: draft
 category: roadmap
 created: 2026-08-16
-updated: 2026-08-16
+updated: 2026-08-17
 tags: [roadmap, staffing, native-child, inference, AR-255, AR-119, decision-needed]
 related:
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
@@ -137,3 +137,66 @@ input.
 
 If instead the child staffs, `native_child_delivery_verifications` gets its first
 row ever and Rule 4 reaches Installed/Live on one host.
+
+## Settled 2026-08-17: the capture answered it, and the judge was right
+
+The falsification clause fired and the instrument confirmed it with content.
+P1 and P2 shipped, a post-P2 series still declined 3/3, and the first
+capture-enabled canary run (build `512f41fd5859`, 14:08–14:11Z, decisions
+`7600e896` through `6917026c`) persisted all seven child assignments beside
+their declines. What they show:
+
+- **Six of seven children were mechanical errands** — verbatim shape: "Run
+  exactly these PowerShell commands … paste the raw combined output verbatim.
+  No commentary." Declining these is *correct* judgment under Rule 8: no card
+  among 70 improves paste-this-output, and silence beats a wrong card. The
+  long decline streak was largely the judge being right about errands.
+- **The one review-shaped child arrived pre-staffed in prose.** The parent
+  wrapped the canary's work unit in its own preamble — "You are acting as an
+  independent code reviewer (authority: review only…)" — before delegating.
+  The judge declined a card that would duplicate a role the parent had
+  already embedded in the assignment text.
+- The P2 repair transport confirmed 5 of 7 declines this run
+  (`native_child_abstention_confirmed`), so the repair path is healthy; the
+  earlier legacy-only draws were transport noise, not a pattern.
+
+**Consequence: the measurement instrument was self-defeating, not the
+runtime.** `CANARY_PROMPT` (shared with the codex activation contract in
+`activation_canary_contract.py`) tells the parent to delegate one code-review
+unit — and the parent model's natural delegation habit adds a role preamble
+and environment-inspection errand children around it, so the judge never sees
+a child with a staffable gap.
+
+### Instrument fix (draft, for the next session to implement)
+
+Change the agency-mode canary parent prompt to remove both confounds:
+
+~~~text
+Treat this as exactly one indivisible code-review work unit. Delegate that
+complete work unit to exactly one sub-agent, and spawn no other sub-agents
+this turn — no environment inspection first. Hand the sub-agent the work
+unit text below EXACTLY as written: do not add a role, a persona, a "you are
+acting as…" preamble, or review instructions of your own; your runtime
+staffs sub-agents with any expertise they need. Work unit:
+{CANARY_WORK_UNIT}
+~~~
+
+Acceptance for the fixed instrument: one canary run whose single child
+decision carries the captured assignment equal to the work unit text (no
+role preamble), judged over the complete universe. Falsification: if the
+judge still declines that assignment, the embedded-role hypothesis is
+refuted — the decline would then be on the unit's own merits and the next
+question is whether a one-paragraph review brief is simply below the judge's
+threshold for dealing a card. Note the codex activation contract pins the
+exact prompt text (`_CODEX_ACTIVATION_CANARY_TASK` regex), so the codex-side
+recognizer must move in the same commit.
+
+### The product question this raises for the owner
+
+The canary parent's habit is probably not unusual: **organic parents may
+routinely pre-staff their children in prose.** If so, the judge declining
+duplicated roles is correct product behavior, and Rule 4's "children must
+also get cards" is satisfiable only where parents delegate plainly. Whether
+Agency should treat an embedded-role assignment as already-staffed (and say
+so in evidence) rather than as a decline is an owner-level reading of the
+vision, not an engineering default.
