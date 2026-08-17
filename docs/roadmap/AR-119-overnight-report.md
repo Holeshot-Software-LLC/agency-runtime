@@ -220,6 +220,13 @@ indistinguishable from the store (the gap above).
 - **The hiring verdict fix is proven live.** Case `6c04ac6e`, hired on the
   post-fix runtime, records `verdict: "safe"` with **6 annotation reasons** —
   the exact shape that recorded `"unsafe"` on every applied hire yesterday.
+- **R6's pool-reuse half held on turn 3** (trace `fb45d24e`, 04:15:24Z): the
+  same-domain request loaded `function-naming-advisor` again from the pool —
+  one worker row ever, zero further hiring cases for that slug. Hired once,
+  reused without re-hiring, in the same session's host artifact. R6 is
+  complete on claude at the exact candidate. (A second organic mint,
+  `contractor-reuse-system-analyst` at 04:20:24Z, occurred in the steward
+  session itself — Rule 6 firing twice in one night, unprompted.)
 
 ## 2a. Repaired tonight
 
