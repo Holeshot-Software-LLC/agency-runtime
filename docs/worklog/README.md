@@ -966,6 +966,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5c027afe` | 2026-08-17 | docs(ar119): retract my own claim that the capture flag was off | null | null |
 | `e737e335` | 2026-08-17 | docs(ar255): the capture wiring records nothing and my test could not see it | null | null |
 | `0f0d07a0` | 2026-08-17 | feat(ar255): give the captured child assignment its own content lane | null | null |
+| `53088a93` | 2026-08-17 | docs(ar255): the capture settled it -- the judge was right about errands | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
