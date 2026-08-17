@@ -155,6 +155,31 @@ indistinguishable from the store (the gap above).
   instrument — a receipt row for the repair call, or the owner-gated content
   capture.
 
+## 1c. R2–R8 battery (in progress)
+
+- **R5 Installed: evidence in hand.** `eval spawn-authority` run with the
+  analyzed package root literally the installed launcher tree
+  (`runtime-sha256-2cd2981585843…/site-packages/agency_runtime`): 5/5 cases
+  pass, including both injected-violation controls. Note the case list is 5
+  at this candidate where the matrix's `e216670a` narrative described 8.
+- **New live failure mode found by the first R2/R3 measurement run** (`claude
+  -p`, real profile, fresh session on the new launcher, session `2b4b19d4`):
+  the UserPromptSubmit hook was **cancelled by the host after 486 s**
+  (`hook_cancelled` attachment 03:51:48Z against the 03:43:42Z user record) —
+  an extreme AR-253 recruiter-overrun draw outliving the host's hook window.
+  The turn proceeded unstaffed and answered both work units; the store has
+  the run row (terminal `response_invalid`) and **zero** routing or failure
+  rows — the hook died before it could write any receipt. Three lessons:
+  (a) this transcript is candidate **R8 Live** evidence (host artifact showing
+  an unstaffed turn that proceeded), with two caveats recorded: the
+  unstaffing came from host cancellation rather than Agency's own fail-open
+  branch, and the run terminalized `response_invalid` while the answer was
+  still delivered; (b) AR-253's overrun is not merely latency — past the hook
+  window it erases the turn's staffing AND its evidence, and only the host
+  artifact shows why (a third sibling for the unrun-vs-fail-open lesson:
+  cancelled-mid-flight); (c) the R2/R3 vehicle needs a routing draw inside
+  the window (90–125 s draws fit; retry in flight).
+
 ## 2a. Repaired tonight
 
 - **The hiring verdict mislabel is fixed on the branch** (`e41ac039`): the
