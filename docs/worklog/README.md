@@ -935,6 +935,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a32c4d91` | 2026-08-16 | fix(judge): tell a complete-universe judge what was already verified | null | null |
 | `a30c432d` | 2026-08-16 | docs(ar255): design for giving the child the parent's evaluation pattern | null | null |
 | `81934a97` | 2026-08-16 | docs(ar119): overnight autonomous brief, and P1 measured inconclusive at n=1 | null | null |
+| `dfe4b8bc` | 2026-08-16 | docs(ar119): aim the overnight brief at cells proven, not at Rule 4 alone | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
