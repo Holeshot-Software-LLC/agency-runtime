@@ -13,10 +13,19 @@ CODEX_ACTIVATION_CANARY_WORK_UNIT = (
     "Identify the primary behavioral regression risk of replacing return value with "
     "return value.strip() in a Python text-normalization helper."
 )
+# The wrapper must not hand the parent a role to embed or an excuse to fan out:
+# the first captured-assignment run (AR-255, "Settled 2026-08-17") showed the
+# parent adding a "you are acting as..." preamble and errand children, which the
+# child judge correctly declined. The recognizer regex below derives from this
+# constant, so prompt and codex recognizer move together by construction.
 CODEX_ACTIVATION_CANARY_PROMPT = (
-    "Treat this as exactly one indivisible code-review work unit. "
-    "Delegate that complete work unit to exactly one sub-agent; do not subdivide it further: "
-    f"{CODEX_ACTIVATION_CANARY_WORK_UNIT}"
+    "Treat this as exactly one indivisible code-review work unit. Delegate that "
+    "complete work unit to exactly one sub-agent, and spawn no other sub-agents "
+    "this turn; no environment inspection first. Hand the sub-agent the work unit "
+    'text below EXACTLY as written: do not add a role, a persona, a "you are '
+    'acting as..." preamble, or review instructions of your own; your runtime '
+    "staffs sub-agents with any expertise they need.\n"
+    f"Work unit:\n{CODEX_ACTIVATION_CANARY_WORK_UNIT}"
 )
 CODEX_ACTIVATION_CANARY_ROUTE_SOURCE = "codex_activation_canary_inference"
 CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE = "activation-canary-contract"

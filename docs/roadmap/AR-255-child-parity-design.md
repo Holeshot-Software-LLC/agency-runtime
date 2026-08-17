@@ -167,7 +167,7 @@ unit — and the parent model's natural delegation habit adds a role preamble
 and environment-inspection errand children around it, so the judge never sees
 a child with a staffable gap.
 
-### Instrument fix (draft, for the next session to implement)
+### Instrument fix (implemented 2026-08-17)
 
 Change the agency-mode canary parent prompt to remove both confounds:
 
@@ -190,6 +190,15 @@ question is whether a one-paragraph review brief is simply below the judge's
 threshold for dealing a card. Note the codex activation contract pins the
 exact prompt text (`_CODEX_ACTIVATION_CANARY_TASK` regex), so the codex-side
 recognizer must move in the same commit.
+
+**Status:** shipped 2026-08-17. `CODEX_ACTIVATION_CANARY_PROMPT` in
+`activation_canary_contract.py` now carries this text (ASCII punctuation),
+ending with the work unit verbatim on its own line; the recognizer regex
+derives from the constant, so prompt and codex recognizer moved together by
+construction, and the one-unit routing constraint
+(`_explicit_indivisible_unit_request`) still fires on the new wording. The
+acceptance run above has not happened yet — it needs the next installed
+build and one measured claude canary.
 
 ### The product question this raises for the owner
 

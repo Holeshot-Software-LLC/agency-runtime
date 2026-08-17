@@ -146,6 +146,16 @@ def test_activation_canary_prompt_and_unit_fit_every_transport_bound() -> None:
     assert canary.CANARY_PROMPT == CODEX_ACTIVATION_CANARY_PROMPT
 
 
+def test_activation_canary_prompt_hands_the_work_unit_verbatim() -> None:
+    # The instrument fix (AR-255, "Settled 2026-08-17"): the unit must arrive
+    # unwrapped at the end of the prompt so the parent can hand "the text
+    # below" to its child without a role preamble to duplicate.
+    assert CODEX_ACTIVATION_CANARY_PROMPT.endswith(
+        f"Work unit:\n{CODEX_ACTIVATION_CANARY_WORK_UNIT}"
+    )
+    assert "you are acting as" not in CODEX_ACTIVATION_CANARY_WORK_UNIT.lower()
+
+
 def _inferred_projection(*, selected: str = "code-reviewer") -> dict[str, Any]:
     work_unit_id = "unit-1111111111"
     return {
