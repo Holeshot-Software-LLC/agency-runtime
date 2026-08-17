@@ -971,6 +971,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b480cc9a` | 2026-08-17 | fix(canary): hand the child the work unit verbatim in the activation prompt | null | null |
 | `a7ff98c3` | 2026-08-17 | fix(canary): demand exclusive verbatim handoff and pin the prompt text | null | null |
 | `7c3f1fac` | 2026-08-17 | style(tests): sort the activation-canary contract import block | null | null |
+| `1796283e` | 2026-08-17 | fix(canary): v3 instrument -- the prompt is planner input, stop naming expertise | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
