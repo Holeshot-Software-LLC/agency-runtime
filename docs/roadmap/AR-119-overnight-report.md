@@ -41,15 +41,61 @@ it; the DRAFT marker leaves only when the session ends.
   `code-reviewer + application-security-engineer`, both loaded,
   `receipt_proven: true`, latency 104,972 ms (the known AR-253 overrun band).
 
+## 1a. Stage 0 sweep: which layers the child judge actually blocks
+
+Fifteen analysis agents swept R1–R8 acceptance criteria against the matrix,
+AR-256's layer definitions, the code anchors, the live store, and the host
+artifacts on disk; every "reachable" claim was then adversarially verified.
+Result, for claude:
+
+| Rule | Installed w/o child judge | Live w/o child judge | Verdict |
+|---|---|---|---|
+| R1 | **no** | **no** | both-no (v6 envelope is the only hash-carrying artifact; its only writer is a judge-accepted child staffing) |
+| R2 | yes | yes | CONFIRMED |
+| R3 | yes | yes | REFUTED as stated → corrected: claude-only, and only after the matrix candidate advances to the installed commit |
+| R4 | **no** | **no** | both-no (as expected) |
+| R5 | yes | yes | CONFIRMED |
+| R6 | yes | yes | CONFIRMED (parent-path hiring ladder) |
+| R7 | yes | yes | CONFIRMED (two consecutive parent turns) |
+| R8 | yes | yes | CONFIRMED (declines are generative: an unstaffed turn that proceeds is the evidence) |
+
+- **The brief's "R1 is parent-side" lead is refuted.** Every R1 anchor is the
+  native-child staffing path; the parent capsule carries no hash and no
+  decision id, and no shipped code computes a parent-side join. **P2 therefore
+  unlocks R1 and R4 together**, doubling its value.
+- The single `v6` marker among retained child transcripts is a **false
+  positive** (an analysis agent's grep output quoted inside a tool result, not
+  launch text). Genuine v6 envelopes ever delivered here: still zero.
+- codex generalization: uncertain until hook trust advances (bypass path
+  authorized tonight); zcode: the sweep's verifier called it not reachable
+  unattended — to be tested against the brief's zcode-CLI instruction before
+  accepting.
+- Cross-cutting precondition from the verifier: **advance the matrix
+  `candidate_commit` to the installed commit and re-run the source-evaluation
+  baseline before greening any cell**; the `source_unchanged` carry-forward
+  does not apply across ~1,070 runtime insertions.
+
 ## 2. Refuted / narrowed
 
 - **Child task size does not explain the declines, further.** Decline #12
   (decision `4c1f3350`, 02:15:13Z) carries `task_chars: 3040` — beyond the
   previous 541–2,408 range — with `code-reviewer` offered (digest
-  `b5b83ecc699e`), `confidence: 0.9`, 5.8 s. The size axis is now excluded up
-  to 3,040 characters.
-- Baseline (pre-P2) child record now stands at **12 abstained, 1 unavailable,
-  2 invalid, 0 staffed** across all recorded native-child decisions.
+  `b5b83ecc699e`), `confidence: 0.9`, 5.8 s. Decline #13 (`19f89c78`,
+  02:20:43Z) at 1,867 chars, confidence 0.95. The size axis is excluded up to
+  3,040 characters.
+- Baseline (pre-P2) claude series is complete at n=3 on digest `16f1e720f15d`:
+  parent staffed 2/3 (the miss is the known recruiter stage,
+  `workforce_inference_failed`/`inference_invalid`; successes routed
+  `code-reviewer + application-security-engineer` at 105.0 s and 90.0 s);
+  child: 2 decisions, 2 declines, 0 staffed. Decisions-to-declines, not
+  runs-to-runs.
+- **Found in passing, verified against the store: passing contractor security
+  reviews are recorded `verdict: "unsafe"`.** `hiring.py:2091` computes
+  `"unsafe" if security_reasons else "safe"`, but reviewers now annotate
+  passes with reasons — all three applied hires since 08-16 15:39 carry 7–9
+  pass-shaped reasons and the mislabel. Evidence-integrity bug only (the gate
+  uses a different signal); flagged for a daytime fix, and every R6 citation
+  tonight carries this caveat.
 
 ## 3. Decisions taken in the owner's absence
 
