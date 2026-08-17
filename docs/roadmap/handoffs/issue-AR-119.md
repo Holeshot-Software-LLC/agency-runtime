@@ -107,15 +107,15 @@ authorized bypass; zcode has no CLI here; hermes and openclaw stay absent.
 **THE BLOCKER MOVED.** The child judge declines **on the merits**: the post-P2
 series split legacy / legacy / `native_child_abstention_confirmed` (n=3).
 
-1. **AR-255 P2 shipped and is proven live** (`966e8bae`, merged `c77c67a4`):
-   one funded repair before an abstention is final. A reaffirmed empty answer
-   records `native_child_abstention_confirmed`; an unrepairable one keeps the
-   legacy reason. The store cannot yet show whether a failed repair reached
-   the provider — unstaffed decisions drop `provider_attempts` and child
-   judge calls mint no `model_receipts` rows; instrument that first. The
-   remaining instrument for WHY it declines is the owner-gated
-   `observability.capture_content` pointed at the child assignment: wiring is
-   authorized (redact_content, flag untouched, local only); enabling is his.
+1. **SETTLED by the capture lane (2026-08-17): the judge was RIGHT.** The
+   `native_child_captured_assignments` table (schema 47, build `512f41fd`)
+   persisted all 7 assignments of the first capture run: six were mechanical
+   errands ("paste this command output verbatim") where declining is correct
+   Rule 8 behavior, and the one review-shaped child arrived with the parent's
+   own "You are acting as an independent code reviewer…" preamble embedded —
+   the card would have duplicated it. The INSTRUMENT was self-defeating, not
+   the runtime. Next: implement the drafted canary prompt in AR-255 design
+   ("Instrument fix"), moving the codex recognizer regex in the same commit.
 2. **The AR-253 overrun has a harder edge.** A 486 s+ recruiter draw outlived
    the claude hook window: the host cancelled the hook (`hook_cancelled` in
    session `2b4b19d4`), the turn proceeded unstaffed and answered, and the
