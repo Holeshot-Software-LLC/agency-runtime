@@ -976,6 +976,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `37e2cb46` | 2026-08-17 | docs(ar119): re-measured v3 verdict -- the judge's threshold is the R4 blocker | null | null |
 | `6878954f` | 2026-08-17 | feat(selector): owner policy -- small units still get cards | null | null |
 | `254ecdd5` | 2026-08-17 | docs(ar119): policy series addendum -- parent chain fully green, child draw provider-killed | null | null |
+| `08cba732` | 2026-08-17 | docs(ar119): vision-completion autonomous loop brief | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
