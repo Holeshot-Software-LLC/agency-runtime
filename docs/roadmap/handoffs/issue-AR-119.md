@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-08-16
+updated: 2026-08-17
 tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -27,8 +27,8 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: 211563c799e167bee03bfd0fa60e3f2ca6cc9195
+branch: claude/remote-control-14de96
+evidence_commit: f2f3ca88dbe4bc9adeb636a028f615c5d4886152
 minimum_ledger_commit: ee82c602f2dc2d5e9632fc91b6dc071b50dc7541
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
@@ -42,11 +42,11 @@ load first after any compaction or restart.
 
 ## checkpoint
 
-- **WORK ON `main` IN `C:\Workspaces\Holeshot Software\agency-runtime`.** PR #274 merged as `be209e7a`.
-- **AR-258 is done.** All three hosts pin one runtime digest and Agency is
-  globally on at generation 56. Hooks reload only in a fresh session. ADR-0159
-  binds exact CLI 0.147 and a pinned Desktop alpha to a sealed v3 attestation;
-  Sol/TUI and 65 Desktop calls omit the marker, so go unstaffed.
+- **WORK ON `main`.** PR #275 (AR-255 P2 + hiring verdict fix) merged as `c77c67a4`.
+- **All three hosts pin `2cd298158584`** (post-P2 main; AR-258 one digest
+  holds). Hooks reload only in a fresh session. Matrix candidate `f2f3ca88`;
+  **first Installed/Live cells ever: R2 R3 R6 R7 proven at all four layers on
+  claude, R5 Installed proven** — see AR-119-c77c67a4-live-evidence.md.
 - **CI runs every matrix-cited test file** ("Run AR-119 matrix evidence"), and
   `test_release_packaging.py` asserts that list *equals* the matrix citations,
   so a citation and a CI entry must arrive together, both directions.
@@ -94,48 +94,48 @@ load first after any compaction or restart.
 
 After restart or compaction, load this file and `AR-119-founding-vision.md`
 first, then AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158. Confirm
-branch, runtime `211563c7`, ledger `ee82c602`, status and worklog parity; do not
+branch, candidate `f2f3ca88`, runtime `2cd298158584`, worklog parity; do not
 reconstruct retired Job B, plan-row, work-unit, grant or consumed-receipt transport.
 
 ## next-bounded-work-package
 
-**Implementation and Simulation are both 45/45; Installed and Live are both
-0/45, so every one of the 45 cells still reads `unproven`.** Claude and zcode are
-ready here; codex needs the TUI trust pass against `980eb2d1b755`; hermes and
-openclaw are absent, so one machine cannot reach 45.
+**Installed is 5/45 and Live 4/45 — green for the first time: R2 R3 R6 R7
+proven at all four layers on claude plus R5 Installed, bound to candidate
+`f2f3ca88` / runtime `2cd298158584`.** Codex activation failed 2/2 under the
+authorized bypass; zcode has no CLI here; hermes and openclaw stay absent.
 
-**START HERE.** Parent staffing is **proven live** (trace `9b7890ac`):
-`code-reviewer` + `senior-secops-engineer` accepted, loaded, receipt correlated.
+**THE BLOCKER MOVED.** The child judge declines **on the merits**: the post-P2
+series split legacy / legacy / `native_child_abstention_confirmed` (n=3).
 
-1. **Claude runs `runtime-sha256-33ac14fcdac4`** at SCHEMA_VERSION 46; codex is
-   behind on `530f6df6c4b6` and zcode on `980eb2d1b755`, so AR-258's one-digest
-   property is broken. The packaged `agency.exe` is pinned at schema 45 and
-   refuses to install — use `python -m agency_runtime.cli install --agent <host>`
-   from the checkout. **A session started before an install keeps calling the old
-   launcher**; the cure is a restart, never another install. Suite runs rewrite
-   `current.json`; ignore it. Claude isolated-profile canaries need an explicit
-   `--timeout 420`: the undeclared 120 s default kills a cold profile mid-turn.
-2. **Prove Claude in two steps and do not conflate them.** First the staffing
-   path: an accepted `routing_decisions` row with selected specialists and no
-   preflight receipt. Only then Rule 4, which needs a host-written artifact
-   carrying exact hashes for **two or more** cards before first child speech.
-   Step one passing is not step two. Codex is measured the same way: the owner
-   passed TUI trust 2026-08-15 but `doctor` still read
-   `adapter_codex_hook_trust: unverified`; check which terminal ran it before
-   assuming codex is blocked.
-3. **Ten child decisions, ten declines, zero staffed** — with `code-reviewer`
-   offered every time and `task_chars` from 541 to 2,408. Not intermittent
-   (parent staffing is: red, red, then four greens) and not a trivial errand.
-   Universe and assignment size are both excluded by evidence. Rule 6 hiring is
-   live: the child universe grew **66 → 67 mid-run** as `request-intake-analyst`
-   was minted, and `offered_agent_digest` moved with it. A six-child parent also
-   cannot prove Rule 4 at all — the collector returns `multiple_child_artifacts`.
-4. **Every zero-marker result on 2026-08-14 measured the schema break** — both
-   canary runs, all nine host probes; both earlier readings are retracted in
-   the matrix. Of 63 child artifacts under `~/.claude/projects`, 9 are marked —
-   3 v5, 7 v1, **0 v6** — and `native_child_delivery_verifications` has zero
-   rows, ever. One child spawned from this runtime settles v6. Owner's hands:
-   a session may not call the Agent tool.
+1. **AR-255 P2 shipped and is proven live** (`966e8bae`, merged `c77c67a4`):
+   one funded repair before an abstention is final. A reaffirmed empty answer
+   records `native_child_abstention_confirmed`; an unrepairable one keeps the
+   legacy reason. The store cannot yet show whether a failed repair reached
+   the provider — unstaffed decisions drop `provider_attempts` and child
+   judge calls mint no `model_receipts` rows; instrument that first. The
+   remaining instrument for WHY it declines is the owner-gated
+   `observability.capture_content` pointed at the child assignment: wiring is
+   authorized (redact_content, flag untouched, local only); enabling is his.
+2. **The AR-253 overrun has a harder edge.** A 486 s+ recruiter draw outlived
+   the claude hook window: the host cancelled the hook (`hook_cancelled` in
+   session `2b4b19d4`), the turn proceeded unstaffed and answered, and the
+   store got a run row with ZERO receipts — a cancelled hook is a third
+   sibling of unrun-vs-fail-open, visible only in the host artifact. Accepted
+   routing draws tonight ran 88.6–283.2 s; the cancelled one exceeded 486 s.
+   R8's candidate artifact is that session; recorded, deliberately unclaimed.
+3. **Sixteen child decisions, zero staffed** — 13 abstained (`task_chars` 541
+   to 3,431, `code-reviewer` always offered), 1 unavailable, 2 invalid. Size
+   and universe stay excluded; the merits reading stands. Rule 6 keeps firing
+   live: `function-naming-advisor` and `contractor-reuse-system-analyst` were
+   both minted organically tonight and the first was reused with no re-hire.
+   A six-child parent still cannot prove Rule 4 (`multiple_child_artifacts`).
+4. **The v6 census is unchanged — zero envelopes ever** and
+   `native_child_delivery_verifications` has zero rows: consistent with a
+   judge that has never accepted, not with a delivery fault. Codex bypass
+   runs DID write receipts (first codex rows since 08-14); the failing stage
+   is the shared recruiter, not codex wiring — attended TUI trust and a real
+   codex turn are the owner's path. zcode activation needs his own session.
+   Canaries still need `--timeout 420`; sessions predating installs are stale.
 
 **An unrun hook and a fail-open hook look identical from outside**, so zero
 Agency rows proves neither; a shim logging stdin/stdout/stderr/exit gave the

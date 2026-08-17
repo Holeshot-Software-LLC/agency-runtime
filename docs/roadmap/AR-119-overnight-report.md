@@ -264,7 +264,28 @@ indistinguishable from the store (the gap above).
 
 ## 4. Morning decisions for the owner
 
-- (placeholder: filled at end of night)
+1. **Enable `observability.capture_content` for child assignments, or not.**
+   The judge declines on the merits; the child's actual assignment is the
+   last unexamined input. Wiring exists as an authorized option (I did not
+   wire it tonight — see section 7); enabling the flag was never mine to do.
+2. **Codex attended trust.** The bypass path proves the runtime records on
+   codex but activation failed twice at the recruiter stage and the exec turn
+   returned empty. Your fresh codex TUI (`Trust all and continue` over the 8
+   hook events) plus one real turn is the unblocked path.
+3. **zcode session.** Projection installed at the one digest; open your zcode
+   app fresh and run one turn to give it installed-activation evidence.
+4. **R8's candidate artifact** (session `2b4b19d4`: host cancelled the hook
+   at 486 s, turn proceeded unstaffed, run terminalized `response_invalid`):
+   decide whether that satisfies R8's "unstaffed turn proceeded" or whether
+   you want a receipt-backed organic routing failure instead.
+5. **Repair-call receipt instrumentation** (evidence-only change): unstaffed
+   decisions drop `provider_attempts` and child-judge calls mint no
+   `model_receipts` rows, so a failed repair is invisible. Small fix, big
+   diagnostic value; spine-covered code, so a daytime change.
+6. **`function-naming-advisor` and `contractor-reuse-system-analyst`** were
+   minted into your roster overnight (both passed critic + security review;
+   both recorded verdict "safe" on the fixed runtime). Keep or cull.
+7. **openclaw/hermes**: run the verification packet on your boxes when ready.
 
 ## 5. Still blocked, and whose hands it needs
 
@@ -282,10 +303,20 @@ indistinguishable from the store (the gap above).
 ## 7. Branch and state
 
 - Branch: `claude/remote-control-14de96` (session worktree
-  `remote-control-7efcd5`). Head at the time of each update is in git.
-- Nothing committed in the primary checkout; your WIP untouched.
-- P2 implemented and committed (`966e8bae`); merge gated on the full
-  production spine + matrix-evidence suites under `-W error`, in flight.
-- Child assignment content capture: NOT wired as of this update; the standing
-  authorization conditions are recorded in the brief. If wired later tonight,
-  this line changes.
+  `remote-control-7efcd5`). PR #275 merged to main as `c77c67a4`; the
+  follow-up docs increment (matrix candidate advance, evidence document,
+  capsule refresh, this report) merges as its own PR.
+- Nothing committed in the primary checkout; your WIP untouched. Nothing was
+  ever installed from unmerged code: `16f1e720` was pre-merge main content,
+  `2cd298158584` is post-merge main content, both from clean trees verified
+  tree-identical to main.
+- Matrix: candidate `f2f3ca88`, Installed 5/45 and Live 4/45 proven (all on
+  claude), every new layer citing the candidate evidence document. No
+  provisional cells exist — nothing was measured on unmerged code.
+- Child assignment content capture: **NOT wired tonight.** The clean merged
+  ledger took priority; the authorization conditions are recorded in the
+  brief and the wiring is morning decision 5's sibling. No capture flag was
+  touched at any point.
+- The capsule is 180 lines, current, and points at the true remaining
+  blockers: the child judge's merits-declines (instrument: capture wiring +
+  repair receipts) and the AR-253 hook-window edge.
