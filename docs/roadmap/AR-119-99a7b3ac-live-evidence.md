@@ -1,6 +1,6 @@
 ---
 title: "AR-119 installed and live evidence at runtime 99a7b3ac"
-status: draft
+status: active
 category: roadmap
 created: 2026-08-18
 updated: 2026-08-18
@@ -39,81 +39,149 @@ and the child transcript
 `…/f3066348-…/subagents/agent-a3b16809ebb7e199e.jsonl`, written by Claude
 Code itself and retained where the host wrote them.
 
-## R4 claude installed
+## R4 and R1 claude — RETRACTED 2026-08-18; an existence proof, not a proven cell
 
-At 01:47:41Z the installed projection's hook staffed a harness-spawned
-native child just-in-time: `routing_decisions` row
-`native-child-3507ad1491c2c291f8709239ea5697d6` (`applied`, source
-`native_child_inference`, provider `codex-subscription`, 11.85 s), and the
-envelope it rendered names the installed runtime itself —
-`runtime_digest` = `candidate_digest` = `cc478bc88258…` — closing the
-wiring chain from inside the artifact. Limitation: one child, one turn;
-the runtime's own in-lifetime collector (canary-only) never evaluated this
-delivery, so `native_child_delivery_verifications` remains empty; the
-verification below is reproducible from the retained artifacts instead.
+**Claimed at all four layers on 2026-08-18 and withdrawn the same day by
+adversarial review.** The artifact is real and every binding verifies —
+several more strongly than first claimed — but the inference from it to
+`proven` does not survive.
 
-## R4 claude live
+### What the artifact does establish, verified to the byte
 
-The child transcript's record zero (type=user, isSidechain=true,
-01:47:41.715Z) carries `[AGENCY INFERENCE TEAM v6]` inside the assignment
-text, before any child speech. The sealed payload binds: `launch_id` =
-`binding_id` = `toolu_01NpSMbfcshZ8UgNYQ71Fvkm` — the exact Agent tool_use
-id recorded in the parent transcript; `parent_session_id`/`parent_trace_id`
-= this session and trace `1b717647…`; `task_sha256 7ee6b9cecc53…` — equal
-to an independent recompute of SHA-256 over the parent-recorded 2,020-char
-assignment, and to the store's captured-assignment hash; one card,
-`codebase-onboarding-engineer`, `specialist_prompt_hash 4af8a247…`,
-`specialist_version sha256:36a665df…` — both exactly equal to the live
-roster row's `current_hash`/`current_version`; issued 01:47:40.953Z,
-delivered inside its 60 s validity window. This is a correlated native
-child artifact with exact card hashes before first speech, live, on the
-owner's real profile. Limitations: a single occurrence; the child's
-assignment was a ~2,000-character research unit, so the small-unit
-question (AR-255) stays open; `provider_receipt_digest` inside the
-envelope was not independently recomputed.
+The child transcript
+`~/.claude/projects/C--Workspaces-Holeshot-Software-agency-runtime/f3066348-…/subagents/agent-a3b16809ebb7e199e.jsonl`
+record zero (`type=user`, `isSidechain=true`, 01:47:41.715Z, marker at
+char 2022; first assistant record is index 5 at 01:47:44.369Z) carries an
+`[AGENCY INFERENCE TEAM v6]` envelope whose bindings all hold:
 
-## R1 claude installed
+- `launch_id` = `toolu_01NpSMbfcshZ8UgNYQ71Fvkm` = the parent transcript's
+  tool_use record **and** the host's own `agent-….meta.json` `toolUseId` —
+  two independent host files.
+- `task_sha256 7ee6b9ce…` equals SHA-256 of the parent-recorded 2,020-char
+  prompt, which contains **no** v6 marker — the envelope was appended
+  host-side afterward, so the parent copy is a genuinely independent
+  witness. It also equals `routing_decisions.query_hash`.
+- The delivered 2,496-char card body is **byte-identical** to
+  `agent_versions.content` for `codebase-onboarding-engineer`, and
+  `sha256(body)` equals `agent_workers.current_hash` — a content checksum,
+  not a matching identifier.
+- `runtime_digest` = `candidate_digest` = installed `cc478bc88258…`, and
+  the installed launcher tree versus this checkout's `agency_runtime/`
+  compares **577 files, 0 added, 0 missing, 0 differing**.
+- Delivered inside its 60 s validity window; store row `applied`,
+  `native_child_inference`, trace `1b717647…`.
 
-The same envelope is the inference receipt joined to exact delivered card
-hashes, delivered by the installed projection: decision id, provider
-identity, and the exact card hash/version travel sealed in one object that
-the store's decision row, captured-assignment row, and roster row each
-join exactly. Limitation: the join is proven through the decision id,
-task hash, and card hashes; the envelope's own `provider_receipt_digest`
-binding was not independently recomputed.
+That is a sound **existence proof**: the JIT path delivered a fully bound,
+pre-speech, exact-hash card to a harness-spawned child, once.
 
-## R1 claude live
+### Why it is not a proven cell
 
-Same artifact, same joins, on a live real-profile turn: inference chose
-the specialist (`native_child_inference`, `applied`), and the exact chosen
-card's hash arrived in the child's first record. Limitations: as R1
-installed; one occurrence.
+1. **Undisclosed base rate: one delivery in fourteen.** Since this runtime
+   was installed, Claude Code wrote **14** harness-spawned child
+   transcripts on this machine; exactly **one** carries a v6 envelope.
+   Inside the measuring session itself, four children were spawned under
+   identical conditions — one got a card, three record zeros carry no
+   `[AGENCY` marker at all, and two show the `SubagentStart` hook firing
+   and writing "this identity message supplies no card". Rule 4's text is
+   "Harness-spawned children **must** also get cards." A limitation
+   reading "single occurrence" implies measured-once; it was measured
+   fourteen times and succeeded once. (Much of the shortfall is provider
+   availability — 13 parent-stage routing failures in that session — and
+   Rule 8 permits abstention, but **no receipt is bound to any of the
+   three unstaffed child launches**, so their non-delivery is unexplained
+   in the store rather than a documented abstention.)
+2. **The promotion reversed this session's own recorded reading, with no
+   decision written down.** The loop status document, from the same
+   artifact the same night, said: no R4 matrix cell, "conservative reading
+   of R4's authority keeps the cell untouched until a collector-verified
+   proof exists". The matrix says a collector-minted proof "is the only
+   thing that can satisfy Rule 4", and
+   `native_child_delivery_verifications` still holds **zero rows**. The
+   standard was not relaxed by decision; it was simply not applied. That
+   is the exact failure mode this matrix has recorded three times.
+3. **A stated corroboration was false.** The claim said `task_sha256`
+   equals "the store's captured-assignment hash". The stored
+   `captured_task` is **2,000 characters — a truncated prefix** (bounded
+   by `MAX_CAPTURE_CHARS`), and its own SHA-256 is `66023421…`, not
+   `7ee6b9ce…`. Only the `task_sha256` *column* matches, and that column
+   was written by the same code path that built the envelope, so it is a
+   self-assertion rather than a content check. The conclusion survives on
+   the parent-transcript recompute alone; the sentence was wrong.
+4. **Plurality.** The founding vision says children get cards, "plural",
+   and the matrix's hermes/openclaw R4 rows demand "the exact **plural**
+   ordered team". This artifact delivered exactly one card (`CARD 1/1`).
+   A permissive reading is defensible, but applying a looser standard to
+   claude than to other hosts is precisely the asymmetry Rule 9 exists to
+   prevent.
+5. **Installed is not independent of Live here.** Both are readings of one
+   01:47:41Z launch; the only fact distinctly belonging to Installed is
+   `runtime_digest` — a field of the same envelope. Counting one event as
+   two proven layers doubles apparent evidence weight.
 
-## R5 claude installed
+**R1 falls with it**: its Installed and Live claims rested on the same
+single artifact ("the same envelope", "same artifact, same joins"), so
+findings 1, 2 and 5 transfer unchanged.
 
-`agency eval spawn-authority --json` re-executed at this candidate with
-the analyzed package root literally the installed launcher tree
-(`~/.agency-runtime/launchers/runtime-sha256-cc478bc88258…/site-packages/agency_runtime`,
-asserted by importing and printing the package path in-process before the
-run, after an earlier attempt was caught importing a checkout tree and
-discarded): 5/5 cases pass — process-origin and worker-origin modules
-disjoint (295 modules, 21 process-capable, 5 worker-origin, overlap 0),
-worker origin confined to the five host boundaries, every process-capable
-module purpose-declared, both injected-violation controls detected.
-Limitation: the separation is host-neutral, so this is one measurement.
+**What would prove these cells:** a collector-minted host-artifact proof
+(the first `native_child_delivery_verifications` row), or a measured
+delivery *rate* across a series of harness-spawned children with a
+receipt bound to every non-delivery — plus, for the strict reading, a
+plural ordered team in one child.
 
-## R5 claude live
+## R5 claude installed — RETRACTED 2026-08-18
 
-A live host-originated spawn with Agency recording rather than starting
-it: the parent transcript's Agent tool_use (host-initiated), the
-`delegation_events` row (`backend=delegate_task`, `status=completed`,
-`error=ok`, worker `claude-agent:a3b16809ebb7e199e`) recording the host's
-own delegation, the staffing decision above (Agency's only role:
-choosing cards for the child the host created), and the installed-tree
-separation proof. Agency started no process; the host originated the
-worker; Agency recorded it. Limitation: one spawn; the negative half
-(no Agency-started process at any seam) rests on the installed
-spawn-authority separation rather than a whole-turn seam sweep.
+**Claimed and withdrawn the same day, by adversarial review, before it
+reached the owner.** It asserted that `agency eval spawn-authority --json`
+analyzed the installed launcher tree, 5/5 cases passing.
+
+It cannot stand: the eval **emits no package path**. Its receipt is
+`{suite, passed, passed_count, failed_count, cases}`, and module names are
+relative to the package root, so they read identically for every tree. The
+one number reported — `modules: 295` — is shared by the ar119 checkout,
+the primary checkout, **and eight separate launcher trees**. The
+distinguishing step (printing `agency_runtime.__file__` in-process) left
+**no retained artifact**, on a machine where that exact confusion already
+happened once this session.
+
+Worse, it is not independent even in principle: this document also asserts
+the checkout tree equals the installed tree, so an eval reading either
+cannot distinguish them. **An installed layer whose evidence is provably
+invariant to which tree it read is not an installed proof — it is the
+Implementation layer re-run.**
+
+What would prove it, and was available for free: run the eval *through the
+installed launcher's own bootstrap*, which executes under `-I -S` so the
+caller's CWD, user site, and PYTHONPATH are removed and only the private
+package parent is restored — making the installed tree structurally
+unavoidable rather than asserted — and retain the command line and stdout.
+The same objection applies to the `c77c67a4`-era R5 Installed claim, which
+rested on the same unretained assertion; it is prior-candidate context
+now, but it inherits this defect and the owner should know.
+
+## R5 claude live — RETRACTED 2026-08-18
+
+**Withdrawn, and one sentence in it was factually false.**
+
+The claim said "Agency started no process". Agency demonstrably *did*
+start one inside that very turn: the child staffing decision
+`native-child-3507ad14…` ran on provider **`codex-subscription`** with
+`latency_ms 11850`, and `cli_transport` is declared process-capable
+("inference provider call") by the spawn-authority eval itself. Agency
+held an OS subprocess open for ~11.85 s ending 01:47:41.457Z — **1.4 s
+before** the delegation row's `started_at` (01:47:42.866Z). Under Rule 5's
+own tool/agent distinction that is permitted (Agency may start *tools*),
+but the sentence must then read "started no **worker**". As written it
+asserted a proposition its own store row falsifies.
+
+The deeper defect: the authority is a conjunction — source separation
+**plus** a native spawn-origin artifact — and a delegation row with a
+parent `tool_use` is purely positive evidence. It proves the host started
+something; it carries no information about absence. The negative half was
+borrowed from the source layer, which the matrix's derivation rule does
+not permit. `tests/test_spawn_origin_absence.py` shows what a real
+measurement costs: four seams detector-patched for a whole turn, a
+positive control proving the detector fires, and non-vacuity asserted from
+the turn's own artifacts. This claim had none of that.
 
 ## R2 claude installed
 
@@ -176,38 +244,61 @@ turn, absent from the next, expiry stated. Limitation: the expiry notice
 rides the next turn's capsule, so an empty-context turn would not carry
 it.
 
-## R6 claude installed
+## R6 claude installed and live — NOT CLAIMED; the ladder half holds, the use half fails
 
-The installed projection ran the whole hiring ladder organically inside a
-real turn of a different project's session (conveyor worktree session
-`b97eb5cb-8d87-4fed-9c1f-b1f3399533b1`, 05:05:48Z): hiring case
-`bfe8a9cb` (`hire`, `applied`, work unit
-`unit-deployment-readiness-review`, trace `01605b15`) carries gap,
-duplicate, and contract evidence, staged model receipts
-(`inference_required: true`), an independent critic receipt
-(`approved: true`, compiled prompt hash `373fb41e…`), an inline dynamic
-audit (`status: approved`, `contract_valid: true`, revision
-`dynamic-v1-373fb41e…`), and a contract hash; the worker
-`deployment-readiness-reviewer` was filed `origin='agency'`,
-`employment_class='contractor'` at 05:05:48.462. A second organic mint
-the same night (`operations-recovery-plan-reviewer`, case `9afaec53`,
-03:45:45Z, this loop session) corroborates the ladder. Limitation: the
-dynamic-hire path records its audit inline rather than as the separate
-security-review row the `2cd29815`-era proof cited; stated as measured.
+Both layers were claimed on 2026-08-18 and are **withdrawn the same day**
+by adversarial review. What survives is worth keeping precisely, because
+most of the ladder did hold.
 
-## R6 claude live
+**What is solid.** The installed projection ran the whole hiring ladder
+organically inside a real turn of another project's session (conveyor
+worktree session `b97eb5cb…`, 05:05:48Z) on the **exact installed
+candidate** — that session's own hook command line names
+`…/runtime-sha256-cc478bc88258…/site-packages/agency_runtime/_bootstrap.py`,
+so candidate binding here is stronger than in most cells. Hiring case
+`bfe8a9cb` carries gap, duplicate and contract evidence, three staged
+model receipts (`hiring`/haiku, `hiring-critic`/sonnet,
+`security_review`/sonnet, `inference_required: true`), and a real
+**security review with `verdict: "safe"`, `same_provider_as_creator:
+false`** — so the "independent critic receipt" clause of the authority is
+genuinely satisfied, and an earlier worry that the dynamic path recorded
+only an inline audit stanza was **wrong** (the audit block is a third,
+separate thing: the compiled contract's own stanza). The worker was filed
+`origin='agency'`, `employment_class='contractor'`. It is the **last row
+in `agent_hiring_cases`** (31 rows, none after 05:05:48.439), so "reused
+with zero further hiring cases" holds. Two distinct later turns exist and
+are provably distinct: different UserPromptSubmit hook ids, different
+resident-manager turn ids, different parentUuids, and two
+`specialists_loaded` rows on **different traces** (`01605b15…` 05:05:48,
+`a19437fb…` 06:29:49).
 
-The new card was dealt into the very turn whose gap created it — the
-session transcript's capsule record 1948 (05:05:48) names
-`deployment-readiness-reviewer` with its instruction body — and **a later
-turn of the same session reused it from the pool with no further hiring
-case**: `specialists_loaded` row at 06:29:49.879, capsule record 2611
-(06:29:50), and zero `agent_hiring_cases` rows after the mint. Filed in
-the pool for next time, found there, hired nobody. Limitations: the reuse
-turn ran in the same session (cross-session reuse still unmeasured), and
-the traffic was another project's autonomous session — organic with
-respect to this loop, but the machine had exactly one interactive owner
-absent all night.
+**Why the cell is nevertheless not claimed.** R6's authority ends with
+**host-backed use**, and the host's own artifact contradicts it. Every
+host-authored `Agency/Agencies loaded:` header in both windows reads
+`agency-steward` with `Recruited via: none` and `Actual Model selected:
+none observed` (records 2613 and 2621, verified directly). The only text
+on the machine naming `deployment-readiness-reviewer` as loaded is an
+`[AGENCY UPDATED HEADER SNAPSHOT]` injected by Agency's own PostToolUse
+hook — Agency-authored, which ADR-0156 says can never originate the
+claim. Both runs terminated **`response_invalid`**, and the reuse card's
+entire lifetime was 10.6 s (`loaded_at 06:29:49.879` → `expired_at
+06:30:00.521`, the run's end).
+
+A second, smaller correction: the earlier write-up cited "capsule record
+1948 … with its instruction body". That record is a `<persisted-output>`
+2 KB preview in which the slug appears **only** in the routing-suggestion
+line; the card body lives in the retained side file
+`…/tool-results/hook-e18246fa-…-additionalContext.txt` (21,001 bytes).
+Cite the side files, not the transcript records.
+
+**What would prove R6 here:** one host turn whose own final header names
+the minted contractor as loaded, on a run that does not terminate
+`response_invalid`. Delivery is already evidenced; host-attested *use* is
+the gap. Also worth the owner's eye: `critic_evidence["approved"]` is a
+hardcoded literal rather than a read verdict, and
+`critic_evidence["receipt"]` stores the security-review receipt rather
+than the critic's — so quoting `approved: true` as a receipt is a
+tautology. The real critic receipt survives only in `model_evidence`.
 
 ## Not moved at this candidate
 
