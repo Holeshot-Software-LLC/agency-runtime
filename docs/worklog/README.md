@@ -1020,6 +1020,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9f1b8871` | 2026-08-18 | docs(ar255): record the post-policy abstention on the pure unit | null | null |
 | `3c389e14` | 2026-08-18 | docs(ar119): retract R1, R4, R5 and R6 claude installed+live after adversarial review | null | null |
 | `b2b19727` | 2026-08-18 | docs(ar119): final status for the vision-completion loop run | null | null |
+| `32586610` | 2026-08-18 | docs(ar119): capsule reflects the retractions and the real Rule 4 blocker | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
