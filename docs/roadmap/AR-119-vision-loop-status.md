@@ -107,3 +107,47 @@ matrix's exact authorities:
 
 No matrix cell has been changed. Any new cell requires advancing
 `candidate_commit` per the update contract, with citations re-anchored.
+
+### Cycle 1 — first live v6 delivery observed; probe green; series started (02:00–02:10 UTC)
+
+**Finding: the first v6 envelope ever observed in a host-authored child
+artifact — the capsule's "one child spawned from this runtime settles v6"
+question is settled live.** This loop session's own research subagent
+(host-spawned via the Agent tool at 01:47Z) was staffed by the child judge
+(`routing_decisions` row `applied`, source `native_child_inference`,
+provider `codex-subscription`, 11.85 s, selected
+`codebase-onboarding-engineer`), its assignment captured verbatim
+(`native-child-3507ad1491c2c291f8709239ea5697d6`), and the child transcript
+`~/.claude/projects/C--Workspaces-Holeshot-Software-agency-runtime/f3066348-ca45-4318-9095-878a4a23c5c2/subagents/agent-a3b16809ebb7e199e.jsonl`
+carries `[AGENCY INFERENCE TEAM v6]` inside record zero (type=user,
+isSidechain=true — the canonical shape), before any child speech. The sealed
+payload binds `launch_id` = the Agent tool-use id, the parent session and
+trace ids, the exact card hash (`specialist_prompt_hash 4af8a247…`, version
+`sha256:36a665df…`), and `candidate_digest` = the installed runtime
+`cc478bc88258…`.
+
+- *What this establishes:* JIT native-child staffing, the v6 renderer, and
+  pre-speech delivery work end to end, live, on the installed projection,
+  in a real profile. The child judge can staff a harness-spawned child.
+- *What it does NOT establish:* the §7.1 acceptance draw (this unit was a
+  ~2,000-char research task, not the 138-char pure review unit; the
+  small-unit question stays open), and no R4 matrix cell (the in-lifetime
+  collector never ran, so `native_child_delivery_verifications` is still
+  zero rows; conservative reading of R4's authority keeps the cell
+  untouched until a collector-verified proof exists).
+- *Falsification:* if the envelope in that artifact fails hash or binding
+  checks against the store's decision row, the delivery claim dies; the
+  artifact is retained where the host wrote it.
+
+**Probe (brief §4.6) passed both halves at ~02:05Z:** `agency eval routing
+--json --no-details` exited 0 with `passed: true` (v1.4.0), and the store
+gained hook-path draws after the backoff receipt — `accepted` parent
+decision 01:52:57Z and the `applied` child decision above. Backoff ended.
+Canary readiness for claude: `ready: true`, `trust_mode: attended`,
+isolated-profile, no unmet prerequisites, confirm phrase verified.
+
+**Series run 1 of ≥3 launched** (isolated-profile, `--timeout 420`,
+serialized; report to the session scratchpad, essentials to be quoted here;
+failures kept; per-run reason codes). Acceptance unchanged: one clean child
+draw that staffs the pure unit and the first
+`native_child_delivery_verifications` row ever.
