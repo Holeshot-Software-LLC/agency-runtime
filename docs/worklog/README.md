@@ -947,6 +947,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e5016733` | 2026-08-16 | docs(ar119): refute the zcode-CLI stage for this box, by measurement | null | null |
 | `e41ac039` | 2026-08-16 | fix(hiring): record the security verdict from the gate signal | null | null |
 | `4d48d937` | 2026-08-16 | docs(ar119): record the hiring verdict repair in the report | null | null |
+| `c77c67a4` | 2026-08-16 | Merge pull request #275 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `73152816` | 2026-08-16 | docs(ar119): the machine is on the post-P2 main build | null | null |
 | `2cd71694` | 2026-08-16 | docs(ar119): post-P2 run 1 per-run split and the repair observability gap | null | null |
 | `9dc5d64a` | 2026-08-16 | docs(ar119): run 2 legacy again, over-budget repair hypothesis refuted | null | null |
@@ -959,24 +960,42 @@ This registry connects repository history to the roadmap and to optional detail 
 | `21b43506` | 2026-08-17 | docs(ar119): first Installed and Live layers - R2 R3 R6 R7 proven on claude | null | null |
 | `c1c978e3` | 2026-08-17 | docs(ar119): refresh the capsule and finish the morning report | null | null |
 | `48f25270` | 2026-08-17 | feat(ar255): record the redacted child assignment under the owner's capture flag | null | null |
+| `38f20e43` | 2026-08-17 | Merge pull request #276 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `6fbc6313` | 2026-08-17 | docs(ar119): the capture wiring shipped; correct the report | null | null |
+| `227ab06b` | 2026-08-17 | Merge pull request #277 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `34b6c09f` | 2026-08-17 | docs(ar119): the machine wakes on main tip 227ab06b | null | null |
+| `f057ffb7` | 2026-08-17 | Merge pull request #278 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `d7ecbc55` | 2026-08-17 | docs(ar119): warn that the owner's eval_commands WIP left the working tree | null | null |
+| `5d9f7ecf` | 2026-08-17 | Merge pull request #279 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `c916e96d` | 2026-08-17 | docs(ar119): the owner resolved the WIP question; retire the warning | null | null |
+| `a13f6556` | 2026-08-17 | Merge pull request #280 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `5c027afe` | 2026-08-17 | docs(ar119): retract my own claim that the capture flag was off | null | null |
 | `e737e335` | 2026-08-17 | docs(ar255): the capture wiring records nothing and my test could not see it | null | null |
 | `0f0d07a0` | 2026-08-17 | feat(ar255): give the captured child assignment its own content lane | null | null |
+| `dfd482d0` | 2026-08-17 | Merge pull request #281 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `53088a93` | 2026-08-17 | docs(ar255): the capture settled it -- the judge was right about errands | null | null |
 | `be8b8df4` | 2026-08-17 | docs(ar119): point the capsule at the settled verdict and the instrument fix | null | null |
+| `520ad0c1` | 2026-08-17 | Merge pull request #282 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `b480cc9a` | 2026-08-17 | fix(canary): hand the child the work unit verbatim in the activation prompt | null | null |
 | `a7ff98c3` | 2026-08-17 | fix(canary): demand exclusive verbatim handoff and pin the prompt text | null | null |
 | `7c3f1fac` | 2026-08-17 | style(tests): sort the activation-canary contract import block | null | null |
+| `28f5e835` | 2026-08-17 | Merge pull request #283 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `1796283e` | 2026-08-17 | fix(canary): v3 instrument -- the prompt is planner input, stop naming expertise | null | null |
+| `58af4d0c` | 2026-08-17 | Merge pull request #284 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `4cc94e09` | 2026-08-17 | docs(ar119): instrument-series verdict -- handoff proven, recruiter is the blocker | null | null |
+| `7cab979f` | 2026-08-17 | Merge pull request #285 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `37e2cb46` | 2026-08-17 | docs(ar119): re-measured v3 verdict -- the judge's threshold is the R4 blocker | null | null |
+| `897af162` | 2026-08-17 | Merge pull request #286 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `6878954f` | 2026-08-17 | feat(selector): owner policy -- small units still get cards | null | null |
+| `99a7b3ac` | 2026-08-17 | Merge pull request #287 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `254ecdd5` | 2026-08-17 | docs(ar119): policy series addendum -- parent chain fully green, child draw provider-killed | null | null |
+| `da380c2f` | 2026-08-17 | Merge pull request #288 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
 | `08cba732` | 2026-08-17 | docs(ar119): vision-completion autonomous loop brief | null | null |
+| `94489201` | 2026-08-17 | Merge pull request #289 from Holeshot-Software-LLC/claude/remote-control-14de96 | null | null |
+| `99be892a` | 2026-08-17 | docs(ar119): open the vision-loop status ledger -- core.worktree repair, provider backoff | null | null |
+| `965daa1f` | 2026-08-17 | docs(ar119): record the first live v6 child delivery and the green probe | null | null |
+| `2c4af855` | 2026-08-17 | docs(ar119): series runs 1-2 provider-killed; 30-minute backoff ruling | null | null |
+| `3d70a2e9` | 2026-08-17 | docs(ar119): verify the live v6 chain end to end across three surfaces | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
