@@ -995,6 +995,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `99be892a` | 2026-08-17 | docs(ar119): open the vision-loop status ledger -- core.worktree repair, provider backoff | null | null |
 | `965daa1f` | 2026-08-17 | docs(ar119): record the first live v6 child delivery and the green probe | null | null |
 | `2c4af855` | 2026-08-17 | docs(ar119): series runs 1-2 provider-killed; 30-minute backoff ruling | null | null |
+| `3d70a2e9` | 2026-08-17 | docs(ar119): verify the live v6 chain end to end across three surfaces | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
