@@ -672,3 +672,63 @@ keeping it should be decided once, for both.
 consumed a capability for it, this reading is wrong. If the owner rules
 that an origin-proof may come from a source other than the one-use
 capability, R4 Live becomes provable from artifacts already on disk today.
+
+### The child-to-receipt join needs no code change, and the fix I tried was wrong
+
+Attempted 2026-08-18, reverted the same session. Recorded because the
+attempt is what produced the answer.
+
+**What I tried and why it failed.** The plan was to make the join
+first-class by adding `launch_id` to the native-child routing-decision
+projection and to `_ROUTING_DECISION_FIELDS`. A persisted-row test made it
+pass. It also broke **five existing contracts** that are green on the
+unmodified tree (verified by stashing: 137 passed clean, 133 passed plus 5
+failures with the change): four native-child staffing tests began
+returning `native_child_routing_decision_unavailable` — the sealed
+success-route readback rejecting the changed projection — plus one
+ready-receipt test. Removing the field from the success path alone did not
+clear it, so the blast radius comes from widening the **shared** decision
+allowlist, not from the native-child route. `_ROUTING_DECISION_FIELDS` is
+load-bearing for every routing decision and for the ready-receipt payload;
+it is not a place to add a field casually. Reverted to clean.
+
+**What actually works, today, with the store as it stands.** Three
+independent join keys already exist, and each covers a different case.
+Applied to the four harness-spawned children of session `f3066348`:
+
+| child | join that resolves it | outcome |
+|---|---|---|
+| `a3b16809…` | v6 envelope `decision_id` in record zero | staffed (`applied`) |
+| `a3b13d36…` | `sha256(child's own assignment)` == `routing_decisions.query_hash` | declined (`inference_invalid`) |
+| `a8796913…` | recomputed `context_fingerprint` | declined (`inference_invalid`) |
+| `a2bd9b49…` | none — genuinely unrecorded | silent hole |
+
+Note the complementarity: the fingerprint resolves `a8796913` but not
+`a3b13d36`; the `query_hash` route resolves `a3b13d36` but not
+`a8796913`. Either alone looks like a 50% evidence gap; together they
+leave exactly one unresolved child. **This retracts the sharper form of
+my earlier claim that receipts are reliably joinable by fingerprint — they
+are joinable, but only by trying all three keys.**
+
+The `query_hash` route is the most useful of the three because it needs
+nothing but the child artifact: strip any appended v6 envelope from record
+zero, hash the remainder, and look it up among that session's decisions.
+
+**The one real hole, unchanged:** `a2bd9b49…` launched 02:59:41Z when no
+parent run was open (previous run closed 02:51:29, next opened 03:02:34).
+`_native_child_staffing_parent` returns no trace, and both
+`staff_native_child` and `_record_native_child_unstaffed` return silently
+by design. That case still reads exactly like a hook that never ran.
+
+**Next step, when it is scheduled:** build the three-key resolver as a
+read-only projection (extending `agency evidence children`, which already
+walks the artifact root) rather than changing what is written. It turns
+delivery into a countable rate immediately and carries none of the risk
+that broke five contracts here. Only after that is the silent hole worth a
+schema decision, because only then is its true frequency known — one in
+fourteen is an upper bound measured by hand, not a rate.
+
+*Falsification:* if a child artifact resolves under none of the three keys
+while its decision demonstrably exists (as `a3b13d36`'s did, with
+`task_chars` matching to the character), then a fourth key is in play and
+the resolver is incomplete.
