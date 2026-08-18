@@ -1023,6 +1023,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `32586610` | 2026-08-18 | docs(ar119): capsule reflects the retractions and the real Rule 4 blocker | null | null |
 | `643e74ab` | 2026-08-18 | Merge pull request #294 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
 | `19b75aa3` | 2026-08-18 | docs(ar119): retract the missing-receipts claim; name R4's real blocker | null | null |
+| `28eda25b` | 2026-08-18 | docs(ar119): the child-to-receipt join needs no code change; revert the field I added | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
