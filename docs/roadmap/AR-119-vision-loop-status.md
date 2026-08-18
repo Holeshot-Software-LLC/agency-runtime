@@ -167,6 +167,20 @@ draw that staffs the pure unit and the first
 - **Run 2** (02:11Z, run `c9535668`, receipt `aa12fb29`): FAILED at parent
   preflight — planner `provider_no_valid_response` (haiku), receipt reason
   `workforce_provider_unavailable`. Nothing downstream ran.
+- **Run 3** (02:47Z, run `dbdb8fba`, receipt `a7999a88`, launched after
+  the probe passed on two accepted hook-path draws at 02:15Z/02:35Z):
+  FAILED at parent preflight — planner `provider_no_valid_response`,
+  identical to run 2.
+
+**Series verdict: 0/3, all provider-killed before the instrument** —
+recruiter contract-invalid ×2, then planner dead ×2. Second consecutive
+provider-killed series tonight (the 2026-08-17 policy series was the
+first). A third failing series spaced ≥6 h from the first records
+`blocked-on-provider` (6.1). The session's own turn draws intermittently
+succeed in the same window, so this is intermittency under load, not an
+outage; account-level rate pressure is a plausible mechanism (the owner
+flagged model-limit pressure tonight). Next series no earlier than ~03:30Z;
+provider-independent §7.2 work proceeds meanwhile.
 
 **Delegated ruling (brief §4.6): two consecutive provider-stage failures →
 30-minute backoff on the series from 02:11:24Z, resume no earlier than
