@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-17
+updated: 2026-08-18
 tags: []
 related: []
 supersedes: []
@@ -1006,6 +1006,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `63dd2800` | 2026-08-17 | docs(ar119): cycle 4 -- advance merged on CLEAN rollup, organic hire recurs | null | null |
 | `31704027` | 2026-08-17 | Merge origin/main (PR #291) back into the working branch | null | null |
 | `69f1ba40` | 2026-08-17 | docs(ar119): series 2 run 2 -- parent chain green, child draw provider-killed again | null | null |
+| `369665bf` | 2026-08-18 | docs(ar119): refresh the capsule at the 3269ff67 candidate | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
