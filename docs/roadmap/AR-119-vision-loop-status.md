@@ -170,8 +170,63 @@ draw that staffs the pure unit and the first
 
 **Delegated ruling (brief §4.6): two consecutive provider-stage failures →
 30-minute backoff on the series from 02:11:24Z, resume no earlier than
-02:41:24Z.** Backoff pauses the attempt clock. Interim work: AR-252
-collector (§7.3, provider-independent, non-docs). *Falsification:* an
-accepted hook-path draw in the store after 02:41Z reopens the series; a
-third consecutive provider-killed series over ≥6 h records
-`blocked-on-provider` per stopping condition 6.1.
+02:41:24Z.** Backoff pauses the attempt clock. Interim work: §7.2 evidence
+inventory (provider-independent). *Falsification:* an accepted hook-path
+draw in the store after 02:41Z reopens the series; a third consecutive
+provider-killed series over ≥6 h records `blocked-on-provider` per
+stopping condition 6.1.
+
+### Cycle 2 — §7.2 inventory: the v6 chain verifies end to end (02:15–02:35 UTC)
+
+**Negative first: this session is not a clean R2/R3 parent-side vehicle.**
+In this interactive real-profile session's transcript, the first
+`[AGENCY LOADED]` attachment record lands at index 87 (00:07:58Z) while the
+first assistant record is index 11 (00:03:57Z) — the caller speaks while
+routing resolves, so pre-speech delivery cannot be shown from this session.
+The `claude -p` one-shot sessions passed R2/R3 because they wait; the
+interactive path does not. (This is an artifact-timing observation about
+the transcript record order, not a delivery regression claim.)
+
+**Positive: the 01:47Z live child delivery verifies across three
+independent surfaces, with exact-hash joins at every seam:**
+
+1. *Parent host artifact* — this session's transcript records the Agent
+   tool_use `toolu_01NpSMbfcshZ8UgNYQ71Fvkm` with the full 2,020-char
+   assignment; `sha256(prompt)` = `7ee6b9cecc53…` (recomputed
+   independently).
+2. *Child host artifact* — `subagents/agent-a3b16809ebb7e199e.jsonl`
+   record zero (type=user, isSidechain=true), timestamp 01:47:41.715Z,
+   carries the v6 envelope inside the assignment text, pre-speech:
+   `task_sha256` = `7ee6b9cecc53…` (equals the parent-side recompute),
+   `binding_id`/`launch_id` = that exact tool_use id,
+   `decision_id native-child-3507ad1491…`, card
+   `codebase-onboarding-engineer` with `specialist_prompt_hash 4af8a247…`
+   and `specialist_version sha256:36a665df…`, `runtime_digest` =
+   `candidate_digest` = installed `cc478bc88258…`, delivered inside its
+   60 s validity window (issued 01:47:40.953Z).
+3. *Store correlation* — `routing_decisions` row with that exact id
+   (`applied`, source `native_child_inference`, provider
+   `codex-subscription`, same trace/session), captured-assignment row with
+   the same `task_sha256` (capture text bounded at the documented
+   `MAX_CAPTURE_CHARS = 2000`, hence hash-binds-original by design), and
+   the roster row `agent_workers.codebase-onboarding-engineer` whose
+   `current_hash`/`current_version` equal the envelope's card hash and
+   version exactly.
+
+**What this makes claimable and what it does not.** This is live
+R4-authority-shaped evidence ("correlated native child artifact with exact
+card hashes before first speech") and an R1-shaped live join (inference
+receipt identifiers sealed with exact delivered card hashes in one
+envelope). It is deliberately NOT claimed in the matrix yet: (a) the
+matrix's `candidate_commit` still anchors `f2f3ca88` (tree == PR #275)
+while this artifact binds runtime `cc478bc88258` (tree == merge
+`99a7b3ac`), so a candidate advance with citation re-anchoring must come
+first — and that advance demotes the existing installed/live claude cells
+proven on `2cd29815` until re-proven; (b) the runtime's own collector
+never evaluated this delivery (`native_child_delivery_verifications`
+remains zero rows — the collector is canary-in-lifetime only); (c) the
+`provider_receipt_digest` binding was not independently recomputed
+(writers: `native_child_decision.py`, `native_child_prompt_delivery.py`).
+*Falsification:* any of the recorded hashes failing a re-check against the
+retained artifacts kills the claim; the artifacts stay where the host
+wrote them.
