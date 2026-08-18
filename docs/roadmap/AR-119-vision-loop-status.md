@@ -1,9 +1,9 @@
 ---
-title: "AR-119 vision-completion loop status"
-status: draft
+title: "AR-119 vision-completion loop final status"
+status: active
 category: roadmap
 created: 2026-08-17
-updated: 2026-08-17
+updated: 2026-08-18
 tags: [roadmap, report, autonomous, loop, AR-119, AR-253, AR-255]
 related:
   - docs/roadmap/AR-119-vision-completion-autonomous-brief.md
@@ -17,15 +17,35 @@ type: reference
 issue_id: AR-119
 ---
 
-# AR-119 vision-completion loop status
+# AR-119 vision-completion loop final status
 
-**The machine is on main's build: all three hosts (claude, codex, zcode) pin
-runtime digest `cc478bc88258…` (merge `99a7b3ac`, PR #287), store schema 47 ==
-checkout 47 == launcher 47, verified read-only at 2026-08-18T01:55Z.** The
-loop session (authorized through 2026-08-18 23:59 local) works on the
-capsule's branch in `agency-runtime-ar119`, fast-forwarded to `94489201`
-(origin/main tip). `native_child_delivery_verifications` still holds zero
-rows, ever.
+**Your machine is on main's build.** All three hosts (claude, codex,
+zcode) pin runtime digest `cc478bc88258…` — merge `99a7b3ac`, PR #287,
+your small-unit policy — with store schema 47 equal to both checkout and
+launcher, verified by reading the three `current-<host>.json` files at
+the close of the run. Everything merged after that install (PRs
+#288–#293) is docs-only, so no reinstall is owed and the installed build
+equals main for the package tree.
+`~/.agency-runtime/overnight-runtime-state.json` carries the same facts.
+
+**This is the final status document for the loop run of 2026-08-18.** The
+loop stopped on condition 6.1: every matrix cell still open now carries a
+recorded blocker that is yours — physically or by decision. It did not
+stop because it ran out of time.
+
+## The one-paragraph version
+
+The night's real gain is narrower than it looked at 04:00, and it is
+still worth having: **the first `[AGENCY INFERENCE TEAM v6]` envelope
+ever observed on this machine**, delivered pre-speech to a live
+harness-spawned child and verified to the byte across parent artifact,
+child artifact and store. R2, R3 and R7 are genuinely proven at all four
+layers on claude. **Four cells I promoted earlier in the run — R1, R4,
+R5, R6 — I retracted the same day after adversarial review, by name,
+before you read them.** The acceptance draw you were waiting for finally
+landed and answered: with your small-unit policy live in the installed
+prompt, the child judge **declined** the pure unit. Three canary series
+(nine runs) otherwise fought provider flakiness all night.
 
 ## Cycle log
 
@@ -424,3 +444,139 @@ with origin/main; R6 pool-reuse watch continues.
   child-draw `native_child_inference_failure` ×1 (03:50Z), against
   accepted draws at 01:47Z (child, staffed), 01:52Z, 02:15Z, 02:35Z,
   02:58Z, 03:06Z, 03:50Z (parent chain green).
+
+## Final status — 2026-08-18
+
+### 1. What is PROVEN
+
+- **R2, R3, R7 claude at all four layers**, candidate `1bd7e37c` (package
+  tree == installed `cc478bc88258…`). Fresh real-profile `claude -p`
+  session `1eaa3a55`: accepted decision `949ced13` (109.5 s), **four
+  cards selected AND loaded with no narrowing**, whole instruction bodies
+  in an 18,748-byte persisted capsule attached pre-speech (record 8 vs
+  9), zero delegations; resumed turn 2 (run `bfb6c3a5`) carries the
+  expiry notice naming all four turn-1 cards pre-speech (record 56 vs
+  57), none re-delivered, `expired_at` equal to run 1's `ended_at`
+  exactly. Honest caveat: those three rules rest on **two** live events,
+  not six.
+- **The first verified v6 child delivery** — kept as an existence proof,
+  not a cell: child `agent-a3b16809ebb7e199e` record zero, 01:47:41.715Z,
+  pre-speech, `launch_id` equal to the parent tool_use id (corroborated
+  by the host's own `.meta.json`), `task_sha256` equal to an independent
+  recompute over the parent-recorded prompt (which contains no marker, so
+  it is a genuine independent witness), card body **byte-identical** to
+  `agent_versions.content`, `runtime_digest` equal to the installed
+  digest.
+- **The section 7.1 acceptance question is ANSWERED, negatively.** Series
+  3 run 3, 11:14–11:15Z: parent accepted `code-reviewer` **alone**
+  (51.2 s, no padding), exactly one child, captured assignment **138
+  characters equal to the pure work unit**, judged over the complete
+  71-candidate universe with `code-reviewer` offered — and the judge
+  **abstained**. The policy was live in the prompt that judged it,
+  verified in the launcher's own `judge_protocol.py`. Qualifier that
+  matters: first-pass and **unconfirmed** — the recorded reason is the
+  one reserved for "the repair could not produce a valid answer", so the
+  P2 repair ran and died, almost certainly the same provider flakiness.
+- **A real environment defect, found and repaired**: a stale
+  `core.worktree` in the shared `.git/config`, left by an earlier
+  remote-control session, was silently pointing every worktree's git view
+  at the wrong directory. The owner's WIP was never touched.
+
+### 2. What is REFUTED — including my own claims
+
+- **R1 and R4 claude Installed+Live — retracted by me.** Delivery ran
+  **one in fourteen** harness-spawned children at this candidate; three
+  unstaffed siblings inside the measuring session carry **no receipt**
+  explaining their non-delivery; `native_child_delivery_verifications` is
+  still empty, and the matrix's own text says a collector-minted proof is
+  the only thing that satisfies Rule 4. Worst of it: **the promotion
+  reversed this session's own recorded conservative reading with no
+  decision written down** — the exact failure this matrix has logged
+  three times. One stated corroboration was also plainly wrong: the
+  store's `captured_task` is a 2,000-character truncation and its hash
+  does not match the envelope.
+- **R5 claude Installed+Live — retracted.** The spawn-authority eval
+  emits no package path, and `modules: 295` is shared by both checkouts
+  and eight launcher trees, so it cannot evidence which tree it read; the
+  Live sentence "Agency started no process" is falsified by its own
+  turn's `codex-subscription` CLI call (11.85 s, ending 1.4 s before the
+  delegation row). The correct phrasing is "started no **worker**".
+- **R6 claude Installed+Live — retracted.** The ladder itself is sound on
+  the exact installed candidate, with a real cross-provider security
+  review (`verdict: safe`) — an earlier worry that only an inline audit
+  existed was **my error**. What fails is the authority's **host-backed
+  use** clause: the host's own headers on both turns read
+  `agency-steward` with `Recruited via: none`, the only text naming the
+  contractor as loaded is Agency-authored, and both runs terminated
+  `response_invalid`.
+- **"Blocked-on-provider" for section 7.1 — superseded** by run 3's
+  answer.
+
+### 3. DECISIONS TAKEN in the owner's absence, each with its falsification
+
+1. **AR-252 joint-verdict shape**, recorded as a delegated ruling in the
+   issue: the verdict is a joint object — verifier-authored semantic
+   half, collector-assembled binding half, division named explicitly in
+   the envelope. *Falsified if* the owner rules the division inadequate;
+   every envelope stays auditable by its named halves.
+2. **The one-use capability seal was NOT widened**, so the AR-252 pairing
+   collector was not built. *Falsified if* the owner rules the seal may
+   widen to exactly two consumptions inside one atomic pairing
+   transaction — the build unblocks immediately.
+3. **Series backoffs and spacing**: 30 minutes after two consecutive
+   provider-stage kills, at least 6 hours across series. *Falsified if* a
+   clean draw arrives inside a backoff window.
+4. **Retracting four cells rather than qualifying them.** *Falsified if*
+   the owner judges the existence proof sufficient for R4 Live with the
+   delivery rate disclosed in the Limitation column — that is a
+   defensible reading, and it is his to make.
+
+### 4. MORNING DECISIONS — concrete choices
+
+1. **R8 capture surface.** Allow the canary to preserve a bounded,
+   redacted parent transcript so a preflight-failed run can prove "an
+   unstaffed turn proceeded"? It is a **new capture surface**, which
+   section 3 reserves to the owner. Yes or no.
+2. **AR-252 capability seal.** Widen the one-use verified-delivery
+   capability to exactly two consumptions inside one atomic pairing
+   transaction, or redesign the collector around a single capability?
+   Nothing collects a real envelope until this is chosen.
+3. **The small-unit policy, given the answer.** The judge declined the
+   pure 138-character unit *with* the policy live. Sharpen the policy
+   further, accept the decline as correct behaviour for a one-paragraph
+   brief, or re-measure for a repair-confirmed decline first?
+4. **Does the joint-verdict ruling stand?**
+5. **R4's standard.** Keep the strict collector-only reading, or accept a
+   host-artifact existence proof with a disclosed delivery rate?
+
+### 5. Still blocked, and whose hands it needs
+
+- **codex** — attended TUI trust; bypass evidence never counts. Owner.
+- **zcode** — no CLI executable on this box. Owner.
+- **openclaw / hermes** — absent by instruction; the runnable
+  verification packet is in the repo for the owner's own boxes.
+- **R8 and the AR-252 collector** — the two decisions above. Owner.
+- **The unexplained non-deliveries** — three harness-spawned children in
+  one session got no card, and no receipt explains why. That is the
+  sharpest *engineering* lead left and it is **not** blocked on the
+  owner: a receipt bound to every child launch would turn a 1-in-14
+  mystery into a measurement.
+- **Provider flakiness (AR-253)** — receipts filed, no chase attempted.
+
+### 6. Caveats
+
+No codex bypass runs were performed, so nothing here is bypass-derived.
+Every canary was isolated-profile, attended trust, `--timeout 420`,
+strictly serialized. The R6 evidence came from a sibling autonomous
+session on the same machine — same host, same installed digest, but a
+conflict-of-interest note worth the owner's eye. No installs were
+performed and no host was touched.
+
+### 7. Branch, commits, and what is where
+
+Branch `codex/ar119-vision-mitigation-handoff`. PRs #290, #291, #292 and
+#293 all merged to main on verified-CLEAN rollups; the retraction commits
+sit on the branch for review. The full local gate suite passed **14 of 14
+in 14.5 minutes** before the candidate advance. Main is untouched except
+through those PRs, nothing was committed in the primary checkout, and the
+owner's WIP there is exactly as he left it.
