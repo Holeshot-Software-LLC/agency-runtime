@@ -3,7 +3,7 @@ title: "AR-252: Record host-evidenced, independently verified outcomes for autom
 status: open
 category: roadmap
 created: 2026-08-05
-updated: 2026-08-12
+updated: 2026-08-18
 tags: [workforce, promotion, evidence, native-child, outcomes, critical-path]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -164,6 +164,49 @@ design has to say so out loud rather than let a reader assume the verifier
 authored the whole thing. Whether that division is acceptable evidence, or
 whether the rule should bind to a digest of the produced work instead, is an
 open decision and not one to settle inside a collector build.
+
+## Delegated ruling: the verdict is a joint object (2026-08-18, loop session)
+
+Recorded under the vision-completion loop brief §5, which directs this
+session to settle the fourth constraint's open decision before any
+collector build, per this issue's own requirement.
+
+**Ruling.** The acceptance verdict is a joint object with its division
+named in the envelope, never implied:
+
+- The **semantic half** — accept or reject, and any qualifying findings —
+  must originate in the verifier child's own host-written output. Agency
+  never composes, paraphrases, or completes it.
+- The **binding half** — which producer artifact digest, which verifier
+  identity, which cards — is assembled by the collector, because only the
+  collector can read both host artifacts; no verifier child can compute or
+  quote the producer's transcript digest unaided.
+- The envelope must carry the division explicitly (semantic fields
+  attributed to the verifier's artifact by digest and record position;
+  binding fields attributed to the collector), so a reader cannot assume
+  the verifier authored the whole verdict.
+
+**Why this division rather than a produced-work digest.** The producer's
+transcript digest is the only host-sealed identity of produced work that
+exists today (`evidence.artifact_digest`); a produced-work digest would
+require every child to emit a separable work artifact, which no host
+contract guarantees, and much child work *is* its transcript content.
+Binding to the transcript therefore preserves ADR-0156's authority chain —
+both halves originate in host-written artifacts and Agency only assembles.
+
+**What this ruling does not do.** It does not widen the one-use,
+canary-only verified-delivery capability (constraint 2); holding two such
+capabilities at once remains a threat-model change that is not taken here
+and is not delegated. It does not close the open alternative: binding to a
+digest of the produced work remains available as a future *tightening*
+under a new owner confirmation, not a rollback of collected envelopes.
+
+**Falsification.** If the owner rules the joint division inadequate as
+acceptance evidence, every collected envelope remains auditable by its
+named halves and re-derivable under the replacement rule; nothing in the
+envelope shape hides which author supplied which field. If a host contract
+later guarantees separable work artifacts, the produced-work binding
+supersedes this ruling for new envelopes.
 
 ## Collector diagnosis shipped ahead of the collector (2026-08-14)
 

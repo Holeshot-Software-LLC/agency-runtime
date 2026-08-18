@@ -230,3 +230,9 @@ remains zero rows — the collector is canary-in-lifetime only); (c) the
 *Falsification:* any of the recorded hashes failing a re-check against the
 retained artifacts kills the claim; the artifacts stay where the host
 wrote them.
+
+Also this cycle: PR #290 opened (docs-only ledger increment; merge only on
+a verified-CLEAN rollup), and the AR-252 fourth-constraint decision is
+settled as a delegated ruling in `issue-AR-252` — the verdict is a joint
+object with its division named in the envelope; the one-use capability
+seal stays untouched and unwidened.
