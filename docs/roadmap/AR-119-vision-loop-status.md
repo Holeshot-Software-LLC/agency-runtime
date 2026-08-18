@@ -782,3 +782,39 @@ artifacts: `agency evidence children` continues to report
 `host_hook_output_origin_not_proven`, because only the canary's in-lifetime
 private-lease collector may consume the verified-delivery capability. The
 capability seal remains the blocker, for R4 and AR-252 alike.
+
+## Owner ruling, 2026-08-18: what "done" means, and what it does not change
+
+The owner ruled directly: **done for this session means claude, codex, zcode —
+in that order.**
+
+**What this fixes.** The completion contract was unsatisfiable on this machine.
+Rule 9 requires rules 1-8 on all five supported hosts; openclaw and hermes are
+absent by the owner's own instruction, so the matrix could never close and every
+plan built on it inherited an open end. Session completion is now measured
+against three hosts, worked in the stated priority order: **claude first, then
+codex, then zcode.**
+
+**What this deliberately does NOT change, and must not be read as changing.**
+
+- **Rule 9 itself is untouched.** The founding vision still requires parity on
+  all five hosts, and `AR-119-founding-vision.md` remains the sole wording
+  authority. Its `canonical_block_sha256` is unchanged because no rule text
+  changed. A semantic change to the nine rules needs an explicit owner
+  confirmation and a new canonical digest; this ruling is not one and must not
+  be used as a precedent for one.
+- **No matrix cell moves.** openclaw and hermes rows stay `unproven`, with their
+  existing reason. The matrix's own contract is that an unavailable host stays
+  unproven and that a host becoming unavailable cannot improve a cell; scoping a
+  session's definition of done cannot improve one either.
+- **R9 stays `unproven` on every host.** It derives from R1-R8 across all five;
+  narrowing the session's scope does not narrow the rule's.
+
+**How to read the two together.** Session scope answers "what do we work on and
+when do we stop"; Rule 9 answers "what does the product claim". The claim is
+still five-host parity. What changed is that the session no longer waits on two
+hosts nobody can reach from here.
+
+*Falsification:* if a future session reports the nine-rule vision as complete
+while openclaw and hermes remain unproven, this ruling has been misread — it
+scopes the session, never the vision.

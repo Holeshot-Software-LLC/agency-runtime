@@ -111,7 +111,95 @@ A run supports a matrix cell only when the host artifact supports it
   user record, no specialist capsule, assistant output after it. Routing
   failures occur organically; none needs to be fabricated.
 
-## 3. What to send back
+## 3. What the claude host taught us, 2026-08-17/18 — read before running anything
+
+Every item below cost real time on claude. They are host-agnostic unless
+stated, and each one produced a reading that looked like a product failure and
+was not.
+
+### 3.1 Four ways to get a confident wrong answer
+
+- **An unrun hook and a fail-open hook are indistinguishable from outside.**
+  Zero Agency rows proves neither. If you suspect the hook is not running, wrap
+  its command in a shim that logs stdin/stdout/stderr/exit — that gave the root
+  cause on the first run after two days of theorising.
+- **A store newer than the launcher disables every hook on the machine** and
+  reads exactly like a delivery failure. Before believing any measurement:
+  `agency doctor` must show the store's schema equal to the runtime's. Run it
+  first, every time.
+- **`python -m agency_runtime...` imports from the current directory first**,
+  and `PYTHONPATH` cannot override it. An eval "against the installed tree" that
+  did not assert `agency_runtime.__file__` may have measured a checkout. Prefer
+  running through the installed launcher's own `_bootstrap.py` under `-I -S`,
+  which removes CWD, user site and PYTHONPATH by construction.
+- **A gate or canary judged by a piped exit code is not judged.** Appending
+  `; echo EXIT=$?` makes a failure look like success. Read the tool's own
+  summary line or report file.
+
+### 3.2 Reading child evidence without fooling yourself
+
+- **`counts.specialists` and `counts.runs` in a canary record are not
+  canary-scoped.** On a workstation whose own sessions write to the same store,
+  both absorb unrelated activity. Only `routing` (filtered by the canary's query
+  hash) and `loaded_specialists` are the canary's own.
+- **`agency evidence child-launches` does not support these hosts.**
+  `default_child_artifact_root` raises for anything but claude and codex, so do
+  not expect a per-launch outcome report here; use the store directly and the
+  bridge-level evidence named in section 2.
+- **A child artifact is not a faithful copy of the assignment.** Measured on
+  claude: a 3,184-character launch input appears in the child's first record as
+  867 characters. Any join that hashes the child's copy will miss. Agency hashes
+  what the *parent* recorded.
+- **An assignment may legitimately quote a delivery marker.** A review task that
+  discusses `[AGENCY INFERENCE TEAM v6]` contains that string; treating the
+  mention as a delivery truncates the assignment and produces a hash matching
+  nothing. Strip only when an envelope actually decodes.
+- **Three join keys exist and they are complementary**, so try all three before
+  concluding a launch has no record: the delivered envelope's `decision_id`, the
+  assignment SHA-256 against `routing_decisions.query_hash`, and the recomputed
+  `context_fingerprint`. Each resolved launches the others missed.
+
+### 3.3 What Rule 4 verification actually requires — expect this
+
+`agency evidence children` will report a delivered, correlated, pre-speech v6
+envelope as **`verified_delivery: false`** with reason
+`host_hook_output_origin_not_proven`. That is not a defect and not a failed run.
+The verification input is the **one-use verified-delivery capability**, which
+only the canary's in-lifetime private-lease collector may consume (ADR-0158); a
+read-only projection cannot supply it and must not consume it.
+
+**So Rule 4 Live can only be proven inside a canary run on these hosts too.**
+Plan for that: the canary is the vehicle, and a passing `evidence children`
+read is not a substitute. The same seal is what blocks AR-252's pairing
+collector, which is why both wait on one owner decision.
+
+### 3.4 Measurement discipline that survived contact
+
+- **Serialize canary runs.** Concurrent runs contend on the same inference
+  providers and depress the very rate being measured.
+- **Keep every failure.** Retry-until-green converts a rate into a best-of. Over
+  three series on claude, nine runs produced one usable answer; the eight
+  failures are what made the ninth readable.
+- **Back off, do not grind.** Two consecutive provider-stage kills earns a
+  30-minute pause; three failing series spaced over six hours is
+  `blocked-on-provider`, and grinding past that produces false confidence.
+- **Expect provider flakiness to dominate.** On claude it roved across planner,
+  recruiter and child stages, interleaved with clean draws minutes apart on
+  identical code. A single failed run says nothing about the path.
+- **Sessions started before an install keep the old launcher.** The cure is a
+  restart, never another install.
+
+### 3.5 The findings that are already settled — do not re-derive them
+
+- Recruiter ranking order, candidate eligibility, requirement coverage, the
+  child's candidate universe, and child task size have each been refuted as the
+  cause of staffing failures. The overnight brief's REFUTED list stands.
+- The child judge, given a pure small unit over the complete universe with the
+  owner's small-unit policy live in the prompt, **abstained** (first-pass,
+  repair unconfirmed). If these hosts staff that same unit, that is a
+  cross-host difference worth reporting immediately.
+
+## 4. What to send back
 
 For each host: the ≥3 canary JSON reports, the recorded commit `C` and
 per-host `runtime_digest`, the host artifact paths (or copies) supporting
