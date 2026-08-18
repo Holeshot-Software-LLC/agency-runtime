@@ -333,6 +333,42 @@ the joint-verdict ruling in AR-252 stands.
   selection, no capture row — so the collector honestly reported
   `delivery_marker_absent`. **Third child-stage provider kill**, now
   spanning >6 h: 2026-08-17 evening policy series, 03:50Z, 08:10Z.
+- **Run 3** (11:14–11:15Z): **THE ACCEPTANCE DRAW LANDED AND THE JUDGE
+  ANSWERED.** Parent decision `1ab1ad0f` accepted with `code-reviewer`
+  ALONE (51.2 s, no padding), exactly one child, and the child's captured
+  assignment is **138 characters equal to the pure work unit** ("Identify
+  the primary behavioral regression risk of replacing return value with
+  return value.strip()…"). The child judge evaluated it over the complete
+  71-candidate universe — `code-reviewer` among the offered ids, digest
+  `5733d4e7…`, provider `claude-subscription`, `inference_attempted:
+  true`, `inference_mode: abstained` — and **abstained**
+  (`inference_abstained` / `native_child_inference_abstained`, 12.4 s).
+
+**§7.1 IS ANSWERED, NEGATIVELY — and this supersedes the earlier
+`blocked-on-provider` framing.** The instrument is fully working: the
+pure unit reached a live child judge, over the complete universe, with
+the owner's small-unit policy live in the installed prompt (verified in
+the launcher's own `judge_protocol.py`: "task size alone is never a
+reason to return an empty selection"). The judge declined anyway.
+
+*What this does NOT establish, precisely:* the abstention is **first-pass
+and unconfirmed**. The recorded reason is
+`native_child_no_specialist_needed`, which the source reserves for "the
+repair could not produce a valid answer, so the first-pass abstention
+stands unconfirmed" — i.e. the AR-255 P2 funded repair ran and failed to
+return a valid answer, almost certainly the same provider flakiness.
+The strongest-form decline (`native_child_abstention_confirmed`) has been
+observed only ONCE, on 2026-08-17, on the PRE-policy runtime. So: one
+post-policy first-pass abstention, not a rate, not repair-confirmed.
+*Falsification:* a post-policy draw that returns
+`native_child_abstention_confirmed` settles this as the judge's
+considered position; any draw that staffs `code-reviewer` refutes it and
+mints the first `native_child_delivery_verifications` row.
+
+**Series 3 verdict: 0/3 for staffing** (instrument disobedience;
+child-draw provider kill; answered abstention) — but run 3 converted the
+§7.1 question from "blocked" to "answered, negatively", which is the
+outcome the owner actually needed from this series.
 
 ### Series 2 ledger (small-unit-policy acceptance, runtime `cc478bc88258…`)
 
