@@ -3,32 +3,31 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-08-17
+updated: 2026-08-18
 tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
-  - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
-  - docs/roadmap/issue-AR-257-separate-decision-conformance-fixture-launcher.md
   - docs/roadmap/AR-119-founding-vision.md
+  - docs/roadmap/AR-119-vision-completion-autonomous-brief.md
+  - docs/roadmap/AR-119-vision-loop-status.md
+  - docs/roadmap/AR-119-99a7b3ac-live-evidence.md
+  - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
-  - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
-  - docs/roadmap/AR-119-acceptance-evidence.md
-  - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: claude/remote-control-14de96
-evidence_commit: f2f3ca88dbe4bc9adeb636a028f615c5d4886152
+branch: codex/ar119-vision-mitigation-handoff
+evidence_commit: 3269ff67d219f8efabbed27e9f1e2cbd48c71a78
 minimum_ledger_commit: ee82c602f2dc2d5e9632fc91b6dc071b50dc7541
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
@@ -37,144 +36,141 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 # AR-119 active recovery capsule
 
 Current bootstrap projection for completing the owner-confirmed nine-rule
-vision. The canonical issue retains history; this file and the founding vision
-load first after any compaction or restart.
+vision. This file and the founding vision load first after any compaction
+or restart; during the authorized loop (through 2026-08-18 23:59) load the
+vision-completion brief and the loop status doc immediately after.
 
 ## checkpoint
 
-- **WORK ON `main`.** PR #275 (AR-255 P2 + hiring verdict fix) merged as `c77c67a4`.
-- **All three hosts pin `2cd298158584`** (post-P2 main; AR-258 one digest
-  holds). Hooks reload only in a fresh session. Matrix candidate `f2f3ca88`;
-  **first Installed/Live cells ever: R2 R3 R6 R7 proven at all four layers on
-  claude, R5 Installed proven** — see AR-119-c77c67a4-live-evidence.md.
-- **CI runs every matrix-cited test file** ("Run AR-119 matrix evidence"), and
-  `test_release_packaging.py` asserts that list *equals* the matrix citations,
-  so a citation and a CI entry must arrive together, both directions.
-- **`eval decision-conformance` cannot run its mutation phase here** (AR-257):
-  the sandbox redirects `HOME` away from pytest, so the baseline dies in ~120 ms,
-  identically on clean `main`. Assert every `before` snippet still matches its
-  source exactly once instead.
-
+- **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-ar119`**
+  (a linked worktree, synced with origin/main). Changes reach main only via
+  PR on a verified-CLEAN rollup. Never commit/stash in the primary checkout
+  (owner WIP: `cli/eval_commands.py` + three untracked eval JSONs); push the
+  shared ref FROM the primary. PRs #290/#291 merged 2026-08-18.
+- **Machine**: all three hosts pin runtime digest `cc478bc88258…` (merge
+  `99a7b3ac`, PR #287, owner small-unit policy), store schema 47 == checkout
+  == launcher. PRs #288–#291 are docs-only: no reinstall owed. The state
+  authority is `~/.agency-runtime/overnight-runtime-state.json`.
 ## completed-evidence
 
-- `AR-119-founding-vision.md` is the sole wording authority and the matrix the
-  sole completion authority; neither implementation nor simulation is host proof.
-- AR-255 uses complete-universe inference, exact ordered multi-card v6 delivery,
-  install/config/roster fences, and sealed one-use delivery proof. Codex
-  `211563c7` preserves exact CLI 0.147 and a sealed Desktop alpha; exec
-  depth-two stays unsupported and no Installed/Live proof has run on any host.
-- AR-252's fourth constraint, in its issue: the verdict must bind the producer's
-  *transcript* digest, unreadable to any verifier child, so Agency supplies the
-  binding and the verdict is a joint object. Settle that first.
+- **Matrix candidate is `3269ff67`** (docs commit; package tree == merge
+  `99a7b3ac`). R1 and R4 claude are proven at ALL FOUR layers — the first
+  Installed/Live either rule has had anywhere — with R2/R3/R5/R7 also full;
+  evidence in `AR-119-99a7b3ac-live-evidence.md`, including the verified
+  live v6 child chain (parent tool_use hash, child record-zero envelope,
+  exact store joins). R6 claude demoted (prior-candidate `2cd29815`
+  artifacts); an organic re-mint happened 2026-08-18T03:45Z
+  (`operations-recovery-plan-reviewer`, case `9afaec53`) — only the
+  pool-reuse turn is missing to re-prove it. R8 still needs a clean
+  unstaffed-turn publication artifact (owner-gated capture surface).
+- AR-252's joint-verdict shape is settled as a delegated ruling in its
+  issue doc; the one-use capability seal is deliberately unwidened.
+
+## traps (machine-specific; do not rediscover)
+
+- `git status` can lie here: a stale `core.worktree` in the shared
+  `.git/config` (left by a remote-control session) redirected every
+  worktree's git view to the wrong directory on 2026-08-17; repaired with
+  `git config --unset core.worktree`. If files phantom-appear, check that
+  first and verify with `Test-Path`, not git.
+- `python -m agency_runtime...` imports from CWD first: PYTHONPATH cannot
+  override it. Always `cd` into the intended tree (checkout or launcher
+  `site-packages`) and assert `agency_runtime.__file__` before trusting an
+  eval. One spawn-authority run tonight silently measured the stale
+  primary; it was caught and discarded.
+- Appending `; echo EXIT=$?` to a command makes the harness see exit 0;
+  judge gates and canaries by their own report/summary, never a piped code.
+- Prepend `C:\agency-cli` to PATH or hosts read "native unverified". The
+  packaged `agency.exe` is schema-pinned and refuses to install; use
+  `python -m agency_runtime.cli install --agent <host>` from a clean
+  checkout whose tree equals origin/main. Sessions predating an install
+  keep the old launcher: restart, never reinstall.
+- Claude isolated-profile canaries need `--timeout 420`; the ar119 venv
+  needed `ensurepip` before `run_local_gates.py` gate 3 could run; the full
+  gate suite takes ~14.5 min and exceeds the 10-min tool cap — run it
+  detached and read its own summary line.
+- Eight preflight/litellm tests are red on clean main outside every gate;
+  `tests/test_platform_wheel.py` fails collection. Pre-existing noise.
 
 ## exact-blocker
 
-1. **AR-180 — Codex support.** `211563c7` proves exact CLI 0.147 and Desktop
-   alpha Impl/Sim; exec depth-two is parked pending a live spawn or a drop.
-   **AR-255:** get authorization before exact install or live proof.
-2. **AR-252 — automatic contractor critical path.** The host-free half is built
-   and checked, but **nothing yet collects a real envelope** — every proof is
-   constructed by the test. What remains is a collector pairing one producer
-   proof, one distinct verifier proof and that verdict, then live host proof.
-3. **AR-253 — staffing rate, latency, and parity.** The recruiter owns the
-   overrun (50-85 s; the 9 s process floor is not the lever). **Measured live
-   2026-08-15: routing took 85.3 s and 124.0 s on two accepted rows, and one run
-   ran 28 minutes before being marked `abandoned`.** A parent turn and its child
-   usually finish before that turn's routing resolves, so the child's
-   `PreToolUse` finds no `active` run to correlate, and past two terminal runs
-   the 5.3.1 exactly-one-run fallback declines as well. **That, not a
-   plan-boundary regression, is why the first canary returned no envelope** —
-   the hook and runtime are proven working. Re-attempt after AR-253 lands or by
-   holding a parent turn open past recruiter resolution.
-4. **AR-125 — value.** Run the matched Agency-on/off corpus only after candidate
-   and provider validity hold; malformed or timed-out arms are invalid, never
-   upstream losses. Rule 9 cannot close until 1-8 are proven on all five hosts.
-
-## same-task-continuity
-
-After restart or compaction, load this file and `AR-119-founding-vision.md`
-first, then AR-119, AR-255, AR-180, ADR-0118, ADR-0156, and ADR-0158. Confirm
-branch, candidate `f2f3ca88`, runtime `2cd298158584`, worklog parity; do not
-reconstruct retired Job B, plan-row, work-unit, grant or consumed-receipt transport.
+1. **The child-stage provider draw is the sole remaining variable for the
+   §7.1 acceptance draw.** Series 1 (02:02–02:47Z) was 0/3 at parent
+   preflight; series 2 run 2 (03:48Z) proved the parent chain green on this
+   runtime — code-reviewer selected AND loaded, receipt proven, exactly one
+   child — then the child staffing draw died provider-side
+   (`native_child_inference_failure`, empty selection, no capture). The
+   small-unit policy remains UNJUDGED: the pure 138-char unit has never
+   reached a child-judge draw that survived. Keep the series discipline:
+   probe (accepted hook-path draw), ≥3 serialized runs, failures kept,
+   30-min backoff after two consecutive provider-stage kills; a third
+   consecutive provider-killed series spaced ≥6 h from series 1 records
+   `blocked-on-provider` per stopping condition 6.1.
+2. **AR-252** — the joint-verdict shape is settled as a delegated ruling in
+   the issue doc (verifier-authored semantic half, collector-assembled
+   binding half, division named in the envelope; the one-use canary-only
+   capability seal deliberately NOT widened). The pairing collector build
+   is next; nothing yet collects a real envelope.
+3. **AR-253** — recruiter `staff_without_safe_team` (decision "staff",
+   ranked list, empty selection) and planner `provider_no_valid_response`
+   sampled all night from this session's own turns and both canary series;
+   intermittent under load, not an outage; file receipts, don't chase
+   provider fixes. Parent staffing succeeded at 02:58Z and 03:50Z.
+4. **codex/zcode/openclaw/hermes** — unchanged: codex needs attended TUI
+   trust (bypass evidence never counts as attended); zcode has no CLI on
+   this box; openclaw/hermes run the owner packet on the owner's boxes.
 
 ## next-bounded-work-package
 
-**Installed is 5/45 and Live 4/45 — green for the first time: R2 R3 R6 R7
-proven at all four layers on claude plus R5 Installed, bound to candidate
-`f2f3ca88` / runtime `2cd298158584`.** Codex activation failed 2/2 under the
-authorized bypass; zcode has no CLI here; hermes and openclaw stay absent.
+Run the acceptance series to a verdict: probe, then ≥3 serialized
+isolated-profile canaries per series, failures kept, 30-minute backoff
+after two consecutive provider-stage kills; a third consecutive
+provider-killed series spaced ≥6 h from series 1 (02:02Z 2026-08-18)
+records `blocked-on-provider` and stops grinding it. On the first clean
+child draw that staffs the pure unit: capture the first
+`native_child_delivery_verifications` row, then pursue the remaining
+claude cells and the AR-252 pairing collector. Watch every ops-shaped
+turn for the `operations-recovery-plan-reviewer` pool-reuse that
+completes the R6 re-proof.
 
-**THE BLOCKER MOVED.** The child judge declines **on the merits**: the post-P2
-series split legacy / legacy / `native_child_abstention_confirmed` (n=3).
+## same-task-continuity
 
-1. **The owner RULED and the policy is LIVE — awaiting one clean child
-   draw.** Small units still get cards (2026-08-17): shipped in the
-   complete-universe judge prompt (PR #287, hosts on `cc478bc8`). The
-   acceptance series went 0/3 on PROVIDER flakiness alone, but run 2
-   proved the parent chain fully green for the first time — routing
-   accepted with `code-reviewer` ALONE (no padding) and a VALID Agency
-   header — before the child judge draw died `inference_unavailable`;
-   runs 1 and 3 died at preflight. Acceptance stands: one clean child
-   draw that STAFFS, and the first delivery-verification row ever.
-2. **The AR-253 overrun has a harder edge.** A 486 s+ recruiter draw outlived
-   the claude hook window: the host cancelled the hook (`hook_cancelled` in
-   session `2b4b19d4`), the turn proceeded unstaffed and answered, and the
-   store got a run row with ZERO receipts — a cancelled hook is a third
-   sibling of unrun-vs-fail-open, visible only in the host artifact. Accepted
-   routing draws tonight ran 88.6–283.2 s; the cancelled one exceeded 486 s.
-   R8's candidate artifact is that session; recorded, deliberately unclaimed.
-3. **Sixteen child decisions, zero staffed** — 13 abstained (`task_chars` 541
-   to 3,431, `code-reviewer` always offered), 1 unavailable, 2 invalid. Size
-   and universe stay excluded; the merits reading stands. Rule 6 keeps firing
-   live: `function-naming-advisor` and `contractor-reuse-system-analyst` were
-   both minted organically tonight and the first was reused with no re-hire.
-   A six-child parent still cannot prove Rule 4 (`multiple_child_artifacts`).
-4. **The v6 census is unchanged — zero envelopes ever** and
-   `native_child_delivery_verifications` has zero rows: consistent with a
-   judge that has never accepted, not with a delivery fault. Codex bypass
-   runs DID write receipts (first codex rows since 08-14); the failing stage
-   is the shared recruiter, not codex wiring — attended TUI trust and a real
-   codex turn are the owner's path. zcode activation needs his own session.
-   Canaries still need `--timeout 420`; sessions predating installs are stale.
-
-**An unrun hook and a fail-open hook look identical from outside**, so zero
-Agency rows proves neither; a shim logging stdin/stdout/stderr/exit gave the
-root cause on the first run. The collector names its own refusal
-(`host_child_collection_reason`); `counts.specialists` / `counts.runs` are not
-canary-scoped; `cd56471d` retired the delegation accounting on purpose.
+After restart or compaction: this file, `AR-119-founding-vision.md`, the
+vision-completion brief (§6 stopping conditions, §7 priorities), then
+`AR-119-vision-loop-status.md` (the running ledger, cycle log, series
+ledgers, morning decisions). The matrix + `AR-119-99a7b3ac-live-evidence.md`
+carry the proof state. Do not reconstruct retired Job B, plan-row,
+work-unit, grant or consumed-receipt transport; do not re-chase the REFUTED
+list in the overnight brief.
 
 ## verification
 
-**Push to `main` no longer triggers hosted CI**: direct-to-main billed a 7-10
-minute run per commit, then cancelled it mid-flight on the next. Run the same
-quality job locally; `gh workflow run ci.yml` still gets the Linux gate.
-
 ~~~text
-python scripts/run_local_gates.py          # the gates CI ran on push (~13 min)
-python scripts/run_local_gates.py --fast   # same minus the two long suites
-python scripts/context_handoff_status.py --json --threshold 50
+python scripts/run_local_gates.py          # full, ~14.5 min, run detached
+python scripts/run_local_gates.py --fast   # skips the production spine
 agency eval routing --json --no-details && agency eval spawn-authority --json
+python -m agency_runtime.cli host-canary claude --timeout 420   # readiness
+# execute: --execute --confirm "RUN LIVE claude CANARY" --timeout 420
 ~~~
 
 Run focused tests, the fast spine, and the matrix-evidence list before each
-checkpoint. A checkout-local evaluator is authoritative until an exact artifact
-is refreshed under explicit install authorization.
+checkpoint. Judge every gate by its own summary; a push's hook gates are
+not the spine.
 
 ## constraints
 
-- Codex remains supported; never weaken evidence or parity to hide its opaque
-  channel. A plaintext-looking Codex tool argument is not proof: the
-  authorization call must carry the explicit empty host marker, and only exact
-  ancestor causal calls may omit it under the sealed v3 profile.
-- Inference alone chooses specialists and contractors. Deterministic code may
-  recall, filter hard-ineligible candidates, validate, budget, and correlate.
-- Only a host-written artifact with exact card hashes before first child speech
-  proves Rule 4. Agency rows and model prose are diagnostics.
-- Same-process private reflection and same-account transcript plus Store forgery
-  are threat-model exclusions; the lease does not protect against code already
-  executing as the owner inside Agency.
-- Keep the 15,000 ms cold control fixed; do not trade authority, safety, or
-  evidence for latency. Automatic promotion remains on the critical path, and
-  no Agency-superiority claim precedes a valid matched corpus.
-- No push, PR, tracker write, hosted dispatch, install, trust action,
-  publication, tag, release, or repository-setting change without authorization.
+- Codex remains supported; never weaken evidence or parity to hide its
+  opaque channel. Inference alone chooses specialists and contractors.
+- Only a host-written artifact proves Rule 4; Agency rows correlate only.
+- Never mark a matrix cell without its named authority at the exact
+  candidate; provisional/branch evidence must say so.
+- Keep the 15,000 ms cold control fixed; automatic promotion stays on the
+  critical path; no Agency-superiority claim without a valid matched
+  corpus (AR-125).
+- Loop authorizations (through 2026-08-18 23:59): branch pushes, PRs,
+  merges on verified-CLEAN rollups only, installs on the three present
+  hosts from a clean main-equal tree, serialized canaries, §5 delegated
+  decisions recorded as rulings. Forbidden at all times: §3 of the brief
+  (no re-auth, no openclaw/hermes installs, no tracker writes, no tags or
+  force-pushes, no pushes to main, no roster retirement approvals, no new
+  capture surfaces, never change `observability.capture_content`).

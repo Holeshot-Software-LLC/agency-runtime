@@ -289,3 +289,80 @@ proceeded with data:
 (a new capture surface — owner-gated by brief §3) to make preflight-failed
 runs double as R8 artifacts; (2) the R7 anchor re-scope above; (3) whether
 the joint-verdict ruling in AR-252 stands.
+
+### Cycle 4 — candidate advance merged; organic hire recurs (03:35–03:50 UTC)
+
+- **Full local gates: 14/14 passed in 14.5 min** at the candidate (after
+  two honest catches: the first run died at gate 3 because the ar119 venv
+  lacked pip — repaired with `ensurepip` — and an appended `echo` had
+  masked a gate failure exit once already; the detached re-run was judged
+  by its own summary line).
+- **PR #291 merged 03:46:58Z on a verified-CLEAN rollup** (0 pending, 0
+  non-SUCCESS/SKIPPED, 8 SUCCESS). The matrix's candidate is now
+  `3269ff67`: R1 and R4 claude proven at all four layers — the first
+  Installed and Live layers either rule has had on any host — plus R5
+  complete, R2/R3/R7 re-proven, R6 demoted. Docs-only merge; no reinstall
+  owed.
+- **The R6 gap is already closing again**: at 03:45:45Z the loop
+  session's own turn organically ran the full hiring ladder on this
+  runtime — hiring case `9afaec53` applied, `operations-recovery-plan-reviewer`
+  filed (`contractor`, `origin=agency`) and dealt into the very turn whose
+  gap created it. The re-proof now lacks only a same-domain reuse turn
+  loading it from the pool with no new hiring case; watching for it in
+  subsequent turns. *Falsification:* a reuse turn that re-hires instead of
+  pool-loading refutes the "filed for next time" half on this runtime.
+
+### Series 2 ledger (small-unit-policy acceptance, runtime `cc478bc88258…`)
+
+- **Run 1** (launched ~03:40Z, run `a41782e8`, receipt `f6e49b1c`):
+  FAILED at parent preflight — planner `provider_no_valid_response`,
+  receipt `workforce_provider_unavailable`. Identical stage to series 1
+  runs 2-3. Failure kept; run 2 next, serialized.
+- **Run 2** (03:48–03:57Z, run `9bbe05e5`): **the parent chain went green
+  on this runtime** — planner applied; recruiter rejected once then
+  applied; parent decision `e346e782` accepted with `code-reviewer`
+  selected AND loaded (`application-security-engineer` padding returned);
+  receipt proven; exactly one child delegation (`e965ec7a`). Then the
+  child staffing draw `f1cb84be` died provider-side:
+  `inference_unavailable`, source `native_child_inference_failure`, empty
+  selection — the judge never answered, no capture row, and the collector
+  honestly reported `delivery_marker_absent`. The parent's final response
+  header also failed this run (yesterday's policy-series run 2 had one —
+  intermittent model behavior, noted). **The small-unit policy therefore
+  remains unjudged: the pure unit has still never reached a child-judge
+  draw that survived.** This is AR-253 evidence: the child-stage draw has
+  now been provider-killed in both the 2026-08-17 policy series and
+  tonight's series 2.
+
+**Delegated ruling (brief §4.6): runs 1-2 both provider-killed → second
+30-minute backoff, run 3 no earlier than ~04:25Z.** Interim: branch sync
+with origin/main; R6 pool-reuse watch continues.
+
+- **Run 3** (04:20–04:3xZ): FAILED at parent preflight again (one
+  preflight failure, zero routing). **Series 2 verdict: 0/3
+  provider-killed** — planner-dead, parent-green/child-draw-dead,
+  preflight-dead. Second consecutive provider-killed series tonight.
+
+### Cycle 5 — between-series consolidation (04:35Z–)
+
+- **Series 3 is scheduled no earlier than 08:05Z**, so the three series
+  span ≥6 h (series 1 started 02:02Z); if series 3 also dies at provider
+  stages, the §7.1 measurement records `blocked-on-provider` per stopping
+  condition 6.1 and stops grinding.
+- **AR-252 finding, sharpened:** with the joint-verdict ruling recorded
+  and the one-use canary-only capability seal deliberately unwidened, the
+  pairing collector CANNOT be built tonight — one envelope needs a
+  producer proof and a distinct verifier proof held together, nothing
+  today can hold two sealed capabilities at once, and an unsealed
+  side-path would weaken the evidence contract. The seal decision (widen
+  vs redesign) is a threat-model change and is queued as a MORNING
+  DECISION, not taken. *Falsification:* if the owner rules the seal may
+  widen to exactly-two one-use consumptions inside one atomic pairing
+  transaction, the collector build unblocks immediately.
+- **AR-253 receipts filed** for tonight's samples (see the issue doc's
+  dated section): recruiter `staff_without_safe_team` ×4 (23:50–01:32Z),
+  planner `provider_no_valid_response` ×5 (00:03–04:3xZ across both
+  canary series), planner contract-invalid double-rejection ×1 (01:12Z),
+  child-draw `native_child_inference_failure` ×1 (03:50Z), against
+  accepted draws at 01:47Z (child, staffed), 01:52Z, 02:15Z, 02:35Z,
+  02:58Z, 03:06Z, 03:50Z (parent chain green).
