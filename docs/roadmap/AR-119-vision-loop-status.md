@@ -732,3 +732,53 @@ fourteen is an upper bound measured by hand, not a rate.
 while its decision demonstrably exists (as `a3b13d36`'s did, with
 `task_chars` matching to the character), then a fourth key is in play and
 the resolver is incomplete.
+
+### The delivery rate is now a command, and it reads 1 staffed of 14
+
+`agency evidence child-launches` shipped 2026-08-18. It reports one outcome
+per harness-spawned child — staffed, declined, or unrecorded — by trying the
+three join keys already in the Store, and it is read-only: no writes, no
+capability consumption, no minted receipts, so an outcome is a diagnostic and
+never delivery proof (ADR-0156).
+
+**First real measurement**, scoped to the current install:
+
+~~~text
+agency evidence child-launches --host claude --since 2026-08-17T21:00:00.000Z
+claude: 14 child launches since 2026-08-17T21:00:00.000Z --
+        1 staffed, 6 declined, 7 with no record
+  46 launch(es) fell before the window
+~~~
+
+This replaces the hand-measured "1 in 14 delivered, 13 unexplained" with
+something a rerun can reproduce. Six of the thirteen non-deliveries carry a
+recorded reason; they are Rule 8 working, not evidence gaps.
+
+**Two findings the build produced, both of which read exactly like a host
+that never spawned anything — the failure shape this project has been bitten
+by three times:**
+
+1. The default artifact root holds children **two** directories down
+   (`<project>/<session>/subagents/`). A single-depth glob reported **zero
+   launches** on the first live run. Both shapes are accepted now, pinned by
+   a test.
+2. An artifact root spans every runtime that ever ran on the machine. Counting
+   all 60 launches against today's install would report a rate for runtimes
+   that never saw them, so `--since` scopes the window and states what it
+   excluded rather than dropping it silently.
+
+**Caveat, stated because the number is not yet trustworthy in one direction:
+7 is an UPPER BOUND on the true silent count.** The `context_fingerprint`
+key does not appear to fire through the CLI path — child `a8796913…`
+resolves by fingerprint in a manual recompute but reads `unrecorded` here.
+The other two keys are sound, and the one genuinely silent child from the
+overnight run (`a2bd9b49…`, launched 02:59:41Z with no open parent run)
+reports correctly. *Falsification:* if wiring the fingerprint lookup
+correctly moves `a8796913…` from `unrecorded` to `declined`, the true silent
+count is 6 or fewer and the headline rate improves accordingly.
+
+**What this does not change.** Rule 4 Live still cannot be proven from these
+artifacts: `agency evidence children` continues to report
+`host_hook_output_origin_not_proven`, because only the canary's in-lifetime
+private-lease collector may consume the verified-delivery capability. The
+capability seal remains the blocker, for R4 and AR-252 alike.
