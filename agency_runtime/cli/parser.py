@@ -7,6 +7,7 @@ from collections.abc import Callable, Mapping
 
 from agency_runtime import __version__
 from agency_runtime.core.child_delivery_evidence import MAX_CHILD_DETAIL_RESULTS
+from agency_runtime.core.child_launch_outcomes import MAX_CHILD_LAUNCHES
 from agency_runtime.core.evals.product_scenarios import PRODUCT_SCENARIOS_BY_ID
 from agency_runtime.core.evals.upstream_selection import CASES as UPSTREAM_SELECTION_CASES
 from agency_runtime.core.evals.workforce_selection import CASES
@@ -1506,6 +1507,39 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     )
     children.add_argument("--json", action="store_true", help="Print JSON")
     _bind(children, handlers, "cmd_evidence_children")
+    child_launches = evidence_sub.add_parser(
+        "child-launches",
+        help="Show one outcome per harness-spawned child launch: staffed, declined, or unrecorded",
+    )
+    child_launches.add_argument(
+        "--host",
+        choices=("claude", "codex"),
+        default=None,
+        help="Read one host only (default: every host that writes child artifacts)",
+    )
+    child_launches.add_argument(
+        "--root",
+        default=None,
+        help="Read this artifact root instead of the host's own (requires --host)",
+    )
+    child_launches.add_argument(
+        "--since",
+        default=None,
+        help=(
+            "Only count launches at or after this ISO-8601 instant. An artifact "
+            "root holds children from every runtime that ever ran here, so an "
+            "unscoped rate describes runtimes that never saw them."
+        ),
+    )
+    child_launches.add_argument("--db", default=None, help="Read this Store instead of the default")
+    child_launches.add_argument(
+        "--limit",
+        type=_positive_int,
+        default=MAX_CHILD_LAUNCHES,
+        help=f"Child artifacts scanned per host (default and max: {MAX_CHILD_LAUNCHES})",
+    )
+    child_launches.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(child_launches, handlers, "cmd_evidence_child_launches")
     rejections = evidence_sub.add_parser(
         "rejections",
         help="Partition recent exceptional runs into withheld and Agency-blind",

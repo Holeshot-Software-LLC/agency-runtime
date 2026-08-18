@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import Any
 
 from agency_runtime.core.child_delivery_evidence import (
     MAX_CHILD_ARTIFACTS,
@@ -13,9 +14,16 @@ from agency_runtime.core.child_delivery_evidence import (
     child_delivery_projection,
     default_child_artifact_root,
 )
+from agency_runtime.core.child_launch_outcomes import (
+    MAX_CHILD_LAUNCHES,
+    resolve_child_launch_outcomes,
+)
 from agency_runtime.core.config import load_config
 from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.host_wiring_drift import host_wiring
+from agency_runtime.core.native_child_staffing import (
+    _failure_context_fingerprint as native_child_failure_context_fingerprint,
+)
 from agency_runtime.core.routing_latency import (
     DEFAULT_ROUTING_LATENCY_BUDGET_MS,
     routing_latency_projection,
@@ -397,3 +405,97 @@ def cmd_evidence_children(args: argparse.Namespace) -> int:
             )
             print(f"  {child['child_id']}  {slugs}{marks}{legacy}{unverified}")
     return 0
+
+
+def cmd_evidence_child_launches(args: argparse.Namespace) -> int:
+    """Report one outcome per harness-spawned child launch.
+
+    `evidence children` answers which children provably received a card, so it
+    only reports artifacts carrying delivery evidence. This answers the prior
+    question -- of the children the host actually spawned, how many were
+    staffed, declined for a recorded reason, or left no record at all. Only the
+    last group is an evidence gap, and it was previously indistinguishable from
+    the other two.
+
+    Read-only, like every projection here: it consumes no delivery capability
+    and mints no receipt, so an outcome is a diagnostic and never delivery
+    proof, which stays with the in-lifetime collector under ADR-0156.
+    """
+
+    hosts = (args.host,) if getattr(args, "host", None) else _HOSTS
+    override = getattr(args, "root", None)
+    if override is not None and len(hosts) != 1:
+        raise ValueError("--root applies to exactly one --host")
+    since = str(getattr(args, "since", None) or "")
+    limit = getattr(args, "limit", None) or MAX_CHILD_LAUNCHES
+
+    join = Store(getattr(args, "db", None)).child_launch_join_rows()
+    decisions = join["decisions"]
+    by_id = {row["id"]: row for row in decisions if row["id"]}
+    by_query_hash: dict[tuple[str, str], dict[str, object]] = {}
+    for row in decisions:
+        by_query_hash.setdefault((row["session_id"], row["query_hash"]), row)
+
+    def _by_fingerprint(session_id: str, launch_id: str, assignment_sha256: str):
+        # The fingerprint is a digest over the parent trace too, which an
+        # artifact never carries, so each candidate trace in the session is
+        # tried. Bounded by the same scan that produced these rows.
+        for row in decisions:
+            if row["session_id"] != session_id or not row["context_fingerprint"]:
+                continue
+            expected = native_child_failure_context_fingerprint(
+                host="claude",
+                parent_session_id=session_id,
+                parent_trace_id=row["trace_id"],
+                launch_id=launch_id,
+                task_sha256=assignment_sha256,
+            )
+            if row["context_fingerprint"].startswith(expected[:32]):
+                return row
+        return None
+
+    results = []
+    for host in hosts:
+        root = Path(override) if override is not None else default_child_artifact_root(host)
+        report = resolve_child_launch_outcomes(
+            root,
+            host=host,
+            decision_by_id=by_id.get,
+            decision_by_query_hash=lambda session, digest: by_query_hash.get((session, digest)),
+            decision_by_fingerprint=_by_fingerprint,
+            since=since,
+            limit=limit,
+        )
+        report["decision_scan_truncated"] = join["scan_truncated"]
+        results.append(report)
+
+    if getattr(args, "json", False):
+        _print_json({"hosts": results})
+        return 0
+    for report in results:
+        _print_child_launch_report(report)
+    return 0
+
+
+def _print_child_launch_report(report: dict[str, Any]) -> None:
+    """Print one host's launch outcomes, stating every bound it was read under."""
+
+    if not report["root_present"]:
+        print(f"{report['host']}: artifact root is absent at {report['root']}")
+        return
+    counts = report["counts"]
+    window = f" since {report['since']}" if report["since"] else ""
+    print(
+        f"{report['host']}: {report['launches_seen']} child launches{window} -- "
+        f"{counts['staffed']} staffed, {counts['declined']} declined, "
+        f"{counts['unrecorded']} with no record"
+    )
+    if report["launches_out_of_window"]:
+        print(f"  {report['launches_out_of_window']} launch(es) fell before the window")
+    if report["artifacts_unreadable"]:
+        print(f"  {report['artifacts_unreadable']} artifact(s) could not be read")
+    if report["scan_truncated"] or report["decision_scan_truncated"]:
+        print("  scan truncated; these counts are a bounded sample, not full history")
+    for item in report["launches"]:
+        if item["outcome"] == "unrecorded":
+            print(f"  no record: child {item['child_id']} launched {item['launched_at']}")

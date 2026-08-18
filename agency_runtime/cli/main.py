@@ -371,6 +371,7 @@ def cmd_policy(args: argparse.Namespace) -> int:
 
 
 cmd_evidence_children = _evidence.cmd_evidence_children
+cmd_evidence_child_launches = _evidence.cmd_evidence_child_launches
 cmd_evidence_latency = _evidence.cmd_evidence_latency
 cmd_evidence_intent = _evidence.cmd_evidence_intent
 cmd_evidence_rejections = _evidence.cmd_evidence_rejections
@@ -431,6 +432,7 @@ _COMMAND_NAMES = (
     "cmd_eval_staffing",
     "cmd_eval_routing",
     "cmd_eval_workforce",
+    "cmd_evidence_child_launches",
     "cmd_evidence_children",
     "cmd_evidence_intent",
     "cmd_evidence_latency",

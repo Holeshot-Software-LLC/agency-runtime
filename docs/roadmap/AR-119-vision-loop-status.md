@@ -580,3 +580,205 @@ sit on the branch for review. The full local gate suite passed **14 of 14
 in 14.5 minutes** before the candidate advance. Main is untouched except
 through those PRs, nothing was committed in the primary checkout, and the
 owner's WIP there is exactly as he left it.
+
+## Correction, 2026-08-18: the receipts were never missing, and R4's real blocker is the capability seal
+
+This section retracts a claim this session made hours earlier and replaces
+it with a measured one. It was written after the loop stopped, on the
+owner's instruction to start the receipt-binding work — and the first step
+of that work showed the work was largely unnecessary.
+
+### Retracted: "three harness-spawned children got no card and no receipt explains why"
+
+That sentence appeared in the final status document and in the capsule.
+**Two of the three are fully explained, and their receipts existed the
+whole time.** Launch `toolu_01Uoswski9DJv7Hz4jg1SYFg` (11:21:06Z) has
+decision `19d542bf` recorded at 11:21:05.97, and the 11:21:39Z launch has
+`cb5a4f26` at 11:21:37.79 — both `inference_invalid` /
+`native_child_inference_failure`, the same child-stage provider failure
+the canary series recorded three times.
+
+The reason both the reviewer and this session missed them is instructive:
+**we looked for a `launch_id` column and there isn't one.** The linkage is
+`context_fingerprint`, a deterministic digest of (host, parent session,
+parent trace, launch id, task sha256). Recomputing it from the child's own
+`.meta.json` `toolUseId` plus the parent-recorded prompt reproduces the
+stored value exactly — verified: computed `11eb6a90b71cc871d4c57bb706a77f74`,
+stored `11eb6a90b71cc871d4c57bb706a77f74`. Receipts are joinable to child
+launches today, with no schema change and no new capture.
+
+This is the fourth time in this effort that a claim died because it was
+scored over the wrong set. The rule the capsule already states — *ask
+which exact set this claim is scored over* — should have been applied to
+the word "unexplained" before it was written down.
+
+### The one genuine silent hole (narrow, real, worth fixing)
+
+Exactly one child launch left nothing: `a2bd9b49…` at 02:59:41Z. At that
+instant **no parent run was open** in the session — the previous run
+closed 02:51:29 and the next opened 03:02:34.
+`_native_child_staffing_parent` therefore returned no trace, and both
+`staff_native_child` and `_record_native_child_unstaffed` returned
+silently, the latter by explicit design ("persist one content-free reason
+only when its parent is exact and live"). That case is genuinely
+indistinguishable from a hook that never ran, which is the exact confusion
+this project has been bitten by twice.
+
+Bounded fix, for whenever it is scheduled: record one content-free
+observation — host, launch id, session id, reason
+`native_child_parent_not_live` — when a child launch is seen and declined
+for want of a live parent. Note that the existing receipt lanes are
+trace-keyed, so this needs either a nullable-trace row or its own lane,
+and a new table means a `SCHEMA_VERSION` bump, which on this machine
+disables every hook until all three hosts are reinstalled. Sequence it
+deliberately; do not let it ride along with other work.
+
+### The finding that matters more: R4 and AR-252 share one blocker
+
+`agency evidence children --host claude --json` already exists, already
+scans the artifact root (157 artifacts, 659 filesystem entries), and
+already finds our v6 delivery: `v6: true`, `pre_speech: true`,
+`correlated: true`, `decision_id native-child-3507ad14…`, the exact card
+in `diagnostic_cards`. It reports `verified_delivery: false` for a named
+reason — **`host_hook_output_origin_not_proven`**.
+
+Reading `_expected_v6_reason`: that reason is returned when `expected is
+None` and the artifact carries no structural hook-output marker.
+`expected` is the **one-use verified-delivery capability**, which
+`_consume_verified_host_child_delivery` pops on read and whose sole
+production consumer is `canary_proof.py`, collecting inside a disposable
+host profile under ADR-0158. A read-only CLI projection cannot supply it
+and must not consume it.
+
+**So Rule 4 Live can only ever be proven inside a canary run.** Not
+because receipts are missing, and not because delivery is broken — the
+delivery is real and verifies to the byte — but because the only code path
+permitted to *verify* a delivery is the canary's in-lifetime private-lease
+collector. That is why `native_child_delivery_verifications` has zero rows
+after fourteen child launches, one of them a perfect delivery.
+
+And the canary path requires the child judge's draw to survive the
+provider, which it has not done once in this machine's recorded history.
+
+**This unifies two open items.** AR-252's pairing collector is blocked on
+the same one-use seal (constraint 2 in its issue: nothing can hold two
+such capabilities at once). The seal is therefore not just AR-252's
+question — it is simultaneously the reason Rule 4 cannot be proven outside
+a disposable profile. Whatever is decided about widening, redesigning, or
+keeping it should be decided once, for both.
+
+**Falsification:** if a future `agency evidence children` run reports
+`verified_delivery: true` for any artifact without a canary having
+consumed a capability for it, this reading is wrong. If the owner rules
+that an origin-proof may come from a source other than the one-use
+capability, R4 Live becomes provable from artifacts already on disk today.
+
+### The child-to-receipt join needs no code change, and the fix I tried was wrong
+
+Attempted 2026-08-18, reverted the same session. Recorded because the
+attempt is what produced the answer.
+
+**What I tried and why it failed.** The plan was to make the join
+first-class by adding `launch_id` to the native-child routing-decision
+projection and to `_ROUTING_DECISION_FIELDS`. A persisted-row test made it
+pass. It also broke **five existing contracts** that are green on the
+unmodified tree (verified by stashing: 137 passed clean, 133 passed plus 5
+failures with the change): four native-child staffing tests began
+returning `native_child_routing_decision_unavailable` — the sealed
+success-route readback rejecting the changed projection — plus one
+ready-receipt test. Removing the field from the success path alone did not
+clear it, so the blast radius comes from widening the **shared** decision
+allowlist, not from the native-child route. `_ROUTING_DECISION_FIELDS` is
+load-bearing for every routing decision and for the ready-receipt payload;
+it is not a place to add a field casually. Reverted to clean.
+
+**What actually works, today, with the store as it stands.** Three
+independent join keys already exist, and each covers a different case.
+Applied to the four harness-spawned children of session `f3066348`:
+
+| child | join that resolves it | outcome |
+|---|---|---|
+| `a3b16809…` | v6 envelope `decision_id` in record zero | staffed (`applied`) |
+| `a3b13d36…` | `sha256(child's own assignment)` == `routing_decisions.query_hash` | declined (`inference_invalid`) |
+| `a8796913…` | recomputed `context_fingerprint` | declined (`inference_invalid`) |
+| `a2bd9b49…` | none — genuinely unrecorded | silent hole |
+
+Note the complementarity: the fingerprint resolves `a8796913` but not
+`a3b13d36`; the `query_hash` route resolves `a3b13d36` but not
+`a8796913`. Either alone looks like a 50% evidence gap; together they
+leave exactly one unresolved child. **This retracts the sharper form of
+my earlier claim that receipts are reliably joinable by fingerprint — they
+are joinable, but only by trying all three keys.**
+
+The `query_hash` route is the most useful of the three because it needs
+nothing but the child artifact: strip any appended v6 envelope from record
+zero, hash the remainder, and look it up among that session's decisions.
+
+**The one real hole, unchanged:** `a2bd9b49…` launched 02:59:41Z when no
+parent run was open (previous run closed 02:51:29, next opened 03:02:34).
+`_native_child_staffing_parent` returns no trace, and both
+`staff_native_child` and `_record_native_child_unstaffed` return silently
+by design. That case still reads exactly like a hook that never ran.
+
+**Next step, when it is scheduled:** build the three-key resolver as a
+read-only projection (extending `agency evidence children`, which already
+walks the artifact root) rather than changing what is written. It turns
+delivery into a countable rate immediately and carries none of the risk
+that broke five contracts here. Only after that is the silent hole worth a
+schema decision, because only then is its true frequency known — one in
+fourteen is an upper bound measured by hand, not a rate.
+
+*Falsification:* if a child artifact resolves under none of the three keys
+while its decision demonstrably exists (as `a3b13d36`'s did, with
+`task_chars` matching to the character), then a fourth key is in play and
+the resolver is incomplete.
+
+### The delivery rate is now a command, and it reads 1 staffed of 14
+
+`agency evidence child-launches` shipped 2026-08-18. It reports one outcome
+per harness-spawned child — staffed, declined, or unrecorded — by trying the
+three join keys already in the Store, and it is read-only: no writes, no
+capability consumption, no minted receipts, so an outcome is a diagnostic and
+never delivery proof (ADR-0156).
+
+**First real measurement**, scoped to the current install:
+
+~~~text
+agency evidence child-launches --host claude --since 2026-08-17T21:00:00.000Z
+claude: 14 child launches since 2026-08-17T21:00:00.000Z --
+        1 staffed, 6 declined, 7 with no record
+  46 launch(es) fell before the window
+~~~
+
+This replaces the hand-measured "1 in 14 delivered, 13 unexplained" with
+something a rerun can reproduce. Six of the thirteen non-deliveries carry a
+recorded reason; they are Rule 8 working, not evidence gaps.
+
+**Two findings the build produced, both of which read exactly like a host
+that never spawned anything — the failure shape this project has been bitten
+by three times:**
+
+1. The default artifact root holds children **two** directories down
+   (`<project>/<session>/subagents/`). A single-depth glob reported **zero
+   launches** on the first live run. Both shapes are accepted now, pinned by
+   a test.
+2. An artifact root spans every runtime that ever ran on the machine. Counting
+   all 60 launches against today's install would report a rate for runtimes
+   that never saw them, so `--since` scopes the window and states what it
+   excluded rather than dropping it silently.
+
+**Caveat, stated because the number is not yet trustworthy in one direction:
+7 is an UPPER BOUND on the true silent count.** The `context_fingerprint`
+key does not appear to fire through the CLI path — child `a8796913…`
+resolves by fingerprint in a manual recompute but reads `unrecorded` here.
+The other two keys are sound, and the one genuinely silent child from the
+overnight run (`a2bd9b49…`, launched 02:59:41Z with no open parent run)
+reports correctly. *Falsification:* if wiring the fingerprint lookup
+correctly moves `a8796913…` from `unrecorded` to `declined`, the true silent
+count is 6 or fewer and the headline rate improves accordingly.
+
+**What this does not change.** Rule 4 Live still cannot be proven from these
+artifacts: `agency evidence children` continues to report
+`host_hook_output_origin_not_proven`, because only the canary's in-lifetime
+private-lease collector may consume the verified-delivery capability. The
+capability seal remains the blocker, for R4 and AR-252 alike.
