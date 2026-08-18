@@ -1031,6 +1031,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c2100761` | 2026-08-18 | fix(evidence): resolve launches whose artifact copy is shortened or quotes a marker | null | null |
 | `cac2ead1` | 2026-08-18 | refactor(evidence): extract the launch-to-decision matcher | null | null |
 | `e7b2b5cd` | 2026-08-18 | docs(ar119): record the completion-scope ruling and arm the openclaw/hermes packet | null | null |
+| `52903976` | 2026-08-18 | docs(ar119): openclaw and hermes have no Rule 4 route today -- say so before he installs | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
