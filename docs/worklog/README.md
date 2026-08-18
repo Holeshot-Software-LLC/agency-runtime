@@ -1035,6 +1035,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6f820d0a` | 2026-08-18 | docs(ar119): box the push blocker -- shared bare=true exposed by removing the hijack | null | null |
 | `b8a519bc` | 2026-08-18 | docs(ar119): the push path writes core.bare=true into the real config | null | null |
 | `2adb42e6` | 2026-08-18 | fix(tests): stop the CI-scope fixture from re-initializing the real repository | null | null |
+| `aebad9c1` | 2026-08-18 | fix(tests): make the CI-scope suite hermetic against an inherited git env | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
