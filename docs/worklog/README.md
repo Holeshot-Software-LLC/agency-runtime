@@ -1033,6 +1033,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e7b2b5cd` | 2026-08-18 | docs(ar119): record the completion-scope ruling and arm the openclaw/hermes packet | null | null |
 | `52903976` | 2026-08-18 | docs(ar119): openclaw and hermes have no Rule 4 route today -- say so before he installs | null | null |
 | `6f820d0a` | 2026-08-18 | docs(ar119): box the push blocker -- shared bare=true exposed by removing the hijack | null | null |
+| `b8a519bc` | 2026-08-18 | docs(ar119): the push path writes core.bare=true into the real config | null | null |
+| `2adb42e6` | 2026-08-18 | fix(tests): stop the CI-scope fixture from re-initializing the real repository | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
