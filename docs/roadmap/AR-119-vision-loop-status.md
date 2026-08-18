@@ -323,6 +323,16 @@ the joint-verdict ruling in AR-252 stands.
   absent. This is model-behavior nondeterminism, not a provider-stage
   kill: the consecutive-provider-kill chain is broken, no backoff owed,
   and any 6.1 recording must describe a MIXED blocker. Failure kept.
+- **Run 2** (08:09–08:11Z): **the best parent result of the night** —
+  parent decision `f1715d12` accepted with **`code-reviewer` ALONE**
+  (57.9 s, no security-team padding, matching the owner's v3 acceptance
+  condition), exactly one child delegation, and only ONE unmet
+  prerequisite left in the whole report. Then the child judge draw
+  `60da5803` died provider-side at 15.3 s —
+  `inference_unavailable` / `native_child_inference_failure`, empty
+  selection, no capture row — so the collector honestly reported
+  `delivery_marker_absent`. **Third child-stage provider kill**, now
+  spanning >6 h: 2026-08-17 evening policy series, 03:50Z, 08:10Z.
 
 ### Series 2 ledger (small-unit-policy acceptance, runtime `cc478bc88258…`)
 
