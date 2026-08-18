@@ -318,3 +318,22 @@ the joint-verdict ruling in AR-252 stands.
   FAILED at parent preflight — planner `provider_no_valid_response`,
   receipt `workforce_provider_unavailable`. Identical stage to series 1
   runs 2-3. Failure kept; run 2 next, serialized.
+- **Run 2** (03:48–03:57Z, run `9bbe05e5`): **the parent chain went green
+  on this runtime** — planner applied; recruiter rejected once then
+  applied; parent decision `e346e782` accepted with `code-reviewer`
+  selected AND loaded (`application-security-engineer` padding returned);
+  receipt proven; exactly one child delegation (`e965ec7a`). Then the
+  child staffing draw `f1cb84be` died provider-side:
+  `inference_unavailable`, source `native_child_inference_failure`, empty
+  selection — the judge never answered, no capture row, and the collector
+  honestly reported `delivery_marker_absent`. The parent's final response
+  header also failed this run (yesterday's policy-series run 2 had one —
+  intermittent model behavior, noted). **The small-unit policy therefore
+  remains unjudged: the pure unit has still never reached a child-judge
+  draw that survived.** This is AR-253 evidence: the child-stage draw has
+  now been provider-killed in both the 2026-08-17 policy series and
+  tonight's series 2.
+
+**Delegated ruling (brief §4.6): runs 1-2 both provider-killed → second
+30-minute backoff, run 3 no earlier than ~04:25Z.** Interim: branch sync
+with origin/main; R6 pool-reuse watch continues.
