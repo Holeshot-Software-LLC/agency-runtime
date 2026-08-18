@@ -997,7 +997,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2c4af855` | 2026-08-17 | docs(ar119): series runs 1-2 provider-killed; 30-minute backoff ruling | null | null |
 | `3d70a2e9` | 2026-08-17 | docs(ar119): verify the live v6 chain end to end across three surfaces | null | null |
 | `d2c0e961` | 2026-08-17 | docs(ar252): settle the joint-verdict shape as a delegated ruling | null | null |
+| `f980f27e` | 2026-08-17 | Merge pull request #290 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
 | `ed7ca319` | 2026-08-17 | docs(ar119): series 0/3 provider-killed; draft the f980f27e candidate evidence | null | null |
+| `72a3756f` | 2026-08-17 | Merge origin/main (PR #290) back into the working branch | null | null |
+| `3269ff67` | 2026-08-17 | docs(ar119): finalize the 99a7b3ac runtime evidence document | null | null |
+| `b192dead` | 2026-08-17 | docs(ar119): advance the matrix to candidate 3269ff67 -- first R1 and R4 installed+live anywhere | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
