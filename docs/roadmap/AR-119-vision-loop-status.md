@@ -337,3 +337,32 @@ the joint-verdict ruling in AR-252 stands.
 **Delegated ruling (brief §4.6): runs 1-2 both provider-killed → second
 30-minute backoff, run 3 no earlier than ~04:25Z.** Interim: branch sync
 with origin/main; R6 pool-reuse watch continues.
+
+- **Run 3** (04:20–04:3xZ): FAILED at parent preflight again (one
+  preflight failure, zero routing). **Series 2 verdict: 0/3
+  provider-killed** — planner-dead, parent-green/child-draw-dead,
+  preflight-dead. Second consecutive provider-killed series tonight.
+
+### Cycle 5 — between-series consolidation (04:35Z–)
+
+- **Series 3 is scheduled no earlier than 08:05Z**, so the three series
+  span ≥6 h (series 1 started 02:02Z); if series 3 also dies at provider
+  stages, the §7.1 measurement records `blocked-on-provider` per stopping
+  condition 6.1 and stops grinding.
+- **AR-252 finding, sharpened:** with the joint-verdict ruling recorded
+  and the one-use canary-only capability seal deliberately unwidened, the
+  pairing collector CANNOT be built tonight — one envelope needs a
+  producer proof and a distinct verifier proof held together, nothing
+  today can hold two sealed capabilities at once, and an unsealed
+  side-path would weaken the evidence contract. The seal decision (widen
+  vs redesign) is a threat-model change and is queued as a MORNING
+  DECISION, not taken. *Falsification:* if the owner rules the seal may
+  widen to exactly-two one-use consumptions inside one atomic pairing
+  transaction, the collector build unblocks immediately.
+- **AR-253 receipts filed** for tonight's samples (see the issue doc's
+  dated section): recruiter `staff_without_safe_team` ×4 (23:50–01:32Z),
+  planner `provider_no_valid_response` ×5 (00:03–04:3xZ across both
+  canary series), planner contract-invalid double-rejection ×1 (01:12Z),
+  child-draw `native_child_inference_failure` ×1 (03:50Z), against
+  accepted draws at 01:47Z (child, staffed), 01:52Z, 02:15Z, 02:35Z,
+  02:58Z, 03:06Z, 03:50Z (parent chain green).

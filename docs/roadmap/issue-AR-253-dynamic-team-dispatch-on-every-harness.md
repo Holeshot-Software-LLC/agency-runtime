@@ -3,7 +3,7 @@ title: "AR-253: Prove staffing latency, rate, and cross-host parity"
 status: open
 category: roadmap
 created: 2026-08-05
-updated: 2026-08-16
+updated: 2026-08-18
 tags: [workforce, staffing, latency, harnesses, eval, host-evidence]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -639,3 +639,30 @@ This also re-aims the planner-scope finding. The binding constraint is the unit'
 conjunctive six-axis requirement set — still a planner invention — but it binds
 through coverage, not through eligibility, so direction B must make *coverage*
 requirements advisory to have any effect.
+
+## Overnight 2026-08-18 receipts: the defect is stage-roving and load-shaped
+
+Sampled across the vision-loop session's own turns and two serialized
+canary series on runtime `cc478bc88258…` (all ids in the store):
+
+- Recruiter `staff_without_safe_team` (decision "staff", ranked list,
+  empty selection): 23:50:24Z, 00:10Z, 00:32Z, 01:32Z — four draws.
+- Planner `provider_no_valid_response`: 00:03Z, 00:47Z, 02:11Z (`aa12fb29`),
+  02:47Z (`a7999a88`), ~04:30Z (series 2 run 3) — five draws.
+- Planner `provider_response_contract_invalid` double-rejection: 01:12Z.
+- Child-stage `native_child_inference_failure` (empty selection, judge
+  never answered): 03:50:34Z (`f1cb84be`) — matching the 2026-08-17
+  policy-series run 2 shape.
+- Against, same window: accepted/applied draws at 01:47:41Z (child judge
+  STAFFED a live harness child — `native-child-3507ad14…`), 01:52Z,
+  02:15Z, 02:35Z, 02:58:49Z (four-card parent accept, 109 s), 03:06:38Z
+  (two-card accept, resumed turn), 03:50:10Z (canary parent accept,
+  code-reviewer selected AND loaded, 127.8 s).
+
+Reading: the failure roves across planner, recruiter, and child stages,
+interleaved with clean draws minutes apart on identical code — a
+provider/load phenomenon, not a runtime or prompt defect; the owner
+flagged account-level model-limit pressure the same night. Receipts filed
+per the loop brief §7.4; no provider chase attempted. Two consecutive
+provider-killed series (02:02Z, 03:40Z) stand; a third at ≥08:05Z decides
+`blocked-on-provider`.
