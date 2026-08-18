@@ -199,6 +199,46 @@ def iter_child_artifacts(root: Path, *, limit: int = MAX_CHILD_LAUNCHES) -> Iter
         yield artifact
 
 
+def _match_decision(
+    launch: Mapping[str, Any],
+    *,
+    parent_assignment: str,
+    decision_by_id: Callable[[str], Mapping[str, Any] | None],
+    decision_by_query_hash: Callable[[str, str], Mapping[str, Any] | None],
+    decision_by_fingerprint: Callable[[str, str, str], Mapping[str, Any] | None] | None,
+) -> tuple[Mapping[str, Any] | None, str]:
+    """Return the first decision a launch resolves to, and which key found it.
+
+    Two assignment digests are tried for the hash-bearing keys: the child
+    artifact's own copy, and the parent's recorded launch input. The second is
+    what Agency hashed whenever the host shortened the first, and neither is
+    reliably present, so both are attempted rather than one being preferred.
+    """
+
+    if launch["envelope_decision_id"]:
+        decision = decision_by_id(launch["envelope_decision_id"])
+        if decision is not None:
+            return decision, "envelope_decision_id"
+    recorded_sha256 = (
+        sha256(original_assignment(parent_assignment).encode("utf-8")).hexdigest()
+        if parent_assignment
+        else ""
+    )
+    digests = tuple(digest for digest in (launch["assignment_sha256"], recorded_sha256) if digest)
+    for digest in digests:
+        decision = decision_by_query_hash(launch["parent_session_id"], digest)
+        if decision is not None:
+            return decision, "assignment_query_hash"
+    if decision_by_fingerprint is not None and launch["launch_id"]:
+        for digest in digests:
+            decision = decision_by_fingerprint(
+                launch["parent_session_id"], launch["launch_id"], digest
+            )
+            if decision is not None:
+                return decision, "context_fingerprint"
+    return None, ""
+
+
 def resolve_child_launch_outcomes(
     root: Path,
     *,
@@ -235,36 +275,13 @@ def resolve_child_launch_outcomes(
             # about the window, not an artifact that failed to read.
             out_of_window += 1
             continue
-        decision = None
-        matched_by = ""
-        if launch["envelope_decision_id"]:
-            decision = decision_by_id(launch["envelope_decision_id"])
-            if decision is not None:
-                matched_by = "envelope_decision_id"
-        # The parent's own record of the launch input is what Agency hashed, so
-        # it is tried alongside the artifact's shortened copy rather than
-        # instead of it: some hosts record the assignment whole in the child.
-        recorded = parent_prompts[transcript].get(launch["launch_id"], "")
-        recorded_sha256 = (
-            sha256(original_assignment(recorded).encode("utf-8")).hexdigest() if recorded else ""
+        decision, matched_by = _match_decision(
+            launch,
+            parent_assignment=parent_prompts[transcript].get(launch["launch_id"], ""),
+            decision_by_id=decision_by_id,
+            decision_by_query_hash=decision_by_query_hash,
+            decision_by_fingerprint=decision_by_fingerprint,
         )
-        for digest in (launch["assignment_sha256"], recorded_sha256):
-            if decision is not None or not digest:
-                continue
-            decision = decision_by_query_hash(launch["parent_session_id"], digest)
-            if decision is not None:
-                matched_by = "assignment_query_hash"
-        if decision is None and decision_by_fingerprint is not None and launch["launch_id"]:
-            for digest in (launch["assignment_sha256"], recorded_sha256):
-                if decision is not None or not digest:
-                    continue
-                decision = decision_by_fingerprint(
-                    launch["parent_session_id"],
-                    launch["launch_id"],
-                    digest,
-                )
-                if decision is not None:
-                    matched_by = "context_fingerprint"
         if decision is None:
             outcome = UNRECORDED
         elif str(decision.get("status") or "") == "applied":
