@@ -63,27 +63,26 @@ vision-completion brief and the loop status doc immediately after.
   `AR-119-99a7b3ac-live-evidence.md` and must not be quietly re-promoted.
   The real gain is an **existence proof**: the first
   `[AGENCY INFERENCE TEAM v6]` envelope ever seen on this machine,
-  pre-speech in a harness-spawned child, verified to the byte — but
-  delivery ran **1 in 14** children at this candidate and
-  `native_child_delivery_verifications` is still empty.
-  R8 needs an owner-gated capture decision.
-- AR-252's joint-verdict shape is settled as a delegated ruling in its
-  issue doc; the one-use capability seal is deliberately unwidened.
+  pre-speech in a harness-spawned child, verified to the byte — which
+  `agency evidence children` finds but cannot verify (blocker 1). R8
+  needs an owner-gated capture decision, or the real-profile fail-open
+  turns already on disk.
+- AR-252's joint-verdict shape is settled as a delegated ruling; the
+  one-use capability seal is deliberately unwidened (blocker 1).
 
 ## traps (machine-specific; do not rediscover)
 
 - `git status` can lie here: a stale `core.worktree` in the shared
-  `.git/config` (left by a remote-control session) redirected every
-  worktree's git view to the wrong directory on 2026-08-17; repaired with
-  `git config --unset core.worktree`. If files phantom-appear, check that
-  first and verify with `Test-Path`, not git.
-- `python -m agency_runtime...` imports from CWD first: PYTHONPATH cannot
-  override it. Always `cd` into the intended tree (checkout or launcher
-  `site-packages`) and assert `agency_runtime.__file__` before trusting an
-  eval. One spawn-authority run tonight silently measured the stale
-  primary; it was caught and discarded.
-- Appending `; echo EXIT=$?` makes the harness see exit 0; judge gates and
-  canaries by their own report, never a piped code.
+  `.git/config` redirected every worktree's git view to the wrong
+  directory on 2026-08-17; repaired with `git config --unset
+  core.worktree`. If files phantom-appear, check that first, with
+  `Test-Path` rather than git.
+- `python -m agency_runtime...` imports from CWD first and PYTHONPATH
+  cannot override it: `cd` into the intended tree and assert
+  `agency_runtime.__file__` before trusting any eval. Better, run the
+  launcher's own `_bootstrap.py` under `-I -S`.
+- Appending `; echo EXIT=$?` makes the harness see exit 0; judge by the
+  report, never a piped code.
 - Prepend `C:\agency-cli` to PATH or hosts read "native unverified". The
   packaged `agency.exe` is schema-pinned; install with
   `python -m agency_runtime.cli install --agent <host>` from a clean
@@ -97,29 +96,31 @@ vision-completion brief and the loop status doc immediately after.
 
 ## exact-blocker
 
-1. **Card delivery to harness-spawned children is 1-in-14 at this
-   candidate, and the misses are unexplained.** One child got a fully
-   bound v6 envelope; thirteen did not, including three in the measuring
-   session itself whose record zeros carry no `[AGENCY` marker and for
-   which **no receipt exists** — two show `SubagentStart` firing and
-   writing "supplies no card". Parent-stage provider failures explain
-   much of it (13 routing failures in that session) and Rule 8 permits
-   abstention, but nothing binds a receipt to a child launch, so the rate
-   cannot be read. Bind one and this becomes a measurement. This, not the
-   acceptance draw, is the live Rule 4 blocker.
-2. **AR-252** — the joint-verdict shape is settled as a delegated ruling in
-   the issue doc (verifier-authored semantic half, collector-assembled
-   binding half, division named in the envelope; the one-use canary-only
-   capability seal deliberately NOT widened). The pairing collector build
-   is next; nothing yet collects a real envelope.
-3. **AR-253** — recruiter `staff_without_safe_team` (decision "staff",
-   ranked list, empty selection) and planner `provider_no_valid_response`
-   sampled all night from this session's own turns and both canary series;
-   intermittent under load, not an outage; file receipts, don't chase
-   provider fixes. Parent staffing succeeded at 02:58Z and 03:50Z.
+1. **Rule 4 Live can only be proven inside a canary run, and that is the
+   whole blocker.** Not missing receipts — that claim was made on
+   2026-08-18 and **retracted the same day**: receipts are joinable to a
+   child launch today by recomputing `context_fingerprint` from the
+   child's `.meta.json` `toolUseId` plus the parent-recorded prompt
+   (verified to match exactly). `agency evidence children` already finds
+   the live v6 delivery and names its own refusal:
+   **`host_hook_output_origin_not_proven`**, because `expected` is the
+   one-use verified-delivery capability that only the canary's
+   in-lifetime private-lease collector may consume (ADR-0158). A
+   read-only projection cannot supply it, so a perfect delivery sits on
+   disk unverifiable and `native_child_delivery_verifications` stays
+   empty. **The same seal blocks AR-252's collector** — decide it once,
+   for both. One narrow silent hole remains: a child launched while no
+   parent run is open records nothing (seen once, 02:59:41Z); fixing it
+   needs a nullable-trace row or a new lane, and a lane means a
+   SCHEMA_VERSION bump — sequence that deliberately.
+2. **AR-252** — joint-verdict shape settled as a delegated ruling in the
+   issue doc; the collector build waits on the same seal as blocker 1.
+3. **AR-253** — recruiter `staff_without_safe_team` and planner
+   `provider_no_valid_response` rove across stages, interleaved with clean
+   draws on identical code: load-shaped, provider-side. Receipts filed in
+   the issue; don't chase provider fixes.
 4. **codex/zcode/openclaw/hermes** — unchanged: codex needs attended TUI
-   trust (bypass evidence never counts as attended); zcode has no CLI on
-   this box; openclaw/hermes run the owner packet on the owner's boxes.
+   trust; zcode has no CLI here; openclaw/hermes run the owner packet.
 
 ## next-bounded-work-package
 
@@ -130,22 +131,20 @@ complete 71-candidate universe with the owner policy live, and the judge
 it is unconfirmed. A repair-confirmed post-policy decline would settle
 it; any staffing refutes it.
 
-The sharpest open engineering lead is now different: **three
-harness-spawned children in one session got no card and no receipt
-explains why.** Bind a receipt to every child launch and the 1-in-14
-delivery rate becomes a measurement instead of a mystery. Series
-discipline if measuring again: probe, ≥3 serialized runs, failures kept,
-30-min backoff after two consecutive provider-stage kills.
+The next decision is the **one-use verified-delivery capability seal**
+(blocker 1): it gates Rule 4 Live and AR-252's collector at once, and no
+amount of measurement moves either until it is settled. Series discipline
+if measuring again: probe, ≥3 serialized runs, failures kept, 30-min
+backoff after two consecutive provider-stage kills.
 
 ## same-task-continuity
 
 After restart or compaction: this file, `AR-119-founding-vision.md`, the
-vision-completion brief (§6 stopping conditions, §7 priorities), then
-`AR-119-vision-loop-status.md` (the running ledger, cycle log, series
-ledgers, morning decisions). The matrix + `AR-119-99a7b3ac-live-evidence.md`
-carry the proof state. Do not reconstruct retired Job B, plan-row,
-work-unit, grant or consumed-receipt transport; do not re-chase the REFUTED
-list in the overnight brief.
+vision-completion brief (§6, §7), then `AR-119-vision-loop-status.md` (the
+ledger, series results, corrections, morning decisions). The matrix and
+`AR-119-99a7b3ac-live-evidence.md` carry the proof state. Do not
+reconstruct retired Job B, plan-row, work-unit, grant or consumed-receipt
+transport; do not re-chase the overnight brief's REFUTED list.
 
 ## verification
 
@@ -158,8 +157,9 @@ python -m agency_runtime.cli host-canary claude --timeout 420   # readiness
 ~~~
 
 Run focused tests, the fast spine, and the matrix-evidence list before each
-checkpoint. Judge every gate by its own summary; a push's hook gates are
-not the spine.
+checkpoint. Judge every gate by its own summary; a push's hooks are not
+the spine. `agency evidence children --host claude --json` reads child
+delivery without touching the store.
 
 ## constraints
 

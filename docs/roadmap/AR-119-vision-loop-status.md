@@ -580,3 +580,95 @@ sit on the branch for review. The full local gate suite passed **14 of 14
 in 14.5 minutes** before the candidate advance. Main is untouched except
 through those PRs, nothing was committed in the primary checkout, and the
 owner's WIP there is exactly as he left it.
+
+## Correction, 2026-08-18: the receipts were never missing, and R4's real blocker is the capability seal
+
+This section retracts a claim this session made hours earlier and replaces
+it with a measured one. It was written after the loop stopped, on the
+owner's instruction to start the receipt-binding work — and the first step
+of that work showed the work was largely unnecessary.
+
+### Retracted: "three harness-spawned children got no card and no receipt explains why"
+
+That sentence appeared in the final status document and in the capsule.
+**Two of the three are fully explained, and their receipts existed the
+whole time.** Launch `toolu_01Uoswski9DJv7Hz4jg1SYFg` (11:21:06Z) has
+decision `19d542bf` recorded at 11:21:05.97, and the 11:21:39Z launch has
+`cb5a4f26` at 11:21:37.79 — both `inference_invalid` /
+`native_child_inference_failure`, the same child-stage provider failure
+the canary series recorded three times.
+
+The reason both the reviewer and this session missed them is instructive:
+**we looked for a `launch_id` column and there isn't one.** The linkage is
+`context_fingerprint`, a deterministic digest of (host, parent session,
+parent trace, launch id, task sha256). Recomputing it from the child's own
+`.meta.json` `toolUseId` plus the parent-recorded prompt reproduces the
+stored value exactly — verified: computed `11eb6a90b71cc871d4c57bb706a77f74`,
+stored `11eb6a90b71cc871d4c57bb706a77f74`. Receipts are joinable to child
+launches today, with no schema change and no new capture.
+
+This is the fourth time in this effort that a claim died because it was
+scored over the wrong set. The rule the capsule already states — *ask
+which exact set this claim is scored over* — should have been applied to
+the word "unexplained" before it was written down.
+
+### The one genuine silent hole (narrow, real, worth fixing)
+
+Exactly one child launch left nothing: `a2bd9b49…` at 02:59:41Z. At that
+instant **no parent run was open** in the session — the previous run
+closed 02:51:29 and the next opened 03:02:34.
+`_native_child_staffing_parent` therefore returned no trace, and both
+`staff_native_child` and `_record_native_child_unstaffed` returned
+silently, the latter by explicit design ("persist one content-free reason
+only when its parent is exact and live"). That case is genuinely
+indistinguishable from a hook that never ran, which is the exact confusion
+this project has been bitten by twice.
+
+Bounded fix, for whenever it is scheduled: record one content-free
+observation — host, launch id, session id, reason
+`native_child_parent_not_live` — when a child launch is seen and declined
+for want of a live parent. Note that the existing receipt lanes are
+trace-keyed, so this needs either a nullable-trace row or its own lane,
+and a new table means a `SCHEMA_VERSION` bump, which on this machine
+disables every hook until all three hosts are reinstalled. Sequence it
+deliberately; do not let it ride along with other work.
+
+### The finding that matters more: R4 and AR-252 share one blocker
+
+`agency evidence children --host claude --json` already exists, already
+scans the artifact root (157 artifacts, 659 filesystem entries), and
+already finds our v6 delivery: `v6: true`, `pre_speech: true`,
+`correlated: true`, `decision_id native-child-3507ad14…`, the exact card
+in `diagnostic_cards`. It reports `verified_delivery: false` for a named
+reason — **`host_hook_output_origin_not_proven`**.
+
+Reading `_expected_v6_reason`: that reason is returned when `expected is
+None` and the artifact carries no structural hook-output marker.
+`expected` is the **one-use verified-delivery capability**, which
+`_consume_verified_host_child_delivery` pops on read and whose sole
+production consumer is `canary_proof.py`, collecting inside a disposable
+host profile under ADR-0158. A read-only CLI projection cannot supply it
+and must not consume it.
+
+**So Rule 4 Live can only ever be proven inside a canary run.** Not
+because receipts are missing, and not because delivery is broken — the
+delivery is real and verifies to the byte — but because the only code path
+permitted to *verify* a delivery is the canary's in-lifetime private-lease
+collector. That is why `native_child_delivery_verifications` has zero rows
+after fourteen child launches, one of them a perfect delivery.
+
+And the canary path requires the child judge's draw to survive the
+provider, which it has not done once in this machine's recorded history.
+
+**This unifies two open items.** AR-252's pairing collector is blocked on
+the same one-use seal (constraint 2 in its issue: nothing can hold two
+such capabilities at once). The seal is therefore not just AR-252's
+question — it is simultaneously the reason Rule 4 cannot be proven outside
+a disposable profile. Whatever is decided about widening, redesigning, or
+keeping it should be decided once, for both.
+
+**Falsification:** if a future `agency evidence children` run reports
+`verified_delivery: true` for any artifact without a canary having
+consumed a capability for it, this reading is wrong. If the owner rules
+that an origin-proof may come from a source other than the one-use
+capability, R4 Live becomes provable from artifacts already on disk today.

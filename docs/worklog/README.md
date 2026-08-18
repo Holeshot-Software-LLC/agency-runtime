@@ -1021,6 +1021,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3c389e14` | 2026-08-18 | docs(ar119): retract R1, R4, R5 and R6 claude installed+live after adversarial review | null | null |
 | `b2b19727` | 2026-08-18 | docs(ar119): final status for the vision-completion loop run | null | null |
 | `32586610` | 2026-08-18 | docs(ar119): capsule reflects the retractions and the real Rule 4 blocker | null | null |
+| `643e74ab` | 2026-08-18 | Merge pull request #294 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
