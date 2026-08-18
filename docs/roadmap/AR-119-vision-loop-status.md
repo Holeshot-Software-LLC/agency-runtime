@@ -151,3 +151,27 @@ serialized; report to the session scratchpad, essentials to be quoted here;
 failures kept; per-run reason codes). Acceptance unchanged: one clean child
 draw that staffs the pure unit and the first
 `native_child_delivery_verifications` row ever.
+
+### Series ledger (small-unit-policy acceptance, runtime `cc478bc88258…`)
+
+- **Run 1** (02:02:48–02:04:24Z, run `98b0ec8c`, receipt `d5062324`):
+  FAILED at parent preflight — planner applied (haiku), recruiter rejected
+  twice `provider_response_contract_invalid` (sonnet), receipt reason
+  `workforce_inference_failed`. Routing 0, specialists 0, delegations 0;
+  the parent turn still finalized (fail-open honored, finalization
+  `7707109b`). The instrument was never reached. Note: the report's
+  `native.canary` block is empty — the canary does not preserve the parent
+  transcript, so a preflight-failed run cannot double as an R8 publication
+  artifact under the current report shape (parked as a post-series
+  candidate improvement).
+- **Run 2** (02:11Z, run `c9535668`, receipt `aa12fb29`): FAILED at parent
+  preflight — planner `provider_no_valid_response` (haiku), receipt reason
+  `workforce_provider_unavailable`. Nothing downstream ran.
+
+**Delegated ruling (brief §4.6): two consecutive provider-stage failures →
+30-minute backoff on the series from 02:11:24Z, resume no earlier than
+02:41:24Z.** Backoff pauses the attempt clock. Interim work: AR-252
+collector (§7.3, provider-independent, non-docs). *Falsification:* an
+accepted hook-path draw in the store after 02:41Z reopens the series; a
+third consecutive provider-killed series over ≥6 h records
+`blocked-on-provider` per stopping condition 6.1.
