@@ -312,6 +312,18 @@ the joint-verdict ruling in AR-252 stands.
   subsequent turns. *Falsification:* a reuse turn that re-hires instead of
   pool-loading refutes the "filed for next time" half on this runtime.
 
+### Series 3 ledger (small-unit-policy acceptance, runtime `cc478bc88258…`)
+
+- **Run 1** (started ≥08:02Z for the 6.1 spacing; run pair recorded, decision
+  `0d611578` 08:05:11Z): FAILED in a **new class** — the parent's routing
+  accepted but selected `agency-governance-request-clarifier` (not
+  `code-reviewer`, a series first), the parent then fanned out to multiple
+  children despite the v3 whole-turn ban (`multiple_child_artifacts`), no
+  child staffing decisions were recorded at all, and the final header was
+  absent. This is model-behavior nondeterminism, not a provider-stage
+  kill: the consecutive-provider-kill chain is broken, no backoff owed,
+  and any 6.1 recording must describe a MIXED blocker. Failure kept.
+
 ### Series 2 ledger (small-unit-policy acceptance, runtime `cc478bc88258…`)
 
 - **Run 1** (launched ~03:40Z, run `a41782e8`, receipt `f6e49b1c`):
