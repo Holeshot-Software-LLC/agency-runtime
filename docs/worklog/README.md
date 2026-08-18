@@ -1008,6 +1008,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `69f1ba40` | 2026-08-17 | docs(ar119): series 2 run 2 -- parent chain green, child draw provider-killed again | null | null |
 | `369665bf` | 2026-08-18 | docs(ar119): refresh the capsule at the 3269ff67 candidate | null | null |
 | `242418fe` | 2026-08-18 | docs(ar119): refresh the capsule at the 3269ff67 candidate | null | null |
+| `e642f73e` | 2026-08-18 | docs(ar253): file the overnight stage-roving provider receipts | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
