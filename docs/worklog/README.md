@@ -1032,6 +1032,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cac2ead1` | 2026-08-18 | refactor(evidence): extract the launch-to-decision matcher | null | null |
 | `e7b2b5cd` | 2026-08-18 | docs(ar119): record the completion-scope ruling and arm the openclaw/hermes packet | null | null |
 | `52903976` | 2026-08-18 | docs(ar119): openclaw and hermes have no Rule 4 route today -- say so before he installs | null | null |
+| `6f820d0a` | 2026-08-18 | docs(ar119): box the push blocker -- shared bare=true exposed by removing the hijack | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
