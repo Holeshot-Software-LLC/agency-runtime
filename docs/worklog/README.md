@@ -997,6 +997,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2c4af855` | 2026-08-17 | docs(ar119): series runs 1-2 provider-killed; 30-minute backoff ruling | null | null |
 | `3d70a2e9` | 2026-08-17 | docs(ar119): verify the live v6 chain end to end across three surfaces | null | null |
 | `d2c0e961` | 2026-08-17 | docs(ar252): settle the joint-verdict shape as a delegated ruling | null | null |
+| `ed7ca319` | 2026-08-17 | docs(ar119): series 0/3 provider-killed; draft the f980f27e candidate evidence | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
