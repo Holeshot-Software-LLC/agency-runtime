@@ -818,3 +818,35 @@ hosts nobody can reach from here.
 *Falsification:* if a future session reports the nine-rule vision as complete
 while openclaw and hermes remain unproven, this ruling has been misread — it
 scopes the session, never the vision.
+
+### Push blocked by a pre-push/worktree git-config fault (2026-08-18, boxed)
+
+Work through commit `49736e26` is committed on the branch and **not pushed**.
+The full 14-gate suite passed (14.0 min) before these commits; docs added after
+it are docs-only with `verify_docs` green.
+
+**What blocks it.** The pre-push hook runs `run_local_gates.py --fast` with
+`GIT_DIR` set and no work tree, and gates whose tests shell out to `git`
+(`test_ci_change_scope.py`, `test_release_packaging.py`) fail there with
+`fatal: this operation must be run in a work tree` — while passing standalone
+(19 passed, and 14/14 gates green). Pushing from the primary hits the same
+class of fault.
+
+**Why it appeared now.** The repository's shared config carries `bare = true`
+with `extensions.worktreeConfig = true`. Earlier pushes worked because
+`core.worktree` pointed the primary at the `remote-control-7efcd5` worktree —
+the same setting diagnosed as the "git status lies" hijack. Removing that
+worktree and unsetting `core.worktree` removed the compensation and exposed
+`bare = true` underneath. So the hijack was load-bearing for pushes, which
+nothing recorded.
+
+**Current state, verified:** primary on main `4939466d` with the owner's WIP
+intact and `git status` working; ar119 clean at `49736e26`; `core.bare` false
+per-worktree; `core.worktree` unset everywhere.
+
+**Do not** push with `SKIP_LOCAL_GATES=1` — forbidden, and it would skip the
+gates that catch exactly this class of fault. The bounded next step is to
+decide whether `bare = true` in the shared config is intentional; if it is not,
+correcting it there (rather than per worktree) should restore ordinary pushes
+from any checkout. *Falsification:* if a push succeeds from a fresh clone of
+the same branch, the fault is local config, not the hook.
