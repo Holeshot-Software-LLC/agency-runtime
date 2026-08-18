@@ -250,3 +250,42 @@ a verified-CLEAN rollup), and the AR-252 fourth-constraint decision is
 settled as a delegated ruling in `issue-AR-252` — the verdict is a joint
 object with its division named in the envelope; the one-use capability
 seal stays untouched and unwidened.
+
+### Cycle 3 — candidate advance to `f980f27e` with re-proof sweep (02:50–03:30 UTC)
+
+PR #290 merged 02:47:36Z on a verified-CLEAN rollup (docs-only; no
+reinstall owed; runtime-state note updated). The candidate advance then
+proceeded with data:
+
+- **Tree equality verified**: `git diff 99a7b3ac origin/main --
+  agency_runtime/` is empty, so main tip `f980f27e143f…` binds the
+  installed digest `cc478bc88258…` exactly, per the `f2f3ca88` precedent.
+- **R5 Installed re-proven** against the launcher tree — after an
+  adversarial catch: the first eval run silently imported the PRIMARY
+  checkout's stale tree because `python -m` puts the current directory
+  ahead of `PYTHONPATH`; it was discarded and re-run with cwd inside the
+  launcher's site-packages and the imported path asserted in-process.
+  Rule for future sessions: **never trust a "-m agency_runtime" run
+  without printing `agency_runtime.__file__` from the same cwd.**
+- **Citation re-anchor sweep** (read-only agent, verified): between the
+  old candidate's tree and `f980f27e`, all changes are pure insertions;
+  exactly one matrix anchor moves — R1 claude Implementation
+  `native_child_staffing.py:876-1031 → 923-1084`. Flagged in passing: the
+  R7 Implementation anchor `store/evidence.py:1298-1340` straddles
+  construct boundaries (it cleanly contains only `complete_run`) — a
+  pre-existing imprecision, left for the owner rather than silently
+  re-scoped tonight.
+- **R2/R3 re-proven live** on the installed runtime: fresh real-profile
+  `claude -p` session `1eaa3a55` — accepted decision, four cards selected
+  AND loaded (no narrowing), whole instruction bodies in the persisted
+  18,748-byte capsule side file, attached pre-speech (record 8 vs 9),
+  zero delegations. R7 Installed already holds in the store
+  (`expired_at == ended_at` exactly, all four rows); the resumed turn 2
+  for R7 Live is in flight.
+- **R6 claude demotes** to prior-candidate context (organic hire cannot
+  be restaged on demand) — the update contract working as designed.
+
+**Morning decisions queued:** (1) canary parent-transcript preservation
+(a new capture surface — owner-gated by brief §3) to make preflight-failed
+runs double as R8 artifacts; (2) the R7 anchor re-scope above; (3) whether
+the joint-verdict ruling in AR-252 stands.

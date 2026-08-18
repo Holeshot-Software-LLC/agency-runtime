@@ -1,5 +1,5 @@
 ---
-title: "AR-119 installed and live evidence at candidate f980f27e"
+title: "AR-119 installed and live evidence at runtime 99a7b3ac"
 status: draft
 category: roadmap
 created: 2026-08-18
@@ -16,12 +16,12 @@ type: reference
 issue_id: AR-119
 ---
 
-# AR-119 installed and live evidence at candidate f980f27e
+# AR-119 installed and live evidence at runtime 99a7b3ac
 
-Every claim below is bound to one runtime: main tip
-`f980f27e` (merge of PR #290), whose `agency_runtime/` tree is identical to
-merge `99a7b3ac` (PR #287) — verified by an empty
-`git diff 99a7b3ac origin/main -- agency_runtime/` — installed on
+Every claim below is bound to one runtime: merge `99a7b3ac` (PR #287, the
+owner's small-unit policy), whose `agency_runtime/` tree equals every
+later main tip through `f980f27e` (docs-only merges since; verified by an
+empty `git diff 99a7b3ac origin/main -- agency_runtime/`) — installed on
 2026-08-17 (before 21:00 UTC, per the runtime-state file) as runtime digest
 `cc478bc88258210b24dfd8f990caa76b41b4585de72a68c45d4c040b74c7f5e5` for
 claude, codex, and zcode (one digest, AR-258), store schema 47 == checkout
@@ -115,16 +115,74 @@ worker; Agency recorded it. Limitation: one spawn; the negative half
 (no Agency-started process at any seam) rests on the installed
 spawn-authority separation rather than a whole-turn seam sweep.
 
+## R2 claude installed
+
+A fresh real-profile `claude -p` session on the installed projection
+(session `1eaa3a55-e7ad-4309-a61d-1a054aae3e55`, started 02:56:56Z from
+the ar119 worktree) activated the delivery path end to end: the
+UserPromptSubmit hook attached the `[AGENCY LOADED]` capsule as transcript
+record 8 (02:58:49.750, persisted side file
+`hook-3576769e-…-additionalContext.txt`, 18,748 bytes), and the store
+gained the accepted routing decision (`949ced13`, 109.5 s, trace
+`442b50db`) and four `specialists_loaded` rows written by the installed
+runtime for that trace. Limitation: one turn, not a rate.
+
+## R2 claude live
+
+The same turn is a real live turn on the owner's profile: the capsule
+carries the selected cards' entries with whole instruction bodies
+(`Instructions:` appears four times in the side file) for
+`codebase-onboarding-engineer`, `application-security-engineer`,
+`secrets-credential-hygiene-engineer`, `code-reviewer`, attached before
+the first assistant record (record 8 at 02:58:49.750 vs record 9 at
+02:58:51.404). Store join: decision `accepted` with exactly those four
+selected, four `specialists_loaded` rows on the same trace, zero
+`delegation_events` for the session — no child existed that could have
+received the cards instead. Selected and loaded sets are equal (4/4),
+with no narrowing. Limitation: one turn.
+
+## R3 claude installed
+
+Same activation artifact as R2 installed: the installed projection
+delivered a multi-card capsule — four compatible cards in one turn —
+into the caller's turn, pre-speech. Limitation: one turn.
+
+## R3 claude live
+
+The R2 live artifact carries four compatible cards' whole instruction
+bodies in one turn, each also present as a `specialists_loaded` row on the
+same trace. Rule 3 asks for two or more; the turn delivered four, and the
+selected set equals the loaded set. Limitation: one turn.
+
+## R7 claude installed
+
+The installed projection expired turn 1's cards at run close: all four
+`specialists_loaded.expired_at` values equal the run's `ended_at`
+(03:02:32.057455) exactly, and turn 2's capsule attachment opens the next
+turn with the expiry notice. Limitation: one two-turn observation.
+
+## R7 claude live
+
+The resumed turn 2 of session `1eaa3a55` (run `bfb6c3a5`, 03:05:52Z)
+received its capsule as record 56 (03:06:38.679, persisted side file
+`hook-1b86c5a5-…-additionalContext.txt`), before turn 2's first assistant
+record 57 (03:06:54.170). It states `[AGENCY SPECIALIST EXPIRY] … no
+longer loaded: application-security-engineer, code-reviewer,
+codebase-onboarding-engineer, secrets-credential-hygiene-engineer` —
+every turn-1 card named, none re-delivered: turn 2's accepted decision
+(`d05cd5d9`, 03:06:38) selected and loaded `ci-operations-advisor` and
+`sre-site-reliability-engineer` instead. Same identity held in its own
+turn, absent from the next, expiry stated. Limitation: the expiry notice
+rides the next turn's capsule, so an empty-context turn would not carry
+it.
+
 ## Demoted at this candidate, pending re-proof
 
-R2, R3, R6, and R7 claude Installed/Live were proven at candidate
-`f2f3ca88` from the `2cd29815` runtime's session `aa740d50` (2026-08-17).
-Those artifacts bind a prior candidate and cannot make this candidate's
-layers green. A fresh real-profile re-proof session on `cc478bc88258` was
-attempted the same night (see the loop status doc); its outcome is
-recorded there. R6's organic hiring occurrence cannot be re-staged on
-demand and stays prior-candidate until a live gap recurs. This demotion is
-the update contract working as designed, not a regression claim about the
+R6 claude Installed/Live was proven at candidate `f2f3ca88` from the
+`2cd29815` runtime's session `aa740d50` (2026-08-17). Its organic hiring
+occurrence cannot be re-staged on demand, so it stays prior-candidate
+context until a live gap recurs on this runtime. This demotion is the
+update contract working as designed, not a regression claim about the
 runtime.
 
 ## Not moved at this candidate
