@@ -34,6 +34,7 @@ def _write_child(
     assignment: str,
     launch_id: str = "",
     envelope: str = "",
+    launched_at: str = "2026-08-18T01:00:00.000Z",
 ) -> Path:
     subagents = root / session / "subagents"
     subagents.mkdir(parents=True, exist_ok=True)
@@ -44,6 +45,7 @@ def _write_child(
                 "type": "user",
                 "isSidechain": True,
                 "sessionId": session,
+                "timestamp": launched_at,
                 "message": {"role": "user", "content": assignment + envelope},
             }
         )
@@ -63,13 +65,15 @@ def _resolver(
     by_id: dict[str, Any] | None = None,
     by_hash: dict[tuple[str, str], Any] | None = None,
     by_fingerprint: dict[str, Any] | None = None,
+    since: str = "",
 ) -> dict[str, Any]:
     return resolve_child_launch_outcomes(
         root,
         host="claude",
         decision_by_id=lambda value: (by_id or {}).get(value),
         decision_by_query_hash=lambda session, digest: (by_hash or {}).get((session, digest)),
-        decision_by_fingerprint=lambda value: (by_fingerprint or {}).get(value),
+        decision_by_fingerprint=lambda session, launch, digest: (by_fingerprint or {}).get(launch),
+        since=since,
     )
 
 
@@ -196,3 +200,44 @@ def test_an_absent_root_reports_itself_rather_than_an_empty_success(tmp_path: Pa
     report = _resolver(tmp_path / "missing")
     assert report["root_present"] is False
     assert report["counts"] == {STAFFED: 0, DECLINED: 0, UNRECORDED: 0}
+
+
+def test_launches_before_the_window_are_reported_not_silently_dropped(tmp_path: Path) -> None:
+    """An artifact root holds children from every runtime that ever ran here.
+
+    Counting all of them against today's install reports a rate for a runtime
+    that never saw them, so the window is explicit and what it excluded is
+    stated rather than quietly missing from the denominator.
+    """
+
+    _write_child(
+        tmp_path,
+        session="session-d",
+        child_id="ancient",
+        assignment="Work from a previous runtime.",
+        launched_at="2026-07-01T00:00:00.000Z",
+    )
+    _write_child(
+        tmp_path,
+        session="session-d",
+        child_id="current",
+        assignment=_ASSIGNMENT,
+        launched_at="2026-08-18T02:00:00.000Z",
+    )
+
+    report = _resolver(
+        tmp_path,
+        by_hash={
+            (
+                "session-d",
+                sha256(_ASSIGNMENT.encode("utf-8")).hexdigest(),
+            ): {"id": "d1", "status": "applied", "source": "nci"}
+        },
+        since="2026-08-18T00:00:00.000Z",
+    )
+
+    assert report["launches_out_of_window"] == 1
+    assert report["launches_seen"] == 1
+    assert report["counts"][STAFFED] == 1
+    assert report["recorded_rate"] == 1.0
+    assert report["since"] == "2026-08-18T00:00:00.000Z"

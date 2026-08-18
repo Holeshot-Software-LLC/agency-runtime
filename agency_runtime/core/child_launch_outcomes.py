@@ -112,15 +112,30 @@ def read_child_launch(artifact: Path) -> dict[str, Any] | None:
         "parent_session_id": str(record.get("sessionId") or "").strip(),
         "assignment_sha256": sha256(original_assignment(content).encode("utf-8")).hexdigest(),
         "envelope_decision_id": str(envelope.get("decision_id") or "").strip() if envelope else "",
+        # The host's own timestamp for its first child record. Scoping on it is
+        # what keeps a delivery rate honest: an artifact root holds children
+        # from every runtime that ever ran here, and counting them all against
+        # today's install reports a rate for a runtime that never saw them.
+        "launched_at": str(record.get("timestamp") or "").strip(),
     }
 
 
 def iter_child_artifacts(root: Path, *, limit: int = MAX_CHILD_LAUNCHES) -> Iterator[Path]:
-    """Yield child transcripts under a host artifact root, bounded."""
+    """Yield child transcripts under a host artifact root, bounded.
+
+    Both shapes the callers use are accepted: the host's whole projects root,
+    where a child sits at ``<project>/<session>/subagents/``, and a single
+    project directory, where it sits one level higher. Globbing only one depth
+    silently reports zero launches against the other, which reads exactly like
+    a host that never spawned anything.
+    """
 
     if not root.is_dir():
         return
-    for seen, artifact in enumerate(sorted(root.glob("*/subagents/agent-*.jsonl"))):
+    found = sorted(
+        set(root.glob("*/subagents/agent-*.jsonl")) | set(root.glob("*/*/subagents/agent-*.jsonl"))
+    )
+    for seen, artifact in enumerate(found):
         if seen >= limit:
             return
         yield artifact
@@ -132,7 +147,8 @@ def resolve_child_launch_outcomes(
     host: str,
     decision_by_id: Callable[[str], Mapping[str, Any] | None],
     decision_by_query_hash: Callable[[str, str], Mapping[str, Any] | None],
-    decision_by_fingerprint: Callable[[str], Mapping[str, Any] | None] | None = None,
+    decision_by_fingerprint: Callable[[str, str, str], Mapping[str, Any] | None] | None = None,
+    since: str = "",
     limit: int = MAX_CHILD_LAUNCHES,
 ) -> dict[str, Any]:
     """Report one outcome per harness-spawned child launch.
@@ -145,10 +161,16 @@ def resolve_child_launch_outcomes(
 
     launches: list[dict[str, Any]] = []
     unreadable = 0
+    out_of_window = 0
     for artifact in iter_child_artifacts(root, limit=limit):
         launch = read_child_launch(artifact)
         if launch is None:
             unreadable += 1
+            continue
+        if since and launch["launched_at"] < since:
+            # Reported, never silently dropped: a scoped-out launch is a fact
+            # about the window, not an artifact that failed to read.
+            out_of_window += 1
             continue
         decision = None
         matched_by = ""
@@ -163,7 +185,11 @@ def resolve_child_launch_outcomes(
             if decision is not None:
                 matched_by = "assignment_query_hash"
         if decision is None and decision_by_fingerprint is not None and launch["launch_id"]:
-            decision = decision_by_fingerprint(launch["launch_id"])
+            decision = decision_by_fingerprint(
+                launch["parent_session_id"],
+                launch["launch_id"],
+                launch["assignment_sha256"],
+            )
             if decision is not None:
                 matched_by = "context_fingerprint"
         if decision is None:
@@ -177,6 +203,7 @@ def resolve_child_launch_outcomes(
                 "child_id": launch["child_id"],
                 "launch_id": launch["launch_id"],
                 "parent_session_id": launch["parent_session_id"],
+                "launched_at": launch["launched_at"],
                 "outcome": outcome,
                 "matched_by": matched_by,
                 "decision_id": str((decision or {}).get("id") or ""),
@@ -195,6 +222,8 @@ def resolve_child_launch_outcomes(
         "root_present": root.is_dir(),
         "launches_seen": len(launches),
         "artifacts_unreadable": unreadable,
+        "launches_out_of_window": out_of_window,
+        "since": since,
         "scan_limit": limit,
         "scan_truncated": len(launches) + unreadable >= limit,
         "counts": counts,

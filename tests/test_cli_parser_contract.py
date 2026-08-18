@@ -45,6 +45,7 @@ HANDLER_NAMES = (
     "cmd_eval_upstream_architecture",
     "cmd_eval_upstream_selection",
     "cmd_eval_workforce",
+    "cmd_evidence_child_launches",
     "cmd_evidence_children",
     "cmd_evidence_intent",
     "cmd_evidence_latency",
@@ -142,6 +143,7 @@ EXPECTED_PATHS = (
     "agency eval upstream-selection",
     "agency eval workforce",
     "agency evidence",
+    "agency evidence child-launches",
     "agency evidence children",
     "agency evidence intent",
     "agency evidence latency",
@@ -244,6 +246,7 @@ EXPECTED_BINDINGS = {
     "agency eval upstream-architecture": "cmd_eval_upstream_architecture",
     "agency eval upstream-selection": "cmd_eval_upstream_selection",
     "agency eval workforce": "cmd_eval_workforce",
+    "agency evidence child-launches": "cmd_evidence_child_launches",
     "agency evidence children": "cmd_evidence_children",
     "agency evidence intent": "cmd_evidence_intent",
     "agency evidence latency": "cmd_evidence_latency",
@@ -300,7 +303,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "b86069d7595b6d55acc14a049ecbca71ab9e8d9229d6ec6e5ec0728c81ff71a5"
+EXPECTED_MANIFEST_SHA256 = "38811f9f6c8fd0c8ad8fc22e7cc53df177185192be3da98dd58c0ee5f45becd9"
 
 
 def _handler(name: str):
