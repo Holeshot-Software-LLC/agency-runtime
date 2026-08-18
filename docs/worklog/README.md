@@ -1002,6 +1002,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `72a3756f` | 2026-08-17 | Merge origin/main (PR #290) back into the working branch | null | null |
 | `3269ff67` | 2026-08-17 | docs(ar119): finalize the 99a7b3ac runtime evidence document | null | null |
 | `b192dead` | 2026-08-17 | docs(ar119): advance the matrix to candidate 3269ff67 -- first R1 and R4 installed+live anywhere | null | null |
+| `63dd2800` | 2026-08-17 | docs(ar119): cycle 4 -- advance merged on CLEAN rollup, organic hire recurs | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
