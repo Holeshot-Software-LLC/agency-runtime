@@ -54,16 +54,19 @@ vision-completion brief and the loop status doc immediately after.
 
 ## completed-evidence
 
-- **Matrix candidate is `1bd7e37c`** (docs commit; package tree == merge
-  `99a7b3ac`). **Seven of eight rules are proven at ALL FOUR layers on
-  claude** — R1 and R4 the first Installed/Live anywhere (verified live v6
-  child chain: parent tool_use hash, child record-zero envelope, exact
-  store joins), R6 re-proven organically (mint 05:05Z with critic and
-  audit approvals; pool reuse 06:29Z with zero further hiring cases;
-  second mint 03:45Z corroborates). Evidence:
-  `AR-119-99a7b3ac-live-evidence.md`. **R8 alone gates R9 on claude** and
-  needs a clean unstaffed-turn publication artifact (owner-gated capture
-  surface decision).
+- **Matrix candidate is `1bd7e37c`** (docs commit; package tree ==
+  merge `99a7b3ac`). **THREE rules — R2, R3, R7 — are proven at all four
+  layers on claude**, resting on two live events (a fresh two-turn
+  real-profile `claude -p` session). **R1, R4, R5 and R6 Installed/Live
+  were claimed on 2026-08-18 and RETRACTED the same day by adversarial
+  review**; the retraction reasons are in
+  `AR-119-99a7b3ac-live-evidence.md` and must not be quietly re-promoted.
+  The real gain is an **existence proof**: the first
+  `[AGENCY INFERENCE TEAM v6]` envelope ever seen on this machine,
+  pre-speech in a harness-spawned child, verified to the byte — but
+  delivery ran **1 in 14** children at this candidate and
+  `native_child_delivery_verifications` is still empty.
+  R8 needs an owner-gated capture decision.
 - AR-252's joint-verdict shape is settled as a delegated ruling in its
   issue doc; the one-use capability seal is deliberately unwidened.
 
@@ -79,34 +82,31 @@ vision-completion brief and the loop status doc immediately after.
   `site-packages`) and assert `agency_runtime.__file__` before trusting an
   eval. One spawn-authority run tonight silently measured the stale
   primary; it was caught and discarded.
-- Appending `; echo EXIT=$?` to a command makes the harness see exit 0;
-  judge gates and canaries by their own report/summary, never a piped code.
+- Appending `; echo EXIT=$?` makes the harness see exit 0; judge gates and
+  canaries by their own report, never a piped code.
 - Prepend `C:\agency-cli` to PATH or hosts read "native unverified". The
-  packaged `agency.exe` is schema-pinned and refuses to install; use
+  packaged `agency.exe` is schema-pinned; install with
   `python -m agency_runtime.cli install --agent <host>` from a clean
-  checkout whose tree equals origin/main. Sessions predating an install
-  keep the old launcher: restart, never reinstall.
-- Claude isolated-profile canaries need `--timeout 420`; the ar119 venv
-  needed `ensurepip` before `run_local_gates.py` gate 3 could run; the full
-  gate suite takes ~14.5 min and exceeds the 10-min tool cap — run it
-  detached and read its own summary line.
-- Eight preflight/litellm tests are red on clean main outside every gate;
-  `tests/test_platform_wheel.py` fails collection. Pre-existing noise.
+  main-equal checkout. Sessions predating an install keep the old
+  launcher: restart, never reinstall.
+- Canaries need `--timeout 420`; the ar119 venv needed `ensurepip` for
+  gate 3; the full gate suite takes ~14.5 min, over the tool cap — run it
+  detached and read its own summary. Eight preflight/litellm tests are red
+  on clean main outside every gate and `test_platform_wheel.py` fails
+  collection: pre-existing noise.
 
 ## exact-blocker
 
-1. **The child-stage provider draw is the sole remaining variable for the
-   §7.1 acceptance draw.** Series 1 (02:02–02:47Z) was 0/3 at parent
-   preflight; series 2 run 2 (03:48Z) proved the parent chain green on this
-   runtime — code-reviewer selected AND loaded, receipt proven, exactly one
-   child — then the child staffing draw died provider-side
-   (`native_child_inference_failure`, empty selection, no capture). The
-   small-unit policy remains UNJUDGED: the pure 138-char unit has never
-   reached a child-judge draw that survived. Keep the series discipline:
-   probe (accepted hook-path draw), ≥3 serialized runs, failures kept,
-   30-min backoff after two consecutive provider-stage kills; a third
-   consecutive provider-killed series spaced ≥6 h from series 1 records
-   `blocked-on-provider` per stopping condition 6.1.
+1. **Card delivery to harness-spawned children is 1-in-14 at this
+   candidate, and the misses are unexplained.** One child got a fully
+   bound v6 envelope; thirteen did not, including three in the measuring
+   session itself whose record zeros carry no `[AGENCY` marker and for
+   which **no receipt exists** — two show `SubagentStart` firing and
+   writing "supplies no card". Parent-stage provider failures explain
+   much of it (13 routing failures in that session) and Rule 8 permits
+   abstention, but nothing binds a receipt to a child launch, so the rate
+   cannot be read. Bind one and this becomes a measurement. This, not the
+   acceptance draw, is the live Rule 4 blocker.
 2. **AR-252** — the joint-verdict shape is settled as a delegated ruling in
    the issue doc (verifier-authored semantic half, collector-assembled
    binding half, division named in the envelope; the one-use canary-only
@@ -123,15 +123,19 @@ vision-completion brief and the loop status doc immediately after.
 
 ## next-bounded-work-package
 
-Run the acceptance series to a verdict: probe, then ≥3 serialized
-isolated-profile canaries per series, failures kept, 30-minute backoff
-after two consecutive provider-stage kills; a third consecutive
-provider-killed series spaced ≥6 h from series 1 (02:02Z 2026-08-18)
-records `blocked-on-provider` and stops grinding it. On the first clean
-child draw that staffs the pure unit: capture the first
-`native_child_delivery_verifications` row, then pursue R8 (owner-gated)
-and the AR-252 pairing collector (owner-gated on the capability-seal
-decision). The R6 pool-reuse re-proof completed 06:29Z 2026-08-18.
+**The section 7.1 question is ANSWERED.** On 2026-08-18 at 11:15Z a clean
+draw delivered the pure 138-char unit to the child judge over the
+complete 71-candidate universe with the owner policy live, and the judge
+**abstained** — first-pass only; the repair returned no valid answer, so
+it is unconfirmed. A repair-confirmed post-policy decline would settle
+it; any staffing refutes it.
+
+The sharpest open engineering lead is now different: **three
+harness-spawned children in one session got no card and no receipt
+explains why.** Bind a receipt to every child launch and the 1-in-14
+delivery rate becomes a measurement instead of a mystery. Series
+discipline if measuring again: probe, ≥3 serialized runs, failures kept,
+30-min backoff after two consecutive provider-stage kills.
 
 ## same-task-continuity
 
