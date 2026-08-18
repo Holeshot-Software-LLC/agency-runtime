@@ -1012,6 +1012,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9efe9e21` | 2026-08-18 | Merge pull request #292 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
 | `1bd7e37c` | 2026-08-18 | docs(ar119): R6 re-proof -- organic mint and pool reuse on the installed runtime | null | null |
 | `5964618b` | 2026-08-18 | docs(ar119): flip R6 claude at candidate 1bd7e37c -- seven of eight rules full | null | null |
+| `2195e738` | 2026-08-18 | Merge pull request #293 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
+| `35f679e9` | 2026-08-18 | docs(ar119): capsule reflects the R6 re-proof and candidate 1bd7e37c | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
