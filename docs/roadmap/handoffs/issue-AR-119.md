@@ -51,14 +51,20 @@ vision-completion brief and the loop status doc immediately after.
   `99a7b3ac`, PR #287, owner small-unit policy), store schema 47 == checkout
   == launcher. PRs #288–#291 are docs-only: no reinstall owed. The state
   authority is `~/.agency-runtime/overnight-runtime-state.json`.
+## completed-evidence
+
 - **Matrix candidate is `3269ff67`** (docs commit; package tree == merge
   `99a7b3ac`). R1 and R4 claude are proven at ALL FOUR layers — the first
   Installed/Live either rule has had anywhere — with R2/R3/R5/R7 also full;
-  evidence in `AR-119-99a7b3ac-live-evidence.md`. R6 claude demoted
-  (prior-candidate `2cd29815` artifacts); an organic re-mint happened
-  2026-08-18T03:45Z (`operations-recovery-plan-reviewer`, case `9afaec53`)
-  — only the pool-reuse turn is missing to re-prove it. R8 still needs a
-  clean unstaffed-turn publication artifact (owner-gated capture surface).
+  evidence in `AR-119-99a7b3ac-live-evidence.md`, including the verified
+  live v6 child chain (parent tool_use hash, child record-zero envelope,
+  exact store joins). R6 claude demoted (prior-candidate `2cd29815`
+  artifacts); an organic re-mint happened 2026-08-18T03:45Z
+  (`operations-recovery-plan-reviewer`, case `9afaec53`) — only the
+  pool-reuse turn is missing to re-prove it. R8 still needs a clean
+  unstaffed-turn publication artifact (owner-gated capture surface).
+- AR-252's joint-verdict shape is settled as a delegated ruling in its
+  issue doc; the one-use capability seal is deliberately unwidened.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -113,6 +119,19 @@ vision-completion brief and the loop status doc immediately after.
 4. **codex/zcode/openclaw/hermes** — unchanged: codex needs attended TUI
    trust (bypass evidence never counts as attended); zcode has no CLI on
    this box; openclaw/hermes run the owner packet on the owner's boxes.
+
+## next-bounded-work-package
+
+Run the acceptance series to a verdict: probe, then ≥3 serialized
+isolated-profile canaries per series, failures kept, 30-minute backoff
+after two consecutive provider-stage kills; a third consecutive
+provider-killed series spaced ≥6 h from series 1 (02:02Z 2026-08-18)
+records `blocked-on-provider` and stops grinding it. On the first clean
+child draw that staffs the pure unit: capture the first
+`native_child_delivery_verifications` row, then pursue the remaining
+claude cells and the AR-252 pairing collector. Watch every ops-shaped
+turn for the `operations-recovery-plan-reviewer` pool-reuse that
+completes the R6 re-proof.
 
 ## same-task-continuity
 
