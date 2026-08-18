@@ -289,3 +289,32 @@ proceeded with data:
 (a new capture surface — owner-gated by brief §3) to make preflight-failed
 runs double as R8 artifacts; (2) the R7 anchor re-scope above; (3) whether
 the joint-verdict ruling in AR-252 stands.
+
+### Cycle 4 — candidate advance merged; organic hire recurs (03:35–03:50 UTC)
+
+- **Full local gates: 14/14 passed in 14.5 min** at the candidate (after
+  two honest catches: the first run died at gate 3 because the ar119 venv
+  lacked pip — repaired with `ensurepip` — and an appended `echo` had
+  masked a gate failure exit once already; the detached re-run was judged
+  by its own summary line).
+- **PR #291 merged 03:46:58Z on a verified-CLEAN rollup** (0 pending, 0
+  non-SUCCESS/SKIPPED, 8 SUCCESS). The matrix's candidate is now
+  `3269ff67`: R1 and R4 claude proven at all four layers — the first
+  Installed and Live layers either rule has had on any host — plus R5
+  complete, R2/R3/R7 re-proven, R6 demoted. Docs-only merge; no reinstall
+  owed.
+- **The R6 gap is already closing again**: at 03:45:45Z the loop
+  session's own turn organically ran the full hiring ladder on this
+  runtime — hiring case `9afaec53` applied, `operations-recovery-plan-reviewer`
+  filed (`contractor`, `origin=agency`) and dealt into the very turn whose
+  gap created it. The re-proof now lacks only a same-domain reuse turn
+  loading it from the pool with no new hiring case; watching for it in
+  subsequent turns. *Falsification:* a reuse turn that re-hires instead of
+  pool-loading refutes the "filed for next time" half on this runtime.
+
+### Series 2 ledger (small-unit-policy acceptance, runtime `cc478bc88258…`)
+
+- **Run 1** (launched ~03:40Z, run `a41782e8`, receipt `f6e49b1c`):
+  FAILED at parent preflight — planner `provider_no_valid_response`,
+  receipt `workforce_provider_unavailable`. Identical stage to series 1
+  runs 2-3. Failure kept; run 2 next, serialized.
