@@ -176,14 +176,38 @@ turn, absent from the next, expiry stated. Limitation: the expiry notice
 rides the next turn's capsule, so an empty-context turn would not carry
 it.
 
-## Demoted at this candidate, pending re-proof
+## R6 claude installed
 
-R6 claude Installed/Live was proven at candidate `f2f3ca88` from the
-`2cd29815` runtime's session `aa740d50` (2026-08-17). Its organic hiring
-occurrence cannot be re-staged on demand, so it stays prior-candidate
-context until a live gap recurs on this runtime. This demotion is the
-update contract working as designed, not a regression claim about the
-runtime.
+The installed projection ran the whole hiring ladder organically inside a
+real turn of a different project's session (conveyor worktree session
+`b97eb5cb-8d87-4fed-9c1f-b1f3399533b1`, 05:05:48Z): hiring case
+`bfe8a9cb` (`hire`, `applied`, work unit
+`unit-deployment-readiness-review`, trace `01605b15`) carries gap,
+duplicate, and contract evidence, staged model receipts
+(`inference_required: true`), an independent critic receipt
+(`approved: true`, compiled prompt hash `373fb41e…`), an inline dynamic
+audit (`status: approved`, `contract_valid: true`, revision
+`dynamic-v1-373fb41e…`), and a contract hash; the worker
+`deployment-readiness-reviewer` was filed `origin='agency'`,
+`employment_class='contractor'` at 05:05:48.462. A second organic mint
+the same night (`operations-recovery-plan-reviewer`, case `9afaec53`,
+03:45:45Z, this loop session) corroborates the ladder. Limitation: the
+dynamic-hire path records its audit inline rather than as the separate
+security-review row the `2cd29815`-era proof cited; stated as measured.
+
+## R6 claude live
+
+The new card was dealt into the very turn whose gap created it — the
+session transcript's capsule record 1948 (05:05:48) names
+`deployment-readiness-reviewer` with its instruction body — and **a later
+turn of the same session reused it from the pool with no further hiring
+case**: `specialists_loaded` row at 06:29:49.879, capsule record 2611
+(06:29:50), and zero `agent_hiring_cases` rows after the mint. Filed in
+the pool for next time, found there, hired nobody. Limitations: the reuse
+turn ran in the same session (cross-session reuse still unmeasured), and
+the traffic was another project's autonomous session — organic with
+respect to this loop, but the machine had exactly one interactive owner
+absent all night.
 
 ## Not moved at this candidate
 
