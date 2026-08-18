@@ -850,3 +850,45 @@ decide whether `bare = true` in the shared config is intentional; if it is not,
 correcting it there (rather than per worktree) should restore ordinary pushes
 from any checkout. *Falsification:* if a push succeeds from a fresh clone of
 the same branch, the fault is local config, not the hook.
+
+### The push path writes `core.bare = true` into the real repository config
+
+Isolated 2026-08-18 by direct measurement, after the earlier entry blamed a
+pre-existing `bare = true`. **That reading was incomplete: the corruption is
+created by the push itself.**
+
+Measured, in order, on the same tree:
+
+1. Set `core.bare false` in `.git/config`; confirm `git rev-parse
+   --is-bare-repository` is `false`, `git ls-files` exits 0, and
+   `test_tracked_release_inputs_pass_hygiene_check` **passes**.
+2. Run `git push origin <branch>`. The pre-push hook's gates fail on
+   `tests/test_ci_change_scope.py` and `tests/test_release_packaging.py`.
+3. Read `.git/config` again: **`bare = true`**.
+
+So each push attempt corrupts the repository config and then reports the
+failure that corruption causes. The failing tests shell out to `git ls-files`,
+which returns exit 128 (`fatal: this operation must be run in a work tree`) in
+a repo marked bare. They pass standalone and passed in the full 14-gate suite;
+they fail only after a push attempt has flipped the flag.
+
+**Consequences worth acting on.** A test or script in the pre-push path is
+writing to the real `.git/config` — mutating developer machine state as a side
+effect of running gates. That is a defect in its own right, independent of
+AR-119: it also explains why `git status` in the primary checkout stopped
+working mid-session, and it is the mechanism that made `core.worktree` look
+load-bearing (it was compensating for a flag something keeps setting).
+
+**Do not** work around this with `SKIP_LOCAL_GATES=1`; that hides the defect
+and skips gates. The bounded next step is to find the writer: run the pre-push
+gate list one file at a time with `.git/config` watched for modification, and
+start with the two suites that fail, since both exercise packaging and CI
+scope logic that reads repository layout.
+
+*Falsification:* if `bare` stays `false` across a push attempt on a fresh
+clone, the writer is local to this repository's configuration rather than the
+gate code.
+
+**State left for the owner:** `core.bare` restored to `false`; both checkouts
+verified healthy; owner WIP untouched; work committed through `cdfbcddb` and
+**not pushed**.
