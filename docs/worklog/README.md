@@ -1027,6 +1027,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b8284c9b` | 2026-08-18 | feat(evidence): resolve an outcome for every harness-spawned child launch | null | null |
 | `f2ba7dd7` | 2026-08-18 | feat(cli): add evidence child-launches, the per-launch outcome report | null | null |
 | `867fcba8` | 2026-08-18 | docs(ar119): record the first reproducible child-delivery rate | null | null |
+| `4939466d` | 2026-08-18 | Merge pull request #295 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
+| `c2100761` | 2026-08-18 | fix(evidence): resolve launches whose artifact copy is shortened or quotes a marker | null | null |
+| `cac2ead1` | 2026-08-18 | refactor(evidence): extract the launch-to-decision matcher | null | null |
+| `e7b2b5cd` | 2026-08-18 | docs(ar119): record the completion-scope ruling and arm the openclaw/hermes packet | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
