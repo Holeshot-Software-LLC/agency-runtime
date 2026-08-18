@@ -1014,6 +1014,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5964618b` | 2026-08-18 | docs(ar119): flip R6 claude at candidate 1bd7e37c -- seven of eight rules full | null | null |
 | `2195e738` | 2026-08-18 | Merge pull request #293 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
 | `35f679e9` | 2026-08-18 | docs(ar119): capsule reflects the R6 re-proof and candidate 1bd7e37c | null | null |
+| `405c65e7` | 2026-08-18 | docs(ar119): series 3 run 1 -- new failure class, instrument disobedience | null | null |
+| `172a1624` | 2026-08-18 | docs(ar119): series 3 run 2 -- best parent chain yet, third child-stage kill | null | null |
+| `548d61f3` | 2026-08-18 | docs(ar119): the acceptance draw landed -- post-policy judge abstains on the pure unit | null | null |
+| `9f1b8871` | 2026-08-18 | docs(ar255): record the post-policy abstention on the pure unit | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
