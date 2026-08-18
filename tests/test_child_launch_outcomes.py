@@ -241,3 +241,85 @@ def test_launches_before_the_window_are_reported_not_silently_dropped(tmp_path: 
     assert report["counts"][STAFFED] == 1
     assert report["recorded_rate"] == 1.0
     assert report["since"] == "2026-08-18T00:00:00.000Z"
+
+
+def test_an_assignment_that_merely_mentions_the_marker_is_not_truncated(tmp_path: Path) -> None:
+    """Quoting a delivery marker is not a delivery.
+
+    A review assignment that discusses envelopes contains these markers as
+    prose. Cutting on the mention truncates the assignment, and the short hash
+    then matches nothing -- reporting a child that has a receipt as unrecorded.
+    That is exactly how this shipped on 2026-08-18.
+    """
+
+    discusses = (
+        "READ-ONLY review. Check whether record zero carries an "
+        "[AGENCY INFERENCE TEAM v6] envelope and whether "
+        "<!-- agency-native-child-team:v6: is present. Report findings only."
+    )
+    assert original_assignment(discusses) == discusses
+
+    _write_child(tmp_path, session="session-e", child_id="mentions", assignment=discusses)
+    report = _resolver(
+        tmp_path,
+        by_hash={
+            (
+                "session-e",
+                sha256(discusses.encode("utf-8")).hexdigest(),
+            ): {"id": "d7", "status": "inference_invalid", "source": "ncif"}
+        },
+    )
+    assert report["counts"][DECLINED] == 1
+    assert report["launches"][0]["matched_by"] == "assignment_query_hash"
+
+
+def test_a_shortened_child_copy_still_resolves_through_the_parent_transcript(
+    tmp_path: Path,
+) -> None:
+    """The child artifact is not a faithful copy of the assignment.
+
+    Measured 2026-08-18: a 3,184-character launch input appears in the child's
+    record zero as 867 characters. Agency hashed what the parent recorded, so
+    an artifact-only resolver reports every shortened launch as unrecorded no
+    matter how carefully it strips.
+    """
+
+    full = "Review this. " + ("detail " * 500)
+    project = tmp_path
+    _write_child(
+        project,
+        session="session-f",
+        child_id="shortened",
+        assignment="Review this. detail detail",  # the host's shortened copy
+        launch_id="toolu_shortened",
+    )
+    (project / "session-f.jsonl").write_text(
+        json.dumps(
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "toolu_shortened",
+                            "input": {"prompt": full},
+                        }
+                    ]
+                },
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = _resolver(
+        project,
+        by_hash={
+            (
+                "session-f",
+                sha256(full.encode("utf-8")).hexdigest(),
+            ): {"id": "d8", "status": "inference_invalid", "source": "ncif"}
+        },
+    )
+    assert report["counts"][DECLINED] == 1
+    assert report["launches"][0]["matched_by"] == "assignment_query_hash"
