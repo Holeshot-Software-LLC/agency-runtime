@@ -3,7 +3,7 @@ title: "AR-255: Make native child staffing inference-owned and host-proven"
 status: open
 category: roadmap
 created: 2026-08-12
-updated: 2026-08-16
+updated: 2026-08-18
 tags: [routing, inference, native-child, codex, evidence, critical-path]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -584,3 +584,56 @@ the flag being on is not the same as the flag being pointed at this data.
 - [ ] Claude's three prior-candidate artifacts remain valid historical
       evidence, an exact-candidate host artifact turns its installed/live
       layers green, and the current projection rejects Store-only claims.
+
+## The post-policy acceptance draw: the judge answered, and declined (2026-08-18)
+
+The standing acceptance question — does the child judge staff a pure,
+small work unit once the owner's small-unit policy is live — got its
+first real answer at 11:15Z on runtime `cc478bc88258…` (installed merge
+`99a7b3ac`, PR #287), canary series 3 run 3.
+
+Everything upstream was clean, which is what makes the answer readable:
+
+- Parent decision `1ab1ad0f` accepted with **`code-reviewer` alone**,
+  51.2 s — the security-team padding the v3 acceptance criteria banned is
+  gone.
+- Exactly one child; the captured assignment is **138 characters equal to
+  the work unit**, verbatim, no role or framing.
+- The child judge evaluated over the **complete 71-candidate universe**
+  (`code-reviewer` present in `offered_agent_ids`, digest `5733d4e7…`),
+  provider `claude-subscription`, `inference_attempted: true`.
+- Decision `cba78001`: `inference_abstained` /
+  `native_child_inference_abstained`, 12.4 s.
+
+The policy text was live in the prompt that judged it — verified by
+reading the **installed launcher's own** `judge_protocol.py`, not the
+checkout: "task size alone is never a reason to return an empty
+selection". So this is not an instrument confound, not a universe
+problem, and not a provider failure at the judging call itself.
+
+**The precise limitation.** The recorded reason is
+`native_child_no_specialist_needed`, which `native_child_staffing.py`
+reserves for the case where the P2 funded repair *could not produce a
+valid answer* — the first-pass abstention therefore stands
+**unconfirmed**. The repair's failure is consistent with the provider
+flakiness that killed eight other draws the same night. The
+strongest-form decline, `native_child_abstention_confirmed`, has been
+recorded exactly once, on 2026-08-17, on the **pre-policy** runtime.
+
+**What is now known:** one post-policy, first-pass, complete-universe
+abstention on the pure unit. **What is not:** whether that survives the
+repair, and whether it is the judge's rate rather than one draw.
+
+**Falsification, stated so the next session cannot drift:** a post-policy
+draw returning `native_child_abstention_confirmed` on the pure unit
+establishes the decline as the judge's considered position and makes the
+question a product decision for the owner (is silence correct for a
+one-paragraph brief, or must the policy be sharpened further?). Any draw
+that staffs `code-reviewer` refutes the decline and mints the first
+`native_child_delivery_verifications` row in the store's history.
+
+Note that Rule 4 no longer depends on this draw: R4 claude reached
+Installed and Live on 2026-08-18 from a live harness-spawned child that
+*was* staffed (a ~2,000-character research unit), recorded in
+`AR-119-99a7b3ac-live-evidence.md`. What remains here is the small-unit
+product question, not the delivery mechanism.

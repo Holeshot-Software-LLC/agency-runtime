@@ -27,7 +27,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: 3269ff67d219f8efabbed27e9f1e2cbd48c71a78
+evidence_commit: 1bd7e37c6ea3be66488941392a956c3323b0472c
 minimum_ledger_commit: ee82c602f2dc2d5e9632fc91b6dc071b50dc7541
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
@@ -46,23 +46,27 @@ vision-completion brief and the loop status doc immediately after.
   (a linked worktree, synced with origin/main). Changes reach main only via
   PR on a verified-CLEAN rollup. Never commit/stash in the primary checkout
   (owner WIP: `cli/eval_commands.py` + three untracked eval JSONs); push the
-  shared ref FROM the primary. PRs #290/#291 merged 2026-08-18.
+  shared ref FROM the primary. PRs #290-#293 merged 2026-08-18.
 - **Machine**: all three hosts pin runtime digest `cc478bc88258…` (merge
   `99a7b3ac`, PR #287, owner small-unit policy), store schema 47 == checkout
-  == launcher. PRs #288–#291 are docs-only: no reinstall owed. The state
+  == launcher. PRs #288–#293 are docs-only: no reinstall owed. The state
   authority is `~/.agency-runtime/overnight-runtime-state.json`.
+
 ## completed-evidence
 
-- **Matrix candidate is `3269ff67`** (docs commit; package tree == merge
-  `99a7b3ac`). R1 and R4 claude are proven at ALL FOUR layers — the first
-  Installed/Live either rule has had anywhere — with R2/R3/R5/R7 also full;
-  evidence in `AR-119-99a7b3ac-live-evidence.md`, including the verified
-  live v6 child chain (parent tool_use hash, child record-zero envelope,
-  exact store joins). R6 claude demoted (prior-candidate `2cd29815`
-  artifacts); an organic re-mint happened 2026-08-18T03:45Z
-  (`operations-recovery-plan-reviewer`, case `9afaec53`) — only the
-  pool-reuse turn is missing to re-prove it. R8 still needs a clean
-  unstaffed-turn publication artifact (owner-gated capture surface).
+- **Matrix candidate is `1bd7e37c`** (docs commit; package tree ==
+  merge `99a7b3ac`). **THREE rules — R2, R3, R7 — are proven at all four
+  layers on claude**, resting on two live events (a fresh two-turn
+  real-profile `claude -p` session). **R1, R4, R5 and R6 Installed/Live
+  were claimed on 2026-08-18 and RETRACTED the same day by adversarial
+  review**; the retraction reasons are in
+  `AR-119-99a7b3ac-live-evidence.md` and must not be quietly re-promoted.
+  The real gain is an **existence proof**: the first
+  `[AGENCY INFERENCE TEAM v6]` envelope ever seen on this machine,
+  pre-speech in a harness-spawned child, verified to the byte — but
+  delivery ran **1 in 14** children at this candidate and
+  `native_child_delivery_verifications` is still empty.
+  R8 needs an owner-gated capture decision.
 - AR-252's joint-verdict shape is settled as a delegated ruling in its
   issue doc; the one-use capability seal is deliberately unwidened.
 
@@ -78,34 +82,31 @@ vision-completion brief and the loop status doc immediately after.
   `site-packages`) and assert `agency_runtime.__file__` before trusting an
   eval. One spawn-authority run tonight silently measured the stale
   primary; it was caught and discarded.
-- Appending `; echo EXIT=$?` to a command makes the harness see exit 0;
-  judge gates and canaries by their own report/summary, never a piped code.
+- Appending `; echo EXIT=$?` makes the harness see exit 0; judge gates and
+  canaries by their own report, never a piped code.
 - Prepend `C:\agency-cli` to PATH or hosts read "native unverified". The
-  packaged `agency.exe` is schema-pinned and refuses to install; use
+  packaged `agency.exe` is schema-pinned; install with
   `python -m agency_runtime.cli install --agent <host>` from a clean
-  checkout whose tree equals origin/main. Sessions predating an install
-  keep the old launcher: restart, never reinstall.
-- Claude isolated-profile canaries need `--timeout 420`; the ar119 venv
-  needed `ensurepip` before `run_local_gates.py` gate 3 could run; the full
-  gate suite takes ~14.5 min and exceeds the 10-min tool cap — run it
-  detached and read its own summary line.
-- Eight preflight/litellm tests are red on clean main outside every gate;
-  `tests/test_platform_wheel.py` fails collection. Pre-existing noise.
+  main-equal checkout. Sessions predating an install keep the old
+  launcher: restart, never reinstall.
+- Canaries need `--timeout 420`; the ar119 venv needed `ensurepip` for
+  gate 3; the full gate suite takes ~14.5 min, over the tool cap — run it
+  detached and read its own summary. Eight preflight/litellm tests are red
+  on clean main outside every gate and `test_platform_wheel.py` fails
+  collection: pre-existing noise.
 
 ## exact-blocker
 
-1. **The child-stage provider draw is the sole remaining variable for the
-   §7.1 acceptance draw.** Series 1 (02:02–02:47Z) was 0/3 at parent
-   preflight; series 2 run 2 (03:48Z) proved the parent chain green on this
-   runtime — code-reviewer selected AND loaded, receipt proven, exactly one
-   child — then the child staffing draw died provider-side
-   (`native_child_inference_failure`, empty selection, no capture). The
-   small-unit policy remains UNJUDGED: the pure 138-char unit has never
-   reached a child-judge draw that survived. Keep the series discipline:
-   probe (accepted hook-path draw), ≥3 serialized runs, failures kept,
-   30-min backoff after two consecutive provider-stage kills; a third
-   consecutive provider-killed series spaced ≥6 h from series 1 records
-   `blocked-on-provider` per stopping condition 6.1.
+1. **Card delivery to harness-spawned children is 1-in-14 at this
+   candidate, and the misses are unexplained.** One child got a fully
+   bound v6 envelope; thirteen did not, including three in the measuring
+   session itself whose record zeros carry no `[AGENCY` marker and for
+   which **no receipt exists** — two show `SubagentStart` firing and
+   writing "supplies no card". Parent-stage provider failures explain
+   much of it (13 routing failures in that session) and Rule 8 permits
+   abstention, but nothing binds a receipt to a child launch, so the rate
+   cannot be read. Bind one and this becomes a measurement. This, not the
+   acceptance draw, is the live Rule 4 blocker.
 2. **AR-252** — the joint-verdict shape is settled as a delegated ruling in
    the issue doc (verifier-authored semantic half, collector-assembled
    binding half, division named in the envelope; the one-use canary-only
@@ -122,16 +123,19 @@ vision-completion brief and the loop status doc immediately after.
 
 ## next-bounded-work-package
 
-Run the acceptance series to a verdict: probe, then ≥3 serialized
-isolated-profile canaries per series, failures kept, 30-minute backoff
-after two consecutive provider-stage kills; a third consecutive
-provider-killed series spaced ≥6 h from series 1 (02:02Z 2026-08-18)
-records `blocked-on-provider` and stops grinding it. On the first clean
-child draw that staffs the pure unit: capture the first
-`native_child_delivery_verifications` row, then pursue the remaining
-claude cells and the AR-252 pairing collector. Watch every ops-shaped
-turn for the `operations-recovery-plan-reviewer` pool-reuse that
-completes the R6 re-proof.
+**The section 7.1 question is ANSWERED.** On 2026-08-18 at 11:15Z a clean
+draw delivered the pure 138-char unit to the child judge over the
+complete 71-candidate universe with the owner policy live, and the judge
+**abstained** — first-pass only; the repair returned no valid answer, so
+it is unconfirmed. A repair-confirmed post-policy decline would settle
+it; any staffing refutes it.
+
+The sharpest open engineering lead is now different: **three
+harness-spawned children in one session got no card and no receipt
+explains why.** Bind a receipt to every child launch and the 1-in-14
+delivery rate becomes a measurement instead of a mystery. Series
+discipline if measuring again: probe, ≥3 serialized runs, failures kept,
+30-min backoff after two consecutive provider-stage kills.
 
 ## same-task-continuity
 
