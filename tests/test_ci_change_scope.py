@@ -30,6 +30,22 @@ def _fixture_git_environment() -> dict[str, str]:
     return environment
 
 
+@pytest.fixture(autouse=True)
+def _isolate_from_the_callers_git(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Detach every test in this file from an inherited git environment.
+
+    The fixture helper sanitizes its own subprocess, but the code under test
+    shells out to git as well, and it reads the ambient environment. Under a
+    hook -- which is exactly where these gates run before a push -- that
+    environment points at the caller's repository, so the subject inspects the
+    wrong tree and the assertions fail for a reason that has nothing to do with
+    the behaviour being tested.
+    """
+
+    for name in [key for key in os.environ if key.startswith("GIT_")]:
+        monkeypatch.delenv(name, raising=False)
+
+
 def _git(root: Path, *arguments: str) -> str:
     completed = subprocess.run(
         ("git", *arguments),
