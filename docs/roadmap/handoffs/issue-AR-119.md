@@ -27,7 +27,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: 3269ff67d219f8efabbed27e9f1e2cbd48c71a78
+evidence_commit: 1bd7e37c6ea3be66488941392a956c3323b0472c
 minimum_ledger_commit: ee82c602f2dc2d5e9632fc91b6dc071b50dc7541
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
@@ -46,23 +46,24 @@ vision-completion brief and the loop status doc immediately after.
   (a linked worktree, synced with origin/main). Changes reach main only via
   PR on a verified-CLEAN rollup. Never commit/stash in the primary checkout
   (owner WIP: `cli/eval_commands.py` + three untracked eval JSONs); push the
-  shared ref FROM the primary. PRs #290/#291 merged 2026-08-18.
+  shared ref FROM the primary. PRs #290-#293 merged 2026-08-18.
 - **Machine**: all three hosts pin runtime digest `cc478bc88258…` (merge
   `99a7b3ac`, PR #287, owner small-unit policy), store schema 47 == checkout
-  == launcher. PRs #288–#291 are docs-only: no reinstall owed. The state
+  == launcher. PRs #288–#293 are docs-only: no reinstall owed. The state
   authority is `~/.agency-runtime/overnight-runtime-state.json`.
+
 ## completed-evidence
 
-- **Matrix candidate is `3269ff67`** (docs commit; package tree == merge
-  `99a7b3ac`). R1 and R4 claude are proven at ALL FOUR layers — the first
-  Installed/Live either rule has had anywhere — with R2/R3/R5/R7 also full;
-  evidence in `AR-119-99a7b3ac-live-evidence.md`, including the verified
-  live v6 child chain (parent tool_use hash, child record-zero envelope,
-  exact store joins). R6 claude demoted (prior-candidate `2cd29815`
-  artifacts); an organic re-mint happened 2026-08-18T03:45Z
-  (`operations-recovery-plan-reviewer`, case `9afaec53`) — only the
-  pool-reuse turn is missing to re-prove it. R8 still needs a clean
-  unstaffed-turn publication artifact (owner-gated capture surface).
+- **Matrix candidate is `1bd7e37c`** (docs commit; package tree == merge
+  `99a7b3ac`). **Seven of eight rules are proven at ALL FOUR layers on
+  claude** — R1 and R4 the first Installed/Live anywhere (verified live v6
+  child chain: parent tool_use hash, child record-zero envelope, exact
+  store joins), R6 re-proven organically (mint 05:05Z with critic and
+  audit approvals; pool reuse 06:29Z with zero further hiring cases;
+  second mint 03:45Z corroborates). Evidence:
+  `AR-119-99a7b3ac-live-evidence.md`. **R8 alone gates R9 on claude** and
+  needs a clean unstaffed-turn publication artifact (owner-gated capture
+  surface decision).
 - AR-252's joint-verdict shape is settled as a delegated ruling in its
   issue doc; the one-use capability seal is deliberately unwidened.
 
@@ -128,10 +129,9 @@ after two consecutive provider-stage kills; a third consecutive
 provider-killed series spaced ≥6 h from series 1 (02:02Z 2026-08-18)
 records `blocked-on-provider` and stops grinding it. On the first clean
 child draw that staffs the pure unit: capture the first
-`native_child_delivery_verifications` row, then pursue the remaining
-claude cells and the AR-252 pairing collector. Watch every ops-shaped
-turn for the `operations-recovery-plan-reviewer` pool-reuse that
-completes the R6 re-proof.
+`native_child_delivery_verifications` row, then pursue R8 (owner-gated)
+and the AR-252 pairing collector (owner-gated on the capability-seal
+decision). The R6 pool-reuse re-proof completed 06:29Z 2026-08-18.
 
 ## same-task-continuity
 
