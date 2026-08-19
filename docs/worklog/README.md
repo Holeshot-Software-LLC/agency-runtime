@@ -1045,6 +1045,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7d361a7a` | 2026-08-19 | docs(ar119): the canary fixture coupling is separable per host | null | null |
 | `9e8f8b79` | 2026-08-19 | docs(ar119): retract the 7.1 settlement -- the control unit staffs | null | null |
 | `adc412a7` | 2026-08-19 | docs(ar119): refresh the capsule for a new session | null | null |
+| `4f34c113` | 2026-08-19 | docs(ar119): correct the capsule's unpushed-branch state | null | null |
+| `976f666a` | 2026-08-19 | docs(ar119): use the full SHA for evidence_commit | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
