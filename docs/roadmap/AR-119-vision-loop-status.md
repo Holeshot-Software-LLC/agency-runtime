@@ -1671,5 +1671,10 @@ environment/config equality check, one-provider narrowing, cross-provider
 credential isolation, and requested/answered proof projection. Focused tests
 cover initial and repair calls, mismatch-before-inference, ordinary-turn
 noninterference, typed config updates, and Claude-to-Codex auth isolation.
-No live canary was run, no owner config or install was changed, and **no matrix
-cell moved**.
+All 14 local gate contracts then passed across the attached run and exact
+reruns: the production spine passed 794 tests with 20 skips, the AR-119 matrix
+evidence suite passed 670, and the dashboard passed 134 with its coverage
+thresholds. The alignment preserved the exact mutation-snippet guard and made
+the setup-failure fixture's deadline robust under full-suite load. No live
+canary was run, no owner config or install was changed, and **no matrix cell
+moved**.

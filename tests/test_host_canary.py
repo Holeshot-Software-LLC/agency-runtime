@@ -808,7 +808,18 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
     private_installer_launcher: tuple[Path, Path],
 ) -> None:
     db_path = tmp_path / "agency.db"
-    store = Store(db_path)
+    config_path = tmp_path / "agency.yaml"
+    config_path.write_text(
+        "providers:\n"
+        "  - name: selector\n"
+        "    type: cli\n"
+        "    transport: claude\n"
+        "canary:\n"
+        "  child_judge_provider_by_host:\n"
+        "    claude: selector\n",
+        encoding="utf-8",
+    )
+    store = Store(db_path, config_path=config_path)
     for agent in bundled_roster():
         store._activate_prevalidated_agent(agent)
     task = "Review the bounded canary change for correctness."
@@ -903,7 +914,7 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
         assert Path(environment["AGENCY_CANARY_NATIVE_INSTALL_HOME"]) == owner_home.resolve()
         assert Path(environment["HOME"]) != owner_home.resolve()
         observed_home.append(claude_home)
-        invocation_store = Store(db_path)
+        invocation_store = Store(db_path, config_path=config_path)
         invocation_store.create_run(
             session_id=session_id,
             trace_id=trace_id,
@@ -1016,6 +1027,9 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
             "HOME": str(owner_home),
             "USERPROFILE": str(owner_home),
         },
+        child_judge_provider="selector",
+        child_judge_transport="claude",
+        child_judge_auth_source=auth_source,
     )
     preparation = canary_module._LivePreparation(
         store=store,

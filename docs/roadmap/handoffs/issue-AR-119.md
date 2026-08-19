@@ -128,11 +128,11 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    hermes have no Rule 4 route.
 
 ## next-bounded-work-package
-Finish local verification of the unpushed ADR-0160 candidate and its worklog
-pair. Do not install or run a live canary without renewed authorization. The
-evidence-backed passing Claude pin is `codex-subscription`; pinning Claude to
-`claude-subscription` is the explicit falsification run and is currently
-expected to decline. No installed value has been chosen or changed.
+The unpushed ADR-0160 candidate is locally verified: all 14 gate contracts
+passed (production spine 794 passed, 20 skipped; AR-119 matrix 670 passed;
+dashboard 134 passed). Do not install or run a live canary without renewed
+authorization. Evidence supports `claude -> codex-subscription`; Claude to
+`claude-subscription` remains the expected-to-decline falsification run.
 
 After authorization, configure the per-host map and collect one fresh Claude
 host artifact. Rule 4 Live still needs the collector green once, AR-252 shares

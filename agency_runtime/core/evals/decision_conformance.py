@@ -2458,7 +2458,10 @@ class _NominationSemantics:""",
         ),
         source_path="agency_runtime/core/native_child_decision.py",
         before=(
-            "    if not isinstance(value, Mapping) or frozenset(value) != _SUCCESS_ROUTE_FIELDS:"
+            "    if not isinstance(value, Mapping) or frozenset(value) not in {\n"
+            "        _SUCCESS_ROUTE_FIELDS,\n"
+            "        _PINNED_SUCCESS_ROUTE_FIELDS,\n"
+            "    }:"
         ),
         after=(
             "    if not isinstance(value, Mapping) "

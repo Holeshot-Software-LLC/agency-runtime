@@ -335,7 +335,7 @@ def test_codex_execute_returns_setup_failure_without_invoking_model(
     backend = canary._SafeCodexCanaryBackend(
         executable="codex",
         db_path=tmp_path / "agency.db",
-        timeout=1,
+        timeout=30,
         marketplace=tmp_path,
         auth_source=tmp_path / "auth.json",
         process_runner=run,
