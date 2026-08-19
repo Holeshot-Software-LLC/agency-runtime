@@ -1456,3 +1456,98 @@ bounds, then Option A is fully costed and cheap, and the seal should be
 decided in its favour. If three such drafts are declined in a series, the
 small-unit policy and canary-based Rule 4 proof are in genuine tension and
 Option B's schema bump becomes the better buy.
+
+### RETRACTION, same session: the §7.1 settlement above does not stand
+
+**Earlier in this session I recorded §7.1 as settled by a repair-confirmed
+decline. Measurement now refutes it, and the retraction is mine, before it
+reached any matrix cell.** The settlement condition was stated in the capsule
+as "a repair-confirmed post-policy decline would settle it; **any staffing
+refutes it**." Staffing has now been observed on the identical unit.
+
+#### The instrument, and why it is comparable
+
+A read-only probe reproduces exactly the call `staff_native_child` makes —
+`query_judge(task, eligible_catalog, config=snapshot.config,
+max_selected=MAX_INFERENCE_TEAM_CARDS, candidate_scope="complete")` — and
+never calls `_unstaffed`, `_record_decision`, or
+`_record_captured_assignment`, so it writes nothing to the Store.
+
+Building the universe by re-filtering the catalog was **not** trusted:
+a first attempt with `capability_status=""` produced 33 eligible agents, not
+71, which would have silently measured a different universe. Instead the
+judge's own recorded universe was rebuilt from decision `5c963e09`'s
+`offered_agent_ids`, and validated against its `offered_agent_digest`:
+
+~~~text
+recorded slugs         71
+digest recomputed      5733d4e7aa75fb48812f9e7733ba811deec06b12180a50a4272c594f018e0897
+digest recorded        5733d4e7aa75fb48812f9e7733ba811deec06b12180a50a4272c594f018e0897   MATCH
+missing from snapshot  0
+catalog rebuilt        71 agents
+~~~
+
+So the universe is provably identical to the one the canary's child judge
+saw, not merely similar.
+
+#### The measurement
+
+Four units, serialized, each deterministically pre-screened against the
+`expertise`/`skill`/`capabilit`/`staff` ban and `MAX_WORK_UNIT_CHARS`. All
+four passed the screen; all four were put to the judge.
+
+| Unit | Chars | Result | Selected | Conf |
+|---|---|---|---|---|
+| **A — control, the exact 138-char unit** | 138 | **STAFFED** | `minimal-change-engineer` | 0.90 |
+| B — same domain, richer | 251 | STAFFED | `code-reviewer` | 0.98 |
+| C — security-framed | 234 | STAFFED | `ai-generated-code-security-auditor` | 0.98 |
+| D — multi-consequence | 372 | STAFFED | `code-reviewer` | 0.96 |
+
+**The control is the finding.** Unit A is byte-identical to
+`CODEX_ACTIVATION_CANARY_WORK_UNIT`, the unit the canary's child judge
+declined twice — once first-pass on 2026-08-18, once repair-confirmed today.
+Over the digest-identical 71-agent universe it was **staffed**, `status
+applied`, `inference_mode inferred`, confidence 0.90.
+
+#### The one thing that differs, and it is the likely cause
+
+The canary's child judge ran on **`claude-subscription`**. This probe ran on
+**`codex-subscription (cli:codex)`** — all four draws.
+
+`~/.agency-runtime/agency.yaml` lists `codex-subscription` first in
+`providers:` and leaves `judge.model` empty, so an unconstrained judge call
+takes the head of the provider list. Inside the canary's restricted isolated
+profile the codex transport is not available, so the judge falls through to
+`claude-subscription`. That is the mechanism that best fits the evidence.
+
+**So the correct reading is: the decline is not a property of the work unit,
+the small-unit policy, or the catalog. It tracks the provider.** The unit is
+demonstrably staffable; one provider staffs it and the other declines it.
+
+*Falsification, and this is the next measurement:* force the probe onto
+`claude-subscription` and re-run unit A. If it declines there, the abstention
+is provider-conditional and confirmed. If it staffs, the difference lies in
+the canary's isolated environment rather than the provider identity, and the
+prompt/profile must be examined instead.
+
+#### What this does to the seal, third correction
+
+My previous re-costing said Option A was "cheap to wire, expensive to
+specify", because the deliverable was thought to be designing a unit the
+judge would staff. **That premise is now refuted: the existing unit is
+staffable.** If the abstention is provider-conditional, Option A may reduce to
+pinning or ordering the child judge's provider inside the canary — no new
+unit, no fixture change, no Rule 9 divergence, and none of the
+matched-corpus damage. That would make Option A decisively cheaper than
+Option B again.
+
+It also raises a question larger than the seal, and it belongs to AR-253
+rather than here: **the child judge's provider is selected by config list
+order with an empty `judge.model`**, so which model judges a harness-spawned
+child depends on provider availability in the ambient environment. Two
+environments therefore disagree about whether the same child needs a
+specialist. Rule 1 says selection is inference-based; it does not
+contemplate the selection changing because a transport was absent.
+
+*Do not promote any cell from this section.* It is a probe, not a host
+artifact, and its provider does not match the canary's.
