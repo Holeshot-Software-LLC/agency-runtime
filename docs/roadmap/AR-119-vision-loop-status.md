@@ -1195,3 +1195,116 @@ host-specific and the finding was withdrawn before it was reported. What
 survives is narrower and still worth knowing: **every codex receipt since
 2026-08-14 is empty, and all three canary receipts are empty** — consistent
 with the canary path rather than with the host.
+
+### `delivery_marker_absent` is the policy working — and it settles §7.1
+
+Diagnosing why the claude canary stopped at `delivery_marker_absent` produced
+a larger result than the diagnosis. **The canary's child got no card because
+the child judge deliberately declined to staff it, and this time the decline
+is repair-confirmed.**
+
+First, what the reason code actually means
+(`child_delivery_evidence.py:1698-1735`): `delivery_marker_absent` is
+returned *after* `_trusted_launch_prefix_bytes` accepted the file. The child
+artifact was found, passed the ownership/link/parent-chain guard, and was
+read — it simply carried no v6 envelope. This is explicitly separated in the
+source from `artifact_not_trusted` because the two "have opposite fixes". So
+the collector is working; there was nothing to collect.
+
+**The canary parent run is `43a081d6`**, session
+`df0fd324-8aeb-44f1-937e-5cf455be4bc7`, trace `1330662e`, 04:00:52 →
+04:03:20Z, and it did **not** fail preflight — it terminated
+`response_invalid`. The parent was staffed normally: decision `c75f7f6c`
+`accepted` over 293 candidates, selecting `code-reviewer` and
+`application-security-engineer`, with two matching `specialists_loaded` rows
+and one completed `delegation_events` row (`unit-05d45f7553`, backend
+`delegate_task`).
+
+**Then the child judge ran, and declined.** Decision `5c963e09`:
+
+~~~text
+status               inference_abstained
+source               native_child_inference_abstained
+native_child_reason  native_child_abstention_confirmed
+provider             claude-subscription     latency_ms 13974
+task_chars 138       task_lines 1            candidate_count 71
+inference_attempted true  inference_configured true  inference_required true
+inference_mode       abstained
+selected_ids []      semantic_ids []         top_score 0.0
+offered_agent_digest 5733d4e7aa75fb48812f9e7733ba811deec06b12180a50a4272c594f018e0897
+~~~
+
+The captured assignment is 138 characters, one line, recorded verbatim:
+
+> Identify the primary behavioral regression risk of replacing return value
+> with return value.strip() in a Python text-normalization helper.
+
+**This is the §7.1 acceptance draw, and it lands on the settling condition.**
+The capsule recorded the open question as: the 2026-08-18 11:15Z draw
+abstained "first-pass only; the repair returned no valid answer, so it is
+unconfirmed. **A repair-confirmed post-policy decline would settle it**; any
+staffing refutes it."
+
+`native_child_abstention_confirmed` is precisely that. The two reasons are
+deliberately split — `native_child_staffing.py:91-99` states that the legacy
+reason "means the first-pass abstention stood because the repair could not
+produce a valid answer; the confirmed reason means the judge tested its own
+abstention on the repair call and reaffirmed it. They must never collapse
+into one code." The confirmed branch (line 1223) is reachable only after a
+second `query_judge` call on `repair_abstention_task(original_task)` with
+`candidate_scope="complete"`, which must return `status == "applied"` **and**
+`inference_mode == "inferred"`, whose `selected_ids` must be a `list` (strict
+`type(...) is not list` check at line 1196) and must be empty. Anything less
+falls to the legacy unconfirmed reason at line 1209.
+
+So: the pure 138-char unit, the complete 71-candidate universe with its
+offered-agent digest recorded, the owner's small-unit policy live, a funded
+repair call, and a reaffirmed decline — on the **current** runtime
+`f7b84c8a40fa`, not the 2026-08-18 one. Two independent clean draws now
+return the same answer.
+
+**The one real weakness, stated plainly.** The repair call leaves **no
+retained receipt**. `_unstaffed` (`native_child_staffing.py:645-701`)
+persists only the routing projection and the captured assignment;
+`provider_attempts` are returned in-process on `NativeChildStaffingResult`
+and never written. The two `model_receipts` rows on this trace are both
+stamped 04:02:00.784 — the parent's planner (haiku) and recruiter (sonnet);
+the child judge's decision at 04:02:35.498 has none. **The confirmation
+therefore rests on the reason code's code-level invariant, not on an
+independent artifact.** That invariant is genuine — unlike R6's
+`critic_evidence["approved"]`, which was a hardcoded literal, this branch is
+actually gated on an applied, inferred repair result — but nothing on disk
+cross-checks it. The only corroborating signal is the 13,974 ms latency, and
+that is weak: the 2026-08-18 01:47Z child staffing took 11,850 ms for what
+appears to have been a single call, so 13.97 s is on the short side for two.
+Do not quote this cell as receipt-backed.
+
+*Falsification:* if a future draw records `native_child_abstention_confirmed`
+with a latency inconsistent with two provider calls, or if the confirmed
+branch is found reachable without an applied repair, the settlement is
+unconfirmed again. Any draw that **staffs** the 138-char unit refutes it
+outright.
+
+### What this does to the seal decision
+
+**It removes the naive form of Option A.** "Make the canary deliver" was
+costed as fixing `delivery_marker_absent`. There is no defect to fix: the
+canary's child is unstaffed because the owner's own small-unit policy tells
+the judge to decline a 138-character unit, and the judge is obeying it twice
+over. Rule 8 is working exactly as written.
+
+The consequence is sharp. **The claude canary cannot produce a Rule 4 Live
+proof while its work unit is the 138-char pure unit** — and that unit is the
+canary contract's own fixture. Option A therefore is not "fix a bug"; it is
+"change what the canary asks for, to a unit the judge will actually staff",
+which changes the canary contract and the fixture that §7.1 was designed to
+measure. That is a different and larger decision than the one it was costed
+as, and it partly collides with AR-125's matched-corpus constraint: a canary
+whose unit is chosen because it gets staffed is no longer a neutral probe.
+
+Option B's costs are unchanged, and so is the finding that **neither option
+moves codex**.
+
+*Falsification:* if the canary's work unit is configurable without touching
+the ADR-0158 contract or the §7.1 fixture, Option A is cheaper than this
+paragraph claims and should be re-costed.
