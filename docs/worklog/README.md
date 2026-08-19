@@ -1048,6 +1048,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4f34c113` | 2026-08-19 | docs(ar119): correct the capsule's unpushed-branch state | null | null |
 | `976f666a` | 2026-08-19 | docs(ar119): use the full SHA for evidence_commit | null | null |
 | `bb33a102` | 2026-08-19 | docs(ar119): capsule reflects the pushed branch state | null | null |
+| `05f76fe3` | 2026-08-19 | feat(ar119): commit the child-judge probe and confirm the decline is provider-conditional | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
