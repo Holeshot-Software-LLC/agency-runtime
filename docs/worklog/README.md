@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-18
+updated: 2026-08-19
 tags: []
 related: []
 supersedes: []
@@ -1038,6 +1038,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `aebad9c1` | 2026-08-18 | fix(tests): make the CI-scope suite hermetic against an inherited git env | null | null |
 | `6ba837fa` | 2026-08-18 | Merge pull request #296 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
 | `895d952c` | 2026-08-18 | docs(ar119): refresh the capsule for a fresh session | null | null |
+| `dc0f077d` | 2026-08-18 | Merge pull request #297 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
+| `cf14d939` | 2026-08-19 | docs(ar119): record the codex canary series, the seal decision, and R8 from disk | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
