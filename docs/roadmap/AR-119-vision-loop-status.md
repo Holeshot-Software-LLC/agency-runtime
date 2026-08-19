@@ -1678,3 +1678,51 @@ thresholds. The alignment preserved the exact mutation-snippet guard and made
 the setup-failure fixture's deadline robust under full-suite load. No live
 canary was run, no owner config or install was changed, and **no matrix cell
 moved**.
+
+### OWNER CLARIFICATION: Codex parent works; the blocker is child proof
+
+The owner confirmed the scope after observing another live request-scoped
+Codex parent turn. That turn carried `host=codex`, Agency preflight inference,
+the loaded specialist capsule, and the required Agency response header. This is
+direct current-turn evidence that the Codex **parent** integration routes and
+delivers Agency context.
+
+It does not falsify the canary result. The three serialized canaries concern a
+different boundary: Codex starts its native child, but Agency cannot read the
+opaque collaboration record required to prove the child's delivered cards.
+The accurate status is therefore:
+
+- Codex parent routing/header delivery: operational in the observed live turn;
+- Codex native child creation: observed;
+- Codex native-child card delivery: not host-proven;
+- Codex Rule 4 Installed/Live and Rule 9: still open.
+
+Never shorten that to “Codex does not work.” Equally, never promote a matrix
+cell from the visible parent header alone; the matrix still requires its named
+authority at the exact candidate.
+
+### OWNER PHASE: three hosts now, two deferred without waiver
+
+The owner set this development phase to Claude, Codex, and ZCode, then plans to
+move development to the OpenClaw box for live OpenClaw work. Hermes and OpenClaw
+are exempt from this session's Option-A milestone only. They remain required by
+the founding five-host Rule-9 contract.
+
+The bounded Option-A milestone is complete only when:
+
+1. Claude uses the measured passing `codex-subscription` pin and produces the
+   approved fresh host artifact;
+2. Codex retains working parent routing and exact pin/no-fallback contracts,
+   with native-child proof explicitly waiting on the upstream host capability;
+3. ZCode has an executable, isolated GLM judge path that records which provider
+   actually answered and cannot change ordinary staffing.
+
+ZCode is the remaining local engineering gap. The installed Agency profile has
+only `codex-subscription` and `claude-subscription`; its ZCode file contains hook
+registration, not reusable provider credentials. ZCode also has no supported
+structured judge transport or safe noninteractive canary backend. The next
+implementation must solve those contracts rather than relabel a parent model or
+send subscription traffic through an unsupported direct API client.
+
+The complete execution sequence is recorded in the canonical AR-119 issue under
+“Owner-scoped completion sequence — 2026-08-19.” No matrix cell moved here.

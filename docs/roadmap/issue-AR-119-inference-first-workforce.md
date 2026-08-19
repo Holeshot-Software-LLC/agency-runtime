@@ -125,6 +125,16 @@ run, and no matrix cell moved. The measured Claude control still staffs on
 `codex-subscription` and declines on `claude-subscription`; ZCode/GLM remains a
 target pending a supported judge transport and safe ZCode canary backend.
 
+The owner separately confirmed the current Codex boundary on 2026-08-19.
+Codex parent operation is working: a live request-scoped parent turn identifies
+`host=codex`, carries Agency preflight inference, loads the selected specialist
+capsule, and projects the required response header. The unresolved Codex issue
+is narrower: Agency cannot read the host's opaque native-child collaboration to
+prove which cards reached a spawned child. That limitation blocks Codex Rule 4
+Installed/Live evidence; it does not make Codex parent routing or header
+delivery unavailable. The current phase therefore treats Codex parent behavior
+as operational while leaving Codex child delivery, Rule 4, and Rule 9 open.
+
 The audited roster, inference receipts, request-scoped cards, resident managers,
 native lifecycle telemetry, CLI, and dashboard provide a strong base. Runtime
 candidate `211563c7` retains the repaired Rule-1 source/simulation state: native
@@ -150,6 +160,51 @@ Fresh-task recovery uses the bounded
 [AR-119 active recovery capsule](handoffs/issue-AR-119.md). The capsule is the
 current bootstrap projection; this issue remains the complete historical
 record and dependency map, not a second completion projection.
+
+### Owner-scoped completion sequence — 2026-08-19
+
+The owner set the immediate development milestone to Claude, Codex, and ZCode.
+OpenClaw and Hermes are deferred for this session and will be resumed on the
+owner's OpenClaw box after the three-host slice is solid. This scheduling choice
+is not a host waiver: the five-host Rule-9 contract and every unproven matrix
+cell remain unchanged.
+
+The completion sequence for the review brief is:
+
+1. **Land Option A without changing real turns.** Review and publish ADR-0160's
+   canary-only per-harness pin after renewed push/PR approval. Preserve the
+   control unit, no-fallback provider identity, requested-versus-actual receipt,
+   and ordinary-turn noninterference.
+2. **Close the Claude canary slice.** Configure the evidence-backed
+   `claude -> codex-subscription` pin, install only after approval, and collect
+   one fresh host-authored artifact. `claude -> claude-subscription` remains the
+   expected-to-decline falsification path, not the passing configuration.
+3. **Close the available Codex parent slice honestly.** Retain current parent
+   routing/header evidence and the exact pin contracts. Do not rerun the
+   byte-identical child canary expecting variation. Keep native-child delivery
+   proof explicitly waiting on the upstream Codex collaboration capability.
+4. **Make ZCode/GLM executable and attributable.** Add a supported, isolated
+   child-judge transport and safe ZCode proof path that records the provider
+   which actually answered and cannot enter ordinary staffing. A subscription
+   or parent-model label alone is insufficient. Direct subscription API use
+   outside an officially supported carrier is not an acceptable shortcut.
+5. **Declare only the bounded Option-A milestone complete.** Claude must have
+   its fresh proof; Codex parent must remain operational with the child-proof
+   exception named; ZCode/GLM must be executable and attributable. OpenClaw and
+   Hermes remain scheduled next, and no Rule-9 or matrix claim follows from this
+   three-host milestone.
+6. **Finish the primary-tool proof package.** Once Claude Rule 4 is green,
+   complete AR-252's independently verified accepted-outcome and automatic
+   promotion path. Formalize Claude Rule 8 only if the owner authorizes the
+   candidate advance to `f7b84c8a40fa` and the required R2/R3/R7 re-anchoring.
+7. **Resume the deferred hosts and final parity.** Move to the OpenClaw box for
+   real OpenClaw evidence, then scope and execute Hermes. Re-run the required
+   exact-candidate proof set and close Rule 9 only after Rules 1–8 are proven on
+   all five hosts.
+
+Push, PR, merge, install, live canary, tracker, and hosted verification actions
+remain approval-gated. The sequence above is a plan, not evidence that any
+unrun stage has passed.
 
 The independent production-readiness review is now captured in
 [the 2026-07-26 audit report](../analysis/2026-07-26-production-readiness-review.md).

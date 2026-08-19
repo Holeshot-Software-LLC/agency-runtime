@@ -50,8 +50,8 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
 - **Machine**: all three hosts pin ONE digest `f7b84c8a40fa` (merge
   `6ba837fa`), schema 47 everywhere, installed 2026-08-19. State authority:
   `~/.agency-runtime/overnight-runtime-state.json`.
-- **Owner ruling 2026-08-18: done = claude, codex, zcode, in that order.**
-  Rule 9 UNCHANGED -- five-host parity is the claim; never close R9 on three.
+- **Current phase = claude, codex, zcode.** OpenClaw/Hermes are session-deferred,
+  not waived. Rule 9 stays five-host and never closes on three.
 ## completed-evidence
 
 Detail in `AR-119-vision-loop-status.md`, session 2026-08-19. **No matrix
@@ -66,10 +66,10 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   The unstaffed negative is OBSERVED, not borrowed like R5's. Store: 0
   specialists/routing/delegations on the trace. Claiming costs a
   `candidate_commit` advance to `f7b84c8a40fa` + re-anchoring R2/R3/R7.
-- **Codex canary: 3 serialized runs, byte-identical -- NOT the AR-253
-  flake.** Planner and recruiter both `structured_response_applied`, yet
-  preflight failed `workforce_inference_failed`. Codex spawns the child and
-  it starts; Agency cannot READ the collaboration.
+- **Codex parent works; child proof is blocked.** A current request-scoped
+  parent turn has preflight inference, a loaded capsule and the Agency header.
+  Three byte-identical canaries still show Codex spawns and starts the child,
+  but Agency cannot READ the collaboration.
   `native_collaboration_topology_invalid` is the diagnostic's terminal
   fall-through reached with every guard PASSING -- not an invalid topology.
   The claude canary instead stops at `delivery_marker_absent`.
@@ -122,7 +122,9 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    with no fallback; normal child staffing is unchanged. Requested and actual
    providers are recorded separately. `zcode -> GLM` is an intended policy,
    but no structured ZCode judge transport or safe canary backend exists yet.
-4. **Hosts**: codex trusted + on claude's digest for the first time
+4. **Hosts**: Codex parent routing/header delivery is operational. Its Rule-4
+   child artifact remains upstream-blocked; never summarize that as “Codex
+   does not work.” Codex is trusted + on claude's digest
    (`hook_trust_status: unverified` = a missing `--verify-activation`
    receipt, NOT the owner's trust action). zcode has no CLI; openclaw and
    hermes have no Rule 4 route.
@@ -134,10 +136,11 @@ dashboard 134 passed). Do not install or run a live canary without renewed
 authorization. Evidence supports `claude -> codex-subscription`; Claude to
 `claude-subscription` remains the expected-to-decline falsification run.
 
-After authorization, configure the per-host map and collect one fresh Claude
-host artifact. Rule 4 Live still needs the collector green once, AR-252 shares
-it, and neither moves codex (blocker 2). ZCode/GLM needs its missing transport
-and backend before it can join the series.
+The canonical issue now carries the complete sequence requested in the review
+brief. Next: build the isolated ZCode/GLM transport/proof contracts without
+altering ordinary staffing, then seek approval to publish/install and collect
+the fresh Claude artifact. Codex parent already works; its child proof waits on
+the upstream host capability. No matrix cell moves from this phase boundary.
 
 ## same-task-continuity
 
