@@ -1994,3 +1994,21 @@ delegation and returned the exact five-line Agency header followed only by
 `agency-governance-request-clarifier`, `delegated: none`, and workforce inference
 `claude-sonnet/sonnet`; the host call itself reported `claude-opus-5`. This is
 installed-main parent/header proof only. It moves no rule or matrix cell.
+
+### LIVE MAIN: Codex trust bypass runs; generic smoke abstains
+
+Fresh Codex CLI thread `01a01c51-f856-71c2-804e-54ed64a2bd82`, trace
+`01a01c51-ffb6-7a33-a0bd-22c21b0418f9`, ran with
+`--dangerously-bypass-hook-trust`, read-only sandboxing, and tool/child paths
+disabled. Host inventory shows merged-main plugin
+`0.1.0+codex.5d5f0eb77307` enabled. The rollout contains the installed resident
+kernel before the model response, proving the invocation-only trust bypass ran
+the hook rather than merely trusting registration state.
+
+Planner and recruiter both applied through `codex-fast/gpt-5.6-terra`, then
+staffing declined with `substantive_specialist_unavailable`,
+`no_safe_sufficient_team`, and `recruiter_abstained`. With no loaded capsule,
+there was no Agency header snapshot; Codex failed open and returned only
+`PARENT_SMOKE_OK`, with no tools or child. This is a valid abstention and hook
+execution result, not parent-header proof. The staffable review control remains
+the next header test. No rule or matrix cell moved.
