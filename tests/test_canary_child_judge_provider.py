@@ -12,7 +12,13 @@ from agency_runtime.core.canary_judge_provider import (
     canary_child_judge_config,
     configured_canary_child_judge_provider,
 )
-from agency_runtime.core.config import AgencyConfig, CanaryConfig, ProviderEntry
+from agency_runtime.core.config import (
+    AgencyConfig,
+    CanaryConfig,
+    InferenceConfig,
+    InferenceProfile,
+    ProviderEntry,
+)
 from agency_runtime.core.configuration_contracts import ConfigValidationError
 from agency_runtime.core.configuration_schema import validate_config_document
 from agency_runtime.core.store.queries import project_routing_decision
@@ -68,6 +74,112 @@ def test_canary_pin_mismatch_fails_without_fallback() -> None:
             "claude",
             {"AGENCY_CANARY_MODE": "1"},
         )
+
+
+def test_zcode_canary_pin_resolves_one_existing_glm_profile_without_chain_mutation() -> None:
+    original_chain = (
+        ProviderEntry(name="codex-subscription", type="cli", transport="codex"),
+        ProviderEntry(name="claude-subscription", type="cli", transport="claude"),
+    )
+    config = AgencyConfig(
+        providers=original_chain,
+        inference=InferenceConfig(
+            profiles={
+                "zcode-recruiter": InferenceProfile(
+                    name="zcode-recruiter",
+                    adapter="anthropic",
+                    model="GLM-5.2",
+                    base_url="https://api.z.ai/api/anthropic",
+                    api_key="bounded-test-key",
+                )
+            }
+        ),
+        canary=CanaryConfig(
+            child_judge_provider_by_host=(("zcode", "zcode-recruiter"),),
+        ),
+    )
+
+    resolved = configured_canary_child_judge_provider(config, "zcode")
+    assert resolved is not None
+    provider, transport = resolved
+    assert transport == ""
+    assert (provider.name, provider.type, provider.model) == (
+        "zcode-recruiter",
+        "anthropic",
+        "GLM-5.2",
+    )
+
+    narrowed, requested = canary_child_judge_config(
+        config,
+        "zcode",
+        {
+            "AGENCY_CANARY_MODE": "1",
+            CANARY_CHILD_JUDGE_PROVIDER_ENV: "zcode-recruiter",
+        },
+    )
+    assert requested == "zcode-recruiter"
+    assert narrowed.providers == (provider,)
+    assert config.providers == original_chain
+
+
+def test_canary_pin_rejects_ambiguous_provider_and_profile_name() -> None:
+    config = AgencyConfig(
+        providers=(ProviderEntry(name="shared", type="cli", transport="codex"),),
+        inference=InferenceConfig(
+            profiles={
+                "shared": InferenceProfile(
+                    name="shared",
+                    adapter="anthropic",
+                    model="GLM-5.2",
+                    base_url="https://api.z.ai/api/anthropic",
+                    api_key="bounded-test-key",
+                )
+            }
+        ),
+        canary=CanaryConfig(child_judge_provider_by_host=(("zcode", "shared"),)),
+    )
+
+    with pytest.raises(CanaryChildJudgeProviderError, match="resolve exactly once"):
+        configured_canary_child_judge_provider(config, "zcode")
+
+
+@pytest.mark.parametrize(
+    "profile",
+    [
+        InferenceProfile(
+            name="unsupported-profile",
+            adapter="openai-compatible",
+            model="glm-test",
+            base_url="https://example.invalid/v1",
+            api_key="bounded-test-key",
+        ),
+        InferenceProfile(
+            name="unsupported-profile",
+            adapter="anthropic",
+            model="GLM-5.2",
+            base_url="https://api.z.ai/api/anthropic",
+        ),
+        InferenceProfile(
+            name="unsupported-profile",
+            adapter="anthropic",
+            model="GLM-5.2",
+            base_url="http://api.example.invalid/v1",
+            api_key="bounded-test-key",
+        ),
+    ],
+)
+def test_canary_pin_rejects_unsupported_or_unavailable_inference_profile(
+    profile: InferenceProfile,
+) -> None:
+    config = AgencyConfig(
+        inference=InferenceConfig(profiles={"unsupported-profile": profile}),
+        canary=CanaryConfig(
+            child_judge_provider_by_host=(("zcode", "unsupported-profile"),),
+        ),
+    )
+
+    with pytest.raises(CanaryChildJudgeProviderError, match="not supported or available"):
+        configured_canary_child_judge_provider(config, "zcode")
 
 
 def test_noncanary_staffing_ignores_the_canary_map() -> None:

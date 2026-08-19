@@ -32,7 +32,10 @@ changes rather than duplicating every commit.
   The judge and its abstention repair use only that provider, cross-provider
   CLI credentials are copied into a second disposable private home, and proof
   records the requested and actual answering providers separately. Ordinary
-  child staffing is unchanged.
+  child staffing is unchanged. A pin may also reuse one exact supported
+  Anthropic-compatible inference profile without adding it to the ordinary
+  provider chain; this enables the local ZCode/GLM judge path but does not
+  claim a safe native ZCode canary backend.
 
 - The dashboard now exposes bounded routing-latency, specialist-selection,
   host-written child-delivery, Rule-8 exception, and staged-versus-wired host

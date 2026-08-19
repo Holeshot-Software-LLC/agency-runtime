@@ -122,8 +122,11 @@ that one provider with no fallback, and leave ordinary child staffing
 unchanged. The local candidate records requested and actual answering provider
 identities separately. No owner profile has been changed, no live canary has
 run, and no matrix cell moved. The measured Claude control still staffs on
-`codex-subscription` and declines on `claude-subscription`; ZCode/GLM remains a
-target pending a supported judge transport and safe ZCode canary backend.
+`codex-subscription` and declines on `claude-subscription`. The local candidate
+now resolves the existing `zcode-recruiter` Anthropic-compatible GLM profile as
+a canary-only provider without changing the ordinary chain. ZCode still lacks
+a safe noninteractive native canary backend, so this is not installed/live
+proof.
 
 The owner separately confirmed the current Codex boundary on 2026-08-19.
 Codex parent operation is working: a live request-scoped parent turn identifies
@@ -183,11 +186,11 @@ The completion sequence for the review brief is:
    routing/header evidence and the exact pin contracts. Do not rerun the
    byte-identical child canary expecting variation. Keep native-child delivery
    proof explicitly waiting on the upstream Codex collaboration capability.
-4. **Make ZCode/GLM executable and attributable.** Add a supported, isolated
-   child-judge transport and safe ZCode proof path that records the provider
-   which actually answered and cannot enter ordinary staffing. A subscription
-   or parent-model label alone is insufficient. Direct subscription API use
-   outside an officially supported carrier is not an acceptable shortcut.
+4. **Make ZCode/GLM attributable and host-proven.** Use the existing isolated
+   `zcode-recruiter` profile through the canary-only resolver, then add a safe
+   ZCode proof path that records the provider which actually answered. The
+   profile cannot enter ordinary staffing. A subscription, prior receipt, or
+   parent-model label alone remains insufficient.
 5. **Declare only the bounded Option-A milestone complete.** Claude must have
    its fresh proof; Codex parent must remain operational with the child-proof
    exception named; ZCode/GLM must be executable and attributable. OpenClaw and

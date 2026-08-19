@@ -120,8 +120,8 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 3. **Owner chose Option A as per-harness and canary-only (ADR-0160).** One
    persistent host map narrows both child-judge calls to exactly one provider,
    with no fallback; normal child staffing is unchanged. Requested and actual
-   providers are recorded separately. `zcode -> GLM` is an intended policy,
-   but no structured ZCode judge transport or safe canary backend exists yet.
+   providers are recorded separately. `zcode -> zcode-recruiter` now resolves
+   its existing GLM profile canary-only; the safe ZCode backend is still absent.
 4. **Hosts**: Codex parent routing/header delivery is operational. Its Rule-4
    child artifact remains upstream-blocked; never summarize that as “Codex
    does not work.” Codex is trusted + on claude's digest
@@ -137,10 +137,10 @@ authorization. Evidence supports `claude -> codex-subscription`; Claude to
 `claude-subscription` remains the expected-to-decline falsification run.
 
 The canonical issue now carries the complete sequence requested in the review
-brief. Next: build the isolated ZCode/GLM transport/proof contracts without
-altering ordinary staffing, then seek approval to publish/install and collect
-the fresh Claude artifact. Codex parent already works; its child proof waits on
-the upstream host capability. No matrix cell moves from this phase boundary.
+brief. Next: verify the isolated ZCode/GLM profile resolver and design the safe
+ZCode proof backend, then seek approval to publish/install and collect the fresh
+Claude artifact. Codex parent already works; its child proof waits on the
+upstream host capability. No matrix cell moves from this phase boundary.
 
 ## same-task-continuity
 

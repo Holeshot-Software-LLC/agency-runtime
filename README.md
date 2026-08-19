@@ -839,12 +839,16 @@ canary:
   child_judge_provider_by_host:
     codex: codex-subscription
     claude: codex-subscription
+    zcode: zcode-recruiter
 ```
 
-Each value must name one configured Codex or Claude CLI provider. There is no
-fallback, and this map does not affect ordinary child staffing. ZCode/GLM is a
-future transport target; a ZCode host installation or subscription alone does
-not provide the structured judge and safe canary contracts yet.
+Each value must resolve exactly once to a configured Codex/Claude CLI provider
+or a supported Anthropic-compatible inference profile. Profile pins are
+materialized only into the canary's one-provider tuple; they never enter or
+reorder the ordinary provider chain. There is no fallback. ZCode can reuse an
+existing GLM inference profile for judge selection, but it still lacks a safe
+noninteractive native canary backend; profile execution alone is not host
+proof.
 
 Claude canaries always run in a disposable isolated profile;
 `--profile-scope current-profile` and `agency install --agent codex

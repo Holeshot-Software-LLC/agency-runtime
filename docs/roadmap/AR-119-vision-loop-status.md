@@ -1661,10 +1661,12 @@ evidence-backed passing choice. The owner profile has not been changed, so no
 installed choice is claimed here.
 
 The owner also identified the intended `zcode -> GLM subscription` pairing.
-The config key can retain that target, but this candidate cannot execute it:
-Agency supports structured CLI judging only through Codex and Claude, and
-ZCode still lacks a safe noninteractive canary backend. A subscription and a
-host integration do not prove those missing contracts.
+The local candidate can now resolve the existing `zcode-recruiter`
+Anthropic-compatible inference profile and narrow it into the canary's sole
+provider without changing the ordinary chain. Historical ZCode Store receipts
+show successful GLM-5.2 profile calls, but they predate this candidate. ZCode
+still lacks a safe noninteractive canary backend, so neither the profile nor
+those receipts are installed/live proof.
 
 Local source now implements the typed map, exact provider resolution,
 environment/config equality check, one-provider narrowing, cross-provider
@@ -1717,12 +1719,13 @@ The bounded Option-A milestone is complete only when:
 3. ZCode has an executable, isolated GLM judge path that records which provider
    actually answered and cannot change ordinary staffing.
 
-ZCode is the remaining local engineering gap. The installed Agency profile has
-only `codex-subscription` and `claude-subscription`; its ZCode file contains hook
-registration, not reusable provider credentials. ZCode also has no supported
-structured judge transport or safe noninteractive canary backend. The next
-implementation must solve those contracts rather than relabel a parent model or
-send subscription traffic through an unsupported direct API client.
+ZCode is the remaining host-proof gap. The installed Agency profile's ordinary
+provider chain has only `codex-subscription` and `claude-subscription`, but its
+inference profile registry already has bounded ZCode/GLM profiles. The local
+candidate resolves `zcode-recruiter` only inside the canary and leaves the
+ordinary chain byte-for-byte unchanged. ZCode still has no safe noninteractive
+native canary backend, so the next implementation must solve that proof
+boundary rather than relabel a parent model or historical receipt.
 
 The complete execution sequence is recorded in the canonical AR-119 issue under
 “Owner-scoped completion sequence — 2026-08-19.” No matrix cell moved here.

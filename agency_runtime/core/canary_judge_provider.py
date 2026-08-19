@@ -5,10 +5,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import replace
 
-from agency_runtime.core.config import AgencyConfig, ProviderEntry
+from agency_runtime.core.config import AgencyConfig, ProviderEntry, is_safe_credential_url
+from agency_runtime.core.inference_profiles import provider_from_profile
 
 CANARY_CHILD_JUDGE_PROVIDER_ENV = "AGENCY_CANARY_CHILD_JUDGE_PROVIDER"
 _SUPPORTED_CLI_TRANSPORTS = frozenset({"claude", "codex"})
+_SUPPORTED_PROFILE_ADAPTERS = frozenset({"anthropic"})
 
 
 class CanaryChildJudgeProviderError(ValueError):
@@ -19,21 +21,46 @@ def configured_canary_child_judge_provider(
     config: AgencyConfig,
     host: str,
 ) -> tuple[ProviderEntry, str] | None:
-    """Resolve one host pin to its exact configured CLI provider and transport."""
+    """Resolve one host pin to one exact provider or canary-only profile."""
 
     requested = config.canary.child_judge_provider(host)
     if not requested:
         return None
-    matches = [
+    provider_matches = [
         provider
         for provider in config.providers
         if provider.name.strip().casefold() == requested.casefold()
     ]
-    if len(matches) != 1:
+    profile_matches = [
+        profile
+        for name, profile in config.inference.profiles.items()
+        if name.strip().casefold() == requested.casefold()
+    ]
+    if len(provider_matches) + len(profile_matches) != 1:
         raise CanaryChildJudgeProviderError(
             "the canary child-judge provider does not resolve exactly once"
         )
-    provider = matches[0]
+    if profile_matches:
+        provider = provider_from_profile(profile_matches[0])
+        if provider.name.strip().casefold() != requested.casefold():
+            raise CanaryChildJudgeProviderError(
+                "the canary child-judge provider does not resolve exactly once"
+            )
+        adapter = provider.type.strip().casefold()
+        transport = provider.transport.strip().casefold()
+        if adapter == "cli" and transport in _SUPPORTED_CLI_TRANSPORTS:
+            return provider, transport
+        if (
+            adapter not in _SUPPORTED_PROFILE_ADAPTERS
+            or not is_safe_credential_url(provider.base_url)
+            or not provider.is_available()
+        ):
+            raise CanaryChildJudgeProviderError(
+                "the canary child-judge inference profile is not supported or available"
+            )
+        return provider, ""
+
+    provider = provider_matches[0]
     transport = provider.transport.strip().casefold()
     if provider.type != "cli" or transport not in _SUPPORTED_CLI_TRANSPORTS:
         raise CanaryChildJudgeProviderError(

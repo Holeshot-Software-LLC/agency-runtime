@@ -19,6 +19,8 @@ from agency_runtime.core.config import (
     AgencyConfig,
     AgentActivationConfig,
     CanaryConfig,
+    InferenceConfig,
+    InferenceProfile,
     OllamaConfig,
     ProviderEntry,
 )
@@ -404,6 +406,71 @@ def test_canary_pin_projection_mismatch_fails_before_judge(
     assert result.staffed is False
     assert result.reason_code == "native_child_canary_provider_invalid"
     assert invoked is False
+
+
+def test_zcode_canary_profile_constrains_initial_and_repair_calls_without_chain_mutation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompt = "Alpha exact specialist prompt."
+    store = _Store([_agent("alpha-reviewer", prompt)], {"alpha-reviewer": prompt})
+    original_chain = (
+        ProviderEntry(name="codex-subscription", type="cli", transport="codex"),
+        ProviderEntry(name="claude-subscription", type="cli", transport="claude"),
+    )
+    observed: list[tuple[tuple[str, str], ...]] = []
+
+    def judge(task: str, _catalog: list[dict[str, Any]], **kwargs: Any) -> dict[str, Any]:
+        observed.append(
+            tuple((provider.name, provider.type) for provider in kwargs["config"].providers)
+        )
+        selected = ["alpha-reviewer"] if task.startswith("A previous evaluation") else []
+        result = _judge_result(selected)
+        result["provider_name"] = "zcode-recruiter"
+        result["provider_attempts"] = [_attempt(name="zcode-recruiter")]
+        return result
+
+    config = AgencyConfig(
+        providers=original_chain,
+        inference=InferenceConfig(
+            profiles={
+                "zcode-recruiter": InferenceProfile(
+                    name="zcode-recruiter",
+                    adapter="anthropic",
+                    model="GLM-5.2",
+                    base_url="https://api.z.ai/api/anthropic",
+                    api_key="bounded-test-key",
+                )
+            }
+        ),
+        canary=CanaryConfig(
+            child_judge_provider_by_host=(("zcode", "zcode-recruiter"),),
+        ),
+        ollama=OllamaConfig(enabled=False),
+    )
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_CHILD_JUDGE_PROVIDER", "zcode-recruiter")
+    zcode_install = replace(_install(), host="zcode")
+    assert store.run is not None
+    store.run["host"] = "zcode"
+
+    result = _invoke(
+        monkeypatch,
+        store,
+        judge,
+        config=config,
+        host="zcode",
+        install_identity=zcode_install,
+        install_identity_reader=lambda _host: zcode_install,
+    )
+
+    assert result.staffed is True
+    assert observed == [
+        (("zcode-recruiter", "anthropic"),),
+        (("zcode-recruiter", "anthropic"),),
+    ]
+    assert config.providers == original_chain
+    assert store.decisions[-1]["decision"]["requested_provider"] == "zcode-recruiter"
+    assert store.decisions[-1]["decision"]["provider"] == "zcode-recruiter"
 
 
 def test_no_provider_fails_open_unstaffed_and_records_explicit_diagnostic(

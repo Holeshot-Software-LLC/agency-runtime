@@ -47,11 +47,12 @@ series stateful and easy to misattribute.
 
 Agency configuration owns a persistent
 `canary.child_judge_provider_by_host` map. Each live Agency canary resolves its
-active host to one exact named CLI provider and narrows the child judge's
-provider tuple to that entry only. There is no provider fallback. The
-disposable host environment carries the same requested provider identity; a
-missing provider, unsupported transport, or config/environment mismatch fails
-before judge inference.
+active host to one exact named CLI provider or supported inference profile and
+narrows the child judge's provider tuple to that entry only. There is no
+provider fallback. The disposable host environment carries the same requested
+identity; a missing or ambiguous name, unsupported or unavailable adapter,
+unsafe credential endpoint, or config/environment mismatch fails before judge
+inference.
 
 The pin applies only while `AGENCY_CANARY_MODE=1`. Ordinary parent and child
 staffing continue to use the configured provider chain unchanged. Both the
@@ -69,13 +70,20 @@ inside the same disposable profile and sets the transport's explicit home.
 The directory dies with the profile. No ambient host credential path is
 treated as proof of the answering provider.
 
+A map entry may instead name one existing Anthropic-compatible inference
+profile. Agency materializes that profile as the canary's sole provider without
+adding it to `config.providers`, so the ordinary provider chain is unchanged.
+The endpoint must satisfy the existing HTTPS-or-literal-loopback credential
+rule and the profile must resolve its configured credential. A name appearing
+in both provider and profile namespaces is ambiguous and fails closed.
+
 The map accepts every supported harness key so one owner profile can retain
-the intended policy while switching harnesses. Runtime resolution currently
-accepts only the already supported structured judge transports, Codex and
-Claude. A desired `zcode -> GLM subscription` entry is a declared target, not
-working evidence: ZCode has neither a supported structured CLI judge transport
-nor a safe noninteractive canary backend in this candidate. Those contracts
-must be implemented and proven before that entry can run.
+the intended policy while switching harnesses. The current ZCode/GLM route can
+reuse the owner's existing `zcode-recruiter` Anthropic-compatible profile as a
+canary-only judge. Historical Store receipts show that profile family answered
+ZCode workforce calls, but they predate this candidate and are not canary or
+matrix proof. ZCode still has no safe noninteractive canary backend, so the
+profile path is locally executable code rather than installed/live evidence.
 
 No provider values are shipped by default and this change does not mutate the
 owner's installed configuration. The evidence-backed AR-119 value for a
@@ -91,10 +99,12 @@ expected to decline unless new measurement reopens the finding.
   silently fall through to a different subscription.
 - Cross-provider canaries carry two isolated credential homes but expose
   neither credential in Store or proof output.
+- A named inference profile is projected only into the canary's one-provider
+  tuple; it does not enter or reorder ordinary `config.providers`.
 - General child staffing behavior, the canary work unit, the Rule-9 contract,
   and every AR-119 matrix cell remain unchanged.
-- A configured but unsupported ZCode/GLM pin fails closed; it does not
-  manufacture ZCode subscription support from the host integration.
+- A configured ZCode/GLM profile pin does not manufacture native ZCode proof;
+  the missing safe backend keeps installed/live claims closed.
 
 ## Alternatives
 

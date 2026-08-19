@@ -55,12 +55,14 @@ availability. It is canary-only, uses one provider with no fallback, and
 records both the requested and actual answering provider. This implements the
 owner's desire to switch harnesses without re-pinning global configuration.
 
-It does not yet make every desired pairing executable. Codex and Claude are
-the only supported structured CLI judge transports. A ZCode harness key and
-future `zcode -> GLM subscription` policy can be retained, but a working GLM
-subscription path still requires a documented structured ZCode judge
-transport, credential isolation, and a safe noninteractive ZCode canary
-backend. No parity or matrix claim follows from the config shape.
+Codex and Claude remain the supported structured CLI judge transports. The
+canary pin can now also resolve one existing supported Anthropic-compatible
+inference profile, so ZCode may use its configured GLM profile without adding
+that profile to or reordering the ordinary provider chain. Historical ZCode
+Store receipts confirm GLM profile execution before this candidate; they are
+not current canary proof. ZCode still needs a safe noninteractive native canary
+backend. No parity or matrix claim follows from profile resolution or the
+config shape.
 
 ## Where the latency actually is (measured 2026-08-14, `9e29aabe`)
 
