@@ -1052,6 +1052,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c0069997` | 2026-08-19 | feat(canary): pin child judges per harness | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-c0069997-pin-child-judge-providers-per-canary-harness.md) |
 | `cc618e4a` | 2026-08-19 | test(canary): align pin verification contracts | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-cc618e4a-align-pin-verification-contracts.md) |
 | `ed5545f7` | 2026-08-19 | docs(ar119): scope codex parent and three-host phase | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `36cb081c` | 2026-08-19 | feat(canary): reuse inference profiles for zcode judges | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-36cb081c-reuse-zcode-glm-canary-profile.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
