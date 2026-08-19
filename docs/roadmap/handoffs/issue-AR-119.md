@@ -27,7 +27,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: fda7c205
+evidence_commit: 4f34c1135c43e5601e79a94714e31f8107c61dda
 minimum_ledger_commit: ee82c602f2dc2d5e9632fc91b6dc071b50dc7541
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
