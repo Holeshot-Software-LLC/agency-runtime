@@ -333,6 +333,37 @@ def test_inference_order_is_preserved_and_only_hard_eligible_catalog_reaches_jud
     assert stored["cards"] == result.native_child_delivery["cards"]
 
 
+def test_prefixed_store_hash_hydrates_to_canonical_delivery_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompt = "Exact specialist prompt with a prefixed Store identity."
+    prompt_digest = _digest(prompt)
+    agent = _agent("alpha-reviewer", prompt)
+    agent["hash"] = f"sha256:{prompt_digest}"
+    store = _Store([agent], {"alpha-reviewer": prompt})
+    observed_hashes: list[str] = []
+    prompt_reader = store.get_versioned_specialist_prompt
+
+    def read_prompt(slug: str, version: str, content_hash: str, **kwargs: Any) -> object:
+        observed_hashes.append(content_hash)
+        return prompt_reader(slug, version, content_hash, **kwargs)
+
+    monkeypatch.setattr(store, "get_versioned_specialist_prompt", read_prompt)
+
+    result = _invoke(monkeypatch, store, _judge_result(["alpha-reviewer"]))
+
+    assert result.staffed is True
+    assert store.prompt_reads == ["alpha-reviewer"]
+    assert observed_hashes == [f"sha256:{prompt_digest}"]
+    parsed = parse_inference_team_delivery(result.rewritten_task)
+    assert parsed is not None
+    assert parsed.cards[0].specialist_prompt_hash == prompt_digest
+    assert result.native_child_delivery["cards"][0]["specialist_prompt_hash"] == prompt_digest
+    assert result.native_child_delivery == project_native_child_staffing_decision(
+        result.native_child_delivery
+    )
+
+
 def test_canary_pin_constrains_initial_and_abstention_repair_calls(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

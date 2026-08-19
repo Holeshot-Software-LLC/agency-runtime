@@ -799,18 +799,21 @@ def _hydrate_team(
         if agent is None:
             return None
         version = str(agent.get("version") or "").strip()
-        prompt_hash = str(agent.get("hash") or "").strip().casefold()
+        stored_prompt_hash = str(agent.get("hash") or "").strip().casefold()
+        # Store keys retain both supported SHA-256 forms. Read the exact key,
+        # then bind v6 delivery and durable evidence to the canonical bare digest.
+        delivery_prompt_hash = content_digest_identity(stored_prompt_hash)
         if (
             not version
             or normalize_version_identity(version) != version
-            or content_digest_identity(prompt_hash) != prompt_hash
+            or delivery_prompt_hash is None
         ):
             return None
         try:
             prompt = prompt_reader(
                 slug,
                 version,
-                prompt_hash,
+                stored_prompt_hash,
                 max_chars=MAX_SPECIALIST_PROMPT_CHARS + 1,
                 disabled_agents=disabled_agents,
             )
@@ -823,14 +826,14 @@ def _hydrate_team(
             prompt.get("prompt_truncated") is not False
             or prompt.get("slug") != slug
             or prompt.get("version") != version
-            or str(prompt.get("hash") or "").strip().casefold() != prompt_hash
+            or str(prompt.get("hash") or "").strip().casefold() != stored_prompt_hash
             or not isinstance(body, str)
             or not body
             or len(body) > MAX_SPECIALIST_PROMPT_CHARS
         ):
             return None
         try:
-            if not content_identity_matches(body, prompt_hash):
+            if not content_identity_matches(body, stored_prompt_hash):
                 return None
         except UnicodeEncodeError:
             return None
@@ -838,7 +841,7 @@ def _hydrate_team(
             InferenceTeamCard(
                 specialist_slug=slug,
                 specialist_version=version,
-                specialist_prompt_hash=prompt_hash,
+                specialist_prompt_hash=delivery_prompt_hash,
                 prompt_body=body,
             )
         )

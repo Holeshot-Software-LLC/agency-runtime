@@ -1868,3 +1868,29 @@ three-host provider-pinning perspective**. The repaired Claude runtime still
 lacks a fresh green end-to-end attestation; Codex child proof remains upstream-
 blocked; OpenClaw and Hermes remain deferred, not waived. No Rule-9 claim and
 **no matrix cell moved**.
+
+### SOURCE CHECKPOINT: ZCode hydration root cause repaired locally
+
+The attended failure was not a missing prompt, inactive worker, changed roster,
+oversized card, or bad content. A read-only reconstruction of its exact ZCode
+capability boundary reproduced 72 eligible cards. Twenty-eight active cards,
+including `code-reviewer`, store their valid prompt identity as
+`sha256:<64 hex>`; the other 44 use the bare digest. `_hydrate_team` supported
+only the latter because it compared `content_digest_identity(hash)` back to the
+stored string before reading the prompt.
+
+The local fix keeps both identities in their proper authority domains: the
+exact prefixed or bare Store identity is used for versioned lookup and body
+verification, while the v6 delivery card receives the canonical bare digest
+required by the decision and host-proof schemas. A regression proves the exact
+prefixed key reaches Store and the parsed/persisted delivery remains canonical.
+The same read-only live catalog now hydrates 72/72 with 28 canonicalizations and
+zero failures; no judge or other provider was called.
+
+Core native-child staffing, envelope, and decision tests pass **117/117**.
+Wider native-hook and proof consumers pass **162**; three unrelated ledger tests
+still assert schema 46 although this branch's committed Store is schema 47.
+Ruff check and format pass on the two changed files. The repair is source-only
+at this checkpoint: the installed runtime remains `51b3202a2acb…`, no attended
+recheck has run, no specialist-delivery claim follows, and **no matrix cell
+moved**.

@@ -125,9 +125,9 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    Claude has an exact requested/answered `codex-subscription` route. Codex
    parent works and its child-proof exception remains explicit. An attended
    ZCode 3.8.1 call recorded requested/answered `zcode-recruiter` on route
-   `625e688c…`, then failed specialist-prompt hydration and ran generic child
-   `agent_526b8a7a…`. The pin is proven; ZCode Rule 4 is not. The persistent map
-   is canary-only/no-fallback, normal staffing remains unchanged, no cell moved.
+   `625e688c…`, then failed specialist-prompt hydration and ran generic child.
+   Local AR-135 repair canonicalizes 28 valid prefixed Store hashes only after
+   exact lookup; read-only live-catalog replay hydrates 72/72. It is not installed or live-proven. The pin is proven; ZCode Rule 4 is not; no cell moved.
 4. **Hosts**: Codex parent routing/header delivery is operational. Its Rule-4
    child artifact remains upstream-blocked; never summarize that as “Codex
    does not work.” Codex is trusted + on claude's digest
@@ -137,10 +137,10 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 ## next-bounded-work-package
 
-Keep Option A frozen after local gates; do not retry Claude or Codex. Next,
-repair AR-135's ZCode prompt hydration and run one attended recheck. At the next
-owner checkpoint, present the complete supplied-review-artifact plan before
-building it. No matrix cell moves without its named exact-candidate authority.
+Keep Option A frozen; do not retry Claude or Codex. Finish AR-135 local gates,
+commit its recovery pair, reinstall ZCode from that clean checkpoint, then run
+one attended 138-character recheck. Require a staffed v6 card before calling
+ZCode solid. No matrix cell moves without its named exact-candidate authority.
 
 ## same-task-continuity
 

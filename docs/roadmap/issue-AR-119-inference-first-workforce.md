@@ -143,6 +143,13 @@ an attended, isolated, actually-attributed GLM path. This does not prove ZCode
 specialist delivery, produce a repaired-digest Claude attestation, publish the
 unpushed commits, move a matrix cell, or complete Rule 4, Rule 9, or AR-119.
 
+AR-135's local follow-up now repairs the ZCode prompt-hydration failure without
+changing Option A. The failure was a shared canonicalization bug: 28 of the 72
+eligible cards use a valid prefixed Store hash, while v6 evidence requires its
+bare digest. Exact Store lookup is now preserved and only the delivered proof
+identity is canonicalized. A read-only replay hydrates all 72 cards; installed
+specialist delivery still awaits one attended ZCode call. No matrix cell moved.
+
 The owner separately confirmed the current Codex boundary on 2026-08-19.
 Codex parent operation is working: a live request-scoped parent turn identifies
 `host=codex`, carries Agency preflight inference, loads the selected specialist

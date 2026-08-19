@@ -55,6 +55,15 @@ profile, but the validated selection then failed with
 provider attribution and lifecycle correlation are now observed, while
 specialist-prompt consumption remains unproven.
 
+The local repair identified the exact cross-contract mismatch. Of the 72 cards
+eligible in that call's read-only reconstructed universe, 28 use the supported
+Store identity form `sha256:<digest>`. Prompt lookup, active-worker state,
+version, body hash, and size all passed, but native-child hydration incorrectly
+required the catalog identity itself to equal the normalized bare digest. It
+now uses the exact stored identity for immutable lookup and body verification,
+then binds v6 delivery and evidence to the canonical bare SHA-256 digest. The
+same live catalog replays 72/72 hydratable without another provider call.
+
 ## Approach
 
 Use one canonical five-host registry across bundle generation, native command
@@ -89,4 +98,6 @@ suite exposed that missing presentation path. Fresh-home, preservation,
 rollback, drift, schema, UI, and smoke tests pass, including the 167-test
 integrated native-hook/ZCode slice. This item remains open because a real
 installed call still could not hydrate and deliver the selected specialist
-prompt after its applied child-judge result.
+prompt after its applied child-judge result. The local repair has 117 core
+native-child passes and 162 wider hook/proof passes; it is not installed or
+live-proven yet.
