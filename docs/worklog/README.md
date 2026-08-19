@@ -1066,6 +1066,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ae1964fa` | 2026-08-19 | Merge pull request #298 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `5ed33a17` | 2026-08-19 | docs(ar119): checkpoint merged-main installation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `a1acc8a1` | 2026-08-19 | docs(ar119): record merged-main Claude smoke | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `16e55c9d` | 2026-08-19 | docs(ar119): record Codex parent abstention | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
