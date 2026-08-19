@@ -52,8 +52,7 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
   `6ba837fa`), schema 47 everywhere, installed 2026-08-19. State authority:
   `~/.agency-runtime/overnight-runtime-state.json`.
 - **Owner ruling 2026-08-18: done = claude, codex, zcode, in that order.**
-  Rule 9 UNCHANGED -- five-host parity is still the claim; never close R9
-  on three hosts.
+  Rule 9 UNCHANGED -- five-host parity is the claim; never close R9 on three.
 ## completed-evidence
 
 Detail in `AR-119-vision-loop-status.md`, session 2026-08-19. **No matrix
@@ -74,8 +73,7 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   it starts; Agency cannot READ the collaboration.
   `native_collaboration_topology_invalid` is the diagnostic's terminal
   fall-through reached with every guard PASSING -- not an invalid topology.
-  The claude canary instead stops at `delivery_marker_absent`; codex never
-  reaches the child judge.
+  The claude canary instead stops at `delivery_marker_absent`.
 ## traps (machine-specific; do not rediscover)
 
 - **git config corruption, FIXED 2026-08-19 (PR #296).** If git ever says
@@ -98,22 +96,26 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 ## exact-blocker
 
-1. **The child judge's provider is picked by config list order, and it
-   changes the answer.** Newest, probably largest. `agency.yaml` lists
-   `codex-subscription` first with `judge.model` empty; the canary's
-   restricted profile has no codex transport and falls through to
-   `claude-subscription`. Measured over a digest-verified identical
-   71-agent universe: the byte-identical 138-char canary unit **ABSTAINED**
-   on `claude-subscription` (twice, one repair-confirmed) and **STAFFED** on
-   `codex-subscription` (`minimal-change-engineer`, 0.90). **This retracted
-   this session's own "7.1 settled" claim** -- any staffing refutes it --
-   and killed the reading that the decline is a small-unit-policy property.
+1. **CONFIRMED 2026-08-19: the child judge's decline is
+   provider-conditional.** `agency.yaml` lists `codex-subscription` first
+   with `judge.model` empty; the canary's restricted profile has no codex
+   transport and falls through to `claude-subscription`. Over a
+   digest-verified identical 71-agent universe with the byte-identical
+   138-char unit: `codex-subscription` **STAFFS** (`minimal-change-engineer`,
+   0.90/0.93) and `claude-subscription` **DECLINES** (0 staffed / 3, two
+   applied+inferred declines at confidence **0.75 -- the same confidence the
+   canary's own child decision `5c963e09` recorded**). Reproduce with
+   `python scripts/ar119_child_judge_probe.py --provider <name> --runs 3`.
+   **This retracted this session's own "7.1 settled" claim** and killed the
+   reading that the decline is a small-unit-policy property. Two
+   environments disagree about whether the same child needs a specialist --
+   an owner question, and AR-253's rather than AR-119's.
 2. **The one-use capability seal** still gates Rule 4 Live and AR-252. Two
    gates in `child_delivery_evidence.py`: the `expected` capability
    (read-only paths hardcode `structural_hook_output=False`, lines
    1151/1226) and the sealed atomic Store consumer.
    `native_child_delivery_verifications` = **0 rows ever**. Gate 1 exists
-   because Claude Code tags no substring as hook-authored (lines 1147-1150).
+   because Claude Code tags no substring as hook-authored (1147-1150).
    **Neither option moves codex**: `_expected_v6_reason` returns
    `unsupported_opaque_interagent_channel` on its FIRST line.
 3. **Option A is separable and cheap to wire.** Codex recognizer call sites
@@ -124,23 +126,21 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 4. **Hosts**: codex trusted + on claude's digest for the first time
    (`hook_trust_status: unverified` = a missing `--verify-activation`
    receipt, NOT the owner's trust action). zcode has no CLI; openclaw and
-   hermes have no Rule 4 route. AR-253 flake still roving.
+   hermes have no Rule 4 route.
 
 ## next-bounded-work-package
-**One measurement decides the seal.** Force the child-judge probe onto
-`claude-subscription`; re-run the 138-char control over the same
-digest-verified 71-agent universe.
-- **Declines** -> provider-conditional, confirmed. Option A collapses to
-  pinning the canary's judge provider: no new unit, no fixture change, no
-  Rule 9 divergence. Decide the seal for Option A.
-- **Staffs** -> the cause is the canary's isolated environment; examine the
-  canary profile and prompt next.
+**That measurement is DONE and returned "declines" (blocker 1), so the seal
+should be decided for OPTION A.** Option A is now cheaper than even the
+separability analysis said: no new work unit, no new prompt constant, no
+change to `canary_proof.py:416`, no Rule 9 divergence, no matched-corpus
+damage. It reduces to **pinning which provider the child judge reaches
+inside the canary**.
 
-The probe is read-only (calls `query_judge` exactly as `staff_native_child`
-does; never `_unstaffed` / `_record_decision`). Rebuild its universe from
-decision `5c963e09`'s `offered_agent_ids`, **validated against
-`offered_agent_digest`** -- a naive re-filter with `capability_status=""`
-yields 33, not 71, and silently measures a different universe.
+Owner decision before building: pin to which provider, and does the pin
+belong to the canary only or to child staffing generally? The second form
+changes real-turn behaviour and is NOT covered by any authorization. Still
+open: Rule 4 Live needs the collector green once, AR-252 shares it, and
+neither moves codex (blocker 2).
 
 ## same-task-continuity
 

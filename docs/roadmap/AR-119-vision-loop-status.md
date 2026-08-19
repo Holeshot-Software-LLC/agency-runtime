@@ -1551,3 +1551,89 @@ contemplate the selection changing because a transport was absent.
 
 *Do not promote any cell from this section.* It is a probe, not a host
 artifact, and its provider does not match the canary's.
+
+### CONFIRMED: the child judge's decline is provider-conditional
+
+The measurement named as the next bounded work package has been run, and it
+returns the first branch. **Same task, same universe, same code — the answer
+depends on which provider answers.**
+
+The probe is now a committed script, `scripts/ar119_child_judge_probe.py`, so
+this is reproducible rather than reconstructed from prose. It rebuilds the
+judge's universe from a recorded decision's `offered_agent_ids`, refuses to
+run unless the recomputed `offered_agent_digest` matches, and restricts the
+inference chain with `dataclasses.replace(config, providers=(one,))`. It
+reports **which provider answered** rather than which one was requested.
+
+#### Instrument validation
+
+Default chain (config order), the byte-identical 138-char control unit:
+
+~~~text
+universe 71 agents | digest 5733d4e7aa75... VERIFIED | provider (config order)
+run 1: applied / inferred | staffed | ["minimal-change-engineer"] | conf 0.93
+       provider codex-subscription (cli:codex)
+~~~
+
+That reproduces the earlier finding, so the instrument is sound before the
+comparison is drawn.
+
+#### The comparison
+
+Forced onto `claude-subscription`, three serialized runs, failures kept:
+
+| Run | Status | Mode | Staffed | Conf | Provider that answered |
+|---|---|---|---|---|---|
+| 1 | `inference_unavailable` | unavailable | no | 0.00 | *(none — transport flake)* |
+| 2 | `applied` | inferred | **no** | 0.75 | `claude-subscription (cli:claude)` |
+| 3 | `applied` | inferred | **no** | 0.75 | `claude-subscription (cli:claude)` |
+
+**0 staffed / 3.** Runs 2 and 3 are genuine applied inferences that returned
+an empty selection — deliberate declines, not failures. Run 1 was a transport
+flake and is retained rather than dropped.
+
+Against the same unit and the same digest-verified 71-agent universe,
+`codex-subscription` staffs (`minimal-change-engineer`, 0.90 and 0.93 across
+two draws) and `claude-subscription` declines twice.
+
+**A corroboration worth noting:** both claude-subscription declines report
+confidence **0.75**, which is exactly the confidence recorded on the canary's
+own child decision `5c963e09`. The probe is reproducing the canary's observed
+behaviour, not merely something adjacent to it.
+
+#### What this settles
+
+1. **Blocker 1 is confirmed.** The decline is a property of the provider, not
+   of the work unit, the small-unit policy, or the catalog.
+2. **The §7.1 retraction stands and is now explained.** The unit was never
+   "too small to staff"; one provider staffs it. The earlier settlement read a
+   provider difference as a policy result.
+3. **Option A is the cheap path, and it is cheaper than even the separability
+   analysis suggested.** It needs no new work unit, no new prompt constant, no
+   change to `canary_proof.py:416`, no Rule 9 divergence and no
+   matched-corpus damage. It reduces to pinning which provider the child judge
+   reaches inside the canary. **The seal should be decided for Option A.**
+
+#### The larger question this exposes, which is not AR-119's
+
+`agency.yaml` leaves `judge.model` empty and lists `codex-subscription` first,
+so an unconstrained judge call takes the head of the provider list, and the
+canary's restricted profile — which has no codex transport — silently falls
+through to `claude-subscription`. **Two environments therefore disagree about
+whether the same harness-spawned child needs a specialist.**
+
+Rule 1 says selection is inference-based. It does not contemplate the
+selection changing because a transport happened to be absent. Whether that is
+acceptable is an owner question, and it belongs to AR-253 rather than here,
+but it should not be closed silently: today it is the difference between a
+child that gets a card and one that does not.
+
+*Falsification:* if a later series on `claude-subscription` staffs this unit,
+the decline is not provider-determined but load- or model-version-dependent,
+and the seal decision must be re-opened. Two applied declines at identical
+confidence make that unlikely but not impossible; the probe makes re-running
+it cheap, which is the point of committing it.
+
+*Scope:* this is a probe, not a host artifact. It correlates; it cannot
+originate a Rule-4 claim (ADR-0156). **Do not promote any matrix cell from
+it.**
