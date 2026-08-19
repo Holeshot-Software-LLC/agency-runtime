@@ -398,6 +398,55 @@ def test_plaintext_staffing_validates_the_exact_returned_hook_bytes_before_succe
     assert returned is not None and len(returned) <= MAX_HOOK_OUTPUT_BYTES
 
 
+def test_zcode_agent_pre_tool_use_reaches_native_child_staffing(
+    monkeypatch: Any,
+) -> None:
+    store = _PlanStore()
+    observed: dict[str, Any] = {}
+
+    def staff(*_args: Any, **kwargs: Any) -> NativeChildStaffingResult:
+        observed.update(kwargs)
+        rewritten = "Review the implementation.\n[AGENCY INFERENCE TEAM v6]"
+        assert kwargs["delivery_validator"](rewritten) is True
+        return NativeChildStaffingResult(
+            staffed=True,
+            reason_code="staffed",
+            rewritten_task=rewritten,
+        )
+
+    monkeypatch.setattr(
+        HookBridge,
+        "_native_child_staffing_parent",
+        lambda _self, _payload, _args: (
+            hooks_module.HookCorrelation(
+                "zcode-session",
+                "trace",
+                "",
+                "",
+                "toolu-code",
+            ),
+            "trace",
+        ),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_install_identity.current_runtime_managed_host_install_identity",
+        lambda host: {"host": host},
+    )
+    monkeypatch.setattr("agency_runtime.core.native_child_staffing.staff_native_child", staff)
+
+    response = HookBridge("zcode", store=store).handle(  # type: ignore[arg-type]
+        _zcode_agent_payload()
+    )
+
+    assert observed["host"] == "zcode"
+    assert observed["parent_session_id"] == "zcode-session"
+    assert observed["launch_id"] == "toolu-code"
+    assert response["hookSpecificOutput"]["hookEventName"] == "PreToolUse"
+    assert response["hookSpecificOutput"]["updatedInput"]["prompt"].endswith(
+        "[AGENCY INFERENCE TEAM v6]"
+    )
+
+
 def test_escaping_heavy_hook_response_is_rejected_before_staffing_can_persist(
     monkeypatch: Any,
 ) -> None:

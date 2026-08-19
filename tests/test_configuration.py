@@ -295,6 +295,38 @@ def test_workforce_policy_round_trips_through_shared_cli_dashboard_config(
     assert loaded.workforce.auto_promote_successes == 12
 
 
+def test_canary_child_judge_provider_map_round_trips_as_typed_config(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+
+    result = apply_config_operations(
+        [
+            {
+                "op": "set",
+                "path": "canary.child_judge_provider_by_host.claude",
+                "value": "codex-subscription",
+            },
+            {
+                "op": "set",
+                "path": "canary.child_judge_provider_by_host.zcode",
+                "value": "glm-subscription",
+            },
+        ],
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    assert result.state.persisted["canary"]["child_judge_provider_by_host"] == {
+        "claude": "codex-subscription",
+        "zcode": "glm-subscription",
+    }
+    loaded = load_config(path, reload=True)
+    assert loaded.canary.child_judge_provider("claude") == "codex-subscription"
+    assert loaded.canary.child_judge_provider("zcode") == "glm-subscription"
+
+
 @pytest.mark.parametrize(
     ("path", "value", "message"),
     [

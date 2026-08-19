@@ -28,6 +28,18 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- Live Agency canaries can persist one child-judge provider pin per harness.
+  The judge and its abstention repair use only that provider, cross-provider
+  CLI credentials are copied into a second disposable private home, and proof
+  records the requested and actual answering providers separately. Ordinary
+  child staffing is unchanged. A pin may also reuse one exact supported
+  Anthropic-compatible inference profile without adding it to the ordinary
+  provider chain; this enables the local ZCode/GLM judge path but does not
+  claim a safe native ZCode canary backend. Profile pins project only their
+  exact identity; CLI transports alone receive isolated credential homes.
+  ZCode's documented Agent `PreToolUse` hook reaches the staffing boundary
+  under test, while installed proof still requires an attended ZCode session.
+
 - The dashboard now exposes bounded routing-latency, specialist-selection,
   host-written child-delivery, Rule-8 exception, and staged-versus-wired host
   evidence. Latency, child, Rule-8, and wiring math share the CLI projections;

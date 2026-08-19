@@ -9,6 +9,7 @@ related:
   - docs/decisions/0036-capability-bound-host-canary-attestations.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0160-pin-child-judge-providers-per-canary-harness.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md

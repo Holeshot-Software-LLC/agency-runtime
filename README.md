@@ -830,6 +830,27 @@ agency host-canary claude
 agency host-canary claude --execute --confirm "RUN LIVE claude CANARY"
 ```
 
+Agency-mode live canaries require an explicit child-judge pin for the active
+harness. Pins persist together, so changing harnesses does not require
+reordering the global provider chain:
+
+```yaml
+canary:
+  child_judge_provider_by_host:
+    codex: codex-subscription
+    claude: codex-subscription
+    zcode: zcode-recruiter
+```
+
+Each value must resolve exactly once to a configured Codex/Claude CLI provider
+or a supported Anthropic-compatible inference profile. Profile pins are
+materialized only into the canary's one-provider tuple; they never enter or
+reorder the ordinary provider chain. There is no fallback. ZCode can reuse an
+existing GLM inference profile for judge selection, but it still lacks a safe
+noninteractive native canary backend. ZCode is hook-driven rather than a
+launchable CLI here, so current provider-attribution proof requires an attended
+installed ZCode Agent call; profile execution alone is not host proof.
+
 Claude canaries always run in a disposable isolated profile;
 `--profile-scope current-profile` and `agency install --agent codex
 --verify-activation` are Codex-only surfaces.

@@ -88,6 +88,7 @@ _SUCCESS_ROUTE_FIELDS = frozenset(
         "work_units",
     }
 )
+_PINNED_SUCCESS_ROUTE_FIELDS = _SUCCESS_ROUTE_FIELDS | {"requested_provider"}
 
 
 def _digest(value: object) -> str:
@@ -272,7 +273,10 @@ def project_native_child_success_route(
 ) -> dict[str, Any] | None:
     """Validate the one exact persisted success shape around a child delivery."""
 
-    if not isinstance(value, Mapping) or frozenset(value) != _SUCCESS_ROUTE_FIELDS:
+    if not isinstance(value, Mapping) or frozenset(value) not in {
+        _SUCCESS_ROUTE_FIELDS,
+        _PINNED_SUCCESS_ROUTE_FIELDS,
+    }:
         return None
     delivery = project_native_child_staffing_decision(value.get("native_child_delivery"))
     if delivery is None:
@@ -291,6 +295,7 @@ def project_native_child_success_route(
     latency_ms = value.get("latency_ms")
     candidate_count = value.get("candidate_count")
     provider = value.get("provider")
+    requested_provider = value.get("requested_provider")
     if (
         value.get("status") != "applied"
         or value.get("semantic_status") != "applied"
@@ -323,6 +328,15 @@ def project_native_child_success_route(
         or not isinstance(provider, str)
         or len(provider) > 128
         or provider != applied_provider
+        or (
+            "requested_provider" in value
+            and (
+                not isinstance(requested_provider, str)
+                or not requested_provider
+                or len(requested_provider) > 128
+                or requested_provider != applied_provider
+            )
+        )
         or value.get("source_message_hash") != query_hash
         or value.get("query_hash") != query_hash
         or value.get("context_fingerprint") != context_fingerprint

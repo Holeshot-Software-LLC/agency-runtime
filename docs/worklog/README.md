@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-18
+updated: 2026-08-19
 tags: []
 related: []
 supersedes: []
@@ -1038,6 +1038,31 @@ This registry connects repository history to the roadmap and to optional detail 
 | `aebad9c1` | 2026-08-18 | fix(tests): make the CI-scope suite hermetic against an inherited git env | null | null |
 | `6ba837fa` | 2026-08-18 | Merge pull request #296 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
 | `895d952c` | 2026-08-18 | docs(ar119): refresh the capsule for a fresh session | null | null |
+| `dc0f077d` | 2026-08-18 | Merge pull request #297 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
+| `cf14d939` | 2026-08-19 | docs(ar119): record the codex canary series, the seal decision, and R8 from disk | null | null |
+| `67acca48` | 2026-08-19 | docs(ar119): settle the 7.1 acceptance draw and re-cost Option A | null | null |
+| `8607eadf` | 2026-08-19 | docs(ar119): record that the canary work unit is deliberately not configurable | null | null |
+| `7d361a7a` | 2026-08-19 | docs(ar119): the canary fixture coupling is separable per host | null | null |
+| `9e8f8b79` | 2026-08-19 | docs(ar119): retract the 7.1 settlement -- the control unit staffs | null | null |
+| `adc412a7` | 2026-08-19 | docs(ar119): refresh the capsule for a new session | null | null |
+| `4f34c113` | 2026-08-19 | docs(ar119): correct the capsule's unpushed-branch state | null | null |
+| `976f666a` | 2026-08-19 | docs(ar119): use the full SHA for evidence_commit | null | null |
+| `bb33a102` | 2026-08-19 | docs(ar119): capsule reflects the pushed branch state | null | null |
+| `05f76fe3` | 2026-08-19 | feat(ar119): commit the child-judge probe and confirm the decline is provider-conditional | null | null |
+| `c0069997` | 2026-08-19 | feat(canary): pin child judges per harness | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-c0069997-pin-child-judge-providers-per-canary-harness.md) |
+| `cc618e4a` | 2026-08-19 | test(canary): align pin verification contracts | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-cc618e4a-align-pin-verification-contracts.md) |
+| `ed5545f7` | 2026-08-19 | docs(ar119): scope codex parent and three-host phase | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `36cb081c` | 2026-08-19 | feat(canary): reuse inference profiles for zcode judges | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-36cb081c-reuse-zcode-glm-canary-profile.md) |
+| `1d5bb4b9` | 2026-08-19 | fix(canary): carry profile pins through host preparation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-1d5bb4b9-carry-profile-pins-through-host-preparation.md) |
+| `14de2f74` | 2026-08-19 | fix(canary): correlate Claude proof to child route | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-14de2f74-correlate-claude-proof-to-child-route.md) |
+| `dd3dbdcc` | 2026-08-19 | docs(ar119): checkpoint installed Option A evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `7088b55c` | 2026-08-19 | docs(ar119): keep recovery capsule bounded | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `0c73db8f` | 2026-08-19 | docs(ar119): checkpoint repaired Option A refresh | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `351f39e3` | 2026-08-19 | docs(ar119): record attended zcode option a proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `3baef26f` | 2026-08-19 | fix(native-child): hydrate prefixed prompt identities | [AR-135](../roadmap/issue-AR-135-complete-zcode-integration.md), [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | null |
+| `dac11c16` | 2026-08-19 | docs(ar119): record repaired zcode delivery and completion plan | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-135](../roadmap/issue-AR-135-complete-zcode-integration.md), [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | null |
+| `29a710ab` | 2026-08-19 | docs(ar119): admit owner-authorized main rollout | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `91d1299d` | 2026-08-19 | docs(ar119): bind the rollout to local gates | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

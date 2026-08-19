@@ -126,6 +126,7 @@ Status meanings:
 | [ADR-0156](0156-host-artifacts-prove-native-child-delivery.md) | Use host-authored artifacts as native-child delivery proof | Accepted |
 | [ADR-0158](0158-collect-child-canary-proof-inside-disposable-host-profiles.md) | Collect child-canary proof inside disposable host profiles | Accepted |
 | [ADR-0159](0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) | Authenticate Codex plaintext spawns from host transcripts | Accepted |
+| [ADR-0160](0160-pin-child-judge-providers-per-canary-harness.md) | Pin child-judge providers per canary harness | Accepted |
 
 ## State and roster governance
 

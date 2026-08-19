@@ -3,7 +3,7 @@ title: "AR-119 vision-completion loop final status"
 status: active
 category: roadmap
 created: 2026-08-17
-updated: 2026-08-18
+updated: 2026-08-19
 tags: [roadmap, report, autonomous, loop, AR-119, AR-253, AR-255]
 related:
   - docs/roadmap/AR-119-vision-completion-autonomous-brief.md
@@ -892,3 +892,1062 @@ gate code.
 **State left for the owner:** `core.bare` restored to `false`; both checkouts
 verified healthy; owner WIP untouched; work committed through `cdfbcddb` and
 **not pushed**.
+
+## Session 2026-08-19: codex canary series, the seal decision, and R8 from disk
+
+Runtime for everything below: installed digest
+`f7b84c8a40fab541640d07a341af92591ba1f2f4d7dfd11124208635116f9dbb`
+(merge `6ba837fa`, PR #296), schema 47 == store 47, all three hosts on one
+digest. **This is a NEWER candidate than the matrix's `1bd7e37c`** (whose
+package tree equals merge `99a7b3ac`, digest `cc478bc88258…`). No matrix
+cell is moved by this session; see "what claiming R8 would cost" below.
+
+Note for anyone re-running these commands: `agency` on PATH resolves to
+`~/.local/bin/agency.exe`, which is **schema 45** and refuses the store with
+`database schema is newer than this runtime (47 > 45)`. Every command below
+was run as `python -m agency_runtime.cli …` from this checkout, whose tree is
+the installed `source_root` recorded in
+`~/.agency-runtime/launchers/current-<host>.json`. `C:\agency-cli` holds the
+**host** CLIs (`claude.CMD`, `codex.CMD`), not the Agency CLI.
+
+### Codex canary series — three runs, deterministic, and NOT the AR-253 flake
+
+Probe first: `agency eval routing --json --no-details` returned
+`passed: true` (v1.4.0). Readiness for codex: `ready: true`,
+`unmet_prerequisites: []`, `trust_mode: attended`. Three serialized live runs
+followed (`--execute --confirm "RUN LIVE codex CANARY" --timeout 420`), runs
+`231919ee` 03:53:28Z, `c7bea5d0` 03:55:59Z, `e70b6bd7` 03:58:09Z.
+
+**All three runs are identical in every recorded field.** That is the
+finding: this is not load-shaped and it is not the provider defect AR-253
+tracks.
+
+~~~text
+canary_passed        false   (x3)
+invocation.status    failed  -> codex_collaboration_projection_unavailable
+collaboration_diagnostic
+  spawn_count 1  child_start_count 1  wait_count 1  tool_output_count 2
+  followup_count 0  child_interaction_count 0  agent_message_count 9
+  unexpected_item_count 0   reason native_collaboration_topology_invalid
+preflight            workforce_inference_failed / runtime_error
+provider attempts    planner   codex-fast gpt-5.6-terra applied
+                     recruiter codex-fast gpt-5.6-terra applied
+cardinalities        routes 0  native_child_routes 0
+                     native_child_deliveries 0  specialist_loads 0
+~~~
+
+Two things in that block deserve to be read slowly.
+
+**1. Both provider stages APPLIED.** On claude the parent-stage failures in
+this same window are provider rejections — `no_safe_sufficient_team`,
+`recruiter_abstained`, `inference_unavailable`, `composition_order_invalid`.
+On codex the planner and recruiter each returned
+`structured_response_applied` and preflight *still* failed. Nothing here
+resembles the AR-253 recruiter/planner defect, and chasing provider health
+will not move it.
+
+**2. The topology counts all PASS, and the diagnostic still reports
+failure.** Walk `_codex_collaboration_diagnostic_reason`
+(`agency_runtime/core/canary_backends.py:2346-2373`) with the observed
+counts: spawn is present and unambiguous, followup is correctly absent under
+the canary contract, wait is present and unambiguous,
+`tool_output_count 2 >= spawn 1 + followup 0 + wait 1`,
+`child_start_count 1 >= spawn_count 1`,
+`child_interaction_count 0 >= followup_count 0`. Every guard passes and the
+function falls through to its terminal
+`return "native_collaboration_topology_invalid"` — a reason with no success
+counterpart. `_CODEX_COLLABORATION_FAILURE_REASON_BY_DIAGNOSTIC` then maps
+it to `codex_collaboration_projection_unavailable`.
+
+So the reported reason is **misleading by construction**: the topology is not
+invalid. The diagnostic only runs when the strict projection already returned
+`collaboration is None`, and it cannot name why. The honest reading is
+"the strict collaboration projection failed for a reason the content-free
+diagnostic cannot express", not "codex built an invalid topology".
+
+**What codex actually did: it spawned the child and the child started.**
+`spawn_count 1`, `child_start_count 1`. The host side worked. What failed is
+Agency's ability to *read* it.
+
+*Falsification:* a codex canary run whose counts differ from the block above,
+or one where `collaboration` is non-null, refutes the determinism claim. A
+fourth run with a different `reason` refutes the fall-through reading.
+
+### The claude control — both hosts fail, at different walls
+
+Comparing three codex canary runs against claude's *real-profile* turns would
+have been a confound, so a claude canary was run in the same window under the
+same flags.
+
+~~~text
+claude canary: invocation.status  completed        (codex: failed)
+               isolated_plugin    invoked+loaded   (codex: registered+enabled)
+               host_child_collection_reason  delivery_marker_absent
+               header_missing     2 fields         (codex: all 5)
+               trust_bypass_used  false            (codex: true)
+               no preflight failure, no evidence block
+~~~
+
+**This is the answer to "compare the child judge's behaviour against
+claude's".** The two hosts stop at different places:
+
+- **claude** reaches child-delivery collection. The in-lifetime collector
+  ran and returned `delivery_marker_absent` — it looked in the child artifact
+  for the v6 marker and did not find one. The child-judge path is *reached*
+  and fails one step from the end.
+- **codex** never reaches it. The parent's own preflight dies first, no
+  routing decision is recorded at all, and `native_child_routes` is 0. The
+  child judge is never invoked, so there is no codex child-judge behaviour to
+  compare yet.
+
+Corroborating the second point from the store: **codex's last
+`routing_decisions` row of any kind is 2026-08-11T22:04:22Z.** The canary
+used to record them (45 rows `codex_activation_canary_inference`,
+2026-07-31 through 2026-08-03); it records none now.
+
+### Codex Rule 4 is blocked one layer EARLIER than the seal
+
+This is the fact that reorders the priorities, and it is deliberate design,
+not a regression.
+
+`agency_runtime/core/child_delivery_evidence.py:636-641`, the first statement
+in `_expected_v6_reason`:
+
+~~~python
+if host == "codex":
+    # Codex 0.147 stores the delegated input as ordinary developer/user
+    # records and carries the actual V2 inter-agent message opaquely. There
+    # is no host-authored field identifying Agency's hook output.
+    return "unsupported_opaque_interagent_channel"
+~~~
+
+It returns **before the capability seal is consulted at all**. And
+`agency_runtime/adapters/hooks.py:1310-1320` refuses to staff a codex native
+child whenever `attest_codex_plaintext_spawn` cannot authenticate the spawn,
+recording `_record_native_child_unstaffed` with the same reason and never
+blocking the child.
+
+**Therefore: whichever way the seal is decided, codex Rule 4 does not move.**
+Codex can be staffed when its spawn is plaintext-attestable, but a codex
+delivery can never *verify* through this path. This is exactly what ADR-0158
+already states ("Codex card delivery through the current opaque channel
+remains unsupported; Codex remains a supported host and proceeds
+unstaffed") — the canary series is the first live confirmation of it on this
+machine, and it is the documented state, not a defect to chase.
+
+### The one-use verified-delivery capability seal — the decision
+
+`native_child_delivery_verifications` holds **0 rows, ever**. The seal has
+never been consumed successfully.
+
+The seal is two independent gates, both in `child_delivery_evidence.py`:
+
+1. **The `expected` capability.** `_expected_v6_reason` returns
+   `host_hook_output_origin_not_proven` when `expected is None` **and**
+   `structural_hook_output` is false (lines 640-646). The read-only entry
+   points pass `structural_hook_output=False` hardcoded (lines 1151, 1226),
+   so `agency evidence children` can never verify.
+2. **The sealed atomic Store consumer.** `_consume_exact_verification`
+   requires a `_NativeChildDeliveryVerificationConsumer` built with the
+   module-private `_VERIFICATION_CONSUMER_SEAL`; anything else returns
+   `atomic_verification_consumer_not_supplied`. Only the Store's own
+   `_record_native_child_delivery_verification` can mint the row.
+
+**The reason for gate 1 is not paranoia — it is a gap in Claude Code's
+artifact format.** The comment at lines 1147-1150 states it: Claude
+identifies record zero as side-chain child input but does not tag any
+substring as hook-authored, so exact one-use expected-decision correlation is
+required before this can verify. The host cannot self-attest which bytes in
+record zero came from the hook. The one-use capability substitutes for a
+marker the artifact does not carry.
+
+**Option A — keep the seal one-use and canary-only; make the canary
+deliver.** The claude control already names the exact remaining step:
+`delivery_marker_absent`. The collector runs in-lifetime inside the
+disposable profile and finds no v6 marker in the child it spawned; the work
+is to make that child actually receive a card.
+
+*Costs:* no new capture surface, no schema bump, no ADR change, no widening
+of ADR-0158 — the cheapest path by far, and the only one that needs no owner
+authorization under §3 of the loop brief. *What it permanently forfeits:*
+Rule 4 Live becomes provable **only** inside a canary. The real-profile v6
+delivery of 2026-08-18 01:47Z — the one fully-bound existence proof this
+project has — stays unverifiable forever, and delivery can never be measured
+as a rate on the owner's real profile. AR-252's collector must then also live
+inside a canary.
+
+**Option B — let the host artifact self-attest: make `structural_hook_output`
+true for claude.** Change what the hook writes into the child's record zero
+so the artifact carries a host-distinguishable hook-output marker. Then
+`expected=None` yields `expected_decision_not_supplied` — a nameable, weaker
+state — instead of `host_hook_output_origin_not_proven`, and a read-only
+consumer can mint a *distinguishable* verdict. The type already contemplates
+this: `_NativeChildDeliveryVerificationConsumer`'s own docstring reads
+"Sealed adapter for the Store's atomic **or read-only** exact consumer."
+
+*Costs:* (a) it changes what is written into a host artifact — a **new
+capture surface**, which §3 of the loop brief reserves to the owner; (b) it
+needs a new verification lane and therefore a `SCHEMA_VERSION` bump, which
+disables every hook machine-wide until every host is reinstalled; (c) it sits
+against ADR-0158's "No CLI or dashboard operation may mint a delivery
+receipt, and Store-only state cannot create the capability" — to keep that
+guarantee the read-only verdict must be typed so it can never be counted as a
+Rule 4 proof, which means the strong claim still requires Option A's canary
+anyway. *What it buys:* real-profile deliveries become countable, which is
+what turns Rule 4 from an existence proof into a rate, and it is the only
+option that ever lets the 01:47Z artifact be verified.
+
+**Neither option moves codex** (previous section). If the priority order is
+codex-first, the seal is not the thing standing in the way — the opaque
+inter-agent channel is.
+
+*Falsification:* if a read-only consumer can be built that satisfies
+`_consume_exact_verification` without the Store's private method, gate 2 is
+weaker than described. If any claude child artifact is found carrying a
+host-authored field that identifies hook output, the line-1147 comment is
+stale and Option B is far cheaper than costed here.
+
+### R8 claude — provable from a fail-open turn already on disk, no new capture surface
+
+**Asked and answered: yes, R8 does not need the proposed canary
+parent-proof.** The morning decision to add a bounded parent-proof to the
+canary attestation can be declined on evidence grounds.
+
+The artifact is this very session. Run `e9715480`, trace
+`2a77824c-d862-4f64-b3ac-ee186e958b94`, session
+`abaccac6-ca45-4abd-91ec-c6a31a9f8c5b`, host claude, real profile,
+`status = preflight_failed`, started 03:42:54.194Z, ended 03:46:30.052Z,
+turn_sequence 1013. Host artifact:
+`~/.claude/projects/C--Workspaces-Holeshot-Software-agency-runtime--claude-worktrees-ar119-vision-mitigation-5fbd88/abaccac6-ca45-4abd-91ec-c6a31a9f8c5b.jsonl`
+(287 records), written by Claude Code and retained where the host wrote it.
+
+The three facts the authority needs, all from the host's own file:
+
+| # | Record | Time | What it shows |
+|---|---|---|---|
+| 1 | 2, `hook_success` SessionStart | 03:42:53.278Z | `command` names `C:\Python313\python.exe -I -S …\launchers\runtime-sha256-f7b84c8a40fa…\site-packages\agency_runtime\_bootstrap.py` — the installed launcher, by digest |
+| 2 | 9, `hook_additional_context` UserPromptSubmit | 03:46:30.231Z | the **entire** delivered context, 1 element, 1,309 chars, inline |
+| 3 | 11, `assistant` | 03:46:31.858Z | the host's first published text, 1.63 s later |
+
+Record 9 is the decisive one. It is retained **inline and complete** in the
+host transcript — not a side file — and it contains the resident-steward
+kernel and nothing else. Checked by substring: `[AGENCY LOADED]` absent,
+`[AGENCY` absent, `Instructions:` absent, `CARD ` absent. Store corroboration
+on the trace: `specialists_loaded` 0, `routing_decisions` 0,
+`delegation_events` 0, `skills_loaded` 0. The receipt is
+`workforce_inference_failed` / `["inference_invalid"]` at 03:46:30.052Z,
+179 ms before the host wrote record 9, and `agency evidence rejections`
+partitions this trace under **"Agency was blind"**, not "withheld".
+
+**Why this is stronger than the cells retracted on 2026-08-18.** The R5
+retraction died because the negative half ("Agency started no process") was
+borrowed from source reading rather than measured. Here the negative is
+*observed*: the complete delivered context is present in the host's own
+artifact, and it demonstrably contains no card. Absence in a retained record
+is a measurement, not an inference. And the R5 retraction's own prescribed
+remedy — run the eval through the installed launcher's own bootstrap, which
+executes under `-I -S`, and retain the command line — is present here for
+free, because Claude Code records the full hook command line itself
+(records 2, 17, 19, 24, 28, 33, 35, all naming digest `f7b84c8a40fa`).
+
+**Three honest limits, stated before anyone promotes this.**
+
+1. **The UserPromptSubmit record does not itself carry the command line.**
+   Record 9 has no `command`, `exitCode`, or `durationMs`. Its binding to the
+   installed launcher comes from neighbouring host records in the same
+   session and the same turn (record 2 at 03:42:53, record 17 at 03:46:52),
+   both naming `f7b84c8a40fa`. Claude Code runs all Agency hooks from one
+   settings config, so this is sound — but it is an inference across records,
+   not a byte-level property of record 9.
+2. **`inference_invalid` is not the purest form of "unavailable".** It means
+   inference ran and its output failed validation, which is nearer "Agency
+   could not assemble a safe team" than "Agency was unreachable". Rule 8's
+   operative line is that Agency never *withholds*, and the turn was plainly
+   not withheld. A cleaner instance would be one of the
+   `workforce_provider_unavailable` traces (`99124b2b` 03:08:24Z,
+   `911912d8` 03:00:53Z), both in session `f3066348`.
+3. **One turn, not a rate** — the same limitation every proven claude cell
+   carries.
+
+**What claiming it would cost.** This evidence sits at digest
+`f7b84c8a40fa`; the matrix candidate is `1bd7e37c` / `cc478bc88258…`.
+Marking R8 Installed/Live requires advancing `candidate_commit` under the
+matrix update contract and **re-anchoring every existing citation** — R2, R3
+and R7's proven cells included. That is the real price, and it is a
+bookkeeping price, not an evidence price. No cell is moved here.
+
+*Falsification:* if record 9's `content` list is found to be truncated by
+Claude Code rather than complete, the observed-absence argument collapses to
+an inference and this is no stronger than the retracted cells. If any
+`specialists_loaded` row is later found on trace `2a77824c`, the turn was not
+unstaffed and the candidate is void.
+
+### Correction recorded against this session's own work
+
+An earlier reading of these runs held that **empty `staffing_reason_codes` on
+the codex receipts was a codex evidence-parity defect** — codex recording
+`[]` where claude records a populated list. The control refutes it: codex has
+recorded populated codes 16 times (`inference_invalid` x7,
+`no_safe_sufficient_team`/`recruiter_abstained` x6,
+`independent_assurance_missing` x2, `inference_unavailable` x1, latest
+2026-08-14), and claude has 11 empty receipts of its own. The column is not
+host-specific and the finding was withdrawn before it was reported. What
+survives is narrower and still worth knowing: **every codex receipt since
+2026-08-14 is empty, and all three canary receipts are empty** — consistent
+with the canary path rather than with the host.
+
+### `delivery_marker_absent` is the policy working — and it settles §7.1
+
+Diagnosing why the claude canary stopped at `delivery_marker_absent` produced
+a larger result than the diagnosis. **The canary's child got no card because
+the child judge deliberately declined to staff it, and this time the decline
+is repair-confirmed.**
+
+First, what the reason code actually means
+(`child_delivery_evidence.py:1698-1735`): `delivery_marker_absent` is
+returned *after* `_trusted_launch_prefix_bytes` accepted the file. The child
+artifact was found, passed the ownership/link/parent-chain guard, and was
+read — it simply carried no v6 envelope. This is explicitly separated in the
+source from `artifact_not_trusted` because the two "have opposite fixes". So
+the collector is working; there was nothing to collect.
+
+**The canary parent run is `43a081d6`**, session
+`df0fd324-8aeb-44f1-937e-5cf455be4bc7`, trace `1330662e`, 04:00:52 →
+04:03:20Z, and it did **not** fail preflight — it terminated
+`response_invalid`. The parent was staffed normally: decision `c75f7f6c`
+`accepted` over 293 candidates, selecting `code-reviewer` and
+`application-security-engineer`, with two matching `specialists_loaded` rows
+and one completed `delegation_events` row (`unit-05d45f7553`, backend
+`delegate_task`).
+
+**Then the child judge ran, and declined.** Decision `5c963e09`:
+
+~~~text
+status               inference_abstained
+source               native_child_inference_abstained
+native_child_reason  native_child_abstention_confirmed
+provider             claude-subscription     latency_ms 13974
+task_chars 138       task_lines 1            candidate_count 71
+inference_attempted true  inference_configured true  inference_required true
+inference_mode       abstained
+selected_ids []      semantic_ids []         top_score 0.0
+offered_agent_digest 5733d4e7aa75fb48812f9e7733ba811deec06b12180a50a4272c594f018e0897
+~~~
+
+The captured assignment is 138 characters, one line, recorded verbatim:
+
+> Identify the primary behavioral regression risk of replacing return value
+> with return value.strip() in a Python text-normalization helper.
+
+**This is the §7.1 acceptance draw, and it lands on the settling condition.**
+The capsule recorded the open question as: the 2026-08-18 11:15Z draw
+abstained "first-pass only; the repair returned no valid answer, so it is
+unconfirmed. **A repair-confirmed post-policy decline would settle it**; any
+staffing refutes it."
+
+`native_child_abstention_confirmed` is precisely that. The two reasons are
+deliberately split — `native_child_staffing.py:91-99` states that the legacy
+reason "means the first-pass abstention stood because the repair could not
+produce a valid answer; the confirmed reason means the judge tested its own
+abstention on the repair call and reaffirmed it. They must never collapse
+into one code." The confirmed branch (line 1223) is reachable only after a
+second `query_judge` call on `repair_abstention_task(original_task)` with
+`candidate_scope="complete"`, which must return `status == "applied"` **and**
+`inference_mode == "inferred"`, whose `selected_ids` must be a `list` (strict
+`type(...) is not list` check at line 1196) and must be empty. Anything less
+falls to the legacy unconfirmed reason at line 1209.
+
+So: the pure 138-char unit, the complete 71-candidate universe with its
+offered-agent digest recorded, the owner's small-unit policy live, a funded
+repair call, and a reaffirmed decline — on the **current** runtime
+`f7b84c8a40fa`, not the 2026-08-18 one. Two independent clean draws now
+return the same answer.
+
+**The one real weakness, stated plainly.** The repair call leaves **no
+retained receipt**. `_unstaffed` (`native_child_staffing.py:645-701`)
+persists only the routing projection and the captured assignment;
+`provider_attempts` are returned in-process on `NativeChildStaffingResult`
+and never written. The two `model_receipts` rows on this trace are both
+stamped 04:02:00.784 — the parent's planner (haiku) and recruiter (sonnet);
+the child judge's decision at 04:02:35.498 has none. **The confirmation
+therefore rests on the reason code's code-level invariant, not on an
+independent artifact.** That invariant is genuine — unlike R6's
+`critic_evidence["approved"]`, which was a hardcoded literal, this branch is
+actually gated on an applied, inferred repair result — but nothing on disk
+cross-checks it. The only corroborating signal is the 13,974 ms latency, and
+that is weak: the 2026-08-18 01:47Z child staffing took 11,850 ms for what
+appears to have been a single call, so 13.97 s is on the short side for two.
+Do not quote this cell as receipt-backed.
+
+*Falsification:* if a future draw records `native_child_abstention_confirmed`
+with a latency inconsistent with two provider calls, or if the confirmed
+branch is found reachable without an applied repair, the settlement is
+unconfirmed again. Any draw that **staffs** the 138-char unit refutes it
+outright.
+
+### What this does to the seal decision
+
+**It removes the naive form of Option A.** "Make the canary deliver" was
+costed as fixing `delivery_marker_absent`. There is no defect to fix: the
+canary's child is unstaffed because the owner's own small-unit policy tells
+the judge to decline a 138-character unit, and the judge is obeying it twice
+over. Rule 8 is working exactly as written.
+
+The consequence is sharp. **The claude canary cannot produce a Rule 4 Live
+proof while its work unit is the 138-char pure unit** — and that unit is the
+canary contract's own fixture. Option A therefore is not "fix a bug"; it is
+"change what the canary asks for, to a unit the judge will actually staff",
+which changes the canary contract and the fixture that §7.1 was designed to
+measure. That is a different and larger decision than the one it was costed
+as, and it partly collides with AR-125's matched-corpus constraint: a canary
+whose unit is chosen because it gets staffed is no longer a neutral probe.
+
+Option B's costs are unchanged, and so is the finding that **neither option
+moves codex**.
+
+*Falsification:* if the canary's work unit is configurable without touching
+the ADR-0158 contract or the §7.1 fixture, Option A is cheaper than this
+paragraph claims and should be re-costed.
+
+#### Addendum: the canary fixture is deliberately not configurable
+
+Testing the falsification above — "if the canary's work unit is configurable
+without touching the ADR-0158 contract or the §7.1 fixture, Option A is
+cheaper than this paragraph claims" — the answer is **no, and by design.**
+
+`agency_runtime/core/activation_canary_contract.py` holds the unit as a
+module constant, `CODEX_ACTIVATION_CANARY_WORK_UNIT`, and three other things
+are derived from it rather than declared alongside it:
+
+- `CODEX_ACTIVATION_CANARY_PROMPT` embeds the unit verbatim and is the
+  parent's prompt. Run `43a081d6`'s `user_message` is this prompt, so **the
+  claude canary uses the codex activation-canary contract** — one fixture
+  serves both hosts.
+- `_CODEX_ACTIVATION_CANARY_TASK` is built by `re.escape` over that prompt,
+  so per the source comment "prompt and codex recognizer move together by
+  construction", and `is_exact_codex_activation_canary_task` requires a
+  `fullmatch`.
+- "The acceptance criterion compares the child's captured assignment to the
+  work unit for **exact equality**."
+
+So changing the unit changes the prompt, the codex recognizer regex, and the
+acceptance criterion simultaneously, on both hosts. That is intentional
+coupling, not incidental.
+
+**The constraint that makes Option A hardest is recorded in the same file.**
+The prompt is also planner input, and the comment states that v2's phrase
+"any expertise they need" produced "invented capability requirements no card
+could cover (`staff_without_safe_team`)", so **"no wording here may name
+expertise, skills, or capabilities"**. The obvious way to make a unit
+staffable — describing the expertise it needs — is precisely the wording that
+already broke this fixture once, and `staff_without_safe_team` is the same
+code still appearing on claude's real-profile receipts today.
+
+The file also records that the first captured-assignment run (AR-255,
+"Settled 2026-08-17") saw the parent add a "you are acting as…" preamble and
+errand children, "which the child judge correctly declined" — the same judge
+behaviour observed again today, for the third time.
+
+**Net effect on the seal.** Option A requires editing a constant that is
+simultaneously the codex activation recognizer, the cross-host canary prompt,
+and the exact-equality acceptance criterion, under a standing prohibition on
+naming expertise in it. It is not a bug fix and it is not a small change.
+This should be weighed against Option B's schema bump rather than assumed
+cheaper than it.
+
+*Falsification:* if a second work-unit constant can be introduced for the
+claude child-delivery canary without touching
+`is_exact_codex_activation_canary_task` or the codex recognizer, the coupling
+is separable per host and Option A narrows to a claude-only change — though
+Rule 9 would then want the same treatment justified on codex.
+
+#### Separability tested: the coupling IS separable, and no existing test breaks
+
+The falsification left open above — "if a second work-unit constant can be
+introduced for the claude child-delivery canary without touching
+`is_exact_codex_activation_canary_task` or the codex recognizer, the coupling
+is separable per host and Option A narrows to a claude-only change" — was
+tested by tracing every consumer of the fixture. **It is separable.** This
+partially reverses the previous addendum's conclusion, which over-costed the
+mechanical side.
+
+Full consumer inventory (`grep` over the whole tree, `__pycache__` excluded):
+
+| Consumer | Gate | Affected by a claude-only prompt? |
+|---|---|---|
+| `canary.py:47` `CANARY_PROMPT = CODEX_ACTIVATION_CANARY_PROMPT` | alias | No — leave the alias alone |
+| `canary_proof.py:416` `base_prompt = facade.CANARY_PROMPT if mode == "agency" else …` | **not host-aware** | **the single change point** |
+| `canary_proof.py:428` `require_exact_activation_rollout=host == "codex" and mode == "agency"` | already codex-gated | No |
+| `pipeline.py:925` (rebind canary goal) | `is_exact_codex_activation_canary_task` → `host == "codex"` | No |
+| `pipeline.py:1711` (planning options) | same | No |
+| `preflight_recipe.py:589` (work-unit replay) | same, plus a route-source gate | No |
+| `store/preflight.py:430` | route-source gate | No |
+
+`is_exact_codex_activation_canary_task` requires `host == "codex"` in its own
+body, so all three recognizer call sites are dead on the claude path by
+construction, and the exact-rollout requirement is *already* written as a
+per-host branch.
+
+**Corroborated empirically, not just by reading.** The claude canary parent
+decision `c75f7f6c` recorded `source: "computed"` — **not**
+`codex_activation_canary_inference`. The codex activation-canary machinery
+demonstrably did not fire on the claude canary run, which is what the source
+reading predicts. (This matters: the matrix has been burned three times by
+source-read evidence that stopped being true.)
+
+**No existing test breaks**, because the cheapest shape leaves
+`CANARY_PROMPT` pointing at the codex constant and adds a separate one:
+
+- `tests/test_activation_canary_contract.py:147` pins
+  `canary.CANARY_PROMPT == CODEX_ACTIVATION_CANARY_PROMPT` — unchanged.
+- `tests/test_canary_coverage_complete.py:189,196` read `canary.CANARY_PROMPT`
+  for policy-trigger and one-unit assertions — unchanged.
+- `tests/test_canary_coverage_complete.py:443-467`, the
+  `_prepare_live_invocation` contract test, exercises **host `"codex"` only**
+  in both mode branches — unchanged by a `host == "claude"` selection.
+- `tests/test_codex_activation_canary.py:507-516` prints `CANARY_PROMPT` in a
+  codex subprocess — unchanged.
+
+Baseline confirmed green before drawing this conclusion:
+`pytest tests/test_activation_canary_contract.py -q` → **21 passed**.
+
+So the mechanical cost of Option A is **one new constant plus one host-aware
+line**, with new tests wanted for the new constant rather than existing ones
+rewritten.
+
+**What is still expensive, and it is not engineering.** The judge declined
+because the owner's small-unit policy told it to, so Option A's real content
+is choosing a unit the judge will staff. That choice is fenced on three
+sides, and the fences are load-bearing:
+
+1. The prompt is **planner input on claude too**. AR-255's v2 series showed
+   that naming what the work needs produced invented capability requirements
+   and `staff_without_safe_team` — the same reason code still appearing on
+   claude's real-profile receipts today (03:45:55Z, 03:28:59Z, 03:12:10Z,
+   02:56:13Z). The obvious way to make a unit staffable is the one wording
+   already proven to break it. `test_activation_canary_prompt_never_names_expertise_for_the_planner`
+   bans `expertise`, `skill`, `capabilit`, `staff` — and it is written against
+   the codex constant, so a new constant would need that guard added
+   deliberately or it silently loses the protection.
+2. `_explicit_indivisible_unit_request` must keep returning true or the
+   planner regains license to decompose the turn into errands — the exact
+   failure the 2026-08-17 captured-assignment run recorded.
+3. Transport bounds: `MAX_ROUTING_SIGNAL_CHARS` and `MAX_WORK_UNIT_CHARS`.
+
+**And the Rule 9 objection stands.** A claude-only canary unit is a per-host
+branch, which the founding vision calls a smell to justify. There is
+precedent in this very file (`require_exact_activation_rollout` is codex-only,
+`NATIVE_ONLY_CANARY_PROMPT` is a mode variant), so it is justifiable rather
+than forbidden — but it has a real cost beyond style: **claude and codex
+canaries would stop measuring the same thing**, which breaks the matched
+comparison this session used to locate the two hosts' different walls, and
+touches AR-125's matched-corpus constraint.
+
+**Net re-costing, third pass.** Option A is cheap to *wire* and expensive to
+*specify*. The engineering is a one-line branch; the deliverable is a work
+unit that the child judge will staff without naming expertise, without
+becoming decomposable, and without making the two hosts incomparable. That is
+an owner policy decision about what the canary is allowed to ask for, not a
+task that can be closed by writing code.
+
+*Falsification:* if a candidate unit is drafted that the judge staffs while
+passing the expertise ban, the indivisible-unit check and the transport
+bounds, then Option A is fully costed and cheap, and the seal should be
+decided in its favour. If three such drafts are declined in a series, the
+small-unit policy and canary-based Rule 4 proof are in genuine tension and
+Option B's schema bump becomes the better buy.
+
+### RETRACTION, same session: the §7.1 settlement above does not stand
+
+**Earlier in this session I recorded §7.1 as settled by a repair-confirmed
+decline. Measurement now refutes it, and the retraction is mine, before it
+reached any matrix cell.** The settlement condition was stated in the capsule
+as "a repair-confirmed post-policy decline would settle it; **any staffing
+refutes it**." Staffing has now been observed on the identical unit.
+
+#### The instrument, and why it is comparable
+
+A read-only probe reproduces exactly the call `staff_native_child` makes —
+`query_judge(task, eligible_catalog, config=snapshot.config,
+max_selected=MAX_INFERENCE_TEAM_CARDS, candidate_scope="complete")` — and
+never calls `_unstaffed`, `_record_decision`, or
+`_record_captured_assignment`, so it writes nothing to the Store.
+
+Building the universe by re-filtering the catalog was **not** trusted:
+a first attempt with `capability_status=""` produced 33 eligible agents, not
+71, which would have silently measured a different universe. Instead the
+judge's own recorded universe was rebuilt from decision `5c963e09`'s
+`offered_agent_ids`, and validated against its `offered_agent_digest`:
+
+~~~text
+recorded slugs         71
+digest recomputed      5733d4e7aa75fb48812f9e7733ba811deec06b12180a50a4272c594f018e0897
+digest recorded        5733d4e7aa75fb48812f9e7733ba811deec06b12180a50a4272c594f018e0897   MATCH
+missing from snapshot  0
+catalog rebuilt        71 agents
+~~~
+
+So the universe is provably identical to the one the canary's child judge
+saw, not merely similar.
+
+#### The measurement
+
+Four units, serialized, each deterministically pre-screened against the
+`expertise`/`skill`/`capabilit`/`staff` ban and `MAX_WORK_UNIT_CHARS`. All
+four passed the screen; all four were put to the judge.
+
+| Unit | Chars | Result | Selected | Conf |
+|---|---|---|---|---|
+| **A — control, the exact 138-char unit** | 138 | **STAFFED** | `minimal-change-engineer` | 0.90 |
+| B — same domain, richer | 251 | STAFFED | `code-reviewer` | 0.98 |
+| C — security-framed | 234 | STAFFED | `ai-generated-code-security-auditor` | 0.98 |
+| D — multi-consequence | 372 | STAFFED | `code-reviewer` | 0.96 |
+
+**The control is the finding.** Unit A is byte-identical to
+`CODEX_ACTIVATION_CANARY_WORK_UNIT`, the unit the canary's child judge
+declined twice — once first-pass on 2026-08-18, once repair-confirmed today.
+Over the digest-identical 71-agent universe it was **staffed**, `status
+applied`, `inference_mode inferred`, confidence 0.90.
+
+#### The one thing that differs, and it is the likely cause
+
+The canary's child judge ran on **`claude-subscription`**. This probe ran on
+**`codex-subscription (cli:codex)`** — all four draws.
+
+`~/.agency-runtime/agency.yaml` lists `codex-subscription` first in
+`providers:` and leaves `judge.model` empty, so an unconstrained judge call
+takes the head of the provider list. Inside the canary's restricted isolated
+profile the codex transport is not available, so the judge falls through to
+`claude-subscription`. That is the mechanism that best fits the evidence.
+
+**So the correct reading is: the decline is not a property of the work unit,
+the small-unit policy, or the catalog. It tracks the provider.** The unit is
+demonstrably staffable; one provider staffs it and the other declines it.
+
+*Falsification, and this is the next measurement:* force the probe onto
+`claude-subscription` and re-run unit A. If it declines there, the abstention
+is provider-conditional and confirmed. If it staffs, the difference lies in
+the canary's isolated environment rather than the provider identity, and the
+prompt/profile must be examined instead.
+
+#### What this does to the seal, third correction
+
+My previous re-costing said Option A was "cheap to wire, expensive to
+specify", because the deliverable was thought to be designing a unit the
+judge would staff. **That premise is now refuted: the existing unit is
+staffable.** If the abstention is provider-conditional, Option A may reduce to
+pinning or ordering the child judge's provider inside the canary — no new
+unit, no fixture change, no Rule 9 divergence, and none of the
+matched-corpus damage. That would make Option A decisively cheaper than
+Option B again.
+
+It also raises a question larger than the seal, and it belongs to AR-253
+rather than here: **the child judge's provider is selected by config list
+order with an empty `judge.model`**, so which model judges a harness-spawned
+child depends on provider availability in the ambient environment. Two
+environments therefore disagree about whether the same child needs a
+specialist. Rule 1 says selection is inference-based; it does not
+contemplate the selection changing because a transport was absent.
+
+*Do not promote any cell from this section.* It is a probe, not a host
+artifact, and its provider does not match the canary's.
+
+### CONFIRMED: the child judge's decline is provider-conditional
+
+The measurement named as the next bounded work package has been run, and it
+returns the first branch. **Same task, same universe, same code — the answer
+depends on which provider answers.**
+
+The probe is now a committed script, `scripts/ar119_child_judge_probe.py`, so
+this is reproducible rather than reconstructed from prose. It rebuilds the
+judge's universe from a recorded decision's `offered_agent_ids`, refuses to
+run unless the recomputed `offered_agent_digest` matches, and restricts the
+inference chain with `dataclasses.replace(config, providers=(one,))`. It
+reports **which provider answered** rather than which one was requested.
+
+#### Instrument validation
+
+Default chain (config order), the byte-identical 138-char control unit:
+
+~~~text
+universe 71 agents | digest 5733d4e7aa75... VERIFIED | provider (config order)
+run 1: applied / inferred | staffed | ["minimal-change-engineer"] | conf 0.93
+       provider codex-subscription (cli:codex)
+~~~
+
+That reproduces the earlier finding, so the instrument is sound before the
+comparison is drawn.
+
+#### The comparison
+
+Forced onto `claude-subscription`, three serialized runs, failures kept:
+
+| Run | Status | Mode | Staffed | Conf | Provider that answered |
+|---|---|---|---|---|---|
+| 1 | `inference_unavailable` | unavailable | no | 0.00 | *(none — transport flake)* |
+| 2 | `applied` | inferred | **no** | 0.75 | `claude-subscription (cli:claude)` |
+| 3 | `applied` | inferred | **no** | 0.75 | `claude-subscription (cli:claude)` |
+
+**0 staffed / 3.** Runs 2 and 3 are genuine applied inferences that returned
+an empty selection — deliberate declines, not failures. Run 1 was a transport
+flake and is retained rather than dropped.
+
+Against the same unit and the same digest-verified 71-agent universe,
+`codex-subscription` staffs (`minimal-change-engineer`, 0.90 and 0.93 across
+two draws) and `claude-subscription` declines twice.
+
+**A corroboration worth noting:** both claude-subscription declines report
+confidence **0.75**, which is exactly the confidence recorded on the canary's
+own child decision `5c963e09`. The probe is reproducing the canary's observed
+behaviour, not merely something adjacent to it.
+
+#### What this settles
+
+1. **Blocker 1 is confirmed.** The decline is a property of the provider, not
+   of the work unit, the small-unit policy, or the catalog.
+2. **The §7.1 retraction stands and is now explained.** The unit was never
+   "too small to staff"; one provider staffs it. The earlier settlement read a
+   provider difference as a policy result.
+3. **Option A is the cheap path, and it is cheaper than even the separability
+   analysis suggested.** It needs no new work unit, no new prompt constant, no
+   change to `canary_proof.py:416`, no Rule 9 divergence and no
+   matched-corpus damage. It reduces to pinning which provider the child judge
+   reaches inside the canary. **The seal should be decided for Option A.**
+
+#### The larger question this exposes, which is not AR-119's
+
+`agency.yaml` leaves `judge.model` empty and lists `codex-subscription` first,
+so an unconstrained judge call takes the head of the provider list, and the
+canary's restricted profile — which has no codex transport — silently falls
+through to `claude-subscription`. **Two environments therefore disagree about
+whether the same harness-spawned child needs a specialist.**
+
+Rule 1 says selection is inference-based. It does not contemplate the
+selection changing because a transport happened to be absent. Whether that is
+acceptable is an owner question, and it belongs to AR-253 rather than here,
+but it should not be closed silently: today it is the difference between a
+child that gets a card and one that does not.
+
+*Falsification:* if a later series on `claude-subscription` staffs this unit,
+the decline is not provider-determined but load- or model-version-dependent,
+and the seal decision must be re-opened. Two applied declines at identical
+confidence make that unlikely but not impossible; the probe makes re-running
+it cheap, which is the point of committing it.
+
+*Scope:* this is a probe, not a host artifact. It correlates; it cannot
+originate a Rule-4 claim (ADR-0156). **Do not promote any matrix cell from
+it.**
+
+### OWNER DECISION: Option A is per harness and canary-only
+
+The owner chose Option A on 2026-08-19 and refined it to one persistent pin
+for each harness, so switching harnesses does not require reordering the global
+provider chain. ADR-0160 owns the mechanism:
+
+- `canary.child_judge_provider_by_host.<host>` names one configured CLI
+  provider;
+- both the initial child-judge call and its one abstention repair see only
+  that provider, with no fallback;
+- the disposable environment must project the same requested identity or the
+  call fails before inference;
+- requested and actual answering providers remain separate evidence; and
+- outside canary mode, child staffing is byte-for-byte on the original
+  provider-chain path.
+
+The map is host-neutral, not a brand-pairing rule. For the measured control,
+`claude -> claude-subscription` is expected to decline and is the explicit
+falsification path; `claude -> codex-subscription` is the current
+evidence-backed passing choice. The owner profile has not been changed, so no
+installed choice is claimed here.
+
+The owner also identified the intended `zcode -> GLM subscription` pairing.
+The local candidate can now resolve the existing `zcode-recruiter`
+Anthropic-compatible inference profile and narrow it into the canary's sole
+provider without changing the ordinary chain. Historical ZCode Store receipts
+show successful GLM-5.2 profile calls, but they predate this candidate. ZCode
+still lacks a safe noninteractive canary backend, so neither the profile nor
+those receipts are installed/live proof.
+
+Local source now implements the typed map, exact provider resolution,
+environment/config equality check, one-provider narrowing, cross-provider
+credential isolation, and requested/answered proof projection. Focused tests
+cover initial and repair calls, mismatch-before-inference, ordinary-turn
+noninterference, typed config updates, and Claude-to-Codex auth isolation.
+All 14 local gate contracts then passed across the attached run and exact
+reruns: the production spine passed 794 tests with 20 skips, the AR-119 matrix
+evidence suite passed 670, and the dashboard passed 134 with its coverage
+thresholds. The alignment preserved the exact mutation-snippet guard and made
+the setup-failure fixture's deadline robust under full-suite load. No live
+canary was run, no owner config or install was changed, and **no matrix cell
+moved**.
+
+### OWNER CLARIFICATION: Codex parent works; the blocker is child proof
+
+The owner confirmed the scope after observing another live request-scoped
+Codex parent turn. That turn carried `host=codex`, Agency preflight inference,
+the loaded specialist capsule, and the required Agency response header. This is
+direct current-turn evidence that the Codex **parent** integration routes and
+delivers Agency context.
+
+It does not falsify the canary result. The three serialized canaries concern a
+different boundary: Codex starts its native child, but Agency cannot read the
+opaque collaboration record required to prove the child's delivered cards.
+The accurate status is therefore:
+
+- Codex parent routing/header delivery: operational in the observed live turn;
+- Codex native child creation: observed;
+- Codex native-child card delivery: not host-proven;
+- Codex Rule 4 Installed/Live and Rule 9: still open.
+
+Never shorten that to “Codex does not work.” Equally, never promote a matrix
+cell from the visible parent header alone; the matrix still requires its named
+authority at the exact candidate.
+
+### OWNER PHASE: three hosts now, two deferred without waiver
+
+The owner set this development phase to Claude, Codex, and ZCode, then plans to
+move development to the OpenClaw box for live OpenClaw work. Hermes and OpenClaw
+are exempt from this session's Option-A milestone only. They remain required by
+the founding five-host Rule-9 contract.
+
+The bounded Option-A milestone is complete only when:
+
+1. Claude uses the measured passing `codex-subscription` pin and produces the
+   approved fresh host artifact;
+2. Codex retains working parent routing and exact pin/no-fallback contracts,
+   with native-child proof explicitly waiting on the upstream host capability;
+3. ZCode has an executable, isolated GLM judge path that records which provider
+   actually answered and cannot change ordinary staffing. On the current
+   hook-only integration this is an attended installed Agent-tool call, not a
+   synthetic noninteractive backend.
+
+ZCode is the remaining host-proof gap. The installed Agency profile's ordinary
+provider chain has only `codex-subscription` and `claude-subscription`, but its
+inference profile registry already has bounded ZCode/GLM profiles. The local
+candidate resolves `zcode-recruiter` only inside the canary and leaves the
+ordinary chain byte-for-byte unchanged. ZCode still has no safe noninteractive
+native canary backend. Source tests now prove that its documented Agent
+`PreToolUse` event reaches native-child staffing and that profile-only pins need
+no CLI credential projection. Because the installed host has no launchable CLI
+here and no child lifecycle events, the next proof is an attended installed
+ZCode call. A direct hook simulation cannot satisfy host proof.
+
+The complete execution sequence is recorded in the canonical AR-119 issue under
+“Owner-scoped completion sequence — 2026-08-19.” No matrix cell moved here.
+
+### LIVE CHECKPOINT: Option A delivered; proof correlation needed one repair
+
+The approved local package installed the pushed candidate into Claude, Codex
+and ZCode. All three manifests resolve launcher runtime
+`59580436f7f10de09ab2e100994f2c785f0bce418419bcea1a7d331e1f890a2c`;
+status reports current launchers and no runtime drift. The persisted canary map
+reads exactly `claude -> codex-subscription`, `codex -> codex-subscription`, and
+`zcode -> zcode-recruiter`. The failed whole-map CLI write changed nothing;
+three supported host-key writes then succeeded. Ordinary staffing was not
+changed.
+
+The first fresh Claude attempt was not a child-judge measurement. Its ordinary
+parent recruiter returned two invalid oversized teams, so preflight stopped
+before a child existed. The report correctly recorded requested
+`codex-subscription`, zero routing receipts for the child, and no delivery.
+
+The bounded second attempt reached the target boundary:
+
+- parent trace `940bbcb0-d1c1-4d0f-a271-b52e7fa62bf9` selected and loaded
+  `code-reviewer`, completed with a valid five-field header and spawned exactly
+  one child;
+- native decision `native-child-7624e16e5d24ff8be84ab066af5a6e5a` applied
+  `minimal-change-engineer` at confidence 0.91 in 9,269 ms;
+- the route's requested provider and sole applied answering provider are both
+  `codex-subscription`;
+- the Claude-written pre-speech artifact matches that exact card, decision,
+  provider-receipt digest, launch binding, install, and candidate digest; and
+- the atomic consumer created the Store's first immutable
+  `native_child_delivery_verifications` row.
+
+The report nevertheless returned red because the pre-Option-A Claude validator
+compared the child-selected `minimal-change-engineer` card against the distinct
+parent `code-reviewer` route. It also preferred the artifact projection when
+looking for provider attempts, although those attempts live on the exact Store
+native-child route. The artifact and route themselves agree; this was a proof
+projection defect, not a staffing or provider failure.
+
+Commit `14de2f74` now joins the collector-sealed Claude artifact to its exact
+Store native-child route, validates their ordered cards and immutable bindings,
+keeps the parent route check separate, rejects a requested/answering provider
+mismatch, and reports the answering provider from the route. Its regression
+deliberately uses a `code-reviewer` parent and a `minimal-change-engineer` child.
+Focused and widened local checks pass: **134 passed**, plus Ruff check and
+format check. The source fix is newer than the installed launcher, so the next
+live action is reinstalling this checkpoint and collecting one attested Claude
+run. ZCode still needs its attended installed Agent `PreToolUse` attribution;
+Codex child proof still waits upstream. **No matrix cell moved.**
+
+### LIVE CHECKPOINT: repaired runtime installed; refresh stopped before child
+
+Claude, Codex, and ZCode now resolve the same repaired launcher runtime,
+`51b3202a2acb3301b3278b5e19d23027441f0b193f9a86d431a76a609fde6bcf`.
+Their fresh install manifests and launcher receipts agree. The persisted map
+still reads `claude -> codex-subscription`, `codex -> codex-subscription`, and
+`zcode -> zcode-recruiter`; the ordinary provider chain remains Codex then
+Claude, and content capture remains enabled.
+
+Claude readiness passed with the new install current, registered, enabled, and
+free of stale prerequisites. The two approved live attempts after reinstall did
+not reach the child-judge boundary:
+
+- trace `c775ba30-ea66-41d5-9912-26094bdcb32f`, receipt
+  `3832e7aa-7095-47a3-8ebc-52bf2adea0e9`, stopped at parent routing after two
+  `claude-sonnet` recruiter responses proposed unsafe oversized teams
+  (`staff_without_safe_team`);
+- trace `34b7b35e-af0c-418f-ae99-8021b7ba3b0f`, receipt
+  `c7ae4580-83d4-495e-bf28-91e3bf070b32`, stopped earlier when the
+  `claude-haiku` parent planner produced no valid response
+  (`provider_no_valid_response`).
+
+Both reports named requested child pin `codex-subscription`, but neither
+created a child route, called a child judge, produced a delivery marker, or
+persisted an attestation. They are parent-preflight outcomes, not provider-pin
+measurements. This package stops the Claude retry series here. The earlier
+verified Claude artifact and immutable decision `native-child-7624e16e…` still
+prove requested and answering `codex-subscription` on the pre-repair runtime;
+the repaired digest does not yet have a green end-to-end attestation.
+
+The installed ZCode 3.6.5 desktop executable and its real seven-event hook
+registration are available. Before the attended call the Store has zero ZCode
+`native_child_inference` rows, giving an exact attribution baseline. The next
+live action is one fresh ZCode Agent call launched with canary mode, the
+persistent `zcode-recruiter` identity, and the managed install home projected;
+a direct hook simulation remains invalid. Codex parent evidence and its opaque
+child boundary are unchanged. **No matrix cell moved.**
+
+### ATTENDED ZCODE CHECKPOINT: GLM pin attributed; prompt hydration remains open
+
+The approved installed call ran after ZCode updated from 3.6.5 to 3.8.1. It
+submitted the exact 138-character activation unit through ZCode Agent and
+created exactly one native child, `agent_526b8a7a-4732-455c-8e93-c0cec510e418`.
+The child returned a substantive review of the silent whitespace-contract
+change and the parent reported `code-reviewer` recruitment. The visible answer
+does not itself prove that the specialist prompt reached the child.
+
+The durable attribution is the Store and installed hook sequence:
+
+- parent run `ada04710-19a2-4938-a2ae-e7ff10b9bdc2`, trace
+  `8cd9de8d-7a81-490f-aca5-34b36b7d8727`, session
+  `sess_fe90fa0f-97eb-407a-9e37-399e97ddf87f`;
+- parent route `c65ee011-7389-4798-85b4-4558619fbaf4` selected
+  `code-reviewer` at confidence 1.0;
+- native-child route `625e688c-b13c-4330-a569-224f2cbadcf0` recorded both
+  requested and actual provider as `zcode-recruiter`, confidence 0.85, for task
+  hash `05d45f7553e81e8536e5d43fd07da8b18b195c6ffc0a35ff7e43c2f202861eee`;
+- installed hooks traversed SessionStart, UserPromptSubmit, PreToolUse,
+  PostToolUse and Stop; delegation `5e746a59-d5ad-4f84-81a4-491ea580b0a1`
+  completed with native run
+  `zcode-agent:agent_526b8a7a-4732-455c-8e93-c0cec510e418`.
+
+This is actual-provider evidence, not an inference from the configured label.
+The failure projection says `native_child_prompt_hydration_failed`, but that
+branch is reachable only after the judge result is applied/inferred, exactly
+one applied provider attempt has a canonical receipt, and the selected IDs and
+compatibility checks pass. Provider identity is projected from the answering
+result separately from `requested_provider`. The canary-only resolver exposed
+only `zcode-recruiter`; the persisted ordinary chain remained Codex then Claude
+and content capture remained enabled.
+
+The failure occurred after GLM answered: `_hydrate_team` could not recover the
+selected specialist prompt, the failure projection intentionally cleared its
+selected IDs, no captured assignment was written, and Agency failed open to a
+generic ZCode child. AR-135 already owns that prompt-consumption gap. Therefore
+this call closes Option A's ZCode provider-pin/attribution requirement but does
+not prove ZCode Rule 4, host-delivered cards, or specialist execution.
+
+With Claude's exact requested/answering `codex-subscription` route, Codex's
+operational parent plus explicit opaque-child exception, and this attended
+ZCode/GLM route, **Option A is complete locally from the owner-defined
+three-host provider-pinning perspective**. The repaired Claude runtime still
+lacks a fresh green end-to-end attestation; Codex child proof remains upstream-
+blocked; OpenClaw and Hermes remain deferred, not waived. No Rule-9 claim and
+**no matrix cell moved**.
+
+### SOURCE CHECKPOINT: ZCode hydration root cause repaired locally
+
+The attended failure was not a missing prompt, inactive worker, changed roster,
+oversized card, or bad content. A read-only reconstruction of its exact ZCode
+capability boundary reproduced 72 eligible cards. Twenty-eight active cards,
+including `code-reviewer`, store their valid prompt identity as
+`sha256:<64 hex>`; the other 44 use the bare digest. `_hydrate_team` supported
+only the latter because it compared `content_digest_identity(hash)` back to the
+stored string before reading the prompt.
+
+The local fix keeps both identities in their proper authority domains: the
+exact prefixed or bare Store identity is used for versioned lookup and body
+verification, while the v6 delivery card receives the canonical bare digest
+required by the decision and host-proof schemas. A regression proves the exact
+prefixed key reaches Store and the parsed/persisted delivery remains canonical.
+The same read-only live catalog now hydrates 72/72 with 28 canonicalizations and
+zero failures; no judge or other provider was called.
+
+Core native-child staffing, envelope, and decision tests pass **117/117**.
+Wider native-hook and proof consumers pass **162**; three unrelated ledger tests
+still assert schema 46 although this branch's committed Store is schema 47.
+Ruff check and format pass on the two changed files. The repair is source-only
+at this checkpoint: the installed runtime remains `51b3202a2acb…`, no attended
+recheck has run, no specialist-delivery claim follows, and **no matrix cell
+moved**.
+
+### CONFIRMED: repaired ZCode hydration reaches the host-written child
+
+Clean ledger head `c165a51e` passed all 12 fast local gates in 1.3 minutes
+before installation. ZCode alone was then reinstalled from that checkpoint:
+runtime `f24664b87f3b0fe6a2490ef7dfbf8685c5d0d8a5e27b191902063bd43b41189f`,
+bundle `da04cfbf784755ccf122fea07638951c76669f3ce376f50fbf2fbba01896e61a`,
+install `759efa16-bdce-4fcb-ab3c-b3b3c0bcf3d8`. Claude and Codex remain on
+`51b3202a2acb…`; ordinary provider order remains unchanged.
+
+The first attended message after restart contained only the 138-character
+unit, so it was a parent-only control, not a native-child measurement. Parent
+route `92c5a7e5…` loaded `code-reviewer`, recorded `delegate=false`, and created
+no child route. It is excluded rather than silently counted. The corrected,
+pinned 755-character parent prompt then created exactly one ZCode Agent child:
+
+- parent trace `5edde147-a618-4035-abc0-c49ec581a90d`, session
+  `sess_aded0d1d-5a89-447d-a158-3012f2c87062`, parent route `06fae2da…`;
+- native-child decision `native-child-aa6e5296b9e34d3238b9e408dcb61904`,
+  applied/inferred, confidence 0.85, exact 72-candidate boundary;
+- requested and answering child provider `zcode-recruiter`, provider type
+  `anthropic`, requested model `GLM-5.2`; the parent router separately used
+  `claude-subscription`, demonstrating that the pinned variable was the child
+  judge rather than the host or parent transport;
+- selected card `python-application-engineer`, version
+  `contractor-1-sha256:27736661e`, canonical prompt digest `27736661ee05…`;
+- launch/binding `call_1f2255f916544728a79ea34b`, child
+  `agent_07b6377b-a2bc-454f-a334-bf60ec5664d5`, exit code 0.
+
+ZCode itself wrote the decisive artifact under
+`~/.zcode/cli/agents/sess_aded0d1d-…/agent_07b6377b-…/`. `metadata.json`
+binds the parent session and tool-use ID to the child. Transcript record zero
+is `turn_started`, sequence zero, and its input already contains the complete
+`[AGENCY INFERENCE TEAM v6]` envelope before child speech. The same envelope is
+present in the child model-I/O rollout. Its 2,928-character card body is
+byte-identical to the immutable Store version whose key is
+`sha256:27736661…`; v6 correctly carries the canonical bare digest. The exact
+original task and hash, all decision fields, card projection, record-zero
+ordering, parent/child binding, Store body, and issue/expiry window pass 14/14
+mechanical checks. Artifact hashes are metadata `f9a95f7ca518…` and transcript
+`630e494cba39…`.
+
+PostToolUse records `generic-worker` because that field is the native ZCode
+lifecycle identity; it does not claim which Agency card was delivered. The
+visible header therefore says `delegated: none`, while the host-written record
+zero independently proves the selected card reached the child. No ZCode row
+was added to `native_child_delivery_verifications`, and the child workspace was
+the primary checkout rather than the linked worktree; its four existing dirty
+paths all predate this run and the read-only review changed none of them. Those
+limits remain explicit.
+
+The prefixed-hash defect is therefore repaired in source, installed, and live
+on ZCode. Together with Claude's attributed pin and Codex's operational parent
+plus explicit upstream child-proof exception, **Option A is complete from the
+owner-scoped Claude/Codex/ZCode perspective**. This does not re-promote R1, R4,
+R5, or R6, formalize R8, complete AR-252, close Rule 9, or move any matrix cell.
+OpenClaw and Hermes remain deferred for this session.

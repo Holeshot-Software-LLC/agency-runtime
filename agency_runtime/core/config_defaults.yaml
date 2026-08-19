@@ -53,6 +53,11 @@ delegation:
   child_inference_concurrency: 2
   child_cache_ttl_seconds: 900
 
+# Live proof may pin each canary host's child judge to one named provider from
+# the provider chain. Empty by default: an operator must choose each pin.
+canary:
+  child_judge_provider_by_host: {}
+
 # Planning uses configured inference whenever any provider is available. Every
 # mode searches the complete local capability index through an inference planner
 # and recruiter. Fast and balanced fund one bounded repair for each stage;

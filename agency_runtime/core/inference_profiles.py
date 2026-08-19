@@ -64,7 +64,7 @@ class ProfileResolution:
     thinking_level_consumed: str  # the consumed value after adapter translation
 
 
-def _profile_to_provider(profile: InferenceProfile) -> ProviderEntry:
+def provider_from_profile(profile: InferenceProfile) -> ProviderEntry:
     """Project one ``InferenceProfile`` to a runnable ``ProviderEntry``."""
 
     timeout_seconds = max(0.05, min(120.0, profile.timeout_ms / 1000.0))
@@ -218,7 +218,7 @@ def resolve(
             "are configured; legacy flat workforce.*_model fallback applies"
         )
     consumed = translate_thinking_level(profile)
-    provider = _profile_to_provider(profile)
+    provider = provider_from_profile(profile)
     return ProfileResolution(
         route_key=route_key,
         profile=profile,
@@ -290,6 +290,7 @@ __all__ = [
     "INDEPENDENCE_ROUTE_TOKENS",
     "ProfileResolution",
     "enforce_strict_independence",
+    "provider_from_profile",
     "resolve",
     "route_requires_independence",
     "shares_provider_with",

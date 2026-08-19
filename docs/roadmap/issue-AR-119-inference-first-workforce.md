@@ -19,6 +19,7 @@ related:
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
+  - docs/decisions/0160-pin-child-judge-providers-per-canary-harness.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/AR-119-acceptance-evidence.md
@@ -115,6 +116,50 @@ unavailable.
 
 ## Current state
 
+On 2026-08-19 the owner chose ADR-0160's Option A mechanism: persist one
+canary-only child-judge provider pin per harness, constrain both judge calls to
+that one provider with no fallback, and leave ordinary child staffing
+unchanged. The approved isolated install now maps Claude and Codex to
+`codex-subscription` and ZCode to the existing `zcode-recruiter` GLM profile;
+the ordinary chain is unchanged. A Claude draw produced a verified pre-speech
+host artifact for `minimal-change-engineer`, with requested and answering
+`codex-subscription` recorded on Store decision `native-child-7624e16e…`.
+Commit `14de2f74` repairs the report's parent/child correlation and provider
+projection; 134 affected tests pass. The repaired runtime is installed across
+all three hosts at digest `51b3202a2acb…`. Two bounded refreshed Claude draws
+stopped at parent preflight and therefore neither measured nor contradicted the
+earlier child route.
+
+The first attended ZCode 3.8.1 call closed provider attribution but exposed a
+prompt-hydration defect after `zcode-recruiter` answered. AR-135 traced that to
+28 of 72 eligible cards using a supported prefixed Store hash while v6 evidence
+requires the bare digest. Exact Store lookup is now preserved and only the
+delivered proof identity is canonicalized.
+
+The installed recheck on runtime `f24664b87f3b…` closes that scoped defect.
+Native-child decision `native-child-aa6e5296…` requested and was answered by
+the canary-only `zcode-recruiter` profile (`GLM-5.2`), selected
+`python-application-engineer`, and bound its v6 envelope to Agent call
+`call_1f2255f…`. ZCode's own child metadata and transcript bind that call to
+`agent_07b6377b…`; record zero contains the complete card before first child
+speech and matches the immutable Store body. Fourteen mechanical checks pass.
+This completes Option A from the owner-scoped Claude/Codex/ZCode perspective:
+Claude has its attributed pin, Codex parent remains operational with its
+upstream child-proof exception, and ZCode has attributed GLM staffing plus
+host-written delivery. It does not publish the unpushed commits, change
+ordinary staffing, re-promote a retracted Rule, move a matrix cell, or complete
+Rule 9 or AR-119.
+
+The owner separately confirmed the current Codex boundary on 2026-08-19.
+Codex parent operation is working: a live request-scoped parent turn identifies
+`host=codex`, carries Agency preflight inference, loads the selected specialist
+capsule, and projects the required response header. The unresolved Codex issue
+is narrower: Agency cannot read the host's opaque native-child collaboration to
+prove which cards reached a spawned child. That limitation blocks Codex Rule 4
+Installed/Live evidence; it does not make Codex parent routing or header
+delivery unavailable. The current phase therefore treats Codex parent behavior
+as operational while leaving Codex child delivery, Rule 4, and Rule 9 open.
+
 The audited roster, inference receipts, request-scoped cards, resident managers,
 native lifecycle telemetry, CLI, and dashboard provide a strong base. Runtime
 candidate `211563c7` retains the repaired Rule-1 source/simulation state: native
@@ -140,6 +185,105 @@ Fresh-task recovery uses the bounded
 [AR-119 active recovery capsule](handoffs/issue-AR-119.md). The capsule is the
 current bootstrap projection; this issue remains the complete historical
 record and dependency map, not a second completion projection.
+
+### Owner-scoped completion sequence — 2026-08-19
+
+The owner set the immediate development milestone to Claude, Codex, and ZCode.
+OpenClaw and Hermes are deferred for this session and will be resumed on the
+owner's OpenClaw box after the three-host slice is solid. This scheduling choice
+is not a host waiver: the five-host Rule-9 contract and every unproven matrix
+cell remain unchanged.
+
+The completion sequence for the review brief is:
+
+1. **Land Option A without changing real turns.** Review and publish ADR-0160's
+   canary-only per-harness pin after renewed push/PR approval. Preserve the
+   control unit, no-fallback provider identity, requested-versus-actual receipt,
+   and ordinary-turn noninterference.
+2. **Close the Claude canary slice.** Configure the evidence-backed
+   `claude -> codex-subscription` pin, install only after approval, and collect
+   one fresh host-authored artifact. `claude -> claude-subscription` remains the
+   expected-to-decline falsification path, not the passing configuration.
+3. **Close the available Codex parent slice honestly.** Retain current parent
+   routing/header evidence and the exact pin contracts. Do not rerun the
+   byte-identical child canary expecting variation. Keep native-child delivery
+   proof explicitly waiting on the upstream Codex collaboration capability.
+4. **Make ZCode/GLM attributable and host-proven.** Use the existing isolated
+   `zcode-recruiter` profile through the canary-only resolver. Source tests
+   prove the documented ZCode Agent `PreToolUse` event reaches child staffing
+   and profile pins need no CLI credential home. The current host is hook-only,
+   has no launchable CLI here, and emits no child lifecycle events, so collect
+   provider attribution through an attended installed ZCode Agent call; do not
+   build or credit a synthetic backend. The profile cannot enter ordinary
+   staffing. A subscription, prior receipt, or parent-model label alone remains
+   insufficient.
+5. **Declare only the bounded Option-A milestone complete.** Claude must have
+   its fresh proof; Codex parent must remain operational with the child-proof
+   exception named; an attended ZCode/GLM call must be executable and
+   attributable. OpenClaw and Hermes remain scheduled next, and no Rule-9 or
+   matrix claim follows from this three-host milestone.
+6. **Finish the primary-tool proof package.** Once Claude Rule 4 is green,
+   complete AR-252's independently verified accepted-outcome and automatic
+   promotion path. Formalize Claude Rule 8 only if the owner authorizes the
+   candidate advance to `f7b84c8a40fa` and the required R2/R3/R7 re-anchoring.
+7. **Resume the deferred hosts and final parity.** Move to the OpenClaw box for
+   real OpenClaw evidence, then scope and execute Hermes. Re-run the required
+   exact-candidate proof set and close Rule 9 only after Rules 1–8 are proven on
+   all five hosts.
+
+### Completion plan for the 19 August review artifact
+
+This checkpoint refresh maps every remaining item in the supplied “Nine Rules,
+Five Tools” review to an executable package and an explicit admission gate.
+Estimates remain the review's engineer-day ranges until a package is scoped on
+its real host.
+
+1. **Freeze the vendor-selection fix — complete for this phase.** Preserve the
+   canary-only map (`claude/codex -> codex-subscription`,
+   `zcode -> zcode-recruiter`), no fallback, requested/actual attribution, and
+   unchanged ordinary staffing. Do not re-measure Claude, Codex, or ZCode merely
+   for variation. Publication still requires a clean rollup and renewed push/PR
+   authorization.
+2. **Close the primary-tool delivery package — 2–4 days, medium confidence.**
+   On Claude, reconcile the existing host artifact and immutable verification
+   with the one-use capability seal, then complete AR-252's independently
+   verified accepted outcome and automatic-promotion path on one exact installed
+   candidate. The exit is current host-written evidence plus the named matrix
+   authority; until then R1/R4/R5/R6 stay retracted.
+3. **Make the Rule-8 owner decision — 1–2 days after approval, medium-high
+   confidence.** Evidence already exists at run `e9715480` / trace `2a77824c`.
+   Lucas must choose whether to advance `candidate_commit` to `f7b84c8a40fa`.
+   If approved, re-anchor R2/R3/R7 at that candidate and only then formalize R8;
+   if declined, leave the current matrix unchanged and record the deferral.
+4. **Treat Codex child proof as an external dependency — weeks if solvable, low
+   confidence.** Keep Codex parent routing and headers supported. Resume Rule-4
+   work only when upstream exposes readable collaboration/child artifacts or an
+   owner-approved proof strategy meets ADR-0156 without weakening the bar.
+   Monitoring the open vendor issues is not a passing result.
+5. **Scope and execute OpenClaw on the owner's box — estimate after discovery.**
+   After renewed install/live authorization, establish a clean exact candidate,
+   verify native registration and real host artifacts, then run Rules 1–8 through
+   their named acceptance authorities. Record reachability, gaps, and an effort
+   estimate before promising a date; no synthetic bridge substitutes for the
+   real box.
+6. **Scope Hermes after OpenClaw — currently unestimated.** Establish an actual
+   supported host path, install and rollback contract, child-delivery evidence
+   surface, and focused acceptance suite before scheduling live matrix work.
+   Hermes remains exempt from this session, not waived from five-host parity.
+7. **Close Rule 9 last.** On one verified-clean rollup, reconcile Rules 1–8 at
+   all four evidence layers for Claude, Codex, ZCode, OpenClaw, and Hermes; run
+   the fixed matched parity/value corpus and local release gates; then obtain the
+   named authority for every matrix movement. Rule 9 is arithmetic over those
+   accepted cells, never an independent implementation shortcut.
+
+Near-term commitment therefore remains the review's **4–7 engineer-day primary
+tool package**, subject to the Rule-8 owner choice. Five-tool completion gets no
+date until Codex exposes a proof surface and the OpenClaw/Hermes discovery
+packages return estimates.
+
+Push, PR, merge, install, live canary, tracker, and hosted verification actions
+remain approval-gated. The sequence above is a plan, not evidence that any
+unrun stage has passed.
 
 The independent production-readiness review is now captured in
 [the 2026-07-26 audit report](../analysis/2026-07-26-production-readiness-review.md).

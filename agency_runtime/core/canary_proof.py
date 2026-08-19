@@ -416,6 +416,29 @@ def prepare_live_invocation(
     base_prompt = facade.CANARY_PROMPT if mode == "agency" else facade.NATIVE_ONLY_CANARY_PROMPT
     prompt = f"{base_prompt}\n\nCanary nonce: {nonce}"
     expected_query_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+    child_judge_provider = ""
+    child_judge_transport = ""
+    if (
+        mode == "agency"
+        and backend_factory is facade._backend
+        and getattr(store, "config_path", None) is not None
+    ):
+        try:
+            config = facade.load_config(getattr(store, "config_path", None), reload=True)
+            resolved = facade._configured_canary_child_judge_provider(config, host)
+            if resolved is None:
+                raise ValueError("missing provider pin")
+            provider, child_judge_transport = resolved
+            child_judge_provider = provider.name
+        except Exception:
+            return LivePreparation(
+                store=store,
+                before=before,
+                backend=None,
+                prompt=prompt,
+                expected_query_hash=expected_query_hash,
+                error="canary child-judge provider pin is unavailable",
+            )
     try:
         if backend_factory is facade._backend:
             backend = backend_factory(
@@ -428,6 +451,8 @@ def prepare_live_invocation(
                 require_existing_store=require_existing_store,
                 require_exact_activation_rollout=host == "codex" and mode == "agency",
                 trust_mode=trust_mode,
+                child_judge_provider=child_judge_provider,
+                child_judge_transport=child_judge_transport,
             )
         else:
             backend = backend_factory(host, db_path=path, timeout=timeout)
@@ -520,13 +545,29 @@ def invoke_and_collect_evidence(
             host_child_delivery=host_child_delivery,
             error="runtime evidence could not be read after host invocation",
         )
+    delta = facade._evidence_delta(preparation.before, after)
+    evidence = facade._evidence_summary(
+        delta,
+        host,
+        expected_query_hash=expected_query_hash,
+    )
+    if host == "claude" and host_child_delivery is not None:
+        try:
+            native_child_route = preparation.store.get_native_child_staffing_decision(
+                host_child_delivery.evidence.decision_id
+            )
+        except Exception:
+            return InvocationOutcome(
+                result=result,
+                evidence=None,
+                host_child_delivery=host_child_delivery,
+                error="exact native-child routing evidence could not be read after Claude invocation",
+            )
+        if isinstance(native_child_route, Mapping):
+            evidence["native_child_route"] = native_child_route
     return InvocationOutcome(
         result=result,
-        evidence=facade._evidence_summary(
-            facade._evidence_delta(preparation.before, after),
-            host,
-            expected_query_hash=expected_query_hash,
-        ),
+        evidence=evidence,
         host_child_delivery=host_child_delivery,
         error=invocation_error,
     )
@@ -826,6 +867,7 @@ def _claude_host_child_delivery_failures(
     proof: Mapping[str, Any] | None,
     evidence: Mapping[str, Any],
     collection_reason: str | None = None,
+    requested_provider: str = "",
 ) -> tuple[str, ...]:
     """Validate the collector-minted Claude proof against the exact canary turn."""
 
@@ -853,19 +895,64 @@ def _claude_host_child_delivery_failures(
     cards = _normalized_host_child_cards(proof.get("cards"))
     if cards is None:
         return ("host-authored Claude child delivery did not contain a bounded card team",)
-    slugs = tuple(card["specialist_slug"] for card in cards)
+    native_route = evidence.get("native_child_route")
+    if (
+        not isinstance(native_route, Mapping)
+        or set(native_route) != _NATIVE_CHILD_ROUTE_FIELDS
+        or not _native_child_route_projection_is_valid(native_route)
+    ):
+        return ("the inference-owned Claude child route was invalid",)
+    if native_route.get("cards") != cards:
+        return ("host-authored Claude child delivery did not match the exact ordered route",)
+    route_bindings = (
+        "decision_id",
+        "host",
+        "parent_session_id",
+        "parent_trace_id",
+        "launch_id",
+        "binding_kind",
+        "binding_id",
+        "provider_receipt_digest",
+        "task_sha256",
+        "team_digest",
+        "candidate_digest",
+        "runtime_digest",
+        "install_id",
+        "bundle_digest",
+        "issued_at",
+        "expires_at",
+        "nonce",
+    )
+    if any(proof.get(field) != native_route.get(field) for field in route_bindings):
+        return ("host-authored Claude child delivery did not match its inference route",)
     routed = evidence.get("routed_specialists")
     expected = evidence.get("expected_specialist")
     if (
         not isinstance(routed, list)
         or any(not isinstance(value, str) for value in routed)
-        or len(routed) != len(slugs)
-        or set(routed) != set(slugs)
-        or expected not in slugs
+        or not isinstance(expected, str)
+        or routed != [expected]
     ):
         return (
-            "the inference-owned Claude canary route did not match the exact host child card team",
+            "the inference-owned Claude canary parent route did not select exactly the expected specialist",
         )
+    attempts = native_route.get("provider_attempts")
+    applied = (
+        [
+            _bounded_identity(attempt.get("provider_name"), maximum=128)
+            for attempt in attempts
+            if isinstance(attempt, Mapping) and attempt.get("status") == "applied"
+        ]
+        if isinstance(attempts, list)
+        else []
+    )
+    if len(applied) != 1 or applied[0] is None:
+        return ("the inference-owned Claude child route did not name one answering provider",)
+    bounded_requested = (
+        _bounded_identity(requested_provider, maximum=128) if requested_provider else None
+    )
+    if requested_provider and (bounded_requested is None or applied[0] != bounded_requested):
+        return ("the Claude child judge answering provider did not match the requested pin",)
     parent_trace_id = _bounded_identity(
         proof.get("parent_trace_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS
     )
@@ -1296,7 +1383,7 @@ def proof_failures(
     return tuple(failures)
 
 
-def evaluate_proof(
+def evaluate_proof(  # noqa: C901 - one ordered proof projection boundary
     host: str,
     *,
     result: dict[str, Any],
@@ -1342,6 +1429,7 @@ def evaluate_proof(
             proof=host_child_delivery_projection,
             evidence=evidence,
             collection_reason=collection_reason,
+            requested_provider=str(result.get("child_judge_provider_requested") or "").strip(),
         )
     if mode == "native-only":
         profile_proven = bool(
@@ -1394,6 +1482,26 @@ def evaluate_proof(
         ),
         "collaboration": collaboration_projection,
     }
+    requested_provider = str(result.get("child_judge_provider_requested") or "").strip()
+    if requested_provider and len(requested_provider) <= 128:
+        invocation["child_judge_provider_requested"] = requested_provider
+    answering_provider = ""
+    provider_source: object = evidence.get("native_child_route")
+    if not isinstance(provider_source, Mapping):
+        provider_source = host_child_delivery_projection
+    attempts = (
+        provider_source.get("provider_attempts") if isinstance(provider_source, Mapping) else None
+    )
+    if isinstance(attempts, list):
+        applied = [
+            str(attempt.get("provider_name") or "").strip()
+            for attempt in attempts
+            if isinstance(attempt, Mapping) and attempt.get("status") == "applied"
+        ]
+        if len(applied) == 1:
+            answering_provider = applied[0]
+    if answering_provider and len(answering_provider) <= 128:
+        invocation["child_judge_provider_answered"] = answering_provider
     if collection_reason is not None:
         invocation["host_child_collection_reason"] = collection_reason
     if host_child_delivery_projection is not None:

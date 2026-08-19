@@ -174,6 +174,17 @@ _SET_VALIDATORS = {
     "workforce.amend_overlap_threshold": lambda item: _number(
         item, "workforce.amend_overlap_threshold", minimum=0.0, maximum=1.0
     ),
+    **{
+        f"canary.child_judge_provider_by_host.{host}": (
+            lambda item, host=host: _string(
+                item,
+                f"canary.child_judge_provider_by_host.{host}",
+                allow_empty=False,
+                maximum=80,
+            ).strip()
+        )
+        for host in ("claude", "codex", "hermes", "openclaw", "zcode")
+    },
     "agents.disabled": lambda item: list(normalize_disabled_agents(item)),
     "store.db_path": lambda item: _string(item, "store.db_path", allow_empty=False, maximum=4096),
     "server.host": lambda item: _loopback_host(item, "server.host"),

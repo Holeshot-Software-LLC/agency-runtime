@@ -410,6 +410,17 @@ class AdaptersConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class CanaryConfig:
+    """Canary-only inference pins keyed by the host under proof."""
+
+    child_judge_provider_by_host: tuple[tuple[str, str], ...] = field(default_factory=tuple)
+
+    def child_judge_provider(self, host: str) -> str:
+        normalized = str(host or "").strip().casefold()
+        return dict(self.child_judge_provider_by_host).get(normalized, "")
+
+
+@dataclass(frozen=True, slots=True)
 class AgencyConfig:
     judge: JudgeConfig = field(default_factory=JudgeConfig)
     ollama: OllamaConfig = field(default_factory=OllamaConfig)
@@ -417,6 +428,7 @@ class AgencyConfig:
     selector: SelectorConfig = field(default_factory=SelectorConfig)
     delegation: DelegationConfig = field(default_factory=DelegationConfig)
     workforce: WorkforceConfig = field(default_factory=WorkforceConfig)
+    canary: CanaryConfig = field(default_factory=CanaryConfig)
     inference: InferenceConfig = field(default_factory=InferenceConfig)
     agents: AgentActivationConfig = field(default_factory=AgentActivationConfig)
     store: StoreConfig = field(default_factory=StoreConfig)
@@ -660,6 +672,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
     selector_raw = raw.get("selector", {})
     delegation_raw = raw.get("delegation", {})
     workforce_raw = raw.get("workforce", {})
+    canary_raw = raw.get("canary", {})
     agents_raw = raw.get("agents", {})
     store_raw = raw.get("store", {})
     server_raw = raw.get("server", {})
@@ -724,6 +737,17 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             contractor_review_days=int(workforce_raw.get("contractor_review_days", 7)),
             hiring_repair_budget=int(workforce_raw.get("hiring_repair_budget", 3)),
             amend_overlap_threshold=float(workforce_raw.get("amend_overlap_threshold", 0.7)),
+        ),
+        canary=CanaryConfig(
+            child_judge_provider_by_host=tuple(
+                sorted(
+                    (
+                        str(host).strip().casefold(),
+                        str(provider).strip(),
+                    )
+                    for host, provider in canary_raw.get("child_judge_provider_by_host", {}).items()
+                )
+            ),
         ),
         inference=_build_inference(inference_raw),
         agents=AgentActivationConfig(
@@ -1141,6 +1165,7 @@ def _load_config_uncached(
             "selector",
             "delegation",
             "workforce",
+            "canary",
             "agents",
             "store",
             "server",
@@ -1311,6 +1336,9 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "contractor_review_days": cfg.workforce.contractor_review_days,
             "hiring_repair_budget": cfg.workforce.hiring_repair_budget,
             "amend_overlap_threshold": cfg.workforce.amend_overlap_threshold,
+        },
+        "canary": {
+            "child_judge_provider_by_host": dict(cfg.canary.child_judge_provider_by_host),
         },
         "agents": {"disabled": list(cfg.agents.disabled)},
         "store": {"db_path": cfg.store.db_path},
