@@ -1058,6 +1058,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `dd3dbdcc` | 2026-08-19 | docs(ar119): checkpoint installed Option A evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `7088b55c` | 2026-08-19 | docs(ar119): keep recovery capsule bounded | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `0c73db8f` | 2026-08-19 | docs(ar119): checkpoint repaired Option A refresh | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `351f39e3` | 2026-08-19 | docs(ar119): record attended zcode option a proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
