@@ -27,7 +27,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: 654f80f465945323ff8879a448edf96432fccfe7
+evidence_commit: fda7c205
 minimum_ledger_commit: ee82c602f2dc2d5e9632fc91b6dc071b50dc7541
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
@@ -46,8 +46,8 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
   verified-CLEAN rollup. Never commit/stash in the primary checkout (owner
   WIP: `cli/eval_commands.py` + three untracked eval JSONs) and never
   install from it -- that WIP sits in the published package tree. Push from
-  THIS worktree. PRs #290-#297 merged. **Six commits sit unpushed on the
-  branch (through `654f80f4`), docs-only, `verify_docs` green.**
+  THIS worktree. PRs #290-#297 merged. **Ten commits sit unpushed on this
+  branch, docs-only, `verify_docs` green; see `git log origin/main..HEAD`.**
 - **Machine**: all three hosts pin ONE digest `f7b84c8a40fa` (merge
   `6ba837fa`), schema 47 everywhere, installed 2026-08-19. State authority:
   `~/.agency-runtime/overnight-runtime-state.json`.
