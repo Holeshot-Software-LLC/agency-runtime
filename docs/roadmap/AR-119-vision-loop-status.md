@@ -1308,3 +1308,55 @@ moves codex**.
 *Falsification:* if the canary's work unit is configurable without touching
 the ADR-0158 contract or the §7.1 fixture, Option A is cheaper than this
 paragraph claims and should be re-costed.
+
+#### Addendum: the canary fixture is deliberately not configurable
+
+Testing the falsification above — "if the canary's work unit is configurable
+without touching the ADR-0158 contract or the §7.1 fixture, Option A is
+cheaper than this paragraph claims" — the answer is **no, and by design.**
+
+`agency_runtime/core/activation_canary_contract.py` holds the unit as a
+module constant, `CODEX_ACTIVATION_CANARY_WORK_UNIT`, and three other things
+are derived from it rather than declared alongside it:
+
+- `CODEX_ACTIVATION_CANARY_PROMPT` embeds the unit verbatim and is the
+  parent's prompt. Run `43a081d6`'s `user_message` is this prompt, so **the
+  claude canary uses the codex activation-canary contract** — one fixture
+  serves both hosts.
+- `_CODEX_ACTIVATION_CANARY_TASK` is built by `re.escape` over that prompt,
+  so per the source comment "prompt and codex recognizer move together by
+  construction", and `is_exact_codex_activation_canary_task` requires a
+  `fullmatch`.
+- "The acceptance criterion compares the child's captured assignment to the
+  work unit for **exact equality**."
+
+So changing the unit changes the prompt, the codex recognizer regex, and the
+acceptance criterion simultaneously, on both hosts. That is intentional
+coupling, not incidental.
+
+**The constraint that makes Option A hardest is recorded in the same file.**
+The prompt is also planner input, and the comment states that v2's phrase
+"any expertise they need" produced "invented capability requirements no card
+could cover (`staff_without_safe_team`)", so **"no wording here may name
+expertise, skills, or capabilities"**. The obvious way to make a unit
+staffable — describing the expertise it needs — is precisely the wording that
+already broke this fixture once, and `staff_without_safe_team` is the same
+code still appearing on claude's real-profile receipts today.
+
+The file also records that the first captured-assignment run (AR-255,
+"Settled 2026-08-17") saw the parent add a "you are acting as…" preamble and
+errand children, "which the child judge correctly declined" — the same judge
+behaviour observed again today, for the third time.
+
+**Net effect on the seal.** Option A requires editing a constant that is
+simultaneously the codex activation recognizer, the cross-host canary prompt,
+and the exact-equality acceptance criterion, under a standing prohibition on
+naming expertise in it. It is not a bug fix and it is not a small change.
+This should be weighed against Option B's schema bump rather than assumed
+cheaper than it.
+
+*Falsification:* if a second work-unit constant can be introduced for the
+claude child-delivery canary without touching
+`is_exact_codex_activation_canary_task` or the codex recognizer, the coupling
+is separable per host and Option A narrows to a claude-only change — though
+Rule 9 would then want the same treatment justified on codex.
