@@ -45,8 +45,9 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
 - **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-ar119`**
   (linked worktree). Main only via PR on a verified-CLEAN rollup. Never
   commit/stash/install in the primary checkout; owner WIP remains there.
-  **Draft PR #298 is pushed through `758fd944`; every later local commit is
-  unpushed. Hosted CI was cancelled for billing. Do not start hosted work.**
+  **Draft PR #298 is at `758fd944`; local `74c31def` is 12 commits ahead.
+  Owner-authorized: push/merge, merged-main install, bounded Claude/ZCode
+  smokes, and one Codex hook-trust-bypass canary. Hosted CI stays skipped.**
 - **Machine**: Claude/Codex remain on installed launcher `51b3202a2acb`; ZCode
   now runs verified repair `f24664b87f3b`. The canary map remains
   `claude/codex -> codex-subscription`, `zcode -> zcode-recruiter`; ordinary
@@ -137,10 +138,10 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 ## next-bounded-work-package
 
-Keep Option A frozen; do not retry Claude, Codex, or ZCode for variation. The
-canonical AR-119 issue now maps every supplied-review item: next is the 2–4 day
-primary-tool seal/AR-252 package plus Lucas's separate Rule-8 candidate choice.
-OpenClaw resumes on its real box after new authorization; Hermes stays deferred.
+Keep Option A frozen. The owner-requested Codex rerun after the exact main
+install is one new bounded observation, not a variation campaign; do not retry
+Claude or ZCode. Then resume the 2–4 day primary-tool seal/AR-252 package plus
+Lucas's separate Rule-8 candidate choice. OpenClaw/Hermes remain deferred.
 
 ## same-task-continuity
 
@@ -173,8 +174,7 @@ read without touching the store.
   candidate; provisional/branch evidence must say so.
 - Keep the 15,000 ms cold control fixed; automatic promotion stays on the
   critical path; no superiority claim without a matched corpus (AR-125).
-- This package's ZCode install/live authorization is consumed. Ask again before
-  any push, PR change, merge, install, live canary, or hosted workflow. No
-  OpenClaw/Hermes install,
-  tracker write, tag, force-push, main push, new capture surface, re-auth, or
-  `observability.capture_content` change.
+- Owner authorization dated 2026-08-19 covers PR #298 update/merge, merged-main
+  install, Claude/ZCode parent smokes, and one Codex child canary with
+  `--dangerously-bypass-hook-trust`. It excludes hosted CI, OpenClaw/Hermes,
+  trackers, tags, force/direct main pushes, new capture, re-auth, or config changes.
