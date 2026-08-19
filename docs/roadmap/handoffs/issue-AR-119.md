@@ -137,10 +137,10 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 ## next-bounded-work-package
 
-Keep Option A frozen. Run fresh Claude and Codex parent CLI smokes, the one
-owner-requested Codex child canary with hook-trust bypass, and an attended fresh
-ZCode parent smoke. Treat the deterministic 4/4 plugin smokes as install checks,
-not live proof. Then resume AR-252; OpenClaw/Hermes remain deferred.
+Keep Option A frozen. Claude's corrected parent CLI header smoke is green; its
+first exact-body prompt is excluded as contract-invalid. Next run the Codex
+parent and one child canary with hook-trust bypass, then an attended fresh ZCode
+parent smoke. Resume AR-252 afterward; OpenClaw/Hermes remain deferred.
 
 ## same-task-continuity
 

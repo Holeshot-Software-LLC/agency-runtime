@@ -1978,3 +1978,19 @@ are install checks, not provider calls or live-host proof. Fresh parent CLI
 smokes and the separately authorized Codex child canary remain next. The
 primary checkout's four named owner-WIP paths were not touched. No rule was
 promoted, no candidate advanced, and **no matrix cell moved**.
+
+### LIVE MAIN: Claude parent header smoke passes
+
+The first fresh Claude CLI prompt required only `PARENT_SMOKE_OK`, conflicting
+with the installed header contract. Session `aaeea445-35f7-4041-a09f-fc27381ef4e1`
+shows Agency injected the current capsule and exact header snapshot, then the
+Stop hook rejected the headerless body as `AGENCY RESPONSE INVALID`. That
+prompt-invalid attempt is excluded rather than counted as an activation result.
+
+The single corrected prompt explicitly permitted the header. Fresh session
+`831eed9e-4367-4380-ada6-0db5fe4be0d7` completed in one turn with no tools or
+delegation and returned the exact five-line Agency header followed only by
+`PARENT_SMOKE_OK`. It recorded `agency-steward` plus
+`agency-governance-request-clarifier`, `delegated: none`, and workforce inference
+`claude-sonnet/sonnet`; the host call itself reported `claude-opus-5`. This is
+installed-main parent/header proof only. It moves no rule or matrix cell.
