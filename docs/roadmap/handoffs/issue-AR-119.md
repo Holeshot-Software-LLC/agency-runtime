@@ -27,9 +27,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: 14de2f74659eb87721daf433c927691a69c27aed
-minimum_ledger_commit: ee82c602f2dc2d5e9632fc91b6dc071b50dc7541
+branch: codex/ar119-main-rollout-evidence
+evidence_commit: ae1964fa21550a19a7bffeb16bd8b84df03717d1
+minimum_ledger_commit: 2f6ed88d811b42f38ce6053d34e24056cea500f9
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -42,14 +42,13 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
 
 ## checkpoint
 
-- **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-ar119`**
-  (linked worktree). Main only via PR on a verified-CLEAN rollup. Never
-  commit/stash/install in the primary checkout; owner WIP remains there.
-  **PR #298 is at `758fd944`; `74c31def` plus this recovery pair are local.
-  Owner-authorized: push/merge, merged-main install, Claude/ZCode smokes, and one
-  Codex hook-trust-bypass canary. Hosted CI must be skipped; local gates govern.**
-- **Machine**: Claude/Codex remain on installed launcher `51b3202a2acb`; ZCode
-  now runs verified repair `f24664b87f3b`. The canary map remains
+- **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-main-rollout`**.
+  It starts at exact main merge `ae1964fa` / PR #298. The primary checkout's
+  named owner WIP remains untouched; never commit, revert, stash, or install there.
+  Hosted CI was technically skipped at PR head and merge; local gates govern.
+- **Machine**: Claude/Codex/ZCode now share installed runtime `12ce2b614e35`.
+  Their current bundle digests begin `d701a815`, `2ad1a6b3`, and `f812867c`.
+  The canary map remains
   `claude/codex -> codex-subscription`, `zcode -> zcode-recruiter`; ordinary
   providers remain Codex then Claude and content capture remains enabled.
 - **Option A's local three-host provider-pin phase is complete.** OpenClaw and
@@ -138,10 +137,10 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 ## next-bounded-work-package
 
-Keep Option A frozen. The owner-requested Codex rerun after the exact main
-install is one new bounded observation, not a variation campaign; do not retry
-Claude or ZCode. Then resume the 2–4 day primary-tool seal/AR-252 package plus
-Lucas's separate Rule-8 candidate choice. OpenClaw/Hermes remain deferred.
+Keep Option A frozen. Run fresh Claude and Codex parent CLI smokes, the one
+owner-requested Codex child canary with hook-trust bypass, and an attended fresh
+ZCode parent smoke. Treat the deterministic 4/4 plugin smokes as install checks,
+not live proof. Then resume AR-252; OpenClaw/Hermes remain deferred.
 
 ## same-task-continuity
 

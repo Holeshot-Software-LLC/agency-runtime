@@ -1951,3 +1951,30 @@ plus explicit upstream child-proof exception, **Option A is complete from the
 owner-scoped Claude/Codex/ZCode perspective**. This does not re-promote R1, R4,
 R5, or R6, formalize R8, complete AR-252, close Rule 9, or move any matrix cell.
 OpenClaw and Hermes remain deferred for this session.
+
+### MAIN CHECKPOINT: PR #298 merged and exact-main runtime installed
+
+PR #298 merged the verified Option A rollup to `main` as `ae1964fa` from exact
+head `2f6ed88d`. The complete local harness passed 14/14 in 14.7 minutes: 161
+workflow-contract tests, 151 mutation snippets, 796 production-spine passes
+(20 skipped), 670 AR-119 evidence tests, and 134 dashboard tests. The pre-push
+hook independently passed 12/12. Both head and merge commits carried GitHub's
+skip instruction; GitHub created no hosted Actions run for either SHA.
+
+A clean main-equal checkout then installed all three owner-scoped hosts with
+dashboard installation opted out. Every manifest points to the same launcher
+runtime `12ce2b614e359e1c97a574b31cfdc189c09e7276cf51ef6c9a341112645bcf3a`:
+
+- Claude install `79053bdd-3cbf-47cb-996e-a33ba82a2b58`, bundle `d701a815…`;
+- Codex install `aa095210-8721-4a5b-825d-75a4e6f71012`, bundle `2ad1a6b3…`,
+  registered with the expected fresh-session activation requirement;
+- ZCode install `f82ad76f-0d45-4ff5-8c30-51b7e6a7ed76`, bundle `f812867c…`,
+  seven owned handlers registered with global hooks still enabled.
+
+The deterministic `agency_runtime.cli smoke` contract passed 4/4 separately
+for Claude, Codex, and ZCode: private schema-47 Store, 263-card starter roster,
+5/5 host parity, and the host-specific generated plugin/hook contract. These
+are install checks, not provider calls or live-host proof. Fresh parent CLI
+smokes and the separately authorized Codex child canary remain next. The
+primary checkout's four named owner-WIP paths were not touched. No rule was
+promoted, no candidate advanced, and **no matrix cell moved**.
