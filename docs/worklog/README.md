@@ -1042,6 +1042,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cf14d939` | 2026-08-19 | docs(ar119): record the codex canary series, the seal decision, and R8 from disk | null | null |
 | `67acca48` | 2026-08-19 | docs(ar119): settle the 7.1 acceptance draw and re-cost Option A | null | null |
 | `8607eadf` | 2026-08-19 | docs(ar119): record that the canary work unit is deliberately not configurable | null | null |
+| `7d361a7a` | 2026-08-19 | docs(ar119): the canary fixture coupling is separable per host | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
