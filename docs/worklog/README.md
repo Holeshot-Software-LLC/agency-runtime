@@ -1047,6 +1047,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `adc412a7` | 2026-08-19 | docs(ar119): refresh the capsule for a new session | null | null |
 | `4f34c113` | 2026-08-19 | docs(ar119): correct the capsule's unpushed-branch state | null | null |
 | `976f666a` | 2026-08-19 | docs(ar119): use the full SHA for evidence_commit | null | null |
+| `bb33a102` | 2026-08-19 | docs(ar119): capsule reflects the pushed branch state | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
