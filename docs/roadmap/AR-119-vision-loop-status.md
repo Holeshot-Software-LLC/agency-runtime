@@ -782,3 +782,113 @@ artifacts: `agency evidence children` continues to report
 `host_hook_output_origin_not_proven`, because only the canary's in-lifetime
 private-lease collector may consume the verified-delivery capability. The
 capability seal remains the blocker, for R4 and AR-252 alike.
+
+## Owner ruling, 2026-08-18: what "done" means, and what it does not change
+
+The owner ruled directly: **done for this session means claude, codex, zcode —
+in that order.**
+
+**What this fixes.** The completion contract was unsatisfiable on this machine.
+Rule 9 requires rules 1-8 on all five supported hosts; openclaw and hermes are
+absent by the owner's own instruction, so the matrix could never close and every
+plan built on it inherited an open end. Session completion is now measured
+against three hosts, worked in the stated priority order: **claude first, then
+codex, then zcode.**
+
+**What this deliberately does NOT change, and must not be read as changing.**
+
+- **Rule 9 itself is untouched.** The founding vision still requires parity on
+  all five hosts, and `AR-119-founding-vision.md` remains the sole wording
+  authority. Its `canonical_block_sha256` is unchanged because no rule text
+  changed. A semantic change to the nine rules needs an explicit owner
+  confirmation and a new canonical digest; this ruling is not one and must not
+  be used as a precedent for one.
+- **No matrix cell moves.** openclaw and hermes rows stay `unproven`, with their
+  existing reason. The matrix's own contract is that an unavailable host stays
+  unproven and that a host becoming unavailable cannot improve a cell; scoping a
+  session's definition of done cannot improve one either.
+- **R9 stays `unproven` on every host.** It derives from R1-R8 across all five;
+  narrowing the session's scope does not narrow the rule's.
+
+**How to read the two together.** Session scope answers "what do we work on and
+when do we stop"; Rule 9 answers "what does the product claim". The claim is
+still five-host parity. What changed is that the session no longer waits on two
+hosts nobody can reach from here.
+
+*Falsification:* if a future session reports the nine-rule vision as complete
+while openclaw and hermes remain unproven, this ruling has been misread — it
+scopes the session, never the vision.
+
+### Push blocked by a pre-push/worktree git-config fault (2026-08-18, boxed)
+
+Work through commit `49736e26` is committed on the branch and **not pushed**.
+The full 14-gate suite passed (14.0 min) before these commits; docs added after
+it are docs-only with `verify_docs` green.
+
+**What blocks it.** The pre-push hook runs `run_local_gates.py --fast` with
+`GIT_DIR` set and no work tree, and gates whose tests shell out to `git`
+(`test_ci_change_scope.py`, `test_release_packaging.py`) fail there with
+`fatal: this operation must be run in a work tree` — while passing standalone
+(19 passed, and 14/14 gates green). Pushing from the primary hits the same
+class of fault.
+
+**Why it appeared now.** The repository's shared config carries `bare = true`
+with `extensions.worktreeConfig = true`. Earlier pushes worked because
+`core.worktree` pointed the primary at the `remote-control-7efcd5` worktree —
+the same setting diagnosed as the "git status lies" hijack. Removing that
+worktree and unsetting `core.worktree` removed the compensation and exposed
+`bare = true` underneath. So the hijack was load-bearing for pushes, which
+nothing recorded.
+
+**Current state, verified:** primary on main `4939466d` with the owner's WIP
+intact and `git status` working; ar119 clean at `49736e26`; `core.bare` false
+per-worktree; `core.worktree` unset everywhere.
+
+**Do not** push with `SKIP_LOCAL_GATES=1` — forbidden, and it would skip the
+gates that catch exactly this class of fault. The bounded next step is to
+decide whether `bare = true` in the shared config is intentional; if it is not,
+correcting it there (rather than per worktree) should restore ordinary pushes
+from any checkout. *Falsification:* if a push succeeds from a fresh clone of
+the same branch, the fault is local config, not the hook.
+
+### The push path writes `core.bare = true` into the real repository config
+
+Isolated 2026-08-18 by direct measurement, after the earlier entry blamed a
+pre-existing `bare = true`. **That reading was incomplete: the corruption is
+created by the push itself.**
+
+Measured, in order, on the same tree:
+
+1. Set `core.bare false` in `.git/config`; confirm `git rev-parse
+   --is-bare-repository` is `false`, `git ls-files` exits 0, and
+   `test_tracked_release_inputs_pass_hygiene_check` **passes**.
+2. Run `git push origin <branch>`. The pre-push hook's gates fail on
+   `tests/test_ci_change_scope.py` and `tests/test_release_packaging.py`.
+3. Read `.git/config` again: **`bare = true`**.
+
+So each push attempt corrupts the repository config and then reports the
+failure that corruption causes. The failing tests shell out to `git ls-files`,
+which returns exit 128 (`fatal: this operation must be run in a work tree`) in
+a repo marked bare. They pass standalone and passed in the full 14-gate suite;
+they fail only after a push attempt has flipped the flag.
+
+**Consequences worth acting on.** A test or script in the pre-push path is
+writing to the real `.git/config` — mutating developer machine state as a side
+effect of running gates. That is a defect in its own right, independent of
+AR-119: it also explains why `git status` in the primary checkout stopped
+working mid-session, and it is the mechanism that made `core.worktree` look
+load-bearing (it was compensating for a flag something keeps setting).
+
+**Do not** work around this with `SKIP_LOCAL_GATES=1`; that hides the defect
+and skips gates. The bounded next step is to find the writer: run the pre-push
+gate list one file at a time with `.git/config` watched for modification, and
+start with the two suites that fail, since both exercise packaging and CI
+scope logic that reads repository layout.
+
+*Falsification:* if `bare` stays `false` across a push attempt on a fresh
+clone, the writer is local to this repository's configuration rather than the
+gate code.
+
+**State left for the owner:** `core.bare` restored to `false`; both checkouts
+verified healthy; owner WIP untouched; work committed through `cdfbcddb` and
+**not pushed**.

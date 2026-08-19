@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -9,6 +10,42 @@ from scripts import check_ci_whitespace
 from scripts import classify_ci_change as subject
 
 
+def _fixture_git_environment() -> dict[str, str]:
+    """Return an environment in which git cannot reach the caller's repository.
+
+    Git exports ``GIT_DIR`` and friends to its hooks, and a subprocess that
+    inherits them ignores ``cwd`` entirely. ``git init`` under an inherited
+    ``GIT_DIR`` therefore re-initializes the *real* repository, and in a hook
+    context -- which has no work tree -- it marks that repository
+    ``bare = true``. Every later ``git ls-files`` in the owning checkout then
+    fails with exit 128 until somebody notices and unsets the flag.
+
+    That is not hypothetical: it corrupted this repository on 2026-08-18, once
+    per push attempt, and the failures surfaced against the suites that merely
+    *read* git rather than the fixture that wrote to it.
+    """
+
+    environment = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    environment["GIT_CONFIG_NOSYSTEM"] = "1"
+    return environment
+
+
+@pytest.fixture(autouse=True)
+def _isolate_from_the_callers_git(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Detach every test in this file from an inherited git environment.
+
+    The fixture helper sanitizes its own subprocess, but the code under test
+    shells out to git as well, and it reads the ambient environment. Under a
+    hook -- which is exactly where these gates run before a push -- that
+    environment points at the caller's repository, so the subject inspects the
+    wrong tree and the assertions fail for a reason that has nothing to do with
+    the behaviour being tested.
+    """
+
+    for name in [key for key in os.environ if key.startswith("GIT_")]:
+        monkeypatch.delenv(name, raising=False)
+
+
 def _git(root: Path, *arguments: str) -> str:
     completed = subprocess.run(
         ("git", *arguments),
@@ -16,6 +53,7 @@ def _git(root: Path, *arguments: str) -> str:
         check=True,
         capture_output=True,
         text=True,
+        env=_fixture_git_environment(),
     )
     return completed.stdout.strip()
 

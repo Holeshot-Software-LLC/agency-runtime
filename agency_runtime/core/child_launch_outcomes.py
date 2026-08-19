@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import Any, Final
 
 MAX_CHILD_LAUNCHES: Final[int] = 500
+MAX_PARENT_TRANSCRIPT_RECORDS: Final[int] = 100_000
 MAX_ASSIGNMENT_BYTES: Final[int] = 262_144
 MAX_ENVELOPE_BYTES: Final[int] = 65_536
 
@@ -48,17 +49,32 @@ _DELIVERY_MARKERS: Final[tuple[str, ...]] = (
 
 
 def original_assignment(text: str) -> str:
-    """Return the host's assignment with any appended v6 envelope removed.
+    """Return the host's assignment with a genuinely delivered v6 envelope removed.
 
     The envelope is appended after the host records its own launch input, so the
-    hash Agency stored is of the text *before* delivery. Stripping is therefore
-    required for the query-hash join to land on a staffed child.
+    hash Agency stored is of the text *before* delivery, and stripping is what
+    lets the query-hash join land on a staffed child.
+
+    Stripping keys off a **decodable** envelope, never a bare marker. An
+    assignment may legitimately quote these markers -- a review task that talks
+    about delivery does exactly that -- and cutting on the mention silently
+    truncates the assignment, which produces a hash that matches nothing and
+    reports a recorded launch as unrecorded. That is not a hypothetical: it is
+    how this function shipped on 2026-08-18, and it cost a child that had a
+    receipt all along.
     """
 
     if not isinstance(text, str):
         return ""
-    cuts = [position for marker in _DELIVERY_MARKERS if (position := text.find(marker)) >= 0]
-    return text[: min(cuts)].rstrip() if cuts else text
+    match = _ENVELOPE.search(text)
+    if match is None or _decoded_envelope(text) is None:
+        return text
+    cuts = [
+        position
+        for marker in _DELIVERY_MARKERS
+        if (position := text.rfind(marker, 0, match.start())) >= 0
+    ]
+    return text[: min(cuts)].rstrip() if cuts else text[: match.start()].rstrip()
 
 
 def _decoded_envelope(text: str) -> Mapping[str, Any] | None:
@@ -120,6 +136,48 @@ def read_child_launch(artifact: Path) -> dict[str, Any] | None:
     }
 
 
+def parent_recorded_assignments(session_transcript: Path) -> dict[str, str]:
+    """Index a parent transcript's launch inputs by the host's own launch id.
+
+    The child artifact is not a faithful copy of the assignment: measured
+    2026-08-18, a 3,184-character launch input appears in the child's record
+    zero as 867 characters. Agency hashed what the *parent* recorded, so an
+    artifact-only hash cannot match for any assignment the host shortened, and
+    a resolver that only reads artifacts reports those launches as unrecorded
+    however carefully it strips.
+    """
+
+    prompts: dict[str, str] = {}
+    if not session_transcript.is_file():
+        return prompts
+    try:
+        with session_transcript.open(encoding="utf-8") as handle:
+            for index, line in enumerate(handle):
+                if index >= MAX_PARENT_TRANSCRIPT_RECORDS:
+                    break
+                if "tool_use" not in line:
+                    continue
+                try:
+                    record = json.loads(line)
+                except ValueError:
+                    continue
+                message = record.get("message") if isinstance(record, Mapping) else None
+                blocks = message.get("content") if isinstance(message, Mapping) else None
+                if not isinstance(blocks, list):
+                    continue
+                for block in blocks:
+                    if not isinstance(block, Mapping) or block.get("type") != "tool_use":
+                        continue
+                    payload = block.get("input")
+                    prompt = payload.get("prompt") if isinstance(payload, Mapping) else None
+                    identity = str(block.get("id") or "").strip()
+                    if identity and isinstance(prompt, str) and prompt:
+                        prompts[identity] = prompt
+    except (OSError, UnicodeDecodeError):
+        return prompts
+    return prompts
+
+
 def iter_child_artifacts(root: Path, *, limit: int = MAX_CHILD_LAUNCHES) -> Iterator[Path]:
     """Yield child transcripts under a host artifact root, bounded.
 
@@ -139,6 +197,46 @@ def iter_child_artifacts(root: Path, *, limit: int = MAX_CHILD_LAUNCHES) -> Iter
         if seen >= limit:
             return
         yield artifact
+
+
+def _match_decision(
+    launch: Mapping[str, Any],
+    *,
+    parent_assignment: str,
+    decision_by_id: Callable[[str], Mapping[str, Any] | None],
+    decision_by_query_hash: Callable[[str, str], Mapping[str, Any] | None],
+    decision_by_fingerprint: Callable[[str, str, str], Mapping[str, Any] | None] | None,
+) -> tuple[Mapping[str, Any] | None, str]:
+    """Return the first decision a launch resolves to, and which key found it.
+
+    Two assignment digests are tried for the hash-bearing keys: the child
+    artifact's own copy, and the parent's recorded launch input. The second is
+    what Agency hashed whenever the host shortened the first, and neither is
+    reliably present, so both are attempted rather than one being preferred.
+    """
+
+    if launch["envelope_decision_id"]:
+        decision = decision_by_id(launch["envelope_decision_id"])
+        if decision is not None:
+            return decision, "envelope_decision_id"
+    recorded_sha256 = (
+        sha256(original_assignment(parent_assignment).encode("utf-8")).hexdigest()
+        if parent_assignment
+        else ""
+    )
+    digests = tuple(digest for digest in (launch["assignment_sha256"], recorded_sha256) if digest)
+    for digest in digests:
+        decision = decision_by_query_hash(launch["parent_session_id"], digest)
+        if decision is not None:
+            return decision, "assignment_query_hash"
+    if decision_by_fingerprint is not None and launch["launch_id"]:
+        for digest in digests:
+            decision = decision_by_fingerprint(
+                launch["parent_session_id"], launch["launch_id"], digest
+            )
+            if decision is not None:
+                return decision, "context_fingerprint"
+    return None, ""
 
 
 def resolve_child_launch_outcomes(
@@ -162,7 +260,12 @@ def resolve_child_launch_outcomes(
     launches: list[dict[str, Any]] = []
     unreadable = 0
     out_of_window = 0
+    parent_prompts: dict[Path, dict[str, str]] = {}
     for artifact in iter_child_artifacts(root, limit=limit):
+        session_dir = artifact.parent.parent
+        transcript = session_dir.with_name(session_dir.name + ".jsonl")
+        if transcript not in parent_prompts:
+            parent_prompts[transcript] = parent_recorded_assignments(transcript)
         launch = read_child_launch(artifact)
         if launch is None:
             unreadable += 1
@@ -172,26 +275,13 @@ def resolve_child_launch_outcomes(
             # about the window, not an artifact that failed to read.
             out_of_window += 1
             continue
-        decision = None
-        matched_by = ""
-        if launch["envelope_decision_id"]:
-            decision = decision_by_id(launch["envelope_decision_id"])
-            if decision is not None:
-                matched_by = "envelope_decision_id"
-        if decision is None:
-            decision = decision_by_query_hash(
-                launch["parent_session_id"], launch["assignment_sha256"]
-            )
-            if decision is not None:
-                matched_by = "assignment_query_hash"
-        if decision is None and decision_by_fingerprint is not None and launch["launch_id"]:
-            decision = decision_by_fingerprint(
-                launch["parent_session_id"],
-                launch["launch_id"],
-                launch["assignment_sha256"],
-            )
-            if decision is not None:
-                matched_by = "context_fingerprint"
+        decision, matched_by = _match_decision(
+            launch,
+            parent_assignment=parent_prompts[transcript].get(launch["launch_id"], ""),
+            decision_by_id=decision_by_id,
+            decision_by_query_hash=decision_by_query_hash,
+            decision_by_fingerprint=decision_by_fingerprint,
+        )
         if decision is None:
             outcome = UNRECORDED
         elif str(decision.get("status") or "") == "applied":
