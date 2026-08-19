@@ -45,9 +45,9 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
 - **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-ar119`**
   (linked worktree). Main only via PR on a verified-CLEAN rollup. Never
   commit/stash/install in the primary checkout; owner WIP remains there.
-  **Draft PR #298 is at `758fd944`; local `74c31def` is 12 commits ahead.
-  Owner-authorized: push/merge, merged-main install, bounded Claude/ZCode
-  smokes, and one Codex hook-trust-bypass canary. Hosted CI stays skipped.**
+  **PR #298 is at `758fd944`; `74c31def` plus this recovery pair are local.
+  Owner-authorized: push/merge, merged-main install, Claude/ZCode smokes, and one
+  Codex hook-trust-bypass canary. Hosted CI must be skipped; local gates govern.**
 - **Machine**: Claude/Codex remain on installed launcher `51b3202a2acb`; ZCode
   now runs verified repair `f24664b87f3b`. The canary map remains
   `claude/codex -> codex-subscription`, `zcode -> zcode-recruiter`; ordinary
