@@ -1734,3 +1734,51 @@ ZCode call. A direct hook simulation cannot satisfy host proof.
 
 The complete execution sequence is recorded in the canonical AR-119 issue under
 “Owner-scoped completion sequence — 2026-08-19.” No matrix cell moved here.
+
+### LIVE CHECKPOINT: Option A delivered; proof correlation needed one repair
+
+The approved local package installed the pushed candidate into Claude, Codex
+and ZCode. All three manifests resolve launcher runtime
+`59580436f7f10de09ab2e100994f2c785f0bce418419bcea1a7d331e1f890a2c`;
+status reports current launchers and no runtime drift. The persisted canary map
+reads exactly `claude -> codex-subscription`, `codex -> codex-subscription`, and
+`zcode -> zcode-recruiter`. The failed whole-map CLI write changed nothing;
+three supported host-key writes then succeeded. Ordinary staffing was not
+changed.
+
+The first fresh Claude attempt was not a child-judge measurement. Its ordinary
+parent recruiter returned two invalid oversized teams, so preflight stopped
+before a child existed. The report correctly recorded requested
+`codex-subscription`, zero routing receipts for the child, and no delivery.
+
+The bounded second attempt reached the target boundary:
+
+- parent trace `940bbcb0-d1c1-4d0f-a271-b52e7fa62bf9` selected and loaded
+  `code-reviewer`, completed with a valid five-field header and spawned exactly
+  one child;
+- native decision `native-child-7624e16e5d24ff8be84ab066af5a6e5a` applied
+  `minimal-change-engineer` at confidence 0.91 in 9,269 ms;
+- the route's requested provider and sole applied answering provider are both
+  `codex-subscription`;
+- the Claude-written pre-speech artifact matches that exact card, decision,
+  provider-receipt digest, launch binding, install, and candidate digest; and
+- the atomic consumer created the Store's first immutable
+  `native_child_delivery_verifications` row.
+
+The report nevertheless returned red because the pre-Option-A Claude validator
+compared the child-selected `minimal-change-engineer` card against the distinct
+parent `code-reviewer` route. It also preferred the artifact projection when
+looking for provider attempts, although those attempts live on the exact Store
+native-child route. The artifact and route themselves agree; this was a proof
+projection defect, not a staffing or provider failure.
+
+Commit `14de2f74` now joins the collector-sealed Claude artifact to its exact
+Store native-child route, validates their ordered cards and immutable bindings,
+keeps the parent route check separate, rejects a requested/answering provider
+mismatch, and reports the answering provider from the route. Its regression
+deliberately uses a `code-reviewer` parent and a `minimal-change-engineer` child.
+Focused and widened local checks pass: **134 passed**, plus Ruff check and
+format check. The source fix is newer than the installed launcher, so the next
+live action is reinstalling this checkpoint and collecting one attested Claude
+run. ZCode still needs its attended installed Agent `PreToolUse` attribution;
+Codex child proof still waits upstream. **No matrix cell moved.**

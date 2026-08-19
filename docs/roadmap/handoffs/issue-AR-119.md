@@ -28,7 +28,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: 4f34c1135c43e5601e79a94714e31f8107c61dda
+evidence_commit: 14de2f74659eb87721daf433c927691a69c27aed
 minimum_ledger_commit: ee82c602f2dc2d5e9632fc91b6dc071b50dc7541
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
@@ -45,11 +45,12 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
 - **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-ar119`**
   (linked worktree). Main only via PR on a verified-CLEAN rollup. Never
   commit/stash/install in the primary checkout; owner WIP remains there.
-  **Remote is through `2c9b471b` (19 ahead of main); the local Option A
-  checkpoint is unpushed. No PR yet.**
-- **Machine**: all three hosts pin ONE digest `f7b84c8a40fa` (merge
-  `6ba837fa`), schema 47 everywhere, installed 2026-08-19. State authority:
-  `~/.agency-runtime/overnight-runtime-state.json`.
+  **Draft PR #298 is pushed through `758fd944`; hosted CI was cancelled for
+  billing. Local `14de2f74` is unpushed. Do not start hosted work.**
+- **Machine**: Claude, Codex and ZCode currently resolve installed launcher
+  digest `59580436f7f1`; the canary map reads `claude/codex ->
+  codex-subscription`, `zcode -> zcode-recruiter`. Source fix `14de2f74` is
+  newer than the installed launcher and must be reinstalled before another run.
 - **Current phase = claude, codex, zcode.** OpenClaw/Hermes are session-deferred,
   not waived. Rule 9 stays five-host and never closes on three.
 ## completed-evidence
@@ -72,7 +73,14 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   but Agency cannot READ the collaboration.
   `native_collaboration_topology_invalid` is the diagnostic's terminal
   fall-through reached with every guard PASSING -- not an invalid topology.
-  The claude canary instead stops at `delivery_marker_absent`.
+  Do not rerun its byte-identical child canary.
+- **Claude reached verified delivery.** Attempt 1 stopped at parent preflight.
+  Attempt 2 produced one pre-speech host artifact and the Store's first
+  `native_child_delivery_verifications` row: decision `native-child-7624e16e…`,
+  `minimal-change-engineer`, requested/answered `codex-subscription`, confidence
+  0.91, candidate `59580436f7f1`. The overall report stayed red only because it
+  compared that child team with the parent's `code-reviewer` team. `14de2f74`
+  fixes the correlation and provider projection; 134 affected tests pass.
 ## traps (machine-specific; do not rediscover)
 
 - **git config corruption, FIXED 2026-08-19 (PR #296).** If git ever says
@@ -113,7 +121,8 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    gates in `child_delivery_evidence.py`: the `expected` capability
    (read-only paths hardcode `structural_hook_output=False`, lines
    1151/1226) and the sealed atomic Store consumer.
-   `native_child_delivery_verifications` = **0 rows ever**. Gate 1 exists
+   `native_child_delivery_verifications` now has **1 verified Claude row** from
+   the pre-fix report above; it has not moved a matrix cell. Gate 1 exists
    because Claude Code tags no substring as hook-authored (1147-1150).
    **Neither option moves codex**: `_expected_v6_reason` returns
    `unsupported_opaque_interagent_channel` on its FIRST line.
@@ -130,17 +139,14 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    hermes have no Rule 4 route.
 
 ## next-bounded-work-package
-The unpushed ADR-0160 candidate is locally verified: all 14 gate contracts
-passed (production spine 794 passed, 20 skipped; AR-119 matrix 670 passed;
-dashboard 134 passed). Do not install or run a live canary without renewed
-authorization. Evidence supports `claude -> codex-subscription`; Claude to
-`claude-subscription` remains the expected-to-decline falsification run.
 
-The canonical issue carries the requested sequence; the ZCode profile resolver
-and Agent `PreToolUse` path are source-tested. Next: seek approval to publish/
-install, collect an attended ZCode attribution call and the fresh Claude
-artifact. Do not build a synthetic backend: ZCode is hook-only here and emits
-no child lifecycle events. Codex child proof waits upstream. No matrix cell moves.
+Reinstall `14de2f74` into only Claude/Codex/ZCode, verify one common launcher
+digest and the unchanged canary map, then run telemetry and one fresh Claude
+canary. It must attest the exact child route and separately report requested and
+answering `codex-subscription`. Next collect the attended installed ZCode Agent
+`PreToolUse` GLM attribution; never simulate a backend. Retain Codex parent
+evidence and its upstream child limitation. Then update records and local gates.
+No matrix cell moves without its named exact-candidate authority.
 
 ## same-task-continuity
 
@@ -173,8 +179,8 @@ read without touching the store.
   candidate; provisional/branch evidence must say so.
 - Keep the 15,000 ms cold control fixed; automatic promotion stays on the
   critical path; no superiority claim without a matched corpus (AR-125).
-- **Loop authorizations LAPSED 2026-08-18 23:59 -- re-ask before pushing,
-  PRing, merging or installing.** Forbidden at all times (§3 of the brief):
-  no re-auth, no openclaw/hermes installs, no tracker writes, no tags or
-  force-pushes, no pushes to main, no roster retirement approvals, no new
-  capture surfaces, never change `observability.capture_content`.
+- This session's renewed authorization covers isolated local installs and live
+  canaries for Claude/Codex/ZCode only. Ask again before pushing, PR changes,
+  merging, any broader install, or hosted workflow. No OpenClaw/Hermes install,
+  tracker write, tag, force-push, main push, new capture surface, re-auth, or
+  `observability.capture_content` change.

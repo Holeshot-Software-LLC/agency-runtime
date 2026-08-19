@@ -119,14 +119,16 @@ unavailable.
 On 2026-08-19 the owner chose ADR-0160's Option A mechanism: persist one
 canary-only child-judge provider pin per harness, constrain both judge calls to
 that one provider with no fallback, and leave ordinary child staffing
-unchanged. The local candidate records requested and actual answering provider
-identities separately. No owner profile has been changed, no live canary has
-run, and no matrix cell moved. The measured Claude control still staffs on
-`codex-subscription` and declines on `claude-subscription`. The local candidate
-now resolves the existing `zcode-recruiter` Anthropic-compatible GLM profile as
-a canary-only provider without changing the ordinary chain. ZCode still lacks
-a safe noninteractive native canary backend, so this is not installed/live
-proof.
+unchanged. The approved isolated install now maps Claude and Codex to
+`codex-subscription` and ZCode to the existing `zcode-recruiter` GLM profile;
+the ordinary chain is unchanged. A fresh Claude draw produced a verified
+pre-speech host artifact for `minimal-change-engineer`, with requested and
+answering `codex-subscription` recorded on Store decision
+`native-child-7624e16e…`. Its overall report exposed a proof-projection defect:
+it compared the child-selected team with the distinct parent `code-reviewer`
+team. Commit `14de2f74` correlates the artifact to the exact native-child route
+and projects the answering provider; 134 affected tests pass. That fix is not
+yet reinstalled, the ZCode attended call remains open, and no matrix cell moved.
 
 The owner separately confirmed the current Codex boundary on 2026-08-19.
 Codex parent operation is working: a live request-scoped parent turn identifies
