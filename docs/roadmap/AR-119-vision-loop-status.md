@@ -1360,3 +1360,99 @@ claude child-delivery canary without touching
 `is_exact_codex_activation_canary_task` or the codex recognizer, the coupling
 is separable per host and Option A narrows to a claude-only change — though
 Rule 9 would then want the same treatment justified on codex.
+
+#### Separability tested: the coupling IS separable, and no existing test breaks
+
+The falsification left open above — "if a second work-unit constant can be
+introduced for the claude child-delivery canary without touching
+`is_exact_codex_activation_canary_task` or the codex recognizer, the coupling
+is separable per host and Option A narrows to a claude-only change" — was
+tested by tracing every consumer of the fixture. **It is separable.** This
+partially reverses the previous addendum's conclusion, which over-costed the
+mechanical side.
+
+Full consumer inventory (`grep` over the whole tree, `__pycache__` excluded):
+
+| Consumer | Gate | Affected by a claude-only prompt? |
+|---|---|---|
+| `canary.py:47` `CANARY_PROMPT = CODEX_ACTIVATION_CANARY_PROMPT` | alias | No — leave the alias alone |
+| `canary_proof.py:416` `base_prompt = facade.CANARY_PROMPT if mode == "agency" else …` | **not host-aware** | **the single change point** |
+| `canary_proof.py:428` `require_exact_activation_rollout=host == "codex" and mode == "agency"` | already codex-gated | No |
+| `pipeline.py:925` (rebind canary goal) | `is_exact_codex_activation_canary_task` → `host == "codex"` | No |
+| `pipeline.py:1711` (planning options) | same | No |
+| `preflight_recipe.py:589` (work-unit replay) | same, plus a route-source gate | No |
+| `store/preflight.py:430` | route-source gate | No |
+
+`is_exact_codex_activation_canary_task` requires `host == "codex"` in its own
+body, so all three recognizer call sites are dead on the claude path by
+construction, and the exact-rollout requirement is *already* written as a
+per-host branch.
+
+**Corroborated empirically, not just by reading.** The claude canary parent
+decision `c75f7f6c` recorded `source: "computed"` — **not**
+`codex_activation_canary_inference`. The codex activation-canary machinery
+demonstrably did not fire on the claude canary run, which is what the source
+reading predicts. (This matters: the matrix has been burned three times by
+source-read evidence that stopped being true.)
+
+**No existing test breaks**, because the cheapest shape leaves
+`CANARY_PROMPT` pointing at the codex constant and adds a separate one:
+
+- `tests/test_activation_canary_contract.py:147` pins
+  `canary.CANARY_PROMPT == CODEX_ACTIVATION_CANARY_PROMPT` — unchanged.
+- `tests/test_canary_coverage_complete.py:189,196` read `canary.CANARY_PROMPT`
+  for policy-trigger and one-unit assertions — unchanged.
+- `tests/test_canary_coverage_complete.py:443-467`, the
+  `_prepare_live_invocation` contract test, exercises **host `"codex"` only**
+  in both mode branches — unchanged by a `host == "claude"` selection.
+- `tests/test_codex_activation_canary.py:507-516` prints `CANARY_PROMPT` in a
+  codex subprocess — unchanged.
+
+Baseline confirmed green before drawing this conclusion:
+`pytest tests/test_activation_canary_contract.py -q` → **21 passed**.
+
+So the mechanical cost of Option A is **one new constant plus one host-aware
+line**, with new tests wanted for the new constant rather than existing ones
+rewritten.
+
+**What is still expensive, and it is not engineering.** The judge declined
+because the owner's small-unit policy told it to, so Option A's real content
+is choosing a unit the judge will staff. That choice is fenced on three
+sides, and the fences are load-bearing:
+
+1. The prompt is **planner input on claude too**. AR-255's v2 series showed
+   that naming what the work needs produced invented capability requirements
+   and `staff_without_safe_team` — the same reason code still appearing on
+   claude's real-profile receipts today (03:45:55Z, 03:28:59Z, 03:12:10Z,
+   02:56:13Z). The obvious way to make a unit staffable is the one wording
+   already proven to break it. `test_activation_canary_prompt_never_names_expertise_for_the_planner`
+   bans `expertise`, `skill`, `capabilit`, `staff` — and it is written against
+   the codex constant, so a new constant would need that guard added
+   deliberately or it silently loses the protection.
+2. `_explicit_indivisible_unit_request` must keep returning true or the
+   planner regains license to decompose the turn into errands — the exact
+   failure the 2026-08-17 captured-assignment run recorded.
+3. Transport bounds: `MAX_ROUTING_SIGNAL_CHARS` and `MAX_WORK_UNIT_CHARS`.
+
+**And the Rule 9 objection stands.** A claude-only canary unit is a per-host
+branch, which the founding vision calls a smell to justify. There is
+precedent in this very file (`require_exact_activation_rollout` is codex-only,
+`NATIVE_ONLY_CANARY_PROMPT` is a mode variant), so it is justifiable rather
+than forbidden — but it has a real cost beyond style: **claude and codex
+canaries would stop measuring the same thing**, which breaks the matched
+comparison this session used to locate the two hosts' different walls, and
+touches AR-125's matched-corpus constraint.
+
+**Net re-costing, third pass.** Option A is cheap to *wire* and expensive to
+*specify*. The engineering is a one-line branch; the deliverable is a work
+unit that the child judge will staff without naming expertise, without
+becoming decomposable, and without making the two hosts incomparable. That is
+an owner policy decision about what the canary is allowed to ask for, not a
+task that can be closed by writing code.
+
+*Falsification:* if a candidate unit is drafted that the judge staffs while
+passing the expertise ban, the indivisible-unit check and the transport
+bounds, then Option A is fully costed and cheap, and the seal should be
+decided in its favour. If three such drafts are declined in a series, the
+small-unit policy and canary-based Rule 4 proof are in genuine tension and
+Option B's schema bump becomes the better buy.
