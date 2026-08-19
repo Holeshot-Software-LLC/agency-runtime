@@ -46,11 +46,11 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
   (linked worktree). Main only via PR on a verified-CLEAN rollup. Never
   commit/stash/install in the primary checkout; owner WIP remains there.
   **Draft PR #298 is pushed through `758fd944`; hosted CI was cancelled for
-  billing. Local `14de2f74` is unpushed. Do not start hosted work.**
+  billing. Local checkpoint `b9fe5b90` is unpushed. Do not start hosted work.**
 - **Machine**: Claude, Codex and ZCode currently resolve installed launcher
-  digest `59580436f7f1`; the canary map reads `claude/codex ->
-  codex-subscription`, `zcode -> zcode-recruiter`. Source fix `14de2f74` is
-  newer than the installed launcher and must be reinstalled before another run.
+  digest `51b3202a2acb`; the canary map reads `claude/codex ->
+  codex-subscription`, `zcode -> zcode-recruiter`. Ordinary providers remain
+  Codex then Claude and content capture remains enabled.
 - **Current phase = claude, codex, zcode.** OpenClaw/Hermes are session-deferred,
   not waived. Rule 9 stays five-host and never closes on three.
 ## completed-evidence
@@ -81,6 +81,8 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   0.91, candidate `59580436f7f1`. The overall report stayed red only because it
   compared that child team with the parent's `code-reviewer` team. `14de2f74`
   fixes the correlation and provider projection; 134 affected tests pass.
+  After reinstall, two bounded refreshes stopped at parent preflight: oversized
+  teams (`3832e7aa…`), then no valid planner (`c7ae4580…`). Neither called a child.
 ## traps (machine-specific; do not rediscover)
 
 - **`agency` on PATH is `~/.local/bin/agency.exe` and is SCHEMA 45** -- it
@@ -123,23 +125,22 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    persistent host map narrows both child-judge calls to exactly one provider,
    with no fallback; normal child staffing is unchanged. Requested and actual
    providers are recorded separately. `zcode -> zcode-recruiter` now resolves
-   its existing GLM profile canary-only; the safe ZCode backend is still absent.
+   its existing GLM profile canary-only; ZCode remains an attended desktop call,
+   not a synthetic backend.
 4. **Hosts**: Codex parent routing/header delivery is operational. Its Rule-4
    child artifact remains upstream-blocked; never summarize that as “Codex
    does not work.” Codex is trusted + on claude's digest
    (`hook_trust_status: unverified` = a missing `--verify-activation`
-   receipt, NOT the owner's trust action). zcode has no CLI; openclaw and
-   hermes have no Rule 4 route.
+   receipt, NOT the owner's trust action). ZCode 3.6.5 has a desktop executable,
+   not a safe noninteractive backend; openclaw/hermes have no Rule 4 route.
 
 ## next-bounded-work-package
 
-Reinstall `14de2f74` into only Claude/Codex/ZCode, verify one common launcher
-digest and the unchanged canary map, then run telemetry and one fresh Claude
-canary. It must attest the exact child route and separately report requested and
-answering `codex-subscription`. Next collect the attended installed ZCode Agent
-`PreToolUse` GLM attribution; never simulate a backend. Retain Codex parent
-evidence and its upstream child limitation. Then update records and local gates.
-No matrix cell moves without its named exact-candidate authority.
+Launch ZCode 3.6.5 with canary mode, persistent `zcode-recruiter`, and managed
+install home projected. Submit one Agent call for the exact 138-character unit;
+join its Store row to the zero baseline and prove requested/answering GLM. Never
+simulate or retry Claude here. Retain the Codex boundary, then update records and
+local gates. No matrix cell moves without its named exact-candidate authority.
 
 ## same-task-continuity
 

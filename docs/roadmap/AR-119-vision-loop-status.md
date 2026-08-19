@@ -1782,3 +1782,41 @@ format check. The source fix is newer than the installed launcher, so the next
 live action is reinstalling this checkpoint and collecting one attested Claude
 run. ZCode still needs its attended installed Agent `PreToolUse` attribution;
 Codex child proof still waits upstream. **No matrix cell moved.**
+
+### LIVE CHECKPOINT: repaired runtime installed; refresh stopped before child
+
+Claude, Codex, and ZCode now resolve the same repaired launcher runtime,
+`51b3202a2acb3301b3278b5e19d23027441f0b193f9a86d431a76a609fde6bcf`.
+Their fresh install manifests and launcher receipts agree. The persisted map
+still reads `claude -> codex-subscription`, `codex -> codex-subscription`, and
+`zcode -> zcode-recruiter`; the ordinary provider chain remains Codex then
+Claude, and content capture remains enabled.
+
+Claude readiness passed with the new install current, registered, enabled, and
+free of stale prerequisites. The two approved live attempts after reinstall did
+not reach the child-judge boundary:
+
+- trace `c775ba30-ea66-41d5-9912-26094bdcb32f`, receipt
+  `3832e7aa-7095-47a3-8ebc-52bf2adea0e9`, stopped at parent routing after two
+  `claude-sonnet` recruiter responses proposed unsafe oversized teams
+  (`staff_without_safe_team`);
+- trace `34b7b35e-af0c-418f-ae99-8021b7ba3b0f`, receipt
+  `c7ae4580-83d4-495e-bf28-91e3bf070b32`, stopped earlier when the
+  `claude-haiku` parent planner produced no valid response
+  (`provider_no_valid_response`).
+
+Both reports named requested child pin `codex-subscription`, but neither
+created a child route, called a child judge, produced a delivery marker, or
+persisted an attestation. They are parent-preflight outcomes, not provider-pin
+measurements. This package stops the Claude retry series here. The earlier
+verified Claude artifact and immutable decision `native-child-7624e16e…` still
+prove requested and answering `codex-subscription` on the pre-repair runtime;
+the repaired digest does not yet have a green end-to-end attestation.
+
+The installed ZCode 3.6.5 desktop executable and its real seven-event hook
+registration are available. Before the attended call the Store has zero ZCode
+`native_child_inference` rows, giving an exact attribution baseline. The next
+live action is one fresh ZCode Agent call launched with canary mode, the
+persistent `zcode-recruiter` identity, and the managed install home projected;
+a direct hook simulation remains invalid. Codex parent evidence and its opaque
+child boundary are unchanged. **No matrix cell moved.**

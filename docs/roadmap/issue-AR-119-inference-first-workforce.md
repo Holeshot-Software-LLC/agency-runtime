@@ -127,8 +127,13 @@ answering `codex-subscription` recorded on Store decision
 `native-child-7624e16e…`. Its overall report exposed a proof-projection defect:
 it compared the child-selected team with the distinct parent `code-reviewer`
 team. Commit `14de2f74` correlates the artifact to the exact native-child route
-and projects the answering provider; 134 affected tests pass. That fix is not
-yet reinstalled, the ZCode attended call remains open, and no matrix cell moved.
+and projects the answering provider; 134 affected tests pass. The repaired
+runtime is now installed across Claude, Codex, and ZCode at digest
+`51b3202a2acb…`. Two bounded refreshed Claude attempts stopped before a child
+judge existed: the first rejected two oversized parent-recruiter teams and the
+second received no valid parent-planner response. Neither measured the pin or
+replaced the earlier exact child route. A green attestation on the repaired
+digest and the attended ZCode call remain open; no matrix cell moved.
 
 The owner separately confirmed the current Codex boundary on 2026-08-19.
 Codex parent operation is working: a live request-scoped parent turn identifies
