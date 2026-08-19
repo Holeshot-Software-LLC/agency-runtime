@@ -242,6 +242,55 @@ def test_claude_auth_preparation_consumes_the_same_execution_budget(
     assert invoked is False
 
 
+def test_claude_canary_projects_a_cross_provider_codex_auth_home(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    prepared: list[tuple[str, Path]] = []
+    observed_env: dict[str, str] = {}
+
+    def prepare(runtime_home: Path, **kwargs: Any) -> Path:
+        home = runtime_home / str(kwargs["directory_name"])
+        home.mkdir()
+        prepared.append((str(kwargs["directory_name"]), Path(kwargs["auth_source"])))
+        return home
+
+    def runner(*_args: Any, **kwargs: Any) -> SimpleNamespace:
+        observed_env.update(kwargs["env"])
+        return _process_result()
+
+    monkeypatch.setattr(canary, "_prepare_private_host_home", prepare)
+    monkeypatch.setattr(canary, "_isolated_canary_environment", lambda *_args: {})
+    monkeypatch.setattr(
+        canary,
+        "_project_isolated_runtime_control",
+        lambda *_args, **_kwargs: {"enabled": True},
+    )
+    backend = canary._SafeClaudeCanaryBackend(
+        executable="claude",
+        db_path=tmp_path / "agency.db",
+        timeout=5.0,
+        plugin_dir=tmp_path / "plugin",
+        auth_source=tmp_path / "claude" / ".credentials.json",
+        process_runner=runner,
+        source_env={},
+        child_judge_provider="codex-subscription",
+        child_judge_transport="codex",
+        child_judge_auth_source=tmp_path / "codex" / "auth.json",
+    )
+
+    result = backend.execute(task="nonce-bound canary", workdir=str(tmp_path))
+
+    assert observed_env["AGENCY_CANARY_CHILD_JUDGE_PROVIDER"] == "codex-subscription"
+    assert Path(observed_env["CLAUDE_CONFIG_DIR"]).name == "claude"
+    assert Path(observed_env["CODEX_HOME"]).name == "child-judge-codex"
+    assert prepared == [
+        ("claude", tmp_path / "claude" / ".credentials.json"),
+        ("child-judge-codex", tmp_path / "codex" / "auth.json"),
+    ]
+    assert result["child_judge_provider_requested"] == "codex-subscription"
+
+
 def _ready_native(*, install_id: str) -> dict[str, Any]:
     return {
         "host": "codex",

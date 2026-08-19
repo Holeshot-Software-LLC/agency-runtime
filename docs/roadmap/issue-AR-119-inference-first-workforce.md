@@ -19,6 +19,7 @@ related:
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
+  - docs/decisions/0160-pin-child-judge-providers-per-canary-harness.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/AR-119-acceptance-evidence.md
@@ -114,6 +115,15 @@ their bridge failure paths withhold the host response when Agency is
 unavailable.
 
 ## Current state
+
+On 2026-08-19 the owner chose ADR-0160's Option A mechanism: persist one
+canary-only child-judge provider pin per harness, constrain both judge calls to
+that one provider with no fallback, and leave ordinary child staffing
+unchanged. The local candidate records requested and actual answering provider
+identities separately. No owner profile has been changed, no live canary has
+run, and no matrix cell moved. The measured Claude control still staffs on
+`codex-subscription` and declines on `claude-subscription`; ZCode/GLM remains a
+target pending a supported judge transport and safe ZCode canary backend.
 
 The audited roster, inference receipts, request-scoped cards, resident managers,
 native lifecycle telemetry, CLI, and dashboard provide a strong base. Runtime

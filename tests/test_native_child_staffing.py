@@ -15,7 +15,13 @@ from typing import Any
 import pytest
 
 from agency_runtime.core import native_child_staffing as staffing
-from agency_runtime.core.config import AgencyConfig, AgentActivationConfig, OllamaConfig
+from agency_runtime.core.config import (
+    AgencyConfig,
+    AgentActivationConfig,
+    CanaryConfig,
+    OllamaConfig,
+    ProviderEntry,
+)
 from agency_runtime.core.native_child_decision import (
     canonical_native_child_provider_receipt_digest,
     project_native_child_staffing_decision,
@@ -323,6 +329,81 @@ def test_inference_order_is_preserved_and_only_hard_eligible_catalog_reaches_jud
     stored = store.get_native_child_staffing_decision("route-1")
     assert stored is not None
     assert stored["cards"] == result.native_child_delivery["cards"]
+
+
+def test_canary_pin_constrains_initial_and_abstention_repair_calls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompt = "Alpha exact specialist prompt."
+    store = _Store([_agent("alpha-reviewer", prompt)], {"alpha-reviewer": prompt})
+    observed_providers: list[tuple[str, ...]] = []
+
+    def judge(task: str, _catalog: list[dict[str, Any]], **kwargs: Any) -> dict[str, Any]:
+        observed_providers.append(tuple(provider.name for provider in kwargs["config"].providers))
+        selected = ["alpha-reviewer"] if task.startswith("A previous evaluation") else []
+        result = _judge_result(selected)
+        result["provider_name"] = "codex-subscription"
+        result["provider_attempts"] = [_attempt(name="codex-subscription")]
+        return result
+
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_CHILD_JUDGE_PROVIDER", "codex-subscription")
+    result = _invoke(
+        monkeypatch,
+        store,
+        judge,
+        config=AgencyConfig(
+            providers=(
+                ProviderEntry(
+                    name="claude-subscription",
+                    type="cli",
+                    transport="claude",
+                ),
+                ProviderEntry(name="codex-subscription", type="cli", transport="codex"),
+            ),
+            canary=CanaryConfig(
+                child_judge_provider_by_host=(("claude", "codex-subscription"),),
+            ),
+            ollama=OllamaConfig(enabled=False),
+        ),
+    )
+
+    assert result.staffed is True
+    assert observed_providers == [("codex-subscription",), ("codex-subscription",)]
+    assert store.decisions[-1]["decision"]["requested_provider"] == "codex-subscription"
+    assert store.decisions[-1]["decision"]["provider"] == "codex-subscription"
+
+
+def test_canary_pin_projection_mismatch_fails_before_judge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompt = "Alpha exact specialist prompt."
+    store = _Store([_agent("alpha-reviewer", prompt)], {"alpha-reviewer": prompt})
+    invoked = False
+
+    def judge(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+        nonlocal invoked
+        invoked = True
+        return _judge_result(["alpha-reviewer"])
+
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_CHILD_JUDGE_PROVIDER", "claude-subscription")
+    result = _invoke(
+        monkeypatch,
+        store,
+        judge,
+        config=AgencyConfig(
+            providers=(ProviderEntry(name="codex-subscription", type="cli", transport="codex"),),
+            canary=CanaryConfig(
+                child_judge_provider_by_host=(("claude", "codex-subscription"),),
+            ),
+            ollama=OllamaConfig(enabled=False),
+        ),
+    )
+
+    assert result.staffed is False
+    assert result.reason_code == "native_child_canary_provider_invalid"
+    assert invoked is False
 
 
 def test_no_provider_fails_open_unstaffed_and_records_explicit_diagnostic(

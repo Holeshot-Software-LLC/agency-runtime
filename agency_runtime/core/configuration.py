@@ -145,6 +145,7 @@ _validate_providers = _schema._validate_providers
 _validate_judge = _schema._validate_judge
 _validate_ollama = _schema._validate_ollama
 _validate_selector = _schema._validate_selector
+_validate_canary = _schema._validate_canary
 _validate_agents = _schema._validate_agents
 _validate_store = _schema._validate_store
 _validate_server = _schema._validate_server

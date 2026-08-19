@@ -127,6 +127,25 @@ def test_success_route_requires_neutral_work_units() -> None:
     assert project_native_child_success_route(route, **arguments) is None
 
 
+def test_success_route_accepts_only_a_requested_provider_that_actually_answered() -> None:
+    expected = _decision()
+    route = _success_route(expected)
+    route["work_units"] = {}
+    route["requested_provider"] = "selector"
+    arguments = {
+        "session_id": str(expected["parent_session_id"]),
+        "trace_id": str(expected["parent_trace_id"]),
+        "query_hash": str(expected["task_sha256"]),
+        "context_fingerprint": _digest("context"),
+        "host": str(expected["host"]),
+    }
+
+    assert project_native_child_success_route(route, **arguments) == expected
+
+    route["requested_provider"] = "different-provider"
+    assert project_native_child_success_route(route, **arguments) is None
+
+
 @pytest.mark.parametrize(
     ("field", "replacement"),
     [
@@ -213,12 +232,14 @@ def test_store_resolves_the_exact_decision_without_calling_it_delivery(tmp_path:
         host=str(expected["host"]),
         user_message="Parent request",
     )
+    route = _success_route(expected)
+    route["requested_provider"] = "selector"
     decision_id = store.record_routing_decision(
         trace_id=str(expected["parent_trace_id"]),
         session_id=str(expected["parent_session_id"]),
         query_hash=str(expected["task_sha256"]),
         context_fingerprint=_digest("context"),
-        decision=_success_route(expected),
+        decision=route,
     )
 
     resolved = store.get_native_child_staffing_decision(decision_id)

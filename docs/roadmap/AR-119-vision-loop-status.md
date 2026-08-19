@@ -1637,3 +1637,39 @@ it cheap, which is the point of committing it.
 *Scope:* this is a probe, not a host artifact. It correlates; it cannot
 originate a Rule-4 claim (ADR-0156). **Do not promote any matrix cell from
 it.**
+
+### OWNER DECISION: Option A is per harness and canary-only
+
+The owner chose Option A on 2026-08-19 and refined it to one persistent pin
+for each harness, so switching harnesses does not require reordering the global
+provider chain. ADR-0160 owns the mechanism:
+
+- `canary.child_judge_provider_by_host.<host>` names one configured CLI
+  provider;
+- both the initial child-judge call and its one abstention repair see only
+  that provider, with no fallback;
+- the disposable environment must project the same requested identity or the
+  call fails before inference;
+- requested and actual answering providers remain separate evidence; and
+- outside canary mode, child staffing is byte-for-byte on the original
+  provider-chain path.
+
+The map is host-neutral, not a brand-pairing rule. For the measured control,
+`claude -> claude-subscription` is expected to decline and is the explicit
+falsification path; `claude -> codex-subscription` is the current
+evidence-backed passing choice. The owner profile has not been changed, so no
+installed choice is claimed here.
+
+The owner also identified the intended `zcode -> GLM subscription` pairing.
+The config key can retain that target, but this candidate cannot execute it:
+Agency supports structured CLI judging only through Codex and Claude, and
+ZCode still lacks a safe noninteractive canary backend. A subscription and a
+host integration do not prove those missing contracts.
+
+Local source now implements the typed map, exact provider resolution,
+environment/config equality check, one-provider narrowing, cross-provider
+credential isolation, and requested/answered proof projection. Focused tests
+cover initial and repair calls, mismatch-before-inference, ordinary-turn
+noninterference, typed config updates, and Claude-to-Codex auth isolation.
+No live canary was run, no owner config or install was changed, and **no matrix
+cell moved**.

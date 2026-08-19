@@ -14,6 +14,7 @@ import pytest
 
 from agency_runtime.core import canary, canary_backends
 from agency_runtime.core.bounded_io import FileSizeLimitError
+from agency_runtime.core.config import AgencyConfig, CanaryConfig, ProviderEntry
 from agency_runtime.core.selector.policy import detect_actions, load_bundled_policy
 
 
@@ -466,6 +467,63 @@ def test_prepare_live_invocation_uses_default_backend_contract(
     )
     assert agency.error is None
     assert calls[1]["require_exact_activation_rollout"] is True
+
+
+def test_prepare_live_invocation_resolves_and_passes_the_exact_canary_pin(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = tmp_path / "agency.yaml"
+
+    class _Store:
+        def __init__(self, _path: Path) -> None:
+            self.config_path = config_path
+
+        def recent_runtime_activity(self, *, limit: int) -> dict[str, list[Any]]:
+            assert limit == 200
+            return {}
+
+    calls: list[dict[str, Any]] = []
+
+    def factory(host: str, **kwargs: Any) -> object:
+        calls.append({"host": host, **kwargs})
+        return object()
+
+    config = AgencyConfig(
+        providers=(ProviderEntry(name="codex-subscription", type="cli", transport="codex"),),
+        canary=CanaryConfig(
+            child_judge_provider_by_host=(("claude", "codex-subscription"),),
+        ),
+    )
+    monkeypatch.setattr(canary, "Store", _Store)
+    monkeypatch.setattr(canary, "load_config", lambda *_args, **_kwargs: config)
+    monkeypatch.setattr(canary, "_backend", factory)
+
+    prepared = canary._prepare_live_invocation(
+        "claude",
+        path=tmp_path / "agency.db",
+        timeout=2,
+        native=_native("claude"),
+        backend_factory=factory,
+        mode="agency",
+    )
+
+    assert prepared.error is None
+    assert calls == [
+        {
+            "host": "claude",
+            "db_path": tmp_path / "agency.db",
+            "timeout": 2,
+            "native": _native("claude"),
+            "master_enabled": True,
+            "profile_scope": "isolated-profile",
+            "require_existing_store": False,
+            "require_exact_activation_rollout": False,
+            "trust_mode": "attended",
+            "child_judge_provider": "codex-subscription",
+            "child_judge_transport": "codex",
+        }
+    ]
 
 
 def test_profile_and_proof_helpers_cover_current_and_receipt_failure() -> None:

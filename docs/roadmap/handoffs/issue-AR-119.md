@@ -21,6 +21,7 @@ related:
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
+  - docs/decisions/0160-pin-child-judge-providers-per-canary-harness.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -42,12 +43,10 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
 ## checkpoint
 
 - **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-ar119`**
-  (linked worktree, synced with origin/main). Main only via PR on a
-  verified-CLEAN rollup. Never commit/stash in the primary checkout (owner
-  WIP: `cli/eval_commands.py` + three untracked eval JSONs) and never
-  install from it -- that WIP sits in the published package tree. Push from
-  THIS worktree. PRs #290-#297 merged. **The branch is PUSHED through
-  `abc88dd9` (15 ahead of main, docs-only, 12/12 gates green). No PR yet.**
+  (linked worktree). Main only via PR on a verified-CLEAN rollup. Never
+  commit/stash/install in the primary checkout; owner WIP remains there.
+  **Remote is through `2c9b471b` (19 ahead of main); the local Option A
+  checkpoint is unpushed. No PR yet.**
 - **Machine**: all three hosts pin ONE digest `f7b84c8a40fa` (merge
   `6ba837fa`), schema 47 everywhere, installed 2026-08-19. State authority:
   `~/.agency-runtime/overnight-runtime-state.json`.
@@ -118,29 +117,27 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    because Claude Code tags no substring as hook-authored (1147-1150).
    **Neither option moves codex**: `_expected_v6_reason` returns
    `unsupported_opaque_interagent_channel` on its FIRST line.
-3. **Option A is separable and cheap to wire.** Codex recognizer call sites
-   are all gated on `host == "codex"`; the only non-host-aware consumer is
-   `canary_proof.py:416`. Keeping `CANARY_PROMPT` aliased and adding a
-   separate constant breaks NO existing test (baseline 21 passed). If
-   blocker 1 is the cause, no new unit is needed at all.
+3. **Owner chose Option A as per-harness and canary-only (ADR-0160).** One
+   persistent host map narrows both child-judge calls to exactly one provider,
+   with no fallback; normal child staffing is unchanged. Requested and actual
+   providers are recorded separately. `zcode -> GLM` is an intended policy,
+   but no structured ZCode judge transport or safe canary backend exists yet.
 4. **Hosts**: codex trusted + on claude's digest for the first time
    (`hook_trust_status: unverified` = a missing `--verify-activation`
    receipt, NOT the owner's trust action). zcode has no CLI; openclaw and
    hermes have no Rule 4 route.
 
 ## next-bounded-work-package
-**That measurement is DONE and returned "declines" (blocker 1), so the seal
-should be decided for OPTION A.** Option A is now cheaper than even the
-separability analysis said: no new work unit, no new prompt constant, no
-change to `canary_proof.py:416`, no Rule 9 divergence, no matched-corpus
-damage. It reduces to **pinning which provider the child judge reaches
-inside the canary**.
+Finish local verification of the unpushed ADR-0160 candidate and its worklog
+pair. Do not install or run a live canary without renewed authorization. The
+evidence-backed passing Claude pin is `codex-subscription`; pinning Claude to
+`claude-subscription` is the explicit falsification run and is currently
+expected to decline. No installed value has been chosen or changed.
 
-Owner decision before building: pin to which provider, and does the pin
-belong to the canary only or to child staffing generally? The second form
-changes real-turn behaviour and is NOT covered by any authorization. Still
-open: Rule 4 Live needs the collector green once, AR-252 shares it, and
-neither moves codex (blocker 2).
+After authorization, configure the per-host map and collect one fresh Claude
+host artifact. Rule 4 Live still needs the collector green once, AR-252 shares
+it, and neither moves codex (blocker 2). ZCode/GLM needs its missing transport
+and backend before it can join the series.
 
 ## same-task-continuity
 

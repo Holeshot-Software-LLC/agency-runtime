@@ -28,6 +28,12 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- Live Agency canaries can persist one child-judge provider pin per harness.
+  The judge and its abstention repair use only that provider, cross-provider
+  CLI credentials are copied into a second disposable private home, and proof
+  records the requested and actual answering providers separately. Ordinary
+  child staffing is unchanged.
+
 - The dashboard now exposes bounded routing-latency, specialist-selection,
   host-written child-delivery, Rule-8 exception, and staged-versus-wired host
   evidence. Latency, child, Rule-8, and wiring math share the CLI projections;

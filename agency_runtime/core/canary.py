@@ -33,7 +33,11 @@ from agency_runtime.core.bounded_io import (
     read_bounded_regular_file,  # noqa: F401 - monkeypatch compatibility
 )
 from agency_runtime.core.bounded_json import safe_load_bounded_json
+from agency_runtime.core.canary_judge_provider import (
+    configured_canary_child_judge_provider as _configured_canary_child_judge_provider,  # noqa: F401 - compatibility dependency resolved by canary_proof
+)
 from agency_runtime.core.child_delivery_evidence import _discard_verified_host_child_delivery
+from agency_runtime.core.config import load_config  # noqa: F401 - compatibility facade
 from agency_runtime.core.host_control import SUPPORTED_HOSTS
 from agency_runtime.core.installer import (
     PLUGIN_VERSION,  # noqa: F401 - compatibility dependency resolved by canary_proof
@@ -250,6 +254,8 @@ def _backend(
     require_exact_activation_rollout: bool = False,
     hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None,
     trust_mode: str = "attended",
+    child_judge_provider: str = "",
+    child_judge_transport: str = "",
 ):
     return _backends.backend(
         host,
@@ -265,6 +271,8 @@ def _backend(
         require_exact_activation_rollout=require_exact_activation_rollout,
         hook_trust_inspector=hook_trust_inspector,
         trust_mode=trust_mode,
+        child_judge_provider=child_judge_provider,
+        child_judge_transport=child_judge_transport,
     )
 
 

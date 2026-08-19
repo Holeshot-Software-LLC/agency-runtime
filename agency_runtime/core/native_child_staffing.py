@@ -9,6 +9,7 @@ with a content-free diagnostic and lets the native child proceed unstaffed.
 from __future__ import annotations
 
 import json
+import os
 import re
 import secrets
 import sys
@@ -20,6 +21,10 @@ from hashlib import sha256
 from typing import Any, Final
 
 from agency_runtime.core.agent_identity import agent_identity
+from agency_runtime.core.canary_judge_provider import (
+    CanaryChildJudgeProviderError,
+    canary_child_judge_config,
+)
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.content_redaction import redact_content
 from agency_runtime.core.correlation import validate_correlation_id
@@ -298,6 +303,16 @@ def _provider_name(value: Mapping[str, Any] | None) -> str:
     return name if len(name) <= 128 else ""
 
 
+def _requested_provider_name(value: Mapping[str, Any] | None) -> str:
+    if value is None:
+        return ""
+    try:
+        name = str(value.get("requested_provider") or "").strip()
+    except Exception:
+        return ""
+    return name if len(name) <= 128 else ""
+
+
 def _route_provider_name(
     value: Mapping[str, Any] | None,
     delivery: Mapping[str, Any] | None,
@@ -458,6 +473,9 @@ def _routing_projection(
         **_offered_projection(offered_ids),
         **_task_shape(task),
     }
+    requested_provider = _requested_provider_name(raw)
+    if requested_provider:
+        decision["requested_provider"] = requested_provider
     if native_child_delivery is not None:
         decision["native_child_delivery"] = dict(native_child_delivery)
     return decision
@@ -1033,10 +1051,32 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
         )
 
     try:
+        judge_config, requested_provider = canary_child_judge_config(
+            snapshot.config,
+            normalized_host,
+            os.environ,
+        )
+    except CanaryChildJudgeProviderError:
+        return _unstaffed(
+            store=store,
+            reason_code="native_child_canary_provider_invalid",
+            task=original_task,
+            host=normalized_host,
+            parent_session_id=session_id,
+            parent_trace_id=trace_id,
+            task_sha256=task_hash,
+            context_fingerprint=context_fingerprint,
+            judge_result={
+                "inference_configured": False,
+                "inference_attempted": False,
+            },
+        )
+
+    try:
         judge_result = query_judge(
             original_task,
             eligible_catalog,
-            config=snapshot.config,
+            config=judge_config,
             max_selected=MAX_INFERENCE_TEAM_CARDS,
             candidate_scope="complete",
         )
@@ -1075,6 +1115,8 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             task_sha256=task_hash,
             context_fingerprint=context_fingerprint,
         )
+    if requested_provider:
+        judge_result["requested_provider"] = requested_provider
 
     state_unchanged = _routing_state_matches(
         store,
@@ -1160,7 +1202,7 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             repair_result: Any = query_judge(
                 repair_abstention_task(original_task),
                 eligible_catalog,
-                config=snapshot.config,
+                config=judge_config,
                 max_selected=MAX_INFERENCE_TEAM_CARDS,
                 candidate_scope="complete",
             )
@@ -1169,6 +1211,8 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
         if isinstance(repair_result, Mapping):
             try:
                 repair_result = dict(repair_result)
+                if requested_provider:
+                    repair_result["requested_provider"] = requested_provider
             except Exception:
                 repair_result = None
         else:

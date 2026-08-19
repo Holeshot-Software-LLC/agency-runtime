@@ -503,6 +503,16 @@ execution because a proven read-only, bounded native-child noninteractive mode
 is not available. Codex and Claude require the exact
 `RUN LIVE <host> CANARY` confirmation before invoking the host.
 
+An Agency-mode live canary also requires
+`canary.child_judge_provider_by_host.<host>` to name one configured Codex or
+Claude CLI provider. The canary fails before inference if the entry is absent,
+unsupported, or differs from the provider projected into the disposable host
+environment; it never tries the next provider. Inspect
+`child_judge_provider_requested` and `child_judge_provider_answered` in the
+proof rather than inferring the judge from the driving host. A ZCode/GLM
+subscription is not yet a supported structured judge transport or safe
+noninteractive ZCode canary backend.
+
 For an Agency-off comparison, leave the plugin installed, run
 `agency off --global`, and execute `agency host-canary <host> --mode
 native-only --execute --confirm "RUN LIVE <host> NATIVE-ONLY CANARY"`. The

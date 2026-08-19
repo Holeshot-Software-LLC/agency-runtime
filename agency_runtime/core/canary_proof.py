@@ -416,6 +416,29 @@ def prepare_live_invocation(
     base_prompt = facade.CANARY_PROMPT if mode == "agency" else facade.NATIVE_ONLY_CANARY_PROMPT
     prompt = f"{base_prompt}\n\nCanary nonce: {nonce}"
     expected_query_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+    child_judge_provider = ""
+    child_judge_transport = ""
+    if (
+        mode == "agency"
+        and backend_factory is facade._backend
+        and getattr(store, "config_path", None) is not None
+    ):
+        try:
+            config = facade.load_config(getattr(store, "config_path", None), reload=True)
+            resolved = facade._configured_canary_child_judge_provider(config, host)
+            if resolved is None:
+                raise ValueError("missing provider pin")
+            provider, child_judge_transport = resolved
+            child_judge_provider = provider.name
+        except Exception:
+            return LivePreparation(
+                store=store,
+                before=before,
+                backend=None,
+                prompt=prompt,
+                expected_query_hash=expected_query_hash,
+                error="canary child-judge provider pin is unavailable",
+            )
     try:
         if backend_factory is facade._backend:
             backend = backend_factory(
@@ -428,6 +451,8 @@ def prepare_live_invocation(
                 require_existing_store=require_existing_store,
                 require_exact_activation_rollout=host == "codex" and mode == "agency",
                 trust_mode=trust_mode,
+                child_judge_provider=child_judge_provider,
+                child_judge_transport=child_judge_transport,
             )
         else:
             backend = backend_factory(host, db_path=path, timeout=timeout)
@@ -1296,7 +1321,7 @@ def proof_failures(
     return tuple(failures)
 
 
-def evaluate_proof(
+def evaluate_proof(  # noqa: C901 - one ordered proof projection boundary
     host: str,
     *,
     result: dict[str, Any],
@@ -1394,6 +1419,26 @@ def evaluate_proof(
         ),
         "collaboration": collaboration_projection,
     }
+    requested_provider = str(result.get("child_judge_provider_requested") or "").strip()
+    if requested_provider and len(requested_provider) <= 128:
+        invocation["child_judge_provider_requested"] = requested_provider
+    answering_provider = ""
+    provider_source: object = host_child_delivery_projection
+    if not isinstance(provider_source, Mapping):
+        provider_source = evidence.get("native_child_route")
+    attempts = (
+        provider_source.get("provider_attempts") if isinstance(provider_source, Mapping) else None
+    )
+    if isinstance(attempts, list):
+        applied = [
+            str(attempt.get("provider_name") or "").strip()
+            for attempt in attempts
+            if isinstance(attempt, Mapping) and attempt.get("status") == "applied"
+        ]
+        if len(applied) == 1:
+            answering_provider = applied[0]
+    if answering_provider and len(answering_provider) <= 128:
+        invocation["child_judge_provider_answered"] = answering_provider
     if collection_reason is not None:
         invocation["host_child_collection_reason"] = collection_reason
     if host_child_delivery_projection is not None:

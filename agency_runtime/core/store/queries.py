@@ -109,6 +109,7 @@ _ROUTING_DECISION_FIELDS = frozenset(
         "confidence",
         "latency_ms",
         "provider",
+        "requested_provider",
         "candidate_count",
         # Which specialists the child judge was actually shown. `candidate_count`
         # alone cannot answer the only question a decline raises -- whether
@@ -267,7 +268,7 @@ def _project_routing_field(key: str, value: object) -> object:
         return _bounded_offered_agent_ids(value)
     if key in _ROUTING_DIGEST_FIELDS:
         return _routing_digest(value) or _OMIT_ROUTING_FIELD
-    if key == "provider":
+    if key in {"provider", "requested_provider"}:
         return str(value or "").strip()[:128]
     if key == "execution_context":
         return project_host_capability_receipt(value) or _OMIT_ROUTING_FIELD
@@ -433,6 +434,8 @@ def _normalize_routing(rows: list[dict[str, Any]]) -> None:
             decision.get("semantic_status") or row.get("status") or "unknown"
         )
         row["fallback_applied"] = decision.get("fallback_applied") is True
+        requested_provider = str(decision.get("requested_provider") or "").strip()
+        row["requested_provider"] = requested_provider[:128]
         fallback_ids = decision.get("fallback_companion_ids")
         row["fallback_companion_ids"] = (
             [str(value) for value in fallback_ids if isinstance(value, str) and value]

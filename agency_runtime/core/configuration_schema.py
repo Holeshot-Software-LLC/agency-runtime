@@ -36,6 +36,7 @@ _PROFILES = frozenset({"local-only", "standard", "power", "yolo"})
 _ENABLED_VALUES = frozenset({"auto", "true", "false"})
 _DELEGATION_MODES = frozenset({"observe", "prefer", "strong"})
 _WORKFORCE_MODES = frozenset({"fast", "balanced", "strict"})
+_CANARY_HOSTS = frozenset({"codex", "claude", "openclaw", "hermes", "zcode"})
 
 
 def _error(path: str, message: str) -> ConfigValidationError:
@@ -541,6 +542,37 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
     return result
 
 
+def _validate_canary(value: Any) -> dict[str, Any]:
+    section = _mapping(value, "canary")
+    if set(section) - {"child_judge_provider_by_host"}:
+        raise _error("canary", "contains unsupported fields")
+    raw = _mapping(
+        section.get("child_judge_provider_by_host", {}),
+        "canary.child_judge_provider_by_host",
+    )
+    providers: dict[str, str] = {}
+    for host, item in raw.items():
+        if not isinstance(host, str) or host.strip().casefold() not in _CANARY_HOSTS:
+            raise _error(
+                "canary.child_judge_provider_by_host",
+                "host names must be one of " + ", ".join(sorted(_CANARY_HOSTS)),
+            )
+        normalized_host = host.strip().casefold()
+        provider = _string(
+            item,
+            f"canary.child_judge_provider_by_host.{normalized_host}",
+            allow_empty=False,
+            maximum=80,
+        ).strip()
+        if has_terminal_control(provider):
+            raise _error(
+                f"canary.child_judge_provider_by_host.{normalized_host}",
+                "contains invalid text",
+            )
+        providers[normalized_host] = provider
+    return {"child_judge_provider_by_host": providers}
+
+
 def _validate_agents(value: Any) -> dict[str, Any]:
     section = _mapping(value, "agents")
     if set(section) - {"disabled"}:
@@ -871,6 +903,7 @@ _TOP_LEVEL_VALIDATORS: dict[str, Callable[[Any], Any]] = {
     "selector": _validate_selector,
     "delegation": _validate_delegation,
     "workforce": _validate_workforce,
+    "canary": _validate_canary,
     "inference": _validate_inference,
     "agents": _validate_agents,
     "store": _validate_store,

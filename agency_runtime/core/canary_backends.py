@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.bounded_io import FileSizeLimitError
+from agency_runtime.core.canary_judge_provider import CANARY_CHILD_JUDGE_PROVIDER_ENV
 from agency_runtime.core.child_delivery_evidence import (
     _begin_private_host_artifact_collection,
     _collect_private_host_child_delivery,
@@ -341,6 +342,45 @@ def prepare_private_host_home(
     restrict_private_directory(host_home)
     _facade()._copy_bounded_auth(auth_source, host_home / auth_name, host=host)
     return host_home
+
+
+def _project_child_judge_environment(
+    env: dict[str, str],
+    *,
+    provider: str,
+    transport: str,
+    main_transport: str,
+    main_home: Path,
+    runtime_home: Path | None,
+    auth_source: Path | None,
+) -> None:
+    """Project one exact judge transport into a canary's bounded environment."""
+
+    if not provider:
+        if transport:
+            raise ValueError("canary child-judge transport has no provider")
+        return
+    if transport not in {"claude", "codex"}:
+        raise ValueError("unsupported canary child-judge transport")
+    env[CANARY_CHILD_JUDGE_PROVIDER_ENV] = provider
+    variable, auth_name, label = (
+        ("CODEX_HOME", "auth.json", "Codex")
+        if transport == "codex"
+        else ("CLAUDE_CONFIG_DIR", ".credentials.json", "Claude")
+    )
+    if transport == main_transport:
+        env[variable] = str(main_home)
+        return
+    if runtime_home is None or auth_source is None:
+        raise ValueError("cross-provider canary authentication is unavailable")
+    judge_home = _facade()._prepare_private_host_home(
+        runtime_home,
+        directory_name=f"child-judge-{transport}",
+        auth_source=auth_source,
+        auth_name=auth_name,
+        host=label,
+    )
+    env[variable] = str(judge_home)
 
 
 def project_isolated_codex_workspace_trust(
@@ -2721,6 +2761,9 @@ class SafeCodexCanaryBackend:
     trusted_workdir: str = ""
     trust_mode: str = "attended"
     project_agency_global_guidance: bool = False
+    child_judge_provider: str = ""
+    child_judge_transport: str = ""
+    child_judge_auth_source: Path | None = None
 
     def _exec_options(self) -> tuple[str, ...]:
         if not isinstance(self.trust_mode, str) or self.trust_mode not in {
@@ -2878,6 +2921,8 @@ class SafeCodexCanaryBackend:
             trust_bypass_used=bypass_used,
             persistent_trust_changed=False,
         )
+        if self.child_judge_provider:
+            record["child_judge_provider_requested"] = self.child_judge_provider
         return record
 
     def _install_plugin(
@@ -2996,6 +3041,15 @@ class SafeCodexCanaryBackend:
             env["AGENCY_DB_PATH"] = str(self.db_path.resolve())
             env["AGENCY_CANARY_MODE"] = "1"
             env["AGENCY_CANARY_MASTER_ENABLED"] = "1" if self.master_enabled else "0"
+            _project_child_judge_environment(
+                env,
+                provider=self.child_judge_provider,
+                transport=self.child_judge_transport,
+                main_transport="codex",
+                main_home=self.auth_source.parent,
+                runtime_home=None,
+                auth_source=self.child_judge_auth_source,
+            )
             self._configure_canary_environment(env)
             trust_failure = self._verify_current_profile_hook_trust(
                 workdir=workdir,
@@ -3078,6 +3132,15 @@ class SafeCodexCanaryBackend:
             )
             env["AGENCY_CANARY_MASTER_ENABLED"] = "1" if projected["enabled"] else "0"
             env["CODEX_HOME"] = str(codex_home)
+            _project_child_judge_environment(
+                env,
+                provider=self.child_judge_provider,
+                transport=self.child_judge_transport,
+                main_transport="codex",
+                main_home=codex_home,
+                runtime_home=runtime_home,
+                auth_source=self.child_judge_auth_source,
+            )
             failure = self._install_plugin(workdir=workdir, env=env, deadline=deadline)
             if failure is None:
                 failure = self._verify_plugin(workdir=workdir, env=env, deadline=deadline)
@@ -3132,6 +3195,14 @@ class SafeClaudeCanaryBackend:
     process_runner: Callable[..., Any]
     source_env: Mapping[str, str]
     master_enabled: bool = True
+    child_judge_provider: str = ""
+    child_judge_transport: str = ""
+    child_judge_auth_source: Path | None = None
+
+    def _record_child_judge_provider(self, record: dict[str, Any]) -> dict[str, Any]:
+        if self.child_judge_provider:
+            record["child_judge_provider_requested"] = self.child_judge_provider
+        return record
 
     def _execute(
         self,
@@ -3153,7 +3224,7 @@ class SafeClaudeCanaryBackend:
                 host="Claude",
             )
             if facade._remaining_canary_timeout(deadline) <= 0:
-                return _timeout_record("claude"), None
+                return self._record_child_judge_provider(_timeout_record("claude")), None
             collection = _begin_private_host_artifact_collection(
                 runtime_lease,
                 host="claude",
@@ -3172,9 +3243,18 @@ class SafeClaudeCanaryBackend:
                 facade._source_home(self.source_env).resolve()
             )
             env["CLAUDE_CONFIG_DIR"] = str(claude_home)
+            _project_child_judge_environment(
+                env,
+                provider=self.child_judge_provider,
+                transport=self.child_judge_transport,
+                main_transport="claude",
+                main_home=claude_home,
+                runtime_home=runtime_home,
+                auth_source=self.child_judge_auth_source,
+            )
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
-                return _timeout_record("claude"), None
+                return self._record_child_judge_provider(_timeout_record("claude")), None
             invocation_start = _start_private_host_invocation(collection)
             try:
                 result = self.process_runner(
@@ -3223,6 +3303,7 @@ class SafeClaudeCanaryBackend:
                     verified_delivery = None
                     collection_reason = "collector_raised"
             record = facade._claude_canary_record(result)
+            self._record_child_judge_provider(record)
             if delivery_store is not None:
                 # The stage that refused travels with the invocation. Without it
                 # a failed Rule 4 canary reports only that delivery "was not
@@ -3296,7 +3377,7 @@ def source_home(source_env: Mapping[str, str]) -> Path:
     return Path(source_env.get("USERPROFILE") or source_env.get("HOME") or Path.home()).expanduser()
 
 
-def backend(
+def backend(  # noqa: C901 - one bounded validation and backend construction boundary
     host: str,
     *,
     db_path: Path,
@@ -3311,6 +3392,8 @@ def backend(
     require_exact_activation_rollout: bool = False,
     hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None,
     trust_mode: str = "attended",
+    child_judge_provider: str = "",
+    child_judge_transport: str = "",
 ) -> SafeCodexCanaryBackend | SafeClaudeCanaryBackend:
     from agency_runtime.core.delegation.backends import run_bounded_process
 
@@ -3342,6 +3425,20 @@ def backend(
     process_runner = runner or run_bounded_process
     source_env = facade.os.environ if environ is None else environ
     home = facade._source_home(source_env)
+    if bool(child_judge_provider) is not bool(child_judge_transport):
+        raise ValueError("canary child-judge provider and transport must be supplied together")
+    child_judge_auth_source = None
+    if child_judge_transport == "codex":
+        child_judge_auth_source = (
+            Path(source_env.get("CODEX_HOME") or (home / ".codex")).expanduser() / "auth.json"
+        )
+    elif child_judge_transport == "claude":
+        child_judge_auth_source = (
+            Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()
+            / ".credentials.json"
+        )
+    elif child_judge_transport:
+        raise ValueError("unsupported canary child-judge transport")
     if host == "codex":
         original_home = Path(source_env.get("CODEX_HOME") or (home / ".codex")).expanduser()
         return SafeCodexCanaryBackend(
@@ -3358,6 +3455,9 @@ def backend(
             require_exact_activation_rollout=require_exact_activation_rollout,
             hook_trust_inspector=hook_trust_inspector,
             trust_mode=trust_mode,
+            child_judge_provider=child_judge_provider,
+            child_judge_transport=child_judge_transport,
+            child_judge_auth_source=child_judge_auth_source,
         )
 
     original_home = Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()
@@ -3370,6 +3470,9 @@ def backend(
         process_runner=process_runner,
         source_env=source_env,
         master_enabled=master_enabled,
+        child_judge_provider=child_judge_provider,
+        child_judge_transport=child_judge_transport,
+        child_judge_auth_source=child_judge_auth_source,
     )
 
 
