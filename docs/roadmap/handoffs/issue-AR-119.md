@@ -83,17 +83,10 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   fixes the correlation and provider projection; 134 affected tests pass.
 ## traps (machine-specific; do not rediscover)
 
-- **git config corruption, FIXED 2026-08-19 (PR #296).** If git ever says
-  "must be run in a work tree" or files phantom-appear, check `core.bare`
-  and `core.worktree` first. Verified false/unset 2026-08-19.
 - **`agency` on PATH is `~/.local/bin/agency.exe` and is SCHEMA 45** -- it
   refuses the schema-47 store. Run `python -m agency_runtime.cli ...` from
   a main-equal checkout instead. `C:\agency-cli` holds the HOST CLIs
   (`claude.CMD`, `codex.CMD`), not the Agency CLI.
-- `python -m agency_runtime...` imports from CWD first and PYTHONPATH
-  cannot override it: `cd` into the intended tree and assert
-  `agency_runtime.__file__`. Better, run the launcher's `_bootstrap.py`
-  under `-I -S`.
 - Appending `; echo EXIT=$?` makes the harness see exit 0; judge by the
   report. Installs need a clean main-equal checkout; sessions predating an
   install keep the old launcher -- restart, never reinstall.
