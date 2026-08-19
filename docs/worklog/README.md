@@ -1036,6 +1036,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b8a519bc` | 2026-08-18 | docs(ar119): the push path writes core.bare=true into the real config | null | null |
 | `2adb42e6` | 2026-08-18 | fix(tests): stop the CI-scope fixture from re-initializing the real repository | null | null |
 | `aebad9c1` | 2026-08-18 | fix(tests): make the CI-scope suite hermetic against an inherited git env | null | null |
+| `6ba837fa` | 2026-08-18 | Merge pull request #296 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

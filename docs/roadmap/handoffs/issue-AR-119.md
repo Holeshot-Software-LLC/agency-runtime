@@ -27,7 +27,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-vision-mitigation-handoff
-evidence_commit: 1bd7e37c6ea3be66488941392a956c3323b0472c
+evidence_commit: 6ba837fa70e844f99dab646c5ab48d03bbed2e7c
 minimum_ledger_commit: ee82c602f2dc2d5e9632fc91b6dc071b50dc7541
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
@@ -37,20 +37,23 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 
 Current bootstrap projection for completing the owner-confirmed nine-rule
 vision. This file and the founding vision load first after any compaction
-or restart; during the authorized loop (through 2026-08-18 23:59) load the
-vision-completion brief and the loop status doc immediately after.
+or restart, then `AR-119-vision-loop-status.md` for current state.
 
 ## checkpoint
 
 - **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-ar119`**
   (a linked worktree, synced with origin/main). Changes reach main only via
   PR on a verified-CLEAN rollup. Never commit/stash in the primary checkout
-  (owner WIP: `cli/eval_commands.py` + three untracked eval JSONs); push the
-  shared ref FROM the primary. PRs #290-#293 merged 2026-08-18.
-- **Machine**: all three hosts pin runtime digest `cc478bc88258…` (merge
-  `99a7b3ac`, PR #287, owner small-unit policy), store schema 47 == checkout
-  == launcher. PRs #288–#293 are docs-only: no reinstall owed. The state
-  authority is `~/.agency-runtime/overnight-runtime-state.json`.
+  (owner WIP: `cli/eval_commands.py` + three untracked eval JSONs), and never
+  install from it -- that WIP sits inside the published package tree. Push
+  from THIS worktree; the pre-push fixture bug that made worktree pushes fail
+  is fixed. PRs #290-#296 merged.
+- **Machine**: all three hosts pin ONE digest `f7b84c8a40fa` (merge
+  `6ba837fa`, PR #296), schema 47 everywhere, installed 2026-08-19. State
+  authority: `~/.agency-runtime/overnight-runtime-state.json`.
+- **Owner ruling 2026-08-18: done = claude, codex, zcode, in that order.**
+  Rule 9 is UNCHANGED — five-host parity is still the claim; never close R9
+  on three hosts.
 
 ## completed-evidence
 
@@ -72,11 +75,11 @@ vision-completion brief and the loop status doc immediately after.
 
 ## traps (machine-specific; do not rediscover)
 
-- `git status` can lie here: a stale `core.worktree` in the shared
-  `.git/config` redirected every worktree's git view to the wrong
-  directory on 2026-08-17; repaired with `git config --unset
-  core.worktree`. If files phantom-appear, check that first, with
-  `Test-Path` rather than git.
+- **git config corruption, FIXED 2026-08-19 (PR #296):** the pre-push
+  gates ran `git init` with an inherited `GIT_DIR`, re-initializing the
+  real repository as `bare = true` once per push and breaking `git status`
+  machine-wide. If git ever claims "must be run in a work tree" or files
+  phantom-appear, check `core.bare` and `core.worktree` first.
 - `python -m agency_runtime...` imports from CWD first and PYTHONPATH
   cannot override it: `cd` into the intended tree and assert
   `agency_runtime.__file__` before trusting any eval. Better, run the
@@ -88,39 +91,36 @@ vision-completion brief and the loop status doc immediately after.
   `python -m agency_runtime.cli install --agent <host>` from a clean
   main-equal checkout. Sessions predating an install keep the old
   launcher: restart, never reinstall.
-- Canaries need `--timeout 420`; the ar119 venv needed `ensurepip` for
-  gate 3; the full gate suite takes ~14.5 min, over the tool cap — run it
-  detached and read its own summary. Eight preflight/litellm tests are red
-  on clean main outside every gate and `test_platform_wheel.py` fails
-  collection: pre-existing noise.
+- Canaries need `--timeout 420`; the full gate suite takes ~14 min, over
+  the tool cap — run it detached and read its own summary. Eight
+  preflight/litellm tests are red on clean main outside every gate, and
+  `test_platform_wheel.py` fails collection: pre-existing noise.
 
 ## exact-blocker
 
-1. **Rule 4 Live can only be proven inside a canary run, and that is the
-   whole blocker.** Not missing receipts — that claim was made on
-   2026-08-18 and **retracted the same day**: receipts are joinable to a
-   child launch today by recomputing `context_fingerprint` from the
-   child's `.meta.json` `toolUseId` plus the parent-recorded prompt
-   (verified to match exactly). `agency evidence children` already finds
-   the live v6 delivery and names its own refusal:
-   **`host_hook_output_origin_not_proven`**, because `expected` is the
-   one-use verified-delivery capability that only the canary's
-   in-lifetime private-lease collector may consume (ADR-0158). A
-   read-only projection cannot supply it, so a perfect delivery sits on
-   disk unverifiable and `native_child_delivery_verifications` stays
-   empty. **The same seal blocks AR-252's collector** — decide it once,
-   for both. One narrow silent hole remains: a child launched while no
-   parent run is open records nothing (seen once, 02:59:41Z); fixing it
-   needs a nullable-trace row or a new lane, and a lane means a
-   SCHEMA_VERSION bump — sequence that deliberately.
+1. **Rule 4 Live can only be proven inside a canary run — the whole
+   blocker is the one-use capability seal.** `agency evidence children`
+   finds the live v6 delivery and refuses it with
+   `host_hook_output_origin_not_proven`: the verification input is the
+   one-use capability only the canary's in-lifetime private-lease
+   collector may consume (ADR-0158), so a read-only projection can never
+   supply it and `native_child_delivery_verifications` stays empty.
+   **The same seal blocks AR-252's collector — decide it once, for both.**
+   Receipts are NOT the problem (that claim was retracted): use
+   `agency evidence child-launches`, which resolves each launch by three
+   complementary keys. One silent hole remains: a child launched with no
+   open parent run records nothing; fixing it needs a new lane, hence a
+   SCHEMA_VERSION bump — sequence deliberately.
 2. **AR-252** — joint-verdict shape settled as a delegated ruling in the
    issue doc; the collector build waits on the same seal as blocker 1.
 3. **AR-253** — recruiter `staff_without_safe_team` and planner
    `provider_no_valid_response` rove across stages, interleaved with clean
    draws on identical code: load-shaped, provider-side. Receipts filed in
    the issue; don't chase provider fixes.
-4. **codex/zcode/openclaw/hermes** — unchanged: codex needs attended TUI
-   trust; zcode has no CLI here; openclaw/hermes run the owner packet.
+4. **Hosts**: codex trust resets on every install (owner re-trusted
+   2026-08-19); zcode has no CLI here; **openclaw/hermes have NO Rule 4
+   route at all** — no artifact reader, no canary, in-process delivery
+   only. See the packet before installing them.
 
 ## next-bounded-work-package
 
