@@ -46,8 +46,8 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
   verified-CLEAN rollup. Never commit/stash in the primary checkout (owner
   WIP: `cli/eval_commands.py` + three untracked eval JSONs) and never
   install from it -- that WIP sits in the published package tree. Push from
-  THIS worktree. PRs #290-#297 merged. **Ten commits sit unpushed on this
-  branch, docs-only, `verify_docs` green; see `git log origin/main..HEAD`.**
+  THIS worktree. PRs #290-#297 merged. **The branch is PUSHED through
+  `abc88dd9` (15 ahead of main, docs-only, 12/12 gates green). No PR yet.**
 - **Machine**: all three hosts pin ONE digest `f7b84c8a40fa` (merge
   `6ba837fa`), schema 47 everywhere, installed 2026-08-19. State authority:
   `~/.agency-runtime/overnight-runtime-state.json`.
