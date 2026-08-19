@@ -67,13 +67,12 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   The unstaffed negative is OBSERVED, not borrowed like R5's. Store: 0
   specialists/routing/delegations on the trace. Claiming costs a
   `candidate_commit` advance to `f7b84c8a40fa` + re-anchoring R2/R3/R7.
-- **Codex parent works; child proof is blocked.** A current request-scoped
-  parent turn has preflight inference, a loaded capsule and the Agency header.
-  Three byte-identical canaries still show Codex spawns and starts the child,
-  but Agency cannot READ the collaboration.
-  `native_collaboration_topology_invalid` is the diagnostic's terminal
-  fall-through reached with every guard PASSING -- not an invalid topology.
-  Do not rerun its byte-identical child canary.
+- **Codex parent works; child proof is blocked.** Merged-main parent routing and
+  header delivery pass. The authorized child rerun used the trust bypass and
+  requested `codex-subscription`, but no child judge answered: parent preflight
+  failed `workforce_inference_failed`, with spawn/start counts 1/0 and terminal
+  `codex_native_child_start_missing`. This exact-main shape differs from the old
+  1/1 opaque-projection series and is not Rule-4 proof.
 - **Claude reached verified delivery.** Attempt 1 stopped at parent preflight.
   Attempt 2 produced one pre-speech host artifact and the Store's first
   `native_child_delivery_verifications` row: decision `native-child-7624e16e…`,
@@ -137,10 +136,10 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 ## next-bounded-work-package
 
-Keep Option A frozen. Claude's corrected parent header is green; its first
-prompt is excluded. Codex trust bypass ran; the generic smoke abstained, while
-the staffable review delivered its exact header with no delegation. Next run one
-Codex child canary and attended ZCode smoke; OpenClaw/Hermes remain deferred.
+Keep Option A frozen. Claude and Codex parent headers are green. The one approved
+Codex child rerun is complete and checkpointed as a pre-child-start failure; do
+not repeat it. Next run one attended ZCode parent smoke, then finalize local
+evidence and gates. OpenClaw/Hermes remain deferred.
 
 ## same-task-continuity
 

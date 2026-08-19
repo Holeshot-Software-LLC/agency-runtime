@@ -2023,3 +2023,35 @@ header, loaded `agency-steward`, `codebase-onboarding-engineer`, and
 `codex-fast/gpt-5.6-terra`. Its one-sentence body correctly named silent loss of
 significant boundary whitespace. This proves merged-main Codex parent routing
 and header delivery; it does not prove child delivery or move a matrix cell.
+
+### LIVE MAIN: Codex child rerun stops before child start
+
+The one approved merged-main child canary ran with the invocation-only hook
+trust bypass and exact 420-second command. The wrapper exited 1 because the
+proof failed, while the bounded Codex host invocation itself exited 0 without
+timeout or truncation. `trust_bypass_used` is true and the installed bundle is
+the expected `2ad1a6b34b64…` from install
+`aa095210-8721-4a5b-825d-75a4e6f71012`.
+
+Store correlation is session `01a01c5a-9f31-7653-8bf2-a59cbfdff700`, trace
+`01a01c5a-9f79-7951-a501-63e3aa1466fb`, run
+`81893528-8763-433c-9347-8e2c016d5815`, and request/query hash
+`74ea67295095b38973dda887023fb125534c0c75045df25f85382e41fc233f64`;
+the exact nonce is `77c5b76ad57caf8fb3ceb472bbcd7a8b`.
+The run closed `preflight_failed`; failure
+`310f2925-f009-4511-a96c-12bbdb55a929` records
+`workforce_inference_failed`. Parent planner and recruiter both answered through
+`codex-fast/gpt-5.6-terra` with `structured_response_applied`, but no route,
+specialist load, delegation, native-child route, delivery, worker run, or
+finalization was created.
+
+The invocation explicitly reports requested child-judge provider
+`codex-subscription`; it does **not** report an answering child provider because
+the child judge was never reached. The collaboration diagnostic observed one
+spawn, one wait, two tool outputs, zero child starts, and no unexpected tools.
+Its terminal reason is `native_child_start_missing`, projected as
+`codex_native_child_start_missing`; the header and response were consequently
+unproven. This differs from the older three-run 1-spawn/1-start opaque-
+projection series. It is a bounded exact-main parent-preflight outcome, not a
+pin falsification, Codex Rule-4 proof, or install failure. No rule was promoted,
+the candidate did not advance, and **no matrix cell moved**.
