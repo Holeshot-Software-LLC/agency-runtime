@@ -1043,6 +1043,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `67acca48` | 2026-08-19 | docs(ar119): settle the 7.1 acceptance draw and re-cost Option A | null | null |
 | `8607eadf` | 2026-08-19 | docs(ar119): record that the canary work unit is deliberately not configurable | null | null |
 | `7d361a7a` | 2026-08-19 | docs(ar119): the canary fixture coupling is separable per host | null | null |
+| `9e8f8b79` | 2026-08-19 | docs(ar119): retract the 7.1 settlement -- the control unit staffs | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
