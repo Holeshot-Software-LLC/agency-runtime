@@ -1040,6 +1040,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `895d952c` | 2026-08-18 | docs(ar119): refresh the capsule for a fresh session | null | null |
 | `dc0f077d` | 2026-08-18 | Merge pull request #297 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff | null | null |
 | `cf14d939` | 2026-08-19 | docs(ar119): record the codex canary series, the seal decision, and R8 from disk | null | null |
+| `67acca48` | 2026-08-19 | docs(ar119): settle the 7.1 acceptance draw and re-cost Option A | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
