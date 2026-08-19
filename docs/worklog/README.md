@@ -1051,6 +1051,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `05f76fe3` | 2026-08-19 | feat(ar119): commit the child-judge probe and confirm the decline is provider-conditional | null | null |
 | `c0069997` | 2026-08-19 | feat(canary): pin child judges per harness | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-c0069997-pin-child-judge-providers-per-canary-harness.md) |
 | `cc618e4a` | 2026-08-19 | test(canary): align pin verification contracts | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-cc618e4a-align-pin-verification-contracts.md) |
+| `ed5545f7` | 2026-08-19 | docs(ar119): scope codex parent and three-host phase | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
