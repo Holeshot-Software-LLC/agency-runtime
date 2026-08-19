@@ -35,7 +35,10 @@ changes rather than duplicating every commit.
   child staffing is unchanged. A pin may also reuse one exact supported
   Anthropic-compatible inference profile without adding it to the ordinary
   provider chain; this enables the local ZCode/GLM judge path but does not
-  claim a safe native ZCode canary backend.
+  claim a safe native ZCode canary backend. Profile pins project only their
+  exact identity; CLI transports alone receive isolated credential homes.
+  ZCode's documented Agent `PreToolUse` hook reaches the staffing boundary
+  under test, while installed proof still requires an attended ZCode session.
 
 - The dashboard now exposes bounded routing-latency, specialist-selection,
   host-written child-delivery, Rule-8 exception, and staged-versus-wired host

@@ -291,6 +291,51 @@ def test_claude_canary_projects_a_cross_provider_codex_auth_home(
     assert result["child_judge_provider_requested"] == "codex-subscription"
 
 
+def test_claude_canary_projects_a_profile_identity_without_cli_auth_home(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    prepared: list[str] = []
+    observed_env: dict[str, str] = {}
+
+    def prepare(runtime_home: Path, **kwargs: Any) -> Path:
+        directory_name = str(kwargs["directory_name"])
+        home = runtime_home / directory_name
+        home.mkdir()
+        prepared.append(directory_name)
+        return home
+
+    def runner(*_args: Any, **kwargs: Any) -> SimpleNamespace:
+        observed_env.update(kwargs["env"])
+        return _process_result()
+
+    monkeypatch.setattr(canary, "_prepare_private_host_home", prepare)
+    monkeypatch.setattr(canary, "_isolated_canary_environment", lambda *_args: {})
+    monkeypatch.setattr(
+        canary,
+        "_project_isolated_runtime_control",
+        lambda *_args, **_kwargs: {"enabled": True},
+    )
+    backend = canary._SafeClaudeCanaryBackend(
+        executable="claude",
+        db_path=tmp_path / "agency.db",
+        timeout=5.0,
+        plugin_dir=tmp_path / "plugin",
+        auth_source=tmp_path / "claude" / ".credentials.json",
+        process_runner=runner,
+        source_env={},
+        child_judge_provider="zcode-recruiter",
+    )
+
+    result = backend.execute(task="nonce-bound canary", workdir=str(tmp_path))
+
+    assert observed_env["AGENCY_CANARY_CHILD_JUDGE_PROVIDER"] == "zcode-recruiter"
+    assert Path(observed_env["CLAUDE_CONFIG_DIR"]).name == "claude"
+    assert "CODEX_HOME" not in observed_env
+    assert prepared == ["claude"]
+    assert result["child_judge_provider_requested"] == "zcode-recruiter"
+
+
 def _ready_native(*, install_id: str) -> dict[str, Any]:
     return {
         "host": "codex",

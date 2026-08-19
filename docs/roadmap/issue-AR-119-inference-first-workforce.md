@@ -187,15 +187,19 @@ The completion sequence for the review brief is:
    byte-identical child canary expecting variation. Keep native-child delivery
    proof explicitly waiting on the upstream Codex collaboration capability.
 4. **Make ZCode/GLM attributable and host-proven.** Use the existing isolated
-   `zcode-recruiter` profile through the canary-only resolver, then add a safe
-   ZCode proof path that records the provider which actually answered. The
-   profile cannot enter ordinary staffing. A subscription, prior receipt, or
-   parent-model label alone remains insufficient.
+   `zcode-recruiter` profile through the canary-only resolver. Source tests
+   prove the documented ZCode Agent `PreToolUse` event reaches child staffing
+   and profile pins need no CLI credential home. The current host is hook-only,
+   has no launchable CLI here, and emits no child lifecycle events, so collect
+   provider attribution through an attended installed ZCode Agent call; do not
+   build or credit a synthetic backend. The profile cannot enter ordinary
+   staffing. A subscription, prior receipt, or parent-model label alone remains
+   insufficient.
 5. **Declare only the bounded Option-A milestone complete.** Claude must have
    its fresh proof; Codex parent must remain operational with the child-proof
-   exception named; ZCode/GLM must be executable and attributable. OpenClaw and
-   Hermes remain scheduled next, and no Rule-9 or matrix claim follows from this
-   three-host milestone.
+   exception named; an attended ZCode/GLM call must be executable and
+   attributable. OpenClaw and Hermes remain scheduled next, and no Rule-9 or
+   matrix claim follows from this three-host milestone.
 6. **Finish the primary-tool proof package.** Once Claude Rule 4 is green,
    complete AR-252's independently verified accepted-outcome and automatic
    promotion path. Formalize Claude Rule 8 only if the owner authorizes the

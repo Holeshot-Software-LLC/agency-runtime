@@ -847,8 +847,9 @@ or a supported Anthropic-compatible inference profile. Profile pins are
 materialized only into the canary's one-provider tuple; they never enter or
 reorder the ordinary provider chain. There is no fallback. ZCode can reuse an
 existing GLM inference profile for judge selection, but it still lacks a safe
-noninteractive native canary backend; profile execution alone is not host
-proof.
+noninteractive native canary backend. ZCode is hook-driven rather than a
+launchable CLI here, so current provider-attribution proof requires an attended
+installed ZCode Agent call; profile execution alone is not host proof.
 
 Claude canaries always run in a disposable isolated profile;
 `--profile-scope current-profile` and `agency install --agent codex

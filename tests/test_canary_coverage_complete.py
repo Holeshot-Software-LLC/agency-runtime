@@ -14,7 +14,13 @@ import pytest
 
 from agency_runtime.core import canary, canary_backends
 from agency_runtime.core.bounded_io import FileSizeLimitError
-from agency_runtime.core.config import AgencyConfig, CanaryConfig, ProviderEntry
+from agency_runtime.core.config import (
+    AgencyConfig,
+    CanaryConfig,
+    InferenceConfig,
+    InferenceProfile,
+    ProviderEntry,
+)
 from agency_runtime.core.selector.policy import detect_actions, load_bundled_policy
 
 
@@ -421,6 +427,38 @@ def test_backend_rejects_unsafe_or_unavailable_hosts(tmp_path: Path) -> None:
         )
 
 
+def test_backend_accepts_a_profile_pin_without_cli_transport(tmp_path: Path) -> None:
+    marketplace = tmp_path / "marketplace"
+    manifest = marketplace / ".agents" / "plugins" / "marketplace.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("{}", encoding="utf-8")
+
+    backend = canary._backend(
+        "codex",
+        db_path=tmp_path / "agency.db",
+        timeout=1,
+        native={"managed_target": str(marketplace)},
+        resolver=lambda _name: "codex",
+        environ={"HOME": str(tmp_path)},
+        child_judge_provider="zcode-recruiter",
+    )
+
+    assert backend.child_judge_provider == "zcode-recruiter"
+    assert backend.child_judge_transport == ""
+    assert backend.child_judge_auth_source is None
+
+    with pytest.raises(ValueError, match="transport has no provider"):
+        canary._backend(
+            "codex",
+            db_path=tmp_path / "agency.db",
+            timeout=1,
+            native={"managed_target": str(marketplace)},
+            resolver=lambda _name: "codex",
+            environ={"HOME": str(tmp_path)},
+            child_judge_transport="codex",
+        )
+
+
 def test_prepare_live_invocation_uses_default_backend_contract(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -524,6 +562,60 @@ def test_prepare_live_invocation_resolves_and_passes_the_exact_canary_pin(
             "child_judge_transport": "codex",
         }
     ]
+
+
+def test_prepare_live_invocation_passes_a_profile_pin_without_cli_transport(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = tmp_path / "agency.yaml"
+
+    class _Store:
+        def __init__(self, _path: Path) -> None:
+            self.config_path = config_path
+
+        def recent_runtime_activity(self, *, limit: int) -> dict[str, list[Any]]:
+            assert limit == 200
+            return {}
+
+    calls: list[dict[str, Any]] = []
+
+    def factory(host: str, **kwargs: Any) -> object:
+        calls.append({"host": host, **kwargs})
+        return object()
+
+    config = AgencyConfig(
+        inference=InferenceConfig(
+            profiles={
+                "zcode-recruiter": InferenceProfile(
+                    name="zcode-recruiter",
+                    adapter="anthropic",
+                    model="GLM-5.2",
+                    base_url="https://api.z.ai/api/anthropic",
+                    api_key="bounded-test-key",
+                )
+            }
+        ),
+        canary=CanaryConfig(
+            child_judge_provider_by_host=(("claude", "zcode-recruiter"),),
+        ),
+    )
+    monkeypatch.setattr(canary, "Store", _Store)
+    monkeypatch.setattr(canary, "load_config", lambda *_args, **_kwargs: config)
+    monkeypatch.setattr(canary, "_backend", factory)
+
+    prepared = canary._prepare_live_invocation(
+        "claude",
+        path=tmp_path / "agency.db",
+        timeout=2,
+        native=_native("claude"),
+        backend_factory=factory,
+        mode="agency",
+    )
+
+    assert prepared.error is None
+    assert calls[0]["child_judge_provider"] == "zcode-recruiter"
+    assert calls[0]["child_judge_transport"] == ""
 
 
 def test_profile_and_proof_helpers_cover_current_and_receipt_failure() -> None:

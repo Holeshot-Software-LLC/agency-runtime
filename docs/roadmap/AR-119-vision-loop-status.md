@@ -1717,15 +1717,20 @@ The bounded Option-A milestone is complete only when:
 2. Codex retains working parent routing and exact pin/no-fallback contracts,
    with native-child proof explicitly waiting on the upstream host capability;
 3. ZCode has an executable, isolated GLM judge path that records which provider
-   actually answered and cannot change ordinary staffing.
+   actually answered and cannot change ordinary staffing. On the current
+   hook-only integration this is an attended installed Agent-tool call, not a
+   synthetic noninteractive backend.
 
 ZCode is the remaining host-proof gap. The installed Agency profile's ordinary
 provider chain has only `codex-subscription` and `claude-subscription`, but its
 inference profile registry already has bounded ZCode/GLM profiles. The local
 candidate resolves `zcode-recruiter` only inside the canary and leaves the
 ordinary chain byte-for-byte unchanged. ZCode still has no safe noninteractive
-native canary backend, so the next implementation must solve that proof
-boundary rather than relabel a parent model or historical receipt.
+native canary backend. Source tests now prove that its documented Agent
+`PreToolUse` event reaches native-child staffing and that profile-only pins need
+no CLI credential projection. Because the installed host has no launchable CLI
+here and no child lifecycle events, the next proof is an attended installed
+ZCode call. A direct hook simulation cannot satisfy host proof.
 
 The complete execution sequence is recorded in the canonical AR-119 issue under
 “Owner-scoped completion sequence — 2026-08-19.” No matrix cell moved here.

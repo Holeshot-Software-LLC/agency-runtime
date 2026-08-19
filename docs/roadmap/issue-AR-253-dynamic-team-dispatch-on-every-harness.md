@@ -61,8 +61,12 @@ inference profile, so ZCode may use its configured GLM profile without adding
 that profile to or reordering the ordinary provider chain. Historical ZCode
 Store receipts confirm GLM profile execution before this candidate; they are
 not current canary proof. ZCode still needs a safe noninteractive native canary
-backend. No parity or matrix claim follows from profile resolution or the
-config shape.
+backend. Source tests now prove its documented Agent `PreToolUse` hook reaches
+native-child staffing and a profile pin projects without a CLI credential
+home. The installed host is hook-driven, has no launchable CLI here, and emits
+no child lifecycle events, so current provider attribution requires an attended
+installed ZCode Agent call. A synthetic hook invocation is not host proof. No
+parity or matrix claim follows from profile resolution or the config shape.
 
 ## Where the latency actually is (measured 2026-08-14, `9e29aabe`)
 

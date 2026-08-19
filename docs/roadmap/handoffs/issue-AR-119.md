@@ -136,11 +136,11 @@ dashboard 134 passed). Do not install or run a live canary without renewed
 authorization. Evidence supports `claude -> codex-subscription`; Claude to
 `claude-subscription` remains the expected-to-decline falsification run.
 
-The canonical issue now carries the complete sequence requested in the review
-brief. Next: verify the isolated ZCode/GLM profile resolver and design the safe
-ZCode proof backend, then seek approval to publish/install and collect the fresh
-Claude artifact. Codex parent already works; its child proof waits on the
-upstream host capability. No matrix cell moves from this phase boundary.
+The canonical issue carries the requested sequence; the ZCode profile resolver
+and Agent `PreToolUse` path are source-tested. Next: seek approval to publish/
+install, collect an attended ZCode attribution call and the fresh Claude
+artifact. Do not build a synthetic backend: ZCode is hook-only here and emits
+no child lifecycle events. Codex child proof waits upstream. No matrix cell moves.
 
 ## same-task-continuity
 

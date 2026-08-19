@@ -354,15 +354,19 @@ def _project_child_judge_environment(
     runtime_home: Path | None,
     auth_source: Path | None,
 ) -> None:
-    """Project one exact judge transport into a canary's bounded environment."""
+    """Project one exact judge identity into a canary's bounded environment."""
 
     if not provider:
         if transport:
             raise ValueError("canary child-judge transport has no provider")
         return
+    env[CANARY_CHILD_JUDGE_PROVIDER_ENV] = provider
+    if not transport:
+        # Inference profiles carry their own bounded provider configuration.
+        # Only CLI transports need a host credential home projected here.
+        return
     if transport not in {"claude", "codex"}:
         raise ValueError("unsupported canary child-judge transport")
-    env[CANARY_CHILD_JUDGE_PROVIDER_ENV] = provider
     variable, auth_name, label = (
         ("CODEX_HOME", "auth.json", "Codex")
         if transport == "codex"
@@ -3425,8 +3429,8 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
     process_runner = runner or run_bounded_process
     source_env = facade.os.environ if environ is None else environ
     home = facade._source_home(source_env)
-    if bool(child_judge_provider) is not bool(child_judge_transport):
-        raise ValueError("canary child-judge provider and transport must be supplied together")
+    if child_judge_transport and not child_judge_provider:
+        raise ValueError("canary child-judge transport has no provider")
     child_judge_auth_source = None
     if child_judge_transport == "codex":
         child_judge_auth_source = (

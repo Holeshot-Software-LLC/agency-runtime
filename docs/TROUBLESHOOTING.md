@@ -512,7 +512,11 @@ the disposable host environment; it never tries the next provider. Inspect
 `child_judge_provider_requested` and `child_judge_provider_answered` in the
 proof rather than inferring the judge from the driving host. ZCode may reuse an
 existing GLM inference profile without adding it to the ordinary provider
-chain, but it still has no safe noninteractive ZCode canary backend.
+chain, but it still has no safe noninteractive ZCode canary backend. The
+documented ZCode Agent `PreToolUse` hook reaches child staffing, but this host
+has no launchable CLI here and emits no child lifecycle events. Collect current
+provider attribution in an attended installed ZCode session; do not treat a
+synthetic hook invocation as host proof.
 
 For an Agency-off comparison, leave the plugin installed, run
 `agency off --global`, and execute `agency host-canary <host> --mode

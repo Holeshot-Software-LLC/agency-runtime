@@ -76,6 +76,9 @@ adding it to `config.providers`, so the ordinary provider chain is unchanged.
 The endpoint must satisfy the existing HTTPS-or-literal-loopback credential
 rule and the profile must resolve its configured credential. A name appearing
 in both provider and profile namespaces is ambiguous and fails closed.
+Profile pins project only `AGENCY_CANARY_CHILD_JUDGE_PROVIDER`; unlike CLI pins,
+they neither require a transport label nor create or copy a CLI credential
+home.
 
 The map accepts every supported harness key so one owner profile can retain
 the intended policy while switching harnesses. The current ZCode/GLM route can
@@ -84,6 +87,11 @@ canary-only judge. Historical Store receipts show that profile family answered
 ZCode workforce calls, but they predate this candidate and are not canary or
 matrix proof. ZCode still has no safe noninteractive canary backend, so the
 profile path is locally executable code rather than installed/live evidence.
+ZCode's documented Agent `PreToolUse` hook reaches that staffing boundary, but
+the current installation is hook-driven, has no launchable CLI backend, and
+emits no `SubagentStart`/`SubagentStop`. Current attribution therefore needs an
+attended installed ZCode session. A synthetic hook invocation is not host
+proof.
 
 No provider values are shipped by default and this change does not mutate the
 owner's installed configuration. The evidence-backed AR-119 value for a
@@ -104,7 +112,8 @@ expected to decline unless new measurement reopens the finding.
 - General child staffing behavior, the canary work unit, the Rule-9 contract,
   and every AR-119 matrix cell remain unchanged.
 - A configured ZCode/GLM profile pin does not manufacture native ZCode proof;
-  the missing safe backend keeps installed/live claims closed.
+  the missing safe backend keeps installed/live claims closed. Agency does not
+  label a direct hook simulation as a native canary.
 
 ## Alternatives
 
