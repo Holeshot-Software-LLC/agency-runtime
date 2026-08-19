@@ -1820,3 +1820,51 @@ live action is one fresh ZCode Agent call launched with canary mode, the
 persistent `zcode-recruiter` identity, and the managed install home projected;
 a direct hook simulation remains invalid. Codex parent evidence and its opaque
 child boundary are unchanged. **No matrix cell moved.**
+
+### ATTENDED ZCODE CHECKPOINT: GLM pin attributed; prompt hydration remains open
+
+The approved installed call ran after ZCode updated from 3.6.5 to 3.8.1. It
+submitted the exact 138-character activation unit through ZCode Agent and
+created exactly one native child, `agent_526b8a7a-4732-455c-8e93-c0cec510e418`.
+The child returned a substantive review of the silent whitespace-contract
+change and the parent reported `code-reviewer` recruitment. The visible answer
+does not itself prove that the specialist prompt reached the child.
+
+The durable attribution is the Store and installed hook sequence:
+
+- parent run `ada04710-19a2-4938-a2ae-e7ff10b9bdc2`, trace
+  `8cd9de8d-7a81-490f-aca5-34b36b7d8727`, session
+  `sess_fe90fa0f-97eb-407a-9e37-399e97ddf87f`;
+- parent route `c65ee011-7389-4798-85b4-4558619fbaf4` selected
+  `code-reviewer` at confidence 1.0;
+- native-child route `625e688c-b13c-4330-a569-224f2cbadcf0` recorded both
+  requested and actual provider as `zcode-recruiter`, confidence 0.85, for task
+  hash `05d45f7553e81e8536e5d43fd07da8b18b195c6ffc0a35ff7e43c2f202861eee`;
+- installed hooks traversed SessionStart, UserPromptSubmit, PreToolUse,
+  PostToolUse and Stop; delegation `5e746a59-d5ad-4f84-81a4-491ea580b0a1`
+  completed with native run
+  `zcode-agent:agent_526b8a7a-4732-455c-8e93-c0cec510e418`.
+
+This is actual-provider evidence, not an inference from the configured label.
+The failure projection says `native_child_prompt_hydration_failed`, but that
+branch is reachable only after the judge result is applied/inferred, exactly
+one applied provider attempt has a canonical receipt, and the selected IDs and
+compatibility checks pass. Provider identity is projected from the answering
+result separately from `requested_provider`. The canary-only resolver exposed
+only `zcode-recruiter`; the persisted ordinary chain remained Codex then Claude
+and content capture remained enabled.
+
+The failure occurred after GLM answered: `_hydrate_team` could not recover the
+selected specialist prompt, the failure projection intentionally cleared its
+selected IDs, no captured assignment was written, and Agency failed open to a
+generic ZCode child. AR-135 already owns that prompt-consumption gap. Therefore
+this call closes Option A's ZCode provider-pin/attribution requirement but does
+not prove ZCode Rule 4, host-delivered cards, or specialist execution.
+
+With Claude's exact requested/answering `codex-subscription` route, Codex's
+operational parent plus explicit opaque-child exception, and this attended
+ZCode/GLM route, **Option A is complete locally from the owner-defined
+three-host provider-pinning perspective**. The repaired Claude runtime still
+lacks a fresh green end-to-end attestation; Codex child proof remains upstream-
+blocked; OpenClaw and Hermes remain deferred, not waived. No Rule-9 claim and
+**no matrix cell moved**.

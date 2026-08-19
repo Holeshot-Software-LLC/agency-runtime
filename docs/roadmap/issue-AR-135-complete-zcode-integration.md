@@ -3,7 +3,7 @@ title: "AR-135: Complete ZCode native integration end to end"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-08-19
 tags: [host-integrations, zcode, installer, hooks, evidence]
 related:
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
@@ -46,6 +46,15 @@ PostToolUseFailure, and Stop. Agent input uses `prompt`; success returns
 `agentId`, while failure exposes no agent identity and must close prepared
 activation without fabricating lineage.
 
+An attended installed ZCode 3.8.1 call on 2026-08-19 traversed the real
+SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, and Stop hooks and
+recorded `zcode-agent:agent_526b8a7a-4732-455c-8e93-c0cec510e418` lineage.
+Its isolated child judge was actually answered by the `zcode-recruiter` GLM
+profile, but the validated selection then failed with
+`native_child_prompt_hydration_failed`. ZCode therefore ran a generic child:
+provider attribution and lifecycle correlation are now observed, while
+specialist-prompt consumption remains unproven.
+
 ## Approach
 
 Use one canonical five-host registry across bundle generation, native command
@@ -79,4 +88,5 @@ canonical detected-host status and persisted adapter selection; the complete
 suite exposed that missing presentation path. Fresh-home, preservation,
 rollback, drift, schema, UI, and smoke tests pass, including the 167-test
 integrated native-hook/ZCode slice. This item remains open because a real
-installed ZCode restart/load canary has not run.
+installed call still could not hydrate and deliver the selected specialist
+prompt after its applied child-judge result.

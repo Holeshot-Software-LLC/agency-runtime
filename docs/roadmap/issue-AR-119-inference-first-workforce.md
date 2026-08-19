@@ -121,19 +121,27 @@ canary-only child-judge provider pin per harness, constrain both judge calls to
 that one provider with no fallback, and leave ordinary child staffing
 unchanged. The approved isolated install now maps Claude and Codex to
 `codex-subscription` and ZCode to the existing `zcode-recruiter` GLM profile;
-the ordinary chain is unchanged. A fresh Claude draw produced a verified
-pre-speech host artifact for `minimal-change-engineer`, with requested and
-answering `codex-subscription` recorded on Store decision
-`native-child-7624e16e…`. Its overall report exposed a proof-projection defect:
-it compared the child-selected team with the distinct parent `code-reviewer`
-team. Commit `14de2f74` correlates the artifact to the exact native-child route
-and projects the answering provider; 134 affected tests pass. The repaired
-runtime is now installed across Claude, Codex, and ZCode at digest
-`51b3202a2acb…`. Two bounded refreshed Claude attempts stopped before a child
-judge existed: the first rejected two oversized parent-recruiter teams and the
-second received no valid parent-planner response. Neither measured the pin or
-replaced the earlier exact child route. A green attestation on the repaired
-digest and the attended ZCode call remain open; no matrix cell moved.
+the ordinary chain is unchanged. A Claude draw produced a verified pre-speech
+host artifact for `minimal-change-engineer`, with requested and answering
+`codex-subscription` recorded on Store decision `native-child-7624e16e…`.
+Commit `14de2f74` repairs the report's parent/child correlation and provider
+projection; 134 affected tests pass. The repaired runtime is installed across
+all three hosts at digest `51b3202a2acb…`. Two bounded refreshed Claude draws
+stopped at parent preflight and therefore neither measured nor contradicted the
+earlier child route.
+
+The attended ZCode 3.8.1 call now closes the remaining provider-attribution
+question for this bounded slice. On trace `8cd9de8d-7a81-490f-aca5-34b36b7d8727`,
+native-child route `625e688c-b13c-4330-a569-224f2cbadcf0` requested and was
+answered by `zcode-recruiter`. The route reached applied/inferred one-provider
+validation before failing specialist-prompt hydration, after which ZCode ran
+generic child `agent_526b8a7a-4732-455c-8e93-c0cec510e418`. Thus Option A is
+locally complete from the owner-scoped Claude/Codex/ZCode provider-pinning
+perspective: Claude has an exact passing-provider route; Codex parent and pin
+contracts remain operational with child proof waiting upstream; and ZCode has
+an attended, isolated, actually-attributed GLM path. This does not prove ZCode
+specialist delivery, produce a repaired-digest Claude attestation, publish the
+unpushed commits, move a matrix cell, or complete Rule 4, Rule 9, or AR-119.
 
 The owner separately confirmed the current Codex boundary on 2026-08-19.
 Codex parent operation is working: a live request-scoped parent turn identifies

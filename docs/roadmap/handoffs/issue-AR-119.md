@@ -45,14 +45,14 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
 - **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-ar119`**
   (linked worktree). Main only via PR on a verified-CLEAN rollup. Never
   commit/stash/install in the primary checkout; owner WIP remains there.
-  **Draft PR #298 is pushed through `758fd944`; hosted CI was cancelled for
-  billing. Local checkpoint `b9fe5b90` is unpushed. Do not start hosted work.**
+  **Draft PR #298 is pushed through `758fd944`; every later local commit is
+  unpushed. Hosted CI was cancelled for billing. Do not start hosted work.**
 - **Machine**: Claude, Codex and ZCode currently resolve installed launcher
   digest `51b3202a2acb`; the canary map reads `claude/codex ->
   codex-subscription`, `zcode -> zcode-recruiter`. Ordinary providers remain
   Codex then Claude and content capture remains enabled.
-- **Current phase = claude, codex, zcode.** OpenClaw/Hermes are session-deferred,
-  not waived. Rule 9 stays five-host and never closes on three.
+- **Option A's local three-host provider-pin phase is complete.** OpenClaw and
+  Hermes are deferred, not waived. Rule 9 stays five-host and never closes on three.
 ## completed-evidence
 
 Detail in `AR-119-vision-loop-status.md`, session 2026-08-19. **No matrix
@@ -121,26 +121,26 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    because Claude Code tags no substring as hook-authored (1147-1150).
    **Neither option moves codex**: `_expected_v6_reason` returns
    `unsupported_opaque_interagent_channel` on its FIRST line.
-3. **Owner chose Option A as per-harness and canary-only (ADR-0160).** One
-   persistent host map narrows both child-judge calls to exactly one provider,
-   with no fallback; normal child staffing is unchanged. Requested and actual
-   providers are recorded separately. `zcode -> zcode-recruiter` now resolves
-   its existing GLM profile canary-only; ZCode remains an attended desktop call,
-   not a synthetic backend.
+3. **Option A is locally complete for the owner-scoped three-host pin phase.**
+   Claude has an exact requested/answered `codex-subscription` route. Codex
+   parent works and its child-proof exception remains explicit. An attended
+   ZCode 3.8.1 call recorded requested/answered `zcode-recruiter` on route
+   `625e688c…`, then failed specialist-prompt hydration and ran generic child
+   `agent_526b8a7a…`. The pin is proven; ZCode Rule 4 is not. The persistent map
+   is canary-only/no-fallback, normal staffing remains unchanged, no cell moved.
 4. **Hosts**: Codex parent routing/header delivery is operational. Its Rule-4
    child artifact remains upstream-blocked; never summarize that as “Codex
    does not work.” Codex is trusted + on claude's digest
    (`hook_trust_status: unverified` = a missing `--verify-activation`
-   receipt, NOT the owner's trust action). ZCode 3.6.5 has a desktop executable,
+   receipt, NOT the owner's trust action). ZCode 3.8.1 has a desktop executable,
    not a safe noninteractive backend; openclaw/hermes have no Rule 4 route.
 
 ## next-bounded-work-package
 
-Launch ZCode 3.6.5 with canary mode, persistent `zcode-recruiter`, and managed
-install home projected. Submit one Agent call for the exact 138-character unit;
-join its Store row to the zero baseline and prove requested/answering GLM. Never
-simulate or retry Claude here. Retain the Codex boundary, then update records and
-local gates. No matrix cell moves without its named exact-candidate authority.
+Keep Option A frozen after local gates; do not retry Claude or Codex. Next,
+repair AR-135's ZCode prompt hydration and run one attended recheck. At the next
+owner checkpoint, present the complete supplied-review-artifact plan before
+building it. No matrix cell moves without its named exact-candidate authority.
 
 ## same-task-continuity
 
