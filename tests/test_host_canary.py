@@ -823,6 +823,7 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
     for agent in bundled_roster():
         store._activate_prevalidated_agent(agent)
     task = "Review the bounded canary change for correctness."
+    child_task = "Identify the primary behavioral regression risk in this bounded change."
     session_id = "claude-canary-parent"
     trace_id = "claude-canary-trace"
     child_id = "claude-canary-child"
@@ -850,7 +851,10 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
         native_child_staffing,
         "query_judge",
         lambda *_args, **_kwargs: {
-            "selected_ids": ["code-reviewer"],
+            # The parent canary route deliberately selects ``code-reviewer``.
+            # Child staffing is a separate inference decision and may choose a
+            # different exact team for the 138-character child assignment.
+            "selected_ids": ["minimal-change-engineer"],
             "confidence": 0.99,
             "latency_ms": 12,
             "status": "applied",
@@ -921,6 +925,13 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
             host="claude",
             user_message=task,
         )
+        invocation_store.record_routing_decision(
+            trace_id=trace_id,
+            session_id=session_id,
+            query_hash=query_hash,
+            context_fingerprint=content_digest("parent-context"),
+            decision={"status": "selected", "selected_ids": ["code-reviewer"]},
+        )
         pre_tool_payload = {
             "hook_event_name": "PreToolUse",
             "session_id": session_id,
@@ -929,7 +940,7 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
             "tool_use_id": launch_id,
             "tool_input": {
                 "description": "canary-review",
-                "prompt": task,
+                "prompt": child_task,
                 "subagent_type": "general-purpose",
                 "model": "sonnet",
             },
@@ -949,7 +960,9 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
         assert delivery is not None
         assert delivery.decision_id == decision_id
         assert delivery.launch_id == launch_id
-        assert tuple(card.specialist_slug for card in delivery.cards) == ("code-reviewer",)
+        assert tuple(card.specialist_slug for card in delivery.cards) == (
+            "minimal-change-engineer",
+        )
         persisted = invocation_store.get_native_child_staffing_decision(decision_id)
         assert persisted is not None
         assert persisted["install_id"] == delivery.install_id
@@ -1070,6 +1083,11 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
     assert proof.invocation["host_child_delivery"]["verified_delivery"] is True
     assert proof.invocation["host_child_delivery"]["pre_speech"] is True
     assert proof.invocation["host_child_delivery"]["decision_id"] == decision_id
+    assert proof.invocation["child_judge_provider_requested"] == "selector"
+    assert proof.invocation["child_judge_provider_answered"] == "selector"
+    assert outcome.evidence["native_child_route"]["cards"][0]["specialist_slug"] == (
+        "minimal-change-engineer"
+    )
     assert outcome.evidence["expected_specialist_loaded"] is False
     assert Store(db_path).get_native_child_delivery_verification(decision_id) is not None
 

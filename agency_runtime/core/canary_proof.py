@@ -545,13 +545,29 @@ def invoke_and_collect_evidence(
             host_child_delivery=host_child_delivery,
             error="runtime evidence could not be read after host invocation",
         )
+    delta = facade._evidence_delta(preparation.before, after)
+    evidence = facade._evidence_summary(
+        delta,
+        host,
+        expected_query_hash=expected_query_hash,
+    )
+    if host == "claude" and host_child_delivery is not None:
+        try:
+            native_child_route = preparation.store.get_native_child_staffing_decision(
+                host_child_delivery.evidence.decision_id
+            )
+        except Exception:
+            return InvocationOutcome(
+                result=result,
+                evidence=None,
+                host_child_delivery=host_child_delivery,
+                error="exact native-child routing evidence could not be read after Claude invocation",
+            )
+        if isinstance(native_child_route, Mapping):
+            evidence["native_child_route"] = native_child_route
     return InvocationOutcome(
         result=result,
-        evidence=facade._evidence_summary(
-            facade._evidence_delta(preparation.before, after),
-            host,
-            expected_query_hash=expected_query_hash,
-        ),
+        evidence=evidence,
         host_child_delivery=host_child_delivery,
         error=invocation_error,
     )
@@ -851,6 +867,7 @@ def _claude_host_child_delivery_failures(
     proof: Mapping[str, Any] | None,
     evidence: Mapping[str, Any],
     collection_reason: str | None = None,
+    requested_provider: str = "",
 ) -> tuple[str, ...]:
     """Validate the collector-minted Claude proof against the exact canary turn."""
 
@@ -878,19 +895,64 @@ def _claude_host_child_delivery_failures(
     cards = _normalized_host_child_cards(proof.get("cards"))
     if cards is None:
         return ("host-authored Claude child delivery did not contain a bounded card team",)
-    slugs = tuple(card["specialist_slug"] for card in cards)
+    native_route = evidence.get("native_child_route")
+    if (
+        not isinstance(native_route, Mapping)
+        or set(native_route) != _NATIVE_CHILD_ROUTE_FIELDS
+        or not _native_child_route_projection_is_valid(native_route)
+    ):
+        return ("the inference-owned Claude child route was invalid",)
+    if native_route.get("cards") != cards:
+        return ("host-authored Claude child delivery did not match the exact ordered route",)
+    route_bindings = (
+        "decision_id",
+        "host",
+        "parent_session_id",
+        "parent_trace_id",
+        "launch_id",
+        "binding_kind",
+        "binding_id",
+        "provider_receipt_digest",
+        "task_sha256",
+        "team_digest",
+        "candidate_digest",
+        "runtime_digest",
+        "install_id",
+        "bundle_digest",
+        "issued_at",
+        "expires_at",
+        "nonce",
+    )
+    if any(proof.get(field) != native_route.get(field) for field in route_bindings):
+        return ("host-authored Claude child delivery did not match its inference route",)
     routed = evidence.get("routed_specialists")
     expected = evidence.get("expected_specialist")
     if (
         not isinstance(routed, list)
         or any(not isinstance(value, str) for value in routed)
-        or len(routed) != len(slugs)
-        or set(routed) != set(slugs)
-        or expected not in slugs
+        or not isinstance(expected, str)
+        or routed != [expected]
     ):
         return (
-            "the inference-owned Claude canary route did not match the exact host child card team",
+            "the inference-owned Claude canary parent route did not select exactly the expected specialist",
         )
+    attempts = native_route.get("provider_attempts")
+    applied = (
+        [
+            _bounded_identity(attempt.get("provider_name"), maximum=128)
+            for attempt in attempts
+            if isinstance(attempt, Mapping) and attempt.get("status") == "applied"
+        ]
+        if isinstance(attempts, list)
+        else []
+    )
+    if len(applied) != 1 or applied[0] is None:
+        return ("the inference-owned Claude child route did not name one answering provider",)
+    bounded_requested = (
+        _bounded_identity(requested_provider, maximum=128) if requested_provider else None
+    )
+    if requested_provider and (bounded_requested is None or applied[0] != bounded_requested):
+        return ("the Claude child judge answering provider did not match the requested pin",)
     parent_trace_id = _bounded_identity(
         proof.get("parent_trace_id"), maximum=_MAX_CODEX_HOST_IDENTITY_CHARS
     )
@@ -1367,6 +1429,7 @@ def evaluate_proof(  # noqa: C901 - one ordered proof projection boundary
             proof=host_child_delivery_projection,
             evidence=evidence,
             collection_reason=collection_reason,
+            requested_provider=str(result.get("child_judge_provider_requested") or "").strip(),
         )
     if mode == "native-only":
         profile_proven = bool(
@@ -1423,9 +1486,9 @@ def evaluate_proof(  # noqa: C901 - one ordered proof projection boundary
     if requested_provider and len(requested_provider) <= 128:
         invocation["child_judge_provider_requested"] = requested_provider
     answering_provider = ""
-    provider_source: object = host_child_delivery_projection
+    provider_source: object = evidence.get("native_child_route")
     if not isinstance(provider_source, Mapping):
-        provider_source = evidence.get("native_child_route")
+        provider_source = host_child_delivery_projection
     attempts = (
         provider_source.get("provider_attempts") if isinstance(provider_source, Mapping) else None
     )
