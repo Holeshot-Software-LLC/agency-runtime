@@ -64,6 +64,18 @@ now uses the exact stored identity for immutable lookup and body verification,
 then binds v6 delivery and evidence to the canonical bare SHA-256 digest. The
 same live catalog replays 72/72 hydratable without another provider call.
 
+The installed recheck closes that hydration and delivery gap on ZCode 3.8.1.
+Runtime `f24664b87f3b…`, bundle `da04cfbf7847…`, and install
+`759efa16-bdce-4fcb-ab3c-b3b3c0bcf3d8` produced applied native-child decision
+`native-child-aa6e5296…`. The requested and answering provider was the
+canary-only `zcode-recruiter` profile (`GLM-5.2`), which selected
+`python-application-engineer`. ZCode's host-written metadata binds Agent call
+`call_1f2255f…` to child `agent_07b6377b…`; child transcript record zero already
+contains the complete v6 envelope and byte-identical 2,928-character Store
+body before any child speech. Fourteen mechanical identity, ordering, hash,
+Store-body, and validity-window checks pass. The native lifecycle projection's
+`generic-worker` label names the host child, not the delivered specialist card.
+
 ## Approach
 
 Use one canonical five-host registry across bundle generation, native command
@@ -96,8 +108,9 @@ lineage. The interactive configuration wizard now includes ZCode in its
 canonical detected-host status and persisted adapter selection; the complete
 suite exposed that missing presentation path. Fresh-home, preservation,
 rollback, drift, schema, UI, and smoke tests pass, including the 167-test
-integrated native-hook/ZCode slice. This item remains open because a real
-installed call still could not hydrate and deliver the selected specialist
-prompt after its applied child-judge result. The local repair has 117 core
-native-child passes and 162 wider hook/proof passes; it is not installed or
-live-proven yet.
+integrated native-hook/ZCode slice. This item remained open at the prior
+checkpoint because a real installed call still needed to hydrate and deliver
+the selected specialist prompt after an applied child-judge result. That gap is
+now closed by the host-written record-zero artifact above. The repair has 117
+core native-child passes, 162 wider hook/proof passes, and all 12 fast local gates;
+broader AR-135 acceptance and matrix authority remain separate.

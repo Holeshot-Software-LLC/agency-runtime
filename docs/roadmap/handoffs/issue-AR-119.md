@@ -47,10 +47,10 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
   commit/stash/install in the primary checkout; owner WIP remains there.
   **Draft PR #298 is pushed through `758fd944`; every later local commit is
   unpushed. Hosted CI was cancelled for billing. Do not start hosted work.**
-- **Machine**: Claude, Codex and ZCode currently resolve installed launcher
-  digest `51b3202a2acb`; the canary map reads `claude/codex ->
-  codex-subscription`, `zcode -> zcode-recruiter`. Ordinary providers remain
-  Codex then Claude and content capture remains enabled.
+- **Machine**: Claude/Codex remain on installed launcher `51b3202a2acb`; ZCode
+  now runs verified repair `f24664b87f3b`. The canary map remains
+  `claude/codex -> codex-subscription`, `zcode -> zcode-recruiter`; ordinary
+  providers remain Codex then Claude and content capture remains enabled.
 - **Option A's local three-host provider-pin phase is complete.** OpenClaw and
   Hermes are deferred, not waived. Rule 9 stays five-host and never closes on three.
 ## completed-evidence
@@ -123,24 +123,24 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    `unsupported_opaque_interagent_channel` on its FIRST line.
 3. **Option A is locally complete for the owner-scoped three-host pin phase.**
    Claude has an exact requested/answered `codex-subscription` route. Codex
-   parent works and its child-proof exception remains explicit. An attended
-   ZCode 3.8.1 call recorded requested/answered `zcode-recruiter` on route
-   `625e688c…`, then failed specialist-prompt hydration and ran generic child.
-   Local AR-135 repair canonicalizes 28 valid prefixed Store hashes only after
-   exact lookup; read-only live-catalog replay hydrates 72/72. It is not installed or live-proven. The pin is proven; ZCode Rule 4 is not; no cell moved.
+   parent works and its child-proof exception remains explicit. Repaired ZCode
+   route `native-child-aa6e5296…` requested/answered `zcode-recruiter`/GLM,
+   selected `python-application-engineer`, and bound v6 card to `call_1f2255f…`.
+   Host child `agent_07b6377b…` carries the byte-exact card in record zero;
+   14/14 mechanical checks pass. No Rule was re-promoted and no cell moved.
 4. **Hosts**: Codex parent routing/header delivery is operational. Its Rule-4
    child artifact remains upstream-blocked; never summarize that as “Codex
    does not work.” Codex is trusted + on claude's digest
    (`hook_trust_status: unverified` = a missing `--verify-activation`
-   receipt, NOT the owner's trust action). ZCode 3.8.1 has a desktop executable,
-   not a safe noninteractive backend; openclaw/hermes have no Rule 4 route.
+   receipt, NOT the owner's trust action). ZCode 3.8.1 is live-proven for this
+   one-card bounded call; openclaw/hermes have no Rule 4 route.
 
 ## next-bounded-work-package
 
-Keep Option A frozen; do not retry Claude or Codex. Finish AR-135 local gates,
-commit its recovery pair, reinstall ZCode from that clean checkpoint, then run
-one attended 138-character recheck. Require a staffed v6 card before calling
-ZCode solid. No matrix cell moves without its named exact-candidate authority.
+Keep Option A frozen; do not retry Claude, Codex, or ZCode for variation. The
+canonical AR-119 issue now maps every supplied-review item: next is the 2–4 day
+primary-tool seal/AR-252 package plus Lucas's separate Rule-8 candidate choice.
+OpenClaw resumes on its real box after new authorization; Hermes stays deferred.
 
 ## same-task-continuity
 
@@ -173,8 +173,8 @@ read without touching the store.
   candidate; provisional/branch evidence must say so.
 - Keep the 15,000 ms cold control fixed; automatic promotion stays on the
   critical path; no superiority claim without a matched corpus (AR-125).
-- This session's renewed authorization covers isolated local installs and live
-  canaries for Claude/Codex/ZCode only. Ask again before pushing, PR changes,
-  merging, any broader install, or hosted workflow. No OpenClaw/Hermes install,
+- This package's ZCode install/live authorization is consumed. Ask again before
+  any push, PR change, merge, install, live canary, or hosted workflow. No
+  OpenClaw/Hermes install,
   tracker write, tag, force-push, main push, new capture surface, re-auth, or
   `observability.capture_content` change.

@@ -1894,3 +1894,60 @@ Ruff check and format pass on the two changed files. The repair is source-only
 at this checkpoint: the installed runtime remains `51b3202a2acb…`, no attended
 recheck has run, no specialist-delivery claim follows, and **no matrix cell
 moved**.
+
+### CONFIRMED: repaired ZCode hydration reaches the host-written child
+
+Clean ledger head `c165a51e` passed all 12 fast local gates in 1.3 minutes
+before installation. ZCode alone was then reinstalled from that checkpoint:
+runtime `f24664b87f3b0fe6a2490ef7dfbf8685c5d0d8a5e27b191902063bd43b41189f`,
+bundle `da04cfbf784755ccf122fea07638951c76669f3ce376f50fbf2fbba01896e61a`,
+install `759efa16-bdce-4fcb-ab3c-b3b3c0bcf3d8`. Claude and Codex remain on
+`51b3202a2acb…`; ordinary provider order remains unchanged.
+
+The first attended message after restart contained only the 138-character
+unit, so it was a parent-only control, not a native-child measurement. Parent
+route `92c5a7e5…` loaded `code-reviewer`, recorded `delegate=false`, and created
+no child route. It is excluded rather than silently counted. The corrected,
+pinned 755-character parent prompt then created exactly one ZCode Agent child:
+
+- parent trace `5edde147-a618-4035-abc0-c49ec581a90d`, session
+  `sess_aded0d1d-5a89-447d-a158-3012f2c87062`, parent route `06fae2da…`;
+- native-child decision `native-child-aa6e5296b9e34d3238b9e408dcb61904`,
+  applied/inferred, confidence 0.85, exact 72-candidate boundary;
+- requested and answering child provider `zcode-recruiter`, provider type
+  `anthropic`, requested model `GLM-5.2`; the parent router separately used
+  `claude-subscription`, demonstrating that the pinned variable was the child
+  judge rather than the host or parent transport;
+- selected card `python-application-engineer`, version
+  `contractor-1-sha256:27736661e`, canonical prompt digest `27736661ee05…`;
+- launch/binding `call_1f2255f916544728a79ea34b`, child
+  `agent_07b6377b-a2bc-454f-a334-bf60ec5664d5`, exit code 0.
+
+ZCode itself wrote the decisive artifact under
+`~/.zcode/cli/agents/sess_aded0d1d-…/agent_07b6377b-…/`. `metadata.json`
+binds the parent session and tool-use ID to the child. Transcript record zero
+is `turn_started`, sequence zero, and its input already contains the complete
+`[AGENCY INFERENCE TEAM v6]` envelope before child speech. The same envelope is
+present in the child model-I/O rollout. Its 2,928-character card body is
+byte-identical to the immutable Store version whose key is
+`sha256:27736661…`; v6 correctly carries the canonical bare digest. The exact
+original task and hash, all decision fields, card projection, record-zero
+ordering, parent/child binding, Store body, and issue/expiry window pass 14/14
+mechanical checks. Artifact hashes are metadata `f9a95f7ca518…` and transcript
+`630e494cba39…`.
+
+PostToolUse records `generic-worker` because that field is the native ZCode
+lifecycle identity; it does not claim which Agency card was delivered. The
+visible header therefore says `delegated: none`, while the host-written record
+zero independently proves the selected card reached the child. No ZCode row
+was added to `native_child_delivery_verifications`, and the child workspace was
+the primary checkout rather than the linked worktree; its four existing dirty
+paths all predate this run and the read-only review changed none of them. Those
+limits remain explicit.
+
+The prefixed-hash defect is therefore repaired in source, installed, and live
+on ZCode. Together with Claude's attributed pin and Codex's operational parent
+plus explicit upstream child-proof exception, **Option A is complete from the
+owner-scoped Claude/Codex/ZCode perspective**. This does not re-promote R1, R4,
+R5, or R6, formalize R8, complete AR-252, close Rule 9, or move any matrix cell.
+OpenClaw and Hermes remain deferred for this session.

@@ -60,13 +60,21 @@ canary pin can now also resolve one existing supported Anthropic-compatible
 inference profile, so ZCode may use its configured GLM profile without adding
 that profile to or reordering the ordinary provider chain. Historical ZCode
 Store receipts confirm GLM profile execution before this candidate; they are
-not current canary proof. ZCode still needs a safe noninteractive native canary
+not current canary proof. ZCode has no safe noninteractive native canary
 backend. Source tests now prove its documented Agent `PreToolUse` hook reaches
 native-child staffing and a profile pin projects without a CLI credential
-home. The installed host is hook-driven, has no launchable CLI here, and emits
-no child lifecycle events, so current provider attribution requires an attended
-installed ZCode Agent call. A synthetic hook invocation is not host proof. No
-parity or matrix claim follows from profile resolution or the config shape.
+home. The installed host is hook-driven, so provider attribution required an
+attended installed ZCode Agent call rather than a synthetic hook invocation.
+
+That bounded call now passes on runtime `f24664b87f3b…`. Native-child decision
+`native-child-aa6e5296…` was requested from and answered by
+`zcode-recruiter`/`GLM-5.2`, selecting `python-application-engineer` at
+confidence 0.85. Host-written child `agent_07b6377b…` carries the exact v6 card
+in transcript record zero, bound to parent call `call_1f2255f…`; its body and
+canonical bare digest match the immutable Store version. This proves one-card
+ZCode delivery for the bounded Option-A checkpoint. It does not satisfy this
+issue's two-or-more-card acceptance case, fixed staffing-rate corpus, latency
+budget, accepted outcomes, or five-host parity, and no matrix cell moved.
 
 ## Where the latency actually is (measured 2026-08-14, `9e29aabe`)
 
