@@ -137,11 +137,10 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 ## next-bounded-work-package
 
-Keep Option A frozen. Claude's corrected parent CLI header smoke is green; its
-first exact-body prompt is excluded. Codex trust bypass ran the installed hook,
-but its generic smoke abstained before a header capsule. Next use the staffable
-review control, then one Codex child canary and an attended ZCode parent smoke.
-Resume AR-252 afterward; OpenClaw/Hermes remain deferred.
+Keep Option A frozen. Claude's corrected parent header is green; its first
+prompt is excluded. Codex trust bypass ran; the generic smoke abstained, while
+the staffable review delivered its exact header with no delegation. Next run one
+Codex child canary and attended ZCode smoke; OpenClaw/Hermes remain deferred.
 
 ## same-task-continuity
 

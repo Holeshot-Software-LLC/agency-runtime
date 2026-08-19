@@ -2012,3 +2012,14 @@ there was no Agency header snapshot; Codex failed open and returned only
 `PARENT_SMOKE_OK`, with no tools or child. This is a valid abstention and hook
 execution result, not parent-header proof. The staffable review control remains
 the next header test. No rule or matrix cell moved.
+
+### LIVE MAIN: Codex staffable parent header passes
+
+Fresh Codex CLI thread `01a01c57-6d65-7951-8cf3-bcde70cbd6d2` used the same
+invocation-only hook-trust bypass with every tool and child path disabled. The
+staffable text-normalization review control returned the exact five-line Agency
+header, loaded `agency-steward`, `codebase-onboarding-engineer`, and
+`code-reviewer`, delegated none, and reported workforce inference
+`codex-fast/gpt-5.6-terra`. Its one-sentence body correctly named silent loss of
+significant boundary whitespace. This proves merged-main Codex parent routing
+and header delivery; it does not prove child delivery or move a matrix cell.
