@@ -1628,7 +1628,7 @@ class HookBridge:
             model=model,
         )
         if not context:
-            context = self._codex_header_snapshot_context(
+            context = self._header_snapshot_context(
                 session_id=session_id,
                 trace_id=trace_id,
                 model=model,
@@ -1676,7 +1676,7 @@ class HookBridge:
             or _first_string(response, "message") != "Wait completed."
         ):
             return ""
-        return self._codex_header_snapshot_context(
+        return self._header_snapshot_context(
             session_id=session_id,
             trace_id=trace_id,
             model=model,
@@ -1688,7 +1688,7 @@ class HookBridge:
             ),
         )
 
-    def _codex_header_snapshot_context(
+    def _header_snapshot_context(
         self,
         *,
         session_id: str,
@@ -1699,11 +1699,10 @@ class HookBridge:
     ) -> str:
         """Render one exact current-turn header without manufacturing evidence."""
 
-        # Codex and Claude both deliver the header through injected context;
-        # ZCode has no SubagentStart/Stop lifecycle and keeps its v1 envelope
-        # path. Restricting this to codex silently left Claude turns with no
-        # header delivery mechanism at all.
-        if self.host not in {"codex", "claude"} or not session_id or not trace_id:
+        # Codex, Claude, and ZCode all deliver parent-turn context through this
+        # hook. Keep the exact Store-backed header on that shared path even
+        # though their native child lifecycle surfaces differ.
+        if self.host not in {"codex", "claude", "zcode"} or not session_id or not trace_id:
             return ""
         from agency_runtime.core.header.contract import (
             EvidenceCorrelationError,
@@ -1760,7 +1759,7 @@ class HookBridge:
                 reservation,
             )
             return {}
-        header_context = self._codex_header_snapshot_context(
+        header_context = self._header_snapshot_context(
             session_id=correlation.session_id,
             trace_id=trace_id,
             model=correlation.model,

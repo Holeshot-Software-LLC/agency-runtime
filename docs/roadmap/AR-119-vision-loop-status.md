@@ -2055,3 +2055,34 @@ unproven. This differs from the older three-run 1-spawn/1-start opaque-
 projection series. It is a bounded exact-main parent-preflight outcome, not a
 pin falsification, Codex Rule-4 proof, or install failure. No rule was promoted,
 the candidate did not advance, and **no matrix cell moved**.
+
+### LIVE MAIN: ZCode exposes a first-response header-delivery defect
+
+Fresh ZCode session `sess_88f7185c-16d2-4dec-873f-8843629bd5e0`, Agency trace
+`ca770802-6bff-417a-b13e-5e0765efa76f`, ran the staffable text-normalization
+control without tools or delegation. The ZCode parent answered through its
+configured `builtin:zai-coding-plan/GLM-5.3` host model and produced the correct
+one-sentence regression assessment. Agency's separate workforce planner and
+recruiter both answered through `claude-subscription/sonnet`; the distinction
+between host model and Agency inference transport is observed rather than
+inferred.
+
+The Stop hook correctly rejected that first response and committed terminal
+finalization `8bb6ea7c-c6a5-4ae5-a71a-569d4af3a2f8` at evidence revision 10.
+The submitted header named only `code-reviewer` and reported `none observed`;
+the authoritative turn required `agency-steward, code-reviewer` and the
+Claude/Sonnet workforce-inference receipt. Its persisted missing list is exactly
+`agencies_loaded, actual_model_selected`; the other three evidence fields and
+the response body were valid.
+
+Host I/O proves why a blind retry would be invalid: ZCode received the resident
+manager once and a placeholder-only header template, but received zero
+occurrences of `claude-subscription` or the exact model line enforced at Stop.
+The shared Store-backed snapshot helper admitted only Claude and Codex. A local
+candidate now admits ZCode on that same initial and updated parent-header path,
+with no child-lifecycle change. The widened hook/parity suite passes 144 tests;
+the final focused initial-header, updated-header, and ZCode child-lifecycle set
+passes 7 tests; focused Ruff and diff checks pass. The governing local fast
+harness passes all 12 gates in 1.3 minutes. This candidate is not yet merged,
+installed, or live-proven. No rule was promoted, the candidate did not advance,
+and **no matrix cell moved**.

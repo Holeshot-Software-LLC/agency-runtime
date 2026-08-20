@@ -133,13 +133,14 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    (`hook_trust_status: unverified` = a missing `--verify-activation`
    receipt, NOT the owner's trust action). ZCode 3.8.1 is live-proven for this
    one-card bounded call; openclaw/hermes have no Rule 4 route.
+5. **Merged-main ZCode parent smoke found one blocker.** Session `sess_88f7185c…`
+   closed `response_invalid`: placeholders hid `agencies_loaded` and
+   `actual_model_selected`. The local fix is 12/12 fast but not merged/installed.
 
 ## next-bounded-work-package
 
-Keep Option A frozen. Claude and Codex parent headers are green. The one approved
-Codex child rerun is complete and checkpointed as a pre-child-start failure; do
-not repeat it. Next run one attended ZCode parent smoke, then finalize local
-evidence and gates. OpenClaw/Hermes remain deferred.
+Keep Option A frozen. Finish local fast gates and a clean recovery pair, then wait
+for push/PR/merge/reinstall authority. After merge, run one ZCode smoke; defer the rest.
 
 ## same-task-continuity
 
@@ -175,4 +176,5 @@ read without touching the store.
 - Owner authorization dated 2026-08-19 covers PR #298 update/merge, merged-main
   install, Claude/ZCode parent smokes, and one Codex child canary with
   `--dangerously-bypass-hook-trust`. It excludes hosted CI, OpenClaw/Hermes,
-  trackers, tags, force/direct main pushes, new capture, re-auth, or config changes.
+  trackers, tags, force/direct main pushes, new capture, re-auth, config changes,
+  or a second PR/merge/install for the ZCode repair.

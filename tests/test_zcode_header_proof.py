@@ -152,9 +152,13 @@ def test_zcode_usersubmit_emits_agency_header_and_routed_team(
 
     context = result["hookSpecificOutput"]["additionalContext"]
 
-    # The resident-steward kernel header is the visible Agency banner.
+    # The resident-steward kernel and exact current-turn evidence header are
+    # both delivered before ZCode authors its first response.
     assert "resident-steward kernel" in context, context[:300]
     assert "[AGENCY PREFLIGHT]" in context, context[:300]
+    assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in context, context[:300]
+    assert "Agency/Agencies loaded: agency-steward, code-reviewer" in context
+    assert "Actual Model selected: none observed" in context
     # Isolated preflight preserves the routed team as durable evidence without
     # falsely claiming either specialist was already loaded in the parent.
     [routing] = store.recent_runtime_activity(limit=10)["routing"]
