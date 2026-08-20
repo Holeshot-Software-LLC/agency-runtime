@@ -1087,6 +1087,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `eff66c67` | 2026-08-20 | Merge pull request #303: pin accepted-outcome parent recruiter [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | null |
 | `e7e4e285` | 2026-08-20 | fix(ar119): make recruiter safe-team repairs actionable | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | [detail](2026-08-20-e7e4e285-make-recruiter-safe-team-repairs-actionable.md) |
 | `8db9700b` | 2026-08-20 | docs(ar119): checkpoint recruiter contract gates | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `c279bca9` | 2026-08-20 | Merge pull request #304: make recruiter safe-team repairs actionable [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | null |
+| `de9ef543` | 2026-08-20 | fix(ar259): preserve terminal hiring state in failure receipts | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-259](../roadmap/issue-AR-259-preserve-terminal-hiring-state.md) | [detail](2026-08-20-de9ef543-preserve-terminal-hiring-state.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
