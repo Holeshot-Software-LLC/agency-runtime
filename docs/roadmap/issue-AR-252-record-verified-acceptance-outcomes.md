@@ -3,7 +3,7 @@ title: "AR-252: Record host-evidenced, independently verified outcomes for autom
 status: open
 category: roadmap
 created: 2026-08-05
-updated: 2026-08-18
+updated: 2026-08-20
 tags: [workforce, promotion, evidence, native-child, outcomes, critical-path]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -46,6 +46,14 @@ AR-242 set the three-success and seven-day review-window policy. Store code can
 validate acceptance evidence and perform automatic promotion atomically, but no
 current host-backed producer/verifier correlation emits the required event.
 Agency-authored assignment rows alone are not proof of successful work.
+
+The accepted-outcome v2 contract now enforces the 2026-08-18 joint-verdict
+ruling at its input and persisted-manifest boundaries. The semantic decision is
+identified by the verifier host artifact's digest and bounded record position;
+the collector-owned binding separately names the producer artifact digest and
+verifier child. Either half missing, misattributed, or edited after recording is
+refused. This tightens the host-free evaluator only: it does not create the
+pairing collector or widen the verified-delivery capability seal.
 
 ## Approach
 
@@ -103,6 +111,13 @@ are constructed by the test rather than collected from a Claude transcript or a
 Codex rollout. The remaining two items are exactly that gap, and until they
 close, the runtime can accept an outcome that nothing yet offers it.
 
+The current accepted envelope is `agency.accepted-outcome.v2`. It deliberately
+refuses the former flat v1 verdict rather than silently treating collector-added
+artifact binding as verifier-authored semantics. No production collector ever
+emitted a v1 row, so there is no live acceptance history to migrate. The 2026-08-20
+focused and Store integration checkpoint is **261 passed**, with Ruff check,
+Ruff format check, and `git diff --check` green.
+
 The collector seam is `agency_runtime/core/child_delivery_evidence.py`, whose
 `_host_child_delivery_projection` already emits the accepted proof shape for a
 verified delivery. What is missing is the step that pairs one producer proof
@@ -144,11 +159,13 @@ them halfway through a build.
 The three above were found by reading the collector. This one falls out of the
 acceptance rule itself and is the sharpest of the four.
 
-`evaluate_acceptance` takes `artifact_digest` from `producer["artifact_digest"]`,
-and `_host_child_delivery_projection` sets that field from
-`evidence.artifact_digest` — the SHA-256 of the bounded trusted read window of
-**the producer child's own transcript**. It is not a digest of any work product.
-The verdict must then match it exactly (`verdict_artifact_mismatch`).
+At the time of this measurement, v1 took `artifact_digest` from
+`producer["artifact_digest"]`, and `_host_child_delivery_projection` set that
+field from `evidence.artifact_digest` — the SHA-256 of the bounded trusted read
+window of **the producer child's own transcript**. It was not a digest of any
+work product. The former flat verdict then had to match it exactly
+(`verdict_artifact_mismatch`). V2 retires that ambiguous shape in favor of the
+explicit semantic and binding halves below.
 
 So the thing a verifier must bind its verdict to is the hash of a file it cannot
 read: the producer's transcript lives in the host's namespace, and the verifier
@@ -207,6 +224,24 @@ named halves and re-derivable under the replacement rule; nothing in the
 envelope shape hides which author supplied which field. If a host contract
 later guarantees separable work artifacts, the produced-work binding
 supersedes this ruling for new envelopes.
+
+## V2 attribution boundary implemented (2026-08-20)
+
+`evaluate_acceptance` and `accepted_outcome_manifest` now require and recheck
+both named halves. The semantic half carries exact authority
+`verifier-host-artifact`, the verifier artifact digest, a bounded non-boolean
+record index, and the verifier's decision. The binding half carries exact
+authority `collector`, the producer artifact digest, and verifier child ID.
+The verifier artifact digest and semantic record position also participate in
+the replay identity, so two records in one verifier transcript cannot collapse
+silently. The stored manifest preserves every attribution field and stops
+counting if any one is edited.
+
+This source checkpoint intentionally stops before the real pairing path. The
+one-use, canary-only verified-delivery seal is unchanged. Building a collector
+that atomically holds a producer proof and a distinct verifier proof still
+requires the owner to authorize exactly two consumptions within that one
+transaction, or to choose a different design.
 
 ## Collector diagnosis shipped ahead of the collector (2026-08-14)
 

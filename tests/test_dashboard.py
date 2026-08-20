@@ -83,8 +83,11 @@ def _acceptance_envelope(
         }
 
     digest = "9" * 64
+    verifier_digest = "8" * 64
     producer = proof(contractor, "dashboard-producer-child", "dashboard-producer-decision")
     producer["artifact_digest"] = digest
+    verifier_proof = proof(verifier, "dashboard-verifier-child", "dashboard-verifier-decision")
+    verifier_proof["artifact_digest"] = verifier_digest
     return {
         "schema": ACCEPTANCE_ENVELOPE_SCHEMA,
         "contractor_worker_id": str(contractor["worker_id"]),
@@ -94,12 +97,20 @@ def _acceptance_envelope(
             "specialist_prompt_hash": str(contractor["current_hash"]),
         },
         "producer": producer,
-        "verifier": proof(verifier, "dashboard-verifier-child", "dashboard-verifier-decision"),
+        "verifier": verifier_proof,
         "verdict": {
             "verdict_id": "dashboard-verdict",
-            "decision": "accepted",
-            "artifact_digest": digest,
-            "verifier_child_id": "dashboard-verifier-child",
+            "semantic": {
+                "authority": "verifier-host-artifact",
+                "artifact_digest": verifier_digest,
+                "record_index": 1,
+                "decision": "accepted",
+            },
+            "binding": {
+                "authority": "collector",
+                "producer_artifact_digest": digest,
+                "verifier_child_id": "dashboard-verifier-child",
+            },
         },
     }
 

@@ -34,6 +34,7 @@ CONTRACTOR_SLUG = "typescript-application-engineer"
 CONTRACTOR_CARD = (CONTRACTOR_SLUG, "1.0.0", "a" * 64)
 VERIFIER_CARD = ("code-reviewer", "2.0.0", "b" * 64)
 ARTIFACT = "c" * 64
+VERIFIER_ARTIFACT = "d" * 64
 
 
 def _card(entry: tuple[str, str, str]) -> dict[str, str]:
@@ -91,12 +92,21 @@ def _envelope(
             child_id="child-verifier",
             decision_id="decision-verifier",
             cards=(VERIFIER_CARD,),
+            artifact_digest=VERIFIER_ARTIFACT,
         ),
         "verdict": {
             "verdict_id": verdict_id,
-            "decision": "accepted",
-            "artifact_digest": artifact,
-            "verifier_child_id": "child-verifier",
+            "semantic": {
+                "authority": "verifier-host-artifact",
+                "artifact_digest": VERIFIER_ARTIFACT,
+                "record_index": 7,
+                "decision": "accepted",
+            },
+            "binding": {
+                "authority": "collector",
+                "producer_artifact_digest": artifact,
+                "verifier_child_id": "child-verifier",
+            },
         },
     }
     envelope.update(overrides)
@@ -114,6 +124,9 @@ def test_host_evidenced_producer_verifier_and_verdict_record_one_acceptance() ->
     assert outcome.manifest["producer_child_id"] == "child-producer"
     assert outcome.manifest["verifier_child_id"] == "child-verifier"
     assert outcome.manifest["verifier_decision_id"] == "decision-verifier"
+    assert outcome.manifest["verifier_artifact_digest"] == VERIFIER_ARTIFACT
+    assert outcome.manifest["verdict_semantic_record_index"] == 7
+    assert outcome.manifest["verdict_binding_authority"] == "collector"
     assert outcome.manifest["acceptance_validated"] is True
 
 
@@ -123,9 +136,33 @@ def test_the_same_evidence_always_yields_the_same_replay_identity() -> None:
     first = evaluate_acceptance(_envelope())
     second = evaluate_acceptance(_envelope())
     other_artifact = evaluate_acceptance(_envelope(artifact="d" * 64))
+    other_verifier_artifact_envelope = _envelope()
+    other_verifier_artifact_envelope["verifier"] = {
+        **other_verifier_artifact_envelope["verifier"],
+        "artifact_digest": "e" * 64,
+    }
+    other_verifier_artifact_envelope["verdict"] = {
+        **other_verifier_artifact_envelope["verdict"],
+        "semantic": {
+            **other_verifier_artifact_envelope["verdict"]["semantic"],
+            "artifact_digest": "e" * 64,
+        },
+    }
+    other_verifier_artifact = evaluate_acceptance(other_verifier_artifact_envelope)
+    other_record_envelope = _envelope()
+    other_record_envelope["verdict"] = {
+        **other_record_envelope["verdict"],
+        "semantic": {
+            **other_record_envelope["verdict"]["semantic"],
+            "record_index": 8,
+        },
+    }
+    other_record = evaluate_acceptance(other_record_envelope)
 
     assert first.outcome_key == second.outcome_key
     assert first.outcome_key != other_artifact.outcome_key
+    assert first.outcome_key != other_verifier_artifact.outcome_key
+    assert first.outcome_key != other_record.outcome_key
 
 
 @pytest.mark.parametrize(
@@ -134,7 +171,7 @@ def test_the_same_evidence_always_yields_the_same_replay_identity() -> None:
         ({"producer": None}, "producer_evidence_missing"),
         ({"verifier": None}, "verifier_evidence_missing"),
         ({"verdict": None}, "verdict_missing"),
-        ({"schema": "agency.accepted-outcome.v0"}, "envelope_malformed"),
+        ({"schema": "agency.accepted-outcome.v1"}, "envelope_malformed"),
         ({"contractor_worker_id": ""}, "envelope_malformed"),
     ],
 )
@@ -213,6 +250,13 @@ def test_a_producer_without_an_artifact_digest_has_nothing_to_accept() -> None:
     assert evaluate_acceptance(envelope).reason == "producer_artifact_digest_missing"
 
 
+def test_a_verifier_without_an_artifact_digest_cannot_author_the_semantic_verdict() -> None:
+    envelope = _envelope()
+    envelope["verifier"] = {**envelope["verifier"], "artifact_digest": ""}
+
+    assert evaluate_acceptance(envelope).reason == "verifier_artifact_digest_missing"
+
+
 def test_two_revisions_of_one_specialist_make_attribution_ambiguous() -> None:
     """Promotion changes one immutable identity, so which card worked must be exact."""
 
@@ -252,7 +296,13 @@ def test_an_outcome_is_refused_unless_the_contractors_own_card_was_delivered(
 def test_a_child_cannot_verify_itself() -> None:
     envelope = _envelope()
     envelope["verifier"] = {**envelope["verifier"], "child_id": "child-producer"}
-    envelope["verdict"] = {**envelope["verdict"], "verifier_child_id": "child-producer"}
+    envelope["verdict"] = {
+        **envelope["verdict"],
+        "binding": {
+            **envelope["verdict"]["binding"],
+            "verifier_child_id": "child-producer",
+        },
+    }
 
     assert evaluate_acceptance(envelope).reason == "shared_producer_verifier_identity"
 
@@ -263,6 +313,7 @@ def test_the_same_specialist_running_twice_is_not_an_independent_verifier() -> N
         child_id="child-verifier",
         decision_id="decision-verifier",
         cards=(CONTRACTOR_CARD,),
+        artifact_digest=VERIFIER_ARTIFACT,
     )
 
     assert evaluate_acceptance(envelope).reason == "shared_producer_verifier_identity"
@@ -279,24 +330,51 @@ def test_a_verifier_without_its_own_inference_decision_is_refused(decision_id: s
 
 
 @pytest.mark.parametrize(
-    ("mutation", "reason"),
+    ("component", "mutation", "reason"),
     [
-        ({"verifier_child_id": "child-somebody-else"}, "verdict_not_bound_to_verifier"),
-        ({"artifact_digest": "9" * 64}, "verdict_artifact_mismatch"),
-        ({"artifact_digest": ""}, "verdict_artifact_mismatch"),
-        ({"decision": "rejected"}, "verdict_rejected"),
-        ({"decision": "inconclusive"}, "verdict_rejected"),
-        ({"verdict_id": ""}, "verdict_missing"),
+        (
+            "binding",
+            {"verifier_child_id": "child-somebody-else"},
+            "verdict_not_bound_to_verifier",
+        ),
+        ("semantic", {"artifact_digest": "9" * 64}, "verdict_semantic_origin_mismatch"),
+        ("semantic", {"artifact_digest": ""}, "verdict_semantic_origin_mismatch"),
+        ("semantic", {"authority": "collector"}, "verdict_semantic_origin_mismatch"),
+        ("semantic", {"record_index": -1}, "verdict_semantic_missing"),
+        ("semantic", {"record_index": 65_536}, "verdict_semantic_missing"),
+        ("semantic", {"record_index": True}, "verdict_semantic_missing"),
+        ("binding", {"producer_artifact_digest": "9" * 64}, "verdict_binding_mismatch"),
+        ("binding", {"producer_artifact_digest": ""}, "verdict_binding_mismatch"),
+        ("binding", {"authority": "verifier"}, "verdict_binding_mismatch"),
+        ("semantic", {"decision": "rejected"}, "verdict_rejected"),
+        ("semantic", {"decision": "inconclusive"}, "verdict_rejected"),
+        ("verdict", {"verdict_id": ""}, "verdict_missing"),
     ],
 )
 def test_the_verdict_must_accept_this_exact_artifact_from_this_exact_verifier(
+    component: str,
     mutation: dict[str, Any],
     reason: str,
 ) -> None:
     envelope = _envelope()
-    envelope["verdict"] = {**envelope["verdict"], **mutation}
+    if component == "verdict":
+        envelope["verdict"] = {**envelope["verdict"], **mutation}
+    else:
+        envelope["verdict"] = {
+            **envelope["verdict"],
+            component: {**envelope["verdict"][component], **mutation},
+        }
 
     assert evaluate_acceptance(envelope).reason == reason
+
+
+@pytest.mark.parametrize("component", ["semantic", "binding"])
+def test_both_joint_verdict_halves_are_required(component: str) -> None:
+    envelope = _envelope()
+    envelope["verdict"] = {**envelope["verdict"], component: None}
+
+    expected = f"verdict_{component}_missing"
+    assert evaluate_acceptance(envelope).reason == expected
 
 
 @pytest.mark.parametrize("envelope", [None, "accepted", 7, [], {"schema": None}])
@@ -330,6 +408,27 @@ def test_a_manifest_whose_key_was_edited_afterwards_stops_counting() -> None:
     forged = {**manifest, "producer_artifact_digest": "1" * 64}
 
     assert accepted_outcome_manifest(forged) is None
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("verifier_artifact_digest", "1" * 64),
+        ("verdict_semantic_authority", "collector"),
+        ("verdict_semantic_artifact_digest", "1" * 64),
+        ("verdict_semantic_record_index", -1),
+        ("verdict_binding_authority", "verifier-host-artifact"),
+        ("verdict_binding_producer_artifact_digest", "1" * 64),
+        ("verdict_binding_verifier_child_id", "child-somebody-else"),
+    ],
+)
+def test_a_manifest_with_edited_joint_verdict_attribution_stops_counting(
+    field: str,
+    value: object,
+) -> None:
+    manifest = dict(evaluate_acceptance(_envelope()).manifest)
+
+    assert accepted_outcome_manifest({**manifest, field: value}) is None
 
 
 def test_readiness_counts_distinct_artifacts_not_distinct_rows() -> None:
@@ -556,9 +655,17 @@ def test_two_verdicts_on_one_artifact_are_one_success(tmp_path: Path) -> None:
             {
                 "verdict": {
                     "verdict_id": "verdict-1",
-                    "decision": "rejected",
-                    "artifact_digest": f"{1:064x}",
-                    "verifier_child_id": "child-verifier",
+                    "semantic": {
+                        "authority": "verifier-host-artifact",
+                        "artifact_digest": VERIFIER_ARTIFACT,
+                        "record_index": 7,
+                        "decision": "rejected",
+                    },
+                    "binding": {
+                        "authority": "collector",
+                        "producer_artifact_digest": f"{1:064x}",
+                        "verifier_child_id": "child-verifier",
+                    },
                 }
             },
             "verdict_rejected",

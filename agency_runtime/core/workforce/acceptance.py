@@ -4,7 +4,11 @@ ADR-0157 makes automatic contractor promotion part of the default lifecycle,
 and AR-252 requires every counted outcome to bind host-authored producer and
 verifier child evidence, the exact delivered card hashes and produced artifact
 digest, a distinct governed verifier selected by inference, and that verifier's
-accepted verdict for that exact artifact.
+accepted verdict for that exact artifact. The v2 envelope names the
+verifier-authored semantic half by verifier artifact digest and record position,
+and names the collector-authored producer/verifier binding separately. That
+division cannot be implied by a flat verdict because the verifier cannot read
+the producer's host transcript digest.
 
 Nothing in this module reads a host, the filesystem, or the Store. It is handed
 two already-verified host-child delivery proofs and one verdict, and answers a
@@ -27,11 +31,12 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Final
 
-ACCEPTANCE_ENVELOPE_SCHEMA: Final[str] = "agency.accepted-outcome.v1"
+ACCEPTANCE_ENVELOPE_SCHEMA: Final[str] = "agency.accepted-outcome.v2"
 HOST_CHILD_PROOF_SCHEMA: Final[str] = "agency.host-child-delivery-proof.v1"
 
 MAX_ACCEPTANCE_IDENTITY_CHARACTERS: Final[int] = 256
 MAX_ACCEPTANCE_CARDS: Final[int] = 64
+MAX_ACCEPTANCE_RECORD_INDEX: Final[int] = 65_535
 
 #: The whole vocabulary a refusal may use. Callers -- CLI, dashboard, hooks --
 #: render these, so a new failure mode has to be named here rather than leak an
@@ -49,11 +54,15 @@ ACCEPTANCE_REASONS: Final[frozenset[str]] = frozenset(
         "contractor_identity_mismatch",
         "verifier_evidence_missing",
         "verifier_not_host_proven",
+        "verifier_artifact_digest_missing",
         "verifier_not_inference_selected",
         "shared_producer_verifier_identity",
         "verdict_missing",
         "verdict_not_bound_to_verifier",
-        "verdict_artifact_mismatch",
+        "verdict_semantic_missing",
+        "verdict_semantic_origin_mismatch",
+        "verdict_binding_missing",
+        "verdict_binding_mismatch",
         "verdict_rejected",
         "replayed",
     }
@@ -111,6 +120,16 @@ def _digest(value: object) -> str:
     return digest
 
 
+def _record_index(value: object) -> int | None:
+    """Return one bounded host-artifact record position, or None."""
+
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    if value < 0 or value > MAX_ACCEPTANCE_RECORD_INDEX:
+        return None
+    return value
+
+
 def _cards(proof: Mapping[str, Any]) -> tuple[tuple[str, str, str], ...]:
     """Project the delivered cards as exact (slug, version, prompt hash) triples."""
 
@@ -154,6 +173,8 @@ def _outcome_key(
     artifact_digest: str,
     verifier_child_id: str,
     verifier_decision_id: str,
+    verifier_artifact_digest: str,
+    verifier_record_index: int,
     verdict_id: str,
     contractor_prompt_hash: str,
 ) -> str:
@@ -164,6 +185,8 @@ def _outcome_key(
             artifact_digest,
             verifier_child_id,
             verifier_decision_id,
+            verifier_artifact_digest,
+            str(verifier_record_index),
             verdict_id,
             contractor_prompt_hash,
         )
@@ -235,25 +258,45 @@ def _verdict_reason(
     verdict: object,
     *,
     verifier_child_id: str,
-    artifact_digest: str,
-) -> tuple[str, str]:
-    """Return the refusal reason and, when accepted, the verdict identity."""
+    verifier_artifact_digest: str,
+    producer_artifact_digest: str,
+) -> tuple[str, str, int | None]:
+    """Validate the named semantic and binding halves of one joint verdict."""
 
     if verdict is None:
-        return "verdict_missing", ""
+        return "verdict_missing", "", None
     if not isinstance(verdict, Mapping):
-        return "envelope_malformed", ""
+        return "envelope_malformed", "", None
     verdict_id = _text(verdict.get("verdict_id"))
-    decision = _text(verdict.get("decision")).casefold()
-    if not verdict_id or not decision:
-        return "verdict_missing", ""
-    if _text(verdict.get("verifier_child_id")) != verifier_child_id:
-        return "verdict_not_bound_to_verifier", ""
-    if _digest(verdict.get("artifact_digest")) != artifact_digest:
-        return "verdict_artifact_mismatch", ""
+    if not verdict_id:
+        return "verdict_missing", "", None
+
+    semantic = verdict.get("semantic")
+    if not isinstance(semantic, Mapping):
+        return "verdict_semantic_missing", "", None
+    decision = _text(semantic.get("decision")).casefold()
+    record_index = _record_index(semantic.get("record_index"))
+    if not decision or record_index is None:
+        return "verdict_semantic_missing", "", None
+    if (
+        _text(semantic.get("authority")) != "verifier-host-artifact"
+        or _digest(semantic.get("artifact_digest")) != verifier_artifact_digest
+    ):
+        return "verdict_semantic_origin_mismatch", "", None
+
+    binding = verdict.get("binding")
+    if not isinstance(binding, Mapping):
+        return "verdict_binding_missing", "", None
+    if _text(binding.get("verifier_child_id")) != verifier_child_id:
+        return "verdict_not_bound_to_verifier", "", None
+    if (
+        _text(binding.get("authority")) != "collector"
+        or _digest(binding.get("producer_artifact_digest")) != producer_artifact_digest
+    ):
+        return "verdict_binding_mismatch", "", None
     if decision != _ACCEPTED_DECISION:
-        return "verdict_rejected", ""
-    return "", verdict_id
+        return "verdict_rejected", "", None
+    return "", verdict_id, record_index
 
 
 def evaluate_acceptance(envelope: object) -> AcceptanceOutcome:
@@ -293,6 +336,10 @@ def evaluate_acceptance(envelope: object) -> AcceptanceOutcome:
     if verifier is None:
         return _refused(reason)
 
+    verifier_artifact_digest = _digest(verifier.get("artifact_digest"))
+    if not verifier_artifact_digest:
+        return _refused("verifier_artifact_digest_missing")
+
     reason = _independence_reason(producer, verifier, contractor_slug=contractor_slug)
     if reason:
         return _refused(reason)
@@ -300,19 +347,24 @@ def evaluate_acceptance(envelope: object) -> AcceptanceOutcome:
     producer_child_id = _text(producer.get("child_id"))
     verifier_child_id = _text(verifier.get("child_id"))
     verifier_decision_id = _text(verifier.get("decision_id"))
-    reason, verdict_id = _verdict_reason(
+    reason, verdict_id, verifier_record_index = _verdict_reason(
         envelope.get("verdict"),
         verifier_child_id=verifier_child_id,
-        artifact_digest=artifact_digest,
+        verifier_artifact_digest=verifier_artifact_digest,
+        producer_artifact_digest=artifact_digest,
     )
     if reason:
         return _refused(reason)
+    if verifier_record_index is None:  # pragma: no cover - guarded by _verdict_reason
+        return _refused("verdict_semantic_missing")
 
     outcome_key = _outcome_key(
         producer_child_id=producer_child_id,
         artifact_digest=artifact_digest,
         verifier_child_id=verifier_child_id,
         verifier_decision_id=verifier_decision_id,
+        verifier_artifact_digest=verifier_artifact_digest,
+        verifier_record_index=verifier_record_index,
         verdict_id=verdict_id,
         contractor_prompt_hash=contractor_prompt_hash,
     )
@@ -331,9 +383,16 @@ def evaluate_acceptance(envelope: object) -> AcceptanceOutcome:
         "verifier_host": _text(verifier.get("host")),
         "verifier_child_id": verifier_child_id,
         "verifier_decision_id": verifier_decision_id,
+        "verifier_artifact_digest": verifier_artifact_digest,
         "verifier_specialist_slugs": sorted({card[0] for card in _cards(verifier)}),
         "verdict_id": verdict_id,
         "verdict_decision": _ACCEPTED_DECISION,
+        "verdict_semantic_authority": "verifier-host-artifact",
+        "verdict_semantic_artifact_digest": verifier_artifact_digest,
+        "verdict_semantic_record_index": verifier_record_index,
+        "verdict_binding_authority": "collector",
+        "verdict_binding_producer_artifact_digest": artifact_digest,
+        "verdict_binding_verifier_child_id": verifier_child_id,
     }
     return AcceptanceOutcome(
         accepted=True,
@@ -365,29 +424,46 @@ def accepted_outcome_manifest(evidence_refs: object) -> dict[str, str] | None:
     producer_child_id = _text(evidence_refs.get("producer_child_id"))
     verifier_child_id = _text(evidence_refs.get("verifier_child_id"))
     verifier_decision_id = _text(evidence_refs.get("verifier_decision_id"))
+    verifier_artifact_digest = _digest(evidence_refs.get("verifier_artifact_digest"))
     verdict_id = _text(evidence_refs.get("verdict_id"))
     contractor_prompt_hash = _text(evidence_refs.get("contractor_prompt_hash"))
-    if not all(
-        (
-            outcome_key,
-            artifact_digest,
-            producer_child_id,
-            verifier_child_id,
-            verifier_decision_id,
-            verdict_id,
-            contractor_prompt_hash,
+    verifier_record_index = _record_index(evidence_refs.get("verdict_semantic_record_index"))
+    if (
+        not all(
+            (
+                outcome_key,
+                artifact_digest,
+                producer_child_id,
+                verifier_child_id,
+                verifier_decision_id,
+                verifier_artifact_digest,
+                verdict_id,
+                contractor_prompt_hash,
+            )
         )
+        or verifier_record_index is None
     ):
         return None
     if producer_child_id == verifier_child_id:
         return None
     if _text(evidence_refs.get("verdict_decision")).casefold() != _ACCEPTED_DECISION:
         return None
+    if (
+        _text(evidence_refs.get("verdict_semantic_authority")) != "verifier-host-artifact"
+        or _digest(evidence_refs.get("verdict_semantic_artifact_digest"))
+        != verifier_artifact_digest
+        or _text(evidence_refs.get("verdict_binding_authority")) != "collector"
+        or _digest(evidence_refs.get("verdict_binding_producer_artifact_digest")) != artifact_digest
+        or _text(evidence_refs.get("verdict_binding_verifier_child_id")) != verifier_child_id
+    ):
+        return None
     recomputed = _outcome_key(
         producer_child_id=producer_child_id,
         artifact_digest=artifact_digest,
         verifier_child_id=verifier_child_id,
         verifier_decision_id=verifier_decision_id,
+        verifier_artifact_digest=verifier_artifact_digest,
+        verifier_record_index=verifier_record_index,
         verdict_id=verdict_id,
         contractor_prompt_hash=contractor_prompt_hash,
     )
@@ -410,6 +486,7 @@ __all__ = [
     "HOST_CHILD_PROOF_SCHEMA",
     "MAX_ACCEPTANCE_CARDS",
     "MAX_ACCEPTANCE_IDENTITY_CHARACTERS",
+    "MAX_ACCEPTANCE_RECORD_INDEX",
     "AcceptanceOutcome",
     "accepted_outcome_manifest",
     "evaluate_acceptance",

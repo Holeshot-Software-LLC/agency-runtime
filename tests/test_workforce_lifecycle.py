@@ -60,6 +60,7 @@ def _acceptance_envelope(
     """A host-evidenced acceptance for one distinct produced artifact (AR-252)."""
 
     digest = f"{index:064x}"
+    verifier_digest = f"{index + 10_000:064x}"
     producer = _delivery_proof(
         contractor,
         child_id=f"child-producer-{index}",
@@ -75,16 +76,27 @@ def _acceptance_envelope(
             "specialist_prompt_hash": str(contractor["current_hash"]),
         },
         "producer": producer,
-        "verifier": _delivery_proof(
-            verifier,
-            child_id="child-verifier",
-            decision_id="decision-verifier",
-        ),
+        "verifier": {
+            **_delivery_proof(
+                verifier,
+                child_id="child-verifier",
+                decision_id="decision-verifier",
+            ),
+            "artifact_digest": verifier_digest,
+        },
         "verdict": {
             "verdict_id": f"verdict-{index}",
-            "decision": "accepted",
-            "artifact_digest": digest,
-            "verifier_child_id": "child-verifier",
+            "semantic": {
+                "authority": "verifier-host-artifact",
+                "artifact_digest": verifier_digest,
+                "record_index": 1,
+                "decision": "accepted",
+            },
+            "binding": {
+                "authority": "collector",
+                "producer_artifact_digest": digest,
+                "verifier_child_id": "child-verifier",
+            },
         },
     }
 
