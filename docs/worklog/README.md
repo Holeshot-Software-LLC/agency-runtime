@@ -1086,6 +1086,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `53c3d53b` | 2026-08-20 | fix(ar119): pin accepted-outcome parent recruiter [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-20-53c3d53b-pin-accepted-outcome-parent-recruiter.md) |
 | `eff66c67` | 2026-08-20 | Merge pull request #303: pin accepted-outcome parent recruiter [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | null |
 | `e7e4e285` | 2026-08-20 | fix(ar119): make recruiter safe-team repairs actionable | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | [detail](2026-08-20-e7e4e285-make-recruiter-safe-team-repairs-actionable.md) |
+| `8db9700b` | 2026-08-20 | docs(ar119): checkpoint recruiter contract gates | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
