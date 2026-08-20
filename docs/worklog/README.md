@@ -1069,6 +1069,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `16e55c9d` | 2026-08-19 | docs(ar119): record Codex parent abstention | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `6d378c2e` | 2026-08-19 | docs(ar119): record Codex parent header proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `bc74a33c` | 2026-08-19 | docs(ar119): record merged-main Codex child rerun | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `88fc1956` | 2026-08-19 | fix(zcode): deliver authoritative parent header snapshots | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-88fc1956-zcode-authoritative-parent-headers.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
