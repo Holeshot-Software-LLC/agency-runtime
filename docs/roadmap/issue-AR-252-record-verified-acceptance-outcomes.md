@@ -43,17 +43,19 @@ current host-spawned, just-in-time architecture.
 ## Current state
 
 AR-242 set the three-success and seven-day review-window policy. Store code can
-validate acceptance evidence and perform automatic promotion atomically, but no
-current host-backed producer/verifier correlation emits the required event.
-Agency-authored assignment rows alone are not proof of successful work.
+validate acceptance evidence and perform automatic promotion atomically. The
+private Claude collector now pairs exactly two host-artifact delivery
+capabilities, but it has not yet been wired into or exercised by a live host
+canary. Agency-authored assignment rows alone remain insufficient proof.
 
 The accepted-outcome v2 contract now enforces the 2026-08-18 joint-verdict
 ruling at its input and persisted-manifest boundaries. The semantic decision is
 identified by the verifier host artifact's digest and bounded record position;
 the collector-owned binding separately names the producer artifact digest and
 verifier child. Either half missing, misattributed, or edited after recording is
-refused. This tightens the host-free evaluator only: it does not create the
-pairing collector or widen the verified-delivery capability seal.
+refused. The owner authorized exactly two consumptions only inside the atomic
+producer/verifier transaction on 2026-08-20; no public or general-purpose
+capability widening followed.
 
 ## Approach
 
@@ -99,30 +101,26 @@ rows, or a shared producer/verifier identity.
 
 ## What the checked boxes do and do not mean
 
-The five checked items are the host-free half: the rule that decides what may
-count, the recorder that applies it, and the readiness migration. They are
-proven by source and simulation in `agency_runtime/core/workforce/acceptance.py`
-and `tests/test_accepted_outcomes.py`, which runs in CI.
+The five checked items cover the deciding rule, recorder, readiness migration,
+and the locally simulated pairing path. Synthetic Claude transcripts now cross
+the same private artifact verifier and sealed exactly-two transaction used by
+the pending live path; direct envelope tests still exercise the host-free core.
 
-They are not proof that the path runs. No host has yet produced a real envelope:
-the producer and verifier proofs come from the sealed
-`agency.host-child-delivery-proof.v1` projection, and in every case above they
-are constructed by the test rather than collected from a Claude transcript or a
-Codex rollout. The remaining two items are exactly that gap, and until they
-close, the runtime can accept an outcome that nothing yet offers it.
+They are not live proof. No real host has yet produced an accepted envelope;
+the collector cases use synthetic host-shaped transcripts in an allocator-owned
+temporary namespace. The remaining two acceptance items are exactly that gap.
 
 The current accepted envelope is `agency.accepted-outcome.v2`. It deliberately
 refuses the former flat v1 verdict rather than silently treating collector-added
 artifact binding as verifier-authored semantics. No production collector ever
-emitted a v1 row, so there is no live acceptance history to migrate. The 2026-08-20
-focused and Store integration checkpoint is **261 passed**, with Ruff check,
-Ruff format check, and `git diff --check` green.
+emitted a v1 row, so there is no live acceptance history to migrate. The
+2026-08-20 affected acceptance, delivery, promotion, lifecycle, and dashboard
+checkpoint is **339 passed**, with Ruff check, Ruff format check, and
+`git diff --check` green.
 
-The collector seam is `agency_runtime/core/child_delivery_evidence.py`, whose
-`_host_child_delivery_projection` already emits the accepted proof shape for a
-verified delivery. What is missing is the step that pairs one producer proof
-with one verifier proof and that verifier's verdict, which is where the live
-work starts.
+The remaining Claude source step is to give the isolated canary backend one
+bounded two-child invocation mode and report the collector's closed result;
+installation and the first live provider draw require fresh owner approval.
 
 ## Measured before building the collector (2026-08-14, `9e29aabe`)
 
@@ -237,11 +235,29 @@ the replay identity, so two records in one verifier transcript cannot collapse
 silently. The stored manifest preserves every attribution field and stops
 counting if any one is edited.
 
-This source checkpoint intentionally stops before the real pairing path. The
-one-use, canary-only verified-delivery seal is unchanged. Building a collector
-that atomically holds a producer proof and a distinct verifier proof still
-requires the owner to authorize exactly two consumptions within that one
-transaction, or to choose a different design.
+The owner authorized exactly two consumptions within one atomic pairing
+transaction on 2026-08-20. That ruling does not authorize a public multi-use
+capability, ordinary-turn outcome recording, installation, or a provider call.
+
+## Exactly-two pairing collector implemented (2026-08-20)
+
+`_collect_private_host_accepted_outcome` requires exactly two artifacts from one
+fresh isolated Claude invocation. Each artifact must independently pass the v6
+Store decision and host-delivery verifier. Exact launch markers bind a shared
+128-bit pair ID and producer/verifier roles; the producer must carry exactly one
+contractor card and in-window host-written output, while the verifier must write
+one exact semantic JSON line in its own artifact. Missing, extra, mismatched,
+ambiguous, stale, or rejected evidence lands on a closed refusal reason.
+
+The collector mints pair-scoped sealed capabilities together. The ordinary
+single consumer rejects them, and a shared lock permits only the exact two-member
+transaction to call `record_accepted_outcome`; both identities disappear after
+a validated terminal Store result and are discarded on every failure path. The
+Store result is re-bound to the locally evaluated envelope, exact worker, replay
+key, and producer digest. Synthetic tests prove recording, policy promotion,
+rejection, ambiguity, pair mismatch, exact-two cardinality, output presence,
+single-consumer refusal, replay, and non-public authority. No live or matrix
+claim follows from this checkpoint.
 
 ## Collector diagnosis shipped ahead of the collector (2026-08-14)
 

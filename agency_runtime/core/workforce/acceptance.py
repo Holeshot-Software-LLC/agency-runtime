@@ -120,6 +120,13 @@ def _digest(value: object) -> str:
     return digest
 
 
+def _pair_id(value: object) -> str:
+    identity = _text(value)
+    if len(identity) != 32 or any(character not in _HEX for character in identity):
+        return ""
+    return identity
+
+
 def _record_index(value: object) -> int | None:
     """Return one bounded host-artifact record position, or None."""
 
@@ -175,6 +182,7 @@ def _outcome_key(
     verifier_decision_id: str,
     verifier_artifact_digest: str,
     verifier_record_index: int,
+    pair_id: str,
     verdict_id: str,
     contractor_prompt_hash: str,
 ) -> str:
@@ -187,6 +195,7 @@ def _outcome_key(
             verifier_decision_id,
             verifier_artifact_digest,
             str(verifier_record_index),
+            pair_id,
             verdict_id,
             contractor_prompt_hash,
         )
@@ -260,43 +269,45 @@ def _verdict_reason(
     verifier_child_id: str,
     verifier_artifact_digest: str,
     producer_artifact_digest: str,
-) -> tuple[str, str, int | None]:
+) -> tuple[str, str, int | None, str]:
     """Validate the named semantic and binding halves of one joint verdict."""
 
     if verdict is None:
-        return "verdict_missing", "", None
+        return "verdict_missing", "", None, ""
     if not isinstance(verdict, Mapping):
-        return "envelope_malformed", "", None
+        return "envelope_malformed", "", None, ""
     verdict_id = _text(verdict.get("verdict_id"))
     if not verdict_id:
-        return "verdict_missing", "", None
+        return "verdict_missing", "", None, ""
 
     semantic = verdict.get("semantic")
     if not isinstance(semantic, Mapping):
-        return "verdict_semantic_missing", "", None
+        return "verdict_semantic_missing", "", None, ""
     decision = _text(semantic.get("decision")).casefold()
     record_index = _record_index(semantic.get("record_index"))
-    if not decision or record_index is None:
-        return "verdict_semantic_missing", "", None
+    pair_id = _pair_id(semantic.get("pair_id"))
+    if not decision or record_index is None or not pair_id:
+        return "verdict_semantic_missing", "", None, ""
     if (
         _text(semantic.get("authority")) != "verifier-host-artifact"
         or _digest(semantic.get("artifact_digest")) != verifier_artifact_digest
     ):
-        return "verdict_semantic_origin_mismatch", "", None
+        return "verdict_semantic_origin_mismatch", "", None, ""
 
     binding = verdict.get("binding")
     if not isinstance(binding, Mapping):
-        return "verdict_binding_missing", "", None
+        return "verdict_binding_missing", "", None, ""
     if _text(binding.get("verifier_child_id")) != verifier_child_id:
-        return "verdict_not_bound_to_verifier", "", None
+        return "verdict_not_bound_to_verifier", "", None, ""
     if (
         _text(binding.get("authority")) != "collector"
         or _digest(binding.get("producer_artifact_digest")) != producer_artifact_digest
+        or _pair_id(binding.get("pair_id")) != pair_id
     ):
-        return "verdict_binding_mismatch", "", None
+        return "verdict_binding_mismatch", "", None, ""
     if decision != _ACCEPTED_DECISION:
-        return "verdict_rejected", "", None
-    return "", verdict_id, record_index
+        return "verdict_rejected", "", None, ""
+    return "", verdict_id, record_index, pair_id
 
 
 def evaluate_acceptance(envelope: object) -> AcceptanceOutcome:
@@ -347,7 +358,7 @@ def evaluate_acceptance(envelope: object) -> AcceptanceOutcome:
     producer_child_id = _text(producer.get("child_id"))
     verifier_child_id = _text(verifier.get("child_id"))
     verifier_decision_id = _text(verifier.get("decision_id"))
-    reason, verdict_id, verifier_record_index = _verdict_reason(
+    reason, verdict_id, verifier_record_index, pair_id = _verdict_reason(
         envelope.get("verdict"),
         verifier_child_id=verifier_child_id,
         verifier_artifact_digest=verifier_artifact_digest,
@@ -365,6 +376,7 @@ def evaluate_acceptance(envelope: object) -> AcceptanceOutcome:
         verifier_decision_id=verifier_decision_id,
         verifier_artifact_digest=verifier_artifact_digest,
         verifier_record_index=verifier_record_index,
+        pair_id=pair_id,
         verdict_id=verdict_id,
         contractor_prompt_hash=contractor_prompt_hash,
     )
@@ -390,9 +402,11 @@ def evaluate_acceptance(envelope: object) -> AcceptanceOutcome:
         "verdict_semantic_authority": "verifier-host-artifact",
         "verdict_semantic_artifact_digest": verifier_artifact_digest,
         "verdict_semantic_record_index": verifier_record_index,
+        "verdict_semantic_pair_id": pair_id,
         "verdict_binding_authority": "collector",
         "verdict_binding_producer_artifact_digest": artifact_digest,
         "verdict_binding_verifier_child_id": verifier_child_id,
+        "verdict_binding_pair_id": pair_id,
     }
     return AcceptanceOutcome(
         accepted=True,
@@ -428,6 +442,7 @@ def accepted_outcome_manifest(evidence_refs: object) -> dict[str, str] | None:
     verdict_id = _text(evidence_refs.get("verdict_id"))
     contractor_prompt_hash = _text(evidence_refs.get("contractor_prompt_hash"))
     verifier_record_index = _record_index(evidence_refs.get("verdict_semantic_record_index"))
+    pair_id = _pair_id(evidence_refs.get("verdict_semantic_pair_id"))
     if (
         not all(
             (
@@ -439,6 +454,7 @@ def accepted_outcome_manifest(evidence_refs: object) -> dict[str, str] | None:
                 verifier_artifact_digest,
                 verdict_id,
                 contractor_prompt_hash,
+                pair_id,
             )
         )
         or verifier_record_index is None
@@ -455,6 +471,7 @@ def accepted_outcome_manifest(evidence_refs: object) -> dict[str, str] | None:
         or _text(evidence_refs.get("verdict_binding_authority")) != "collector"
         or _digest(evidence_refs.get("verdict_binding_producer_artifact_digest")) != artifact_digest
         or _text(evidence_refs.get("verdict_binding_verifier_child_id")) != verifier_child_id
+        or _pair_id(evidence_refs.get("verdict_binding_pair_id")) != pair_id
     ):
         return None
     recomputed = _outcome_key(
@@ -464,6 +481,7 @@ def accepted_outcome_manifest(evidence_refs: object) -> dict[str, str] | None:
         verifier_decision_id=verifier_decision_id,
         verifier_artifact_digest=verifier_artifact_digest,
         verifier_record_index=verifier_record_index,
+        pair_id=pair_id,
         verdict_id=verdict_id,
         contractor_prompt_hash=contractor_prompt_hash,
     )

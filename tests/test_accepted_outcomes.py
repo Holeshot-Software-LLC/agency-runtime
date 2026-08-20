@@ -19,6 +19,7 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core.roster.revisions import content_digest_identity
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.workforce.acceptance import (
     ACCEPTANCE_ENVELOPE_SCHEMA,
@@ -35,6 +36,7 @@ CONTRACTOR_CARD = (CONTRACTOR_SLUG, "1.0.0", "a" * 64)
 VERIFIER_CARD = ("code-reviewer", "2.0.0", "b" * 64)
 ARTIFACT = "c" * 64
 VERIFIER_ARTIFACT = "d" * 64
+PAIR_ID = "1" * 32
 
 
 def _card(entry: tuple[str, str, str]) -> dict[str, str]:
@@ -100,12 +102,14 @@ def _envelope(
                 "authority": "verifier-host-artifact",
                 "artifact_digest": VERIFIER_ARTIFACT,
                 "record_index": 7,
+                "pair_id": PAIR_ID,
                 "decision": "accepted",
             },
             "binding": {
                 "authority": "collector",
                 "producer_artifact_digest": artifact,
                 "verifier_child_id": "child-verifier",
+                "pair_id": PAIR_ID,
             },
         },
     }
@@ -126,6 +130,7 @@ def test_host_evidenced_producer_verifier_and_verdict_record_one_acceptance() ->
     assert outcome.manifest["verifier_decision_id"] == "decision-verifier"
     assert outcome.manifest["verifier_artifact_digest"] == VERIFIER_ARTIFACT
     assert outcome.manifest["verdict_semantic_record_index"] == 7
+    assert outcome.manifest["verdict_semantic_pair_id"] == PAIR_ID
     assert outcome.manifest["verdict_binding_authority"] == "collector"
     assert outcome.manifest["acceptance_validated"] is True
 
@@ -343,9 +348,11 @@ def test_a_verifier_without_its_own_inference_decision_is_refused(decision_id: s
         ("semantic", {"record_index": -1}, "verdict_semantic_missing"),
         ("semantic", {"record_index": 65_536}, "verdict_semantic_missing"),
         ("semantic", {"record_index": True}, "verdict_semantic_missing"),
+        ("semantic", {"pair_id": "not-a-pair"}, "verdict_semantic_missing"),
         ("binding", {"producer_artifact_digest": "9" * 64}, "verdict_binding_mismatch"),
         ("binding", {"producer_artifact_digest": ""}, "verdict_binding_mismatch"),
         ("binding", {"authority": "verifier"}, "verdict_binding_mismatch"),
+        ("binding", {"pair_id": "2" * 32}, "verdict_binding_mismatch"),
         ("semantic", {"decision": "rejected"}, "verdict_rejected"),
         ("semantic", {"decision": "inconclusive"}, "verdict_rejected"),
         ("verdict", {"verdict_id": ""}, "verdict_missing"),
@@ -417,9 +424,11 @@ def test_a_manifest_whose_key_was_edited_afterwards_stops_counting() -> None:
         ("verdict_semantic_authority", "collector"),
         ("verdict_semantic_artifact_digest", "1" * 64),
         ("verdict_semantic_record_index", -1),
+        ("verdict_semantic_pair_id", "2" * 32),
         ("verdict_binding_authority", "verifier-host-artifact"),
         ("verdict_binding_producer_artifact_digest", "1" * 64),
         ("verdict_binding_verifier_child_id", "child-somebody-else"),
+        ("verdict_binding_pair_id", "2" * 32),
     ],
 )
 def test_a_manifest_with_edited_joint_verdict_attribution_stops_counting(
@@ -462,7 +471,9 @@ def _contractor(store: Store) -> dict[str, Any]:
 def _store_envelope(worker: dict[str, Any], *, index: int) -> dict[str, Any]:
     """One envelope whose contractor card is this worker's real active identity."""
 
-    card = (CONTRACTOR_SLUG, str(worker["current_version"]), str(worker["current_hash"]))
+    prompt_hash = content_digest_identity(worker["current_hash"])
+    assert prompt_hash is not None
+    card = (CONTRACTOR_SLUG, str(worker["current_version"]), prompt_hash)
     return _envelope(
         contractor_worker_id=str(worker["worker_id"]),
         contractor_card=card,
@@ -659,12 +670,14 @@ def test_two_verdicts_on_one_artifact_are_one_success(tmp_path: Path) -> None:
                         "authority": "verifier-host-artifact",
                         "artifact_digest": VERIFIER_ARTIFACT,
                         "record_index": 7,
+                        "pair_id": PAIR_ID,
                         "decision": "rejected",
                     },
                     "binding": {
                         "authority": "collector",
                         "producer_artifact_digest": f"{1:064x}",
                         "verifier_child_id": "child-verifier",
+                        "pair_id": PAIR_ID,
                     },
                 }
             },
@@ -703,6 +716,36 @@ def test_an_outcome_credited_to_the_wrong_worker_is_refused(tmp_path: Path) -> N
         envelope=_envelope(
             contractor_worker_id=str(worker["worker_id"]),
             contractor_card=("python-backend-engineer", "1.0.0", "e" * 64),
+            producer_child_id="child-producer-1",
+        ),
+        auto_promote_successes=1,
+        disabled_agents=(),
+    )
+
+    assert result["recorded"] is False
+    assert result["reason"] == "contractor_identity_mismatch"
+    assert _acceptance_rows(store, str(worker["worker_id"])) == []
+
+
+@pytest.mark.parametrize("revision_field", ["version", "hash"])
+def test_an_outcome_for_another_worker_revision_is_refused(
+    tmp_path: Path,
+    revision_field: str,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    worker = _contractor(store)
+    version = str(worker["current_version"])
+    prompt_hash = content_digest_identity(worker["current_hash"])
+    assert prompt_hash is not None
+    if revision_field == "version":
+        version = "contractor-other-version"
+    else:
+        prompt_hash = "e" * 64
+
+    result = store.record_accepted_outcome(
+        envelope=_envelope(
+            contractor_worker_id=str(worker["worker_id"]),
+            contractor_card=(CONTRACTOR_SLUG, version, prompt_hash),
             producer_child_id="child-producer-1",
         ),
         auto_promote_successes=1,

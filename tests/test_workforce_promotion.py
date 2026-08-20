@@ -66,12 +66,14 @@ def _outcome(unit: str, *, verifier_child_id: str = "child-verifier") -> dict[st
                     "authority": "verifier-host-artifact",
                     "artifact_digest": verifier_digest,
                     "record_index": 1,
+                    "pair_id": "1" * 32,
                     "decision": "accepted",
                 },
                 "binding": {
                     "authority": "collector",
                     "producer_artifact_digest": digest,
                     "verifier_child_id": verifier_child_id,
+                    "pair_id": "1" * 32,
                 },
             },
         }

@@ -103,18 +103,18 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    decision `5c963e09`). Reproduce with `python
    scripts/ar119_child_judge_probe.py --provider <name> --runs 3`. This retracts
    "7.1 settled"; policy interpretation belongs to AR-253.
-2. **The one-use capability seal** still gates Rule 4 Live and AR-252. Two
-   gates in `child_delivery_evidence.py`: the `expected` capability
-   (read-only paths hardcode `structural_hook_output=False`, lines
-   1151/1226) and the sealed atomic Store consumer.
+2. **The exactly-two capability decision is locally implemented.** The owner
+   authorized two consumptions only inside one atomic producer/verifier pairing.
+   Pair-scoped capabilities cannot enter the ordinary one-use consumer; exactly
+   two Store-verified Claude artifacts, one producer output, and one verifier-
+   artifact semantic line are required before the Store call.
    `native_child_delivery_verifications` now has **1 verified Claude row** from
    the pre-fix report above; it has not moved a matrix cell. Gate 1 exists
    because Claude Code tags no substring as hook-authored (1147-1150).
    **Neither option moves codex**: `_expected_v6_reason` returns
    `unsupported_opaque_interagent_channel` on its FIRST line.
-   Accepted-outcome v2 now validates verifier-artifact semantics separately from
-   collector binding; 261 tests pass. It consumes no proofs, so the seal and
-   every live/matrix claim remain unchanged.
+   The 339-test affected surface passes. The collector is not wired to the live
+   canary yet, so every live/matrix claim remains unchanged.
 3. **Option A is locally complete for the owner-scoped three-host pin phase.**
    Claude has an exact requested/answered `codex-subscription` route. Codex
    parent works and its child-proof exception remains explicit. Repaired ZCode
@@ -138,9 +138,9 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 Keep Option A frozen. The full sequence requested at the 19 August review is:
 
-1. Claude: the one-use consumer, host proof, and v2 attribution boundary exist.
-   Obtain the owner's exactly-two-consumption ruling before the pairing collector,
-   then prove outcomes/promotion; separately decide R8 and the 15,000 ms control.
+1. Claude: wire one bounded two-child canary mode to the private pairing
+   collector, verify locally, then obtain fresh install/live approval before
+   proving outcomes/promotion. R8 and the 15,000 ms control stay separate.
 2. Codex: retain parent proof and wait for the upstream child-start/readable-
    artifact surface; do not repeat the deterministic canary series meanwhile.
 3. ZCode: retain this parent proof and existing one-card child proof, then close

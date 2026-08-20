@@ -1178,7 +1178,11 @@ def test_raw_diagnostic_and_forged_typed_value_cannot_project_authority(
 
     assert subject._consume_verified_host_child_delivery(forged_diagnostic) is None
     with pytest.raises(TypeError, match="trusted collector"):
-        subject._VerifiedHostChildDelivery(forged_diagnostic, _seal=object())
+        subject._VerifiedHostChildDelivery(
+            forged_diagnostic,
+            _consumption_scope="single",
+            _seal=object(),
+        )
 
 
 def test_collector_authority_is_absent_from_the_public_evidence_surface() -> None:

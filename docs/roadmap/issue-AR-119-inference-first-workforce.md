@@ -4108,6 +4108,18 @@ promotion. The sequenced plan for every remaining item in the 19 August owner
 review is in `AR-119-vision-loop-status.md` under
 "CHECKPOINT PLAN: finish the 19 August review scope."
 
+### Claude exactly-two outcome collector checkpoint — 2026-08-20
+
+The owner authorized two verified-delivery consumptions only inside one atomic
+producer/verifier pairing transaction. The private Claude collector now requires
+exactly two independently Store-verified host artifacts, shared pair identity,
+distinct roles, one contractor card plus producer output, and one verifier-
+artifact semantic decision. Pair capabilities cannot enter the ordinary single
+consumer and disappear together after the bounded Store result. The 339-test
+affected acceptance/delivery/promotion/lifecycle/dashboard surface passes with
+Ruff and diff checks green. This is source and synthetic-artifact evidence only:
+no install, provider draw, live outcome, candidate advance, or matrix cell moved.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -4139,14 +4151,14 @@ review is in `AR-119-vision-loop-status.md` under
 
 ### Next bounded work package
 
-Keep Option A frozen. The next schedulable code package is the Claude one-use
-capability seal plus atomic Store consumer, followed by an exact-candidate
-host-artifact proof and AR-252 accepted-outcome/promotion evidence. Formal R8
-credit remains a separate owner decision because it advances the candidate and
-re-anchors R2/R3/R7. Codex child work waits for an upstream readable started-
-child surface; do not burn repeated canaries. After ZCode plural-card closure,
-move development to the owner's OpenClaw box; Hermes and final five-host Rule 9
-remain later authorized packages.
+Keep Option A frozen. Next, wire the isolated Claude canary to one bounded
+producer/verifier invocation and the private collector, verify that surface
+locally, then obtain fresh install/live approval before drawing provider evidence.
+Formal R8 credit remains a separate owner decision because it advances the
+candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
+started-child surface; do not burn repeated canaries. After ZCode plural-card
+closure, move development to the owner's OpenClaw box; Hermes and final five-host
+Rule 9 remain later authorized packages.
 
 ### Context checkpoint constraints
 

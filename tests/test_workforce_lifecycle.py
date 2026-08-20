@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from agency_runtime.core.roster.bundled import BundledRoster
+from agency_runtime.core.roster.revisions import content_digest_identity
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
 from agency_runtime.core.store.schema import SCHEMA_VERSION
 from agency_runtime.core.store.sqlite import Store
@@ -34,6 +35,8 @@ def _agent(slug: str) -> dict[str, object]:
 def _delivery_proof(worker: dict[str, object], *, child_id: str, decision_id: str) -> dict:
     """One sealed host-child delivery proof for this worker's active card."""
 
+    prompt_hash = content_digest_identity(worker["current_hash"])
+    assert prompt_hash is not None
     return {
         "schema": HOST_CHILD_PROOF_SCHEMA,
         "verified_delivery": True,
@@ -45,7 +48,7 @@ def _delivery_proof(worker: dict[str, object], *, child_id: str, decision_id: st
             {
                 "specialist_slug": str(worker["agent_slug"]),
                 "specialist_version": str(worker["current_version"]),
-                "specialist_prompt_hash": str(worker["current_hash"]),
+                "specialist_prompt_hash": prompt_hash,
             }
         ],
     }
@@ -61,6 +64,8 @@ def _acceptance_envelope(
 
     digest = f"{index:064x}"
     verifier_digest = f"{index + 10_000:064x}"
+    contractor_prompt_hash = content_digest_identity(contractor["current_hash"])
+    assert contractor_prompt_hash is not None
     producer = _delivery_proof(
         contractor,
         child_id=f"child-producer-{index}",
@@ -73,7 +78,7 @@ def _acceptance_envelope(
         "contractor_card": {
             "specialist_slug": str(contractor["agent_slug"]),
             "specialist_version": str(contractor["current_version"]),
-            "specialist_prompt_hash": str(contractor["current_hash"]),
+            "specialist_prompt_hash": contractor_prompt_hash,
         },
         "producer": producer,
         "verifier": {
@@ -90,12 +95,14 @@ def _acceptance_envelope(
                 "authority": "verifier-host-artifact",
                 "artifact_digest": verifier_digest,
                 "record_index": 1,
+                "pair_id": f"{index:032x}",
                 "decision": "accepted",
             },
             "binding": {
                 "authority": "collector",
                 "producer_artifact_digest": digest,
                 "verifier_child_id": "child-verifier",
+                "pair_id": f"{index:032x}",
             },
         },
     }
