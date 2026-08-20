@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-08-13
+updated: 2026-08-20
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance, multi-harness]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -4087,6 +4087,27 @@ routing passed every threshold, and Ruff lint/format passed. The expanded
 decision-conformance evaluator remains pending; the 131/131 result above remains
 `45b21cdc` history.
 
+### Option A exact-main parent checkpoint — 2026-08-20
+
+PR #299 merged the ZCode authoritative-parent-header repair to main as
+`f203dc66` with no hosted Actions run. ZCode alone was reinstalled from that
+exact merge and passed its deterministic 4/4 source smoke. The bundled ZCode
+0.16.3 CLI then completed one no-tools parent control: session
+`sess_d4ac6d99-a8e6-4f43-ab81-c19902f23d86`, host trace
+`d3f6efd5-9e14-4e34-81c6-bb2fae78d9d9`, Agency trace
+`498d64b3-8643-4c38-8c0f-922e3837cf8d`.
+
+ZCode's own model-I/O records provider `zai`, requested `glm-5.2`, actual
+response model `glm-5.3`, one request, and zero tool calls. Agency's separate
+workforce receipt records `claude-subscription/sonnet`; the response carried
+the exact Store-backed five-line header and Stop finalized it
+`accept/completed` with no missing fields, activation, or delegation rows.
+This closes the parent-header repair and the owner-scoped three-host Option A
+rollout. It is not plural-card Rule-4 proof, a candidate advance, or a matrix
+promotion. The sequenced plan for every remaining item in the 19 August owner
+review is in `AR-119-vision-loop-status.md` under
+"CHECKPOINT PLAN: finish the 19 August review scope."
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -4118,10 +4139,14 @@ decision-conformance evaluator remains pending; the 131/131 result above remains
 
 ### Next bounded work package
 
-Search and sample read-only real-host exec depth-two/deeper ancestry, if emitted,
-before defining or reviewing that separate schema. After explicit install/
-trust/live authorization and current Codex and Claude artifacts, continue
-AR-252, AR-253, AR-125, and derived Rule 9.
+Keep Option A frozen. The next schedulable code package is the Claude one-use
+capability seal plus atomic Store consumer, followed by an exact-candidate
+host-artifact proof and AR-252 accepted-outcome/promotion evidence. Formal R8
+credit remains a separate owner decision because it advances the candidate and
+re-anchors R2/R3/R7. Codex child work waits for an upstream readable started-
+child surface; do not burn repeated canaries. After ZCode plural-card closure,
+move development to the owner's OpenClaw box; Hermes and final five-host Rule 9
+remain later authorized packages.
 
 ### Context checkpoint constraints
 
