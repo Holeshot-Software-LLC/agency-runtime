@@ -1951,3 +1951,138 @@ plus explicit upstream child-proof exception, **Option A is complete from the
 owner-scoped Claude/Codex/ZCode perspective**. This does not re-promote R1, R4,
 R5, or R6, formalize R8, complete AR-252, close Rule 9, or move any matrix cell.
 OpenClaw and Hermes remain deferred for this session.
+
+### MAIN CHECKPOINT: PR #298 merged and exact-main runtime installed
+
+PR #298 merged the verified Option A rollup to `main` as `ae1964fa` from exact
+head `2f6ed88d`. The complete local harness passed 14/14 in 14.7 minutes: 161
+workflow-contract tests, 151 mutation snippets, 796 production-spine passes
+(20 skipped), 670 AR-119 evidence tests, and 134 dashboard tests. The pre-push
+hook independently passed 12/12. Both head and merge commits carried GitHub's
+skip instruction; GitHub created no hosted Actions run for either SHA.
+
+A clean main-equal checkout then installed all three owner-scoped hosts with
+dashboard installation opted out. Every manifest points to the same launcher
+runtime `12ce2b614e359e1c97a574b31cfdc189c09e7276cf51ef6c9a341112645bcf3a`:
+
+- Claude install `79053bdd-3cbf-47cb-996e-a33ba82a2b58`, bundle `d701a815…`;
+- Codex install `aa095210-8721-4a5b-825d-75a4e6f71012`, bundle `2ad1a6b3…`,
+  registered with the expected fresh-session activation requirement;
+- ZCode install `f82ad76f-0d45-4ff5-8c30-51b7e6a7ed76`, bundle `f812867c…`,
+  seven owned handlers registered with global hooks still enabled.
+
+The deterministic `agency_runtime.cli smoke` contract passed 4/4 separately
+for Claude, Codex, and ZCode: private schema-47 Store, 263-card starter roster,
+5/5 host parity, and the host-specific generated plugin/hook contract. These
+are install checks, not provider calls or live-host proof. Fresh parent CLI
+smokes and the separately authorized Codex child canary remain next. The
+primary checkout's four named owner-WIP paths were not touched. No rule was
+promoted, no candidate advanced, and **no matrix cell moved**.
+
+### LIVE MAIN: Claude parent header smoke passes
+
+The first fresh Claude CLI prompt required only `PARENT_SMOKE_OK`, conflicting
+with the installed header contract. Session `aaeea445-35f7-4041-a09f-fc27381ef4e1`
+shows Agency injected the current capsule and exact header snapshot, then the
+Stop hook rejected the headerless body as `AGENCY RESPONSE INVALID`. That
+prompt-invalid attempt is excluded rather than counted as an activation result.
+
+The single corrected prompt explicitly permitted the header. Fresh session
+`831eed9e-4367-4380-ada6-0db5fe4be0d7` completed in one turn with no tools or
+delegation and returned the exact five-line Agency header followed only by
+`PARENT_SMOKE_OK`. It recorded `agency-steward` plus
+`agency-governance-request-clarifier`, `delegated: none`, and workforce inference
+`claude-sonnet/sonnet`; the host call itself reported `claude-opus-5`. This is
+installed-main parent/header proof only. It moves no rule or matrix cell.
+
+### LIVE MAIN: Codex trust bypass runs; generic smoke abstains
+
+Fresh Codex CLI thread `01a01c51-f856-71c2-804e-54ed64a2bd82`, trace
+`01a01c51-ffb6-7a33-a0bd-22c21b0418f9`, ran with
+`--dangerously-bypass-hook-trust`, read-only sandboxing, and tool/child paths
+disabled. Host inventory shows merged-main plugin
+`0.1.0+codex.5d5f0eb77307` enabled. The rollout contains the installed resident
+kernel before the model response, proving the invocation-only trust bypass ran
+the hook rather than merely trusting registration state.
+
+Planner and recruiter both applied through `codex-fast/gpt-5.6-terra`, then
+staffing declined with `substantive_specialist_unavailable`,
+`no_safe_sufficient_team`, and `recruiter_abstained`. With no loaded capsule,
+there was no Agency header snapshot; Codex failed open and returned only
+`PARENT_SMOKE_OK`, with no tools or child. This is a valid abstention and hook
+execution result, not parent-header proof. The staffable review control remains
+the next header test. No rule or matrix cell moved.
+
+### LIVE MAIN: Codex staffable parent header passes
+
+Fresh Codex CLI thread `01a01c57-6d65-7951-8cf3-bcde70cbd6d2` used the same
+invocation-only hook-trust bypass with every tool and child path disabled. The
+staffable text-normalization review control returned the exact five-line Agency
+header, loaded `agency-steward`, `codebase-onboarding-engineer`, and
+`code-reviewer`, delegated none, and reported workforce inference
+`codex-fast/gpt-5.6-terra`. Its one-sentence body correctly named silent loss of
+significant boundary whitespace. This proves merged-main Codex parent routing
+and header delivery; it does not prove child delivery or move a matrix cell.
+
+### LIVE MAIN: Codex child rerun stops before child start
+
+The one approved merged-main child canary ran with the invocation-only hook
+trust bypass and exact 420-second command. The wrapper exited 1 because the
+proof failed, while the bounded Codex host invocation itself exited 0 without
+timeout or truncation. `trust_bypass_used` is true and the installed bundle is
+the expected `2ad1a6b34b64…` from install
+`aa095210-8721-4a5b-825d-75a4e6f71012`.
+
+Store correlation is session `01a01c5a-9f31-7653-8bf2-a59cbfdff700`, trace
+`01a01c5a-9f79-7951-a501-63e3aa1466fb`, run
+`81893528-8763-433c-9347-8e2c016d5815`, and request/query hash
+`74ea67295095b38973dda887023fb125534c0c75045df25f85382e41fc233f64`;
+the exact nonce is `77c5b76ad57caf8fb3ceb472bbcd7a8b`.
+The run closed `preflight_failed`; failure
+`310f2925-f009-4511-a96c-12bbdb55a929` records
+`workforce_inference_failed`. Parent planner and recruiter both answered through
+`codex-fast/gpt-5.6-terra` with `structured_response_applied`, but no route,
+specialist load, delegation, native-child route, delivery, worker run, or
+finalization was created.
+
+The invocation explicitly reports requested child-judge provider
+`codex-subscription`; it does **not** report an answering child provider because
+the child judge was never reached. The collaboration diagnostic observed one
+spawn, one wait, two tool outputs, zero child starts, and no unexpected tools.
+Its terminal reason is `native_child_start_missing`, projected as
+`codex_native_child_start_missing`; the header and response were consequently
+unproven. This differs from the older three-run 1-spawn/1-start opaque-
+projection series. It is a bounded exact-main parent-preflight outcome, not a
+pin falsification, Codex Rule-4 proof, or install failure. No rule was promoted,
+the candidate did not advance, and **no matrix cell moved**.
+
+### LIVE MAIN: ZCode exposes a first-response header-delivery defect
+
+Fresh ZCode session `sess_88f7185c-16d2-4dec-873f-8843629bd5e0`, Agency trace
+`ca770802-6bff-417a-b13e-5e0765efa76f`, ran the staffable text-normalization
+control without tools or delegation. The ZCode parent answered through its
+configured `builtin:zai-coding-plan/GLM-5.3` host model and produced the correct
+one-sentence regression assessment. Agency's separate workforce planner and
+recruiter both answered through `claude-subscription/sonnet`; the distinction
+between host model and Agency inference transport is observed rather than
+inferred.
+
+The Stop hook correctly rejected that first response and committed terminal
+finalization `8bb6ea7c-c6a5-4ae5-a71a-569d4af3a2f8` at evidence revision 10.
+The submitted header named only `code-reviewer` and reported `none observed`;
+the authoritative turn required `agency-steward, code-reviewer` and the
+Claude/Sonnet workforce-inference receipt. Its persisted missing list is exactly
+`agencies_loaded, actual_model_selected`; the other three evidence fields and
+the response body were valid.
+
+Host I/O proves why a blind retry would be invalid: ZCode received the resident
+manager once and a placeholder-only header template, but received zero
+occurrences of `claude-subscription` or the exact model line enforced at Stop.
+The shared Store-backed snapshot helper admitted only Claude and Codex. A local
+candidate now admits ZCode on that same initial and updated parent-header path,
+with no child-lifecycle change. The widened hook/parity suite passes 144 tests;
+the final focused initial-header, updated-header, and ZCode child-lifecycle set
+passes 7 tests; focused Ruff and diff checks pass. The governing local fast
+harness passes all 12 gates in 1.3 minutes. This candidate is not yet merged,
+installed, or live-proven. No rule was promoted, the candidate did not advance,
+and **no matrix cell moved**.

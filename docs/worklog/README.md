@@ -1063,6 +1063,13 @@ This registry connects repository history to the roadmap and to optional detail 
 | `dac11c16` | 2026-08-19 | docs(ar119): record repaired zcode delivery and completion plan | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-135](../roadmap/issue-AR-135-complete-zcode-integration.md), [AR-253](../roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md) | null |
 | `29a710ab` | 2026-08-19 | docs(ar119): admit owner-authorized main rollout | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `91d1299d` | 2026-08-19 | docs(ar119): bind the rollout to local gates | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `ae1964fa` | 2026-08-19 | Merge pull request #298 from Holeshot-Software-LLC/codex/ar119-vision-mitigation-handoff [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `5ed33a17` | 2026-08-19 | docs(ar119): checkpoint merged-main installation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `a1acc8a1` | 2026-08-19 | docs(ar119): record merged-main Claude smoke | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `16e55c9d` | 2026-08-19 | docs(ar119): record Codex parent abstention | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `6d378c2e` | 2026-08-19 | docs(ar119): record Codex parent header proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `bc74a33c` | 2026-08-19 | docs(ar119): record merged-main Codex child rerun | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `88fc1956` | 2026-08-19 | fix(zcode): deliver authoritative parent header snapshots | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-88fc1956-zcode-authoritative-parent-headers.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

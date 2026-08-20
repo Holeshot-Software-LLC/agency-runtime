@@ -1825,15 +1825,16 @@ def test_two_real_hook_processes_keep_subagent_start_identity_only(
     assert "agency.preflight" not in context
 
 
-def test_codex_stdio_preflight_header_is_accepted_first_pass(tmp_path: Path) -> None:
-    db_path = tmp_path / "codex-finalization.db"
+@pytest.mark.parametrize("host", ["codex", "zcode"])
+def test_stdio_preflight_header_is_accepted_first_pass(host: str, tmp_path: Path) -> None:
+    db_path = tmp_path / f"{host}-finalization.db"
     store = Store(db_path)
     session_id = "stdio-finalization"
     turn_id = "stdio-finalization-turn"
     model = "gpt-5.6-codex"
 
     prompt = _run_hook(
-        "codex",
+        host,
         db_path,
         json.dumps(
             {
@@ -1866,7 +1867,7 @@ def test_codex_stdio_preflight_header_is_accepted_first_pass(tmp_path: Path) -> 
     assert exact_response.rsplit("\n\n", 1)[0] in prompt_context
 
     accepted = _run_hook(
-        "codex",
+        host,
         db_path,
         json.dumps(
             {
@@ -1938,23 +1939,34 @@ def test_codex_successful_wait_injects_authoritative_first_pass_header(
     assert context.count("Agency/Agencies loaded:") == 1
 
 
-def test_codex_successful_tool_use_injects_updated_first_pass_header(
+@pytest.mark.parametrize(
+    ("host", "model", "tool_name", "tool_input"),
+    [
+        ("codex", "gpt-5.6-codex", "skill_view", {"name": "openai-docs"}),
+        ("zcode", "GLM-5.3", "Skill", {"skill": "openai-docs"}),
+    ],
+)
+def test_successful_tool_use_injects_updated_first_pass_header(
+    host: str,
+    model: str,
+    tool_name: str,
+    tool_input: dict[str, str],
     tmp_path: Path,
 ) -> None:
-    db_path = tmp_path / "codex-post-tool-header.db"
+    db_path = tmp_path / f"{host}-post-tool-header.db"
     Store(db_path)
     session_id = "post-tool-header"
     turn_id = "post-tool-header-turn"
 
     prompt = _run_hook(
-        "codex",
+        host,
         db_path,
         json.dumps(
             {
                 "hook_event_name": "UserPromptSubmit",
                 "session_id": session_id,
                 "turn_id": turn_id,
-                "model": "gpt-5.6-codex",
+                "model": model,
                 "prompt": "agency status",
             }
         ),
@@ -1962,17 +1974,17 @@ def test_codex_successful_tool_use_injects_updated_first_pass_header(
     assert prompt.returncode == 0, prompt.stderr
 
     observed = _run_hook(
-        "codex",
+        host,
         db_path,
         json.dumps(
             {
                 "hook_event_name": "PostToolUse",
                 "session_id": session_id,
                 "turn_id": turn_id,
-                "model": "gpt-5.6-codex",
-                "tool_name": "skill_view",
+                "model": model,
+                "tool_name": tool_name,
                 "tool_use_id": "skill-call",
-                "tool_input": {"name": "openai-docs"},
+                "tool_input": tool_input,
                 "tool_response": {"status": "completed"},
             }
         ),
