@@ -341,6 +341,29 @@ No provider call or live canary had run at this checkpoint. The single
 authorized 420-second falsification draw is next; merge, install, and readiness
 alone prove no accepted outcome, attestation, or promotion.
 
+## Second exact-main draw advances to recruiter safety (2026-08-20)
+
+Pair `6e0eff1149894c830127417a1411f06d` ran once from exact main. Claude
+exited 0 without timeout or truncation; the wrapper failed at
+`delivery_marker_absent` and persisted no attestation, accepted outcome, or
+promotion. Session `7c19bc88…`, trace `055d329f…`, run `2dbc72dd…`,
+and failure `88840ca1…` close `preflight_failed` /
+`workforce_inference_failed`.
+
+The repaired parent prompt reached a valid applied Haiku planner result. The
+configured Sonnet recruiter then could not produce a safe selected team for
+`unit-parseport-impl` from four ranked implementation candidates, and its
+repair attempt returned no valid response. The trace has no route, applied
+model receipt, specialist load, delegation, child scope, worker run, delivery
+verification, finalization, or outcome event. Collector ordering proves exactly
+two in-window host artifacts, but no v6 marker because Agency never staffed.
+The requested `codex-subscription` child judge was not reached.
+
+The planner repair is therefore live-proven at its intended boundary. The
+remaining issue is the previously measured intermittent Claude/Sonnet recruiter
+contract behavior, not accepted-outcome recording or promotion. No automatic
+retry followed and no matrix cell moved.
+
 ## Collector diagnosis shipped ahead of the collector (2026-08-14)
 
 `_collect_private_host_child_delivery` answered eighteen distinct conditions

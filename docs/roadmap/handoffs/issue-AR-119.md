@@ -77,7 +77,7 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   requested `glm-5.2`, actual response model `glm-5.3`, zero tools. Agency trace
   `498d64b3…` finalized `accept/completed` with the exact five fields and no
   delegation. This is parent proof, not a Rule-4 cell.
-- **PR #302 merged the preflight repair** at `a102a932` with no hosted run; Claude is exact-main installed and ready; one authorized draw is next.
+- **PR #302 merged the preflight repair** at `a102a932` with no hosted run; its one draw passed planner shaping, then failed closed at recruiter safety.
 ## traps (machine-specific; do not rediscover)
 
 - **`agency` on PATH is `~/.local/bin/agency.exe` and is SCHEMA 45** -- it
@@ -113,9 +113,9 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    because Claude Code tags no substring as hook-authored (1147-1150).
    **Neither option moves codex**: `_expected_v6_reason` returns
    `unsupported_opaque_interagent_channel` on its FIRST line.
-   PR #302 merged the canary-only 2,316/false -> 2,367/true detector repair at
-   `a102a932`; 11 direct, 102 widened and two exact-head 12/12 fast passes are
-   green. Claude install/readiness pass; no provider/profile change or draw yet.
+   Exact-main pair `6e0eff11…` proved the 2,367-char repair: Haiku planner
+   applied. Sonnet recruiter then failed `staff_without_safe_team` and its
+   repair had no valid response; no route, child judge, outcome or promotion.
 3. **Option A is locally complete for the owner-scoped three-host pin phase.**
    Claude has an exact requested/answered `codex-subscription` route. Codex
    parent works and its child-proof exception remains explicit. Repaired ZCode
@@ -139,9 +139,9 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 Keep Option A frozen. The full sequence requested at the 19 August review is:
 
-1. Claude: PR #302's indivisible-parent repair is merged, installed and ready.
-   Run the one authorized 420-second accepted-outcome draw, record its exact
-   boundary, then proceed to outcomes/promotion only if verified evidence permits.
+1. Claude: PR #302's planner shaping is live-proven. Do not retry the consumed
+   draw. The owner must choose a canary-only parent-recruiter pin or a bounded
+   retry on existing Claude/Sonnet before outcomes/promotion can proceed.
 2. Codex: retain parent proof. The 0.148 draw stopped before spawn; do not
    repeat until a new upstream surface or deterministic preflight fix exists.
 3. ZCode: retain this parent proof and existing one-card child proof, then close
@@ -175,6 +175,6 @@ Judge each gate by its own summary; push hooks are not the production spine.
   candidate; provisional/branch evidence must say so.
 - Keep the 15,000 ms cold control fixed; automatic promotion stays on the
   critical path; no superiority claim without a matched corpus (AR-125).
-- PR #302 push/merge and Claude exact-main install are consumed; exactly one
-  420-second accepted-outcome provider draw remains authorized in this package.
-  Anything after it needs fresh authority; OpenClaw/Hermes remain exempt, not waived.
+- PR #302 push/merge, Claude exact-main install, and its one live draw are
+  consumed. Fresh authority is required for any push/PR/merge/install/provider
+  draw or config change; OpenClaw/Hermes remain exempt, not waived.

@@ -4175,6 +4175,29 @@ launcher artifacts, and explicit child pin `codex-subscription`. This is
 merged/install/readiness evidence only; no provider call, outcome, attestation,
 promotion, candidate advance, or matrix cell occurred at this checkpoint.
 
+### Claude planner repair passes; recruiter still fails — 2026-08-20
+
+Exact-main pair `6e0eff1149894c830127417a1411f06d` ran once. Claude exited
+0 without timeout or truncation, while the wrapper failed closed at
+`delivery_marker_absent` and wrote no outcome, attestation, or promotion.
+Store session `7c19bc88…`, trace `055d329f…`, run `2dbc72dd…`, and
+failure `88840ca1…` prove the changed boundary.
+
+The Haiku planner now applied one valid structured unit, live-proving the
+indivisible-parent repair. The configured Sonnet recruiter then failed
+`staff_without_safe_team` for `unit-parseport-impl` after ranking four
+implementation candidates; its funded repair returned no valid response. The
+trace contains no routing decision, applied model receipt, specialist load,
+delegation, child scope, captured assignment, worker run, delivery verification,
+finalization, attestation, skill, or worker-outcome row. Collector ordering
+proves exactly two in-window Claude artifacts existed, but the first lacked v6
+delivery because preflight never staffed. No child judge answered.
+
+This is the already documented intermittent Claude/Sonnet recruiter behavior,
+not a new planner, child-pin, Agent-topology, or outcome-recorder defect. The
+authorized draw is consumed without retry. No rule, candidate, or matrix cell
+moved.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -4206,10 +4229,12 @@ promotion, candidate advance, or matrix cell occurred at this checkpoint.
 
 ### Next bounded work package
 
-Keep Option A frozen. The isolated Claude parent-preflight repair is merged,
-installed from exact main, and ready. Run the one authorized bounded
-accepted-outcome falsification with `--timeout 420`, then preserve its exact
-host and Store boundary without an automatic retry.
+Keep Option A frozen. PR #302's parent-planner repair is merged, installed, and
+live-proven, but the consumed draw stopped at the existing intermittent
+Claude/Sonnet recruiter contract failure. Before any new draw, the owner must
+choose a canary-only parent-recruiter pin and provider or explicitly authorize a
+bounded retry on the unchanged current route; no general-turn route change is
+authorized.
 Formal R8 credit remains a separate owner decision because it advances the
 candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
 started-child surface; do not burn repeated canaries. After ZCode plural-card

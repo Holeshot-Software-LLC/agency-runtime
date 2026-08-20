@@ -2237,16 +2237,56 @@ No live command or provider call had run at this checkpoint. The one authorized
 candidate advance, or matrix move follows from publication, installation, or
 readiness alone.
 
+### SECOND CLAUDE ACCEPTED-OUTCOME DRAW: planner fixed, recruiter unsafe
+
+The one authorized exact-main draw ran pair
+`6e0eff1149894c830127417a1411f06d` with the required confirmation and
+420-second bound. Claude exited 0 without timeout or output truncation; the
+proof wrapper exited 1 at `delivery_marker_absent`. It requested child pin
+`codex-subscription`, targeted `typescript-application-engineer` /
+`54cb1db1-7c55-5d13-9fff-ddb1bd5ca921`, and wrote no attestation,
+accepted outcome, or promotion.
+
+The Store locates the exact boundary at session
+`7c19bc88-37bc-4fec-b26d-6cadc67532a9`, trace
+`055d329f-2b78-4f6c-88d8-17f721a0ebf5`, run
+`2dbc72dd-e080-4241-88f8-e65e508b4931`, and failure
+`88840ca1-c17c-4c83-9fa8-377b9b3fcc39`. The run closed
+`preflight_failed` / `workforce_inference_failed`. Unlike the first draw,
+the `claude-haiku` planner returned `structured_response_applied` for one
+unit. The configured `claude-sonnet` recruiter then returned
+`provider_response_contract_invalid`: its `unit-parseport-impl` staff
+decision could not form a safe capability team from the four ranked candidates
+`typescript-application-engineer`, `minimal-change-engineer`,
+`developer-tooling-engineer`, and `backend-service-engineer`. The funded
+repair attempt ended `provider_no_valid_response`.
+
+There are zero routing decisions, applied model-receipt rows, specialist loads,
+delegation events, child scopes, captured assignments, worker runs, delivery
+verifications, finalizations, attestations, skills, or worker-outcome events on
+that trace. The collector's `delivery_marker_absent` result occurs only after
+its exact-two in-window artifact gate; therefore Claude created the requested
+pair, but the first artifact lacked an Agency v6 delivery marker because
+preflight never staffed. No child judge answered.
+
+This falsifies the old planner-blocker hypothesis and live-proves the local
+indivisible-work repair at its intended boundary. The remaining blocker is the
+same intermittent Claude/Sonnet recruiter structured-response behavior already
+documented in the instrument series, not the child pin, host Agent topology, or
+Store outcome recorder. The one draw is consumed and was not retried. No rule
+was promoted, the candidate did not advance, and **no matrix cell moved**.
+
 ### CHECKPOINT PLAN: finish the 19 August review scope
 
 1. **Freeze Option A.** Preserve per-harness child-judge pins and the current
    Claude, Codex, and ZCode evidence; do not spend more provider calls re-proving
    the seal without a falsification target.
-2. **Verify the isolated Claude parent-preflight repair.** PR #302 is merged,
-   exact-main Claude is installed, readiness is green, and one 420-second draw
-   is authorized. Run it once and preserve the exact boundary. Feed verified
-   outcomes through AR-252's three-success/seven-day promotion path only if the
-   host and Store evidence permit it; do not retry a failure blindly.
+2. **Resolve the isolated Claude parent recruiter.** PR #302's planner shaping
+   is live-proven, but the one draw stopped at the existing intermittent
+   Claude/Sonnet recruiter contract failure. Do not retry it blindly. The owner
+   must choose whether a canary-only parent-recruiter pin is warranted and which
+   provider it uses, or explicitly fund a bounded retry on the current route.
+   No general-turn route or config change is authorized.
 3. **Make the Rule-8 claim only after the owner accepts its cost.** Advance the
    candidate to the disk-proven `f7b84c8a40fa` boundary and re-anchor R2/R3/R7;
    no new capture surface or live draw is needed. Re-run the fixed 15,000 ms cold
