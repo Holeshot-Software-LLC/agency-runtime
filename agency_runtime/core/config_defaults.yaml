@@ -57,6 +57,9 @@ delegation:
 # the provider chain. Empty by default: an operator must choose each pin.
 canary:
   child_judge_provider_by_host: {}
+  # The accepted-outcome parent recruiter is a separate role. Empty by
+  # default; when set, only that canary's recruiter and repair use this pin.
+  accepted_outcome_parent_recruiter_provider_by_host: {}
 
 # Planning uses configured inference whenever any provider is available. Every
 # mode searches the complete local capability index through an inference planner

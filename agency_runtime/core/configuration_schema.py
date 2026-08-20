@@ -544,33 +544,38 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
 
 def _validate_canary(value: Any) -> dict[str, Any]:
     section = _mapping(value, "canary")
-    if set(section) - {"child_judge_provider_by_host"}:
-        raise _error("canary", "contains unsupported fields")
-    raw = _mapping(
-        section.get("child_judge_provider_by_host", {}),
-        "canary.child_judge_provider_by_host",
+    provider_maps = (
+        "child_judge_provider_by_host",
+        "accepted_outcome_parent_recruiter_provider_by_host",
     )
-    providers: dict[str, str] = {}
-    for host, item in raw.items():
-        if not isinstance(host, str) or host.strip().casefold() not in _CANARY_HOSTS:
-            raise _error(
-                "canary.child_judge_provider_by_host",
-                "host names must be one of " + ", ".join(sorted(_CANARY_HOSTS)),
-            )
-        normalized_host = host.strip().casefold()
-        provider = _string(
-            item,
-            f"canary.child_judge_provider_by_host.{normalized_host}",
-            allow_empty=False,
-            maximum=80,
-        ).strip()
-        if has_terminal_control(provider):
-            raise _error(
-                f"canary.child_judge_provider_by_host.{normalized_host}",
-                "contains invalid text",
-            )
-        providers[normalized_host] = provider
-    return {"child_judge_provider_by_host": providers}
+    if set(section) - set(provider_maps):
+        raise _error("canary", "contains unsupported fields")
+    validated: dict[str, dict[str, str]] = {}
+    for field_name in provider_maps:
+        path = f"canary.{field_name}"
+        raw = _mapping(section.get(field_name, {}), path)
+        providers: dict[str, str] = {}
+        for host, item in raw.items():
+            if not isinstance(host, str) or host.strip().casefold() not in _CANARY_HOSTS:
+                raise _error(
+                    path,
+                    "host names must be one of " + ", ".join(sorted(_CANARY_HOSTS)),
+                )
+            normalized_host = host.strip().casefold()
+            provider = _string(
+                item,
+                f"{path}.{normalized_host}",
+                allow_empty=False,
+                maximum=80,
+            ).strip()
+            if has_terminal_control(provider):
+                raise _error(
+                    f"{path}.{normalized_host}",
+                    "contains invalid text",
+                )
+            providers[normalized_host] = provider
+        validated[field_name] = providers
+    return validated
 
 
 def _validate_agents(value: Any) -> dict[str, Any]:

@@ -106,6 +106,7 @@ Status meanings:
 | [ADR-0132](0132-fund-one-repair-per-workforce-inference-stage.md) | Fund one repair per workforce inference stage | Accepted |
 | [ADR-0122](0122-use-one-agency-native-resident-steward.md) | Use one Agency-native resident steward | Accepted |
 | [ADR-0123](0123-use-general-preflight-ceiling-for-persistent-parents.md) | Use the general preflight ceiling for persistent native parents | Accepted |
+| [ADR-0161](0161-pin-accepted-outcome-parent-recruiter-separately.md) | Pin the accepted-outcome parent recruiter separately | Accepted |
 
 ## Evidence and observability
 

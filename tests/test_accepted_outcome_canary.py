@@ -18,6 +18,9 @@ from agency_runtime.core.accepted_outcome_canary_contract import (
     ACCEPTED_OUTCOME_CONTRACTOR_SLUG,
     build_accepted_outcome_canary_prompt,
 )
+from agency_runtime.core.canary_parent_recruiter_provider import (
+    ACCEPTED_OUTCOME_PARENT_RECRUITER_PROVIDER_ENV,
+)
 from agency_runtime.core.child_delivery_evidence import _HostAcceptedOutcomeCollection
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.workforce.inference import _explicit_indivisible_unit_request
@@ -137,6 +140,7 @@ def _accepted_collection(*, promoted: bool = False) -> _HostAcceptedOutcomeColle
 
 class _Backend:
     child_judge_provider = PROVIDER
+    parent_recruiter_provider = PROVIDER
 
     def __init__(self, collection: _HostAcceptedOutcomeCollection | None) -> None:
         self.collection = collection
@@ -155,6 +159,7 @@ class _Backend:
                 "stderr_truncated": False,
                 "output": "secret child and model text must not escape",
                 "child_judge_provider_requested": PROVIDER,
+                "parent_recruiter_provider_requested": PROVIDER,
                 "host_accepted_outcome_reason": reason,
             },
             self.collection,
@@ -275,6 +280,7 @@ def test_success_reports_both_actual_providers_and_no_model_text(
     assert report["canary_passed"] is True
     assert report["promotion_observed"] is True
     assert report["child_judge_provider_requested"] == PROVIDER
+    assert report["parent_recruiter_provider_requested"] == PROVIDER
     assert report["child_judge_provider_answered"] == {
         "producer": PROVIDER,
         "verifier": PROVIDER,
@@ -283,6 +289,7 @@ def test_success_reports_both_actual_providers_and_no_model_text(
     assert report["verifier"]["cards"][0]["specialist_slug"] == "code-reviewer"
     assert report["accepted_outcome"]["recorded"] is True
     assert report["invocation"]["host_accepted_outcome_reason"] == "accepted"
+    assert report["invocation"]["parent_recruiter_provider_requested"] == PROVIDER
     assert "output" not in report["invocation"]
     assert "secret child" not in json.dumps(report)
     assert backend.calls == 1
@@ -356,8 +363,14 @@ def test_safe_backend_collects_pair_before_private_home_cleanup(
 
     monkeypatch.setattr(canary_backends, "_collect_private_host_accepted_outcome", collect)
 
-    def runner(argv: list[str], **_kwargs: object) -> BoundedProcessResult:
+    def runner(argv: list[str], **kwargs: object) -> BoundedProcessResult:
         observed["argv"] = argv
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        observed["parent_recruiter_provider"] = environment[
+            ACCEPTED_OUTCOME_PARENT_RECRUITER_PROVIDER_ENV
+        ]
+        observed["codex_home"] = Path(environment["CODEX_HOME"])
         return BoundedProcessResult(0, json.dumps({"result": "done"}), "")
 
     backend = canary_backends.SafeClaudeCanaryBackend(
@@ -370,6 +383,9 @@ def test_safe_backend_collects_pair_before_private_home_cleanup(
         source_env={"HOME": str(owner_home), "USERPROFILE": str(owner_home)},
         child_judge_provider=PROVIDER,
         child_judge_transport="",
+        parent_recruiter_provider=PROVIDER,
+        parent_recruiter_transport="codex",
+        parent_recruiter_auth_source=auth,
     )
     record, collection = backend.execute_with_accepted_outcome(
         task="bounded pair",
@@ -382,6 +398,9 @@ def test_safe_backend_collects_pair_before_private_home_cleanup(
     assert observed["root_alive"] is True
     assert not observed["root"].exists()
     assert observed["expected_provider"] == PROVIDER
+    assert observed["parent_recruiter_provider"] == PROVIDER
+    assert not observed["codex_home"].exists()
+    assert record["parent_recruiter_provider_requested"] == PROVIDER
     argv = observed["argv"]
     assert argv[argv.index("--max-turns") + 1] == "4"
     assert "--tools=Agent" in argv

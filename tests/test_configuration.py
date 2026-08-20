@@ -313,6 +313,11 @@ def test_canary_child_judge_provider_map_round_trips_as_typed_config(
                 "path": "canary.child_judge_provider_by_host.zcode",
                 "value": "glm-subscription",
             },
+            {
+                "op": "set",
+                "path": "canary.accepted_outcome_parent_recruiter_provider_by_host.claude",
+                "value": "codex-subscription",
+            },
         ],
         expected_revision=state.revision,
         path=path,
@@ -322,9 +327,15 @@ def test_canary_child_judge_provider_map_round_trips_as_typed_config(
         "claude": "codex-subscription",
         "zcode": "glm-subscription",
     }
+    assert result.state.persisted["canary"][
+        "accepted_outcome_parent_recruiter_provider_by_host"
+    ] == {"claude": "codex-subscription"}
     loaded = load_config(path, reload=True)
     assert loaded.canary.child_judge_provider("claude") == "codex-subscription"
     assert loaded.canary.child_judge_provider("zcode") == "glm-subscription"
+    assert (
+        loaded.canary.accepted_outcome_parent_recruiter_provider("claude") == "codex-subscription"
+    )
 
 
 @pytest.mark.parametrize(

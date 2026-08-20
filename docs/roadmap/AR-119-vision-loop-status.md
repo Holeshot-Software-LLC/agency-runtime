@@ -2214,17 +2214,109 @@ fresh Claude invocation will staff. No provider was called, no outcome or
 promotion was written, the candidate did not advance, and **no matrix cell
 moved**.
 
+### MAIN CHECKPOINT: indivisible-parent repair merged and installed
+
+PR #302 published exact repair head `c798562f` and merged it to main as
+`a102a932a64d43a8cb0c4b914823bcf1755ad85b`. The non-draft PR was
+CLEAN/MERGEABLE with an empty check rollup. Both head and merge subjects carried
+`[skip ci]`; GitHub created no hosted run. The exact head passed the 12-gate
+fast harness in 1.3 minutes before push and the pre-push hook independently
+passed all 12 in 0.9 minutes.
+
+A clean detached checkout moved from prior main `5a1d863c` to exact merged
+main and installed Claude only. Install
+`4c6d8a17-902e-4de6-8b8a-15de14276eca` staged bundle
+`b0b5073ca7cbe4dc5ad7dbdaabb6d9a2af9f5168d9987262027ff21a650d9721`,
+retained backup `20260820T192318.474752Z`, and finished registered, enabled,
+and non-partial. Readiness on Claude Code 2.1.226 is true with zero unmet
+prerequisites, current launcher artifacts, and configured Claude child pin
+`codex-subscription`.
+
+No live command or provider call had run at this checkpoint. The one authorized
+420-second accepted-outcome draw is next. No outcome, attestation, promotion,
+candidate advance, or matrix move follows from publication, installation, or
+readiness alone.
+
+### SECOND CLAUDE ACCEPTED-OUTCOME DRAW: planner fixed, recruiter unsafe
+
+The one authorized exact-main draw ran pair
+`6e0eff1149894c830127417a1411f06d` with the required confirmation and
+420-second bound. Claude exited 0 without timeout or output truncation; the
+proof wrapper exited 1 at `delivery_marker_absent`. It requested child pin
+`codex-subscription`, targeted `typescript-application-engineer` /
+`54cb1db1-7c55-5d13-9fff-ddb1bd5ca921`, and wrote no attestation,
+accepted outcome, or promotion.
+
+The Store locates the exact boundary at session
+`7c19bc88-37bc-4fec-b26d-6cadc67532a9`, trace
+`055d329f-2b78-4f6c-88d8-17f721a0ebf5`, run
+`2dbc72dd-e080-4241-88f8-e65e508b4931`, and failure
+`88840ca1-c17c-4c83-9fa8-377b9b3fcc39`. The run closed
+`preflight_failed` / `workforce_inference_failed`. Unlike the first draw,
+the `claude-haiku` planner returned `structured_response_applied` for one
+unit. The configured `claude-sonnet` recruiter then returned
+`provider_response_contract_invalid`: its `unit-parseport-impl` staff
+decision could not form a safe capability team from the four ranked candidates
+`typescript-application-engineer`, `minimal-change-engineer`,
+`developer-tooling-engineer`, and `backend-service-engineer`. The funded
+repair attempt ended `provider_no_valid_response`.
+
+There are zero routing decisions, applied model-receipt rows, specialist loads,
+delegation events, child scopes, captured assignments, worker runs, delivery
+verifications, finalizations, attestations, skills, or worker-outcome events on
+that trace. The collector's `delivery_marker_absent` result occurs only after
+its exact-two in-window artifact gate; therefore Claude created the requested
+pair, but the first artifact lacked an Agency v6 delivery marker because
+preflight never staffed. No child judge answered.
+
+This falsifies the old planner-blocker hypothesis and live-proves the local
+indivisible-work repair at its intended boundary. The remaining blocker is the
+same intermittent Claude/Sonnet recruiter structured-response behavior already
+documented in the instrument series, not the child pin, host Agent topology, or
+Store outcome recorder. The one draw is consumed and was not retried. No rule
+was promoted, the candidate did not advance, and **no matrix cell moved**.
+
+### LOCAL CANDIDATE: accepted-outcome parent recruiter is pinned separately
+
+The owner chose the narrow branch on 2026-08-20: keep the Claude parent host,
+keep its existing Haiku planner route, and constrain only the accepted-outcome
+parent recruiter's initial call and funded repair to `codex-subscription`.
+This is a new role-specific pin, not a reuse or widening of Option A's child
+judge authority.
+
+The local candidate adds
+`canary.accepted_outcome_parent_recruiter_provider_by_host.<host>`. Production
+preparation resolves that pin exactly once, the disposable accepted-outcome
+backend projects its own provider identity and bounded CLI credentials, and
+workforce routing consumes it only for `stage=recruiter` with route key
+`workforce.recruiter`. A missing, ambiguous, unsupported, or mismatched pin
+fails closed without falling back. The parent planner, ordinary Claude turns,
+ordinary activation canaries, and independently configured child judge remain
+on their existing paths.
+
+This is local source and test evidence only. The owner config still has no
+parent-recruiter entry, no install or provider call followed, and the consumed
+draw was not repeated. Therefore no accepted outcome, promotion, rule, candidate,
+or matrix state moves at this checkpoint.
+
+Local verification is green: the bounded configuration/canary set passed
+137 tests with 4 skips and the unrelated historical fast-default assertion
+deselected; host-canary/workforce routing passed 152; child/activation/hook
+noninterference passed 182; the warning-strict production spine passed 797
+with 20 skips; and all 12 fast local gates passed in 1.2 minutes. Documentation
+validation covers 713 files. The slow 14-gate harness, hosted CI, installation,
+and live inference were not run.
+
 ### CHECKPOINT PLAN: finish the 19 August review scope
 
 1. **Freeze Option A.** Preserve per-harness child-judge pins and the current
    Claude, Codex, and ZCode evidence; do not spend more provider calls re-proving
    the seal without a falsification target.
-2. **Verify the isolated Claude parent-preflight repair.** The local canary-only
-   candidate now marks the exact parent work as indivisible and passes focused,
-   widened, and 12/12 fast gates. A fresh push, merge, install, or provider draw
-   needs new owner authority. Only then test whether one exact-main invocation
-   staffs and feed verified outcomes through AR-252's three-success/seven-day
-   promotion path.
+2. **Publish and prove the isolated Claude parent recruiter.** The owner chose
+   the local canary-only `claude -> codex-subscription` recruiter pin. Finish its
+   local gates and recovery pair, then obtain fresh authority for push/PR/merge,
+   owner-config update, exact-main install, and one bounded falsification draw.
+   No general-turn route change or unapproved retry is authorized.
 3. **Make the Rule-8 claim only after the owner accepts its cost.** Advance the
    candidate to the disk-proven `f7b84c8a40fa` boundary and re-anchor R2/R3/R7;
    no new capture surface or live draw is needed. Re-run the fixed 15,000 ms cold

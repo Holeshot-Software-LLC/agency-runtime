@@ -12,6 +12,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - docs/decisions/0161-pin-accepted-outcome-parent-recruiter-separately.md
   - agency_runtime/core/accepted_outcome_canary_contract.py
   - agency_runtime/core/outcome_canary.py
   - agency_runtime/core/canary_backends.py
@@ -326,6 +327,67 @@ activation/inference surface passes 102/102, and Ruff plus all 12 fast local
 gates are green. No live rerun followed, so this does not yet prove staffing,
 accepted outcome recording, attestation, or promotion. Publication,
 installation, and one bounded provider draw require fresh owner authority.
+
+## Indivisible-parent repair merged and installed (2026-08-20)
+
+PR #302 merged exact repair head `c798562f` as main `a102a932` with skip
+instructions on both commits and no hosted run. The exact head passed the
+12-gate fast harness twice locally, including the pre-push hook. Claude-only
+install `4c6d8a17-902e-4de6-8b8a-15de14276eca` then staged bundle
+`b0b5073ca7cb…` from a clean detached checkout of that merge.
+
+Claude Code 2.1.226 readiness is true with zero unmet prerequisites, current
+launcher artifacts, and explicit requested child pin `codex-subscription`.
+No provider call or live canary had run at this checkpoint. The single
+authorized 420-second falsification draw is next; merge, install, and readiness
+alone prove no accepted outcome, attestation, or promotion.
+
+## Second exact-main draw advances to recruiter safety (2026-08-20)
+
+Pair `6e0eff1149894c830127417a1411f06d` ran once from exact main. Claude
+exited 0 without timeout or truncation; the wrapper failed at
+`delivery_marker_absent` and persisted no attestation, accepted outcome, or
+promotion. Session `7c19bc88…`, trace `055d329f…`, run `2dbc72dd…`,
+and failure `88840ca1…` close `preflight_failed` /
+`workforce_inference_failed`.
+
+The repaired parent prompt reached a valid applied Haiku planner result. The
+configured Sonnet recruiter then could not produce a safe selected team for
+`unit-parseport-impl` from four ranked implementation candidates, and its
+repair attempt returned no valid response. The trace has no route, applied
+model receipt, specialist load, delegation, child scope, worker run, delivery
+verification, finalization, or outcome event. Collector ordering proves exactly
+two in-window host artifacts, but no v6 marker because Agency never staffed.
+The requested `codex-subscription` child judge was not reached.
+
+The planner repair is therefore live-proven at its intended boundary. The
+remaining issue is the previously measured intermittent Claude/Sonnet recruiter
+contract behavior, not accepted-outcome recording or promotion. No automatic
+retry followed and no matrix cell moved.
+
+## Parent recruiter isolated onto the chosen provider locally (2026-08-20)
+
+The owner chose a canary-only `claude -> codex-subscription` parent-recruiter
+pin. The local candidate now requires that role through the typed
+`canary.accepted_outcome_parent_recruiter_provider_by_host` map, projects its
+identity and CLI credentials only into the accepted-outcome subprocess, and
+uses it only for the primary recruiter call and funded repair. The Haiku parent
+planner, ordinary turns, activation canaries, and independently pinned child
+judge retain their existing routes. Missing, ambiguous, unsupported, and
+mismatched parent pins fail closed without fallback.
+
+No owner config, install, provider, Store outcome, or promotion state changed.
+The next proof boundary is an authorized publish/configure/install cycle and
+one bounded draw from exact merged main; until then this is local source and
+test evidence only and no matrix cell moves.
+
+Verification passed 137 bounded configuration/canary tests (4 skips, one
+unrelated historical fast-default assertion deselected), 152 host-canary and
+workforce-route tests, 182 child/activation/hook noninterference tests, and the
+797-test warning-strict production spine with 20 skips. The 12 fast gates passed
+in 1.2 minutes and 713 Markdown files passed documentation validation. The slow
+14-gate harness, hosted CI, install, owner-config mutation, and live inference
+remain unrun.
 
 ## Collector diagnosis shipped ahead of the collector (2026-08-14)
 

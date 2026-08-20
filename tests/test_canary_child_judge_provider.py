@@ -217,13 +217,19 @@ def test_canary_mapping_schema_normalizes_hosts_and_rejects_invalid_text() -> No
                 "child_judge_provider_by_host": {
                     "CLAUDE": "codex-subscription",
                     "zcode": "glm-subscription",
-                }
+                },
+                "accepted_outcome_parent_recruiter_provider_by_host": {
+                    "CLAUDE": "codex-subscription",
+                },
             }
         }
     )
     assert validated["canary"]["child_judge_provider_by_host"] == {
         "claude": "codex-subscription",
         "zcode": "glm-subscription",
+    }
+    assert validated["canary"]["accepted_outcome_parent_recruiter_provider_by_host"] == {
+        "claude": "codex-subscription",
     }
 
     with pytest.raises(ConfigValidationError, match="host names must be one of"):

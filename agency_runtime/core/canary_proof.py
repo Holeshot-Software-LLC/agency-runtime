@@ -395,6 +395,7 @@ def prepare_live_invocation(
     require_existing_store: bool = False,
     trust_mode: str = "attended",
     base_prompt: str | None = None,
+    require_accepted_outcome_parent_recruiter: bool = False,
 ) -> LivePreparation:
     facade = _facade()
     try:
@@ -422,6 +423,8 @@ def prepare_live_invocation(
     expected_query_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
     child_judge_provider = ""
     child_judge_transport = ""
+    parent_recruiter_provider = ""
+    parent_recruiter_transport = ""
     if (
         mode == "agency"
         and backend_factory is facade._backend
@@ -434,6 +437,14 @@ def prepare_live_invocation(
                 raise ValueError("missing provider pin")
             provider, child_judge_transport = resolved
             child_judge_provider = provider.name
+            if require_accepted_outcome_parent_recruiter:
+                parent_resolved = facade._configured_accepted_outcome_parent_recruiter_provider(
+                    config, host
+                )
+                if parent_resolved is None:
+                    raise ValueError("missing parent recruiter pin")
+                parent_provider, parent_recruiter_transport = parent_resolved
+                parent_recruiter_provider = parent_provider.name
         except Exception:
             return LivePreparation(
                 store=store,
@@ -441,7 +452,11 @@ def prepare_live_invocation(
                 backend=None,
                 prompt=prompt,
                 expected_query_hash=expected_query_hash,
-                error="canary child-judge provider pin is unavailable",
+                error=(
+                    "accepted-outcome parent-recruiter provider pin is unavailable"
+                    if require_accepted_outcome_parent_recruiter and child_judge_provider
+                    else "canary child-judge provider pin is unavailable"
+                ),
             )
     try:
         if backend_factory is facade._backend:
@@ -457,6 +472,8 @@ def prepare_live_invocation(
                 trust_mode=trust_mode,
                 child_judge_provider=child_judge_provider,
                 child_judge_transport=child_judge_transport,
+                parent_recruiter_provider=parent_recruiter_provider,
+                parent_recruiter_transport=parent_recruiter_transport,
             )
         else:
             backend = backend_factory(host, db_path=path, timeout=timeout)

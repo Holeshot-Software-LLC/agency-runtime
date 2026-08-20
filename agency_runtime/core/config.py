@@ -414,10 +414,17 @@ class CanaryConfig:
     """Canary-only inference pins keyed by the host under proof."""
 
     child_judge_provider_by_host: tuple[tuple[str, str], ...] = field(default_factory=tuple)
+    accepted_outcome_parent_recruiter_provider_by_host: tuple[tuple[str, str], ...] = field(
+        default_factory=tuple
+    )
 
     def child_judge_provider(self, host: str) -> str:
         normalized = str(host or "").strip().casefold()
         return dict(self.child_judge_provider_by_host).get(normalized, "")
+
+    def accepted_outcome_parent_recruiter_provider(self, host: str) -> str:
+        normalized = str(host or "").strip().casefold()
+        return dict(self.accepted_outcome_parent_recruiter_provider_by_host).get(normalized, "")
 
 
 @dataclass(frozen=True, slots=True)
@@ -746,6 +753,17 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
                         str(provider).strip(),
                     )
                     for host, provider in canary_raw.get("child_judge_provider_by_host", {}).items()
+                )
+            ),
+            accepted_outcome_parent_recruiter_provider_by_host=tuple(
+                sorted(
+                    (
+                        str(host).strip().casefold(),
+                        str(provider).strip(),
+                    )
+                    for host, provider in canary_raw.get(
+                        "accepted_outcome_parent_recruiter_provider_by_host", {}
+                    ).items()
                 )
             ),
         ),
@@ -1339,6 +1357,9 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
         },
         "canary": {
             "child_judge_provider_by_host": dict(cfg.canary.child_judge_provider_by_host),
+            "accepted_outcome_parent_recruiter_provider_by_host": dict(
+                cfg.canary.accepted_outcome_parent_recruiter_provider_by_host
+            ),
         },
         "agents": {"disabled": list(cfg.agents.disabled)},
         "store": {"db_path": cfg.store.db_path},

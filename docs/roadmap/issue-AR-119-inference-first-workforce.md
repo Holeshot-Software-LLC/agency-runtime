@@ -20,6 +20,7 @@ related:
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
   - docs/decisions/0160-pin-child-judge-providers-per-canary-harness.md
+  - docs/decisions/0161-pin-accepted-outcome-parent-recruiter-separately.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/AR-119-acceptance-evidence.md
@@ -4161,6 +4162,68 @@ dashboard tests green. This is source-level repair evidence only. No provider
 was called, no accepted outcome or promotion was written, the candidate did
 not advance, and no matrix cell moved.
 
+### Claude parent-preflight repair merged and installed — 2026-08-20
+
+PR #302 merged exact repair head `c798562f` to main as `a102a932`.
+The non-draft PR was cleanly mergeable with no check rollup; skip instructions
+on both head and merge produced no hosted run. The exact head passed 12/12 fast
+gates before push and again in the pre-push hook.
+
+Claude-only install `4c6d8a17-902e-4de6-8b8a-15de14276eca` came from a
+clean detached checkout of that merge and staged bundle `b0b5073ca7cb…`.
+Readiness on Claude Code 2.1.226 is true with zero unmet prerequisites, current
+launcher artifacts, and explicit child pin `codex-subscription`. This is
+merged/install/readiness evidence only; no provider call, outcome, attestation,
+promotion, candidate advance, or matrix cell occurred at this checkpoint.
+
+### Claude planner repair passes; recruiter still fails — 2026-08-20
+
+Exact-main pair `6e0eff1149894c830127417a1411f06d` ran once. Claude exited
+0 without timeout or truncation, while the wrapper failed closed at
+`delivery_marker_absent` and wrote no outcome, attestation, or promotion.
+Store session `7c19bc88…`, trace `055d329f…`, run `2dbc72dd…`, and
+failure `88840ca1…` prove the changed boundary.
+
+The Haiku planner now applied one valid structured unit, live-proving the
+indivisible-parent repair. The configured Sonnet recruiter then failed
+`staff_without_safe_team` for `unit-parseport-impl` after ranking four
+implementation candidates; its funded repair returned no valid response. The
+trace contains no routing decision, applied model receipt, specialist load,
+delegation, child scope, captured assignment, worker run, delivery verification,
+finalization, attestation, skill, or worker-outcome row. Collector ordering
+proves exactly two in-window Claude artifacts existed, but the first lacked v6
+delivery because preflight never staffed. No child judge answered.
+
+This is the already documented intermittent Claude/Sonnet recruiter behavior,
+not a new planner, child-pin, Agent-topology, or outcome-recorder defect. The
+authorized draw is consumed without retry. No rule, candidate, or matrix cell
+moved.
+
+### Accepted-outcome parent-recruiter pin candidate — 2026-08-20
+
+The owner chose a canary-only `claude -> codex-subscription` parent-recruiter
+pin instead of spending another draw on the unchanged Sonnet route. The local
+candidate introduces a distinct typed map,
+`canary.accepted_outcome_parent_recruiter_provider_by_host`, and projects it
+only into the Claude accepted-outcome subprocess. Workforce routing consumes
+the projection only for the primary recruiter route; planner, critic, ordinary
+turn, activation-canary, and child-judge paths remain unchanged. Resolution is
+exact, CLI-only, and no-fallback, with requested parent recruiter and child
+judge identities reported separately.
+
+This checkpoint has no owner-config mutation, install, live inference, outcome,
+promotion, rule credit, candidate advance, or matrix movement. Publication,
+owner-config update, exact-main installation, and one bounded draw remain fresh
+authorization boundaries.
+
+The local proof set is green: 137 bounded configuration/canary tests passed
+with 4 skips and the unrelated historical fast-default assertion deselected;
+152 host-canary/workforce-route tests, 182 child/activation/hook
+noninterference tests, and the 797-test warning-strict production spine passed
+(20 spine skips). All 12 fast gates passed in 1.2 minutes and documentation
+validation passed for 713 files. The slow 14-gate harness and every outward or
+live boundary remain unrun.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -4192,10 +4255,11 @@ not advance, and no matrix cell moved.
 
 ### Next bounded work package
 
-Keep Option A frozen. The isolated Claude parent-preflight repair candidate is
-locally green. Next obtain fresh push/PR/merge/install/live approval, publish it
-through a verified-clean no-hosted-CI rollup, install exact main, and draw one
-bounded accepted-outcome falsification with `--timeout 420`.
+Keep Option A frozen. The owner chose the local canary-only
+`claude -> codex-subscription` parent-recruiter pin. Finish its local gates and
+recovery pair, then obtain fresh authority for publication, owner-config update,
+exact-main installation, and one bounded falsification draw; no general-turn
+route change or unapproved retry is authorized.
 Formal R8 credit remains a separate owner decision because it advances the
 candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
 started-child surface; do not burn repeated canaries. After ZCode plural-card
@@ -4204,7 +4268,7 @@ Rule 9 remain later authorized packages.
 
 ### Context checkpoint constraints
 
-- Continue on `codex/ar119-vision-mitigation-handoff` from the current local
+- Continue on `codex/ar119-claude-outcome-live-evidence` from the current local
   recovery checkpoint; do not reset, discard, or silently rewrite the
   accumulated AR-119 work.
 - Keep tracker issue #132 open and do not claim the north-star goal complete.

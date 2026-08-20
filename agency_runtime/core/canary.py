@@ -36,6 +36,9 @@ from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.canary_judge_provider import (
     configured_canary_child_judge_provider as _configured_canary_child_judge_provider,  # noqa: F401 - compatibility dependency resolved by canary_proof
 )
+from agency_runtime.core.canary_parent_recruiter_provider import (
+    configured_accepted_outcome_parent_recruiter_provider as _configured_accepted_outcome_parent_recruiter_provider,  # noqa: F401 - compatibility dependency resolved by canary_proof
+)
 from agency_runtime.core.child_delivery_evidence import _discard_verified_host_child_delivery
 from agency_runtime.core.config import load_config  # noqa: F401 - compatibility facade
 from agency_runtime.core.host_control import SUPPORTED_HOSTS
@@ -256,6 +259,8 @@ def _backend(
     trust_mode: str = "attended",
     child_judge_provider: str = "",
     child_judge_transport: str = "",
+    parent_recruiter_provider: str = "",
+    parent_recruiter_transport: str = "",
 ):
     return _backends.backend(
         host,
@@ -273,6 +278,8 @@ def _backend(
         trust_mode=trust_mode,
         child_judge_provider=child_judge_provider,
         child_judge_transport=child_judge_transport,
+        parent_recruiter_provider=parent_recruiter_provider,
+        parent_recruiter_transport=parent_recruiter_transport,
     )
 
 
