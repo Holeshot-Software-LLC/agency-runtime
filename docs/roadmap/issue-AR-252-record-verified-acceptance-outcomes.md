@@ -327,6 +327,20 @@ gates are green. No live rerun followed, so this does not yet prove staffing,
 accepted outcome recording, attestation, or promotion. Publication,
 installation, and one bounded provider draw require fresh owner authority.
 
+## Indivisible-parent repair merged and installed (2026-08-20)
+
+PR #302 merged exact repair head `c798562f` as main `a102a932` with skip
+instructions on both commits and no hosted run. The exact head passed the
+12-gate fast harness twice locally, including the pre-push hook. Claude-only
+install `4c6d8a17-902e-4de6-8b8a-15de14276eca` then staged bundle
+`b0b5073ca7cb…` from a clean detached checkout of that merge.
+
+Claude Code 2.1.226 readiness is true with zero unmet prerequisites, current
+launcher artifacts, and explicit requested child pin `codex-subscription`.
+No provider call or live canary had run at this checkpoint. The single
+authorized 420-second falsification draw is next; merge, install, and readiness
+alone prove no accepted outcome, attestation, or promotion.
+
 ## Collector diagnosis shipped ahead of the collector (2026-08-14)
 
 `_collect_private_host_child_delivery` answered eighteen distinct conditions

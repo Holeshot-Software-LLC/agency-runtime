@@ -4161,6 +4161,20 @@ dashboard tests green. This is source-level repair evidence only. No provider
 was called, no accepted outcome or promotion was written, the candidate did
 not advance, and no matrix cell moved.
 
+### Claude parent-preflight repair merged and installed — 2026-08-20
+
+PR #302 merged exact repair head `c798562f` to main as `a102a932`.
+The non-draft PR was cleanly mergeable with no check rollup; skip instructions
+on both head and merge produced no hosted run. The exact head passed 12/12 fast
+gates before push and again in the pre-push hook.
+
+Claude-only install `4c6d8a17-902e-4de6-8b8a-15de14276eca` came from a
+clean detached checkout of that merge and staged bundle `b0b5073ca7cb…`.
+Readiness on Claude Code 2.1.226 is true with zero unmet prerequisites, current
+launcher artifacts, and explicit child pin `codex-subscription`. This is
+merged/install/readiness evidence only; no provider call, outcome, attestation,
+promotion, candidate advance, or matrix cell occurred at this checkpoint.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -4192,10 +4206,10 @@ not advance, and no matrix cell moved.
 
 ### Next bounded work package
 
-Keep Option A frozen. The isolated Claude parent-preflight repair candidate is
-locally green. Next obtain fresh push/PR/merge/install/live approval, publish it
-through a verified-clean no-hosted-CI rollup, install exact main, and draw one
-bounded accepted-outcome falsification with `--timeout 420`.
+Keep Option A frozen. The isolated Claude parent-preflight repair is merged,
+installed from exact main, and ready. Run the one authorized bounded
+accepted-outcome falsification with `--timeout 420`, then preserve its exact
+host and Store boundary without an automatic retry.
 Formal R8 credit remains a separate owner decision because it advances the
 candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
 started-child surface; do not burn repeated canaries. After ZCode plural-card

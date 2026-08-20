@@ -2214,17 +2214,39 @@ fresh Claude invocation will staff. No provider was called, no outcome or
 promotion was written, the candidate did not advance, and **no matrix cell
 moved**.
 
+### MAIN CHECKPOINT: indivisible-parent repair merged and installed
+
+PR #302 published exact repair head `c798562f` and merged it to main as
+`a102a932a64d43a8cb0c4b914823bcf1755ad85b`. The non-draft PR was
+CLEAN/MERGEABLE with an empty check rollup. Both head and merge subjects carried
+`[skip ci]`; GitHub created no hosted run. The exact head passed the 12-gate
+fast harness in 1.3 minutes before push and the pre-push hook independently
+passed all 12 in 0.9 minutes.
+
+A clean detached checkout moved from prior main `5a1d863c` to exact merged
+main and installed Claude only. Install
+`4c6d8a17-902e-4de6-8b8a-15de14276eca` staged bundle
+`b0b5073ca7cbe4dc5ad7dbdaabb6d9a2af9f5168d9987262027ff21a650d9721`,
+retained backup `20260820T192318.474752Z`, and finished registered, enabled,
+and non-partial. Readiness on Claude Code 2.1.226 is true with zero unmet
+prerequisites, current launcher artifacts, and configured Claude child pin
+`codex-subscription`.
+
+No live command or provider call had run at this checkpoint. The one authorized
+420-second accepted-outcome draw is next. No outcome, attestation, promotion,
+candidate advance, or matrix move follows from publication, installation, or
+readiness alone.
+
 ### CHECKPOINT PLAN: finish the 19 August review scope
 
 1. **Freeze Option A.** Preserve per-harness child-judge pins and the current
    Claude, Codex, and ZCode evidence; do not spend more provider calls re-proving
    the seal without a falsification target.
-2. **Verify the isolated Claude parent-preflight repair.** The local canary-only
-   candidate now marks the exact parent work as indivisible and passes focused,
-   widened, and 12/12 fast gates. A fresh push, merge, install, or provider draw
-   needs new owner authority. Only then test whether one exact-main invocation
-   staffs and feed verified outcomes through AR-252's three-success/seven-day
-   promotion path.
+2. **Verify the isolated Claude parent-preflight repair.** PR #302 is merged,
+   exact-main Claude is installed, readiness is green, and one 420-second draw
+   is authorized. Run it once and preserve the exact boundary. Feed verified
+   outcomes through AR-252's three-success/seven-day promotion path only if the
+   host and Store evidence permit it; do not retry a failure blindly.
 3. **Make the Rule-8 claim only after the owner accepts its cost.** Advance the
    candidate to the disk-proven `f7b84c8a40fa` boundary and re-anchor R2/R3/R7;
    no new capture surface or live draw is needed. Re-run the fixed 15,000 ms cold
