@@ -1077,6 +1077,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `aa6439b1` | 2026-08-20 | feat(outcomes): collect atomic producer verifier pairs | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-20-aa6439b1-collect-atomic-producer-verifier-pairs.md) |
 | `87d87b99` | 2026-08-20 | feat(outcomes): wire isolated Claude acceptance canary | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-20-87d87b99-wire-isolated-claude-acceptance-canary.md) |
 | `6cc6601c` | 2026-08-20 | docs(ar119): record Codex 0.148 pre-spawn draw | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `5a1d863c` | 2026-08-20 | Merge pull request #301: bind accepted outcomes to host artifacts [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | null |
+| `3a3191da` | 2026-08-20 | docs(ar119): record Claude outcome preflight failure | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
