@@ -229,7 +229,9 @@ def test_preflight_failure_receipt_projects_provider_attempts_without_content(
             },
             "hiring_events": [
                 {
+                    "status": "rejected",
                     "reason_codes": ["gap_evidence_not_hireable"],
+                    "calls_used": 2,
                     "notification": secret,
                 }
             ],
@@ -269,7 +271,11 @@ def test_preflight_failure_receipt_projects_provider_attempts_without_content(
     ]
     assert receipt["provider_attempts"][0]["provider_name"].startswith("sha256:")
     assert receipt["staffing_reason_codes"] == ["selected_agent_budget_exceeded"]
-    assert receipt["hiring_reason_codes"] == ["gap_evidence_not_hireable"]
+    assert receipt["hiring_reason_codes"] == [
+        "hiring_status_rejected",
+        "hiring_inference_attempted",
+        "gap_evidence_not_hireable",
+    ]
     connection = store._connect()
     try:
         durable = connection.execute(

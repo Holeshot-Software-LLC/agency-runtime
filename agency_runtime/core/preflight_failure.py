@@ -11,6 +11,16 @@ MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES = 32 * 1024
 MAX_PREFLIGHT_FAILURE_REASON_CODES = 32
 MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES = 4 * 1024
 _REASON_CODE = re.compile(r"^[a-z][a-z0-9_]{1,95}$")
+_HIRING_EVENT_STATUSES = frozenset(
+    {
+        "abstained",
+        "amended",
+        "hired",
+        "not_attempted",
+        "pending_approval",
+        "rejected",
+    }
+)
 
 PREFLIGHT_FAILURE_INVARIANTS = frozenset({"", "native_plan_scope_invalid"})
 
@@ -248,7 +258,16 @@ def preflight_staffing_reason_codes(routing: Mapping[str, Any]) -> list[str]:
 
 
 def preflight_hiring_reason_codes(routing: Mapping[str, Any]) -> list[str]:
-    """Project contractor-hiring codes from a routing result without content."""
+    """Project bounded contractor-hiring state from a routing result without content.
+
+    A successful deferred hire has no reason codes by design. If later
+    whole-team restaffing fails, atomic preflight rolls that pending hire back;
+    retaining only ``reason_codes`` therefore made "hire ran and reached a
+    terminal status" indistinguishable from "hiring never ran". Preserve the
+    closed event status and whether inference was consumed alongside any
+    existing reason codes. No worker identity, notification, or model content
+    crosses this failure boundary.
+    """
 
     raw_events = routing.get("hiring_events")
     events = raw_events if isinstance(raw_events, (list, tuple)) else ()
@@ -256,6 +275,12 @@ def preflight_hiring_reason_codes(routing: Mapping[str, Any]) -> list[str]:
     for event in events:
         if not isinstance(event, Mapping):
             continue
+        status = str(event.get("status") or "").strip().casefold()
+        if status in _HIRING_EVENT_STATUSES:
+            codes.append(f"hiring_status_{status}")
+        calls_used = event.get("calls_used")
+        if not isinstance(calls_used, bool) and isinstance(calls_used, int) and calls_used > 0:
+            codes.append("hiring_inference_attempted")
         raw_codes = event.get("reason_codes")
         if not isinstance(raw_codes, (list, tuple)):
             continue

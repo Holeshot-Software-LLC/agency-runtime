@@ -22,6 +22,7 @@ from agency_runtime.core.preflight_failure import (
     PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
     default_preflight_failure_receipt,
     preflight_eligibility_reason_codes,
+    preflight_hiring_reason_codes,
     project_preflight_failure_receipt,
     project_preflight_provider_attempts,
 )
@@ -124,6 +125,67 @@ def test_eligibility_reasons_stay_bounded_under_a_hostile_routing_result() -> No
 
     assert len(codes) <= MAX_PREFLIGHT_FAILURE_REASON_CODES
     assert len(set(codes)) == len(codes)
+
+
+def test_deferred_hiring_status_survives_a_later_preflight_failure() -> None:
+    """An empty success reason list must not erase that hiring ran."""
+
+    routing = {
+        "hiring_events": [
+            {
+                "unit_id": "unit-implement",
+                "status": "hired",
+                "reason_codes": [],
+                "calls_used": 3,
+                "worker": "private-worker-identity",
+                "notification": "private model-authored notification",
+            }
+        ]
+    }
+
+    codes = preflight_hiring_reason_codes(routing)
+
+    assert codes == ["hiring_status_hired", "hiring_inference_attempted"]
+    assert "worker" not in " ".join(codes)
+    assert "notification" not in " ".join(codes)
+
+
+def test_pending_and_not_attempted_hiring_are_distinguishable() -> None:
+    routing = {
+        "hiring_events": [
+            {
+                "status": "pending_approval",
+                "reason_codes": [],
+                "calls_used": 3,
+            },
+            {
+                "status": "not_attempted",
+                "reason_codes": ["task_hiring_limit_reached"],
+                "calls_used": 0,
+            },
+        ]
+    }
+
+    assert preflight_hiring_reason_codes(routing) == [
+        "hiring_status_pending_approval",
+        "hiring_inference_attempted",
+        "hiring_status_not_attempted",
+        "task_hiring_limit_reached",
+    ]
+
+
+def test_untrusted_hiring_status_and_call_count_do_not_cross_the_boundary() -> None:
+    routing = {
+        "hiring_events": [
+            {
+                "status": "hired private-worker-identity",
+                "reason_codes": [],
+                "calls_used": "3",
+            }
+        ]
+    }
+
+    assert preflight_hiring_reason_codes(routing) == []
 
 
 @pytest.mark.parametrize(
