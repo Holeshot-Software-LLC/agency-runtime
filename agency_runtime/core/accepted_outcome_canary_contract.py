@@ -39,8 +39,9 @@ def build_accepted_outcome_canary_prompt(pair_id: str) -> str:
     producer_task = f"{_PRODUCER_WORK_UNIT}\n{producer_marker}"
     verifier_prefix = f"{_VERIFIER_WORK_UNIT}\n{verifier_marker}"
     return (
-        "This is one bounded Agency Runtime accepted-outcome canary. Use Claude's native "
-        "Agent tool exactly twice, serially, with general-purpose children. Do not call any "
+        "Treat this as exactly one indivisible Agency Runtime accepted-outcome work unit. "
+        "Do not split or decompose it. Use Claude's native Agent tool exactly twice, "
+        "serially, with general-purpose children. Do not call any "
         "other tool, start any other child, retry a call, or run the two calls in parallel.\n\n"
         "First, call Agent once with the exact producer prompt between "
         "<producer-prompt> tags. Pass the enclosed text verbatim and do not include the "

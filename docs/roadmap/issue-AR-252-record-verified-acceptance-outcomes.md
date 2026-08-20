@@ -48,10 +48,12 @@ current host-spawned, just-in-time architecture.
 AR-242 set the three-success and seven-day review-window policy. Store code can
 validate acceptance evidence and perform automatic promotion atomically. The
 private Claude collector now pairs exactly two host-artifact delivery
-capabilities. An explicit isolated Claude canary mode now drives that exact
-serial pair and reports content-free provider, card, delivery, and Store-result
-evidence, but it has not been installed or exercised by a live host. Agency-
-authored assignment rows alone remain insufficient proof.
+capabilities. An explicit isolated Claude canary mode drives that exact serial
+pair and reports content-free provider, card, delivery, and Store-result
+evidence. PR #301 installed that path from exact main `5a1d863c`; its first live
+draw failed closed before child staffing because both `claude-haiku` parent
+planner responses violated the structured response contract. Agency-authored
+assignment rows alone remain insufficient proof.
 
 The accepted-outcome v2 contract now enforces the 2026-08-18 joint-verdict
 ruling at its input and persisted-manifest boundaries. The semantic decision is
@@ -123,10 +125,11 @@ emitted a v1 row, so there is no live acceptance history to migrate. The
 checkpoint is **339 passed**, with Ruff check, Ruff format check, and
 `git diff --check` green.
 
-The remaining Claude step is operational rather than source wiring: publish and
-install an exact merged-main candidate, then run the explicitly confirmed live
-mode. Push, PR, merge, installation, and the first provider draw require fresh
-owner approval.
+The remaining Claude step is now a bounded preflight repair: reproduce and fix
+the parent planner's `provider_response_contract_invalid` result locally, then
+publish/install a repaired exact-main candidate and run the explicitly
+confirmed live mode. Any further push, PR, merge, installation, or provider
+draw requires fresh owner approval.
 
 ## Measured before building the collector (2026-08-14, `9e29aabe`)
 
@@ -289,6 +292,40 @@ and 134 dashboard tests), and the separate decision-conformance evaluator kills
 the new confirmation gate without `--execute`; its sandboxed host inventory was
 not readiness evidence. No host call, provider draw, acceptance, promotion,
 candidate advance, or matrix move occurred.
+
+## First exact-main live draw stopped at parent preflight (2026-08-20)
+
+PR #301 merged the canary at `5a1d863c` with no hosted run. Exact-main install
+`3c0f9bb6-ca93-444b-a965-c10706e67b67` staged bundle `7a526cd548a9...`; Claude
+Code 2.1.226 readiness was green. Pair `5a1be926bf1b0d1e86148b382f474f8d`
+then ran once with the required confirmation and 420-second bound. Claude exited
+0 without timeout or truncation, while the proof failed closed at
+`delivery_marker_absent` and wrote no acceptance, attestation, or promotion.
+
+The Store makes the earlier cause exact. Session `c6a4a7ea...`, trace
+`2d918a99...`, and failure `61ec6d6d...` closed `preflight_failed` /
+`workforce_inference_failed`. Both planner attempts used `claude-haiku` with
+requested and actual `haiku`; both were rejected as
+`provider_response_contract_invalid`. No routing decision, worker run, delivery
+verification, or applied model receipt exists in the invocation window. The
+two host artifacts therefore could not carry Agency v6 delivery markers. This
+is a deterministic isolated-parent preflight repair target; it does not measure
+the requested `codex-subscription` child judge and moves no matrix cell.
+
+## Local indivisible-parent repair candidate (2026-08-20)
+
+The exact 2,316-character merged-main canary prompt did not satisfy the
+existing parent-planner indivisible-unit detector. The local canary-only
+candidate now explicitly declares one indivisible work unit and forbids
+splitting or decomposition; its 2,367-character prompt satisfies that same
+production detector. It changes no provider, model profile, ordinary-turn
+behavior, Store contract, or global configuration.
+
+The exact prompt contract passes 11/11 tests, the widened canary/collector/
+activation/inference surface passes 102/102, and Ruff plus all 12 fast local
+gates are green. No live rerun followed, so this does not yet prove staffing,
+accepted outcome recording, attestation, or promotion. Publication,
+installation, and one bounded provider draw require fresh owner authority.
 
 ## Collector diagnosis shipped ahead of the collector (2026-08-14)
 

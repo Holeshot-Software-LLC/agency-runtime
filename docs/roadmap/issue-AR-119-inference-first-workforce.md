@@ -150,6 +150,16 @@ host-written delivery. It does not publish the unpushed commits, change
 ordinary staffing, re-promote a retracted Rule, move a matrix cell, or complete
 Rule 9 or AR-119.
 
+PR #301 subsequently merged the sealed accepted-outcome path to exact main
+`5a1d863c` and installed it for Claude. Its first live producer/verifier draw
+failed closed before staffing: both `claude-haiku` parent planner responses were
+rejected as `provider_response_contract_invalid`, leaving zero routing
+decisions, worker runs, or delivery verifications. The host process itself
+completed and wrote two candidate child artifacts, but neither could carry an
+Agency v6 delivery marker after the failed preflight. No outcome, promotion, or
+matrix movement followed. The next Claude package is therefore a deterministic
+isolated-parent preflight repair, not another unmodified provider draw.
+
 The owner separately confirmed the current Codex boundary on 2026-08-19.
 Codex parent operation is working: a live request-scoped parent turn identifies
 `host=codex`, carries Agency preflight inference, loads the selected specialist
@@ -4135,6 +4145,22 @@ A read-only source CLI smoke reached the new gate but sandboxed inventory was
 not host-readiness evidence. No install, live draw, acceptance, promotion,
 candidate advance, or matrix cell moved.
 
+### Claude accepted-outcome parent-preflight repair candidate — 2026-08-20
+
+The exact merged-main canary prompt measured 2,316 characters and did not
+satisfy the existing indivisible-work-unit detector. The local canary-only
+candidate explicitly makes the producer/verifier sequence one indivisible
+parent work unit and forbids decomposition; the resulting 2,367-character
+prompt satisfies that same production detector. It changes no provider, model
+profile, ordinary-turn behavior, Store contract, or global configuration.
+
+The exact prompt surface passes 11/11 tests, the widened canary/collector/
+activation/inference surface passes 102/102, and the local fast harness passes
+12/12 with Ruff, 161 workflow contracts, 151 mutation snippets, and 134
+dashboard tests green. This is source-level repair evidence only. No provider
+was called, no accepted outcome or promotion was written, the candidate did
+not advance, and no matrix cell moved.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -4166,10 +4192,10 @@ candidate advance, or matrix cell moved.
 
 ### Next bounded work package
 
-Keep Option A frozen. The isolated Claude producer/verifier canary is locally
-wired and verified. Next obtain fresh push/PR/merge/install/live approval,
-publish it through a verified-clean no-hosted-CI rollup, install exact main, and
-draw the first bounded accepted-outcome evidence with `--timeout 420`.
+Keep Option A frozen. The isolated Claude parent-preflight repair candidate is
+locally green. Next obtain fresh push/PR/merge/install/live approval, publish it
+through a verified-clean no-hosted-CI rollup, install exact main, and draw one
+bounded accepted-outcome falsification with `--timeout 420`.
 Formal R8 credit remains a separate owner decision because it advances the
 candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
 started-child surface; do not burn repeated canaries. After ZCode plural-card

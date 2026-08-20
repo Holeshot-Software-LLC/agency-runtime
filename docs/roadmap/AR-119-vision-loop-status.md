@@ -2152,15 +2152,79 @@ prior exact-main 1/0 run. Do not repeat it without a new upstream surface or a
 deterministic parent-preflight repair target. No rule was promoted, the
 candidate did not advance, and **no matrix cell moved**.
 
+### CLAUDE ACCEPTED-OUTCOME DRAW: parent planner contract invalid
+
+PR #301 merged the eight-commit AR-119/AR-252 outcome package to exact main
+`5a1d863c` on 2026-08-20. Both the PR head and merge commit carried
+`[skip ci]`; GitHub reported the PR cleanly mergeable and created no hosted
+run. The push hook passed all 12 local gates in 0.9 minutes. The earlier exact
+code candidate retained its 14/14 complete harness, 151/151 mutation, and 46/46
+focused evidence.
+
+Claude was then installed from a clean detached checkout at that merge. Install
+`3c0f9bb6-ca93-444b-a965-c10706e67b67` staged bundle
+`7a526cd548a92d207e17f6df270aab2a8bde1ffbd9eaef7b03bd5989d39c6ba2`,
+retained backup `20260820T182048.584843Z`, and finished registered, enabled,
+and non-partial. Readiness on Claude Code 2.1.226 was green with zero unmet
+prerequisites. The owner-authorized isolated command used the exact
+`RUN LIVE claude ACCEPTED-OUTCOME CANARY` confirmation and 420-second bound.
+The host process exited 0 without timeout or truncation; the proof wrapper
+exited 1.
+
+Pair `5a1be926bf1b0d1e86148b382f474f8d` failed closed at
+`delivery_marker_absent`. It requested the evidence-backed Claude canary pin
+`codex-subscription` and targeted contractor
+`typescript-application-engineer` / worker
+`54cb1db1-7c55-5d13-9fff-ddb1bd5ca921`, but never reached the child judge.
+Store session `c6a4a7ea-ce8c-4ec8-8a7c-4be9ecb3bd25`, trace
+`2d918a99-32c0-40bd-a9e9-f53dea2834df`, run
+`6312eeae-5532-4eba-90b1-f2eb23bb379c`, and failure
+`61ec6d6d-74d9-4de7-86f0-288606c7b9dc` prove the earlier boundary:
+`preflight_failed` / `workforce_inference_failed`. Two serialized planner
+attempts through `claude-haiku` / requested and actual `haiku` were rejected as
+`provider_response_contract_invalid`; there is no applied model receipt,
+routing decision, worker run, or delivery verification in that window.
+
+The host wrote exactly two candidate child artifacts, so the collector reached
+the two-artifact gate, but their first authoritative v6 read carried no delivery
+marker because Agency preflight had staffed neither child. No accepted outcome,
+attestation, or promotion was written. This is a deterministic isolated-parent
+preflight target, not evidence against the child-judge pin or Claude's native
+child surface. Do not repeat the live draw until that contract failure is
+reproduced and repaired locally. No rule was promoted, the candidate did not
+advance, and **no matrix cell moved**.
+
+### LOCAL REPAIR CANDIDATE: accepted-outcome parent work is indivisible
+
+The exact merged-main canary prompt was 2,316 characters and returned false
+from the existing `_explicit_indivisible_unit_request` detector. It therefore
+did not give the parent planner the repository's durable one-work-unit signal
+before asking Claude for two serial children. The local canary-only candidate
+now says that the accepted-outcome canary is exactly one indivisible work unit
+and must not be split or decomposed. Its 2,367-character prompt returns true
+from the same production detector. No provider, model profile, ordinary-turn
+behavior, Store contract, or global configuration changed.
+
+The exact prompt contract passes 11/11 focused tests; the widened canary,
+collector, activation-contract, and workforce-inference surface passes 102/102.
+Ruff lint and format checks pass, and the local fast harness passes all 12
+gates in 1.3 minutes, including 161 workflow contracts, 151 mutation snippets,
+and 134 dashboard tests. This is a local repair candidate, not proof that a
+fresh Claude invocation will staff. No provider was called, no outcome or
+promotion was written, the candidate did not advance, and **no matrix cell
+moved**.
+
 ### CHECKPOINT PLAN: finish the 19 August review scope
 
 1. **Freeze Option A.** Preserve per-harness child-judge pins and the current
    Claude, Codex, and ZCode evidence; do not spend more provider calls re-proving
    the seal without a falsification target.
-2. **Close the primary-tool delivery mechanism.** On Claude, finish the one-use
-   capability seal and atomic Store consumer, prove the exact merged candidate
-   from a pre-speech host artifact, then feed that verified outcome through
-   AR-252's three-success/seven-day automatic-promotion path.
+2. **Verify the isolated Claude parent-preflight repair.** The local canary-only
+   candidate now marks the exact parent work as indivisible and passes focused,
+   widened, and 12/12 fast gates. A fresh push, merge, install, or provider draw
+   needs new owner authority. Only then test whether one exact-main invocation
+   staffs and feed verified outcomes through AR-252's three-success/seven-day
+   promotion path.
 3. **Make the Rule-8 claim only after the owner accepts its cost.** Advance the
    candidate to the disk-proven `f7b84c8a40fa` boundary and re-anchor R2/R3/R7;
    no new capture surface or live draw is needed. Re-run the fixed 15,000 ms cold

@@ -27,7 +27,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: codex/ar119-claude-seal-outcomes
+branch: codex/ar119-claude-outcome-preflight-repair
 evidence_commit: aa6439b1c84c4ef4c7b95d17c530a586bf4c08b4
 minimum_ledger_commit: f1f196bc983a1e55d8e5fb108117509a736a6c71
 hard_checkpoint_percent: 50
@@ -42,11 +42,11 @@ file and the founding vision first, then the loop status for current state.
 ## checkpoint
 
 - **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-main-rollout`**.
-  It starts at exact main `b908b747` / PR #300. The primary checkout's
+  It starts at exact main `5a1d863c` / PR #301; the primary checkout's
   named owner WIP remains untouched; never commit, revert, stash, or install there.
   Hosted CI was skipped at PR head and merge; local gates govern.
-- **Machine**: Claude/Codex retain the PR #298 install (`d701a815…` / `2ad1a6b3…`).
-  ZCode is installed from `f203dc66` (`c28d34aa…` / `749a449c…`). The map remains
+- **Machine**: Claude is at `5a1d863c` (`3c0f9bb6…` / `7a526cd5…`); Codex
+  retains PR #298 and ZCode `f203dc66`. The map remains
   `claude/codex -> codex-subscription`, `zcode -> zcode-recruiter`; ordinary
   providers remain Codex then Claude and content capture remains enabled.
 - **Option A's three-host pin phase is complete.** OpenClaw/Hermes are deferred,
@@ -77,7 +77,7 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   requested `glm-5.2`, actual response model `glm-5.3`, zero tools. Agency trace
   `498d64b3…` finalized `accept/completed` with the exact five fields and no
   delegation. This is parent proof, not a Rule-4 cell.
-- **PR #300 put ZCode CLI evidence on main** at `b908b747`, with no hosted run; this Claude outcome branch has no install/live authorization.
+- **PR #301 merged the outcome path** at `5a1d863c` with no hosted run; Claude installed, then its first live outcome draw failed closed at parent preflight.
 ## traps (machine-specific; do not rediscover)
 
 - **`agency` on PATH is `~/.local/bin/agency.exe` and is SCHEMA 45** -- it
@@ -113,8 +113,9 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    because Claude Code tags no substring as hook-authored (1147-1150).
    **Neither option moves codex**: `_expected_v6_reason` returns
    `unsupported_opaque_interagent_channel` on its FIRST line.
-   Its isolated Claude canary is wired; 14/14 local gates, 151/151 mutations,
-   and 46/46 focused tests pass. No install/live; all live/matrix claims stand.
+   Local canary-only repair changes the exact prompt from 2,316/false to
+   2,367/true at the existing indivisible-unit detector; 11 direct, 102 widened,
+   and 12/12 fast gates pass. No provider/profile change or live rerun followed.
 3. **Option A is locally complete for the owner-scoped three-host pin phase.**
    Claude has an exact requested/answered `codex-subscription` route. Codex
    parent works and its child-proof exception remains explicit. Repaired ZCode
@@ -138,9 +139,9 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 Keep Option A frozen. The full sequence requested at the 19 August review is:
 
-1. Claude: obtain fresh push/PR/merge/install/live approval, publish the locally
-   green canary through a clean no-hosted-CI rollup, install exact main, then
-   prove outcomes/promotion. R8 and the 15,000 ms control stay separate.
+1. Claude: local canary-only repair now marks the exact parent work unit
+   indivisible; 11 direct, 102 widened and 12/12 fast gates pass. Obtain fresh
+   authority before publish/install/draw, then prove outcomes/promotion.
 2. Codex: retain parent proof. The 0.148 draw stopped before spawn; do not
    repeat until a new upstream surface or deterministic preflight fix exists.
 3. ZCode: retain this parent proof and existing one-card child proof, then close
@@ -174,7 +175,6 @@ Judge each gate by its own summary; push hooks are not the production spine.
   candidate; provisional/branch evidence must say so.
 - Keep the 15,000 ms cold control fixed; automatic promotion stays on the
   critical path; no superiority claim without a matched corpus (AR-125).
-- PR #300 push/merge, ZCode reinstall, and its CLI smoke are consumed. Fresh
-  authority is required for another push/PR/merge/install, provider draw,
-  hosted CI, tracker/tag/re-auth, or config change.
-  OpenClaw and Hermes remain exempt for this session, not waived.
+- PR #301 push/merge, Claude install, and its first live draw are consumed; fresh
+  authority is required for another push/PR/merge/install, provider draw, hosted
+  CI, tracker/tag/re-auth, or config change. OpenClaw/Hermes remain exempt, not waived.
