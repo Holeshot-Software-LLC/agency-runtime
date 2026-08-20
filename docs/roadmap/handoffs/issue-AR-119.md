@@ -77,7 +77,7 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   requested `glm-5.2`, actual response model `glm-5.3`, zero tools. Agency trace
   `498d64b3…` finalized `accept/completed` with the exact five fields and no
   delegation. This is parent proof, not a Rule-4 cell.
-- **PR #302 merged the preflight repair** at `a102a932` with no hosted run; its one draw passed planner shaping, then failed closed at recruiter safety.
+- **PR #302 merged the preflight repair** at `a102a932`; its draw reached recruiter safety. The local parent pin passed 797/20 + 12/12, not config/live.
 ## traps (machine-specific; do not rediscover)
 
 - **`agency` on PATH is `~/.local/bin/agency.exe` and is SCHEMA 45** -- it
@@ -139,9 +139,9 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 Keep Option A frozen. The full sequence requested at the 19 August review is:
 
-1. Claude: PR #302's planner shaping is live-proven. Do not retry the consumed
-   draw. The owner must choose a canary-only parent-recruiter pin or a bounded
-   retry on existing Claude/Sonnet before outcomes/promotion can proceed.
+1. Claude: the local canary-only `claude -> codex-subscription` parent-recruiter
+   pin is implemented; owner config remains unset. Finish gates/recovery, then
+   seek fresh publication, config, exact-main install, and one-draw authority.
 2. Codex: retain parent proof. The 0.148 draw stopped before spawn; do not
    repeat until a new upstream surface or deterministic preflight fix exists.
 3. ZCode: retain this parent proof and existing one-card child proof, then close

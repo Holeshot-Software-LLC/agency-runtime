@@ -39,6 +39,10 @@ def _requested_provider(backend: object) -> str | None:
     return _bounded_identity(getattr(backend, "child_judge_provider", None), maximum=128)
 
 
+def _requested_parent_recruiter_provider(backend: object) -> str | None:
+    return _bounded_identity(getattr(backend, "parent_recruiter_provider", None), maximum=128)
+
+
 def _safe_invocation(record: Mapping[str, Any]) -> dict[str, Any]:
     """Project process facts only; model and child text never enter the report."""
 
@@ -55,6 +59,11 @@ def _safe_invocation(record: Mapping[str, Any]) -> dict[str, Any]:
     requested = _bounded_identity(record.get("child_judge_provider_requested"), maximum=128)
     if requested is not None:
         projected["child_judge_provider_requested"] = requested
+    parent_requested = _bounded_identity(
+        record.get("parent_recruiter_provider_requested"), maximum=128
+    )
+    if parent_requested is not None:
+        projected["parent_recruiter_provider_requested"] = parent_requested
     failure = _bounded_identity(record.get("failure_reason"), maximum=128)
     if failure is not None:
         projected["failure_reason"] = failure
@@ -276,6 +285,7 @@ def run_accepted_outcome_canary(  # noqa: C901 - one bounded live-proof orchestr
         profile_scope="isolated-profile",
         require_existing_store=False,
         base_prompt=build_accepted_outcome_canary_prompt(pair_id),
+        require_accepted_outcome_parent_recruiter=True,
     )
     if preparation.error:
         report["unmet_prerequisites"].append(preparation.error)
@@ -291,6 +301,12 @@ def run_accepted_outcome_canary(  # noqa: C901 - one bounded live-proof orchestr
             "accepted-outcome child judge provider pin is unavailable"
         )
         return report
+    requested_parent_recruiter = _requested_parent_recruiter_provider(preparation.backend)
+    if requested_parent_recruiter is None:
+        report["unmet_prerequisites"].append(
+            "accepted-outcome parent-recruiter provider pin is unavailable"
+        )
+        return report
     worker_ready, worker = _target_worker_is_ready(preparation.store)
     if not worker_ready or worker is None:
         report["unmet_prerequisites"].append(
@@ -300,6 +316,7 @@ def run_accepted_outcome_canary(  # noqa: C901 - one bounded live-proof orchestr
     report["target_worker"] = worker
     report["pair_id"] = pair_id
     report["child_judge_provider_requested"] = requested_provider
+    report["parent_recruiter_provider_requested"] = requested_parent_recruiter
     report["live_attempted"] = True
 
     record: Mapping[str, Any] | None = None
@@ -345,9 +362,10 @@ def run_accepted_outcome_canary(  # noqa: C901 - one bounded live-proof orchestr
     if (
         record.get("status") != "completed"
         or record.get("child_judge_provider_requested") != requested_provider
+        or record.get("parent_recruiter_provider_requested") != requested_parent_recruiter
     ):
         report["unmet_prerequisites"].append(
-            "safe Claude invocation did not complete with the requested child judge pin"
+            "safe Claude invocation did not complete with both requested provider pins"
         )
         return report
     if collection is None:

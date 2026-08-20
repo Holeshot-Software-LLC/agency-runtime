@@ -13,6 +13,9 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Final
 
+from agency_runtime.core.canary_parent_recruiter_provider import (
+    accepted_outcome_parent_recruiter_provider,
+)
 from agency_runtime.core.config import AgencyConfig, ProviderEntry
 from agency_runtime.core.configuration_contracts import ConfigValidationError
 from agency_runtime.core.inference_profiles import resolve as resolve_inference_route
@@ -680,6 +683,15 @@ def configured_workforce_providers(
     back to the legacy provider chain so dashboards and CLI evals that
     pre-date the inference block still work.
     """
+
+    if stage == "recruiter" and route_key == "workforce.recruiter":
+        canary_provider = accepted_outcome_parent_recruiter_provider(
+            config,
+            harness,
+            os.environ,
+        )
+        if canary_provider is not None:
+            return (canary_provider,)
 
     # An explicit AGENCY_INFERENCE_HARNESS naming a configured section is the
     # operator's master switch (CLI testing from any terminal); otherwise the

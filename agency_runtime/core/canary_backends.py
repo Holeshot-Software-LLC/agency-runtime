@@ -14,6 +14,9 @@ from typing import Any
 
 from agency_runtime.core.bounded_io import FileSizeLimitError
 from agency_runtime.core.canary_judge_provider import CANARY_CHILD_JUDGE_PROVIDER_ENV
+from agency_runtime.core.canary_parent_recruiter_provider import (
+    ACCEPTED_OUTCOME_PARENT_RECRUITER_PROVIDER_ENV,
+)
 from agency_runtime.core.child_delivery_evidence import (
     _begin_private_host_artifact_collection,
     _collect_private_host_accepted_outcome,
@@ -346,6 +349,42 @@ def prepare_private_host_home(
     return host_home
 
 
+def _project_canary_cli_transport_environment(
+    env: dict[str, str],
+    *,
+    transport: str,
+    role: str,
+    main_transport: str,
+    main_home: Path,
+    runtime_home: Path | None,
+    auth_source: Path | None,
+) -> None:
+    """Project one CLI transport's credentials into a bounded canary environment."""
+
+    if not transport:
+        return
+    if transport not in {"claude", "codex"}:
+        raise ValueError("unsupported canary inference transport")
+    variable, auth_name, label = (
+        ("CODEX_HOME", "auth.json", "Codex")
+        if transport == "codex"
+        else ("CLAUDE_CONFIG_DIR", ".credentials.json", "Claude")
+    )
+    if transport == main_transport:
+        env[variable] = str(main_home)
+        return
+    if runtime_home is None or auth_source is None:
+        raise ValueError("cross-provider canary authentication is unavailable")
+    provider_home = _facade()._prepare_private_host_home(
+        runtime_home,
+        directory_name=f"{role}-{transport}",
+        auth_source=auth_source,
+        auth_name=auth_name,
+        host=label,
+    )
+    env[variable] = str(provider_home)
+
+
 def _project_child_judge_environment(
     env: dict[str, str],
     *,
@@ -363,30 +402,41 @@ def _project_child_judge_environment(
             raise ValueError("canary child-judge transport has no provider")
         return
     env[CANARY_CHILD_JUDGE_PROVIDER_ENV] = provider
-    if not transport:
-        # Inference profiles carry their own bounded provider configuration.
-        # Only CLI transports need a host credential home projected here.
-        return
-    if transport not in {"claude", "codex"}:
-        raise ValueError("unsupported canary child-judge transport")
-    variable, auth_name, label = (
-        ("CODEX_HOME", "auth.json", "Codex")
-        if transport == "codex"
-        else ("CLAUDE_CONFIG_DIR", ".credentials.json", "Claude")
-    )
-    if transport == main_transport:
-        env[variable] = str(main_home)
-        return
-    if runtime_home is None or auth_source is None:
-        raise ValueError("cross-provider canary authentication is unavailable")
-    judge_home = _facade()._prepare_private_host_home(
-        runtime_home,
-        directory_name=f"child-judge-{transport}",
+    _project_canary_cli_transport_environment(
+        env,
+        transport=transport,
+        role="child-judge",
+        main_transport=main_transport,
+        main_home=main_home,
+        runtime_home=runtime_home,
         auth_source=auth_source,
-        auth_name=auth_name,
-        host=label,
     )
-    env[variable] = str(judge_home)
+
+
+def _project_parent_recruiter_environment(
+    env: dict[str, str],
+    *,
+    provider: str,
+    transport: str,
+    main_transport: str,
+    main_home: Path,
+    runtime_home: Path | None,
+    auth_source: Path | None,
+) -> None:
+    """Project the accepted-outcome parent recruiter's exact provider identity."""
+
+    if not provider:
+        raise ValueError("accepted-outcome parent recruiter has no provider")
+    env[ACCEPTED_OUTCOME_PARENT_RECRUITER_PROVIDER_ENV] = provider
+    _project_canary_cli_transport_environment(
+        env,
+        transport=transport,
+        role="parent-recruiter",
+        main_transport=main_transport,
+        main_home=main_home,
+        runtime_home=runtime_home,
+        auth_source=auth_source,
+    )
 
 
 def project_isolated_codex_workspace_trust(
@@ -3204,10 +3254,18 @@ class SafeClaudeCanaryBackend:
     child_judge_provider: str = ""
     child_judge_transport: str = ""
     child_judge_auth_source: Path | None = None
+    parent_recruiter_provider: str = ""
+    parent_recruiter_transport: str = ""
+    parent_recruiter_auth_source: Path | None = None
 
     def _record_child_judge_provider(self, record: dict[str, Any]) -> dict[str, Any]:
         if self.child_judge_provider:
             record["child_judge_provider_requested"] = self.child_judge_provider
+        return record
+
+    def _record_parent_recruiter_provider(self, record: dict[str, Any]) -> dict[str, Any]:
+        if self.parent_recruiter_provider:
+            record["parent_recruiter_provider_requested"] = self.parent_recruiter_provider
         return record
 
     def _execute(
@@ -3225,6 +3283,10 @@ class SafeClaudeCanaryBackend:
             raise ValueError("accepted-outcome collection requires the exact invocation Store")
         if accepted_outcome and not self.child_judge_provider:
             raise ValueError("accepted-outcome collection requires an explicit child judge pin")
+        if accepted_outcome and not self.parent_recruiter_provider:
+            raise ValueError(
+                "accepted-outcome collection requires an explicit parent recruiter pin"
+            )
         facade = _facade()
         deadline = facade.time.monotonic() + self.timeout
         collected_evidence: _VerifiedHostChildDelivery | _HostAcceptedOutcomeCollection | None = (
@@ -3268,6 +3330,16 @@ class SafeClaudeCanaryBackend:
                 runtime_home=runtime_home,
                 auth_source=self.child_judge_auth_source,
             )
+            if accepted_outcome:
+                _project_parent_recruiter_environment(
+                    env,
+                    provider=self.parent_recruiter_provider,
+                    transport=self.parent_recruiter_transport,
+                    main_transport="claude",
+                    main_home=claude_home,
+                    runtime_home=runtime_home,
+                    auth_source=self.parent_recruiter_auth_source,
+                )
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
                 return self._record_child_judge_provider(_timeout_record("claude")), None
@@ -3332,6 +3404,8 @@ class SafeClaudeCanaryBackend:
                     collection_reason = "collector_raised"
             record = facade._claude_canary_record(result)
             self._record_child_judge_provider(record)
+            if accepted_outcome:
+                self._record_parent_recruiter_provider(record)
             if delivery_store is not None:
                 # The stage that refused travels with the invocation. Without it
                 # a failed Rule 4 canary reports only that delivery "was not
@@ -3447,6 +3521,8 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
     trust_mode: str = "attended",
     child_judge_provider: str = "",
     child_judge_transport: str = "",
+    parent_recruiter_provider: str = "",
+    parent_recruiter_transport: str = "",
 ) -> SafeCodexCanaryBackend | SafeClaudeCanaryBackend:
     from agency_runtime.core.delegation.backends import run_bounded_process
 
@@ -3480,6 +3556,10 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
     home = facade._source_home(source_env)
     if child_judge_transport and not child_judge_provider:
         raise ValueError("canary child-judge transport has no provider")
+    if parent_recruiter_transport and not parent_recruiter_provider:
+        raise ValueError("canary parent-recruiter transport has no provider")
+    if parent_recruiter_provider and host != "claude":
+        raise ValueError("accepted-outcome parent-recruiter pins support Claude only")
     child_judge_auth_source = None
     if child_judge_transport == "codex":
         child_judge_auth_source = (
@@ -3492,6 +3572,18 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
         )
     elif child_judge_transport:
         raise ValueError("unsupported canary child-judge transport")
+    parent_recruiter_auth_source = None
+    if parent_recruiter_transport == "codex":
+        parent_recruiter_auth_source = (
+            Path(source_env.get("CODEX_HOME") or (home / ".codex")).expanduser() / "auth.json"
+        )
+    elif parent_recruiter_transport == "claude":
+        parent_recruiter_auth_source = (
+            Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()
+            / ".credentials.json"
+        )
+    elif parent_recruiter_transport:
+        raise ValueError("unsupported canary parent-recruiter transport")
     if host == "codex":
         original_home = Path(source_env.get("CODEX_HOME") or (home / ".codex")).expanduser()
         return SafeCodexCanaryBackend(
@@ -3526,6 +3618,9 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
         child_judge_provider=child_judge_provider,
         child_judge_transport=child_judge_transport,
         child_judge_auth_source=child_judge_auth_source,
+        parent_recruiter_provider=parent_recruiter_provider,
+        parent_recruiter_transport=parent_recruiter_transport,
+        parent_recruiter_auth_source=parent_recruiter_auth_source,
     )
 
 

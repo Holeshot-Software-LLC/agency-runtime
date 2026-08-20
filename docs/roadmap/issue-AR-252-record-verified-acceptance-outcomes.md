@@ -12,6 +12,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - docs/decisions/0161-pin-accepted-outcome-parent-recruiter-separately.md
   - agency_runtime/core/accepted_outcome_canary_contract.py
   - agency_runtime/core/outcome_canary.py
   - agency_runtime/core/canary_backends.py
@@ -363,6 +364,30 @@ The planner repair is therefore live-proven at its intended boundary. The
 remaining issue is the previously measured intermittent Claude/Sonnet recruiter
 contract behavior, not accepted-outcome recording or promotion. No automatic
 retry followed and no matrix cell moved.
+
+## Parent recruiter isolated onto the chosen provider locally (2026-08-20)
+
+The owner chose a canary-only `claude -> codex-subscription` parent-recruiter
+pin. The local candidate now requires that role through the typed
+`canary.accepted_outcome_parent_recruiter_provider_by_host` map, projects its
+identity and CLI credentials only into the accepted-outcome subprocess, and
+uses it only for the primary recruiter call and funded repair. The Haiku parent
+planner, ordinary turns, activation canaries, and independently pinned child
+judge retain their existing routes. Missing, ambiguous, unsupported, and
+mismatched parent pins fail closed without fallback.
+
+No owner config, install, provider, Store outcome, or promotion state changed.
+The next proof boundary is an authorized publish/configure/install cycle and
+one bounded draw from exact merged main; until then this is local source and
+test evidence only and no matrix cell moves.
+
+Verification passed 137 bounded configuration/canary tests (4 skips, one
+unrelated historical fast-default assertion deselected), 152 host-canary and
+workforce-route tests, 182 child/activation/hook noninterference tests, and the
+797-test warning-strict production spine with 20 skips. The 12 fast gates passed
+in 1.2 minutes and 713 Markdown files passed documentation validation. The slow
+14-gate harness, hosted CI, install, owner-config mutation, and live inference
+remain unrun.
 
 ## Collector diagnosis shipped ahead of the collector (2026-08-14)
 

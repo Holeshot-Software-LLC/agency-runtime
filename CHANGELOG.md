@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-13
+updated: 2026-08-20
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -54,6 +54,11 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- The Claude accepted-outcome canary now requires a separate, per-host parent-
+  recruiter provider pin. Only its recruiter and bounded repair use that exact
+  no-fallback provider; the parent planner, ordinary host turns, activation
+  canaries, and the independently configured child judge keep their existing
+  routes. The readiness report records both requested role pins separately.
 - Dashboard copy and controls now match Agency's staffing-only contract:
   retired delegation preferences, confidence bypasses, and dependency-planning
   UI are gone. The superseded read-only `/api/overview` and GET `/api/config`

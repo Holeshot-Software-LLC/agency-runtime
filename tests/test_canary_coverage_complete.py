@@ -560,8 +560,61 @@ def test_prepare_live_invocation_resolves_and_passes_the_exact_canary_pin(
             "trust_mode": "attended",
             "child_judge_provider": "codex-subscription",
             "child_judge_transport": "codex",
+            "parent_recruiter_provider": "",
+            "parent_recruiter_transport": "",
         }
     ]
+
+
+def test_prepare_live_invocation_resolves_separate_accepted_outcome_parent_pin(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = tmp_path / "agency.yaml"
+
+    class _Store:
+        def __init__(self, _path: Path) -> None:
+            self.config_path = config_path
+
+        def recent_runtime_activity(self, *, limit: int) -> dict[str, list[Any]]:
+            assert limit == 200
+            return {}
+
+    calls: list[dict[str, Any]] = []
+
+    def factory(host: str, **kwargs: Any) -> object:
+        calls.append({"host": host, **kwargs})
+        return object()
+
+    config = AgencyConfig(
+        providers=(
+            ProviderEntry(name="codex-subscription", type="cli", transport="codex"),
+            ProviderEntry(name="claude-subscription", type="cli", transport="claude"),
+        ),
+        canary=CanaryConfig(
+            child_judge_provider_by_host=(("claude", "claude-subscription"),),
+            accepted_outcome_parent_recruiter_provider_by_host=(("claude", "codex-subscription"),),
+        ),
+    )
+    monkeypatch.setattr(canary, "Store", _Store)
+    monkeypatch.setattr(canary, "load_config", lambda *_args, **_kwargs: config)
+    monkeypatch.setattr(canary, "_backend", factory)
+
+    prepared = canary._prepare_live_invocation(
+        "claude",
+        path=tmp_path / "agency.db",
+        timeout=2,
+        native=_native("claude"),
+        backend_factory=factory,
+        mode="agency",
+        require_accepted_outcome_parent_recruiter=True,
+    )
+
+    assert prepared.error is None
+    assert calls[0]["child_judge_provider"] == "claude-subscription"
+    assert calls[0]["child_judge_transport"] == "claude"
+    assert calls[0]["parent_recruiter_provider"] == "codex-subscription"
+    assert calls[0]["parent_recruiter_transport"] == "codex"
 
 
 def test_prepare_live_invocation_passes_a_profile_pin_without_cli_transport(

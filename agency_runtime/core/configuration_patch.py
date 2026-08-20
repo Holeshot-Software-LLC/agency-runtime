@@ -175,13 +175,17 @@ _SET_VALIDATORS = {
         item, "workforce.amend_overlap_threshold", minimum=0.0, maximum=1.0
     ),
     **{
-        f"canary.child_judge_provider_by_host.{host}": (
-            lambda item, host=host: _string(
+        f"canary.{field_name}.{host}": (
+            lambda item, field_name=field_name, host=host: _string(
                 item,
-                f"canary.child_judge_provider_by_host.{host}",
+                f"canary.{field_name}.{host}",
                 allow_empty=False,
                 maximum=80,
             ).strip()
+        )
+        for field_name in (
+            "child_judge_provider_by_host",
+            "accepted_outcome_parent_recruiter_provider_by_host",
         )
         for host in ("claude", "codex", "hermes", "openclaw", "zcode")
     },

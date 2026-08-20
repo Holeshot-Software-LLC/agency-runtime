@@ -840,16 +840,25 @@ canary:
     codex: codex-subscription
     claude: codex-subscription
     zcode: zcode-recruiter
+  accepted_outcome_parent_recruiter_provider_by_host:
+    claude: codex-subscription
 ```
 
-Each value must resolve exactly once to a configured Codex/Claude CLI provider
-or a supported Anthropic-compatible inference profile. Profile pins are
+Each child-judge value must resolve exactly once to a configured Codex/Claude
+CLI provider or a supported Anthropic-compatible inference profile. Profile pins are
 materialized only into the canary's one-provider tuple; they never enter or
 reorder the ordinary provider chain. There is no fallback. ZCode can reuse an
 existing GLM inference profile for judge selection, but it still lacks a safe
 noninteractive native canary backend. ZCode is hook-driven rather than a
 launchable CLI here, so current provider-attribution proof requires an attended
 installed ZCode Agent call; profile execution alone is not host proof.
+
+The accepted-outcome parent recruiter is a separate canary-only role. Its pin
+must name exactly one configured Codex or Claude CLI provider. Only the Claude
+`--accepted-outcome` recruiter's initial call and bounded repair see that
+provider; the parent planner keeps its normal Claude route, ordinary turns keep
+their configured routes, and child staffing still uses the independent
+`child_judge_provider_by_host` pin.
 
 Claude canaries always run in a disposable isolated profile;
 `--profile-scope current-profile` and `agency install --agent codex

@@ -2276,17 +2276,47 @@ documented in the instrument series, not the child pin, host Agent topology, or
 Store outcome recorder. The one draw is consumed and was not retried. No rule
 was promoted, the candidate did not advance, and **no matrix cell moved**.
 
+### LOCAL CANDIDATE: accepted-outcome parent recruiter is pinned separately
+
+The owner chose the narrow branch on 2026-08-20: keep the Claude parent host,
+keep its existing Haiku planner route, and constrain only the accepted-outcome
+parent recruiter's initial call and funded repair to `codex-subscription`.
+This is a new role-specific pin, not a reuse or widening of Option A's child
+judge authority.
+
+The local candidate adds
+`canary.accepted_outcome_parent_recruiter_provider_by_host.<host>`. Production
+preparation resolves that pin exactly once, the disposable accepted-outcome
+backend projects its own provider identity and bounded CLI credentials, and
+workforce routing consumes it only for `stage=recruiter` with route key
+`workforce.recruiter`. A missing, ambiguous, unsupported, or mismatched pin
+fails closed without falling back. The parent planner, ordinary Claude turns,
+ordinary activation canaries, and independently configured child judge remain
+on their existing paths.
+
+This is local source and test evidence only. The owner config still has no
+parent-recruiter entry, no install or provider call followed, and the consumed
+draw was not repeated. Therefore no accepted outcome, promotion, rule, candidate,
+or matrix state moves at this checkpoint.
+
+Local verification is green: the bounded configuration/canary set passed
+137 tests with 4 skips and the unrelated historical fast-default assertion
+deselected; host-canary/workforce routing passed 152; child/activation/hook
+noninterference passed 182; the warning-strict production spine passed 797
+with 20 skips; and all 12 fast local gates passed in 1.2 minutes. Documentation
+validation covers 713 files. The slow 14-gate harness, hosted CI, installation,
+and live inference were not run.
+
 ### CHECKPOINT PLAN: finish the 19 August review scope
 
 1. **Freeze Option A.** Preserve per-harness child-judge pins and the current
    Claude, Codex, and ZCode evidence; do not spend more provider calls re-proving
    the seal without a falsification target.
-2. **Resolve the isolated Claude parent recruiter.** PR #302's planner shaping
-   is live-proven, but the one draw stopped at the existing intermittent
-   Claude/Sonnet recruiter contract failure. Do not retry it blindly. The owner
-   must choose whether a canary-only parent-recruiter pin is warranted and which
-   provider it uses, or explicitly fund a bounded retry on the current route.
-   No general-turn route or config change is authorized.
+2. **Publish and prove the isolated Claude parent recruiter.** The owner chose
+   the local canary-only `claude -> codex-subscription` recruiter pin. Finish its
+   local gates and recovery pair, then obtain fresh authority for push/PR/merge,
+   owner-config update, exact-main install, and one bounded falsification draw.
+   No general-turn route change or unapproved retry is authorized.
 3. **Make the Rule-8 claim only after the owner accepts its cost.** Advance the
    candidate to the disk-proven `f7b84c8a40fa` boundary and re-anchor R2/R3/R7;
    no new capture surface or live draw is needed. Re-run the fixed 15,000 ms cold
